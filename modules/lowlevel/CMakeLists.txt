@@ -1,6 +1,6 @@
 # module name
-set(MODULE_NAME "core")
+set(MODULE_NAME "lowlevel")
 # modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel")
+set(MODULE_DEPS "")
 
 setup_submodule(${MODULE_NAME})

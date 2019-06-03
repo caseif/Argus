@@ -1,4 +1,4 @@
-set(MODULE_IDS "core")
+set(MODULE_IDS "lowlevel;core")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.0)
@@ -15,6 +15,8 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
 project(argus
         VERSION 0.1.0)
+
+option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 
 function(set_module_includes)
   get_property(INCLUDE_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
@@ -43,6 +45,10 @@ function(setup_submodule)
 
   # store this module's include dirs
   set_module_includes()
+  
+  if(${USE_PTHREADS})
+    add_definitions("-DUSE_PTHREADS")
+  endif()
 
   add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
 
@@ -69,7 +75,6 @@ foreach(module ${MODULE_IDS})
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
-#target_link_libraries(${PROJECT_NAME} ${MODULE_IDS})
 
 # set the linker language (since we're not including any sources)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
