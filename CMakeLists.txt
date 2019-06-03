@@ -54,12 +54,16 @@ function(setup_submodule)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+  get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)
+  list(APPEND ALL_LIBS "${LOCAL_LIBS}")
+  set_property(GLOBAL PROPERTY ALL_LIBS "${ALL_LIBS}")
+
   string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
 
 # transform them to add the prefix
 foreach(module ${MODULE_IDS})
-list(APPEND MODULE_PATHS "${MODULE_PATH_PREFIX}${module}")
+  list(APPEND MODULE_PATHS "${MODULE_PATH_PREFIX}${module}")
 endforeach()
 
 set(SRC_DIR src)
@@ -78,3 +82,8 @@ add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
 
 # set the linker language (since we're not including any sources)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+
+# add libraries for linking
+get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)
+list(REMOVE_DUPLICATES ALL_LIBS)
+target_link_libraries(${PROJECT_NAME} ${ALL_LIBS})
