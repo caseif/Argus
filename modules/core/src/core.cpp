@@ -7,12 +7,13 @@
 #else
 #include <thread>
 #endif
-#include <time.h>
+#include <vector>
 
 namespace argus {
 
     static argus::Thread *g_game_thread;
-    static UpdateCallback g_update_callback;
+
+    static std::vector<UpdateCallback> g_update_callbacks(10);
 
     unsigned long long g_last_update = 0;
 
@@ -29,8 +30,11 @@ namespace argus {
             delta = 0;
         }
 
-        // invoke the game's callback
-        g_update_callback(delta);
+        // invoke update callbacks
+        std::vector<UpdateCallback>::const_iterator it;
+        for (it = g_update_callbacks.begin(); it != g_update_callbacks.end(); it++) {
+            (*it)(delta);
+        }
 
         return NULL;
     }
@@ -41,7 +45,7 @@ namespace argus {
             exit(1);
         }
 
-        g_update_callback = update_callback;
+        add_update_callback(update_callback);
 
         // initialize the engine before proceeding
         _init_engine();
@@ -51,6 +55,10 @@ namespace argus {
 
         // return control of the main thread back to the program
         return;
+    }
+
+    void add_update_callback(UpdateCallback callback) {
+        g_update_callbacks.insert(g_update_callbacks.cend(), callback);
     }
 
 }
