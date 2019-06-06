@@ -1,4 +1,4 @@
-#include "argus/argus_core.hpp"
+#include "argus/core.hpp"
 #include "internal/config.hpp"
 
 namespace argus {

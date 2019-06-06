@@ -1,4 +1,4 @@
-#include "argus/argus_lowlevel.hpp"
+#include "argus/lowlevel.hpp"
 
 #ifdef USE_PTHREADS
 #include <pthread.h>

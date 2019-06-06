@@ -1,5 +1,5 @@
-#include "argus/argus_core.hpp"
-#include "argus/argus_lowlevel.hpp"
+#include "argus/core.hpp"
+#include "argus/lowlevel.hpp"
 #include "internal/config.hpp"
 
 #include <chrono>
