@@ -18,6 +18,10 @@ project(argus
 
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 
+if(${USE_PTHREADS})
+  message("Using pthreads instead of std::thread as requested...")
+endif()
+
 function(set_module_includes)
   get_property(INCLUDE_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   set_property(GLOBAL PROPERTY ${PROJECT_NAME}_INCLUDE_DIRS "${INCLUDE_DIRS}")
@@ -79,9 +83,16 @@ foreach(module ${MODULE_IDS})
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
+add_library(${PROJECT_NAME}_static STATIC ${MODULE_LIBS})
 
 # set the linker language (since we're not including any sources)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${PROJECT_NAME}_static PROPERTIES LINKER_LANGUAGE CXX)
+# set the C++ standard
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11)
+# enable PIC
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # add libraries for linking
 get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)

@@ -22,6 +22,8 @@ namespace argus {
 
     void thread_destroy(Thread *thread);
 
-    unsigned long int microtime();
+    void sleep_nanos(unsigned long long ns);
+
+    unsigned long long microtime(void);
 
 }
