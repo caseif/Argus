@@ -1,12 +1,14 @@
 #pragma once
 
+#include <functional>
+
 namespace argus {
 
     /**
      * \brief An update callback accepts a single parameter representing the
      *        delta in microseconds since the last update.
      */
-    typedef void (*UpdateCallback)(unsigned long long);
+    typedef std::function<void(unsigned long long)> Callback;
 
     /*
      * \brief Performs basic engine initialization.
@@ -19,9 +21,9 @@ namespace argus {
     /**
      * \brief Starts the engine.
      *
-     * \param update_callback The callback representing the main game loop.
+     * \param game_loop The callback representing the main game loop.
      */
-    void start_engine(UpdateCallback update_callback);
+    void start_engine(Callback game_loop);
 
     /**
      * \brief Sets the target tickrate of the engine.
@@ -36,6 +38,13 @@ namespace argus {
      *
      * It is normally not necessary to invoke this from game code.
      */
-    void register_update_callback(UpdateCallback update_callback);
+    void register_update_callback(Callback update_callback);
+
+    /**
+     * \brief Registers a callback for invocation on each render update.
+     *
+     * It is normally not necessary to invoke this from game code.
+     */
+    void register_render_callback(Callback update_callback);
 
 }

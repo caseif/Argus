@@ -8,6 +8,13 @@
 
 namespace argus {
 
+    #define FATAL(s)    std::cerr << s << std::endl;    \
+                        exit(1)
+
+    #define ASSERT(c, s)    if (!(c)) {     \
+                                FATAL(s);   \
+                            }
+
     #ifdef USE_PTHREADS
     typedef pthread_t Thread;
     #else

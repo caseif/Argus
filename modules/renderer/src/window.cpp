@@ -1,5 +1,7 @@
+#include "argus/core.hpp"
 #include "argus/renderer.hpp"
 
+#include <functional>
 #include <iostream>
 #include <string>
 #include <SDL2/SDL_render.h>
@@ -14,6 +16,15 @@ namespace argus {
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+
+        register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+
+        return;
+    }
+
+    void Window::update(unsigned long long delta) {
+        //TODO
+        return;
     }
 
     Window *Window::create_window(void) {

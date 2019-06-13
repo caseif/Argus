@@ -11,7 +11,9 @@
 
 namespace argus {
 
-    static std::vector<UpdateCallback> g_update_callbacks;
+    static std::vector<Callback> g_update_callbacks;
+    static std::vector<Callback> g_render_callbacks;
+
     extern EngineConfig g_engine_config;
 
     bool initialized = false;
@@ -46,7 +48,7 @@ namespace argus {
             g_last_update = argus::microtime();
 
             // invoke update callbacks
-            std::vector<UpdateCallback>::const_iterator it;
+            std::vector<Callback>::const_iterator it;
             for (it = g_update_callbacks.begin(); it != g_update_callbacks.end(); it++) {
                 (*it)(last_delta);
             }
@@ -58,10 +60,7 @@ namespace argus {
     }
 
     void initialize_engine(void) {
-        if (initialized) {
-            std::cerr << "Cannot initialize engine more than once." << std::endl;
-            exit(1);
-        }
+        ASSERT(initialized, "Cannot initialize engine more than once.");
 
         // we'll probably register around 10 or so internal callbacks, so allocate them now
         g_update_callbacks.reserve(10);
@@ -72,22 +71,21 @@ namespace argus {
         return;
     }
 
-    void register_update_callback(UpdateCallback callback) {
+    void register_update_callback(Callback callback) {
+        ASSERT(initialized, "Cannot register update callback before engine initialization.");
+
         g_update_callbacks.insert(g_update_callbacks.cend(), callback);
     }
 
-    void start_engine(UpdateCallback update_callback) {
-        if (!initialized) {
-            std::cerr << "Cannot start engine before it is initialized." << std::endl;
-            exit(1);
-        }
+    void register_render_callback(Callback callback) {
+        g_render_callbacks.insert(g_render_callbacks.cend(), callback);
+    }
 
-        if (update_callback == NULL) {
-            std::cerr << "start_engine supplied with NULL update callback" << std::endl;
-            exit(1);
-        }
+    void start_engine(Callback game_loop) {
+        ASSERT(initialized, "Cannot start engine before it is initialized.");
+        ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
-        register_update_callback(update_callback);
+        register_update_callback(game_loop);
 
         // pass control over to the game loop
         _game_loop();

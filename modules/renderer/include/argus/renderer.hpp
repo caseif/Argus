@@ -15,6 +15,10 @@ namespace argus {
 
             Window(void);
 
+            void update(unsigned long long delta);
+
+            static void update_window(Window *window, unsigned long long delta);
+
         public:
             /**
              * \brief Creates a new window.
