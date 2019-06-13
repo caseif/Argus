@@ -16,35 +16,79 @@ namespace argus {
             Window(void);
 
         public:
-            /* Creates a new window.                                              */
+            /**
+             * \brief Creates a new window.
+             *
+             * \return The new window.
+             */
             static Window *create_window(void);
 
-            /* Creates a new renderer for this window.                            */
+            /**
+             * \brief Creates a new renderer for this window.
+             *
+             * This function must be called before invoking `activate`, and must
+             * not be called more than once.
+             *
+             * \return The new renderer.
+             */
             Renderer *create_renderer(void);
 
-            /* Sets the window title.                                             */
+            /**
+             * Sets the window title.
+             *
+             * \param title The new window title.
+             */
             void set_title(std::string title);
 
-            /* Sets the fullscreen state of the window.                           */
-            /* Caution: This may not be supported on all platforms.               */
+            /**
+             * \brief Sets the fullscreen state of the window.
+             *
+             * Caution: This may not be supported on all platforms.
+             *
+             * \param fullscreen Whether the window is to be displayed in
+             *                   fullscreen.
+             */
             void set_fullscreen(bool fullscreen);
 
-            /* Sets the resolution of the window when not in fullscreen mode.     */
-            /* Caution: This may not be supported on all platforms.               */
+            /**
+             * \brief Sets the resolution of the window when not in fullscreen
+             *        mode.
+             *
+             * Caution: This may not be supported on all platforms.
+             *
+             * \param width The new width of the window.
+             * \param height The new height of the window.
+             */
             void set_windowed_resolution(unsigned int width, unsigned int height);
 
-            /* Sets the position of the window on the screen when not in          */
-            /* fullscreen mode.                                                   */
-            /* Caution: This may not be supported on all platforms.               */
+            /**
+             * \brief Sets the position of the window on the screen when in
+             *        windowed mode.
+             *
+             * Caution: This may not be supported on all platforms.
+             *
+             * \param x The new X-coordinate of the window.
+             * \param y The new Y-coordinate of the window.
+             */
             void set_windowed_position(unsigned int x, unsigned int y);
 
-            /* Activates the window. This function should be invoked only once.   */
+            /*
+             * \brief Activates the window.
+             *
+             * This function should be invoked only once.
+             */
             void activate(void);
 
-            /* Returns the underlying SDL window to allow low-level control. If   */
-            /* the window is not yet active, this will return a null pointer.     */
-            /* Caution: Use of this function is generally not recommended, as     */
-            /* Argus provides a higher-level abstraction for most functionality.  */
+            /**
+             * \brief Returns the underlying SDL window to allow low-level
+             *        control.
+             *
+             * Caution: Use of this function is generally not recommended, as
+             * Argus provides a higher-level abstraction for most typical
+             * functionality.
+             *
+             * \return The underlying SDL_window.
+             */
             SDL_Window *get_sdl_window(void);
     };
 
@@ -57,10 +101,15 @@ namespace argus {
             Renderer(Window *window);
 
         public:
-            /* Returns the underlying SDL renderer to allow low-level control. If */
-            /* the window is not yet active, this will return a null pointer.     */
-            /* Caution: Use of this function is generally not recommended, as     */
-            /* Argus provides a higher-level abstraction for most functionality.  */
+            /**
+             * \brief Returns the underlying SDL renderer to allow low-level
+             *        control.
+             *
+             * Caution: Use of this function is generally not recommended, as
+             * Argus provides a higher-level abstraction for most functionality.
+             *
+             * \return The underlying SDL renderer
+             */
             SDL_Renderer *get_sdl_renderer(void);
     };
 
