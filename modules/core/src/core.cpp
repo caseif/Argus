@@ -20,7 +20,7 @@ namespace argus {
 
     static void _handle_idle(unsigned long long frame_start) {
         if (g_engine_config.target_fps != 0) {
-            unsigned long long delta = argus::microtime() - frame_start;
+            unsigned long long delta = microtime() - frame_start;
 
             unsigned int frametime_target_us = US_PER_S / g_engine_config.target_fps;
             if (delta < frametime_target_us) {
@@ -35,11 +35,11 @@ namespace argus {
 
     static void _game_loop(void) {
         while (1) {
-            unsigned long long frame_start = argus::microtime();
+            unsigned long long frame_start = microtime();
             unsigned long long last_delta;
 
             if (g_last_update != 0) {
-                last_delta = argus::microtime() - g_last_update;
+                last_delta = microtime() - g_last_update;
             } else {
                 last_delta = 0;
             }

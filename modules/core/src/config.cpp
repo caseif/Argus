@@ -8,4 +8,5 @@ namespace argus {
     void set_target_framerate(unsigned int target_fps) {
         g_engine_config.target_fps = target_fps;
     }
+
 }
