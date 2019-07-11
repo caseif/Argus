@@ -11,8 +11,8 @@ namespace argus {
     } EngineModules;
 
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
-    
-    bool operator &(const EngineModules lhs, const EngineModules rhs);
+    constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
+    inline bool operator &(const EngineModules lhs, const EngineModules rhs);
 
     /**
      * \brief An update callback accepts a single parameter representing the
@@ -54,9 +54,23 @@ namespace argus {
      * \brief Sets the target tickrate of the engine.
      *
      * When performance allows, the engine will sleep between updates to
-     * maintain this limit. Set to 0 to disable tickrate targeting.
+     * enforce this limit. Set to 0 to disable tickrate targeting.
+     *
+     * Note that this is independent from the target tickrate, which controls
+     * how frequently frames are rendered.
      */
-    void set_target_framerate(unsigned int target_tickrate);
+    void set_target_tickrate(unsigned int target_tickrate);
+
+    /**
+     * \brief Sets the target framerate of the engine.
+     *
+     * When performance allows, the engine will sleep between frames to
+     * enforce this limit. Set to 0 to disable framerate targeting.
+     *
+     * Note that this is independent from the target tickrate, which controls
+     * how often the game logic routine is called.
+     */
+    void set_target_framerate(unsigned int target_framerate);
 
     /**
      * \brief Registers a callback for invocation on each game update.

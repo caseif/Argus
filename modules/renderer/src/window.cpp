@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
 
 #define DEF_TITLE "ArgusGame"
@@ -14,9 +16,23 @@
 
 namespace argus {
 
+    typedef std::function<void(void*)> WindowEventCallback;
+
     extern bool g_renderer_initialized;
 
     std::vector<Window*> g_windows;
+
+    void _event_callback(Window *window, SDL_Event *event) {
+        switch (event->type) {
+            case SDL_WINDOWEVENT:
+                if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
+                    stop_engine();
+                }
+                break;
+            default:
+                break;
+        }
+    }
 
     Window::Window(void) {
         ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
@@ -25,6 +41,15 @@ namespace argus {
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        
+        // add the close listener
+        SDL_AddEventWatch(
+                [](auto userdata, auto event) -> int{
+                    _event_callback(static_cast<Window*>(userdata), event);
+                    return 0;
+                },
+                this
+        );
 
         register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -40,6 +65,8 @@ namespace argus {
     }
 
     void Window::update(unsigned long long delta) {
+        printf("update\n");
+        SDL_PumpEvents();
         SDL_UpdateWindowSurface(get_sdl_window());
         return;
     }
