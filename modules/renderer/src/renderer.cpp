@@ -39,12 +39,17 @@ namespace argus {
         ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
         handle = SDL_CreateRenderer(window->get_sdl_window(), -1, SDL_RENDERER_ACCELERATED);
+
+        g_renderers.insert(g_renderers.cend(), this);
     }
 
     Renderer::~Renderer(void) = default;
-    
+
     void Renderer::destroy(void) {
+        SDL_DestroyRenderer(handle);
+
         g_renderers.erase(std::remove(g_renderers.begin(), g_renderers.end(), this));
+        
         delete this;
         return;
     }

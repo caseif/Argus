@@ -21,16 +21,11 @@ namespace argus {
     extern bool g_renderer_initialized;
 
     std::vector<Window*> g_windows;
+    size_t g_window_count = 0;
 
-    void _event_callback(Window *window, SDL_Event *event) {
-        switch (event->type) {
-            case SDL_WINDOWEVENT:
-                if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
-                    stop_engine();
-                }
-                break;
-            default:
-                break;
+    void _window_event_callback(Window *window, SDL_Event *event) {
+        if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
+            window->destroy();
         }
     }
 
@@ -41,11 +36,17 @@ namespace argus {
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+
+        g_window_count++;
+        g_windows.insert(g_windows.cend(), this);
         
         // add the close listener
         SDL_AddEventWatch(
                 [](auto userdata, auto event) -> int{
-                    _event_callback(static_cast<Window*>(userdata), event);
+                    Window *window = static_cast<Window*>(userdata);
+                    if (event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->handle)) {
+                        _window_event_callback(window, event);
+                    }
                     return 0;
                 },
                 this
@@ -59,13 +60,20 @@ namespace argus {
     Window::~Window(void) = default;
 
     void Window::destroy(void) {
+        SDL_DestroyWindow(handle);
+
         g_windows.erase(std::remove(g_windows.begin(), g_windows.end(), this));
+
         delete this;
+
+        if (--g_window_count == 0) {
+            stop_engine();
+        }
+
         return;
     }
 
     void Window::update(unsigned long long delta) {
-        printf("update\n");
         SDL_PumpEvents();
         SDL_UpdateWindowSurface(get_sdl_window());
         return;
