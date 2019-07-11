@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <SDL2/SDL.h>
 
 namespace argus {
 
@@ -24,6 +25,12 @@ namespace argus {
      * \brief A callback accepts no parameters.
      */
     typedef std::function<void()> NullaryCallback;
+
+    /**
+     * \brief A callback that accepts a piece of user-supplied data and an SDL
+     * event.
+     */
+    typedef std::function<void(void*, SDL_Event*)> SDLEventCallback;
 
     /*
      * \brief Initializes the engine with the given modules.
@@ -93,5 +100,13 @@ namespace argus {
      * It is normally not necessary to invoke this from game code.
      */
     void register_close_callback(NullaryCallback close_callback);
+
+    /**
+     * \brief Registers a listener for particular SDL events.
+     * 
+     * Events which match the given filter will be passed to the callback
+     * function along with the user-supplied data pointer.
+     */
+    void register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
 
 }

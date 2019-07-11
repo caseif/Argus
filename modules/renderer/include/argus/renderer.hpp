@@ -21,6 +21,8 @@ namespace argus {
             
             ~Window(void);
 
+            void remove_child(Window *child);
+
             void update(unsigned long long delta);
 
             static void update_window(Window *window, unsigned long long delta);

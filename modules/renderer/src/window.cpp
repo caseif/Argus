@@ -16,14 +16,18 @@
 
 namespace argus {
 
-    typedef std::function<void(void*)> WindowEventCallback;
-
     extern bool g_renderer_initialized;
 
     std::vector<Window*> g_windows;
     size_t g_window_count = 0;
 
-    void _window_event_callback(Window *window, SDL_Event *event) {
+    int _window_event_filter(void *data, SDL_Event *event) {
+        Window *window = static_cast<Window*>(data);
+        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->get_sdl_window());
+    }
+
+    void _window_event_callback(void *data, SDL_Event *event) {
+        Window *window = static_cast<Window*>(data);
         if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
             window->destroy();
         }
@@ -40,17 +44,8 @@ namespace argus {
         g_window_count++;
         g_windows.insert(g_windows.cend(), this);
         
-        // add the close listener
-        SDL_AddEventWatch(
-                [](auto userdata, auto event) -> int{
-                    Window *window = static_cast<Window*>(userdata);
-                    if (event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->handle)) {
-                        _window_event_callback(window, event);
-                    }
-                    return 0;
-                },
-                this
-        );
+        // register the listener
+        register_sdl_event_listener(_window_event_filter, _window_event_callback, this);
 
         register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -60,9 +55,13 @@ namespace argus {
     Window::~Window(void) = default;
 
     void Window::destroy(void) {
-        std::vector<Window*>::const_iterator it;
-        for (it = children.begin(); it != children.end(); it++) {
-            (*it)->destroy();
+        for (Window *child : children) {
+            child->parent = nullptr;
+            child->destroy();
+        }
+
+        if (parent != nullptr) {
+            parent->remove_child(this);
         }
 
         SDL_DestroyWindow(handle);
@@ -97,6 +96,10 @@ namespace argus {
         children.insert(children.cend(), child_window);
 
         return child_window;
+    }
+
+    void Window::remove_child(Window *child) {
+        children.erase(std::remove(children.begin(), children.end(), child));
     }
 
     void Window::update(unsigned long long delta) {

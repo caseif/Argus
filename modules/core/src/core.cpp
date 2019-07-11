@@ -32,16 +32,25 @@ namespace argus {
                 & static_cast<std::underlying_type<EngineModules>::type>(rhs));
     }
 
+    typedef struct {
+        SDL_EventFilter filter;
+        SDLEventCallback callback;
+        void *data;
+    } SDLEventListener;
+
     Thread *g_render_thread;
 
     static std::vector<DeltaCallback> g_update_callbacks;
     static std::vector<DeltaCallback> g_render_callbacks;
     static std::vector<NullaryCallback> g_close_callbacks;
 
+    static std::vector<SDLEventListener> g_event_listeners;
+
     static bool g_engine_stopping = false;
 
     extern EngineConfig g_engine_config;
 
+    bool g_initializing = false;
     bool g_initialized = false;
 
     unsigned long long g_last_update = 0;
@@ -103,6 +112,9 @@ namespace argus {
             unsigned long long update_start = argus::microtime();
             unsigned long long delta = _compute_delta(&g_last_update);
 
+            // pump events
+            SDL_PumpEvents();
+
             // invoke update callbacks
             std::vector<DeltaCallback>::const_iterator it;
             for (it = g_update_callbacks.begin(); it != g_update_callbacks.end(); it++) {
@@ -117,7 +129,6 @@ namespace argus {
         return;
     }
 
-    // basically the same as the game loop, but with different variables
     static void *_render_loop(void*) {
         while (1) {
             if (g_engine_stopping) {
@@ -140,6 +151,19 @@ namespace argus {
 
         return nullptr;
     }
+
+    static int _master_event_callback(void *data, SDL_Event *event) {
+        std::vector<SDLEventListener>::const_iterator it;
+        for (it = g_event_listeners.begin(); it != g_event_listeners.end(); it++) {
+            SDLEventListener listener = *it;
+
+            if (listener.filter == nullptr || listener.filter(listener.data, event)) {
+                listener.callback(listener.data, event);
+            }
+        }
+
+        return 0;
+    }
     
     void _initialize_modules(EngineModules module_bitmask) {
         if (module_bitmask & EngineModules::RENDERER) {
@@ -148,7 +172,9 @@ namespace argus {
     }
 
     void initialize_engine(EngineModules module_bitmask) {
-        ASSERT(!g_initialized, "Cannot initialize engine more than once.");
+        ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
+
+        g_initializing = true;
 
         signal(SIGINT, _interrupt_handler);
 
@@ -157,24 +183,33 @@ namespace argus {
 
         _initialize_modules(module_bitmask);
 
-        //TODO: more init stuff
+        SDL_AddEventWatch(_master_event_callback, nullptr);
 
         g_initialized = true;
         return;
     }
 
     void register_update_callback(DeltaCallback callback) {
-        ASSERT(g_initialized, "Cannot register update callback before engine initialization.");
-
+        ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
         g_update_callbacks.insert(g_update_callbacks.cend(), callback);
     }
 
     void register_render_callback(DeltaCallback callback) {
+        ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
         g_render_callbacks.insert(g_render_callbacks.cend(), callback);
     }
 
     void register_close_callback(NullaryCallback callback) {
+        ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
         g_close_callbacks.insert(g_close_callbacks.cend(), callback);
+    }
+
+    void register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
+        ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
+        ASSERT(callback != nullptr, "Event listener cannot have null callback.");
+
+        SDLEventListener listener = {filter, callback, data};
+        g_event_listeners.insert(g_event_listeners.cend(), listener);
     }
 
     void start_engine(DeltaCallback game_loop) {

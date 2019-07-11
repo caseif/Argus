@@ -16,11 +16,15 @@ namespace argus {
     extern std::vector<Window*> g_windows;
 
     void _clean_up(void) {
-        for (Renderer *renderer : g_renderers) {
+        // use a copy since Renderer::destroy modifies the global list
+        auto renderers_copy = g_renderers;
+        for (Renderer *renderer : renderers_copy) {
             renderer->destroy();
         }
 
-        for (Window *window : g_windows) {
+        // same here with using a copy
+        auto windows_copy = g_windows;
+        for (Window *window : windows_copy) {
             window->destroy();
         }
 
@@ -49,7 +53,7 @@ namespace argus {
         SDL_DestroyRenderer(handle);
 
         g_renderers.erase(std::remove(g_renderers.begin(), g_renderers.end(), this));
-        
+
         delete this;
         return;
     }
