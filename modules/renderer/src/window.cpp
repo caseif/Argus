@@ -60,6 +60,11 @@ namespace argus {
     Window::~Window(void) = default;
 
     void Window::destroy(void) {
+        std::vector<Window*>::const_iterator it;
+        for (it = children.begin(); it != children.end(); it++) {
+            (*it)->destroy();
+        }
+
         SDL_DestroyWindow(handle);
 
         g_windows.erase(std::remove(g_windows.begin(), g_windows.end(), this));
@@ -73,12 +78,6 @@ namespace argus {
         return;
     }
 
-    void Window::update(unsigned long long delta) {
-        SDL_PumpEvents();
-        SDL_UpdateWindowSurface(get_sdl_window());
-        return;
-    }
-
     Window *Window::create_window(void) {
         return new Window();
     }
@@ -89,6 +88,21 @@ namespace argus {
         }
 
         return new Renderer(this);
+    }
+
+    Window *Window::create_child_window(void) {
+        Window *child_window = new Window();
+        child_window->parent = this;
+
+        children.insert(children.cend(), child_window);
+
+        return child_window;
+    }
+
+    void Window::update(unsigned long long delta) {
+        SDL_PumpEvents();
+        SDL_UpdateWindowSurface(get_sdl_window());
+        return;
     }
 
     void Window::set_title(std::string title) {

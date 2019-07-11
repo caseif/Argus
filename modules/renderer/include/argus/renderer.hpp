@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 #include <SDL2/SDL_render.h>
 
 namespace argus {
@@ -13,6 +14,8 @@ namespace argus {
 
         private:
             SDL_Window *handle;
+            Window *parent;
+            std::vector<Window*> children;
 
             Window(void);
             
@@ -47,6 +50,15 @@ namespace argus {
              * \return The new renderer.
              */
             Renderer *create_renderer(void);
+
+            /**
+             * \brief Creates a new window as a child of this one.
+             *
+             * Note that the child window will not be modal to the parent.
+             *
+             * \return The new child window.
+             */
+            Window *create_child_window(void);
 
             /**
              * Sets the window title.
