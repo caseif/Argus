@@ -11,14 +11,42 @@
 
 namespace argus {
 
-    static std::vector<Callback> g_update_callbacks;
-    static std::vector<Callback> g_render_callbacks;
+    EngineModules operator |(const EngineModules lhs, const EngineModules rhs) {
+        return static_cast<EngineModules>(
+                static_cast<std::underlying_type<EngineModules>::type>(lhs)
+                | static_cast<std::underlying_type<EngineModules>::type>(rhs)
+        );
+    }
+
+    bool operator &(const EngineModules lhs, const EngineModules rhs) {
+        return (static_cast<std::underlying_type<EngineModules>::type>(lhs)
+                & static_cast<std::underlying_type<EngineModules>::type>(rhs));
+    }
+
+    static std::vector<DeltaCallback> g_update_callbacks;
+    static std::vector<DeltaCallback> g_render_callbacks;
+    static std::vector<NullaryCallback> g_close_callbacks;
+
+    static bool g_engine_stopping = false;
 
     extern EngineConfig g_engine_config;
 
-    bool initialized = false;
+    bool g_initialized = false;
 
     unsigned long long g_last_update = 0;
+
+    // module initializers
+    extern void init_module_renderer(void);
+
+    static void _interrupt_handler(void) {
+        stop_engine();
+    }
+
+    static void _clean_up(void) {
+        for (NullaryCallback callback : g_close_callbacks) {
+            callback();
+        }
+    }
 
     static void _handle_idle(unsigned long long frame_start) {
         if (g_engine_config.target_fps != 0) {
@@ -37,6 +65,11 @@ namespace argus {
 
     static void _game_loop(void) {
         while (1) {
+            if (g_engine_stopping) {
+                _clean_up();
+                break;
+            }
+
             unsigned long long frame_start = argus::microtime();
             unsigned long long last_delta;
 
@@ -48,7 +81,7 @@ namespace argus {
             g_last_update = argus::microtime();
 
             // invoke update callbacks
-            std::vector<Callback>::const_iterator it;
+            std::vector<DeltaCallback>::const_iterator it;
             for (it = g_update_callbacks.begin(); it != g_update_callbacks.end(); it++) {
                 (*it)(last_delta);
             }
@@ -58,31 +91,43 @@ namespace argus {
 
         return;
     }
+    
+    void _initialize_modules(EngineModules module_bitmask) {
+        if (module_bitmask & EngineModules::RENDERER) {
+            init_module_renderer();
+        }
+    }
 
-    void initialize_engine(void) {
-        ASSERT(initialized, "Cannot initialize engine more than once.");
+    void initialize_engine(EngineModules module_bitmask) {
+        ASSERT(!g_initialized, "Cannot initialize engine more than once.");
 
         // we'll probably register around 10 or so internal callbacks, so allocate them now
         g_update_callbacks.reserve(10);
 
+        _initialize_modules(module_bitmask);
+
         //TODO: more init stuff
 
-        initialized = true;
+        g_initialized = true;
         return;
     }
 
-    void register_update_callback(Callback callback) {
-        ASSERT(initialized, "Cannot register update callback before engine initialization.");
+    void register_update_callback(DeltaCallback callback) {
+        ASSERT(g_initialized, "Cannot register update callback before engine initialization.");
 
         g_update_callbacks.insert(g_update_callbacks.cend(), callback);
     }
 
-    void register_render_callback(Callback callback) {
+    void register_render_callback(DeltaCallback callback) {
         g_render_callbacks.insert(g_render_callbacks.cend(), callback);
     }
 
-    void start_engine(Callback game_loop) {
-        ASSERT(initialized, "Cannot start engine before it is initialized.");
+    void register_close_callback(NullaryCallback callback) {
+        g_close_callbacks.insert(g_close_callbacks.cend(), callback);
+    }
+
+    void start_engine(DeltaCallback game_loop) {
+        ASSERT(g_initialized, "Cannot start engine before it is initialized.");
         ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
         register_update_callback(game_loop);
@@ -91,6 +136,12 @@ namespace argus {
         _game_loop();
 
         exit(0);
+    }
+
+    void stop_engine(void) {
+        ASSERT(g_initialized, "Cannot stop engine before it is initialized.");
+
+        g_engine_stopping = true;
     }
 
 }

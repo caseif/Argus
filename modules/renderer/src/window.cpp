@@ -1,9 +1,12 @@
 #include "argus/core.hpp"
+#include "argus/lowlevel.hpp"
 #include "argus/renderer.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <SDL2/SDL_render.h>
 
 #define DEF_TITLE "ArgusGame"
@@ -11,7 +14,13 @@
 
 namespace argus {
 
+    extern bool g_renderer_initialized;
+
+    std::vector<Window*> g_windows;
+
     Window::Window(void) {
+        ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
+
         handle = SDL_CreateWindow("ArgusGame",
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
@@ -22,8 +31,16 @@ namespace argus {
         return;
     }
 
+    Window::~Window(void) = default;
+
+    void Window::destroy(void) {
+        g_windows.erase(std::remove(g_windows.begin(), g_windows.end(), this));
+        delete this;
+        return;
+    }
+
     void Window::update(unsigned long long delta) {
-        //TODO
+        SDL_UpdateWindowSurface(get_sdl_window());
         return;
     }
 
@@ -49,7 +66,7 @@ namespace argus {
         return;
     }
 
-    void Window::set_windowed_resolution(unsigned int width, unsigned int height) {
+    void Window::set_resolution(unsigned int width, unsigned int height) {
         SDL_SetWindowSize(handle, width, height);
         return;
     }
@@ -60,7 +77,7 @@ namespace argus {
     }
 
     void Window::activate(void) {
-        //TODO
+        SDL_ShowWindow(handle);
         return;
     }
 

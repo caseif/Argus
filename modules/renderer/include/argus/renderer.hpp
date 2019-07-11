@@ -14,6 +14,8 @@ namespace argus {
             SDL_Window *handle;
 
             Window(void);
+            
+            ~Window(void);
 
             void update(unsigned long long delta);
 
@@ -26,6 +28,14 @@ namespace argus {
              * \return The new window.
              */
             static Window *create_window(void);
+
+            /**
+             * \brief Destroys this window.
+             *
+             * Warning: This method destroys the Window object. No other
+             * methods should be invoked upon it after calling destroy().
+             */
+            void destroy(void);
 
             /**
              * \brief Creates a new renderer for this window.
@@ -63,7 +73,7 @@ namespace argus {
              * \param width The new width of the window.
              * \param height The new height of the window.
              */
-            void set_windowed_resolution(unsigned int width, unsigned int height);
+            void set_resolution(unsigned int width, unsigned int height);
 
             /**
              * \brief Sets the position of the window on the screen when in
@@ -104,7 +114,17 @@ namespace argus {
 
             Renderer(Window *window);
 
+            ~Renderer(void);
+
         public:
+            /**
+             * \brief Destroys this renderer.
+             *
+             * Warning: This method destroys the Renderer object. No other
+             * methods should be invoked upon it after calling destroy().
+             */
+            void destroy(void);
+
             /**
              * \brief Returns the underlying SDL renderer to allow low-level
              *        control.

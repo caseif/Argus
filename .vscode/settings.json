@@ -41,6 +41,7 @@
         "utility": "cpp",
         "cstdarg": "cpp",
         "cstddef": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "deque": "cpp"
     }
 }
