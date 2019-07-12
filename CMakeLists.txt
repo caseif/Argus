@@ -45,7 +45,8 @@ function(setup_submodule)
   load_dep_module_includes(MODULE_INCLUDES)
 
   include_directories(${PROJECT_SOURCE_DIR}/include
-                ${MODULE_INCLUDES})
+                ${MODULE_INCLUDES}
+                "${CMAKE_SOURCE_DIR}/vmmlib/")
 
   # store this module's include dirs
   set_module_includes()

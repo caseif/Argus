@@ -5,6 +5,13 @@
 #include <vector>
 #include <SDL2/SDL_render.h>
 
+#include "vmmlib/matrix.hpp"
+#include "vmmlib/vector.hpp"
+
+namespace vmml {
+    typedef Vector<2, double> Vector2d;
+}
+
 namespace argus {
 
     class Renderer;
@@ -150,6 +157,78 @@ namespace argus {
              * \return The underlying SDL renderer
              */
             SDL_Renderer *get_sdl_renderer(void);
+    };
+
+    class Transform {
+        private:
+            Transform &parent;
+            vmml::Vector2d translation;
+            double rotation;
+            vmml::Vector2d scale;
+
+        public:
+            Transform(void);
+
+            Transform(vmml::Vector2d translation, double rotation, vmml::Vector2d scale);
+
+            vmml::Vector2d get_translation(void) const;
+
+            void set_translation(const vmml::Vector2d &translation);
+
+            void add_translation(const vmml::Vector2d &translation_delta);
+            
+            double get_rotation(void) const;
+
+            void set_rotation(double rotation_degrees);
+
+            void add_rotation(double rotation_degrees);
+
+            vmml::Vector2d get_scale(void) const;
+
+            void set_scale(const vmml::Vector2d &scale);
+
+            void set_parent(const Transform &transform);
+
+            const vmml::Matrix3d &to_matrix(void);
+    };
+
+    /**
+     * Represents an object to be rendered to the screen in some capacity.
+     *
+     * Note that a render target may be rendered to another RenderObject before
+     * ultimately being rasterized to the screen.
+     */
+    class RenderObject {
+        protected:
+            SDL_Texture *handle;
+
+            Transform transform;
+
+            RenderObject(void);
+
+            ~RenderObject(void) = default;
+
+            void queue_render_object(RenderObject);
+
+        public:
+            /**
+             * Queues this object to be rendered to another RenderObject with
+             * its current transformation.
+             */
+            void render_to(RenderObject&);
+    };
+
+    /**
+     * Represents a layer to be rendered to the screen.
+     */
+    class RenderLayer : RenderObject {
+        private:
+            RenderLayer(void);
+
+            ~RenderLayer(void) = default;
+
+        public:
+            void destroy(void);
     };
 
 }

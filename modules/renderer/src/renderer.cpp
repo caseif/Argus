@@ -62,4 +62,26 @@ namespace argus {
         return handle;
     }
 
+    RenderObject::RenderObject(void) {
+        //TODO
+    }
+
+    void RenderObject::render_to(RenderObject &other) {
+        other.queue_render_object(*this);
+    }
+
+    void RenderObject::queue_render_object(RenderObject child) {
+        child.transform.set_parent(this->transform);
+        //TODO
+    }
+
+    RenderLayer::RenderLayer(void) {
+        //TODO
+    }
+
+    void RenderLayer::destroy(void) {
+        //TODO
+        delete this;
+    }
+
 }
