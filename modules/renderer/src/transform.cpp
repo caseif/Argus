@@ -11,12 +11,19 @@ namespace argus {
         translation = *new Vector2d(0, 0);
         rotation = 0;
         scale = *new Vector2d(0, 0);
+        parent = nullptr;
     }
 
     Transform::Transform(Vector2d translation, double rotation, Vector2d scale) {
         this->translation = translation;
         this->rotation = rotation;
         this->scale = scale;
+    }
+
+    Transform::~Transform(void) {
+        if (parent != nullptr) {
+            free(parent);
+        }
     }
 
     Vector2d Transform::get_translation(void) const {

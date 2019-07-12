@@ -161,7 +161,7 @@ namespace argus {
 
     class Transform {
         private:
-            Transform &parent;
+            Transform *parent;
             vmml::Vector2d translation;
             double rotation;
             vmml::Vector2d scale;
@@ -170,6 +170,8 @@ namespace argus {
             Transform(void);
 
             Transform(vmml::Vector2d translation, double rotation, vmml::Vector2d scale);
+
+            ~Transform(void);
 
             vmml::Vector2d get_translation(void) const;
 
