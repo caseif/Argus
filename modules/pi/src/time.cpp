@@ -1,5 +1,6 @@
-#include "argus/lowlevel.hpp"
+#include "argus/time.hpp"
 
+#include <thread>
 #ifdef __WIN32
 #include <Windows.h>
 #else

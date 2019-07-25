@@ -1,6 +1,6 @@
 #include "argus/core.hpp"
-#include "argus/lowlevel.hpp"
 #include "argus/renderer.hpp"
+#include "internal/util.hpp"
 
 #include <algorithm>
 #include <functional>

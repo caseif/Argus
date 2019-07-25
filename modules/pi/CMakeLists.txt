@@ -1,7 +1,7 @@
 # module name
-set(MODULE_NAME "core")
+set(MODULE_NAME "pi")
 # modules this one depends on (as a list)
-set(MODULE_DEPS "pi")
+set(MODULE_DEPS "")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "")
 

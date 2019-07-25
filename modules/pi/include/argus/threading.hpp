@@ -7,14 +7,7 @@
 #endif
 
 namespace argus {
-
-    #define FATAL(s)    std::cerr << s << std::endl;    \
-                        exit(1)
-
-    #define ASSERT(c, s)    if (!(c)) {     \
-                                FATAL(s);   \
-                            }
-
+    
     #ifdef USE_PTHREADS
     typedef pthread_t Thread;
     #else
@@ -56,19 +49,5 @@ namespace argus {
      * \param thread The thread to destroy.
      */
     void thread_destroy(Thread *thread);
-
-    /**
-     * \brief Sleeps for the specified amount of time in nanoseconds.
-     *
-     * \param ns The number of nanoseconds to sleep for.
-     */
-    void sleep_nanos(unsigned long long ns);
-
-    /**
-     * \brief Returns the number of microseconds since the Unix epoch.
-     *
-     * \return The number of microseconds since the Unix epoch.
-     */
-    unsigned long long microtime(void);
 
 }
