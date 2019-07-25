@@ -24,6 +24,8 @@ namespace argus {
             Window *parent;
             std::vector<Window*> children;
 
+            Renderer *renderer;
+
             Window(void);
             
             ~Window(void);
@@ -49,16 +51,6 @@ namespace argus {
              * methods should be invoked upon it after calling destroy().
              */
             void destroy(void);
-
-            /**
-             * \brief Creates a new renderer for this window.
-             *
-             * This function must be called before invoking `activate`, and must
-             * not be called more than once.
-             *
-             * \return The new renderer.
-             */
-            Renderer *create_renderer(void);
 
             /**
              * \brief Creates a new window as a child of this one.

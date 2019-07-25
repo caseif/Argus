@@ -41,6 +41,8 @@ namespace argus {
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
 
+        renderer = new Renderer(this);
+
         g_window_count++;
         g_windows.insert(g_windows.cend(), this);
         
@@ -64,6 +66,8 @@ namespace argus {
             parent->remove_child(this);
         }
 
+        renderer->destroy();
+
         SDL_DestroyWindow(handle);
 
         g_windows.erase(std::remove(g_windows.begin(), g_windows.end(), this));
@@ -79,14 +83,6 @@ namespace argus {
 
     Window *Window::create_window(void) {
         return new Window();
-    }
-
-    Renderer *Window::create_renderer(void) {
-        if (SDL_GetRenderer(handle) != NULL) {
-            std::cerr << "create_renderer invoked on window twice" << std::endl;
-        }
-
-        return new Renderer(this);
     }
 
     Window *Window::create_child_window(void) {
