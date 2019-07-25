@@ -1,6 +1,9 @@
-#include "argus/core.hpp"
+// module pi
 #include "argus/threading.hpp"
 #include "argus/time.hpp"
+
+// module core
+#include "argus/core.hpp"
 #include "internal/config.hpp"
 #include "internal/util.hpp"
 

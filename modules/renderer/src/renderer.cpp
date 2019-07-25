@@ -1,6 +1,10 @@
+// module core
 #include "argus/core.hpp"
-#include "argus/renderer.hpp"
 #include "internal/util.hpp"
+
+// module renderer
+#include "argus/renderer.hpp"
+#include "internal/glext.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -33,8 +37,22 @@ namespace argus {
         return;
     }
 
-    void init_module_renderer() {
+    static void _init_opengl(void) {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+
+        load_opengl_extensions();
+    }
+
+    void init_module_renderer(void) {
         register_close_callback(_clean_up);
+
+        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+            FATAL("Failed to initialize SDL video\n");
+        }
+
+        _init_opengl();
 
         g_renderer_initialized = true;
     }
@@ -56,28 +74,6 @@ namespace argus {
 
         delete this;
         return;
-    }
-
-    RenderObject::RenderObject(void) {
-        //TODO
-    }
-
-    void RenderObject::render_to(RenderObject &other) {
-        other.queue_render_object(*this);
-    }
-
-    void RenderObject::queue_render_object(RenderObject child) {
-        child.transform.set_parent(this->transform);
-        //TODO
-    }
-
-    RenderLayer::RenderLayer(void) {
-        //TODO
-    }
-
-    void RenderLayer::destroy(void) {
-        //TODO
-        delete this;
     }
 
 }

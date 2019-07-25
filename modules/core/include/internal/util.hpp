@@ -1,12 +1,15 @@
 #pragma once
 
+#include <cstdio>
+#include <cstdlib>
+
 namespace argus {
 
-    #define FATAL(s)    std::cerr << s << std::endl;    \
-                        exit(1)
+    #define FATAL(fmt, ...) printf(fmt, ##__VA_ARGS__); \
+                            exit(1)
 
-    #define ASSERT(c, s)    if (!(c)) {     \
-                                FATAL(s);   \
-                            }
+    #define ASSERT(c, fmt, ...) if (!(c)) {     \
+                                        FATAL(fmt, ##__VA_ARGS__);   \
+                                    }
 
 }

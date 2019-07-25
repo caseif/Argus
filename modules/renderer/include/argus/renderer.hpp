@@ -1,12 +1,13 @@
 #pragma once
 
+#include "vmmlib/matrix.hpp"
+#include "vmmlib/vector.hpp"
+
 #include <functional>
 #include <string>
 #include <vector>
+#include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
-
-#include "vmmlib/matrix.hpp"
-#include "vmmlib/vector.hpp"
 
 namespace vmml {
     typedef Vector<2, double> Vector2d;
@@ -108,26 +109,6 @@ namespace argus {
             void activate(void);
     };
 
-    class Renderer {
-        friend class Window;
-
-        private:
-            SDL_Renderer *handle;
-
-            Renderer(Window *window);
-
-            ~Renderer(void);
-
-        public:
-            /**
-             * \brief Destroys this renderer.
-             *
-             * Warning: This method destroys the Renderer object. No other
-             * methods should be invoked upon it after calling destroy().
-             */
-            void destroy(void);
-    };
-
     class Transform {
         private:
             Transform *parent;
@@ -164,42 +145,49 @@ namespace argus {
     };
 
     /**
-     * Represents an object to be rendered to the screen in some capacity.
+     * Represents a layer to which geometry may be rendered.
      *
-     * Note that a render target may be rendered to another RenderObject before
-     * ultimately being rasterized to the screen.
+     * Render layers will be composited to the screen as multiple ordered
+     * layers when a frame is rendered.
      */
-    class RenderObject {
+    class RenderLayer {
         protected:
-            SDL_Texture *handle;
+            GLuint framebuffer;
+            GLuint gl_texture;
 
             Transform transform;
 
-            RenderObject(void);
-
-            ~RenderObject(void) = default;
-
-            void queue_render_object(RenderObject);
-
-        public:
-            /**
-             * Queues this object to be rendered to another RenderObject with
-             * its current transformation.
-             */
-            void render_to(RenderObject&);
-    };
-
-    /**
-     * Represents a layer to be rendered to the screen.
-     */
-    class RenderLayer : RenderObject {
-        private:
             RenderLayer(void);
 
             ~RenderLayer(void) = default;
+    };
+
+    class Renderer {
+        friend class Window;
+
+        private:
+            SDL_Renderer *handle;
+
+            Renderer(Window *window);
+
+            ~Renderer(void);
 
         public:
+            /**
+             * \brief Destroys this renderer.
+             *
+             * Warning: This method destroys the Renderer object. No other
+             * methods should be invoked upon it after calling destroy().
+             */
             void destroy(void);
+
+            /**
+             * \brief Creates a new render layer with the given priority.
+             *
+             * Layers with higher priority will be rendered after (ergo in front
+             * of) those with lower priority.
+             */
+            RenderLayer *create_render_layer(int priority);
     };
 
 }

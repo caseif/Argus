@@ -1,5 +1,7 @@
+// module pi
 #include "argus/time.hpp"
 
+#include <chrono>
 #include <thread>
 #ifdef __WIN32
 #include <Windows.h>

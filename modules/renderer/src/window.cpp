@@ -1,13 +1,15 @@
+// module core
 #include "argus/core.hpp"
-#include "argus/renderer.hpp"
 #include "internal/util.hpp"
+
+// module renderer
+#include "argus/renderer.hpp"
 
 #include <algorithm>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
 

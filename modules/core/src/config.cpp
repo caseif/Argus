@@ -1,3 +1,4 @@
+// module core
 #include "argus/core.hpp"
 #include "internal/config.hpp"
 
