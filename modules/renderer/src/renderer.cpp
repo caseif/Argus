@@ -42,7 +42,7 @@ namespace argus {
     Renderer::Renderer(Window *window) {
         ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
-        handle = SDL_CreateRenderer(window->get_sdl_window(), -1, SDL_RENDERER_ACCELERATED);
+        handle = SDL_CreateRenderer(window->handle, -1, SDL_RENDERER_ACCELERATED);
 
         g_renderers.insert(g_renderers.cend(), this);
     }
@@ -56,10 +56,6 @@ namespace argus {
 
         delete this;
         return;
-    }
-
-    SDL_Renderer *Renderer::get_sdl_renderer(void) {
-        return handle;
     }
 
     RenderObject::RenderObject(void) {

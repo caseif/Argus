@@ -114,18 +114,6 @@ namespace argus {
              * This function should be invoked only once.
              */
             void activate(void);
-
-            /**
-             * \brief Returns the underlying SDL window to allow low-level
-             *        control.
-             *
-             * Caution: Use of this function is generally not recommended, as
-             * Argus provides a higher-level abstraction for most typical
-             * functionality.
-             *
-             * \return The underlying SDL_window.
-             */
-            SDL_Window *get_sdl_window(void);
     };
 
     class Renderer {
@@ -146,17 +134,6 @@ namespace argus {
              * methods should be invoked upon it after calling destroy().
              */
             void destroy(void);
-
-            /**
-             * \brief Returns the underlying SDL renderer to allow low-level
-             *        control.
-             *
-             * Caution: Use of this function is generally not recommended, as
-             * Argus provides a higher-level abstraction for most functionality.
-             *
-             * \return The underlying SDL renderer
-             */
-            SDL_Renderer *get_sdl_renderer(void);
     };
 
     class Transform {

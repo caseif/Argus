@@ -22,8 +22,8 @@ namespace argus {
     size_t g_window_count = 0;
 
     int _window_event_filter(void *data, SDL_Event *event) {
-        Window *window = static_cast<Window*>(data);
-        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->get_sdl_window());
+        SDL_Window *window = static_cast<SDL_Window*>(data);
+        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window);
     }
 
     void _window_event_callback(void *data, SDL_Event *event) {
@@ -45,7 +45,7 @@ namespace argus {
         g_windows.insert(g_windows.cend(), this);
         
         // register the listener
-        register_sdl_event_listener(_window_event_filter, _window_event_callback, this);
+        register_sdl_event_listener(_window_event_filter, _window_event_callback, handle);
 
         register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -104,7 +104,7 @@ namespace argus {
 
     void Window::update(unsigned long long delta) {
         SDL_PumpEvents();
-        SDL_UpdateWindowSurface(get_sdl_window());
+        SDL_UpdateWindowSurface(handle);
         return;
     }
 
@@ -131,10 +131,6 @@ namespace argus {
     void Window::activate(void) {
         SDL_ShowWindow(handle);
         return;
-    }
-
-    SDL_Window *Window::get_sdl_window(void) {
-        return handle;
     }
 
 }
