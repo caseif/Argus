@@ -41,6 +41,8 @@ namespace argus {
         g_window_count++;
         g_windows.insert(g_windows.cend(), this);
 
+        parent = nullptr;
+
         renderer = new Renderer(this);
         
         // register the listener

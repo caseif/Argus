@@ -13,8 +13,8 @@ namespace argus {
     #ifdef USE_PTHREADS
     Thread *thread_create(void *(routine)(void*), void *arg) {
         pthread_t *thread = static_cast<pthread_t*>(malloc(sizeof(pthread_t)));
-        pthread_create(thread, NULL, routine, arg);
-        
+        //pthread_create(thread, NULL, routine, arg);
+
         return static_cast<Thread*>(thread);
     }
 

@@ -4,7 +4,8 @@
 
 namespace argus {
 
-    static void (*glGenFramebuffers)(GLsizei, GLuint*);
+    static void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+    static void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
 
     void load_opengl_extensions(void);
 

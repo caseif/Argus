@@ -78,8 +78,10 @@ namespace argus {
     }
 
     static void _clean_up(void) {
-        for (IndexedValue<NullaryCallback> callback : g_close_callbacks) {
-            callback.value();
+        // we want to deinitialize the modules in the opposite order as they were initialized
+        for (std::vector<IndexedValue<NullaryCallback>>::reverse_iterator it = g_close_callbacks.rbegin();
+                it != g_close_callbacks.rend(); it++) { 
+            it->value();
         }
 
         thread_detach(g_render_thread);
@@ -168,11 +170,9 @@ namespace argus {
 
     static int _master_event_callback(void *data, SDL_Event *event) {
         std::vector<IndexedValue<SDLEventListener>>::const_iterator it;
-        for (it = g_event_listeners.begin(); it != g_event_listeners.end(); it++) {
-            SDLEventListener listener = it->value;
-
-            if (listener.filter == nullptr || listener.filter(listener.data, event)) {
-                listener.callback(listener.data, event);
+        for (IndexedValue<SDLEventListener> listener : g_event_listeners) {
+            if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, event)) {
+                listener.value.callback(listener.value.data, event);
             }
         }
 
@@ -204,11 +204,11 @@ namespace argus {
     }
 
     template <typename ValueType>
-    static bool remove_from_vector(std::vector<IndexedValue<ValueType>> vector, uint64_t id) {
-        auto it = std::remove_if(vector.begin(), vector.end(),
+    static bool remove_from_vector(std::vector<IndexedValue<ValueType>> *vector, uint64_t id) {
+        auto it = std::remove_if(vector->begin(), vector->end(),
                 [id](auto callback) {return callback.id == id;});
-        if (it != vector.end()) {
-            vector.erase(it, vector.end());
+        if (it != vector->end()) {
+            vector->erase(it, vector->end());
             return true;
         }
         return false;
@@ -222,7 +222,7 @@ namespace argus {
     }
 
     bool unregister_update_callback(uint64_t id) {
-        if (!remove_from_vector(g_update_callbacks, id)) {
+        if (!remove_from_vector(&g_update_callbacks, id)) {
             WARN("Game attempted to unregister unknown update callback %lu\n", id);
             return false;
         }
@@ -237,7 +237,7 @@ namespace argus {
     }
 
     bool unregister_render_callback(uint64_t id) {
-        if (!remove_from_vector(g_render_callbacks, id)) {
+        if (!remove_from_vector(&g_render_callbacks, id)) {
             WARN("Game attempted to unregister unknown render callback %lu\n", id);
             return false;
         }
@@ -252,7 +252,7 @@ namespace argus {
     }
 
     bool unregister_close_callback(uint64_t id) {
-        if (!remove_from_vector(g_close_callbacks, id)) {
+        if (!remove_from_vector(&g_close_callbacks, id)) {
             WARN("Game attempted to unregister unknown close callback %lu\n", id);
             return false;
         }
@@ -270,7 +270,7 @@ namespace argus {
     }
 
     bool unregister_sdl_event_listener(uint64_t id) {
-        if (!remove_from_vector(g_event_listeners, id)) {
+        if (!remove_from_vector(&g_event_listeners, id)) {
             WARN("Game attempted to unregister unknown update callback %lu\n", id);
             return false;
         }
