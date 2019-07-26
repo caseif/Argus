@@ -6,6 +6,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
 
@@ -22,6 +23,10 @@ namespace argus {
 
         private:
             SDL_Window *handle;
+
+            uint64_t callback_id;
+            uint64_t listener_id;
+
             Window *parent;
             std::vector<Window*> children;
 
@@ -35,6 +40,8 @@ namespace argus {
 
             void update(unsigned long long delta);
 
+            static int event_filter(void *data, SDL_Event *event);
+            
             static void update_window(Window *window, unsigned long long delta);
 
         public:

@@ -18,6 +18,8 @@ namespace argus {
     }
 
     void load_opengl_extensions(void) {
+        SDL_GL_LoadLibrary(NULL);
+
         _load_opengl_extension<>("glGenFramebuffers", &glGenFramebuffers);
     }
 

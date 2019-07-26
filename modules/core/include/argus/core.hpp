@@ -83,30 +83,58 @@ namespace argus {
      * \brief Registers a callback for invocation on each game update.
      *
      * It is normally not necessary to invoke this from game code.
+     *
+     * \return The ID of the new registration.
      */
-    void register_update_callback(DeltaCallback update_callback);
+    uint64_t register_update_callback(DeltaCallback update_callback);
+
+    /**
+     * \brief Unregisters the update callback with the given ID.
+     */
+    bool unregister_update_callback(uint64_t id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
      *
      * It is normally not necessary to invoke this from game code.
+     *
+     * \return The ID of the new registration.
      */
-    void register_render_callback(DeltaCallback update_callback);
+    uint64_t register_render_callback(DeltaCallback update_callback);
+
+    /**
+     * \brief Unregisters the update callback with the given ID.
+     */
+    bool unregister_render_callback(uint64_t id);
 
     /**
      * \brief Registers a callback for invocation when the engine is requested
      * to close.
      *
      * It is normally not necessary to invoke this from game code.
+     *
+     * \return The ID of the new registration.
      */
-    void register_close_callback(NullaryCallback close_callback);
+    uint64_t register_close_callback(NullaryCallback close_callback);
+
+    /**
+     * \brief Unregisters the update callback with the given ID.
+     */
+    bool unregister_close_callback(uint64_t id);
 
     /**
      * \brief Registers a listener for particular SDL events.
      * 
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
+     *
+     * \return The ID of the new registration.
      */
-    void register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
+    uint64_t register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
+
+    /**
+     * \brief Unregisters the update callback with the given ID.
+     */
+    bool unregister_sdl_event_listener(uint64_t id);
 
 }

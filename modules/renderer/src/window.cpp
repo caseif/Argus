@@ -23,11 +23,6 @@ namespace argus {
     std::vector<Window*> g_windows;
     size_t g_window_count = 0;
 
-    int _window_event_filter(void *data, SDL_Event *event) {
-        SDL_Window *window = static_cast<SDL_Window*>(data);
-        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window);
-    }
-
     void _window_event_callback(void *data, SDL_Event *event) {
         Window *window = static_cast<Window*>(data);
         if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
@@ -43,15 +38,15 @@ namespace argus {
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
 
-        renderer = new Renderer(this);
-
         g_window_count++;
         g_windows.insert(g_windows.cend(), this);
+
+        renderer = new Renderer(this);
         
         // register the listener
-        register_sdl_event_listener(_window_event_filter, _window_event_callback, handle);
+        listener_id = register_sdl_event_listener(event_filter, _window_event_callback, this);
 
-        register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+        callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
         return;
     }
@@ -59,6 +54,9 @@ namespace argus {
     Window::~Window(void) = default;
 
     void Window::destroy(void) {
+        unregister_render_callback(callback_id);
+        unregister_sdl_event_listener(listener_id);
+
         for (Window *child : children) {
             child->parent = nullptr;
             child->destroy();
@@ -129,6 +127,11 @@ namespace argus {
     void Window::activate(void) {
         SDL_ShowWindow(handle);
         return;
+    }
+
+    int Window::event_filter(void *data, SDL_Event *event) {
+        Window *window = static_cast<Window*>(data);
+        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->handle);
     }
 
 }
