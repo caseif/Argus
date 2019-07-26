@@ -10,8 +10,8 @@
 #include <algorithm>
 #include <chrono>
 #include <csignal>
-#include <cstdint>
 #include <iostream>
+#include <mutex>
 #include <vector>
 
 #define US_PER_S 1000000LLU
@@ -38,12 +38,6 @@ namespace argus {
                 & static_cast<std::underlying_type<EngineModules>::type>(rhs));
     }
 
-    template <typename ValueType>
-    struct IndexedValue {
-        uint64_t id;
-        ValueType value;
-    };
-
     typedef struct {
         SDL_EventFilter filter;
         SDLEventCallback callback;
@@ -52,13 +46,16 @@ namespace argus {
 
     Thread *g_render_thread;
 
-    static uint64_t g_next_index = 0;
+    static unsigned long long g_next_index = 0;
 
+    //TODO: probably make this thread-safe
     static std::vector<IndexedValue<DeltaCallback>> g_update_callbacks;
     static std::vector<IndexedValue<DeltaCallback>> g_render_callbacks;
     static std::vector<IndexedValue<NullaryCallback>> g_close_callbacks;
 
     static std::vector<IndexedValue<SDLEventListener>> g_event_listeners;
+
+    static std::mutex g_render_callbacks_mutex;
 
     static bool g_engine_stopping = false;
 
@@ -132,9 +129,8 @@ namespace argus {
             SDL_PumpEvents();
 
             // invoke update callbacks
-            std::vector<IndexedValue<DeltaCallback>>::const_iterator it;
-            for (it = g_update_callbacks.begin(); it != g_update_callbacks.end(); it++) {
-                it->value(delta);
+            for (IndexedValue<DeltaCallback> callback : g_update_callbacks) {
+                callback.value(delta);
             }
 
             if (g_engine_config.target_tickrate != 0) {
@@ -155,10 +151,11 @@ namespace argus {
             unsigned long long delta = _compute_delta(&g_last_frame);
 
             // invoke render callbacks
-            std::vector<IndexedValue<DeltaCallback>>::const_iterator it;
-            for (it = g_render_callbacks.begin(); it != g_render_callbacks.end(); it++) {
-                it->value(delta);
+            g_render_callbacks_mutex.lock();
+            for (IndexedValue<DeltaCallback> callback : g_render_callbacks) {
+                callback.value(delta);
             }
+            g_render_callbacks_mutex.unlock();
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -204,7 +201,7 @@ namespace argus {
     }
 
     template <typename ValueType>
-    static bool remove_from_vector(std::vector<IndexedValue<ValueType>> *vector, uint64_t id) {
+    static bool remove_from_vector(std::vector<IndexedValue<ValueType>> *vector, unsigned long long id) {
         auto it = std::remove_if(vector->begin(), vector->end(),
                 [id](auto callback) {return callback.id == id;});
         if (it != vector->end()) {
@@ -214,54 +211,58 @@ namespace argus {
         return false;
     }
 
-    uint64_t register_update_callback(DeltaCallback callback) {
+    unsigned long long register_update_callback(DeltaCallback callback) {
         ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
-        uint64_t id = g_next_index++;
+        unsigned long long id = g_next_index++;
         g_update_callbacks.insert(g_update_callbacks.cend(), {id, callback});
         return id;
     }
 
-    bool unregister_update_callback(uint64_t id) {
+    bool unregister_update_callback(unsigned long long id) {
         if (!remove_from_vector(&g_update_callbacks, id)) {
-            WARN("Game attempted to unregister unknown update callback %lu\n", id);
+            WARN("Game attempted to unregister unknown update callback %llu\n", id);
             return false;
         }
         return true;
     }
 
-    uint64_t register_render_callback(DeltaCallback callback) {
+    unsigned long long register_render_callback(DeltaCallback callback) {
         ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
-        uint64_t id = g_next_index++;
+        unsigned long long id = g_next_index++;
+        g_render_callbacks_mutex.lock();
         g_render_callbacks.insert(g_render_callbacks.cend(), {id, callback});
+        g_render_callbacks_mutex.unlock();
         return id;
     }
 
-    bool unregister_render_callback(uint64_t id) {
-        if (!remove_from_vector(&g_render_callbacks, id)) {
-            WARN("Game attempted to unregister unknown render callback %lu\n", id);
-            return false;
+    bool unregister_render_callback(unsigned long long id) {
+        g_render_callbacks_mutex.lock();
+        bool res = remove_from_vector(&g_render_callbacks, id);
+        g_render_callbacks_mutex.unlock();
+        if (!res) {
+            WARN("Game attempted to unregister unknown render callback %llu\n", id);
         }
-        return true;
+        return res;
     }
 
-    uint64_t register_close_callback(NullaryCallback callback) {
+    unsigned long long register_close_callback(NullaryCallback callback) {
         ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
-        uint64_t id = g_next_index++;
+        unsigned long long id = g_next_index++;
         g_close_callbacks.insert(g_close_callbacks.cend(), {id, callback});
         return id;
     }
 
-    bool unregister_close_callback(uint64_t id) {
+    bool unregister_close_callback(unsigned long long id) {
         if (!remove_from_vector(&g_close_callbacks, id)) {
-            WARN("Game attempted to unregister unknown close callback %lu\n", id);
+            WARN("Game attempted to unregister unknown close callback %llu\n", id);
             return false;
         }
         return true;
     }
 
-    uint64_t register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
+    unsigned long long register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
         ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
-        uint64_t id = g_next_index++;
+        unsigned long long id = g_next_index++;
         ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
         SDLEventListener listener = {filter, callback, data};
@@ -269,9 +270,9 @@ namespace argus {
         return id;
     }
 
-    bool unregister_sdl_event_listener(uint64_t id) {
+    bool unregister_sdl_event_listener(unsigned long long id) {
         if (!remove_from_vector(&g_event_listeners, id)) {
-            WARN("Game attempted to unregister unknown update callback %lu\n", id);
+            WARN("Game attempted to unregister unknown update callback %llu\n", id);
             return false;
         }
         return true;

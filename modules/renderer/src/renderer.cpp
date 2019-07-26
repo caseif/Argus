@@ -54,16 +54,34 @@ namespace argus {
     Renderer::Renderer(Window *window) {
         ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
-        handle = SDL_CreateRenderer(window->handle, -1, SDL_RENDERER_ACCELERATED);
+        this->window = window;
+
+        gl_context = SDL_GL_CreateContext(window->handle);
     }
 
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
-        SDL_DestroyRenderer(handle);
+        SDL_GL_DeleteContext(gl_context);
 
         delete this;
         return;
+    }
+
+    RenderLayer *Renderer::create_render_layer(int priority) {
+        RenderLayer *layer = new RenderLayer(this);
+        render_layers.insert(render_layers.cend(), layer);
+        return layer;
+    }
+
+    void Renderer::remove_render_layer(RenderLayer *render_layer) {
+        render_layers.erase(std::remove(render_layers.begin(), render_layers.end(), render_layer));
+        delete render_layer;
+        return;
+    }
+
+    void Renderer::activate_gl_context(void) {
+        SDL_GL_MakeCurrent(window->handle, gl_context);
     }
 
 }

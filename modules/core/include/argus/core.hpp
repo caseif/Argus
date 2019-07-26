@@ -6,8 +6,8 @@
 namespace argus {
 
     typedef enum class engine_modules_t : uint64_t {
-        CORE        = 0x01,
-        LOWLEVEL    = 0x02,
+        PI        = 0x01,
+        CORE    = 0x02,
         RENDERER    = 0x04,
     } EngineModules;
 
@@ -86,12 +86,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    uint64_t register_update_callback(DeltaCallback update_callback);
+    unsigned long long register_update_callback(DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_update_callback(uint64_t id);
+    bool unregister_update_callback(unsigned long long id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
@@ -100,12 +100,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    uint64_t register_render_callback(DeltaCallback update_callback);
+    unsigned long long register_render_callback(DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_render_callback(uint64_t id);
+    bool unregister_render_callback(unsigned long long id);
 
     /**
      * \brief Registers a callback for invocation when the engine is requested
@@ -115,12 +115,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    uint64_t register_close_callback(NullaryCallback close_callback);
+    unsigned long long register_close_callback(NullaryCallback close_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_close_callback(uint64_t id);
+    bool unregister_close_callback(unsigned long long id);
 
     /**
      * \brief Registers a listener for particular SDL events.
@@ -130,11 +130,11 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    uint64_t register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
+    unsigned long long register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_sdl_event_listener(uint64_t id);
+    bool unregister_sdl_event_listener(unsigned long long id);
 
 }

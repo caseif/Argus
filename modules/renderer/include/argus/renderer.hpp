@@ -70,6 +70,13 @@ namespace argus {
             Window *create_child_window(void);
 
             /**
+             * Gets this Window's associated Renderer.
+             *
+             * \return The Window's Renderer.
+             */
+            Renderer *get_renderer(void);
+
+            /**
              * Sets the window title.
              *
              * \param title The new window title.
@@ -158,13 +165,17 @@ namespace argus {
      * layers when a frame is rendered.
      */
     class RenderLayer {
-        protected:
+        friend class Renderer;
+
+        private:
+            Renderer *parent_renderer;
+
             GLuint framebuffer;
             GLuint gl_texture;
 
             Transform transform;
 
-            RenderLayer(void);
+            RenderLayer(Renderer *parent);
 
             ~RenderLayer(void) = default;
     };
@@ -173,7 +184,10 @@ namespace argus {
         friend class Window;
 
         private:
-            SDL_Renderer *handle;
+            Window *window;
+            SDL_GLContext gl_context;
+
+            std::vector<RenderLayer*> render_layers;
 
             Renderer(Window *window);
 
@@ -189,12 +203,23 @@ namespace argus {
             void destroy(void);
 
             /**
+             * Makes this Renderer's GL context current, such that future GL
+             * calls will apply to it.
+             */
+            void activate_gl_context(void);
+
+            /**
              * \brief Creates a new render layer with the given priority.
              *
              * Layers with higher priority will be rendered after (ergo in front
              * of) those with lower priority.
              */
             RenderLayer *create_render_layer(int priority);
+
+            /**
+             * \brief Removes a render layer from this renderer and destroys it.
+             */
+            void remove_render_layer(RenderLayer *layer);
     };
 
 }

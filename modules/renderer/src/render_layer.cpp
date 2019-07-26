@@ -8,7 +8,11 @@
 
 namespace argus {
 
-    RenderLayer::RenderLayer(void) {
+    RenderLayer::RenderLayer(Renderer *parent) {
+        this->parent_renderer = parent;
+
+        parent->activate_gl_context();
+
         // init the framebuffer
         glGenFramebuffers(1, &framebuffer);
 

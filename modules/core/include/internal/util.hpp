@@ -14,4 +14,10 @@ namespace argus {
                                         FATAL(fmt, ##__VA_ARGS__);   \
                                     }
 
+    template <typename ValueType>
+    struct IndexedValue {
+        unsigned long long id;
+        ValueType value;
+    };
+
 }

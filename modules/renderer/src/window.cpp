@@ -100,8 +100,11 @@ namespace argus {
         children.erase(std::remove(children.begin(), children.end(), child));
     }
 
+    Renderer *Window::get_renderer(void) {
+        return renderer;
+    }
+
     void Window::update(unsigned long long delta) {
-        SDL_PumpEvents();
         SDL_UpdateWindowSurface(handle);
         return;
     }

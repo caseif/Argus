@@ -8,11 +8,15 @@
 
 namespace argus {
 
+    void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+    void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+
     template <typename FunctionType>
     static void _load_opengl_extension(const char *func_name, FunctionType *target) {
         void *function = SDL_GL_GetProcAddress(func_name);
         if (!function) {
             FATAL("Failed to load OpenGL extension: %s\n", func_name);
+        } else {
         }
         *target = reinterpret_cast<FunctionType>(function);
     }
@@ -21,6 +25,7 @@ namespace argus {
         SDL_GL_LoadLibrary(NULL);
 
         _load_opengl_extension<>("glGenFramebuffers", &glGenFramebuffers);
+        _load_opengl_extension<>("glFramebufferTexture", &glFramebufferTexture);
     }
 
 }
