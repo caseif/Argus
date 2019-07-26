@@ -9,10 +9,11 @@ as needed. Furthermore, it offers great ease in expanding, as new modules can be
 integrated into the engine with little effort. The current stock modules are as
 follows:
 
-| Name | Description |
-| --- | :-- |
-| core | Core engine framework; facilitates basic operation and communication among components. |
-| renderer | Renderer module; responsible for managing windows and rendering. |
+| Layer | Name | Description |
+| --- | --- | :-- |
+| 0 | pi | Platform-independence code for features such as threading. |
+| 1 | core | Core engine framework; facilitates basic operation and communication among components. |
+| 2 | renderer | Renderer module; responsible for managing windows and rendering. |
 
 A large number of additional modules are planned for future inclusion.
 
