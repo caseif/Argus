@@ -1,5 +1,6 @@
 #pragma once
 
+#define VMMLIB_OLD_TYPEDEFS
 #include "vmmlib/matrix.hpp"
 #include "vmmlib/vector.hpp"
 
@@ -9,10 +10,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
-
-namespace vmml {
-    typedef Vector<2, double> Vector2d;
-}
 
 namespace argus {
 
@@ -126,22 +123,22 @@ namespace argus {
     class Transform {
         private:
             Transform *parent;
-            vmml::Vector2d translation;
+            vmml::vec2d translation;
             double rotation;
-            vmml::Vector2d scale;
+            vmml::vec2d scale;
 
         public:
             Transform(void);
 
-            Transform(vmml::Vector2d translation, double rotation, vmml::Vector2d scale);
+            Transform(vmml::vec2d translation, double rotation, vmml::vec2d scale);
 
             ~Transform(void);
 
-            vmml::Vector2d get_translation(void) const;
+            vmml::vec2d get_translation(void) const;
 
-            void set_translation(const vmml::Vector2d &translation);
+            void set_translation(const vmml::vec2d &translation);
 
-            void add_translation(const vmml::Vector2d &translation_delta);
+            void add_translation(const vmml::vec2d &translation_delta);
             
             double get_rotation(void) const;
 
@@ -149,13 +146,13 @@ namespace argus {
 
             void add_rotation(double rotation_degrees);
 
-            vmml::Vector2d get_scale(void) const;
+            vmml::vec2d get_scale(void) const;
 
-            void set_scale(const vmml::Vector2d &scale);
+            void set_scale(const vmml::vec2d &scale);
 
             void set_parent(const Transform &transform);
 
-            const vmml::Matrix3d &to_matrix(void);
+            const vmml::mat3d &to_matrix(void);
     };
 
     /**
