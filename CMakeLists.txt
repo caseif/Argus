@@ -22,16 +22,39 @@ if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested...")
 endif()
 
-function(set_module_includes)
-  get_property(INCLUDE_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
-  set_property(GLOBAL PROPERTY ${PROJECT_NAME}_INCLUDE_DIRS "${INCLUDE_DIRS}")
-endfunction()
-
+# loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes dest)
   foreach(module ${MODULE_DEPS})
     get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
-    set(${dest} "${MODULE_INC_DIR} ${MODULE_INCLUDES}" PARENT_SCOPE)
+    set(${dest} "${MODULE_INC_DIR}" PARENT_SCOPE)
   endforeach()
+endfunction()
+
+# configures the module's top-level include dirs and saves them to the given variable
+function(load_module_includes dest)
+  # load this module's include dir
+  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/include")
+
+  # load include dirs defined by module dependencies
+  load_dep_module_includes(PARENT_INCLUDES)
+  list(LENGTH PARENT_INCLUDES LEN)
+  if(LEN GREATER 0)
+    list(APPEND ALL_INCLUDES "${PARENT_INCLUDES}")
+  endif()
+
+  # load include dirs defined by this module
+  list(LENGTH LOCAL_INC_DIRS LEN)
+  if(LEN GREATER 0)
+    list(APPEND ALL_INCLUDES "${LOCAL_INC_DIRS}")
+  endif()
+
+  # remove any duplicates
+  list(REMOVE_DUPLICATES ALL_INCLUDES)
+
+  set_property(GLOBAL PROPERTY ${PROJECT_NAME}_INCLUDE_DIRS "${ALL_INCLUDES}")
+  set_property(GLOBAL PROPERTY INCLUDE_DIRECTORIES "${ALL_INCLUDES}")
+
+  set(${dest} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
 function(setup_submodule)
@@ -41,15 +64,9 @@ function(setup_submodule)
   file(GLOB C_FILES ${SRC_DIR}/*.c)
   file(GLOB CPP_FILES ${SRC_DIR}/*.cpp)
 
-  # load include dirs defined by module dependencies
-  load_dep_module_includes(MODULE_INCLUDES)
-
-  include_directories(${PROJECT_SOURCE_DIR}/include
-                ${MODULE_INCLUDES}
-                "${CMAKE_SOURCE_DIR}/vmmlib/")
-
-  # store this module's include dirs
-  set_module_includes()
+  # recursively load this module's include dirs
+  load_module_includes(ALL_INCLUDE_DIRS)
+  include_directories("${ALL_INCLUDE_DIRS}")
   
   if(${USE_PTHREADS})
     add_definitions("-DUSE_PTHREADS")
@@ -66,7 +83,7 @@ function(setup_submodule)
   string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
 
-# transform them to add the prefix
+# transform the module paths to add the prefix
 foreach(module ${MODULE_IDS})
   list(APPEND MODULE_PATHS "${MODULE_PATH_PREFIX}${module}")
 endforeach()
@@ -74,13 +91,39 @@ endforeach()
 set(SRC_DIR src)
 set(INC_DIR include)
 
-set(CMAKE_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_DIST_DIR ${CMAKE_BINARY_DIR}/dist)
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BIN_DIR})
+set(CMAKE_LIB_OUT_DIR ${CMAKE_DIST_DIR}/lib)
+
+set(LIBRARY_OUTPUT_PATH ${CMAKE_LIB_OUT_DIR})
+
+# configure the copy headers task
+set(HDR_TARGET "${PROJECT_NAME}_headers")
+set(HDR_OUT_DIR "${CMAKE_DIST_DIR}/include/argus/")
+add_custom_target(${HDR_TARGET})
+add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E
+    make_directory ${HDR_OUT_DIR})
+foreach(MODULE_ID ${MODULE_IDS})
+endforeach()
 
 foreach(module ${MODULE_IDS})
   add_subdirectory(${MODULE_PATH_PREFIX}${module})
   set(MODULE_LIBS "$<TARGET_OBJECTS:${module}>;${MODULE_LIBS}")
+
+
+  # configure the copy headers task to include this module
+  set(MODULE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/${MODULE_PATH_PREFIX}${module}/include/argus")
+  file(GLOB_RECURSE HDR_FILES RELATIVE ${MODULE_INCLUDE_DIR} "*.h" "*.hpp")
+  list(FILTER HDR_FILES EXCLUDE REGEX "^\\.\\..*")
+  string(REGEX REPLACE "([^;]+)" "${MODULE_INCLUDE_DIR}/\\1" HDR_FILES "${HDR_FILES}")
+  add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
+    COMMENT "${HDR_FILES}"
+    COMMAND ${CMAKE_COMMAND} -E
+      copy ${HDR_FILES} ${HDR_OUT_DIR})
+
+  # add this module as a dependency of the copy headers task
+  add_dependencies(${HDR_TARGET} ${module})
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
@@ -99,3 +142,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)
 list(REMOVE_DUPLICATES ALL_LIBS)
 target_link_libraries(${PROJECT_NAME} ${ALL_LIBS})
+
+# make the copy headers target a dependency to force it to run
+add_dependencies(${PROJECT_NAME} ${HDR_TARGET})

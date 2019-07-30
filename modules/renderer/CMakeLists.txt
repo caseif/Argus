@@ -4,5 +4,7 @@ set(MODULE_NAME "renderer")
 set(MODULE_DEPS "core")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "")
+# include dirs this module uses
+set(LOCAL_INC_DIRS "${CMAKE_SOURCE_DIR}/vmmlib/")
 
 setup_submodule(${MODULE_NAME})
