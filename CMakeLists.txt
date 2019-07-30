@@ -65,8 +65,11 @@ function(setup_submodule)
   file(GLOB CPP_FILES ${SRC_DIR}/*.cpp)
 
   # recursively load this module's include dirs
-  load_module_includes(ALL_INCLUDE_DIRS)
-  include_directories("${ALL_INCLUDE_DIRS}")
+  load_module_includes(MODULE_INCLUDES)
+  include_directories("${MODULE_INCLUDES}")
+  get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
+  list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
+  set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
   
   if(${USE_PTHREADS})
     add_definitions("-DUSE_PTHREADS")
@@ -76,9 +79,9 @@ function(setup_submodule)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-  get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)
-  list(APPEND ALL_LIBS "${LOCAL_LIBS}")
-  set_property(GLOBAL PROPERTY ALL_LIBS "${ALL_LIBS}")
+  get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
+  list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
+  set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
 
   string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
@@ -139,9 +142,16 @@ set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11)
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # add libraries for linking
-get_property(ALL_LIBS GLOBAL PROPERTY ALL_LIBS)
-list(REMOVE_DUPLICATES ALL_LIBS)
-target_link_libraries(${PROJECT_NAME} ${ALL_LIBS})
+get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
+list(REMOVE_DUPLICATES GLOBAL_LIBS)
+target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS})
+message("libs: ${GLOBAL_LIBS}")
+
+# add global include list
+get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
+list(REMOVE_DUPLICATES GLOBAL_INCLUDES)
+target_include_directories(${PROJECT_NAME} PUBLIC "${GLOBAL_INCLUDES}")
+target_include_directories(${PROJECT_NAME}_static PUBLIC "${GLOBAL_INCLUDES}")
 
 # make the copy headers target a dependency to force it to run
 add_dependencies(${PROJECT_NAME} ${HDR_TARGET})
