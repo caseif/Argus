@@ -20,8 +20,8 @@ namespace argus {
 
     extern bool g_renderer_initialized;
 
-    std::vector<Window*> g_windows;
-    size_t g_window_count = 0;
+    extern std::vector<Window*> g_windows;
+    extern size_t g_window_count = 0;
 
     void _window_event_callback(void *data, SDL_Event *event) {
         Window *window = static_cast<Window*>(data);

@@ -15,7 +15,8 @@ namespace argus {
 
     bool g_renderer_initialized = false;
 
-    extern std::vector<Window*> g_windows;
+    std::vector<Window*> g_windows;
+    size_t g_window_count = 0;
 
     void _clean_up(void) {
         // use a copy since Window::destroy modifies the global list

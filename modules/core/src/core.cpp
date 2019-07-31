@@ -64,9 +64,6 @@ namespace argus {
     bool g_initializing = false;
     bool g_initialized = false;
 
-    unsigned long long g_last_update = 0;
-    unsigned long long g_last_frame = 0;
-
     // module initializers
     extern void init_module_renderer(void);
 
@@ -116,6 +113,8 @@ namespace argus {
     }
 
     static void _game_loop(void) {
+        static unsigned long long last_update = 0;
+
         while (1) {
             if (g_engine_stopping) {
                 _clean_up();
@@ -123,7 +122,7 @@ namespace argus {
             }
 
             unsigned long long update_start = argus::microtime();
-            unsigned long long delta = _compute_delta(&g_last_update);
+            unsigned long long delta = _compute_delta(&last_update);
 
             // pump events
             SDL_PumpEvents();
@@ -142,13 +141,15 @@ namespace argus {
     }
 
     static void *_render_loop(void*) {
+        static unsigned long long last_frame = 0;
+
         while (1) {
             if (g_engine_stopping) {
                 break;
             }
 
             unsigned long long render_start = argus::microtime();
-            unsigned long long delta = _compute_delta(&g_last_frame);
+            unsigned long long delta = _compute_delta(&last_frame);
 
             // invoke render callbacks
             g_render_callbacks_mutex.lock();
