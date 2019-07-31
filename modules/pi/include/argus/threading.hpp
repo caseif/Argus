@@ -56,20 +56,67 @@ namespace argus {
      */
     void thread_destroy(Thread *thread);
 
+    /**
+     * \brief Initializes a new smutex at the given pointer.
+     *
+     * An smutex is a read/write mutex, allowing data to be read by multiple
+     * threads at once (but only written by one).
+     */
     void smutex_create(smutex *mutex);
 
+    /**
+     * \brief Destroys the given smutex.
+     *
+     * Note that on Windows, this function does nothing since SRWLOCK
+     * destruction is not required (or possible).
+     */
     void smutex_destroy(smutex *mutex);
 
+    /**
+     * \brief Acquires an exclusive lock on the given mutex, blocking the thread
+     * if necessary.
+     */
     void smutex_lock(smutex *mutex);
 
-    void smutex_try_lock(smutex *mutex);
+    /**
+     * \brief Attempts to acquire an exclusive lock on the given mutex, but
+     * fails quickly and does not block.
+     *
+     * \return Whether a lock was acquired.
+     */
+    bool smutex_try_lock(smutex *mutex);
 
+    /**
+     * \brief Releases the current exclusive lock on the given mutex.
+     *
+     * This function should never be invoked if an exclusive lock is not
+     * guaranteed to be held by the current thread.
+     */
     void smutex_unlock(smutex *mutex);
     
+    /**
+     * \brief Acquires a shared lock on the given mutex, blocking the thread if
+     * necessary.
+     *
+     * Multiple threads may hold a shared lock at once, so long as no thread
+     * holds an exclusive lock.
+     */
     void smutex_lock_shared(smutex *mutex);
 
-    void smutex_try_lock_shared(smutex *mutex);
+    /**
+     * \brief Attempts to acquire a shared lock on the given mutex, but fails
+     * quickly and does not block.
+     *
+     * \return Whether a lock was acquired.
+     */
+    bool smutex_try_lock_shared(smutex *mutex);
    
+    /**
+     * \brief Releases the current shared lock on the given mutex.
+     *
+     * This function should never be invoked if an shared lock is not guaranteed
+     * to be held by the current thread.
+     */
     void smutex_unlock_shared(smutex *mutex);
 
 }

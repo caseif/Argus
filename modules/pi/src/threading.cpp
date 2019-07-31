@@ -70,7 +70,7 @@ namespace argus {
     }
 
     void smutex_try_lock(smutex *mutex) {
-        TryAcquireSRWLockExclusive(mutex);
+        return TryAcquireSRWLockExclusive(mutex) != 0;
     }
 
     void smutex_unlock(smutex *mutex) {
@@ -82,7 +82,7 @@ namespace argus {
     }
 
     void smutex_try_lock_shared(smutex *mutex) {
-        TryAcquireSRWLockShared(mutex);
+        return TryAcquireSRWLockShared(mutex) != 0;
     }
    
     void smutex_unlock_shared(smutex *mutex) {
@@ -101,8 +101,8 @@ namespace argus {
         pthread_rwlock_wrlock(mutex);
     }
 
-    void smutex_try_lock(smutex *mutex) {
-        pthread_rwlock_tryrdlock(mutex);
+    bool smutex_try_lock(smutex *mutex) {
+        return pthread_rwlock_tryrdlock(mutex) == 0;
     }
 
     void smutex_unlock(smutex *mutex) {
@@ -113,8 +113,8 @@ namespace argus {
         pthread_rwlock_rdlock(mutex);
     }
 
-    void smutex_try_lock_shared(smutex *mutex) {
-        pthread_rwlock_rdlock(mutex);
+    bool smutex_try_lock_shared(smutex *mutex) {
+        return pthread_rwlock_rdlock(mutex) == 0;
     }
    
     void smutex_unlock_shared(smutex *mutex) {
