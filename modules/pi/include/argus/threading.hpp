@@ -14,6 +14,12 @@ namespace argus {
     typedef std::thread Thread;
     #endif
 
+    #ifdef __WIN32
+    typedef PSRWLOCK smutex;
+    #else
+    typedef pthread_rwlock_t smutex;
+    #endif
+
     /**
      * \brief Creates a new thread.
      *
@@ -49,5 +55,21 @@ namespace argus {
      * \param thread The thread to destroy.
      */
     void thread_destroy(Thread *thread);
+
+    void smutex_create(smutex *mutex);
+
+    void smutex_destroy(smutex *mutex);
+
+    void smutex_lock(smutex *mutex);
+
+    void smutex_try_lock(smutex *mutex);
+
+    void smutex_unlock(smutex *mutex);
+    
+    void smutex_lock_shared(smutex *mutex);
+
+    void smutex_try_lock_shared(smutex *mutex);
+   
+    void smutex_unlock_shared(smutex *mutex);
 
 }

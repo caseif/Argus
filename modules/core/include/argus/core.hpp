@@ -97,7 +97,7 @@ namespace argus {
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_update_callback(Index id);
+    void unregister_update_callback(Index id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
@@ -111,7 +111,7 @@ namespace argus {
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_render_callback(Index id);
+    void unregister_render_callback(Index id);
 
     /**
      * \brief Registers a callback for invocation when the engine is requested
@@ -126,7 +126,7 @@ namespace argus {
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_close_callback(Index id);
+    void unregister_close_callback(Index id);
 
     /**
      * \brief Registers a listener for particular SDL events.
@@ -141,6 +141,6 @@ namespace argus {
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_sdl_event_listener(Index id);
+    void unregister_sdl_event_listener(Index id);
 
 }

@@ -12,6 +12,7 @@
 #include <csignal>
 #include <iostream>
 #include <mutex>
+#include <queue>
 #include <vector>
 
 #define US_PER_S 1000000LLU
@@ -44,18 +45,29 @@ namespace argus {
         void *data;
     } SDLEventListener;
 
+    // This struct defines the list alongside two mutation queues and a shared
+    // mutex. In this way, it facilitates a thread-safe callback list wherein
+    // the callbacks themselves may modify the list, i.e. while the list is
+    // being iterated.
+    template<typename T>
+    struct CallbackList {
+        std::vector<IndexedValue<T>> list;
+        std::queue<IndexedValue<T>> addition_queue;
+        std::queue<Index> removal_queue;
+        smutex list_mutex;
+        smutex queue_mutex;
+    };
+
     Thread *g_render_thread;
 
     static Index g_next_index = 0;
     static std::mutex g_next_index_mutex;
 
     //TODO: probably make this thread-safe
-    static std::vector<IndexedValue<DeltaCallback>> g_update_callbacks;
-    static std::vector<IndexedValue<DeltaCallback>> g_render_callbacks;
-    static std::vector<IndexedValue<NullaryCallback>> g_close_callbacks;
-    static std::vector<IndexedValue<SDLEventListener>> g_event_listeners;
-
-    static std::mutex g_render_callbacks_mutex;
+    static CallbackList<DeltaCallback> g_update_callbacks;
+    static CallbackList<DeltaCallback> g_render_callbacks;
+    static CallbackList<NullaryCallback> g_close_callbacks;
+    static CallbackList<SDLEventListener> g_event_listeners;
 
     static bool g_engine_stopping = false;
 
@@ -73,10 +85,12 @@ namespace argus {
 
     static void _clean_up(void) {
         // we want to deinitialize the modules in the opposite order as they were initialized
-        for (std::vector<IndexedValue<NullaryCallback>>::reverse_iterator it = g_close_callbacks.rbegin();
-                it != g_close_callbacks.rend(); it++) { 
+        smutex_lock_shared(&g_close_callbacks.list_mutex);
+        for (std::vector<IndexedValue<NullaryCallback>>::reverse_iterator it = g_close_callbacks.list.rbegin();
+                it != g_close_callbacks.list.rend(); it++) { 
             it->value();
         }
+        smutex_unlock_shared(&g_close_callbacks.list_mutex);
 
         thread_detach(g_render_thread);
         thread_destroy(g_render_thread);
@@ -112,6 +126,62 @@ namespace argus {
         return delta;
     }
 
+    template<typename T>
+    static bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> *vector, Index id) {
+        auto it = std::remove_if(vector->begin(), vector->end(),
+                [id](auto callback) {return callback.id == id;});
+        if (it != vector->end()) {
+            vector->erase(it, vector->end());
+            return true;
+        }
+        return false;
+    }
+
+    template<typename T>
+    static void _flush_callback_list_queues(CallbackList<T> *list) {
+        smutex_lock_shared(&list->queue_mutex);
+
+        // avoid acquiring an exclusive lock unless we actually need to update the list
+        if (!list->removal_queue.empty()) {
+            smutex_unlock_shared(&list->queue_mutex); // VC++ doesn't allow upgrading lock ownership
+            smutex_lock(&list->queue_mutex);
+            smutex_lock(&list->list_mutex); // we need to get a lock on the list since we're updating it
+            while (!list->removal_queue.empty()) {
+                Index id = list->removal_queue.front();
+                list->removal_queue.pop();
+                if (!_remove_from_indexed_vector(&list->list, id)) {
+                    _ARGUS_WARN("Game attempted to unregister unknown callback %llu\n", id);
+                }
+            }
+            smutex_unlock(&list->list_mutex);
+            smutex_unlock(&list->queue_mutex);
+        } else {
+            smutex_unlock_shared(&list->queue_mutex);
+        }
+
+        // same here
+        smutex_lock_shared(&list->queue_mutex);
+        if (!list->addition_queue.empty()) {
+            smutex_unlock_shared(&list->queue_mutex);
+            smutex_lock(&list->queue_mutex);
+            smutex_lock(&list->list_mutex);
+            while (!list->addition_queue.empty()) {
+                list->list.insert(list->list.cend(), list->addition_queue.front());
+                list->addition_queue.pop();
+            }
+            smutex_unlock(&list->list_mutex);
+            smutex_unlock(&list->queue_mutex);
+        } else {
+            smutex_unlock_shared(&list->queue_mutex);
+        }
+    }
+
+    template<typename T>
+    void _init_callback_list(CallbackList<T> *list) {
+        smutex_create(&list->list_mutex);
+        smutex_create(&list->queue_mutex);
+    }
+
     static void _game_loop(void) {
         static Timestamp last_update = 0;
 
@@ -124,13 +194,20 @@ namespace argus {
             Timestamp update_start = argus::microtime();
             TimeDelta delta = _compute_delta(&last_update);
 
+            _flush_callback_list_queues(&g_update_callbacks);
+            _flush_callback_list_queues(&g_render_callbacks);
+            _flush_callback_list_queues(&g_close_callbacks);
+            _flush_callback_list_queues(&g_event_listeners);
+
             // pump events
             SDL_PumpEvents();
 
             // invoke update callbacks
-            for (IndexedValue<DeltaCallback> callback : g_update_callbacks) {
+            smutex_lock_shared(&g_update_callbacks.list_mutex);
+            for (IndexedValue<DeltaCallback> callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
+            smutex_unlock_shared(&g_update_callbacks.list_mutex);
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -152,11 +229,11 @@ namespace argus {
             TimeDelta delta = _compute_delta(&last_frame);
 
             // invoke render callbacks
-            g_render_callbacks_mutex.lock();
-            for (IndexedValue<DeltaCallback> callback : g_render_callbacks) {
+            smutex_lock_shared(&g_render_callbacks.list_mutex);
+            for (IndexedValue<DeltaCallback> callback : g_render_callbacks.list) {
                 callback.value(delta);
             }
-            g_render_callbacks_mutex.unlock();
+            smutex_unlock_shared(&g_render_callbacks.list_mutex);
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -167,12 +244,13 @@ namespace argus {
     }
 
     static int _master_event_callback(void *data, SDL_Event *event) {
-        std::vector<IndexedValue<SDLEventListener>>::const_iterator it;
-        for (IndexedValue<SDLEventListener> listener : g_event_listeners) {
+        smutex_lock_shared(&g_event_listeners.list_mutex);
+        for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
             if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, event)) {
                 listener.value.callback(listener.value.data, event);
             }
         }
+        smutex_unlock_shared(&g_event_listeners.list_mutex);
 
         return 0;
     }
@@ -191,7 +269,12 @@ namespace argus {
         signal(SIGINT, _interrupt_handler);
 
         // we'll probably register around 10 or so internal callbacks, so allocate them now
-        g_update_callbacks.reserve(10);
+        g_update_callbacks.list.reserve(10);
+
+        _init_callback_list(&g_update_callbacks);
+        _init_callback_list(&g_render_callbacks);
+        _init_callback_list(&g_close_callbacks);
+        _init_callback_list(&g_event_listeners);
 
         _initialize_modules(module_bitmask);
 
@@ -201,64 +284,51 @@ namespace argus {
         return;
     }
 
-    template <typename ValueType>
-    static bool remove_from_vector(std::vector<IndexedValue<ValueType>> *vector, Index id) {
-        auto it = std::remove_if(vector->begin(), vector->end(),
-                [id](auto callback) {return callback.id == id;});
-        if (it != vector->end()) {
-            vector->erase(it, vector->end());
-            return true;
-        }
-        return false;
+    template<typename T>
+    Index _add_callback(CallbackList<T> *list, T *callback) {
+        g_next_index_mutex.lock();
+        Index index = g_next_index++;
+        g_next_index_mutex.unlock();
+
+        smutex_lock(&list->queue_mutex);
+        list->addition_queue.push({index, *callback});
+        smutex_unlock(&list->queue_mutex);
+
+        return index;
+    }
+
+    template<typename T>
+    void _remove_callback(CallbackList<T> *list, Index index) {
+        smutex_lock(&list->queue_mutex);
+        list->removal_queue.push(index);
+        smutex_unlock(&list->queue_mutex);
     }
 
     Index register_update_callback(DeltaCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
-        Index id = g_next_index++;
-        g_update_callbacks.insert(g_update_callbacks.cend(), {id, callback});
-        return id;
+        return _add_callback(&g_update_callbacks, &callback);
     }
 
-    bool unregister_update_callback(Index id) {
-        if (!remove_from_vector(&g_update_callbacks, id)) {
-            _ARGUS_WARN("Game attempted to unregister unknown update callback %llu\n", id);
-            return false;
-        }
-        return true;
+    void unregister_update_callback(Index id) {
+        _remove_callback(&g_update_callbacks, id);
     }
 
     Index register_render_callback(DeltaCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
-        Index id = g_next_index++;
-        g_render_callbacks_mutex.lock();
-        g_render_callbacks.insert(g_render_callbacks.cend(), {id, callback});
-        g_render_callbacks_mutex.unlock();
-        return id;
+        return _add_callback(&g_render_callbacks, &callback);
     }
 
-    bool unregister_render_callback(Index id) {
-        g_render_callbacks_mutex.lock();
-        bool res = remove_from_vector(&g_render_callbacks, id);
-        g_render_callbacks_mutex.unlock();
-        if (!res) {
-            _ARGUS_WARN("Game attempted to unregister unknown render callback %llu\n", id);
-        }
-        return res;
+    void unregister_render_callback(Index id) {
+        _remove_callback(&g_render_callbacks, id);
     }
 
     Index register_close_callback(NullaryCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
-        Index id = g_next_index++;
-        g_close_callbacks.insert(g_close_callbacks.cend(), {id, callback});
-        return id;
+        return _add_callback(&g_close_callbacks, &callback);
     }
 
-    bool unregister_close_callback(Index id) {
-        if (!remove_from_vector(&g_close_callbacks, id)) {
-            _ARGUS_WARN("Game attempted to unregister unknown close callback %llu\n", id);
-            return false;
-        }
-        return true;
+    void unregister_close_callback(Index id) {
+        _remove_callback(&g_close_callbacks, id);
     }
 
     Index register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
@@ -267,16 +337,11 @@ namespace argus {
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
         SDLEventListener listener = {filter, callback, data};
-        g_event_listeners.insert(g_event_listeners.cend(), {id, listener});
-        return id;
+        return _add_callback(&g_event_listeners, &listener);
     }
 
-    bool unregister_sdl_event_listener(Index id) {
-        if (!remove_from_vector(&g_event_listeners, id)) {
-            _ARGUS_WARN("Game attempted to unregister unknown update callback %llu\n", id);
-            return false;
-        }
-        return true;
+    void unregister_sdl_event_listener(Index id) {
+        _remove_callback(&g_event_listeners, id);
     }
 
     void start_engine(DeltaCallback game_loop) {

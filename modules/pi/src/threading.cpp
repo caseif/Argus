@@ -8,6 +8,12 @@
 #include <thread>
 #endif
 
+#ifdef __WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace argus {
 
     #ifdef USE_PTHREADS
@@ -47,6 +53,72 @@ namespace argus {
     void thread_destroy(Thread *thread) {
         delete(thread);
         return;
+    }
+    #endif
+
+    #ifdef __WIN32
+    void smutex_create(smutex *mutex) {
+        IniitalizeSRWLock(mutex);
+    }
+
+    void smutex_destroy(smutex *mutex) {
+        // do nothing
+    }
+
+    void smutex_lock(smutex *mutex) {
+        AcquireSRWLockExclusive(mutex);
+    }
+
+    void smutex_try_lock(smutex *mutex) {
+        TryAcquireSRWLockExclusive(mutex);
+    }
+
+    void smutex_unlock(smutex *mutex) {
+        ReleaseSRWLockExclusive(mutex);
+    }
+    
+    void smutex_lock_shared(smutex *mutex) {
+        AcquireSRWLockShared(mutex);
+    }
+
+    void smutex_try_lock_shared(smutex *mutex) {
+        TryAcquireSRWLockShared(mutex);
+    }
+   
+    void smutex_unlock_shared(smutex *mutex) {
+        ReleaseSRWLockShared(mutex);
+    }
+    #else
+    void smutex_create(smutex *mutex) {
+        pthread_rwlock_init(mutex, NULL);
+    }
+
+    void smutex_destroy(smutex *mutex) {
+        pthread_rwlock_destroy(mutex);
+    }
+
+    void smutex_lock(smutex *mutex) {
+        pthread_rwlock_wrlock(mutex);
+    }
+
+    void smutex_try_lock(smutex *mutex) {
+        pthread_rwlock_tryrdlock(mutex);
+    }
+
+    void smutex_unlock(smutex *mutex) {
+        pthread_rwlock_unlock(mutex);
+    }
+    
+    void smutex_lock_shared(smutex *mutex) {
+        pthread_rwlock_rdlock(mutex);
+    }
+
+    void smutex_try_lock_shared(smutex *mutex) {
+        pthread_rwlock_rdlock(mutex);
+    }
+   
+    void smutex_unlock_shared(smutex *mutex) {
+        pthread_rwlock_unlock(mutex);
     }
     #endif
 

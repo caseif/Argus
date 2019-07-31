@@ -42,6 +42,17 @@
         "cstdarg": "cpp",
         "cstddef": "cpp",
         "cinttypes": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "mutex": "cpp",
+        "atomic": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "csignal": "cpp",
+        "cstring": "cpp",
+        "iomanip": "cpp",
+        "typeindex": "cpp",
+        "shared_mutex": "cpp"
     }
 }
