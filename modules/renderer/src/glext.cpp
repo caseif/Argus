@@ -8,8 +8,10 @@
 
 namespace argus {
 
-    void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
-    void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+    namespace glext {
+        void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+        void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+    }
 
     template <typename FunctionType>
     static void _load_opengl_extension(const char *func_name, FunctionType *target) {
@@ -24,8 +26,8 @@ namespace argus {
     void load_opengl_extensions(void) {
         SDL_GL_LoadLibrary(NULL);
 
-        _load_opengl_extension<>("glGenFramebuffers", &glGenFramebuffers);
-        _load_opengl_extension<>("glFramebufferTexture", &glFramebufferTexture);
+        _load_opengl_extension<>("glGenFramebuffers", &glext::glGenFramebuffers);
+        _load_opengl_extension<>("glFramebufferTexture", &glext::glFramebufferTexture);
     }
 
 }

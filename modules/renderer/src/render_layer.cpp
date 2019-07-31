@@ -8,6 +8,9 @@
 
 namespace argus {
 
+    using glext::glGenFramebuffers;
+    using glext::glFramebufferTexture;
+
     RenderLayer::RenderLayer(Renderer *parent) {
         this->parent_renderer = parent;
 
