@@ -4,6 +4,12 @@
 #include <SDL2/SDL.h>
 
 namespace argus {
+    
+    typedef unsigned long long Timestamp;
+
+    typedef unsigned long long TimeDelta;
+
+    typedef unsigned long long Index;
 
     typedef enum class engine_modules_t : uint64_t {
         PI        = 0x01,
@@ -19,7 +25,7 @@ namespace argus {
      * \brief An update callback accepts a single parameter representing the
      *        delta in microseconds since the last update.
      */
-    typedef std::function<void(unsigned long long)> DeltaCallback;
+    typedef std::function<void(TimeDelta)> DeltaCallback;
 
     /**
      * \brief A callback accepts no parameters.
@@ -86,12 +92,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    unsigned long long register_update_callback(DeltaCallback update_callback);
+    Index register_update_callback(DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_update_callback(unsigned long long id);
+    bool unregister_update_callback(Index id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
@@ -100,12 +106,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    unsigned long long register_render_callback(DeltaCallback update_callback);
+    Index register_render_callback(DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_render_callback(unsigned long long id);
+    bool unregister_render_callback(Index id);
 
     /**
      * \brief Registers a callback for invocation when the engine is requested
@@ -115,12 +121,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    unsigned long long register_close_callback(NullaryCallback close_callback);
+    Index register_close_callback(NullaryCallback close_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_close_callback(unsigned long long id);
+    bool unregister_close_callback(Index id);
 
     /**
      * \brief Registers a listener for particular SDL events.
@@ -130,11 +136,11 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    unsigned long long register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
+    Index register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    bool unregister_sdl_event_listener(unsigned long long id);
+    bool unregister_sdl_event_listener(Index id);
 
 }

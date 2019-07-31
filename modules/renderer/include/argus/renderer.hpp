@@ -1,5 +1,8 @@
 #pragma once
 
+// module core
+#include "argus/core.hpp"
+
 #define VMMLIB_OLD_TYPEDEFS
 #include "vmmlib/matrix.hpp"
 #include "vmmlib/vector.hpp"
@@ -35,11 +38,11 @@ namespace argus {
 
             void remove_child(Window *child);
 
-            void update(unsigned long long delta);
+            void update(Timestamp delta);
 
             static int event_filter(void *data, SDL_Event *event);
             
-            static void update_window(Window *window, unsigned long long delta);
+            static void update_window(Window *window, Timestamp delta);
 
         public:
             /**

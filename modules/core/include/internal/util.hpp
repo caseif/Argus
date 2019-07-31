@@ -1,5 +1,8 @@
 #pragma once
 
+// module core
+#include "argus/core.hpp"
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -15,7 +18,7 @@ namespace argus {
 
     template <typename ValueType>
     struct IndexedValue {
-        unsigned long long id;
+        Index id;
         ValueType value;
     };
 

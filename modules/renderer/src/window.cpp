@@ -21,7 +21,7 @@ namespace argus {
     extern bool g_renderer_initialized;
 
     extern std::vector<Window*> g_windows;
-    extern size_t g_window_count = 0;
+    extern size_t g_window_count;
 
     void _window_event_callback(void *data, SDL_Event *event) {
         Window *window = static_cast<Window*>(data);
@@ -104,7 +104,7 @@ namespace argus {
         return renderer;
     }
 
-    void Window::update(unsigned long long delta) {
+    void Window::update(Timestamp delta) {
         SDL_UpdateWindowSurface(handle);
         return;
     }
