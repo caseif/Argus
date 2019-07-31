@@ -183,7 +183,7 @@ namespace argus {
     }
 
     void initialize_engine(EngineModules module_bitmask) {
-        ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
+        _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
 
         g_initializing = true;
 
@@ -212,7 +212,7 @@ namespace argus {
     }
 
     unsigned long long register_update_callback(DeltaCallback callback) {
-        ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
+        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
         unsigned long long id = g_next_index++;
         g_update_callbacks.insert(g_update_callbacks.cend(), {id, callback});
         return id;
@@ -220,14 +220,14 @@ namespace argus {
 
     bool unregister_update_callback(unsigned long long id) {
         if (!remove_from_vector(&g_update_callbacks, id)) {
-            WARN("Game attempted to unregister unknown update callback %llu\n", id);
+            _ARGUS_WARN("Game attempted to unregister unknown update callback %llu\n", id);
             return false;
         }
         return true;
     }
 
     unsigned long long register_render_callback(DeltaCallback callback) {
-        ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
+        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
         unsigned long long id = g_next_index++;
         g_render_callbacks_mutex.lock();
         g_render_callbacks.insert(g_render_callbacks.cend(), {id, callback});
@@ -240,13 +240,13 @@ namespace argus {
         bool res = remove_from_vector(&g_render_callbacks, id);
         g_render_callbacks_mutex.unlock();
         if (!res) {
-            WARN("Game attempted to unregister unknown render callback %llu\n", id);
+            _ARGUS_WARN("Game attempted to unregister unknown render callback %llu\n", id);
         }
         return res;
     }
 
     unsigned long long register_close_callback(NullaryCallback callback) {
-        ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
+        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
         unsigned long long id = g_next_index++;
         g_close_callbacks.insert(g_close_callbacks.cend(), {id, callback});
         return id;
@@ -254,16 +254,16 @@ namespace argus {
 
     bool unregister_close_callback(unsigned long long id) {
         if (!remove_from_vector(&g_close_callbacks, id)) {
-            WARN("Game attempted to unregister unknown close callback %llu\n", id);
+            _ARGUS_WARN("Game attempted to unregister unknown close callback %llu\n", id);
             return false;
         }
         return true;
     }
 
     unsigned long long register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
-        ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
+        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
         unsigned long long id = g_next_index++;
-        ASSERT(callback != nullptr, "Event listener cannot have null callback.");
+        _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
         SDLEventListener listener = {filter, callback, data};
         g_event_listeners.insert(g_event_listeners.cend(), {id, listener});
@@ -272,15 +272,15 @@ namespace argus {
 
     bool unregister_sdl_event_listener(unsigned long long id) {
         if (!remove_from_vector(&g_event_listeners, id)) {
-            WARN("Game attempted to unregister unknown update callback %llu\n", id);
+            _ARGUS_WARN("Game attempted to unregister unknown update callback %llu\n", id);
             return false;
         }
         return true;
     }
 
     void start_engine(DeltaCallback game_loop) {
-        ASSERT(g_initialized, "Cannot start engine before it is initialized.");
-        ASSERT(game_loop != NULL, "start_engine invoked with null callback");
+        _ARGUS_ASSERT(g_initialized, "Cannot start engine before it is initialized.");
+        _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
         register_update_callback(game_loop);
 
@@ -293,7 +293,7 @@ namespace argus {
     }
 
     void stop_engine(void) {
-        ASSERT(g_initialized, "Cannot stop engine before it is initialized.");
+        _ARGUS_ASSERT(g_initialized, "Cannot stop engine before it is initialized.");
 
         g_engine_stopping = true;
     }

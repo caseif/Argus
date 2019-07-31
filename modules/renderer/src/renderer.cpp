@@ -43,7 +43,7 @@ namespace argus {
         register_close_callback(_clean_up);
 
         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-            FATAL("Failed to initialize SDL video\n");
+            _ARGUS_FATAL("Failed to initialize SDL video\n");
         }
 
         _init_opengl();
@@ -52,7 +52,7 @@ namespace argus {
     }
 
     Renderer::Renderer(Window *window) {
-        ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
+        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
         this->window = window;
 

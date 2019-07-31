@@ -31,7 +31,7 @@ namespace argus {
     }
 
     Window::Window(void) {
-        ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
+        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         handle = SDL_CreateWindow("ArgusGame",
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
