@@ -57,7 +57,7 @@ namespace argus {
 
         this->window = window;
 
-        gl_context = SDL_GL_CreateContext(window->handle);
+        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window->handle));
     }
 
     Renderer::~Renderer(void) = default;
@@ -82,7 +82,7 @@ namespace argus {
     }
 
     void Renderer::activate_gl_context(void) {
-        SDL_GL_MakeCurrent(window->handle, gl_context);
+        SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window->handle), gl_context);
     }
 
 }

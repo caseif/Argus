@@ -3,8 +3,10 @@
 // module core
 #include "argus/core.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 #define _ARGUS_WARN(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
 
@@ -21,5 +23,10 @@ namespace argus {
         Index id;
         ValueType value;
     };
+
+    template<typename T>
+    inline void remove_from_vector(std::vector<T> &vec, T item) {
+        vec.erase(std::remove(vec.begin(), vec.end(), item));
+    }
 
 }

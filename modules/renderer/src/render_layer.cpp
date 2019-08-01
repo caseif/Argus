@@ -14,6 +14,8 @@ namespace argus {
     RenderLayer::RenderLayer(Renderer *parent) {
         this->parent_renderer = parent;
 
+        this->root_item = new RenderItem(this, nullptr);
+
         parent->activate_gl_context();
 
         // init the framebuffer
@@ -26,6 +28,16 @@ namespace argus {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl_texture, 0);
+    }
+
+    void RenderLayer::destroy(void) {
+        parent_renderer->remove_render_layer(this);
+        delete this;
+    }
+
+    void RenderLayer::render_to_parent(void) {
+        parent_renderer->activate_gl_context();
+        root_item->render();
     }
 
 }

@@ -16,7 +16,9 @@
 
 namespace argus {
 
+    // forward declarations for friend declarations
     class Renderer;
+    class RenderLayer;
 
     class Window {
         friend class Renderer;
@@ -159,6 +161,34 @@ namespace argus {
     };
 
     /**
+     * \brief Represents an item to be rendered.
+     *
+     * Each item may have its own rendering properties, as well as a list of
+     * child items. Child items will inherit the transform of their parent,
+     * which is added to their own.
+     */
+    class RenderItem {
+        friend class RenderLayer;
+
+        private:
+            ~RenderItem(void) = default;
+
+        protected:
+            RenderLayer *layer;
+            RenderItem *parent;
+            std::vector<RenderItem*> children;
+
+            RenderItem(RenderLayer *layer, RenderItem *parent);
+
+            void render_children(void);
+
+        public:
+            void render(void);
+
+            void destroy(void);
+    };
+
+    /**
      * Represents a layer to which geometry may be rendered.
      *
      * Render layers will be composited to the screen as multiple ordered
@@ -170,6 +200,8 @@ namespace argus {
         private:
             Renderer *parent_renderer;
 
+            RenderItem *root_item;
+
             GLuint framebuffer;
             GLuint gl_texture;
 
@@ -178,6 +210,15 @@ namespace argus {
             RenderLayer(Renderer *parent);
 
             ~RenderLayer(void) = default;
+
+            void render_to_parent(void);
+        
+        public:
+            /**
+             * \brief Destroys this RenderLayer and removes it from the parent
+             * renderer.
+             */
+            void destroy(void);
     };
 
     class Renderer {
