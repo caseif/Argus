@@ -14,7 +14,7 @@ namespace argus {
     RenderLayer::RenderLayer(Renderer *parent) {
         this->parent_renderer = parent;
 
-        this->root_item = new RenderItem(this, nullptr);
+        this->root_item = new RenderItem(*this, nullptr);
 
         parent->activate_gl_context();
 
@@ -31,11 +31,11 @@ namespace argus {
     }
 
     void RenderLayer::destroy(void) {
-        parent_renderer->remove_render_layer(this);
+        parent_renderer->remove_render_layer(*this);
         delete this;
     }
 
-    void RenderLayer::render_to_parent(void) {
+    void RenderLayer::render_to_parent(void) const {
         parent_renderer->activate_gl_context();
         root_item->render();
     }

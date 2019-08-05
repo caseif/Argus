@@ -23,9 +23,9 @@ namespace argus {
     extern std::vector<Window*> g_windows;
     extern size_t g_window_count;
 
-    void _window_event_callback(void *data, SDL_Event *event) {
+    void _window_event_callback(void *data, SDL_Event &event) {
         Window *window = static_cast<Window*>(data);
-        if (event->window.event == SDL_WINDOWEVENT_CLOSE) {
+        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
             window->destroy();
         }
     }
@@ -43,7 +43,7 @@ namespace argus {
 
         parent = nullptr;
 
-        renderer = new Renderer(this);
+        renderer = new Renderer(*this);
         
         // register the listener
         listener_id = register_sdl_event_listener(event_filter, _window_event_callback, this);
@@ -65,14 +65,14 @@ namespace argus {
         }
 
         if (parent != nullptr) {
-            parent->remove_child(this);
+            parent->remove_child(*this);
         }
 
         renderer->destroy();
 
         SDL_DestroyWindow(handle);
 
-        g_windows.erase(std::remove(g_windows.begin(), g_windows.end(), this));
+        remove_from_vector(g_windows, this);
 
         delete this;
 
@@ -83,48 +83,48 @@ namespace argus {
         return;
     }
 
-    Window *Window::create_window(void) {
-        return new Window();
+    Window &Window::create_window(void) {
+        return *new Window();
     }
 
-    Window *Window::create_child_window(void) {
+    Window &Window::create_child_window(void) {
         Window *child_window = new Window();
         child_window->parent = this;
 
         children.insert(children.cend(), child_window);
 
-        return child_window;
+        return *child_window;
     }
 
-    void Window::remove_child(Window *child) {
-        children.erase(std::remove(children.begin(), children.end(), child));
+    void Window::remove_child(Window &child) {
+        remove_from_vector(children, &child);
     }
 
-    Renderer *Window::get_renderer(void) {
-        return renderer;
+    Renderer &Window::get_renderer(void) const {
+        return *renderer;
     }
 
-    void Window::update(Timestamp delta) {
+    void Window::update(const Timestamp delta) {
         SDL_UpdateWindowSurface(handle);
         return;
     }
 
-    void Window::set_title(std::string title) {
+    void Window::set_title(const std::string &title) {
         SDL_SetWindowTitle(handle, title.c_str());
         return;
     }
 
-    void Window::set_fullscreen(bool fullscreen) {
+    void Window::set_fullscreen(const bool fullscreen) {
         SDL_SetWindowFullscreen(handle, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
         return;
     }
 
-    void Window::set_resolution(unsigned int width, unsigned int height) {
+    void Window::set_resolution(const unsigned int width, const unsigned int height) {
         SDL_SetWindowSize(handle, width, height);
         return;
     }
 
-    void Window::set_windowed_position(unsigned int x, unsigned int y) {
+    void Window::set_windowed_position(const unsigned int x, const unsigned int y) {
         SDL_SetWindowPosition(handle, x, y);
         return;
     }

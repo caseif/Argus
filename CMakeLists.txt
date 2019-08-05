@@ -154,3 +154,4 @@ target_include_directories(${PROJECT_NAME}_static PUBLIC "${GLOBAL_INCLUDES}")
 
 # make the copy headers target a dependency to force it to run
 add_dependencies(${PROJECT_NAME} ${HDR_TARGET})
+add_dependencies(${PROJECT_NAME}_static ${HDR_TARGET})

@@ -38,13 +38,13 @@ namespace argus {
             
             ~Window(void);
 
-            void remove_child(Window *child);
+            void remove_child(Window &child);
 
-            void update(Timestamp delta);
+            void update(const Timestamp delta);
 
             static int event_filter(void *data, SDL_Event *event);
             
-            static void update_window(Window *window, Timestamp delta);
+            static void update_window(const Window &window, const Timestamp delta);
 
         public:
             /**
@@ -52,7 +52,7 @@ namespace argus {
              *
              * \return The new window.
              */
-            static Window *create_window(void);
+            static Window &create_window(void);
 
             /**
              * \brief Destroys this window.
@@ -69,21 +69,21 @@ namespace argus {
              *
              * \return The new child window.
              */
-            Window *create_child_window(void);
+            Window &create_child_window(void);
 
             /**
              * Gets this Window's associated Renderer.
              *
              * \return The Window's Renderer.
              */
-            Renderer *get_renderer(void);
+            Renderer &get_renderer(void) const;
 
             /**
              * Sets the window title.
              *
              * \param title The new window title.
              */
-            void set_title(std::string title);
+            void set_title(const std::string &title);
 
             /**
              * \brief Sets the fullscreen state of the window.
@@ -93,7 +93,7 @@ namespace argus {
              * \param fullscreen Whether the window is to be displayed in
              *                   fullscreen.
              */
-            void set_fullscreen(bool fullscreen);
+            void set_fullscreen(const bool fullscreen);
 
             /**
              * \brief Sets the resolution of the window when not in fullscreen
@@ -104,7 +104,7 @@ namespace argus {
              * \param width The new width of the window.
              * \param height The new height of the window.
              */
-            void set_resolution(unsigned int width, unsigned int height);
+            void set_resolution(const unsigned int width, const unsigned int height);
 
             /**
              * \brief Sets the position of the window on the screen when in
@@ -115,7 +115,7 @@ namespace argus {
              * \param x The new X-coordinate of the window.
              * \param y The new Y-coordinate of the window.
              */
-            void set_windowed_position(unsigned int x, unsigned int y);
+            void set_windowed_position(const unsigned int x, const unsigned int y);
 
             /*
              * \brief Activates the window.
@@ -139,7 +139,7 @@ namespace argus {
 
             ~Transform(void);
 
-            vmml::vec2d get_translation(void) const;
+            const vmml::vec2d get_translation(void) const;
 
             void set_translation(const vmml::vec2d &translation);
 
@@ -151,13 +151,13 @@ namespace argus {
 
             void add_rotation(double rotation_degrees);
 
-            vmml::vec2d get_scale(void) const;
+            const vmml::vec2d get_scale(void) const;
 
             void set_scale(const vmml::vec2d &scale);
 
             void set_parent(const Transform &transform);
 
-            const vmml::mat3d &to_matrix(void);
+            const vmml::mat3d &to_matrix(void) const;
     };
 
     /**
@@ -174,16 +174,16 @@ namespace argus {
             ~RenderItem(void) = default;
 
         protected:
-            RenderLayer *layer;
-            RenderItem *parent;
+            RenderLayer &layer;
+            RenderItem *const parent; // can be null
             std::vector<RenderItem*> children;
 
-            RenderItem(RenderLayer *layer, RenderItem *parent);
+            RenderItem(RenderLayer &layer, RenderItem *const parent);
 
-            void render_children(void);
+            void render_children(void) const;
 
         public:
-            void render(void);
+            void render(void) const;
 
             void destroy(void);
     };
@@ -211,7 +211,7 @@ namespace argus {
 
             ~RenderLayer(void) = default;
 
-            void render_to_parent(void);
+            void render_to_parent(void) const;
         
         public:
             /**
@@ -225,12 +225,12 @@ namespace argus {
         friend class Window;
 
         private:
-            Window *window;
+            Window &window;
             SDL_GLContext gl_context;
 
             std::vector<RenderLayer*> render_layers;
 
-            Renderer(Window *window);
+            Renderer(Window &window);
 
             ~Renderer(void);
 
@@ -247,7 +247,7 @@ namespace argus {
              * Makes this Renderer's GL context current, such that future GL
              * calls will apply to it.
              */
-            void activate_gl_context(void);
+            void activate_gl_context(void) const;
 
             /**
              * \brief Creates a new render layer with the given priority.
@@ -255,12 +255,12 @@ namespace argus {
              * Layers with higher priority will be rendered after (ergo in front
              * of) those with lower priority.
              */
-            RenderLayer *create_render_layer(int priority);
+            RenderLayer &create_render_layer(int priority);
 
             /**
              * \brief Removes a render layer from this renderer and destroys it.
              */
-            void remove_render_layer(RenderLayer *layer);
+            void remove_render_layer(RenderLayer &layer);
     };
 
 }

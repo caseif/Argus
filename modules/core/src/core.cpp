@@ -247,7 +247,7 @@ namespace argus {
         smutex_lock_shared(&g_event_listeners.list_mutex);
         for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
             if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, event)) {
-                listener.value.callback(listener.value.data, event);
+                listener.value.callback(listener.value.data, *event);
             }
         }
         smutex_unlock_shared(&g_event_listeners.list_mutex);

@@ -14,7 +14,7 @@ namespace argus {
     }
 
     template <typename FunctionType>
-    static void _load_opengl_extension(const char *func_name, FunctionType *target) {
+    static void _load_opengl_extension(const char *const func_name, FunctionType *target) {
         void *function = SDL_GL_GetProcAddress(func_name);
         if (!function) {
             _ARGUS_FATAL("Failed to load OpenGL extension: %s\n", func_name);

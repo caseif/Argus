@@ -52,12 +52,11 @@ namespace argus {
         g_renderer_initialized = true;
     }
 
-    Renderer::Renderer(Window *window) {
+    Renderer::Renderer(Window &window):
+            window(window) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
-        this->window = window;
-
-        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window->handle));
+        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
     }
 
     Renderer::~Renderer(void) = default;
@@ -69,20 +68,20 @@ namespace argus {
         return;
     }
 
-    RenderLayer *Renderer::create_render_layer(int priority) {
+    RenderLayer &Renderer::create_render_layer(int priority) {
         RenderLayer *layer = new RenderLayer(this);
         render_layers.insert(render_layers.cend(), layer);
-        return layer;
+        return *layer;
     }
 
-    void Renderer::remove_render_layer(RenderLayer *render_layer) {
-        render_layers.erase(std::remove(render_layers.begin(), render_layers.end(), render_layer));
-        delete render_layer;
+    void Renderer::remove_render_layer(RenderLayer &render_layer) {
+        remove_from_vector(render_layers, &render_layer);
+        delete &render_layer;
         return;
     }
 
-    void Renderer::activate_gl_context(void) {
-        SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window->handle), gl_context);
+    void Renderer::activate_gl_context(void) const {
+        SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window.handle), gl_context);
     }
 
 }

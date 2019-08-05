@@ -26,7 +26,7 @@ namespace argus {
         }
     }
 
-    vmml::vec2d Transform::get_translation(void) const {
+    const vmml::vec2d Transform::get_translation(void) const {
         return translation;
     }
 
@@ -50,7 +50,7 @@ namespace argus {
         this->rotation += rotation_degrees;
     }
 
-    vmml::vec2d Transform::get_scale(void) const {
+    const vmml::vec2d Transform::get_scale(void) const {
         return scale;
     }
 
@@ -62,7 +62,7 @@ namespace argus {
         this->parent = new Transform(parent);
     }
 
-    const vmml::mat3d &Transform::to_matrix(void) {
+    const vmml::mat3d &Transform::to_matrix(void) const {
         //TODO
     }
 

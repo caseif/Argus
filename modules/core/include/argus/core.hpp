@@ -36,7 +36,7 @@ namespace argus {
      * \brief A callback that accepts a piece of user-supplied data and an SDL
      * event.
      */
-    typedef std::function<void(void*, SDL_Event*)> SDLEventCallback;
+    typedef std::function<void(void*, SDL_Event&)> SDLEventCallback;
 
     /*
      * \brief Initializes the engine with the given modules.
@@ -136,6 +136,7 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
+    //TODO: abstract away SDL events and implement our own event model
     Index register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
 
     /**
