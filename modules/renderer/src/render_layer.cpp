@@ -11,10 +11,9 @@ namespace argus {
     using glext::glGenFramebuffers;
     using glext::glFramebufferTexture;
 
-    RenderLayer::RenderLayer(Renderer *parent) {
+    RenderLayer::RenderLayer(Renderer *const parent):
+            root_item(new RenderItem(*this, nullptr)) {
         this->parent_renderer = parent;
-
-        this->root_item = new RenderItem(*this, nullptr);
 
         parent->activate_gl_context();
 
@@ -35,7 +34,7 @@ namespace argus {
         delete this;
     }
 
-    void RenderLayer::render_to_parent(void) const {
+    void RenderLayer::render(void) const {
         parent_renderer->activate_gl_context();
         root_item->render();
     }

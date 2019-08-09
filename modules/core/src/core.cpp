@@ -63,7 +63,6 @@ namespace argus {
     static Index g_next_index = 0;
     static std::mutex g_next_index_mutex;
 
-    //TODO: probably make this thread-safe
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
     static CallbackList<NullaryCallback> g_close_callbacks;
@@ -85,18 +84,18 @@ namespace argus {
 
     static void _clean_up(void) {
         // we want to deinitialize the modules in the opposite order as they were initialized
-        smutex_lock_shared(&g_close_callbacks.list_mutex);
+        smutex_lock_shared(g_close_callbacks.list_mutex);
         for (std::vector<IndexedValue<NullaryCallback>>::reverse_iterator it = g_close_callbacks.list.rbegin();
                 it != g_close_callbacks.list.rend(); it++) { 
             it->value();
         }
-        smutex_unlock_shared(&g_close_callbacks.list_mutex);
+        smutex_unlock_shared(g_close_callbacks.list_mutex);
 
-        thread_detach(g_render_thread);
-        thread_destroy(g_render_thread);
+        thread_detach(*g_render_thread);
+        thread_destroy(*g_render_thread);
     }
 
-    static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
+    static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {
         if (target_rate == 0) {
             return;
         }
@@ -113,73 +112,73 @@ namespace argus {
         }
     }
 
-    static TimeDelta _compute_delta(Timestamp *last_timestamp) {
+    static const TimeDelta _compute_delta(Timestamp &last_timestamp) {
         TimeDelta delta;
 
-        if (*last_timestamp != 0) {
-            delta = argus::microtime() - *last_timestamp;
+        if (last_timestamp != 0) {
+            delta = argus::microtime() - last_timestamp;
         } else {
             delta = 0;
         }
-        *last_timestamp = argus::microtime();
+        last_timestamp = argus::microtime();
 
         return delta;
     }
 
     template<typename T>
-    static bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> *vector, Index id) {
-        auto it = std::remove_if(vector->begin(), vector->end(),
+    static const bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
+        auto it = std::remove_if(vector.begin(), vector.end(),
                 [id](auto callback) {return callback.id == id;});
-        if (it != vector->end()) {
-            vector->erase(it, vector->end());
+        if (it != vector.end()) {
+            vector.erase(it, vector.end());
             return true;
         }
         return false;
     }
 
     template<typename T>
-    static void _flush_callback_list_queues(CallbackList<T> *list) {
-        smutex_lock_shared(&list->queue_mutex);
+    static void _flush_callback_list_queues(CallbackList<T> &list) {
+        smutex_lock_shared(list.queue_mutex);
 
         // avoid acquiring an exclusive lock unless we actually need to update the list
-        if (!list->removal_queue.empty()) {
-            smutex_unlock_shared(&list->queue_mutex); // VC++ doesn't allow upgrading lock ownership
-            smutex_lock(&list->queue_mutex);
-            smutex_lock(&list->list_mutex); // we need to get a lock on the list since we're updating it
-            while (!list->removal_queue.empty()) {
-                Index id = list->removal_queue.front();
-                list->removal_queue.pop();
-                if (!_remove_from_indexed_vector(&list->list, id)) {
+        if (!list.removal_queue.empty()) {
+            smutex_unlock_shared(list.queue_mutex); // VC++ doesn't allow upgrading lock ownership
+            smutex_lock(list.queue_mutex);
+            smutex_lock(list.list_mutex); // we need to get a lock on the list since we're updating it
+            while (!list.removal_queue.empty()) {
+                Index id = list.removal_queue.front();
+                list.removal_queue.pop();
+                if (!_remove_from_indexed_vector(list.list, id)) {
                     _ARGUS_WARN("Game attempted to unregister unknown callback %llu\n", id);
                 }
             }
-            smutex_unlock(&list->list_mutex);
-            smutex_unlock(&list->queue_mutex);
+            smutex_unlock(list.list_mutex);
+            smutex_unlock(list.queue_mutex);
         } else {
-            smutex_unlock_shared(&list->queue_mutex);
+            smutex_unlock_shared(list.queue_mutex);
         }
 
         // same here
-        smutex_lock_shared(&list->queue_mutex);
-        if (!list->addition_queue.empty()) {
-            smutex_unlock_shared(&list->queue_mutex);
-            smutex_lock(&list->queue_mutex);
-            smutex_lock(&list->list_mutex);
-            while (!list->addition_queue.empty()) {
-                list->list.insert(list->list.cend(), list->addition_queue.front());
-                list->addition_queue.pop();
+        smutex_lock_shared(list.queue_mutex);
+        if (!list.addition_queue.empty()) {
+            smutex_unlock_shared(list.queue_mutex);
+            smutex_lock(list.queue_mutex);
+            smutex_lock(list.list_mutex);
+            while (!list.addition_queue.empty()) {
+                list.list.insert(list.list.cend(), list.addition_queue.front());
+                list.addition_queue.pop();
             }
-            smutex_unlock(&list->list_mutex);
-            smutex_unlock(&list->queue_mutex);
+            smutex_unlock(list.list_mutex);
+            smutex_unlock(list.queue_mutex);
         } else {
-            smutex_unlock_shared(&list->queue_mutex);
+            smutex_unlock_shared(list.queue_mutex);
         }
     }
 
     template<typename T>
-    void _init_callback_list(CallbackList<T> *list) {
-        smutex_create(&list->list_mutex);
-        smutex_create(&list->queue_mutex);
+    void _init_callback_list(CallbackList<T> &list) {
+        smutex_create(list.list_mutex);
+        smutex_create(list.queue_mutex);
     }
 
     static void _game_loop(void) {
@@ -192,22 +191,22 @@ namespace argus {
             }
 
             Timestamp update_start = argus::microtime();
-            TimeDelta delta = _compute_delta(&last_update);
+            TimeDelta delta = _compute_delta(last_update);
 
-            _flush_callback_list_queues(&g_update_callbacks);
-            _flush_callback_list_queues(&g_render_callbacks);
-            _flush_callback_list_queues(&g_close_callbacks);
-            _flush_callback_list_queues(&g_event_listeners);
+            _flush_callback_list_queues(g_update_callbacks);
+            _flush_callback_list_queues(g_render_callbacks);
+            _flush_callback_list_queues(g_close_callbacks);
+            _flush_callback_list_queues(g_event_listeners);
 
             // pump events
             SDL_PumpEvents();
 
             // invoke update callbacks
-            smutex_lock_shared(&g_update_callbacks.list_mutex);
+            smutex_lock_shared(g_update_callbacks.list_mutex);
             for (IndexedValue<DeltaCallback> callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
-            smutex_unlock_shared(&g_update_callbacks.list_mutex);
+            smutex_unlock_shared(g_update_callbacks.list_mutex);
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -217,7 +216,7 @@ namespace argus {
         return;
     }
 
-    static void *_render_loop(void*) {
+    static void *_render_loop(void *const _) {
         static Timestamp last_frame = 0;
 
         while (1) {
@@ -226,14 +225,14 @@ namespace argus {
             }
 
             Timestamp render_start = argus::microtime();
-            TimeDelta delta = _compute_delta(&last_frame);
+            TimeDelta delta = _compute_delta(last_frame);
 
             // invoke render callbacks
-            smutex_lock_shared(&g_render_callbacks.list_mutex);
+            smutex_lock_shared(g_render_callbacks.list_mutex);
             for (IndexedValue<DeltaCallback> callback : g_render_callbacks.list) {
                 callback.value(delta);
             }
-            smutex_unlock_shared(&g_render_callbacks.list_mutex);
+            smutex_unlock_shared(g_render_callbacks.list_mutex);
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -243,25 +242,25 @@ namespace argus {
         return nullptr;
     }
 
-    static int _master_event_callback(void *data, SDL_Event *event) {
-        smutex_lock_shared(&g_event_listeners.list_mutex);
+    static int _master_event_callback(void *const data, SDL_Event *const event) {
+        smutex_lock_shared(g_event_listeners.list_mutex);
         for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
             if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, event)) {
                 listener.value.callback(listener.value.data, *event);
             }
         }
-        smutex_unlock_shared(&g_event_listeners.list_mutex);
+        smutex_unlock_shared(g_event_listeners.list_mutex);
 
         return 0;
     }
     
-    void _initialize_modules(EngineModules module_bitmask) {
+    void _initialize_modules(const EngineModules module_bitmask) {
         if (module_bitmask & EngineModules::RENDERER) {
             init_module_renderer();
         }
     }
 
-    void initialize_engine(EngineModules module_bitmask) {
+    void initialize_engine(const EngineModules module_bitmask) {
         _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
 
         g_initializing = true;
@@ -271,10 +270,10 @@ namespace argus {
         // we'll probably register around 10 or so internal callbacks, so allocate them now
         g_update_callbacks.list.reserve(10);
 
-        _init_callback_list(&g_update_callbacks);
-        _init_callback_list(&g_render_callbacks);
-        _init_callback_list(&g_close_callbacks);
-        _init_callback_list(&g_event_listeners);
+        _init_callback_list(g_update_callbacks);
+        _init_callback_list(g_render_callbacks);
+        _init_callback_list(g_close_callbacks);
+        _init_callback_list(g_event_listeners);
 
         _initialize_modules(module_bitmask);
 
@@ -285,72 +284,72 @@ namespace argus {
     }
 
     template<typename T>
-    Index _add_callback(CallbackList<T> *list, T *callback) {
+    Index _add_callback(CallbackList<T> &list, T callback) {
         g_next_index_mutex.lock();
         Index index = g_next_index++;
         g_next_index_mutex.unlock();
 
-        smutex_lock(&list->queue_mutex);
-        list->addition_queue.push({index, *callback});
-        smutex_unlock(&list->queue_mutex);
+        smutex_lock(list.queue_mutex);
+        list.addition_queue.push({index, callback});
+        smutex_unlock(list.queue_mutex);
 
         return index;
     }
 
     template<typename T>
-    void _remove_callback(CallbackList<T> *list, Index index) {
-        smutex_lock(&list->queue_mutex);
-        list->removal_queue.push(index);
-        smutex_unlock(&list->queue_mutex);
+    void _remove_callback(CallbackList<T> &list, const Index index) {
+        smutex_lock(list.queue_mutex);
+        list.removal_queue.push(index);
+        smutex_unlock(list.queue_mutex);
     }
 
-    Index register_update_callback(DeltaCallback callback) {
+    const Index register_update_callback(const DeltaCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
-        return _add_callback(&g_update_callbacks, &callback);
+        return _add_callback(g_update_callbacks, callback);
     }
 
-    void unregister_update_callback(Index id) {
-        _remove_callback(&g_update_callbacks, id);
+    void unregister_update_callback(const Index id) {
+        _remove_callback(g_update_callbacks, id);
     }
 
-    Index register_render_callback(DeltaCallback callback) {
+    const Index register_render_callback(const DeltaCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register render callback before engine initialization.");
-        return _add_callback(&g_render_callbacks, &callback);
+        return _add_callback(g_render_callbacks, callback);
     }
 
-    void unregister_render_callback(Index id) {
-        _remove_callback(&g_render_callbacks, id);
+    void unregister_render_callback(const Index id) {
+        _remove_callback(g_render_callbacks, id);
     }
 
-    Index register_close_callback(NullaryCallback callback) {
+    const Index register_close_callback(const NullaryCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
-        return _add_callback(&g_close_callbacks, &callback);
+        return _add_callback(g_close_callbacks, callback);
     }
 
-    void unregister_close_callback(Index id) {
-        _remove_callback(&g_close_callbacks, id);
+    void unregister_close_callback(const Index id) {
+        _remove_callback(g_close_callbacks, id);
     }
 
-    Index register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data) {
+    const Index register_sdl_event_listener(const SDL_EventFilter filter, const SDLEventCallback callback, void *const data) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
         Index id = g_next_index++;
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
         SDLEventListener listener = {filter, callback, data};
-        return _add_callback(&g_event_listeners, &listener);
+        return _add_callback(g_event_listeners, listener);
     }
 
-    void unregister_sdl_event_listener(Index id) {
-        _remove_callback(&g_event_listeners, id);
+    void unregister_sdl_event_listener(const Index id) {
+        _remove_callback(g_event_listeners, id);
     }
 
-    void start_engine(DeltaCallback game_loop) {
+    void start_engine(const DeltaCallback game_loop) {
         _ARGUS_ASSERT(g_initialized, "Cannot start engine before it is initialized.");
         _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
         register_update_callback(game_loop);
 
-        g_render_thread = thread_create(_render_loop, nullptr);
+        g_render_thread = &thread_create(_render_loop, nullptr);
 
         // pass control over to the game loop
         _game_loop();

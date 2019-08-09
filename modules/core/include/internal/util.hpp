@@ -25,7 +25,7 @@ namespace argus {
     };
 
     template<typename T>
-    inline void remove_from_vector(std::vector<T> &vec, T item) {
+    inline void remove_from_vector(std::vector<T> &vec, const T item) {
         vec.erase(std::remove(vec.begin(), vec.end(), item));
     }
 

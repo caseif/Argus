@@ -48,14 +48,14 @@ namespace argus {
      * This must be called before any other interaction with the engine takes
      * place.
      */
-    void initialize_engine(EngineModules module_bitmask);
+    void initialize_engine(const EngineModules module_bitmask);
 
     /**
      * \brief Starts the engine.
      *
      * \param game_loop The callback representing the main game loop.
      */
-    void start_engine(DeltaCallback game_loop);
+    void start_engine(const DeltaCallback game_loop);
 
     /**
      * \brief Requests that the engine halt execution, performing cleanup as
@@ -72,7 +72,7 @@ namespace argus {
      * Note that this is independent from the target tickrate, which controls
      * how frequently frames are rendered.
      */
-    void set_target_tickrate(unsigned int target_tickrate);
+    void set_target_tickrate(const unsigned int target_tickrate);
 
     /**
      * \brief Sets the target framerate of the engine.
@@ -83,7 +83,7 @@ namespace argus {
      * Note that this is independent from the target tickrate, which controls
      * how often the game logic routine is called.
      */
-    void set_target_framerate(unsigned int target_framerate);
+    void set_target_framerate(const unsigned int target_framerate);
 
     /**
      * \brief Registers a callback for invocation on each game update.
@@ -92,12 +92,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    Index register_update_callback(DeltaCallback update_callback);
+    const Index register_update_callback(const DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    void unregister_update_callback(Index id);
+    void unregister_update_callback(const Index id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
@@ -106,12 +106,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    Index register_render_callback(DeltaCallback update_callback);
+    const Index register_render_callback(const DeltaCallback update_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    void unregister_render_callback(Index id);
+    void unregister_render_callback(const Index id);
 
     /**
      * \brief Registers a callback for invocation when the engine is requested
@@ -121,12 +121,12 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    Index register_close_callback(NullaryCallback close_callback);
+    const Index register_close_callback(const NullaryCallback close_callback);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    void unregister_close_callback(Index id);
+    void unregister_close_callback(const Index id);
 
     /**
      * \brief Registers a listener for particular SDL events.
@@ -137,11 +137,11 @@ namespace argus {
      * \return The ID of the new registration.
      */
     //TODO: abstract away SDL events and implement our own event model
-    Index register_sdl_event_listener(SDL_EventFilter filter, SDLEventCallback callback, void *data);
+    const Index register_sdl_event_listener(const SDL_EventFilter filter, const SDLEventCallback callback, void *const data);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    void unregister_sdl_event_listener(Index id);
+    void unregister_sdl_event_listener(const Index id);
 
 }

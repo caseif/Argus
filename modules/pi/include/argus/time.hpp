@@ -7,13 +7,13 @@ namespace argus {
      *
      * \param ns The number of nanoseconds to sleep for.
      */
-    void sleep_nanos(unsigned long long ns);
+    void sleep_nanos(const unsigned long long ns);
 
     /**
      * \brief Returns the number of microseconds since the Unix epoch.
      *
      * \return The number of microseconds since the Unix epoch.
      */
-    unsigned long long microtime(void);
+    const unsigned long long microtime(void);
 
 }

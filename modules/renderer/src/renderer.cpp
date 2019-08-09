@@ -68,7 +68,7 @@ namespace argus {
         return;
     }
 
-    RenderLayer &Renderer::create_render_layer(int priority) {
+    RenderLayer &Renderer::create_render_layer(const int priority) {
         RenderLayer *layer = new RenderLayer(this);
         render_layers.insert(render_layers.cend(), layer);
         return *layer;

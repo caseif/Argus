@@ -135,27 +135,27 @@ namespace argus {
         public:
             Transform(void);
 
-            Transform(vmml::vec2d translation, double rotation, vmml::vec2d scale);
+            Transform(const vmml::vec2d translation, const double rotation, const vmml::vec2d scale);
 
             ~Transform(void);
 
-            const vmml::vec2d get_translation(void) const;
+            const vmml::vec2d &get_translation(void) const;
 
-            void set_translation(const vmml::vec2d &translation);
+            void set_translation(vmml::vec2d &translation);
 
-            void add_translation(const vmml::vec2d &translation_delta);
+            void add_translation(vmml::vec2d &translation_delta);
             
-            double get_rotation(void) const;
+            const double get_rotation(void) const;
 
-            void set_rotation(double rotation_degrees);
+            void set_rotation(const double rotation_degrees);
 
-            void add_rotation(double rotation_degrees);
+            void add_rotation(const double rotation_degrees);
 
-            const vmml::vec2d get_scale(void) const;
+            const vmml::vec2d &get_scale(void) const;
 
-            void set_scale(const vmml::vec2d &scale);
+            void set_scale(vmml::vec2d &scale);
 
-            void set_parent(const Transform &transform);
+            void set_parent(Transform &transform);
 
             const vmml::mat3d &to_matrix(void) const;
     };
@@ -200,18 +200,18 @@ namespace argus {
         private:
             Renderer *parent_renderer;
 
-            RenderItem *root_item;
+            const RenderItem *root_item;
 
             GLuint framebuffer;
             GLuint gl_texture;
 
             Transform transform;
 
-            RenderLayer(Renderer *parent);
+            RenderLayer(Renderer *const parent);
 
             ~RenderLayer(void) = default;
 
-            void render_to_parent(void) const;
+            void render(void) const;
         
         public:
             /**
@@ -255,7 +255,7 @@ namespace argus {
              * Layers with higher priority will be rendered after (ergo in front
              * of) those with lower priority.
              */
-            RenderLayer &create_render_layer(int priority);
+            RenderLayer &create_render_layer(const int priority);
 
             /**
              * \brief Removes a render layer from this renderer and destroys it.

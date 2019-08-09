@@ -26,19 +26,19 @@ namespace argus {
         }
     }
 
-    const vmml::vec2d Transform::get_translation(void) const {
+    const vmml::vec2d &Transform::get_translation(void) const {
         return translation;
     }
 
-    void Transform::set_translation(const vmml::vec2d &translation) {
+    void Transform::set_translation(vmml::vec2d &translation) {
         this->translation = translation;
     }
 
-    void Transform::add_translation(const vmml::vec2d &translation_delta) {
+    void Transform::add_translation(vmml::vec2d &translation_delta) {
         this->translation += translation_delta;
     }
     
-    double Transform::get_rotation(void) const {
+    const double Transform::get_rotation(void) const {
         return rotation;
     }
 
@@ -50,15 +50,15 @@ namespace argus {
         this->rotation += rotation_degrees;
     }
 
-    const vmml::vec2d Transform::get_scale(void) const {
+    const vmml::vec2d &Transform::get_scale(void) const {
         return scale;
     }
 
-    void Transform::set_scale(const vmml::vec2d &scale) {
+    void Transform::set_scale(vmml::vec2d &scale) {
         this->scale = scale;
     }
 
-    void Transform::set_parent(const Transform &parent) {
+    void Transform::set_parent(Transform &parent) {
         this->parent = new Transform(parent);
     }
 
