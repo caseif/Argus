@@ -254,10 +254,19 @@ namespace argus {
             std::vector<Renderable*> children;
 
             RenderableFactory &renderable_factory;
+
+            bool dirty;
+
+            GLint vbo;
+            GLint vao;
             
             RenderGroup(RenderLayer &parent);
 
-            void render(void) const;
+            void update_buffer(void);
+
+            void add_renderable(Renderable &renderable);
+
+            void remove_renderable(Renderable &renderable);
 
         public:
             void destroy(void);
@@ -268,7 +277,7 @@ namespace argus {
              *
              * \returns This RenderLayer's Renderable factory.
              */
-            RenderableFactory &get_renderable_factory(void);
+            RenderableFactory &get_renderable_factory(void) const;
     };
 
     /**

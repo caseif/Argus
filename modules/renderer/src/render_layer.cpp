@@ -36,7 +36,12 @@ namespace argus {
 
     void RenderLayer::render(void) const {
         parent_renderer->activate_gl_context();
-        root_group.render();
+
+        for (RenderGroup *group : children) {
+            if (group->dirty) {
+                group->update_buffer();
+            }
+        }
     }
 
 }

@@ -16,13 +16,27 @@ namespace argus {
         delete this;
     }
 
-    void RenderGroup::render(void) const {
+    void RenderGroup::update_buffer(void) {
+        //TODO
+
         for (Renderable *const child : this->children) {
             child->render();
         }
+
+        dirty = false;
     }
 
-    RenderableFactory &RenderGroup::get_renderable_factory(void) {
+    void RenderGroup::add_renderable(Renderable &renderable) {
+        children.insert(children.cbegin(), &renderable);
+        dirty = true;
+    }
+
+    void RenderGroup::remove_renderable(Renderable &renderable) {
+        remove_from_vector(children, &renderable);
+        dirty = true;
+    }
+
+    RenderableFactory &RenderGroup::get_renderable_factory(void) const {
         return renderable_factory;
     }
 

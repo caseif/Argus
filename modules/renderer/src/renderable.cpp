@@ -6,10 +6,11 @@ namespace argus {
 
     Renderable::Renderable(RenderGroup &group):
                     parent(group) {
+        parent.add_renderable(*this);
     }
 
     void Renderable::destroy(void) {
-        remove_from_vector(parent.children, this);
+        parent.remove_renderable(*this);
 
         delete this;
     }
