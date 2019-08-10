@@ -1,8 +1,22 @@
+// module core
 #include "internal/util.hpp"
 
+// module renderer
 #include "argus/renderer.hpp"
+#include "internal/glext.hpp"
+
+#include <SDL2/SDL_opengl.h>
 
 namespace argus {
+
+    using glext::glBindBuffer;
+    using glext::glBufferData;
+    using glext::glGenBuffers;
+
+    using glext::glBindVertexArray;
+    using glext::glEnableVertexAttribArray;
+    using glext::glGenVertexArrays;
+    using glext::glVertexAttribPointer;
 
     RenderGroup::RenderGroup(RenderLayer &parent):
             parent(parent),
@@ -17,11 +31,32 @@ namespace argus {
     }
 
     void RenderGroup::update_buffer(void) {
-        //TODO
+        printf("update\n");
+        // init vertex array
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
 
+        // init vertex buffer
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        // compute how many vertices will be in this buffer
+        size_t vertex_count = 0;
         for (Renderable *const child : this->children) {
-            child->render();
+            vertex_count += child->get_vertex_count();
         }
+
+        // allocate a new buffer
+        glBufferData(GL_ARRAY_BUFFER, vertex_count * __VERTEX_LEN_WORDS__ * __VERTEX_WORD_LEN__, nullptr, GL_DYNAMIC_DRAW);
+
+        // render each child to the new buffer
+        size_t offset = 0;
+        for (Renderable *const child : this->children) {
+            child->render(vbo, offset);
+            offset += child->get_vertex_count();
+        }
+
+        //TODO: set attributes
 
         dirty = false;
     }

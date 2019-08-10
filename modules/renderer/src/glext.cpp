@@ -9,17 +9,18 @@
 namespace argus {
 
     namespace glext {
-        void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
         void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+        void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
-        void (*glGenBuffers)(GLsizei n, GLuint *buffers);
         void (*glBindBuffer)(GLenum target, GLuint buffer);
         void (*glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
+        void (*glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        void (*glGenBuffers)(GLsizei n, GLuint *buffers);
 
-        void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        void (*glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
         void (*glBindVertexArray)(GLuint array);
+        void (*glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
         void (*glEnableVertexAttribArray)(GLuint index);
+        void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
         void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
     }
 
@@ -42,6 +43,7 @@ namespace argus {
         _load_gl_ext<>("glGenBuffers", &glext::glGenBuffers);
         _load_gl_ext<>("glBindBuffer", &glext::glBindBuffer);
         _load_gl_ext<>("glBufferData", &glext::glBufferData);
+        _load_gl_ext<>("glBufferSubData", &glext::glBufferSubData);
 
         _load_gl_ext<>("glGenVertexArrays", &glext::glGenVertexArrays);
         _load_gl_ext<>("glDeleteVertexArrays", &glext::glDeleteVertexArrays);

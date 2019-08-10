@@ -14,6 +14,9 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
 
+#define __VERTEX_LEN_WORDS__ 8 // 2 position, 4 color, 2 texcoord
+#define __VERTEX_WORD_LEN__ 4
+
 namespace argus {
 
     using vmml::vec2f;
@@ -74,7 +77,7 @@ namespace argus {
             Window *parent;
             std::vector<Window*> children;
 
-            Renderer *renderer;
+            Renderer &renderer;
 
             Window(void);
             
@@ -180,6 +183,8 @@ namespace argus {
 
             ~Renderer(void);
 
+            void render(const TimeDelta delta);
+
         public:
             /**
              * \brief Destroys this renderer.
@@ -257,8 +262,8 @@ namespace argus {
 
             bool dirty;
 
-            GLint vbo;
-            GLint vao;
+            GLuint vbo;
+            GLuint vao;
             
             RenderGroup(RenderLayer &parent);
 
@@ -297,7 +302,9 @@ namespace argus {
 
             ~Renderable(void) = default;
 
-            virtual void render(void) const = 0;
+            virtual void render(const GLuint vbo, const size_t offset) const = 0;
+
+            virtual const unsigned int get_vertex_count(void) const = 0;
 
         public:
             void destroy(void);
@@ -308,7 +315,7 @@ namespace argus {
         friend class RenderableFactory;
 
         private:
-            void render(void) const override;
+            void render(const GLuint vbo, const size_t offset) const override;
 
             using Renderable::Renderable;
     };
@@ -323,7 +330,9 @@ namespace argus {
 
             RenderableTriangle(RenderGroup &parent_group, vec2f corner_1, vec2f corner_2, vec2f corner_3);
 
-            void render(void) const override;
+            void render(const GLuint vbo, const size_t offset) const override;
+
+            const unsigned int get_vertex_count(void) const override;
     };
 
     class RenderableFactory {

@@ -15,6 +15,8 @@ namespace argus {
             root_group(*new RenderGroup(*this)) {
         this->parent_renderer = parent;
 
+        children.insert(children.cbegin(), &root_group);
+
         parent->activate_gl_context();
 
         // init the framebuffer
@@ -35,10 +37,11 @@ namespace argus {
     }
 
     void RenderLayer::render(void) const {
+        printf("render\n");
         parent_renderer->activate_gl_context();
 
         for (RenderGroup *group : children) {
-            if (group->dirty) {
+            if (group->dirty || true) {
                 group->update_buffer();
             }
         }

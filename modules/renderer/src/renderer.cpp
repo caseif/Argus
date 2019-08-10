@@ -80,6 +80,13 @@ namespace argus {
         return;
     }
 
+    void Renderer::render(const TimeDelta delta) {
+        //TODO: account for priorities
+        for (RenderLayer *layer : render_layers) {
+            layer->render();
+        }
+    }
+
     void Renderer::activate_gl_context(void) const {
         SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window.handle), gl_context);
     }
