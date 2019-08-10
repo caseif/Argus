@@ -11,7 +11,7 @@ namespace argus {
 
     using namespace glext;
 
-    ShaderProgram::ShaderProgram(std::initializer_list<Shader*> shaders):
+    ShaderProgram::ShaderProgram(const std::initializer_list<Shader*> shaders):
             shaders(shaders) {
         built = false;
     }
@@ -19,7 +19,7 @@ namespace argus {
     void ShaderProgram::link(void) {
         gl_program = glCreateProgram();
 
-        // initializer bootstrap shaders
+        // initialize bootstrap shaders
         std::stringstream bootstrap_vert_ss;
         std::stringstream bootstrap_frag_ss;
         bootstrap_vert_ss << "#version 110\n\nint main() {\n";

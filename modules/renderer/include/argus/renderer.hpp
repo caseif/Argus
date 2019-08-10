@@ -92,10 +92,10 @@ namespace argus {
 
         public:
             static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
-                    const int priority, std::initializer_list<std::string> uniform_ids);
+                    const int priority, const std::initializer_list<std::string> uniform_ids);
 
             static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
-                    const int priority, std::initializer_list<std::string> uniform_ids);
+                    const int priority, const std::initializer_list<std::string> uniform_ids);
 
             void destroy(void);
 
@@ -111,12 +111,12 @@ namespace argus {
 
             GLuint gl_program;
             
-            ShaderProgram(std::initializer_list<Shader*> shaders);
+            ShaderProgram(const std::initializer_list<Shader*> shaders);
 
             void link(void);
 
         public:
-            static ShaderProgram &create_program(std::initializer_list<Shader&> shaders);
+            static ShaderProgram &create_program(const std::initializer_list<Shader&> shaders);
 
             void destroy(void);
 

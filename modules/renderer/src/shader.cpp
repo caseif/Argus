@@ -13,7 +13,7 @@ namespace argus {
     using namespace glext;
 
     Shader::Shader(const GLenum type, std::string const &src, std::string const &entry_point, const int priority,
-            std::initializer_list<std::string> uniform_ids):
+            const std::initializer_list<std::string> uniform_ids):
             type(type),
             src(src),
             entry_point(entry_point),
@@ -40,12 +40,12 @@ namespace argus {
     }
             
     Shader &Shader::create_vertex_shader(const std::string src, const std::string entry_point,
-            const int priority, std::initializer_list<std::string> uniform_ids) {
+            const int priority, const std::initializer_list<std::string> uniform_ids) {
         return *new Shader(GL_VERTEX_SHADER, src, entry_point, priority, uniform_ids);
     }
 
     Shader &Shader::create_fragment_shader(const std::string src, const std::string entry_point,
-            const int priority, std::initializer_list<std::string> uniform_ids) {
+            const int priority, const std::initializer_list<std::string> uniform_ids) {
         return *new Shader(GL_FRAGMENT_SHADER, src, entry_point, priority, uniform_ids);
     }
 
