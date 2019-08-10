@@ -16,9 +16,14 @@
 
 namespace argus {
 
+    using vmml::vec2f;
+    using vmml::vec2d;
+    using vmml::mat3d;
+
     // forward declarations for friend declarations
     class Renderer;
     class RenderLayer;
+    class RenderItemFactory;
 
     class Window {
         friend class Renderer;
@@ -128,22 +133,22 @@ namespace argus {
     class Transform {
         private:
             Transform *parent;
-            vmml::vec2d translation;
+            vec2d translation;
             double rotation;
-            vmml::vec2d scale;
+            vec2d scale;
 
         public:
             Transform(void);
 
-            Transform(const vmml::vec2d translation, const double rotation, const vmml::vec2d scale);
+            Transform(const vec2d translation, const double rotation, const vec2d scale);
 
             ~Transform(void);
 
-            const vmml::vec2d &get_translation(void) const;
+            const vec2d &get_translation(void) const;
 
-            void set_translation(vmml::vec2d &translation);
+            void set_translation(vec2d &translation);
 
-            void add_translation(vmml::vec2d &translation_delta);
+            void add_translation(vec2d &translation_delta);
             
             const double get_rotation(void) const;
 
@@ -151,13 +156,13 @@ namespace argus {
 
             void add_rotation(const double rotation_degrees);
 
-            const vmml::vec2d &get_scale(void) const;
+            const vec2d &get_scale(void) const;
 
-            void set_scale(vmml::vec2d &scale);
+            void set_scale(vec2d &scale);
 
             void set_parent(Transform &transform);
 
-            const vmml::mat3d &to_matrix(void) const;
+            const mat3d &to_matrix(void) const;
     };
 
     /**
@@ -170,9 +175,6 @@ namespace argus {
     class RenderItem {
         friend class RenderLayer;
 
-        private:
-            ~RenderItem(void) = default;
-
         protected:
             RenderLayer &layer;
             RenderItem *const parent; // can be null
@@ -180,12 +182,49 @@ namespace argus {
 
             RenderItem(RenderLayer &layer, RenderItem *const parent);
 
+            ~RenderItem(void) = default;
+
             void render_children(void) const;
 
-        public:
-            void render(void) const;
+            virtual void render(void) const = 0;
 
+        public:
             void destroy(void);
+    };
+
+    class RenderNull : RenderItem {
+        friend class RenderLayer;
+        friend class RenderItemFactory;
+
+        private:
+            void render(void) const override;
+
+            using RenderItem::RenderItem;
+    };
+
+    class RenderTriangle : RenderItem {
+        friend class RenderItemFactory;
+
+        private:
+            vec2f corner_1;
+            vec2f corner_2;
+            vec2f corner_3;
+
+            RenderTriangle(RenderLayer &parent_layer, RenderItem *const parent_item, vec2f corner_1, vec2f corner_2, vec2f corner_3);
+
+            void render(void) const override;
+    };
+
+    class RenderItemFactory {
+        friend class RenderLayer;
+
+        private:
+            RenderLayer &parent;
+
+            RenderItemFactory(RenderLayer &parent);
+
+        public:
+            RenderTriangle &create_trangle(vec2d &corner_1, vec2d &corner_2, vec2d &corner_3);
     };
 
     /**
@@ -196,11 +235,14 @@ namespace argus {
      */
     class RenderLayer {
         friend class Renderer;
+        friend class RenderItemFactory;
 
         private:
             Renderer *parent_renderer;
 
-            const RenderItem *root_item;
+            RenderItemFactory &item_factory;
+
+            RenderItem &root_item;
 
             GLuint framebuffer;
             GLuint gl_texture;
@@ -219,6 +261,16 @@ namespace argus {
              * renderer.
              */
             void destroy(void);
+
+            /**
+             * \brief Returns a factory for creating RenderItems attached to
+             * this RenderLayer.
+             *
+             * \returns This RenderLayer's RenderItem factory.
+             */
+            RenderItemFactory &get_render_item_factory(void) {
+                return item_factory;
+            }
     };
 
     class Renderer {

@@ -15,14 +15,12 @@ namespace argus {
         }
     }
 
-    void RenderItem::render(void) const {
-        //TODO
-    }
-
     void RenderItem::destroy(void) {
         if (parent != nullptr) {
             remove_from_vector(parent->children, this);
         }
+
+        delete this;
     }
 
 }
