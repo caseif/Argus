@@ -20,10 +20,47 @@ namespace argus {
     using vmml::vec2d;
     using vmml::mat3d;
 
-    // forward declarations for friend declarations
+    // forward declarations
     class Renderer;
     class RenderLayer;
-    class RenderItemFactory;
+    class RenderGroup;
+    class Renderable;
+    class RenderableFactory;
+
+    class Transform {
+        private:
+            Transform *parent;
+            vec2d translation;
+            double rotation;
+            vec2d scale;
+
+        public:
+            Transform(void);
+
+            Transform(const vec2d translation, const double rotation, const vec2d scale);
+
+            ~Transform(void);
+
+            const vec2d &get_translation(void) const;
+
+            void set_translation(vec2d &translation);
+
+            void add_translation(vec2d &translation_delta);
+            
+            const double get_rotation(void) const;
+
+            void set_rotation(const double rotation_degrees);
+
+            void add_rotation(const double rotation_degrees);
+
+            const vec2d &get_scale(void) const;
+
+            void set_scale(vec2d &scale);
+
+            void set_parent(Transform &transform);
+
+            const mat3d &to_matrix(void) const;
+    };
 
     class Window {
         friend class Renderer;
@@ -130,149 +167,6 @@ namespace argus {
             void activate(void);
     };
 
-    class Transform {
-        private:
-            Transform *parent;
-            vec2d translation;
-            double rotation;
-            vec2d scale;
-
-        public:
-            Transform(void);
-
-            Transform(const vec2d translation, const double rotation, const vec2d scale);
-
-            ~Transform(void);
-
-            const vec2d &get_translation(void) const;
-
-            void set_translation(vec2d &translation);
-
-            void add_translation(vec2d &translation_delta);
-            
-            const double get_rotation(void) const;
-
-            void set_rotation(const double rotation_degrees);
-
-            void add_rotation(const double rotation_degrees);
-
-            const vec2d &get_scale(void) const;
-
-            void set_scale(vec2d &scale);
-
-            void set_parent(Transform &transform);
-
-            const mat3d &to_matrix(void) const;
-    };
-
-    /**
-     * \brief Represents an item to be rendered.
-     *
-     * Each item may have its own rendering properties, as well as a list of
-     * child items. Child items will inherit the transform of their parent,
-     * which is added to their own.
-     */
-    class RenderItem {
-        friend class RenderLayer;
-
-        protected:
-            RenderLayer &layer;
-            RenderItem *const parent; // can be null
-            std::vector<RenderItem*> children;
-
-            RenderItem(RenderLayer &layer, RenderItem *const parent);
-
-            ~RenderItem(void) = default;
-
-            void render_children(void) const;
-
-            virtual void render(void) const = 0;
-
-        public:
-            void destroy(void);
-    };
-
-    class RenderNull : RenderItem {
-        friend class RenderLayer;
-        friend class RenderItemFactory;
-
-        private:
-            void render(void) const override;
-
-            using RenderItem::RenderItem;
-    };
-
-    class RenderTriangle : RenderItem {
-        friend class RenderItemFactory;
-
-        private:
-            vec2f corner_1;
-            vec2f corner_2;
-            vec2f corner_3;
-
-            RenderTriangle(RenderLayer &parent_layer, RenderItem *const parent_item, vec2f corner_1, vec2f corner_2, vec2f corner_3);
-
-            void render(void) const override;
-    };
-
-    class RenderItemFactory {
-        friend class RenderLayer;
-
-        private:
-            RenderLayer &parent;
-
-            RenderItemFactory(RenderLayer &parent);
-
-        public:
-            RenderTriangle &create_trangle(vec2d &corner_1, vec2d &corner_2, vec2d &corner_3);
-    };
-
-    /**
-     * Represents a layer to which geometry may be rendered.
-     *
-     * Render layers will be composited to the screen as multiple ordered
-     * layers when a frame is rendered.
-     */
-    class RenderLayer {
-        friend class Renderer;
-        friend class RenderItemFactory;
-
-        private:
-            Renderer *parent_renderer;
-
-            RenderItemFactory &item_factory;
-
-            RenderItem &root_item;
-
-            GLuint framebuffer;
-            GLuint gl_texture;
-
-            Transform transform;
-
-            RenderLayer(Renderer *const parent);
-
-            ~RenderLayer(void) = default;
-
-            void render(void) const;
-        
-        public:
-            /**
-             * \brief Destroys this RenderLayer and removes it from the parent
-             * renderer.
-             */
-            void destroy(void);
-
-            /**
-             * \brief Returns a factory for creating RenderItems attached to
-             * this RenderLayer.
-             *
-             * \returns This RenderLayer's RenderItem factory.
-             */
-            RenderItemFactory &get_render_item_factory(void) {
-                return item_factory;
-            }
-    };
-
     class Renderer {
         friend class Window;
 
@@ -313,6 +207,126 @@ namespace argus {
              * \brief Removes a render layer from this renderer and destroys it.
              */
             void remove_render_layer(RenderLayer &layer);
+    };
+
+    /**
+     * Represents a layer to which geometry may be rendered.
+     *
+     * Render layers will be composited to the screen as multiple ordered
+     * layers when a frame is rendered.
+     */
+    class RenderLayer {
+        friend class Renderer;
+        friend RenderGroup;
+        friend class RenderableFactory;
+
+        private:
+            Renderer *parent_renderer;
+
+            std::vector<RenderGroup*> children;
+            RenderGroup &root_group;
+
+            GLuint framebuffer;
+            GLuint gl_texture;
+
+            Transform transform;
+
+            RenderLayer(Renderer *const parent);
+
+            ~RenderLayer(void) = default;
+
+            void render(void) const;
+        
+        public:
+            /**
+             * \brief Destroys this RenderLayer and removes it from the parent
+             * renderer.
+             */
+            void destroy(void);
+    };
+
+    class RenderGroup {
+        friend RenderLayer;
+        friend Renderable;
+
+        private:
+            RenderLayer &parent;
+            std::vector<Renderable*> children;
+
+            RenderableFactory &renderable_factory;
+            
+            RenderGroup(RenderLayer &parent);
+
+            void render(void) const;
+
+        public:
+            void destroy(void);
+
+            /**
+             * \brief Returns a factory for creating Renderables attached to
+             * this RenderLayer.
+             *
+             * \returns This RenderLayer's Renderable factory.
+             */
+            RenderableFactory &get_renderable_factory(void);
+    };
+
+    /**
+     * \brief Represents an item to be rendered.
+     *
+     * Each item may have its own rendering properties, as well as a list of
+     * child items. Child items will inherit the transform of their parent,
+     * which is added to their own.
+     */
+    class Renderable {
+        friend class RenderGroup;
+
+        protected:
+            RenderGroup &parent;
+
+            Renderable(RenderGroup &parent);
+
+            ~Renderable(void) = default;
+
+            virtual void render(void) const = 0;
+
+        public:
+            void destroy(void);
+    };
+
+    class RenderNull : Renderable {
+        friend class RenderLayer;
+        friend class RenderableFactory;
+
+        private:
+            void render(void) const override;
+
+            using Renderable::Renderable;
+    };
+
+    class RenderableTriangle : Renderable {
+        friend class RenderableFactory;
+
+        private:
+            vec2f corner_1;
+            vec2f corner_2;
+            vec2f corner_3;
+
+            RenderableTriangle(RenderGroup &parent_group, vec2f corner_1, vec2f corner_2, vec2f corner_3);
+
+            void render(void) const override;
+    };
+
+    class RenderableFactory {
+        friend class RenderGroup;
+
+        private:
+            RenderGroup &parent;
+
+            RenderableFactory(RenderGroup &parent);
+
+        public:
+            RenderableTriangle &create_triangle(vec2d &corner_1, vec2d &corner_2, vec2d &corner_3);
     };
 
 }
