@@ -9,14 +9,7 @@
 
 namespace argus {
 
-    using glext::glBindBuffer;
-    using glext::glBufferData;
-    using glext::glGenBuffers;
-
-    using glext::glBindVertexArray;
-    using glext::glEnableVertexAttribArray;
-    using glext::glGenVertexArrays;
-    using glext::glVertexAttribPointer;
+    using namespace glext;
 
     RenderGroup::RenderGroup(RenderLayer &parent):
             parent(parent),

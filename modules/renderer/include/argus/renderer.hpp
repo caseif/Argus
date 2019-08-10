@@ -8,7 +8,9 @@
 #include "vmmlib/vector.hpp"
 
 #include <functional>
+#include <initializer_list>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -17,6 +19,8 @@
 #define __VERTEX_LEN_WORDS__ 8 // 2 position, 4 color, 2 texcoord
 #define __VERTEX_WORD_LEN__ 4
 
+#define __GL_LOG_MAX_LEN 255
+
 namespace argus {
 
     using vmml::vec2f;
@@ -24,6 +28,8 @@ namespace argus {
     using vmml::mat3d;
 
     // forward declarations
+    class Shader;
+    class ShaderProgram;
     class Renderer;
     class RenderLayer;
     class RenderGroup;
@@ -63,6 +69,60 @@ namespace argus {
             void set_parent(Transform &transform);
 
             const mat3d &to_matrix(void) const;
+    };
+
+    class Shader {
+        friend class ShaderProgram;
+
+        private:
+            const GLenum type;
+            const std::string src;
+            const std::string entry_point;
+            const int priority;
+            const std::initializer_list<std::string> uniform_ids;
+
+            bool built;
+
+            GLuint gl_shader;
+
+            Shader(const GLenum type, std::string const &src, std::string const &entry_point, const int priority,
+                    std::initializer_list<std::string> uniform_ids);
+
+            void compile(void);
+
+        public:
+            static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
+                    const int priority, std::initializer_list<std::string> uniform_ids);
+
+            static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
+                    const int priority, std::initializer_list<std::string> uniform_ids);
+
+            void destroy(void);
+
+            GLuint get_handle(void) const;
+    };
+
+    class ShaderProgram {
+        private:
+            const std::initializer_list<Shader*> shaders;
+            std::unordered_map<std::string, GLint> uniforms;
+
+            bool built;
+
+            GLuint gl_program;
+            
+            ShaderProgram(std::initializer_list<Shader*> shaders);
+
+            void link(void);
+
+        public:
+            static ShaderProgram &create_program(std::initializer_list<Shader&> shaders);
+
+            void destroy(void);
+
+            GLuint get_handle(void) const;
+
+            GLint get_uniform_location(std::string const &uniform_id) const;
     };
 
     class Window {

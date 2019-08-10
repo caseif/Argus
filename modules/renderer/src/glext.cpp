@@ -22,6 +22,20 @@ namespace argus {
         void (*glEnableVertexAttribArray)(GLuint index);
         void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
         void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
+
+        void (*glAttachShader)(GLuint program, GLuint shader);
+        void (*glCompileShader)(GLuint shader);
+        GLuint (*glCreateProgram)(void);
+        GLuint (*glCreateShader)(GLenum shaderType);
+        void (*glDeleteProgram)(GLuint program);
+        void (*glDeleteShader)(GLuint shader);
+        void (*glDetachShader)(GLuint program, GLuint shader);
+        void (*glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+        void (*glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
+        void (*glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+        GLint (*glGetUniformLocation)(GLuint program, const GLchar *name);
+        void (*glLinkProgram)(GLuint program);
+        void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
     }
 
     template <typename FunctionType>
@@ -50,6 +64,20 @@ namespace argus {
         _load_gl_ext<>("glBindVertexArray", &glext::glBindVertexArray);
         _load_gl_ext<>("glEnableVertexAttribArray", &glext::glEnableVertexAttribArray);
         _load_gl_ext<>("glVertexAttribPointer", &glext::glVertexAttribPointer);
+
+        _load_gl_ext<>("glAttachShader", &glext::glAttachShader);
+        _load_gl_ext<>("glCompileShader", &glext::glCompileShader);
+        _load_gl_ext<>("glCreateProgram", &glext::glCreateProgram);
+        _load_gl_ext<>("glCreateShader", &glext::glCreateShader);
+        _load_gl_ext<>("glDeleteProgram", &glext::glDeleteProgram);
+        _load_gl_ext<>("glDeleteShader", &glext::glDeleteShader);
+        _load_gl_ext<>("glDetachShader", &glext::glDetachShader);
+        _load_gl_ext<>("glGetProgramiv", &glext::glGetProgramiv);
+        _load_gl_ext<>("glGetShaderiv", &glext::glGetShaderiv);
+        _load_gl_ext<>("glGetShaderInfoLog", &glext::glGetShaderInfoLog);
+        _load_gl_ext<>("glGetUniformLocation", &glext::glGetUniformLocation);
+        _load_gl_ext<>("glLinkProgram", &glext::glLinkProgram);
+        _load_gl_ext<>("glShaderSource", &glext::glShaderSource);
     }
 
 }
