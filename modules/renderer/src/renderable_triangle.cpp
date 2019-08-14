@@ -1,11 +1,12 @@
 #include "argus/renderer.hpp"
+#include "internal/defines.hpp"
 #include "internal/glext.hpp"
 
 #include "vmmlib/vector.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
-#define __TRIANGLE_VERTICES__ 3
+#define __TRIANGLE_VERTICES 3
 
 namespace argus {
 
@@ -21,12 +22,14 @@ namespace argus {
     }
 
     void RenderableTriangle::render(const GLuint vbo, const size_t offset) const {
-        float buffer_data[__TRIANGLE_VERTICES__ * __VERTEX_LEN_WORDS__ * __VERTEX_WORD_LEN__];
+        float buffer_data[__TRIANGLE_VERTICES * __VERTEX_LEN * __VERTEX_WORD_LEN];
+        //TODO
+
         glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(buffer_data), buffer_data);
     }
 
     const unsigned int RenderableTriangle::get_vertex_count(void) const {
-        return __TRIANGLE_VERTICES__;
+        return __TRIANGLE_VERTICES;
     }
 
 }

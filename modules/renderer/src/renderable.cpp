@@ -9,10 +9,14 @@ namespace argus {
         parent.add_renderable(*this);
     }
 
-    void Renderable::destroy(void) {
+    void Renderable::remove(void) {
         parent.remove_renderable(*this);
 
         delete this;
+    }
+
+    Transform const &Renderable::get_transform(void) const {
+        return transform;
     }
 
 }

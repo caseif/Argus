@@ -17,9 +17,14 @@ project(argus
         VERSION 0.1.0)
 
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
+option(USE_GLES "Use ES profile for OpenGL" OFF)
 
 if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested...")
+endif()
+
+if (${USE_GLES})
+  message("Using GL ES profile as requested...")
 endif()
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
@@ -73,6 +78,10 @@ function(setup_submodule)
   
   if(${USE_PTHREADS})
     add_definitions("-DUSE_PTHREADS")
+  endif()
+
+  if (${USE_GLES})
+    add_definitions("-DUSE_GLES")
   endif()
 
   add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})

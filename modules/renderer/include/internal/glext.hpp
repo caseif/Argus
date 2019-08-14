@@ -20,6 +20,7 @@ namespace argus {
         extern void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
 
         extern void (*glAttachShader)(GLuint program, GLuint shader);
+        extern void (*glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
         extern void (*glCompileShader)(GLuint shader);
         extern GLuint (*glCreateProgram)(void);
         extern GLuint (*glCreateShader)(GLenum shaderType);
@@ -32,6 +33,8 @@ namespace argus {
         extern GLint (*glGetUniformLocation)(GLuint program, const GLchar *name);
         extern void (*glLinkProgram)(GLuint program);
         extern void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+        extern void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+        extern void (*glUseProgram)(GLuint program);
 
     }
 

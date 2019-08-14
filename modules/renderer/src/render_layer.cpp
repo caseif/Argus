@@ -36,15 +36,16 @@ namespace argus {
         delete this;
     }
 
-    void RenderLayer::render(void) const {
-        printf("render\n");
+    void RenderLayer::render(void) {
         parent_renderer->activate_gl_context();
 
         for (RenderGroup *group : children) {
-            if (group->dirty || true) {
+            if (group->dirty_children) {
                 group->update_buffer();
             }
         }
+
+        transform.clean();
     }
 
 }

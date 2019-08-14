@@ -16,18 +16,14 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
 
-#define __VERTEX_LEN_WORDS__ 8 // 2 position, 4 color, 2 texcoord
-#define __VERTEX_WORD_LEN__ 4
-
-#define __GL_LOG_MAX_LEN 255
-
 namespace argus {
 
     using vmml::vec2f;
     using vmml::vec2d;
-    using vmml::mat3d;
+    using vmml::mat4f;
 
     // forward declarations
+    class Transform;
     class Shader;
     class ShaderProgram;
     class Renderer;
@@ -35,6 +31,7 @@ namespace argus {
     class RenderGroup;
     class Renderable;
     class RenderableFactory;
+    class RenderableTriangle;
 
     class Transform {
         private:
@@ -43,12 +40,16 @@ namespace argus {
             double rotation;
             vec2d scale;
 
+            bool dirty;
+
         public:
             Transform(void);
 
             Transform(const vec2d translation, const double rotation, const vec2d scale);
 
             ~Transform(void);
+
+            Transform operator +(const Transform rhs);
 
             const vec2d &get_translation(void) const;
 
@@ -68,7 +69,11 @@ namespace argus {
 
             void set_parent(Transform &transform);
 
-            const mat3d &to_matrix(void) const;
+            const mat4f &to_matrix(void) const;
+
+            const bool is_dirty(void) const;
+
+            void clean(void);
     };
 
     class Shader {
@@ -78,47 +83,43 @@ namespace argus {
             const GLenum type;
             const std::string src;
             const std::string entry_point;
-            const int priority;
             const std::initializer_list<std::string> uniform_ids;
 
-            bool built;
-
-            GLuint gl_shader;
-
-            Shader(const GLenum type, std::string const &src, std::string const &entry_point, const int priority,
+            Shader(const GLenum type, std::string const &src, std::string const &entry_point,
                     std::initializer_list<std::string> uniform_ids);
-
-            void compile(void);
 
         public:
             static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
-                    const int priority, const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> uniform_ids);
+
+            static Shader create_vertex_shader_stack(const std::string src, const std::string entry_point,
+                    const std::initializer_list<std::string> uniform_ids);
 
             static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
-                    const int priority, const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> uniform_ids);
 
-            void destroy(void);
-
-            GLuint get_handle(void) const;
+            static Shader create_fragment_shader_stack(const std::string src, const std::string entry_point,
+                    const std::initializer_list<std::string> uniform_ids);
     };
 
     class ShaderProgram {
         private:
-            const std::initializer_list<Shader*> shaders;
+            std::vector<Shader*> shaders;
+            std::vector<GLint> shader_handles;
             std::unordered_map<std::string, GLint> uniforms;
 
             bool built;
 
             GLuint gl_program;
-            
-            ShaderProgram(const std::initializer_list<Shader*> shaders);
 
             void link(void);
 
         public:
-            static ShaderProgram &create_program(const std::initializer_list<Shader&> shaders);
+            ShaderProgram(const std::vector<Shader*> &shaders);
 
-            void destroy(void);
+            void delete_program(void);
+
+            void use_program(void);
 
             GLuint get_handle(void) const;
 
@@ -291,16 +292,21 @@ namespace argus {
             std::vector<RenderGroup*> children;
             RenderGroup &root_group;
 
+            Transform transform;
+
+            std::vector<Shader*> shaders;
+
+            bool dirty_transform;
+            bool dirty_shaders;
+
             GLuint framebuffer;
             GLuint gl_texture;
-
-            Transform transform;
 
             RenderLayer(Renderer *const parent);
 
             ~RenderLayer(void) = default;
 
-            void render(void) const;
+            void render(void);
         
         public:
             /**
@@ -308,6 +314,10 @@ namespace argus {
              * renderer.
              */
             void destroy(void);
+
+            void add_shader(Shader &shader);
+
+            void remove_shader(Shader &shader);
     };
 
     class RenderGroup {
@@ -318,16 +328,29 @@ namespace argus {
             RenderLayer &parent;
             std::vector<Renderable*> children;
 
+            Transform transform;
+
+            std::vector<Shader*> shaders;
+
             RenderableFactory &renderable_factory;
 
-            bool dirty;
+            size_t vertex_count;
 
+            bool dirty_transform;
+            bool dirty_children;
+            bool dirty_shaders;
+
+            ShaderProgram shader_program;
             GLuint vbo;
             GLuint vao;
             
             RenderGroup(RenderLayer &parent);
 
             void update_buffer(void);
+
+            void refresh_shaders(void);
+
+            void draw(void);
 
             void add_renderable(Renderable &renderable);
 
@@ -336,6 +359,8 @@ namespace argus {
         public:
             void destroy(void);
 
+            Transform const &get_transform(void) const;
+
             /**
              * \brief Returns a factory for creating Renderables attached to
              * this RenderLayer.
@@ -343,6 +368,10 @@ namespace argus {
              * \returns This RenderLayer's Renderable factory.
              */
             RenderableFactory &get_renderable_factory(void) const;
+
+            void add_shader(Shader &shader);
+
+            void remove_shader(Shader &shader);
     };
 
     /**
@@ -358,6 +387,8 @@ namespace argus {
         protected:
             RenderGroup &parent;
 
+            Transform transform;
+
             Renderable(RenderGroup &parent);
 
             ~Renderable(void) = default;
@@ -367,17 +398,9 @@ namespace argus {
             virtual const unsigned int get_vertex_count(void) const = 0;
 
         public:
-            void destroy(void);
-    };
+            void remove(void);
 
-    class RenderNull : Renderable {
-        friend class RenderLayer;
-        friend class RenderableFactory;
-
-        private:
-            void render(const GLuint vbo, const size_t offset) const override;
-
-            using Renderable::Renderable;
+            Transform const &get_transform(void) const;
     };
 
     class RenderableTriangle : Renderable {

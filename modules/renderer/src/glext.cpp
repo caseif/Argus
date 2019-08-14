@@ -24,6 +24,7 @@ namespace argus {
         void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
 
         void (*glAttachShader)(GLuint program, GLuint shader);
+        void (*glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
         void (*glCompileShader)(GLuint shader);
         GLuint (*glCreateProgram)(void);
         GLuint (*glCreateShader)(GLenum shaderType);
@@ -36,6 +37,8 @@ namespace argus {
         GLint (*glGetUniformLocation)(GLuint program, const GLchar *name);
         void (*glLinkProgram)(GLuint program);
         void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+        void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+        void (*glUseProgram)(GLuint program);
     }
 
     template <typename FunctionType>
@@ -66,6 +69,7 @@ namespace argus {
         _load_gl_ext<>("glVertexAttribPointer", &glext::glVertexAttribPointer);
 
         _load_gl_ext<>("glAttachShader", &glext::glAttachShader);
+        _load_gl_ext<>("glBindAttribLocation", &glext::glBindAttribLocation);
         _load_gl_ext<>("glCompileShader", &glext::glCompileShader);
         _load_gl_ext<>("glCreateProgram", &glext::glCreateProgram);
         _load_gl_ext<>("glCreateShader", &glext::glCreateShader);
@@ -78,6 +82,8 @@ namespace argus {
         _load_gl_ext<>("glGetUniformLocation", &glext::glGetUniformLocation);
         _load_gl_ext<>("glLinkProgram", &glext::glLinkProgram);
         _load_gl_ext<>("glShaderSource", &glext::glShaderSource);
+        _load_gl_ext<>("glUniformMatrix4fv", &glext::glUniformMatrix4fv);
+        _load_gl_ext<>("glUseProgram", &glext::glUseProgram);
     }
 
 }
