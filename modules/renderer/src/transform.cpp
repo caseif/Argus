@@ -10,7 +10,6 @@ namespace argus {
         translation = {0, 0};
         rotation = 0;
         scale = {0, 0};
-        parent = nullptr;
     }
 
     Transform::Transform(vec2d const &translation, const double rotation, vec2d const &scale) {
@@ -19,14 +18,8 @@ namespace argus {
         this->scale = scale;
     }
 
-    Transform::~Transform(void) {
-        if (parent != nullptr) {
-            free(parent);
-        }
-    }
-
     Transform Transform::operator +(const Transform rhs) {
-        return *new Transform(
+        return Transform(
                 this->translation + rhs.translation,
                 this->rotation + rhs.rotation,
                 this->scale * rhs.scale
@@ -67,11 +60,6 @@ namespace argus {
 
     void Transform::set_scale(vec2d const &scale) {
         this->scale = scale;
-        this->dirty = true;
-    }
-
-    void Transform::set_parent(Transform &parent) {
-        this->parent = new Transform(parent);
         this->dirty = true;
     }
 

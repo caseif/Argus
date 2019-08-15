@@ -31,7 +31,7 @@ namespace argus {
     }
 
     Window::Window(void):
-            renderer(*new Renderer(*this)) {
+            renderer(Renderer(*this)) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         handle = SDL_CreateWindow("ArgusGame",
@@ -74,11 +74,11 @@ namespace argus {
 
         remove_from_vector(g_windows, this);
 
-        delete this;
-
         if (--g_window_count == 0) {
             stop_engine();
         }
+
+        delete this;
 
         return;
     }
@@ -100,7 +100,7 @@ namespace argus {
         remove_from_vector(children, &child);
     }
 
-    Renderer &Window::get_renderer(void) const {
+    Renderer &Window::get_renderer(void) {
         return renderer;
     }
 

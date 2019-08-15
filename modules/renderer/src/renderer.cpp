@@ -93,7 +93,6 @@ namespace argus {
     void Renderer::destroy(void) {
         SDL_GL_DeleteContext(gl_context);
 
-        delete this;
         return;
     }
 
@@ -104,8 +103,11 @@ namespace argus {
     }
 
     void Renderer::remove_render_layer(RenderLayer &render_layer) {
+        _ARGUS_ASSERT(render_layer.parent_renderer == this, "remove_render_layer called on RenderLayer with different parent");
+
         remove_from_vector(render_layers, &render_layer);
         delete &render_layer;
+
         return;
     }
 

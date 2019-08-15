@@ -26,6 +26,7 @@ namespace argus {
     class Transform;
     class Shader;
     class ShaderProgram;
+    class Window;
     class Renderer;
     class RenderLayer;
     class RenderGroup;
@@ -35,7 +36,6 @@ namespace argus {
 
     class Transform {
         private:
-            Transform *parent;
             vec2d translation;
             double rotation;
             vec2d scale;
@@ -46,8 +46,6 @@ namespace argus {
             Transform(void);
 
             Transform(vec2d const &translation, const double rotation, vec2d const &scale);
-
-            ~Transform(void);
 
             Transform operator +(const Transform rhs);
 
@@ -66,8 +64,6 @@ namespace argus {
             vec2d const &get_scale(void) const;
 
             void set_scale(vec2d const &scale);
-
-            void set_parent(Transform &transform);
 
             mat4f const &to_matrix(void) const;
 
@@ -126,6 +122,50 @@ namespace argus {
             GLint get_uniform_location(std::string const &uniform_id) const;
     };
 
+    class Renderer {
+        friend class Window;
+
+        private:
+            Window &window;
+            SDL_GLContext gl_context;
+
+            std::vector<RenderLayer*> render_layers;
+
+            Renderer(Window &window);
+
+            ~Renderer(void);
+
+            void render(const TimeDelta delta);
+
+        public:
+            /**
+             * \brief Destroys this renderer.
+             *
+             * Warning: This method destroys the Renderer object. No other
+             * methods should be invoked upon it after calling destroy().
+             */
+            void destroy(void);
+
+            /**
+             * Makes this Renderer's GL context current, such that future GL
+             * calls will apply to it.
+             */
+            void activate_gl_context(void) const;
+
+            /**
+             * \brief Creates a new render layer with the given priority.
+             *
+             * Layers with higher priority will be rendered after (ergo in front
+             * of) those with lower priority.
+             */
+            RenderLayer &create_render_layer(const int priority);
+
+            /**
+             * \brief Removes a render layer from this renderer and destroys it.
+             */
+            void remove_render_layer(RenderLayer &layer);
+    };
+
     class Window {
         friend class Renderer;
 
@@ -138,7 +178,7 @@ namespace argus {
             Window *parent;
             std::vector<Window*> children;
 
-            Renderer &renderer;
+            Renderer renderer;
 
             Window(void);
             
@@ -182,7 +222,7 @@ namespace argus {
              *
              * \return The Window's Renderer.
              */
-            Renderer &get_renderer(void) const;
+            Renderer &get_renderer(void);
 
             /**
              * Sets the window title.
@@ -231,102 +271,22 @@ namespace argus {
             void activate(void);
     };
 
-    class Renderer {
-        friend class Window;
+    class RenderableFactory {
+        friend class RenderGroup;
 
         private:
-            Window &window;
-            SDL_GLContext gl_context;
+            RenderGroup &parent;
 
-            std::vector<RenderLayer*> render_layers;
-
-            Renderer(Window &window);
-
-            ~Renderer(void);
-
-            void render(const TimeDelta delta);
+            RenderableFactory(RenderGroup &parent);
 
         public:
-            /**
-             * \brief Destroys this renderer.
-             *
-             * Warning: This method destroys the Renderer object. No other
-             * methods should be invoked upon it after calling destroy().
-             */
-            void destroy(void);
-
-            /**
-             * Makes this Renderer's GL context current, such that future GL
-             * calls will apply to it.
-             */
-            void activate_gl_context(void) const;
-
-            /**
-             * \brief Creates a new render layer with the given priority.
-             *
-             * Layers with higher priority will be rendered after (ergo in front
-             * of) those with lower priority.
-             */
-            RenderLayer &create_render_layer(const int priority);
-
-            /**
-             * \brief Removes a render layer from this renderer and destroys it.
-             */
-            void remove_render_layer(RenderLayer &layer);
-    };
-
-    /**
-     * Represents a layer to which geometry may be rendered.
-     *
-     * Render layers will be composited to the screen as multiple ordered
-     * layers when a frame is rendered.
-     */
-    class RenderLayer {
-        friend class Renderer;
-        friend RenderGroup;
-        friend class RenderableFactory;
-
-        private:
-            Renderer *parent_renderer;
-
-            std::vector<RenderGroup*> children;
-            RenderGroup &root_group;
-
-            Transform transform;
-
-            std::vector<const Shader*> shaders;
-
-            bool dirty_transform;
-            bool dirty_shaders;
-
-            GLuint framebuffer;
-            GLuint gl_texture;
-
-            RenderLayer(Renderer *const parent);
-
-            ~RenderLayer(void) = default;
-
-            void render(void);
-        
-        public:
-            /**
-             * \brief Destroys this RenderLayer and removes it from the parent
-             * renderer.
-             */
-            void destroy(void);
-
-            Transform &get_transform(void);
-
-            RenderGroup &create_render_group(const int priority);
-
-            void add_shader(Shader const &shader);
-
-            void remove_shader(Shader const &shader);
+            RenderableTriangle &create_triangle(vec2d const &corner_1, vec2d const &corner_2, vec2d const &corner_3) const;
     };
 
     class RenderGroup {
-        friend RenderLayer;
         friend Renderable;
+        friend RenderLayer;
+        friend RenderableFactory;
 
         private:
             RenderLayer &parent;
@@ -336,7 +296,7 @@ namespace argus {
 
             std::vector<const Shader*> shaders;
 
-            RenderableFactory &renderable_factory;
+            RenderableFactory renderable_factory;
 
             size_t vertex_count;
 
@@ -371,7 +331,59 @@ namespace argus {
              *
              * \returns This RenderLayer's Renderable factory.
              */
-            RenderableFactory &get_renderable_factory(void) const;
+            RenderableFactory &get_renderable_factory(void);
+
+            void add_shader(Shader const &shader);
+
+            void remove_shader(Shader const &shader);
+    };
+
+    /**
+     * Represents a layer to which geometry may be rendered.
+     *
+     * Render layers will be composited to the screen as multiple ordered
+     * layers when a frame is rendered.
+     */
+    class RenderLayer {
+        friend class Renderer;
+        friend class RenderGroup;
+        friend class RenderableFactory;
+
+        private:
+            Renderer *parent_renderer;
+
+            std::vector<RenderGroup*> children;
+
+            std::vector<const Shader*> shaders;
+
+            RenderGroup root_group;
+
+            Transform transform;
+
+            bool dirty_transform;
+            bool dirty_shaders;
+
+            GLuint framebuffer;
+            GLuint gl_texture;
+
+            RenderLayer(Renderer *const parent);
+
+            ~RenderLayer(void) = default;
+
+            void render(void);
+
+            void remove_group(RenderGroup &group);
+        
+        public:
+            /**
+             * \brief Destroys this RenderLayer and removes it from the parent
+             * renderer.
+             */
+            void destroy(void);
+
+            Transform &get_transform(void);
+
+            RenderGroup &create_render_group(const int priority);
 
             void add_shader(Shader const &shader);
 
@@ -420,18 +432,6 @@ namespace argus {
             void render(const GLuint vbo, const size_t offset) const override;
 
             const unsigned int get_vertex_count(void) const override;
-    };
-
-    class RenderableFactory {
-        friend class RenderGroup;
-
-        private:
-            RenderGroup &parent;
-
-            RenderableFactory(RenderGroup &parent);
-
-        public:
-            RenderableTriangle &create_triangle(vec2d const &corner_1, vec2d const &corner_2, vec2d const &corner_3) const;
     };
 
 }

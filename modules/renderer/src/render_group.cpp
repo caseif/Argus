@@ -14,7 +14,7 @@ namespace argus {
 
     extern Shader g_group_transform_shader;
 
-    static std::vector<const Shader*> _generate_initial_shaders(void) {
+    static std::vector<const Shader*> _generate_initial_group_shaders(void) {
         std::vector<const Shader*> shaders;
         shaders.insert(shaders.cbegin(), &g_group_transform_shader);
         return shaders;
@@ -22,22 +22,28 @@ namespace argus {
 
     static ShaderProgram _generate_iniital_program(std::vector<const Shader*> &parent_shaders, std::vector<const Shader*> &self_shaders) {
         std::vector<const Shader*> final_shaders;
-        final_shaders.insert(final_shaders.cbegin(), parent_shaders.cbegin(), parent_shaders.cend());
-        final_shaders.insert(final_shaders.cbegin(), self_shaders.cbegin(), self_shaders.cend());
+        if (parent_shaders.size() > 0) {
+            final_shaders.insert(final_shaders.cbegin(), parent_shaders.cbegin(), parent_shaders.cend());
+        }
+        if (self_shaders.size() > 0) {
+            final_shaders.insert(final_shaders.cbegin(), self_shaders.cbegin(), self_shaders.cend());
+        }
         return ShaderProgram(final_shaders);
     }
 
     RenderGroup::RenderGroup(RenderLayer &parent):
             parent(parent),
-            renderable_factory(*new RenderableFactory(*this)),
-            shaders(_generate_initial_shaders()),
+            renderable_factory(RenderableFactory(*this)),
+            shaders(_generate_initial_group_shaders()),
             shader_program(_generate_iniital_program(parent.shaders, shaders)) {
     }
 
     void RenderGroup::destroy(void) {
-        remove_from_vector(parent.children, this);
+        if (&parent.root_group == this) {
+            _ARGUS_FATAL("Cannot destroy root RenderGroup");
+        }
 
-        delete this;
+        parent.remove_group(*this);
     }
 
     Transform &RenderGroup::get_transform(void) {
@@ -136,11 +142,14 @@ namespace argus {
     }
 
     void RenderGroup::remove_renderable(Renderable &renderable) {
+        _ARGUS_ASSERT(&renderable.parent == this, "remove_renderable was passed Renderable with wrong parent");
+
         remove_from_vector(children, &renderable);
+        delete &renderable;
         dirty_children = true;
     }
 
-    RenderableFactory &RenderGroup::get_renderable_factory(void) const {
+    RenderableFactory &RenderGroup::get_renderable_factory(void) {
         return renderable_factory;
     }
 

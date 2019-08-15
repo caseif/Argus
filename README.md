@@ -1,6 +1,6 @@
 # Argus Game Engine
 
-Argus is a 2D game engine written in C++ and built on OpenGL and SDL 2.
+Argus is a 2D game engine written in C++11 and built on OpenGL and SDL 2.
 
 ### Features
 

@@ -12,8 +12,17 @@ namespace argus {
     using glext::glGenFramebuffers;
     using glext::glFramebufferTexture;
 
+    extern Shader g_layer_transform_shader;
+
+    static std::vector<const Shader*> _generate_initial_layer_shaders(void) {
+        std::vector<const Shader*> shaders;
+        shaders.insert(shaders.cbegin(), &g_layer_transform_shader);
+        return shaders;
+    }
+
     RenderLayer::RenderLayer(Renderer *const parent):
-            root_group(*new RenderGroup(*this)) {
+            shaders(_generate_initial_layer_shaders()),
+            root_group(RenderGroup(*this)) {
         this->parent_renderer = parent;
 
         children.insert(children.cbegin(), &root_group);
@@ -34,6 +43,14 @@ namespace argus {
 
     void RenderLayer::destroy(void) {
         parent_renderer->remove_render_layer(*this);
+        delete this;
+    }
+
+    void RenderLayer::remove_group(RenderGroup &group) {
+        _ARGUS_ASSERT(&group.parent == this, "remove_group() passed group with wrong parent");
+
+        remove_from_vector(children, &group);
+
         delete this;
     }
 
