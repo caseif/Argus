@@ -1,4 +1,5 @@
-#define GL_EXT
+// module core
+#include "internal/util.hpp"
 
 // module renderer
 #include "argus/renderer.hpp"
@@ -34,6 +35,24 @@ namespace argus {
     void RenderLayer::destroy(void) {
         parent_renderer->remove_render_layer(*this);
         delete this;
+    }
+
+    Transform &RenderLayer::get_transform(void) {
+        return transform;
+    }
+
+    RenderGroup &RenderLayer::create_render_group(const int priority) {
+        RenderGroup *group = new RenderGroup(*this);
+        children.insert(children.cbegin(), group);
+        return *group;
+    }
+
+    void RenderLayer::add_shader(Shader const &shader) {
+        shaders.insert(shaders.cbegin(), &shader);
+    }
+
+    void RenderLayer::remove_shader(Shader const &shader) {
+        remove_from_vector(shaders, &shader);
     }
 
     void RenderLayer::render(void) {

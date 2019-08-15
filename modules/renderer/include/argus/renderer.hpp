@@ -45,17 +45,17 @@ namespace argus {
         public:
             Transform(void);
 
-            Transform(const vec2d translation, const double rotation, const vec2d scale);
+            Transform(vec2d const &translation, const double rotation, vec2d const &scale);
 
             ~Transform(void);
 
             Transform operator +(const Transform rhs);
 
-            const vec2d &get_translation(void) const;
+            vec2d const &get_translation(void) const;
 
-            void set_translation(vec2d &translation);
+            void set_translation(vec2d const &translation);
 
-            void add_translation(vec2d &translation_delta);
+            void add_translation(vec2d const &translation_delta);
             
             const double get_rotation(void) const;
 
@@ -63,13 +63,13 @@ namespace argus {
 
             void add_rotation(const double rotation_degrees);
 
-            const vec2d &get_scale(void) const;
+            vec2d const &get_scale(void) const;
 
-            void set_scale(vec2d &scale);
+            void set_scale(vec2d const &scale);
 
             void set_parent(Transform &transform);
 
-            const mat4f &to_matrix(void) const;
+            mat4f const &to_matrix(void) const;
 
             const bool is_dirty(void) const;
 
@@ -104,7 +104,7 @@ namespace argus {
 
     class ShaderProgram {
         private:
-            std::vector<Shader*> shaders;
+            std::vector<const Shader*> shaders;
             std::vector<GLint> shader_handles;
             std::unordered_map<std::string, GLint> uniforms;
 
@@ -115,7 +115,7 @@ namespace argus {
             void link(void);
 
         public:
-            ShaderProgram(const std::vector<Shader*> &shaders);
+            ShaderProgram(const std::vector<const Shader*> &shaders);
 
             void delete_program(void);
 
@@ -294,7 +294,7 @@ namespace argus {
 
             Transform transform;
 
-            std::vector<Shader*> shaders;
+            std::vector<const Shader*> shaders;
 
             bool dirty_transform;
             bool dirty_shaders;
@@ -315,9 +315,13 @@ namespace argus {
              */
             void destroy(void);
 
-            void add_shader(Shader &shader);
+            Transform &get_transform(void);
 
-            void remove_shader(Shader &shader);
+            RenderGroup &create_render_group(const int priority);
+
+            void add_shader(Shader const &shader);
+
+            void remove_shader(Shader const &shader);
     };
 
     class RenderGroup {
@@ -330,7 +334,7 @@ namespace argus {
 
             Transform transform;
 
-            std::vector<Shader*> shaders;
+            std::vector<const Shader*> shaders;
 
             RenderableFactory &renderable_factory;
 
@@ -359,7 +363,7 @@ namespace argus {
         public:
             void destroy(void);
 
-            Transform const &get_transform(void) const;
+            Transform &get_transform(void);
 
             /**
              * \brief Returns a factory for creating Renderables attached to
@@ -369,9 +373,9 @@ namespace argus {
              */
             RenderableFactory &get_renderable_factory(void) const;
 
-            void add_shader(Shader &shader);
+            void add_shader(Shader const &shader);
 
-            void remove_shader(Shader &shader);
+            void remove_shader(Shader const &shader);
     };
 
     /**
@@ -407,11 +411,11 @@ namespace argus {
         friend class RenderableFactory;
 
         private:
-            vec2f corner_1;
-            vec2f corner_2;
-            vec2f corner_3;
+            const vec2f corner_1;
+            const vec2f corner_2;
+            const vec2f corner_3;
 
-            RenderableTriangle(RenderGroup &parent_group, vec2f corner_1, vec2f corner_2, vec2f corner_3);
+            RenderableTriangle(RenderGroup &parent_group, vec2f const &corner_1, vec2f const &corner_2, vec2f const &corner_3);
 
             void render(const GLuint vbo, const size_t offset) const override;
 
@@ -427,7 +431,7 @@ namespace argus {
             RenderableFactory(RenderGroup &parent);
 
         public:
-            RenderableTriangle &create_triangle(vec2d &corner_1, vec2d &corner_2, vec2d &corner_3);
+            RenderableTriangle &create_triangle(vec2d const &corner_1, vec2d const &corner_2, vec2d const &corner_3) const;
     };
 
 }

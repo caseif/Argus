@@ -14,14 +14,14 @@ namespace argus {
 
     extern Shader g_group_transform_shader;
 
-    static std::vector<Shader*> _generate_initial_shaders(void) {
-        std::vector<Shader*> shaders;
+    static std::vector<const Shader*> _generate_initial_shaders(void) {
+        std::vector<const Shader*> shaders;
         shaders.insert(shaders.cbegin(), &g_group_transform_shader);
         return shaders;
     }
 
-    static ShaderProgram _generate_iniital_program(std::vector<Shader*> &parent_shaders, std::vector<Shader*> &self_shaders) {
-        std::vector<Shader*> final_shaders;
+    static ShaderProgram _generate_iniital_program(std::vector<const Shader*> &parent_shaders, std::vector<const Shader*> &self_shaders) {
+        std::vector<const Shader*> final_shaders;
         final_shaders.insert(final_shaders.cbegin(), parent_shaders.cbegin(), parent_shaders.cend());
         final_shaders.insert(final_shaders.cbegin(), self_shaders.cbegin(), self_shaders.cend());
         return ShaderProgram(final_shaders);
@@ -40,17 +40,21 @@ namespace argus {
         delete this;
     }
 
-    Transform const &RenderGroup::get_transform(void) const {
+    Transform &RenderGroup::get_transform(void) {
         return transform;
     }
 
     void RenderGroup::update_buffer(void) {
         // if the children list is dirty, we'll just reinitialize the buffer entirely
         if (dirty_children) {
+            glDeleteVertexArrays(1, &vao);
+
             // init vertex array
             glGenVertexArrays(1, &vao);
+        }
             glBindVertexArray(vao);
 
+        if (dirty_children) {
             // init vertex buffer
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -94,7 +98,7 @@ namespace argus {
         if (parent.dirty_shaders || dirty_shaders) {
             shader_program.delete_program();
 
-            std::vector<Shader*> new_shaders;
+            std::vector<const Shader*> new_shaders;
             if (parent.dirty_shaders) {
                 new_shaders.insert(new_shaders.end(), parent.shaders.begin(), parent.shaders.end());
             }

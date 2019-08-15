@@ -1,20 +1,19 @@
 // module renderer
 #include "argus/renderer.hpp"
 
-#define VMMLIB_OLD_TYPEDEFS
-#include "vmmlib/matrix.hpp"
-#include "vmmlib/vector.hpp"
-
 namespace argus {
 
+    using vmml::vec2d;
+    using vmml::mat4f;
+
     Transform::Transform(void) {
-        translation = *new vmml::vec2d(0, 0);
+        translation = {0, 0};
         rotation = 0;
-        scale = *new vmml::vec2d(0, 0);
+        scale = {0, 0};
         parent = nullptr;
     }
 
-    Transform::Transform(vmml::vec2d translation, double rotation, vmml::vec2d scale) {
+    Transform::Transform(vec2d const &translation, const double rotation, vec2d const &scale) {
         this->translation = translation;
         this->rotation = rotation;
         this->scale = scale;
@@ -34,16 +33,16 @@ namespace argus {
         );
     }
 
-    const vmml::vec2d &Transform::get_translation(void) const {
+    vec2d const &Transform::get_translation(void) const {
         return translation;
     }
 
-    void Transform::set_translation(vmml::vec2d &translation) {
+    void Transform::set_translation(vec2d const &translation) {
         this->translation = translation;
         this->dirty = true;
     }
 
-    void Transform::add_translation(vmml::vec2d &translation_delta) {
+    void Transform::add_translation(vec2d const &translation_delta) {
         this->translation += translation_delta;
         this->dirty = true;
     }
@@ -52,21 +51,21 @@ namespace argus {
         return rotation;
     }
 
-    void Transform::set_rotation(double rotation_degrees) {
+    void Transform::set_rotation(const double rotation_degrees) {
         this->rotation = rotation_degrees;
         this->dirty = true;
     }
 
-    void Transform::add_rotation(double rotation_degrees) {
+    void Transform::add_rotation(const double rotation_degrees) {
         this->rotation += rotation_degrees;
         this->dirty = true;
     }
 
-    const vmml::vec2d &Transform::get_scale(void) const {
+    vec2d const &Transform::get_scale(void) const {
         return scale;
     }
 
-    void Transform::set_scale(vmml::vec2d &scale) {
+    void Transform::set_scale(vec2d const &scale) {
         this->scale = scale;
         this->dirty = true;
     }
@@ -76,7 +75,7 @@ namespace argus {
         this->dirty = true;
     }
 
-    const vmml::mat4f &Transform::to_matrix(void) const {
+    mat4f const &Transform::to_matrix(void) const {
         //TODO
     }
 

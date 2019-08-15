@@ -5,6 +5,9 @@
 namespace argus {
 
     namespace glext {
+        typedef void (APIENTRY *DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+            const GLchar *message, void *userParam);
+
         extern void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
         extern void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
@@ -36,6 +39,7 @@ namespace argus {
         extern void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
         extern void (*glUseProgram)(GLuint program);
 
+        extern void (*glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
     }
 
     void load_opengl_extensions(void);

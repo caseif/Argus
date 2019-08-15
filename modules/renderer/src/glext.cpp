@@ -39,6 +39,8 @@ namespace argus {
         void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
         void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
         void (*glUseProgram)(GLuint program);
+
+        void (*glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
     }
 
     template <typename FunctionType>
@@ -54,36 +56,40 @@ namespace argus {
     void load_opengl_extensions(void) {
         SDL_GL_LoadLibrary(NULL);
 
-        _load_gl_ext<>("glGenFramebuffers", &glext::glGenFramebuffers);
-        _load_gl_ext<>("glFramebufferTexture", &glext::glFramebufferTexture);
+        using namespace glext;
 
-        _load_gl_ext<>("glGenBuffers", &glext::glGenBuffers);
-        _load_gl_ext<>("glBindBuffer", &glext::glBindBuffer);
-        _load_gl_ext<>("glBufferData", &glext::glBufferData);
-        _load_gl_ext<>("glBufferSubData", &glext::glBufferSubData);
+        _load_gl_ext<>("glGenFramebuffers", &glGenFramebuffers);
+        _load_gl_ext<>("glFramebufferTexture", &glFramebufferTexture);
 
-        _load_gl_ext<>("glGenVertexArrays", &glext::glGenVertexArrays);
-        _load_gl_ext<>("glDeleteVertexArrays", &glext::glDeleteVertexArrays);
-        _load_gl_ext<>("glBindVertexArray", &glext::glBindVertexArray);
-        _load_gl_ext<>("glEnableVertexAttribArray", &glext::glEnableVertexAttribArray);
-        _load_gl_ext<>("glVertexAttribPointer", &glext::glVertexAttribPointer);
+        _load_gl_ext<>("glGenBuffers", &glGenBuffers);
+        _load_gl_ext<>("glBindBuffer", &glBindBuffer);
+        _load_gl_ext<>("glBufferData", &glBufferData);
+        _load_gl_ext<>("glBufferSubData", &glBufferSubData);
 
-        _load_gl_ext<>("glAttachShader", &glext::glAttachShader);
-        _load_gl_ext<>("glBindAttribLocation", &glext::glBindAttribLocation);
-        _load_gl_ext<>("glCompileShader", &glext::glCompileShader);
-        _load_gl_ext<>("glCreateProgram", &glext::glCreateProgram);
-        _load_gl_ext<>("glCreateShader", &glext::glCreateShader);
-        _load_gl_ext<>("glDeleteProgram", &glext::glDeleteProgram);
-        _load_gl_ext<>("glDeleteShader", &glext::glDeleteShader);
-        _load_gl_ext<>("glDetachShader", &glext::glDetachShader);
-        _load_gl_ext<>("glGetProgramiv", &glext::glGetProgramiv);
-        _load_gl_ext<>("glGetShaderiv", &glext::glGetShaderiv);
-        _load_gl_ext<>("glGetShaderInfoLog", &glext::glGetShaderInfoLog);
-        _load_gl_ext<>("glGetUniformLocation", &glext::glGetUniformLocation);
-        _load_gl_ext<>("glLinkProgram", &glext::glLinkProgram);
-        _load_gl_ext<>("glShaderSource", &glext::glShaderSource);
-        _load_gl_ext<>("glUniformMatrix4fv", &glext::glUniformMatrix4fv);
-        _load_gl_ext<>("glUseProgram", &glext::glUseProgram);
+        _load_gl_ext<>("glGenVertexArrays", &glGenVertexArrays);
+        _load_gl_ext<>("glDeleteVertexArrays", &glDeleteVertexArrays);
+        _load_gl_ext<>("glBindVertexArray", &glBindVertexArray);
+        _load_gl_ext<>("glEnableVertexAttribArray", &glEnableVertexAttribArray);
+        _load_gl_ext<>("glVertexAttribPointer", &glVertexAttribPointer);
+
+        _load_gl_ext<>("glAttachShader", &glAttachShader);
+        _load_gl_ext<>("glBindAttribLocation", &glBindAttribLocation);
+        _load_gl_ext<>("glCompileShader", &glCompileShader);
+        _load_gl_ext<>("glCreateProgram", &glCreateProgram);
+        _load_gl_ext<>("glCreateShader", &glCreateShader);
+        _load_gl_ext<>("glDeleteProgram", &glDeleteProgram);
+        _load_gl_ext<>("glDeleteShader", &glDeleteShader);
+        _load_gl_ext<>("glDetachShader", &glDetachShader);
+        _load_gl_ext<>("glGetProgramiv", &glGetProgramiv);
+        _load_gl_ext<>("glGetShaderiv", &glGetShaderiv);
+        _load_gl_ext<>("glGetShaderInfoLog", &glGetShaderInfoLog);
+        _load_gl_ext<>("glGetUniformLocation", &glGetUniformLocation);
+        _load_gl_ext<>("glLinkProgram", &glLinkProgram);
+        _load_gl_ext<>("glShaderSource", &glShaderSource);
+        _load_gl_ext<>("glUniformMatrix4fv", &glUniformMatrix4fv);
+        _load_gl_ext<>("glUseProgram", &glUseProgram);
+
+        _load_gl_ext<>("glDebugMessageCallback", &glDebugMessageCallback);
     }
 
 }

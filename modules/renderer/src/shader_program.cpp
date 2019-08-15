@@ -12,7 +12,7 @@ namespace argus {
 
     using namespace glext;
 
-    ShaderProgram::ShaderProgram(const std::vector<Shader*> &shaders):
+    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
             shaders(shaders) {
         built = false;
     }
@@ -83,7 +83,7 @@ namespace argus {
         )";
 
         // now we concatenate the source for each sub-shader
-        for (Shader *shader : shaders) {
+        for (const Shader *shader : shaders) {
             (shader->type == GL_VERTEX_SHADER ? bootstrap_vert_ss : bootstrap_frag_ss) << shader->src << "\n";
         }
 
@@ -101,7 +101,7 @@ namespace argus {
 
         // then we insert the calls to each sub-shaders entry point into the main() function
         //TODO: deal with priorities
-        for (Shader *shader : shaders) {
+        for (const Shader *shader : shaders) {
             (shader->type == GL_VERTEX_SHADER ? bootstrap_vert_ss : bootstrap_frag_ss) << "    " << shader->entry_point << "();\n";
         }
 
@@ -153,7 +153,7 @@ namespace argus {
             uniforms.insert({uniform_id, glGetUniformLocation(gl_program, uniform_id.c_str())});
         }
 
-        for (Shader *shader : shaders) {
+        for (const Shader *shader : shaders) {
             for (std::string uniform_id : shader->uniform_ids) {
                 uniforms.insert({uniform_id, glGetUniformLocation(gl_program, uniform_id.c_str())});
             }

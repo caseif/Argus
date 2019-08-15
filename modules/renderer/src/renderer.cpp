@@ -18,7 +18,7 @@ namespace argus {
     std::vector<Window*> g_windows;
     size_t g_window_count = 0;
 
-    void _clean_up(void) {
+    static void _clean_up(void) {
         // use a copy since Window::destroy modifies the global list
         auto windows_copy = g_windows;
         // doing this in reverse ensures that child windows are destroyed before their parents
@@ -39,11 +39,31 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         #else
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
 
         load_opengl_extensions();
+    }
+
+    static void _gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+            const GLchar *message, void *userParam) {
+        char const* severity_str;
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_NOTIFICATION:
+                severity_str = "TRACE";
+                break;
+            case GL_DEBUG_SEVERITY_LOW:
+                severity_str = "INFO";
+                break;
+            case GL_DEBUG_SEVERITY_MEDIUM:
+                severity_str = "WARN";
+                break;
+            case GL_DEBUG_SEVERITY_HIGH:
+                severity_str = "SEVERE";
+                break;
+        }
+        std::cerr << "[GL][" << severity_str << "] " << message << std::endl;
     }
 
     void init_module_renderer(void) {
@@ -63,6 +83,9 @@ namespace argus {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
         gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
+
+        activate_gl_context();
+        glClearColor(0, 0, 0, 1);
     }
 
     Renderer::~Renderer(void) = default;
@@ -91,6 +114,8 @@ namespace argus {
         for (RenderLayer *layer : render_layers) {
             layer->render();
         }
+
+        SDL_GL_SwapWindow(window.handle);
     }
 
     void Renderer::activate_gl_context(void) const {
