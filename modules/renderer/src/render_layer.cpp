@@ -9,8 +9,7 @@
 
 namespace argus {
 
-    using glext::glGenFramebuffers;
-    using glext::glFramebufferTexture;
+    using namespace glext;
 
     extern Shader g_layer_transform_shader;
 
@@ -66,8 +65,7 @@ namespace argus {
 
     void RenderLayer::render(void) {
         for (RenderGroup *group : children) {
-            group->update_buffer();
-            group->refresh_shaders();
+            group->draw();
         }
 
         if (dirty_shaders) {

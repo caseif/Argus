@@ -19,6 +19,8 @@
 namespace argus {
 
     using vmml::vec2f;
+    using vmml::vec3f;
+    using vmml::vec4f;
     using vmml::mat4f;
 
     // forward declarations
@@ -71,6 +73,12 @@ namespace argus {
             void clean(void);
     };
 
+    struct Vertex {
+        vec2f position;
+        vec4f color;
+        vec3f tex_coord;
+    };
+
     class Shader {
         friend class ShaderProgram;
 
@@ -98,6 +106,7 @@ namespace argus {
     };
 
     class ShaderProgram {
+        friend class RenderLayer;
         friend class RenderGroup;
 
         private:
@@ -282,7 +291,7 @@ namespace argus {
             RenderableFactory(RenderGroup &parent);
 
         public:
-            RenderableTriangle &create_triangle(vec2f const &corner_1, vec2f const &corner_2, vec2f const &corner_3) const;
+            RenderableTriangle &create_triangle(Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3) const;
     };
 
     class RenderGroup {
@@ -433,11 +442,11 @@ namespace argus {
         friend class RenderableFactory;
 
         private:
-            const vec2f corner_1;
-            const vec2f corner_2;
-            const vec2f corner_3;
+            const Vertex corner_1;
+            const Vertex corner_2;
+            const Vertex corner_3;
 
-            RenderableTriangle(RenderGroup &parent_group, vec2f const &corner_1, vec2f const &corner_2, vec2f const &corner_3);
+            RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3);
 
             void render(const GLuint vbo, const size_t offset) const override;
 

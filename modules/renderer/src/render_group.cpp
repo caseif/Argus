@@ -95,15 +95,16 @@ namespace argus {
             glEnableVertexAttribArray(__ATTRIB_LOC_TEXCOORD);
 
             GLintptr position_offset = 0;
-            GLintptr color_offset = (__VERTEX_POSITION_LEN) * sizeof(float);
-            GLintptr texcoord_offset = (__VERTEX_POSITION_LEN + __VERTEX_COLOR_LEN) * sizeof(float);
+            GLintptr color_offset = (__VERTEX_POSITION_LEN) * __VERTEX_WORD_LEN;
+            GLintptr texcoord_offset = (__VERTEX_POSITION_LEN + __VERTEX_COLOR_LEN) * __VERTEX_WORD_LEN;
+            GLint vertex_stride = __VERTEX_LEN * __VERTEX_WORD_LEN;
 
             glVertexAttribPointer(__ATTRIB_LOC_POSITION, __VERTEX_POSITION_LEN, GL_FLOAT, GL_FALSE,
-                    __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(position_offset));
+                    vertex_stride, reinterpret_cast<GLvoid*>(position_offset));
             glVertexAttribPointer(__ATTRIB_LOC_COLOR, __VERTEX_COLOR_LEN, GL_FLOAT, GL_FALSE,
-                    __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(color_offset));
+                    vertex_stride, reinterpret_cast<GLvoid*>(color_offset));
             glVertexAttribPointer(__ATTRIB_LOC_TEXCOORD, __VERTEX_TEXCOORD_LEN, GL_FLOAT, GL_FALSE,
-                     __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(texcoord_offset));
+                     vertex_stride, reinterpret_cast<GLvoid*>(texcoord_offset));
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
         }
@@ -148,6 +149,8 @@ namespace argus {
 
             shader_program.update_shaders(new_shaders);
             shader_program.link();
+        } else if (shader_program.needs_rebuild) {
+            shader_program.link();
         }
 
         if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {
@@ -179,14 +182,16 @@ namespace argus {
     }
 
     void RenderGroup::draw(void) {
-        if (shader_program.needs_rebuild) {
-            shader_program.link();
-        }
+        refresh_shaders();
 
         glUseProgram(shader_program.gl_program);
+        
+        update_buffer();
+
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, vertex_count);
         glBindVertexArray(0);
+
         glUseProgram(0);
     }
 

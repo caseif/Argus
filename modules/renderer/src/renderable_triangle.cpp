@@ -8,34 +8,33 @@
 
 namespace argus {
 
-    using vmml::vec2f;
-
     using glext::glBufferSubData;
 
-    RenderableTriangle::RenderableTriangle(RenderGroup &parent, vec2f const &corner_1, vec2f const &corner_2, vec2f const &corner_3):
+    RenderableTriangle::RenderableTriangle(RenderGroup &parent, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3):
             Renderable(parent),
             corner_1(corner_1),
             corner_2(corner_2),
             corner_3(corner_3) {
     }
 
+    static void _fill_buffer(float *buffer, Vertex const &vertex, const size_t offset) {
+        buffer[offset + 0] = vertex.position.x();
+        buffer[offset + 1] = vertex.position.y();
+        buffer[offset + 2] = vertex.color.r();
+        buffer[offset + 3] = vertex.color.g();
+        buffer[offset + 4] = vertex.color.b();
+        buffer[offset + 5] = vertex.color.a();
+        buffer[offset + 6] = vertex.tex_coord.x();
+        buffer[offset + 7] = vertex.tex_coord.y();
+        buffer[offset + 8] = vertex.tex_coord.z();
+    }
+
     void RenderableTriangle::render(const GLuint vbo, const size_t offset) const {
         float buffer_data[__TRIANGLE_VERTICES * __VERTEX_LEN];
-        buffer_data[0] = corner_1.x();
-        buffer_data[1] = corner_1.y();
-        buffer_data[9] = corner_2.x();
-        buffer_data[10] = corner_2.y();
-        buffer_data[18] = corner_3.x();
-        buffer_data[19] = corner_3.y();
 
-        for (size_t i = 0; i < 3; i++) {
-            for (size_t j = 0; j < 4; j++) {
-                buffer_data[i * __VERTEX_LEN + 2 + j] = 255.0;
-            }
-            for (size_t j = 0; j < 3; j++) {
-                buffer_data[i * __VERTEX_LEN + 5 + j] = 1.0;
-            }
-        }
+        _fill_buffer(buffer_data, corner_1, 0);
+        _fill_buffer(buffer_data, corner_2, __VERTEX_LEN * 1);
+        _fill_buffer(buffer_data, corner_3, __VERTEX_LEN * 2);
 
         glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(buffer_data), buffer_data);
     }

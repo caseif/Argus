@@ -148,8 +148,8 @@ namespace argus {
         bootstrap_frag_ss << R"(
                 // end sub-shader invocation
 
-                vec4 texColor = texture()" __UNIFORM_TEXTURE R"(, texCoord);
-                gl_FragColor = color * texColor;
+                vec4 texel = texture()" __UNIFORM_TEXTURE R"(, texCoord);
+                gl_FragColor = texel + color;
             }
         )";
 

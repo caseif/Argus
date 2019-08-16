@@ -2,7 +2,7 @@
 #define __VERTEX_COLOR_LEN 4
 #define __VERTEX_TEXCOORD_LEN 3
 #define __VERTEX_LEN (__VERTEX_POSITION_LEN + __VERTEX_COLOR_LEN + __VERTEX_TEXCOORD_LEN)
-#define __VERTEX_WORD_LEN 4
+#define __VERTEX_WORD_LEN sizeof(float)
 
 #define __GL_LOG_MAX_LEN 255
 

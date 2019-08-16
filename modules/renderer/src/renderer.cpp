@@ -106,10 +106,10 @@ namespace argus {
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
         
-        glDisable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);
 
         glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     Renderer::~Renderer(void) = default;
@@ -142,7 +142,7 @@ namespace argus {
 
         activate_gl_context();
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //TODO: account for priorities
         for (RenderLayer *layer : render_layers) {

@@ -9,7 +9,7 @@ namespace argus {
     Transform::Transform(void) {
         translation = {0, 0};
         rotation = 0;
-        scale = {0, 0};
+        scale = {1, 1};
     }
 
     Transform::Transform(vec2f const &translation, const double rotation, vec2f const &scale) {
