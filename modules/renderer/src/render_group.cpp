@@ -48,6 +48,9 @@ namespace argus {
         }
 
         parent.remove_group(*this);
+
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
     }
 
     Transform &RenderGroup::get_transform(void) {
@@ -91,11 +94,18 @@ namespace argus {
             glEnableVertexAttribArray(__ATTRIB_LOC_COLOR);
             glEnableVertexAttribArray(__ATTRIB_LOC_TEXCOORD);
 
-            glVertexAttribPointer(__ATTRIB_LOC_POSITION, __VERTEX_POSITION_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
-            glVertexAttribPointer(__ATTRIB_LOC_COLOR, __VERTEX_COLOR_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
-            glVertexAttribPointer(__ATTRIB_LOC_TEXCOORD, __VERTEX_TEXCOORD_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
+            GLintptr position_offset = 0;
+            GLintptr color_offset = (__VERTEX_POSITION_LEN) * sizeof(float);
+            GLintptr texcoord_offset = (__VERTEX_POSITION_LEN + __VERTEX_COLOR_LEN) * sizeof(float);
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glVertexAttribPointer(__ATTRIB_LOC_POSITION, __VERTEX_POSITION_LEN, GL_FLOAT, GL_FALSE,
+                    __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(position_offset));
+            glVertexAttribPointer(__ATTRIB_LOC_COLOR, __VERTEX_COLOR_LEN, GL_FLOAT, GL_FALSE,
+                    __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(color_offset));
+            glVertexAttribPointer(__ATTRIB_LOC_TEXCOORD, __VERTEX_TEXCOORD_LEN, GL_FLOAT, GL_FALSE,
+                     __VERTEX_LEN * __VERTEX_WORD_LEN, reinterpret_cast<GLvoid*>(texcoord_offset));
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
         }
 
         // push each child's data to the buffer, if applicable
@@ -109,6 +119,7 @@ namespace argus {
             offset += child->get_vertex_count();
         }
 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
         if (dirty_children) {
@@ -168,7 +179,6 @@ namespace argus {
     }
 
     void RenderGroup::draw(void) {
-        printf("draw\n");
         if (shader_program.needs_rebuild) {
             shader_program.link();
         }

@@ -30,7 +30,7 @@ namespace argus {
 
         for (size_t i = 0; i < 3; i++) {
             for (size_t j = 0; j < 4; j++) {
-                buffer_data[i * __VERTEX_LEN + 2 + j] = 1.0;
+                buffer_data[i * __VERTEX_LEN + 2 + j] = 255.0;
             }
             for (size_t j = 0; j < 3; j++) {
                 buffer_data[i * __VERTEX_LEN + 5 + j] = 1.0;

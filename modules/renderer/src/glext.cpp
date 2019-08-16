@@ -22,7 +22,7 @@ namespace argus {
         void (*glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
         void (*glEnableVertexAttribArray)(GLuint index);
         void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
+        void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
         void (*glAttachShader)(GLuint program, GLuint shader);
         void (*glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);

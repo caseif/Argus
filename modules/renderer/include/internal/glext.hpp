@@ -21,7 +21,7 @@ namespace argus {
         extern void (*glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
         extern void (*glEnableVertexAttribArray)(GLuint index);
         extern void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        extern void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride);
+        extern void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
         extern void (*glAttachShader)(GLuint program, GLuint shader);
         extern void (*glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);

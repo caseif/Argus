@@ -8,9 +8,6 @@
 #include <cstdlib>
 #include <vector>
 
-#define MAX_INT32 2147483647
-#define MAX_UINT32 4294967296
-
 #define STRINGIZE_DETAIL(x) #x
 #define STRINGIZE(x) STRINGIZE_DETAIL(x)
 
