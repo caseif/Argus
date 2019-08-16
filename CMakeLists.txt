@@ -18,13 +18,19 @@ project(argus
 
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 option(USE_GLES "Use ES profile for OpenGL" OFF)
+option(DEBUG "Compile with debug symbols and messages" OFF)
 
 if(${USE_PTHREADS})
-  message("Using pthreads instead of std::thread as requested...")
+  message("Using pthreads instead of std::thread as requested")
 endif()
 
 if (${USE_GLES})
-  message("Using GL ES profile as requested...")
+  message("Using GL ES profile as requested")
+endif()
+
+if (${DEBUG})
+  message("Compiling with debug symbols and messages as requested")
+  set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
@@ -82,6 +88,10 @@ function(setup_submodule)
 
   if (${USE_GLES})
     add_definitions("-DUSE_GLES")
+  endif()
+
+  if (${DEBUG})
+    add_definitions("-D_ARGUS_DEBUG_MODE")
   endif()
 
   add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})

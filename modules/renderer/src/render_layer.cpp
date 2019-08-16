@@ -23,7 +23,6 @@ namespace argus {
     RenderLayer::RenderLayer(Renderer *const parent):
             shaders(_generate_initial_layer_shaders()),
             root_group(RenderGroup(*this)),
-            dirty_transform(false),
             dirty_shaders(false) {
         this->parent_renderer = parent;
 
@@ -47,6 +46,10 @@ namespace argus {
         return transform;
     }
 
+    RenderableFactory &RenderLayer::get_renderable_factory(void) {
+        return root_group.get_renderable_factory();
+    }
+
     RenderGroup &RenderLayer::create_render_group(const int priority) {
         RenderGroup *group = new RenderGroup(*this);
         children.insert(children.cbegin(), group);
@@ -62,15 +65,18 @@ namespace argus {
     }
 
     void RenderLayer::render(void) {
-        parent_renderer->activate_gl_context();
-
         for (RenderGroup *group : children) {
-            if (group->dirty_children) {
-                group->update_buffer();
-            }
+            group->update_buffer();
+            group->refresh_shaders();
         }
 
-        transform.clean();
+        if (dirty_shaders) {
+            dirty_shaders = false;
+        }
+
+        if (transform.is_dirty()) {
+            transform.clean();
+        }
     }
 
 }

@@ -36,6 +36,7 @@ namespace argus {
         void (*glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
         void (*glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
         GLint (*glGetUniformLocation)(GLuint program, const GLchar *name);
+        GLboolean (*glIsShader)(GLuint shader);
         void (*glLinkProgram)(GLuint program);
         void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
         void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
@@ -46,11 +47,13 @@ namespace argus {
 
     template <typename FunctionType>
     static void _load_gl_ext(const char *const func_name, FunctionType *target) {
+        //TODO: verify the extension for each given function is supported
         void *function = SDL_GL_GetProcAddress(func_name);
+
         if (!function) {
             _ARGUS_FATAL("Failed to load OpenGL extension: %s\n", func_name);
-        } else {
         }
+
         *target = reinterpret_cast<FunctionType>(function);
     }
 
@@ -86,12 +89,13 @@ namespace argus {
         _load_gl_ext<>("glGetShaderiv", &glGetShaderiv);
         _load_gl_ext<>("glGetShaderInfoLog", &glGetShaderInfoLog);
         _load_gl_ext<>("glGetUniformLocation", &glGetUniformLocation);
+        _load_gl_ext<>("glIsShader", &glIsShader);
         _load_gl_ext<>("glLinkProgram", &glLinkProgram);
-        _load_gl_ext<>("glShaderSourcea", &glShaderSource);
+        _load_gl_ext<>("glShaderSource", &glShaderSource);
         _load_gl_ext<>("glUniformMatrix4fv", &glUniformMatrix4fv);
         _load_gl_ext<>("glUseProgram", &glUseProgram);
 
-        _load_gl_ext<>("glDebugMessageCallback", &glDebugMessageCallback);
+        _load_gl_ext<>("glDebugMessageCallbackARB", &glDebugMessageCallback);
     }
 
 }

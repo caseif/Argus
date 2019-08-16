@@ -13,6 +13,8 @@
 
 namespace argus {
 
+    using namespace glext;
+
     bool g_renderer_initialized = false;
 
     std::vector<Window*> g_windows;
@@ -42,29 +44,38 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, GL_TRUE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 
         load_opengl_extensions();
     }
 
     static void _gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
             const GLchar *message, void *userParam) {
-        char const* severity_str;
+        #ifndef _ARGUS_DEBUG_MODE
+        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION || severity == GL_DEBUG_SEVERITY_LOW) {
+            return;
+        }
+        #endif
+        char const* level;
+        auto stream = stdout;
         switch (severity) {
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                severity_str = "TRACE";
-                break;
-            case GL_DEBUG_SEVERITY_LOW:
-                severity_str = "INFO";
+            case GL_DEBUG_SEVERITY_HIGH:
+                level = "SEVERE";
+                stream = stderr;
                 break;
             case GL_DEBUG_SEVERITY_MEDIUM:
-                severity_str = "WARN";
+                level = "WARN";
+                stream = stderr;
                 break;
-            case GL_DEBUG_SEVERITY_HIGH:
-                severity_str = "SEVERE";
+            case GL_DEBUG_SEVERITY_LOW:
+                level = "INFO";
+                break;
+            case GL_DEBUG_SEVERITY_NOTIFICATION:
+                level = "TRACE";
                 break;
         }
-        std::cerr << "[GL][" << severity_str << "] " << message << std::endl;
+        _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
     void init_module_renderer(void) {
@@ -85,8 +96,20 @@ namespace argus {
 
         gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
 
+        int version_major;
+        int version_minor;
+        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &version_major);
+        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &version_minor);
+        _ARGUS_DEBUG("Obtained context with version %d.%d\n", version_major, version_minor);
+
         activate_gl_context();
+
+        glDebugMessageCallback(_gl_debug_callback, nullptr);
+        
+        glDisable(GL_DEPTH_TEST);
+
         glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
     }
 
     Renderer::~Renderer(void) = default;
@@ -116,6 +139,10 @@ namespace argus {
         if (window.invalid) {
             return;
         }
+
+        activate_gl_context();
+
+        glClear(GL_COLOR_BUFFER_BIT);
 
         //TODO: account for priorities
         for (RenderLayer *layer : render_layers) {

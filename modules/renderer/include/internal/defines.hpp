@@ -6,8 +6,8 @@
 
 #define __GL_LOG_MAX_LEN 255
 
-#define __UNIFORM_PROJECTION "projectionMatrix"
-#define __UNIFORM_TEXTURE "texture"
+#define __UNIFORM_PROJECTION "_argus_projection_matrix"
+#define __UNIFORM_TEXTURE "_argus_sampler_array"
 #define __UNIFORM_LAYER_TRANSFORM "_argus_layer_transform"
 #define __UNIFORM_GROUP_TRANSFORM "_argus_group_transform"
 

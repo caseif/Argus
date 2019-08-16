@@ -29,8 +29,11 @@ namespace argus {
         buffer_data[17] = corner_3.y();
 
         for (size_t i = 0; i < 3; i++) {
-            for (size_t j = 0; j < 6; j++) {
+            for (size_t j = 0; j < 4; j++) {
                 buffer_data[i * __VERTEX_LEN + 2 + j] = 1.0;
+            }
+            for (size_t j = 0; j < 2; j++) {
+                buffer_data[i * __VERTEX_LEN + 5 + j] = 1.0;
             }
         }
 

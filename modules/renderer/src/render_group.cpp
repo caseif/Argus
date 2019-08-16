@@ -20,13 +20,13 @@ namespace argus {
         return shaders;
     }
 
-    static ShaderProgram _generate_iniital_program(std::vector<const Shader*> &parent_shaders, std::vector<const Shader*> &self_shaders) {
+    ShaderProgram RenderGroup::generate_initial_program(void) {
         std::vector<const Shader*> final_shaders;
-        if (parent_shaders.size() > 0) {
-            final_shaders.insert(final_shaders.cbegin(), parent_shaders.cbegin(), parent_shaders.cend());
+        if (parent.shaders.size() > 0) {
+            final_shaders.insert(final_shaders.cbegin(), parent.shaders.cbegin(), parent.shaders.cend());
         }
-        if (self_shaders.size() > 0) {
-            final_shaders.insert(final_shaders.cbegin(), self_shaders.cbegin(), self_shaders.cend());
+        if (shaders.size() > 0) {
+            final_shaders.insert(final_shaders.cbegin(), shaders.cbegin(), shaders.cend());
         }
         return ShaderProgram(final_shaders);
     }
@@ -35,8 +35,7 @@ namespace argus {
             parent(parent),
             renderable_factory(RenderableFactory(*this)),
             shaders(_generate_initial_group_shaders()),
-            shader_program(_generate_iniital_program(parent.shaders, shaders)),
-            dirty_transform(false),
+            shader_program(generate_initial_program()),
             dirty_children(false),
             dirty_shaders(false),
             buffers_initialized(false),
@@ -76,6 +75,7 @@ namespace argus {
             // init vertex buffer
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            GLenum err = glGetError();
 
             // compute how many vertices will be in this buffer
             vertex_count = 0;
@@ -109,14 +109,20 @@ namespace argus {
 
         glBindVertexArray(0);
 
-        dirty_children = false;
-        
-        buffers_initialized = true;
+        if (dirty_children) {
+            dirty_children = false;
+        }
+
+        if (!buffers_initialized) {
+            buffers_initialized = true;
+        }
     }
 
     void RenderGroup::refresh_shaders(void) {
         if (!shaders_initialized || parent.dirty_shaders || dirty_shaders) {
-            shader_program.delete_program();
+            if (shaders_initialized) {
+                glDeleteProgram(shader_program.gl_program);
+            }
 
             std::vector<const Shader*> new_shaders;
             if (!shaders_initialized || parent.dirty_shaders) {
@@ -127,7 +133,12 @@ namespace argus {
                 new_shaders.insert(new_shaders.end(), shaders.begin(), shaders.end());
             }
 
-            shader_program = ShaderProgram(new_shaders);
+            shader_program.update_shaders(new_shaders);
+            shader_program.link();
+        }
+
+        if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {
+            glUseProgram(shader_program.gl_program);
         }
 
         if (!shaders_initialized || transform.is_dirty()) {
@@ -137,15 +148,29 @@ namespace argus {
         }
 
         if (!shaders_initialized || parent.transform.is_dirty()) {
-            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_TRUE,
-                    transform.to_matrix().array);
+            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_LAYER_TRANSFORM), 1, GL_TRUE,
+                    parent.transform.to_matrix().array);
         }
 
-        shaders_initialized = true;
+        if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {
+            glUseProgram(0);
+        }
+
+        if (dirty_shaders) {
+            dirty_shaders = false;
+        }
+
+        if (!shaders_initialized) {
+            shaders_initialized = true;
+        }
     }
 
     void RenderGroup::draw(void) {
-        shader_program.use_program();
+        if (shader_program.needs_rebuild) {
+            shader_program.link();
+        }
+
+        glUseProgram(shader_program.gl_program);
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, vertex_count);
         glBindVertexArray(0);

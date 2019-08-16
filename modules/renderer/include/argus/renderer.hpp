@@ -79,46 +79,45 @@ namespace argus {
             const GLenum type;
             const std::string src;
             const std::string entry_point;
-            const std::initializer_list<std::string> uniform_ids;
+            const std::vector<std::string> uniform_ids;
 
             Shader(const GLenum type, std::string const &src, std::string const &entry_point,
-                    std::initializer_list<std::string> uniform_ids);
+                    std::initializer_list<std::string> const &uniform_ids);
 
         public:
             static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> &uniform_ids);
 
             static Shader create_vertex_shader_stack(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> &uniform_ids);
 
             static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> &uniform_ids);
 
             static Shader create_fragment_shader_stack(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> uniform_ids);
+                    const std::initializer_list<std::string> &uniform_ids);
     };
 
     class ShaderProgram {
+        friend class RenderGroup;
+
         private:
             std::vector<const Shader*> shaders;
             std::vector<GLint> shader_handles;
             std::unordered_map<std::string, GLint> uniforms;
 
-            bool built;
+            bool initialized;
+            bool needs_rebuild;
 
             GLuint gl_program;
 
-            void link(void);
-
-        public:
             ShaderProgram(const std::vector<const Shader*> &shaders);
 
-            void delete_program(void);
+            void link(void);
 
-            void use_program(void);
+            void update_shaders(std::vector<const Shader*> &shaders);
 
-            GLuint get_handle(void) const;
-
+        public:
             GLint get_uniform_location(std::string const &uniform_id) const;
     };
 
@@ -302,17 +301,19 @@ namespace argus {
 
             size_t vertex_count;
 
-            bool dirty_transform;
             bool dirty_children;
             bool dirty_shaders;
 
             bool shaders_initialized;
             bool buffers_initialized;
+
             ShaderProgram shader_program;
             GLuint vbo;
             GLuint vao;
             
             RenderGroup(RenderLayer &parent);
+
+            ShaderProgram generate_initial_program(void);
 
             void update_buffer(void);
 
@@ -331,9 +332,9 @@ namespace argus {
 
             /**
              * \brief Returns a factory for creating Renderables attached to
-             * this RenderLayer.
+             * this RenderGroup.
              *
-             * \returns This RenderLayer's Renderable factory.
+             * \returns This RenderGroup's Renderable factory.
              */
             RenderableFactory &get_renderable_factory(void);
 
@@ -364,7 +365,6 @@ namespace argus {
 
             Transform transform;
 
-            bool dirty_transform;
             bool dirty_shaders;
 
             RenderLayer(Renderer *const parent);
@@ -383,6 +383,14 @@ namespace argus {
             void destroy(void);
 
             Transform &get_transform(void);
+
+            /**
+             * \brief Returns a factory for creating Renderables attached to
+             * this RenderLayer's root RenderGroup.
+             *
+             * \returns This RenderLayer's root Renderable factory.
+             */
+            RenderableFactory &get_renderable_factory(void);
 
             RenderGroup &create_render_group(const int priority);
 
