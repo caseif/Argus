@@ -3,7 +3,7 @@
 
 namespace argus {
 
-    using vmml::vec2d;
+    using vmml::vec2f;
     using vmml::mat4f;
 
     Transform::Transform(void) {
@@ -12,7 +12,7 @@ namespace argus {
         scale = {0, 0};
     }
 
-    Transform::Transform(vec2d const &translation, const double rotation, vec2d const &scale) {
+    Transform::Transform(vec2f const &translation, const double rotation, vec2f const &scale) {
         this->translation = translation;
         this->rotation = rotation;
         this->scale = scale;
@@ -26,16 +26,16 @@ namespace argus {
         );
     }
 
-    vec2d const &Transform::get_translation(void) const {
+    vec2f const &Transform::get_translation(void) const {
         return translation;
     }
 
-    void Transform::set_translation(vec2d const &translation) {
+    void Transform::set_translation(vec2f const &translation) {
         this->translation = translation;
         this->dirty = true;
     }
 
-    void Transform::add_translation(vec2d const &translation_delta) {
+    void Transform::add_translation(vec2f const &translation_delta) {
         this->translation += translation_delta;
         this->dirty = true;
     }
@@ -54,17 +54,28 @@ namespace argus {
         this->dirty = true;
     }
 
-    vec2d const &Transform::get_scale(void) const {
+    vec2f const &Transform::get_scale(void) const {
         return scale;
     }
 
-    void Transform::set_scale(vec2d const &scale) {
+    void Transform::set_scale(vec2f const &scale) {
         this->scale = scale;
         this->dirty = true;
     }
 
-    mat4f const &Transform::to_matrix(void) const {
-        //TODO
+    mat4f const Transform::to_matrix(void) const {
+        float cos_rot;
+        float sin_rot;
+        sincosf32(rotation, &sin_rot, &cos_rot);
+        std::vector<float> vals = {
+            cos_rot * scale.x(),    sin_rot,                0,  translation.x(),
+            sin_rot,                cos_rot * scale.y(),    0,  translation.y(),
+            0,                      0,                      1,  0,
+            0,                      0,                      0,  1
+        };
+        mat4f res = mat4f();
+        res.set(vals.cbegin(), vals.cend());
+        return res;
     }
 
     const bool Transform::is_dirty(void) const {

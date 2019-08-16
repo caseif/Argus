@@ -23,16 +23,16 @@ namespace argus {
         float buffer_data[__TRIANGLE_VERTICES * __VERTEX_LEN];
         buffer_data[0] = corner_1.x();
         buffer_data[1] = corner_1.y();
-        buffer_data[8] = corner_2.x();
-        buffer_data[9] = corner_2.y();
-        buffer_data[16] = corner_3.x();
-        buffer_data[17] = corner_3.y();
+        buffer_data[9] = corner_2.x();
+        buffer_data[10] = corner_2.y();
+        buffer_data[18] = corner_3.x();
+        buffer_data[19] = corner_3.y();
 
         for (size_t i = 0; i < 3; i++) {
             for (size_t j = 0; j < 4; j++) {
                 buffer_data[i * __VERTEX_LEN + 2 + j] = 1.0;
             }
-            for (size_t j = 0; j < 2; j++) {
+            for (size_t j = 0; j < 3; j++) {
                 buffer_data[i * __VERTEX_LEN + 5 + j] = 1.0;
             }
         }

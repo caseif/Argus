@@ -19,7 +19,6 @@
 namespace argus {
 
     using vmml::vec2f;
-    using vmml::vec2d;
     using vmml::mat4f;
 
     // forward declarations
@@ -36,24 +35,24 @@ namespace argus {
 
     class Transform {
         private:
-            vec2d translation;
+            vec2f translation;
             double rotation;
-            vec2d scale;
+            vec2f scale;
 
             bool dirty;
 
         public:
             Transform(void);
 
-            Transform(vec2d const &translation, const double rotation, vec2d const &scale);
+            Transform(vec2f const &translation, const double rotation, vec2f const &scale);
 
             Transform operator +(const Transform rhs);
 
-            vec2d const &get_translation(void) const;
+            vec2f const &get_translation(void) const;
 
-            void set_translation(vec2d const &translation);
+            void set_translation(vec2f const &translation);
 
-            void add_translation(vec2d const &translation_delta);
+            void add_translation(vec2f const &translation_delta);
             
             const double get_rotation(void) const;
 
@@ -61,11 +60,11 @@ namespace argus {
 
             void add_rotation(const double rotation_degrees);
 
-            vec2d const &get_scale(void) const;
+            vec2f const &get_scale(void) const;
 
-            void set_scale(vec2d const &scale);
+            void set_scale(vec2f const &scale);
 
-            mat4f const &to_matrix(void) const;
+            mat4f const to_matrix(void) const;
 
             const bool is_dirty(void) const;
 
@@ -116,6 +115,8 @@ namespace argus {
             void link(void);
 
             void update_shaders(std::vector<const Shader*> &shaders);
+
+            void update_projection_matrix(const unsigned int viewport_width, const unsigned int viewport_height);
 
         public:
             GLint get_uniform_location(std::string const &uniform_id) const;
@@ -281,7 +282,7 @@ namespace argus {
             RenderableFactory(RenderGroup &parent);
 
         public:
-            RenderableTriangle &create_triangle(vec2d const &corner_1, vec2d const &corner_2, vec2d const &corner_3) const;
+            RenderableTriangle &create_triangle(vec2f const &corner_1, vec2f const &corner_2, vec2f const &corner_3) const;
     };
 
     class RenderGroup {

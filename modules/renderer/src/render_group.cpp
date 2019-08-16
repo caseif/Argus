@@ -94,6 +94,8 @@ namespace argus {
             glVertexAttribPointer(__ATTRIB_LOC_POSITION, __VERTEX_POSITION_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
             glVertexAttribPointer(__ATTRIB_LOC_COLOR, __VERTEX_COLOR_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
             glVertexAttribPointer(__ATTRIB_LOC_TEXCOORD, __VERTEX_TEXCOORD_LEN, GL_FLOAT, false, __VERTEX_LEN * __VERTEX_WORD_LEN);
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
         // push each child's data to the buffer, if applicable
@@ -166,6 +168,7 @@ namespace argus {
     }
 
     void RenderGroup::draw(void) {
+        printf("draw\n");
         if (shader_program.needs_rebuild) {
             shader_program.link();
         }
