@@ -57,6 +57,10 @@ namespace argus {
     Window::~Window(void) = default;
 
     void Window::destroy(void) {
+        if (close_callback != nullptr) {
+            close_callback(*this);
+        }
+
         unregister_render_callback(callback_id);
         unregister_sdl_event_listener(listener_id);
 

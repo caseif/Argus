@@ -7,8 +7,10 @@
 #include "vmmlib/matrix.hpp"
 #include "vmmlib/vector.hpp"
 
+#include <atomic>
 #include <functional>
 #include <initializer_list>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -35,38 +37,49 @@ namespace argus {
     class RenderableFactory;
     class RenderableTriangle;
 
+    typedef std::function<void(Window &window)> WindowCloseCallback;
+
     class Transform {
         private:
             vec2f translation;
-            double rotation;
+            std::atomic<float> rotation;
             vec2f scale;
+
+            std::mutex translation_mutex;
+            std::mutex scale_mutex;
 
             bool dirty;
 
         public:
             Transform(void);
 
-            Transform(vec2f const &translation, const double rotation, vec2f const &scale);
+            // we need to explicitly define move/copy ctors to keep things atomic,
+            // and also because mutexes can't be moved/copied
+            Transform(Transform &rhs);
+
+            Transform(Transform &&rhs);
+
+            Transform(vec2f const &translation, const float rotation, vec2f const &scale);
 
             Transform operator +(const Transform rhs);
 
-            vec2f const &get_translation(void) const;
+            vec2f const get_translation(void);
 
             void set_translation(vec2f const &translation);
 
             void add_translation(vec2f const &translation_delta);
             
-            const double get_rotation(void) const;
+            const float get_rotation(void) const;
 
-            void set_rotation(const double rotation_degrees);
+            void set_rotation(const float rotation_degrees);
 
-            void add_rotation(const double rotation_degrees);
+            void add_rotation(const float rotation_degrees);
 
-            vec2f const &get_scale(void) const;
+            vec2f const get_scale(void);
 
             void set_scale(vec2f const &scale);
 
-            mat4f const to_matrix(void) const;
+            mat4f const to_matrix(void);
 
             const bool is_dirty(void) const;
 
@@ -189,6 +202,8 @@ namespace argus {
             Window *parent;
             std::vector<Window*> children;
 
+            WindowCloseCallback close_callback;
+
             bool invalid;
 
             Window(void);
@@ -200,7 +215,7 @@ namespace argus {
             void update(const Timestamp delta);
 
             static int event_filter(void *data, SDL_Event *event);
-            
+
             static void update_window(const Window &window, const Timestamp delta);
 
         public:
@@ -273,6 +288,8 @@ namespace argus {
              * \param y The new Y-coordinate of the window.
              */
             void set_windowed_position(const unsigned int x, const unsigned int y);
+
+            void set_close_callback(WindowCloseCallback callback);
 
             /*
              * \brief Activates the window.
