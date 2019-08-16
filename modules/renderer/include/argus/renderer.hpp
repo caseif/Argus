@@ -172,13 +172,15 @@ namespace argus {
         private:
             SDL_Window *handle;
 
-            uint64_t callback_id;
-            uint64_t listener_id;
+            Index callback_id;
+            Index listener_id;
 
             Window *parent;
             std::vector<Window*> children;
 
             Renderer renderer;
+
+            bool invalid;
 
             Window(void);
             

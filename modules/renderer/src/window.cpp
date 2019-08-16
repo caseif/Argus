@@ -25,6 +25,7 @@ namespace argus {
 
     void _window_event_callback(void *data, SDL_Event &event) {
         Window *window = static_cast<Window*>(data);
+
         if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
             window->destroy();
         }
@@ -49,6 +50,8 @@ namespace argus {
 
         callback_id = register_render_callback(std::bind(&Renderer::render, &renderer, std::placeholders::_1));
         callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+
+        invalid = false;
 
         return;
     }
@@ -78,7 +81,7 @@ namespace argus {
             stop_engine();
         }
 
-        delete this;
+        invalid = true;
 
         return;
     }
@@ -105,6 +108,11 @@ namespace argus {
     }
 
     void Window::update(const Timestamp delta) {
+        if (invalid) {
+            delete this;
+            return;
+        }
+
         SDL_UpdateWindowSurface(handle);
         return;
     }

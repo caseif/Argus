@@ -42,6 +42,7 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
         load_opengl_extensions();
     }
@@ -112,6 +113,10 @@ namespace argus {
     }
 
     void Renderer::render(const TimeDelta delta) {
+        if (window.invalid) {
+            return;
+        }
+
         //TODO: account for priorities
         for (RenderLayer *layer : render_layers) {
             layer->render();

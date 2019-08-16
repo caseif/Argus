@@ -85,7 +85,7 @@ namespace argus {
         _load_gl_ext<>("glGetShaderInfoLog", &glGetShaderInfoLog);
         _load_gl_ext<>("glGetUniformLocation", &glGetUniformLocation);
         _load_gl_ext<>("glLinkProgram", &glLinkProgram);
-        _load_gl_ext<>("glShaderSource", &glShaderSource);
+        _load_gl_ext<>("glShaderSourcea", &glShaderSource);
         _load_gl_ext<>("glUniformMatrix4fv", &glUniformMatrix4fv);
         _load_gl_ext<>("glUseProgram", &glUseProgram);
 
