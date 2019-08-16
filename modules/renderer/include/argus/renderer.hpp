@@ -170,15 +170,15 @@ namespace argus {
         friend class Renderer;
 
         private:
-            SDL_Window *handle;
+            SDL_Window *const handle;
+
+            Renderer renderer;
 
             Index callback_id;
             Index listener_id;
 
             Window *parent;
             std::vector<Window*> children;
-
-            Renderer renderer;
 
             bool invalid;
 
@@ -306,6 +306,8 @@ namespace argus {
             bool dirty_children;
             bool dirty_shaders;
 
+            bool shaders_initialized;
+            bool buffers_initialized;
             ShaderProgram shader_program;
             GLuint vbo;
             GLuint vao;
@@ -364,9 +366,6 @@ namespace argus {
 
             bool dirty_transform;
             bool dirty_shaders;
-
-            GLuint framebuffer;
-            GLuint gl_texture;
 
             RenderLayer(Renderer *const parent);
 

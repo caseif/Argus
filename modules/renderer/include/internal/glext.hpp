@@ -14,6 +14,7 @@ namespace argus {
         extern void (*glBindBuffer)(GLenum target, GLuint buffer);
         extern void (*glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
         extern void (*glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        extern void (*glDeleteBuffers)(GLsizei n, const GLuint *buffers);
         extern void (*glGenBuffers)(GLsizei n, GLuint *buffers);
 
         extern void (*glBindVertexArray)(GLuint array);

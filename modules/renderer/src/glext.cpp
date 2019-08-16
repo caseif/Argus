@@ -15,6 +15,7 @@ namespace argus {
         void (*glBindBuffer)(GLenum target, GLuint buffer);
         void (*glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
         void (*glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        void (*glDeleteBuffers)(GLsizei n, const GLuint *buffers);
         void (*glGenBuffers)(GLsizei n, GLuint *buffers);
 
         void (*glBindVertexArray)(GLuint array);
@@ -61,10 +62,11 @@ namespace argus {
         _load_gl_ext<>("glGenFramebuffers", &glGenFramebuffers);
         _load_gl_ext<>("glFramebufferTexture", &glFramebufferTexture);
 
-        _load_gl_ext<>("glGenBuffers", &glGenBuffers);
         _load_gl_ext<>("glBindBuffer", &glBindBuffer);
         _load_gl_ext<>("glBufferData", &glBufferData);
         _load_gl_ext<>("glBufferSubData", &glBufferSubData);
+        _load_gl_ext<>("glDeleteBuffers", &glDeleteBuffers);
+        _load_gl_ext<>("glGenBuffers", &glGenBuffers);
 
         _load_gl_ext<>("glGenVertexArrays", &glGenVertexArrays);
         _load_gl_ext<>("glDeleteVertexArrays", &glDeleteVertexArrays);

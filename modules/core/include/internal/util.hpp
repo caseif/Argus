@@ -8,6 +8,9 @@
 #include <cstdlib>
 #include <vector>
 
+#define MAX_INT32 2147483647
+#define MAX_UINT32 4294967296
+
 #define _ARGUS_WARN(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
 
 #define _ARGUS_FATAL(fmt, ...)  _ARGUS_WARN(fmt, ##__VA_ARGS__); \

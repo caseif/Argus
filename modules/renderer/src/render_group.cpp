@@ -35,7 +35,12 @@ namespace argus {
             parent(parent),
             renderable_factory(RenderableFactory(*this)),
             shaders(_generate_initial_group_shaders()),
-            shader_program(_generate_iniital_program(parent.shaders, shaders)) {
+            shader_program(_generate_iniital_program(parent.shaders, shaders)),
+            dirty_transform(false),
+            dirty_children(false),
+            dirty_shaders(false),
+            buffers_initialized(false),
+            shaders_initialized(false) {
     }
 
     void RenderGroup::destroy(void) {
@@ -52,15 +57,22 @@ namespace argus {
 
     void RenderGroup::update_buffer(void) {
         // if the children list is dirty, we'll just reinitialize the buffer entirely
-        if (dirty_children) {
-            glDeleteVertexArrays(1, &vao);
+        if (!buffers_initialized || dirty_children) {
+            if (buffers_initialized) {
+                glDeleteVertexArrays(1, &vao);
+            }
 
             // init vertex array
             glGenVertexArrays(1, &vao);
         }
-            glBindVertexArray(vao);
 
-        if (dirty_children) {
+        glBindVertexArray(vao);
+
+        if (!buffers_initialized || dirty_children) {
+            if (buffers_initialized) {
+                glDeleteBuffers(1, &vbo);
+            }
+
             // init vertex buffer
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -98,34 +110,38 @@ namespace argus {
         glBindVertexArray(0);
 
         dirty_children = false;
+        
+        buffers_initialized = true;
     }
 
     void RenderGroup::refresh_shaders(void) {
-        if (parent.dirty_shaders || dirty_shaders) {
+        if (!shaders_initialized || parent.dirty_shaders || dirty_shaders) {
             shader_program.delete_program();
 
             std::vector<const Shader*> new_shaders;
-            if (parent.dirty_shaders) {
+            if (!shaders_initialized || parent.dirty_shaders) {
                 new_shaders.insert(new_shaders.end(), parent.shaders.begin(), parent.shaders.end());
             }
 
-            if (dirty_shaders) {
+            if (!shaders_initialized || dirty_shaders) {
                 new_shaders.insert(new_shaders.end(), shaders.begin(), shaders.end());
             }
 
             shader_program = ShaderProgram(new_shaders);
         }
 
-        if (transform.is_dirty()) {
+        if (!shaders_initialized || transform.is_dirty()) {
             glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_TRUE,
                     transform.to_matrix().array);
             transform.clean();
         }
 
-        if (parent.transform.is_dirty()) {
+        if (!shaders_initialized || parent.transform.is_dirty()) {
             glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_TRUE,
                     transform.to_matrix().array);
         }
+
+        shaders_initialized = true;
     }
 
     void RenderGroup::draw(void) {

@@ -5,7 +5,8 @@
 namespace argus {
 
     Renderable::Renderable(RenderGroup &group):
-                    parent(group) {
+            parent(group),
+            transform(Transform()) {
         parent.add_renderable(*this);
     }
 

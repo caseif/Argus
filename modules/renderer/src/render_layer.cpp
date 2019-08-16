@@ -22,23 +22,12 @@ namespace argus {
 
     RenderLayer::RenderLayer(Renderer *const parent):
             shaders(_generate_initial_layer_shaders()),
-            root_group(RenderGroup(*this)) {
+            root_group(RenderGroup(*this)),
+            dirty_transform(false),
+            dirty_shaders(false) {
         this->parent_renderer = parent;
 
         children.insert(children.cbegin(), &root_group);
-
-        parent->activate_gl_context();
-
-        // init the framebuffer
-        glGenFramebuffers(1, &framebuffer);
-
-        // init the texture
-        glGenTextures(1, &gl_texture);
-        glBindTexture(GL_TEXTURE_2D, gl_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl_texture, 0);
     }
 
     void RenderLayer::destroy(void) {

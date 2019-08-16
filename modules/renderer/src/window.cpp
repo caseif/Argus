@@ -32,13 +32,12 @@ namespace argus {
     }
 
     Window::Window(void):
-            renderer(Renderer(*this)) {
-        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
-
-        handle = SDL_CreateWindow("ArgusGame",
+            handle(SDL_CreateWindow("ArgusGame",
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
-                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)),
+            renderer(Renderer(*this)) {
+        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         g_window_count++;
         g_windows.insert(g_windows.cend(), this);
@@ -48,7 +47,6 @@ namespace argus {
         // register the listener
         listener_id = register_sdl_event_listener(event_filter, _window_event_callback, this);
 
-        callback_id = register_render_callback(std::bind(&Renderer::render, &renderer, std::placeholders::_1));
         callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
         invalid = false;
@@ -112,6 +110,8 @@ namespace argus {
             delete this;
             return;
         }
+
+        renderer.render(delta);
 
         SDL_UpdateWindowSurface(handle);
         return;
