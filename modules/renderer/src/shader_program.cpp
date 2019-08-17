@@ -12,6 +12,16 @@ namespace argus {
 
     using namespace glext;
 
+    using vmml::mat4f;
+
+    // not sure why this needs to be row-major form...
+    float g_ortho_matrix[16] = {
+        2.0,  0.0,  0.0,  0.0,
+        0.0, -2.0,  0.0,  0.0,
+        0.0,  0.0,  1.0,  0.0,
+       -1.0,  1.0,  1.0,  1.0
+    };
+
     ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
             shaders(shaders),
             initialized(false),
@@ -115,7 +125,7 @@ namespace argus {
             // end sub-shader concatenation
 
             void main() {
-                position = in_position;
+                position = ()" __UNIFORM_PROJECTION R"( * vec4(in_position, 0.0, 1.0)).xy;
                 color = in_color;
                 texCoord = in_texCoord;
 
@@ -139,7 +149,6 @@ namespace argus {
         bootstrap_vert_ss << R"(
                 // end sub-shader invocation
 
-                //gl_Position = )" __UNIFORM_PROJECTION R"( * vec4(position, 0.0, 1.0);
                 gl_Position = vec4(position, 0.0, 1.0);
             }
         )";
@@ -198,6 +207,10 @@ namespace argus {
                 uniforms.insert({uniform_id, uniform_loc});
             }
         }
+
+        glUseProgram(gl_program);
+        glUniformMatrix4fv(get_uniform_location(__UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
+        glUseProgram(0);
 
         needs_rebuild = false;
     }
