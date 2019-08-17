@@ -13,7 +13,8 @@ follows:
 | --- | --- | :-- |
 | 0 | pi | Platform-independence code for features such as threading. |
 | 1 | core | Core engine framework; facilitates basic operation and communication among components. |
-| 2 | renderer | Renderer module; responsible for managing windows and rendering. |
+| 2 | resman | Resource manager; facilitates resource loading and lifetime. |
+| 3 | renderer | Renderer module; responsible for managing windows and rendering. |
 
 A large number of additional modules are planned for future inclusion.
 

@@ -1,4 +1,4 @@
-set(MODULE_IDS "pi;core;renderer")
+set(MODULE_IDS "pi;core;resman;renderer")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.0)
