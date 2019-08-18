@@ -13,6 +13,7 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
+#include <utility>
 #include <vector>
 
 #define US_PER_S 1000000LLU
@@ -91,8 +92,8 @@ namespace argus {
         }
         smutex_unlock_shared(g_close_callbacks.list_mutex);
 
-        thread_detach(*g_render_thread);
-        thread_destroy(*g_render_thread);
+        g_render_thread->detach();
+        g_render_thread->destroy();
     }
 
     static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {
@@ -349,7 +350,7 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_render_thread = &thread_create(_render_loop, nullptr);
+        g_render_thread = &Thread::create(_render_loop, nullptr);
 
         // pass control over to the game loop
         _game_loop();

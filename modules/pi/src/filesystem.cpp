@@ -1,5 +1,6 @@
 #include "argus/filesystem.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -102,12 +103,69 @@ namespace argus {
 
         return rc;
     }
+
+    AsyncFileRequestHandle AsyncFileRequestHandle::operator =(AsyncFileRequestHandle const &rhs) {
+        return AsyncFileRequestHandle(rhs);
+    }
     
+    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &rhs):
+            file_handle(rhs.file_handle),
+            streamed_bytes(rhs.streamed_bytes),
+            result_valid(rhs.result_valid.load()),
+            success(rhs.success),
+            thread(nullptr) {
+    }
+
+    AsyncFileRequestHandle::AsyncFileRequestHandle(FileHandle &file_handle, const size_t offset, const size_t size,
+            unsigned char *const buf, AsyncFileRequestCallback callback):
+            file_handle(&file_handle),
+            offset(offset),
+            size(size),
+            buf(buf),
+            callback(callback),
+            result_valid(false) {
+    }
+    
+    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs):
+            file_handle(std::move(rhs.file_handle)),
+            streamed_bytes(std::move(rhs.streamed_bytes)),
+            result_valid(rhs.result_valid.load()),
+            success(std::move(rhs.success)),
+            thread(nullptr) {
+    }
+
+    void AsyncFileRequestHandle::join(void) {
+        thread->join();
+    }
+
+    void AsyncFileRequestHandle::cancel(void) {
+        thread->detach();
+        thread->destroy();
+    }
+
+    size_t AsyncFileRequestHandle::get_streamed_bytes(void) {
+        if (!result_valid) {
+            return 0;
+        }
+        return streamed_bytes;
+    }
+
+    bool AsyncFileRequestHandle::was_successful(void) {
+        if (!result_valid) {
+            return false;
+        }
+        return success;
+    }
+
+    bool AsyncFileRequestHandle::is_result_valid(void) {
+        return result_valid;
+    }
+
     FileHandle::FileHandle(const std::string path, const size_t size, void *const handle):
         path(path),
         size(size),
         handle(handle),
-        valid(false) {
+        valid(true) {
     }
 
     const int FileHandle::create(const std::string path, const int mode, FileHandle *const handle) {
@@ -151,6 +209,78 @@ namespace argus {
     const int FileHandle::release(void) {
         fclose(static_cast<FILE*>(this->handle));
         this->valid = false;
+    }
+
+    const int FileHandle::read(size_t offset, size_t size, unsigned char *const buf) const {
+        if (!valid) {
+            fprintf(stderr, "read called on invalid FileHandle\n");
+            return -1;
+        }
+
+        if (offset + size > this->size) {
+            fprintf(stderr, "read called with invalid offset/size parameters");
+            return -1;
+        }
+
+        //TODO
+    }
+
+    void *FileHandle::read_async_wrapper(void *ptr) {
+        AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
+        request_handle->file_handle->read(request_handle->offset, request_handle->size, request_handle->buf);
+    }
+
+    const int FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
+            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
+        if (!valid) {
+            fprintf(stderr, "read_async called on invalid FileHandle\n");
+            return -1;
+        }
+
+        if (offset + size > this->size) {
+            fprintf(stderr, "read_async called with invalid offset/size parameters");
+            return -1;
+        }
+
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(*this, offset, size, buf, callback);
+
+        Thread thread = Thread::create(std::bind(&FileHandle::read_async_wrapper, this, std::placeholders::_1), static_cast<void*>(this));
+        handle_local.thread = &thread;
+
+        *request_handle = handle_local;
+        
+        return 0;
+    }
+
+    const int FileHandle::write(size_t offset, size_t size, unsigned char *const buf) const {
+        if (!valid) {
+            fprintf(stderr, "write called on invalid FileHandle\n");
+            return -1;
+        }
+
+        //TODO
+    }
+
+    void *FileHandle::write_async_wrapper(void *ptr) {
+        AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
+        request_handle->file_handle->write(request_handle->offset, request_handle->size, request_handle->buf);
+    }
+
+    const int FileHandle::write_async(const size_t offset, const size_t size, unsigned char *const buf,
+            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
+        if (!valid) {
+            fprintf(stderr, "write_async called on invalid FileHandle\n");
+            return -1;
+        }
+
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(*this, offset, size, buf, callback);
+
+        Thread thread = Thread::create(std::bind(&FileHandle::write_async_wrapper, this, std::placeholders::_1), static_cast<void*>(this));
+        handle_local.thread = &thread;
+
+        *request_handle = handle_local;
+        
+        return 0;
     }
 
 }

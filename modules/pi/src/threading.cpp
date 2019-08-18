@@ -1,5 +1,6 @@
-// module pi
 #include "argus/threading.hpp"
+
+#include <functional>
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
@@ -17,41 +18,72 @@
 namespace argus {
 
     #ifdef USE_PTHREADS
-    Thread *thread_create(void *const (routine)(void*), void *arg) {
-        pthread_t *thread = static_cast<pthread_t*>(malloc(sizeof(pthread_t)));
-        //pthread_create(thread, NULL, routine, arg);
+    struct FunctionDelegate {
+        static void *invoke_static(void *self) {
+            return static_cast<FunctionDelegate*>(self)->invoke();
+        }
 
-        return static_cast<Thread*>(thread);
+        std::function<void*(void*)> &func;
+        void *arg;
+
+        FunctionDelegate(std::function<void*(void*)> &func, void *arg):
+                func(func),
+                arg(arg) {
+        }
+
+        void *invoke() {
+            printf("func: %p\n", func);
+            return func(arg);
+        }
+    };
+
+    Thread &Thread::create(std::function<void*(void*)> routine, void *arg) {
+        pthread_t pthread;
+
+        FunctionDelegate delegate(routine, arg);
+        pthread_create(&pthread, NULL, delegate.invoke_static, &delegate);
+
+        return *new Thread(pthread);
     }
 
-    void thread_join(Thread &thread) {
-        pthread_join(static_cast<pthread_t>(*thread), NULL);
+    Thread::Thread(pthread_t handle):
+            handle(handle) {
     }
 
-    void thread_detach(Thread &thread) {
-        pthread_detach(static_cast<pthread_t>(*thread));
+    void Thread::join() {
+        pthread_join(handle, NULL);
     }
 
-    void thread_destroy(Thread &thread) {
-        pthread_cancel(static_cast<pthread_t>(*thread));
+    void Thread::detach() {
+        pthread_detach(handle);
+    }
+
+    void Thread::destroy() {
+        pthread_cancel(handle);
+        delete this;
     }
     #else
-    Thread &thread_create(void *(*const routine)(void*), void *arg) {
-        return *static_cast<Thread*>(new std::thread(routine, arg));
+    Thread &Thread::create(std::function<void*(void*)> routine, void *arg) {
+        return *new Thread(new std::thread(routine, arg));
     }
 
-    void thread_join(Thread &thread) {
-        static_cast<std::thread*>(&thread)->join();
+    Thread::Thread(std::thread *handle):
+            handle(handle) {
+    }
+
+    void Thread::join() {
+        handle->join();
         return;
     }
 
-    void thread_detach(Thread &thread) {
-        static_cast<std::thread*>(&thread)->detach();
+    void Thread::detach() {
+        handle->detach();
         return;
     }
 
-    void thread_destroy(Thread &thread) {
-        delete &thread;
+    void Thread::destroy() {
+        delete handle;
+        delete this;
         return;
     }
     #endif
@@ -76,7 +108,7 @@ namespace argus {
     void smutex_unlock(smutex &mutex) {
         ReleaseSRWLockExclusive(mutex);
     }
-    
+
     void smutex_lock_shared(smutex &mutex) {
         AcquireSRWLockShared(mutex);
     }
@@ -84,7 +116,7 @@ namespace argus {
     void smutex_try_lock_shared(smutex &mutex) {
         return TryAcquireSRWLockShared(mutex) != 0;
     }
-   
+
     void smutex_unlock_shared(smutex &mutex) {
         ReleaseSRWLockShared(mutex);
     }
@@ -108,7 +140,7 @@ namespace argus {
     void smutex_unlock(smutex &mutex) {
         pthread_rwlock_unlock(&mutex);
     }
-    
+
     void smutex_lock_shared(smutex &mutex) {
         pthread_rwlock_rdlock(&mutex);
     }
@@ -116,7 +148,7 @@ namespace argus {
     bool smutex_try_lock_shared(smutex &mutex) {
         return pthread_rwlock_rdlock(&mutex) == 0;
     }
-   
+
     void smutex_unlock_shared(smutex &mutex) {
         pthread_rwlock_unlock(&mutex);
     }

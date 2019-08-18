@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #ifdef USE_PTHREADS
 #include <pthread.h>
 #else
@@ -7,11 +9,11 @@
 #endif
 
 namespace argus {
-    
+
     #ifdef USE_PTHREADS
-    typedef pthread_t Thread;
+    typedef pthread_t thread_handle_t;
     #else
-    typedef std::thread Thread;
+    typedef std::thread* thread_handle_t;
     #endif
 
     #ifdef __WIN32
@@ -20,41 +22,56 @@ namespace argus {
     typedef pthread_rwlock_t smutex;
     #endif
 
-    /**
-     * \brief Creates a new thread.
-     *
-     * Note that this object returns a handle defined by Argus in order to
-     * enable compatibility with multiple threading backends.
-     *
-     * \param routine The callback to invoke in the new thread.
-     * \param arg The argument to pass to the callback.
-     * \return A handle to the new thread.
-     */
-    Thread &thread_create(void *(*const routine)(void*), void *arg);
+    class Thread {
+        private:
+            #ifdef USE_PTHREADS
+            pthread_t handle;
 
-    /**
-     * \brief Pauses execution of the current thread until the target thread has
-     *        exited.
-     *
-     * \param thread The thread to join with.
-     */
-    void thread_join(Thread &thread);
+            Thread(pthread_t handle);
+            #else
+            std::thread* handle;
 
-    /**
-     * \brief Detaches the target thread from its parent.
-     *
-     * \param thread The thread to detach.
-     */
-    void thread_detach(Thread &thread);
+            Thread(std::thread *handle);
+            #endif
+    
 
-    /**
-     * \brief Destroys the target thread.
-     * 
-     * This will send an interrupt signal to the target thread.
-     *
-     * \param thread The thread to destroy.
-     */
-    void thread_destroy(Thread &thread);
+        public:
+            /**
+             * \brief Creates a new thread.
+             *
+             * Note that this object returns a handle defined by Argus in order to
+             * enable compatibility with multiple threading backends.
+             *
+             * \param routine The callback to invoke in the new thread.
+             * \param arg The argument to pass to the callback.
+             * \return A handle to the new thread.
+             */
+            static Thread &create(std::function<void*(void*)> routine, void *arg);
+
+            /**
+             * \brief Pauses execution of the current thread until the target thread has
+             *        exited.
+             *
+             * \param thread The thread to join with.
+             */
+            void join(void);
+
+            /**
+             * \brief Detaches the target thread from its parent.
+             *
+             * \param thread The thread to detach.
+             */
+            void detach(void);
+
+            /**
+             * \brief Destroys the target thread.
+             * 
+             * This will send an interrupt signal to the target thread.
+             *
+             * \param thread The thread to destroy.
+             */
+            void destroy(void);
+    };
 
     /**
      * \brief Initializes a new smutex at the given pointer.
