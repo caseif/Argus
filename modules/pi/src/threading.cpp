@@ -8,7 +8,7 @@
 #include <thread>
 #endif
 
-#ifdef __WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
@@ -56,7 +56,7 @@ namespace argus {
     }
     #endif
 
-    #ifdef __WIN32
+    #ifdef _WIN32
     void smutex_create(smutex &mutex) {
         IniitalizeSRWLock(mutex);
     }

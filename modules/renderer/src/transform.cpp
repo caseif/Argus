@@ -19,9 +19,9 @@ namespace argus {
     }
 
     Transform::Transform(Transform &&rhs):
-            translation(rhs.get_translation()),
-            rotation(rhs.get_rotation()),
-            scale(rhs.get_scale()) {
+            translation(std::move(rhs.translation)),
+            rotation(rhs.rotation.load()),
+            scale(std::move(rhs.scale)) {
     }
 
     Transform::Transform(vec2f const &translation, const float rotation, vec2f const &scale):

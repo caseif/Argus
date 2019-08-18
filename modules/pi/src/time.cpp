@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <thread>
-#ifdef __WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #else
 #include <time.h>
@@ -16,7 +16,7 @@
 
 namespace argus {
 
-    #ifdef __WIN32
+    #ifdef _WIN32
     #define WIN32_EPOCH_OFFSET = 11644473600000000ULL
 
     const unsigned long long microtime(void) {

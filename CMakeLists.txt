@@ -16,9 +16,12 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 project(argus
         VERSION 0.1.0)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 option(USE_GLES "Use ES profile for OpenGL" OFF)
-option(DEBUG "Compile with debug symbols and messages" OFF)
 
 if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested")
@@ -26,11 +29,6 @@ endif()
 
 if (${USE_GLES})
   message("Using GL ES profile as requested")
-endif()
-
-if (${DEBUG})
-  message("Compiling with debug symbols and messages as requested")
-  set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
@@ -86,12 +84,27 @@ function(setup_submodule)
     add_definitions("-DUSE_PTHREADS")
   endif()
 
-  if (${USE_GLES})
+  if(${USE_GLES})
     add_definitions("-DUSE_GLES")
   endif()
 
-  if (${DEBUG})
+  if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_definitions("-D_ARGUS_DEBUG_MODE")
+  endif()
+
+  if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
+    if(MSVC_VERSION LESS 1911)
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FULL /Od")
+    else()
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FASTLINK /Od")
+    endif()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
+  else() 
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()
 
   add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
