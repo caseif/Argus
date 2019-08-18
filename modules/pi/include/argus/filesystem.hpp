@@ -8,8 +8,7 @@
 
 #define FILE_MODE_READ 1
 #define FILE_MODE_WRITE 2
-#define FILE_MODE_APPEND 4
-#define FILE_MODE_CREATE 8
+#define FILE_MODE_CREATE 4
 
 namespace argus {
 
@@ -23,7 +22,7 @@ namespace argus {
 
         private:
             FileHandle *file_handle;
-            size_t offset;
+            ssize_t offset;
             size_t size;
             unsigned char *buf;
             AsyncFileRequestCallback callback;
@@ -41,7 +40,7 @@ namespace argus {
 
             AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs);
 
-            AsyncFileRequestHandle(FileHandle &file_handle, const size_t offset, const size_t size,
+            AsyncFileRequestHandle(FileHandle &file_handle, const ssize_t offset, const size_t size,
                     unsigned char *const buf, AsyncFileRequestCallback callback);
 
         public:
@@ -101,9 +100,9 @@ namespace argus {
             const int read_async(size_t offset, size_t size, unsigned char *const buf,
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);
             
-            const int write(size_t offset, size_t size, unsigned char *const buf) const;
+            const int write(ssize_t offset, size_t size, unsigned char *const buf) const;
 
-            const int write_async(size_t offset, size_t size, unsigned char *const buf,
+            const int write_async(ssize_t offset, size_t size, unsigned char *const buf,
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);
 
     };

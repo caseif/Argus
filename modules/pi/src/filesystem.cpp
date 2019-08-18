@@ -8,8 +8,11 @@
 #ifdef _WIN32
     #include <Windows.h>
 
+    #define errno WSAGetLastError()
     #define fileno _fileno
+    #define fseek _fseek64
     #define fstat _fstat64
+    #define stat _stat64
     #define stat_t __stat64
 #elif defined __APPLE__
     #include <mach-o/dyld.h>
@@ -32,7 +35,9 @@
     #endif
 
     #define fopen fopen64
+    #define fseek fseeko64
     #define fstat fstat64
+    #define stat stat64
     #define stat_t struct stat64
 #elif defined __NetBSD__ || defined __DragonFly__
     #include <unistd.h>
@@ -116,7 +121,7 @@ namespace argus {
             thread(nullptr) {
     }
 
-    AsyncFileRequestHandle::AsyncFileRequestHandle(FileHandle &file_handle, const size_t offset, const size_t size,
+    AsyncFileRequestHandle::AsyncFileRequestHandle(FileHandle &file_handle, const ssize_t offset, const size_t size,
             unsigned char *const buf, AsyncFileRequestCallback callback):
             file_handle(&file_handle),
             offset(offset),
@@ -172,10 +177,9 @@ namespace argus {
         const char *std_mode;
         // we check for the following invalid cases:
         // - no modes set at all
-        // - write and append set simultaneously
         // - create set without any other modes
         // - read and create set without any other modes
-        if ((mode == 0) || (mode & (FILE_MODE_WRITE | FILE_MODE_APPEND)) || (mode == FILE_MODE_CREATE)
+        if ((mode == 0) || (mode == FILE_MODE_CREATE)
                 || ((mode & ~FILE_MODE_READ) == (FILE_MODE_CREATE))) {
             printf("FileHandle::create called with invalid mode %d\n", mode);
             return -1;
@@ -185,19 +189,35 @@ namespace argus {
             std_mode = "w+";
         } else if (mode & (FILE_MODE_READ | FILE_MODE_WRITE)) {
             std_mode = "r+";
-        } else if (mode & (FILE_MODE_READ | FILE_MODE_APPEND)) {
-            std_mode = "a+";
         } else if (mode & FILE_MODE_READ) {
             std_mode = "r";
         } else if (mode & FILE_MODE_WRITE) {
             std_mode = "w";
-        } else if (mode & FILE_MODE_APPEND) {
-            std_mode = "a";
         }
 
-        FILE *file = fopen64(path.c_str(), std_mode);
+        FILE *file;
+        if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {               
+            stat_t stat_buf;
+            int stat_rc = stat(path.c_str(), &stat_buf);
+
+            if (stat_rc) {
+                if (errno == ENOENT) {
+                    FILE *file_tmp = fopen(path.c_str(), "w");
+                    if (!file_tmp) {
+                        return errno;
+                    }
+
+                    fclose(file_tmp);
+                } else {
+                    return errno;
+                }
+            }
+        }
+
+        file = fopen(path.c_str(), std_mode);
+
         if (file == nullptr) {
-            return -1;
+            return errno;
         }
 
         stat_t stat_buf;
@@ -218,11 +238,19 @@ namespace argus {
         }
 
         if (offset + size > this->size) {
-            fprintf(stderr, "read called with invalid offset/size parameters");
+            fprintf(stderr, "read called with invalid offset/size parameter");
             return -1;
         }
 
-        //TODO
+        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+
+        size_t read_chunks = fread(buf, size, 1, static_cast<FILE*>(handle));
+
+        if (read_chunks == 1) {
+            return errno;
+        }
+
+        return 0;
     }
 
     void *FileHandle::read_async_wrapper(void *ptr) {
@@ -252,13 +280,30 @@ namespace argus {
         return 0;
     }
 
-    const int FileHandle::write(size_t offset, size_t size, unsigned char *const buf) const {
+    const int FileHandle::write(ssize_t offset, size_t size, unsigned char *const buf) const {
         if (!valid) {
             fprintf(stderr, "write called on invalid FileHandle\n");
             return -1;
         }
 
-        //TODO
+        if (offset < -1) {
+            fprintf(stderr, "write called with invalid offset parameters");
+            return -1;
+        }
+
+        if (offset == -1) {
+            fseek(static_cast<FILE*>(handle), 0, SEEK_END);
+        } else {
+            fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+        }
+
+        size_t read_chunks = fwrite(buf, size, 1, static_cast<FILE*>(handle));
+
+        if (read_chunks == 1) {
+            return errno;
+        }
+
+        return 0;
     }
 
     void *FileHandle::write_async_wrapper(void *ptr) {
@@ -266,7 +311,7 @@ namespace argus {
         request_handle->file_handle->write(request_handle->offset, request_handle->size, request_handle->buf);
     }
 
-    const int FileHandle::write_async(const size_t offset, const size_t size, unsigned char *const buf,
+    const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
             AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
         if (!valid) {
             fprintf(stderr, "write_async called on invalid FileHandle\n");
