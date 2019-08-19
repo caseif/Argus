@@ -4,49 +4,50 @@
 // module renderer
 #include "internal/glext.hpp"
 
+#include <map>
 #include <SDL2/SDL_video.h>
 
 namespace argus {
 
     namespace glext {
-        void (APIENTRY *glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
-        void (APIENTRY *glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+        PTR_glFramebufferTexture glFramebufferTexture;
+        PTR_glGenFramebuffers glGenFramebuffers;
 
-        void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer);
-        void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
-        void (APIENTRY *glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
-        void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint *buffers);
-        void (APIENTRY *glGenBuffers)(GLsizei n, GLuint *buffers);
+        PTR_glBindBuffer glBindBuffer;
+        PTR_glBufferData glBufferData;
+        PTR_glBufferSubData glBufferSubData;
+        PTR_glDeleteBuffers glDeleteBuffers;
+        PTR_glGenBuffers glGenBuffers;
 
-        void (APIENTRY *glBindVertexArray)(GLuint array);
-        void (APIENTRY *glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
-        void (APIENTRY *glEnableVertexAttribArray)(GLuint index);
-        void (APIENTRY *glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        void (APIENTRY *glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+        PTR_glBindVertexArray glBindVertexArray;
+        PTR_glDeleteVertexArrays glDeleteVertexArrays;
+        PTR_glEnableVertexAttribArray glEnableVertexAttribArray;
+        PTR_glGenVertexArrays glGenVertexArrays;
+        PTR_glVertexAttribPointer glVertexAttribPointer;
 
-        void (APIENTRY *glAttachShader)(GLuint program, GLuint shader);
-        void (APIENTRY *glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
-        void (APIENTRY *glCompileShader)(GLuint shader);
-        GLuint (APIENTRY *glCreateProgram)(void);
-        GLuint (APIENTRY *glCreateShader)(GLenum shaderType);
-        void (APIENTRY *glDeleteProgram)(GLuint program);
-        void (APIENTRY *glDeleteShader)(GLuint shader);
-        void (APIENTRY *glDetachShader)(GLuint program, GLuint shader);
-        void (APIENTRY *glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
-        void (APIENTRY *glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
-        void (APIENTRY *glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-        GLint (APIENTRY *glGetUniformLocation)(GLuint program, const GLchar *name);
-        GLboolean (APIENTRY *glIsShader)(GLuint shader);
-        void (APIENTRY *glLinkProgram)(GLuint program);
-        void (APIENTRY *glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-        void (APIENTRY *glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-        void (APIENTRY *glUseProgram)(GLuint program);
+        PTR_glAttachShader glAttachShader;
+        PTR_glBindAttribLocation glBindAttribLocation;
+        PTR_glCompileShader glCompileShader;
+        PTR_glCreateProgram glCreateProgram;
+        PTR_glCreateShader glCreateShader;
+        PTR_glDeleteProgram glDeleteProgram;
+        PTR_glDeleteShader glDeleteShader;
+        PTR_glDetachShader glDetachShader;
+        PTR_glGetProgramiv glGetProgramiv;
+        PTR_glGetShaderiv glGetShaderiv;
+        PTR_glGetShaderInfoLog glGetShaderInfoLog;
+        PTR_glGetUniformLocation glGetUniformLocation;
+        PTR_glIsShader glIsShader;
+        PTR_glLinkProgram glLinkProgram;
+        PTR_glShaderSource glShaderSource;
+        PTR_glUniformMatrix4fv glUniformMatrix4fv;
+        PTR_glUseProgram glUseProgram;
 
-        void (APIENTRY *glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
+        PTR_glDebugMessageCallback glDebugMessageCallback;
     }
 
-    template <typename FunctionType>
-    static void _load_gl_ext(const char *const func_name, FunctionType *target) {
+    template <typename FunctionSpec>
+    static void _load_gl_ext(const char *const func_name, FunctionSpec *target) {
         //TODO: verify the extension for each given function is supported
         void *function = SDL_GL_GetProcAddress(func_name);
 
@@ -54,7 +55,7 @@ namespace argus {
             _ARGUS_FATAL("Failed to load OpenGL extension: %s\n", func_name);
         }
 
-        *target = reinterpret_cast<FunctionType>(function);
+        *target = reinterpret_cast<FunctionSpec>(function);
     }
 
     void load_opengl_extensions(void) {

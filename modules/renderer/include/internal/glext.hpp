@@ -8,42 +8,77 @@ namespace argus {
 
     namespace glext {
         typedef void (APIENTRY *DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-            const GLchar *message, void *userParam);
+                const GLchar *message, void *userParam);
 
-        extern void (APIENTRY *glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
-        extern void (APIENTRY *glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+        typedef void (APIENTRY *PTR_glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+        typedef void (APIENTRY *PTR_glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
-        extern void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer);
-        extern void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
-        extern void (APIENTRY *glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
-        extern void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint *buffers);
-        extern void (APIENTRY *glGenBuffers)(GLsizei n, GLuint *buffers);
+        typedef void (APIENTRY *PTR_glBindBuffer)(GLenum target, GLuint buffer);
+        typedef void (APIENTRY *PTR_glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
+        typedef void (APIENTRY *PTR_glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        typedef void (APIENTRY *PTR_glDeleteBuffers)(GLsizei n, const GLuint *buffers);
+        typedef void (APIENTRY *PTR_glGenBuffers)(GLsizei n, GLuint *buffers);
 
-        extern void (APIENTRY *glBindVertexArray)(GLuint array);
-        extern void (APIENTRY *glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
-        extern void (APIENTRY *glEnableVertexAttribArray)(GLuint index);
-        extern void (APIENTRY *glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        extern void (APIENTRY *glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+        typedef void (APIENTRY *PTR_glBindVertexArray)(GLuint array);
+        typedef void (APIENTRY *PTR_glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
+        typedef void (APIENTRY *PTR_glEnableVertexAttribArray)(GLuint index);
+        typedef void (APIENTRY *PTR_glGenVertexArrays)(GLsizei n, GLuint *arrays);
+        typedef void (APIENTRY *PTR_glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
-        extern void (APIENTRY *glAttachShader)(GLuint program, GLuint shader);
-        extern void (APIENTRY *glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
-        extern void (APIENTRY *glCompileShader)(GLuint shader);
-        extern GLuint (APIENTRY *glCreateProgram)(void);
-        extern GLuint (APIENTRY *glCreateShader)(GLenum shaderType);
-        extern void (APIENTRY *glDeleteProgram)(GLuint program);
-        extern void (APIENTRY *glDeleteShader)(GLuint shader);
-        extern void (APIENTRY *glDetachShader)(GLuint program, GLuint shader);
-        extern void (APIENTRY *glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
-        extern void (APIENTRY *glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
-        extern void (APIENTRY *glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-        extern GLint (APIENTRY *glGetUniformLocation)(GLuint program, const GLchar *name);
-        extern GLboolean (APIENTRY *glIsShader)(GLuint shader);
-        extern void (APIENTRY *glLinkProgram)(GLuint program);
-        extern void (APIENTRY *glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-        extern void (APIENTRY *glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-        extern void (APIENTRY *glUseProgram)(GLuint program);
+        typedef void (APIENTRY *PTR_glAttachShader)(GLuint program, GLuint shader);
+        typedef void (APIENTRY *PTR_glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+        typedef void (APIENTRY *PTR_glCompileShader)(GLuint shader);
+        typedef GLuint (APIENTRY *PTR_glCreateProgram)(void);
+        typedef GLuint (APIENTRY *PTR_glCreateShader)(GLenum shaderType);
+        typedef void (APIENTRY *PTR_glDeleteProgram)(GLuint program);
+        typedef void (APIENTRY *PTR_glDeleteShader)(GLuint shader);
+        typedef void (APIENTRY *PTR_glDetachShader)(GLuint program, GLuint shader);
+        typedef void (APIENTRY *PTR_glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+        typedef void (APIENTRY *PTR_glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
+        typedef void (APIENTRY *PTR_glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+        typedef GLint (APIENTRY *PTR_glGetUniformLocation)(GLuint program, const GLchar *name);
+        typedef GLboolean (APIENTRY *PTR_glIsShader)(GLuint shader);
+        typedef void (APIENTRY *PTR_glLinkProgram)(GLuint program);
+        typedef void (APIENTRY *PTR_glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+        typedef void (APIENTRY *PTR_glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+        typedef void (APIENTRY *PTR_glUseProgram)(GLuint program);
 
-        extern void (APIENTRY *glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
+        typedef void (APIENTRY *PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
+
+        extern PTR_glFramebufferTexture glFramebufferTexture;
+        extern PTR_glGenFramebuffers glGenFramebuffers;
+
+        extern PTR_glBindBuffer glBindBuffer;
+        extern PTR_glBufferData glBufferData;
+        extern PTR_glBufferSubData glBufferSubData;
+        extern PTR_glDeleteBuffers glDeleteBuffers;
+        extern PTR_glGenBuffers glGenBuffers;
+
+        extern PTR_glBindVertexArray glBindVertexArray;
+        extern PTR_glDeleteVertexArrays glDeleteVertexArrays;
+        extern PTR_glEnableVertexAttribArray glEnableVertexAttribArray;
+        extern PTR_glGenVertexArrays glGenVertexArrays;
+        extern PTR_glVertexAttribPointer glVertexAttribPointer;
+
+        extern PTR_glAttachShader glAttachShader;
+        extern PTR_glBindAttribLocation glBindAttribLocation;
+        extern PTR_glCompileShader glCompileShader;
+        extern PTR_glCreateProgram glCreateProgram;
+        extern PTR_glCreateShader glCreateShader;
+        extern PTR_glDeleteProgram glDeleteProgram;
+        extern PTR_glDeleteShader glDeleteShader;
+        extern PTR_glDetachShader glDetachShader;
+        extern PTR_glGetProgramiv glGetProgramiv;
+        extern PTR_glGetShaderiv glGetShaderiv;
+        extern PTR_glGetShaderInfoLog glGetShaderInfoLog;
+        extern PTR_glGetUniformLocation glGetUniformLocation;
+        extern PTR_glIsShader glIsShader;
+        extern PTR_glLinkProgram glLinkProgram;
+        extern PTR_glShaderSource glShaderSource;
+        extern PTR_glUniformMatrix4fv glUniformMatrix4fv;
+        extern PTR_glUseProgram glUseProgram;
+
+        extern PTR_glDebugMessageCallback glDebugMessageCallback;
     }
 
     void load_opengl_extensions(void);
