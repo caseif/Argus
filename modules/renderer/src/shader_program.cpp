@@ -50,9 +50,10 @@ namespace argus {
         if (res == GL_FALSE) {
             int log_len;
             glGetShaderiv(gl_shader, GL_INFO_LOG_LENGTH, &log_len);
-            char log[log_len];
+            char *log = new char[log_len];
             glGetShaderInfoLog(gl_shader, log_len, nullptr, log);
             _ARGUS_FATAL("Failed to compile %s shader:\n%s\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment", log);
+            delete[] log;
         }
 
         return gl_shader;
@@ -184,9 +185,10 @@ namespace argus {
         if (res == GL_FALSE) {
             int log_len;
             glGetShaderiv(gl_program, GL_INFO_LOG_LENGTH, &log_len);
-            char log[log_len];
+            char *log = new char[log_len];
             glGetShaderInfoLog(gl_program, __LOG_MAX_LEN, nullptr, log);
             _ARGUS_FATAL("Failed to link program:\n%s\n", log);
+            delete[] log;
         }
 
         // delete bootstrap shaders

@@ -9,40 +9,40 @@
 namespace argus {
 
     namespace glext {
-        void (*glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
-        void (*glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+        void (APIENTRY *glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+        void (APIENTRY *glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
-        void (*glBindBuffer)(GLenum target, GLuint buffer);
-        void (*glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
-        void (*glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
-        void (*glDeleteBuffers)(GLsizei n, const GLuint *buffers);
-        void (*glGenBuffers)(GLsizei n, GLuint *buffers);
+        void (APIENTRY *glBindBuffer)(GLenum target, GLuint buffer);
+        void (APIENTRY *glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
+        void (APIENTRY *glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        void (APIENTRY *glDeleteBuffers)(GLsizei n, const GLuint *buffers);
+        void (APIENTRY *glGenBuffers)(GLsizei n, GLuint *buffers);
 
-        void (*glBindVertexArray)(GLuint array);
-        void (*glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
-        void (*glEnableVertexAttribArray)(GLuint index);
-        void (*glGenVertexArrays)(GLsizei n, GLuint *arrays);
-        void (*glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+        void (APIENTRY *glBindVertexArray)(GLuint array);
+        void (APIENTRY *glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
+        void (APIENTRY *glEnableVertexAttribArray)(GLuint index);
+        void (APIENTRY *glGenVertexArrays)(GLsizei n, GLuint *arrays);
+        void (APIENTRY *glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
-        void (*glAttachShader)(GLuint program, GLuint shader);
-        void (*glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
-        void (*glCompileShader)(GLuint shader);
-        GLuint (*glCreateProgram)(void);
-        GLuint (*glCreateShader)(GLenum shaderType);
-        void (*glDeleteProgram)(GLuint program);
-        void (*glDeleteShader)(GLuint shader);
-        void (*glDetachShader)(GLuint program, GLuint shader);
-        void (*glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
-        void (*glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
-        void (*glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-        GLint (*glGetUniformLocation)(GLuint program, const GLchar *name);
-        GLboolean (*glIsShader)(GLuint shader);
-        void (*glLinkProgram)(GLuint program);
-        void (*glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-        void (*glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-        void (*glUseProgram)(GLuint program);
+        void (APIENTRY *glAttachShader)(GLuint program, GLuint shader);
+        void (APIENTRY *glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+        void (APIENTRY *glCompileShader)(GLuint shader);
+        GLuint (APIENTRY *glCreateProgram)(void);
+        GLuint (APIENTRY *glCreateShader)(GLenum shaderType);
+        void (APIENTRY *glDeleteProgram)(GLuint program);
+        void (APIENTRY *glDeleteShader)(GLuint shader);
+        void (APIENTRY *glDetachShader)(GLuint program, GLuint shader);
+        void (APIENTRY *glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+        void (APIENTRY *glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
+        void (APIENTRY *glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+        GLint (APIENTRY *glGetUniformLocation)(GLuint program, const GLchar *name);
+        GLboolean (APIENTRY *glIsShader)(GLuint shader);
+        void (APIENTRY *glLinkProgram)(GLuint program);
+        void (APIENTRY *glShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+        void (APIENTRY *glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+        void (APIENTRY *glUseProgram)(GLuint program);
 
-        void (*glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
+        void (APIENTRY *glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
     }
 
     template <typename FunctionType>

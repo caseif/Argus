@@ -17,7 +17,7 @@
 namespace argus {
 
     #ifdef _WIN32
-    #define WIN32_EPOCH_OFFSET = 11644473600000000ULL
+    #define WIN32_EPOCH_OFFSET 11644473600000000ULL
 
     const unsigned long long microtime(void) {
         FILETIME ft;
@@ -27,6 +27,7 @@ namespace argus {
         tt |= ft.dwLowDateTime;
         tt /= 10;
         tt -= WIN32_EPOCH_OFFSET;
+        return tt;
     }
     #else
     const unsigned long long microtime(void) {
@@ -34,18 +35,17 @@ namespace argus {
         clock_gettime(CLOCK_MONOTONIC, &now);
         return now.tv_sec * 1000000 + now.tv_nsec / 1000;
     }
+    #endif
 
     #ifdef USE_PTHREADS
     void sleep_nanos(const unsigned long long ns) {
-        const struct timespec spec = {(long) (ns / NS_PER_S), (long) (ns % NS_PER_S)};
+        const struct timespec spec = { (long) (ns / NS_PER_S), (long) (ns % NS_PER_S) };
         nanosleep(&spec, NULL);
     }
     #else
     void sleep_nanos(const unsigned long long ns) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(ns));
     }
-    #endif
-
     #endif
 
 }

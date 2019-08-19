@@ -2,6 +2,10 @@
 
 #include <functional>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #ifdef USE_PTHREADS
 #include <pthread.h>
 #else
@@ -16,7 +20,7 @@ namespace argus {
     typedef std::thread* thread_handle_t;
     #endif
 
-    #ifdef __WIN32
+    #ifdef _WIN32
     typedef PSRWLOCK smutex;
     #else
     typedef pthread_rwlock_t smutex;

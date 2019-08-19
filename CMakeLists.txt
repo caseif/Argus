@@ -10,6 +10,8 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
 set(CMAKE_C_OUTPUT_EXTENSION_REPLACE 1)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
@@ -30,6 +32,11 @@ endif()
 if (${USE_GLES})
   message("Using GL ES profile as requested")
 endif()
+
+find_package("SDL2" REQUIRED)
+find_package("OpenGL" REQUIRED)
+
+set(VMMLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/vmmlib/include")
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes dest)
@@ -75,7 +82,7 @@ function(setup_submodule)
 
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
-  include_directories("${MODULE_INCLUDES}")
+  include_directories("${MODULE_INCLUDES}" ${VMMLIB_INCLUDE_DIR})
   get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
   list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
   set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")

@@ -6,6 +6,12 @@
 #include <functional>
 #include <string>
 
+#ifdef _WIN32
+// builds targeting 32-bit define size_t as a 32-bit int, which won't do
+#define size_t unsigned __int64
+#define ssize_t __int64
+#endif
+
 #define FILE_MODE_READ 1
 #define FILE_MODE_WRITE 2
 #define FILE_MODE_CREATE 4

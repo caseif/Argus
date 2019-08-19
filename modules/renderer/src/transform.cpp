@@ -94,10 +94,9 @@ namespace argus {
         this->dirty = true;
     }
 
-    mat4f const Transform::to_matrix(void) {
-        float cos_rot;
-        float sin_rot;
-        sincosf32(rotation, &sin_rot, &cos_rot);
+    void Transform::to_matrix(float dst_arr[16]) {
+        float cos_rot = cos(rotation);
+        float sin_rot = sin(rotation);
 
         translation_mutex.lock();
         vec2f translation_current = translation;
@@ -107,15 +106,14 @@ namespace argus {
         vec2f scale_current = scale;
         scale_mutex.unlock();
 
-        std::vector<float> vals = {
+        float arr[16] = {
             cos_rot * scale_current.x(),    -sin_rot,                       0,  translation_current.x(),
             sin_rot,                        cos_rot * scale_current.y(),    0,  translation_current.y(),
             0,                              0,                              1,  0,
             0,                              0,                              0,  1
         };
-        mat4f res = mat4f();
-        res.set(vals.cbegin(), vals.cend());
-        return res;
+
+        dst_arr = std::move(arr);
     }
 
     const bool Transform::is_dirty(void) const {

@@ -158,14 +158,16 @@ namespace argus {
         }
 
         if (!shaders_initialized || transform.is_dirty()) {
-            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_TRUE,
-                    transform.to_matrix().array);
+            float transform_matrix[16];
+            transform.to_matrix(transform_matrix);
+            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_TRUE, transform_matrix);
             transform.clean();
         }
 
         if (!shaders_initialized || parent.transform.is_dirty()) {
-            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_LAYER_TRANSFORM), 1, GL_TRUE,
-                    parent.transform.to_matrix().array);
+            float transform_matrix[16];
+            parent.transform.to_matrix(transform_matrix);
+            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_LAYER_TRANSFORM), 1, GL_TRUE, transform_matrix);
         }
 
         if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {

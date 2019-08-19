@@ -79,7 +79,7 @@ namespace argus {
 
             void set_scale(vec2f const &scale);
 
-            mat4f const to_matrix(void);
+            void to_matrix(float dst_arr[16]);
 
             const bool is_dirty(void) const;
 

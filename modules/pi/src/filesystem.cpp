@@ -8,12 +8,15 @@
 #ifdef _WIN32
     #include <Windows.h>
 
+    #ifndef errno
     #define errno WSAGetLastError()
+    #endif
+
     #define fileno _fileno
-    #define fseek _fseek64
+    #define fseek _fseeki64
     #define fstat _fstat64
     #define stat _stat64
-    #define stat_t __stat64
+    #define stat_t struct _stat64
 #elif defined __APPLE__
     #include <mach-o/dyld.h>
 
@@ -55,19 +58,20 @@
 namespace argus {
 
     int get_executable_path(std::string *str) {
-        size_t max_path_len = 4097;
+        const size_t max_path_len = 4097;
+        size_t path_len = max_path_len;
         char path[max_path_len];
 
         int rc;
 
-        #ifdef _WIN32
+#ifdef _WIN32
         GetModuleFileName(NULL, path, max_path_len);
         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
 
         if (rc != 0) {
             return rc;
         }
-        #elif defined __APPLE__
+#elif defined __APPLE__
         uint32_t size;
         rc = _NSGetExecutablePath(path, &size);
 
@@ -75,34 +79,34 @@ namespace argus {
             _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
             return rc;
         }
-        #elif defined __linux__
+#elif defined __linux__
         ssize_t size = readlink("/proc/self/exe", path, max_path_len);
         if (size == -1) {
             return errno;
         }
-        #elif defined __FreeBSD__
+#elif defined __FreeBSD__
         int mib[4];
         mib[0] = CTL_KERN;
         mib[1] = KERN_PROC;
         mib[2] = KERN_PROC_PATHNAME;
         mib[3] = -1;
 
-        rc = sysctl(mib, 4, path, &max_path_len, NULL, 0);
+        rc = sysctl(mib, 4, path, &path_len, NULL, 0);
 
         if (rc != 0) {
             return errno;
         }
-        #elif defined __NetBSD__
+#elif defined __NetBSD__
         readlink("/proc/curproc/exe", path, max_path_len);
         if (size == -1) {
             return errno;
         }
-        #elif defined __DragonFly__
+#elif defined __DragonFly__
         readlink("/proc/curproc/file", path, max_path_len);
         if (size == -1) {
             return errno;
         }
-        #endif
+#endif
 
         *str = std::string(path);
 
@@ -112,8 +116,8 @@ namespace argus {
     AsyncFileRequestHandle AsyncFileRequestHandle::operator =(AsyncFileRequestHandle const &rhs) {
         return AsyncFileRequestHandle(rhs);
     }
-    
-    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &rhs):
+
+    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &rhs) :
             file_handle(rhs.file_handle),
             streamed_bytes(rhs.streamed_bytes),
             result_valid(rhs.result_valid.load()),
@@ -130,8 +134,8 @@ namespace argus {
             callback(callback),
             result_valid(false) {
     }
-    
-    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs):
+
+    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs) :
             file_handle(std::move(rhs.file_handle)),
             streamed_bytes(std::move(rhs.streamed_bytes)),
             result_valid(rhs.result_valid.load()),
@@ -166,13 +170,14 @@ namespace argus {
         return result_valid;
     }
 
-    FileHandle::FileHandle(const std::string path, const size_t size, void *const handle):
-        path(path),
-        size(size),
-        handle(handle),
-        valid(true) {
+    FileHandle::FileHandle(const std::string path, const size_t size, void *const handle) :
+            path(path),
+            size(size),
+            handle(handle),
+            valid(true) {
     }
 
+    //TODO: use the native Windows file API, if available
     const int FileHandle::create(const std::string path, const int mode, FileHandle *const handle) {
         const char *std_mode;
         // we check for the following invalid cases:
@@ -202,7 +207,12 @@ namespace argus {
 
             if (stat_rc) {
                 if (errno == ENOENT) {
+                    #ifdef _WIN32
+                    FILE *file_tmp;
+                    fopen_s(&file_tmp, path.c_str(), "w");
+                    #else
                     FILE *file_tmp = fopen(path.c_str(), "w");
+                    #endif
                     if (!file_tmp) {
                         return errno;
                     }
@@ -214,7 +224,11 @@ namespace argus {
             }
         }
 
+        #ifdef _WIN32
+        fopen_s(&file, path.c_str(), std_mode);
+        #else
         file = fopen(path.c_str(), std_mode);
+        #endif
 
         if (file == nullptr) {
             return errno;
@@ -224,11 +238,18 @@ namespace argus {
         fstat(fileno(file), &stat_buf);
 
         *handle = std::move(FileHandle(path, stat_buf.st_size, static_cast<void*>(file)));
+
+        return 0;
     }
 
     const int FileHandle::release(void) {
-        fclose(static_cast<FILE*>(this->handle));
+        int rc = fclose(static_cast<FILE*>(this->handle));
         this->valid = false;
+        if (rc == 0) {
+            return 0;
+        } else {
+            return errno;
+        }
     }
 
     const int FileHandle::read(size_t offset, size_t size, unsigned char *const buf) const {
@@ -256,6 +277,7 @@ namespace argus {
     void *FileHandle::read_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
         request_handle->file_handle->read(request_handle->offset, request_handle->size, request_handle->buf);
+        return nullptr; //TODO?
     }
 
     const int FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
@@ -309,6 +331,7 @@ namespace argus {
     void *FileHandle::write_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
         request_handle->file_handle->write(request_handle->offset, request_handle->size, request_handle->buf);
+        return nullptr; //TODO?
     }
 
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,

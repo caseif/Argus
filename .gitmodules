@@ -1,0 +1,4 @@
+[submodule "vmmlib"]
+    path = vmmlib
+    url = git://github.com/VMML/vmmlib.git
+    branch = 1.7
