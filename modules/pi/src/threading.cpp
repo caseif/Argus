@@ -90,7 +90,7 @@ namespace argus {
 
     #ifdef _WIN32
     void smutex_create(smutex &mutex) {
-        InitializeSRWLock(mutex);
+        InitializeSRWLock(&mutex);
     }
 
     void smutex_destroy(smutex &mutex) {
@@ -98,27 +98,27 @@ namespace argus {
     }
 
     void smutex_lock(smutex &mutex) {
-        AcquireSRWLockExclusive(mutex);
+        AcquireSRWLockExclusive(&mutex);
     }
 
     bool smutex_try_lock(smutex &mutex) {
-        return TryAcquireSRWLockExclusive(mutex);
+        return TryAcquireSRWLockExclusive(&mutex);
     }
 
     void smutex_unlock(smutex &mutex) {
-        ReleaseSRWLockExclusive(mutex);
+        ReleaseSRWLockExclusive(&mutex);
     }
 
     void smutex_lock_shared(smutex &mutex) {
-        AcquireSRWLockShared(mutex);
+        AcquireSRWLockShared(&mutex);
     }
 
     bool smutex_try_lock_shared(smutex &mutex) {
-        return TryAcquireSRWLockShared(mutex);
+        return TryAcquireSRWLockShared(&mutex);
     }
 
     void smutex_unlock_shared(smutex &mutex) {
-        ReleaseSRWLockShared(mutex);
+        ReleaseSRWLockShared(&mutex);
     }
     #else
     void smutex_create(smutex &mutex) {

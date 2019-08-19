@@ -1,5 +1,7 @@
 #pragma once
 
+#define SDL_MAIN_HANDLED
+
 #include <functional>
 #include <SDL2/SDL.h>
 

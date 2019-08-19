@@ -21,7 +21,7 @@ namespace argus {
     #endif
 
     #ifdef _WIN32
-    typedef PSRWLOCK smutex;
+    typedef SRWLOCK smutex;
     #else
     typedef pthread_rwlock_t smutex;
     #endif

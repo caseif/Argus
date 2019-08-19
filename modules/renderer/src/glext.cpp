@@ -62,8 +62,8 @@ namespace argus {
 
         using namespace glext;
 
-        _load_gl_ext<>("glGenFramebuffers", &glGenFramebuffers);
         _load_gl_ext<>("glFramebufferTexture", &glFramebufferTexture);
+        _load_gl_ext<>("glGenFramebuffers", &glGenFramebuffers);
 
         _load_gl_ext<>("glBindBuffer", &glBindBuffer);
         _load_gl_ext<>("glBufferData", &glBufferData);
