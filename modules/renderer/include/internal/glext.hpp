@@ -1,8 +1,43 @@
 #pragma once
 
+#include "internal/expand_dong.hpp"
+
 #define SDL_MAIN_HANDLED
 
 #include <SDL2/SDL_opengl.h>
+
+#define GL_FUNCTIONS    glFramebufferTexture, \
+                        glGenFramebuffers, \
+                        glBindBuffer, \
+                        glBufferData, \
+                        glBufferSubData, \
+                        glDeleteBuffers, \
+                        glGenBuffers, \
+                        glBindVertexArray, \
+                        glDeleteVertexArrays, \
+                        glEnableVertexAttribArray, \
+                        glGenVertexArrays, \
+                        glVertexAttribPointer, \
+                        glAttachShader, \
+                        glBindAttribLocation, \
+                        glCompileShader, \
+                        glCreateProgram, \
+                        glCreateShader, \
+                        glDeleteProgram, \
+                        glDeleteShader, \
+                        glDetachShader, \
+                        glGetProgramiv, \
+                        glGetShaderiv, \
+                        glGetShaderInfoLog, \
+                        glGetUniformLocation, \
+                        glIsShader, \
+                        glLinkProgram, \
+                        glShaderSource, \
+                        glUniformMatrix4fv, \
+                        glUseProgram, \
+                        glDebugMessageCallback
+
+#define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
 
 namespace argus {
 
@@ -45,42 +80,13 @@ namespace argus {
 
         typedef void (APIENTRY *PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
 
-        extern PTR_glFramebufferTexture glFramebufferTexture;
-        extern PTR_glGenFramebuffers glGenFramebuffers;
-
-        extern PTR_glBindBuffer glBindBuffer;
-        extern PTR_glBufferData glBufferData;
-        extern PTR_glBufferSubData glBufferSubData;
-        extern PTR_glDeleteBuffers glDeleteBuffers;
-        extern PTR_glGenBuffers glGenBuffers;
-
-        extern PTR_glBindVertexArray glBindVertexArray;
-        extern PTR_glDeleteVertexArrays glDeleteVertexArrays;
-        extern PTR_glEnableVertexAttribArray glEnableVertexAttribArray;
-        extern PTR_glGenVertexArrays glGenVertexArrays;
-        extern PTR_glVertexAttribPointer glVertexAttribPointer;
-
-        extern PTR_glAttachShader glAttachShader;
-        extern PTR_glBindAttribLocation glBindAttribLocation;
-        extern PTR_glCompileShader glCompileShader;
-        extern PTR_glCreateProgram glCreateProgram;
-        extern PTR_glCreateShader glCreateShader;
-        extern PTR_glDeleteProgram glDeleteProgram;
-        extern PTR_glDeleteShader glDeleteShader;
-        extern PTR_glDetachShader glDetachShader;
-        extern PTR_glGetProgramiv glGetProgramiv;
-        extern PTR_glGetShaderiv glGetShaderiv;
-        extern PTR_glGetShaderInfoLog glGetShaderInfoLog;
-        extern PTR_glGetUniformLocation glGetUniformLocation;
-        extern PTR_glIsShader glIsShader;
-        extern PTR_glLinkProgram glLinkProgram;
-        extern PTR_glShaderSource glShaderSource;
-        extern PTR_glUniformMatrix4fv glUniformMatrix4fv;
-        extern PTR_glUseProgram glUseProgram;
-
-        extern PTR_glDebugMessageCallback glDebugMessageCallback;
+        EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);
     }
 
-    void load_opengl_extensions(void);
+    void init_opengl_extensions(void);
+
+    #ifdef _WIN32
+    void load_gl_extensions_for_context(SDL_GLContext ctx);
+    #endif
 
 }

@@ -2,48 +2,25 @@
 #include "internal/util.hpp"
 
 // module renderer
+#include "internal/expand_dong.hpp"
 #include "internal/glext.hpp"
 
 #include <map>
 #include <SDL2/SDL_video.h>
 
+#define EXPAND_GL_DEFINITION(function) PTR_##function function;
+#define EXPAND_GL_INIT_GLOBAL(function) _init_gl_ptr<__COUNTER__>(#function, &function);
+#define EXPAND_GL_INIT_SCOPED(function) _load_gl_ext(#function, &funcs_struct.function);
+
 namespace argus {
 
     namespace glext {
-        PTR_glFramebufferTexture glFramebufferTexture;
-        PTR_glGenFramebuffers glGenFramebuffers;
+        EXPAND_LIST(EXPAND_GL_DEFINITION, GL_FUNCTIONS);
 
-        PTR_glBindBuffer glBindBuffer;
-        PTR_glBufferData glBufferData;
-        PTR_glBufferSubData glBufferSubData;
-        PTR_glDeleteBuffers glDeleteBuffers;
-        PTR_glGenBuffers glGenBuffers;
-
-        PTR_glBindVertexArray glBindVertexArray;
-        PTR_glDeleteVertexArrays glDeleteVertexArrays;
-        PTR_glEnableVertexAttribArray glEnableVertexAttribArray;
-        PTR_glGenVertexArrays glGenVertexArrays;
-        PTR_glVertexAttribPointer glVertexAttribPointer;
-
-        PTR_glAttachShader glAttachShader;
-        PTR_glBindAttribLocation glBindAttribLocation;
-        PTR_glCompileShader glCompileShader;
-        PTR_glCreateProgram glCreateProgram;
-        PTR_glCreateShader glCreateShader;
-        PTR_glDeleteProgram glDeleteProgram;
-        PTR_glDeleteShader glDeleteShader;
-        PTR_glDetachShader glDetachShader;
-        PTR_glGetProgramiv glGetProgramiv;
-        PTR_glGetShaderiv glGetShaderiv;
-        PTR_glGetShaderInfoLog glGetShaderInfoLog;
-        PTR_glGetUniformLocation glGetUniformLocation;
-        PTR_glIsShader glIsShader;
-        PTR_glLinkProgram glLinkProgram;
-        PTR_glShaderSource glShaderSource;
-        PTR_glUniformMatrix4fv glUniformMatrix4fv;
-        PTR_glUseProgram glUseProgram;
-
-        PTR_glDebugMessageCallback glDebugMessageCallback;
+        // I can't think of a way to achieve this end without declaration duplication
+        struct GLExtFuncs {
+            EXPAND_LIST(EXPAND_GL_DEFINITION, GL_FUNCTIONS);
+        };
     }
 
     template <typename FunctionSpec>
@@ -58,45 +35,56 @@ namespace argus {
         *target = reinterpret_cast<FunctionSpec>(function);
     }
 
-    void load_opengl_extensions(void) {
+    #ifdef _WIN32 //TODO
+    static std::map<SDL_GLContext, struct glext::GLExtFuncs> g_per_context_regs;
+
+    void load_gl_extensions_for_context(SDL_GLContext ctx) {
+        struct glext::GLExtFuncs funcs_struct;
+        EXPAND_LIST(EXPAND_GL_INIT_SCOPED, GL_FUNCTIONS);
+        
+        g_per_context_regs.insert({ctx, funcs_struct});
+    }
+
+    template <size_t FunctionIndex, typename RetType, typename... ParamTypes>
+    static RetType APIENTRY _gl_trampoline(ParamTypes... params) {
+        struct glext::GLExtFuncs *funcStruct;
+
+        SDL_GLContext gl_ctx = SDL_GL_GetCurrentContext();
+        if (!gl_ctx) {
+            _ARGUS_FATAL("No GL context is current\n");
+        }
+
+        auto it = g_per_context_regs.find(gl_ctx);
+        if (it == g_per_context_regs.end()) {
+            _ARGUS_FATAL("GL functions are not registered for this context\n");
+        }
+
+        funcStruct = &it->second;
+
+        void *ptr = *reinterpret_cast<void**>((reinterpret_cast<unsigned char*>(funcStruct)) + (FunctionIndex * sizeof(void*)));
+        return (*reinterpret_cast<RetType(APIENTRY**)(ParamTypes...)>(reinterpret_cast<unsigned char*>(funcStruct) + (FunctionIndex * sizeof(void*))))(params...);
+    }
+    #endif
+
+    template <size_t FunctionIndex, typename RetType, typename... ParamTypes>
+    static void _init_gl_ptr(const char *const func_name, RetType(APIENTRY **target)(ParamTypes...)) {
+        #ifdef _WIN32 //TODO
+        // The use of __COUNTER__ here is a horrible hack that exploits the fact
+        // that the trampoline functions are initialized in the same order as
+        // the GLExtFuncs member definitions. It allows us to use the same
+        // _init_gl_ptr calls across platforms.
+        *target = reinterpret_cast<RetType(APIENTRY*)(ParamTypes...)>(_gl_trampoline<FunctionIndex, RetType, ParamTypes...>);
+        #else
+        _load_gl_ext(func_name, target);
+        #endif
+    }
+
+    void init_opengl_extensions(void) {
         SDL_GL_LoadLibrary(NULL);
 
         using namespace glext;
 
-        _load_gl_ext<>("glFramebufferTexture", &glFramebufferTexture);
-        _load_gl_ext<>("glGenFramebuffers", &glGenFramebuffers);
-
-        _load_gl_ext<>("glBindBuffer", &glBindBuffer);
-        _load_gl_ext<>("glBufferData", &glBufferData);
-        _load_gl_ext<>("glBufferSubData", &glBufferSubData);
-        _load_gl_ext<>("glDeleteBuffers", &glDeleteBuffers);
-        _load_gl_ext<>("glGenBuffers", &glGenBuffers);
-
-        _load_gl_ext<>("glGenVertexArrays", &glGenVertexArrays);
-        _load_gl_ext<>("glDeleteVertexArrays", &glDeleteVertexArrays);
-        _load_gl_ext<>("glBindVertexArray", &glBindVertexArray);
-        _load_gl_ext<>("glEnableVertexAttribArray", &glEnableVertexAttribArray);
-        _load_gl_ext<>("glVertexAttribPointer", &glVertexAttribPointer);
-
-        _load_gl_ext<>("glAttachShader", &glAttachShader);
-        _load_gl_ext<>("glBindAttribLocation", &glBindAttribLocation);
-        _load_gl_ext<>("glCompileShader", &glCompileShader);
-        _load_gl_ext<>("glCreateProgram", &glCreateProgram);
-        _load_gl_ext<>("glCreateShader", &glCreateShader);
-        _load_gl_ext<>("glDeleteProgram", &glDeleteProgram);
-        _load_gl_ext<>("glDeleteShader", &glDeleteShader);
-        _load_gl_ext<>("glDetachShader", &glDetachShader);
-        _load_gl_ext<>("glGetProgramiv", &glGetProgramiv);
-        _load_gl_ext<>("glGetShaderiv", &glGetShaderiv);
-        _load_gl_ext<>("glGetShaderInfoLog", &glGetShaderInfoLog);
-        _load_gl_ext<>("glGetUniformLocation", &glGetUniformLocation);
-        _load_gl_ext<>("glIsShader", &glIsShader);
-        _load_gl_ext<>("glLinkProgram", &glLinkProgram);
-        _load_gl_ext<>("glShaderSource", &glShaderSource);
-        _load_gl_ext<>("glUniformMatrix4fv", &glUniformMatrix4fv);
-        _load_gl_ext<>("glUseProgram", &glUseProgram);
-
-        _load_gl_ext<>("glDebugMessageCallbackARB", &glDebugMessageCallback);
+        EXPAND_LIST(EXPAND_GL_INIT_GLOBAL, GL_FUNCTIONS);
     }
 
 }

@@ -47,7 +47,7 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, GL_TRUE);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 
-        load_opengl_extensions();
+        init_opengl_extensions();
     }
 
     static void APIENTRY _gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
@@ -95,6 +95,10 @@ namespace argus {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
         gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
+
+        #ifdef _WIN32
+        load_gl_extensions_for_context(gl_context);
+        #endif
 
         int version_major;
         int version_minor;
