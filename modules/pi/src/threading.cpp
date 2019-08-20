@@ -32,7 +32,6 @@ namespace argus {
         }
 
         void *invoke() {
-            printf("func: %p\n", func);
             return func(arg);
         }
     };

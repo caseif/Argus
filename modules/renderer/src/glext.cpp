@@ -27,7 +27,7 @@ namespace argus {
         //TODO: verify the extension for each given function is supported
         void *function = SDL_GL_GetProcAddress(func_name);
         const char* error = SDL_GetError();
-        if (error != "") {
+        if (error[0] != '\0') {
             printf("Failed to get address for GL function %s: %s\n", func_name, error);
 		}
         SDL_ClearError();

@@ -36,9 +36,10 @@ namespace argus {
     static GLint _compile_shader(const GLenum type, std::string const &src) {
         GLint gl_shader = glCreateShader(type);
 
-        if (!glIsShader(gl_shader)) {
+        /*if (!glIsShader(gl_shader)) {
             _ARGUS_FATAL("Failed to create %s shader\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
-        }
+            glGetError
+        }*/
 
         const char *c_str = src.c_str();
         glShaderSource(gl_shader, 1, &c_str, nullptr);
@@ -86,9 +87,9 @@ namespace argus {
             R"(#version 330 core)"
             #endif
             R"(
-            attribute vec2 )" __ATTRIB_POSITION R"(;
-            attribute vec4 )" __ATTRIB_COLOR R"(;
-            attribute vec3 )" __ATTRIB_TEXCOORD R"(;
+            in vec2 )" __ATTRIB_POSITION R"(;
+            in vec4 )" __ATTRIB_COLOR R"(;
+            in vec3 )" __ATTRIB_TEXCOORD R"(;
 
             uniform mat4 )" __UNIFORM_PROJECTION R"(;
 
@@ -114,6 +115,8 @@ namespace argus {
             in vec4 color;
             in vec3 texCoord;
 
+            out vec4 )" __OUT_FRAGDATA R"(;
+
             // begin sub-shader concatenation)";
 
         // now we concatenate the source for each sub-shader
@@ -126,9 +129,9 @@ namespace argus {
             // end sub-shader concatenation
 
             void main() {
-                position = ()" __UNIFORM_PROJECTION R"( * vec4(in_position, 0.0, 1.0)).xy;
-                color = in_color;
-                texCoord = in_texCoord;
+                position = ()" __UNIFORM_PROJECTION R"( * vec4()" __ATTRIB_POSITION R"(, 0.0, 1.0)).xy;
+                color = )" __ATTRIB_COLOR R"(;
+                texCoord = )" __ATTRIB_TEXCOORD R"(;
 
                 // begin sub-shader invocation)";
 
@@ -159,7 +162,7 @@ namespace argus {
                 // end sub-shader invocation
 
                 vec4 texel = texture()" __UNIFORM_TEXTURE R"(, texCoord);
-                gl_FragColor = texel + color;
+                )" __OUT_FRAGDATA R"( = texel + color;
             }
         )";
 
@@ -177,6 +180,8 @@ namespace argus {
         glBindAttribLocation(gl_program, __ATTRIB_LOC_POSITION, __ATTRIB_POSITION);
         glBindAttribLocation(gl_program, __ATTRIB_LOC_COLOR, __ATTRIB_COLOR);
         glBindAttribLocation(gl_program, __ATTRIB_LOC_TEXCOORD, __ATTRIB_TEXCOORD);
+
+        glBindFragDataLocation(gl_program, 0, __OUT_FRAGDATA);
 
         glLinkProgram(gl_program);
 

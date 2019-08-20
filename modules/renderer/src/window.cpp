@@ -117,6 +117,7 @@ namespace argus {
 
         renderer.render(delta);
 
+        SDL_GL_SwapWindow(handle);
         SDL_UpdateWindowSurface(handle);
         return;
     }

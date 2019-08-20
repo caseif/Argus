@@ -19,6 +19,7 @@
                         glVertexAttribPointer, \
                         glAttachShader, \
                         glBindAttribLocation, \
+                        glBindFragDataLocation, \
                         glCompileShader, \
                         glCreateProgram, \
                         glCreateShader, \
@@ -34,7 +35,8 @@
                         glShaderSource, \
                         glUniformMatrix4fv, \
                         glUseProgram, \
-                        glDebugMessageCallback
+                        glDebugMessageCallback, \
+                        glGetError
 
 #define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
 
@@ -60,6 +62,7 @@ namespace argus {
 
         typedef void (APIENTRY *PTR_glAttachShader)(GLuint program, GLuint shader);
         typedef void (APIENTRY *PTR_glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+        typedef void (APIENTRY *PTR_glBindFragDataLocation)(GLuint program, GLuint colorNumber, const char *name);
         typedef void (APIENTRY *PTR_glCompileShader)(GLuint shader);
         typedef GLuint (APIENTRY *PTR_glCreateProgram)(void);
         typedef GLuint (APIENTRY *PTR_glCreateShader)(GLenum shaderType);
@@ -77,6 +80,7 @@ namespace argus {
         typedef void (APIENTRY *PTR_glUseProgram)(GLuint program);
 
         typedef void (APIENTRY *PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
+        typedef GLenum (APIENTRY *PTR_glGetError)(void);
 
         EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);
     }
