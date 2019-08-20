@@ -94,7 +94,7 @@ namespace argus {
         this->dirty = true;
     }
 
-    void Transform::to_matrix(float dst_arr[16]) {
+    void Transform::to_matrix(float (&dst_arr)[16]) {
         float cos_rot = cos(rotation);
         float sin_rot = sin(rotation);
 
@@ -106,14 +106,23 @@ namespace argus {
         vec2f scale_current = scale;
         scale_mutex.unlock();
 
-        float arr[16] = {
-            cos_rot * scale_current.x(),    -sin_rot,                       0,  translation_current.x(),
-            sin_rot,                        cos_rot * scale_current.y(),    0,  translation_current.y(),
-            0,                              0,                              1,  0,
-            0,                              0,                              0,  1
-        };
-
-        dst_arr = std::move(arr);
+        // really wish C++ had a more elegant way to do this syntactically
+        dst_arr[0] =  cos_rot * scale_current.x();
+        dst_arr[1] =  -sin_rot;
+        dst_arr[2] =  0;
+        dst_arr[3] =  translation_current.x();
+        dst_arr[4] =  sin_rot;
+        dst_arr[5] =  cos_rot * scale_current.y();
+        dst_arr[6] =  0;
+        dst_arr[7] =  translation_current.y();
+        dst_arr[8] =  0;
+        dst_arr[9] =  0;
+        dst_arr[10] =  1;
+        dst_arr[11] =  0;
+        dst_arr[12] =  0;
+        dst_arr[13] =  0;
+        dst_arr[14] =  0;
+        dst_arr[15] =  1;
     }
 
     const bool Transform::is_dirty(void) const {
