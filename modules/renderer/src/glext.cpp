@@ -6,7 +6,6 @@
 #include "internal/glext.hpp"
 
 #include <map>
-#include <SDL2/SDL_video.h>
 
 #define EXPAND_GL_DEFINITION(function) PTR_##function function;
 #define EXPAND_GL_INIT_GLOBAL(function) _init_gl_ptr<__COUNTER__>(#function, &function);
@@ -27,6 +26,11 @@ namespace argus {
     static void _load_gl_ext(const char *const func_name, FunctionSpec *target) {
         //TODO: verify the extension for each given function is supported
         void *function = SDL_GL_GetProcAddress(func_name);
+        const char* error = SDL_GetError();
+        if (error != "") {
+            printf("Failed to get address for GL function %s: %s\n", func_name, error);
+		}
+        SDL_ClearError();
 
         if (!function) {
             _ARGUS_FATAL("Failed to load OpenGL extension: %s\n", func_name);
@@ -38,7 +42,10 @@ namespace argus {
     #ifdef _WIN32 //TODO
     static std::map<SDL_GLContext, struct glext::GLExtFuncs> g_per_context_regs;
 
-    void load_gl_extensions_for_context(SDL_GLContext ctx) {
+    void load_gl_extensions_for_current_context() {
+        SDL_GLContext ctx = SDL_GL_GetCurrentContext();
+        _ARGUS_ASSERT(ctx, "No context is current\n");
+
         struct glext::GLExtFuncs funcs_struct;
         EXPAND_LIST(EXPAND_GL_INIT_SCOPED, GL_FUNCTIONS);
         
@@ -80,7 +87,11 @@ namespace argus {
     }
 
     void init_opengl_extensions(void) {
-        SDL_GL_LoadLibrary(NULL);
+		#ifndef _WIN32
+		if (SDL_GL_LoadLibrary(nullptr) != 0) {
+			_ARGUS_FATAL("Failed to load GL library\n");
+		}
+		#endif
 
         using namespace glext;
 

@@ -44,8 +44,13 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, GL_TRUE);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        #ifdef _ARGUS_DEBUG_MODE
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+        #else
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+        #endif
 
         init_opengl_extensions();
     }
@@ -95,10 +100,10 @@ namespace argus {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
 
         gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
-
-        #ifdef _WIN32
-        load_gl_extensions_for_context(gl_context);
-        #endif
+		const char* sdl_err = SDL_GetError();
+		if (sdl_err != "") {
+			_ARGUS_FATAL("Failed to create GL context: %s\n", sdl_err);
+		}
 
         int version_major;
         int version_minor;
@@ -107,6 +112,13 @@ namespace argus {
         _ARGUS_DEBUG("Obtained context with version %d.%d\n", version_major, version_minor);
 
         activate_gl_context();
+
+		#ifdef _WIN32
+		if (SDL_GL_LoadLibrary(nullptr) != 0) {
+			_ARGUS_FATAL("Failed to load GL library\n");
+		}
+		load_gl_extensions_for_current_context();
+		#endif
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
         

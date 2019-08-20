@@ -79,14 +79,16 @@ function(setup_submodule)
   # source files
   file(GLOB C_FILES ${SRC_DIR}/*.c)
   file(GLOB CPP_FILES ${SRC_DIR}/*.cpp)
+  file(GLOB H_FILES ${SRC_DIR}/*.h)
+  file(GLOB HPP_FILES ${SRC_DIR}/*.hpp)
 
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
-  include_directories("${MODULE_INCLUDES}" ${VMMLIB_INCLUDE_DIR})
+  include_directories("${MODULE_INCLUDES}")
   get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
   list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
   set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
-  
+
   if(${USE_PTHREADS})
     add_definitions("-DUSE_PTHREADS")
   endif()
@@ -108,13 +110,13 @@ function(setup_submodule)
       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FASTLINK /Od")
     endif()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-  else() 
+  else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra")
     set(CMAKE_CXX_FLAGS_DEBUG "-g")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()
 
-  add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
+  add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

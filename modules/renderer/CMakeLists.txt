@@ -5,6 +5,6 @@ set(MODULE_DEPS "core")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "${SDL2_LIBRARY};${OPENGL_gl_LIBRARY}")
 # include dirs this module uses
-set(LOCAL_INC_DIRS "${CMAKE_SOURCE_DIR}/vmmlib/;${SDL2_INCLUDE_DIR};${OPENGL_INCLUDE_DIR}")
+set(LOCAL_INC_DIRS "${VMMLIB_INCLUDE_DIR};${SDL2_INCLUDE_DIR};${OPENGL_INCLUDE_DIR}")
 
 setup_submodule(${MODULE_NAME})

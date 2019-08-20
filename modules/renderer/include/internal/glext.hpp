@@ -6,8 +6,7 @@
 
 #include <SDL2/SDL_opengl.h>
 
-#define GL_FUNCTIONS    glFramebufferTexture, \
-                        glGenFramebuffers, \
+#define GL_FUNCTIONS    glGenFramebuffers, \
                         glBindBuffer, \
                         glBufferData, \
                         glBufferSubData, \
@@ -45,7 +44,6 @@ namespace argus {
         typedef void (APIENTRY *DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                 const GLchar *message, void *userParam);
 
-        typedef void (APIENTRY *PTR_glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
         typedef void (APIENTRY *PTR_glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
         typedef void (APIENTRY *PTR_glBindBuffer)(GLenum target, GLuint buffer);
@@ -86,7 +84,7 @@ namespace argus {
     void init_opengl_extensions(void);
 
     #ifdef _WIN32
-    void load_gl_extensions_for_context(SDL_GLContext ctx);
+    void load_gl_extensions_for_current_context();
     #endif
 
 }
