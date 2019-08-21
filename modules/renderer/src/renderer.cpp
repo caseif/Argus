@@ -106,8 +106,7 @@ namespace argus {
     }
 
     Renderer::Renderer(Window &window):
-            window(window),
-            initialized(false) {
+            window(window) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
     }
 
@@ -139,8 +138,6 @@ namespace argus {
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        initialized = true;
     }
 
     Renderer::~Renderer(void) = default;

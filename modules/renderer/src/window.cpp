@@ -65,7 +65,8 @@ namespace argus {
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-        SDL_GetWindowSurface(handle);
+
+        renderer.init();
 
         state |= WINDOW_STATE_INITIALIZED;
     }
@@ -142,10 +143,6 @@ namespace argus {
             return;
         }
 
-        if (!renderer.initialized) {
-            renderer.init();
-        }
-
         if (properties.title.dirty) {
             SDL_SetWindowTitle(handle, ((std::string) properties.title).c_str());
         }
@@ -164,7 +161,6 @@ namespace argus {
         renderer.render(delta);
 
         SDL_GL_SwapWindow(handle);
-        SDL_UpdateWindowSurface(handle);
         return;
     }
 

@@ -167,8 +167,6 @@ namespace argus {
 
             std::vector<RenderLayer*> render_layers;
 
-            bool initialized;
-
             Renderer(Window &window);
 
             ~Renderer(void);
