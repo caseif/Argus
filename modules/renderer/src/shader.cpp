@@ -10,7 +10,7 @@
         uniform mat4 " uniform ";       \n\
                                         \n\
         void " entry "() {              \n\
-            position = (vec4(position, 0.0, 1.0) * " uniform ").xy;   \n\
+            position = (" uniform " * vec4(position, 0.0, 1.0)).xy;   \n\
         }                               \n\
     ", entry, {uniform})
 

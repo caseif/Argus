@@ -106,7 +106,8 @@ namespace argus {
         vec2f scale_current = scale;
         scale_mutex.unlock();
 
-        // really wish C++ had a more elegant way to do this syntactically
+        // this is transposed from the actual matrix, since GL interprets it in column-major order
+        // really wish C++ had a more syntactically elegant way to do this
         dst_arr[0] =  cos_rot * scale_current.x();
         dst_arr[1] =  sin_rot;
         dst_arr[2] =  0;

@@ -14,7 +14,7 @@ namespace argus {
 
     using vmml::mat4f;
 
-    // not sure why this needs to be row-major form...
+    // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {
         2.0,  0.0,  0.0,  0.0,
         0.0, -2.0,  0.0,  0.0,

@@ -144,8 +144,11 @@ namespace argus {
         // avoid acquiring an exclusive lock unless we actually need to update the list
         if (!list.removal_queue.empty()) {
             smutex_unlock_shared(list.queue_mutex); // VC++ doesn't allow upgrading lock ownership
-            smutex_lock(list.queue_mutex);
+            // it's important that we lock list_mutex first, since the callback loop has a perpetual lock on it
+            // and individual callbacks may invoke _unregister_callback (thus locking queue_mutex).
+            // failure to follow this order will cause deadlock.
             smutex_lock(list.list_mutex); // we need to get a lock on the list since we're updating it
+            smutex_lock(list.queue_mutex);
             while (!list.removal_queue.empty()) {
                 Index id = list.removal_queue.front();
                 list.removal_queue.pop();
