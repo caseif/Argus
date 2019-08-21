@@ -9,11 +9,14 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
 
 namespace argus {
 
     using namespace glext;
+
+    typedef SDL_Window *window_handle_t;
 
     bool g_renderer_initialized = false;
 
@@ -83,6 +86,13 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
+    static void _activate_gl_context(SDL_Window *window, SDL_GLContext ctx) {
+        int rc = SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window), ctx);
+        if (rc != 0) {
+            _ARGUS_FATAL("SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
+        }
+    }
+
     void init_module_renderer(void) {
         register_close_callback(_clean_up);
 
@@ -108,7 +118,7 @@ namespace argus {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
 
-        activate_gl_context();
+        _activate_gl_context(window.handle, gl_context);
 
         int version_major;
         int version_minor;
@@ -157,24 +167,13 @@ namespace argus {
     }
 
     void Renderer::render(const TimeDelta delta) {
-        if (window.invalid) {
-            return;
-        }
-
-        activate_gl_context();
+        _activate_gl_context(window.handle, gl_context);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //TODO: account for priorities
         for (RenderLayer *layer : render_layers) {
             layer->render();
-        }
-    }
-
-    void Renderer::activate_gl_context(void) const {
-        int rc = SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window.handle), gl_context);
-        if (rc != 0) {
-            _ARGUS_FATAL("SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
         }
     }
 

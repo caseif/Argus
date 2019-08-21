@@ -6,6 +6,8 @@
 #include "internal/defines.hpp"
 #include "internal/glext.hpp"
 
+#include <SDL2/SDL_opengl.h>
+
 #define __LOG_MAX_LEN 255
 
 namespace argus {
@@ -60,12 +62,15 @@ namespace argus {
     }
 
     void ShaderProgram::link(void) {
+        GLuint gl_program = static_cast<GLuint>(program_handle);
+
         if (initialized) {
             glDeleteProgram(gl_program);
         }
 
         // create the program, to start
         gl_program = glCreateProgram();
+        program_handle = static_cast<handle_t>(gl_program);
 
         if (!initialized) {
             initialized = true;
@@ -120,7 +125,16 @@ namespace argus {
 
         // now we concatenate the source for each sub-shader
         for (const Shader *shader : shaders) {
-            (shader->type == GL_VERTEX_SHADER ? bootstrap_vert_ss : bootstrap_frag_ss) << shader->src << "\n";
+            switch (shader->type) {
+                case SHADER_VERTEX:
+                    bootstrap_vert_ss << shader->src << "\n";
+                    break;
+                case SHADER_FRAGMENT:
+                    bootstrap_frag_ss << shader->src << "\n";
+                    break;
+                default:
+                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->type);
+            }
         }
 
         // we open the main function and add a little boilerplate
@@ -143,7 +157,16 @@ namespace argus {
         // then we insert the calls to each sub-shaders entry point into the main() function
         //TODO: deal with priorities
         for (const Shader *shader : shaders) {
-            (shader->type == GL_VERTEX_SHADER ? bootstrap_vert_ss : bootstrap_frag_ss) << "\n    " << shader->entry_point << "();";
+            switch (shader->type) {
+                case SHADER_VERTEX:
+                    bootstrap_vert_ss << "\n    " << shader->entry_point << "();";
+                    break;
+                case SHADER_FRAGMENT:
+                    bootstrap_frag_ss << "\n    " << shader->entry_point << "();";
+                    break;
+                default:
+                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->type);
+            }
         }
 
         // finally, we close bootstrap main() functions with a bit more boilerplate
@@ -171,57 +194,57 @@ namespace argus {
         // compile each bootstrap shader
 
         GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
-        glAttachShader(gl_program, bootstrap_vert_handle);
+        glAttachShader(program_handle, bootstrap_vert_handle);
 
         GLint bootstrap_frag_handle = _compile_shader(GL_FRAGMENT_SHADER, bootstrap_frag_ss.str());
-        glAttachShader(gl_program, bootstrap_frag_handle);
+        glAttachShader(program_handle, bootstrap_frag_handle);
 
-        glBindAttribLocation(gl_program, __ATTRIB_LOC_POSITION, __ATTRIB_POSITION);
-        glBindAttribLocation(gl_program, __ATTRIB_LOC_COLOR, __ATTRIB_COLOR);
-        glBindAttribLocation(gl_program, __ATTRIB_LOC_TEXCOORD, __ATTRIB_TEXCOORD);
+        glBindAttribLocation(program_handle, __ATTRIB_LOC_POSITION, __ATTRIB_POSITION);
+        glBindAttribLocation(program_handle, __ATTRIB_LOC_COLOR, __ATTRIB_COLOR);
+        glBindAttribLocation(program_handle, __ATTRIB_LOC_TEXCOORD, __ATTRIB_TEXCOORD);
 
-        glBindFragDataLocation(gl_program, 0, __OUT_FRAGDATA);
+        glBindFragDataLocation(program_handle, 0, __OUT_FRAGDATA);
 
-        glLinkProgram(gl_program);
+        glLinkProgram(program_handle);
 
         int res;
-        glGetProgramiv(gl_program, GL_LINK_STATUS, &res);
+        glGetProgramiv(program_handle, GL_LINK_STATUS, &res);
         if (res == GL_FALSE) {
             int log_len;
-            glGetShaderiv(gl_program, GL_INFO_LOG_LENGTH, &log_len);
+            glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
-            glGetShaderInfoLog(gl_program, __LOG_MAX_LEN, nullptr, log);
+            glGetShaderInfoLog(program_handle, __LOG_MAX_LEN, nullptr, log);
             _ARGUS_FATAL("Failed to link program:\n%s\n", log);
             delete[] log;
         }
 
         // delete bootstrap shaders
-        glDetachShader(gl_program, bootstrap_vert_handle);
+        glDetachShader(program_handle, bootstrap_vert_handle);
         glDeleteShader(bootstrap_vert_handle);
-        glDetachShader(gl_program, bootstrap_frag_handle);
+        glDetachShader(program_handle, bootstrap_frag_handle);
         glDeleteShader(bootstrap_frag_handle);
 
         std::vector<std::string> bootstrap_uniforms {__UNIFORM_PROJECTION, __UNIFORM_TEXTURE};
         for (std::string uniform_id : bootstrap_uniforms) {
-            GLint uniform_loc = glGetUniformLocation(gl_program, uniform_id.c_str());
+            GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
             uniforms.insert({uniform_id, uniform_loc});
         }
 
         for (const Shader *shader : shaders) {
             for (std::string const &uniform_id : shader->uniform_ids) {
-                GLint uniform_loc = glGetUniformLocation(gl_program, uniform_id.c_str());
+                GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
                 uniforms.insert({uniform_id, uniform_loc});
             }
         }
 
-        glUseProgram(gl_program);
+        glUseProgram(program_handle);
         glUniformMatrix4fv(get_uniform_location(__UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
         glUseProgram(0);
 
         needs_rebuild = false;
     }
 
-    GLint ShaderProgram::get_uniform_location(std::string const &uniform_id) const {
+    handle_t ShaderProgram::get_uniform_location(std::string const &uniform_id) const {
         auto it = uniforms.find(uniform_id);
         if (it == uniforms.end()) {
             _ARGUS_FATAL("Attempted to get non-existent shader uniform %s\n", uniform_id.c_str());

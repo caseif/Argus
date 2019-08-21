@@ -4,8 +4,10 @@
 #include "argus/core.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
 #include <vector>
 
 #define STRINGIZE_DETAIL(x) #x

@@ -156,8 +156,8 @@ namespace argus {
                     _ARGUS_WARN("Game attempted to unregister unknown callback %llu\n", id);
                 }
             }
-            smutex_unlock(list.list_mutex);
             smutex_unlock(list.queue_mutex);
+            smutex_unlock(list.list_mutex);
         } else {
             smutex_unlock_shared(list.queue_mutex);
         }
@@ -166,14 +166,15 @@ namespace argus {
         smutex_lock_shared(list.queue_mutex);
         if (!list.addition_queue.empty()) {
             smutex_unlock_shared(list.queue_mutex);
-            smutex_lock(list.queue_mutex);
+            // same deal with the ordering
             smutex_lock(list.list_mutex);
+            smutex_lock(list.queue_mutex);
             while (!list.addition_queue.empty()) {
                 list.list.insert(list.list.cend(), list.addition_queue.front());
                 list.addition_queue.pop();
             }
-            smutex_unlock(list.list_mutex);
             smutex_unlock(list.queue_mutex);
+            smutex_unlock(list.list_mutex);
         } else {
             smutex_unlock_shared(list.queue_mutex);
         }
@@ -204,6 +205,8 @@ namespace argus {
 
             // pump events
             SDL_PumpEvents();
+            SDL_Event event;
+            while (SDL_PollEvent(&event));
 
             // invoke update callbacks
             smutex_lock_shared(g_update_callbacks.list_mutex);

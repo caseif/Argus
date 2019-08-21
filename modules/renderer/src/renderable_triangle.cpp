@@ -29,7 +29,7 @@ namespace argus {
         buffer[offset + 8] = vertex.tex_coord.z();
     }
 
-    void RenderableTriangle::render(const GLuint vbo, const size_t offset) const {
+    void RenderableTriangle::render(handle_t buffer_handle, const size_t offset) const {
         float buffer_data[__TRIANGLE_VERTICES * __VERTEX_LEN];
 
         _fill_buffer(buffer_data, corner_1, 0);

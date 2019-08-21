@@ -22,7 +22,7 @@ namespace argus {
 
     Shader g_group_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_group_transform", __UNIFORM_GROUP_TRANSFORM);
 
-    Shader::Shader(const GLenum type, std::string const &src, std::string const &entry_point,
+    Shader::Shader(const unsigned int type, std::string const &src, std::string const &entry_point,
             std::initializer_list<std::string> const &uniform_ids):
             type(type),
             src(src),
@@ -32,22 +32,22 @@ namespace argus {
             
     Shader &Shader::create_vertex_shader(const std::string src, const std::string entry_point,
             std::initializer_list<std::string> const &uniform_ids) {
-        return *new Shader(GL_VERTEX_SHADER, src, entry_point, uniform_ids);
+        return *new Shader(SHADER_VERTEX, src, entry_point, uniform_ids);
     }
     
     Shader Shader::create_vertex_shader_stack(const std::string src, const std::string entry_point,
             std::initializer_list<std::string> const &uniform_ids) {
-        return Shader(GL_VERTEX_SHADER, src, entry_point, uniform_ids);
+        return Shader(SHADER_VERTEX, src, entry_point, uniform_ids);
     }
 
     Shader &Shader::create_fragment_shader(const std::string src, const std::string entry_point,
             std::initializer_list<std::string> const &uniform_ids) {
-        return *new Shader(GL_FRAGMENT_SHADER, src, entry_point, uniform_ids);
+        return *new Shader(SHADER_FRAGMENT, src, entry_point, uniform_ids);
     }
     
     Shader Shader::create_fragment_shader_stack(const std::string src, const std::string entry_point,
             std::initializer_list<std::string> const &uniform_ids) {
-        return Shader(GL_FRAGMENT_SHADER, src, entry_point, uniform_ids);
+        return Shader(SHADER_FRAGMENT, src, entry_point, uniform_ids);
     }
 
 }

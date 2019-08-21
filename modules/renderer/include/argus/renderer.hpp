@@ -1,13 +1,15 @@
 #pragma once
 
-#define SDL_MAIN_HANDLED
-
-// module core
-#include "argus/core.hpp"
-
+// include these first so they don't collide with the min/max macros in Windef.h
 #define VMMLIB_OLD_TYPEDEFS
 #include "vmmlib/matrix.hpp"
 #include "vmmlib/vector.hpp"
+
+// module pi
+#include "argus/threading.hpp"
+
+// module core
+#include "argus/core.hpp"
 
 #include <atomic>
 #include <functional>
@@ -17,8 +19,9 @@
 #include <unordered_map>
 #include <vector>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_render.h>
+
+#define SHADER_VERTEX 1
+#define SHADER_FRAGMENT 2
 
 namespace argus {
 
@@ -26,6 +29,12 @@ namespace argus {
     using vmml::vec3f;
     using vmml::vec4f;
     using vmml::mat4f;
+
+    template <typename T>
+    struct pair_t {
+        T a;
+        T b;
+    };
 
     // forward declarations
     class Transform;
@@ -38,6 +47,9 @@ namespace argus {
     class Renderable;
     class RenderableFactory;
     class RenderableTriangle;
+
+    typedef unsigned int handle_t;
+    typedef int shandle_t;
 
     typedef std::function<void(Window &window)> WindowCloseCallback;
 
@@ -98,12 +110,12 @@ namespace argus {
         friend class ShaderProgram;
 
         private:
-            const GLenum type;
+            const unsigned int type;
             const std::string src;
             const std::string entry_point;
             const std::vector<std::string> uniform_ids;
 
-            Shader(const GLenum type, std::string const &src, std::string const &entry_point,
+            Shader(const unsigned int type, std::string const &src, std::string const &entry_point,
                     std::initializer_list<std::string> const &uniform_ids);
 
         public:
@@ -126,13 +138,13 @@ namespace argus {
 
         private:
             std::vector<const Shader*> shaders;
-            std::vector<GLint> shader_handles;
-            std::unordered_map<std::string, GLint> uniforms;
+            std::vector<shandle_t> shader_handles;
+            std::unordered_map<std::string, handle_t> uniforms;
 
             bool initialized;
             bool needs_rebuild;
 
-            GLuint gl_program;
+            handle_t program_handle;
 
             ShaderProgram(const std::vector<const Shader*> &shaders);
 
@@ -143,7 +155,7 @@ namespace argus {
             void update_projection_matrix(const unsigned int viewport_width, const unsigned int viewport_height);
 
         public:
-            GLint get_uniform_location(std::string const &uniform_id) const;
+            handle_t get_uniform_location(std::string const &uniform_id) const;
     };
 
     class Renderer {
@@ -175,12 +187,6 @@ namespace argus {
             void destroy(void);
 
             /**
-             * Makes this Renderer's GL context current, such that future GL
-             * calls will apply to it.
-             */
-            void activate_gl_context(void) const;
-
-            /**
              * \brief Creates a new render layer with the given priority.
              *
              * Layers with higher priority will be rendered after (ergo in front
@@ -198,9 +204,9 @@ namespace argus {
         friend class Renderer;
 
         private:
-            SDL_Window *const handle;
-
             Renderer renderer;
+
+            SDL_Window *handle;
 
             Index callback_id;
             Index listener_id;
@@ -208,15 +214,22 @@ namespace argus {
             Window *parent;
             std::vector<Window*> children;
 
+            struct {
+                AtomicDirtiable<std::string> title;
+                AtomicDirtiable<bool> fullscreen;
+                AtomicDirtiable<pair_t<unsigned int>> resolution;
+                AtomicDirtiable<pair_t<int>> position;
+            } properties;
+
             WindowCloseCallback close_callback;
 
-            bool close_requested;
-
-            bool invalid;
+            std::atomic<unsigned int> state;
 
             Window(void);
             
             ~Window(void);
+
+            void init(void);
 
             void remove_child(Window &child);
 
@@ -265,7 +278,7 @@ namespace argus {
              *
              * \param title The new window title.
              */
-            void set_title(const std::string &title);
+            void set_title(std::string const &title);
 
             /**
              * \brief Sets the fullscreen state of the window.
@@ -297,7 +310,7 @@ namespace argus {
              * \param x The new X-coordinate of the window.
              * \param y The new Y-coordinate of the window.
              */
-            void set_windowed_position(const unsigned int x, const unsigned int y);
+            void set_windowed_position(const int x, const int y);
 
             void set_close_callback(WindowCloseCallback callback);
 
@@ -345,8 +358,8 @@ namespace argus {
             bool buffers_initialized;
 
             ShaderProgram shader_program;
-            GLuint vbo;
-            GLuint vao;
+            handle_t vbo;
+            handle_t vao;
             
             RenderGroup(RenderLayer &parent);
 
@@ -455,7 +468,7 @@ namespace argus {
 
             ~Renderable(void) = default;
 
-            virtual void render(const GLuint vbo, const size_t offset) const = 0;
+            virtual void render(const handle_t buffer_handle, const size_t offset) const = 0;
 
             virtual const unsigned int get_vertex_count(void) const = 0;
 
@@ -475,7 +488,7 @@ namespace argus {
 
             RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3);
 
-            void render(const GLuint vbo, const size_t offset) const override;
+            void render(const handle_t buffer_handle, const size_t offset) const override;
 
             const unsigned int get_vertex_count(void) const override;
     };

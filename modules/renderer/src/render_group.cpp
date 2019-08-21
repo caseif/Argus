@@ -135,7 +135,7 @@ namespace argus {
     void RenderGroup::refresh_shaders(void) {
         if (!shaders_initialized || parent.dirty_shaders || dirty_shaders) {
             if (shaders_initialized) {
-                glDeleteProgram(shader_program.gl_program);
+                glDeleteProgram(shader_program.program_handle);
             }
 
             std::vector<const Shader*> new_shaders;
@@ -154,7 +154,7 @@ namespace argus {
         }
 
         if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {
-            glUseProgram(shader_program.gl_program);
+            glUseProgram(shader_program.program_handle);
         }
 
         if (!shaders_initialized || transform.is_dirty()) {
@@ -186,12 +186,12 @@ namespace argus {
     void RenderGroup::draw(void) {
         refresh_shaders();
 
-        glUseProgram(shader_program.gl_program);
+        glUseProgram(shader_program.program_handle);
         
         update_buffer();
 
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertex_count));
         glBindVertexArray(0);
 
         glUseProgram(0);

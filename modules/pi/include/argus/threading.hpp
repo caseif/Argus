@@ -1,6 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
+#include <mutex>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -139,5 +141,56 @@ namespace argus {
      * to be held by the current thread.
      */
     void smutex_unlock_shared(smutex &mutex);
+
+    
+
+    template <typename ValueType>
+    struct ExplicitAtomic {
+        private:
+            ValueType value;
+            std::mutex mutex;
+
+        public:
+            inline operator ValueType() {
+                return value;
+            }
+
+            inline ExplicitAtomic &operator =(ValueType const &rhs) {
+                mutex.lock();
+                value = rhs;
+                mutex.unlock();
+                return *this;
+            }
+
+            inline ExplicitAtomic &operator =(ValueType const &&rhs) {
+                mutex.lock();
+                value = std::move(rhs);
+                mutex.unlock();
+                return *this;
+            }
+    };
+
+    template <typename ValueType>
+    struct AtomicDirtiable {
+        ExplicitAtomic<ValueType> value;
+        std::atomic_bool dirty;
+
+        inline operator ValueType() {
+            dirty = false;
+            return value;
+        };
+
+        inline AtomicDirtiable &operator =(ValueType const &rhs) {
+            value = rhs;
+            dirty = true;
+            return *this;
+        };
+
+        inline AtomicDirtiable &operator =(ValueType const &&rhs) {
+            value = std::move(rhs);
+            dirty = true;
+            return *this;
+        };
+    };
 
 }

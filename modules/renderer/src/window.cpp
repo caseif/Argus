@@ -1,9 +1,12 @@
+// module renderer
+#include "argus/renderer.hpp"
+
+// module pi
+#include "argus/threading.hpp"
+
 // module core
 #include "argus/core.hpp"
 #include "internal/util.hpp"
-
-// module renderer
-#include "argus/renderer.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -16,6 +19,12 @@
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300
 
+#define WINDOW_STATE_INITIALIZED        1
+#define WINDOW_STATE_READY              2
+#define WINDOW_STATE_VISIBLE            4
+#define WINDOW_STATE_CLOSE_REQUESTED    8
+#define WINDOW_STATE_VALID              16
+
 namespace argus {
 
     extern bool g_renderer_initialized;
@@ -27,19 +36,13 @@ namespace argus {
         Window *window = static_cast<Window*>(data);
 
         if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-            window->close_requested = true;
+            window->state |= WINDOW_STATE_CLOSE_REQUESTED;
         }
     }
 
     Window::Window(void):
-            handle(SDL_CreateWindow("ArgusGame",
-                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                DEF_WINDOW_DIM, DEF_WINDOW_DIM,
-                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)),
             renderer(Renderer(*this)),
-            invalid(false),
-            close_requested(false) {
-        SDL_GetWindowSurface(handle);
+            state(WINDOW_STATE_VALID) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         g_window_count++;
@@ -52,12 +55,20 @@ namespace argus {
 
         callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
-        invalid = false;
-
         return;
     }
 
     Window::~Window(void) = default;
+
+    void Window::init(void) {
+        handle = SDL_CreateWindow("ArgusGame",
+                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                DEF_WINDOW_DIM, DEF_WINDOW_DIM,
+                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        SDL_GetWindowSurface(handle);
+
+        state |= WINDOW_STATE_INITIALIZED;
+    }
 
     void Window::destroy(void) {
         if (close_callback != nullptr) {
@@ -69,7 +80,7 @@ namespace argus {
 
         for (Window *child : children) {
             child->parent = nullptr;
-            child->close_requested = true;
+            child->state |= WINDOW_STATE_CLOSE_REQUESTED;
         }
 
         if (parent != nullptr) {
@@ -86,7 +97,7 @@ namespace argus {
             stop_engine();
         }
 
-        invalid = true;
+        state &= ~WINDOW_STATE_VALID;
 
         return;
     }
@@ -113,18 +124,41 @@ namespace argus {
     }
 
     void Window::update(const Timestamp delta) {
-        if (invalid) {
+        if (!(state & WINDOW_STATE_VALID)) {
             delete this;
             return;
         }
 
-        if (close_requested) {
+        if (!(state & WINDOW_STATE_INITIALIZED)) {
+            init();
+        }
+
+        if (!(state & WINDOW_STATE_VISIBLE) && (state & WINDOW_STATE_READY)) {
+            SDL_ShowWindow(handle);
+        }
+
+        if (state & WINDOW_STATE_CLOSE_REQUESTED) {
             destroy();
             return;
         }
 
         if (!renderer.initialized) {
             renderer.init();
+        }
+
+        if (properties.title.dirty) {
+            SDL_SetWindowTitle(handle, ((std::string) properties.title).c_str());
+        }
+        if (properties.fullscreen.dirty) {
+            SDL_SetWindowFullscreen(handle, properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+        }
+        if (properties.resolution.dirty) {
+            pair_t<unsigned int> res = properties.resolution;
+            SDL_SetWindowSize(handle, res.a, res.b);
+        }
+        if (properties.position.dirty) {
+            pair_t<int> pos = properties.position;
+            SDL_SetWindowPosition(handle, pos.a, pos.b);
         }
 
         renderer.render(delta);
@@ -134,33 +168,39 @@ namespace argus {
         return;
     }
 
-    void Window::set_title(const std::string &title) {
-        SDL_SetWindowTitle(handle, title.c_str());
+    void Window::set_title(std::string const &title) {
+        properties.title = title;
         return;
     }
 
     void Window::set_fullscreen(const bool fullscreen) {
-        SDL_SetWindowFullscreen(handle, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+        properties.fullscreen = fullscreen;
         return;
     }
 
     void Window::set_resolution(const unsigned int width, const unsigned int height) {
-        SDL_SetWindowSize(handle, width, height);
+        properties.resolution = {width, height};
         return;
     }
 
-    void Window::set_windowed_position(const unsigned int x, const unsigned int y) {
-        SDL_SetWindowPosition(handle, x, y);
+    void Window::set_windowed_position(const int x, const int y) {
+        properties.position = {x, y};
         return;
     }
 
     void Window::activate(void) {
-        SDL_ShowWindow(handle);
+        state |= WINDOW_STATE_READY;
         return;
     }
 
     int Window::event_filter(void *data, SDL_Event *event) {
         Window *window = static_cast<Window*>(data);
+      
+        // ignore events for uninitialized windows
+        if (!(window->state & WINDOW_STATE_INITIALIZED)) {
+            return false;
+        }
+
         return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->handle);
     }
 

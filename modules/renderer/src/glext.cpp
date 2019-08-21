@@ -28,7 +28,7 @@ namespace argus {
         void *function = SDL_GL_GetProcAddress(func_name);
         const char* error = SDL_GetError();
         if (error[0] != '\0') {
-            printf("Failed to get address for GL function %s: %s\n", func_name, error);
+            _ARGUS_FATAL("Failed to get address for GL function %s: %s\n", func_name, error);
 		}
         SDL_ClearError();
 

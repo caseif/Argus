@@ -53,6 +53,25 @@
         "cstring": "cpp",
         "iomanip": "cpp",
         "typeindex": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "xstring": "cpp",
+        "algorithm": "cpp",
+        "ios": "cpp",
+        "map": "cpp",
+        "queue": "cpp",
+        "string": "cpp",
+        "xfacet": "cpp",
+        "xhash": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "xlocinfo": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp",
+        "xmemory": "cpp",
+        "xstddef": "cpp",
+        "xtr1common": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp"
     }
 }
