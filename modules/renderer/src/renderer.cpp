@@ -41,15 +41,15 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         #else
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
-        //SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
-        //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
         #ifdef _ARGUS_DEBUG_MODE
-        //SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
         #else
-        //SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
         #endif
 
         init_opengl_extensions();
@@ -96,13 +96,16 @@ namespace argus {
     }
 
     Renderer::Renderer(Window &window):
-            window(window) {
+            window(window),
+            initialized(false) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
+    }
 
+    // we do the init in a separate method so the GL context is always created from the render thread
+    void Renderer::init(void) {
         gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
-        const char* sdl_err = SDL_GetError();
-        if (sdl_err[0] != '\0') {
-            _ARGUS_FATAL("Failed to create GL contextt: \"%s\"\n", sdl_err);
+        if (!gl_context) {
+            _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
 
         activate_gl_context();
@@ -121,11 +124,13 @@ namespace argus {
         #endif
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
-        
+
         glDepthFunc(GL_ALWAYS);
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        initialized = true;
     }
 
     Renderer::~Renderer(void) = default;
@@ -167,7 +172,10 @@ namespace argus {
     }
 
     void Renderer::activate_gl_context(void) const {
-        SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window.handle), gl_context);
+        int rc = SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window.handle), gl_context);
+        if (rc != 0) {
+            _ARGUS_FATAL("SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
+        }
     }
 
 }

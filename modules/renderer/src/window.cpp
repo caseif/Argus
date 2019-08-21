@@ -23,11 +23,11 @@ namespace argus {
     extern std::vector<Window*> g_windows;
     extern size_t g_window_count;
 
-    void _window_event_callback(void *data, SDL_Event &event) {
+    void Window::window_event_callback(void *data, SDL_Event &event) {
         Window *window = static_cast<Window*>(data);
 
         if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-            window->destroy();
+            window->close_requested = true;
         }
     }
 
@@ -36,7 +36,10 @@ namespace argus {
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)),
-            renderer(Renderer(*this)) {
+            renderer(Renderer(*this)),
+            invalid(false),
+            close_requested(false) {
+        SDL_GetWindowSurface(handle);
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         g_window_count++;
@@ -45,7 +48,7 @@ namespace argus {
         parent = nullptr;
         
         // register the listener
-        listener_id = register_sdl_event_listener(event_filter, _window_event_callback, this);
+        listener_id = register_sdl_event_listener(event_filter, window_event_callback, this);
 
         callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -66,7 +69,7 @@ namespace argus {
 
         for (Window *child : children) {
             child->parent = nullptr;
-            child->destroy();
+            child->close_requested = true;
         }
 
         if (parent != nullptr) {
@@ -113,6 +116,15 @@ namespace argus {
         if (invalid) {
             delete this;
             return;
+        }
+
+        if (close_requested) {
+            destroy();
+            return;
+        }
+
+        if (!renderer.initialized) {
+            renderer.init();
         }
 
         renderer.render(delta);

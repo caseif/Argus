@@ -36,10 +36,9 @@ namespace argus {
     static GLint _compile_shader(const GLenum type, std::string const &src) {
         GLint gl_shader = glCreateShader(type);
 
-        /*if (!glIsShader(gl_shader)) {
+        if (!glIsShader(gl_shader)) {
             _ARGUS_FATAL("Failed to create %s shader\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
-            glGetError
-        }*/
+        }
 
         const char *c_str = src.c_str();
         glShaderSource(gl_shader, 1, &c_str, nullptr);

@@ -155,9 +155,13 @@ namespace argus {
 
             std::vector<RenderLayer*> render_layers;
 
+            bool initialized;
+
             Renderer(Window &window);
 
             ~Renderer(void);
+
+            void init(void);
 
             void render(const TimeDelta delta);
 
@@ -206,6 +210,8 @@ namespace argus {
 
             WindowCloseCallback close_callback;
 
+            bool close_requested;
+
             bool invalid;
 
             Window(void);
@@ -219,6 +225,8 @@ namespace argus {
             static int event_filter(void *data, SDL_Event *event);
 
             static void update_window(const Window &window, const Timestamp delta);
+
+            static void window_event_callback(void *data, SDL_Event &event);
 
         public:
             /**

@@ -108,19 +108,19 @@ namespace argus {
 
         // really wish C++ had a more elegant way to do this syntactically
         dst_arr[0] =  cos_rot * scale_current.x();
-        dst_arr[1] =  -sin_rot;
+        dst_arr[1] =  sin_rot;
         dst_arr[2] =  0;
-        dst_arr[3] =  translation_current.x();
-        dst_arr[4] =  sin_rot;
+        dst_arr[3] =  0;
+        dst_arr[4] =  -sin_rot;
         dst_arr[5] =  cos_rot * scale_current.y();
         dst_arr[6] =  0;
-        dst_arr[7] =  translation_current.y();
+        dst_arr[7] =  0;
         dst_arr[8] =  0;
         dst_arr[9] =  0;
         dst_arr[10] =  1;
         dst_arr[11] =  0;
-        dst_arr[12] =  0;
-        dst_arr[13] =  0;
+        dst_arr[12] =  translation_current.x();
+        dst_arr[13] =  translation_current.y();
         dst_arr[14] =  0;
         dst_arr[15] =  1;
     }
