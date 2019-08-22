@@ -22,6 +22,8 @@
 
     #define stat_t struct stat
 #elif defined __linux__
+    #include <sys/stat.h>
+    #include <sys/types.h>
     #include <unistd.h>
 
     #ifndef __USE_FILE_OFFSET64

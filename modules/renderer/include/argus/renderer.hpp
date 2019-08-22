@@ -14,7 +14,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <SDL2/SDL.h>
 
 #define SHADER_VERTEX 1
 #define SHADER_FRAGMENT 2
@@ -229,11 +228,11 @@ namespace argus {
 
             void update(const Timestamp delta);
 
-            static int event_filter(void *data, SDL_Event *event);
-
             static void update_window(const Window &window, const Timestamp delta);
 
-            static void window_event_callback(void *data, SDL_Event &event);
+            static bool event_filter(ArgusEvent &event, void *user_data);
+
+            static void event_callback(ArgusEvent &event, void *user_data);
 
         public:
             /**

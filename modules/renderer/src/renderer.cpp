@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_render.h>
 

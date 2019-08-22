@@ -1,5 +1,10 @@
+// module lowlevel
+#include "argus/math.hpp"
+
 // module renderer
 #include "argus/renderer.hpp"
+
+#include <cmath>
 
 namespace argus {
 
@@ -92,8 +97,8 @@ namespace argus {
     }
 
     void Transform::to_matrix(float (&dst_arr)[16]) {
-        float cos_rot = cos(rotation);
-        float sin_rot = sin(rotation);
+        float cos_rot = std::cos(rotation);
+        float sin_rot = std::sin(rotation);
 
         translation_mutex.lock();
         Vector2f translation_current = translation;

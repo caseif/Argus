@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
-#include <time.h>
+#include <ctime>
 #ifdef USE_PTHREADS
 #include <unistd.h>
 #endif

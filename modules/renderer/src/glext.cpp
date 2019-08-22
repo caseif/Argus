@@ -10,6 +10,8 @@
 
 #include <map>
 
+#include <SDL2/SDL.h>
+
 #define EXPAND_GL_DEFINITION(function) PTR_##function function;
 #define EXPAND_GL_INIT_GLOBAL(function) _init_gl_ptr<__COUNTER__>(#function, &function);
 #define EXPAND_GL_INIT_SCOPED(function) _load_gl_ext(#function, &funcs_struct.function);

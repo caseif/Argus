@@ -3,7 +3,6 @@
 #define SDL_MAIN_HANDLED
 
 #include <functional>
-#include <SDL2/SDL.h>
 
 namespace argus {
     
@@ -23,6 +22,20 @@ namespace argus {
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
     inline bool operator &(const EngineModules lhs, const EngineModules rhs);
 
+    typedef enum {
+        UNDEFINED,
+        WINDOW,
+        KEYBOARD,
+        MOUSE,
+        JOYSTICK
+    } ArgusEventType;
+
+    //TODO: expand this beyond a shim
+    struct ArgusEvent {
+        ArgusEventType type;
+        void *event_data;
+    };
+
     /**
      * \brief An update callback accepts a single parameter representing the
      *        delta in microseconds since the last update.
@@ -35,10 +48,16 @@ namespace argus {
     typedef std::function<void()> NullaryCallback;
 
     /**
-     * \brief A callback that accepts a piece of user-supplied data and an SDL
-     * event.
+     * \brief A callback that accepts an event and a piece of user-supplied
+     * data.
      */
-    typedef std::function<void(void*, SDL_Event&)> SDLEventCallback;
+    typedef std::function<bool(ArgusEvent&, void*)> ArgusEventFilter;
+
+    /**
+     * \brief A callback that accepts an event and a piece of user-supplied
+     * data.
+     */
+    typedef std::function<void(ArgusEvent&, void*)> ArgusEventCallback;
 
     /*
      * \brief Initializes the engine with the given modules.
@@ -131,19 +150,18 @@ namespace argus {
     void unregister_close_callback(const Index id);
 
     /**
-     * \brief Registers a listener for particular SDL events.
+     * \brief Registers a listener for particular events.
      * 
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
      *
      * \return The ID of the new registration.
      */
-    //TODO: abstract away SDL events and implement our own event model
-    const Index register_sdl_event_listener(const SDL_EventFilter filter, const SDLEventCallback callback, void *const data);
+    const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data);
 
     /**
      * \brief Unregisters the update callback with the given ID.
      */
-    void unregister_sdl_event_listener(const Index id);
+    void unregister_event_handler(const Index id);
 
 }

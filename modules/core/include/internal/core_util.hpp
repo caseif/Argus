@@ -16,6 +16,10 @@ namespace argus {
     struct IndexedValue {
         Index id;
         ValueType value;
+
+        operator ValueType&() const {
+            return value;
+        }
     };
 
     template<typename T>

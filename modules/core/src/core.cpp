@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include <SDL2/SDL.h>
+
 #define US_PER_S 1000000LLU
 #define SLEEP_OVERHEAD_NS 120000LLU
 
@@ -42,10 +44,10 @@ namespace argus {
     }
 
     typedef struct {
-        SDL_EventFilter filter;
-        SDLEventCallback callback;
+        ArgusEventFilter filter;
+        ArgusEventCallback callback;
         void *data;
-    } SDLEventListener;
+    } EventHandler;
 
     // This struct defines the list alongside two mutation queues and a shared
     // mutex. In this way, it facilitates a thread-safe callback list wherein
@@ -68,7 +70,7 @@ namespace argus {
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
     static CallbackList<NullaryCallback> g_close_callbacks;
-    static CallbackList<SDLEventListener> g_event_listeners;
+    static CallbackList<EventHandler> g_event_listeners;
 
     static bool g_engine_stopping = false;
 
@@ -188,10 +190,11 @@ namespace argus {
     }
 
     static int _master_event_handler(SDL_Event &event) {
+        ArgusEvent argus_event = {UNDEFINED, &event};
         smutex_lock_shared(g_event_listeners.list_mutex);
-        for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
-            if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, &event)) {
-                listener.value.callback(listener.value.data, event);
+        for (IndexedValue<EventHandler> listener : g_event_listeners.list) {
+            if (listener.value.filter == nullptr || listener.value.filter(argus_event, listener.value.data)) {
+                listener.value.callback(argus_event, listener.value.data);
             }
         }
         smutex_unlock_shared(g_event_listeners.list_mutex);
@@ -268,14 +271,6 @@ namespace argus {
 
         if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
             _ARGUS_FATAL("Failed to initialize SDL events: %s\n", SDL_GetError());
-        }
-
-        if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-            _ARGUS_FATAL("Failed to initialize SDL video: %s\n", SDL_GetError());
-        }
-
-        if (SDL_InitSubSystem(SDL_INIT_EVERYTHING) != 0) {
-            _ARGUS_FATAL("Failed to initialize SDL everything: %s\n", SDL_GetError());
         }
     }
     
@@ -355,16 +350,16 @@ namespace argus {
         _remove_callback(g_close_callbacks, id);
     }
 
-    const Index register_sdl_event_listener(const SDL_EventFilter filter, const SDLEventCallback callback, void *const data) {
+    const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
         Index id = g_next_index++;
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
-        SDLEventListener listener = {filter, callback, data};
+        EventHandler listener = {filter, callback, data};
         return _add_callback(g_event_listeners, listener);
     }
 
-    void unregister_sdl_event_listener(const Index id) {
+    void unregister_event_handler(const Index id) {
         _remove_callback(g_event_listeners, id);
     }
 

@@ -33,14 +33,6 @@ namespace argus {
     extern std::vector<Window*> g_windows;
     extern size_t g_window_count;
 
-    void Window::window_event_callback(void *data, SDL_Event &event) {
-        Window *window = static_cast<Window*>(data);
-
-        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-            window->state |= WINDOW_STATE_CLOSE_REQUESTED;
-        }
-    }
-
     Window::Window(void):
             renderer(Renderer(*this)),
             handle(SDL_CreateWindow("ArgusGame",
@@ -57,7 +49,7 @@ namespace argus {
         parent = nullptr;
         
         // register the listener
-        listener_id = register_sdl_event_listener(event_filter, window_event_callback, this);
+        listener_id = register_event_handler(event_filter, event_callback, this);
 
         callback_id = register_update_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -76,7 +68,7 @@ namespace argus {
         }
 
         unregister_update_callback(callback_id);
-        unregister_sdl_event_listener(listener_id);
+        unregister_event_handler(listener_id);
 
         for (Window *child : children) {
             child->parent = nullptr;
@@ -194,16 +186,28 @@ namespace argus {
         return;
     }
 
-    int Window::event_filter(void *data, SDL_Event *event) {
-        Window *window = static_cast<Window*>(data);
+    bool Window::event_filter(ArgusEvent &event, void *user_data) {
+        Window *window = static_cast<Window*>(user_data);
       
         // ignore events for uninitialized windows
         if (!(window->state & WINDOW_STATE_INITIALIZED)) {
             return false;
         }
 
-        return event->type == SDL_WINDOWEVENT
-                && event->window.windowID == SDL_GetWindowID(static_cast<SDL_Window*>(window->handle));
+        SDL_Event *sdl_event = static_cast<SDL_Event*>(event.event_data);
+
+        return sdl_event->type == SDL_WINDOWEVENT
+                && sdl_event->window.windowID == SDL_GetWindowID(static_cast<SDL_Window*>(window->handle));
+    }
+
+    void Window::event_callback(ArgusEvent &event, void *data) {
+        Window *window = static_cast<Window*>(data);
+
+        SDL_Event *sdl_event = static_cast<SDL_Event*>(event.event_data);
+
+        if (sdl_event->window.event == SDL_WINDOWEVENT_CLOSE) {
+            window->state |= WINDOW_STATE_CLOSE_REQUESTED;
+        }
     }
 
 }

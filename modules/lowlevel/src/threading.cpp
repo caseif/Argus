@@ -4,7 +4,7 @@
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
-#include <stdlib.h>
+#include <cstdlib>
 #else
 #include <thread>
 #endif
