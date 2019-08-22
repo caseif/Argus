@@ -163,11 +163,20 @@ namespace argus {
 
         private:
             Window &window;
-            SDL_GLContext gl_context;
-
             std::vector<RenderLayer*> render_layers;
 
+            SDL_GLContext gl_context;
+            Index callback_id;
+
+            bool initialized;
+            std::atomic_bool destruction_pending;
+            bool valid;
+
             Renderer(Window &window);
+
+            Renderer(Renderer &rhs);
+
+            Renderer(Renderer &&rhs);
 
             ~Renderer(void);
 
@@ -226,8 +235,6 @@ namespace argus {
             Window(void);
             
             ~Window(void);
-
-            void init(void);
 
             void remove_child(Window &child);
 

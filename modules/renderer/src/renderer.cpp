@@ -96,28 +96,47 @@ namespace argus {
     void init_module_renderer(void) {
         register_close_callback(_clean_up);
 
-        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
             _ARGUS_FATAL("Failed to initialize SDL video\n");
         }
-
         _init_opengl();
 
         g_renderer_initialized = true;
     }
 
     Renderer::Renderer(Window &window):
-            window(window) {
+            window(window),
+            initialized(false),
+            destruction_pending(false),
+            valid(true) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
+        callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
+    }
+
+    Renderer::Renderer(Renderer &rhs):
+            window(rhs.window),
+            render_layers(rhs.render_layers),
+            initialized(rhs.initialized),
+            callback_id(rhs.callback_id),
+            destruction_pending(rhs.destruction_pending.load()),
+            valid(valid) {
+    }
+
+    Renderer::Renderer(Renderer &&rhs):
+            window(std::move(window)),
+            render_layers(std::move(rhs.render_layers)),
+            initialized(std::move(initialized)),
+            callback_id(rhs.callback_id),
+            destruction_pending(rhs.destruction_pending.load()),
+            valid(valid) {
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
     void Renderer::init(void) {
-        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
+        gl_context = SDL_GL_CreateContext(window.handle);
         if (!gl_context) {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
-
-        _activate_gl_context(window.handle, gl_context);
 
         int version_major;
         int version_minor;
@@ -138,12 +157,18 @@ namespace argus {
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        initialized = true;
     }
 
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
         SDL_GL_DeleteContext(gl_context);
+
+        unregister_render_callback(callback_id);
+
+        valid = false;
 
         return;
     }
@@ -164,6 +189,22 @@ namespace argus {
     }
 
     void Renderer::render(const TimeDelta delta) {
+        // there's no contract that guarantees callbacks will be removed immediately, so we need to be able to track
+        // when the renderer has been invalidated so we don't try to deinit it more than once
+        if (!valid) {
+            return;
+        }
+
+        // this may be invoked between the parent window being destroyed and the callback being fully unregistered
+        if (destruction_pending) {
+            destroy();
+            return;
+        }
+
+        if (!initialized) {
+            init();
+        }
+
         _activate_gl_context(window.handle, gl_context);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,6 +213,8 @@ namespace argus {
         for (RenderLayer *layer : render_layers) {
             layer->render();
         }
+
+        SDL_GL_SwapWindow(window.handle);
     }
 
 }

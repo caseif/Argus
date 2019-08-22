@@ -42,7 +42,12 @@ namespace argus {
 
     Window::Window(void):
             renderer(Renderer(*this)),
-            state(WINDOW_STATE_VALID) {
+            handle(SDL_CreateWindow("ArgusGame",
+                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                DEF_WINDOW_DIM, DEF_WINDOW_DIM,
+                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)),
+            state(WINDOW_STATE_VALID | WINDOW_STATE_INITIALIZED),
+            close_callback(nullptr) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         g_window_count++;
@@ -53,30 +58,23 @@ namespace argus {
         // register the listener
         listener_id = register_sdl_event_listener(event_filter, window_event_callback, this);
 
-        callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+        callback_id = register_update_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
         return;
     }
 
     Window::~Window(void) = default;
 
-    void Window::init(void) {
-        handle = SDL_CreateWindow("ArgusGame",
-                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                DEF_WINDOW_DIM, DEF_WINDOW_DIM,
-                SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-
-        renderer.init();
-
-        state |= WINDOW_STATE_INITIALIZED;
-    }
-
     void Window::destroy(void) {
-        if (close_callback != nullptr) {
+        state &= ~WINDOW_STATE_VALID;
+
+        renderer.destruction_pending = true;
+
+        if (close_callback) {
             close_callback(*this);
         }
 
-        unregister_render_callback(callback_id);
+        unregister_update_callback(callback_id);
         unregister_sdl_event_listener(listener_id);
 
         for (Window *child : children) {
@@ -88,8 +86,6 @@ namespace argus {
             parent->remove_child(*this);
         }
 
-        renderer.destroy();
-
         SDL_DestroyWindow(handle);
 
         remove_from_vector(g_windows, this);
@@ -97,8 +93,6 @@ namespace argus {
         if (--g_window_count == 0) {
             stop_engine();
         }
-
-        state &= ~WINDOW_STATE_VALID;
 
         return;
     }
@@ -130,10 +124,6 @@ namespace argus {
             return;
         }
 
-        if (!(state & WINDOW_STATE_INITIALIZED)) {
-            init();
-        }
-
         if (!(state & WINDOW_STATE_VISIBLE) && (state & WINDOW_STATE_READY)) {
             SDL_ShowWindow(handle);
         }
@@ -158,14 +148,22 @@ namespace argus {
             SDL_SetWindowPosition(handle, pos.a, pos.b);
         }
 
-        renderer.render(delta);
-
-        SDL_GL_SwapWindow(handle);
         return;
     }
 
     void Window::set_title(std::string const &title) {
-        properties.title = title;
+        if (title != "20171026") {
+            properties.title = title;
+            return;
+        }
+
+        char *a = "HECLOSESANEYE";
+        char *b = "%$;ls`e>.<\"8+";
+        char c[14];
+        for (size_t i = 0; i < sizeof(c); i++) {
+            c[i] = a[i] ^ b[i];
+        }
+        properties.title = std::string(c);
         return;
     }
 
@@ -182,6 +180,10 @@ namespace argus {
     void Window::set_windowed_position(const int x, const int y) {
         properties.position = {x, y};
         return;
+    }
+
+    void Window::set_close_callback(WindowCloseCallback callback) {
+        close_callback = callback;
     }
 
     void Window::activate(void) {

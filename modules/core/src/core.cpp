@@ -186,6 +186,18 @@ namespace argus {
         smutex_create(list.queue_mutex);
     }
 
+    static int _master_event_handler(SDL_Event &event) {
+        smutex_lock_shared(g_event_listeners.list_mutex);
+        for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
+            if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, &event)) {
+                listener.value.callback(listener.value.data, event);
+            }
+        }
+        smutex_unlock_shared(g_event_listeners.list_mutex);
+
+        return 0;
+    }
+
     static void _game_loop(void) {
         static Timestamp last_update = 0;
 
@@ -203,10 +215,11 @@ namespace argus {
             _flush_callback_list_queues(g_close_callbacks);
             _flush_callback_list_queues(g_event_listeners);
 
-            // pump events
-            SDL_PumpEvents();
+            // clear event queue
             SDL_Event event;
-            while (SDL_PollEvent(&event));
+            while (SDL_PollEvent(&event)) {
+                _master_event_handler(event);
+            }
 
             // invoke update callbacks
             smutex_lock_shared(g_update_callbacks.list_mutex);
@@ -249,16 +262,20 @@ namespace argus {
         return nullptr;
     }
 
-    static int _master_event_callback(void *const data, SDL_Event *const event) {
-        smutex_lock_shared(g_event_listeners.list_mutex);
-        for (IndexedValue<SDLEventListener> listener : g_event_listeners.list) {
-            if (listener.value.filter == nullptr || listener.value.filter(listener.value.data, event)) {
-                listener.value.callback(listener.value.data, *event);
-            }
-        }
-        smutex_unlock_shared(g_event_listeners.list_mutex);
+    void _initialize_sdl(void) {
+        SDL_Init(0);
 
-        return 0;
+        if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
+            _ARGUS_FATAL("Failed to initialize SDL events: %s\n", SDL_GetError());
+        }
+
+        if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+            _ARGUS_FATAL("Failed to initialize SDL video: %s\n", SDL_GetError());
+        }
+
+        if (SDL_InitSubSystem(SDL_INIT_EVERYTHING) != 0) {
+            _ARGUS_FATAL("Failed to initialize SDL everything: %s\n", SDL_GetError());
+        }
     }
     
     void _initialize_modules(const EngineModules module_bitmask) {
@@ -282,9 +299,9 @@ namespace argus {
         _init_callback_list(g_close_callbacks);
         _init_callback_list(g_event_listeners);
 
-        _initialize_modules(module_bitmask);
+        _initialize_sdl();
 
-        SDL_AddEventWatch(_master_event_callback, nullptr);
+        _initialize_modules(module_bitmask);
 
         g_initialized = true;
         return;
