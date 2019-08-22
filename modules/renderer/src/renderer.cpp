@@ -19,8 +19,6 @@ namespace argus {
 
     using namespace glext;
 
-    typedef SDL_Window *window_handle_t;
-
     bool g_renderer_initialized = false;
 
     std::vector<Window*> g_windows;
@@ -89,7 +87,7 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
-    static void _activate_gl_context(SDL_Window *window, SDL_GLContext ctx) {
+    static void _activate_gl_context(window_handle_t window, graphics_context_t ctx) {
         int rc = SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window), ctx);
         if (rc != 0) {
             _ARGUS_FATAL("SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
@@ -136,7 +134,7 @@ namespace argus {
 
     // we do the init in a separate method so the GL context is always created from the render thread
     void Renderer::init(void) {
-        gl_context = SDL_GL_CreateContext(window.handle);
+        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
         if (!gl_context) {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
@@ -217,7 +215,7 @@ namespace argus {
             layer->render();
         }
 
-        SDL_GL_SwapWindow(window.handle);
+        SDL_GL_SwapWindow(static_cast<SDL_Window*>(window.handle));
     }
 
 }

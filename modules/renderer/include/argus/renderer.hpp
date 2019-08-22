@@ -36,6 +36,10 @@ namespace argus {
     typedef unsigned int handle_t;
     typedef int shandle_t;
 
+    typedef void *window_handle_t;
+    typedef void *graphics_context_t;
+    typedef void *graphics_handle_t;
+
     typedef std::function<void(Window &window)> WindowCloseCallback;
 
     class Transform {
@@ -150,7 +154,7 @@ namespace argus {
             Window &window;
             std::vector<RenderLayer*> render_layers;
 
-            SDL_GLContext gl_context;
+            graphics_context_t gl_context;
             Index callback_id;
 
             bool initialized;
@@ -198,7 +202,7 @@ namespace argus {
         private:
             Renderer renderer;
 
-            SDL_Window *handle;
+            window_handle_t handle;
 
             Index callback_id;
             Index listener_id;

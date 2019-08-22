@@ -87,7 +87,7 @@ namespace argus {
             parent->remove_child(*this);
         }
 
-        SDL_DestroyWindow(handle);
+        SDL_DestroyWindow(static_cast<SDL_Window*>(handle));
 
         remove_from_vector(g_windows, this);
 
@@ -125,8 +125,10 @@ namespace argus {
             return;
         }
 
+        SDL_Window *sdl_handle = static_cast<SDL_Window*>(handle);
+
         if (!(state & WINDOW_STATE_VISIBLE) && (state & WINDOW_STATE_READY)) {
-            SDL_ShowWindow(handle);
+            SDL_ShowWindow(sdl_handle);
         }
 
         if (state & WINDOW_STATE_CLOSE_REQUESTED) {
@@ -135,18 +137,18 @@ namespace argus {
         }
 
         if (properties.title.dirty) {
-            SDL_SetWindowTitle(handle, ((std::string) properties.title).c_str());
+            SDL_SetWindowTitle(sdl_handle, ((std::string) properties.title).c_str());
         }
         if (properties.fullscreen.dirty) {
-            SDL_SetWindowFullscreen(handle, properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+            SDL_SetWindowFullscreen(sdl_handle, properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
         }
         if (properties.resolution.dirty) {
             Vector2u res = properties.resolution;
-            SDL_SetWindowSize(handle, res.x, res.y);
+            SDL_SetWindowSize(sdl_handle, res.x, res.y);
         }
         if (properties.position.dirty) {
             Vector2i pos = properties.position;
-            SDL_SetWindowPosition(handle, pos.x, pos.y);
+            SDL_SetWindowPosition(sdl_handle, pos.x, pos.y);
         }
 
         return;
@@ -200,7 +202,8 @@ namespace argus {
             return false;
         }
 
-        return event->type == SDL_WINDOWEVENT && event->window.windowID == SDL_GetWindowID(window->handle);
+        return event->type == SDL_WINDOWEVENT
+                && event->window.windowID == SDL_GetWindowID(static_cast<SDL_Window*>(window->handle));
     }
 
 }
