@@ -97,6 +97,8 @@ namespace argus {
 
         g_render_thread->detach();
         g_render_thread->destroy();
+
+        SDL_Quit();
     }
 
     static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {

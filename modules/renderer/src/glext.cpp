@@ -22,9 +22,11 @@ namespace argus {
         EXPAND_LIST(EXPAND_GL_DEFINITION, GL_FUNCTIONS);
 
         // I can't think of a way to achieve this end without declaration duplication
+        #pragma pack(push,1)
         struct GLExtFuncs {
             EXPAND_LIST(EXPAND_GL_DEFINITION, GL_FUNCTIONS);
         };
+        #pragma pack(pop)
     }
 
     template <typename FunctionSpec>
