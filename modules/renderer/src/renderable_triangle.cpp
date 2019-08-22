@@ -1,5 +1,5 @@
 #include "argus/renderer.hpp"
-#include "internal/defines.hpp"
+#include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
 #include <SDL2/SDL_opengl.h>
@@ -18,15 +18,15 @@ namespace argus {
     }
 
     static void _fill_buffer(float *buffer, Vertex const &vertex, const size_t offset) {
-        buffer[offset + 0] = vertex.position.x();
-        buffer[offset + 1] = vertex.position.y();
-        buffer[offset + 2] = vertex.color.r();
-        buffer[offset + 3] = vertex.color.g();
-        buffer[offset + 4] = vertex.color.b();
-        buffer[offset + 5] = vertex.color.a();
-        buffer[offset + 6] = vertex.tex_coord.x();
-        buffer[offset + 7] = vertex.tex_coord.y();
-        buffer[offset + 8] = vertex.tex_coord.z();
+        buffer[offset + 0] = vertex.position.x;
+        buffer[offset + 1] = vertex.position.y;
+        buffer[offset + 2] = vertex.color.r;
+        buffer[offset + 3] = vertex.color.g;
+        buffer[offset + 4] = vertex.color.b;
+        buffer[offset + 5] = vertex.color.a;
+        buffer[offset + 6] = vertex.tex_coord.x;
+        buffer[offset + 7] = vertex.tex_coord.y;
+        buffer[offset + 8] = vertex.tex_coord.z;
     }
 
     void RenderableTriangle::render(handle_t buffer_handle, const size_t offset) const {

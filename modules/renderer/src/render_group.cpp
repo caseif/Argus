@@ -2,11 +2,11 @@
 #include "internal/logging.hpp"
 
 // module core
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/defines.hpp"
+#include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
 #include <SDL2/SDL_opengl.h>

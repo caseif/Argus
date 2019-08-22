@@ -6,7 +6,7 @@
 // module core
 #include "argus/core.hpp"
 #include "internal/config.hpp"
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
 
 #include <algorithm>
 #include <chrono>

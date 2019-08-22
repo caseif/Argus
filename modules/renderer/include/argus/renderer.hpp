@@ -1,11 +1,7 @@
 #pragma once
 
-// include these first so they don't collide with the min/max macros in Windef.h
-#define VMMLIB_OLD_TYPEDEFS
-#include "vmmlib/matrix.hpp"
-#include "vmmlib/vector.hpp"
-
 // module lowlevel
+#include "argus/math.hpp"
 #include "argus/threading.hpp"
 
 // module core
@@ -24,17 +20,6 @@
 #define SHADER_FRAGMENT 2
 
 namespace argus {
-
-    using vmml::vec2f;
-    using vmml::vec3f;
-    using vmml::vec4f;
-    using vmml::mat4f;
-
-    template <typename T>
-    struct pair_t {
-        T a;
-        T b;
-    };
 
     // forward declarations
     class Transform;
@@ -55,9 +40,9 @@ namespace argus {
 
     class Transform {
         private:
-            vec2f translation;
+            Vector2f translation;
             std::atomic<float> rotation;
-            vec2f scale;
+            Vector2f scale;
 
             std::mutex translation_mutex;
             std::mutex scale_mutex;
@@ -73,15 +58,15 @@ namespace argus {
 
             Transform(Transform &&rhs);
 
-            Transform(vec2f const &translation, const float rotation, vec2f const &scale);
+            Transform(Vector2f const &translation, const float rotation, Vector2f const &scale);
 
             Transform operator +(const Transform rhs);
 
-            vec2f const get_translation(void);
+            Vector2f const get_translation(void);
 
-            void set_translation(vec2f const &translation);
+            void set_translation(Vector2f const &translation);
 
-            void add_translation(vec2f const &translation_delta);
+            void add_translation(Vector2f const &translation_delta);
             
             const float get_rotation(void) const;
 
@@ -89,9 +74,9 @@ namespace argus {
 
             void add_rotation(const float rotation_degrees);
 
-            vec2f const get_scale(void);
+            Vector2f const get_scale(void);
 
-            void set_scale(vec2f const &scale);
+            void set_scale(Vector2f const &scale);
 
             void to_matrix(float (&dst_arr)[16]);
 
@@ -101,9 +86,9 @@ namespace argus {
     };
 
     struct Vertex {
-        vec2f position;
-        vec4f color;
-        vec3f tex_coord;
+        Vector2f position;
+        Vector4f color;
+        Vector3f tex_coord;
     };
 
     class Shader {
@@ -224,8 +209,8 @@ namespace argus {
             struct {
                 AtomicDirtiable<std::string> title;
                 AtomicDirtiable<bool> fullscreen;
-                AtomicDirtiable<pair_t<unsigned int>> resolution;
-                AtomicDirtiable<pair_t<int>> position;
+                AtomicDirtiable<Vector2u> resolution;
+                AtomicDirtiable<Vector2i> position;
             } properties;
 
             WindowCloseCallback close_callback;

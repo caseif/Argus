@@ -1,13 +1,13 @@
-// module renderer
-#include "argus/renderer.hpp"
-
 // module lowlevel
 #include "argus/threading.hpp"
 #include "internal/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
+
+// module renderer
+#include "argus/renderer.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -141,12 +141,12 @@ namespace argus {
             SDL_SetWindowFullscreen(handle, properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
         }
         if (properties.resolution.dirty) {
-            pair_t<unsigned int> res = properties.resolution;
-            SDL_SetWindowSize(handle, res.a, res.b);
+            Vector2u res = properties.resolution;
+            SDL_SetWindowSize(handle, res.x, res.y);
         }
         if (properties.position.dirty) {
-            pair_t<int> pos = properties.position;
-            SDL_SetWindowPosition(handle, pos.a, pos.b);
+            Vector2i pos = properties.position;
+            SDL_SetWindowPosition(handle, pos.x, pos.y);
         }
 
         return;

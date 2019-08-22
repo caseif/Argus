@@ -3,7 +3,7 @@
 
 // module core
 #include "argus/core.hpp"
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
 
 // module renderer
 #include "argus/renderer.hpp"

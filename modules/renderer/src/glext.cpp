@@ -2,7 +2,7 @@
 #include "internal/logging.hpp"
 
 // module core
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
 
 // module renderer
 #include "internal/expand_dong.hpp"

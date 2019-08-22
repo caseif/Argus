@@ -2,13 +2,14 @@
 #include "internal/logging.hpp"
 
 // module core
-#include "internal/util.hpp"
+#include "internal/core_util.hpp"
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/defines.hpp"
+#include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
+#include <sstream>
 #include <SDL2/SDL_opengl.h>
 
 #define __LOG_MAX_LEN 255
@@ -16,8 +17,6 @@
 namespace argus {
 
     using namespace glext;
-
-    using vmml::mat4f;
 
     // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {
