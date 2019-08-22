@@ -1,4 +1,4 @@
-// module pi
+// module lowlevel
 #include "argus/time.hpp"
 
 #include <chrono>

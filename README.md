@@ -11,7 +11,7 @@ follows:
 
 | Layer | Name | Description |
 | --- | --- | :-- |
-| 0 | pi | Platform-independence code for features such as threading. |
+| 0 | lowlevel | Low-level platform-independence code for features such as threading. |
 | 1 | core | Core engine framework; facilitates basic operation and communication among components. |
 | 2 | resman | Resource manager; facilitates resource loading and lifetime. |
 | 3 | renderer | Renderer module; responsible for managing windows and rendering. |

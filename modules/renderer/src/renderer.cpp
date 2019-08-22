@@ -1,3 +1,6 @@
+// module lowlevel
+#include "internal/logging.hpp"
+
 // module core
 #include "argus/core.hpp"
 #include "internal/util.hpp"
@@ -123,7 +126,7 @@ namespace argus {
     }
 
     Renderer::Renderer(Renderer &&rhs):
-            window(std::move(window)),
+            window(rhs.window),
             render_layers(std::move(rhs.render_layers)),
             initialized(std::move(initialized)),
             callback_id(rhs.callback_id),

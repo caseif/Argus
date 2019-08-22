@@ -1,5 +1,5 @@
 # module name
-set(MODULE_NAME "pi")
+set(MODULE_NAME "lowlevel")
 # modules this one depends on (as a list)
 set(MODULE_DEPS "")
 # libraries this module depends on (as a list)

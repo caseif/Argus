@@ -1,6 +1,7 @@
-// module pi
+// module lowlevel
 #include "argus/threading.hpp"
 #include "argus/time.hpp"
+#include "internal/logging.hpp"
 
 // module core
 #include "argus/core.hpp"

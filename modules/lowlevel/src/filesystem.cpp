@@ -277,7 +277,7 @@ namespace argus {
     void *FileHandle::read_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
         request_handle->file_handle->read(request_handle->offset, request_handle->size, request_handle->buf);
-        return nullptr; //TODO?
+        return nullptr;
     }
 
     const int FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
@@ -331,7 +331,7 @@ namespace argus {
     void *FileHandle::write_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
         request_handle->file_handle->write(request_handle->offset, request_handle->size, request_handle->buf);
-        return nullptr; //TODO?
+        return nullptr;
     }
 
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,

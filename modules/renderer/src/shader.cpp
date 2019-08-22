@@ -1,3 +1,6 @@
+// module lowlevel
+#include "internal/logging.hpp"
+
 // module core
 #include "internal/util.hpp"
 

@@ -14,7 +14,7 @@ namespace argus {
     typedef unsigned long long Index;
 
     typedef enum class engine_modules_t : uint64_t {
-        PI        = 0x01,
+        LOWLEVEL        = 0x01,
         CORE    = 0x02,
         RENDERER    = 0x04,
     } EngineModules;

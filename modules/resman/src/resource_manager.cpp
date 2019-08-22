@@ -1,4 +1,4 @@
-// module pi
+// module lowlevel
 #include "argus/resource_manager.hpp"
 
 #include "argus/resource_manager.hpp"

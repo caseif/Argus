@@ -1,8 +1,9 @@
 // module renderer
 #include "argus/renderer.hpp"
 
-// module pi
+// module lowlevel
 #include "argus/threading.hpp"
+#include "internal/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
@@ -157,8 +158,8 @@ namespace argus {
             return;
         }
 
-        char *a = "HECLOSESANEYE";
-        char *b = "%$;ls`e>.<\"8+";
+        const char *a = "HECLOSESANEYE";
+        const char *b = "%$;ls`e>.<\"8+";
         char c[14];
         for (size_t i = 0; i < sizeof(c); i++) {
             c[i] = a[i] ^ b[i];

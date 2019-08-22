@@ -1,5 +1,10 @@
+// module lowlevel
+#include "internal/logging.hpp"
+
+// module core
 #include "internal/util.hpp"
 
+// module renderer
 #include "argus/renderer.hpp"
 
 namespace argus {

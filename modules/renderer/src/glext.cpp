@@ -1,3 +1,6 @@
+// module lowlevel
+#include "internal/logging.hpp"
+
 // module core
 #include "internal/util.hpp"
 
@@ -39,7 +42,7 @@ namespace argus {
         *target = reinterpret_cast<FunctionSpec>(function);
     }
 
-    #ifdef _WIN32 //TODO
+    #ifdef _WIN32
     static std::map<SDL_GLContext, struct glext::GLExtFuncs> g_per_context_regs;
 
     void load_gl_extensions_for_current_context() {
@@ -75,7 +78,7 @@ namespace argus {
 
     template <size_t FunctionIndex, typename RetType, typename... ParamTypes>
     static void _init_gl_ptr(const char *const func_name, RetType(APIENTRY **target)(ParamTypes...)) {
-        #ifdef _WIN32 //TODO
+        #ifdef _WIN32
         // The use of __COUNTER__ here is a horrible hack that exploits the fact
         // that the trampoline functions are initialized in the same order as
         // the GLExtFuncs member definitions. It allows us to use the same

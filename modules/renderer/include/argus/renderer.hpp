@@ -5,7 +5,7 @@
 #include "vmmlib/matrix.hpp"
 #include "vmmlib/vector.hpp"
 
-// module pi
+// module lowlevel
 #include "argus/threading.hpp"
 
 // module core
