@@ -59,62 +59,6 @@
 
 namespace argus {
 
-    int get_executable_path(std::string *str) {
-        const size_t max_path_len = 4097;
-        size_t path_len = max_path_len;
-        char path[max_path_len];
-
-        int rc;
-
-#ifdef _WIN32
-        GetModuleFileName(NULL, path, max_path_len);
-        rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
-
-        if (rc != 0) {
-            return rc;
-        }
-#elif defined __APPLE__
-        uint32_t size;
-        rc = _NSGetExecutablePath(path, &size);
-
-        if (rc != 0) {
-            _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
-            return rc;
-        }
-#elif defined __linux__
-        ssize_t size = readlink("/proc/self/exe", path, max_path_len);
-        if (size == -1) {
-            return errno;
-        }
-#elif defined __FreeBSD__
-        int mib[4];
-        mib[0] = CTL_KERN;
-        mib[1] = KERN_PROC;
-        mib[2] = KERN_PROC_PATHNAME;
-        mib[3] = -1;
-
-        rc = sysctl(mib, 4, path, &path_len, NULL, 0);
-
-        if (rc != 0) {
-            return errno;
-        }
-#elif defined __NetBSD__
-        readlink("/proc/curproc/exe", path, max_path_len);
-        if (size == -1) {
-            return errno;
-        }
-#elif defined __DragonFly__
-        readlink("/proc/curproc/file", path, max_path_len);
-        if (size == -1) {
-            return errno;
-        }
-#endif
-
-        *str = std::string(path);
-
-        return rc;
-    }
-
     AsyncFileRequestHandle AsyncFileRequestHandle::operator =(AsyncFileRequestHandle const &rhs) {
         return AsyncFileRequestHandle(rhs);
     }
@@ -351,6 +295,62 @@ namespace argus {
         *request_handle = handle_local;
         
         return 0;
+    }
+    
+    int get_executable_path(std::string *str) {
+        const size_t max_path_len = 4097;
+        size_t path_len = max_path_len;
+        char path[max_path_len];
+
+        int rc;
+
+        #ifdef _WIN32
+        GetModuleFileName(NULL, path, max_path_len);
+        rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
+
+        if (rc != 0) {
+            return rc;
+        }
+        #elif defined __APPLE__
+        uint32_t size;
+        rc = _NSGetExecutablePath(path, &size);
+
+        if (rc != 0) {
+            _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
+            return rc;
+        }
+        #elif defined __linux__
+        ssize_t size = readlink("/proc/self/exe", path, max_path_len);
+        if (size == -1) {
+            return errno;
+        }
+        #elif defined __FreeBSD__
+        int mib[4];
+        mib[0] = CTL_KERN;
+        mib[1] = KERN_PROC;
+        mib[2] = KERN_PROC_PATHNAME;
+        mib[3] = -1;
+
+        rc = sysctl(mib, 4, path, &path_len, NULL, 0);
+
+        if (rc != 0) {
+            return errno;
+        }
+        #elif defined __NetBSD__
+        readlink("/proc/curproc/exe", path, max_path_len);
+        if (size == -1) {
+            return errno;
+        }
+        #elif defined __DragonFly__
+        readlink("/proc/curproc/file", path, max_path_len);
+        if (size == -1) {
+            return errno;
+        }
+        #endif
+
+        *str = std::string(path);
+
+        return rc;
     }
 
 }

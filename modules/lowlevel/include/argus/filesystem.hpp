@@ -61,8 +61,6 @@ namespace argus {
             bool is_result_valid(void);
     };
 
-    std::string get_executable_path(void);
-
     class FileHandle {
         private:
             std::string path;
@@ -112,5 +110,7 @@ namespace argus {
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);
 
     };
+
+    std::string get_executable_path(void);
 
 }
