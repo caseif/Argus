@@ -101,23 +101,24 @@ namespace argus {
             const unsigned int type;
             const std::string src;
             const std::string entry_point;
+            const int priority;
             const std::vector<std::string> uniform_ids;
 
             Shader(const unsigned int type, std::string const &src, std::string const &entry_point,
-                    std::initializer_list<std::string> const &uniform_ids);
+                    const int priority, std::initializer_list<std::string> const &uniform_ids);
 
         public:
             static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> &uniform_ids);
+                    const int priority, const std::initializer_list<std::string> &uniform_ids);
 
             static Shader create_vertex_shader_stack(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> &uniform_ids);
+                    const int priority, const std::initializer_list<std::string> &uniform_ids);
 
             static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> &uniform_ids);
+                    const int priority, const std::initializer_list<std::string> &uniform_ids);
 
             static Shader create_fragment_shader_stack(const std::string src, const std::string entry_point,
-                    const std::initializer_list<std::string> &uniform_ids);
+                    const int priority, const std::initializer_list<std::string> &uniform_ids);
     };
 
     class ShaderProgram {
@@ -136,9 +137,11 @@ namespace argus {
 
             ShaderProgram(const std::vector<const Shader*> &shaders);
 
+            ShaderProgram(const std::vector<const Shader*> &&shaders);
+
             void link(void);
 
-            void update_shaders(std::vector<const Shader*> &shaders);
+            void update_shaders(const std::vector<const Shader*> &shaders);
 
             void update_projection_matrix(const unsigned int viewport_width, const unsigned int viewport_height);
 
@@ -398,19 +401,19 @@ namespace argus {
         friend class RenderableFactory;
 
         private:
-            Renderer *parent_renderer;
+            Renderer &parent_renderer;
+            const int priority;
+            RenderGroup root_group;
 
             std::vector<RenderGroup*> children;
 
             std::vector<const Shader*> shaders;
 
-            RenderGroup root_group;
-
             Transform transform;
 
             bool dirty_shaders;
 
-            RenderLayer(Renderer *const parent);
+            RenderLayer(Renderer &parent, const int priority);
 
             ~RenderLayer(void) = default;
 

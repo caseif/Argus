@@ -25,13 +25,14 @@ namespace argus {
 
     ShaderProgram RenderGroup::generate_initial_program(void) {
         std::vector<const Shader*> final_shaders;
+        final_shaders.reserve(parent.shaders.size() + shaders.size());
         if (parent.shaders.size() > 0) {
-            final_shaders.insert(final_shaders.cbegin(), parent.shaders.cbegin(), parent.shaders.cend());
+            std::copy(parent.shaders.begin(), parent.shaders.end(), std::back_inserter(final_shaders));
         }
         if (shaders.size() > 0) {
-            final_shaders.insert(final_shaders.cbegin(), shaders.cbegin(), shaders.cend());
+            std::copy(shaders.begin(), shaders.end(), std::back_inserter(final_shaders));
         }
-        return ShaderProgram(final_shaders);
+        return ShaderProgram(std::move(final_shaders));
     }
 
     RenderGroup::RenderGroup(RenderLayer &parent):

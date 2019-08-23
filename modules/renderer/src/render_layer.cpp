@@ -22,17 +22,17 @@ namespace argus {
         return shaders;
     }
 
-    RenderLayer::RenderLayer(Renderer *const parent):
-            shaders(_generate_initial_layer_shaders()),
+    RenderLayer::RenderLayer(Renderer &parent, const int priority):
+            parent_renderer(parent),
+            priority(priority),
             root_group(RenderGroup(*this)),
+            children({&root_group}),
+            shaders(_generate_initial_layer_shaders()),
             dirty_shaders(false) {
-        this->parent_renderer = parent;
-
-        children.insert(children.cbegin(), &root_group);
     }
 
     void RenderLayer::destroy(void) {
-        parent_renderer->remove_render_layer(*this);
+        parent_renderer.remove_render_layer(*this);
         delete this;
     }
 

@@ -30,10 +30,19 @@ namespace argus {
             shaders(shaders),
             initialized(false),
             needs_rebuild(true) {
+        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority < b->priority;});
     }
 
-    void ShaderProgram::update_shaders(std::vector<const Shader*> &shaders) {
+    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &&shaders):
+            shaders(std::move(shaders)),
+            initialized(false),
+            needs_rebuild(true) {
+        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority < b->priority;});
+    }
+
+    void ShaderProgram::update_shaders(const std::vector<const Shader*> &shaders) {
         this->shaders = shaders;
+        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority < b->priority;});
         needs_rebuild = true;
     }
 
@@ -126,7 +135,7 @@ namespace argus {
             // begin sub-shader concatenation)";
 
         // now we concatenate the source for each sub-shader
-        for (const Shader *shader : shaders) {
+        for (const Shader *const shader : shaders) {
             switch (shader->type) {
                 case SHADER_VERTEX:
                     bootstrap_vert_ss << shader->src << "\n";
@@ -157,8 +166,7 @@ namespace argus {
                 // begin sub-shader invocation)";
 
         // then we insert the calls to each sub-shaders entry point into the main() function
-        //TODO: deal with priorities
-        for (const Shader *shader : shaders) {
+        for (const Shader *const shader : shaders) {
             switch (shader->type) {
                 case SHADER_VERTEX:
                     bootstrap_vert_ss << "\n    " << shader->entry_point << "();";

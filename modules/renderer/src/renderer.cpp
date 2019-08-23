@@ -177,13 +177,14 @@ namespace argus {
     }
 
     RenderLayer &Renderer::create_render_layer(const int priority) {
-        RenderLayer *layer = new RenderLayer(this);
+        RenderLayer *layer = new RenderLayer(*this, priority);
         render_layers.insert(render_layers.cend(), layer);
+        std::sort(render_layers.begin(), render_layers.end(), [](auto a, auto b) {return a->priority < b->priority;});
         return *layer;
     }
 
     void Renderer::remove_render_layer(RenderLayer &render_layer) {
-        _ARGUS_ASSERT(render_layer.parent_renderer == this, "remove_render_layer called on RenderLayer with different parent");
+        _ARGUS_ASSERT(&render_layer.parent_renderer == this, "remove_render_layer called on RenderLayer with different parent");
 
         remove_from_vector(render_layers, &render_layer);
         delete &render_layer;
@@ -212,7 +213,6 @@ namespace argus {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //TODO: account for priorities
         for (RenderLayer *layer : render_layers) {
             layer->render();
         }
