@@ -41,22 +41,27 @@ namespace argus {
     }
 
     static void _init_opengl(void) {
+        int context_flags = 0;
+        #ifdef _ARGUS_DEBUG_MODE
+        context_flags |= SDL_GL_CONTEXT_DEBUG_FLAG;
+        #endif
+
         #ifdef USE_GLES
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         #else
+        context_flags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
+
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         #endif
+
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-        #ifdef _ARGUS_DEBUG_MODE
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-        #else
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-        #endif
+
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
 
         init_opengl_extensions();
     }

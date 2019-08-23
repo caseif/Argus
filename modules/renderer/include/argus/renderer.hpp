@@ -403,11 +403,11 @@ namespace argus {
         private:
             Renderer &parent_renderer;
             const int priority;
-            RenderGroup root_group;
 
             std::vector<RenderGroup*> children;
-
             std::vector<const Shader*> shaders;
+
+            RenderGroup root_group; // this depends on shaders being initialized
 
             Transform transform;
 

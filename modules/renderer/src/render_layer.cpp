@@ -25,9 +25,9 @@ namespace argus {
     RenderLayer::RenderLayer(Renderer &parent, const int priority):
             parent_renderer(parent),
             priority(priority),
+            shaders(_generate_initial_layer_shaders()),
             root_group(RenderGroup(*this)),
             children({&root_group}),
-            shaders(_generate_initial_layer_shaders()),
             dirty_shaders(false) {
     }
 

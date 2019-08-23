@@ -125,6 +125,10 @@ namespace argus {
             R"(#version 330 core)"
             #endif
             R"(
+            precision mediump float;
+            precision mediump int;
+            precision mediump sampler2DArray;
+
             uniform sampler2DArray )" __UNIFORM_TEXTURE R"(;
 
             in vec4 color;
