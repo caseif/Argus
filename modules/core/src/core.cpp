@@ -69,8 +69,9 @@ namespace argus {
 
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
-    static CallbackList<NullaryCallback> g_close_callbacks;
     static CallbackList<EventHandler> g_event_listeners;
+
+    static EngineModules g_enabled_modules;
 
     static bool g_engine_stopping = false;
 
@@ -79,27 +80,13 @@ namespace argus {
     bool g_initializing = false;
     bool g_initialized = false;
 
-    // module initializers
-    extern void init_module_renderer(void);
-
     static void _interrupt_handler(int signal) {
         stop_engine();
     }
 
-    static void _clean_up(void) {
-        // we want to deinitialize the modules in the opposite order as they were initialized
-        smutex_lock_shared(g_close_callbacks.list_mutex);
-        for (std::vector<IndexedValue<NullaryCallback>>::reverse_iterator it = g_close_callbacks.list.rbegin();
-                it != g_close_callbacks.list.rend(); it++) { 
-            it->value();
-        }
-        smutex_unlock_shared(g_close_callbacks.list_mutex);
-
-        g_render_thread->detach();
-        g_render_thread->destroy();
-
-        SDL_Quit();
-    }
+    // module (de-)initializers
+    extern void update_lifecycle_resman(LifecycleStage);
+    extern void update_lifecycle_renderer(LifecycleStage);
 
     static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {
         if (target_rate == 0) {
@@ -204,6 +191,68 @@ namespace argus {
         return 0;
     }
 
+    void _initialize_sdl(void) {
+        SDL_Init(0);
+
+        if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
+            _ARGUS_FATAL("Failed to initialize SDL events: %s\n", SDL_GetError());
+        }
+    }
+
+    void update_lifecycle_core(LifecycleStage stage) {
+        if (stage == PRE_INIT) {
+            _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
+
+            g_initializing = true;
+
+            // we'll probably register around 10 or so internal callbacks, so allocate them now
+            g_update_callbacks.list.reserve(10);
+            return;
+        } else if (stage == INIT) {
+            _init_callback_list(g_update_callbacks);
+            _init_callback_list(g_render_callbacks);
+            _init_callback_list(g_event_listeners);
+
+            _initialize_sdl();
+
+            g_initialized = true;
+        } else if (stage == POST_DEINIT) {
+            g_render_thread->detach();
+            g_render_thread->destroy();
+
+            SDL_Quit();
+        }
+    }
+    
+    void _initialize_modules(const EngineModules modules) {
+        for (LifecycleStage stage = PRE_INIT; stage <= POST_INIT; stage = static_cast<LifecycleStage>(stage + 1)) {
+            update_lifecycle_core(stage);
+            if (modules & EngineModules::RENDERER) {
+                update_lifecycle_renderer(stage);
+            }
+        }
+    }
+
+    void _deinitialize_modules(const EngineModules modules) {
+        for (LifecycleStage stage = PRE_DEINIT; stage <= POST_DEINIT; stage = static_cast<LifecycleStage>(stage + 1)) {
+            // we want to deinitialize the modules in the opposite order as they were initialized
+            if (modules & EngineModules::RENDERER) {
+                update_lifecycle_renderer(stage);
+            }
+            update_lifecycle_core(stage);
+        }
+    }
+
+    void initialize_engine(const EngineModules modules) {
+        signal(SIGINT, _interrupt_handler);
+        g_enabled_modules = modules;
+        _initialize_modules(modules);
+    }
+
+    static void _clean_up(void) {
+        _deinitialize_modules(g_enabled_modules);
+    }
+
     static void _game_loop(void) {
         static Timestamp last_update = 0;
 
@@ -218,7 +267,6 @@ namespace argus {
 
             _flush_callback_list_queues(g_update_callbacks);
             _flush_callback_list_queues(g_render_callbacks);
-            _flush_callback_list_queues(g_close_callbacks);
             _flush_callback_list_queues(g_event_listeners);
 
             // clear event queue
@@ -268,43 +316,6 @@ namespace argus {
         return nullptr;
     }
 
-    void _initialize_sdl(void) {
-        SDL_Init(0);
-
-        if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
-            _ARGUS_FATAL("Failed to initialize SDL events: %s\n", SDL_GetError());
-        }
-    }
-    
-    void _initialize_modules(const EngineModules module_bitmask) {
-        if (module_bitmask & EngineModules::RENDERER) {
-            init_module_renderer();
-        }
-    }
-
-    void initialize_engine(const EngineModules module_bitmask) {
-        _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
-
-        g_initializing = true;
-
-        signal(SIGINT, _interrupt_handler);
-
-        // we'll probably register around 10 or so internal callbacks, so allocate them now
-        g_update_callbacks.list.reserve(10);
-
-        _init_callback_list(g_update_callbacks);
-        _init_callback_list(g_render_callbacks);
-        _init_callback_list(g_close_callbacks);
-        _init_callback_list(g_event_listeners);
-
-        _initialize_sdl();
-
-        _initialize_modules(module_bitmask);
-
-        g_initialized = true;
-        return;
-    }
-
     template<typename T>
     Index _add_callback(CallbackList<T> &list, T callback) {
         g_next_index_mutex.lock();
@@ -341,15 +352,6 @@ namespace argus {
 
     void unregister_render_callback(const Index id) {
         _remove_callback(g_render_callbacks, id);
-    }
-
-    const Index register_close_callback(const NullaryCallback callback) {
-        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register close callback before engine initialization.");
-        return _add_callback(g_close_callbacks, callback);
-    }
-
-    void unregister_close_callback(const Index id) {
-        _remove_callback(g_close_callbacks, id);
     }
 
     const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data) {

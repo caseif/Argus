@@ -13,14 +13,63 @@ namespace argus {
     typedef unsigned long long Index;
 
     typedef enum class engine_modules_t : uint64_t {
-        LOWLEVEL        = 0x01,
-        CORE    = 0x02,
-        RENDERER    = 0x04,
+        LOWLEVEL    = 0x01,
+        CORE        = 0x02,
+        RESMAN      = 0x04,
+        RENDERER    = 0x08,
     } EngineModules;
 
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
     inline bool operator &(const EngineModules lhs, const EngineModules rhs);
+
+    /**
+     * Represents the stages of engine bring-up or spin-down.
+     */
+    typedef enum {
+        /**
+         * The first lifecycle stage, for performing early allocation or other
+         * early setup. Changes during this stage should not be visible to
+         * dependent modules.
+         */
+        PRE_INIT,
+        /**
+         * Primary initialization, for performing most initialization tasks.
+         */
+        INIT,
+        /**
+         * Late initialization, for performing initialization of systems
+         * contingent on dependent modules being initialized.
+         */
+        LATE_INIT,
+        /**
+         * Very late initialization, for performing initialization contingent
+         * on all modules being fully initialized externally. Changes during
+         * this stage should not be visible to dependent modules.
+         */
+        POST_INIT,
+        /**
+         * Early de-initialization, for performing early de-init tasks when the
+         * engine has first announced its intention to shut down. Changes during
+         * this stage should not be visible to dependent modules.
+         */
+        PRE_DEINIT,
+        /**
+         * Primary de-initialization, for performing most de-init tasks.
+         */
+        DEINIT,
+        /**
+         * Late de-initialization, for performing de-init of systems contingent
+         * on dependent modules being de-initialized.
+         */
+        LATE_DEINIT,
+        /**
+         * Very late initialization, for performing de-init contingent on all
+         * modules being fully de-initialized externally. Changes during this
+         * stage should not be visible to dependent modules.
+         */
+        POST_DEINIT
+    } LifecycleStage;
 
     typedef enum {
         UNDEFINED,
@@ -35,6 +84,11 @@ namespace argus {
         ArgusEventType type;
         void *event_data;
     };
+
+    /**
+     * \brief A callback for passing lifecycle changes to engine modules.
+     */
+    typedef std::function<void(LifecycleStage)> LifecycleUpdateCallback;
 
     /**
      * \brief An update callback accepts a single parameter representing the
@@ -133,21 +187,6 @@ namespace argus {
      * \brief Unregisters the update callback with the given ID.
      */
     void unregister_render_callback(const Index id);
-
-    /**
-     * \brief Registers a callback for invocation when the engine is requested
-     * to close.
-     *
-     * It is normally not necessary to invoke this from game code.
-     *
-     * \return The ID of the new registration.
-     */
-    const Index register_close_callback(const NullaryCallback close_callback);
-
-    /**
-     * \brief Unregisters the update callback with the given ID.
-     */
-    void unregister_close_callback(const Index id);
 
     /**
      * \brief Registers a listener for particular events.

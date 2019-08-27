@@ -101,15 +101,17 @@ namespace argus {
         }
     }
 
-    void init_module_renderer(void) {
-        register_close_callback(_clean_up);
+    void update_lifecycle_renderer(LifecycleStage stage) {
+        if (stage == INIT) {
+            if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+                _ARGUS_FATAL("Failed to initialize SDL video\n");
+            }
+            _init_opengl();
 
-        if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-            _ARGUS_FATAL("Failed to initialize SDL video\n");
+            g_renderer_initialized = true;
+        } else if (stage == DEINIT) {
+            _clean_up();
         }
-        _init_opengl();
-
-        g_renderer_initialized = true;
     }
 
     Renderer::Renderer(Window &window):

@@ -3,6 +3,9 @@
 #include "argus/filesystem.hpp"
 #include "internal/logging.hpp"
 
+// module core
+#include "argus/core.hpp"
+
 // module resman
 #include "argus/resource_manager.hpp"
 
@@ -12,8 +15,10 @@ namespace argus {
 
     ResourceManager g_global_resource_manager;
 
-    void init_module_resman(void) {
-        g_global_resource_manager.discover_resources();
+    void update_lifecycle_resman(LifecycleStage stage) {
+        if (stage == LATE_INIT) {
+            g_global_resource_manager.discover_resources();
+        }
     }
 
     template <typename ResourceDataType>
