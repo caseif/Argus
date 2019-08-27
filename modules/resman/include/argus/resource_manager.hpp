@@ -11,8 +11,8 @@ namespace argus {
 
     class ResourceManager;
 
-    typedef AsyncRequestCallback<ResourceManager*, std::string> AsyncResourceRequestCallback;
-    typedef AsyncRequestHandle<ResourceManager*, std::string> AsyncResourceRequestHandle;
+    typedef AsyncRequestCallback<ResourceManager*, const std::string> AsyncResourceRequestCallback;
+    typedef AsyncRequestHandle<ResourceManager*, const std::string> AsyncResourceRequestHandle;
     
     struct ResourcePrototype {
         std::string uid;
@@ -72,22 +72,22 @@ namespace argus {
 
             int unload_resource(std::string const &uid);
 
+            void load_resource_trampoline(AsyncResourceRequestHandle &handle);
+
         public:
             template <typename ResourceDataType>
-            int register_loader(const std::string type_id, ResourceLoader<ResourceDataType> loader);
+            int register_loader(std::string const &type_id, const ResourceLoader<ResourceDataType> loader);
 
             template <typename ResourceDataType>
-            int get_resource(const std::string uid, Resource<ResourceDataType> **target);
+            int get_resource(std::string const &uid, Resource<ResourceDataType> **const target);
 
             template <typename ResourceDataType>
-            int try_get_resource(const std::string uid, Resource<ResourceDataType> **target) const;
+            int try_get_resource(std::string const &uid, Resource<ResourceDataType> **const target) const;
 
-            template <typename ResourceDataType>
-            int load_resource(const std::string uid);
+            int load_resource(std::string const &uid);
 
-            template <typename ResourceDataType>
-            int load_reosurce_async(const std::string uid, AsyncResourceRequestHandle *handle,
-                    AsyncResourceRequestCallback callback);
+            AsyncResourceRequestHandle load_reosurce_async(std::string const &uid,
+                    const AsyncResourceRequestCallback callback);
     };
 
 }

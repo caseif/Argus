@@ -220,11 +220,11 @@ namespace argus {
 
             AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &&rhs);
 
-            AsyncRequestHandle(T &item, const DataType &&data, AsyncRequestCallback<T, DataType> callback);
+            AsyncRequestHandle(T &item, const DataType &data, AsyncRequestCallback<T, DataType> callback);
             
-            AsyncRequestHandle(T item, const DataType &&data, AsyncRequestCallback<T, DataType> callback);
+            AsyncRequestHandle(T item, const DataType &data, AsyncRequestCallback<T, DataType> callback);
 
-            void execute(std::function<void*(void*)> routine);
+            void execute(std::function<void(AsyncRequestHandle<T, DataType>&)> routine);
 
             void join(void);
 
@@ -235,6 +235,8 @@ namespace argus {
             bool was_successful(void);
 
             bool is_result_valid(void);
+
+            void set_result(bool success);
     };
 
 }

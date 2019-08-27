@@ -179,7 +179,7 @@ namespace argus {
     }
 
     template <typename T, typename DataType>
-    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T &item, const DataType &&data,
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T &item, const DataType &data,
             AsyncRequestCallback<T, DataType> callback):
             data(data),
             callback(callback),
@@ -188,7 +188,7 @@ namespace argus {
     }
 
     template <typename T, typename DataType>
-    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T item, const DataType &&data,
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T item, const DataType &data,
             AsyncRequestCallback<T, DataType> callback):
             data(data),
             callback(callback),
@@ -198,7 +198,7 @@ namespace argus {
     }
 
     template <typename T, typename DataType>
-    void AsyncRequestHandle<T, DataType>::execute(std::function<void*(void*)> routine) {
+    void AsyncRequestHandle<T, DataType>::execute(std::function<void(AsyncRequestHandle<T, DataType>&)> routine) {
         thread = Thread::create(routine, static_cast<void*>(this));
     }
 
@@ -233,6 +233,16 @@ namespace argus {
     template <typename T, typename DataType>
     bool AsyncRequestHandle<T, DataType>::is_result_valid(void) {
         return result_valid;
+    }
+
+    template <typename T, typename DataType>
+    void AsyncRequestHandle<T, DataType>::set_result(bool success) {
+        if (is_result_valid) {
+            _ARGUS_FATAL("Cannot set handle result more than once");
+        }
+
+        this->success = success;
+        this->result_valid = true;
     }
 
 }

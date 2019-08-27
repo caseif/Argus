@@ -40,9 +40,9 @@ namespace argus {
 
             FileHandle(const std::string path, const size_t size, void *const handle);
 
-            void *read_async_wrapper(void *ptr);
+            void read_trampoline(AsyncFileRequestHandle &handle);
 
-            void *write_async_wrapper(void *ptr);
+            void write_trampoline(AsyncFileRequestHandle &handle);
 
         public:
             /**
@@ -69,11 +69,11 @@ namespace argus {
             const int release(void);
 
             const int read(ssize_t offset, size_t size, unsigned char *const buf) const;
+            
+            const int write(ssize_t offset, size_t size, unsigned char *const buf) const;
 
             const int read_async(ssize_t offset, size_t size, unsigned char *const buf,
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);
-            
-            const int write(ssize_t offset, size_t size, unsigned char *const buf) const;
 
             const int write_async(ssize_t offset, size_t size, unsigned char *const buf,
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);

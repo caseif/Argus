@@ -168,33 +168,6 @@ namespace argus {
         return 0;
     }
 
-    void *FileHandle::read_async_wrapper(void *ptr) {
-        AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
-        request_handle->item->read(request_handle->data.offset, request_handle->data.size, request_handle->data.buf);
-        return nullptr;
-    }
-
-    const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
-        if (!valid) {
-            set_error("read_async called on invalid FileHandle");
-            return -1;
-        }
-
-        if (offset + size > this->size) {
-            set_error("read_async called with invalid offset/size parameters");
-            return -1;
-        }
-
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
-
-        handle_local.execute(std::bind(&FileHandle::read_async_wrapper, this, std::placeholders::_1));
-
-        *request_handle = handle_local;
-        
-        return 0;
-    }
-
     const int FileHandle::write(ssize_t offset, size_t size, unsigned char *const buf) const {
         if (!valid) {
             set_error("write called on invalid FileHandle");
@@ -221,10 +194,25 @@ namespace argus {
         return 0;
     }
 
-    void *FileHandle::write_async_wrapper(void *ptr) {
-        AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
-        request_handle->item->write(request_handle->data.offset, request_handle->data.size, request_handle->data.buf);
-        return nullptr;
+    const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
+            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
+        if (!valid) {
+            set_error("read_async called on invalid FileHandle");
+            return -1;
+        }
+
+        if (offset + size > this->size) {
+            set_error("read_async called with invalid offset/size parameters");
+            return -1;
+        }
+
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
+
+        handle_local.execute(std::bind(&FileHandle::read_trampoline, this, std::placeholders::_1));
+
+        *request_handle = handle_local;
+        
+        return 0;
     }
 
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
@@ -236,11 +224,19 @@ namespace argus {
 
         AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf}, callback);
 
-        handle_local.execute(std::bind(&FileHandle::write_async_wrapper, this, std::placeholders::_1));
+        handle_local.execute(std::bind(&FileHandle::write_trampoline, this, std::placeholders::_1));
 
         *request_handle = handle_local;
         
         return 0;
+    }
+
+    void FileHandle::read_trampoline(AsyncFileRequestHandle &handle) {
+        handle.item->read(handle.data.offset, handle.data.size, handle.data.buf);
+    }
+
+    void FileHandle::write_trampoline(AsyncFileRequestHandle &handle) {
+        handle.item->write(handle.data.offset, handle.data.size, handle.data.buf);
     }
     
     int get_executable_path(std::string *str) {
