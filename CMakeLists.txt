@@ -40,10 +40,12 @@ set(VMMLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/vmmlib/include")
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes dest)
+  set(MODULE_MASTER_DEPENDENCY_INCLUDES "")
   foreach(module ${MODULE_DEPS})
     get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
-    set(${dest} "${MODULE_INC_DIR}" PARENT_SCOPE)
+    list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
   endforeach()
+  set(${dest} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
 # configures the module's top-level include dirs and saves them to the given variable

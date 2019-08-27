@@ -193,4 +193,48 @@ namespace argus {
         };
     };
 
+    template <typename T, typename DataType>
+    class AsyncRequestHandle;
+
+    template <typename T, typename DataType>
+    using AsyncRequestCallback = std::function<void(AsyncRequestHandle<T, DataType>)>;
+
+    template <typename T, typename DataType>
+    class AsyncRequestHandle {
+        private:
+            AsyncRequestCallback<T, DataType> callback;
+
+            bool success;
+
+            std::atomic_bool result_valid;
+
+            Thread *thread;
+
+        public:
+            const T item;
+            const DataType data;
+
+            AsyncRequestHandle<T, DataType> operator =(AsyncRequestHandle<T, DataType> const &rhs);
+
+            AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &rhs);
+
+            AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &&rhs);
+
+            AsyncRequestHandle(T &item, const DataType &&data, AsyncRequestCallback<T, DataType> callback);
+            
+            AsyncRequestHandle(T item, const DataType &&data, AsyncRequestCallback<T, DataType> callback);
+
+            void execute(std::function<void*(void*)> routine);
+
+            void join(void);
+
+            void cancel(void);
+
+            int get_data(DataType &target);
+
+            bool was_successful(void);
+
+            bool is_result_valid(void);
+    };
+
 }

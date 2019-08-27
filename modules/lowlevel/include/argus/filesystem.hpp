@@ -19,47 +19,16 @@
 namespace argus {
 
     class FileHandle;
-    class AsyncFileRequestHandle;
 
-    typedef std::function<void(AsyncFileRequestHandle)> AsyncFileRequestCallback;
-
-    class AsyncFileRequestHandle {
-        friend class FileHandle;
-
-        private:
-            FileHandle *file_handle;
-            ssize_t offset;
-            size_t size;
-            unsigned char *buf;
-            AsyncFileRequestCallback callback;
-
-            size_t streamed_bytes;
-            bool success;
-
-            std::atomic_bool result_valid;
-
-            Thread *thread;
-
-            AsyncFileRequestHandle operator =(AsyncFileRequestHandle const &rhs);
-
-            AsyncFileRequestHandle(AsyncFileRequestHandle const &rhs);
-
-            AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs);
-
-            AsyncFileRequestHandle(FileHandle &file_handle, const ssize_t offset, const size_t size,
-                    unsigned char *const buf, AsyncFileRequestCallback callback);
-
-        public:
-            void join(void);
-
-            void cancel(void);
-
-            size_t get_streamed_bytes(void);
-
-            bool was_successful(void);
-
-            bool is_result_valid(void);
+    struct FileStreamData {
+        ssize_t offset;
+        size_t size;
+        unsigned char *buf;
+        size_t streamed_bytes;
     };
+
+    typedef AsyncRequestHandle<FileHandle*, FileStreamData> AsyncFileRequestHandle;
+    typedef AsyncRequestCallback<FileHandle*, FileStreamData> AsyncFileRequestCallback;
 
     class FileHandle {
         private:

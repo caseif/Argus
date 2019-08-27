@@ -59,63 +59,6 @@
 
 namespace argus {
 
-    AsyncFileRequestHandle AsyncFileRequestHandle::operator =(AsyncFileRequestHandle const &rhs) {
-        return AsyncFileRequestHandle(rhs);
-    }
-
-    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &rhs) :
-            file_handle(rhs.file_handle),
-            streamed_bytes(rhs.streamed_bytes),
-            result_valid(rhs.result_valid.load()),
-            success(rhs.success),
-            thread(nullptr) {
-    }
-
-    AsyncFileRequestHandle::AsyncFileRequestHandle(FileHandle &file_handle, const ssize_t offset, const size_t size,
-            unsigned char *const buf, AsyncFileRequestCallback callback):
-            file_handle(&file_handle),
-            offset(offset),
-            size(size),
-            buf(buf),
-            callback(callback),
-            result_valid(false) {
-    }
-
-    AsyncFileRequestHandle::AsyncFileRequestHandle(AsyncFileRequestHandle const &&rhs) :
-            file_handle(std::move(rhs.file_handle)),
-            streamed_bytes(std::move(rhs.streamed_bytes)),
-            result_valid(rhs.result_valid.load()),
-            success(std::move(rhs.success)),
-            thread(nullptr) {
-    }
-
-    void AsyncFileRequestHandle::join(void) {
-        thread->join();
-    }
-
-    void AsyncFileRequestHandle::cancel(void) {
-        thread->detach();
-        thread->destroy();
-    }
-
-    size_t AsyncFileRequestHandle::get_streamed_bytes(void) {
-        if (!result_valid) {
-            return 0;
-        }
-        return streamed_bytes;
-    }
-
-    bool AsyncFileRequestHandle::was_successful(void) {
-        if (!result_valid) {
-            return false;
-        }
-        return success;
-    }
-
-    bool AsyncFileRequestHandle::is_result_valid(void) {
-        return result_valid;
-    }
-
     FileHandle::FileHandle(const std::string path, const size_t size, void *const handle) :
             path(path),
             size(size),
@@ -222,7 +165,7 @@ namespace argus {
 
     void *FileHandle::read_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
-        request_handle->file_handle->read(request_handle->offset, request_handle->size, request_handle->buf);
+        request_handle->item->read(request_handle->data.offset, request_handle->data.size, request_handle->data.buf);
         return nullptr;
     }
 
@@ -238,10 +181,9 @@ namespace argus {
             return -1;
         }
 
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(*this, offset, size, buf, callback);
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
 
-        Thread thread = Thread::create(std::bind(&FileHandle::read_async_wrapper, this, std::placeholders::_1), static_cast<void*>(this));
-        handle_local.thread = &thread;
+        handle_local.execute(std::bind(&FileHandle::read_async_wrapper, this, std::placeholders::_1));
 
         *request_handle = handle_local;
         
@@ -276,7 +218,7 @@ namespace argus {
 
     void *FileHandle::write_async_wrapper(void *ptr) {
         AsyncFileRequestHandle *request_handle = static_cast<AsyncFileRequestHandle*>(ptr);
-        request_handle->file_handle->write(request_handle->offset, request_handle->size, request_handle->buf);
+        request_handle->item->write(request_handle->data.offset, request_handle->data.size, request_handle->data.buf);
         return nullptr;
     }
 
@@ -287,10 +229,9 @@ namespace argus {
             return -1;
         }
 
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(*this, offset, size, buf, callback);
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf}, callback);
 
-        Thread thread = Thread::create(std::bind(&FileHandle::write_async_wrapper, this, std::placeholders::_1), static_cast<void*>(this));
-        handle_local.thread = &thread;
+        handle_local.execute(std::bind(&FileHandle::write_async_wrapper, this, std::placeholders::_1));
 
         *request_handle = handle_local;
         

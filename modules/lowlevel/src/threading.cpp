@@ -1,6 +1,7 @@
 #include "argus/threading.hpp"
 
 #include <functional>
+#include <type_traits>
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
@@ -152,5 +153,84 @@ namespace argus {
         pthread_rwlock_unlock(&mutex);
     }
     #endif
+
+    template <typename T, typename DataType>
+    AsyncRequestHandle<T, DataType> AsyncRequestHandle<T, DataType>::operator =(AsyncRequestHandle<T, DataType> const &rhs) {
+        return AsyncFileRequestHandle(rhs);
+    }
+
+    template <typename T, typename DataType>
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &rhs):
+            item(rhs.item),
+            data(rhs.data),
+            result_valid(rhs.result_valid.load()),
+            success(rhs.success),
+            thread(rhs.thread) {
+    }
+
+    template <typename T, typename DataType>
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &&rhs) :
+            item(std::move(rhs.item)),
+            data(std::move(rhs.data)),
+            result_valid(rhs.result_valid.load()),
+            success(std::move(rhs.success)),
+            thread(std::move(rhs.thread)) {
+    }
+
+    template <typename T, typename DataType>
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T &item, const DataType &&data,
+            AsyncRequestCallback<T, DataType> callback):
+            data(data),
+            callback(callback),
+            result_valid(false),
+            thread(nullptr) {
+    }
+
+    template <typename T, typename DataType>
+    AsyncRequestHandle<T, DataType>::AsyncRequestHandle(T item, const DataType &&data,
+            AsyncRequestCallback<T, DataType> callback):
+            data(data),
+            callback(callback),
+            result_valid(false),
+            thread(nullptr) {
+        static_assert(std::is_pointer<T>::value, "item parameter must be a reference for non-pointer template type");
+    }
+
+    template <typename T, typename DataType>
+    void AsyncRequestHandle<T, DataType>::execute(std::function<void*(void*)> routine) {
+        thread = Thread::create(routine, static_cast<void*>(this));
+    }
+
+    template <typename T, typename DataType>
+    void AsyncRequestHandle<T, DataType>::join(void) {
+        thread->join();
+    }
+
+    template <typename T, typename DataType>
+    void AsyncRequestHandle<T, DataType>::cancel(void) {
+        thread->detach();
+        thread->destroy();
+    }
+
+    template <typename T, typename DataType>
+    int AsyncRequestHandle<T, DataType>::get_data(DataType &target) {
+        if (!result_valid) {
+            return -1;
+        }
+        target = data;
+    }
+
+    template <typename T, typename DataType>
+    bool AsyncRequestHandle<T, DataType>::was_successful(void) {
+        if (!result_valid) {
+            return false;
+        }
+        return success;
+    }
+
+    template <typename T, typename DataType>
+    bool AsyncRequestHandle<T, DataType>::is_result_valid(void) {
+        return result_valid;
+    }
 
 }
