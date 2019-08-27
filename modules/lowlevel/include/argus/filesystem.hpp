@@ -68,9 +68,9 @@ namespace argus {
              */
             const int release(void);
 
-            const int read(size_t offset, size_t size, unsigned char *const buf) const;
+            const int read(ssize_t offset, size_t size, unsigned char *const buf) const;
 
-            const int read_async(size_t offset, size_t size, unsigned char *const buf,
+            const int read_async(ssize_t offset, size_t size, unsigned char *const buf,
                     AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle);
             
             const int write(ssize_t offset, size_t size, unsigned char *const buf) const;

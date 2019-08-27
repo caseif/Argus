@@ -1,3 +1,4 @@
+#include "argus/error.hpp"
 #include "argus/threading.hpp"
 
 #include <functional>
@@ -215,6 +216,7 @@ namespace argus {
     template <typename T, typename DataType>
     int AsyncRequestHandle<T, DataType>::get_data(DataType &target) {
         if (!result_valid) {
+            set_error("AsyncRequestHandle result is not yet valid");
             return -1;
         }
         target = data;

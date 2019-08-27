@@ -1,3 +1,4 @@
+#include "argus/error.hpp"
 #include "argus/filesystem.hpp"
 
 #include <algorithm>
@@ -75,7 +76,7 @@ namespace argus {
         // - read and create set without any other modes
         if ((mode == 0) || (mode == FILE_MODE_CREATE)
                 || ((mode & ~FILE_MODE_READ) == (FILE_MODE_CREATE))) {
-            printf("FileHandle::create called with invalid mode %d\n", mode);
+            set_error("FileHandle::create called with invalid mode");
             return -1;
         }
 
@@ -141,14 +142,18 @@ namespace argus {
         }
     }
 
-    const int FileHandle::read(size_t offset, size_t size, unsigned char *const buf) const {
+    const int FileHandle::read(ssize_t offset, size_t size, unsigned char *const buf) const {
         if (!valid) {
-            fprintf(stderr, "read called on invalid FileHandle\n");
+            set_error("read called on invalid FileHandle");
             return -1;
         }
 
+        if (size == 0) {
+            set_error("read called with invalid size parameter");
+        }
+
         if (offset + size > this->size) {
-            fprintf(stderr, "read called with invalid offset/size parameter");
+            set_error("read called with invalid offset/size combination");
             return -1;
         }
 
@@ -169,15 +174,15 @@ namespace argus {
         return nullptr;
     }
 
-    const int FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
+    const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
             AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
         if (!valid) {
-            fprintf(stderr, "read_async called on invalid FileHandle\n");
+            set_error("read_async called on invalid FileHandle");
             return -1;
         }
 
         if (offset + size > this->size) {
-            fprintf(stderr, "read_async called with invalid offset/size parameters");
+            set_error("read_async called with invalid offset/size parameters");
             return -1;
         }
 
@@ -192,12 +197,12 @@ namespace argus {
 
     const int FileHandle::write(ssize_t offset, size_t size, unsigned char *const buf) const {
         if (!valid) {
-            fprintf(stderr, "write called on invalid FileHandle\n");
+            set_error("write called on invalid FileHandle");
             return -1;
         }
 
         if (offset < -1) {
-            fprintf(stderr, "write called with invalid offset parameters");
+            set_error("write called with invalid offset parameters");
             return -1;
         }
 
@@ -225,7 +230,7 @@ namespace argus {
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
             AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
         if (!valid) {
-            fprintf(stderr, "write_async called on invalid FileHandle\n");
+            set_error("write_async called on invalid FileHandle");
             return -1;
         }
 

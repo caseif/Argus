@@ -21,9 +21,9 @@ namespace argus {
 
     using namespace glext;
 
-    Shader g_layer_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_layer_transform", __UNIFORM_LAYER_TRANSFORM);
+    Shader g_layer_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_layer_transform", _UNIFORM_LAYER_TRANSFORM);
 
-    Shader g_group_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_group_transform", __UNIFORM_GROUP_TRANSFORM);
+    Shader g_group_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_group_transform", _UNIFORM_GROUP_TRANSFORM);
 
     Shader::Shader(const unsigned int type, std::string const &src, std::string const &entry_point,
             const int priority, std::initializer_list<std::string> const &uniform_ids):

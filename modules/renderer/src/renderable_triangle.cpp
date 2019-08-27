@@ -4,7 +4,7 @@
 
 #include <SDL2/SDL_opengl.h>
 
-#define __TRIANGLE_VERTICES 3
+#define _TRIANGLE_VERTICES 3
 
 namespace argus {
 
@@ -30,17 +30,17 @@ namespace argus {
     }
 
     void RenderableTriangle::render(handle_t buffer_handle, const size_t offset) const {
-        float buffer_data[__TRIANGLE_VERTICES * __VERTEX_LEN];
+        float buffer_data[_TRIANGLE_VERTICES * _VERTEX_LEN];
 
         _fill_buffer(buffer_data, corner_1, 0);
-        _fill_buffer(buffer_data, corner_2, __VERTEX_LEN * 1);
-        _fill_buffer(buffer_data, corner_3, __VERTEX_LEN * 2);
+        _fill_buffer(buffer_data, corner_2, _VERTEX_LEN * 1);
+        _fill_buffer(buffer_data, corner_3, _VERTEX_LEN * 2);
 
         glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(buffer_data), buffer_data);
     }
 
     const unsigned int RenderableTriangle::get_vertex_count(void) const {
-        return __TRIANGLE_VERTICES;
+        return _TRIANGLE_VERTICES;
     }
 
 }

@@ -91,23 +91,23 @@ namespace argus {
             }
 
             // allocate a new buffer
-            glBufferData(GL_ARRAY_BUFFER, vertex_count * __VERTEX_LEN * __VERTEX_WORD_LEN, nullptr, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, vertex_count * _VERTEX_LEN * _VERTEX_WORD_LEN, nullptr, GL_DYNAMIC_DRAW);
 
             // set up attribute metadata
-            glEnableVertexAttribArray(__ATTRIB_LOC_POSITION);
-            glEnableVertexAttribArray(__ATTRIB_LOC_COLOR);
-            glEnableVertexAttribArray(__ATTRIB_LOC_TEXCOORD);
+            glEnableVertexAttribArray(_ATTRIB_LOC_POSITION);
+            glEnableVertexAttribArray(_ATTRIB_LOC_COLOR);
+            glEnableVertexAttribArray(_ATTRIB_LOC_TEXCOORD);
 
             GLintptr position_offset = 0;
-            GLintptr color_offset = (__VERTEX_POSITION_LEN) * __VERTEX_WORD_LEN;
-            GLintptr texcoord_offset = (__VERTEX_POSITION_LEN + __VERTEX_COLOR_LEN) * __VERTEX_WORD_LEN;
-            GLint vertex_stride = __VERTEX_LEN * __VERTEX_WORD_LEN;
+            GLintptr color_offset = (_VERTEX_POSITION_LEN) * _VERTEX_WORD_LEN;
+            GLintptr texcoord_offset = (_VERTEX_POSITION_LEN + _VERTEX_COLOR_LEN) * _VERTEX_WORD_LEN;
+            GLint vertex_stride = _VERTEX_LEN * _VERTEX_WORD_LEN;
 
-            glVertexAttribPointer(__ATTRIB_LOC_POSITION, __VERTEX_POSITION_LEN, GL_FLOAT, GL_FALSE,
+            glVertexAttribPointer(_ATTRIB_LOC_POSITION, _VERTEX_POSITION_LEN, GL_FLOAT, GL_FALSE,
                     vertex_stride, reinterpret_cast<GLvoid*>(position_offset));
-            glVertexAttribPointer(__ATTRIB_LOC_COLOR, __VERTEX_COLOR_LEN, GL_FLOAT, GL_FALSE,
+            glVertexAttribPointer(_ATTRIB_LOC_COLOR, _VERTEX_COLOR_LEN, GL_FLOAT, GL_FALSE,
                     vertex_stride, reinterpret_cast<GLvoid*>(color_offset));
-            glVertexAttribPointer(__ATTRIB_LOC_TEXCOORD, __VERTEX_TEXCOORD_LEN, GL_FLOAT, GL_FALSE,
+            glVertexAttribPointer(_ATTRIB_LOC_TEXCOORD, _VERTEX_TEXCOORD_LEN, GL_FLOAT, GL_FALSE,
                      vertex_stride, reinterpret_cast<GLvoid*>(texcoord_offset));
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -164,14 +164,14 @@ namespace argus {
         if (!shaders_initialized || transform.is_dirty()) {
             float transform_matrix[16];
             transform.to_matrix(transform_matrix);
-            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_GROUP_TRANSFORM), 1, GL_FALSE, transform_matrix);
+            glUniformMatrix4fv(shader_program.get_uniform_location(_UNIFORM_GROUP_TRANSFORM), 1, GL_FALSE, transform_matrix);
             transform.clean();
         }
 
         if (!shaders_initialized || parent.transform.is_dirty()) {
             float transform_matrix[16];
             parent.transform.to_matrix(transform_matrix);
-            glUniformMatrix4fv(shader_program.get_uniform_location(__UNIFORM_LAYER_TRANSFORM), 1, GL_FALSE, transform_matrix);
+            glUniformMatrix4fv(shader_program.get_uniform_location(_UNIFORM_LAYER_TRANSFORM), 1, GL_FALSE, transform_matrix);
         }
 
         if (!shaders_initialized || transform.is_dirty() || parent.transform.is_dirty()) {

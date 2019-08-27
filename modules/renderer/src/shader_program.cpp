@@ -12,7 +12,7 @@
 #include <sstream>
 #include <SDL2/SDL_opengl.h>
 
-#define __LOG_MAX_LEN 255
+#define _LOG_MAX_LEN 255
 
 namespace argus {
 
@@ -102,11 +102,11 @@ namespace argus {
             R"(#version 330 core)"
             #endif
             R"(
-            in vec2 )" __ATTRIB_POSITION R"(;
-            in vec4 )" __ATTRIB_COLOR R"(;
-            in vec3 )" __ATTRIB_TEXCOORD R"(;
+            in vec2 )" _ATTRIB_POSITION R"(;
+            in vec4 )" _ATTRIB_COLOR R"(;
+            in vec3 )" _ATTRIB_TEXCOORD R"(;
 
-            uniform mat4 )" __UNIFORM_PROJECTION R"(;
+            uniform mat4 )" _UNIFORM_PROJECTION R"(;
 
             out vec4 color;
             out vec3 texCoord;
@@ -129,12 +129,12 @@ namespace argus {
             precision mediump int;
             precision mediump sampler2DArray;
 
-            uniform sampler2DArray )" __UNIFORM_TEXTURE R"(;
+            uniform sampler2DArray )" _UNIFORM_TEXTURE R"(;
 
             in vec4 color;
             in vec3 texCoord;
 
-            out vec4 )" __OUT_FRAGDATA R"(;
+            out vec4 )" _OUT_FRAGDATA R"(;
 
             // begin sub-shader concatenation)";
 
@@ -157,9 +157,9 @@ namespace argus {
             // end sub-shader concatenation
 
             void main() {
-                position = ()" __UNIFORM_PROJECTION R"( * vec4()" __ATTRIB_POSITION R"(, 0.0, 1.0)).xy;
-                color = )" __ATTRIB_COLOR R"(;
-                texCoord = )" __ATTRIB_TEXCOORD R"(;
+                position = ()" _UNIFORM_PROJECTION R"( * vec4()" _ATTRIB_POSITION R"(, 0.0, 1.0)).xy;
+                color = )" _ATTRIB_COLOR R"(;
+                texCoord = )" _ATTRIB_TEXCOORD R"(;
 
                 // begin sub-shader invocation)";
 
@@ -197,8 +197,8 @@ namespace argus {
         bootstrap_frag_ss << R"(
                 // end sub-shader invocation
 
-                vec4 texel = texture()" __UNIFORM_TEXTURE R"(, texCoord);
-                )" __OUT_FRAGDATA R"( = texel + color;
+                vec4 texel = texture()" _UNIFORM_TEXTURE R"(, texCoord);
+                )" _OUT_FRAGDATA R"( = texel + color;
             }
         )";
 
@@ -213,11 +213,11 @@ namespace argus {
         GLint bootstrap_frag_handle = _compile_shader(GL_FRAGMENT_SHADER, bootstrap_frag_ss.str());
         glAttachShader(program_handle, bootstrap_frag_handle);
 
-        glBindAttribLocation(program_handle, __ATTRIB_LOC_POSITION, __ATTRIB_POSITION);
-        glBindAttribLocation(program_handle, __ATTRIB_LOC_COLOR, __ATTRIB_COLOR);
-        glBindAttribLocation(program_handle, __ATTRIB_LOC_TEXCOORD, __ATTRIB_TEXCOORD);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_POSITION, _ATTRIB_POSITION);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_COLOR, _ATTRIB_COLOR);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_TEXCOORD, _ATTRIB_TEXCOORD);
 
-        glBindFragDataLocation(program_handle, 0, __OUT_FRAGDATA);
+        glBindFragDataLocation(program_handle, 0, _OUT_FRAGDATA);
 
         glLinkProgram(program_handle);
 
@@ -227,7 +227,7 @@ namespace argus {
             int log_len;
             glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
-            glGetShaderInfoLog(program_handle, __LOG_MAX_LEN, nullptr, log);
+            glGetShaderInfoLog(program_handle, _LOG_MAX_LEN, nullptr, log);
             _ARGUS_FATAL("Failed to link program:\n%s\n", log);
             delete[] log;
         }
@@ -238,7 +238,7 @@ namespace argus {
         glDetachShader(program_handle, bootstrap_frag_handle);
         glDeleteShader(bootstrap_frag_handle);
 
-        std::vector<std::string> bootstrap_uniforms {__UNIFORM_PROJECTION, __UNIFORM_TEXTURE};
+        std::vector<std::string> bootstrap_uniforms {_UNIFORM_PROJECTION, _UNIFORM_TEXTURE};
         for (std::string uniform_id : bootstrap_uniforms) {
             GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
             uniforms.insert({uniform_id, uniform_loc});
@@ -252,7 +252,7 @@ namespace argus {
         }
 
         glUseProgram(program_handle);
-        glUniformMatrix4fv(get_uniform_location(__UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
+        glUniformMatrix4fv(get_uniform_location(_UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
         glUseProgram(0);
 
         needs_rebuild = false;

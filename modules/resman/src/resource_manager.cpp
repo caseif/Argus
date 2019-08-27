@@ -1,8 +1,9 @@
 // module lowlevel
-#include "argus/resource_manager.hpp"
+#include "argus/error.hpp"
+#include "internal/logging.hpp"
 
-// module core
-#include "internal/core_util.hpp"
+// module resman
+#include "argus/resource_manager.hpp"
 
 namespace argus {
 
@@ -43,13 +44,14 @@ namespace argus {
     template <typename ResourceDataType>
     int ResourceLoader<ResourceDataType>::load_dependencies(std::initializer_list<std::string> dependencies) {
         //TODO
+        return 0;
     }
 
     template <typename ResourceDataType>
     int ResourceManager::register_loader(const std::string type_id, ResourceLoader<ResourceDataType> loader) {
         auto it = registered_loaders.find(type_id);
         if (it != registered_loaders.cend()) {
-            _ARGUS_WARN("Cannot register loader for type \"%s\" more than once\n", type_id);
+            set_error("Cannot register loader for type more than once");
             return -1;
         }
 
@@ -59,13 +61,22 @@ namespace argus {
 
     template <typename ResourceDataType>
     int ResourceManager::get_resource(const std::string uid, Resource<ResourceDataType> **target) {
+        auto it = discovered_resource_prototypes.find(uid);
+        if (it == discovered_resource_prototypes.cend()) {
+            set_error("Resource does not exist");
+            return -1;
+        }
+
+        ResourcePrototype prototype = it->second;
         //TODO
+        return 0;
     }
 
     template <typename ResourceDataType>
     int ResourceManager::try_get_resource(const std::string uid, Resource<ResourceDataType> **target) const {
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
+            set_error("Resource is not loaded");
             return -1;
         }
 
@@ -76,12 +87,14 @@ namespace argus {
     template <typename ResourceDataType>
     int ResourceManager::load_resource(const std::string uid) {
         //TODO
+        return 0;
     }
 
     template <typename ResourceDataType>
     int ResourceManager::load_reosurce_async(const std::string uid, AsyncResourceRequestHandle *handle,
             AsyncResourceRequestCallback callback) {
         //TODO
+        return 0;
     }
 
     int ResourceManager::unload_resource(std::string const &uid) {
