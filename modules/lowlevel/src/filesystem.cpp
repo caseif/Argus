@@ -18,14 +18,19 @@
     #define fstat _fstat64
     #define stat _stat64
     #define stat_t struct _stat64
+
+    #define S_ISDIR(mode) (mode & S_IFDIR)
+    #define S_ISREG(mode) (mode & S_IFREG)
 #elif defined __APPLE__
+    #include <dirent.h>
     #include <mach-o/dyld.h>
 
     #define stat_t struct stat
 #elif defined __linux__
+    #include <dirent.h>
+    #include <unistd.h>
     #include <sys/stat.h>
     #include <sys/types.h>
-    #include <unistd.h>
 
     #ifndef __USE_FILE_OFFSET64
         #define __USE_FILE_OFFSET64
@@ -46,10 +51,12 @@
     #define stat stat64
     #define stat_t struct stat64
 #elif defined __NetBSD__ || defined __DragonFly__
+    #include <dirent.h>
     #include <unistd.h>
 
     #define stat_t struct stat
 #elif defined __FreeBSD__
+    #include <dirent.h>
     #include <sys/sysctl.h>
     #include <sys/types.h>
 
@@ -142,7 +149,7 @@ namespace argus {
         }
     }
 
-    const int FileHandle::read(ssize_t offset, size_t size, unsigned char *const buf) const {
+    const int FileHandle::read(const ssize_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
             set_error("read called on invalid FileHandle");
             return -1;
@@ -168,7 +175,7 @@ namespace argus {
         return 0;
     }
 
-    const int FileHandle::write(ssize_t offset, size_t size, unsigned char *const buf) const {
+    const int FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
             set_error("write called on invalid FileHandle");
             return -1;
@@ -195,7 +202,7 @@ namespace argus {
     }
 
     const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
+            const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
         if (!valid) {
             set_error("read_async called on invalid FileHandle");
             return -1;
@@ -216,7 +223,7 @@ namespace argus {
     }
 
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-            AsyncFileRequestCallback callback, AsyncFileRequestHandle *request_handle) {
+            const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
         if (!valid) {
             set_error("write_async called on invalid FileHandle");
             return -1;
@@ -231,15 +238,15 @@ namespace argus {
         return 0;
     }
 
-    void FileHandle::read_trampoline(AsyncFileRequestHandle &handle) {
+    void FileHandle::read_trampoline(AsyncFileRequestHandle const &handle) {
         handle.item->read(handle.data.offset, handle.data.size, handle.data.buf);
     }
 
-    void FileHandle::write_trampoline(AsyncFileRequestHandle &handle) {
+    void FileHandle::write_trampoline(AsyncFileRequestHandle const &handle) {
         handle.item->write(handle.data.offset, handle.data.size, handle.data.buf);
     }
     
-    int get_executable_path(std::string *str) {
+    int get_executable_path(std::string *const str) {
         const size_t max_path_len = 4097;
         size_t path_len = max_path_len;
         char path[max_path_len];
@@ -293,6 +300,67 @@ namespace argus {
         *str = std::string(path);
 
         return rc;
+    }
+
+    int list_directory_files(std::string const &directory_path, std::vector<std::string> *const target) {
+        #ifdef _WIN32
+        #error "Not yet supported"
+        //TODO
+        #else
+        DIR *dir = opendir(directory_path.c_str());
+        if (dir == NULL) {
+            set_error("Failed to open directory");
+            return -1;
+        }
+
+        struct dirent *ent;
+        while ((ent = readdir(dir)) != NULL) {
+            target->insert(target->cbegin(), std::string(ent->d_name));
+        }
+
+        closedir(dir);
+        #endif
+    }
+
+    bool is_directory(std::string const &path) {
+        stat_t path_stat;
+        if (stat(path.c_str(), &path_stat) != 0) {
+            set_error("Failed to stat path");
+            return false;
+        }
+        return S_ISDIR(path_stat.st_mode);
+    }
+    
+    bool is_regfile(std::string const &path) {
+        stat_t path_stat;
+        if (stat(path.c_str(), &path_stat) != 0) {
+            set_error("Failed to stat path");
+            return false;
+        }
+        return S_ISREG(path_stat.st_mode);
+    }
+
+    std::string get_parent(std::string const &path) {
+        #ifdef _WIN32
+        char path_separator = '\\';
+        #else
+        char path_separator = '/';
+        #endif
+
+        size_t start = path.length() - 1;
+        if (path[start] == path_separator) {
+            start--;
+        }
+        return path.substr(0, path.find_last_of(path_separator, start));
+    }
+
+    std::pair<const std::string, const std::string> get_name_and_extension(std::string const &file_name) {
+        size_t index = file_name.find_last_of(EXTENSION_SEPARATOR);
+        if (index == std::string::npos) {
+            return {file_name, ""};
+        } else {
+            return {file_name.substr(0, index), file_name.substr(index + 1)};
+        }
     }
 
 }

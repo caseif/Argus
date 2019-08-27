@@ -1,14 +1,19 @@
 // module lowlevel
 #include "argus/error.hpp"
+#include "argus/filesystem.hpp"
 #include "internal/logging.hpp"
 
 // module resman
 #include "argus/resource_manager.hpp"
 
+#define UID_SEPARATOR "."
+
 namespace argus {
 
+    ResourceManager g_global_resource_manager;
+
     void init_module_resman(void) {
-        //TODO: discover resources
+        g_global_resource_manager.discover_resources();
     }
 
     template <typename ResourceDataType>
@@ -49,8 +54,7 @@ namespace argus {
 
     template <typename ResourceDataType>
     int ResourceManager::register_loader(std::string const &type_id, const ResourceLoader<ResourceDataType> loader) {
-        auto it = registered_loaders.find(type_id);
-        if (it != registered_loaders.cend()) {
+        if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             set_error("Cannot register loader for type more than once");
             return -1;
         }
@@ -59,10 +63,54 @@ namespace argus {
         return 0;
     }
 
+    static void _discover_resources_recursively(std::string const &root_path, std::string const &prefix,
+            std::map<const std::string, const ResourcePrototype> &prototype_map) {
+        std::vector<std::string> children = list_directory_files(root_path);
+        for (std::string child : children) {
+            std::string full_child_path = root_path + PATH_SEPARATOR + child;
+
+            std::string cur_uid;
+            if (prefix.empty()) {
+                cur_uid = child;
+            } else {
+                cur_uid = prefix + UID_SEPARATOR + child;
+            }
+
+            if (is_directory(full_child_path)) {
+                _discover_resources_recursively(full_child_path, cur_uid, prototype_map);
+            } else if (is_regfile(full_child_path)) {
+                std::pair<std::string, std::string> name_and_ext = get_name_and_extension(child);
+                if (name_and_ext.second.empty()) {
+                    _ARGUS_WARN("Resource %s does not have an extension, ignoring\n", full_child_path.c_str());
+                    continue;
+                }
+
+                if (prototype_map.find(name_and_ext.first) != prototype_map.cend()) {
+                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies",
+                            cur_uid.c_str());
+                    continue;
+                }
+
+                //TODO: type lookup
+                prototype_map.insert({cur_uid, {cur_uid, name_and_ext.second}});
+            }
+        }
+    }
+
+    void ResourceManager::discover_resources(void) {
+        std::string exe_path;
+        if (get_executable_path(&exe_path) != 0) {
+            _ARGUS_FATAL("Failed to get executable directory: %s\n", get_error().c_str());
+        }
+
+        std::string exe_dir = get_parent(exe_path);
+
+        _discover_resources_recursively(exe_dir, "", discovered_resource_prototypes);
+    }
+
     template <typename ResourceDataType>
     int ResourceManager::get_resource(std::string const &uid, Resource<ResourceDataType> **target) {
-        auto it = discovered_resource_prototypes.find(uid);
-        if (it == discovered_resource_prototypes.cend()) {
+        if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             set_error("Resource does not exist");
             return -1;
         }
@@ -110,6 +158,10 @@ namespace argus {
     int ResourceManager::unload_resource(std::string const &uid) {
         loaded_resources.erase(uid);
         return 0;
+    }
+
+    ResourceManager &get_global_resource_manager(void) {
+        return g_global_resource_manager;
     }
 
 }

@@ -66,7 +66,7 @@ namespace argus {
 
     class ResourceManager {
         private:
-            std::map<const std::string, void*> discovered_resource_prototypes;
+            std::map<const std::string, const ResourcePrototype> discovered_resource_prototypes;
             std::map<const std::string, void*> loaded_resources;
             std::map<const std::string, void*> registered_loaders;
 
@@ -75,6 +75,8 @@ namespace argus {
             void load_resource_trampoline(AsyncResourceRequestHandle &handle);
 
         public:
+            void discover_resources(void);
+
             template <typename ResourceDataType>
             int register_loader(std::string const &type_id, const ResourceLoader<ResourceDataType> loader);
 
@@ -89,5 +91,7 @@ namespace argus {
             AsyncResourceRequestHandle load_reosurce_async(std::string const &uid,
                     const AsyncResourceRequestCallback callback);
     };
+
+    ResourceManager &get_resource_manager(void);
 
 }
