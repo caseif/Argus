@@ -88,7 +88,7 @@ namespace argus {
 
     int get_executable_path(std::string *const target);
 
-    std::vector<std::string> list_directory_files(std::string const &directory_path);
+    int list_directory_files(std::string const &directory_path, std::vector<std::string> *const target);
 
     bool is_directory(std::string const &path);
 

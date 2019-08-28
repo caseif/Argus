@@ -183,6 +183,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
 set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11)
 # enable PIC
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(${PROJECT_NAME}_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # add libraries for linking
 get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)

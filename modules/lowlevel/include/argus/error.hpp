@@ -1,7 +1,5 @@
 #pragma once
 
-#include "internal/logging.hpp"
-
 #include <cassert>
 #include <cstring>
 #include <string>

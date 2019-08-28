@@ -12,6 +12,7 @@
 #include <chrono>
 #include <csignal>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <queue>
 #include <utility>
@@ -72,6 +73,12 @@ namespace argus {
     static CallbackList<EventHandler> g_event_listeners;
 
     static EngineModules g_enabled_modules;
+    static std::vector<EngineModules> g_all_modules {
+            EngineModules::LOWLEVEL,
+            EngineModules::CORE,
+            EngineModules::RESMAN,
+            EngineModules::RENDERER
+    };
 
     static bool g_engine_stopping = false;
 
@@ -80,13 +87,20 @@ namespace argus {
     bool g_initializing = false;
     bool g_initialized = false;
 
+    // module lifecycle hooks
+    extern void update_lifecycle_resman(LifecycleStage);
+    extern void update_lifecycle_renderer(LifecycleStage);
+    void update_lifecycle_core(LifecycleStage);
+
+    std::map<const EngineModules, const LifecycleUpdateCallback> g_lifecycle_hooks{
+        {EngineModules::CORE, update_lifecycle_core},
+        {EngineModules::RESMAN, update_lifecycle_resman},
+        {EngineModules::RENDERER, update_lifecycle_renderer}
+    };
+
     static void _interrupt_handler(int signal) {
         stop_engine();
     }
-
-    // module (de-)initializers
-    extern void update_lifecycle_resman(LifecycleStage);
-    extern void update_lifecycle_renderer(LifecycleStage);
 
     static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {
         if (target_rate == 0) {
@@ -226,9 +240,13 @@ namespace argus {
     
     void _initialize_modules(const EngineModules modules) {
         for (LifecycleStage stage = PRE_INIT; stage <= POST_INIT; stage = static_cast<LifecycleStage>(stage + 1)) {
-            update_lifecycle_core(stage);
-            if (modules & EngineModules::RENDERER) {
-                update_lifecycle_renderer(stage);
+            for (EngineModules module : g_all_modules) {
+                if (modules & module) {
+                    auto it = g_lifecycle_hooks.find(module);
+                    if (it != g_lifecycle_hooks.cend()) {
+                        it->second(stage);
+                    }
+                }
             }
         }
     }

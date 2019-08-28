@@ -1,6 +1,7 @@
 // module lowlevel
 #include "argus/error.hpp"
 #include "argus/filesystem.hpp"
+#include "argus/threading.hpp"
 #include "internal/logging.hpp"
 
 // module core
@@ -18,36 +19,6 @@ namespace argus {
     void update_lifecycle_resman(LifecycleStage stage) {
         if (stage == LATE_INIT) {
             g_global_resource_manager.discover_resources();
-        }
-    }
-
-    template <typename ResourceDataType>
-    Resource<ResourceDataType>::Resource(ResourceManager const &manager, const std::string uid):
-            manager(manager),
-            uid(uid),
-            ready(false),
-            ref_count(0) {
-    }
-
-    template <typename ResourceDataType>
-    const bool Resource<ResourceDataType>::is_ready(void) const {
-        return ready;
-    }
-
-    template <typename ResourceDataType>
-    ResourceDataType const &Resource<ResourceDataType>::get_data(void) const {
-        if (!ready) {
-            _ARGUS_WARN("get_data called on non-ready resource with UID %s\n", uid);
-        }
-
-        return data;
-    }
-
-    template <typename ResourceDataType>
-    void Resource<ResourceDataType>::release(void) {
-        if (--ref_count == 0) {
-            manager.unload_resource(*this);
-            std::string uid = this->uid;
         }
     }
 
@@ -70,7 +41,11 @@ namespace argus {
 
     static void _discover_resources_recursively(std::string const &root_path, std::string const &prefix,
             std::map<const std::string, const ResourcePrototype> &prototype_map) {
-        std::vector<std::string> children = list_directory_files(root_path);
+        std::vector<std::string> children;
+        if (list_directory_files(root_path, &children) != 0) {
+            _ARGUS_WARN("Failed to discover resources: %s\n", get_error().c_str());
+        }
+
         for (std::string child : children) {
             std::string full_child_path = root_path + PATH_SEPARATOR + child;
 
@@ -148,16 +123,17 @@ namespace argus {
     }
 
     void ResourceManager::load_resource_trampoline(AsyncResourceRequestHandle &handle) {
-        handle.set_result(load_resource(handle.data) == 0);
+        bool res = load_resource(handle.data) == 0;
+        handle.set_result(res);
     }
 
     AsyncResourceRequestHandle ResourceManager::load_reosurce_async(std::string const &uid,
             const AsyncResourceRequestCallback callback) {
-        AsyncResourceRequestHandle handle = AsyncResourceRequestHandle(this, uid, callback);
+        /*AsyncResourceRequestHandle handle = AsyncResourceRequestHandle(this, uid, callback);
         
         handle.execute(std::bind(&ResourceManager::load_resource_trampoline, this, std::placeholders::_1));
 
-        return handle;
+        return handle;*/
     }
 
     int ResourceManager::unload_resource(std::string const &uid) {

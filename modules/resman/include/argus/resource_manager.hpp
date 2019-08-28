@@ -9,49 +9,16 @@
 
 namespace argus {
 
+    template <typename ResourceDataType>
+    class Resource;
     class ResourceManager;
 
     typedef AsyncRequestCallback<ResourceManager*, const std::string> AsyncResourceRequestCallback;
     typedef AsyncRequestHandle<ResourceManager*, const std::string> AsyncResourceRequestHandle;
-    
+
     struct ResourcePrototype {
         std::string uid;
         std::string type_id;
-    };
-
-    template <typename ResourceDataType>
-    class Resource {
-        private:
-            ResourceManager &manager;
-
-            std::atomic_bool ready;
-            std::atomic<unsigned int> ref_count;
-
-            std::vector<std::string> dependencies;
-            ResourceDataType data;
-
-            Resource(ResourceManager const &manager, const std::string uid);
-
-        public:
-            const ResourcePrototype prototype;
-
-            // god this is such a hack
-            const struct {
-                inline operator std::string() {
-                    return prototype.uid;
-                }
-            } uid;
-            const struct {
-                inline operator std::string() {
-                    return prototype.type_id;
-                }
-            } type_id;
-
-            const bool is_ready(void) const;
-
-            ResourceDataType const &get_data(void) const;
-
-            void release(void);
     };
 
     template <typename ResourceDataType>
@@ -61,7 +28,7 @@ namespace argus {
         protected:
             int load_dependencies(std::initializer_list<std::string> dependencies);
 
-            ResourceDataType load(std::istream stream);
+            const ResourceDataType load(const std::istream &stream) const;
     };
 
     class ResourceManager {
@@ -90,6 +57,54 @@ namespace argus {
 
             AsyncResourceRequestHandle load_reosurce_async(std::string const &uid,
                     const AsyncResourceRequestCallback callback);
+    };
+
+    template <typename ResourceDataType>
+    class Resource {
+        private:
+            ResourceManager &manager;
+
+            std::atomic_bool ready;
+            std::atomic<unsigned int> ref_count;
+
+            std::vector<std::string> dependencies;
+            ResourceDataType data;
+
+            Resource(ResourceManager const &manager, const std::string uid):
+                    manager(manager),
+                    uid(uid),
+                    ready(false),
+                    ref_count(0) {
+            }
+
+        public:
+            const ResourcePrototype prototype;
+
+            // god this is such a hack
+            const struct {
+                inline operator std::string() {
+                    return prototype.uid;
+                }
+            } uid;
+            const struct {
+                inline operator std::string() {
+                    return prototype.type_id;
+                }
+            } type_id;
+
+            const bool is_ready(void) const {
+                return ready;
+            }
+
+            ResourceDataType const &get_data(void) const {
+                return data;
+            }
+
+            void release(void) {
+                if (--ref_count == 0) {
+                    manager.unload_resource(*this);
+                }
+            }
     };
 
     ResourceManager &get_resource_manager(void);
