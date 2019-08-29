@@ -26,7 +26,27 @@ namespace argus {
     }
 
     int ResourceLoaderParent::load_dependencies(std::initializer_list<std::string> dependencies) {
-        //TODO
+        std::vector<ResourceParent*> acquired;
+
+        bool failed = false;
+        auto it = dependencies.begin();
+        for (it; it < dependencies.end(); it++) {
+            ResourceParent *res;
+            if (g_global_resource_manager.get_resource(*it, &res) != 0) {
+                failed = true;
+                break;
+            }
+            acquired.insert(acquired.begin(), res);
+        }
+
+        if (failed) {
+            for (ResourceParent *res : acquired) {
+                res->release();
+            }
+
+            return -1;
+        }
+
         return 0;
     }
 
@@ -42,19 +62,19 @@ namespace argus {
     }
 
     template <typename ResourceDataType>
-    int ResourceManager::register_loader(std::string const &type_id, const ResourceLoader<ResourceDataType> loader) {
+    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader<ResourceDataType> const &loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             set_error("Cannot register loader for type more than once");
             return -1;
         }
 
-        registered_loaders.insert(type_id, loader);
+        registered_loaders.insert(type_id, new ResourceLoader<ResourceDataType>(loader));
         return 0;
     }
 
     static void _discover_fs_resources_recursively(std::string const &root_path, std::string const &prefix,
-            std::map<const std::string, const ResourcePrototype> &prototype_map,
-            std::map<const std::string, const std::string> const &extension_map) {
+            std::map<std::string, ResourcePrototype> &prototype_map,
+            std::map<std::string, std::string> const &extension_map) {
         std::vector<std::string> children;
         if (list_directory_files(root_path, &children) != 0) {
             _ARGUS_WARN("Failed to discover resources: %s\n", get_error().c_str());
@@ -91,12 +111,12 @@ namespace argus {
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {
                     _ARGUS_WARN("Discovered filesystem resource %s with unknown extension %s, ignoring\n",
-                            cur_uid, ext);
+                            cur_uid.c_str(), ext.c_str());
                 }
 
                 prototype_map.insert({cur_uid, {cur_uid, name_and_ext.second}});
 
-                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid, full_child_path);
+                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(), full_child_path.c_str());
             }
         }
     }
@@ -112,8 +132,7 @@ namespace argus {
         _discover_fs_resources_recursively(exe_dir, "", discovered_resource_prototypes, extension_registrations);
     }
 
-    template <typename ResourceDataType>
-    int ResourceManager::get_resource(std::string const &uid, Resource<ResourceDataType> **target) {
+    int ResourceManager::get_resource(std::string const &uid, ResourceParent **target) {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             set_error("Resource does not exist");
             return -1;
@@ -124,7 +143,10 @@ namespace argus {
             return rc;
         }
 
-        *target = loaded_resources.find(uid);
+        auto it = loaded_resources.find(uid);
+        _ARGUS_ASSERT(it != loaded_resources.cend(), "Failed to get handle to loaded resource %s\n", uid.c_str());
+        
+        *target = it->second;
 
         return 0;
     }
@@ -142,6 +164,10 @@ namespace argus {
     }
 
     int ResourceManager::load_resource(std::string const &uid) {
+        if (loaded_resources.find(uid) != loaded_resources.cend()) {
+            return 0;
+        }
+
         //TODO
         return 0;
     }

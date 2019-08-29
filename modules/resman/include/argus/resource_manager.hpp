@@ -9,6 +9,7 @@
 
 namespace argus {
 
+    class ResourceParent;
     template <typename ResourceDataType>
     class Resource;
     class ResourceManager;
@@ -46,11 +47,11 @@ namespace argus {
         friend class ResourceParent;
 
         private:
-            std::map<const std::string, const ResourcePrototype> discovered_resource_prototypes;
-            std::map<const std::string, void*> loaded_resources;
+            std::map<std::string, ResourcePrototype> discovered_resource_prototypes;
+            std::map<std::string, ResourceParent*> loaded_resources;
 
-            std::map<const std::string, ResourceLoaderParent*> registered_loaders;
-            std::map<const std::string, const std::string> extension_registrations;
+            std::map<std::string, ResourceLoaderParent*> registered_loaders;
+            std::map<std::string, std::string> extension_registrations;
 
             int unload_resource(std::string const &uid);
 
@@ -60,10 +61,9 @@ namespace argus {
             void discover_resources(void);
 
             template <typename ResourceDataType>
-            int register_loader(std::string const &type_id, const ResourceLoader<ResourceDataType> loader);
+            int register_loader(std::string const &type_id, ResourceLoader<ResourceDataType> const &loader);
 
-            template <typename ResourceDataType>
-            int get_resource(std::string const &uid, Resource<ResourceDataType> **const target);
+            int get_resource(std::string const &uid, ResourceParent **const target);
 
             template <typename ResourceDataType>
             int try_get_resource(std::string const &uid, Resource<ResourceDataType> **const target) const;
@@ -75,6 +75,8 @@ namespace argus {
     };
 
     class ResourceParent {
+        friend class ResourceManager;
+
         private:
             ResourceManager &manager;
 
@@ -82,13 +84,6 @@ namespace argus {
             std::atomic<unsigned int> ref_count;
 
             std::vector<std::string> dependencies;
-
-            ResourceParent(ResourceManager &manager, const ResourcePrototype prototype):
-                    manager(manager),
-                    prototype(prototype),
-                    ready(false),
-                    ref_count(0) {
-            }
 
         public:
             const ResourcePrototype prototype;
@@ -107,6 +102,27 @@ namespace argus {
                 }
             } type_id {*this};
 
+            ResourceParent(ResourceParent &rhs):
+                    manager(rhs.manager),
+                    prototype(rhs.prototype),
+                    ready(rhs.ready.load()),
+                    ref_count(rhs.ref_count.load()) {
+            }
+            
+            ResourceParent(ResourceParent &&rhs):
+                    manager(rhs.manager),
+                    prototype(std::move(rhs.prototype)),
+                    ready(rhs.ready.load()),
+                    ref_count(rhs.ref_count.load()) {
+            }
+
+            ResourceParent(ResourceManager &manager, const ResourcePrototype prototype):
+                    manager(manager),
+                    prototype(prototype),
+                    ready(false),
+                    ref_count(0) {
+            }
+
             const bool is_ready(void) const {
                 return ready;
             }
@@ -120,10 +136,12 @@ namespace argus {
 
     template <typename ResourceDataType>
     class Resource : ResourceParent {
+        friend class ResourceManager;
+
         private:
             ResourceDataType data;
 
-            Resource(ResourceManager const &manager, const ResourcePrototype prototype):
+            Resource(ResourceManager &manager, const ResourcePrototype prototype):
                     ResourceParent(manager, prototype) {
             }
 
