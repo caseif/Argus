@@ -21,21 +21,36 @@ namespace argus {
         std::string type_id;
     };
 
-    template <typename ResourceDataType>
-    class ResourceLoader {
+    class ResourceLoaderParent {
         friend class ResourceManager;
 
+        private:
+            const std::vector<std::string> types;
+            const std::vector<std::string> extensions;
+
         protected:
+            ResourceLoaderParent(std::initializer_list<std::string> types, std::initializer_list<std::string> extensions);
+
             int load_dependencies(std::initializer_list<std::string> dependencies);
+    };
+
+    template <typename ResourceDataType>
+    class ResourceLoader : ResourceLoaderParent {
+        protected:
+            ResourceLoader(std::initializer_list<std::string> types, std::initializer_list<std::string> extensions);
 
             const ResourceDataType load(const std::istream &stream) const;
     };
 
     class ResourceManager {
+        friend class ResourceParent;
+
         private:
             std::map<const std::string, const ResourcePrototype> discovered_resource_prototypes;
             std::map<const std::string, void*> loaded_resources;
-            std::map<const std::string, void*> registered_loaders;
+
+            std::map<const std::string, ResourceLoaderParent*> registered_loaders;
+            std::map<const std::string, const std::string> extension_registrations;
 
             int unload_resource(std::string const &uid);
 
@@ -59,8 +74,7 @@ namespace argus {
                     const AsyncResourceRequestCallback callback);
     };
 
-    template <typename ResourceDataType>
-    class Resource {
+    class ResourceParent {
         private:
             ResourceManager &manager;
 
@@ -68,11 +82,10 @@ namespace argus {
             std::atomic<unsigned int> ref_count;
 
             std::vector<std::string> dependencies;
-            ResourceDataType data;
 
-            Resource(ResourceManager const &manager, const std::string uid):
+            ResourceParent(ResourceManager &manager, const ResourcePrototype prototype):
                     manager(manager),
-                    uid(uid),
+                    prototype(prototype),
                     ready(false),
                     ref_count(0) {
             }
@@ -82,28 +95,41 @@ namespace argus {
 
             // god this is such a hack
             const struct {
+                ResourceParent &parent;
                 inline operator std::string() {
-                    return prototype.uid;
+                    return parent.prototype.uid;
                 }
-            } uid;
+            } uid {*this};
             const struct {
+                ResourceParent &parent;
                 inline operator std::string() {
-                    return prototype.type_id;
+                    return parent.prototype.type_id;
                 }
-            } type_id;
+            } type_id {*this};
 
             const bool is_ready(void) const {
                 return ready;
             }
 
-            ResourceDataType const &get_data(void) const {
-                return data;
-            }
-
             void release(void) {
                 if (--ref_count == 0) {
-                    manager.unload_resource(*this);
+                    manager.unload_resource(prototype.uid);
                 }
+            }
+    };
+
+    template <typename ResourceDataType>
+    class Resource : ResourceParent {
+        private:
+            ResourceDataType data;
+
+            Resource(ResourceManager const &manager, const ResourcePrototype prototype):
+                    ResourceParent(manager, prototype) {
+            }
+
+        public:
+            ResourceDataType const &get_data(void) const {
+                return data;
             }
     };
 
