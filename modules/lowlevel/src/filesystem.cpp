@@ -65,6 +65,8 @@
     #error "This OS is not supported at this time."
 #endif
 
+#define CHUNK_SIZE 4096LU
+
 namespace argus {
 
     FileHandle::FileHandle(const std::string path, const size_t size, void *const handle) :
@@ -139,6 +141,10 @@ namespace argus {
         return 0;
     }
 
+    FileHandle::FileHandle(void):
+            valid(false) {
+    }
+
     const int FileHandle::release(void) {
         int rc = fclose(static_cast<FILE*>(this->handle));
         this->valid = false;
@@ -151,7 +157,7 @@ namespace argus {
 
     const int FileHandle::read(const ssize_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
-            set_error("read called on invalid FileHandle");
+            set_error("read called on non-valid FileHandle");
             return -1;
         }
 
@@ -175,9 +181,31 @@ namespace argus {
         return 0;
     }
 
+    const int FileHandle::to_istream(const ssize_t offset, std::ifstream *stream) const {
+        if (!valid) {
+            set_error("read called on non-valid FileHandle");
+            return -1;
+        }
+
+        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+
+        char buf[CHUNK_SIZE];
+
+        *stream = std::ifstream(path, std::ios::binary | std::ios::in);
+
+        if (!stream->good()) {
+            set_error("Failed to create file stream");
+            return -1;
+        }
+
+        stream->seekg(offset);
+
+        return 0;
+    }
+
     const int FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
-            set_error("write called on invalid FileHandle");
+            set_error("write called on non-valid FileHandle");
             return -1;
         }
 
@@ -204,7 +232,7 @@ namespace argus {
     const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
             const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
         if (!valid) {
-            set_error("read_async called on invalid FileHandle");
+            set_error("read_async called on non-valid FileHandle");
             return -1;
         }
 
@@ -225,11 +253,11 @@ namespace argus {
     const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
             const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
         if (!valid) {
-            set_error("write_async called on invalid FileHandle");
+            set_error("write_async called on non-valid FileHandle");
             return -1;
         }
 
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf}, callback);
+        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
 
         handle_local.execute(std::bind(&FileHandle::write_trampoline, this, std::placeholders::_1));
 

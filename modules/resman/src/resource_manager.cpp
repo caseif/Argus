@@ -31,12 +31,12 @@ namespace argus {
         bool failed = false;
         auto it = dependencies.begin();
         for (it; it < dependencies.end(); it++) {
-            ResourceParent *res;
-            if (g_global_resource_manager.get_resource(*it, &res) != 0) {
+            auto res = g_global_resource_manager.loaded_resources.find(*it);
+            if (res != g_global_resource_manager.loaded_resources.end()) {
                 failed = true;
                 break;
             }
-            acquired.insert(acquired.begin(), res);
+            acquired.insert(acquired.begin(), res->second);
         }
 
         if (failed) {
@@ -83,29 +83,31 @@ namespace argus {
         for (std::string child : children) {
             std::string full_child_path = root_path + PATH_SEPARATOR + child;
 
+            auto name_and_ext = get_name_and_extension(child);
+            std::string name = name_and_ext.first;
+            std::string ext = name_and_ext.second;
+
             std::string cur_uid;
             if (prefix.empty()) {
-                cur_uid = child;
+                cur_uid = name;
             } else {
-                cur_uid = prefix + UID_SEPARATOR + child;
+                cur_uid = prefix + UID_SEPARATOR + name;
             }
 
             if (is_directory(full_child_path)) {
                 _discover_fs_resources_recursively(full_child_path, cur_uid, prototype_map, extension_map);
             } else if (is_regfile(full_child_path)) {
-                std::pair<std::string, std::string> name_and_ext = get_name_and_extension(child);
-                if (name_and_ext.second.empty()) {
+                if (ext.empty()) {
                     _ARGUS_WARN("Resource %s does not have an extension, ignoring\n", full_child_path.c_str());
                     continue;
                 }
 
-                if (prototype_map.find(name_and_ext.first) != prototype_map.cend()) {
+                if (prototype_map.find(cur_uid) != prototype_map.cend()) {
                     _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies",
                             cur_uid.c_str());
                     continue;
                 }
 
-                std::string ext = name_and_ext.second;
                 std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){return std::tolower(c);});
 
                 auto type_it = extension_map.find(ext);
@@ -114,7 +116,7 @@ namespace argus {
                             cur_uid.c_str(), ext.c_str());
                 }
 
-                prototype_map.insert({cur_uid, {cur_uid, name_and_ext.second}});
+                prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path}});
 
                 _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(), full_child_path.c_str());
             }
@@ -132,13 +134,14 @@ namespace argus {
         _discover_fs_resources_recursively(exe_dir, "", discovered_resource_prototypes, extension_registrations);
     }
 
-    int ResourceManager::get_resource(std::string const &uid, ResourceParent **target) {
+    template <typename ResourceDataType>
+    int ResourceManager::get_resource(std::string const &uid, Resource<ResourceDataType> **target) {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             set_error("Resource does not exist");
             return -1;
         }
 
-        int rc = load_resource(uid);
+        int rc = load_resource<ResourceDataType>(uid);
         if (rc != 0) {
             return rc;
         }
@@ -163,25 +166,61 @@ namespace argus {
         return 0;
     }
 
+    template <typename ResourceDataType>
     int ResourceManager::load_resource(std::string const &uid) {
         if (loaded_resources.find(uid) != loaded_resources.cend()) {
             return 0;
         }
 
-        //TODO
-        return 0;
+        auto pt_it = discovered_resource_prototypes.find(uid);
+        if (pt_it == discovered_resource_prototypes.cend()) {
+            set_error("Resource does not exist");
+            return -1;
+        }
+        ResourcePrototype proto = pt_it->second;
+
+        if (!proto.fs_path.empty()) {
+            FileHandle file_handle;
+            int rc = FileHandle::create(proto.fs_path, FILE_MODE_READ, &file_handle);
+            if (rc != 0) {
+                return rc;
+            }
+
+            auto loader_it = registered_loaders.find(proto.type_id);
+            if (loader_it == registered_loaders.end()) {
+                set_error("No registered loader for type");
+                return -1;
+            }
+
+            ResourceLoader<ResourceDataType> *loader = loader_it->second;
+
+            std::ifstream stream;
+
+            file_handle.to_istream(0, &stream);
+
+            loader->load(stream);
+
+            stream.close();
+
+            return 0;
+        } else {
+            //TODO: read from resource package
+            return 0;
+        }
     }
 
+    template <typename ResourceDataType>
     void ResourceManager::load_resource_trampoline(AsyncResourceRequestHandle &handle) {
-        bool res = load_resource(handle.data) == 0;
+        bool res = load_resource<ResourceDataType>(handle.data) == 0;
         handle.set_result(res);
     }
-
+    
+    template <typename ResourceDataType>
     AsyncResourceRequestHandle ResourceManager::load_reosurce_async(std::string const &uid,
             const AsyncResourceRequestCallback callback) {
         AsyncResourceRequestHandle handle = AsyncResourceRequestHandle(this, uid, callback);
         
-        handle.execute(std::bind(&ResourceManager::load_resource_trampoline, this, std::placeholders::_1));
+        handle.execute(std::bind(&ResourceManager::load_resource_trampoline<ResourceDataType>, this, std::placeholders::_1));
 
         return handle;
     }

@@ -3,6 +3,7 @@
 #include "argus/threading.hpp"
 
 #include <atomic>
+#include <fstream>
 #include <functional>
 #include <string>
 #include <vector>
@@ -62,6 +63,8 @@ namespace argus {
              */
             static const int create(const std::string path, const int mode, FileHandle *const handle);
 
+            FileHandle(void);
+
             const std::string get_path(void) const;
 
             const size_t get_size(void) const;
@@ -74,6 +77,8 @@ namespace argus {
              * \return 0 on success, non-zero otherwise.
              */
             const int release(void);
+
+            const int to_istream(const ssize_t offset, std::ifstream *stream) const;
 
             const int read(const ssize_t offset, const size_t size, unsigned char *const buf) const;
             

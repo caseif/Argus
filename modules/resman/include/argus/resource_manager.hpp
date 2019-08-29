@@ -20,6 +20,7 @@ namespace argus {
     struct ResourcePrototype {
         std::string uid;
         std::string type_id;
+        std::string fs_path;
     };
 
     class ResourceLoaderParent {
@@ -44,6 +45,7 @@ namespace argus {
     };
 
     class ResourceManager {
+        friend class ResourceLoaderParent;
         friend class ResourceParent;
 
         private:
@@ -55,6 +57,7 @@ namespace argus {
 
             int unload_resource(std::string const &uid);
 
+            template <typename ResourceDataType>
             void load_resource_trampoline(AsyncResourceRequestHandle &handle);
 
         public:
@@ -63,13 +66,16 @@ namespace argus {
             template <typename ResourceDataType>
             int register_loader(std::string const &type_id, ResourceLoader<ResourceDataType> const &loader);
 
-            int get_resource(std::string const &uid, ResourceParent **const target);
+            template <typename ResourceDataType>
+            int get_resource(std::string const &uid, Resource<ResourceDataType> **const target);
 
             template <typename ResourceDataType>
             int try_get_resource(std::string const &uid, Resource<ResourceDataType> **const target) const;
 
+            template <typename ResourceDataType>
             int load_resource(std::string const &uid);
 
+            template <typename ResourceDataType>
             AsyncResourceRequestHandle load_reosurce_async(std::string const &uid,
                     const AsyncResourceRequestCallback callback);
     };
