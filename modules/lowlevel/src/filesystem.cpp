@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -279,13 +280,14 @@ namespace argus {
         size_t path_len = max_path_len;
         char path[max_path_len];
 
-        int rc;
+        int rc = 0;
 
         #ifdef _WIN32
         GetModuleFileName(NULL, path, max_path_len);
         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
 
         if (rc != 0) {
+            set_error("Failed to get executable path");
             return rc;
         }
         #elif defined __APPLE__
@@ -294,11 +296,13 @@ namespace argus {
 
         if (rc != 0) {
             _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
+            set_error("Executable path too long for buffer");
             return rc;
         }
         #elif defined __linux__
         ssize_t size = readlink("/proc/self/exe", path, max_path_len);
         if (size == -1) {
+            set_error("Failed to read /proc/self/exe");
             return errno;
         }
         #elif defined __FreeBSD__
@@ -311,16 +315,19 @@ namespace argus {
         rc = sysctl(mib, 4, path, &path_len, NULL, 0);
 
         if (rc != 0) {
+            set_error("Failed to get executable path");
             return errno;
         }
         #elif defined __NetBSD__
         readlink("/proc/curproc/exe", path, max_path_len);
         if (size == -1) {
+            set_error("Failed to read /proc/curproc/exe");
             return errno;
         }
         #elif defined __DragonFly__
         readlink("/proc/curproc/file", path, max_path_len);
         if (size == -1) {
+            set_error("Failed to read /proc/curproc/file");
             return errno;
         }
         #endif
@@ -343,6 +350,10 @@ namespace argus {
 
         struct dirent *ent;
         while ((ent = readdir(dir)) != NULL) {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+                continue;
+            }
+
             target->insert(target->cbegin(), std::string(ent->d_name));
         }
 

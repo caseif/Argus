@@ -15,6 +15,8 @@
 
 #define UID_SEPARATOR "."
 
+#define RESOURCES_DIR "resources"
+
 namespace argus {
 
     ResourceManager g_global_resource_manager;
@@ -114,6 +116,7 @@ namespace argus {
                 if (type_it == extension_map.cend()) {
                     _ARGUS_WARN("Discovered filesystem resource %s with unknown extension %s, ignoring\n",
                             cur_uid.c_str(), ext.c_str());
+                    continue;
                 }
 
                 prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path}});
@@ -131,7 +134,8 @@ namespace argus {
 
         std::string exe_dir = get_parent(exe_path);
 
-        _discover_fs_resources_recursively(exe_dir, "", discovered_resource_prototypes, extension_registrations);
+        _discover_fs_resources_recursively(exe_dir + PATH_SEPARATOR + RESOURCES_DIR, "",
+                discovered_resource_prototypes, extension_registrations);
     }
 
     template <typename ResourceDataType>
