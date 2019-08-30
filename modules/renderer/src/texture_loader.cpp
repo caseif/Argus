@@ -7,12 +7,16 @@
 namespace argus {
 
     PngTextureLoader::PngTextureLoader():
-            ResourceLoader<TextureData>({RESOURCE_TYPE_TEXTURE_PNG}, {RESOURCE_EXTENSION_PNG}) {
+            ResourceLoader({RESOURCE_TYPE_TEXTURE_PNG}, {RESOURCE_EXTENSION_PNG}) {
     }
 
-    const TextureData PngTextureLoader::load(std::istream const &stream) const {
+    void const *const PngTextureLoader::load(std::istream const &stream) const {
         printf("called\n");
-        return {1, 1, 1};
+        return new TextureData{1, 1, 1};
+    }
+
+    void PngTextureLoader::unload(void *const data_buf) const {
+        delete static_cast<TextureData*>(data_buf);
     }
 
 }

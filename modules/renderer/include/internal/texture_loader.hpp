@@ -8,11 +8,13 @@
 
 namespace argus {
 
-    class PngTextureLoader : public ResourceLoader<TextureData> {
+    class PngTextureLoader : public ResourceLoader {
         public:
             PngTextureLoader();
 
-            const TextureData load(std::istream const &stream) const override;
+            void const *const load(std::istream const &stream) const override;
+
+            void unload(void *const data_ptr) const override;
     };
 
 }

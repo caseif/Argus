@@ -95,10 +95,10 @@ namespace argus {
     };
 
     struct TextureData {
-        const size_t width;
-        const size_t height;
-        const size_t bpp;
-        unsigned char *const data;
+        size_t width;
+        size_t height;
+        size_t bpp;
+        unsigned char *data;
 
         TextureData(const size_t width, const size_t height, const size_t bpp);
 

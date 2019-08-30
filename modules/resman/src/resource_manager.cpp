@@ -27,8 +27,8 @@ namespace argus {
         }
     }
 
-    int ResourceLoaderParent::load_dependencies(std::initializer_list<std::string> dependencies) {
-        std::vector<ResourceParent*> acquired;
+    int ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
+        std::vector<Resource*> acquired;
 
         bool failed = false;
         auto it = dependencies.begin();
@@ -42,35 +42,38 @@ namespace argus {
         }
 
         if (failed) {
-            for (ResourceParent *res : acquired) {
+            for (Resource *res : acquired) {
                 res->release();
             }
 
             return -1;
         }
 
+        last_dependencies = dependencies;
+
         return 0;
     }
 
-    ResourceLoaderParent::ResourceLoaderParent(std::initializer_list<std::string> types,
+    ResourceLoader::ResourceLoader(std::initializer_list<std::string> types,
             std::initializer_list<std::string> extensions):
             types(types),
             extensions(extensions) {
     }
 
-    template <typename ResourceDataType>
-    ResourceLoader<ResourceDataType>::ResourceLoader(std::initializer_list<std::string> types,
-            std::initializer_list<std::string> extensions): ResourceLoader(types, extensions) {
+    void const *const ResourceLoader::load(std::istream const &stream) const {
+        return nullptr;
     }
 
-    template <typename ResourceDataType>
-    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader<ResourceDataType> const &loader) {
+    void ResourceLoader::unload(void *const data_ptr) const {
+    }
+
+    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader const &loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             set_error("Cannot register loader for type more than once");
             return -1;
         }
 
-        registered_loaders.insert(type_id, new ResourceLoader<ResourceDataType>(loader));
+        registered_loaders.insert({type_id, new ResourceLoader(loader)});
         return 0;
     }
 
@@ -138,14 +141,13 @@ namespace argus {
                 discovered_resource_prototypes, extension_registrations);
     }
 
-    template <typename ResourceDataType>
-    int ResourceManager::get_resource(std::string const &uid, Resource<ResourceDataType> **target) {
+    int ResourceManager::get_resource(std::string const &uid, Resource **target) {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             set_error("Resource does not exist");
             return -1;
         }
 
-        int rc = load_resource<ResourceDataType>(uid);
+        int rc = load_resource(uid);
         if (rc != 0) {
             return rc;
         }
@@ -158,8 +160,7 @@ namespace argus {
         return 0;
     }
 
-    template <typename ResourceDataType>
-    int ResourceManager::try_get_resource(std::string const &uid, Resource<ResourceDataType> **const target) const {
+    int ResourceManager::try_get_resource(std::string const &uid, Resource **const target) const {
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
             set_error("Resource is not loaded");
@@ -170,7 +171,6 @@ namespace argus {
         return 0;
     }
 
-    template <typename ResourceDataType>
     int ResourceManager::load_resource(std::string const &uid) {
         if (loaded_resources.find(uid) != loaded_resources.cend()) {
             return 0;
@@ -196,13 +196,15 @@ namespace argus {
                 return -1;
             }
 
-            ResourceLoader<ResourceDataType> *loader = loader_it->second;
-
             std::ifstream stream;
-
             file_handle.to_istream(0, &stream);
 
-            loader->load(stream);
+            ResourceLoader *loader = loader_it->second;
+            loader->last_dependencies = {};
+            void const *data_ptr = loader->load(stream);
+
+            Resource *res = new Resource(*this, proto, data_ptr, loader->last_dependencies);
+            loaded_resources.insert({proto.uid, res});
 
             stream.close();
 
@@ -213,25 +215,63 @@ namespace argus {
         }
     }
 
-    template <typename ResourceDataType>
     void ResourceManager::load_resource_trampoline(AsyncResourceRequestHandle &handle) {
-        bool res = load_resource<ResourceDataType>(handle.data) == 0;
+        bool res = load_resource(handle.data) == 0;
         handle.set_result(res);
     }
     
-    template <typename ResourceDataType>
     AsyncResourceRequestHandle ResourceManager::load_reosurce_async(std::string const &uid,
             const AsyncResourceRequestCallback callback) {
         AsyncResourceRequestHandle handle = AsyncResourceRequestHandle(this, uid, callback);
         
-        handle.execute(std::bind(&ResourceManager::load_resource_trampoline<ResourceDataType>, this, std::placeholders::_1));
+        handle.execute(std::bind(&ResourceManager::load_resource_trampoline, this, std::placeholders::_1));
 
         return handle;
     }
 
     int ResourceManager::unload_resource(std::string const &uid) {
+        auto it = loaded_resources.find(uid);
+        if (it == loaded_resources.cend()) {
+            set_error("Resource not loaded");
+            return -1;
+        }
+
+        Resource *res = it->second;
+
         loaded_resources.erase(uid);
+
+        delete res;
+
         return 0;
+    }
+
+    Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, const void *const data_ptr,
+            std::vector<std::string> &dependencies):
+            manager(manager),
+            prototype(prototype),
+            data_ptr(data_ptr),
+            dependencies(dependencies),
+            ref_count(0) {
+    }
+
+    Resource::Resource(Resource &rhs):
+            manager(rhs.manager),
+            prototype(rhs.prototype),
+            data_ptr(rhs.data_ptr),
+            ref_count(rhs.ref_count.load()) {
+    }
+    
+    Resource::Resource(Resource &&rhs):
+            manager(rhs.manager),
+            prototype(std::move(rhs.prototype)),
+            data_ptr(rhs.data_ptr),
+            ref_count(rhs.ref_count.load()) {
+    }
+
+    void Resource::release(void) {
+        if (--ref_count == 0) {
+            manager.unload_resource(prototype.uid);
+        }
     }
 
     ResourceManager &get_global_resource_manager(void) {
