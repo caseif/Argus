@@ -485,6 +485,15 @@ namespace argus {
         private:
             void release_texture();
 
+            float *vertex_buffer;
+            size_t buffer_head;
+            size_t buffer_size;
+            size_t max_buffer_size;
+
+            handle_t tex_buffer;
+            unsigned int tex_index;
+            Vector2f tex_max_uv;
+
         protected:
             RenderGroup &parent;
 
@@ -496,7 +505,13 @@ namespace argus {
 
             ~Renderable(void);
 
-            virtual void render(const handle_t buffer_handle, const size_t offset) const = 0;
+            void allocate_buffer(const size_t vertex_count);
+
+            void buffer_vertex(Vertex const &vertex);
+
+            void upload_buffer(size_t offset);
+
+            virtual void populate_buffer(void) = 0;
 
             virtual const unsigned int get_vertex_count(void) const = 0;
 
@@ -518,7 +533,7 @@ namespace argus {
 
             RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3);
 
-            void render(const handle_t buffer_handle, const size_t offset) const override;
+            void populate_buffer() override;
 
             const unsigned int get_vertex_count(void) const override;
     };

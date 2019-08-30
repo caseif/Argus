@@ -118,7 +118,9 @@ namespace argus {
         size_t offset = 0;
         for (Renderable *const child : this->children) {
             if (child->transform.is_dirty() || dirty_children) {
-                child->render(vbo, offset);
+                child->allocate_buffer(child->get_vertex_count() * _VERTEX_LEN);
+                child->populate_buffer();
+                child->upload_buffer(offset);
                 child->transform.clean();
             }
             offset += child->get_vertex_count();
