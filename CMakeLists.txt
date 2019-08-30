@@ -33,11 +33,6 @@ if (${USE_GLES})
   message("Using GL ES profile as requested")
 endif()
 
-find_package("SDL2" REQUIRED)
-find_package("OpenGL" REQUIRED)
-
-set(VMMLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/vmmlib/include")
-
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes dest)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")

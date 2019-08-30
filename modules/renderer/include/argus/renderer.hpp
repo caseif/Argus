@@ -94,6 +94,19 @@ namespace argus {
         Vector3f tex_coord;
     };
 
+    struct TextureData {
+        const size_t width;
+        const size_t height;
+        const size_t bpp;
+        unsigned char *const data;
+
+        TextureData(const size_t width, const size_t height, const size_t bpp);
+
+        ~TextureData(void);
+
+        const size_t get_data_length(void);
+    };
+
     class Shader {
         friend class ShaderProgram;
 

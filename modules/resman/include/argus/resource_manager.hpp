@@ -37,11 +37,11 @@ namespace argus {
     };
 
     template <typename ResourceDataType>
-    class ResourceLoader : ResourceLoaderParent {
+    class ResourceLoader : public ResourceLoaderParent {
         protected:
             ResourceLoader(std::initializer_list<std::string> types, std::initializer_list<std::string> extensions);
 
-            const ResourceDataType load(const std::istream &stream) const;
+            virtual const ResourceDataType load(std::istream const &stream) const;
     };
 
     class ResourceManager {
@@ -141,7 +141,7 @@ namespace argus {
     };
 
     template <typename ResourceDataType>
-    class Resource : ResourceParent {
+    class Resource : public ResourceParent {
         friend class ResourceManager;
 
         private:
@@ -157,6 +157,6 @@ namespace argus {
             }
     };
 
-    ResourceManager &get_resource_manager(void);
+    ResourceManager &get_global_resource_manager(void);
 
 }

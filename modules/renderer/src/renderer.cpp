@@ -5,9 +5,14 @@
 #include "argus/core.hpp"
 #include "internal/core_util.hpp"
 
+// module resman
+#include "argus/resource_manager.hpp"
+
 // module renderer
 #include "argus/renderer.hpp"
 #include "internal/glext.hpp"
+#include "internal/renderer_defines.hpp"
+#include "internal/texture_loader.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -109,6 +114,8 @@ namespace argus {
             _init_opengl();
 
             g_renderer_initialized = true;
+        } else if (stage == LATE_INIT) {
+            get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, *new PngTextureLoader());
         } else if (stage == DEINIT) {
             _clean_up();
         }

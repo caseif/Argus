@@ -20,3 +20,5 @@
 #define _ATTRIB_LOC_POSITION 0
 #define _ATTRIB_LOC_COLOR 1
 #define _ATTRIB_LOC_TEXCOORD 2
+
+#define RESOURCE_TYPE_TEXTURE_PNG "image/png"

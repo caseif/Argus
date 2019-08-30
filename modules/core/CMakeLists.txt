@@ -1,3 +1,5 @@
+find_package("SDL2" REQUIRED)
+
 # module name
 set(MODULE_NAME "core")
 # modules this one depends on (as a list)
