@@ -2,16 +2,14 @@
 
 namespace argus {
 
-    extern ResourceManager g_global_resource_manager;
-
     int ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
         std::vector<Resource*> acquired;
 
         bool failed = false;
         auto it = dependencies.begin();
         for (it; it < dependencies.end(); it++) {
-            auto res = g_global_resource_manager.loaded_resources.find(*it);
-            if (res != g_global_resource_manager.loaded_resources.end()) {
+            auto res = get_global_resource_manager().loaded_resources.find(*it);
+            if (res != get_global_resource_manager().loaded_resources.end()) {
                 failed = true;
                 break;
             }
@@ -31,10 +29,13 @@ namespace argus {
         return 0;
     }
 
-    ResourceLoader::ResourceLoader(std::initializer_list<std::string> types,
+    ResourceLoader::ResourceLoader(std::string type_id,
             std::initializer_list<std::string> extensions):
-            types(types),
+            type_id(type_id),
             extensions(extensions) {
+        for (std::string ext : extensions) {
+            get_global_resource_manager().extension_registrations.insert({ext, type_id});
+        }
     }
 
     void const *const ResourceLoader::load(std::istream const &stream) const {

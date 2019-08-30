@@ -25,13 +25,13 @@ namespace argus {
         friend class ResourceManager;
 
         private:
-            const std::vector<std::string> types;
+            const std::string type_id;
             const std::vector<std::string> extensions;
             
             std::vector<std::string> last_dependencies;
 
         protected:
-            ResourceLoader(std::initializer_list<std::string> types, std::initializer_list<std::string> extensions);
+            ResourceLoader(std::string type_id, std::initializer_list<std::string> extensions);
 
             int load_dependencies(std::initializer_list<std::string> dependencies);
 

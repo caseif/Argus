@@ -7,7 +7,7 @@
 namespace argus {
 
     PngTextureLoader::PngTextureLoader():
-            ResourceLoader({RESOURCE_TYPE_TEXTURE_PNG}, {RESOURCE_EXTENSION_PNG}) {
+            ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG, {RESOURCE_EXTENSION_PNG}) {
     }
 
     void const *const PngTextureLoader::load(std::istream const &stream) const {
