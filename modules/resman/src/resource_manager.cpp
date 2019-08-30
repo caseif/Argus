@@ -27,46 +27,6 @@ namespace argus {
         }
     }
 
-    int ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
-        std::vector<Resource*> acquired;
-
-        bool failed = false;
-        auto it = dependencies.begin();
-        for (it; it < dependencies.end(); it++) {
-            auto res = g_global_resource_manager.loaded_resources.find(*it);
-            if (res != g_global_resource_manager.loaded_resources.end()) {
-                failed = true;
-                break;
-            }
-            acquired.insert(acquired.begin(), res->second);
-        }
-
-        if (failed) {
-            for (Resource *res : acquired) {
-                res->release();
-            }
-
-            return -1;
-        }
-
-        last_dependencies = dependencies;
-
-        return 0;
-    }
-
-    ResourceLoader::ResourceLoader(std::initializer_list<std::string> types,
-            std::initializer_list<std::string> extensions):
-            types(types),
-            extensions(extensions) {
-    }
-
-    void const *const ResourceLoader::load(std::istream const &stream) const {
-        return nullptr;
-    }
-
-    void ResourceLoader::unload(void *const data_ptr) const {
-    }
-
     int ResourceManager::register_loader(std::string const &type_id, ResourceLoader const &loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             set_error("Cannot register loader for type more than once");
@@ -243,35 +203,6 @@ namespace argus {
         delete res;
 
         return 0;
-    }
-
-    Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, const void *const data_ptr,
-            std::vector<std::string> &dependencies):
-            manager(manager),
-            prototype(prototype),
-            data_ptr(data_ptr),
-            dependencies(dependencies),
-            ref_count(0) {
-    }
-
-    Resource::Resource(Resource &rhs):
-            manager(rhs.manager),
-            prototype(rhs.prototype),
-            data_ptr(rhs.data_ptr),
-            ref_count(rhs.ref_count.load()) {
-    }
-    
-    Resource::Resource(Resource &&rhs):
-            manager(rhs.manager),
-            prototype(std::move(rhs.prototype)),
-            data_ptr(rhs.data_ptr),
-            ref_count(rhs.ref_count.load()) {
-    }
-
-    void Resource::release(void) {
-        if (--ref_count == 0) {
-            manager.unload_resource(prototype.uid);
-        }
     }
 
     ResourceManager &get_global_resource_manager(void) {
