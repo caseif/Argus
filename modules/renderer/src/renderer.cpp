@@ -115,7 +115,7 @@ namespace argus {
 
             g_renderer_initialized = true;
         } else if (stage == LATE_INIT) {
-            get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, *new PngTextureLoader());
+            ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
         } else if (stage == DEINIT) {
             _clean_up();
         }

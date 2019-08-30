@@ -19,7 +19,7 @@ namespace argus {
 
     inline void set_error(std::string &&msg) {
         #ifdef ARGUS_PRINT_ERRORS
-        std::cout << msg << std::endl;
+        std::cout << "[Argus][ERROR] " << msg << std::endl;
         #endif
         g_cur_err = msg;
     }

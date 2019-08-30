@@ -3,7 +3,8 @@
 #include "argus/threading.hpp"
 
 #include <atomic>
-#include <iostream>
+#include <fstream>
+#include <istream>
 #include <map>
 #include <vector>
 
@@ -30,14 +31,14 @@ namespace argus {
             
             std::vector<std::string> last_dependencies;
 
+            virtual void *const load(std::istream &stream, const size_t size) const;
+
+            virtual void unload(void *const data_ptr) const;
+
         protected:
             ResourceLoader(std::string type_id, std::initializer_list<std::string> extensions);
 
             int load_dependencies(std::initializer_list<std::string> dependencies);
-
-            virtual void const *const load(std::istream const &stream) const;
-
-            virtual void unload(void *const data_ptr) const;
     };
 
     class ResourceManager {
@@ -56,9 +57,11 @@ namespace argus {
             void load_resource_trampoline(AsyncResourceRequestHandle &handle);
 
         public:
+            static ResourceManager &get_global_resource_manager(void);
+    
             void discover_resources(void);
 
-            int register_loader(std::string const &type_id, ResourceLoader const &loader);
+            int register_loader(std::string const &type_id, ResourceLoader *const loader);
 
             int get_resource(std::string const &uid, Resource **const target);
 
@@ -80,9 +83,9 @@ namespace argus {
 
             std::vector<std::string> dependencies;
 
-            const void *const data_ptr;
+            void *const data_ptr;
 
-            Resource(ResourceManager &manager, const ResourcePrototype prototype, const void *const data,
+            Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data,
                     std::vector<std::string> &dependencies);
 
         public:
@@ -91,13 +94,13 @@ namespace argus {
             // god this is such a hack
             const struct {
                 Resource &parent;
-                inline operator std::string() {
+                inline operator std::string(void) const {
                     return parent.prototype.uid;
                 }
             } uid {*this};
             const struct {
                 Resource &parent;
-                inline operator std::string() {
+                inline operator std::string(void) const {
                     return parent.prototype.type_id;
                 }
             } type_id {*this};
@@ -109,11 +112,9 @@ namespace argus {
             void release(void);
 
             template <typename DataType>
-            const DataType &get_data(void) {
+            DataType &get_data(void) {
                 return *static_cast<DataType*>(data_ptr);
             }
     };
-
-    ResourceManager &get_global_resource_manager(void);
 
 }

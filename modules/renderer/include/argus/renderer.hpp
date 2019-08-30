@@ -7,6 +7,9 @@
 // module core
 #include "argus/core.hpp"
 
+// module resman
+#include "argus/resource_manager.hpp"
+
 #include <atomic>
 #include <functional>
 #include <initializer_list>
@@ -95,16 +98,27 @@ namespace argus {
     };
 
     struct TextureData {
-        size_t width;
-        size_t height;
-        size_t bpp;
-        unsigned char *data;
+        private:            
+            std::atomic_bool ready;
 
-        TextureData(const size_t width, const size_t height, const size_t bpp);
+        public:
+            const size_t width;
+            const size_t height;
+            const size_t bpp;
+            const size_t channels;
+            unsigned char **image_data;
+            handle_t tex_handle;
+
+        TextureData(const size_t width, const size_t height, const size_t bpp, const size_t channels,
+                unsigned char **image_data);
 
         ~TextureData(void);
 
         const size_t get_data_length(void);
+
+        const bool is_ready(void);
+
+        void upload_to_gpu(void);
     };
 
     class Shader {
@@ -468,14 +482,19 @@ namespace argus {
     class Renderable {
         friend class RenderGroup;
 
+        private:
+            void release_texture();
+
         protected:
             RenderGroup &parent;
 
             Transform transform;
 
+            Resource *tex_resource;
+
             Renderable(RenderGroup &parent);
 
-            ~Renderable(void) = default;
+            ~Renderable(void);
 
             virtual void render(const handle_t buffer_handle, const size_t offset) const = 0;
 
@@ -485,9 +504,11 @@ namespace argus {
             void remove(void);
 
             Transform const &get_transform(void) const;
+
+            void set_texture(std::string const &texture_uid);
     };
 
-    class RenderableTriangle : Renderable {
+    class RenderableTriangle : public Renderable {
         friend class RenderableFactory;
 
         private:

@@ -2,7 +2,7 @@
 
 namespace argus {
 
-    Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, const void *const data_ptr,
+    Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data_ptr,
             std::vector<std::string> &dependencies):
             manager(manager),
             prototype(prototype),

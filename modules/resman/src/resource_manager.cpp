@@ -27,13 +27,17 @@ namespace argus {
         }
     }
 
-    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader const &loader) {
+    ResourceManager &ResourceManager::get_global_resource_manager(void) {
+        return g_global_resource_manager;
+    }
+
+    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader *const loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             set_error("Cannot register loader for type more than once");
             return -1;
         }
 
-        registered_loaders.insert({type_id, new ResourceLoader(loader)});
+        registered_loaders.insert({type_id, loader});
         return 0;
     }
 
@@ -161,12 +165,19 @@ namespace argus {
 
             ResourceLoader *loader = loader_it->second;
             loader->last_dependencies = {};
-            void const *data_ptr = loader->load(stream);
+            void *const data_ptr = loader->load(stream, file_handle.get_size());
+
+            if (!data_ptr) {
+                stream.close();
+                file_handle.release();
+                return -1;
+            }
 
             Resource *res = new Resource(*this, proto, data_ptr, loader->last_dependencies);
             loaded_resources.insert({proto.uid, res});
 
             stream.close();
+            file_handle.release();
 
             return 0;
         } else {
@@ -203,10 +214,6 @@ namespace argus {
         delete res;
 
         return 0;
-    }
-
-    ResourceManager &get_global_resource_manager(void) {
-        return g_global_resource_manager;
     }
 
 }

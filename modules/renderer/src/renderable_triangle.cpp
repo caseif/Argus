@@ -36,6 +36,13 @@ namespace argus {
         _fill_buffer(buffer_data, corner_2, _VERTEX_LEN * 1);
         _fill_buffer(buffer_data, corner_3, _VERTEX_LEN * 2);
 
+        if (tex_resource != nullptr) {
+            TextureData &tex_data = tex_resource->get_data<TextureData>();
+            if (!tex_data.is_ready()) {
+                tex_data.upload_to_gpu();
+            }
+        }
+
         glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(buffer_data), buffer_data);
     }
 

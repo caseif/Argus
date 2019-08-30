@@ -41,12 +41,13 @@ namespace argus {
     class FileHandle {
         private:
             std::string path;
+            int mode;
             size_t size;
             void *handle;
 
             bool valid;
 
-            FileHandle(const std::string path, const size_t size, void *const handle);
+            FileHandle(const std::string path, const int mode, const size_t size, void *const handle);
 
             void read_trampoline(AsyncFileRequestHandle const &handle);
 
@@ -65,7 +66,7 @@ namespace argus {
 
             FileHandle(void);
 
-            const std::string get_path(void) const;
+            std::string const &get_path(void) const;
 
             const size_t get_size(void) const;
 

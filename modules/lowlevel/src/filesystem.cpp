@@ -70,11 +70,16 @@
 
 namespace argus {
 
-    FileHandle::FileHandle(const std::string path, const size_t size, void *const handle) :
+    FileHandle::FileHandle(const std::string path, const int mode, const size_t size, void *const handle):
             path(path),
+            mode(mode),
             size(size),
             handle(handle),
             valid(true) {
+    }
+
+    FileHandle::FileHandle(void):
+            valid(false) {
     }
 
     //TODO: use the native Windows file API, if available
@@ -90,9 +95,9 @@ namespace argus {
             return -1;
         }
 
-        if (mode & (FILE_MODE_READ | FILE_MODE_WRITE | FILE_MODE_CREATE)) {
+        if ((mode & FILE_MODE_READ) && (mode & FILE_MODE_WRITE) && (mode & FILE_MODE_CREATE)) {
             std_mode = "w+";
-        } else if (mode & (FILE_MODE_READ | FILE_MODE_WRITE)) {
+        } else if ((mode & FILE_MODE_READ) && (mode & FILE_MODE_WRITE)) {
             std_mode = "r+";
         } else if (mode & FILE_MODE_READ) {
             std_mode = "r";
@@ -101,7 +106,7 @@ namespace argus {
         }
 
         FILE *file;
-        if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {               
+        if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {
             stat_t stat_buf;
             int stat_rc = stat(path.c_str(), &stat_buf);
 
@@ -137,13 +142,17 @@ namespace argus {
         stat_t stat_buf;
         fstat(fileno(file), &stat_buf);
 
-        *handle = std::move(FileHandle(path, stat_buf.st_size, static_cast<void*>(file)));
+        *handle = std::move(FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file)));
 
         return 0;
     }
 
-    FileHandle::FileHandle(void):
-            valid(false) {
+    std::string const &FileHandle::get_path(void) const {
+        return path;
+    }
+
+    const size_t FileHandle::get_size(void) const {
+        return size;
     }
 
     const int FileHandle::release(void) {
@@ -192,14 +201,22 @@ namespace argus {
 
         char buf[CHUNK_SIZE];
 
-        *stream = std::ifstream(path, std::ios::binary | std::ios::in);
+        std::ios::openmode mode = std::ios::binary;
+        if (this->mode & FILE_MODE_READ) {
+            mode |= std::ios::in;
+        }
+        if (this->mode & FILE_MODE_WRITE) {
+            mode |= std::ios::out;
+        }
+        
+        *stream = std::ifstream(path, mode);
 
         if (!stream->good()) {
             set_error("Failed to create file stream");
             return -1;
         }
 
-        stream->seekg(offset);
+        //stream->seekg(offset);
 
         return 0;
     }
