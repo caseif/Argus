@@ -68,11 +68,11 @@ namespace argus {
 
         size_t width = png_get_image_width(png_ptr, info_ptr);
         size_t height = png_get_image_height(png_ptr, info_ptr);
-        size_t bpp = png_get_bit_depth(png_ptr, info_ptr);
+        size_t bit_depth = png_get_bit_depth(png_ptr, info_ptr);
         size_t channels = png_get_channels(png_ptr, info_ptr);
         unsigned char color_type = png_get_color_type(png_ptr, info_ptr);
 
-        if (bpp == 16) {
+        if (bit_depth == 16) {
             png_set_strip_16(png_ptr);
         }
 
@@ -80,7 +80,7 @@ namespace argus {
             png_set_palette_to_rgb(png_ptr);
         }
 
-        if (color_type == PNG_COLOR_TYPE_GRAY && bpp < 8) {
+        if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
             png_set_expand_gray_1_2_4_to_8(png_ptr);
         }
 
@@ -111,7 +111,7 @@ namespace argus {
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
         try {
-            return new TextureData{width, height, 8, 4, row_pointers};
+            return new TextureData{width, height, std::move(row_pointers)};
         } catch (std::invalid_argument &ex) {
             set_error(ex.what());
             return nullptr;

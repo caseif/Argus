@@ -68,15 +68,15 @@ namespace argus {
         return rotation;
     }
 
-    void Transform::set_rotation(const float rotation_degrees) {
-        this->rotation = rotation_degrees;
+    void Transform::set_rotation(const float rotation_radians) {
+        this->rotation = rotation_radians;
 
         this->dirty = true;
     }
 
-    void Transform::add_rotation(const float rotation_degrees) {
+    void Transform::add_rotation(const float rotation_radians) {
         float current = this->rotation.load();
-        while (!this->rotation.compare_exchange_weak(current, current + rotation_degrees));
+        while (!this->rotation.compare_exchange_weak(current, current + rotation_radians));
         this->dirty = true;
     }
 
@@ -109,7 +109,7 @@ namespace argus {
         scale_mutex.unlock();
 
         // this is transposed from the actual matrix, since GL interprets it in column-major order
-        // really wish C++ had a more syntactically elegant way to do this
+        // also, really wish C++ had a more syntactically elegant way to do this
         dst_arr[0] =  cos_rot * scale_current.x;
         dst_arr[1] =  sin_rot;
         dst_arr[2] =  0;

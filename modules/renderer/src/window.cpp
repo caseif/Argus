@@ -178,7 +178,7 @@ namespace argus {
         return;
     }
 
-    void Window::set_close_callback(WindowCloseCallback callback) {
+    void Window::set_close_callback(WindowCallback callback) {
         close_callback = callback;
     }
 
