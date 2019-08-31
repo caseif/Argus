@@ -43,7 +43,7 @@ namespace argus {
         }
 
         size_t row_size = width * bpp * channels / 8;
-        glBufferData(GL_PIXEL_UNPACK_BUFFER, height * row_size, nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, height * row_size, nullptr, GL_STREAM_COPY);
 
         size_t offset = 0;
         for (size_t y = 0; y < height; y++) {

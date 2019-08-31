@@ -198,7 +198,7 @@ namespace argus {
                 // end sub-shader invocation
 
                 vec4 texel = texture()" _UNIFORM_TEXTURE R"(, texCoord);
-                )" _OUT_FRAGDATA R"( = texel + color;
+                )" _OUT_FRAGDATA R"( = vec4((texel.rgb + color.rgb), texel.a * color.a);
             }
         )";
 

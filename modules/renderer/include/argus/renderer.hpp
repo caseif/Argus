@@ -94,7 +94,7 @@ namespace argus {
     struct Vertex {
         Vector2f position;
         Vector4f color;
-        Vector3f tex_coord;
+        Vector2f tex_coord;
     };
 
     struct TextureData {
