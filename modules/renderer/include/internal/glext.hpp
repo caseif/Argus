@@ -12,6 +12,9 @@
                         glBufferSubData, \
                         glDeleteBuffers, \
                         glGenBuffers, \
+                        glIsBuffer, \
+                        glMapBuffer, \
+                        glUnmapBuffer, \
                         glBindVertexArray, \
                         glDeleteVertexArrays, \
                         glEnableVertexAttribArray, \
@@ -46,20 +49,27 @@ namespace argus {
         typedef void (APIENTRY *DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                 const GLchar *message, void *userParam);
 
+        // framebuffer
         typedef void (APIENTRY *PTR_glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
 
+        // buffer
         typedef void (APIENTRY *PTR_glBindBuffer)(GLenum target, GLuint buffer);
         typedef void (APIENTRY *PTR_glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
         typedef void (APIENTRY *PTR_glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
         typedef void (APIENTRY *PTR_glDeleteBuffers)(GLsizei n, const GLuint *buffers);
         typedef void (APIENTRY *PTR_glGenBuffers)(GLsizei n, GLuint *buffers);
+        typedef GLboolean (APIENTRY *PTR_glIsBuffer)(GLuint buffer);
+        typedef void *(APIENTRY *PTR_glMapBuffer)(GLenum target, GLenum access);
+        typedef GLboolean (APIENTRY *PTR_glUnmapBuffer)(GLenum target);
 
+        // vertex array
         typedef void (APIENTRY *PTR_glBindVertexArray)(GLuint array);
         typedef void (APIENTRY *PTR_glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
         typedef void (APIENTRY *PTR_glEnableVertexAttribArray)(GLuint index);
         typedef void (APIENTRY *PTR_glGenVertexArrays)(GLsizei n, GLuint *arrays);
         typedef void (APIENTRY *PTR_glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
+        // shader
         typedef void (APIENTRY *PTR_glAttachShader)(GLuint program, GLuint shader);
         typedef void (APIENTRY *PTR_glBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
         typedef void (APIENTRY *PTR_glBindFragDataLocation)(GLuint program, GLuint colorNumber, const char *name);
@@ -79,6 +89,7 @@ namespace argus {
         typedef void (APIENTRY *PTR_glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
         typedef void (APIENTRY *PTR_glUseProgram)(GLuint program);
 
+        // utility
         typedef void (APIENTRY *PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
         typedef GLenum (APIENTRY *PTR_glGetError)(void);
 

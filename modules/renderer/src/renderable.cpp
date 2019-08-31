@@ -25,12 +25,19 @@ namespace argus {
             buffer_size(0),
             max_buffer_size(0),
             buffer_head(0),
-            tex_resource(nullptr) {
+            tex_index(0),
+            tex_max_uv({1.0, 1.0}),
+            tex_resource(nullptr),
+            dirty_texture(false) {
         parent.add_renderable(*this);
     }
 
     Renderable::~Renderable(void) {
         release_texture();
+
+        if (max_buffer_size > 0) {
+            free(vertex_buffer);
+        }
     }
 
     void Renderable::remove(void) {
@@ -43,16 +50,7 @@ namespace argus {
         return transform;
     }
 
-    static void _fill_buffer(float *const buffer, Vertex const &vertex, const size_t offset) {
-        buffer[offset + 0] = vertex.position.x;
-        buffer[offset + 1] = vertex.position.y;
-        buffer[offset + 2] = vertex.color.r;
-        buffer[offset + 3] = vertex.color.g;
-        buffer[offset + 4] = vertex.color.b;
-        buffer[offset + 5] = vertex.color.a;
-        buffer[offset + 6] = vertex.tex_coord.x;
-        buffer[offset + 7] = vertex.tex_coord.y;
-        buffer[offset + 8] = vertex.tex_coord.z;
+    static void _fill_buffer(float *const buffer, Vertex const &vertex, unsigned int tex_index, const size_t offset) {
     }
 
     void Renderable::allocate_buffer(const size_t vertex_count) {
@@ -77,12 +75,17 @@ namespace argus {
             _ARGUS_FATAL("Buffer overflow while buffering vertex (%lu > %lu)", buffer_head + _VERTEX_LEN, buffer_size);
         }
 
-        _fill_buffer(vertex_buffer, vertex, buffer_head);
-        buffer_head += _VERTEX_LEN;
-    }
+        vertex_buffer[buffer_head + 0] = vertex.position.x;
+        vertex_buffer[buffer_head + 1] = vertex.position.y;
+        vertex_buffer[buffer_head + 2] = vertex.color.r;
+        vertex_buffer[buffer_head + 3] = vertex.color.g;
+        vertex_buffer[buffer_head + 4] = vertex.color.b;
+        vertex_buffer[buffer_head + 5] = vertex.color.a;
+        vertex_buffer[buffer_head + 6] = vertex.tex_coord.x * tex_max_uv.x;
+        vertex_buffer[buffer_head + 7] = vertex.tex_coord.y * tex_max_uv.y;
+        vertex_buffer[buffer_head + 8] = tex_index;
 
-    void Renderable::upload_buffer(size_t offset) {
-        glBufferSubData(GL_ARRAY_BUFFER, offset, buffer_size * sizeof(float), vertex_buffer);
+        buffer_head += _VERTEX_LEN;
     }
 
     void Renderable::set_texture(std::string const &texture_uid) {
@@ -91,6 +94,8 @@ namespace argus {
         if (ResourceManager::get_global_resource_manager().get_resource(texture_uid, &tex_resource) != 0) {
             _ARGUS_WARN("Failed to set texture of Renderable: %s\n", get_error().c_str());
         }
+
+        dirty_texture = true;
     }
 
     void Renderable::release_texture(void) {

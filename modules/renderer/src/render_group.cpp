@@ -9,6 +9,7 @@
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
+#include <set>
 #include <SDL2/SDL_opengl.h>
 
 namespace argus {
@@ -43,7 +44,8 @@ namespace argus {
             dirty_children(false),
             dirty_shaders(false),
             buffers_initialized(false),
-            shaders_initialized(false) {
+            shaders_initialized(false),
+            tex_handle(0) {
     }
 
     void RenderGroup::destroy(void) {
@@ -59,6 +61,84 @@ namespace argus {
 
     Transform &RenderGroup::get_transform(void) {
         return transform;
+    }
+
+    void RenderGroup::rebuild_textures(bool force) {
+        bool needs_rebuild = false;
+        size_t max_width = 0;
+        size_t max_height = 0;
+
+        std::set<Resource*> seen_textures;
+        for (Renderable *child : children) {
+            if (child->tex_resource != nullptr) {
+                seen_textures.insert(child->tex_resource);
+
+                TextureData &tex_data = child->tex_resource->get_data<TextureData>();
+
+                if (tex_data.width > max_width) {
+                    max_width = tex_data.width;
+                }
+                if (tex_data.height > max_height) {
+                    max_height = tex_data.height;
+                }
+
+                if (child->dirty_texture) {
+                    needs_rebuild = true;
+                }
+            }
+        }
+
+        if (needs_rebuild) {
+            if (glIsTexture(tex_handle)) {
+                glDeleteTextures(1, &tex_handle);
+            }
+
+            glGenTextures(1, &tex_handle);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, tex_handle);
+
+            if (!glIsTexture(tex_handle)) {
+                _ARGUS_FATAL("Failed to gen texture while rebuilding texture array\n");
+            }
+
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, max_width, max_height, seen_textures.size(),
+                    0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            texture_indices = {};
+            unsigned int cur_index = 0;
+
+            for (Resource *tex_res : seen_textures) {
+                TextureData &tex_data = tex_res->get_data<TextureData>();
+
+                if (!tex_data.is_prepared()) {
+                    tex_data.prepare();
+                }
+
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tex_data.buffer_handle);
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, cur_index, tex_data.width, tex_data.height, 1,
+                        GL_RGBA, GL_UNSIGNED_BYTE, 0);
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+                texture_indices.insert({tex_res->uid, cur_index});
+
+                cur_index++;
+            }
+
+            for (Renderable *child : children) {
+                if (child->tex_resource != nullptr) {
+                    auto it = texture_indices.find(child->tex_resource->uid);
+                    _ARGUS_ASSERT(it != texture_indices.cend(), "Failed to get texture index after rebuilding\n");
+
+                    TextureData &tex_data = child->tex_resource->get_data<TextureData>();
+                    child->tex_index = it->second;
+                    child->tex_max_uv = Vector2f{(float) tex_data.width / max_width, (float) tex_data.height / max_height};
+                }
+
+                child->dirty_texture = false;
+            }
+        }
     }
 
     void RenderGroup::update_buffer(void) {
@@ -120,7 +200,8 @@ namespace argus {
             if (child->transform.is_dirty() || dirty_children) {
                 child->allocate_buffer(child->get_vertex_count() * _VERTEX_LEN);
                 child->populate_buffer();
-                child->upload_buffer(offset);
+                glBufferSubData(GL_ARRAY_BUFFER, offset, child->buffer_size * sizeof(float), child->vertex_buffer);
+
                 child->transform.clean();
             }
             offset += child->get_vertex_count();
@@ -193,12 +274,16 @@ namespace argus {
         refresh_shaders();
 
         glUseProgram(shader_program.program_handle);
-        
+
+        rebuild_textures(false);
+
         update_buffer();
 
+        glBindTexture(GL_TEXTURE_2D_ARRAY, tex_handle);
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertex_count));
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
         glUseProgram(0);
     }

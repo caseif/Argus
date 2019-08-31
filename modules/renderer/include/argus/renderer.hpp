@@ -99,7 +99,7 @@ namespace argus {
 
     struct TextureData {
         private:            
-            std::atomic_bool ready;
+            std::atomic_bool prepared;
 
         public:
             const size_t width;
@@ -107,7 +107,7 @@ namespace argus {
             const size_t bpp;
             const size_t channels;
             unsigned char **image_data;
-            handle_t tex_handle;
+            handle_t buffer_handle;
 
         TextureData(const size_t width, const size_t height, const size_t bpp, const size_t channels,
                 unsigned char **image_data);
@@ -116,9 +116,11 @@ namespace argus {
 
         const size_t get_data_length(void);
 
-        const bool is_ready(void);
+        const bool is_prepared(void);
 
-        void upload_to_gpu(void);
+        void prepare(void);
+        
+        const unsigned int get_pixel_format(void) const;
     };
 
     class Shader {
@@ -370,6 +372,8 @@ namespace argus {
 
             std::vector<const Shader*> shaders;
 
+            std::map<std::string, unsigned int> texture_indices;
+
             RenderableFactory renderable_factory;
 
             size_t vertex_count;
@@ -383,10 +387,13 @@ namespace argus {
             ShaderProgram shader_program;
             handle_t vbo;
             handle_t vao;
+            handle_t tex_handle;
             
             RenderGroup(RenderLayer &parent);
 
             ShaderProgram generate_initial_program(void);
+
+            void rebuild_textures(bool force);
 
             void update_buffer(void);
 
@@ -493,6 +500,7 @@ namespace argus {
             handle_t tex_buffer;
             unsigned int tex_index;
             Vector2f tex_max_uv;
+            std::atomic_bool dirty_texture;
 
         protected:
             RenderGroup &parent;
@@ -508,8 +516,6 @@ namespace argus {
             void allocate_buffer(const size_t vertex_count);
 
             void buffer_vertex(Vertex const &vertex);
-
-            void upload_buffer(size_t offset);
 
             virtual void populate_buffer(void) = 0;
 

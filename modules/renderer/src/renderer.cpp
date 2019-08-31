@@ -65,6 +65,7 @@ namespace argus {
 
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1); 
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
 
