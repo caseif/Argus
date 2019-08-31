@@ -80,7 +80,6 @@ namespace argus {
             png_set_palette_to_rgb(png_ptr);
         }
 
-        // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
         if (color_type == PNG_COLOR_TYPE_GRAY && bpp < 8) {
             png_set_expand_gray_1_2_4_to_8(png_ptr);
         }

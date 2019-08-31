@@ -34,6 +34,7 @@ namespace argus {
     class Renderable;
     class RenderableFactory;
     class RenderableTriangle;
+    class RenderableSquare;
 
     typedef unsigned int handle_t;
     typedef int shandle_t;
@@ -191,6 +192,8 @@ namespace argus {
             bool initialized;
             std::atomic_bool destruction_pending;
             bool valid;
+
+            std::atomic_bool dirty_resolution;
 
             Renderer(Window &window);
 
@@ -357,6 +360,9 @@ namespace argus {
 
         public:
             RenderableTriangle &create_triangle(Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3) const;
+            
+            RenderableSquare &create_square(Vertex const &corner_1, Vertex const &corner_2,
+                    Vertex const &corner_3, Vertex const &corner_4) const;
     };
 
     class RenderGroup {
@@ -537,9 +543,27 @@ namespace argus {
             const Vertex corner_2;
             const Vertex corner_3;
 
-            RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3);
+            RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2,
+                    Vertex const &corner_3);
 
-            void populate_buffer() override;
+            void populate_buffer(void) override;
+
+            const unsigned int get_vertex_count(void) const override;
+    };
+
+    class RenderableSquare : public Renderable {
+        friend class RenderableFactory;
+
+        private:
+            const Vertex corner_1;
+            const Vertex corner_2;
+            const Vertex corner_3;
+            const Vertex corner_4;
+
+            RenderableSquare(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2,
+                    Vertex const &corner_3, Vertex const &corner_4);
+
+            void populate_buffer(void) override;
 
             const unsigned int get_vertex_count(void) const override;
     };

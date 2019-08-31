@@ -126,7 +126,8 @@ namespace argus {
             window(window),
             initialized(false),
             destruction_pending(false),
-            valid(true) {
+            valid(true),
+            dirty_resolution(false) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
         callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
     }
@@ -137,7 +138,8 @@ namespace argus {
             initialized(rhs.initialized),
             callback_id(rhs.callback_id),
             destruction_pending(rhs.destruction_pending.load()),
-            valid(valid) {
+            valid(valid),
+            dirty_resolution(false) {
     }
 
     Renderer::Renderer(Renderer &&rhs):
@@ -146,7 +148,8 @@ namespace argus {
             initialized(std::move(initialized)),
             callback_id(rhs.callback_id),
             destruction_pending(rhs.destruction_pending.load()),
-            valid(valid) {
+            valid(valid),
+            dirty_resolution(false) {
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
@@ -228,6 +231,12 @@ namespace argus {
         }
 
         _activate_gl_context(window.handle, gl_context);
+
+        if (dirty_resolution) {
+            Vector2u res = window.properties.resolution.value;
+            glViewport(0, 0, res.x, res.y);
+            dirty_resolution = false;
+        }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

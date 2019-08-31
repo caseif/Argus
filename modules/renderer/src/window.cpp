@@ -137,6 +137,7 @@ namespace argus {
         if (properties.resolution.dirty) {
             Vector2u res = properties.resolution;
             SDL_SetWindowSize(sdl_handle, res.x, res.y);
+            renderer.dirty_resolution = true;
         }
         if (properties.position.dirty) {
             Vector2i pos = properties.position;
