@@ -193,7 +193,7 @@ namespace argus {
     }
 
     static int _master_event_handler(SDL_Event &event) {
-        ArgusEvent argus_event = {UNDEFINED, &event};
+        ArgusEvent argus_event = {ArgusEventType::UNDEFINED, &event};
         smutex_lock_shared(g_event_listeners.list_mutex);
         for (IndexedValue<EventHandler> listener : g_event_listeners.list) {
             if (listener.value.filter == nullptr || listener.value.filter(argus_event, listener.value.data)) {
@@ -214,7 +214,7 @@ namespace argus {
     }
 
     void update_lifecycle_core(LifecycleStage stage) {
-        if (stage == PRE_INIT) {
+        if (stage == LifecycleStage::PRE_INIT) {
             _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
 
             g_initializing = true;
@@ -222,7 +222,7 @@ namespace argus {
             // we'll probably register around 10 or so internal callbacks, so allocate them now
             g_update_callbacks.list.reserve(10);
             return;
-        } else if (stage == INIT) {
+        } else if (stage == LifecycleStage::INIT) {
             _init_callback_list(g_update_callbacks);
             _init_callback_list(g_render_callbacks);
             _init_callback_list(g_event_listeners);
@@ -230,7 +230,7 @@ namespace argus {
             _initialize_sdl();
 
             g_initialized = true;
-        } else if (stage == POST_DEINIT) {
+        } else if (stage == LifecycleStage::POST_DEINIT) {
             g_render_thread->detach();
             g_render_thread->destroy();
 
@@ -239,7 +239,8 @@ namespace argus {
     }
     
     void _initialize_modules(const EngineModules modules) {
-        for (LifecycleStage stage = PRE_INIT; stage <= POST_INIT; stage = static_cast<LifecycleStage>(stage + 1)) {
+        for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (EngineModules module : g_all_modules) {
                 if (modules & module) {
                     auto it = g_lifecycle_hooks.find(module);
@@ -252,7 +253,8 @@ namespace argus {
     }
 
     void _deinitialize_modules(const EngineModules modules) {
-        for (LifecycleStage stage = PRE_DEINIT; stage <= POST_DEINIT; stage = static_cast<LifecycleStage>(stage + 1)) {
+        for (LifecycleStage stage = LifecycleStage::PRE_DEINIT; stage <= LifecycleStage::POST_DEINIT;
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             // we want to deinitialize the modules in the opposite order as they were initialized
             if (modules & EngineModules::RENDERER) {
                 update_lifecycle_renderer(stage);

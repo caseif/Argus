@@ -14,7 +14,7 @@ namespace argus {
      * keyboard layout. For instance, KeyboardScancode::Q will correspond to a
      * press of the "A" key if an AZERTY layout is active.
      */
-    typedef enum class keyboard_scancode_t {
+    enum class KeyboardScancode {
         ESCAPE,
         F1,
         F2,
@@ -119,7 +119,7 @@ namespace argus {
         NP_ENTER,
         NP_0,
         NP_DOT
-    } KeyboardScancode;
+    };
 
     /**
      * \brief Represents a command sent by a key press.
@@ -127,7 +127,7 @@ namespace argus {
      * Command keys are defined as those which are not representative of a
      * textual character nor a key modifier.
      */
-    typedef enum class keyboard_command_t {
+    enum class KeyboardCommand {
         ESCAPE,
         F1,
         F2,
@@ -161,7 +161,7 @@ namespace argus {
         NP_NUM_LOCK,
         NP_ENTER,
         NP_DOT
-    } KeyboardCommand;
+    };
 
     /**
      * \brief Represents a modifier enabled by a key press.
@@ -169,7 +169,7 @@ namespace argus {
      * Modifier keys are defined as the left and right shift, alt, and control
      * keys, as well as the Super and Fn keys.
      */
-    typedef enum class keyboard_modifier_t : uint16_t {
+    enum class KeyboardModifiers : uint16_t {
         LEFT_SHIFT  = 0x01,
         RIGHT_SHIFT = 0x02,
         LEFT_CONTROL   = 0x04,
@@ -178,7 +178,7 @@ namespace argus {
         RIGHT_ALT   = 0x20,
         FN          = 0x40,
         RIGHT_CONTROL  = 0x80
-    } KeyboardModifiers;
+    };
 
     /**
      * \brief Represents a press of a keyboard key, providing acces to

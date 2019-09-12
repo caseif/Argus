@@ -12,13 +12,13 @@ namespace argus {
 
     typedef unsigned long long Index;
 
-    typedef enum class engine_modules_t : uint64_t {
+    enum class EngineModules : uint64_t {
         LOWLEVEL    = 0x01,
         CORE        = 0x02,
         INPUT       = 0x04,
         RESMAN      = 0x08,
         RENDERER    = 0x10,
-    } EngineModules;
+    };
 
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
@@ -27,7 +27,7 @@ namespace argus {
     /**
      * Represents the stages of engine bring-up or spin-down.
      */
-    typedef enum {
+    enum class LifecycleStage {
         /**
          * The first lifecycle stage, for performing early allocation or other
          * early setup. Changes during this stage should not be visible to
@@ -70,15 +70,15 @@ namespace argus {
          * stage should not be visible to dependent modules.
          */
         POST_DEINIT
-    } LifecycleStage;
+    };
 
-    typedef enum {
+    enum class ArgusEventType {
         UNDEFINED,
         WINDOW,
         KEYBOARD,
         MOUSE,
         JOYSTICK
-    } ArgusEventType;
+    };
 
     //TODO: expand this beyond a shim
     struct ArgusEvent {

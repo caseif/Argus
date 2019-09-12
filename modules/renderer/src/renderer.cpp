@@ -108,16 +108,16 @@ namespace argus {
     }
 
     void update_lifecycle_renderer(LifecycleStage stage) {
-        if (stage == INIT) {
+        if (stage == LifecycleStage::INIT) {
             if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
                 _ARGUS_FATAL("Failed to initialize SDL video\n");
             }
             _init_opengl();
 
             g_renderer_initialized = true;
-        } else if (stage == LATE_INIT) {
+        } else if (stage == LifecycleStage::LATE_INIT) {
             ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
-        } else if (stage == DEINIT) {
+        } else if (stage == LifecycleStage::DEINIT) {
             _clean_up();
         }
     }

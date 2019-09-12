@@ -22,7 +22,7 @@ namespace argus {
     ResourceManager g_global_resource_manager;
 
     void update_lifecycle_resman(LifecycleStage stage) {
-        if (stage == POST_INIT) {
+        if (stage == LifecycleStage::POST_INIT) {
             g_global_resource_manager.discover_resources();
         }
     }
