@@ -15,8 +15,9 @@ namespace argus {
     typedef enum class engine_modules_t : uint64_t {
         LOWLEVEL    = 0x01,
         CORE        = 0x02,
-        RESMAN      = 0x04,
-        RENDERER    = 0x08,
+        INPUT       = 0x04,
+        RESMAN      = 0x08,
+        RENDERER    = 0x10,
     } EngineModules;
 
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
