@@ -13,6 +13,7 @@ follows:
 | --- | --- | :-- |
 | 0 | lowlevel | Low-level platform-independence code for features such as threading. |
 | 1 | core | Core engine framework; facilitates basic operation and communication among components. |
+| 2 | input | Input manager; responsible for interpreting keyboard, mouse, and controller input. |
 | 2 | resman | Resource manager; facilitates resource loading and lifetime. |
 | 3 | renderer | Renderer module; responsible for managing windows and rendering. |
 
