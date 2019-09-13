@@ -1,11 +1,15 @@
 // module renderer
 #include "argus/renderer.hpp"
 #include "internal/glext.hpp"
+#include "internal/renderer_defines.hpp"
+#include "internal/texture_loader.hpp"
+
+// module core
+#include "argus/core.hpp"
+#include "internal/sdl_event.hpp"
 
 // module lowlevel
 #include "internal/logging.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/texture_loader.hpp"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -15,22 +19,9 @@ namespace argus {
 
     bool g_renderer_initialized = false;
 
-    std::vector<Window*> g_windows;
+    // maps SDL window IDs to Window instance pointers
+    std::map<uint32_t, Window*> g_window_map;
     size_t g_window_count = 0;
-
-    static void _clean_up(void) {
-        // use a copy since Window::destroy modifies the global list
-        auto windows_copy = g_windows;
-        // doing this in reverse ensures that child windows are destroyed before their parents
-        for (std::vector<Window*>::reverse_iterator it = windows_copy.rbegin();
-                it != windows_copy.rend(); it++) { 
-            (*it)->destroy();
-        }
-
-        SDL_VideoQuit();
-
-        return;
-    }
 
     static void _init_opengl(void) {
         int context_flags = 0;
@@ -59,11 +50,56 @@ namespace argus {
         init_opengl_extensions();
     }
 
+    static void _clean_up(void) {
+        // use a copy since Window::destroy modifies the global list
+        auto windows_copy = g_window_map;
+        // doing this in reverse ensures that child windows are destroyed before their parents
+        for (auto it = windows_copy.rbegin();
+                it != windows_copy.rend(); it++) { 
+            it->second->destroy();
+        }
+
+        SDL_VideoQuit();
+
+        return;
+    }
+
+    static bool _renderer_event_filter(SDL_Event &event, void *const data) {
+        return event.type == SDL_WINDOWEVENT;
+    }
+
+    static void _renderer_event_handler(SDL_Event &event, void *const data) {
+        WindowEventType event_type;
+
+        auto it = g_window_map.find(event.window.windowID);
+        if (it == g_window_map.cend()) {
+            return;
+        }
+        Window &window = *it->second;
+
+        switch (event.window.event) {
+            case SDL_WINDOWEVENT_CLOSE:
+                dispatch_event(WindowEvent(WindowEventType::CLOSE, window));
+                return;
+            case SDL_WINDOWEVENT_MINIMIZED:
+                dispatch_event(WindowEvent(WindowEventType::MINIMIZE, window));
+                return;
+            case SDL_WINDOWEVENT_RESTORED:
+                dispatch_event(WindowEvent(WindowEventType::RESTORE, window));
+                return;
+            default:
+                return; // ignore
+        }
+    }
+
     void update_lifecycle_renderer(LifecycleStage stage) {
         if (stage == LifecycleStage::INIT) {
             if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
                 _ARGUS_FATAL("Failed to initialize SDL video\n");
             }
+
+            register_sdl_event_handler(_renderer_event_filter, _renderer_event_handler, nullptr);
+
             _init_opengl();
 
             g_renderer_initialized = true;

@@ -80,10 +80,8 @@ namespace argus {
         JOYSTICK
     };
 
-    //TODO: expand this beyond a shim
     struct ArgusEvent {
-        ArgusEventType type;
-        void *event_data;
+        const ArgusEventType type;
     };
 
     /**
@@ -203,5 +201,7 @@ namespace argus {
      * \brief Unregisters the update callback with the given ID.
      */
     void unregister_event_handler(const Index id);
+
+    void dispatch_event(ArgusEvent const event);
 
 }

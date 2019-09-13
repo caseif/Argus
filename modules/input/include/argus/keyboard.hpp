@@ -1,5 +1,7 @@
 #pragma once
 
+#include "argus/core.hpp"
+
 #include <functional>
 
 namespace argus {
@@ -170,14 +172,17 @@ namespace argus {
      * keys, as well as the Super and Fn keys.
      */
     enum class KeyboardModifiers : uint16_t {
-        LEFT_SHIFT  = 0x01,
-        RIGHT_SHIFT = 0x02,
-        LEFT_CONTROL   = 0x04,
-        SUPER       = 0x08,
-        LEFT_ALT    = 0x10,
-        RIGHT_ALT   = 0x20,
-        FN          = 0x40,
-        RIGHT_CONTROL  = 0x80
+        LEFT_SHIFT      = 0x01,
+        RIGHT_SHIFT     = 0x02,
+        LEFT_CONTROL    = 0x04,
+        SUPER           = 0x08,
+        LEFT_ALT        = 0x10,
+        RIGHT_ALT       = 0x20,
+        FN              = 0x40,
+        RIGHT_CONTROL   = 0x80,
+        SHIFT           = LEFT_SHIFT | RIGHT_SHIFT,
+        CONTROL         = LEFT_CONTROL | RIGHT_CONTROL,
+        ALT             = LEFT_ALT | RIGHT_ALT
     };
 
     /**
@@ -250,6 +255,10 @@ namespace argus {
          * \return The key modifier associated with this key press.
          */
         KeyboardModifiers get_modifier(void);
+    };
+
+    struct KeyPressEvent : ArgusEvent {
+        const KeyPress key_press;
     };
 
     /**

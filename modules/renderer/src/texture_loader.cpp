@@ -15,7 +15,7 @@ namespace argus {
         static_cast<std::ifstream*>(png_get_io_ptr(stream))->read((char*) buf, size);
     }
 
-    PngTextureLoader::PngTextureLoader():
+    PngTextureLoader::PngTextureLoader(void):
             ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG, {RESOURCE_EXTENSION_PNG}) {
     }
 

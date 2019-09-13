@@ -7,6 +7,7 @@
 #include "argus/core.hpp"
 #include "internal/config.hpp"
 #include "internal/core_util.hpp"
+#include "internal/sdl_event.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -44,11 +45,15 @@ namespace argus {
                 & static_cast<std::underlying_type<EngineModules>::type>(rhs));
     }
 
-    typedef struct {
-        ArgusEventFilter filter;
-        ArgusEventCallback callback;
+    template <typename Filter, typename Callback>
+    struct EventHandler {
+        Filter filter;
+        Callback callback;
         void *data;
-    } EventHandler;
+    };
+
+    typedef EventHandler<ArgusEventFilter, ArgusEventCallback> ArgusEventHandler;
+    typedef EventHandler<SDLEventFilter, SDLEventCallback> SDLEventHandler;
 
     // This struct defines the list alongside two mutation queues and a shared
     // mutex. In this way, it facilitates a thread-safe callback list wherein
@@ -70,7 +75,8 @@ namespace argus {
 
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
-    static CallbackList<EventHandler> g_event_listeners;
+    static CallbackList<ArgusEventHandler> g_event_listeners;
+    static CallbackList<SDLEventHandler> g_sdl_event_listeners;
 
     static EngineModules g_enabled_modules;
     static std::vector<EngineModules> g_all_modules {
@@ -193,9 +199,9 @@ namespace argus {
     }
 
     static int _master_event_handler(SDL_Event &event) {
-        ArgusEvent argus_event = {ArgusEventType::UNDEFINED, &event};
+        ArgusEvent argus_event = {ArgusEventType::UNDEFINED};
         smutex_lock_shared(g_event_listeners.list_mutex);
-        for (IndexedValue<EventHandler> listener : g_event_listeners.list) {
+        for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
             if (listener.value.filter == nullptr || listener.value.filter(argus_event, listener.value.data)) {
                 listener.value.callback(argus_event, listener.value.data);
             }
@@ -379,12 +385,29 @@ namespace argus {
         Index id = g_next_index++;
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
-        EventHandler listener = {filter, callback, data};
+        ArgusEventHandler listener = {filter, callback, data};
         return _add_callback(g_event_listeners, listener);
     }
 
     void unregister_event_handler(const Index id) {
         _remove_callback(g_event_listeners, id);
+    }
+
+    const Index register_sdl_event_handler(const SDLEventFilter filter, const SDLEventCallback callback, void *const data) {
+        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register SDL event listener before engine initialization.");
+        Index id = g_next_index++;
+        _ARGUS_ASSERT(callback != nullptr, "SDL event listener cannot have null callback.");
+
+        SDLEventHandler listener = {filter, callback, data};
+        return _add_callback(g_sdl_event_listeners, listener);
+    }
+
+    void unregister_sdl_event_handler(const Index id) {
+        _remove_callback(g_event_listeners, id);
+    }
+
+    void dispatch_event(ArgusEvent event) {
+
     }
 
     void start_engine(const DeltaCallback game_loop) {

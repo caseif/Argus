@@ -30,7 +30,7 @@ namespace argus {
 
     extern bool g_renderer_initialized;
 
-    extern std::vector<Window*> g_windows;
+    extern std::map<uint32_t, Window*> g_window_map;
     extern size_t g_window_count;
 
     Window::Window(void):
@@ -44,7 +44,7 @@ namespace argus {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
         g_window_count++;
-        g_windows.insert(g_windows.cend(), this);
+        g_window_map.insert({SDL_GetWindowID(static_cast<SDL_Window*>(handle)), this});
 
         parent = nullptr;
         
@@ -79,9 +79,9 @@ namespace argus {
             parent->remove_child(*this);
         }
 
-        SDL_DestroyWindow(static_cast<SDL_Window*>(handle));
+        g_window_map.erase(SDL_GetWindowID(static_cast<SDL_Window*>(handle)));
 
-        remove_from_vector(g_windows, this);
+        SDL_DestroyWindow(static_cast<SDL_Window*>(handle));
 
         if (--g_window_count == 0) {
             stop_engine();
@@ -195,18 +195,15 @@ namespace argus {
             return false;
         }
 
-        SDL_Event *sdl_event = static_cast<SDL_Event*>(event.event_data);
-
-        return sdl_event->type == SDL_WINDOWEVENT
-                && sdl_event->window.windowID == SDL_GetWindowID(static_cast<SDL_Window*>(window->handle));
+        return event.type == ArgusEventType::WINDOW
+                && &static_cast<WindowEvent&>(event).window == window;
     }
 
     void Window::event_callback(ArgusEvent &event, void *data) {
+        WindowEvent &window_event = static_cast<WindowEvent&>(event);
         Window *window = static_cast<Window*>(data);
 
-        SDL_Event *sdl_event = static_cast<SDL_Event*>(event.event_data);
-
-        if (sdl_event->window.event == SDL_WINDOWEVENT_CLOSE) {
+        if (window_event.subtype == WindowEventType::CLOSE) {
             window->state |= WINDOW_STATE_CLOSE_REQUESTED;
         }
     }

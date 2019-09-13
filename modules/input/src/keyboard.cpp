@@ -1,6 +1,26 @@
+// module input
 #include "argus/keyboard.hpp"
 
+// module core
+#include <internal/sdl_event.hpp>
+
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keyboard.h>
+
 namespace argus {
+
+    static bool _sdl_keyboard_event_filter(SDL_Event &event, void *const data) {
+        //TODO
+        return false;
+    }
+
+    static void _sdl_keyboard_event_handler(SDL_Event &event, void *const data) {
+        //TODO
+    }
+
+    void init_keyboard(void) {
+        register_sdl_event_handler(_sdl_keyboard_event_filter, nullptr, nullptr);
+    }
 
     bool KeyPress::is_character(void) {
         //TODO

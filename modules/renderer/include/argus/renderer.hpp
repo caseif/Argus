@@ -59,6 +59,23 @@ namespace argus {
      */
     typedef std::function<void(Window &window)> WindowCallback;
 
+    enum class WindowEventType {
+        CLOSE,
+        MINIMIZE,
+        RESTORE
+    };
+
+    struct WindowEvent : ArgusEvent {
+        const WindowEventType subtype;
+        const Window &window;
+
+        WindowEvent(const WindowEventType subtype, Window &window):
+                ArgusEvent{ArgusEventType::WINDOW},
+                subtype(subtype),
+                window(window) {
+        }
+    };
+
     /**
      * \brief A transformation in 2D space.
      *
