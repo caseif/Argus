@@ -10,39 +10,43 @@
 namespace argus {
 
     static bool _sdl_keyboard_event_filter(SDL_Event &event, void *const data) {
-        //TODO
-        return false;
+        return event.type == SDL_KEYDOWN || event.type == SDL_KEYUP;
     }
 
     static void _sdl_keyboard_event_handler(SDL_Event &event, void *const data) {
-        //TODO
+        //TODO: determine if a key press is actually supported by Argus's API
+        KeyboardEventType key_event_type = event.type == SDL_KEYDOWN
+                ? KeyboardEventType::KEY_DOWN
+                : KeyboardEventType::KEY_UP;
+
+        KeyboardScancode scancode = static_cast<KeyboardScancode>(event.key.keysym.scancode);
     }
 
     void init_keyboard(void) {
         register_sdl_event_handler(_sdl_keyboard_event_filter, nullptr, nullptr);
     }
 
-    bool KeyPress::is_character(void) {
+    bool KeyboardEvent::is_character(void) {
+        return !is_command() && !is_modifier();
+    }
+
+    bool KeyboardEvent::is_command(void) {
         //TODO
     }
 
-    bool KeyPress::is_command(void) {
-        //TODO
-    }
-
-    bool KeyPress::is_modifier(void) {
+    bool KeyboardEvent::is_modifier(void) {
         return is_modifier_key(scancode);
     }
 
-    wchar_t KeyPress::get_character(void) {
+    wchar_t KeyboardEvent::get_character(void) {
         //TODO
     }
 
-    KeyboardCommand KeyPress::get_command(void) {
+    KeyboardCommand KeyboardEvent::get_command(void) {
         //TODO
     }
 
-    KeyboardModifiers KeyPress::get_modifier(void) {
+    KeyboardModifiers KeyboardEvent::get_modifier(void) {
         //TODO
     }
 
@@ -55,7 +59,17 @@ namespace argus {
     }
 
     bool is_modifier_key(KeyboardScancode scancode) {
-        //TODO
+        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
+        return keycode == SDLK_LCTRL
+                || keycode == SDLK_RCTRL
+                || keycode == SDLK_LSHIFT
+                || keycode == SDLK_RSHIFT
+                || keycode == SDLK_LALT
+                || keycode == SDLK_RALT
+                || keycode == SDLK_APPLICATION
+                || keycode == SDLK_NUMLOCKCLEAR
+                || keycode == SDLK_CAPSLOCK
+                || keycode == SDLK_SCROLLLOCK;
     }
 
     wchar_t get_key_character(KeyboardScancode scancode) {
