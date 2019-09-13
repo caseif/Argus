@@ -65,11 +65,11 @@ namespace argus {
         RESTORE
     };
 
-    struct WindowEvent : ArgusEvent {
+    struct WindowEvent : public ArgusEvent {
         const WindowEventType subtype;
-        const Window &window;
+        const Window *window;
 
-        WindowEvent(const WindowEventType subtype, Window &window):
+        WindowEvent(const WindowEventType subtype, Window *window):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
                 window(window) {

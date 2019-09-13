@@ -188,6 +188,8 @@ namespace argus {
     }
 
     bool Window::event_filter(ArgusEvent &event, void *user_data) {
+        WindowEvent &window_event = static_cast<WindowEvent&>(event);
+
         Window *window = static_cast<Window*>(user_data);
       
         // ignore events for uninitialized windows
@@ -195,8 +197,7 @@ namespace argus {
             return false;
         }
 
-        return event.type == ArgusEventType::WINDOW
-                && &static_cast<WindowEvent&>(event).window == window;
+        return event.type == ArgusEventType::WINDOW && window_event.window == window;
     }
 
     void Window::event_callback(ArgusEvent &event, void *data) {

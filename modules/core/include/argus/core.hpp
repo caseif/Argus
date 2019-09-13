@@ -3,6 +3,7 @@
 #define SDL_MAIN_HANDLED
 
 #include <functional>
+#include <memory>
 
 namespace argus {
     
@@ -202,6 +203,11 @@ namespace argus {
      */
     void unregister_event_handler(const Index id);
 
-    void dispatch_event(ArgusEvent const event);
+    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event);
+
+    template <typename EventType>
+    void dispatch_event(EventType const &event) {
+        _dispatch_event_ptr(std::make_unique<EventType>(event));
+    }
 
 }

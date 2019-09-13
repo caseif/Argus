@@ -2,8 +2,6 @@
 
 #include "argus/core.hpp"
 
-#include <functional>
-
 namespace argus {
 
     /**

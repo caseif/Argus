@@ -69,8 +69,6 @@ namespace argus {
     }
 
     static void _renderer_event_handler(SDL_Event &event, void *const data) {
-        WindowEventType event_type;
-
         auto it = g_window_map.find(event.window.windowID);
         if (it == g_window_map.cend()) {
             return;
@@ -78,14 +76,15 @@ namespace argus {
         Window &window = *it->second;
 
         switch (event.window.event) {
-            case SDL_WINDOWEVENT_CLOSE:
-                dispatch_event(WindowEvent(WindowEventType::CLOSE, window));
+            case SDL_WINDOWEVENT_CLOSE: {
+                dispatch_event(WindowEvent(WindowEventType::CLOSE, &window));
                 return;
+            }
             case SDL_WINDOWEVENT_MINIMIZED:
-                dispatch_event(WindowEvent(WindowEventType::MINIMIZE, window));
+                dispatch_event(WindowEvent(WindowEventType::MINIMIZE, &window));
                 return;
             case SDL_WINDOWEVENT_RESTORED:
-                dispatch_event(WindowEvent(WindowEventType::RESTORE, window));
+                dispatch_event(WindowEvent(WindowEventType::RESTORE, &window));
                 return;
             default:
                 return; // ignore

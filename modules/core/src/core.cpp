@@ -78,6 +78,9 @@ namespace argus {
     static CallbackList<ArgusEventHandler> g_event_listeners;
     static CallbackList<SDLEventHandler> g_sdl_event_listeners;
 
+    static std::queue<std::unique_ptr<ArgusEvent>> g_event_queue;
+    static std::mutex g_event_queue_mutex;
+
     static EngineModules g_enabled_modules;
     static std::vector<EngineModules> g_all_modules {
             EngineModules::LOWLEVEL,
@@ -199,16 +202,32 @@ namespace argus {
     }
 
     static int _master_event_handler(SDL_Event &event) {
-        ArgusEvent argus_event = {ArgusEventType::UNDEFINED};
-        smutex_lock_shared(g_event_listeners.list_mutex);
-        for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
-            if (listener.value.filter == nullptr || listener.value.filter(argus_event, listener.value.data)) {
-                listener.value.callback(argus_event, listener.value.data);
+        for (IndexedValue<SDLEventHandler> listener : g_sdl_event_listeners.list) {
+            if (listener.value.filter == nullptr || listener.value.filter(event, listener.value.data)) {
+                listener.value.callback(event, listener.value.data);
             }
         }
-        smutex_unlock_shared(g_event_listeners.list_mutex);
+        smutex_unlock_shared(g_sdl_event_listeners.list_mutex);
 
         return 0;
+    }
+
+    static void _process_event_queue(void) {
+        g_event_queue_mutex.lock();
+        smutex_lock_shared(g_event_listeners.list_mutex);
+
+        while (!g_event_queue.empty()) {
+            ArgusEvent &event = *std::move(g_event_queue.front().get());
+            for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
+                if (listener.value.filter == nullptr || listener.value.filter(event, listener.value.data)) {
+                    listener.value.callback(event, listener.value.data);
+                }
+            }
+            g_event_queue.pop();
+        }
+       
+        smutex_unlock_shared(g_event_listeners.list_mutex);
+        g_event_queue_mutex.unlock();
     }
 
     void _initialize_sdl(void) {
@@ -294,12 +313,15 @@ namespace argus {
             _flush_callback_list_queues(g_update_callbacks);
             _flush_callback_list_queues(g_render_callbacks);
             _flush_callback_list_queues(g_event_listeners);
+            _flush_callback_list_queues(g_sdl_event_listeners);
 
             // clear event queue
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 _master_event_handler(event);
             }
+
+            _process_event_queue();
 
             // invoke update callbacks
             smutex_lock_shared(g_update_callbacks.list_mutex);
@@ -399,15 +421,16 @@ namespace argus {
         _ARGUS_ASSERT(callback != nullptr, "SDL event listener cannot have null callback.");
 
         SDLEventHandler listener = {filter, callback, data};
+
         return _add_callback(g_sdl_event_listeners, listener);
     }
 
     void unregister_sdl_event_handler(const Index id) {
-        _remove_callback(g_event_listeners, id);
+        _remove_callback(g_sdl_event_listeners, id);
     }
 
-    void dispatch_event(ArgusEvent event) {
-
+    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event) {
+        g_event_queue.push(std::move(event));
     }
 
     void start_engine(const DeltaCallback game_loop) {
