@@ -97,13 +97,13 @@ namespace argus {
                 _ARGUS_FATAL("Failed to initialize SDL video\n");
             }
 
+            ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
+
             register_sdl_event_handler(_renderer_event_filter, _renderer_event_handler, nullptr);
 
             _init_opengl();
 
             g_renderer_initialized = true;
-        } else if (stage == LifecycleStage::LATE_INIT) {
-            ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
         } else if (stage == LifecycleStage::DEINIT) {
             _clean_up();
         }

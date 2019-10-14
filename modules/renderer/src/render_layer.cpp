@@ -27,6 +27,7 @@ namespace argus {
             priority(priority),
             shaders(_generate_initial_layer_shaders()),
             root_group(RenderGroup(*this)),
+            transform(),
             children({&root_group}),
             dirty_shaders(false) {
     }

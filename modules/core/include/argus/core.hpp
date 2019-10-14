@@ -6,13 +6,28 @@
 #include <memory>
 
 namespace argus {
-    
+
+    /**
+     * \brief Represents an instant in time.
+     */
     typedef unsigned long long Timestamp;
 
+    /**
+     * \brief Represents a duration of time.
+     */
     typedef unsigned long long TimeDelta;
 
+    /**
+     * \brief Represents a unique index used for tracking purposes.
+     */
     typedef unsigned long long Index;
 
+    /**
+     * \brief An enumeration of all modules offered by the engine.
+     * 
+     * Each enum value corresponds to a particular bit position, such that the
+     * bitwise OR of multiple modules will preserve the set of input modules.
+     */
     enum class EngineModules : uint64_t {
         LOWLEVEL    = 0x01,
         CORE        = 0x02,
@@ -21,66 +36,92 @@ namespace argus {
         RENDERER    = 0x10,
     };
 
+    // bitwise operator overrides for EngineModules
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
     inline bool operator &(const EngineModules lhs, const EngineModules rhs);
 
     /**
-     * Represents the stages of engine bring-up or spin-down.
+     * \brief Represents the stages of engine bring-up or spin-down.
      */
     enum class LifecycleStage {
         /**
-         * The first lifecycle stage, for performing early allocation or other
-         * early setup. Changes during this stage should not be visible to
-         * dependent modules.
+         * \brief The first lifecycle stage.
+         *
+         * Should be used for performing early allocation or other early setup,
+         * generally for the purpose of preparing the module for use in the
+         * initialization of dependent modules.
          */
         PRE_INIT,
         /**
-         * Primary initialization, for performing most initialization tasks.
+         * \brief Primary initialization stage, for performing most
+         * initialization tasks.
          */
         INIT,
         /**
-         * Late initialization, for performing initialization of systems
-         * contingent on dependent modules being initialized.
-         */
-        LATE_INIT,
-        /**
-         * Very late initialization, for performing initialization contingent
-         * on all modules being fully initialized externally. Changes during
-         * this stage should not be visible to dependent modules.
+         * \brief Post-initialization stage, for performing initialization
+         * contingent on all parent modules being initialized.
          */
         POST_INIT,
         /**
-         * Early de-initialization, for performing early de-init tasks when the
-         * engine has first announced its intention to shut down. Changes during
-         * this stage should not be visible to dependent modules.
+         * \brief Early de-initialization. This occurs immediately after the
+         * engine has committed to shutting down.
+         *
+         * Should be used for performing early de-initialization tasks, such as
+         * saving user data. Changes during this stage should not be visible to
+         * dependent modules.
          */
         PRE_DEINIT,
         /**
-         * Primary de-initialization, for performing most de-init tasks.
+         * \brief Primary de-initialization.
+         *
+         * Should be used for performing most de-initialization tasks.
          */
         DEINIT,
         /**
-         * Late de-initialization, for performing de-init of systems contingent
-         * on dependent modules being de-initialized.
-         */
-        LATE_DEINIT,
-        /**
-         * Very late initialization, for performing de-init contingent on all
-         * modules being fully de-initialized externally. Changes during this
-         * stage should not be visible to dependent modules.
+         * \brief Very late initialization.
+         * 
+         * Should be used for performing de-init contingent on parent modules
+         * being fully de-initializedm as well as for final deallocation and
+         * similar tasks.
          */
         POST_DEINIT
     };
 
+    /**
+     * \brief Represents a class of event dispatched by the engine.
+     */
     enum class ArgusEventType {
+        /**
+         * \brief An event of an unknown or undefined class.
+         */
         UNDEFINED,
+        /**
+         * \brief An event pertaining to a game window.
+         */
         WINDOW,
+        /**
+         * \brief An event pertaining to keyboard input.
+         */
         KEYBOARD,
+        /**
+         * \brief An event pertaining to mouse input.
+         */
         MOUSE,
-        JOYSTICK
+        /**
+         * \brief An event pertaining to joystick input.
+         */
+        JOYSTICK,
+        /**
+         * \brief An event signifying some type of abstracted input.
+         */
+        INPUT
     };
 
+    /**
+     * \brief Represents an event pertaining to the current application,
+     * typically triggered by user interaction.
+     */
     struct ArgusEvent {
         const ArgusEventType type;
     };
@@ -203,8 +244,22 @@ namespace argus {
      */
     void unregister_event_handler(const Index id);
 
+    /**
+     * \brief Dispatches an event as wrapped by a unique_ptr.
+     *
+     * This function is intended for internal use only, and is exposed here
+     * solely due to C++ templating restrictions.
+     *
+     * \param event An rreference to the event to be dispatched as wrapped by a
+     * unique_ptr.
+     */
     void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event);
 
+    /**
+     * Dispatches an event to all respective registered listeners.
+     *
+     * \param event An lreference to the event to be dispatched.
+     */
     template <typename EventType>
     void dispatch_event(EventType const &event) {
         _dispatch_event_ptr(std::make_unique<EventType>(event));

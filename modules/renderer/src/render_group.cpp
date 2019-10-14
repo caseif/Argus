@@ -38,6 +38,8 @@ namespace argus {
 
     RenderGroup::RenderGroup(RenderLayer &parent):
             parent(parent),
+            children(),
+            transform(),
             renderable_factory(RenderableFactory(*this)),
             shaders(_generate_initial_group_shaders()),
             shader_program(generate_initial_program()),
