@@ -1,5 +1,6 @@
 #include "argus/error.hpp"
 #include "argus/filesystem.hpp"
+#include "internal/logging.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -103,6 +104,8 @@ namespace argus {
             std_mode = "r";
         } else if (mode & FILE_MODE_WRITE) {
             std_mode = "w";
+        } else {
+            _ARGUS_FATAL("Unable to determine mode string");
         }
 
         FILE *file;
