@@ -28,7 +28,8 @@ namespace argus {
             const std::string res_uid;
 
             ResourceException(std::string const &res_uid, const std::string msg):
-                    res_uid(res_uid) {
+                    res_uid(res_uid),
+                    msg(msg) {
             }
 
             const char *what(void) const noexcept override {

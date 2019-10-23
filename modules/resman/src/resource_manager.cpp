@@ -1,5 +1,4 @@
 // module lowlevel
-#include "argus/error.hpp"
 #include "argus/filesystem.hpp"
 #include "argus/threading.hpp"
 #include "internal/logging.hpp"
@@ -47,8 +46,11 @@ namespace argus {
             std::map<std::string, ResourcePrototype> &prototype_map,
             std::map<std::string, std::string> const &extension_map) {
         std::vector<std::string> children;
-        if (list_directory_files(root_path, &children) != 0) {
-            _ARGUS_WARN("Failed to discover resources: %s\n", get_error().c_str());
+        try {
+            children = list_directory_files(root_path);
+        } catch (std::exception &ex) {
+            _ARGUS_WARN("Failed to discover resources: %s\n", ex.what());
+            return;
         }
 
         for (std::string child : children) {
@@ -96,15 +98,16 @@ namespace argus {
     }
 
     void ResourceManager::discover_resources(void) {
-        std::string exe_path;
-        if (get_executable_path(&exe_path) != 0) {
-            _ARGUS_FATAL("Failed to get executable directory: %s\n", get_error().c_str());
-        }
+        try {
+        std::string exe_path = get_executable_path();
 
         std::string exe_dir = get_parent(exe_path);
 
         _discover_fs_resources_recursively(exe_dir + PATH_SEPARATOR + RESOURCES_DIR, "",
                 discovered_resource_prototypes, extension_registrations);
+        } catch (std::exception &ex) {
+            _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
+        }
     }
 
     Resource &ResourceManager::get_resource(std::string const &uid) {

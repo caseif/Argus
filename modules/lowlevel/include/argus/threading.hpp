@@ -1,7 +1,5 @@
 #pragma once
 
-#include "argus/error.hpp"
-
 #include <atomic>
 #include <future>
 #include <functional>

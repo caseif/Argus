@@ -21,37 +21,29 @@ namespace argus {
 
     void *const PngTextureLoader::load(std::istream &stream, const size_t size) const {
         unsigned char sig[8];
-        try {
-            stream.read((char*) sig, 8);
-        } catch(std::exception const &ex) {
-            _ARGUS_FATAL("Failed to read resource from stream: %s\n", ex.what());
-        }
+        stream.read((char*) sig, 8);
 
         if (png_sig_cmp(sig, 0, 8) != 0) {
-            set_error("Invalid PNG file");
-            return nullptr;
+            throw std::invalid_argument("Invalid PNG file");
         }
 
         png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         if (png_ptr == nullptr) {
-            set_error("Failed to create PNG read struct");
-            return nullptr;
+            throw std::runtime_error("Failed to create PNG read struct");
         }
 
         png_infop info_ptr = png_create_info_struct(png_ptr);
         if (info_ptr == nullptr) {
             png_destroy_read_struct(&png_ptr, nullptr, nullptr);
 
-            set_error("Failed to create PNG info struct");
-            return nullptr;
+            throw std::runtime_error("Failed to create PNG info struct");
         }
 
         png_infop end_info_ptr = png_create_info_struct(png_ptr);
         if (info_ptr == nullptr) {
             png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-            set_error("Failed to create PNG end info struct");
-            return nullptr;
+            throw std::runtime_error("Failed to create PNG end info struct");
         }
 
 
@@ -110,12 +102,7 @@ namespace argus {
 
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
-        try {
-            return new TextureData{width, height, std::move(row_pointers)};
-        } catch (std::invalid_argument &ex) {
-            set_error(ex.what());
-            return nullptr;
-        }
+        return new TextureData{width, height, std::move(row_pointers)};
     }
 
     void PngTextureLoader::unload(void *const data_buf) const {

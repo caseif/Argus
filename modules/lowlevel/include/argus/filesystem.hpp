@@ -77,9 +77,9 @@ namespace argus {
                     unsigned char *const buf, const std::function<void(FileHandle&)> callback);
     };
 
-    int get_executable_path(std::string *const target);
+    const std::string get_executable_path(void);
 
-    int list_directory_files(std::string const &directory_path, std::vector<std::string> *const target);
+    const std::vector<std::string> list_directory_files(std::string const &directory_path);
 
     bool is_directory(std::string const &path);
 

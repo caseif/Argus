@@ -1,4 +1,3 @@
-#include "argus/error.hpp"
 #include "argus/threading.hpp"
 
 #include <functional>

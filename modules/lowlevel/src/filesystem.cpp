@@ -1,4 +1,3 @@
-#include "argus/error.hpp"
 #include "argus/filesystem.hpp"
 #include "internal/logging.hpp"
 
@@ -259,7 +258,7 @@ namespace argus {
         return make_future(std::bind(&FileHandle::write, this, offset, size, buf), std::bind(callback, *this));
     }
     
-    int get_executable_path(std::string *const str) {
+    const std::string get_executable_path(void) {
         const size_t max_path_len = 4097;
         size_t path_len = max_path_len;
         char path[max_path_len];
@@ -271,7 +270,7 @@ namespace argus {
         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
 
         if (rc != 0) {
-            set_error("Failed to get executable path");
+            throw std::system_error(errno, std::generic_category(), "Failed to get executable path");
             return rc;
         }
         #elif defined __APPLE__
@@ -280,14 +279,13 @@ namespace argus {
 
         if (rc != 0) {
             _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
-            set_error("Executable path too long for buffer");
+            throw std::runtime_error("Executable path too long for buffer");
             return rc;
         }
         #elif defined __linux__
         ssize_t size = readlink("/proc/self/exe", path, max_path_len);
         if (size == -1) {
-            set_error("Failed to read /proc/self/exe");
-            return errno;
+            throw std::system_error(errno, std::generic_category(), "Failed to read /proc/self/exe");
         }
         #elif defined __FreeBSD__
         int mib[4];
@@ -299,37 +297,33 @@ namespace argus {
         rc = sysctl(mib, 4, path, &path_len, NULL, 0);
 
         if (rc != 0) {
-            set_error("Failed to get executable path");
-            return errno;
+            throw std::runtime_error("Failed to get executable path");
         }
         #elif defined __NetBSD__
         readlink("/proc/curproc/exe", path, max_path_len);
         if (size == -1) {
-            set_error("Failed to read /proc/curproc/exe");
-            return errno;
+            throw std::system_error(errno, std::generic_category(), "Failed to read /proc/curproc/exe");
         }
         #elif defined __DragonFly__
         readlink("/proc/curproc/file", path, max_path_len);
         if (size == -1) {
-            set_error("Failed to read /proc/curproc/file");
-            return errno;
+            throw std::system_error(errno, std::generic_category(), "Failed to read /proc/curproc/file");
         }
         #endif
 
-        *str = std::string(path);
-
-        return rc;
+        return std::string(path);
     }
 
-    int list_directory_files(std::string const &directory_path, std::vector<std::string> *const target) {
+    const std::vector<std::string> list_directory_files(std::string const &directory_path) {
+        std::vector<std::string> res;
+
         #ifdef _WIN32
         #error "Not yet supported"
         //TODO
         #else
         DIR *dir = opendir(directory_path.c_str());
         if (dir == NULL) {
-            set_error("Failed to open directory");
-            return -1;
+            throw std::runtime_error("Failed to open directory");
         }
 
         struct dirent *ent;
@@ -338,26 +332,26 @@ namespace argus {
                 continue;
             }
 
-            target->insert(target->cbegin(), std::string(ent->d_name));
+            res.insert(res.cbegin(), std::string(ent->d_name));
         }
 
         closedir(dir);
         #endif
+
+        return res;
     }
 
     bool is_directory(std::string const &path) {
         stat_t path_stat;
         if (stat(path.c_str(), &path_stat) != 0) {
-            set_error("Failed to stat path");
             return false;
         }
         return S_ISDIR(path_stat.st_mode);
     }
-    
+
     bool is_regfile(std::string const &path) {
         stat_t path_stat;
         if (stat(path.c_str(), &path_stat) != 0) {
-            set_error("Failed to stat path");
             return false;
         }
         return S_ISREG(path_stat.st_mode);
