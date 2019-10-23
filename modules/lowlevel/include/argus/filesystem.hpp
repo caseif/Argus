@@ -27,14 +27,6 @@
 
 namespace argus {
 
-    class FileHandle;
-
-    struct FileStreamResult {
-        ssize_t offset;
-        size_t size;
-        size_t streamed_bytes;
-    };
-
     class FileHandle {
         private:
             std::string path;
