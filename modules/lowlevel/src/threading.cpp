@@ -2,6 +2,7 @@
 #include "argus/threading.hpp"
 
 #include <functional>
+#include <memory>
 #include <type_traits>
 
 #ifdef USE_PTHREADS
@@ -154,5 +155,24 @@ namespace argus {
         pthread_rwlock_unlock(&mutex);
     }
     #endif
+
+    std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback) {
+        auto promise_ptr = std::make_shared<std::promise<void>>();
+        std::future<void> future = promise_ptr->get_future();
+        Thread thread = Thread::create([function, callback, promise_ptr](void*) mutable -> void* {
+            try {
+                function();
+                promise_ptr->set_value_at_thread_exit();
+
+                if (callback != nullptr) {
+                    callback();
+                }
+            } catch (std::exception &ex) {
+                promise_ptr->set_exception_at_thread_exit(std::make_exception_ptr(ex));
+            }
+        }, nullptr);
+
+        return future;
+    }
 
 }

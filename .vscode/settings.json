@@ -79,6 +79,7 @@
         "numeric": "cpp",
         "set": "cpp",
         "cfenv": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "future": "cpp"
     }
 }

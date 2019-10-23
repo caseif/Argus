@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <future>
+#include <system_error>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -84,7 +86,7 @@ namespace argus {
     }
 
     //TODO: use the native Windows file API, if available
-    const int FileHandle::create(const std::string path, const int mode, FileHandle *const handle) {
+    FileHandle FileHandle::create(const std::string path, const int mode) {
         const char *std_mode;
         // we check for the following invalid cases:
         // - no modes set at all
@@ -92,8 +94,7 @@ namespace argus {
         // - read and create set without any other modes
         if ((mode == 0) || (mode == FILE_MODE_CREATE)
                 || ((mode & ~FILE_MODE_READ) == (FILE_MODE_CREATE))) {
-            set_error("FileHandle::create called with invalid mode");
-            return -1;
+            throw std::invalid_argument("FileHandle::create called with invalid mode");
         }
 
         if ((mode & FILE_MODE_READ) && (mode & FILE_MODE_WRITE) && (mode & FILE_MODE_CREATE)) {
@@ -122,12 +123,12 @@ namespace argus {
                     FILE *file_tmp = fopen(path.c_str(), "w");
                     #endif
                     if (!file_tmp) {
-                        return errno;
+                        throw std::system_error(errno, std::generic_category());
                     }
 
                     fclose(file_tmp);
                 } else {
-                    return errno;
+                    throw std::system_error(errno, std::generic_category());
                 }
             }
         }
@@ -139,15 +140,13 @@ namespace argus {
         #endif
 
         if (file == nullptr) {
-            return errno;
+            throw std::system_error(errno, std::generic_category());
         }
 
         stat_t stat_buf;
         fstat(fileno(file), &stat_buf);
 
-        *handle = std::move(FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file)));
-
-        return 0;
+        return FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file));
     }
 
     std::string const &FileHandle::get_path(void) const {
@@ -168,36 +167,9 @@ namespace argus {
         }
     }
 
-    const int FileHandle::read(const ssize_t offset, const size_t size, unsigned char *const buf) const {
+    const void FileHandle::to_istream(const ssize_t offset, std::ifstream &target) const {
         if (!valid) {
-            set_error("read called on non-valid FileHandle");
-            return -1;
-        }
-
-        if (size == 0) {
-            set_error("read called with invalid size parameter");
-        }
-
-        if (offset + size > this->size) {
-            set_error("read called with invalid offset/size combination");
-            return -1;
-        }
-
-        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
-
-        size_t read_chunks = fread(buf, size, 1, static_cast<FILE*>(handle));
-
-        if (read_chunks == 1) {
-            return errno;
-        }
-
-        return 0;
-    }
-
-    const int FileHandle::to_istream(const ssize_t offset, std::ifstream *stream) const {
-        if (!valid) {
-            set_error("read called on non-valid FileHandle");
-            return -1;
+            throw std::invalid_argument("read called on non-valid FileHandle");
         }
 
         fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
@@ -212,27 +184,44 @@ namespace argus {
             mode |= std::ios::out;
         }
         
-        *stream = std::ifstream(path, mode);
+        target.open(path, mode);
 
-        if (!stream->good()) {
-            set_error("Failed to create file stream");
-            return -1;
+        if (!target.good()) {
+            throw std::runtime_error("Failed to create file stream");
         }
 
         //stream->seekg(offset);
-
-        return 0;
     }
 
-    const int FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) const {
+    const void FileHandle::read(const ssize_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
-            set_error("write called on non-valid FileHandle");
-            return -1;
+            throw std::invalid_argument("read called on non-valid FileHandle");
+        }
+
+        if (size == 0) {
+            throw std::invalid_argument("read called with invalid size parameter");
+        }
+
+        if (offset + size > this->size) {
+            throw std::invalid_argument("read called with invalid offset/size combination");
+        }
+
+        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+
+        size_t read_chunks = fread(buf, size, 1, static_cast<FILE*>(handle));
+
+        if (read_chunks == 1) {
+            throw std::system_error(errno, std::generic_category());
+        }
+    }
+
+    const void FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) const {
+        if (!valid) {
+            throw std::invalid_argument("write called on non-valid FileHandle");
         }
 
         if (offset < -1) {
-            set_error("write called with invalid offset parameters");
-            return -1;
+            throw std::invalid_argument("write called with invalid offset parameters");
         }
 
         if (offset == -1) {
@@ -241,58 +230,33 @@ namespace argus {
             fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
         }
 
-        size_t read_chunks = fwrite(buf, size, 1, static_cast<FILE*>(handle));
+        size_t write_chunks = fwrite(buf, size, 1, static_cast<FILE*>(handle));
 
-        if (read_chunks == 1) {
-            return errno;
+        if (write_chunks != 1) {
+            throw std::system_error(errno, std::generic_category());
         }
-
-        return 0;
     }
 
-    const int FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-            const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
+    const std::future<void> FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
+            const std::function<void(FileHandle&)> callback) {
         if (!valid) {
-            set_error("read_async called on non-valid FileHandle");
-            return -1;
+            throw std::invalid_argument("read_async called on non-valid FileHandle");
         }
 
         if (offset + size > this->size) {
-            set_error("read_async called with invalid offset/size parameters");
-            return -1;
+            throw std::invalid_argument("read_async called with invalid offset/size parameters");
         }
 
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
-
-        handle_local.execute(std::bind(&FileHandle::read_trampoline, this, std::placeholders::_1));
-
-        *request_handle = handle_local;
-        
-        return 0;
+        return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
     }
 
-    const int FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-            const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle) {
+    const std::future<void> FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
+            std::function<void(FileHandle&)> callback) {
         if (!valid) {
-            set_error("write_async called on non-valid FileHandle");
-            return -1;
+            throw std::invalid_argument("write_async called on non-valid FileHandle");
         }
 
-        AsyncFileRequestHandle handle_local = AsyncFileRequestHandle(this, FileStreamData{offset, size, buf, 0}, callback);
-
-        handle_local.execute(std::bind(&FileHandle::write_trampoline, this, std::placeholders::_1));
-
-        *request_handle = handle_local;
-        
-        return 0;
-    }
-
-    void FileHandle::read_trampoline(AsyncFileRequestHandle const &handle) {
-        handle.item->read(handle.data.offset, handle.data.size, handle.data.buf);
-    }
-
-    void FileHandle::write_trampoline(AsyncFileRequestHandle const &handle) {
-        handle.item->write(handle.data.offset, handle.data.size, handle.data.buf);
+        return make_future(std::bind(&FileHandle::write, this, offset, size, buf), std::bind(callback, *this));
     }
     
     int get_executable_path(std::string *const str) {

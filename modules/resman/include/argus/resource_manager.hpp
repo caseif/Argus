@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <fstream>
+#include <future>
 #include <istream>
 #include <map>
 #include <vector>
@@ -13,13 +14,64 @@ namespace argus {
     class Resource;
     class ResourceManager;
 
-    typedef AsyncRequestCallback<ResourceManager*, const std::string> AsyncResourceRequestCallback;
-    typedef AsyncRequestHandle<ResourceManager*, const std::string> AsyncResourceRequestHandle;
-
     struct ResourcePrototype {
         std::string uid;
         std::string type_id;
         std::string fs_path;
+    };
+
+    class ResourceException : public std::exception {
+        private:
+            const std::string msg;
+
+        public:
+            const std::string res_uid;
+
+            ResourceException(std::string const &res_uid, const std::string msg):
+                    res_uid(res_uid) {
+            }
+
+            const char *what(void) const noexcept override {
+                return msg.c_str();
+            }
+    };
+
+    class ResourceNotLoadedException : public ResourceException {
+        public:
+            ResourceNotLoadedException(std::string const &res_uid):
+                    ResourceException(res_uid, "Resource is not loaded") {
+            }
+    };
+
+    class ResourceLoadedException : public ResourceException {
+        public:
+            ResourceLoadedException(std::string const &res_uid):
+                    ResourceException(res_uid, "Resource is already loaded") {
+            }
+    };
+
+    class ResourceNotPresentException : public ResourceException {
+        public:
+            ResourceNotPresentException(std::string const &res_uid):
+                    ResourceException(res_uid, "Resource does not exist") {
+            }
+    };
+
+    class NoLoaderException : public ResourceException {
+        public:
+            const std::string resource_type;
+
+            NoLoaderException(std::string const &res_uid, std::string const &type_id):
+                    ResourceException(res_uid, "No registered loader for type"),
+                    resource_type(type_id) {
+            }
+    };
+
+    class LoadFailedException : public ResourceException {
+        public:
+            LoadFailedException(std::string const &res_uid):
+                    ResourceException(res_uid, "Resource loading failed") {
+            }
     };
 
     class ResourceLoader {
@@ -54,8 +106,6 @@ namespace argus {
 
             int unload_resource(std::string const &uid);
 
-            void load_resource_trampoline(AsyncResourceRequestHandle &handle);
-
         public:
             static ResourceManager &get_global_resource_manager(void);
     
@@ -63,14 +113,16 @@ namespace argus {
 
             int register_loader(std::string const &type_id, ResourceLoader *const loader);
 
-            int get_resource(std::string const &uid, Resource **const target);
+            Resource &get_resource(std::string const &uid);
 
-            int try_get_resource(std::string const &uid, Resource **const target) const;
+            Resource &try_get_resource(std::string const &uid) const;
 
-            int load_resource(std::string const &uid);
+            Resource &load_resource(std::string const &uid);
 
-            AsyncResourceRequestHandle load_reosurce_async(std::string const &uid,
-                    const AsyncResourceRequestCallback callback);
+            std::future<Resource&> load_resource_async(std::string const &uid,
+                    const std::function<void(Resource&)> callback);
+
+            std::future<Resource&> load_resource_async(std::string const &uid);
     };
 
     class Resource {
@@ -87,6 +139,8 @@ namespace argus {
 
             Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data,
                     std::vector<std::string> &dependencies);
+
+            Resource operator=(Resource &ref) = delete;
 
         public:
             const ResourcePrototype prototype;

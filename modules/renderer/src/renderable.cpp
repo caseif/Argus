@@ -91,8 +91,10 @@ namespace argus {
     void Renderable::set_texture(std::string const &texture_uid) {
         release_texture();
 
-        if (ResourceManager::get_global_resource_manager().get_resource(texture_uid, &tex_resource) != 0) {
-            _ARGUS_WARN("Failed to set texture of Renderable: %s\n", get_error().c_str());
+        try {
+            tex_resource = &ResourceManager::get_global_resource_manager().get_resource(texture_uid);
+        } catch (ResourceException &ex) {
+            _ARGUS_WARN("Failed to set texture of Renderable: %s\n", ex.what());
         }
 
         dirty_texture = true;
@@ -103,10 +105,10 @@ namespace argus {
             return;
         }
 
-        Resource *res;
-        if (ResourceManager::get_global_resource_manager().get_resource(tex_resource->uid, &res) == 0) {
+        try {
+            ResourceManager::get_global_resource_manager().get_resource(tex_resource->uid);
             tex_resource->release();
-        } else {
+        } catch (ResourceException &ex) {
             _ARGUS_WARN("Previous texture %s for Renderable was invalid\n", ((std::string) tex_resource->uid).c_str());
         }
     }

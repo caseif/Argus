@@ -12,6 +12,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <exception>
+#include <future>
+#include <memory>
 
 #define UID_SEPARATOR "."
 
@@ -33,8 +36,7 @@ namespace argus {
 
     int ResourceManager::register_loader(std::string const &type_id, ResourceLoader *const loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
-            set_error("Cannot register loader for type more than once");
-            return -1;
+            throw std::invalid_argument("Cannot register loader for type more than once");
         }
 
         registered_loaders.insert({type_id, loader});
@@ -105,63 +107,49 @@ namespace argus {
                 discovered_resource_prototypes, extension_registrations);
     }
 
-    int ResourceManager::get_resource(std::string const &uid, Resource **target) {
+    Resource &ResourceManager::get_resource(std::string const &uid) {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
-            set_error("Resource does not exist");
-            return -1;
-        }
-
-        int rc = load_resource(uid);
-        if (rc != 0) {
-            return rc;
+            throw ResourceNotPresentException(uid);
         }
 
         auto it = loaded_resources.find(uid);
-        _ARGUS_ASSERT(it != loaded_resources.cend(), "Failed to get handle to loaded resource %s\n", uid.c_str());
-        
-        *target = it->second;
-
-        return 0;
+        if (it != loaded_resources.cend()) {
+            return *it->second;
+        } else {
+            return load_resource(uid);
+        }
     }
 
-    int ResourceManager::try_get_resource(std::string const &uid, Resource **const target) const {
+    Resource &ResourceManager::try_get_resource(std::string const &uid) const {
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
-            set_error("Resource is not loaded");
-            return -1;
+            throw ResourceNotLoadedException(uid);
         }
 
-        *target = it->second;
-        return 0;
+        return *it->second;
     }
 
-    int ResourceManager::load_resource(std::string const &uid) {
+    Resource &ResourceManager::load_resource(std::string const &uid) {
         if (loaded_resources.find(uid) != loaded_resources.cend()) {
-            return 0;
+            throw ResourceLoadedException(uid);
         }
 
         auto pt_it = discovered_resource_prototypes.find(uid);
         if (pt_it == discovered_resource_prototypes.cend()) {
-            set_error("Resource does not exist");
-            return -1;
+            throw ResourceNotPresentException(uid);
         }
         ResourcePrototype proto = pt_it->second;
 
         if (!proto.fs_path.empty()) {
-            FileHandle file_handle;
-            int rc = FileHandle::create(proto.fs_path, FILE_MODE_READ, &file_handle);
-            if (rc != 0) {
-                return rc;
-            }
+            FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
             auto loader_it = registered_loaders.find(proto.type_id);
             if (loader_it == registered_loaders.end()) {
-                set_error("No registered loader for type");
-                return -1;
+                throw NoLoaderException(uid, proto.type_id);
             }
 
             std::ifstream stream;
-            file_handle.to_istream(0, &stream);
+            file_handle.to_istream(0, stream);
 
             ResourceLoader *loader = loader_it->second;
             loader->last_dependencies = {};
@@ -170,7 +158,7 @@ namespace argus {
             if (!data_ptr) {
                 stream.close();
                 file_handle.release();
-                return -1;
+                throw LoadFailedException(uid);
             }
 
             Resource *res = new Resource(*this, proto, data_ptr, loader->last_dependencies);
@@ -179,32 +167,26 @@ namespace argus {
             stream.close();
             file_handle.release();
 
-            return 0;
+            return *res;
         } else {
             //TODO: read from resource package
-            return 0;
+            throw ResourceNotPresentException(uid);
         }
     }
-
-    void ResourceManager::load_resource_trampoline(AsyncResourceRequestHandle &handle) {
-        bool res = load_resource(handle.data) == 0;
-        handle.set_result(res);
+    
+    std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid,
+                    const std::function<void(Resource&)> callback) {
+        return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
     }
     
-    AsyncResourceRequestHandle ResourceManager::load_reosurce_async(std::string const &uid,
-            const AsyncResourceRequestCallback callback) {
-        AsyncResourceRequestHandle handle = AsyncResourceRequestHandle(this, uid, callback);
-        
-        handle.execute(std::bind(&ResourceManager::load_resource_trampoline, this, std::placeholders::_1));
-
-        return handle;
+    std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid) {
+        return load_resource_async(uid, nullptr);
     }
 
     int ResourceManager::unload_resource(std::string const &uid) {
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
-            set_error("Resource not loaded");
-            return -1;
+            throw ResourceNotLoadedException(uid);
         }
 
         Resource *res = it->second;

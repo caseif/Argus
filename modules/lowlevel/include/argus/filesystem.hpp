@@ -5,6 +5,7 @@
 #include <atomic>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <string>
 #include <vector>
 
@@ -28,15 +29,11 @@ namespace argus {
 
     class FileHandle;
 
-    struct FileStreamData {
+    struct FileStreamResult {
         ssize_t offset;
         size_t size;
-        unsigned char *buf;
         size_t streamed_bytes;
     };
-
-    typedef AsyncRequestHandle<FileHandle*, FileStreamData> AsyncFileRequestHandle;
-    typedef AsyncRequestCallback<FileHandle*, FileStreamData> AsyncFileRequestCallback;
 
     class FileHandle {
         private:
@@ -49,10 +46,6 @@ namespace argus {
 
             FileHandle(const std::string path, const int mode, const size_t size, void *const handle);
 
-            void read_trampoline(AsyncFileRequestHandle const &handle);
-
-            void write_trampoline(AsyncFileRequestHandle const &handle);
-
         public:
             /**
              * \brief Creates a handle to the file at the provided path and stores it in
@@ -62,7 +55,7 @@ namespace argus {
              * \param handle A pointer to the memory address to store the handle in.
              * \return 0 on success, non-zero otherwise.
              */
-            static const int create(const std::string path, const int mode, FileHandle *const handle);
+            static FileHandle create(const std::string path, const int mode);
 
             FileHandle(void);
 
@@ -79,17 +72,17 @@ namespace argus {
              */
             const int release(void);
 
-            const int to_istream(const ssize_t offset, std::ifstream *stream) const;
+            const void to_istream(const ssize_t offset, std::ifstream &target) const;
 
-            const int read(const ssize_t offset, const size_t size, unsigned char *const buf) const;
-            
-            const int write(const ssize_t offset, const size_t size, unsigned char *const buf) const;
+            const void read(const ssize_t offset, const size_t size, unsigned char *const buf) const;
 
-            const int read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-                    const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle);
+            const void write(const ssize_t offset, const size_t size, unsigned char *const buf) const;
 
-            const int write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
-                    const AsyncFileRequestCallback callback, AsyncFileRequestHandle *const request_handle);
+            const std::future<void> read_async(const ssize_t offset, const size_t size,
+                    unsigned char *const buf, const std::function<void(FileHandle&)> callback);
+
+            const std::future<void> write_async(const ssize_t offset, const size_t size,
+                    unsigned char *const buf, const std::function<void(FileHandle&)> callback);
     };
 
     int get_executable_path(std::string *const target);

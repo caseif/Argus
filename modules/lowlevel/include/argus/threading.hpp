@@ -3,6 +3,7 @@
 #include "argus/error.hpp"
 
 #include <atomic>
+#include <future>
 #include <functional>
 #include <mutex>
 
@@ -195,102 +196,25 @@ namespace argus {
         };
     };
 
-    template <typename T, typename DataType>
-    class AsyncRequestHandle;
+    template <typename Out>
+    std::future<Out> make_future(const std::function<Out(void)> function, const std::function<void(Out)> callback) {
+        auto promise_ptr = std::make_shared<std::promise<Out>>();
+        std::future<Out> future = promise_ptr->get_future();
+        Thread thread = Thread::create([function, callback, promise_ptr](void*) mutable -> void* {
+            try {
+                Out res = function();
+                promise_ptr->set_value_at_thread_exit(res);
 
-    template <typename T, typename DataType>
-    using AsyncRequestCallback = std::function<void(AsyncRequestHandle<T, DataType>)>;
-
-    template <typename T, typename DataType>
-    class AsyncRequestHandle {
-        private:
-            AsyncRequestCallback<T, DataType> callback;
-
-            std::atomic_bool success;
-
-            std::atomic_bool result_valid;
-
-            Thread *thread;
-
-        public:
-            const T item;
-            const DataType data;
-
-            AsyncRequestHandle<T, DataType> operator =(AsyncRequestHandle<T, DataType> const &rhs) {
-                return (rhs);
-            }
-
-            AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &rhs):
-                    item(rhs.item),
-                    data(rhs.data),
-                    result_valid(rhs.result_valid.load()),
-                    success(rhs.success.load()),
-                    thread(rhs.thread) {
-            }
-
-            AsyncRequestHandle(AsyncRequestHandle<T, DataType> const &&rhs):
-                    item(std::move(rhs.item)),
-                    data(std::move(rhs.data)),
-                    result_valid(rhs.result_valid.load()),
-                    success(rhs.success.load()),
-                    thread(rhs.thread) {
-            }
-
-            AsyncRequestHandle(T &item, const DataType &data, AsyncRequestCallback<T, DataType> callback):
-                    item(item),
-                    data(data),
-                    callback(callback),
-                    result_valid(false),
-                    thread(nullptr) {
-            }
-            
-            AsyncRequestHandle(T item, const DataType &data, AsyncRequestCallback<T, DataType> callback):
-                    item(item),
-                    data(data),
-                    callback(callback),
-                    result_valid(false),
-                    thread(nullptr) {
-                static_assert(std::is_pointer<T>::value,
-                        "item parameter must be a reference for non-pointer template type");
-            }
-
-            void execute(std::function<void(AsyncRequestHandle<T, DataType>&)> routine) {
-                thread = &Thread::create([this, routine](void *arg) {routine(*this); return nullptr;}, static_cast<void*>(this));
-            }
-
-            void join(void) const {
-                thread->join();
-            }
-
-            void cancel(void) {
-                thread->detach();
-                thread->destroy();
-            }
-
-            int get_data(DataType &target) const {
-                if (!result_valid) {
-                    set_error("AsyncRequestHandle result is not yet valid");
-                    return -1;
+                if (callback != nullptr) {
+                    callback(res);
                 }
-                target = data;
+            } catch (std::exception &ex) {
+                promise_ptr->set_exception(std::make_exception_ptr(ex));
             }
+        }, nullptr);
 
-            bool was_successful(void) const {
-                return result_valid && success;
-            }
+        return future;
+    }
 
-            bool is_result_valid(void) const {
-                return result_valid;
-            }
-
-            void set_result(const bool success) {
-                if (result_valid) {
-                    set_error("Cannot set handle result more than once");
-                }
-
-                this->success = success;
-                this->result_valid = true;
-            }
-    };
-
+    std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback);
 }
