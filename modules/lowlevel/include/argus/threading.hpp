@@ -58,15 +58,11 @@ namespace argus {
             /**
              * \brief Pauses execution of the current thread until the target thread has
              *        exited.
-             *
-             * \param thread The thread to join with.
              */
             void join(void);
 
             /**
              * \brief Detaches the target thread from its parent.
-             *
-             * \param thread The thread to detach.
              */
             void detach(void);
 
@@ -74,8 +70,6 @@ namespace argus {
              * \brief Destroys the target thread.
              * 
              * This will send an interrupt signal to the target thread.
-             *
-             * \param thread The thread to destroy.
              */
             void destroy(void);
     };
@@ -98,13 +92,13 @@ namespace argus {
 
     /**
      * \brief Acquires an exclusive lock on the given mutex, blocking the thread
-     * if necessary.
+     *        if necessary.
      */
     void smutex_lock(smutex &mutex);
 
     /**
      * \brief Attempts to acquire an exclusive lock on the given mutex, but
-     * fails quickly and does not block.
+     *        fails quickly and does not block.
      *
      * \return Whether a lock was acquired.
      */
@@ -120,7 +114,7 @@ namespace argus {
     
     /**
      * \brief Acquires a shared lock on the given mutex, blocking the thread if
-     * necessary.
+     *        necessary.
      *
      * Multiple threads may hold a shared lock at once, so long as no thread
      * holds an exclusive lock.
@@ -129,7 +123,7 @@ namespace argus {
 
     /**
      * \brief Attempts to acquire a shared lock on the given mutex, but fails
-     * quickly and does not block.
+     *        quickly and does not block.
      *
      * \return Whether a lock was acquired.
      */
@@ -143,27 +137,79 @@ namespace argus {
      */
     void smutex_unlock_shared(smutex &mutex);
 
-    
-
+    /**
+     * \brief A drop-in replacement for std::atomic for non-trvially copyable
+     *        types.
+     *
+     * Because \ref{std::atomic} generally operates on primitive types only, it cannot
+     * be used with complex types such as std::string. A `ComplexAtomic` object
+     * wraps an object not eligible for use with std::atomic and provides
+     * transparent atomicity support in a similar fashion.
+     *
+     * \tparam ValueType The type of value to be wrapped for atomic use.
+     */
     template <typename ValueType>
-    struct ExplicitAtomic {
+    class ComplexAtomic {
         private:
             ValueType value;
             std::mutex mutex;
 
         public:
-            inline operator ValueType() {
+            /**
+             * \brief The default constructor; creates a `ComplexAtomic` with an
+             *        empty value.
+             */
+            ComplexAtomic(void):
+                    value(),
+                    mutex() {
+            }
+
+            /**
+             * \brief The copy constructor.
+             *
+             * \param val The value to copy into this `ComplexAtomic`'s state.
+             */
+            ComplexAtomic(ValueType &val):
+                    value(std::move(val)),
+                    mutex() {
+            }
+
+            /**
+             * \brief The move constructor.
+             *
+             * \param val The value to move into this `ComplexAtomic`'s state.
+             */
+            ComplexAtomic(ValueType &&val):
+                    value(std::move(val)),
+                    mutex() {
+            }
+
+            /**
+             * \brief Converts the ComplexAtomic to its base type, effectively
+             * "unwrapping" it.
+             */
+            inline operator ValueType(void) {
                 return value;
             }
 
-            inline ExplicitAtomic &operator =(ValueType const &rhs) {
+            /**
+             * \brief Performs an atomic assignment to an lvalue.
+             *
+             * \param rhs The value to assign.
+             */
+            inline ComplexAtomic &operator =(ValueType const &rhs) {
                 mutex.lock();
                 value = rhs;
                 mutex.unlock();
                 return *this;
             }
 
-            inline ExplicitAtomic &operator =(ValueType const &&rhs) {
+            /**
+             * \brief Performs an atomic assignment to an rvalue.
+             *
+             * \param rhs The value to assign.
+             */
+            inline ComplexAtomic &operator =(ValueType const &&rhs) {
                 mutex.lock();
                 value = std::move(rhs);
                 mutex.unlock();
@@ -171,31 +217,81 @@ namespace argus {
             }
     };
 
+    /**
+     * \brief Represents a value which is to be read and written atomically,
+     *        and contains a "dirtiness" attribute.
+     *
+     * An `AtomicDirtiable` is essentially equivalent to a ComplexAtomic, but
+     * contains an additional std::atomic_bool attribute to track its dirtiness.
+     *
+     * \tparam ValueType The type of value to be wrapped for use.
+     */
     template <typename ValueType>
-    struct AtomicDirtiable {
-        ExplicitAtomic<ValueType> value;
-        std::atomic_bool dirty;
+    class AtomicDirtiable {
+        private:
+            ComplexAtomic<ValueType> value;
 
-        inline operator ValueType() {
-            dirty = false;
-            return value;
-        };
+        public:
+            /**
+             * \brief The current dirtiness of the value.
+             */
+            std::atomic_bool dirty;
 
-        inline AtomicDirtiable &operator =(ValueType const &rhs) {
-            value = rhs;
-            dirty = true;
-            return *this;
-        };
+            /**
+             * \brief Converts the AtomicDirtiable to its base type, effectively
+             *        "unwrapping" it.
+             */
+            inline operator ValueType() {
+                dirty = false;
+                return value;
+            };
 
-        inline AtomicDirtiable &operator =(ValueType const &&rhs) {
-            value = std::move(rhs);
-            dirty = true;
-            return *this;
-        };
+            /**
+             * \brief Performs an atomic assignment to an lvalue, setting the
+             *        dirty flag.
+             *
+             * \param rhs The value to assign.
+             */
+            inline AtomicDirtiable &operator =(ValueType const &rhs) {
+                value = rhs;
+                dirty = true;
+                return *this;
+            };
+
+            /**
+             * \brief Performs an atomic assignment to an rvalue, setting the
+             *        dirty flag.
+             *
+             * \param rhs The value to assign.
+             */
+            inline AtomicDirtiable &operator =(ValueType const &&rhs) {
+                value = std::move(rhs);
+                dirty = true;
+                return *this;
+            };
     };
 
+    /**
+     * \brief Constructs a std::future with the given function as a supplier,
+     *        and optionally invoking the given callback upon completion.
+     *
+     * \param function A function containing a task which will supply the
+     *                 returned std::future.
+     * \param callback The function to invoke after completion of the task.
+     *                 This callback must accept the supplied value and may be
+     *                 left absent if unneeded.
+     *
+     * \tparam Out The type of value provided by the returned std::future.
+     * 
+     * \remark The provided functions \em must be thread-safe, as they will be
+     *         performed on a new thread.
+     */
     template <typename Out>
     std::future<Out> make_future(const std::function<Out(void)> function, const std::function<void(Out)> callback) {
+        if (!function) {
+            throw std::invalid_argument("make_future: Function must be present");
+        }
+
         auto promise_ptr = std::make_shared<std::promise<Out>>();
         std::future<Out> future = promise_ptr->get_future();
         Thread thread = Thread::create([function, callback, promise_ptr](void*) mutable -> void* {
@@ -214,5 +310,18 @@ namespace argus {
         return future;
     }
 
+    /**
+     * \brief Template specialization for make_future for the `void` type.
+     * 
+     * This is useful when an asynchronous task does not return anything
+     * meaningful, but notification of completion is still desired.
+     *
+     * \param function The function containing the task to be executed.
+     * \param callback The callback to be invoked upon completion of the task.
+     *
+     * \remark This specialization is necessary for technical reasons, as the
+     *         `void` type has unique language semantics which require special
+     *         handling.
+     */
     std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback);
 }

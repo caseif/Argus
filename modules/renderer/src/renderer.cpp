@@ -174,7 +174,7 @@ namespace argus {
         _activate_gl_context(window.handle, gl_context);
 
         if (dirty_resolution) {
-            Vector2u res = window.properties.resolution.value;
+            Vector2u res = window.properties.resolution;
             glViewport(0, 0, res.x, res.y);
             dirty_resolution = false;
         }

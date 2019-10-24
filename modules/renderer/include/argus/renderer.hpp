@@ -147,7 +147,7 @@ namespace argus {
             /**
              * \brief Sets the rotation component of this Transform.
              *
-             * \prarm rotation_radians The new rotation component for this Transform.
+             * \param rotation_radians The new rotation component for this Transform.
              */
             void set_rotation(const float rotation_radians);
 
