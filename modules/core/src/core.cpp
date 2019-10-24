@@ -32,7 +32,7 @@ namespace argus {
                 | static_cast<std::underlying_type<EngineModules>::type>(rhs)
         );
     }
-    
+
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs) {
         return static_cast<EngineModules>(
                 static_cast<std::underlying_type<EngineModules>::type>(lhs)
@@ -225,7 +225,7 @@ namespace argus {
             }
             g_event_queue.pop();
         }
-       
+
         smutex_unlock_shared(g_event_listeners.list_mutex);
         g_event_queue_mutex.unlock();
     }
@@ -262,7 +262,7 @@ namespace argus {
             SDL_Quit();
         }
     }
-    
+
     void _initialize_modules(const EngineModules modules) {
         for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
                 stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {

@@ -55,7 +55,7 @@ namespace argus {
 
         struct glext::GLExtFuncs funcs_struct;
         EXPAND_LIST(EXPAND_GL_INIT_SCOPED, GL_FUNCTIONS);
-        
+
         g_per_context_regs.insert({ctx, funcs_struct});
     }
 

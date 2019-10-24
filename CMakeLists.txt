@@ -152,7 +152,6 @@ foreach(module ${MODULE_IDS})
   add_subdirectory(${MODULE_PATH_PREFIX}${module})
   set(MODULE_LIBS "$<TARGET_OBJECTS:${module}>;${MODULE_LIBS}")
 
-
   # configure the copy headers task to include this module
   set(MODULE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/${MODULE_PATH_PREFIX}${module}/include/argus")
   file(GLOB_RECURSE HDR_FILES RELATIVE ${MODULE_INCLUDE_DIR} "*.h" "*.hpp")

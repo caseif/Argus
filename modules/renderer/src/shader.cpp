@@ -33,7 +33,7 @@ namespace argus {
             priority(priority),
             uniform_ids(std::vector<std::string>(uniform_ids)) {
     }
-            
+
     Shader &Shader::create_vertex_shader(const std::string src, const std::string entry_point,
             const int priority, std::initializer_list<std::string> const &uniform_ids) {
         return *new Shader(SHADER_VERTEX, src, entry_point, priority, uniform_ids);

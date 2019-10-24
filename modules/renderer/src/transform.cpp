@@ -63,7 +63,7 @@ namespace argus {
 
         this->dirty = true;
     }
-    
+
     const float Transform::get_rotation(void) const {
         return rotation;
     }
@@ -103,7 +103,7 @@ namespace argus {
         translation_mutex.lock();
         Vector2f translation_current = translation;
         translation_mutex.unlock();
-        
+
         scale_mutex.lock();
         Vector2f scale_current = scale;
         scale_mutex.unlock();

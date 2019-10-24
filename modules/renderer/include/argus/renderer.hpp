@@ -538,7 +538,7 @@ namespace argus {
             std::atomic<unsigned int> state;
 
             Window(void);
-            
+
             ~Window(void);
 
             void remove_child(Window &child);
@@ -642,7 +642,7 @@ namespace argus {
 
         public:
             RenderableTriangle &create_triangle(Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3) const;
-            
+
             RenderableSquare &create_square(Vertex const &corner_1, Vertex const &corner_2,
                     Vertex const &corner_3, Vertex const &corner_4) const;
     };
@@ -676,7 +676,7 @@ namespace argus {
             handle_t vbo;
             handle_t vao;
             handle_t tex_handle;
-            
+
             RenderGroup(RenderLayer &parent);
 
             ShaderProgram generate_initial_program(void);
@@ -742,7 +742,7 @@ namespace argus {
             void render(void);
 
             void remove_group(RenderGroup &group);
-        
+
         public:
             /**
              * \brief Destroys this RenderLayer and removes it from the parent

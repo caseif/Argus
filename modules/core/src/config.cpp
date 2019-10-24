@@ -3,7 +3,7 @@
 #include "internal/config.hpp"
 
 namespace argus {
-    
+
     EngineConfig g_engine_config;
 
     void set_target_tickrate(const unsigned int target_tickrate) {

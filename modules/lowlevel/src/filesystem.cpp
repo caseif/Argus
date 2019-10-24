@@ -182,7 +182,7 @@ namespace argus {
         if (this->mode & FILE_MODE_WRITE) {
             mode |= std::ios::out;
         }
-        
+
         target.open(path, mode);
 
         if (!target.good()) {
@@ -257,7 +257,7 @@ namespace argus {
 
         return make_future(std::bind(&FileHandle::write, this, offset, size, buf), std::bind(callback, *this));
     }
-    
+
     const std::string get_executable_path(void) {
         const size_t max_path_len = 4097;
         size_t path_len = max_path_len;

@@ -81,7 +81,7 @@ namespace argus {
         private:
             const std::string type_id;
             const std::vector<std::string> extensions;
-            
+
             std::vector<std::string> last_dependencies;
 
             virtual void *const load(std::istream &stream, const size_t size) const;
@@ -109,7 +109,7 @@ namespace argus {
 
         public:
             static ResourceManager &get_global_resource_manager(void);
-    
+
             void discover_resources(void);
 
             int register_loader(std::string const &type_id, ResourceLoader *const loader);
@@ -161,7 +161,7 @@ namespace argus {
             } type_id {*this};
 
             Resource(Resource &rhs);
-            
+
             Resource(Resource &&rhs);
 
             void release(void);

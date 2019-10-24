@@ -17,7 +17,7 @@ namespace argus {
             data_ptr(rhs.data_ptr),
             ref_count(rhs.ref_count.load()) {
     }
-    
+
     Resource::Resource(Resource &&rhs):
             manager(rhs.manager),
             prototype(std::move(rhs.prototype)),

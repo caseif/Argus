@@ -40,7 +40,6 @@ namespace argus {
 
             Thread(std::thread *handle);
             #endif
-    
 
         public:
             /**
@@ -111,7 +110,7 @@ namespace argus {
      * guaranteed to be held by the current thread.
      */
     void smutex_unlock(smutex &mutex);
-    
+
     /**
      * \brief Acquires a shared lock on the given mutex, blocking the thread if
      *        necessary.
@@ -128,7 +127,7 @@ namespace argus {
      * \return Whether a lock was acquired.
      */
     bool smutex_try_lock_shared(smutex &mutex);
-   
+
     /**
      * \brief Releases the current shared lock on the given mutex.
      *

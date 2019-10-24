@@ -85,7 +85,6 @@ struct Vector2 {
         return *this;
     }
 
-
     /**
      * \brief Performs in-place element-wise multiplication with another
      *        Vector2.

@@ -47,7 +47,7 @@ namespace argus {
         g_window_map.insert({SDL_GetWindowID(static_cast<SDL_Window*>(handle)), this});
 
         parent = nullptr;
-        
+
         // register the listener
         listener_id = register_event_handler(event_filter, event_callback, this);
 
@@ -191,7 +191,7 @@ namespace argus {
         WindowEvent &window_event = static_cast<WindowEvent&>(event);
 
         Window *window = static_cast<Window*>(user_data);
-      
+
         // ignore events for uninitialized windows
         if (!(window->state & WINDOW_STATE_INITIALIZED)) {
             return false;

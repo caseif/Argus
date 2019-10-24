@@ -176,12 +176,12 @@ namespace argus {
             throw ResourceNotPresentException(uid);
         }
     }
-    
+
     std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid,
                     const std::function<void(Resource&)> callback) {
         return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
     }
-    
+
     std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid) {
         return load_resource_async(uid, nullptr);
     }
