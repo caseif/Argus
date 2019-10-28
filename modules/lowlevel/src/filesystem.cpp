@@ -89,10 +89,6 @@ namespace argus {
             valid(true) {
     }
 
-    FileHandle::FileHandle(void):
-            valid(false) {
-    }
-
     //TODO: use the native Windows file API, if available
     FileHandle FileHandle::create(const std::string path, const int mode) {
         const char *std_mode;
@@ -100,8 +96,7 @@ namespace argus {
         // - no modes set at all
         // - create set without any other modes
         // - read and create set without any other modes
-        if ((mode == 0) || (mode == FILE_MODE_CREATE)
-                || ((mode & ~FILE_MODE_READ) == (FILE_MODE_CREATE))) {
+        if ((mode == 0) || ((mode & FILE_MODE_CREATE) && !(mode & FILE_MODE_WRITE))) {
             throw std::invalid_argument("FileHandle::create called with invalid mode");
         }
 
@@ -124,6 +119,7 @@ namespace argus {
 
             if (stat_rc) {
                 if (errno == ENOENT) {
+                    // if the file doesn't exist, create it
                     #ifdef _WIN32
                     FILE *file_tmp;
                     fopen_s(&file_tmp, path.c_str(), "w");
@@ -136,6 +132,7 @@ namespace argus {
 
                     fclose(file_tmp);
                 } else {
+                    // throw the error directly if it's not ENOENT
                     throw std::system_error(errno, std::generic_category());
                 }
             }
@@ -165,14 +162,21 @@ namespace argus {
         return size;
     }
 
-    const int FileHandle::release(void) {
+    void FileHandle::release(void) {
+        if (!this->valid) {
+            throw std::invalid_argument("release called on non-valid FileHandle");
+        }
+
         int rc = fclose(static_cast<FILE*>(this->handle));
         this->valid = false;
-        if (rc == 0) {
-            return 0;
-        } else {
-            return errno;
+        if (rc != 0) {
+            throw std::system_error(errno, std::generic_category());
         }
+    }
+
+    void FileHandle::remove(void) {
+        this->release();
+        ::remove(this->path.c_str());
     }
 
     const void FileHandle::to_istream(const ssize_t offset, std::ifstream &target) const {
@@ -201,7 +205,7 @@ namespace argus {
         //stream->seekg(offset);
     }
 
-    const void FileHandle::read(const ssize_t offset, const size_t size, unsigned char *const buf) const {
+    const void FileHandle::read(const size_t offset, const size_t size, unsigned char *const buf) const {
         if (!valid) {
             throw std::invalid_argument("read called on non-valid FileHandle");
         }
@@ -223,13 +227,17 @@ namespace argus {
         }
     }
 
-    const void FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) const {
+    const void FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) {
         if (!valid) {
             throw std::invalid_argument("write called on non-valid FileHandle");
         }
 
+        if (size == 0) {
+            throw std::invalid_argument("write called with invalid size parameter");
+        }
+
         if (offset < -1) {
-            throw std::invalid_argument("write called with invalid offset parameters");
+            throw std::invalid_argument("write called with invalid offset parameter");
         }
 
         if (offset == -1) {
@@ -240,15 +248,26 @@ namespace argus {
 
         size_t write_chunks = fwrite(buf, size, 1, static_cast<FILE*>(handle));
 
+        stat_t file_stat;
+        if (fstat(fileno(static_cast<FILE*>(handle)), &file_stat) != 0) {
+            throw std::system_error(errno, std::generic_category(), "fstat failed");
+        }
+
+        this->size = file_stat.st_size;
+
         if (write_chunks != 1) {
-            throw std::system_error(errno, std::generic_category());
+            throw std::system_error(errno, std::generic_category(), "write failed");
         }
     }
 
-    const std::future<void> FileHandle::read_async(const ssize_t offset, const size_t size, unsigned char *const buf,
+    const std::future<void> FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
             const std::function<void(FileHandle&)> callback) {
         if (!valid) {
             throw std::invalid_argument("read_async called on non-valid FileHandle");
+        }
+
+        if (size == 0) {
+            throw std::invalid_argument("read called with invalid size parameter");
         }
 
         if (offset + size > this->size) {
@@ -262,6 +281,14 @@ namespace argus {
             std::function<void(FileHandle&)> callback) {
         if (!valid) {
             throw std::invalid_argument("write_async called on non-valid FileHandle");
+        }
+
+        if (size == 0) {
+            throw std::invalid_argument("write_async called with invalid size parameter");
+        }
+
+        if (offset < -1) {
+            throw std::invalid_argument("write_async called with invalid offset parameter");
         }
 
         return make_future(std::bind(&FileHandle::write, this, offset, size, buf), std::bind(callback, *this));
@@ -306,7 +333,7 @@ namespace argus {
         rc = sysctl(mib, 4, path, &path_len, NULL, 0);
 
         if (rc != 0) {
-            throw std::runtime_error("Failed to get executable path");
+            throw std::system_error(errno, std::generic_category(), "Failed to get executable path");
         }
         #elif defined __NetBSD__
         readlink("/proc/curproc/exe", path, max_path_len);
@@ -323,7 +350,7 @@ namespace argus {
         return std::string(path);
     }
 
-    const std::vector<std::string> list_directory_files(std::string const &directory_path) {
+    const std::vector<std::string> list_directory_entries(std::string const &directory_path) {
         std::vector<std::string> res;
 
         #ifdef _WIN32
@@ -332,7 +359,7 @@ namespace argus {
         #else
         DIR *dir = opendir(directory_path.c_str());
         if (dir == NULL) {
-            throw std::runtime_error("Failed to open directory");
+            throw std::system_error(errno, std::generic_category(), "Failed to open directory");
         }
 
         struct dirent *ent;
@@ -373,11 +400,23 @@ namespace argus {
         char path_separator = '/';
         #endif
 
+        if (path.length() == 0) {
+            throw std::invalid_argument("Cannot get parent of zero-length path");
+        }
+
         size_t start = path.length() - 1;
+        // skip any trailing slashes
         if (path[start] == path_separator) {
             start--;
         }
-        return path.substr(0, path.find_last_of(path_separator, start));
+
+        //TOOD: this probably doesn't handle Windows paths too well right now
+        size_t index = path.find_last_of(path_separator, start);
+        if (index == std::string::npos) {
+            return path;
+        }
+
+        return path.substr(0, index);
     }
 
     std::pair<const std::string, const std::string> get_name_and_extension(std::string const &file_name) {

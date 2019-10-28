@@ -56,7 +56,7 @@ namespace argus {
             std::map<std::string, std::string> const &extension_map) {
         std::vector<std::string> children;
         try {
-            children = list_directory_files(root_path);
+            children = list_directory_entries(root_path);
         } catch (std::exception &ex) {
             _ARGUS_WARN("Failed to discover resources: %s\n", ex.what());
             return;
