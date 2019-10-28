@@ -15,9 +15,9 @@ namespace argus {
 
     /**
      * \brief Represents a scancode tied to a key press.
-     * 
+     *
      * Argus's scancode definitions are based on a 104-key QWERTY layout.
-     * 
+     *
      * Scancodes are indiciative of the location of a pressed key on the
      * keyboard, but the actual value of the key will depend on the current
      * keyboard layout. For instance, KeyboardScancode::Q will correspond to a
@@ -239,7 +239,7 @@ namespace argus {
 
         /**
          * \brief Gets whether the key press is representative of a command.
-         * 
+         *
          * \return Whether the key press is representative of a command.
          */
         bool is_command(void);
@@ -255,7 +255,7 @@ namespace argus {
         /**
          * \brief Gets the textual character associated with this key press,
          * taking key modifiers into account.
-         * 
+         *
          * This will throw invalid_argument if is_character returns false.
          *
          * \return The textual character associated with this key press.
@@ -265,7 +265,7 @@ namespace argus {
         /**
          * \brief Gets the command associated with this key press, taking key
          * modifiers into account.
-         * 
+         *
          * This will throw invalid_argument if is_command returns false.
          *
          * \return The command associated with this key press.
@@ -274,9 +274,9 @@ namespace argus {
 
         /**
          * \brief Gets the key modifier associated with this key press.
-         * 
+         *
          * This will throw invalid_argument if is_modifier returns false.
-         * 
+         *
          * \return The key modifier associated with this key press.
          */
         KeyboardModifiers get_modifier(void);

@@ -54,7 +54,7 @@ namespace argus {
              *
              * If the file does not yet exist, it will be created as an empty
              * file.
-             * 
+             *
              * \param path The path of the file to obtain a handle to.
              * \param handle A pointer to the memory address to store the handle in.
              *
@@ -65,7 +65,6 @@ namespace argus {
              *        WRITE.
              * \throw std::system_error If an error occurs while opening or
              *        creating the file.
-             *                              
              */
             static FileHandle create(const std::string path, const int mode);
 
@@ -89,7 +88,7 @@ namespace argus {
 
             /**
              * \brief Releases this file handle.
-             * 
+             *
              * The handle will thereafter be invalidated and thus ineligible for
              * further use.
              *
@@ -101,7 +100,7 @@ namespace argus {
 
             /**
              * \brief Removes the file referenced by this handle.
-             * 
+             *
              * This operation implicitly releases the handle, invalidating it.
              *
              * \throw std::invalid_argument If this handle is not valid.

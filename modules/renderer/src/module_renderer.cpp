@@ -52,7 +52,7 @@ namespace argus {
 
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1); 
+        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
 
@@ -64,7 +64,7 @@ namespace argus {
         auto windows_copy = g_window_map;
         // doing this in reverse ensures that child windows are destroyed before their parents
         for (auto it = windows_copy.rbegin();
-                it != windows_copy.rend(); it++) { 
+                it != windows_copy.rend(); it++) {
             it->second->destroy();
         }
 

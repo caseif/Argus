@@ -33,7 +33,7 @@ namespace argus {
 
     /**
      * \brief An enumeration of all modules offered by the engine.
-     * 
+     *
      * Each enum value corresponds to a particular bit position, such that the
      * bitwise OR of multiple modules will preserve the set of input modules.
      */
@@ -89,7 +89,7 @@ namespace argus {
         DEINIT,
         /**
          * \brief Very late initialization.
-         * 
+         *
          * Should be used for performing de-init contingent on parent modules
          * being fully de-initializedm as well as for final deallocation and
          * similar tasks.
@@ -169,7 +169,7 @@ namespace argus {
      * \param module_bitmask A bitmask denoting which modules should be
      * initialized, constructed from the bitwise OR of the appropriate
      * EngineModule values. MODULE_CORE is implicit.
-     * 
+     *
      * This must be called before any other interaction with the engine takes
      * place.
      */
@@ -240,7 +240,7 @@ namespace argus {
 
     /**
      * \brief Registers a listener for particular events.
-     * 
+     *
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
      *

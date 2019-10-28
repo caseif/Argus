@@ -127,7 +127,7 @@ namespace argus {
 
         // set up the fragment shader's globals
         std::stringstream bootstrap_frag_ss;
-        bootstrap_frag_ss << 
+        bootstrap_frag_ss <<
             #ifdef USE_GLES
             R"(#version 300 es)"
             #else

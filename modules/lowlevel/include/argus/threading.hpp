@@ -76,7 +76,7 @@ namespace argus {
 
             /**
              * \brief Destroys the target thread.
-             * 
+             *
              * This will send an interrupt signal to the target thread.
              */
             void destroy(void);
@@ -290,7 +290,7 @@ namespace argus {
      *                 left absent if unneeded.
      *
      * \tparam Out The type of value provided by the returned std::future.
-     * 
+     *
      * \remark The provided functions \em must be thread-safe, as they will be
      *         performed on a new thread.
      */
@@ -320,7 +320,7 @@ namespace argus {
 
     /**
      * \brief Template specialization for make_future for the `void` type.
-     * 
+     *
      * This is useful when an asynchronous task does not return anything
      * meaningful, but notification of completion is still desired.
      *

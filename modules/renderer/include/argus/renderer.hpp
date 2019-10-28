@@ -326,7 +326,7 @@ namespace argus {
             const std::string entry_point;
             /**
              * \brief The priority of this shader.
-             * 
+             *
              * Higher priority shaders will be processed before lower priority
              * ones within their respective stage.
              */
