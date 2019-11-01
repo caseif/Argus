@@ -214,6 +214,10 @@ namespace argus {
      * the semantic value of the key press.
      */
     struct KeyboardEvent : public ArgusEvent {
+        /**
+         * \brief The particular \link KeyboardEventType type \endlink of
+         * KeyboardEvent.
+         */
         const KeyboardEventType subtype;
 
         /**

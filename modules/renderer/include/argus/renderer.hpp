@@ -87,9 +87,23 @@ namespace argus {
      * \sa Window
      */
     struct WindowEvent : public ArgusEvent {
+        /**
+         * \brief The specific \link WindowEventType type \endlink of
+         *        WindowEvent.
+         */
         const WindowEventType subtype;
+        /**
+         * \brief The Window associated with the event.
+         */
         const Window *window;
 
+        /**
+         * \brief Constructs a new WindowEvent.
+         *
+         * \param subtype The specific \link WindowEventType type \endlink of
+         *        WindowEvent.
+         * \param window The Window associated with the event.
+         */
         WindowEvent(const WindowEventType subtype, Window *window):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
@@ -125,16 +139,24 @@ namespace argus {
 
             /**
              * \brief The copy constructor.
+             *
+             * \param rhs The Transform to copy.
              */
             Transform(Transform &rhs);
 
             /**
              * \brief The move constructor.
+             *
+             * \param rhs The Transform to move.
              */
             Transform(Transform &&rhs);
 
             /**
              * \brief Constructs a new 2D Transform with the given parameters.
+             *
+             * \param translation The translation in 2D space.
+             * \param rotation The single-axis rotation.
+             * \param scale The scale in 2D space.
              */
             Transform(Vector2f const &translation, const float rotation, Vector2f const &scale);
 
@@ -143,6 +165,8 @@ namespace argus {
              *
              * The translation and rotation combinations are additive, while the
              * scale combination is multiplicative.
+             *
+             * \param rhs The Transform to add.
              *
              * \return The resulting Transform.
              */
@@ -816,7 +840,7 @@ namespace argus {
              */
             void set_close_callback(WindowCallback callback);
 
-            /*
+            /**
              * \brief Activates the window.
              *
              * \note This function should be invoked only once.
@@ -1341,6 +1365,9 @@ namespace argus {
              *
              * This method will automatically attempt to load the Resource if
              * necessary.
+             *
+             * \param texture_uid The UID of the Resource containing the new
+             *        texture.
              *
              * \throw ResourceException If the underlying texture Resource
              *        cannot be loaded.

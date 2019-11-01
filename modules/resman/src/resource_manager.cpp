@@ -42,13 +42,12 @@ namespace argus {
         return g_global_resource_manager;
     }
 
-    int ResourceManager::register_loader(std::string const &type_id, ResourceLoader *const loader) {
+    void ResourceManager::register_loader(std::string const &type_id, ResourceLoader *const loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             throw std::invalid_argument("Cannot register loader for type more than once");
         }
 
         registered_loaders.insert({type_id, loader});
-        return 0;
     }
 
     static void _discover_fs_resources_recursively(std::string const &root_path, std::string const &prefix,
@@ -99,7 +98,7 @@ namespace argus {
                     continue;
                 }
 
-                prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path}});
+                prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path, true}});
 
                 _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(), full_child_path.c_str());
             }
@@ -133,6 +132,10 @@ namespace argus {
     }
 
     Resource &ResourceManager::try_get_resource(std::string const &uid) const {
+        if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
+            throw ResourceNotPresentException(uid);
+        }
+
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);

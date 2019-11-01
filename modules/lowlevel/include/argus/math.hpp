@@ -71,6 +71,8 @@ struct Vector2 {
     /**
      * \brief Performs in-place element-wise addition with another Vector2.
      *
+     * \param rhs The Vector2 to add to this.
+     *
      * \return This Vector2 after being updated.
      *
      * \sa Vector2::operator+
@@ -83,6 +85,8 @@ struct Vector2 {
 
     /**
      * \brief Performs in-place element-wise subtraction with another Vector2.
+     *
+     * \param rhs The Vector2 to subtract from this.
      *
      * \return This Vector2 after being updated.
      *
@@ -97,6 +101,8 @@ struct Vector2 {
     /**
      * \brief Performs in-place element-wise multiplication with another
      *        Vector2.
+     *
+     * \param rhs The Vector2 to multiply this by.
      *
      * \return This Vector2 after being updated.
      *
@@ -117,6 +123,9 @@ struct Vector2 {
  */
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
 struct Vector3 {
+    /**
+     * \brief Union containing the first element of the vector.
+     */
     union {
         /**
          * \brief The first element of this vector.
@@ -128,6 +137,9 @@ struct Vector3 {
          */
         T r;
     };
+    /**
+     * \brief Union containing the second element of the vector.
+     */
     union {
         /**
          * \brief The second element of this vector.
@@ -139,6 +151,9 @@ struct Vector3 {
          */
         T g;
     };
+    /**
+     * \brief Union containing the third element of the vector.
+     */
     union {
         /**
          * \brief The third element of this vector.
@@ -194,6 +209,8 @@ struct Vector3 {
     /**
      * \brief Performs in-place element-wise addition with another Vector3.
      *
+     * \param rhs The Vector3 to add to this.
+     *
      * \return This Vector3 after being updated.
      *
      * \sa Vector3::operator+
@@ -207,6 +224,8 @@ struct Vector3 {
 
     /**
      * \brief Performs in-place element-wise subtraction with another Vector3.
+     *
+     * \param rhs The Vector3 to subtract from this.
      *
      * \return This Vector3 after being updated.
      *
@@ -222,6 +241,8 @@ struct Vector3 {
     /**
      * \brief Performs in-place element-wise multiplication with another
      *        Vector3.
+     *
+     * \param rhs The Vector3 to multiply this by.
      *
      * \return This Vector3 after being updated.
      *
@@ -243,6 +264,9 @@ struct Vector3 {
  */
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
 struct Vector4 {
+    /**
+     * \brief Union containing the first element of the vector.
+     */
     union {
         /**
          * \brief The first element of this vector.
@@ -254,6 +278,9 @@ struct Vector4 {
          */
         T r;
     };
+    /**
+     * \brief Union containing the second element of the vector.
+     */
     union {
         /**
          * \brief The second element of this vector.
@@ -265,6 +292,9 @@ struct Vector4 {
          */
         T g;
     };
+    /**
+     * \brief Union containing the third element of the vector.
+     */
     union {
         /**
          * \brief The third element of this vector.
@@ -276,6 +306,9 @@ struct Vector4 {
          */
         T b;
     };
+    /**
+     * \brief Union containing the fourth element of the vector.
+     */
     union {
         /**
          * \brief The fourth element of this vector.
@@ -331,6 +364,8 @@ struct Vector4 {
     /**
      * \brief Performs in-place element-wise addition with another Vector4.
      *
+     * \param rhs The Vector4 to add to this.
+     *
      * \return This Vector4 after being updated.
      *
      * \sa Vector4::operator+
@@ -345,6 +380,8 @@ struct Vector4 {
 
     /**
      * \brief Performs in-place element-wise subtraction with another Vector4.
+     *
+     * \param rhs The Vector4 to subtract from this.
      *
      * \return This Vector4 after being updated.
      *
@@ -361,6 +398,8 @@ struct Vector4 {
     /**
      * \brief Performs in-place element-wise multiplication with another
      *        Vector4.
+     *
+     * \param rhs The Vector3 to multiply this by.
      *
      * \return This Vector4 after being updated.
      *

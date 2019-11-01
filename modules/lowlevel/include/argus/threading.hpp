@@ -38,6 +38,9 @@ namespace argus {
     typedef pthread_rwlock_t smutex;
     #endif
 
+    /**
+     * \brief Simple abstraction for system threads.
+     */
     class Thread {
         private:
             #ifdef USE_PTHREADS
@@ -195,6 +198,8 @@ namespace argus {
             /**
              * \brief Converts the ComplexAtomic to its base type, effectively
              * "unwrapping" it.
+             *
+             * \return The base value.
              */
             inline operator ValueType(void) {
                 return value;
@@ -204,6 +209,8 @@ namespace argus {
              * \brief Performs an atomic assignment to an lvalue.
              *
              * \param rhs The value to assign.
+             *
+             * \return This ComplexAtomic.
              */
             inline ComplexAtomic &operator =(ValueType const &rhs) {
                 mutex.lock();
@@ -216,6 +223,8 @@ namespace argus {
              * \brief Performs an atomic assignment to an rvalue.
              *
              * \param rhs The value to assign.
+             *
+             * \return This ComplexAtomic.
              */
             inline ComplexAtomic &operator =(ValueType const &&rhs) {
                 mutex.lock();
@@ -248,6 +257,8 @@ namespace argus {
             /**
              * \brief Converts the AtomicDirtiable to its base type, effectively
              *        "unwrapping" it.
+             *
+             * \return The base value.
              */
             inline operator ValueType() {
                 dirty = false;
@@ -259,6 +270,8 @@ namespace argus {
              *        dirty flag.
              *
              * \param rhs The value to assign.
+             *
+             * \return This AtomicDirtiable.
              */
             inline AtomicDirtiable &operator =(ValueType const &rhs) {
                 value = rhs;
@@ -271,6 +284,8 @@ namespace argus {
              *        dirty flag.
              *
              * \param rhs The value to assign.
+             *
+             * \return This AtomicDirtiable.
              */
             inline AtomicDirtiable &operator =(ValueType const &&rhs) {
                 value = std::move(rhs);

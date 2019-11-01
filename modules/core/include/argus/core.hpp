@@ -132,6 +132,9 @@ namespace argus {
      * typically triggered by user interaction.
      */
     struct ArgusEvent {
+        /**
+         * \brief The type of event.
+         */
         const ArgusEventType type;
     };
 

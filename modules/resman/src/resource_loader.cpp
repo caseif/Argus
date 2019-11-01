@@ -11,31 +11,32 @@
 
 namespace argus {
 
-    int ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
-        std::vector<Resource*> acquired;
+    void ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
+        std::vector<Resource&> acquired;
 
         bool failed = false;
         auto it = dependencies.begin();
+        std::exception thrown_exception;
         for (it; it < dependencies.end(); it++) {
-            auto res = ResourceManager::get_global_resource_manager().loaded_resources.find(*it);
-            if (res != ResourceManager::get_global_resource_manager().loaded_resources.end()) {
+            try {
+                Resource &res = ResourceManager::get_global_resource_manager().get_resource(*it);
+                acquired.insert(acquired.end(), res);
+            } catch (std::exception &ex) {
                 failed = true;
+                thrown_exception = ex;
                 break;
             }
-            acquired.insert(acquired.begin(), res->second);
         }
 
         if (failed) {
-            for (Resource *res : acquired) {
-                res->release();
+            for (Resource &res : acquired) {
+                res.release();
             }
 
-            return -1;
+            throw thrown_exception;
         }
 
         last_dependencies = dependencies;
-
-        return 0;
     }
 
     ResourceLoader::ResourceLoader(std::string type_id,
