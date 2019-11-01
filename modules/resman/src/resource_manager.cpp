@@ -42,7 +42,7 @@ namespace argus {
         return g_global_resource_manager;
     }
 
-    void ResourceManager::register_loader(std::string const &type_id, ResourceLoader *const loader) {
+    void ResourceManager::register_loader(const std::string &type_id, ResourceLoader *const loader) {
         if (registered_loaders.find(type_id) != registered_loaders.cend()) {
             throw std::invalid_argument("Cannot register loader for type more than once");
         }
@@ -50,9 +50,9 @@ namespace argus {
         registered_loaders.insert({type_id, loader});
     }
 
-    static void _discover_fs_resources_recursively(std::string const &root_path, std::string const &prefix,
+    static void _discover_fs_resources_recursively(const std::string &root_path, const std::string &prefix,
             std::map<std::string, ResourcePrototype> &prototype_map,
-            std::map<std::string, std::string> const &extension_map) {
+            std::map<std::string, std::string>const  &extension_map) {
         std::vector<std::string> children;
         try {
             children = list_directory_entries(root_path);
@@ -118,7 +118,7 @@ namespace argus {
         }
     }
 
-    Resource &ResourceManager::get_resource(std::string const &uid) {
+    Resource &ResourceManager::get_resource(const std::string &uid) {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
@@ -131,7 +131,7 @@ namespace argus {
         }
     }
 
-    Resource &ResourceManager::try_get_resource(std::string const &uid) const {
+    Resource &ResourceManager::try_get_resource(const std::string &uid) const {
         if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
@@ -144,7 +144,7 @@ namespace argus {
         return *it->second;
     }
 
-    Resource &ResourceManager::load_resource(std::string const &uid) {
+    Resource &ResourceManager::load_resource(const std::string &uid) {
         if (loaded_resources.find(uid) != loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
         }
@@ -189,16 +189,16 @@ namespace argus {
         }
     }
 
-    std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid,
+    std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid,
                     const std::function<void(Resource&)> callback) {
         return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
     }
 
-    std::future<Resource&> ResourceManager::load_resource_async(std::string const &uid) {
+    std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid) {
         return load_resource_async(uid, nullptr);
     }
 
-    int ResourceManager::unload_resource(std::string const &uid) {
+    int ResourceManager::unload_resource(const std::string &uid) {
         auto it = loaded_resources.find(uid);
         if (it == loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);

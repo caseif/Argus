@@ -273,7 +273,7 @@ namespace argus {
      * \param event An lreference to the event to be dispatched.
      */
     template <typename EventType>
-    void dispatch_event(EventType const &event) {
+    void dispatch_event(const EventType &event) {
         _dispatch_event_ptr(std::make_unique<EventType>(event));
     }
 

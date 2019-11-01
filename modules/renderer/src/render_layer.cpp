@@ -68,11 +68,11 @@ namespace argus {
         return *group;
     }
 
-    void RenderLayer::add_shader(Shader const &shader) {
+    void RenderLayer::add_shader(const Shader &shader) {
         shaders.insert(shaders.cbegin(), &shader);
     }
 
-    void RenderLayer::remove_shader(Shader const &shader) {
+    void RenderLayer::remove_shader(const Shader &shader) {
         remove_from_vector(shaders, &shader);
     }
 

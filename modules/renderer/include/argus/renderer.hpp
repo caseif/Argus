@@ -158,7 +158,7 @@ namespace argus {
              * \param rotation The single-axis rotation.
              * \param scale The scale in 2D space.
              */
-            Transform(Vector2f const &translation, const float rotation, Vector2f const &scale);
+            Transform(const Vector2f &translation, const float rotation, const Vector2f &scale);
 
             /**
              * \brief Adds one Transform to another.
@@ -184,7 +184,7 @@ namespace argus {
              *
              * \param translation The new translation for this Transform.
              */
-            void set_translation(Vector2f const &translation);
+            void set_translation(const Vector2f &translation);
 
             /**
              * \brief Adds the given value to this Transform's translation
@@ -193,7 +193,7 @@ namespace argus {
              * \param translation_delta The value to add to this Transform's
              *         translation component.
              */
-            void add_translation(Vector2f const &translation_delta);
+            void add_translation(const Vector2f &translation_delta);
 
             /**
              * \brief Gets the rotation component of this Transform in radians.
@@ -230,7 +230,7 @@ namespace argus {
              *
              * \param scale The new scale component for this Transform.
              */
-            void set_scale(Vector2f const &scale);
+            void set_scale(const Vector2f &scale);
 
             /**
              * \brief Generates a 4x4 matrix in column-major form representing
@@ -394,8 +394,8 @@ namespace argus {
              * \param priority The priority of the Shader.
              * \param uniform_ids A list of uniforms defined by this shader.
              */
-            Shader(const unsigned int type, std::string const &src, std::string const &entry_point,
-                    const int priority, std::initializer_list<std::string> const &uniform_ids);
+            Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
+                    const int priority, std::initializer_list<std::string>const  &uniform_ids);
 
         public:
             /**
@@ -529,7 +529,7 @@ namespace argus {
              * \deprecated This will be removed after functions are added to
              *             abstract the setting of uniforms.
              */
-            handle_t get_uniform_location(std::string const &uniform_id) const;
+            handle_t get_uniform_location(const std::string &uniform_id) const;
 
             //TODO: uniform set abstraction
     };
@@ -799,7 +799,7 @@ namespace argus {
              *
              * \param title The new window title.
              */
-            void set_title(std::string const &title);
+            void set_title(const std::string &title);
 
             /**
              * \brief Sets the fullscreen state of the window.
@@ -871,7 +871,7 @@ namespace argus {
              *
              * \return The created RenderableTriangle.
              */
-            RenderableTriangle &create_triangle(Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3) const;
+            RenderableTriangle &create_triangle(const Vertex &corner_1, const Vertex &corner_2, const Vertex &corner_3) const;
 
             /**
              * \brief Creates a new RenderableSquare with the given vertices.
@@ -883,8 +883,8 @@ namespace argus {
              *
              * \return The created RenderableTriangle.
              */
-            RenderableSquare &create_square(Vertex const &corner_1, Vertex const &corner_2,
-                    Vertex const &corner_3, Vertex const &corner_4) const;
+            RenderableSquare &create_square(const Vertex &corner_1, const Vertex &corner_2,
+                    const Vertex &corner_3, const Vertex &corner_4) const;
     };
 
     /**
@@ -1083,14 +1083,14 @@ namespace argus {
              *
              * \param shader The Shader to add.
              */
-            void add_shader(Shader const &shader);
+            void add_shader(const Shader &shader);
 
             /**
              * \brief Removes a local Shader from this group.
              *
              * \param shader The Shader to remove.
              */
-            void remove_shader(Shader const &shader);
+            void remove_shader(const Shader &shader);
     };
 
     /**
@@ -1209,14 +1209,14 @@ namespace argus {
              *
              * \param shader The Shader to add.
              */
-            void add_shader(Shader const &shader);
+            void add_shader(const Shader &shader);
 
             /**
              * \brief Removes the given Shader from this layer.
              *
              * \param shader The Shader to remove.
              */
-            void remove_shader(Shader const &shader);
+            void remove_shader(const Shader &shader);
     };
 
     /**
@@ -1326,7 +1326,7 @@ namespace argus {
              * \sa Renderable#allocate_buffer(const size_t)
              * \sa Renderable#populate_buffer(void)
              */
-            void buffer_vertex(Vertex const &vertex);
+            void buffer_vertex(const Vertex &vertex);
 
             /**
              * \brief Populates the vertex buffer with this Renderable's current
@@ -1358,7 +1358,7 @@ namespace argus {
              *
              * \return Transform This Renderable's Transform.
              */
-            Transform const &get_transform(void) const;
+            const Transform &get_transform(void) const;
 
             /**
              * \brief Applies the Texture with the given resource UID to this
@@ -1373,7 +1373,7 @@ namespace argus {
              * \throw ResourceException If the underlying texture Resource
              *        cannot be loaded.
              */
-            void set_texture(std::string const &texture_uid);
+            void set_texture(const std::string &texture_uid);
     };
 
     /**
@@ -1396,8 +1396,8 @@ namespace argus {
              * \param corner_2 The second corner of the new triangle.
              * \param corner_3 The third corner of the new triangle.
              */
-            RenderableTriangle(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2,
-                    Vertex const &corner_3);
+            RenderableTriangle(RenderGroup &parent_group, const Vertex &corner_1, const Vertex &corner_2,
+                    const Vertex &corner_3);
 
             void populate_buffer(void) override;
 
@@ -1429,8 +1429,8 @@ namespace argus {
              * \param corner_3 The third corner of the new square.
              * \param corner_4 The fourth corner of the new square.
              */
-            RenderableSquare(RenderGroup &parent_group, Vertex const &corner_1, Vertex const &corner_2,
-                    Vertex const &corner_3, Vertex const &corner_4);
+            RenderableSquare(RenderGroup &parent_group, const Vertex &corner_1, const Vertex &corner_2,
+                    const Vertex &corner_3, const Vertex &corner_4);
 
             void populate_buffer(void) override;
 

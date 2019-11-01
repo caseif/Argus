@@ -19,8 +19,8 @@ namespace argus {
 
     using glext::glBufferSubData;
 
-    RenderableSquare::RenderableSquare(RenderGroup &parent, Vertex const &corner_1, Vertex const &corner_2,
-            Vertex const &corner_3, Vertex const &corner_4):
+    RenderableSquare::RenderableSquare(RenderGroup &parent, const Vertex &corner_1, const Vertex &corner_2,
+            const Vertex &corner_3, const Vertex &corner_4):
             Renderable(parent),
             corner_1(corner_1),
             corner_2(corner_2),

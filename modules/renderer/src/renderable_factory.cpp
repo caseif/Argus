@@ -15,12 +15,12 @@ namespace argus {
             parent(parent) {
     }
 
-    RenderableTriangle &RenderableFactory::create_triangle(Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3) const {
+    RenderableTriangle &RenderableFactory::create_triangle(const Vertex &corner_1, const Vertex &corner_2, const Vertex &corner_3) const {
         return *new RenderableTriangle(parent, corner_1, corner_2, corner_3);
     }
 
-    RenderableSquare &RenderableFactory::create_square(Vertex const &corner_1, Vertex const &corner_2,
-            Vertex const &corner_3, Vertex const &corner_4) const {
+    RenderableSquare &RenderableFactory::create_square(const Vertex &corner_1, const Vertex &corner_2,
+            const Vertex &corner_3, const Vertex &corner_4) const {
         return *new RenderableSquare(parent, corner_1, corner_2, corner_3, corner_4);
     }
 

@@ -12,7 +12,7 @@
 namespace argus {
 
     void ResourceLoader::load_dependencies(std::initializer_list<std::string> dependencies) {
-        std::vector<Resource&> acquired;
+        std::vector<Resource*> acquired;
 
         bool failed = false;
         auto it = dependencies.begin();
@@ -20,7 +20,7 @@ namespace argus {
         for (it; it < dependencies.end(); it++) {
             try {
                 Resource &res = ResourceManager::get_global_resource_manager().get_resource(*it);
-                acquired.insert(acquired.end(), res);
+                acquired.insert(acquired.end(), &res);
             } catch (std::exception &ex) {
                 failed = true;
                 thrown_exception = ex;
@@ -29,8 +29,8 @@ namespace argus {
         }
 
         if (failed) {
-            for (Resource &res : acquired) {
-                res.release();
+            for (Resource *res : acquired) {
+                res->release();
             }
 
             throw thrown_exception;

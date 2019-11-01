@@ -80,7 +80,7 @@ namespace argus {
              *
              * \return The absolute path of the file referenced by this handle.
              */
-            std::string const &get_path(void) const;
+            const std::string &get_path(void) const;
 
             /**
              * \brief Gets the size of the file referenced by this handle.
@@ -258,7 +258,7 @@ namespace argus {
      *
      * \throw std::system_error If an error occurs while opening the directory.
      */
-    const std::vector<std::string> list_directory_entries(std::string const &directory_path);
+    const std::vector<std::string> list_directory_entries(const std::string &directory_path);
 
     /**
      * \brief Gets whether the entry at the given path is a directory.
@@ -269,7 +269,7 @@ namespace argus {
      *
      * \return Whether the entry at the path is a directory.
      */
-    bool is_directory(std::string const &path);
+    bool is_directory(const std::string &path);
 
     /**
      * \brief Gets whether the entry at the given path is a regular file.
@@ -280,7 +280,7 @@ namespace argus {
      *
      * \return Whether the entry at the path is a regular file.
      */
-    bool is_regfile(std::string const &path);
+    bool is_regfile(const std::string &path);
 
     /**
      * \brief Parses the parent of the entry at the given path.
@@ -294,7 +294,7 @@ namespace argus {
      *
      * \throw std::system_error If the `path` parameter is an empty string.
      */
-    std::string get_parent(std::string const &path);
+    std::string get_parent(const std::string &path);
 
     /**
      * \brief Parses the name and extension from the given file name.
@@ -307,6 +307,6 @@ namespace argus {
      * \warning This function does not operate on paths (relative or absolute)
      *          and will not handle them correctly.
      */
-    std::pair<const std::string, const std::string> get_name_and_extension(std::string const &file_name);
+    std::pair<const std::string, const std::string> get_name_and_extension(const std::string &file_name);
 
 }

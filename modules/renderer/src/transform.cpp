@@ -35,7 +35,7 @@ namespace argus {
             scale(std::move(rhs.scale)) {
     }
 
-    Transform::Transform(Vector2f const &translation, const float rotation, Vector2f const &scale):
+    Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
             translation(translation),
             rotation(rotation),
             scale(scale) {
@@ -57,7 +57,7 @@ namespace argus {
         return translation;
     }
 
-    void Transform::set_translation(Vector2f const &translation) {
+    void Transform::set_translation(const Vector2f &translation) {
         translation_mutex.lock();
         this->translation = translation;
         translation_mutex.unlock();
@@ -65,7 +65,7 @@ namespace argus {
         this->dirty = true;
     }
 
-    void Transform::add_translation(Vector2f const &translation_delta) {
+    void Transform::add_translation(const Vector2f &translation_delta) {
         translation_mutex.lock();
         this->translation += translation_delta;
         translation_mutex.unlock();
@@ -97,7 +97,7 @@ namespace argus {
         return scale_current;
     }
 
-    void Transform::set_scale(Vector2f const &scale) {
+    void Transform::set_scale(const Vector2f &scale) {
         this->scale_mutex.lock();
         this->scale = scale;
         this->scale_mutex.unlock();

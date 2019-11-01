@@ -48,7 +48,7 @@ namespace argus {
         needs_rebuild = true;
     }
 
-    static GLint _compile_shader(const GLenum type, std::string const &src) {
+    static GLint _compile_shader(const GLenum type, const std::string &src) {
         GLint gl_shader = glCreateShader(type);
 
         if (!glIsShader(gl_shader)) {
@@ -247,7 +247,7 @@ namespace argus {
         }
 
         for (const Shader *shader : shaders) {
-            for (std::string const &uniform_id : shader->uniform_ids) {
+            for (const std::string &uniform_id : shader->uniform_ids) {
                 GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
                 uniforms.insert({uniform_id, uniform_loc});
             }
@@ -260,7 +260,7 @@ namespace argus {
         needs_rebuild = false;
     }
 
-    handle_t ShaderProgram::get_uniform_location(std::string const &uniform_id) const {
+    handle_t ShaderProgram::get_uniform_location(const std::string &uniform_id) const {
         auto it = uniforms.find(uniform_id);
         if (it == uniforms.end()) {
             _ARGUS_FATAL("Attempted to get non-existent shader uniform %s\n", uniform_id.c_str());

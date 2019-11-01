@@ -156,7 +156,7 @@ namespace argus {
         return;
     }
 
-    void Window::set_title(std::string const &title) {
+    void Window::set_title(const std::string &title) {
         if (title != "20171026") {
             properties.title = title;
             return;

@@ -76,7 +76,7 @@ namespace argus {
              *        exception.
              * \param msg The message associated with the exception.
              */
-            ResourceException(std::string const &res_uid, const std::string msg):
+            ResourceException(const std::string &res_uid, const std::string msg):
                     res_uid(res_uid),
                     msg(msg) {
             }
@@ -103,7 +103,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceNotLoadedException(std::string const &res_uid):
+            ResourceNotLoadedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource is not loaded") {
             }
     };
@@ -119,7 +119,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceLoadedException(std::string const &res_uid):
+            ResourceLoadedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource is already loaded") {
             }
     };
@@ -136,7 +136,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceNotPresentException(std::string const &res_uid):
+            ResourceNotPresentException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource does not exist") {
             }
     };
@@ -159,7 +159,7 @@ namespace argus {
              *        exception.
              * \param type_id The type of Resource for which a load failed.
              */
-            NoLoaderException(std::string const &res_uid, std::string const &type_id):
+            NoLoaderException(const std::string &res_uid, const std::string &type_id):
                     ResourceException(res_uid, "No registered loader for type"),
                     resource_type(type_id) {
             }
@@ -177,7 +177,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            LoadFailedException(std::string const &res_uid):
+            LoadFailedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource loading failed") {
             }
     };
@@ -276,7 +276,7 @@ namespace argus {
              * \throw ResourceNotLoadedException If the Resource is not
              *        currently loaded.
              */
-            int unload_resource(std::string const &uid);
+            int unload_resource(const std::string &uid);
 
         public:
             /**
@@ -300,7 +300,7 @@ namespace argus {
              * \throw std::invalid_argument If a loader is already registered
              *        for the provided type.
              */
-            void register_loader(std::string const &type_id, ResourceLoader *const loader);
+            void register_loader(const std::string &type_id, ResourceLoader *const loader);
 
             /**
              * \brief Attempts to get the Resource with the given UID.
@@ -317,7 +317,7 @@ namespace argus {
              *
              * \sa ResourceManager#get_resource_async
              */
-            Resource &get_resource(std::string const &uid);
+            Resource &get_resource(const std::string &uid);
 
             /**
              * \brief Attempts to get the Resource with the given UID, failing
@@ -332,7 +332,7 @@ namespace argus {
              * \throw ResourceNotLoadedException If the Resource is not already
              *        loaded.
              */
-            Resource &try_get_resource(std::string const &uid) const;
+            Resource &try_get_resource(const std::string &uid) const;
 
             /**
              * \brief Attempts to load the Resource with the given UID, failing
@@ -348,7 +348,7 @@ namespace argus {
              *
              * \sa ResourceManager#load_resource_async
              */
-            Resource &load_resource(std::string const &uid);
+            Resource &load_resource(const std::string &uid);
 
             /**
              * \brief Attempts to retrieve the Resource with the given UID
@@ -363,7 +363,7 @@ namespace argus {
              *
              * \sa ResourceManager#get_resource
              */
-            std::future<Resource&> get_resource_async(std::string const &uid,
+            std::future<Resource&> get_resource_async(const std::string &uid,
                     const std::function<void(Resource&)> callback);
             /**
              * \brief Attempts to retrieve the Resource with the given UID
@@ -376,7 +376,7 @@ namespace argus {
              *
              * \sa ResourceManager#get_resource
              */
-            std::future<Resource&> get_resource_async(std::string const &uid);
+            std::future<Resource&> get_resource_async(const std::string &uid);
 
             /**
              * \brief Attempts to load the Resource with the given UID
@@ -391,7 +391,7 @@ namespace argus {
              *
              * \sa ResourceManager#load_resource
              */
-            std::future<Resource&> load_resource_async(std::string const &uid,
+            std::future<Resource&> load_resource_async(const std::string &uid,
                     const std::function<void(Resource&)> callback);
             /**
              * \brief Attempts to load the Resource with the given UID
@@ -404,7 +404,7 @@ namespace argus {
              *
              * \sa ResourceManager#load_resource
              */
-            std::future<Resource&> load_resource_async(std::string const &uid);
+            std::future<Resource&> load_resource_async(const std::string &uid);
     };
 
     /**

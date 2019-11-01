@@ -142,7 +142,7 @@ namespace argus {
         return FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file));
     }
 
-    std::string const &FileHandle::get_path(void) const {
+    const std::string &FileHandle::get_path(void) const {
         return path;
     }
 
@@ -289,7 +289,7 @@ namespace argus {
         return std::string(path);
     }
 
-    const std::vector<std::string> list_directory_entries(std::string const &directory_path) {
+    const std::vector<std::string> list_directory_entries(const std::string &directory_path) {
         std::vector<std::string> res;
 
         #ifdef _WIN32
@@ -314,7 +314,7 @@ namespace argus {
         return res;
     }
 
-    bool is_directory(std::string const &path) {
+    bool is_directory(const std::string &path) {
         stat_t path_stat;
         if (stat(path.c_str(), &path_stat) != 0) {
             return false;
@@ -322,7 +322,7 @@ namespace argus {
         return S_ISDIR(path_stat.st_mode);
     }
 
-    bool is_regfile(std::string const &path) {
+    bool is_regfile(const std::string &path) {
         stat_t path_stat;
         if (stat(path.c_str(), &path_stat) != 0) {
             return false;
@@ -330,7 +330,7 @@ namespace argus {
         return S_ISREG(path_stat.st_mode);
     }
 
-    std::string get_parent(std::string const &path) {
+    std::string get_parent(const std::string &path) {
         #ifdef _WIN32
         char path_separator = '\\';
         #else
@@ -354,7 +354,7 @@ namespace argus {
         return path.substr(0, index);
     }
 
-    std::pair<const std::string, const std::string> get_name_and_extension(std::string const &file_name) {
+    std::pair<const std::string, const std::string> get_name_and_extension(const std::string &file_name) {
         size_t index = file_name.find_last_of(EXTENSION_SEPARATOR);
         if (index == std::string::npos) {
             return {file_name, ""};

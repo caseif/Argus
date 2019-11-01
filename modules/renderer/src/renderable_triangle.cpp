@@ -19,7 +19,7 @@ namespace argus {
 
     using glext::glBufferSubData;
 
-    RenderableTriangle::RenderableTriangle(RenderGroup &parent, Vertex const &corner_1, Vertex const &corner_2, Vertex const &corner_3):
+    RenderableTriangle::RenderableTriangle(RenderGroup &parent, const Vertex &corner_1, const Vertex &corner_2, const Vertex &corner_3):
             Renderable(parent),
             corner_1(corner_1),
             corner_2(corner_2),

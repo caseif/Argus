@@ -55,11 +55,11 @@ namespace argus {
         delete this;
     }
 
-    Transform const &Renderable::get_transform(void) const {
+    const Transform &Renderable::get_transform(void) const {
         return transform;
     }
 
-    static void _fill_buffer(float *const buffer, Vertex const &vertex, unsigned int tex_index, const size_t offset) {
+    static void _fill_buffer(float *const buffer, const Vertex &vertex, unsigned int tex_index, const size_t offset) {
     }
 
     void Renderable::allocate_buffer(const size_t vertex_count) {
@@ -79,7 +79,7 @@ namespace argus {
         buffer_head = 0;
     }
 
-    void Renderable::buffer_vertex(Vertex const &vertex) {
+    void Renderable::buffer_vertex(const Vertex &vertex) {
         if (buffer_head + _VERTEX_LEN > buffer_size) {
             _ARGUS_FATAL("Buffer overflow while buffering vertex (%lu > %lu)", buffer_head + _VERTEX_LEN, buffer_size);
         }
@@ -97,7 +97,7 @@ namespace argus {
         buffer_head += _VERTEX_LEN;
     }
 
-    void Renderable::set_texture(std::string const &texture_uid) {
+    void Renderable::set_texture(const std::string &texture_uid) {
         release_texture();
 
         tex_resource = &ResourceManager::get_global_resource_manager().get_resource(texture_uid);

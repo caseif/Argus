@@ -212,7 +212,7 @@ namespace argus {
              *
              * \return This ComplexAtomic.
              */
-            inline ComplexAtomic &operator =(ValueType const &rhs) {
+            inline ComplexAtomic &operator =(const ValueType &rhs) {
                 mutex.lock();
                 value = rhs;
                 mutex.unlock();
@@ -226,7 +226,7 @@ namespace argus {
              *
              * \return This ComplexAtomic.
              */
-            inline ComplexAtomic &operator =(ValueType const &&rhs) {
+            inline ComplexAtomic &operator =(const ValueType &&rhs) {
                 mutex.lock();
                 value = std::move(rhs);
                 mutex.unlock();
@@ -273,7 +273,7 @@ namespace argus {
              *
              * \return This AtomicDirtiable.
              */
-            inline AtomicDirtiable &operator =(ValueType const &rhs) {
+            inline AtomicDirtiable &operator =(const ValueType &rhs) {
                 value = rhs;
                 dirty = true;
                 return *this;
@@ -287,7 +287,7 @@ namespace argus {
              *
              * \return This AtomicDirtiable.
              */
-            inline AtomicDirtiable &operator =(ValueType const &&rhs) {
+            inline AtomicDirtiable &operator =(const ValueType &&rhs) {
                 value = std::move(rhs);
                 dirty = true;
                 return *this;
