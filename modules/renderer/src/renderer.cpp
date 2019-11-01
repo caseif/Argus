@@ -82,30 +82,10 @@ namespace argus {
         callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
     }
 
-    Renderer::Renderer(Renderer &rhs):
-            window(rhs.window),
-            render_layers(rhs.render_layers),
-            initialized(rhs.initialized),
-            callback_id(rhs.callback_id),
-            destruction_pending(rhs.destruction_pending.load()),
-            valid(valid),
-            dirty_resolution(false) {
-    }
-
-    Renderer::Renderer(Renderer &&rhs):
-            window(rhs.window),
-            render_layers(std::move(rhs.render_layers)),
-            initialized(std::move(initialized)),
-            callback_id(rhs.callback_id),
-            destruction_pending(rhs.destruction_pending.load()),
-            valid(valid),
-            dirty_resolution(false) {
-    }
-
     // we do the init in a separate method so the GL context is always created from the render thread
     void Renderer::init(void) {
-        gl_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
-        if (!gl_context) {
+        gfx_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
+        if (!gfx_context) {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
 
@@ -138,7 +118,7 @@ namespace argus {
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
-        SDL_GL_DeleteContext(gl_context);
+        SDL_GL_DeleteContext(gfx_context);
 
         unregister_render_callback(callback_id);
 
@@ -180,7 +160,7 @@ namespace argus {
             init();
         }
 
-        _activate_gl_context(window.handle, gl_context);
+        _activate_gl_context(window.handle, gfx_context);
 
         if (dirty_resolution) {
             Vector2u res = window.properties.resolution;

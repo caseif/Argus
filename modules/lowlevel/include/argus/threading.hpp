@@ -149,8 +149,8 @@ namespace argus {
      * \brief A drop-in replacement for std::atomic for non-trvially copyable
      *        types.
      *
-     * Because \ref{std::atomic} generally operates on primitive types only, it cannot
-     * be used with complex types such as std::string. A `ComplexAtomic` object
+     * Because std::atomic generally operates on primitive types only, it cannot
+     * be used with complex types such as std::string. A ComplexAtomic object
      * wraps an object not eligible for use with std::atomic and provides
      * transparent atomicity support in a similar fashion.
      *
@@ -291,8 +291,8 @@ namespace argus {
      *
      * \tparam Out The type of value provided by the returned std::future.
      *
-     * \remark The provided functions \em must be thread-safe, as they will be
-     *         performed on a new thread.
+     * \attention The provided functions \em must be thread-safe, as they will
+     *            be performed on a new thread.
      */
     template <typename Out>
     std::future<Out> make_future(const std::function<Out(void)> function, const std::function<void(Out)> callback) {

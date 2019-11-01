@@ -36,7 +36,13 @@
 
 namespace argus {
 
-
+    /**
+     * \brief Represents a handle to a file on the disk.
+     *
+     * A FileHandle may be used to create, read from, and write to files on the
+     * disk in a high-level manner. Additionally, it provides a high-level
+     * interface for asynchronous file I/O.
+     */
     class FileHandle {
         private:
             std::string path;
@@ -56,9 +62,9 @@ namespace argus {
              * file.
              *
              * \param path The path of the file to obtain a handle to.
-             * \param handle A pointer to the memory address to store the handle in.
+             * \param mode The mode to open the file with.
              *
-             * \return 0 on success, non-zero otherwise.
+             * \return The created FileHandle.
              *
              * \throw std::invalid_argument If the given mode is invalid. This
              *        occurs if no mode is set, or if CREATE is set without
@@ -89,8 +95,8 @@ namespace argus {
             /**
              * \brief Releases this file handle.
              *
-             * The handle will thereafter be invalidated and thus ineligible for
-             * further use.
+             * \attention The handle will thereafter be invalidated and thus
+             *            ineligible for further use.
              *
              * \throw std::invalid_argument If this handle is not valid.
              * \throw std::system_error If an error occurs while closing the
@@ -101,7 +107,8 @@ namespace argus {
             /**
              * \brief Removes the file referenced by this handle.
              *
-             * This operation implicitly releases the handle, invalidating it.
+             * \attention This operation implicitly releases the handle,
+             *            invalidating it.
              *
              * \throw std::invalid_argument If this handle is not valid.
              * \throw std::system_error If an error occurs while removing the
@@ -131,9 +138,10 @@ namespace argus {
              *            at least `size` bytes in length to avoid a buffer
              *            overflow.
              *
-             * \throw std::invalid_argument If this handle is not valid, if
-             *        `size` is zero, or if the size and offset in conjunction
-             *        are nonsensical.
+             * \throw std::invalid_argument If this handle is not valid, if the
+             *        current mode does not support reading, or if `size` or
+             *        `offset` are nonsensical (individiually or in
+             *        conjunction).
              * \throw std::system_error If an error occurs while reading from
              *        the file.
              */
@@ -149,8 +157,9 @@ namespace argus {
              *            buffer _must_ be at least `size` bytes in length to
              *            avoid a buffer over-read.
              *
-             * \throw std::invalid_argument If this handle is not valid, or if
-             *        `size` or `offset` are nonsensical (individiually or in
+             * \throw std::invalid_argument If this handle is not valid, if the
+             *        current mode does not support reading, or if `size` or
+             *        `offset` are nonsensical (individiually or in
              *        conjunction).
              * \throw std::system_error If an error occurs while writing to the
              *        file.
@@ -172,16 +181,18 @@ namespace argus {
              *        read operation generates an exception), so it should not
              *        contain any critical code.
              *
-             * \throw std::invalid_argument If this handle is not valid, or if
-             *        `size` or `offset` are nonsensical (individiually or in
-             *        conjunction).
-             *
              * \return A std::future which will be completed after the data has
              *         been fully read, or after the read operation generates an
              *         exception.
              *
-             * \remark Any exception thrown by the read operation is exposed
-             *         through the returned std::future.
+             * \throw std::invalid_argument If this handle is not valid, if the
+             *        current mode does not support reading, or if `size` or
+             *        `offset` are nonsensical (individiually or in
+             *        conjunction).
+             *
+             * \attention Any exceptions thrown by the read operation itself (not
+             *            including parameter validation) are exposed through the
+             *            returned std::future.
              *
              * \sa FileHandle::read
              */
@@ -204,16 +215,18 @@ namespace argus {
              *        write operation generates an exception), so it should not
              *        contain any critical code.
              *
-             * \throw std::invalid_argument If this handle is not valid, or if
-             *        `size` or `offset` are nonsensical (individiually or in
-             *        conjunction).
-             *
              * \return A std::future which will be completed after the data has
              *         been fully written, or after the write operation
              *         generates an exception.
              *
-             * \remark Any exception thrown by the write operation is exposed
-             *         through the returned std::future.
+             * \throw std::invalid_argument If this handle is not valid, if the
+             *        current mode does not support reading, or if `size` or
+             *        `offset` are nonsensical (individiually or in
+             *        conjunction).
+             *
+             * \attention Any exceptions thrown by the read operation itself (not
+             *            including parameter validation) are exposed through the
+             *            returned std::future.
              *
              * \sa FileHandle::write
              */
@@ -291,8 +304,8 @@ namespace argus {
      * \return A std::pair containing the name and extension of the given file
      *         name, respectively.
      *
-     * \remark This function does not operate on paths (relative or absolute)
-     *         and will not handle them correctly.
+     * \warning This function does not operate on paths (relative or absolute)
+     *          and will not handle them correctly.
      */
     std::pair<const std::string, const std::string> get_name_and_extension(std::string const &file_name);
 

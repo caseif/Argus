@@ -43,7 +43,7 @@ namespace argus {
     extern size_t g_window_count;
 
     Window::Window(void):
-            renderer(Renderer(*this)),
+            renderer(*this),
             handle(SDL_CreateWindow("ArgusGame",
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 DEF_WINDOW_DIM, DEF_WINDOW_DIM,
@@ -112,7 +112,7 @@ namespace argus {
         return *child_window;
     }
 
-    void Window::remove_child(Window &child) {
+    void Window::remove_child(const Window &child) {
         remove_from_vector(children, &child);
     }
 

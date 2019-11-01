@@ -36,12 +36,8 @@ namespace argus {
     ShaderProgram RenderGroup::generate_initial_program(void) {
         std::vector<const Shader*> final_shaders;
         final_shaders.reserve(parent.shaders.size() + shaders.size());
-        if (parent.shaders.size() > 0) {
-            std::copy(parent.shaders.begin(), parent.shaders.end(), std::back_inserter(final_shaders));
-        }
-        if (shaders.size() > 0) {
-            std::copy(shaders.begin(), shaders.end(), std::back_inserter(final_shaders));
-        }
+        std::copy(parent.shaders.begin(), parent.shaders.end(), std::back_inserter(final_shaders));
+        std::copy(shaders.begin(), shaders.end(), std::back_inserter(final_shaders));
         return ShaderProgram(std::move(final_shaders));
     }
 
@@ -230,22 +226,20 @@ namespace argus {
         }
     }
 
-    void RenderGroup::refresh_shaders(void) {
+    void RenderGroup::rebuild_shaders(void) {
+        // check if any shader compilation is needed this frame
         if (!shaders_initialized || parent.dirty_shaders || dirty_shaders) {
+            // check if there's an existing program that needs deletion
             if (shaders_initialized) {
                 glDeleteProgram(shader_program.program_handle);
             }
 
-            std::vector<const Shader*> new_shaders;
-            if (!shaders_initialized || parent.dirty_shaders) {
-                new_shaders.insert(new_shaders.end(), parent.shaders.begin(), parent.shaders.end());
-            }
+            // create a superset of all shaders
+            std::vector<const Shader*> shader_superlist;
+            shader_superlist.insert(shader_superlist.end(), parent.shaders.cbegin(), parent.shaders.cend());
+            shader_superlist.insert(shader_superlist.end(), shaders.cbegin(), shaders.cend());
 
-            if (!shaders_initialized || dirty_shaders) {
-                new_shaders.insert(new_shaders.end(), shaders.begin(), shaders.end());
-            }
-
-            shader_program.update_shaders(new_shaders);
+            shader_program.update_shaders(shader_superlist);
             shader_program.link();
         } else if (shader_program.needs_rebuild) {
             shader_program.link();
@@ -282,7 +276,7 @@ namespace argus {
     }
 
     void RenderGroup::draw(void) {
-        refresh_shaders();
+        rebuild_shaders();
 
         glUseProgram(shader_program.program_handle);
 
@@ -299,16 +293,16 @@ namespace argus {
         glUseProgram(0);
     }
 
-    void RenderGroup::add_renderable(Renderable &renderable) {
-        children.insert(children.cbegin(), &renderable);
+    void RenderGroup::add_renderable(const Renderable &renderable) {
+        //TODO: this is a hack
+        children.insert(children.cbegin(), const_cast<Renderable*>(&renderable));
         dirty_children = true;
     }
 
-    void RenderGroup::remove_renderable(Renderable &renderable) {
+    void RenderGroup::remove_renderable(const Renderable &renderable) {
         _ARGUS_ASSERT(&renderable.parent == this, "remove_renderable was passed Renderable with wrong parent");
 
         remove_from_vector(children, &renderable);
-        delete &renderable;
         dirty_children = true;
     }
 

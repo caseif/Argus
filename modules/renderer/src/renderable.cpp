@@ -49,7 +49,7 @@ namespace argus {
         }
     }
 
-    void Renderable::remove(void) {
+    void Renderable::destroy(void) {
         parent.remove_renderable(*this);
 
         delete this;
@@ -100,11 +100,7 @@ namespace argus {
     void Renderable::set_texture(std::string const &texture_uid) {
         release_texture();
 
-        try {
-            tex_resource = &ResourceManager::get_global_resource_manager().get_resource(texture_uid);
-        } catch (ResourceException &ex) {
-            _ARGUS_WARN("Failed to set texture of Renderable: %s\n", ex.what());
-        }
+        tex_resource = &ResourceManager::get_global_resource_manager().get_resource(texture_uid);
 
         dirty_texture = true;
     }

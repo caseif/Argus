@@ -18,6 +18,7 @@
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
+#include <set>
 #include <sstream>
 #include <SDL2/SDL_opengl.h>
 
@@ -36,22 +37,14 @@ namespace argus {
     };
 
     ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
-            shaders(shaders),
+            shaders(shaders.cbegin(), shaders.cend(), [](auto a, auto b){return a->priority > b->priority;}),
             initialized(false),
             needs_rebuild(true) {
-        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority > b->priority;});
-    }
-
-    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &&shaders):
-            shaders(std::move(shaders)),
-            initialized(false),
-            needs_rebuild(true) {
-        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority > b->priority;});
     }
 
     void ShaderProgram::update_shaders(const std::vector<const Shader*> &shaders) {
-        this->shaders = shaders;
-        std::sort(this->shaders.begin(), this->shaders.end(), [](auto a, auto b){return a->priority > b->priority;});
+        this->shaders.clear();
+        std::copy(shaders.cbegin(), shaders.cend(), std::inserter(this->shaders, this->shaders.end()));
         needs_rebuild = true;
     }
 
