@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/math.hpp
+ *
+ * Various mathematics utility functions and classes.
+ */
+
 #pragma once
 
 #include <type_traits>

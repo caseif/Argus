@@ -7,6 +7,13 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/renderer.hpp
+ *
+ * Primary rendering engine interface, providing high-level abstractions for
+ * rendering concepts.
+ */
+
 #pragma once
 
 // module lowlevel

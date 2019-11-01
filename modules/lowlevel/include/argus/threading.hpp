@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/threading.hpp
+ *
+ * Platform-agnostic system threading interface.
+ */
+
 #pragma once
 
 #include <atomic>

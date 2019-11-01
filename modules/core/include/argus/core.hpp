@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/core.hpp
+ *
+ * Contains core engine functionality, primarily for bootstrapping.
+ */
+
 #pragma once
 
 #define SDL_MAIN_HANDLED

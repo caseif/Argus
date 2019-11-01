@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/resource_manager.hpp
+ *
+ * High-level resource management API.
+ */
+
 #pragma once
 
 #include "argus/threading.hpp"

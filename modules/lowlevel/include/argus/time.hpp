@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/time.hpp
+ *
+ * Time-related utility functions.
+ */
+
 #pragma once
 
 namespace argus {

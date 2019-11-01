@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/input.hpp
+ *
+ * Primary user input API.
+ */
+
 #pragma once
 
 namespace argus {

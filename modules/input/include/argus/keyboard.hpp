@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/keyboard.hpp
+ *
+ * API for detecting and interpreting keyboard events.
+ */
+
 #pragma once
 
 #include "argus/core.hpp"

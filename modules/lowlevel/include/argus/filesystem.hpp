@@ -7,6 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file argus/filesystem.hpp
+ *
+ * Low-level filesystem API.
+ */
+
 #pragma once
 
 #include "argus/threading.hpp"
