@@ -311,7 +311,7 @@ namespace argus {
              *
              * \throw ResourceNotPresentException If no Resource with the given
              *        UID exists.
-             * 
+             *
              * \attention This method will attempt to load the Resource if it is
              *            not already in memory.
              *

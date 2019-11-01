@@ -537,10 +537,10 @@ namespace argus {
     /**
      * \brief A construct which exposes functionality for rendering the entire
      *        screen space at once.
-     * 
+     *
      * Each Renderer has a one-to-one mapping with a Window, and a one-to-many
      * mapping with one or more \link RenderLayer RenderLayers \endlink.
-     * 
+     *
      * A Renderer is guaranteed to have at least one RenderLayer, considered to
      * be the "base" layer.
      *
@@ -762,7 +762,8 @@ namespace argus {
              *
              * \return The created Window.
              *
-             * \warning Not all platforms may support multiple \link Window Windows \endlink.
+             * \warning Not all platforms may support multiple
+             *          \link Window Windows \endlink.
              *
              * \attention The Window is created in heap memory, and will be
              *            deallocated by Window#destroy(void).
@@ -778,7 +779,7 @@ namespace argus {
             void destroy(void);
 
             /**
-             * \brief Creates a new window as a child of this one. 
+             * \brief Creates a new window as a child of this one.
              *
              * \return The new child window.
              *
