@@ -15,6 +15,9 @@
 
 #define _GL_LOG_MAX_LEN 255
 
+#define SHADER_VERTEX 1
+#define SHADER_FRAGMENT 2
+
 #define _UNIFORM_PROJECTION "_argus_uni_projection_matrix"
 #define _UNIFORM_TEXTURE "_argus_uni_sampler_array"
 #define _UNIFORM_LAYER_TRANSFORM "_argus_uni_layer_transform"

@@ -215,9 +215,10 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a press of a keyboard key, providing access to
-     * inforrmation regarding the emitted scancode, the active modifiers, and
-     * the semantic value of the key press.
+     * \brief Represents a press of a keyboard key.
+     *
+     * This provides access to inforrmation regarding the emitted scancode, the
+     * active modifiers, and the semantic value of the key press.
      */
     struct KeyboardEvent : public ArgusEvent {
         /**
@@ -233,8 +234,8 @@ namespace argus {
         /**
          * \brief The modifiers active during this key press.
          *
-         * If the key press is associated with a modifier key, said key will not
-         * be included by this field.
+         * \remark If the key press is associated with a modifier key, said key
+         *         will not be included by this field.
          */
         const KeyboardModifiers modifiers;
 
@@ -243,7 +244,7 @@ namespace argus {
          * character.
          *
          * \return Whether the key press is representative of a textual
-         * character.
+         *         character.
          */
         bool is_character(void);
 
@@ -256,7 +257,7 @@ namespace argus {
 
         /**
          * \brief Gets whether the key press is representative of a key
-         * modifier.
+         *        modifier.
          *
          * \return Whether the key press is representative of a key modifier.
          */
@@ -264,9 +265,9 @@ namespace argus {
 
         /**
          * \brief Gets the textual character associated with this key press,
-         * taking key modifiers into account.
+         *        taking key modifiers into account.
          *
-         * This will throw invalid_argument if is_character returns false.
+         * This will throw invalid_argument if is_character(KeyboardScancode) returns `false`.
          *
          * \return The textual character associated with this key press.
          */
@@ -276,7 +277,7 @@ namespace argus {
          * \brief Gets the command associated with this key press, taking key
          * modifiers into account.
          *
-         * This will throw invalid_argument if is_command returns false.
+         * \throw invalid_argument If is_command(KeyboardScancode) returns `false`.
          *
          * \return The command associated with this key press.
          */
@@ -285,7 +286,7 @@ namespace argus {
         /**
          * \brief Gets the key modifier associated with this key press.
          *
-         * This will throw invalid_argument if is_modifier returns false.
+         * \throw invalid_argument If is_modifier(KeyboardScancode) returns `false`.
          *
          * \return The key modifier associated with this key press.
          */
@@ -293,8 +294,10 @@ namespace argus {
     };
 
     /**
-     * \brief Gets whether the given scancode is associated with a textual
-     * character key.
+     * \brief Gets whether a scancode is associated with a textual character
+     *        key.
+     *
+     * \param scancode The scancode to check.
      *
      * \return Whether the given scancode is associated with a textual character
      * key.
@@ -302,38 +305,48 @@ namespace argus {
     bool is_character_key(KeyboardScancode scancode);
 
     /**
-     * \brief Gets whether the given scancode is associated with a command key.
+     * \brief Gets whether a scancode is associated with a command key.
+     *
+     * \param scancode The scancode to check.
      *
      * \return Whether the given scancode is associated with a command key.
      */
     bool is_command_key(KeyboardScancode scancode);
 
     /**
-     * \brief Gets whether the given scancode is associated with a modifier key.
+     * \brief Gets whether a scancode is associated with a modifier key.
+     *
+     * \param scancode The scancode to check.
      *
      * \return Whether the given scancode is associated with a modifier key.
      */
     bool is_modifier_key(KeyboardScancode scancode);
 
     /**
-     * \brief Gets the character associated with the key represented by the
-     * given scancode, not taking key modifiers into account.
+     * \brief Gets the character associated with a scancode, not taking key
+     *        modifiers into account.
+     *
+     * \param scancode The scancode to look up.
      *
      * \return The character for the given scancode.
      */
     wchar_t get_key_character(KeyboardScancode scancode);
 
     /**
-     * \brief Gets the command associated with the key represented by the
-     * given scancode, not taking key modifiers into account.
+     * \brief Gets the command associated with a scancode, not taking key
+     *        modifiers into account.
+     *
+     * \param scancode The scancode to look up.
      *
      * \return The command for the given scancode.
      */
     KeyboardCommand get_key_command(KeyboardScancode scancode);
 
     /**
-     * \brief Gets the key modifier associated with the key represented by the
-     * given scancode.
+     * \brief Gets the key modifier associated with a scancode.
+     *        given scancode.
+     *
+     * \param scancode The scancode to look up.
      *
      * \return The key modifier for the given scancode.
      */

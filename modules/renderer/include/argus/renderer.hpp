@@ -35,9 +35,6 @@
 #include <unordered_map>
 #include <vector>
 
-#define SHADER_VERTEX 1
-#define SHADER_FRAGMENT 2
-
 namespace argus {
 
     // forward declarations

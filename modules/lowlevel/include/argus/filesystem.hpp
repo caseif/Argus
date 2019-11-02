@@ -29,15 +29,33 @@
 #define size_t unsigned __int64
 #define ssize_t __int64
 
+/**
+ * \brief The separator for elements in filesystem paths.
+ */
 #define PATH_SEPARATOR "\\"
 #else
+/**
+ * \brief The separator for elements in filesystem paths.
+ */
 #define PATH_SEPARATOR "/"
 #endif
 
+/**
+ * \brief The separator between a file's name and extension.
+ */
 #define EXTENSION_SEPARATOR "."
 
+/**
+ * \brief File mode mask denoting read access.
+ */
 #define FILE_MODE_READ 1
+/**
+ * \brief File mode mask denoting write access.
+ */
 #define FILE_MODE_WRITE 2
+/**
+ * \brief File mode mask denoting the file should be created if necessary.
+ */
 #define FILE_MODE_CREATE 4
 
 namespace argus {

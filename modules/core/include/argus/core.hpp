@@ -51,9 +51,35 @@ namespace argus {
         RENDERER    = 0x10,
     };
 
-    // bitwise operator overrides for EngineModules
+    /**
+     * \brief Bitwise OR implementation for EngineModules bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     */
     EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
+    /**
+     * \brief Bitwise OR-assignment implementation for EngineModules bitmask
+     *        elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     *
+     * \sa EngineModules::operator|
+     */
     constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
+    /**
+     * \brief Bitwise AND implementation for EngineModules bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise AND of the operands.
+     */
     inline bool operator &(const EngineModules lhs, const EngineModules rhs);
 
     /**
@@ -172,7 +198,7 @@ namespace argus {
      */
     typedef std::function<void(ArgusEvent&, void*)> ArgusEventCallback;
 
-    /*
+    /**
      * \brief Initializes the engine with the given modules.
      *
      * \param module_bitmask A bitmask denoting which modules should be
@@ -203,7 +229,9 @@ namespace argus {
      * When performance allows, the engine will sleep between updates to
      * enforce this limit. Set to 0 to disable tickrate targeting.
      *
-     * Note that this is independent from the target tickrate, which controls
+     * \param target_tickrate The new target tickrate in updates/second.
+     *
+     * \attention This is independent from the target framerate, which controls
      * how frequently frames are rendered.
      */
     void set_target_tickrate(const unsigned int target_tickrate);
@@ -214,8 +242,10 @@ namespace argus {
      * When performance allows, the engine will sleep between frames to
      * enforce this limit. Set to 0 to disable framerate targeting.
      *
-     * Note that this is independent from the target tickrate, which controls
-     * how often the game logic routine is called.
+     * \param target_framerate The new target framerate in frames/second.
+     *
+     * \attention This is independent from the target tickrate, which controls
+     * how frequently the game logic routine is called.
      */
     void set_target_framerate(const unsigned int target_framerate);
 
@@ -224,12 +254,18 @@ namespace argus {
      *
      * It is normally not necessary to invoke this from game code.
      *
+     * \param update_callback The callback to be invoked on each update.
+     *
      * \return The ID of the new registration.
+     *
+     * \sa DeltaCallback
      */
     const Index register_update_callback(const DeltaCallback update_callback);
 
     /**
-     * \brief Unregisters the update callback with the given ID.
+     * \brief Unregisters an update callback.
+     *
+     * \param id The ID of the callback to unregister.
      */
     void unregister_update_callback(const Index id);
 
@@ -238,27 +274,42 @@ namespace argus {
      *
      * It is normally not necessary to invoke this from game code.
      *
+     * \param render_callback The callback to be invoked on each frame.
+     *
      * \return The ID of the new registration.
+     *
+     * \sa DeltaCallback
      */
-    const Index register_render_callback(const DeltaCallback update_callback);
+    const Index register_render_callback(const DeltaCallback render_callback);
 
     /**
-     * \brief Unregisters the update callback with the given ID.
+     * \brief Unregisters a render callback.
+     *
+     * \param id The ID of the callback to unregister.
      */
     void unregister_render_callback(const Index id);
 
     /**
-     * \brief Registers a listener for particular events.
+     * \brief Registers a handler for particular events.
      *
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
+     *
+     * \param filter The \link ArgusEventFilter filter \endlink for the new
+     *        event handler.
+     * \param callback The \link ArgusEventCallback callback \endlink
+     *        responsible for handling passed events.
+     * \param data The data pointer to supply to the filter and callback
+     *        functions on each invocation.
      *
      * \return The ID of the new registration.
      */
     const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data);
 
     /**
-     * \brief Unregisters the update callback with the given ID.
+     * \brief Unregisters an event handler.
+     *
+     * \param id The ID of the callback to unregister.
      */
     void unregister_event_handler(const Index id);
 

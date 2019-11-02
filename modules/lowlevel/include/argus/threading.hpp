@@ -32,12 +32,18 @@
 
 namespace argus {
 
+    /**
+     * \brief An abstract handle to a system thread.
+     */
     #ifdef USE_PTHREADS
     typedef pthread_t thread_handle_t;
     #else
     typedef std::thread* thread_handle_t;
     #endif
 
+    /**
+     * \brief An abstract handle to a system shared mutex.
+     */
     #ifdef _WIN32
     typedef SRWLOCK smutex;
     #else
@@ -311,6 +317,8 @@ namespace argus {
      *                 left absent if unneeded.
      *
      * \tparam Out The type of value provided by the returned std::future.
+     *
+     * \return The created std::future.
      *
      * \attention The provided functions \em must be thread-safe, as they will
      *            be performed on a new thread.
