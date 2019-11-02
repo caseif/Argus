@@ -18,7 +18,7 @@
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
-#define GEN_TRANSFORM_SHADER(entry, uniform) Shader::create_vertex_shader_stack("\
+#define GEN_TRANSFORM_SHADER(entry, uniform) Shader::create_vertex_shader("\
         uniform mat4 " uniform ";       \n\
                                         \n\
         void " entry "() {              \n\
@@ -43,22 +43,12 @@ namespace argus {
             uniform_ids(std::vector<std::string>(uniform_ids)) {
     }
 
-    Shader &Shader::create_vertex_shader(const std::string src, const std::string entry_point,
-            const int priority, const std::initializer_list<std::string> &uniform_ids) {
-        return *new Shader(SHADER_VERTEX, src, entry_point, priority, uniform_ids);
-    }
-
-    Shader Shader::create_vertex_shader_stack(const std::string src, const std::string entry_point,
+    Shader Shader::create_vertex_shader(const std::string src, const std::string entry_point,
             const int priority, const std::initializer_list<std::string> &uniform_ids) {
         return Shader(SHADER_VERTEX, src, entry_point, priority, uniform_ids);
     }
 
-    Shader &Shader::create_fragment_shader(const std::string src, const std::string entry_point,
-            const int priority, const std::initializer_list<std::string> &uniform_ids) {
-        return *new Shader(SHADER_FRAGMENT, src, entry_point, priority, uniform_ids);
-    }
-
-    Shader Shader::create_fragment_shader_stack(const std::string src, const std::string entry_point,
+    Shader Shader::create_fragment_shader(const std::string src, const std::string entry_point,
             const int priority, const std::initializer_list<std::string> &uniform_ids) {
         return Shader(SHADER_FRAGMENT, src, entry_point, priority, uniform_ids);
     }

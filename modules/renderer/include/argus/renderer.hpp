@@ -403,7 +403,7 @@ namespace argus {
 
         public:
             /**
-             * \brief Creates a new vertex shader on the heap with the given parameters.
+             * \brief Creates a new vertex shader with the given parameters.
              *
              * \param src The source code of the Shader.
              * \param entry_point The entry point of the Shader.
@@ -412,24 +412,11 @@ namespace argus {
              *
              * \return The constructed vertex Shader.
              */
-            static Shader &create_vertex_shader(const std::string src, const std::string entry_point,
+            static Shader create_vertex_shader(const std::string src, const std::string entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
 
             /**
-             * \brief Creates a new vertex shader on the stack with the given parameters.
-             *
-             * \param src The source code of the Shader.
-             * \param entry_point The entry point of the Shader.
-             * \param priority The priority of the Shader.
-             * \param uniform_ids A list of uniforms defined by this shader.
-             *
-             * \return The constructed vertex Shader.
-             */
-            static Shader create_vertex_shader_stack(const std::string src, const std::string entry_point,
-                    const int priority, const std::initializer_list<std::string> &uniform_ids);
-
-            /**
-             * \brief Creates a new fragment shader on the heap with the given parameters.
+             * \brief Creates a new fragment shader with the given parameters.
              *
              * \param src The source code of the Shader.
              * \param entry_point The entry point of the Shader.
@@ -438,20 +425,7 @@ namespace argus {
              *
              * \return The constructed fragment Shader.
              */
-            static Shader &create_fragment_shader(const std::string src, const std::string entry_point,
-                    const int priority, const std::initializer_list<std::string> &uniform_ids);
-
-            /**
-             * \brief Creates a new fragment shader on the stack with the given parameters.
-             *
-             * \param src The source code of the Shader.
-             * \param entry_point The entry point of the Shader.
-             * \param priority The priority of the Shader.
-             * \param uniform_ids A list of uniforms defined by this shader.
-             *
-             * \return The constructed fragment Shader.
-             */
-            static Shader create_fragment_shader_stack(const std::string src, const std::string entry_point,
+            static Shader create_fragment_shader(const std::string src, const std::string entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
     };
 
