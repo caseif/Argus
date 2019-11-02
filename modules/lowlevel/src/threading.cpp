@@ -99,68 +99,68 @@ namespace argus {
     #endif
 
     #ifdef _WIN32
-    void smutex_create(smutex &mutex) {
-        InitializeSRWLock(&mutex);
+    SharedMutex::SharedMutex(void) {
+        InitializeSRWLock(&handle);
     }
 
-    void smutex_destroy(smutex &mutex) {
+    SharedMutex::~SharedMutex(void) {
         // do nothing
     }
 
-    void smutex_lock(smutex &mutex) {
-        AcquireSRWLockExclusive(&mutex);
+    void SharedMutex::lock(void) {
+        AcquireSRWLockExclusive(&handle);
     }
 
-    bool smutex_try_lock(smutex &mutex) {
-        return TryAcquireSRWLockExclusive(&mutex);
+    bool SharedMutex::try_lock(void) {
+        return TryAcquireSRWLockExclusive(&handle);
     }
 
-    void smutex_unlock(smutex &mutex) {
-        ReleaseSRWLockExclusive(&mutex);
+    void SharedMutex::unlock(void) {
+        ReleaseSRWLockExclusive(&handle);
     }
 
-    void smutex_lock_shared(smutex &mutex) {
-        AcquireSRWLockShared(&mutex);
+    void SharedMutex::lock_shared(void) {
+        AcquireSRWLockShared(&handle);
     }
 
-    bool smutex_try_lock_shared(smutex &mutex) {
-        return TryAcquireSRWLockShared(&mutex);
+    bool SharedMutex::try_lock_shared(void) {
+        return TryAcquireSRWLockShared(&handle);
     }
 
-    void smutex_unlock_shared(smutex &mutex) {
-        ReleaseSRWLockShared(&mutex);
+    void SharedMutex::unlock_shared(void) {
+        ReleaseSRWLockShared(&handle);
     }
     #else
-    void smutex_create(smutex &mutex) {
-        pthread_rwlock_init(&mutex, NULL);
+    SharedMutex::SharedMutex(void) {
+        pthread_rwlock_init(&handle, NULL);
     }
 
-    void smutex_destroy(smutex &mutex) {
-        pthread_rwlock_destroy(&mutex);
+    SharedMutex::~SharedMutex(void) {
+        pthread_rwlock_destroy(&handle);
     }
 
-    void smutex_lock(smutex &mutex) {
-        pthread_rwlock_wrlock(&mutex);
+    void SharedMutex::lock(void) {
+        pthread_rwlock_wrlock(&handle);
     }
 
-    bool smutex_try_lock(smutex &mutex) {
-        return pthread_rwlock_tryrdlock(&mutex) == 0;
+    bool SharedMutex::try_lock(void) {
+        return pthread_rwlock_tryrdlock(&handle) == 0;
     }
 
-    void smutex_unlock(smutex &mutex) {
-        pthread_rwlock_unlock(&mutex);
+    void SharedMutex::unlock(void) {
+        pthread_rwlock_unlock(&handle);
     }
 
-    void smutex_lock_shared(smutex &mutex) {
-        pthread_rwlock_rdlock(&mutex);
+    void SharedMutex::lock_shared(void) {
+        pthread_rwlock_rdlock(&handle);
     }
 
-    bool smutex_try_lock_shared(smutex &mutex) {
-        return pthread_rwlock_rdlock(&mutex) == 0;
+    bool SharedMutex::try_lock_shared(void) {
+        return pthread_rwlock_rdlock(&handle) == 0;
     }
 
-    void smutex_unlock_shared(smutex &mutex) {
-        pthread_rwlock_unlock(&mutex);
+    void SharedMutex::unlock_shared(void) {
+        pthread_rwlock_unlock(&handle);
     }
     #endif
 

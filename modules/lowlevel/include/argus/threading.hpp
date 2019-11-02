@@ -45,9 +45,9 @@ namespace argus {
      * \brief An abstract handle to a system shared mutex.
      */
     #ifdef _WIN32
-    typedef SRWLOCK smutex;
+    typedef SRWLOCK smutex_handle_t;
     #else
-    typedef pthread_rwlock_t smutex;
+    typedef pthread_rwlock_t smutex_handle_t;
     #endif
 
     /**
@@ -98,67 +98,88 @@ namespace argus {
     };
 
     /**
-     * \brief Initializes a new smutex at the given pointer.
+     * \brief A read/write mutex.
      *
-     * An smutex is a read/write mutex, allowing data to be read by multiple
-     * threads at once (but only written by one).
+     * A shared mutex allows both shared and exclusive locking, allowing
+     * multiple threads to read at once through shared acquisition. However, a
+     * thread performing a write operation will acquire an exclusive lock, in
+     * which case the shared mutex behaves like a standard mutex and allows only
+     * one concurrent accessor.
      */
-    void smutex_create(smutex &mutex);
+    class SharedMutex {
+        private:
+            /**
+             * \brief The handle to the system mutex.
+             */
+            smutex_handle_t handle;
 
-    /**
-     * \brief Destroys the given smutex.
-     *
-     * Note that on Windows, this function does nothing since SRWLOCK
-     * destruction is not required (or possible).
-     */
-    void smutex_destroy(smutex &mutex);
+        public:
+            /**
+             * \brief Constructs a new SharedMutex.
+             */
+            SharedMutex(void);
 
-    /**
-     * \brief Acquires an exclusive lock on the given mutex, blocking the thread
-     *        if necessary.
-     */
-    void smutex_lock(smutex &mutex);
+            ~SharedMutex(void);
 
-    /**
-     * \brief Attempts to acquire an exclusive lock on the given mutex, but
-     *        fails quickly and does not block.
-     *
-     * \return Whether a lock was acquired.
-     */
-    bool smutex_try_lock(smutex &mutex);
+            /**
+             * \brief Acquires an exclusive lock on the mutex, blocking the
+             *        calling thread if necessary.
+             *
+             * \attention Only one thread may hold an exclusive lock at a time,
+             *            and no shared locks may be held as long as an
+             *            exclusive lock is held.
+             *
+             * \sa SharedMutex::try_lock(void)
+             */
+            void lock(void);
 
-    /**
-     * \brief Releases the current exclusive lock on the given mutex.
-     *
-     * This function should never be invoked if an exclusive lock is not
-     * guaranteed to be held by the current thread.
-     */
-    void smutex_unlock(smutex &mutex);
+            /**
+             * \brief Attempts to acquire an exclusive lock on the mutex, but
+             *        fails fast and does not block.
+             *
+             * \return Whether a lock was acquired.
+             *
+             * \sa SharedMutex::lock(void)
+             */
+            bool try_lock(void);
 
-    /**
-     * \brief Acquires a shared lock on the given mutex, blocking the thread if
-     *        necessary.
-     *
-     * Multiple threads may hold a shared lock at once, so long as no thread
-     * holds an exclusive lock.
-     */
-    void smutex_lock_shared(smutex &mutex);
+            /**
+             * \brief Releases the current exclusive lock on the mutex.
+             *
+             * \warning This function should only be invoked if an exclusive
+             *          lock is guaranteed to be held by the current thread.
+             */
+            void unlock(void);
 
-    /**
-     * \brief Attempts to acquire a shared lock on the given mutex, but fails
-     *        quickly and does not block.
-     *
-     * \return Whether a lock was acquired.
-     */
-    bool smutex_try_lock_shared(smutex &mutex);
+            /**
+             * \brief Acquires a shared lock, blocking the thread if
+             *        necessary.
+             *
+             * \remark Multiple threads may hold a shared lock at once, so long
+             *         as no thread holds an exclusive lock.
+             *
+             * \sa SharedMutex::try_lock_shared(void)
+             */
+            void lock_shared(void);
 
-    /**
-     * \brief Releases the current shared lock on the given mutex.
-     *
-     * This function should never be invoked if an shared lock is not guaranteed
-     * to be held by the current thread.
-     */
-    void smutex_unlock_shared(smutex &mutex);
+            /**
+             * \brief Attempts to acquire a shared lock on the given mutex, but
+             *        fails quickly and does not block.
+             *
+             * \return Whether a lock was acquired.
+             *
+             * \sa SharedMutex::lock_shared(void)
+             */
+            bool try_lock_shared(void);
+
+            /**
+             * \brief Releases the current shared lock on the given mutex.
+             *
+             * \warning This function should be invoked only if a shared lock is
+             *          guaranteed to be held by the current thread.
+             */
+            void unlock_shared(void);
+    };
 
     /**
      * \brief A drop-in replacement for std::atomic for non-trvially copyable

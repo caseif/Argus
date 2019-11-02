@@ -73,8 +73,8 @@ namespace argus {
         std::vector<IndexedValue<T>> list;
         std::queue<IndexedValue<T>> addition_queue;
         std::queue<Index> removal_queue;
-        smutex list_mutex;
-        smutex queue_mutex;
+        SharedMutex list_mutex;
+        SharedMutex queue_mutex;
     };
 
     Thread *g_render_thread;
@@ -163,16 +163,16 @@ namespace argus {
 
     template<typename T>
     static void _flush_callback_list_queues(CallbackList<T> &list) {
-        smutex_lock_shared(list.queue_mutex);
+        list.queue_mutex.lock_shared();
 
         // avoid acquiring an exclusive lock unless we actually need to update the list
         if (!list.removal_queue.empty()) {
-            smutex_unlock_shared(list.queue_mutex); // VC++ doesn't allow upgrading lock ownership
+            list.queue_mutex.unlock_shared(); // VC++ doesn't allow upgrading lock ownership
             // it's important that we lock list_mutex first, since the callback loop has a perpetual lock on it
             // and individual callbacks may invoke _unregister_callback (thus locking queue_mutex).
             // failure to follow this order will cause deadlock.
-            smutex_lock(list.list_mutex); // we need to get a lock on the list since we're updating it
-            smutex_lock(list.queue_mutex);
+            list.list_mutex.lock(); // we need to get a lock on the list since we're updating it
+            list.queue_mutex.lock();
             while (!list.removal_queue.empty()) {
                 Index id = list.removal_queue.front();
                 list.removal_queue.pop();
@@ -180,34 +180,28 @@ namespace argus {
                     _ARGUS_WARN("Game attempted to unregister unknown callback %llu\n", id);
                 }
             }
-            smutex_unlock(list.queue_mutex);
-            smutex_unlock(list.list_mutex);
+            list.queue_mutex.unlock();
+            list.list_mutex.unlock();
         } else {
-            smutex_unlock_shared(list.queue_mutex);
+            list.queue_mutex.unlock_shared();
         }
 
         // same here
-        smutex_lock_shared(list.queue_mutex);
+        list.queue_mutex.lock_shared();
         if (!list.addition_queue.empty()) {
-            smutex_unlock_shared(list.queue_mutex);
+            list.queue_mutex.unlock_shared();
             // same deal with the ordering
-            smutex_lock(list.list_mutex);
-            smutex_lock(list.queue_mutex);
+            list.list_mutex.lock();
+            list.queue_mutex.lock();
             while (!list.addition_queue.empty()) {
                 list.list.insert(list.list.cend(), list.addition_queue.front());
                 list.addition_queue.pop();
             }
-            smutex_unlock(list.queue_mutex);
-            smutex_unlock(list.list_mutex);
+            list.queue_mutex.unlock();
+            list.list_mutex.unlock();
         } else {
-            smutex_unlock_shared(list.queue_mutex);
+            list.queue_mutex.unlock_shared();
         }
-    }
-
-    template<typename T>
-    void _init_callback_list(CallbackList<T> &list) {
-        smutex_create(list.list_mutex);
-        smutex_create(list.queue_mutex);
     }
 
     static int _master_event_handler(SDL_Event &event) {
@@ -216,14 +210,14 @@ namespace argus {
                 listener.value.callback(event, listener.value.data);
             }
         }
-        smutex_unlock_shared(g_sdl_event_listeners.list_mutex);
+        g_sdl_event_listeners.list_mutex.unlock_shared();
 
         return 0;
     }
 
     static void _process_event_queue(void) {
         g_event_queue_mutex.lock();
-        smutex_lock_shared(g_event_listeners.list_mutex);
+        g_event_listeners.list_mutex.lock_shared();
 
         while (!g_event_queue.empty()) {
             ArgusEvent &event = *std::move(g_event_queue.front().get());
@@ -235,7 +229,7 @@ namespace argus {
             g_event_queue.pop();
         }
 
-        smutex_unlock_shared(g_event_listeners.list_mutex);
+        g_event_listeners.list_mutex.unlock_shared();
         g_event_queue_mutex.unlock();
     }
 
@@ -257,10 +251,6 @@ namespace argus {
             g_update_callbacks.list.reserve(10);
             return;
         } else if (stage == LifecycleStage::INIT) {
-            _init_callback_list(g_update_callbacks);
-            _init_callback_list(g_render_callbacks);
-            _init_callback_list(g_event_listeners);
-
             _initialize_sdl();
 
             g_initialized = true;
@@ -333,11 +323,11 @@ namespace argus {
             _process_event_queue();
 
             // invoke update callbacks
-            smutex_lock_shared(g_update_callbacks.list_mutex);
+            g_update_callbacks.list_mutex.lock_shared();
             for (IndexedValue<DeltaCallback> callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
-            smutex_unlock_shared(g_update_callbacks.list_mutex);
+            g_update_callbacks.list_mutex.unlock_shared();
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -359,11 +349,11 @@ namespace argus {
             TimeDelta delta = _compute_delta(last_frame);
 
             // invoke render callbacks
-            smutex_lock_shared(g_render_callbacks.list_mutex);
+            g_render_callbacks.list_mutex.lock_shared();
             for (IndexedValue<DeltaCallback> callback : g_render_callbacks.list) {
                 callback.value(delta);
             }
-            smutex_unlock_shared(g_render_callbacks.list_mutex);
+            g_render_callbacks.list_mutex.unlock_shared();
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -379,18 +369,18 @@ namespace argus {
         Index index = g_next_index++;
         g_next_index_mutex.unlock();
 
-        smutex_lock(list.queue_mutex);
+        list.queue_mutex.lock();
         list.addition_queue.push({index, callback});
-        smutex_unlock(list.queue_mutex);
+        list.queue_mutex.unlock();
 
         return index;
     }
 
     template<typename T>
     void _remove_callback(CallbackList<T> &list, const Index index) {
-        smutex_lock(list.queue_mutex);
+        list.queue_mutex.lock();
         list.removal_queue.push(index);
-        smutex_unlock(list.queue_mutex);
+        list.queue_mutex.unlock();
     }
 
     const Index register_update_callback(const DeltaCallback callback) {
