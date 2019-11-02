@@ -192,7 +192,7 @@ namespace argus {
 
             /**
              * \brief Adds the given value to this Transform's translation
-             * component.
+             *        component.
              *
              * \param translation_delta The value to add to this Transform's
              *         translation component.
@@ -215,7 +215,7 @@ namespace argus {
 
             /**
              * \brief Adds the given value to this Transform's rotation
-             * component.
+             *        component.
              *
              * \param rotation_radians The value in radians to add to this
              *         Transform's rotation component.
@@ -238,7 +238,7 @@ namespace argus {
 
             /**
              * \brief Generates a 4x4 matrix in column-major form representing
-             * this Transform and stores it in the given parameter.
+             *        this Transform and stores it in the given parameter.
              *
              * \param dst_arr A pointer to the location where the matrix data
              *         will be stored.
@@ -247,7 +247,7 @@ namespace argus {
 
             /**
              * \brief Gets whether this transform has been modified since the
-             * last time the clean() member function was invoked.
+             *        last time the clean() member function was invoked.
              *
              * \return Whether this transform is dirty.
              */
@@ -261,7 +261,7 @@ namespace argus {
 
     /**
      * \brief Represents a vertex in 2D space containing a 2-dimensional spatial
-     * position, an RGBA color value, and 2-dimensional texture UV coordinates.
+     *        position, an RGBA color value, and 2-dimensional texture UV coordinates.
      */
     struct Vertex {
         /**
@@ -280,7 +280,7 @@ namespace argus {
 
     /**
      * \brief Contains metadata and data pertaining to an image to be used as a
-     * texture for rendering.
+     *        texture for rendering.
      *
      * Depending on whether the data has been prepared by the renderer, the
      * object may or may not contain the image data. Image data is deleted
@@ -778,7 +778,7 @@ namespace argus {
              * \brief Destroys this window.
              *
              * \warning This method destroys the Window object. No other methods
-             * should be invoked upon it after calling destroy().
+             *          should be invoked upon it after calling destroy().
              */
             void destroy(void);
 
@@ -893,7 +893,7 @@ namespace argus {
 
     /**
      * \brief Represents a group of \link Renderable Renderables \endlink to be
-     * rendered at once.
+     *        rendered at once.
      *
      * A RenderGroup may contain both its own Transform and \link Shader Shaders
      * \endlink, which will be applied in conjunction with the respective

@@ -192,13 +192,13 @@ namespace argus {
 
             /**
              * \brief Reads data from the file referenced by this handle
-             * asynchronously.
+             *        asynchronously.
              *
              * \param offset The offset in bytes from which to begin reading.
              * \param size The number of bytes to read.
              * \param buf The buffer to store data into. This buffer _must_ be
-             *            at least `size` bytes in length to avoid a buffer
-             *            overflow.
+             *        at least `size` bytes in length to avoid a buffer
+             *        overflow.
              * \param callback The callback to execute upon completion of the
              *        read operation. The function handle may be empty. Note
              *        that this callback is not guaranteed to run (e.g. if the
@@ -225,7 +225,7 @@ namespace argus {
 
             /**
              * \brief Writes data into the file referenced by this handle
-             * asynchronously.
+             *        asynchronously.
              *
              * \param offset The offset in bytes at which to begin writing, or
              *        `-1` to append to the end of the file.
@@ -260,7 +260,7 @@ namespace argus {
 
     /**
      * \brief Gets the path to the current executable. This function has various
-     * implementations depending on the target platform.
+     *        implementations depending on the target platform.
      *
      * \return The path to the current executable.
      *

@@ -96,17 +96,17 @@ namespace argus {
         PRE_INIT,
         /**
          * \brief Primary initialization stage, for performing most
-         * initialization tasks.
+         *        initialization tasks.
          */
         INIT,
         /**
          * \brief Post-initialization stage, for performing initialization
-         * contingent on all parent modules being initialized.
+         *        contingent on all parent modules being initialized.
          */
         POST_INIT,
         /**
          * \brief Early de-initialization. This occurs immediately after the
-         * engine has committed to shutting down.
+         *        engine has committed to shutting down.
          *
          * Should be used for performing early de-initialization tasks, such as
          * saving user data. Changes during this stage should not be visible to
@@ -161,7 +161,7 @@ namespace argus {
 
     /**
      * \brief Represents an event pertaining to the current application,
-     * typically triggered by user interaction.
+     *        typically triggered by user interaction.
      */
     struct ArgusEvent {
         /**
@@ -188,13 +188,13 @@ namespace argus {
 
     /**
      * \brief A callback that accepts an event and a piece of user-supplied
-     * data.
+     *        data.
      */
     typedef std::function<bool(ArgusEvent&, void*)> ArgusEventFilter;
 
     /**
      * \brief A callback that accepts an event and a piece of user-supplied
-     * data.
+     *        data.
      */
     typedef std::function<void(ArgusEvent&, void*)> ArgusEventCallback;
 
@@ -202,8 +202,8 @@ namespace argus {
      * \brief Initializes the engine with the given modules.
      *
      * \param module_bitmask A bitmask denoting which modules should be
-     * initialized, constructed from the bitwise OR of the appropriate
-     * EngineModule values. MODULE_CORE is implicit.
+     *        initialized, constructed from the bitwise OR of the appropriate
+     *        EngineModule values. MODULE_CORE is implicit.
      *
      * This must be called before any other interaction with the engine takes
      * place.
@@ -219,7 +219,7 @@ namespace argus {
 
     /**
      * \brief Requests that the engine halt execution, performing cleanup as
-     * necessary.
+     *        necessary.
      */
     void stop_engine(void);
 
@@ -232,7 +232,7 @@ namespace argus {
      * \param target_tickrate The new target tickrate in updates/second.
      *
      * \attention This is independent from the target framerate, which controls
-     * how frequently frames are rendered.
+     *            how frequently frames are rendered.
      */
     void set_target_tickrate(const unsigned int target_tickrate);
 
@@ -245,7 +245,7 @@ namespace argus {
      * \param target_framerate The new target framerate in frames/second.
      *
      * \attention This is independent from the target tickrate, which controls
-     * how frequently the game logic routine is called.
+     *            how frequently the game logic routine is called.
      */
     void set_target_framerate(const unsigned int target_framerate);
 
@@ -320,7 +320,7 @@ namespace argus {
      * solely due to C++ templating restrictions.
      *
      * \param event An rreference to the event to be dispatched as wrapped by a
-     * unique_ptr.
+     *        std::unique_ptr.
      */
     void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event);
 

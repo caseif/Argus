@@ -223,7 +223,7 @@ namespace argus {
     struct KeyboardEvent : public ArgusEvent {
         /**
          * \brief The particular \link KeyboardEventType type \endlink of
-         * KeyboardEvent.
+         *        KeyboardEvent.
          */
         const KeyboardEventType subtype;
 
@@ -241,7 +241,7 @@ namespace argus {
 
         /**
          * \brief Gets whether the key press is representative of a textual
-         * character.
+         *        character.
          *
          * \return Whether the key press is representative of a textual
          *         character.
@@ -275,7 +275,7 @@ namespace argus {
 
         /**
          * \brief Gets the command associated with this key press, taking key
-         * modifiers into account.
+         *        modifiers into account.
          *
          * \throw invalid_argument If is_command(KeyboardScancode) returns `false`.
          *
@@ -300,7 +300,7 @@ namespace argus {
      * \param scancode The scancode to check.
      *
      * \return Whether the given scancode is associated with a textual character
-     * key.
+     *         key.
      */
     bool is_character_key(KeyboardScancode scancode);
 
