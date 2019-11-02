@@ -399,7 +399,7 @@ namespace argus {
              * \param uniform_ids A list of uniforms defined by this shader.
              */
             Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
-                    const int priority, std::initializer_list<std::string>const  &uniform_ids);
+                    const int priority, const std::initializer_list<std::string> &uniform_ids);
 
         public:
             /**

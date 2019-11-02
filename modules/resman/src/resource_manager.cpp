@@ -52,7 +52,7 @@ namespace argus {
 
     static void _discover_fs_resources_recursively(const std::string &root_path, const std::string &prefix,
             std::map<std::string, ResourcePrototype> &prototype_map,
-            std::map<std::string, std::string>const  &extension_map) {
+            const std::map<std::string, std::string> &extension_map) {
         std::vector<std::string> children;
         try {
             children = list_directory_entries(root_path);

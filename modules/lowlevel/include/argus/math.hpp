@@ -42,7 +42,7 @@ struct Vector2 {
      *
      * \return The element-wise sum of the two vectors as a new Vector2.
      */
-    Vector2<T> operator +(Vector2<T>const  &rhs) {
+    Vector2<T> operator +(const Vector2<T> &rhs) {
         return {x + rhs.x, y + rhs.y};
     }
 
@@ -58,7 +58,7 @@ struct Vector2 {
      * \return The element-wise difference between the two vectors as a new
      *         Vector2.
      */
-    Vector2<T> operator -(Vector2<T>const  &rhs) {
+    Vector2<T> operator -(const Vector2<T> &rhs) {
         return {x - rhs.x, y - rhs.y};
     }
 
@@ -70,7 +70,7 @@ struct Vector2 {
      *
      * \return The element-wise product of the two vectors as a new Vector2.
      */
-    Vector2<T> operator *(Vector2<T>const  &rhs) {
+    Vector2<T> operator *(const Vector2<T> &rhs) {
         return {x * rhs.x, y * rhs.y};
     }
 
@@ -83,7 +83,7 @@ struct Vector2 {
      *
      * \sa Vector2::operator+
      */
-    Vector2<T> &operator +=(Vector2<T>const  &rhs) {
+    Vector2<T> &operator +=(const Vector2<T> &rhs) {
         x += rhs.x;
         y += rhs.y;
         return *this;
@@ -98,7 +98,7 @@ struct Vector2 {
      *
      * \sa Vector2::operator-
      */
-    Vector2<T> &operator -=(Vector2<T>const  &rhs) {
+    Vector2<T> &operator -=(const Vector2<T> &rhs) {
         x -= rhs.x;
         y -= rhs.y;
         return *this;
@@ -114,7 +114,7 @@ struct Vector2 {
      *
      * \sa Vector2::operator*
      */
-    Vector2<T> &operator *=(Vector2<T>const  &rhs) {
+    Vector2<T> &operator *=(const Vector2<T> &rhs) {
         x *= rhs.x;
         y *= rhs.y;
         return *this;
@@ -180,7 +180,7 @@ struct Vector3 {
      *
      * \return The element-wise sum of the two vectors as a new Vector2.
      */
-    Vector3<T> operator +(Vector3<T>const  &rhs) {
+    Vector3<T> operator +(const Vector3<T> &rhs) {
         return {x + rhs.x, y + rhs.y, z + rhs.z};
     }
 
@@ -196,7 +196,7 @@ struct Vector3 {
      * \return The element-wise difference between the two vectors as a new
      *         Vector2.
      */
-    Vector3<T> operator -(Vector3<T>const  &rhs) {
+    Vector3<T> operator -(const Vector3<T> &rhs) {
         return {x - rhs.x, y - rhs.y, z - rhs.z};
     }
 
@@ -208,7 +208,7 @@ struct Vector3 {
      *
      * \return The element-wise product of the two vectors as a new Vector2.
      */
-    T operator *(Vector3<T>const  &rhs) {
+    T operator *(const Vector3<T> &rhs) {
         return {x * rhs.x, y * rhs.y, z * rhs.z};
     }
 
@@ -221,7 +221,7 @@ struct Vector3 {
      *
      * \sa Vector3::operator+
      */
-    Vector3<T> &operator +=(Vector3<T>const  &rhs) {
+    Vector3<T> &operator +=(const Vector3<T> &rhs) {
         x += rhs.x;
         y += rhs.y;
         z += rhs.z;
@@ -237,7 +237,7 @@ struct Vector3 {
      *
      * \sa Vector3::operator-
      */
-    Vector3<T> &operator -=(Vector3<T>const  &rhs) {
+    Vector3<T> &operator -=(const Vector3<T> &rhs) {
         x -= rhs.x;
         y -= rhs.y;
         z -= rhs.z;
@@ -254,7 +254,7 @@ struct Vector3 {
      *
      * \sa Vector3::operator*
      */
-    Vector3<T> &operator *=(Vector3<T>const  &rhs) {
+    Vector3<T> &operator *=(const Vector3<T> &rhs) {
         x *= rhs.x;
         y *= rhs.y;
         z *= rhs.z;
@@ -335,7 +335,7 @@ struct Vector4 {
      *
      * \return The element-wise sum of the two vectors as a new Vector4.
      */
-    Vector4<T> operator +(Vector4<T>const  &rhs) {
+    Vector4<T> operator +(const Vector4<T> &rhs) {
         return {x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w};
     }
 
@@ -351,7 +351,7 @@ struct Vector4 {
      * \return The element-wise difference between the two vectors as a new
      *         Vector4.
      */
-    Vector4<T> operator -(Vector4<T>const  &rhs) {
+    Vector4<T> operator -(const Vector4<T> &rhs) {
         return {x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w};
     }
 
@@ -363,7 +363,7 @@ struct Vector4 {
      *
      * \return The element-wise product of the two vectors as a new Vector4.
      */
-    Vector4<T> operator *(Vector4<T>const  &rhs) {
+    Vector4<T> operator *(const Vector4<T> &rhs) {
         return {x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w};
     }
 
@@ -376,7 +376,7 @@ struct Vector4 {
      *
      * \sa Vector4::operator+
      */
-    Vector4<T> &operator +=(Vector4<T>const  &rhs) {
+    Vector4<T> &operator +=(const Vector4<T> &rhs) {
         x += rhs.x;
         y += rhs.y;
         z += rhs.z;
@@ -393,7 +393,7 @@ struct Vector4 {
      *
      * \sa Vector4::operator-
      */
-    Vector4<T> &operator -=(Vector4<T>const  &rhs) {
+    Vector4<T> &operator -=(const Vector4<T> &rhs) {
         x -= rhs.x;
         y -= rhs.y;
         z -= rhs.z;
@@ -411,7 +411,7 @@ struct Vector4 {
      *
      * \sa Vector4::operator*
      */
-    Vector4<T> &operator *=(Vector4<T>const  &rhs) {
+    Vector4<T> &operator *=(const Vector4<T> &rhs) {
         x *= rhs.x;
         y *= rhs.y;
         z *= rhs.z;
