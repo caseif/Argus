@@ -32,7 +32,7 @@ namespace argus {
     }
 
     void init_keyboard(void) {
-        register_sdl_event_handler(_sdl_keyboard_event_filter, nullptr, nullptr);
+        register_sdl_event_handler(_sdl_keyboard_event_filter, _sdl_keyboard_event_handler, nullptr);
     }
 
     bool KeyboardEvent::is_character(void) {
