@@ -178,6 +178,8 @@ namespace argus {
             } catch (std::exception &ex) {
                 promise_ptr->set_exception_at_thread_exit(std::make_exception_ptr(ex));
             }
+
+            return nullptr;
         }, nullptr);
 
         return future;

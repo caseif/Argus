@@ -363,6 +363,8 @@ namespace argus {
             } catch (std::exception &ex) {
                 promise_ptr->set_exception(std::make_exception_ptr(ex));
             }
+
+            return nullptr;
         }, nullptr);
 
         return future;

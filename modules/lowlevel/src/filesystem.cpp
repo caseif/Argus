@@ -169,8 +169,6 @@ namespace argus {
 
         fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
 
-        char buf[CHUNK_SIZE];
-
         std::ios::openmode mode = std::ios::binary;
         if (this->mode & FILE_MODE_READ) {
             mode |= std::ios::in;

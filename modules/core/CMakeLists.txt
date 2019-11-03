@@ -1,4 +1,4 @@
-find_package("SDL2" REQUIRED)
+find_package(SDL2 REQUIRED)
 
 # module name
 set(MODULE_NAME "core")

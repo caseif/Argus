@@ -29,6 +29,7 @@
 #include <atomic>
 #include <functional>
 #include <initializer_list>
+#include <map>
 #include <mutex>
 #include <set>
 #include <string>

@@ -18,6 +18,7 @@
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
+#include <iterator>
 #include <set>
 #include <sstream>
 #include <SDL2/SDL_opengl.h>
