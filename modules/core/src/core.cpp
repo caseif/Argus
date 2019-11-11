@@ -334,7 +334,7 @@ namespace argus {
                 continue;
             }
 
-            _ARGUS_INFO("Found external module file %s, attempting to load.\n", filename);
+            _ARGUS_INFO("Found external module file %s, attempting to load.\n", filename.c_str());
 
             void *handle;
             #ifdef _WIN32
