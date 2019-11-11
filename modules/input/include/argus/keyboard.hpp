@@ -156,6 +156,7 @@ namespace argus {
         F11,
         F12,
         BACKSPACE,
+        TAB,
         CAPS_LOCK,
         ENTER,
         MENU,
@@ -174,7 +175,8 @@ namespace argus {
         ARROW_RIGHT,
         NP_NUM_LOCK,
         NP_ENTER,
-        NP_DOT
+        NP_DOT,
+        SUPER
     };
 
     /**
@@ -185,6 +187,7 @@ namespace argus {
      * toggles.
      */
     enum class KeyboardModifiers : uint16_t {
+        NONE            = 0x00,
         LEFT_SHIFT      = 0x01,
         RIGHT_SHIFT     = 0x02,
         LEFT_CONTROL    = 0x04,
@@ -199,6 +202,37 @@ namespace argus {
         CONTROL         = LEFT_CONTROL | RIGHT_CONTROL,
         ALT             = LEFT_ALT | RIGHT_ALT
     };
+
+        /**
+     * \brief Bitwise OR implementation for KeyboardModifiers bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     */
+    KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    /**
+     * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
+     *        elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     *
+     * \sa KeyboardModifiers::operator|
+     */
+    constexpr inline KeyboardModifiers operator |=(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    /**
+     * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise AND of the operands.
+     */
+    inline bool operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
 
     /**
      * \brief Represents a specific type of keyboard event.
@@ -228,16 +262,27 @@ namespace argus {
         const KeyboardEventType subtype;
 
         /**
-         * \brief The scancode emitted by this key press.
+         * \brief The scancode associated with this key event.
          */
         const KeyboardScancode scancode;
         /**
-         * \brief The modifiers active during this key press.
+         * \brief The modifiers active during this key event.
          *
          * \remark If the key press is associated with a modifier key, said key
          *         will not be included by this field.
          */
         const KeyboardModifiers modifiers;
+
+        /**
+         * \brief Aggregate constructor for KeyboardEvent.
+         *
+         * \param subtype The particlar \link KeyboardEventType type \endlink of
+         *        the KeyboardEvent.
+         * \param scancode The scancode associated with this key event.
+         * \param modifiers The modifiers active during this key event.
+         */
+        KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
+                const KeyboardModifiers modifiers);
 
         /**
          * \brief Gets whether the key press is representative of a textual
@@ -267,7 +312,8 @@ namespace argus {
          * \brief Gets the textual character associated with this key press,
          *        taking key modifiers into account.
          *
-         * This will throw invalid_argument if is_character(KeyboardScancode) returns `false`.
+         * \throw std::invalid_argument if is_character(KeyboardScancode)
+         *        returns `false`.
          *
          * \return The textual character associated with this key press.
          */
@@ -277,7 +323,8 @@ namespace argus {
          * \brief Gets the command associated with this key press, taking key
          *        modifiers into account.
          *
-         * \throw invalid_argument If is_command(KeyboardScancode) returns `false`.
+         * \throw std::invalid_argument If is_command(KeyboardScancode) returns
+         *        `false`.
          *
          * \return The command associated with this key press.
          */
@@ -286,7 +333,8 @@ namespace argus {
         /**
          * \brief Gets the key modifier associated with this key press.
          *
-         * \throw invalid_argument If is_modifier(KeyboardScancode) returns `false`.
+         * \throw std::invalid_argument If is_modifier(KeyboardScancode) returns
+         *        `false`.
          *
          * \return The key modifier associated with this key press.
          */

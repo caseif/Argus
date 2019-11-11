@@ -157,10 +157,19 @@ namespace argus {
      *        typically triggered by user interaction.
      */
     struct ArgusEvent {
-        /**
-         * \brief The type of event.
-         */
-        const ArgusEventType type;
+        protected:
+            /**
+             * \brief Aggregate constructor for ArgusEvent.
+             *
+             * \param type The \link ArgusEventType type \endlink of event.
+             */
+            ArgusEvent(ArgusEventType type);
+
+        public:
+            /**
+             * \brief The type of event.
+             */
+            const ArgusEventType type;
     };
 
     /**
@@ -376,7 +385,7 @@ namespace argus {
     void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event);
 
     /**
-     * Dispatches an event to all respective registered listeners.
+     * \brief Dispatches an event to all respective registered listeners.
      *
      * \param event An lreference to the event to be dispatched.
      */

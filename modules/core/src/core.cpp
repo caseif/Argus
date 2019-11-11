@@ -334,6 +334,8 @@ namespace argus {
                 continue;
             }
 
+            _ARGUS_INFO("Found external module file %s, attempting to load.\n", filename);
+
             void *handle;
             #ifdef _WIN32
             handle = LoadLibrary(full_path);
@@ -595,6 +597,10 @@ namespace argus {
         _ARGUS_ASSERT(g_initialized, "Cannot stop engine before it is initialized.");
 
         g_engine_stopping = true;
+    }
+
+    ArgusEvent::ArgusEvent(ArgusEventType type):
+            type(type) {
     }
 
 }
