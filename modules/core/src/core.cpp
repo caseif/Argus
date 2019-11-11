@@ -283,7 +283,7 @@ namespace argus {
         }
     }
 
-    void _load_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
+    void _enable_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
         // skip duplicates
         for (const ArgusModule enabled_module : g_enabled_modules) {
             if (enabled_module.id == module_id) {
@@ -307,17 +307,17 @@ namespace argus {
         std::vector<std::string> new_chain = dependent_chain;
         new_chain.insert(new_chain.cend(), module_id);
         for (const std::string dependency : it->second.dependencies) {
-            _load_module(dependency, new_chain);
+            _enable_module(dependency, new_chain);
         }
 
         g_enabled_modules.insert(it->second);
 
-        _ARGUS_INFO("Loaded module %s.\n", module_id.c_str());
+        _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
     void _load_modules(const std::initializer_list<const std::string> modules) {
         for (const std::string module : modules) {
-            _load_module(module, {});
+            _enable_module(module, {});
         }
     }
 
