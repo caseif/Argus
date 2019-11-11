@@ -18,7 +18,6 @@
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
 
-#include <iterator>
 #include <set>
 #include <sstream>
 #include <SDL2/SDL_opengl.h>
@@ -38,7 +37,13 @@ namespace argus {
     };
 
     ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
-            shaders(shaders.cbegin(), shaders.cend(), [](auto a, auto b){return a->priority > b->priority;}),
+            shaders(shaders.cbegin(), shaders.cend(), [](auto a, auto b){
+                if (a->priority != b->priority) {
+                    return a->priority > b->priority;
+                } else {
+                    return a->entry_point.compare(b->entry_point) < 0;
+                }
+            }),
             initialized(false),
             needs_rebuild(true) {
     }

@@ -36,8 +36,10 @@ namespace argus {
     ShaderProgram RenderGroup::generate_initial_program(void) {
         std::vector<const Shader*> final_shaders;
         final_shaders.reserve(parent.shaders.size() + shaders.size());
+
         std::copy(parent.shaders.begin(), parent.shaders.end(), std::back_inserter(final_shaders));
         std::copy(shaders.begin(), shaders.end(), std::back_inserter(final_shaders));
+
         return ShaderProgram(std::move(final_shaders));
     }
 
