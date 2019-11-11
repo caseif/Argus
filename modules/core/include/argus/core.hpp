@@ -15,10 +15,48 @@
 
 #pragma once
 
-#define SDL_MAIN_HANDLED
-
 #include <functional>
 #include <memory>
+#include <vector>
+
+#define SDL_MAIN_HANDLED
+
+#ifdef _MSC_VER
+#define _MODULE_REG_PREFIX BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+#elif defined(__GNUC__) || defined(__clang__)
+#define _MODULE_REG_PREFIX __attribute__((constructor)) __argus_module_ctor(void)
+#else
+#warning "Module loading is unsupported on this platform."
+#endif
+
+#define MODULE_CORE "core"
+#define MODULE_INPUT "input"
+#define MODULE_RESMAN "resman"
+#define MODULE_RENDERER "renderer"
+
+/**
+ * \brief Macro for conveniently registering Argus modules contained by shared
+ *        libraries.
+ *
+ * This macro implicitly invokes argus::register_argus_module upon library load.
+ *
+ * \remark If desired, the library entry point may be specified manually and the
+ * argus::register_argus_module function invoked explicitly, removing any need
+ * for this macro.
+ *
+ * \param id The ID of the module.
+ * \param layer The layer of the module.
+ * \param dependencies A list of IDs of modules this one is dependent on.
+ * \param lifecycle_update_callback The function which handles lifecycle updates
+ *        for this module.
+ *
+ * \sa argus::ArgusModule
+ * \sa argus::register_argus_module
+ */
+#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
+    _MODULE_REG_PREFIX { \
+        register_argus_module(id, layer, dependencies, lifecycle_update_callback); \
+    }
 
 namespace argus {
 
@@ -36,51 +74,6 @@ namespace argus {
      * \brief Represents a unique index used for tracking purposes.
      */
     typedef unsigned long long Index;
-
-    /**
-     * \brief An enumeration of all modules offered by the engine.
-     *
-     * Each enum value corresponds to a particular bit position, such that the
-     * bitwise OR of multiple modules will preserve the set of input modules.
-     */
-    enum class EngineModules : uint64_t {
-        LOWLEVEL    = 0x01,
-        CORE        = 0x02,
-        INPUT       = 0x04,
-        RESMAN      = 0x08,
-        RENDERER    = 0x10,
-    };
-
-    /**
-     * \brief Bitwise OR implementation for EngineModules bitmask elements.
-     *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
-     *
-     * \return The bitwise OR of the operands.
-     */
-    EngineModules operator |(const EngineModules lhs, const EngineModules rhs);
-    /**
-     * \brief Bitwise OR-assignment implementation for EngineModules bitmask
-     *        elements.
-     *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
-     *
-     * \return The bitwise OR of the operands.
-     *
-     * \sa EngineModules::operator|
-     */
-    constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs);
-    /**
-     * \brief Bitwise AND implementation for EngineModules bitmask elements.
-     *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
-     *
-     * \return The bitwise AND of the operands.
-     */
-    inline bool operator &(const EngineModules lhs, const EngineModules rhs);
 
     /**
      * \brief Represents the stages of engine bring-up or spin-down.
@@ -199,16 +192,74 @@ namespace argus {
     typedef std::function<void(ArgusEvent&, void*)> ArgusEventCallback;
 
     /**
+     * \brief Represents a module for the Argus engine.
+     *
+     * This struct contains all information required to initialize and update
+     * the module appropriately.
+     */
+    struct ArgusModule {
+        /**
+         * \brief The ID of the module.
+         *
+         * \attention This ID must contain only lowercase Latin letters
+         *            (`[a-z]`), numbers (`[0-9]`), and underscores (`[_]`).
+         */
+        const std::string id;
+        /**
+         * \brief The layer of the module.
+         *
+         * A module may be dependent on another module only if the dependency
+         * specifies a lower layer than the dependent. For example, a module
+         * on with layer `3` may depend on a module on layer `2`, but not on one
+         * on `3` or `4`. This requirements removes any possibility of circular
+         * dependencies by necessitating a well-defined load order.
+         */
+        const uint8_t layer;
+        /**
+         * \brief A list of IDs of modules this one is dependent on.
+         *
+         * If any dependency fails to load, the dependent module will also fail.
+         */
+        const std::vector<std::string> dependencies;
+        /**
+         * \brief The function which handles lifecycle updates for this module.
+         *
+         * This function will accept a single argument of type `const`
+         * LifecycleStage and will not return anything.
+         *
+         * This function should handle initialization of the module when the
+         * engine starts, as well as deinitialization when the engine stops.
+         *
+         * \sa LifecycleStage
+         */
+        const LifecycleUpdateCallback lifecycle_update_callback;
+    };
+
+    /**
+     * \brief Registers a module for use with the engine.
+     *
+     * This function should be invoked upon the module library being loaded.
+     *
+     * \attention For convenience, the macro REGISTER_ARGUS_MODULE registers an
+     *            entry point which invokes this function automatically.
+     *
+     * \throw std::invalid_argument If a module with the given ID is already
+     *        registered.
+     */
+    void register_module(const ArgusModule module);
+
+    /**
      * \brief Initializes the engine with the given modules.
      *
-     * \param module_bitmask A bitmask denoting which modules should be
-     *        initialized, constructed from the bitwise OR of the appropriate
-     *        EngineModule values. MODULE_CORE is implicit.
+     * \param modules A list of IDs denoting engine modules to initialize.
      *
-     * This must be called before any other interaction with the engine takes
-     * place.
+     * \attention This must be called before any other interaction with the
+     * engine takes place.
+     *
+     * \throw std::invalid_argument If any of the requested modules (or their
+     *        dependencies) cannot be loaded.
      */
-    void initialize_engine(const EngineModules module_bitmask);
+    void initialize_engine(const std::initializer_list<const std::string> modules);
 
     /**
      * \brief Starts the engine.

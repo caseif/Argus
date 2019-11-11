@@ -78,7 +78,7 @@ namespace argus {
             destruction_pending(false),
             valid(true),
             dirty_resolution(false) {
-        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.");
+        _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.\n");
         callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
     }
 

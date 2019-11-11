@@ -11,7 +11,7 @@ follows:
 
 | Layer | Name | Description |
 | --- | --- | :-- |
-| 0 | lowlevel | Low-level platform-independence code for features such as threading. |
+| 0 | lowlevel | Low-level platform-independence code for features such as threading. Strictly speaking, this is not an engine "module," but rather a collection of libraries. |
 | 1 | core | Core engine framework; facilitates basic operation and communication among components. |
 | 2 | input | Input manager; responsible for interpreting keyboard, mouse, and controller input. |
 | 2 | resman | Resource manager; facilitates resource loading and lifetime. |

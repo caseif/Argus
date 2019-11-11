@@ -16,10 +16,18 @@
 
 namespace argus {
 
-    void update_lifecycle_input(LifecycleStage stage) {
-        if (stage == LifecycleStage::INIT) {
-            init_keyboard();
+    void _update_lifecycle_input(LifecycleStage stage) {
+        switch (stage) {
+            case LifecycleStage::INIT:
+                init_keyboard();
+                break;
+            default:
+                break;
         }
+    }
+
+    void init_module_input(void) {
+        register_module({MODULE_INPUT, 2, {"core"}, _update_lifecycle_input});
     }
 
 }

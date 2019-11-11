@@ -100,22 +100,33 @@ namespace argus {
         }
     }
 
-    void update_lifecycle_renderer(LifecycleStage stage) {
-        if (stage == LifecycleStage::INIT) {
-            if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-                _ARGUS_FATAL("Failed to initialize SDL video\n");
+    void _update_lifecycle_renderer(LifecycleStage stage) {
+        switch (stage) {
+            case LifecycleStage::INIT: {
+                if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+                    _ARGUS_FATAL("Failed to initialize SDL video\n");
+                }
+
+                ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
+
+                register_sdl_event_handler(_renderer_event_filter, _renderer_event_handler, nullptr);
+
+                _init_opengl();
+
+                g_renderer_initialized = true;
+
+                break;
             }
-
-            ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
-
-            register_sdl_event_handler(_renderer_event_filter, _renderer_event_handler, nullptr);
-
-            _init_opengl();
-
-            g_renderer_initialized = true;
-        } else if (stage == LifecycleStage::DEINIT) {
-            _clean_up();
+            case LifecycleStage::DEINIT:
+                _clean_up();
+                break;
+            default:
+                break;
         }
+    }
+
+    void init_module_renderer(void) {
+        register_module({MODULE_RENDERER, 3, {"core", "resman"}, _update_lifecycle_renderer});
     }
 
 }

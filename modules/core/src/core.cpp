@@ -21,10 +21,14 @@
 #include <algorithm>
 #include <chrono>
 #include <csignal>
+#include <initializer_list>
 #include <iostream>
 #include <map>
 #include <mutex>
 #include <queue>
+#include <set>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -34,25 +38,6 @@
 #define SLEEP_OVERHEAD_NS 120000LLU
 
 namespace argus {
-
-    EngineModules operator |(const EngineModules lhs, const EngineModules rhs) {
-        return static_cast<EngineModules>(
-                static_cast<std::underlying_type<EngineModules>::type>(lhs)
-                | static_cast<std::underlying_type<EngineModules>::type>(rhs)
-        );
-    }
-
-    constexpr inline EngineModules operator |=(const EngineModules lhs, const EngineModules rhs) {
-        return static_cast<EngineModules>(
-                static_cast<std::underlying_type<EngineModules>::type>(lhs)
-                | static_cast<std::underlying_type<EngineModules>::type>(rhs)
-        );
-    }
-
-    inline bool operator &(const EngineModules lhs, const EngineModules rhs) {
-        return (static_cast<std::underlying_type<EngineModules>::type>(lhs)
-                & static_cast<std::underlying_type<EngineModules>::type>(rhs));
-    }
 
     template <typename Filter, typename Callback>
     struct EventHandler {
@@ -90,13 +75,16 @@ namespace argus {
     static std::queue<std::unique_ptr<ArgusEvent>> g_event_queue;
     static std::mutex g_event_queue_mutex;
 
-    static EngineModules g_enabled_modules;
-    static std::vector<EngineModules> g_all_modules {
-            EngineModules::LOWLEVEL,
-            EngineModules::CORE,
-            EngineModules::RESMAN,
-            EngineModules::RENDERER
-    };
+    static std::map<const std::string, const ArgusModule> g_registered_modules;
+    static std::set<ArgusModule, bool(*)(const ArgusModule, const ArgusModule)> g_enabled_modules(
+        [](const ArgusModule a, const ArgusModule b) {
+            if (a.layer != b.layer) {
+                return a.layer < b.layer;
+            } else {
+                return a.id.compare(b.id) < 0;
+            }
+        }
+    );
 
     static bool g_engine_stopping = false;
 
@@ -106,14 +94,16 @@ namespace argus {
     bool g_initialized = false;
 
     // module lifecycle hooks
-    extern void update_lifecycle_resman(LifecycleStage);
-    extern void update_lifecycle_renderer(LifecycleStage);
-    void update_lifecycle_core(LifecycleStage);
+    void init_module_core(void);
+    extern void init_module_input(void);
+    extern void init_module_resman(void);
+    extern void init_module_renderer(void);
 
-    std::map<const EngineModules, const LifecycleUpdateCallback> g_lifecycle_hooks{
-        {EngineModules::CORE, update_lifecycle_core},
-        {EngineModules::RESMAN, update_lifecycle_resman},
-        {EngineModules::RENDERER, update_lifecycle_renderer}
+    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{
+        {MODULE_CORE, init_module_core},
+        {MODULE_INPUT, init_module_input},
+        {MODULE_RESMAN, init_module_resman},
+        {MODULE_RENDERER, init_module_renderer}
     };
 
     static void _interrupt_handler(int signal) {
@@ -241,60 +231,125 @@ namespace argus {
         }
     }
 
-    void update_lifecycle_core(LifecycleStage stage) {
-        if (stage == LifecycleStage::PRE_INIT) {
-            _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
+    void _update_lifecycle_core(LifecycleStage stage) {
+        switch (stage) {
+            case LifecycleStage::PRE_INIT:
+                _ARGUS_ASSERT(!g_initializing && !g_initialized, "Cannot initialize engine more than once.");
 
-            g_initializing = true;
+                g_initializing = true;
 
-            // we'll probably register around 10 or so internal callbacks, so allocate them now
-            g_update_callbacks.list.reserve(10);
-            return;
-        } else if (stage == LifecycleStage::INIT) {
-            _initialize_sdl();
+                // we'll probably register around 10 or so internal callbacks, so allocate them now
+                g_update_callbacks.list.reserve(10);
+                break;
+            case LifecycleStage::INIT:
+                _initialize_sdl();
+                g_initialized = true;
+                break;
+            case LifecycleStage::POST_DEINIT:
+                g_render_thread->detach();
+                g_render_thread->destroy();
 
-            g_initialized = true;
-        } else if (stage == LifecycleStage::POST_DEINIT) {
-            g_render_thread->detach();
-            g_render_thread->destroy();
+                SDL_Quit();
 
-            SDL_Quit();
+                break;
+            default:
+                break;
         }
     }
 
-    void _initialize_modules(const EngineModules modules) {
-        for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (EngineModules module : g_all_modules) {
-                if (modules & module) {
-                    auto it = g_lifecycle_hooks.find(module);
-                    if (it != g_lifecycle_hooks.cend()) {
-                        it->second(stage);
-                    }
-                }
+    void init_module_core(void) {
+        register_module({MODULE_CORE, 1, {}, _update_lifecycle_core});
+    }
+
+    void register_module(const ArgusModule module) {
+        if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {;
+            throw std::invalid_argument("Module is already registered: " + module.id);
+        }
+
+        for (char ch : module.id) {
+            if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || (ch == '_'))) {
+                throw std::invalid_argument("Invalid module identifier: " + module.id);
             }
         }
+
+        g_registered_modules.insert({module.id, module});
+
+        _ARGUS_INFO("Registered module %s\n", module.id.c_str());
     }
 
-    void _deinitialize_modules(const EngineModules modules) {
+    void _init_stock_modules(void) {
+        for (auto it = g_stock_module_initializers.cbegin(); it != g_stock_module_initializers.cend(); it++) {
+            it->second();
+        }
+    }
+
+    void _load_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
+        // skip duplicates
+        for (const ArgusModule enabled_module : g_enabled_modules) {
+            if (enabled_module.id == module_id) {
+                if (dependent_chain.empty()) {
+                    _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
+                }
+                return;
+            }
+        }
+
+        auto it = g_registered_modules.find(module_id);
+        if (it == g_registered_modules.cend()) {
+            std::stringstream err_msg;
+            err_msg << "Module \"" << module_id << "\" was requested, but is not registered";
+            for (const std::string dependent : dependent_chain) {
+                err_msg << "\n    Required by module \"" << dependent << "\"";
+            }
+            throw std::invalid_argument(err_msg.str());
+        }
+
+        std::vector<std::string> new_chain = dependent_chain;
+        new_chain.insert(new_chain.cend(), module_id);
+        for (const std::string dependency : it->second.dependencies) {
+            _load_module(dependency, new_chain);
+        }
+
+        g_enabled_modules.insert(it->second);
+
+        _ARGUS_INFO("Loaded module %s.\n", module_id.c_str());
+    }
+
+    void _load_modules(const std::initializer_list<const std::string> modules) {
+        for (const std::string module : modules) {
+            _load_module(module, {});
+        }
+    }
+
+    void _deinitialize_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PRE_DEINIT; stage <= LifecycleStage::POST_DEINIT;
                 stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            // we want to deinitialize the modules in the opposite order as they were initialized
-            if (modules & EngineModules::RENDERER) {
-                update_lifecycle_renderer(stage);
+            for (auto it = g_enabled_modules.rbegin(); it != g_enabled_modules.rend(); it++) {
+                it->lifecycle_update_callback(stage);
             }
-            update_lifecycle_core(stage);
         }
     }
 
-    void initialize_engine(const EngineModules modules) {
+    void initialize_engine(const std::initializer_list<const std::string> modules) {
         signal(SIGINT, _interrupt_handler);
-        g_enabled_modules = modules;
-        _initialize_modules(modules);
+
+        _init_stock_modules();
+
+        _load_modules(modules);
+
+        for (ArgusModule module : g_enabled_modules) {
+        }
+
+        for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+            for (auto it = g_enabled_modules.cbegin(); it != g_enabled_modules.cend(); it++) {
+                it->lifecycle_update_callback(stage);
+            }
+        }
     }
 
     static void _clean_up(void) {
-        _deinitialize_modules(g_enabled_modules);
+        _deinitialize_modules();
     }
 
     static void _game_loop(void) {
@@ -309,6 +364,7 @@ namespace argus {
             Timestamp update_start = argus::microtime();
             TimeDelta delta = _compute_delta(last_update);
 
+            //TODO: should we flush the queues before the engine stops?
             _flush_callback_list_queues(g_update_callbacks);
             _flush_callback_list_queues(g_render_callbacks);
             _flush_callback_list_queues(g_event_listeners);

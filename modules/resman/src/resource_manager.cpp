@@ -32,10 +32,18 @@ namespace argus {
 
     ResourceManager g_global_resource_manager;
 
-    void update_lifecycle_resman(LifecycleStage stage) {
-        if (stage == LifecycleStage::POST_INIT) {
-            g_global_resource_manager.discover_resources();
+    void _update_lifecycle_resman(LifecycleStage stage) {
+        switch (stage) {
+            case LifecycleStage::POST_INIT:
+                g_global_resource_manager.discover_resources();
+                break;
+            default:
+                break;
         }
+    }
+
+    void init_module_resman(void) {
+        register_module({MODULE_RESMAN, 2, {"core"}, _update_lifecycle_resman});
     }
 
     ResourceManager &ResourceManager::get_global_resource_manager(void) {
