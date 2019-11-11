@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/filesystem.hpp"
 #include "argus/threading.hpp"
 #include "argus/time.hpp"
 #include "internal/logging.hpp"
@@ -34,8 +35,23 @@
 
 #include <SDL2/SDL.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
 #define US_PER_S 1000000LLU
 #define SLEEP_OVERHEAD_NS 120000LLU
+
+#define MODULES_DIR_NAME "modules"
+#ifdef _WIN32
+#define SHARED_LIB_EXT "dll"
+#elif defined(__APPLE__)
+#define SHARED_LIB_EXT "dylib"
+#else
+#define SHARED_LIB_EXT "so"
+#endif
 
 namespace argus {
 
@@ -85,6 +101,8 @@ namespace argus {
             }
         }
     );
+
+    static std::vector<void*> g_external_module_handles;
 
     static bool g_engine_stopping = false;
 
@@ -272,7 +290,7 @@ namespace argus {
             }
         }
 
-        g_registered_modules.insert({module.id, module});
+        g_registered_modules.insert(std::make_pair(module.id, module));
 
         _ARGUS_INFO("Registered module %s\n", module.id.c_str());
     }
@@ -280,6 +298,73 @@ namespace argus {
     void _init_stock_modules(void) {
         for (auto it = g_stock_module_initializers.cbegin(); it != g_stock_module_initializers.cend(); it++) {
             it->second();
+        }
+    }
+
+    void _load_external_modules(void) {
+        std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
+
+        if (!is_directory(modules_dir_path)) {
+            _ARGUS_INFO("No external modules to load.\n");
+            return;
+        }
+
+        std::vector<std::string> entries = list_directory_entries(modules_dir_path);
+        if (entries.empty()) {
+            _ARGUS_INFO("No external modules to load.\n");
+            return;
+        }
+
+        for (std::string filename : entries) {
+            std::string full_path = modules_dir_path + PATH_SEPARATOR + filename;
+
+            if (!is_regfile(full_path)) {
+                continue;
+            }
+
+            std::string ext = "";
+            size_t ext_index = filename.rfind(EXTENSION_SEPARATOR);
+            if (ext_index != std::string::npos) {
+                ext = filename.substr(ext_index + 1);
+            }
+
+            if (ext != SHARED_LIB_EXT) {
+                _ARGUS_WARN("Not loading file %s as module (bad extension %s)\n",
+                        filename.c_str(), ext.empty() ? "(none)" : ext.c_str());
+                continue;
+            }
+
+            void *handle;
+            #ifdef _WIN32
+            handle = LoadLibrary(full_path);
+            if (handle == nullptr) {
+                _ARGUS_WARN("Failed to load external module file %s (errno: %d)\n", filename.c_str(), GetLastError());
+                continue;
+            }
+            #else
+            handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            if (handle == nullptr) {
+                _ARGUS_WARN("Failed to load external module file %s (error: %s)\n", filename.c_str(), dlerror());
+                continue;
+            }
+            #endif
+            
+
+            g_external_module_handles.insert(g_external_module_handles.begin(), handle);
+        }
+    }
+
+    void _unload_external_modules(void) {
+        for (void *handle : g_external_module_handles) {
+            #ifdef _WIN32
+            if (FreeLibrary(handle) == 0) {
+                _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
+            }
+            #else
+            if (dlclose(handle) != 0) {
+                _ARGUS_WARN("Failed to unload external module (errno: %d)\n", errno);
+            }
+            #endif
         }
     }
 
@@ -335,6 +420,8 @@ namespace argus {
 
         _init_stock_modules();
 
+        _load_external_modules();
+
         _load_modules(modules);
 
         for (ArgusModule module : g_enabled_modules) {
@@ -350,6 +437,8 @@ namespace argus {
 
     static void _clean_up(void) {
         _deinitialize_modules();
+
+        _unload_external_modules();
     }
 
     static void _game_loop(void) {

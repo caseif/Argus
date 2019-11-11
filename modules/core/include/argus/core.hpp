@@ -24,7 +24,7 @@
 #ifdef _MSC_VER
 #define _MODULE_REG_PREFIX BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 #elif defined(__GNUC__) || defined(__clang__)
-#define _MODULE_REG_PREFIX __attribute__((constructor)) __argus_module_ctor(void)
+#define _MODULE_REG_PREFIX __attribute__((constructor)) void __argus_module_ctor(void)
 #else
 #warning "Module loading is unsupported on this platform."
 #endif
@@ -55,7 +55,7 @@
  */
 #define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
     _MODULE_REG_PREFIX { \
-        register_argus_module(id, layer, dependencies, lifecycle_update_callback); \
+        argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
     }
 
 namespace argus {

@@ -277,8 +277,8 @@ namespace argus {
      * \param directory_path The relative or absolute path to the directory to
      *                       query.
      *
-     * \return A std::vector containing the names of all entries in the
-     *         specified directory.
+     * \return A std::vector containing the unqualified names of all entries in
+     *         the specified directory.
      *
      * \throw std::system_error If an error occurs while opening the directory.
      */
