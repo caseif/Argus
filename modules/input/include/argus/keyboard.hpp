@@ -285,6 +285,13 @@ namespace argus {
                 const KeyboardModifiers modifiers);
 
         /**
+         * \brief Gets the semantic name of the pressed key.
+         *
+         * \return The name of the pressed key.
+         */
+        std::string get_key_name(void);
+
+        /**
          * \brief Gets whether the key press is representative of a command.
          *
          * \return Whether the key press is representative of a command.
@@ -322,6 +329,14 @@ namespace argus {
     };
 
     /**
+     * \brief Gets the semantic name of the key associated with the given
+     *        scancode.
+     *
+     * \return The name of the key.
+     */
+    std::string get_key_name(KeyboardScancode scancode);
+
+    /**
      * \brief Gets whether a scancode is associated with a command key.
      *
      * \param scancode The scancode to check.
@@ -338,16 +353,6 @@ namespace argus {
      * \return Whether the given scancode is associated with a modifier key.
      */
     bool is_modifier_key(KeyboardScancode scancode);
-
-    /**
-     * \brief Gets the character associated with a scancode, not taking key
-     *        modifiers into account.
-     *
-     * \param scancode The scancode to look up.
-     *
-     * \return The character for the given scancode.
-     */
-    wchar_t get_key_character(KeyboardScancode scancode);
 
     /**
      * \brief Gets the command associated with a scancode, not taking key

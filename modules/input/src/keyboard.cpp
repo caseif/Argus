@@ -105,6 +105,10 @@ namespace argus {
             modifiers(modifiers) {
     }
 
+    std::string KeyboardEvent::get_key_name(void) {
+        return argus::get_key_name(scancode);
+    }
+
     bool KeyboardEvent::is_command(void) {
         return is_command_key(scancode);
     }
