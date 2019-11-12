@@ -374,6 +374,14 @@ namespace argus {
      */
     const KeyboardModifiers get_key_modifier(const KeyboardScancode scancode);
 
+    /**
+     * \brief Gets whether the key associated with a scancode is currently being
+     *        pressed down.
+     *
+     * \param scancode The scancode to query.
+     *
+     * \return Whether the key is being pressed.
+     */
     const bool is_key_down(const KeyboardScancode scancode);
 
     //TODO: this doc needs some love

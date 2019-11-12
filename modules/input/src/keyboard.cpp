@@ -25,6 +25,9 @@ namespace argus {
     static std::vector<TextInputContext*> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
+    static const uint8_t *g_last_keyboard_state = nullptr;
+    static int g_keyboard_key_count = 0;
+
     static KeyboardModifiers _translate_sdl_keymod(uint16_t sdl_keymod) {
         KeyboardModifiers mod = KeyboardModifiers::NONE;
         
@@ -72,6 +75,10 @@ namespace argus {
         KeyboardModifiers mod = _translate_sdl_keymod(sdl_event.key.keysym.mod);
 
         dispatch_event(KeyboardEvent(key_event_type, scancode, mod));
+    }
+
+    static void _update_callback(TimeDelta delta) {
+        g_last_keyboard_state = SDL_GetKeyboardState(&g_keyboard_key_count);
     }
 
     KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
@@ -241,6 +248,14 @@ namespace argus {
             default:
                 _ARGUS_FATAL("Unsupported key modifier %d\n", keycode);
         }
+    }
+
+    const bool is_key_down(const KeyboardScancode scancode) {
+        SDL_Scancode sdl_scancode = static_cast<SDL_Scancode>(scancode);
+        if (sdl_scancode >= g_keyboard_key_count) {
+            return false;
+        }
+        return g_last_keyboard_state[sdl_scancode];
     }
 
     TextInputContext::TextInputContext(void):
