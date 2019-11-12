@@ -289,14 +289,14 @@ namespace argus {
          *
          * \return The name of the pressed key.
          */
-        std::string get_key_name(void);
+        const std::string get_key_name(void) const;
 
         /**
          * \brief Gets whether the key press is representative of a command.
          *
          * \return Whether the key press is representative of a command.
          */
-        bool is_command(void);
+        const bool is_command(void) const;
 
         /**
          * \brief Gets whether the key press is representative of a key
@@ -304,7 +304,7 @@ namespace argus {
          *
          * \return Whether the key press is representative of a key modifier.
          */
-        bool is_modifier(void);
+        const bool is_modifier(void) const;
 
         /**
          * \brief Gets the command associated with this key press, taking key
@@ -315,7 +315,7 @@ namespace argus {
          *
          * \return The command associated with this key press.
          */
-        KeyboardCommand get_command(void);
+        const KeyboardCommand get_command(void) const;
 
         /**
          * \brief Gets the key modifier associated with this key press.
@@ -325,7 +325,7 @@ namespace argus {
          *
          * \return The key modifier associated with this key press.
          */
-        KeyboardModifiers get_modifier(void);
+        const KeyboardModifiers get_modifier(void) const;
     };
 
     /**
@@ -334,7 +334,7 @@ namespace argus {
      *
      * \return The name of the key.
      */
-    std::string get_key_name(KeyboardScancode scancode);
+    const std::string get_key_name(const KeyboardScancode scancode);
 
     /**
      * \brief Gets whether a scancode is associated with a command key.
@@ -343,7 +343,7 @@ namespace argus {
      *
      * \return Whether the given scancode is associated with a command key.
      */
-    bool is_command_key(KeyboardScancode scancode);
+    const bool is_command_key(const KeyboardScancode scancode);
 
     /**
      * \brief Gets whether a scancode is associated with a modifier key.
@@ -352,7 +352,7 @@ namespace argus {
      *
      * \return Whether the given scancode is associated with a modifier key.
      */
-    bool is_modifier_key(KeyboardScancode scancode);
+    const bool is_modifier_key(const KeyboardScancode scancode);
 
     /**
      * \brief Gets the command associated with a scancode, not taking key
@@ -362,7 +362,7 @@ namespace argus {
      *
      * \return The command for the given scancode.
      */
-    KeyboardCommand get_key_command(KeyboardScancode scancode);
+    const KeyboardCommand get_key_command(const KeyboardScancode scancode);
 
     /**
      * \brief Gets the key modifier associated with a scancode.
@@ -372,7 +372,9 @@ namespace argus {
      *
      * \return The key modifier for the given scancode.
      */
-    KeyboardModifiers get_key_modifier(KeyboardScancode scancode);
+    const KeyboardModifiers get_key_modifier(const KeyboardScancode scancode);
+
+    const bool is_key_down(const KeyboardScancode scancode);
 
     //TODO: this doc needs some love
     /**

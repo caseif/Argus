@@ -724,7 +724,7 @@ namespace argus {
              *
              * \return Whether the event should be passed along for handling.
              */
-            static bool event_filter(ArgusEvent &event, void *user_data);
+            static const bool event_filter(const ArgusEvent &event, void *user_data);
 
             /**
              * \brief Handles \link ArgusEvent events \endlink relating to a
@@ -733,7 +733,7 @@ namespace argus {
              * \param event The passed ArgusEvent.
              * \param user_data A pointer to the Window to handle events for.
              */
-            static void event_callback(ArgusEvent &event, void *user_data);
+            static void event_callback(const ArgusEvent &event, void *user_data);
 
         public:
             /**

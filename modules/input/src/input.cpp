@@ -16,7 +16,7 @@
 
 namespace argus {
 
-    void _update_lifecycle_input(LifecycleStage stage) {
+    void _update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT:
                 init_keyboard();

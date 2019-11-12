@@ -196,9 +196,8 @@ namespace argus {
         return;
     }
 
-    bool Window::event_filter(ArgusEvent &event, void *user_data) {
-        WindowEvent &window_event = static_cast<WindowEvent&>(event);
-
+    const bool Window::event_filter(const ArgusEvent &event, void *user_data) {
+        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
         Window *window = static_cast<Window*>(user_data);
 
         // ignore events for uninitialized windows
@@ -209,9 +208,9 @@ namespace argus {
         return event.type == ArgusEventType::WINDOW && window_event.window == window;
     }
 
-    void Window::event_callback(ArgusEvent &event, void *data) {
-        WindowEvent &window_event = static_cast<WindowEvent&>(event);
-        Window *window = static_cast<Window*>(data);
+    void Window::event_callback(const ArgusEvent &event, void *user_data) {
+        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
+        Window *window = static_cast<Window*>(user_data);
 
         if (window_event.subtype == WindowEventType::CLOSE) {
             window->state |= WINDOW_STATE_CLOSE_REQUESTED;

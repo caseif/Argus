@@ -105,27 +105,27 @@ namespace argus {
             modifiers(modifiers) {
     }
 
-    std::string KeyboardEvent::get_key_name(void) {
+    const std::string KeyboardEvent::get_key_name(void) const {
         return argus::get_key_name(scancode);
     }
 
-    bool KeyboardEvent::is_command(void) {
+    const bool KeyboardEvent::is_command(void) const {
         return is_command_key(scancode);
     }
 
-    bool KeyboardEvent::is_modifier(void) {
+    const bool KeyboardEvent::is_modifier(void) const {
         return is_modifier_key(scancode);
     }
 
-    KeyboardCommand KeyboardEvent::get_command(void) {
+    const KeyboardCommand KeyboardEvent::get_command(void) const {
         return get_key_command(scancode);
     }
 
-    KeyboardModifiers KeyboardEvent::get_modifier(void) {
+    const KeyboardModifiers KeyboardEvent::get_modifier(void) const {
         return get_key_modifier(scancode);
     }
 
-    bool is_command_key(KeyboardScancode scancode) {
+    const bool is_command_key(const KeyboardScancode scancode) {
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         return keycode == SDLK_RETURN
                 || keycode == SDLK_ESCAPE
@@ -149,7 +149,7 @@ namespace argus {
                 || keycode == SDLK_LGUI;
     }
 
-    bool is_modifier_key(KeyboardScancode scancode) {
+    const bool is_modifier_key(const KeyboardScancode scancode) {
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         return keycode == SDLK_LCTRL
                 || keycode == SDLK_RCTRL
@@ -162,12 +162,12 @@ namespace argus {
                 || keycode == SDLK_SCROLLLOCK;
     }
 
-    std::string get_key_name(KeyboardScancode scancode) {
+    const std::string get_key_name(const KeyboardScancode scancode) {
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         return SDL_GetKeyName(keycode);
     }
 
-    KeyboardCommand get_key_command(KeyboardScancode scancode) {
+    const KeyboardCommand get_key_command(const KeyboardScancode scancode) {
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         switch (keycode) {
             case SDLK_RETURN:
@@ -213,7 +213,7 @@ namespace argus {
         }
     }
 
-    KeyboardModifiers get_key_modifier(KeyboardScancode scancode) {
+    const KeyboardModifiers get_key_modifier(const KeyboardScancode scancode) {
         if (!is_modifier_key(scancode)) {
             throw std::invalid_argument("get_modifier called for non-modifier key");
         }

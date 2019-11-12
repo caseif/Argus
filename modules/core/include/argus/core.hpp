@@ -175,13 +175,13 @@ namespace argus {
     /**
      * \brief A callback for passing lifecycle changes to engine modules.
      */
-    typedef std::function<void(LifecycleStage)> LifecycleUpdateCallback;
+    typedef std::function<void(const LifecycleStage)> LifecycleUpdateCallback;
 
     /**
      * \brief An update callback accepts a single parameter representing the
      *        delta in microseconds since the last update.
      */
-    typedef std::function<void(TimeDelta)> DeltaCallback;
+    typedef std::function<void(const TimeDelta)> DeltaCallback;
 
     /**
      * \brief A callback accepts no parameters.
@@ -192,13 +192,13 @@ namespace argus {
      * \brief A callback that accepts an event and a piece of user-supplied
      *        data.
      */
-    typedef std::function<bool(ArgusEvent&, void*)> ArgusEventFilter;
+    typedef std::function<const bool(const ArgusEvent&, void*)> ArgusEventFilter;
 
     /**
      * \brief A callback that accepts an event and a piece of user-supplied
      *        data.
      */
-    typedef std::function<void(ArgusEvent&, void*)> ArgusEventCallback;
+    typedef std::function<void(const ArgusEvent&, void*)> ArgusEventCallback;
 
     /**
      * \brief Represents a module for the Argus engine.
