@@ -105,10 +105,6 @@ namespace argus {
             modifiers(modifiers) {
     }
 
-    bool KeyboardEvent::is_character(void) {
-        return is_character_key(scancode);
-    }
-
     bool KeyboardEvent::is_command(void) {
         return is_command_key(scancode);
     }
@@ -117,11 +113,57 @@ namespace argus {
         return is_modifier_key(scancode);
     }
 
-    wchar_t KeyboardEvent::get_character(void) {
-        //TODO: may need some restructuring
+    KeyboardCommand KeyboardEvent::get_command(void) {
+        return get_key_command(scancode);
     }
 
-    KeyboardCommand KeyboardEvent::get_command(void) {
+    KeyboardModifiers KeyboardEvent::get_modifier(void) {
+        return get_key_modifier(scancode);
+    }
+
+    bool is_command_key(KeyboardScancode scancode) {
+        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
+        return keycode == SDLK_RETURN
+                || keycode == SDLK_ESCAPE
+                || keycode == SDLK_BACKSPACE
+                || keycode == SDLK_TAB
+                || keycode == SDLK_PRINTSCREEN
+                || keycode == SDLK_SCROLLLOCK
+                || keycode == SDLK_PAUSE
+                || keycode == SDLK_INSERT
+                || keycode == SDLK_HOME
+                || keycode == SDLK_PAGEUP
+                || keycode == SDLK_DELETE
+                || keycode == SDLK_END
+                || keycode == SDLK_PAGEDOWN
+                || keycode == SDLK_RIGHT
+                || keycode == SDLK_LEFT
+                || keycode == SDLK_DOWN
+                || keycode == SDLK_UP
+                || keycode == SDLK_KP_ENTER
+                || keycode == SDLK_MENU
+                || keycode == SDLK_LGUI;
+    }
+
+    bool is_modifier_key(KeyboardScancode scancode) {
+        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
+        return keycode == SDLK_LCTRL
+                || keycode == SDLK_RCTRL
+                || keycode == SDLK_LSHIFT
+                || keycode == SDLK_RSHIFT
+                || keycode == SDLK_LALT
+                || keycode == SDLK_RALT
+                || keycode == SDLK_NUMLOCKCLEAR
+                || keycode == SDLK_CAPSLOCK
+                || keycode == SDLK_SCROLLLOCK;
+    }
+
+    std::string get_key_name(KeyboardScancode scancode) {
+        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
+        return SDL_GetKeyName(keycode);
+    }
+
+    KeyboardCommand get_key_command(KeyboardScancode scancode) {
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         switch (keycode) {
             case SDLK_RETURN:
@@ -167,7 +209,7 @@ namespace argus {
         }
     }
 
-    KeyboardModifiers KeyboardEvent::get_modifier(void) {
+    KeyboardModifiers get_key_modifier(KeyboardScancode scancode) {
         if (!is_modifier_key(scancode)) {
             throw std::invalid_argument("get_modifier called for non-modifier key");
         }
@@ -197,60 +239,6 @@ namespace argus {
         }
     }
 
-    bool is_character_key(KeyboardScancode scancode) {
-        //TODO: we can probably do better than this
-        return !is_command_key(scancode) && !is_modifier_key(scancode);
-    }
-
-    bool is_command_key(KeyboardScancode scancode) {
-        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
-        return keycode == SDLK_RETURN
-                || keycode == SDLK_ESCAPE
-                || keycode == SDLK_BACKSPACE
-                || keycode == SDLK_TAB
-                || keycode == SDLK_PRINTSCREEN
-                || keycode == SDLK_SCROLLLOCK
-                || keycode == SDLK_PAUSE
-                || keycode == SDLK_INSERT
-                || keycode == SDLK_HOME
-                || keycode == SDLK_PAGEUP
-                || keycode == SDLK_DELETE
-                || keycode == SDLK_END
-                || keycode == SDLK_PAGEDOWN
-                || keycode == SDLK_RIGHT
-                || keycode == SDLK_LEFT
-                || keycode == SDLK_DOWN
-                || keycode == SDLK_UP
-                || keycode == SDLK_KP_ENTER
-                || keycode == SDLK_MENU
-                || keycode == SDLK_LGUI;
-    }
-
-    bool is_modifier_key(KeyboardScancode scancode) {
-        SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
-        return keycode == SDLK_LCTRL
-                || keycode == SDLK_RCTRL
-                || keycode == SDLK_LSHIFT
-                || keycode == SDLK_RSHIFT
-                || keycode == SDLK_LALT
-                || keycode == SDLK_RALT
-                || keycode == SDLK_NUMLOCKCLEAR
-                || keycode == SDLK_CAPSLOCK
-                || keycode == SDLK_SCROLLLOCK;
-    }
-
-    wchar_t get_key_character(KeyboardScancode scancode) {
-        //TODO
-    }
-
-    KeyboardCommand get_key_command(KeyboardScancode scancode) {
-        //TODO
-    }
-
-    KeyboardModifiers get_key_modifier(KeyboardScancode scancode) {
-        //TODO
-    }
-
     TextInputContext::TextInputContext(void):
             valid(true),
             active(false),
@@ -262,7 +250,7 @@ namespace argus {
         return *new TextInputContext();
     }
 
-    const std::wstring &TextInputContext::get_current_text(void) const {
+    const std::string &TextInputContext::get_current_text(void) const {
         return text;
     }
 

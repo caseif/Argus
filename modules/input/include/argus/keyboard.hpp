@@ -285,15 +285,6 @@ namespace argus {
                 const KeyboardModifiers modifiers);
 
         /**
-         * \brief Gets whether the key press is representative of a textual
-         *        character.
-         *
-         * \return Whether the key press is representative of a textual
-         *         character.
-         */
-        bool is_character(void);
-
-        /**
          * \brief Gets whether the key press is representative of a command.
          *
          * \return Whether the key press is representative of a command.
@@ -307,17 +298,6 @@ namespace argus {
          * \return Whether the key press is representative of a key modifier.
          */
         bool is_modifier(void);
-
-        /**
-         * \brief Gets the textual character associated with this key press,
-         *        taking key modifiers into account.
-         *
-         * \throw std::invalid_argument if is_character(KeyboardScancode)
-         *        returns `false`.
-         *
-         * \return The textual character associated with this key press.
-         */
-        wchar_t get_character(void);
 
         /**
          * \brief Gets the command associated with this key press, taking key
@@ -340,17 +320,6 @@ namespace argus {
          */
         KeyboardModifiers get_modifier(void);
     };
-
-    /**
-     * \brief Gets whether a scancode is associated with a textual character
-     *        key.
-     *
-     * \param scancode The scancode to check.
-     *
-     * \return Whether the given scancode is associated with a textual character
-     *         key.
-     */
-    bool is_character_key(KeyboardScancode scancode);
 
     /**
      * \brief Gets whether a scancode is associated with a command key.
@@ -411,7 +380,7 @@ namespace argus {
         private:
             bool valid;
             bool active;
-            std::wstring text;
+            std::string text;
 
             TextInputContext(void);
 
@@ -430,7 +399,7 @@ namespace argus {
             /**
              * \brief Returns the context's current text.
              */
-            const std::wstring &get_current_text(void) const;
+            const std::string &get_current_text(void) const;
 
             /**
              * \brief Resumes capturing text input to the context.
