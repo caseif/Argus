@@ -14,6 +14,7 @@ namespace argus {
     typedef struct {
         unsigned int target_tickrate;
         unsigned int target_framerate;
+        std::initializer_list<const std::string> load_modules;
     } EngineConfig;
 
 }

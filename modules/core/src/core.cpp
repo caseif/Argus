@@ -402,7 +402,7 @@ namespace argus {
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
-    void _load_modules(const std::initializer_list<const std::string> modules) {
+    void _load_modules(const std::initializer_list<const std::string> &modules) {
         for (const std::string module : modules) {
             _enable_module(module, {});
         }
@@ -417,14 +417,18 @@ namespace argus {
         }
     }
 
-    void initialize_engine(const std::initializer_list<const std::string> modules) {
+    void initialize_engine() {
         signal(SIGINT, _interrupt_handler);
 
         _init_stock_modules();
 
         _load_external_modules();
 
-        _load_modules(modules);
+        if (g_engine_config.load_modules.size() > 0) {
+            _load_modules(g_engine_config.load_modules);
+        } else {
+            _load_modules({"core"});
+        }
 
         for (ArgusModule module : g_enabled_modules) {
         }

@@ -258,9 +258,11 @@ namespace argus {
     void register_module(const ArgusModule module);
 
     /**
-     * \brief Initializes the engine with the given modules.
+     * \brief Initializes the engine.
      *
-     * \param modules A list of IDs denoting engine modules to initialize.
+     * argus::set_load_modules(const std::initializer_list) should be invoked
+     * before this function is called. If the load modules have not been
+     * configured, only the `core` module will be loaded.
      *
      * \attention This must be called before any other interaction with the
      * engine takes place.
@@ -268,7 +270,7 @@ namespace argus {
      * \throw std::invalid_argument If any of the requested modules (or their
      *        dependencies) cannot be loaded.
      */
-    void initialize_engine(const std::initializer_list<const std::string> modules);
+    void initialize_engine(void);
 
     /**
      * \brief Starts the engine.
@@ -308,6 +310,16 @@ namespace argus {
      *            how frequently the game logic routine is called.
      */
     void set_target_framerate(const unsigned int target_framerate);
+    
+    /**
+     * \brief Sets the modules to load on engine initialization.
+     *
+     * If any provided module or any its respective dependencies cannot be
+     * loaded, engine initialization will fail.
+     *
+     * \param module_list The IDs of the modules to load on engine init.
+     */
+    void set_load_modules(const std::initializer_list<const std::string> module_list);
 
     /**
      * \brief Registers a callback for invocation on each game update.
