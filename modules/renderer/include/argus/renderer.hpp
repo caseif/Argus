@@ -973,6 +973,9 @@ namespace argus {
              */
             RenderGroup(RenderLayer &parent);
 
+            RenderGroup(const RenderGroup &ref): RenderGroup(ref.parent) {
+            }
+
             /**
              * \brief Constructs the ShaderProgram which will be associated with
              *        this group.
@@ -1360,6 +1363,7 @@ namespace argus {
      */
     class RenderableTriangle : public Renderable {
         friend class RenderableFactory;
+        friend class AllocPool;
 
         private:
             const Vertex corner_1;
@@ -1391,6 +1395,7 @@ namespace argus {
      */
     class RenderableSquare : public Renderable {
         friend class RenderableFactory;
+        friend class AllocPool;
 
         private:
             const Vertex corner_1;

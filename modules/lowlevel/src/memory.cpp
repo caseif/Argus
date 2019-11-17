@@ -8,6 +8,7 @@
  */
 
 #include "argus/memory.hpp"
+#include "internal/logging.hpp"
 
 #include <list>
 #include <stdexcept>
@@ -18,9 +19,9 @@
 namespace argus {
 
     struct pimpl_AllocPool {
-        size_t block_size;
-        uint8_t alignment_exp;
-        size_t chunk_size;
+        const size_t block_size;
+        const uint8_t alignment_exp;
+        const size_t chunk_size;
         size_t chunk_count;
         void *next_free_block;
         std::list<const uintptr_t> chunk_addrs; // used exclusively for destruction
@@ -28,6 +29,11 @@ namespace argus {
 
     // helper function for determining the nearest aligned address following the given unaligned address
     inline static uintptr_t _align_addr(uintptr_t addr, pimpl_AllocPool *pool) {
+        // special case if no alignment is requested
+        if (pool->alignment_exp == 0) {
+            return addr;
+        }
+
         size_t alignment_bytes = exp2(pool->alignment_exp);
         // We create a bitmask from the alignment "chunk" size by subtracting one (e.g. 0x0010 -> 0x000F)
         // and then inverting it (0x000F -> 0xFFF0). Then, we AND it with the real address to get the next
@@ -72,7 +78,11 @@ namespace argus {
         return reinterpret_cast<void*>(aligned_addr);
     }
 
-    AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp, size_t initial_cap):
+    void AllocPool::validate_block_size(size_t size) const {
+        _ARGUS_ASSERT(size == pimpl->block_size, "Size mismatch for AllocPool");
+    }
+
+    AllocPool::AllocPool(size_t block_size, size_t initial_cap, uint8_t alignment_exp):
             pimpl(new pimpl_AllocPool({
                 block_size,
                 alignment_exp,

@@ -20,12 +20,19 @@ namespace argus {
         private:
             pimpl_AllocPool *pimpl;
 
+            void validate_block_size(size_t size) const;
+
         public:
-            AllocPool(size_t block_size, uint8_t alignment_exp, size_t initial_cap);
+            AllocPool(size_t block_size, size_t initial_cap, uint8_t alignment_exp = 0);
 
             ~AllocPool(void);
 
             void *alloc(void);
+
+            template <typename T, typename... Args>
+            T &construct(Args & ... args) {
+                return *new (this->alloc()) T(args...);
+            }
 
             void free(void *addr);
     };
