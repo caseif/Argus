@@ -106,12 +106,14 @@ namespace argus {
     }
 
     void *AllocPool::alloc(void) {
+        void *res;
         if (pimpl->next_free_block == nullptr) {
-            _create_chunk(pimpl);
+            // need to allocate a new chunk
+            res = _create_chunk(pimpl);
+        } else {
+            // grab the next free block
+            res = pimpl->next_free_block;
         }
-
-        // grab the next free block
-        void *res = pimpl->next_free_block;
 
         // bump the linked list entry point along
         // again, we reinterpret the block's memory as an array of pointers and grab the first entry
