@@ -213,7 +213,7 @@ namespace argus {
 
                 child->transform.clean();
             }
-            offset += child->get_vertex_count();
+            offset += child->buffer_size * sizeof(float);
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);

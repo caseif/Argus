@@ -29,7 +29,7 @@ namespace argus {
     RenderableSquare &RenderableFactory::create_square(const Vertex &corner_1, const Vertex &corner_2,
             const Vertex &corner_3, const Vertex &corner_4) const {
         //return *new RenderableSquare(parent, corner_1, corner_2, corner_3, corner_4);
-        return g_triangle_alloc_pool.construct<RenderableSquare>(parent, corner_1, corner_2, corner_3, corner_4);
+        return g_square_alloc_pool.construct<RenderableSquare>(parent, corner_1, corner_2, corner_3, corner_4);
     }
 
 }
