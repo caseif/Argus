@@ -14,6 +14,8 @@
 
 namespace argus {
 
+    void *alloc_page(void);
+
     struct pimpl_AllocPool;
 
     class AllocPool {

@@ -28,18 +28,18 @@ namespace argus {
     };
 
     // helper function for determining the nearest aligned address following the given unaligned address
-    inline static uintptr_t _align_addr(uintptr_t addr, pimpl_AllocPool *pool) {
+    inline static uintptr_t _next_aligned_value(uintptr_t base_val, size_t alignment_exp) {
         // special case if no alignment is requested
-        if (pool->alignment_exp == 0) {
-            return addr;
+        if (alignment_exp == 0) {
+            return base_val;
         }
 
-        size_t alignment_bytes = exp2(pool->alignment_exp);
+        size_t alignment_bytes = exp2(alignment_exp);
         // We create a bitmask from the alignment "chunk" size by subtracting one (e.g. 0x0010 -> 0x000F)
         // and then inverting it (0x000F -> 0xFFF0). Then, we AND it with the real address to get the next
         // aligned address in the direction of zero, then add the alignment "chunk" size to get the next
         // aligned address in the direction of max size_t.
-        return addr & ~(alignment_bytes - 1u) + alignment_bytes;
+        return (base_val & ~(alignment_bytes - 1u)) + alignment_bytes;
     }
 
     // helper function for allocating memory for an AllocPool
@@ -60,7 +60,7 @@ namespace argus {
 
         pool->chunk_addrs.insert(pool->chunk_addrs.end(), chunk_addr);
 
-        uintptr_t aligned_addr = _align_addr(chunk_addr, pool);
+        uintptr_t aligned_addr = _next_aligned_value(chunk_addr, pool->alignment_exp);
 
         // next we need to build a linked list within the allocated memory
         for (size_t index = 0; index < pool->chunk_size - 1; index++) {
@@ -84,7 +84,7 @@ namespace argus {
 
     AllocPool::AllocPool(size_t block_size, size_t initial_cap, uint8_t alignment_exp):
             pimpl(new pimpl_AllocPool({
-                block_size,
+                _next_aligned_value(block_size, alignment_exp), // objects must be aligned within the pool
                 alignment_exp,
                 initial_cap,
                 1,

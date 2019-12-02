@@ -116,6 +116,8 @@ namespace argus {
         }
     };
 
+    class pimpl_Transform;
+
     /**
      * \brief A transformation in 2D space.
      *
@@ -123,6 +125,8 @@ namespace argus {
      */
     class Transform {
         private:
+            pimpl_Transform *pimpl;
+
             Vector2f translation;
             std::atomic<float> rotation;
             Vector2f scale;
