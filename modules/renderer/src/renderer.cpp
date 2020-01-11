@@ -102,6 +102,8 @@ namespace argus {
         load_gl_extensions_for_current_context();
         #endif
 
+        SDL_GL_SetSwapInterval(SDL_FALSE);
+
         glDebugMessageCallback(_gl_debug_callback, nullptr);
 
         glDepthFunc(GL_ALWAYS);

@@ -58,7 +58,7 @@ namespace argus {
     }
 
     void RenderGroup::destroy(void) {
-        if (&parent.root_group == this) {
+        if (&parent.def_group == this) {
             _ARGUS_FATAL("Cannot destroy root RenderGroup");
         }
 
@@ -306,6 +306,8 @@ namespace argus {
 
         remove_from_vector(children, &renderable);
         dirty_children = true;
+
+
     }
 
     RenderableFactory &RenderGroup::get_renderable_factory(void) {

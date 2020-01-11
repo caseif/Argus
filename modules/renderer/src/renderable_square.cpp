@@ -7,6 +7,10 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/memory.hpp"
+
+// module renderer
 #include "argus/renderer.hpp"
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
@@ -18,6 +22,8 @@
 namespace argus {
 
     using glext::glBufferSubData;
+
+    extern AllocPool g_square_alloc_pool;
 
     RenderableSquare::RenderableSquare(RenderGroup &parent, const Vertex &corner_1, const Vertex &corner_2,
             const Vertex &corner_3, const Vertex &corner_4):
@@ -41,6 +47,10 @@ namespace argus {
 
     const unsigned int RenderableSquare::get_vertex_count(void) const {
         return _SQUARE_VERTICES;
+    }
+
+    void RenderableSquare::free(void) {
+        g_square_alloc_pool.free(this);
     }
 
 }

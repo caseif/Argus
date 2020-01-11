@@ -7,6 +7,10 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/memory.hpp"
+
+// module renderer
 #include "argus/renderer.hpp"
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
@@ -18,6 +22,8 @@
 namespace argus {
 
     using glext::glBufferSubData;
+
+    extern AllocPool g_triangle_alloc_pool;
 
     RenderableTriangle::RenderableTriangle(RenderGroup &parent, const Vertex &corner_1, const Vertex &corner_2, const Vertex &corner_3):
             Renderable(parent),
@@ -36,6 +42,10 @@ namespace argus {
 
     const unsigned int RenderableTriangle::get_vertex_count(void) const {
         return _TRIANGLE_VERTICES;
+    }
+
+    void RenderableTriangle::free(void) {
+        g_triangle_alloc_pool.free(this);
     }
 
 }

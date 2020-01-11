@@ -42,17 +42,18 @@ namespace argus {
     }
 
     Renderable::~Renderable(void) {
-        release_texture();
-
-        if (max_buffer_size > 0) {
-            free(vertex_buffer);
-        }
     }
 
     void Renderable::destroy(void) {
+        release_texture();
+
+        if (max_buffer_size > 0) {
+            ::free(vertex_buffer);
+        }
+
         parent.remove_renderable(*this);
 
-        delete this;
+        this->free();
     }
 
     const Transform &Renderable::get_transform(void) const {

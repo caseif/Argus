@@ -35,9 +35,9 @@ namespace argus {
             parent_renderer(parent),
             priority(priority),
             shaders(_generate_initial_layer_shaders()),
-            root_group(RenderGroup(*this)),
+            def_group(RenderGroup(*this)),
             transform(),
-            children({&root_group}),
+            children({&def_group}),
             dirty_shaders(false) {
     }
 
@@ -59,13 +59,17 @@ namespace argus {
     }
 
     RenderableFactory &RenderLayer::get_renderable_factory(void) {
-        return root_group.get_renderable_factory();
+        return def_group.get_renderable_factory();
     }
 
     RenderGroup &RenderLayer::create_render_group(const int priority) {
         RenderGroup *group = new RenderGroup(*this);
         children.insert(children.cbegin(), group);
         return *group;
+    }
+
+    RenderGroup &RenderLayer::get_default_group(void) {
+        return def_group;
     }
 
     void RenderLayer::add_shader(const Shader &shader) {

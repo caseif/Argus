@@ -1114,12 +1114,12 @@ namespace argus {
             std::vector<const Shader*> shaders;
 
             /**
-             * \brief The implicit root RenderGroup of this layer.
+             * \brief The implicit default RenderGroup of this layer.
              *
              * \remark A pointer to this RenderGroup is present in the children
              *         vector.
              */
-            RenderGroup root_group; // this depends on shaders being initialized
+            RenderGroup def_group; // this depends on shaders being initialized
 
             /**
              * \brief The Transform of this RenderLayer.
@@ -1189,6 +1189,11 @@ namespace argus {
              * \return RenderGroup The created RenderGroup.
              */
             RenderGroup &create_render_group(const int priority);
+
+            /**
+             * \brief Gets the default RenderGroup of this layer.
+             */
+            RenderGroup &get_default_group(void);
 
             /**
              * \brief Adds the given Shader to this layer.
@@ -1330,6 +1335,11 @@ namespace argus {
              */
             virtual const unsigned int get_vertex_count(void) const = 0;
 
+            /**
+             * \brief Removes this Renderable from memory.
+             */
+            virtual void free(void) = 0;
+
         public:
             /**
              * \brief Removes this Renderable from its parent RenderGroup and
@@ -1389,6 +1399,8 @@ namespace argus {
             void populate_buffer(void) override;
 
             const unsigned int get_vertex_count(void) const override;
+
+            void free(void) override;
     };
 
     /**
@@ -1423,6 +1435,8 @@ namespace argus {
             void populate_buffer(void) override;
 
             const unsigned int get_vertex_count(void) const override;
+
+            void free(void) override;
     };
 
 }
