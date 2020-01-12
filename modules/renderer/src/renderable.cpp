@@ -41,9 +41,6 @@ namespace argus {
         parent.add_renderable(*this);
     }
 
-    Renderable::~Renderable(void) {
-    }
-
     void Renderable::destroy(void) {
         release_texture();
 
@@ -52,6 +49,8 @@ namespace argus {
         }
 
         parent.remove_renderable(*this);
+
+        this->transform.~Transform();
 
         this->free();
     }

@@ -127,15 +127,6 @@ namespace argus {
         private:
             pimpl_Transform *pimpl;
 
-            Vector2f translation;
-            std::atomic<float> rotation;
-            Vector2f scale;
-
-            std::mutex translation_mutex;
-            std::mutex scale_mutex;
-
-            std::atomic_bool dirty;
-
         public:
             /**
              * \brief Constructs a Transform with no translation or rotation and
@@ -159,6 +150,8 @@ namespace argus {
              * \param rhs The Transform to move.
              */
             Transform(Transform &&rhs);
+
+            ~Transform(void);
 
             /**
              * \brief Constructs a new 2D Transform with the given parameters.

@@ -9,6 +9,7 @@
 
 // module lowlevel
 #include "argus/math.hpp"
+#include "argus/memory.hpp"
 
 // module renderer
 #include "argus/renderer.hpp"
@@ -17,105 +18,123 @@
 
 namespace argus {
 
-    Transform::Transform(void):
-        translation({0, 0}),
-        rotation(0),
-        scale({1, 1}) {
-    }
+    struct pimpl_Transform {
+        Vector2f translation;
+        std::atomic<float> rotation;
+        Vector2f scale;
 
-    Transform::Transform(Transform &rhs):
-            translation(rhs.get_translation()),
-            rotation(rhs.get_rotation()),
-            scale(rhs.get_scale()) {
-    }
+        std::mutex translation_mutex;
+        std::mutex scale_mutex;
 
-    Transform::Transform(Transform &&rhs):
-            translation(std::move(rhs.translation)),
-            rotation(rhs.rotation.load()),
-            scale(std::move(rhs.scale)) {
-    }
+        std::atomic_bool dirty;
 
-    Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
+        pimpl_Transform(Vector2f translation, const float rotation, const Vector2f scale):
             translation(translation),
             rotation(rotation),
             scale(scale) {
+        }
+    };
+
+    AllocPool g_pimpl_pool(sizeof(pimpl_Transform), 512);
+
+    Transform::Transform(void): Transform({0, 0}, 0, {1, 1}) {
+    }
+
+    Transform::Transform(Transform &rhs): Transform(
+            rhs.pimpl->translation,
+            rhs.pimpl->rotation,
+            rhs.pimpl->scale
+    ) {
+    }
+
+    // for the move ctor, we just steal the pimpl
+    Transform::Transform(Transform &&rhs):
+            pimpl(rhs.pimpl) {
+    }
+
+    Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
+            pimpl(&g_pimpl_pool.construct<pimpl_Transform>(translation, rotation, scale)) {
+    }
+
+    Transform::~Transform(void) {
+        g_pimpl_pool.free(pimpl);
     }
 
     Transform Transform::operator +(const Transform rhs) {
         return Transform(
-                this->translation + rhs.translation,
-                this->rotation.load() + rhs.rotation,
-                this->scale * rhs.scale
+                pimpl->translation + rhs.pimpl->translation,
+                pimpl->rotation.load() + rhs.pimpl->rotation,
+                pimpl->scale * rhs.pimpl->scale
         );
     }
 
     Vector2f const Transform::get_translation(void) {
-        this->translation_mutex.lock();
-        Vector2f translation_current = this->translation;
-        this->translation_mutex.unlock();
+        pimpl->translation_mutex.lock();
+        Vector2f translation_current = pimpl->translation;
+        pimpl->translation_mutex.unlock();
 
-        return translation;
+        return this->pimpl->translation;
     }
 
     void Transform::set_translation(const Vector2f &translation) {
-        translation_mutex.lock();
-        this->translation = translation;
-        translation_mutex.unlock();
+        pimpl->translation_mutex.lock();
+        pimpl->translation = translation;
+        pimpl->translation_mutex.unlock();
 
-        this->dirty = true;
+        pimpl->dirty = true;
     }
 
     void Transform::add_translation(const Vector2f &translation_delta) {
-        translation_mutex.lock();
-        this->translation += translation_delta;
-        translation_mutex.unlock();
+        pimpl->translation_mutex.lock();
+        pimpl->translation += translation_delta;
+        pimpl->translation_mutex.unlock();
 
-        this->dirty = true;
+        pimpl->dirty = true;
     }
 
     const float Transform::get_rotation(void) const {
-        return rotation;
+        return pimpl->rotation;
     }
 
     void Transform::set_rotation(const float rotation_radians) {
-        this->rotation = rotation_radians;
+        pimpl->rotation = rotation_radians;
 
-        this->dirty = true;
+        pimpl->dirty = true;
     }
 
     void Transform::add_rotation(const float rotation_radians) {
-        float current = this->rotation.load();
-        while (!this->rotation.compare_exchange_weak(current, current + rotation_radians));
-        this->dirty = true;
+        float current = pimpl->rotation.load();
+        while (!pimpl->rotation.compare_exchange_weak(current, current + rotation_radians));
+        pimpl->dirty = true;
     }
 
     Vector2f const Transform::get_scale(void) {
-        this->scale_mutex.lock();
-        Vector2f scale_current = this->scale;
-        this->scale_mutex.unlock();
+        pimpl->scale_mutex.lock();
+        Vector2f scale_current = pimpl->scale;
+        pimpl->scale_mutex.unlock();
 
         return scale_current;
     }
 
     void Transform::set_scale(const Vector2f &scale) {
-        this->scale_mutex.lock();
-        this->scale = scale;
-        this->scale_mutex.unlock();
+        pimpl->scale_mutex.lock();
+        pimpl->scale = scale;
+        pimpl->scale_mutex.unlock();
 
-        this->dirty = true;
+        pimpl->dirty = true;
     }
 
     void Transform::to_matrix(float (&dst_arr)[16]) {
-        float cos_rot = std::cos(rotation);
-        float sin_rot = std::sin(rotation);
+        float cos_rot = std::cos(pimpl->rotation);
+        float sin_rot = std::sin(pimpl->rotation);
 
-        translation_mutex.lock();
-        Vector2f translation_current = translation;
-        translation_mutex.unlock();
+        pimpl->translation_mutex.lock();
+        Vector2f translation_current = pimpl->translation;
+        pimpl->translation_mutex.unlock();
 
-        scale_mutex.lock();
-        Vector2f scale_current = scale;
-        scale_mutex.unlock();
+        pimpl->scale_mutex.lock();
+        Vector2f scale_current = pimpl->scale;
+        pimpl->scale_mutex.unlock();
 
         // this is transposed from the actual matrix, since GL interprets it in column-major order
         // also, really wish C++ had a more syntactically elegant way to do this
@@ -138,11 +157,11 @@ namespace argus {
     }
 
     const bool Transform::is_dirty(void) const {
-        return dirty;
+        return pimpl->dirty;
     }
 
     void Transform::clean(void) {
-        dirty = false;
+        pimpl->dirty = false;
     }
 
 }

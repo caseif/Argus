@@ -97,13 +97,13 @@ namespace argus {
             uintptr_t next_block = cur_block + pool->real_block_size;
             // write a pointer to the next block in the first n bytes of the current block
             // we reinterpret the block's memory as an array of pointers and set the first entry
-            reinterpret_cast<uintptr_t*>(cur_block)[0] = next_block;
+            *reinterpret_cast<uintptr_t*>(cur_block) = next_block;
         }
 
         // insert a null pointer in the last block
         uintptr_t last_block = reinterpret_cast<uintptr_t>(new_chunk->data)
                 + ((pool->blocks_per_chunk - 1) * pool->real_block_size);
-        reinterpret_cast<uintptr_t*>(last_block)[0] = 0;
+        *reinterpret_cast<uintptr_t*>(last_block) = 0;
 
         return new_chunk;
     }
@@ -165,7 +165,7 @@ namespace argus {
 
         // bump the linked list entry point along
         // reinterpret the block's memory as an array of pointers and grab the first entry
-        selected_chunk->first_free_block = reinterpret_cast<uintptr_t*>(block_addr)[0];
+        selected_chunk->first_free_block = *reinterpret_cast<uintptr_t*>(block_addr);
 
         pimpl->alloced_block_count += 1;
         selected_chunk->occupied_blocks += 1;
@@ -188,7 +188,7 @@ namespace argus {
                 }
 
                 // reinterpret the freed block's memory as an array of pointers and store the current block list head
-                reinterpret_cast<uintptr_t*>(addr)[0] = chunk->first_free_block;
+                *reinterpret_cast<uintptr_t*>(addr) = chunk->first_free_block;
                 // then update the head to point to the freed block
                 chunk->first_free_block = reinterpret_cast<uintptr_t>(addr);
 
