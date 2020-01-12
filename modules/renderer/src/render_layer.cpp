@@ -35,9 +35,9 @@ namespace argus {
             parent_renderer(parent),
             priority(priority),
             shaders(_generate_initial_layer_shaders()),
-            def_group(RenderGroup(*this)),
+            def_group(create_render_group(0)),
             transform(),
-            children({&def_group}),
+            children({}),
             dirty_shaders(false) {
     }
 

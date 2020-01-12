@@ -3,6 +3,7 @@ set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0072 OLD) # OpenGL library preference
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
@@ -154,13 +155,10 @@ foreach(module ${MODULE_IDS})
 
   # configure the copy headers task to include this module
   set(MODULE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/${MODULE_PATH_PREFIX}${module}/include/argus")
-  file(GLOB_RECURSE HDR_FILES RELATIVE ${MODULE_INCLUDE_DIR} "*.h" "*.hpp")
-  list(FILTER HDR_FILES EXCLUDE REGEX "^\\.\\..*")
-  string(REGEX REPLACE "([^;]+)" "${MODULE_INCLUDE_DIR}/\\1" HDR_FILES "${HDR_FILES}")
   add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
-    COMMENT "${HDR_FILES}"
+    COMMENT "Copying headers for module ${module}"
     COMMAND ${CMAKE_COMMAND} -E
-      copy ${HDR_FILES} ${HDR_OUT_DIR})
+      copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
 
   # add this module as a dependency of the copy headers task
   add_dependencies(${HDR_TARGET} ${module})
