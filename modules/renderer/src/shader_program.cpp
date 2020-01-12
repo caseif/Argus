@@ -17,6 +17,7 @@
 #include "argus/renderer.hpp"
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
+#include "internal/pimpl_shader.hpp"
 
 #include <set>
 #include <sstream>
@@ -38,10 +39,10 @@ namespace argus {
 
     ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
             shaders(shaders.cbegin(), shaders.cend(), [](auto a, auto b){
-                if (a->priority != b->priority) {
-                    return a->priority > b->priority;
+                if (a->pimpl->priority != b->pimpl->priority) {
+                    return a->pimpl->priority > b->pimpl->priority;
                 } else {
-                    return a->entry_point.compare(b->entry_point) < 0;
+                    return a->pimpl->entry_point.compare(b->pimpl->entry_point) < 0;
                 }
             }),
             initialized(false),
@@ -148,15 +149,15 @@ namespace argus {
 
         // now we concatenate the source for each sub-shader
         for (const Shader *const shader : shaders) {
-            switch (shader->type) {
+            switch (shader->pimpl->type) {
                 case SHADER_VERTEX:
-                    bootstrap_vert_ss << shader->src << "\n";
+                    bootstrap_vert_ss << shader->pimpl->src << "\n";
                     break;
                 case SHADER_FRAGMENT:
-                    bootstrap_frag_ss << shader->src << "\n";
+                    bootstrap_frag_ss << shader->pimpl->src << "\n";
                     break;
                 default:
-                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->type);
+                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->pimpl->type);
             }
         }
 
@@ -179,15 +180,15 @@ namespace argus {
 
         // then we insert the calls to each sub-shaders entry point into the main() function
         for (const Shader *const shader : shaders) {
-            switch (shader->type) {
+            switch (shader->pimpl->type) {
                 case SHADER_VERTEX:
-                    bootstrap_vert_ss << "\n    " << shader->entry_point << "();";
+                    bootstrap_vert_ss << "\n    " << shader->pimpl->entry_point << "();";
                     break;
                 case SHADER_FRAGMENT:
-                    bootstrap_frag_ss << "\n    " << shader->entry_point << "();";
+                    bootstrap_frag_ss << "\n    " << shader->pimpl->entry_point << "();";
                     break;
                 default:
-                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->type);
+                    _ARGUS_FATAL("Unrecognized shader type ID %d\n", shader->pimpl->type);
             }
         }
 
@@ -253,7 +254,7 @@ namespace argus {
         }
 
         for (const Shader *shader : shaders) {
-            for (const std::string &uniform_id : shader->uniform_ids) {
+            for (const std::string &uniform_id : shader->pimpl->uniform_ids) {
                 GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
                 uniforms.insert({uniform_id, uniform_loc});
             }

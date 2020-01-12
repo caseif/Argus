@@ -135,7 +135,7 @@ namespace argus {
         while (chunk != NULL) {
             uintptr_t addr = chunk->unaligned_addr;
             chunk = chunk->next_chunk;
-            free(reinterpret_cast<void*>(addr));
+            ::free(reinterpret_cast<void*>(addr));
         }
     }
 

@@ -28,14 +28,14 @@ namespace argus {
 
         std::atomic_bool dirty;
 
-        pimpl_Transform(Vector2f translation, const float rotation, const Vector2f scale):
+        pimpl_Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
             translation(translation),
             rotation(rotation),
             scale(scale) {
         }
     };
 
-    AllocPool g_pimpl_pool(sizeof(pimpl_Transform), 512);
+    AllocPool g_pimpl_pool(sizeof(pimpl_Transform), 1024);
 
     Transform::Transform(void): Transform({0, 0}, 0, {1, 1}) {
     }

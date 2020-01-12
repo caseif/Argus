@@ -351,6 +351,8 @@ namespace argus {
         void prepare(void);
     };
 
+    struct pimpl_Shader;
+
     /**
      * \brief Represents a shader for use with a RenderGroup or RenderLayer.
      *
@@ -363,29 +365,7 @@ namespace argus {
         friend class ShaderProgram;
 
         private:
-            /**
-             * \brief The type of this shader as a magic value.
-             */
-            const unsigned int type;
-            /**
-             * \brief The source code of this shader.
-             */
-            const std::string src;
-            /**
-             * \brief The name of this shader's entry point.
-             */
-            const std::string entry_point;
-            /**
-             * \brief The priority of this shader.
-             *
-             * Higher priority shaders will be processed before lower priority
-             * ones within their respective stage.
-             */
-            const int priority;
-            /**
-             * \brief The uniforms defined by this shader.
-             */
-            const std::vector<std::string> uniform_ids;
+            pimpl_Shader *pimpl;
 
             /**
              * \brief Constructs a new Shader with the given parameters.
@@ -395,6 +375,9 @@ namespace argus {
              * \param entry_point The entry point of the Shader.
              * \param priority The priority of the Shader.
              * \param uniform_ids A list of uniforms defined by this shader.
+             *
+             * \remark Higher-priority shaders are executed before
+             *         lower-priority ones within their respective stage.
              */
             Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
@@ -407,6 +390,9 @@ namespace argus {
              * \param entry_point The entry point of the Shader.
              * \param priority The priority of the Shader.
              * \param uniform_ids A list of uniforms defined by this shader.
+             *
+             * \remark Higher-priority shaders are executed before
+             *         lower-priority ones within their respective stage.
              *
              * \return The constructed vertex Shader.
              */
