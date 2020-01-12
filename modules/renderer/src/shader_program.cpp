@@ -17,7 +17,7 @@
 #include "argus/renderer.hpp"
 #include "internal/renderer_defines.hpp"
 #include "internal/glext.hpp"
-#include "internal/pimpl_shader.hpp"
+#include "internal/pimpl/shader.hpp"
 
 #include <set>
 #include <sstream>

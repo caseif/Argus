@@ -22,6 +22,8 @@
 #include "internal/glext.hpp"
 #include "internal/renderer_defines.hpp"
 #include "internal/texture_loader.hpp"
+#include "internal/pimpl/renderer.hpp"
+#include "internal/pimpl/window.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -72,20 +74,21 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
-    Renderer::Renderer(Window &window):
-            window(window),
-            initialized(false),
-            destruction_pending(false),
-            valid(true),
-            dirty_resolution(false) {
+    Renderer::Renderer(Window &window): pimpl(new pimpl_Renderer(window)) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.\n");
-        callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
+
+        pimpl->window = window;
+        pimpl->initialized = false;
+        pimpl->destruction_pending = false;
+        pimpl->valid = true;
+        pimpl->dirty_resolution = false;
+        pimpl->callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
     void Renderer::init(void) {
-        gfx_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(window.handle));
-        if (!gfx_context) {
+        pimpl->gfx_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(pimpl->window.pimpl->handle));
+        if (!pimpl->gfx_context) {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
 
@@ -114,32 +117,35 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        initialized = true;
+        pimpl->initialized = true;
     }
 
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
-        SDL_GL_DeleteContext(gfx_context);
+        SDL_GL_DeleteContext(pimpl->gfx_context);
 
-        unregister_render_callback(callback_id);
+        unregister_render_callback(pimpl->callback_id);
 
-        valid = false;
+        pimpl->valid = false;
 
         return;
     }
 
     RenderLayer &Renderer::create_render_layer(const int priority) {
         RenderLayer *layer = new RenderLayer(*this, priority);
-        render_layers.insert(render_layers.cend(), layer);
-        std::sort(render_layers.begin(), render_layers.end(), [](auto a, auto b) {return a->priority < b->priority;});
+        pimpl->render_layers.insert(pimpl->render_layers.cend(), layer);
+        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](auto a, auto b) {
+            return a->priority < b->priority;
+        });
         return *layer;
     }
 
     void Renderer::remove_render_layer(RenderLayer &render_layer) {
-        _ARGUS_ASSERT(&render_layer.parent_renderer == this, "remove_render_layer called on RenderLayer with different parent");
+        _ARGUS_ASSERT(&render_layer.parent_renderer == this,
+        "remove_render_layer called on RenderLayer with different parent");
 
-        remove_from_vector(render_layers, &render_layer);
+        remove_from_vector(pimpl->render_layers, &render_layer);
         delete &render_layer;
 
         return;
@@ -148,35 +154,35 @@ namespace argus {
     void Renderer::render(const TimeDelta delta) {
         // there's no contract that guarantees callbacks will be removed immediately, so we need to be able to track
         // when the renderer has been invalidated so we don't try to deinit it more than once
-        if (!valid) {
+        if (!pimpl->valid) {
             return;
         }
 
         // this may be invoked between the parent window being destroyed and the callback being fully unregistered
-        if (destruction_pending) {
+        if (pimpl->destruction_pending) {
             destroy();
             return;
         }
 
-        if (!initialized) {
+        if (!pimpl->initialized) {
             init();
         }
 
-        _activate_gl_context(window.handle, gfx_context);
+        _activate_gl_context(pimpl->window.pimpl->handle, pimpl->gfx_context);
 
-        if (dirty_resolution) {
-            Vector2u res = window.properties.resolution;
+        if (pimpl->dirty_resolution) {
+            Vector2u res = pimpl->window.pimpl->properties.resolution;
             glViewport(0, 0, res.x, res.y);
-            dirty_resolution = false;
+            pimpl->dirty_resolution = false;
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (RenderLayer *layer : render_layers) {
+        for (RenderLayer *layer : pimpl->render_layers) {
             layer->render();
         }
 
-        SDL_GL_SwapWindow(static_cast<SDL_Window*>(window.handle));
+        SDL_GL_SwapWindow(static_cast<SDL_Window*>(pimpl->window.pimpl->handle));
     }
 
 }

@@ -496,6 +496,8 @@ namespace argus {
             //TODO: uniform set abstraction
     };
 
+    struct pimpl_Renderer;
+
     /**
      * \brief A construct which exposes functionality for rendering the entire
      *        screen space at once.
@@ -510,47 +512,10 @@ namespace argus {
      */
     class Renderer {
         friend class Window;
+        friend class pimpl_Window;
 
         private:
-            /**
-             * \brief The Window which this Renderer is mapped to.
-             */
-            Window &window;
-            /**
-             * \brief The child \link RenderLayer RenderLayers \endlink of this
-             *        Renderer.
-             */
-            std::vector<RenderLayer*> render_layers;
-
-            /**
-             * \brief The graphics context associated with this Renderer.
-             */
-            graphics_context_t gfx_context;
-            /**
-             * \brief The ID of the engine callback registered for this
-             *        Renderer.
-             */
-            Index callback_id;
-
-            /**
-             * \brief Whether this Renderer has been initialized.
-             */
-            bool initialized;
-            /**
-             * \brief Whether this Renderer is queued for destruction.
-             */
-            std::atomic_bool destruction_pending;
-            /**
-             * \brief Whether this Renderer is still valid.
-             *
-             * If `false`, the Renderer has been destroyed.
-             */
-            bool valid;
-
-            /**
-             * \brief Whether the render resolution has recently been updated.
-             */
-            std::atomic_bool dirty_resolution;
+            pimpl_Renderer *pimpl;
 
             /**
              * \brief Constructs a new Renderer attached to the given Window.
@@ -611,6 +576,8 @@ namespace argus {
             void remove_render_layer(RenderLayer &layer);
     };
 
+    struct pimpl_Window;
+
     /**
      * \brief Represents an individual window on the screen.
      *
@@ -620,56 +587,10 @@ namespace argus {
      */
     class Window {
         friend class Renderer;
+        friend class pimpl_Renderer;
 
         private:
-            /**
-             * \brief The Renderer associated with this Window.
-             */
-            Renderer renderer;
-
-            /**
-             * \brief A handle to the lower-level window represented by this
-             *        object.
-             */
-            window_handle_t handle;
-
-            /**
-             * \brief The ID of the engine callback registered for this Window.
-             */
-            Index callback_id;
-
-            /**
-             * \brief The ID of the event listener registered for this Window.
-             */
-            Index listener_id;
-
-            /**
-             * \brief The Window parent to this one, if applicable.
-             */
-            Window *parent;
-            /**
-             * \brief This Window's child \link Window Windows \endlink, if any.
-             */
-            std::vector<Window*> children;
-
-            struct {
-                AtomicDirtiable<std::string> title;
-                AtomicDirtiable<bool> fullscreen;
-                AtomicDirtiable<Vector2u> resolution;
-                AtomicDirtiable<Vector2i> position;
-            } properties;
-
-            /**
-             * \brief The callback to be executed upon the Window being closed.
-             */
-            WindowCallback close_callback;
-
-            /**
-             * \brief The state of this Window as a bitfield.
-             *
-             * \warning This field's semantic meaning is implementation-defined.
-             */
-            std::atomic<unsigned int> state;
+            pimpl_Window *pimpl;
 
             /**
              * \brief The nullary and primary constructor.
