@@ -8,21 +8,33 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
-#include "internal/sdl_event.hpp"
+#include "internal/core/sdl_event.hpp"
+
+// module resman
+#include "argus/resource_manager.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/window.hpp"
+#include "argus/renderer/window_event.hpp"
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/texture_loader.hpp"
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_video.h>
+
+#include <iterator>
+#include <map>
+#include <string>
+#include <utility>
+
+#include <cstddef>
+#include <cstdint>
 
 namespace argus {
 

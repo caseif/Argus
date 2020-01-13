@@ -8,21 +8,26 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
-
-// module core
-#include "internal/core_util.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/shader.hpp"
+#include "argus/renderer/shader_program.hpp"
+#include "argus/renderer/util/types.hpp"
 #include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/pimpl/shader.hpp"
 
-#include <initializer_list>
+#include <SDL2/SDL_opengl.h>
+
+#include <algorithm>
+#include <iterator>
 #include <set>
 #include <sstream>
-#include <SDL2/SDL_opengl.h>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #define _LOG_MAX_LEN 255
 

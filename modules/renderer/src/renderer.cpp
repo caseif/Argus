@@ -8,30 +8,33 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
+#include "argus/math.hpp"
+#include "argus/threading.hpp"
 
 // module core
 #include "argus/core.hpp"
-#include "internal/core_util.hpp"
-
-// module resman
-#include "argus/resource_manager.hpp"
+#include "internal/core/core_util.hpp"
 
 // module renderer
+#include "argus/renderer/render_layer.hpp"
 #include "argus/renderer/renderer.hpp"
+#include "argus/renderer/window.hpp"
+#include "argus/renderer/util/types.hpp"
 #include "internal/renderer/glext.hpp"
-#include "internal/renderer/renderer_defines.hpp"
-#include "internal/renderer/texture_loader.hpp"
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_video.h>
+
 #include <algorithm>
-#include <iostream>
+#include <atomic>
+#include <functional>
 #include <vector>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_render.h>
+#include <cstdio>
 
 namespace argus {
 

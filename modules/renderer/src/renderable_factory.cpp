@@ -8,7 +8,11 @@
  */
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/render_group.hpp"
+#include "argus/renderer/renderable_factory.hpp"
+#include "argus/renderer/renderable_square.hpp"
+#include "argus/renderer/renderable_triangle.hpp"
+#include "argus/renderer/transform.hpp"
 
 // module lowlevel
 #include "argus/memory.hpp"

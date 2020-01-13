@@ -7,7 +7,13 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module resman
 #include "argus/resource_manager.hpp"
+
+#include <atomic>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace argus {
 

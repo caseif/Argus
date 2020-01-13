@@ -9,9 +9,9 @@
 
 #include "argus/threading.hpp"
 
+#include <exception>
 #include <functional>
 #include <memory>
-#include <type_traits>
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
@@ -22,9 +22,9 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#else
-#include <unistd.h>
 #endif
+
+#include <cstddef>
 
 namespace argus {
 
@@ -175,8 +175,8 @@ namespace argus {
                 if (callback != nullptr) {
                     callback();
                 }
-            } catch (std::exception &ex) {
-                promise_ptr->set_exception_at_thread_exit(std::make_exception_ptr(ex));
+            } catch (...) {
+                promise_ptr->set_exception_at_thread_exit(std::current_exception());
             }
 
             return nullptr;

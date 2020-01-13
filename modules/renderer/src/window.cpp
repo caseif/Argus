@@ -8,25 +8,31 @@
  */
 
 // module lowlevel
+#include "argus/math.hpp"
 #include "argus/threading.hpp"
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
-#include "internal/core_util.hpp"
+#include "internal/core/core_util.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/renderer.hpp"
+#include "argus/renderer/window.hpp"
+#include "argus/renderer/window_event.hpp"
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
-#include <algorithm>
+#include <SDL2/SDL_video.h>
+
+#include <atomic>
 #include <functional>
-#include <iostream>
+#include <map>
 #include <string>
 #include <vector>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_render.h>
+
+#include <cstddef>
+#include <cstdint>
 
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300

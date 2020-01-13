@@ -16,12 +16,17 @@
 #pragma once
 
 #include <atomic>
-#include <future>
+#include <exception>
 #include <functional>
+#include <future>
+#include <memory>
 #include <mutex>
+#include <stdexcept>
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <pthread.h> // need it for rwlock
 #endif
 
 #ifdef USE_PTHREADS
@@ -360,8 +365,8 @@ namespace argus {
                 if (callback != nullptr) {
                     callback(res);
                 }
-            } catch (std::exception &ex) {
-                promise_ptr->set_exception(std::make_exception_ptr(ex));
+            } catch (...) {
+                promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
             }
 
             return nullptr;

@@ -7,18 +7,26 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "internal/lowlevel/logging.hpp"
+
+// module core
+#include "argus/core.hpp"
+#include "internal/core/core_util.hpp"
+#include "internal/core/sdl_event.hpp"
+
 // module input
 #include "argus/keyboard.hpp"
 
-// module core
-#include "internal/core_util.hpp"
-#include "internal/sdl_event.hpp"
-
-// module lowlevel
-#include "internal/logging.hpp"
-
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
+
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <vector>
+
+#include <cstdint>
 
 namespace argus {
 

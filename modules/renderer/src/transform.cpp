@@ -12,7 +12,10 @@
 #include "argus/memory.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/transform.hpp"
+
+#include <atomic>
+#include <mutex>
 
 #include <cmath>
 

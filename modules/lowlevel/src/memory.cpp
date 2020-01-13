@@ -8,9 +8,8 @@
  */
 
 #include "argus/memory.hpp"
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
-#include <list>
 #include <stdexcept>
 
 #include <cmath>

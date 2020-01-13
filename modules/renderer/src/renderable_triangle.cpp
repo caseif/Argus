@@ -11,11 +11,11 @@
 #include "argus/memory.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
-#include "internal/renderer/renderer_defines.hpp"
+#include "argus/renderer/render_group.hpp"
+#include "argus/renderer/renderable.hpp"
+#include "argus/renderer/renderable_triangle.hpp"
+#include "argus/renderer/transform.hpp"
 #include "internal/renderer/glext.hpp"
-
-#include <SDL2/SDL_opengl.h>
 
 #define _TRIANGLE_VERTICES 3
 

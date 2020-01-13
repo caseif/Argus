@@ -8,16 +8,24 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
+
+// module resman
+#include "argus/resource_manager.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/texture_data.hpp"
 #include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/texture_loader.hpp"
 
 #include <png.h>
 
 #include <istream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+
+#include <cstdio>
 
 #define RESOURCE_EXTENSION_PNG "png"
 

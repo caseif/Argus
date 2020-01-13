@@ -16,6 +16,7 @@
 #include <Windows.h>
 #else
 #include <ctime>
+#include <sys/time.h>
 #ifdef USE_PTHREADS
 #include <unistd.h>
 #endif

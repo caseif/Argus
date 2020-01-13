@@ -10,7 +10,7 @@
 // module lowlevel
 #include "argus/filesystem.hpp"
 #include "argus/threading.hpp"
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
@@ -21,8 +21,14 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <functional>
 #include <future>
-#include <memory>
+#include <istream>
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 #define UID_SEPARATOR "."
 

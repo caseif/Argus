@@ -7,8 +7,6 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/renderer.hpp"
-
 #include <initializer_list>
 #include <string>
 

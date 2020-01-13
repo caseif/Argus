@@ -8,18 +8,17 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
-
-// module core
-#include "internal/core_util.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module renderer
 #include "internal/renderer/expand_dong.hpp"
 #include "internal/renderer/glext.hpp"
 
-#include <map>
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_video.h>
 
-#include <SDL2/SDL.h>
+#include <cstddef>
 
 #define EXPAND_GL_DEFINITION(function) PTR_##function function;
 #define EXPAND_GL_INIT_GLOBAL(function) _init_gl_ptr<__COUNTER__>(#function, &function);

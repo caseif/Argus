@@ -9,7 +9,10 @@
 
 // module core
 #include "argus/core.hpp"
-#include "internal/config.hpp"
+#include "internal/core/config.hpp"
+
+#include <initializer_list>
+#include <string>
 
 namespace argus {
 

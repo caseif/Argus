@@ -9,16 +9,15 @@
 
 // module lowlevel
 #include "argus/memory.hpp"
-#include "internal/logging.hpp"
-
-// module core
-#include "internal/core_util.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/shader.hpp"
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/pimpl/shader.hpp"
+
+#include <initializer_list>
+#include <string>
 
 #define GEN_TRANSFORM_SHADER(entry, uniform) Shader::create_vertex_shader("\
         uniform mat4 " uniform ";       \n\

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <new>
+
 #include <cstddef>
 #include <cstdint>
 

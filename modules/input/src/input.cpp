@@ -9,10 +9,12 @@
 
 // module input
 #include "argus/input.hpp"
-#include "internal/input_helpers.hpp"
+#include "internal/input/input_helpers.hpp"
 
 // module core
 #include "argus/core.hpp"
+
+#include <string>
 
 namespace argus {
 

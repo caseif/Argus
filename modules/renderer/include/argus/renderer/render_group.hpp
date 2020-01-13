@@ -15,7 +15,6 @@
 #include "argus/renderer/renderable.hpp"
 #include "argus/renderer/shader.hpp"
 #include "argus/renderer/shader_program.hpp"
-#include "argus/renderer/util/types.hpp"
 
 #include <map>
 #include <vector>

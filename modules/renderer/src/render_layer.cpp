@@ -8,18 +8,22 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "internal/core_util.hpp"
+#include "internal/core/core_util.hpp"
 
 // module renderer
 #include "argus/renderer/render_group.hpp"
-#include "argus/renderer.hpp"
+#include "argus/renderer/render_layer.hpp"
+#include "argus/renderer/renderable_factory.hpp"
+#include "argus/renderer/renderer.hpp"
+#include "argus/renderer/shader.hpp"
+#include "argus/renderer/transform.hpp"
 #include "internal/renderer/pimpl/render_group.hpp"
 #include "internal/renderer/glext.hpp"
 
-#include <SDL2/SDL_opengl.h>
+#include <vector>
 
 namespace argus {
 

@@ -7,16 +7,19 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
 #include "argus/filesystem.hpp"
-#include "internal/error_util.hpp"
-#include "internal/logging.hpp"
+#include "argus/threading.hpp"
+#include "internal/lowlevel/error_util.hpp"
+#include "internal/lowlevel/logging.hpp"
 
-#include <algorithm>
+#include <future>
+#include <stdexcept>
+
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
-#include <future>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #ifdef _WIN32
     #include <Windows.h>
@@ -36,9 +39,8 @@
     #define stat_t struct stat
 #elif defined __linux__
     #include <dirent.h>
+    #include <features.h>
     #include <unistd.h>
-    #include <sys/stat.h>
-    #include <sys/types.h>
 
     #ifndef __USE_FILE_OFFSET64
         #define __USE_FILE_OFFSET64

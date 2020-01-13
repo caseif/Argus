@@ -7,7 +7,18 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/renderer.hpp"
+// module lowlevel
+#include "argus/threading.hpp"
+
+// module core
+#include "argus/core.hpp"
+
+// module renderer
+#include "argus/renderer/renderer.hpp"
+#include "argus/renderer/util/types.hpp"
+
+#include <atomic>
+#include <vector>
 
 namespace argus {
     struct pimpl_Window {

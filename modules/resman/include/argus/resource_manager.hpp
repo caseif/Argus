@@ -15,8 +15,6 @@
 
 #pragma once
 
-#include "argus/threading.hpp"
-
 #include <atomic>
 #include <fstream>
 #include <future>

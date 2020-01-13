@@ -15,14 +15,14 @@
 
 #pragma once
 
-#include "argus/threading.hpp"
-
-#include <atomic>
 #include <fstream>
 #include <functional>
 #include <future>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include <cstdio>
 
 #ifdef _WIN32
 // builds targeting 32-bit define size_t as a 32-bit int, which won't do
@@ -34,6 +34,8 @@
  */
 #define PATH_SEPARATOR "\\"
 #else
+#include <sys/types.h>
+
 /**
  * \brief The separator for elements in filesystem paths.
  */

@@ -8,20 +8,23 @@
  */
 
 // module lowlevel
-#include "internal/logging.hpp"
-
-// module core
-#include "internal/core_util.hpp"
+#include "internal/lowlevel/logging.hpp"
+#include "argus/math.hpp"
 
 // module resman
 #include "argus/resource_manager.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
+#include "argus/renderer/render_group.hpp"
+#include "argus/renderer/renderable.hpp"
+#include "argus/renderer/transform.hpp"
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/renderer_defines.hpp"
 
-#include <SDL2/SDL_opengl.h>
+#include <atomic>
+#include <string>
+
+#include <cstdlib>
 
 namespace argus {
 

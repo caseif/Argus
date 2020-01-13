@@ -11,29 +11,39 @@
 #include "argus/filesystem.hpp"
 #include "argus/threading.hpp"
 #include "argus/time.hpp"
-#include "internal/logging.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
-#include "internal/config.hpp"
-#include "internal/core_util.hpp"
-#include "internal/sdl_event.hpp"
+#include "internal/core/config.hpp"
+#include "internal/core/core_util.hpp"
+#include "internal/core/sdl_event.hpp"
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_events.h>
 
 #include <algorithm>
-#include <chrono>
 #include <csignal>
+#include <functional>
 #include <initializer_list>
 #include <iostream>
+#include <iterator>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <SDL2/SDL.h>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <Windows.h>
