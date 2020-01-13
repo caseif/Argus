@@ -20,8 +20,8 @@
 // module renderer
 #include "argus/renderer/window.hpp"
 #include "argus/renderer/window_event.hpp"
+#include "internal/renderer/defines.hpp"
 #include "internal/renderer/glext.hpp"
-#include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/texture_loader.hpp"
 
 #include <SDL2/SDL.h>

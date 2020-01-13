@@ -13,7 +13,6 @@
 #include "argus/renderer/render_group.hpp"
 #include "argus/renderer/render_layer.hpp"
 #include "argus/renderer/shader.hpp"
-#include "argus/renderer/util/types.hpp"
 
 #include <initializer_list>
 #include <set>
@@ -27,6 +26,11 @@ namespace argus {
     class RenderLayer;
     class Shader;
 
+    //TODO: temporary until we implement a proper uniform API
+    typedef unsigned int uniform_location_t;
+
+    struct pimpl_ShaderProgram;
+
     /**
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
@@ -36,30 +40,7 @@ namespace argus {
         friend class RenderLayer;
 
         private:
-            /**
-             * \brief The set of Shaders encompassed by this program.
-             */
-            std::set<const Shader*, bool(*)(const Shader*, const Shader*)> shaders;
-            /**
-             * \brief A complete list of uniforms defined by this
-             *        program's Shaders.
-             */
-            std::unordered_map<std::string, handle_t> uniforms;
-
-            /**
-             * \brief Whether this program has been initially compiled and linked.
-             */
-            bool initialized;
-            /**
-             * \brief Whether this program must be rebuilt (due to the Shader
-             *        list updating).
-             */
-            bool needs_rebuild;
-
-            /**
-             * \brief A handle to the linked program in video memory.
-             */
-            handle_t program_handle;
+            pimpl_ShaderProgram *pimpl;
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given
@@ -126,8 +107,8 @@ namespace argus {
              * \deprecated This will be removed after functions are added to
              *             abstract the setting of uniforms.
              */
-            handle_t get_uniform_location(const std::string &uniform_id) const;
+            uniform_location_t get_uniform_location(const std::string &uniform_id) const;
 
-            //TODO: uniform set abstraction
+            //TODO: proper uniform API
     };
 }

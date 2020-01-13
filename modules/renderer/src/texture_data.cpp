@@ -8,11 +8,13 @@
  */
 
 // module lowlevel
+#include "argus/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module renderer
 #include "argus/renderer/texture_data.hpp"
 #include "internal/renderer/glext.hpp"
+#include "internal/renderer/pimpl/texture_data.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
@@ -24,37 +26,42 @@ namespace argus {
 
     using namespace glext;
 
+    static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData), 512);
+
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const size_t width, const size_t height, unsigned char **&&image_data):
             width(width),
             height(height),
-            image_data(image_data),
-            prepared(false) {
-        image_data = nullptr;
+            pimpl(&g_pimpl_pool.construct<pimpl_TextureData>()) {
+        pimpl->image_data = image_data;
+        pimpl->prepared = false;
+        pimpl->image_data = nullptr;
     }
 
     TextureData::~TextureData(void) {
-        if (prepared) {
-            glDeleteBuffers(1, &buffer_handle);
+        if (pimpl->prepared) {
+            glDeleteBuffers(1, &pimpl->buffer_handle);
         } else {
             for (size_t y = 0; y < height; y++) {
-                delete[] image_data[y];
+                delete[] pimpl->image_data[y];
             }
-            delete[] image_data;
+            delete[] pimpl->image_data;
         }
+
+        g_pimpl_pool.free(pimpl);
     }
 
     const bool TextureData::is_prepared(void) {
-        return prepared;
+        return pimpl->prepared;
     }
 
     void TextureData::prepare(void) {
-        _ARGUS_ASSERT(!prepared, "TextureData#prepare called twice\n");
+        _ARGUS_ASSERT(!pimpl->prepared, "TextureData#prepare called twice\n");
 
-        glGenBuffers(1, &buffer_handle);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, buffer_handle);
+        glGenBuffers(1, &pimpl->buffer_handle);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pimpl->buffer_handle);
 
-        if (!glIsBuffer(buffer_handle)) {
+        if (!glIsBuffer(pimpl->buffer_handle)) {
             _ARGUS_FATAL("Failed to gen pixel buffer during texture preparation\n");
         }
 
@@ -63,20 +70,20 @@ namespace argus {
 
         size_t offset = 0;
         for (size_t y = 0; y < height; y++) {
-            glBufferSubData(GL_PIXEL_UNPACK_BUFFER, offset, row_size, image_data[y]);
+            glBufferSubData(GL_PIXEL_UNPACK_BUFFER, offset, row_size, pimpl->image_data[y]);
             offset += row_size;
         }
 
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
         for (size_t y = 0; y < height; y++) {
-            delete[] image_data[y];
+            delete[] pimpl->image_data[y];
         }
-        delete[] image_data;
+        delete[] pimpl->image_data;
 
-        image_data = nullptr;
+        pimpl->image_data = nullptr;
 
-        prepared = true;
+        pimpl->prepared = true;
     }
 
 }

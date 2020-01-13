@@ -20,8 +20,9 @@
 #include "argus/renderer/renderer.hpp"
 #include "argus/renderer/shader.hpp"
 #include "argus/renderer/transform.hpp"
-#include "internal/renderer/pimpl/render_group.hpp"
 #include "internal/renderer/glext.hpp"
+#include "internal/renderer/pimpl/render_group.hpp"
+#include "internal/renderer/pimpl/render_layer.hpp"
 
 #include <vector>
 
@@ -38,65 +39,64 @@ namespace argus {
     }
 
     RenderLayer::RenderLayer(Renderer &parent, const int priority):
-            parent_renderer(parent),
-            priority(priority),
-            shaders(_generate_initial_layer_shaders()),
-            def_group(create_render_group(0)),
-            transform(),
-            children({}),
-            dirty_shaders(false) {
+            pimpl(new pimpl_RenderLayer(parent, priority)) {
+        pimpl->shaders = _generate_initial_layer_shaders();
+        pimpl->def_group = &create_render_group(0);
+        pimpl->children = {pimpl->def_group};
+        pimpl->dirty_shaders = false;
     }
 
     void RenderLayer::destroy(void) {
-        parent_renderer.remove_render_layer(*this);
+        pimpl->parent_renderer.remove_render_layer(*this);
+        delete pimpl;
         delete this;
     }
 
     void RenderLayer::remove_group(RenderGroup &group) {
         _ARGUS_ASSERT(&group.pimpl->parent == this, "remove_group() passed group with wrong parent");
 
-        remove_from_vector(children, &group);
+        remove_from_vector(pimpl->children, &group);
 
         delete this;
     }
 
     Transform &RenderLayer::get_transform(void) {
-        return transform;
+        return pimpl->transform;
     }
 
     RenderableFactory &RenderLayer::get_renderable_factory(void) {
-        return def_group.get_renderable_factory();
+        return pimpl->def_group->get_renderable_factory();
     }
 
     RenderGroup &RenderLayer::create_render_group(const int priority) {
         RenderGroup *group = new RenderGroup(*this);
-        children.insert(children.cbegin(), group);
+        pimpl->children.insert(pimpl->children.cbegin(), group);
         return *group;
     }
 
     RenderGroup &RenderLayer::get_default_group(void) {
-        return def_group;
+        return *pimpl->def_group;
     }
 
     void RenderLayer::add_shader(const Shader &shader) {
-        shaders.insert(shaders.cbegin(), &shader);
+        pimpl->shaders.insert(pimpl->shaders.cbegin(), &shader);
     }
 
     void RenderLayer::remove_shader(const Shader &shader) {
-        remove_from_vector(shaders, &shader);
+        remove_from_vector(pimpl->shaders, &shader);
     }
 
     void RenderLayer::render(void) {
-        for (RenderGroup *group : children) {
+        for (RenderGroup *group : pimpl->children) {
             group->draw();
         }
 
-        if (dirty_shaders) {
-            dirty_shaders = false;
+        if (pimpl->dirty_shaders) {
+            pimpl->dirty_shaders = false;
         }
 
-        if (transform.is_dirty()) {
-            transform.clean();
+        if (pimpl->transform.is_dirty()) {
+            pimpl->transform.clean();
         }
     }
 

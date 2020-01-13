@@ -11,7 +11,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module renderer
-#include "internal/renderer/expand_dong.hpp"
+#include "internal/renderer/expansion_macros.hpp"
 #include "internal/renderer/glext.hpp"
 
 #include <SDL2/SDL_error.h>

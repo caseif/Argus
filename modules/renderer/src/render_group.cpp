@@ -27,9 +27,13 @@
 #include "argus/renderer/shader_program.hpp"
 #include "argus/renderer/texture_data.hpp"
 #include "argus/renderer/transform.hpp"
-#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/defines.hpp"
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/pimpl/render_group.hpp"
+#include "internal/renderer/pimpl/render_layer.hpp"
+#include "internal/renderer/pimpl/renderable.hpp"
+#include "internal/renderer/pimpl/shader_program.hpp"
+#include "internal/renderer/pimpl/texture_data.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
@@ -75,7 +79,7 @@ namespace argus {
     }
 
     void RenderGroup::destroy(void) {
-        if (&pimpl->parent.def_group == this) {
+        if (pimpl->parent.pimpl->def_group == this) {
             _ARGUS_FATAL("Cannot destroy root RenderGroup");
         }
 
@@ -83,6 +87,8 @@ namespace argus {
 
         glDeleteVertexArrays(1, &pimpl->vao);
         glDeleteBuffers(1, &pimpl->vbo);
+
+        g_pimpl_pool.free(pimpl);
     }
 
     Transform &RenderGroup::get_transform(void) {
@@ -96,10 +102,10 @@ namespace argus {
 
         std::set<Resource*> seen_textures;
         for (Renderable *child : pimpl->children) {
-            if (child->tex_resource != nullptr) {
-                seen_textures.insert(child->tex_resource);
+            if (child->pimpl->tex_resource != nullptr) {
+                seen_textures.insert(child->pimpl->tex_resource);
 
-                TextureData &tex_data = child->tex_resource->get_data<TextureData>();
+                TextureData &tex_data = child->pimpl->tex_resource->get_data<TextureData>();
 
                 if (tex_data.width > max_width) {
                     max_width = tex_data.width;
@@ -108,7 +114,7 @@ namespace argus {
                     max_height = tex_data.height;
                 }
 
-                if (child->dirty_texture) {
+                if (child->pimpl->dirty_texture) {
                     needs_rebuild = true;
                 }
             }
@@ -142,7 +148,7 @@ namespace argus {
                     tex_data.prepare();
                 }
 
-                glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tex_data.buffer_handle);
+                glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tex_data.pimpl->buffer_handle);
                 glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, cur_index, tex_data.width, tex_data.height, 1,
                         GL_RGBA, GL_UNSIGNED_BYTE, 0);
                 glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -153,17 +159,20 @@ namespace argus {
             }
 
             for (Renderable *child : pimpl->children) {
-                if (child->tex_resource != nullptr) {
-                    auto it = pimpl->texture_indices.find(child->tex_resource->uid);
+                if (child->pimpl->tex_resource != nullptr) {
+                    auto it = pimpl->texture_indices.find(child->pimpl->tex_resource->uid);
                     _ARGUS_ASSERT(it != pimpl->texture_indices.cend(),
                             "Failed to get texture index after rebuilding\n");
 
-                    TextureData &tex_data = child->tex_resource->get_data<TextureData>();
-                    child->tex_index = it->second;
-                    child->tex_max_uv = Vector2f{(float) tex_data.width / max_width, (float) tex_data.height / max_height};
+                    TextureData &tex_data = child->pimpl->tex_resource->get_data<TextureData>();
+                    child->pimpl->tex_index = it->second;
+                    child->pimpl->tex_max_uv = Vector2f{
+                            (float) tex_data.width / max_width,
+                            (float) tex_data.height / max_height
+                    };
                 }
 
-                child->dirty_texture = false;
+                child->pimpl->dirty_texture = false;
             }
         }
     }
@@ -198,7 +207,8 @@ namespace argus {
             }
 
             // allocate a new buffer
-            glBufferData(GL_ARRAY_BUFFER, pimpl->vertex_count * _VERTEX_LEN * _VERTEX_WORD_LEN, nullptr, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, pimpl->vertex_count * _VERTEX_LEN * _VERTEX_WORD_LEN, nullptr,
+                    GL_DYNAMIC_DRAW);
 
             // set up attribute metadata
             glEnableVertexAttribArray(_ATTRIB_LOC_POSITION);
@@ -224,14 +234,15 @@ namespace argus {
         // we only push a child's data if the child list has changed, or the specific child's transform has changed
         size_t offset = 0;
         for (Renderable *const child : pimpl->children) {
-            if (child->transform.is_dirty() || pimpl->dirty_children) {
+            if (child->pimpl->transform.is_dirty() || pimpl->dirty_children) {
                 child->allocate_buffer(child->get_vertex_count() * _VERTEX_LEN);
                 child->populate_buffer();
-                glBufferSubData(GL_ARRAY_BUFFER, offset, child->buffer_size * sizeof(float), child->vertex_buffer);
+                glBufferSubData(GL_ARRAY_BUFFER, offset, child->pimpl->buffer_size * sizeof(float),
+                        child->pimpl->vertex_buffer);
 
-                child->transform.clean();
+                child->pimpl->transform.clean();
             }
-            offset += child->buffer_size * sizeof(float);
+            offset += child->pimpl->buffer_size * sizeof(float);
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -248,7 +259,7 @@ namespace argus {
 
     void RenderGroup::rebuild_shaders(void) {
         // check if any shader compilation is needed this frame
-        if (!pimpl->shaders_initialized || pimpl->parent.dirty_shaders || pimpl->dirty_shaders) {
+        if (!pimpl->shaders_initialized || pimpl->parent.pimpl->dirty_shaders || pimpl->dirty_shaders) {
             // check if there's an existing program that needs deletion
             if (pimpl->shaders_initialized) {
                 pimpl->shader_program.delete_program();
@@ -257,17 +268,17 @@ namespace argus {
             // create a superset of all shaders
             std::vector<const Shader*> shader_superlist;
             shader_superlist.insert(shader_superlist.end(),
-                    pimpl->parent.shaders.cbegin(), pimpl->parent.shaders.cend());
+                    pimpl->parent.pimpl->shaders.cbegin(), pimpl->parent.pimpl->shaders.cend());
             shader_superlist.insert(shader_superlist.end(), pimpl->shaders.cbegin(), pimpl->shaders.cend());
 
             pimpl->shader_program.update_shaders(shader_superlist);
             pimpl->shader_program.link();
-        } else if (pimpl->shader_program.needs_rebuild) {
+        } else if (pimpl->shader_program.pimpl->needs_rebuild) {
             pimpl->shader_program.link();
         }
 
-        if (!pimpl->shaders_initialized || pimpl->transform.is_dirty() || pimpl->parent.transform.is_dirty()) {
-            glUseProgram(pimpl->shader_program.program_handle);
+        if (!pimpl->shaders_initialized || pimpl->transform.is_dirty() || pimpl->parent.pimpl->transform.is_dirty()) {
+            glUseProgram(pimpl->shader_program.pimpl->program_handle);
         }
 
         if (!pimpl->shaders_initialized || pimpl->transform.is_dirty()) {
@@ -278,14 +289,14 @@ namespace argus {
             pimpl->transform.clean();
         }
 
-        if (!pimpl->shaders_initialized || pimpl->parent.transform.is_dirty()) {
+        if (!pimpl->shaders_initialized || pimpl->parent.pimpl->transform.is_dirty()) {
             float transform_matrix[16];
-            pimpl->parent.transform.to_matrix(transform_matrix);
+            pimpl->parent.pimpl->transform.to_matrix(transform_matrix);
             glUniformMatrix4fv(pimpl->shader_program.get_uniform_location(_UNIFORM_LAYER_TRANSFORM), 1, GL_FALSE,
                     transform_matrix);
         }
 
-        if (!pimpl->shaders_initialized || pimpl->transform.is_dirty() || pimpl->parent.transform.is_dirty()) {
+        if (!pimpl->shaders_initialized || pimpl->transform.is_dirty() || pimpl->parent.pimpl->transform.is_dirty()) {
             glUseProgram(0);
         }
 
@@ -301,7 +312,7 @@ namespace argus {
     void RenderGroup::draw(void) {
         rebuild_shaders();
 
-        glUseProgram(pimpl->shader_program.program_handle);
+        glUseProgram(pimpl->shader_program.pimpl->program_handle);
 
         rebuild_textures(false);
 
@@ -323,7 +334,7 @@ namespace argus {
     }
 
     void RenderGroup::remove_renderable(const Renderable &renderable) {
-        _ARGUS_ASSERT(&renderable.parent == this, "remove_renderable was passed Renderable with wrong parent");
+        _ARGUS_ASSERT(&renderable.pimpl->parent == this, "remove_renderable was passed Renderable with wrong parent");
 
         remove_from_vector(pimpl->children, &renderable);
         pimpl->dirty_children = true;

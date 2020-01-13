@@ -9,14 +9,13 @@
 
 #pragma once
 
-// module renderer
-#include "argus/renderer/util/types.hpp"
-
 #include <atomic>
 
 #include <cstdio>
 
 namespace argus {
+    struct pimpl_TextureData;
+
     /**
      * \brief Contains metadata and data pertaining to an image to be used as a
      *        texture for rendering.
@@ -26,21 +25,10 @@ namespace argus {
      * after it has been uploaded to the GPU during texture preparation.
      */
     struct TextureData {
-        private:
-            /**
-             * \brief A two-dimensional array of pixel data for this texture.
-             *
-             * The data is stored in column-major form. If the texture has
-             * already been prepared for use in rendering, the data will no
-             * longer be present in system memory and the pointer will be
-             * equivalent to nullptr.
-             */
-            unsigned char **image_data;
+        friend class RenderGroup;
 
-            /**
-             * \brief Whether the texture data has been prepared for use.
-             */
-            std::atomic_bool prepared;
+        private:
+            pimpl_TextureData *pimpl;
 
         public:
             /**
@@ -51,12 +39,6 @@ namespace argus {
              * \brief The height in pixels of the texture.
              */
             const size_t height;
-            /**
-             * \brief A handle to the buffer in video memory storing this
-             *        texture's data. This handle is only valid after the
-             *        texture data has been prepared for use.
-             */
-            handle_t buffer_handle;
 
         /**
          * \brief Constructs a new instance of this class with the given

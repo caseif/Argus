@@ -11,7 +11,8 @@
 
 // module renderer
 #include "argus/renderer/transform.hpp"
-#include "argus/renderer/util/types.hpp"
+#include "internal/renderer/types.hpp"
+#include "internal/renderer/pimpl/render_layer.hpp"
 
 #include <map>
 #include <vector>
@@ -116,8 +117,9 @@ namespace argus {
             std::vector<const Shader*> &&shaders):
                 parent(parent),
                 renderable_factory(factory),
+                transform(),
                 shaders(shaders),
-                shader_program(_merge_shaders(parent.shaders, shaders)) {
+                shader_program(_merge_shaders(parent.pimpl->shaders, shaders)) {
         }
     };
 }

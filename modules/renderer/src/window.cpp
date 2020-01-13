@@ -73,7 +73,9 @@ namespace argus {
         return;
     }
 
-    Window::~Window(void) = default;
+    Window::~Window(void) {
+        delete pimpl;
+    }
 
     void Window::destroy(void) {
         pimpl->state &= ~WINDOW_STATE_VALID;

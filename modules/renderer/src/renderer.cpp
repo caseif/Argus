@@ -20,8 +20,9 @@
 #include "argus/renderer/render_layer.hpp"
 #include "argus/renderer/renderer.hpp"
 #include "argus/renderer/window.hpp"
-#include "argus/renderer/util/types.hpp"
 #include "internal/renderer/glext.hpp"
+#include "internal/renderer/types.hpp"
+#include "internal/renderer/pimpl/render_layer.hpp"
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
@@ -132,6 +133,8 @@ namespace argus {
 
         pimpl->valid = false;
 
+        delete pimpl;
+
         return;
     }
 
@@ -139,13 +142,13 @@ namespace argus {
         RenderLayer *layer = new RenderLayer(*this, priority);
         pimpl->render_layers.insert(pimpl->render_layers.cend(), layer);
         std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](auto a, auto b) {
-            return a->priority < b->priority;
+            return a->pimpl->priority < b->pimpl->priority;
         });
         return *layer;
     }
 
     void Renderer::remove_render_layer(RenderLayer &render_layer) {
-        _ARGUS_ASSERT(&render_layer.parent_renderer == this,
+        _ARGUS_ASSERT(&render_layer.pimpl->parent_renderer == this,
         "remove_render_layer called on RenderLayer with different parent");
 
         remove_from_vector(pimpl->render_layers, &render_layer);

@@ -15,7 +15,7 @@
 
 // module renderer
 #include "argus/renderer/renderer.hpp"
-#include "argus/renderer/util/types.hpp"
+#include "internal/renderer/types.hpp"
 
 #include <atomic>
 #include <vector>

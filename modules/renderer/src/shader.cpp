@@ -12,8 +12,8 @@
 
 // module renderer
 #include "argus/renderer/shader.hpp"
+#include "internal/renderer/defines.hpp"
 #include "internal/renderer/glext.hpp"
-#include "internal/renderer/renderer_defines.hpp"
 #include "internal/renderer/pimpl/shader.hpp"
 
 #include <initializer_list>
