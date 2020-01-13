@@ -28,6 +28,8 @@ namespace argus {
     class Shader;
     class ShaderProgram;
 
+    struct pimpl_RenderGroup;
+
     /**
      * \brief Represents a group of \link Renderable Renderables \endlink to be
      *        rendered at once.
@@ -42,90 +44,7 @@ namespace argus {
         friend RenderableFactory;
 
         private:
-            /**
-             * \brief The RenderLayer which this group belongs to.
-             */
-            RenderLayer &parent;
-            /**
-             * \brief The Renderable objects contained by this group.
-             */
-            std::vector<Renderable*> children;
-
-            /**
-             * \brief The Transform of this group.
-             *
-             * This will be combined with the Transform of the parent
-             * RenderLayer.
-             */
-            Transform transform;
-
-            /**
-             * \brief The \link Shader Shaders \endlink to be applied to this
-             *        group.
-             *
-             * These will be combined with the \link Shader Shaders \endlink of
-             * the parent RenderLayer.
-             */
-            std::vector<const Shader*> shaders;
-
-            /**
-             * \brief A map of texture IDs to texture array indices.
-             */
-            std::map<std::string, unsigned int> texture_indices;
-
-            /**
-             * \brief The RenderableFactory associated with this group.
-             *
-             * RenderGroup and RenderableFactory objects always have a
-             * one-to-one mapping.
-             *
-             * \sa RenderableFactory
-             */
-            RenderableFactory renderable_factory;
-
-            /**
-             * \brief The current total vertex count of this group.
-             */
-            size_t vertex_count;
-
-            /**
-             * \brief Whether the child Renderable list has been mutated since
-             *        the list was last flushed to the underlying vertex buffer
-             *        object.
-             */
-            bool dirty_children;
-            /**
-             * \brief Whether the shader list of either this object or its
-             *        parent RenderLayer has been mutated since the full shader
-             *        list was last compiled.
-             */
-            bool dirty_shaders;
-
-            bool shaders_initialized;
-            bool buffers_initialized;
-
-            ShaderProgram shader_program;
-            /**
-             * A handle to the underlying vertex buffer object of this group.
-             *
-             * \attention The exact semantic meaning of this value is
-             *            implementation-defined.
-             */
-            handle_t vbo;
-            /**
-             * A handle to the underlying vertex array object of this group.
-             *
-             * \attention The exact semantic meaning of this value is
-             *            implementation-defined.
-             */
-            handle_t vao;
-            /**
-             * A handle to the underlying texture object of this group.
-             *
-             * \attention The exact semantic meaning of this value is
-             *            implementation-defined.
-             */
-            handle_t tex_handle;
+            pimpl_RenderGroup *pimpl;
 
             /**
              * \brief Constructs a new RenderGroup.
@@ -135,16 +54,7 @@ namespace argus {
              */
             RenderGroup(RenderLayer &parent);
 
-            RenderGroup(const RenderGroup &ref): RenderGroup(ref.parent) {
-            }
-
-            /**
-             * \brief Constructs the ShaderProgram which will be associated with
-             *        this group.
-             *
-             * \return The constructed ShaderProgram.
-             */
-            ShaderProgram generate_initial_program(void);
+            RenderGroup(const RenderGroup &ref);
 
             /**
              * \brief Rebuilds the texture array associated with this group.

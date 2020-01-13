@@ -17,8 +17,8 @@
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/pimpl/renderer.hpp"
-#include "internal/pimpl/window.hpp"
+#include "internal/renderer/pimpl/renderer.hpp"
+#include "internal/renderer/pimpl/window.hpp"
 
 #include <algorithm>
 #include <functional>

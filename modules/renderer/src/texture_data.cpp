@@ -12,7 +12,7 @@
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/glext.hpp"
+#include "internal/renderer/glext.hpp"
 
 #include <SDL2/SDL_opengl.h>
 

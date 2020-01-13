@@ -7,14 +7,17 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/renderer.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/texture_loader.hpp"
-
+// module lowlevel
 #include "internal/logging.hpp"
 
-#include <istream>
+// module renderer
+#include "argus/renderer.hpp"
+#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/texture_loader.hpp"
+
 #include <png.h>
+
+#include <istream>
 
 #define RESOURCE_EXTENSION_PNG "png"
 

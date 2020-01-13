@@ -14,8 +14,10 @@
 #include "internal/core_util.hpp"
 
 // module renderer
+#include "argus/renderer/render_group.hpp"
 #include "argus/renderer.hpp"
-#include "internal/glext.hpp"
+#include "internal/renderer/pimpl/render_group.hpp"
+#include "internal/renderer/glext.hpp"
 
 #include <SDL2/SDL_opengl.h>
 
@@ -47,7 +49,7 @@ namespace argus {
     }
 
     void RenderLayer::remove_group(RenderGroup &group) {
-        _ARGUS_ASSERT(&group.parent == this, "remove_group() passed group with wrong parent");
+        _ARGUS_ASSERT(&group.pimpl->parent == this, "remove_group() passed group with wrong parent");
 
         remove_from_vector(children, &group);
 

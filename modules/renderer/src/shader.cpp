@@ -16,9 +16,9 @@
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/glext.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/pimpl/shader.hpp"
+#include "internal/renderer/glext.hpp"
+#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/pimpl/shader.hpp"
 
 #define GEN_TRANSFORM_SHADER(entry, uniform) Shader::create_vertex_shader("\
         uniform mat4 " uniform ";       \n\

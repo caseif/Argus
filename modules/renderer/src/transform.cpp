@@ -35,7 +35,7 @@ namespace argus {
         }
     };
 
-    AllocPool g_pimpl_pool(sizeof(pimpl_Transform), 1024);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_Transform), 1024);
 
     Transform::Transform(void): Transform({0, 0}, 0, {1, 1}) {
     }

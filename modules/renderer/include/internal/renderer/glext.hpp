@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "internal/expand_dong.hpp"
+#include "internal/renderer/expand_dong.hpp"
 
 #define SDL_MAIN_HANDLED
 

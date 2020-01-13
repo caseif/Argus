@@ -27,6 +27,7 @@ namespace argus {
      */
     class RenderableFactory {
         friend class RenderGroup;
+        friend class pimpl_RenderGroup;
 
         private:
             RenderGroup &parent;

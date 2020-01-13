@@ -15,6 +15,7 @@
 #include "argus/renderer/shader.hpp"
 #include "argus/renderer/util/types.hpp"
 
+#include <initializer_list>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -30,8 +31,9 @@ namespace argus {
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
     class ShaderProgram {
-        friend class RenderLayer;
         friend class RenderGroup;
+        friend class pimpl_RenderGroup;
+        friend class RenderLayer;
 
         private:
             /**
@@ -69,10 +71,30 @@ namespace argus {
             ShaderProgram(const std::vector<const Shader*> &shaders);
 
             /**
+             * \brief Constructs a new ShaderProgram encompassing the given
+             *        Shaders.
+             *
+             * \param shaders The \link Shader Shaders \endlink to construct the
+             *        new program with.
+             */
+            ShaderProgram(const std::initializer_list<const Shader*> &shaders):
+                    ShaderProgram(std::vector<const Shader*>(shaders)) {
+            }
+
+            /**
              * \brief Compiles and links this program so it may be used in
              *        rendering.
              */
             void link(void);
+
+            /**
+             * \brief Deletes this program from graphics memory, making this
+             *        object invalid.
+             *
+             * \attention This function will not delete the ShaderProgram
+             *            object.
+             */
+            void delete_program(void);
 
             /**
              * \brief Updates the list of Shaders encompassed by this program.

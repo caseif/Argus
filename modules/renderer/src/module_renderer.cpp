@@ -7,18 +7,18 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-// module renderer
-#include "argus/renderer.hpp"
-#include "internal/glext.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/texture_loader.hpp"
+// module lowlevel
+#include "internal/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
 #include "internal/sdl_event.hpp"
 
-// module lowlevel
-#include "internal/logging.hpp"
+// module renderer
+#include "argus/renderer.hpp"
+#include "internal/renderer/glext.hpp"
+#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/texture_loader.hpp"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>

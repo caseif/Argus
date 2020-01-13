@@ -18,12 +18,12 @@
 #include "argus/resource_manager.hpp"
 
 // module renderer
-#include "argus/renderer.hpp"
-#include "internal/glext.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/texture_loader.hpp"
-#include "internal/pimpl/renderer.hpp"
-#include "internal/pimpl/window.hpp"
+#include "argus/renderer/renderer.hpp"
+#include "internal/renderer/glext.hpp"
+#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/texture_loader.hpp"
+#include "internal/renderer/pimpl/renderer.hpp"
+#include "internal/renderer/pimpl/window.hpp"
 
 #include <algorithm>
 #include <iostream>

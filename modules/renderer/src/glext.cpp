@@ -14,8 +14,8 @@
 #include "internal/core_util.hpp"
 
 // module renderer
-#include "internal/expand_dong.hpp"
-#include "internal/glext.hpp"
+#include "internal/renderer/expand_dong.hpp"
+#include "internal/renderer/glext.hpp"
 
 #include <map>
 

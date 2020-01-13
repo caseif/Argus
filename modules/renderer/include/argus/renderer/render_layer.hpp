@@ -34,6 +34,7 @@ namespace argus {
     class RenderLayer {
         friend class Renderer;
         friend class RenderGroup;
+        friend class pimpl_RenderGroup;
         friend class RenderableFactory;
 
         private:

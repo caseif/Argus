@@ -15,10 +15,11 @@
 
 // module renderer
 #include "argus/renderer.hpp"
-#include "internal/renderer_defines.hpp"
-#include "internal/glext.hpp"
-#include "internal/pimpl/shader.hpp"
+#include "internal/renderer/renderer_defines.hpp"
+#include "internal/renderer/glext.hpp"
+#include "internal/renderer/pimpl/shader.hpp"
 
+#include <initializer_list>
 #include <set>
 #include <sstream>
 #include <SDL2/SDL_opengl.h>
@@ -38,7 +39,7 @@ namespace argus {
     };
 
     ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
-            shaders(shaders.cbegin(), shaders.cend(), [](auto a, auto b){
+            shaders(shaders.begin(), shaders.end(), [](auto a, auto b){
                 if (a->pimpl->priority != b->pimpl->priority) {
                     return a->pimpl->priority > b->pimpl->priority;
                 } else {
@@ -265,6 +266,12 @@ namespace argus {
         glUseProgram(0);
 
         needs_rebuild = false;
+    }
+
+    void ShaderProgram::delete_program(void) {
+        _ARGUS_ASSERT(this->initialized, "Cannot delete uninitialized program.");
+        glDeleteProgram(this->program_handle);
+        this->initialized = false;
     }
 
     handle_t ShaderProgram::get_uniform_location(const std::string &uniform_id) const {
