@@ -96,11 +96,8 @@ namespace argus {
             _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
         }
 
-        int version_major;
-        int version_minor;
-        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &version_major);
-        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &version_minor);
-        _ARGUS_DEBUG("Obtained context with version %d.%d\n", version_major, version_minor);
+        const GLubyte *ver_str = glGetString(GL_VERSION);
+        _ARGUS_DEBUG("Obtained context with version %s\n", ver_str);
 
         #ifdef _WIN32
         if (SDL_GL_LoadLibrary(nullptr) != 0) {
