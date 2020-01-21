@@ -57,7 +57,7 @@ namespace argus {
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             DEF_WINDOW_DIM, DEF_WINDOW_DIM,
             SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-        pimpl->state = WINDOW_STATE_VALID | WINDOW_STATE_INITIALIZED;
+        pimpl->state = WINDOW_STATE_VALID;
         pimpl->close_callback = nullptr;
 
         g_window_count++;
@@ -68,7 +68,7 @@ namespace argus {
         // register the listener
         pimpl->listener_id = register_event_handler(event_filter, event_callback, this);
 
-        pimpl->callback_id = register_update_callback(std::bind(&Window::update, this, std::placeholders::_1));
+        pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
         return;
     }
@@ -80,13 +80,13 @@ namespace argus {
     void Window::destroy(void) {
         pimpl->state &= ~WINDOW_STATE_VALID;
 
-        pimpl->renderer.pimpl->destruction_pending = true;
+        pimpl->renderer.destroy();
 
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
         }
 
-        unregister_update_callback(pimpl->callback_id);
+        unregister_render_callback(pimpl->callback_id);
         unregister_event_handler(pimpl->listener_id);
 
         for (Window *child : pimpl->children) {
@@ -136,6 +136,12 @@ namespace argus {
             return;
         }
 
+        if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
+            pimpl->renderer.init();
+            pimpl->state |= WINDOW_STATE_INITIALIZED;
+            return;
+        }
+
         SDL_Window *sdl_handle = static_cast<SDL_Window*>(pimpl->handle);
 
         if (!(pimpl->state & WINDOW_STATE_VISIBLE) && (pimpl->state & WINDOW_STATE_READY)) {
@@ -162,6 +168,8 @@ namespace argus {
             Vector2i pos = pimpl->properties.position;
             SDL_SetWindowPosition(sdl_handle, pos.x, pos.y);
         }
+
+        pimpl->renderer.render(delta);
 
         return;
     }

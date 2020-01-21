@@ -82,11 +82,7 @@ namespace argus {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create renderer before module is initialized.\n");
 
         pimpl->window = window;
-        pimpl->initialized = false;
-        pimpl->destruction_pending = false;
-        pimpl->valid = true;
         pimpl->dirty_resolution = false;
-        pimpl->callback_id = register_render_callback(std::bind(&Renderer::render, this, std::placeholders::_1));
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
@@ -117,18 +113,12 @@ namespace argus {
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        pimpl->initialized = true;
     }
 
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
         SDL_GL_DeleteContext(pimpl->gfx_context);
-
-        unregister_render_callback(pimpl->callback_id);
-
-        pimpl->valid = false;
 
         delete pimpl;
 
@@ -155,22 +145,6 @@ namespace argus {
     }
 
     void Renderer::render(const TimeDelta delta) {
-        // there's no contract that guarantees callbacks will be removed immediately, so we need to be able to track
-        // when the renderer has been invalidated so we don't try to deinit it more than once
-        if (!pimpl->valid) {
-            return;
-        }
-
-        // this may be invoked between the parent window being destroyed and the callback being fully unregistered
-        if (pimpl->destruction_pending) {
-            destroy();
-            return;
-        }
-
-        if (!pimpl->initialized) {
-            init();
-        }
-
         _activate_gl_context(pimpl->window.pimpl->handle, pimpl->gfx_context);
 
         if (pimpl->dirty_resolution) {

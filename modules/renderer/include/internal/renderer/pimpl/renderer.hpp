@@ -33,27 +33,6 @@ namespace argus {
          */
         graphics_context_t gfx_context;
         /**
-         * \brief The ID of the engine callback registered for this
-         *        Renderer.
-         */
-        Index callback_id;
-
-        /**
-         * \brief Whether this Renderer has been initialized.
-         */
-        bool initialized;
-        /**
-         * \brief Whether this Renderer is queued for destruction.
-         */
-        std::atomic_bool destruction_pending;
-        /**
-         * \brief Whether this Renderer is still valid.
-         *
-         * If `false`, the Renderer has been destroyed.
-         */
-        bool valid;
-
-        /**
          * \brief Whether the render resolution has recently been updated.
          */
         std::atomic_bool dirty_resolution;
