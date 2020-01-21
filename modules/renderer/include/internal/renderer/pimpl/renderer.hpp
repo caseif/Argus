@@ -27,11 +27,6 @@ namespace argus {
          *        Renderer.
          */
         std::vector<RenderLayer*> render_layers;
-
-        /**
-         * \brief The graphics context associated with this Renderer.
-         */
-        graphics_context_t gfx_context;
         /**
          * \brief Whether the render resolution has recently been updated.
          */

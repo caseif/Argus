@@ -43,10 +43,10 @@ namespace argus {
 
     extern bool g_renderer_initialized;
 
-    static void _activate_gl_context(window_handle_t window, graphics_context_t ctx) {
-        int rc = SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window), ctx);
-        if (rc != 0) {
-            _ARGUS_FATAL("SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
+    static void _activate_gl_context(window_handle_t window) {
+        glfwMakeContextCurrent(window);
+        if (glfwGetCurrentContext() != window) {
+             _ARGUS_FATAL("Failed to make context current: %s\n", SDL_GetError());
         }
     }
 
@@ -87,10 +87,7 @@ namespace argus {
 
     // we do the init in a separate method so the GL context is always created from the render thread
     void Renderer::init(void) {
-        pimpl->gfx_context = SDL_GL_CreateContext(static_cast<SDL_Window*>(pimpl->window.pimpl->handle));
-        if (!pimpl->gfx_context) {
-            _ARGUS_FATAL("Failed to create GL context: \"%s\"\n", SDL_GetError());
-        }
+        _activate_gl_context(pimpl->window.pimpl->handle);
 
         const GLubyte *ver_str = glGetString(GL_VERSION);
         _ARGUS_DEBUG("Obtained context with version %s\n", ver_str);
@@ -118,8 +115,6 @@ namespace argus {
     Renderer::~Renderer(void) = default;
 
     void Renderer::destroy(void) {
-        SDL_GL_DeleteContext(pimpl->gfx_context);
-
         delete pimpl;
 
         return;
@@ -145,7 +140,7 @@ namespace argus {
     }
 
     void Renderer::render(const TimeDelta delta) {
-        _activate_gl_context(pimpl->window.pimpl->handle, pimpl->gfx_context);
+        _activate_gl_context(pimpl->window.pimpl->handle);
 
         if (pimpl->dirty_resolution) {
             Vector2u res = pimpl->window.pimpl->properties.resolution;
@@ -159,7 +154,7 @@ namespace argus {
             layer->render();
         }
 
-        SDL_GL_SwapWindow(static_cast<SDL_Window*>(pimpl->window.pimpl->handle));
+        glfwSwapBuffers(pimpl->window.pimpl->handle);
     }
 
 }

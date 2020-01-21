@@ -14,9 +14,7 @@
 #include "internal/renderer/expansion_macros.hpp"
 #include "internal/renderer/glext.hpp"
 
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_video.h>
+#include <GLFW/glfw3.h>
 
 #include <cstddef>
 
@@ -25,6 +23,8 @@
 #define EXPAND_GL_INIT_SCOPED(function) _load_gl_ext(#function, &funcs_struct.function);
 
 namespace argus {
+
+    static bool is_initialized = false;
 
     namespace glext {
         EXPAND_LIST(EXPAND_GL_DEFINITION, GL_FUNCTIONS);
@@ -39,27 +39,22 @@ namespace argus {
 
     template <typename FunctionSpec>
     static void _load_gl_ext(const char *const func_name, FunctionSpec *target) {
+        _ARGUS_ASSERT(glfwGetCurrentContext() != nullptr, "No GL context is current\n");
         //TODO: verify the extension for each given function is supported
-        void *function = SDL_GL_GetProcAddress(func_name);
-        const char* error = SDL_GetError();
-        if (error[0] != '\0') {
-            _ARGUS_FATAL("Failed to get address for GL function %s: %s\n", func_name, error);
+        GLFWglproc function = glfwGetProcAddress(func_name);
+        if (function == nullptr) {
+            _ARGUS_FATAL("Failed to get address for GL function %s\n", func_name);
 		}
-        SDL_ClearError();
-
-        if (!function) {
-            _ARGUS_FATAL("Failed to load OpenGL extension: %s\n", func_name);
-        }
 
         *target = reinterpret_cast<FunctionSpec>(function);
     }
 
     #ifdef _WIN32
-    static std::map<SDL_GLContext, struct glext::GLExtFuncs> g_per_context_regs;
+    static std::map<GLFWwindow*, struct glext::GLExtFuncs> g_per_context_regs;
 
     void load_gl_extensions_for_current_context() {
-        SDL_GLContext ctx = SDL_GL_GetCurrentContext();
-        _ARGUS_ASSERT(ctx, "No context is current\n");
+        GLFWwindow *ctx = glfwGetCurrentContext();
+        _ARGUS_ASSERT(ctx != nullptr, "No GL context is current\n");
 
         struct glext::GLExtFuncs funcs_struct;
         EXPAND_LIST(EXPAND_GL_INIT_SCOPED, GL_FUNCTIONS);
@@ -71,10 +66,8 @@ namespace argus {
     static RetType APIENTRY _gl_trampoline(ParamTypes... params) {
         struct glext::GLExtFuncs *funcStruct;
 
-        SDL_GLContext gl_ctx = SDL_GL_GetCurrentContext();
-        if (!gl_ctx) {
-            _ARGUS_FATAL("No GL context is current\n");
-        }
+        GLFWwindow *gl_ctx = glfwGetCurrentContext();
+        _ARGUS_ASSERT(gl_ctx != nullptr, "No GL context is current\n");
 
         auto it = g_per_context_regs.find(gl_ctx);
         if (it == g_per_context_regs.end()) {
@@ -102,11 +95,11 @@ namespace argus {
     }
 
     void init_opengl_extensions(void) {
-		#ifndef _WIN32
-		if (SDL_GL_LoadLibrary(nullptr) != 0) {
-			_ARGUS_FATAL("Failed to load GL library\n");
-		}
-		#endif
+        //TODO: stopgap until I figure out a better way to deal with GLFW
+        if (is_initialized) {
+            return;
+        }
+        is_initialized = true;
 
         using namespace glext;
 

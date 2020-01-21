@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <cstdlib>
 
 #define STRINGIZE_DETAIL(x) #x

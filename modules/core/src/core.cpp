@@ -19,6 +19,8 @@
 #include "internal/core/core_util.hpp"
 #include "internal/core/sdl_event.hpp"
 
+#include <GLFW/glfw3.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
@@ -270,7 +272,8 @@ namespace argus {
                 g_update_callbacks.list.reserve(10);
                 break;
             case LifecycleStage::INIT:
-                _initialize_sdl();
+                //_initialize_sdl();
+                glfwInit();
                 g_initialized = true;
                 break;
             case LifecycleStage::POST_DEINIT:
@@ -476,10 +479,11 @@ namespace argus {
             _flush_callback_list_queues(g_sdl_event_listeners);
 
             // clear event queue
-            SDL_Event event;
+            /*SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 _master_event_handler(event);
-            }
+            }*/
+            glfwPollEvents();
 
             _process_event_queue();
 

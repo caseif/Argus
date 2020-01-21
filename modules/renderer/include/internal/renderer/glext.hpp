@@ -11,9 +11,7 @@
 
 #include "internal/renderer/expansion_macros.hpp"
 
-#define SDL_MAIN_HANDLED
-
-#include <SDL2/SDL_opengl.h>
+#include <GLFW/glfw3.h>
 
 #define GL_FUNCTIONS    glGenFramebuffers, \
                         glBindBuffer, \

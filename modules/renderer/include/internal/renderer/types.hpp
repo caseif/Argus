@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <GLFW/glfw3.h>
+
 namespace argus {
     /**
      * \brief An unsigned integer handle to an object.
@@ -22,9 +24,5 @@ namespace argus {
     /**
      * \brief A handle to a window.
      */
-    typedef void *window_handle_t;
-    /**
-     * \brief A handle to a graphics context.
-     */
-    typedef void *graphics_context_t;
+    typedef GLFWwindow *window_handle_t;
 }

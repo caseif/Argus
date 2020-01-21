@@ -20,10 +20,11 @@
 #include "argus/renderer/renderer.hpp"
 #include "argus/renderer/window.hpp"
 #include "argus/renderer/window_event.hpp"
+#include "internal/renderer/glext.hpp"
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
-#include <SDL2/SDL_video.h>
+#include <GLFW/glfw3.h>
 
 #include <atomic>
 #include <functional>
@@ -47,21 +48,33 @@ namespace argus {
 
     extern bool g_renderer_initialized;
 
-    extern std::map<uint32_t, Window*> g_window_map;
+    extern std::map<window_handle_t, Window*> g_window_map;
     extern size_t g_window_count;
 
     Window::Window(void): pimpl(new pimpl_Window(*this)) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
-        pimpl->handle = SDL_CreateWindow("ArgusGame",
+        /*pimpl->handle = SDL_CreateWindow("ArgusGame",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             DEF_WINDOW_DIM, DEF_WINDOW_DIM,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);*/
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+        #ifdef USE_GLES
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        #else
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        #endif
+        pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, "ArgusGame", nullptr, nullptr);
         pimpl->state = WINDOW_STATE_VALID;
         pimpl->close_callback = nullptr;
 
         g_window_count++;
-        g_window_map.insert({SDL_GetWindowID(static_cast<SDL_Window*>(pimpl->handle)), this});
+        g_window_map.insert({pimpl->handle, this});
 
         pimpl->parent = nullptr;
 
@@ -69,6 +82,9 @@ namespace argus {
         pimpl->listener_id = register_event_handler(event_filter, event_callback, this);
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+
+        glfwMakeContextCurrent(pimpl->handle);
+        init_opengl_extensions();
 
         return;
     }
@@ -98,9 +114,9 @@ namespace argus {
             pimpl->parent->remove_child(*this);
         }
 
-        g_window_map.erase(SDL_GetWindowID(static_cast<SDL_Window*>(pimpl->handle)));
+        g_window_map.erase(pimpl->handle);
 
-        SDL_DestroyWindow(static_cast<SDL_Window*>(pimpl->handle));
+        glfwDestroyWindow(pimpl->handle);
 
         if (--g_window_count == 0) {
             stop_engine();
@@ -142,10 +158,9 @@ namespace argus {
             return;
         }
 
-        SDL_Window *sdl_handle = static_cast<SDL_Window*>(pimpl->handle);
-
         if (!(pimpl->state & WINDOW_STATE_VISIBLE) && (pimpl->state & WINDOW_STATE_READY)) {
-            SDL_ShowWindow(sdl_handle);
+            glfwShowWindow(pimpl->handle);
+            pimpl->state |= WINDOW_STATE_VISIBLE;
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
@@ -154,19 +169,22 @@ namespace argus {
         }
 
         if (pimpl->properties.title.dirty) {
-            SDL_SetWindowTitle(sdl_handle, ((std::string) pimpl->properties.title).c_str());
+            glfwSetWindowTitle(pimpl->handle, ((std::string) pimpl->properties.title).c_str());
         }
         if (pimpl->properties.fullscreen.dirty) {
-            SDL_SetWindowFullscreen(sdl_handle, pimpl->properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+            //TODO
+            //SDL_SetWindowFullscreen(sdl_handle, pimpl->properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
         }
         if (pimpl->properties.resolution.dirty) {
-            Vector2u res = pimpl->properties.resolution;
-            SDL_SetWindowSize(sdl_handle, res.x, res.y);
+            glfwSetWindowSize(pimpl->handle,
+                Vector2u(pimpl->properties.resolution).x,
+                Vector2u(pimpl->properties.resolution).y);
             pimpl->renderer.pimpl->dirty_resolution = true;
         }
         if (pimpl->properties.position.dirty) {
-            Vector2i pos = pimpl->properties.position;
-            SDL_SetWindowPosition(sdl_handle, pos.x, pos.y);
+            glfwSetWindowPos(pimpl->handle,
+                Vector2i(pimpl->properties.position).x,
+                Vector2i(pimpl->properties.position).y);
         }
 
         pimpl->renderer.render(delta);

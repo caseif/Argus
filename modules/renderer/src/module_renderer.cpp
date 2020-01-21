@@ -50,7 +50,7 @@ namespace argus {
         context_flags |= SDL_GL_CONTEXT_DEBUG_FLAG;
         #endif
 
-        #ifdef USE_GLES
+        /*#ifdef USE_GLES
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -66,9 +66,7 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
-
-        init_opengl_extensions();
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);*/
     }
 
     static void _clean_up(void) {
