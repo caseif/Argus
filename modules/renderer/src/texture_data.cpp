@@ -16,7 +16,7 @@
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/pimpl/texture_data.hpp"
 
-#include <SDL2/SDL_opengl.h>
+#include <GL/gl.h>
 
 #include <atomic>
 

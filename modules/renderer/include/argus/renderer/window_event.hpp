@@ -39,7 +39,7 @@ namespace argus {
         /**
          * \brief The Window associated with the event.
          */
-        const Window *window;
+        const Window &window;
 
         /**
          * \brief Constructs a new WindowEvent.
@@ -48,7 +48,7 @@ namespace argus {
          *        WindowEvent.
          * \param window The Window associated with the event.
          */
-        WindowEvent(const WindowEventType subtype, Window *window):
+        WindowEvent(const WindowEventType subtype, Window &window):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
                 window(window) {

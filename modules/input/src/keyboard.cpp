@@ -13,7 +13,6 @@
 // module core
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
-#include "internal/core/sdl_event.hpp"
 
 // module input
 #include "argus/keyboard.hpp"
@@ -89,7 +88,7 @@ namespace argus {
         g_last_keyboard_state = SDL_GetKeyboardState(&g_keyboard_key_count);
     }
 
-    KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
+    constexpr inline KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
         return static_cast<KeyboardModifiers>(
                 static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
                 | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs)
@@ -103,13 +102,15 @@ namespace argus {
         );
     }
 
-    inline bool operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
-        return (static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
+    constexpr inline KeyboardModifiers operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
+        return static_cast<KeyboardModifiers>(
+                static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
+                & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs)
+        );
     }
 
     void init_keyboard(void) {
-        register_sdl_event_handler(_sdl_keyboard_event_filter, _sdl_keyboard_event_handler, nullptr);
+        //register_sdl_event_handler(_sdl_keyboard_event_filter, _sdl_keyboard_event_handler, nullptr);
     }
 
     KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 

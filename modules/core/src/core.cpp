@@ -17,16 +17,8 @@
 #include "argus/core.hpp"
 #include "internal/core/config.hpp"
 #include "internal/core/core_util.hpp"
-#include "internal/core/sdl_event.hpp"
-
-#include <GLFW/glfw3.h>
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_events.h>
 
 #include <algorithm>
-#include <csignal>
 #include <functional>
 #include <initializer_list>
 #include <iostream>
@@ -43,6 +35,7 @@
 #include <vector>
 
 #include <cerrno>
+#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -67,15 +60,11 @@
 
 namespace argus {
 
-    template <typename Filter, typename Callback>
-    struct EventHandler {
-        Filter filter;
-        Callback callback;
+    struct ArgusEventHandler {
+        ArgusEventType type;
+        ArgusEventCallback callback;
         void *data;
     };
-
-    typedef EventHandler<ArgusEventFilter, ArgusEventCallback> ArgusEventHandler;
-    typedef EventHandler<SDLEventFilter, SDLEventCallback> SDLEventHandler;
 
     // This struct defines the list alongside two mutation queues and a shared
     // mutex. In this way, it facilitates a thread-safe callback list wherein
@@ -98,7 +87,6 @@ namespace argus {
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
     static CallbackList<ArgusEventHandler> g_event_listeners;
-    static CallbackList<SDLEventHandler> g_sdl_event_listeners;
 
     static std::queue<std::unique_ptr<ArgusEvent>> g_event_queue;
     static std::mutex g_event_queue_mutex;
@@ -224,17 +212,6 @@ namespace argus {
         }
     }
 
-    static int _master_event_handler(SDL_Event &event) {
-        for (IndexedValue<SDLEventHandler> listener : g_sdl_event_listeners.list) {
-            if (listener.value.filter == nullptr || listener.value.filter(event, listener.value.data)) {
-                listener.value.callback(event, listener.value.data);
-            }
-        }
-        g_sdl_event_listeners.list_mutex.unlock_shared();
-
-        return 0;
-    }
-
     static void _process_event_queue(void) {
         g_event_queue_mutex.lock();
         g_event_listeners.list_mutex.lock_shared();
@@ -242,7 +219,7 @@ namespace argus {
         while (!g_event_queue.empty()) {
             ArgusEvent &event = *std::move(g_event_queue.front().get());
             for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
-                if (listener.value.filter == nullptr || listener.value.filter(event, listener.value.data)) {
+                if (static_cast<int>(listener.value.type & event.type)) {
                     listener.value.callback(event, listener.value.data);
                 }
             }
@@ -253,12 +230,25 @@ namespace argus {
         g_event_queue_mutex.unlock();
     }
 
-    void _initialize_sdl(void) {
-        SDL_Init(0);
+    constexpr inline ArgusEventType operator |(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(
+                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
+                | static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
+        );
+    }
 
-        if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
-            _ARGUS_FATAL("Failed to initialize SDL events: %s\n", SDL_GetError());
-        }
+    constexpr inline ArgusEventType operator |=(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(
+                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
+                | static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
+        );
+    }
+
+    constexpr inline ArgusEventType operator &(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(
+                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
+                & static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
+        );
     }
 
     void _update_lifecycle_core(LifecycleStage stage) {
@@ -272,15 +262,11 @@ namespace argus {
                 g_update_callbacks.list.reserve(10);
                 break;
             case LifecycleStage::INIT:
-                //_initialize_sdl();
-                glfwInit();
                 g_initialized = true;
                 break;
             case LifecycleStage::POST_DEINIT:
                 g_render_thread->detach();
                 g_render_thread->destroy();
-
-                SDL_Quit();
 
                 break;
             default:
@@ -476,14 +462,6 @@ namespace argus {
             _flush_callback_list_queues(g_update_callbacks);
             _flush_callback_list_queues(g_render_callbacks);
             _flush_callback_list_queues(g_event_listeners);
-            _flush_callback_list_queues(g_sdl_event_listeners);
-
-            // clear event queue
-            /*SDL_Event event;
-            while (SDL_PollEvent(&event)) {
-                _master_event_handler(event);
-            }*/
-            glfwPollEvents();
 
             _process_event_queue();
 
@@ -567,31 +545,17 @@ namespace argus {
         _remove_callback(g_render_callbacks, id);
     }
 
-    const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data) {
+    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback, void *const data) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
         Index id = g_next_index++;
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
-        ArgusEventHandler listener = {filter, callback, data};
+        ArgusEventHandler listener = {type, callback, data};
         return _add_callback(g_event_listeners, listener);
     }
 
     void unregister_event_handler(const Index id) {
         _remove_callback(g_event_listeners, id);
-    }
-
-    const Index register_sdl_event_handler(const SDLEventFilter filter, const SDLEventCallback callback, void *const data) {
-        _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register SDL event listener before engine initialization.");
-        Index id = g_next_index++;
-        _ARGUS_ASSERT(callback != nullptr, "SDL event listener cannot have null callback.");
-
-        SDLEventHandler listener = {filter, callback, data};
-
-        return _add_callback(g_sdl_event_listeners, listener);
-    }
-
-    void unregister_sdl_event_handler(const Index id) {
-        _remove_callback(g_sdl_event_listeners, id);
     }
 
     void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event) {

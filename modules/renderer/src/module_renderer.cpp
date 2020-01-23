@@ -12,7 +12,6 @@
 
 // module core
 #include "argus/core.hpp"
-#include "internal/core/sdl_event.hpp"
 
 // module resman
 #include "argus/resource_manager.hpp"
@@ -24,9 +23,7 @@
 #include "internal/renderer/glext.hpp"
 #include "internal/renderer/texture_loader.hpp"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_video.h>
+#include <GLFW/glfw3.h>
 
 #include <iterator>
 #include <map>
@@ -45,11 +42,6 @@ namespace argus {
     size_t g_window_count = 0;
 
     static void _init_opengl(void) {
-        int context_flags = 0;
-        #ifdef _ARGUS_DEBUG_MODE
-        context_flags |= SDL_GL_CONTEXT_DEBUG_FLAG;
-        #endif
-
         /*#ifdef USE_GLES
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -78,50 +70,25 @@ namespace argus {
             it->second->destroy();
         }
 
-        SDL_VideoQuit();
+        glfwTerminate();
 
         return;
     }
 
-    static bool _renderer_event_filter(SDL_Event &event, void *const data) {
-        return event.type == SDL_WINDOWEVENT;
-    }
-
-    static void _renderer_event_handler(SDL_Event &event, void *const data) {
-        auto it = g_window_map.find(event.window.windowID);
-        if (it == g_window_map.cend()) {
-            return;
-        }
-        Window &window = *it->second;
-
-        switch (event.window.event) {
-            case SDL_WINDOWEVENT_CLOSE: {
-                dispatch_event(WindowEvent(WindowEventType::CLOSE, &window));
-                return;
-            }
-            case SDL_WINDOWEVENT_MINIMIZED:
-                dispatch_event(WindowEvent(WindowEventType::MINIMIZE, &window));
-                return;
-            case SDL_WINDOWEVENT_RESTORED:
-                dispatch_event(WindowEvent(WindowEventType::RESTORE, &window));
-                return;
-            default:
-                return; // ignore
-        }
+    static void poll_events(const TimeDelta delta) {
+        glfwPollEvents();
     }
 
     void _update_lifecycle_renderer(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT: {
-                if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-                    _ARGUS_FATAL("Failed to initialize SDL video\n");
-                }
-
-                ResourceManager::get_global_resource_manager().register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
-
-                register_sdl_event_handler(_renderer_event_filter, _renderer_event_handler, nullptr);
-
+                glfwInit();
                 _init_opengl();
+
+                register_render_callback(poll_events);
+
+                ResourceManager::get_global_resource_manager()
+                    .register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());
 
                 g_renderer_initialized = true;
 

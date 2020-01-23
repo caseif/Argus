@@ -203,7 +203,7 @@ namespace argus {
         ALT             = LEFT_ALT | RIGHT_ALT
     };
 
-        /**
+    /**
      * \brief Bitwise OR implementation for KeyboardModifiers bitmask elements.
      *
      * \param lhs Left-hand operand.
@@ -211,7 +211,7 @@ namespace argus {
      *
      * \return The bitwise OR of the operands.
      */
-    KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
     /**
      * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
      *        elements.
@@ -232,7 +232,7 @@ namespace argus {
      *
      * \return The bitwise AND of the operands.
      */
-    inline bool operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
 
     /**
      * \brief Represents a specific type of keyboard event.

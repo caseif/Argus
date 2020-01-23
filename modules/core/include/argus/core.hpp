@@ -19,8 +19,6 @@
 #include <memory>
 #include <vector>
 
-#define SDL_MAIN_HANDLED
-
 #ifdef _MSC_VER
 #define _MODULE_REG_PREFIX BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 #elif defined(__GNUC__) || defined(__clang__)
@@ -125,32 +123,63 @@ namespace argus {
     /**
      * \brief Represents a class of event dispatched by the engine.
      */
-    enum class ArgusEventType {
+    enum class ArgusEventType : uint16_t {
         /**
          * \brief An event of an unknown or undefined class.
          */
-        UNDEFINED,
+        UNDEFINED = 0x01,
         /**
          * \brief An event pertaining to a game window.
          */
-        WINDOW,
+        WINDOW = 0x02,
         /**
          * \brief An event pertaining to keyboard input.
          */
-        KEYBOARD,
+        KEYBOARD = 0x04,
         /**
          * \brief An event pertaining to mouse input.
          */
-        MOUSE,
+        MOUSE = 0x08,
         /**
          * \brief An event pertaining to joystick input.
          */
-        JOYSTICK,
+        JOYSTICK = 0x10,
         /**
          * \brief An event signifying some type of abstracted input.
          */
-        INPUT
+        INPUT = KEYBOARD | MOUSE | JOYSTICK
     };
+
+    /**
+     * \brief Bitwise OR implementation for ArgusEventType bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     */
+    constexpr ArgusEventType operator |(const ArgusEventType lhs, const ArgusEventType rhs);
+    /**
+     * \brief Bitwise OR-assignment implementation for ArgusEventType bitmask
+     *        elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise OR of the operands.
+     *
+     * \sa KeyboardModifiers::operator|
+     */
+    constexpr inline ArgusEventType operator |=(const ArgusEventType lhs, const ArgusEventType rhs);
+    /**
+     * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
+     *
+     * \param lhs Left-hand operand.
+     * \param rhs Right-hand operand.
+     *
+     * \return The bitwise AND of the operands.
+     */
+    constexpr inline ArgusEventType operator &(const ArgusEventType lhs, const ArgusEventType rhs);
 
     /**
      * \brief Represents an event pertaining to the current application,
@@ -187,12 +216,6 @@ namespace argus {
      * \brief A callback accepts no parameters.
      */
     typedef std::function<void()> NullaryCallback;
-
-    /**
-     * \brief A callback that accepts an event and a piece of user-supplied
-     *        data.
-     */
-    typedef std::function<const bool(const ArgusEvent&, void*)> ArgusEventFilter;
 
     /**
      * \brief A callback that accepts an event and a piece of user-supplied
@@ -376,7 +399,8 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    const Index register_event_handler(const ArgusEventFilter filter, const ArgusEventCallback callback, void *const data);
+    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
+        void *const data = nullptr);
 
     /**
      * \brief Unregisters an event handler.

@@ -19,7 +19,7 @@
 #include "internal/renderer/pimpl/shader.hpp"
 #include "internal/renderer/pimpl/shader_program.hpp"
 
-#include <SDL2/SDL_opengl.h>
+#include <GL/gl.h>
 
 #include <algorithm>
 #include <iterator>

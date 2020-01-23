@@ -26,9 +26,7 @@
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_video.h>
+#include <GLFW/glfw3.h>
 
 #include <algorithm>
 #include <atomic>
@@ -46,7 +44,7 @@ namespace argus {
     static void _activate_gl_context(window_handle_t window) {
         glfwMakeContextCurrent(window);
         if (glfwGetCurrentContext() != window) {
-             _ARGUS_FATAL("Failed to make context current: %s\n", SDL_GetError());
+             _ARGUS_FATAL("Failed to make GL context current\n");
         }
     }
 
@@ -98,8 +96,6 @@ namespace argus {
         }
         load_gl_extensions_for_current_context();
         #endif
-
-        SDL_GL_SetSwapInterval(SDL_FALSE);
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
 

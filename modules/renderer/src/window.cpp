@@ -51,6 +51,14 @@ namespace argus {
     extern std::map<window_handle_t, Window*> g_window_map;
     extern size_t g_window_count;
 
+    static void _on_window_close(GLFWwindow *handle) {
+        dispatch_event(WindowEvent(WindowEventType::CLOSE, *g_window_map.find(handle)->second));
+    }
+
+    static void _register_callbacks(GLFWwindow *handle) {
+        glfwSetWindowCloseCallback(handle, _on_window_close);
+    }
+
     Window::Window(void): pimpl(new pimpl_Window(*this)) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
@@ -79,7 +87,10 @@ namespace argus {
         pimpl->parent = nullptr;
 
         // register the listener
-        pimpl->listener_id = register_event_handler(event_filter, event_callback, this);
+        pimpl->listener_id = register_event_handler(ArgusEventType::WINDOW,
+            std::bind(&Window::event_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        _register_callbacks(pimpl->handle);
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -232,24 +243,20 @@ namespace argus {
         return;
     }
 
-    const bool Window::event_filter(const ArgusEvent &event, void *user_data) {
-        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
-        Window *window = static_cast<Window*>(user_data);
-
-        // ignore events for uninitialized windows
-        if (!(window->pimpl->state & WINDOW_STATE_INITIALIZED)) {
-            return false;
-        }
-
-        return event.type == ArgusEventType::WINDOW && window_event.window == window;
-    }
-
     void Window::event_callback(const ArgusEvent &event, void *user_data) {
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
-        Window *window = static_cast<Window*>(user_data);
+        // ignore events for uninitialized windows
+        
+        if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
+            return;
+        }
+
+        if (&window_event.window != this) {
+            return;
+        }
 
         if (window_event.subtype == WindowEventType::CLOSE) {
-            window->pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+            pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
         }
     }
 
