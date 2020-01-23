@@ -21,7 +21,11 @@ namespace argus {
     enum class WindowEventType {
         CLOSE,
         MINIMIZE,
-        RESTORE
+        RESTORE,
+        FOCUS,
+        UNFOCUS,
+        RESIZE,
+        MOVE
     };
 
     /**

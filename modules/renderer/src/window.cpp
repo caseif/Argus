@@ -24,6 +24,9 @@
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
+#ifdef USE_GLES
+#define GLFW_INCLUDE_ES3
+#endif
 #include <GLFW/glfw3.h>
 
 #include <atomic>
@@ -51,27 +54,50 @@ namespace argus {
     extern std::map<window_handle_t, Window*> g_window_map;
     extern size_t g_window_count;
 
+    static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
+        dispatch_event(WindowEvent(type, *g_window_map.find(handle)->second));
+    }
+
     static void _on_window_close(GLFWwindow *handle) {
-        dispatch_event(WindowEvent(WindowEventType::CLOSE, *g_window_map.find(handle)->second));
+        _dispatch_window_event(handle, WindowEventType::CLOSE);
+    }
+
+    static void _on_window_minimize_restore(GLFWwindow *handle, int minimized) {
+        _dispatch_window_event(handle, minimized ? WindowEventType::MINIMIZE : WindowEventType::RESTORE);
+    }
+
+    static void _on_window_resize(GLFWwindow *handle, int width, int height) {
+        _dispatch_window_event(handle, WindowEventType::RESIZE);
+    }
+
+    static void _on_window_move(GLFWwindow *handle, int x, int y) {
+        _dispatch_window_event(handle, WindowEventType::MOVE);
+    }
+
+    static void _on_window_focus(GLFWwindow *handle, int focused) {
+        _dispatch_window_event(handle, focused == GLFW_TRUE ? WindowEventType::FOCUS : WindowEventType::UNFOCUS);
     }
 
     static void _register_callbacks(GLFWwindow *handle) {
         glfwSetWindowCloseCallback(handle, _on_window_close);
+        glfwSetWindowIconifyCallback(handle, _on_window_minimize_restore);
+        glfwSetWindowSizeCallback(handle, _on_window_resize);
+        glfwSetWindowPosCallback(handle, _on_window_move);
+        glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
     Window::Window(void): pimpl(new pimpl_Window(*this)) {
         _ARGUS_ASSERT(g_renderer_initialized, "Cannot create window before renderer module is initialized.");
 
-        /*pimpl->handle = SDL_CreateWindow("ArgusGame",
-            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            DEF_WINDOW_DIM, DEF_WINDOW_DIM,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);*/
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         #ifdef USE_GLES
-        glfwWindowHint(GLFW_CONTEXT_CREATION_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         #else
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -183,20 +209,34 @@ namespace argus {
             glfwSetWindowTitle(pimpl->handle, ((std::string) pimpl->properties.title).c_str());
         }
         if (pimpl->properties.fullscreen.dirty) {
-            //TODO
-            //SDL_SetWindowFullscreen(sdl_handle, pimpl->properties.fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-        }
-        if (pimpl->properties.resolution.dirty) {
-            glfwSetWindowSize(pimpl->handle,
-                Vector2u(pimpl->properties.resolution).x,
-                Vector2u(pimpl->properties.resolution).y);
-            pimpl->renderer.pimpl->dirty_resolution = true;
-        }
-        if (pimpl->properties.position.dirty) {
-            glfwSetWindowPos(pimpl->handle,
+            glfwSetWindowMonitor(pimpl->handle,
+                pimpl->properties.fullscreen ? glfwGetPrimaryMonitor() : nullptr,
                 Vector2i(pimpl->properties.position).x,
-                Vector2i(pimpl->properties.position).y);
+                Vector2i(pimpl->properties.position).y,
+                Vector2u(pimpl->properties.resolution).x,
+                Vector2u(pimpl->properties.resolution).y,
+                GLFW_DONT_CARE);
+            if (pimpl->properties.resolution.dirty) {
+                pimpl->renderer.pimpl->dirty_resolution = true;
+            }
+        } else {
+            if (pimpl->properties.resolution.dirty) {
+                glfwSetWindowSize(pimpl->handle,
+                    Vector2u(pimpl->properties.resolution).x,
+                    Vector2u(pimpl->properties.resolution).y);
+                pimpl->renderer.pimpl->dirty_resolution = true;
+            }
+            if (pimpl->properties.position.dirty) {
+                glfwSetWindowPos(pimpl->handle,
+                    Vector2i(pimpl->properties.position).x,
+                    Vector2i(pimpl->properties.position).y);
+            }
         }
+
+        pimpl->properties.title.clean();
+        pimpl->properties.fullscreen.clean();
+        pimpl->properties.resolution.clean();
+        pimpl->properties.position.clean();
 
         pimpl->renderer.render(delta);
 
@@ -257,6 +297,8 @@ namespace argus {
 
         if (window_event.subtype == WindowEventType::CLOSE) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+        } else if (window_event.subtype == WindowEventType::RESIZE) {
+            pimpl->renderer.pimpl->dirty_resolution = true;
         }
     }
 

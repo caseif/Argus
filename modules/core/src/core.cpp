@@ -499,7 +499,6 @@ namespace argus {
             g_render_callbacks.list_mutex.unlock_shared();
 
             if (g_engine_config.target_framerate != 0) {
-                printf("sleep to meet %d\n", g_engine_config.target_framerate);
                 _handle_idle(render_start, g_engine_config.target_framerate);
             }
         }

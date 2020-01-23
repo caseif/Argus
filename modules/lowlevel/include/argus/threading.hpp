@@ -299,7 +299,6 @@ namespace argus {
              * \return The base value.
              */
             inline operator ValueType() {
-                dirty = false;
                 return value;
             };
 
@@ -330,6 +329,10 @@ namespace argus {
                 dirty = true;
                 return *this;
             };
+
+            inline void clean(void) {
+                this->dirty = false;
+            }
     };
 
     /**
