@@ -1,4 +1,4 @@
-set(MODULE_IDS "lowlevel;core;input;resman;renderer")
+set(MODULE_IDS "lowlevel;core;resman;renderer;input")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.0)

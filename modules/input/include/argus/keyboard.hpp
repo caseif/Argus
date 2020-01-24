@@ -188,19 +188,10 @@ namespace argus {
      */
     enum class KeyboardModifiers : uint16_t {
         NONE            = 0x00,
-        LEFT_SHIFT      = 0x01,
-        RIGHT_SHIFT     = 0x02,
-        LEFT_CONTROL    = 0x04,
-        SUPER           = 0x08,
-        LEFT_ALT        = 0x10,
-        RIGHT_ALT       = 0x20,
-        RIGHT_CONTROL   = 0x40,
-        NUM_LOCK        = 0x80,
-        CAPS_LOCK       = 0x10,
-        SCROLL_LOCK     = 0x200,
-        SHIFT           = LEFT_SHIFT | RIGHT_SHIFT,
-        CONTROL         = LEFT_CONTROL | RIGHT_CONTROL,
-        ALT             = LEFT_ALT | RIGHT_ALT
+        SHIFT           = 0x01,
+        CONTROL         = 0x02,
+        SUPER           = 0x04,
+        ALT             = 0x08
     };
 
     /**

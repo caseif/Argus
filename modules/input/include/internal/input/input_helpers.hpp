@@ -9,8 +9,12 @@
 
 #pragma once
 
+#include <GLFW/glfw3.h>
+
 namespace argus {
 
-    void init_keyboard(void);
+    void init_window_input(GLFWwindow *handle);
+
+    void init_keyboard(GLFWwindow *handle);
 
 }

@@ -21,7 +21,6 @@ namespace argus {
     void _update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT:
-                init_keyboard();
                 break;
             default:
                 break;
@@ -30,6 +29,10 @@ namespace argus {
 
     void init_module_input(void) {
         register_module({MODULE_INPUT, 2, {"core"}, _update_lifecycle_input});
+    }
+
+    void init_window_input(GLFWwindow *handle) {
+        init_keyboard(handle);
     }
 
 }

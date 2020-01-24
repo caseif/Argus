@@ -14,8 +14,13 @@
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
+// module renderer
+#include "argus/renderer/window.hpp"
+
 // module input
 #include "argus/keyboard.hpp"
+
+#include <GLFW/glfw3.h>
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
@@ -35,51 +40,40 @@ namespace argus {
     static const uint8_t *g_last_keyboard_state = nullptr;
     static int g_keyboard_key_count = 0;
 
-    static KeyboardModifiers _translate_sdl_keymod(uint16_t sdl_keymod) {
+    static KeyboardModifiers _translate_glfw_keymod(uint16_t glfw_keymod) {
         KeyboardModifiers mod = KeyboardModifiers::NONE;
-        
-        if (sdl_keymod & KMOD_NUM) {
-            mod |= KeyboardModifiers::NUM_LOCK;
+
+        if (glfw_keymod & GLFW_MOD_SHIFT) {
+            mod |= KeyboardModifiers::SHIFT;
         }
-        if (sdl_keymod & KMOD_CAPS) {
-            mod |= KeyboardModifiers::CAPS_LOCK;
+        if (glfw_keymod & GLFW_MOD_CONTROL) {
+            mod |= KeyboardModifiers::CONTROL;
         }
-        if (sdl_keymod & KMOD_LCTRL) {
-            mod |= KeyboardModifiers::LEFT_CONTROL;
+        if (glfw_keymod & GLFW_MOD_SUPER) {
+            mod |= KeyboardModifiers::SUPER;
         }
-        if (sdl_keymod & KMOD_RCTRL) {
-            mod |= KeyboardModifiers::RIGHT_CONTROL;
-        }
-        if (sdl_keymod & KMOD_LSHIFT) {
-            mod |= KeyboardModifiers::LEFT_SHIFT;
-        }
-        if (sdl_keymod & KMOD_RSHIFT) {
-            mod |= KeyboardModifiers::RIGHT_SHIFT;
-        }
-        if (sdl_keymod & KMOD_LALT) {
-            mod |= KeyboardModifiers::LEFT_ALT;
-        }
-        if (sdl_keymod & KMOD_RALT) {
-            mod |= KeyboardModifiers::RIGHT_ALT;
+        if (glfw_keymod & GLFW_MOD_ALT) {
+            mod |= KeyboardModifiers::ALT;
         }
 
         return mod;
     }
 
-    static bool _sdl_keyboard_event_filter(SDL_Event &sdl_event, void *const data) {
-        return sdl_event.type == SDL_KEYDOWN || sdl_event.type == SDL_KEYUP;
-    }
-
-    static void _sdl_keyboard_event_handler(SDL_Event &sdl_event, void *const data) {
+    static void _on_key_event(GLFWwindow *window, int glfw_key, int glfw_scancode, int glfw_action, int glfw_mods) {
         //TODO: determine if a key press is actually supported by Argus's API
 
-        KeyboardEventType key_event_type = sdl_event.type == SDL_KEYDOWN
-                ? KeyboardEventType::KEY_DOWN
-                : KeyboardEventType::KEY_UP;
+        KeyboardEventType key_event_type;
+        if (glfw_action == GLFW_PRESS) {
+            key_event_type = KeyboardEventType::KEY_DOWN;
+        } else if (glfw_action == GLFW_RELEASE) {
+            key_event_type = KeyboardEventType::KEY_UP;
+        } else {
+            return;
+        }
 
-        KeyboardScancode scancode = static_cast<KeyboardScancode>(sdl_event.key.keysym.scancode);
+        KeyboardScancode scancode = static_cast<KeyboardScancode>(glfw_scancode);
 
-        KeyboardModifiers mod = _translate_sdl_keymod(sdl_event.key.keysym.mod);
+        KeyboardModifiers mod = _translate_glfw_keymod(glfw_mods);
 
         dispatch_event(KeyboardEvent(key_event_type, scancode, mod));
     }
@@ -109,8 +103,8 @@ namespace argus {
         );
     }
 
-    void init_keyboard(void) {
-        //register_sdl_event_handler(_sdl_keyboard_event_filter, _sdl_keyboard_event_handler, nullptr);
+    void init_keyboard(GLFWwindow *handle) {
+        glfwSetKeyCallback(handle, _on_key_event);
     }
 
     KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
@@ -236,24 +230,14 @@ namespace argus {
 
         SDL_Keycode keycode = SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode));
         switch (keycode) {
-            case SDLK_LCTRL:
-                return KeyboardModifiers::LEFT_CONTROL;
-            case SDLK_RCTRL:
-                return KeyboardModifiers::RIGHT_CONTROL;
-            case SDLK_LSHIFT:
-                return KeyboardModifiers::LEFT_SHIFT;
-            case SDLK_RSHIFT:
-                return KeyboardModifiers::RIGHT_SHIFT;
-            case SDLK_LALT:
-                return KeyboardModifiers::LEFT_ALT;
-            case SDLK_RALT:
-                return KeyboardModifiers::RIGHT_ALT;
-            case SDLK_NUMLOCKCLEAR:
-                return KeyboardModifiers::NUM_LOCK;
-            case SDLK_CAPSLOCK:
-                return KeyboardModifiers::CAPS_LOCK;
-            case SDLK_SCROLLLOCK:
-                return KeyboardModifiers::SCROLL_LOCK;
+            case GLFW_MOD_CONTROL:
+                return KeyboardModifiers::CONTROL;
+            case GLFW_MOD_SHIFT:
+                return KeyboardModifiers::SHIFT;
+            case GLFW_MOD_ALT:
+                return KeyboardModifiers::ALT;
+            case GLFW_MOD_SUPER:
+                return KeyboardModifiers::SUPER;
             default:
                 _ARGUS_FATAL("Unsupported key modifier %d\n", keycode);
         }
