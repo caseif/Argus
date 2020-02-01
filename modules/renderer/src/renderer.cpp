@@ -90,7 +90,7 @@ namespace argus {
         const GLubyte *ver_str = glGetString(GL_VERSION);
         _ARGUS_DEBUG("Obtained context with version %s\n", ver_str);
 
-        //TODO: load GL library?
+        //TODO: load GL library on Windows?
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
 
