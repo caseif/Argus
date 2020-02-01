@@ -21,6 +21,7 @@
 #include "argus/renderer/window.hpp"
 #include "argus/renderer/window_event.hpp"
 #include "internal/renderer/glext.hpp"
+#include "internal/renderer/window.hpp"
 #include "internal/renderer/pimpl/renderer.hpp"
 #include "internal/renderer/pimpl/window.hpp"
 
@@ -192,6 +193,9 @@ namespace argus {
         if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
             pimpl->renderer.init();
             pimpl->state |= WINDOW_STATE_INITIALIZED;
+
+            dispatch_event(WindowEvent(WindowEventType::CREATE, *this));
+
             return;
         }
 
@@ -208,18 +212,26 @@ namespace argus {
         if (pimpl->properties.title.dirty) {
             glfwSetWindowTitle(pimpl->handle, ((std::string) pimpl->properties.title).c_str());
         }
+
+        bool fullscreen = false;
         if (pimpl->properties.fullscreen.dirty) {
+            fullscreen = pimpl->properties.fullscreen;
+            if (fullscreen) {
             glfwSetWindowMonitor(pimpl->handle,
-                pimpl->properties.fullscreen ? glfwGetPrimaryMonitor() : nullptr,
+                glfwGetPrimaryMonitor(),
                 Vector2i(pimpl->properties.position).x,
                 Vector2i(pimpl->properties.position).y,
                 Vector2u(pimpl->properties.resolution).x,
                 Vector2u(pimpl->properties.resolution).y,
                 GLFW_DONT_CARE);
+            } else {
+                glfwSetWindowMonitor(pimpl->handle, nullptr, 0, 0, 0, 0, GLFW_DONT_CARE);
+            }
             if (pimpl->properties.resolution.dirty) {
                 pimpl->renderer.pimpl->dirty_resolution = true;
             }
-        } else {
+        }
+        if (!fullscreen) {
             if (pimpl->properties.resolution.dirty) {
                 glfwSetWindowSize(pimpl->handle,
                     Vector2u(pimpl->properties.resolution).x,
@@ -300,6 +312,10 @@ namespace argus {
         } else if (window_event.subtype == WindowEventType::RESIZE) {
             pimpl->renderer.pimpl->dirty_resolution = true;
         }
+    }
+
+    void *get_window_handle(const Window &window) {
+        return static_cast<void*>(window.pimpl->handle);
     }
 
 }

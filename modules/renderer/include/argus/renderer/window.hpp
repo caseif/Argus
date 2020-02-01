@@ -42,6 +42,8 @@ namespace argus {
         friend class Renderer;
         friend class pimpl_Renderer;
 
+        friend void *get_window_handle(const Window &window);
+
         private:
             pimpl_Window *pimpl;
 

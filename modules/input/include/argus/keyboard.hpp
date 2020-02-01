@@ -15,7 +15,11 @@
 
 #pragma once
 
+// module core
 #include "argus/core.hpp"
+
+// module renderer
+#include "argus/renderer/window.hpp"
 
 namespace argus {
 
@@ -30,6 +34,7 @@ namespace argus {
      * press of the "A" key if an AZERTY layout is active.
      */
     enum class KeyboardScancode {
+        UNKNOWN = 0,
         A = 4,
         B = 5,
         C = 6,
@@ -73,8 +78,8 @@ namespace argus {
         SPACE = 44,
         MINUS = 45,
         EQUALS = 46,
-        OPEN_SQ_BRACKET = 47,
-        CLOSE_SQ_BRACKET = 48,
+        LEFT_BRACKET = 47,
+        RIGHT_BRACKET = 48,
         BACK_SLASH = 49,
         SEMICOLON = 51,
         APOSTROPHE = 52,
@@ -125,6 +130,7 @@ namespace argus {
         NP_9 = 97,
         NP_0 = 98,
         NP_DOT = 99,
+        NP_EQUALS = 103,
         MENU = 118,
         LEFT_CONTROL = 224,
         LEFT_SHIFT = 225,
@@ -281,42 +287,6 @@ namespace argus {
          * \return The name of the pressed key.
          */
         const std::string get_key_name(void) const;
-
-        /**
-         * \brief Gets whether the key press is representative of a command.
-         *
-         * \return Whether the key press is representative of a command.
-         */
-        const bool is_command(void) const;
-
-        /**
-         * \brief Gets whether the key press is representative of a key
-         *        modifier.
-         *
-         * \return Whether the key press is representative of a key modifier.
-         */
-        const bool is_modifier(void) const;
-
-        /**
-         * \brief Gets the command associated with this key press, taking key
-         *        modifiers into account.
-         *
-         * \throw std::invalid_argument If is_command(KeyboardScancode) returns
-         *        `false`.
-         *
-         * \return The command associated with this key press.
-         */
-        const KeyboardCommand get_command(void) const;
-
-        /**
-         * \brief Gets the key modifier associated with this key press.
-         *
-         * \throw std::invalid_argument If is_modifier(KeyboardScancode) returns
-         *        `false`.
-         *
-         * \return The key modifier associated with this key press.
-         */
-        const KeyboardModifiers get_modifier(void) const;
     };
 
     /**
@@ -328,52 +298,15 @@ namespace argus {
     const std::string get_key_name(const KeyboardScancode scancode);
 
     /**
-     * \brief Gets whether a scancode is associated with a command key.
-     *
-     * \param scancode The scancode to check.
-     *
-     * \return Whether the given scancode is associated with a command key.
-     */
-    const bool is_command_key(const KeyboardScancode scancode);
-
-    /**
-     * \brief Gets whether a scancode is associated with a modifier key.
-     *
-     * \param scancode The scancode to check.
-     *
-     * \return Whether the given scancode is associated with a modifier key.
-     */
-    const bool is_modifier_key(const KeyboardScancode scancode);
-
-    /**
-     * \brief Gets the command associated with a scancode, not taking key
-     *        modifiers into account.
-     *
-     * \param scancode The scancode to look up.
-     *
-     * \return The command for the given scancode.
-     */
-    const KeyboardCommand get_key_command(const KeyboardScancode scancode);
-
-    /**
-     * \brief Gets the key modifier associated with a scancode.
-     *        given scancode.
-     *
-     * \param scancode The scancode to look up.
-     *
-     * \return The key modifier for the given scancode.
-     */
-    const KeyboardModifiers get_key_modifier(const KeyboardScancode scancode);
-
-    /**
      * \brief Gets whether the key associated with a scancode is currently being
      *        pressed down.
      *
+     * \param window The window to query input for.
      * \param scancode The scancode to query.
      *
      * \return Whether the key is being pressed.
      */
-    const bool is_key_down(const KeyboardScancode scancode);
+    const bool is_key_down(const Window &window, const KeyboardScancode scancode);
 
     //TODO: this doc needs some love
     /**

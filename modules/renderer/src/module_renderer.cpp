@@ -37,29 +37,9 @@ namespace argus {
 
     bool g_renderer_initialized = false;
 
-    // maps SDL window IDs to Window instance pointers
-    std::map<uint32_t, Window*> g_window_map;
+    // maps GLFW window pointers to Window instance pointers
+    std::map<GLFWwindow*, Window*> g_window_map;
     size_t g_window_count = 0;
-
-    static void _init_opengl(void) {
-        /*#ifdef USE_GLES
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-        #else
-        context_flags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
-
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-        #endif
-
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);*/
-    }
 
     static void _clean_up(void) {
         // use a copy since Window::destroy modifies the global list
@@ -83,7 +63,6 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::INIT: {
                 glfwInit();
-                _init_opengl();
 
                 register_render_callback(poll_events);
 

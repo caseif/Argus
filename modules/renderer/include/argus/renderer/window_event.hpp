@@ -19,6 +19,7 @@ namespace argus {
      * \sa WindowEvent
      */
     enum class WindowEventType {
+        CREATE,
         CLOSE,
         MINIMIZE,
         RESTORE,

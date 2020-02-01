@@ -90,12 +90,7 @@ namespace argus {
         const GLubyte *ver_str = glGetString(GL_VERSION);
         _ARGUS_DEBUG("Obtained context with version %s\n", ver_str);
 
-        #ifdef _WIN32
-        if (SDL_GL_LoadLibrary(nullptr) != 0) {
-           _ARGUS_FATAL("Failed to load GL library\n");
-        }
-        load_gl_extensions_for_current_context();
-        #endif
+        //TODO: load GL library?
 
         glDebugMessageCallback(_gl_debug_callback, nullptr);
 

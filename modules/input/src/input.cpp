@@ -7,20 +7,36 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module core
+#include "argus/core.hpp"
+
+// module renderer
+#include "argus/renderer/window_event.hpp"
+#include "internal/renderer/window.hpp"
+
 // module input
 #include "argus/input.hpp"
 #include "internal/input/input_helpers.hpp"
-
-// module core
-#include "argus/core.hpp"
 
 #include <string>
 
 namespace argus {
 
+    static void _init_window_input(const Window &window) {
+        init_keyboard(static_cast<GLFWwindow*>(get_window_handle(window)));
+    }
+
+    static void _on_window_event(const ArgusEvent &event, void *data) {
+        const WindowEvent wevent = static_cast<const WindowEvent&>(event);
+        if (wevent.subtype == WindowEventType::CREATE) {
+            _init_window_input(wevent.window);
+        }
+    }
+
     void _update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT:
+                register_event_handler(ArgusEventType::WINDOW, _on_window_event);
                 break;
             default:
                 break;
@@ -28,11 +44,7 @@ namespace argus {
     }
 
     void init_module_input(void) {
-        register_module({MODULE_INPUT, 2, {"core"}, _update_lifecycle_input});
-    }
-
-    void init_window_input(GLFWwindow *handle) {
-        init_keyboard(handle);
+        register_module({MODULE_INPUT, 4, {"core"}, _update_lifecycle_input});
     }
 
 }
