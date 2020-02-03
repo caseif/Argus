@@ -5,7 +5,7 @@ find_package(PNG REQUIRED)
 # module name
 set(MODULE_NAME "renderer")
 # modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core;resman")
+set(MODULE_DEPS "lowlevel;core;ecs;resman")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "${GLFW_LIBRARY};${OPENGL_gl_LIBRARY};${PNG_LIBRARY}")
 # include dirs this module uses

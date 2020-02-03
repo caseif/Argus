@@ -36,7 +36,7 @@
  * \brief Macro for conveniently registering Argus modules contained by shared
  *        libraries.
  *
- * This macro implicitly invokes argus::register_argus_module upon library load.
+ * This macro implicitly invokes argus::register_module upon library load.
  *
  * \remark If desired, the library entry point may be specified manually and the
  * argus::register_argus_module function invoked explicitly, removing any need

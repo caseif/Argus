@@ -1,9 +1,13 @@
-set(MODULE_IDS "lowlevel;core;resman;renderer;input")
+set(MODULE_IDS "lowlevel;core;ecs;resman;renderer;input")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.0)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0072 OLD) # OpenGL library preference
+if(POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
+if(POLICY CMP0072)
+  cmake_policy(SET CMP0072 OLD) # OpenGL library preference
+endif()
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
@@ -109,7 +113,8 @@ function(setup_submodule)
     endif()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
   else()
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
+                         -Wmissing-declarations -Winit-self -pedantic -pedantic-errors -std=c++11")
     set(CMAKE_CXX_FLAGS_DEBUG "-g")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()

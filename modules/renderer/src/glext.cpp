@@ -16,6 +16,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <map>
+
 #include <cstddef>
 
 #define EXPAND_GL_DEFINITION(function) PTR_##function function;
