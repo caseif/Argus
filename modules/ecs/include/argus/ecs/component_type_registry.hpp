@@ -15,24 +15,26 @@
 
 namespace argus {
     typedef void *ComponentHandle;
-    typedef uint16_t ComponentId;
+    typedef uint16_t ComponentTypeId;
 
-    struct pimpl_ComponentRegistry;
+    struct pimpl_ComponentTypeRegistry;
 
-    class ComponentRegistry {
+    class ComponentTypeRegistry {
         private:
-            pimpl_ComponentRegistry *pimpl;
+            pimpl_ComponentTypeRegistry *pimpl;
 
-            ComponentRegistry(void);
+            ComponentTypeRegistry(void);
 
         public:
-            static ComponentRegistry &instance(void);
+            static ComponentTypeRegistry &instance(void);
 
-            ComponentId get_component_id(std::string &component_name);
+            size_t get_component_type_count(void);
 
-            size_t get_component_size(ComponentId component_id);
+            ComponentTypeId get_component_type_id(std::string &type_name);
 
-            ComponentId register_component(std::string &name, size_t size);
+            size_t get_component_type_size(ComponentTypeId type_id);
+
+            ComponentTypeId register_component(std::string &name, size_t size);
 
             void _seal(void);
 

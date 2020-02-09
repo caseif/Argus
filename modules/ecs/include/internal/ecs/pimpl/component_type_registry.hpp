@@ -16,26 +16,26 @@
 #include "argus/memory.hpp"
 
 // module ecs
-#include "argus/ecs/component_registry.hpp"
+#include "argus/ecs/component_type_registry.hpp"
 
 namespace argus {
 
-    struct ComponentInfo {
-        ComponentId id;
+    struct ComponentTypeInfo {
+        ComponentTypeId id;
         std::string name;
         size_t size;
 
-        ComponentInfo(ComponentId id, std::string name, size_t size):
+        ComponentTypeInfo(ComponentTypeId id, std::string name, size_t size):
                 id(id),
                 name(name),
                 size(size) {
         }
     };
     
-    struct pimpl_ComponentRegistry {
-        std::vector<ComponentInfo> component_types;
-        ComponentId next_id = 0;
-        std::map<ComponentId, AllocPool> component_pools;
+    struct pimpl_ComponentTypeRegistry {
+        std::vector<ComponentTypeInfo> component_types;
+        ComponentTypeId next_id = 0;
+        std::map<ComponentTypeId, AllocPool> component_pools;
         bool sealed = false;
     };
 

@@ -15,7 +15,7 @@ namespace argus {
     
     struct pimpl_Entity {
         const EntityId id;
-        //TODO: component pointers
+        void *component_pointers[0];
     };
 
 }

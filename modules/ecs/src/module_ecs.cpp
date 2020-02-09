@@ -7,20 +7,19 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module core
 #include "argus/core.hpp"
+
+// module ecs
+#include "argus/ecs/component_type_registry.hpp"
 
 namespace argus {
 
-    static bool g_accepting_component_regs = false;
-
     void _update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::PRE_INIT: {
-                g_accepting_component_regs = true;
-            }
             case LifecycleStage::INIT: {
                 // we only accept component registrations during the pre-init stage
-                g_accepting_component_regs = false;
+                ComponentTypeRegistry::instance()._seal();
             }
         }
     }

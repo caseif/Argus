@@ -9,5 +9,5 @@
 
 #pragma once
 
-#include "argus/ecs/component_registry.hpp"
+#include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"

@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "argus/ecs/component_registry.hpp"
+#include "argus/ecs/component_type_registry.hpp"
 
 #include <initializer_list>
 #include <utility>
@@ -26,11 +26,13 @@ namespace argus {
             const pimpl_Entity *pimpl;
 
         public:
-            static Entity &create_entity(std::initializer_list<std::pair<ComponentId, void*>> components);
+            static Entity &create_entity(std::initializer_list<std::pair<ComponentTypeId, void*>> components);
+
+            void destroy(void);
 
             EntityId get_id(void);
 
-            bool has_component(ComponentId component_id);
+            bool has_component(ComponentTypeId component_id);
     };
 
 }
