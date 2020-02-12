@@ -89,7 +89,7 @@ namespace argus {
 
     void Renderable::buffer_vertex(const Vertex &vertex) {
         if (pimpl->buffer_head + _VERTEX_LEN > pimpl->buffer_size) {
-            _ARGUS_FATAL("Buffer overflow while buffering vertex (%lu > %lu)",
+            _ARGUS_FATAL("Buffer overflow while buffering vertex (%zu > %zu)",
                     pimpl->buffer_head + _VERTEX_LEN, pimpl->buffer_size);
         }
 

@@ -17,6 +17,24 @@
 
 #define MAX(a, b) (a > b ? a : b)
 
+#ifdef __LP64__
+#define BLOCKS_PER_CHUNK 64
+#define BlockBitField uint64_t
+#ifdef _MSC_VER
+#define __clz(x) BitScanReverse64(x, ~0L)
+#else
+#define __clz(x) __builtin_clzl(x)
+#endif
+#else
+#define BLOCKS_PER_CHUNK 32
+#define BlockBitField uint32_t
+#ifdef _MSC_VER
+#define __clz(x) BitScanReverse(x, ~0)
+#else
+#define __clz(x) __builtin_clz(x)
+#endif
+#endif
+
 namespace argus {
 
     // some quick terminology:
@@ -27,15 +45,14 @@ namespace argus {
     struct ChunkMetadata {
         const uintptr_t unaligned_addr; // the address returned by malloc when creating the chunk
         size_t occupied_blocks; // the number of occupied blocks in the chunk, used for bookkeeping
+        BlockBitField occupied_block_map; // a bitfield of blocks which are currently occupied
         ChunkMetadata *next_chunk;
-        uintptr_t first_free_block;
         unsigned char data[];
     };
 
     struct pimpl_AllocPool {
         const size_t nominal_block_size;
         const size_t real_block_size;
-        size_t alloced_block_count;
         const uint8_t alignment_exp;
         const size_t blocks_per_chunk;
         size_t chunk_count;
@@ -88,21 +105,6 @@ namespace argus {
 
         *const_cast<uintptr_t*>(&new_chunk->unaligned_addr) = malloc_addr;
         new_chunk->occupied_blocks = 0;
-        new_chunk->first_free_block = reinterpret_cast<uintptr_t>(new_chunk->data);
-
-        // next we need to build a linked list within the allocated memory
-        for (size_t index = 0; index < pool->blocks_per_chunk - 1; index++) {
-            uintptr_t cur_block = reinterpret_cast<uintptr_t>(new_chunk->data) + (index * pool->real_block_size);
-            uintptr_t next_block = cur_block + pool->real_block_size;
-            // write a pointer to the next block in the first n bytes of the current block
-            // we reinterpret the block's memory as an array of pointers and set the first entry
-            *reinterpret_cast<uintptr_t*>(cur_block) = next_block;
-        }
-
-        // insert a null pointer in the last block
-        uintptr_t last_block = reinterpret_cast<uintptr_t>(new_chunk->data)
-                + ((pool->blocks_per_chunk - 1) * pool->real_block_size);
-        *reinterpret_cast<uintptr_t*>(last_block) = 0;
 
         return new_chunk;
     }
@@ -115,12 +117,12 @@ namespace argus {
             pimpl(new pimpl_AllocPool({
                 block_size,
                 _next_aligned_value(block_size, alignment_exp), // objects must be aligned within the pool
-                0,
                 alignment_exp,
-                initial_cap,
+                BLOCKS_PER_CHUNK,
                 1,
                 nullptr
             })) {
+        //TODO: do we still need this?
         if (block_size < sizeof(size_t)) {
             throw std::invalid_argument("Block size too small");
         }
@@ -130,7 +132,7 @@ namespace argus {
     }
 
     AllocPool::~AllocPool(void) {
-        const ChunkMetadata *chunk = this->pimpl->first_chunk;
+        const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != NULL) {
             uintptr_t addr = chunk->unaligned_addr;
             chunk = chunk->next_chunk;
@@ -139,14 +141,16 @@ namespace argus {
     }
 
     void *AllocPool::alloc(void) {
-        //return malloc(this->pimpl->real_block_size);
-        ChunkMetadata *cur_chunk = this->pimpl->first_chunk;
+        //return malloc(pimpl->real_block_size); // for benchmarking purposes
+        ChunkMetadata *cur_chunk = pimpl->first_chunk;
         ChunkMetadata *selected_chunk = nullptr;
         size_t max_block_count = 0;
         // iterate the chunks and pick the one with the highest block count.
         // this way, we can avoid excessive fragmentation.
         while (cur_chunk != nullptr) {
-            if (cur_chunk->occupied_blocks < this->pimpl->blocks_per_chunk
+            // SIZE_MAX works because the block map is guaranteed to be size_t bytes,
+            // so SIZE_MAX represents a filled bitfield
+            if (cur_chunk->occupied_block_map != SIZE_MAX
                     && cur_chunk->occupied_blocks >= max_block_count) {
                 selected_chunk = cur_chunk;
             }
@@ -156,40 +160,40 @@ namespace argus {
         if (selected_chunk == nullptr) {
             // need to allocate a new chunk
             selected_chunk = _create_chunk(pimpl);
-            selected_chunk->next_chunk = this->pimpl->first_chunk;
-            this->pimpl->first_chunk = selected_chunk;
+            selected_chunk->next_chunk = pimpl->first_chunk;
+            pimpl->first_chunk = selected_chunk;
         }
 
-        uintptr_t block_addr = selected_chunk->first_free_block;
+        size_t first_free_block_index = __clz(~selected_chunk->occupied_block_map);
 
-        // bump the linked list entry point along
-        // reinterpret the block's memory as an array of pointers and grab the first entry
-        selected_chunk->first_free_block = *reinterpret_cast<uintptr_t*>(block_addr);
+        uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
+                + (first_free_block_index * pimpl->real_block_size);
+        
+        // set the relevant bit in the block map
+        selected_chunk->occupied_block_map |= (1 << (BLOCKS_PER_CHUNK - first_free_block_index - 1));
 
-        pimpl->alloced_block_count += 1;
         selected_chunk->occupied_blocks += 1;
 
         return reinterpret_cast<void*>(block_addr);
     }
 
     void AllocPool::free(void *const addr) {
-        const size_t chunk_len = this->pimpl->real_block_size * this->pimpl->blocks_per_chunk;
+        const size_t chunk_len = pimpl->real_block_size * pimpl->blocks_per_chunk;
         
         // keep track of the last chunk in case we have to remove one
         ChunkMetadata *last_chunk = nullptr;
         
-        ChunkMetadata *chunk = this->pimpl->first_chunk;
+        ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != nullptr) {
             if (addr >= chunk->data && addr < chunk->data + chunk_len) {
                 size_t offset_in_chunk = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(chunk->data);
-                if ((offset_in_chunk % this->pimpl->real_block_size) != 0) {
+                if ((offset_in_chunk % pimpl->real_block_size) != 0) {
                     throw std::invalid_argument("Pointer does not point to a valid block");
                 }
 
-                // reinterpret the freed block's memory as an array of pointers and store the current block list head
-                *reinterpret_cast<uintptr_t*>(addr) = chunk->first_free_block;
-                // then update the head to point to the freed block
-                chunk->first_free_block = reinterpret_cast<uintptr_t>(addr);
+                size_t block_index = offset_in_chunk / pimpl->real_block_size;
+                // clear appropriate bit in block map
+                chunk->occupied_block_map &= ~(1 << (BLOCKS_PER_CHUNK - block_index - 1));
 
                 // if the chunk is empty, delete it
                 if (--chunk->occupied_blocks == 0) {
@@ -199,7 +203,7 @@ namespace argus {
                     if (last_chunk == nullptr) {
                         // don't delete the last remaining chunk
                         if (chunk->next_chunk != nullptr) {
-                            this->pimpl->first_chunk = chunk->next_chunk;
+                            pimpl->first_chunk = chunk->next_chunk;
                         } else {
                             should_delete = false;
                         }
