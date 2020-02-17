@@ -8,7 +8,7 @@
  */
 
 // module lowlevel
-#include "internal/lowlevel/logging.hpp"
+#include "internal/lowlevel/error_util.hpp"
 
 // module ecs
 #include "argus/ecs/component_type_registry.hpp"
@@ -20,8 +20,6 @@
 namespace argus {
 
     static ComponentTypeRegistry *g_comp_reg_singleton;
-
-    static AllocPool **g_component_pools;
 
     inline static std::string to_lower(std::string &str) {
         std::string str_copy = str;
@@ -65,6 +63,20 @@ namespace argus {
         return *g_comp_reg_singleton;
     }
 
+    void *ComponentTypeRegistry::alloc_component(ComponentTypeId component_type) {
+        validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
+            "Invalid component type ID " + component_type);
+        
+        return (*pimpl->component_pools)[component_type].alloc();
+    }
+
+    void ComponentTypeRegistry::free_component(ComponentTypeId component_type, void *ptr) {
+        validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
+            "Invalid component type ID " + component_type);
+
+        (*pimpl->component_pools)[component_type].free(ptr);
+    }
+
     size_t ComponentTypeRegistry::get_component_type_count(void) {
         return pimpl->next_id;
     }
@@ -72,41 +84,39 @@ namespace argus {
     ComponentTypeId ComponentTypeRegistry::get_component_type_id(std::string &type_name) {
         std::string name_lower = type_name;
         to_lower(type_name);
-        ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types, [name_lower](ComponentTypeInfo cmpnt) {
-            return cmpnt.name == name_lower;
-        });
-        if (component == nullptr) {
-            throw std::invalid_argument("No component type registered with name " + type_name);
-        }
+        ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types,
+            [name_lower](ComponentTypeInfo cmpnt) {
+                return cmpnt.name == name_lower;
+            }
+        );
+
+        validate_arg(component == nullptr, "No component type registered with name " + type_name);
+
         return component->id;
     }
 
     size_t ComponentTypeRegistry::get_component_type_size(ComponentTypeId type_id) {
         ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types, type_id);
-        if (component == nullptr) {
-            throw std::invalid_argument("No component type registered with ID " + type_id);
-        }
+        validate_arg(component == nullptr, "No component type registered with ID " + type_id);
         return component->size;
     }
 
-    ComponentTypeId ComponentTypeRegistry::register_component(std::string &name, size_t size) {
-        if (_lookup_component_type(pimpl->component_types, name) != nullptr) {
-            throw std::invalid_argument("Component type with name " + name + " is already registered");
-        }
-
-        _ARGUS_ASSERT(!_is_sealed(), "Failed to register component type because registry is already sealed");
+    ComponentTypeId ComponentTypeRegistry::register_component_type(std::string &name, size_t size) {
+        validate_arg(_lookup_component_type(pimpl->component_types, name) != nullptr,
+            "Component type with name " + name + " is already registered");
+        validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
         pimpl->component_types.insert(pimpl->component_types.begin(), ComponentTypeInfo(pimpl->next_id++, name, size));
     }
 
     void ComponentTypeRegistry::_seal(void) {
-        _ARGUS_ASSERT(!pimpl->sealed, "Cannot seal component registry because it is already sealed.\n");
+        validate_state(!pimpl->sealed, "Cannot seal component registry because it is already sealed.\n");
+
         pimpl->sealed = true;
 
-        *g_component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
+        *pimpl->component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
         for (size_t i = 0; i < pimpl->next_id; i++) {
-            AllocPool &target = ((*g_component_pools)[i]);
-            //TODO: verify initial_cap is reasonable
+            AllocPool &target = ((*pimpl->component_pools)[i]);
             new (&target) AllocPool(pimpl->component_types.at(i).size, 32);
         }
     }

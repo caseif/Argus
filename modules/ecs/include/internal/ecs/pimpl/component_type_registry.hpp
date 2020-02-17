@@ -35,7 +35,7 @@ namespace argus {
     struct pimpl_ComponentTypeRegistry {
         std::vector<ComponentTypeInfo> component_types;
         ComponentTypeId next_id = 0;
-        std::map<ComponentTypeId, AllocPool> component_pools;
+        AllocPool **component_pools;
         bool sealed = false;
     };
 

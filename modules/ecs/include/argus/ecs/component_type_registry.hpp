@@ -28,13 +28,17 @@ namespace argus {
         public:
             static ComponentTypeRegistry &instance(void);
 
+            void *alloc_component(ComponentTypeId type_id);
+
+            void free_component(ComponentTypeId type_id, void *ptr);
+
             size_t get_component_type_count(void);
 
             ComponentTypeId get_component_type_id(std::string &type_name);
 
             size_t get_component_type_size(ComponentTypeId type_id);
 
-            ComponentTypeId register_component(std::string &name, size_t size);
+            ComponentTypeId register_component_type(std::string &name, size_t size);
 
             void _seal(void);
 

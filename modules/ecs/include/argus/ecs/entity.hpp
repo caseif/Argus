@@ -23,16 +23,23 @@ namespace argus {
 
     class Entity {
         private:
-            const pimpl_Entity *pimpl;
+            pimpl_Entity *pimpl;
 
         public:
-            static Entity &create_entity(std::initializer_list<std::pair<ComponentTypeId, void*>> components);
+            static Entity &create_entity(std::initializer_list<ComponentTypeId> components);
 
             void destroy(void);
 
             EntityId get_id(void);
 
-            bool has_component(ComponentTypeId component_id);
+            void *get_component(ComponentTypeId component_type);
+
+            template <typename T>
+            T *get_component(ComponentTypeId component_type) {
+                return static_cast<T*>(get_component(component_type));
+            }
+
+            bool has_component(ComponentTypeId component_type);
     };
 
 }
