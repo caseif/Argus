@@ -52,7 +52,7 @@ namespace argus {
 
     extern Shader g_group_transform_shader;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup), 512);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup));
 
     static std::vector<const Shader*> _generate_initial_group_shaders(void) {
         std::vector<const Shader*> shaders;

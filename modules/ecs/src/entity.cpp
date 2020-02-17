@@ -27,7 +27,7 @@ namespace argus {
         if (g_entity_pool == nullptr) {
             size_t entity_size = sizeof(pimpl_Entity)
                 + (sizeof(void*) * ComponentTypeRegistry::instance().get_component_type_count());
-            g_entity_pool = new AllocPool(entity_size, 64);
+            g_entity_pool = new AllocPool(entity_size);
         }
 
         Entity &entity = *static_cast<Entity*>(g_entity_pool->alloc());

@@ -113,7 +113,7 @@ namespace argus {
         _ARGUS_ASSERT(size == pimpl->real_block_size, "Size mismatch for AllocPool");
     }
 
-    AllocPool::AllocPool(size_t block_size, size_t initial_cap, uint8_t alignment_exp):
+    AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp):
             pimpl(new pimpl_AllocPool({
                 block_size,
                 _next_aligned_value(block_size, alignment_exp), // objects must be aligned within the pool

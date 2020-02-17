@@ -117,7 +117,7 @@ namespace argus {
         *pimpl->component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
         for (size_t i = 0; i < pimpl->next_id; i++) {
             AllocPool &target = ((*pimpl->component_pools)[i]);
-            new (&target) AllocPool(pimpl->component_types.at(i).size, 32);
+            new (&target) AllocPool(pimpl->component_types.at(i).size);
         }
     }
 

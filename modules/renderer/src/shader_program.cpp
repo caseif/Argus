@@ -36,7 +36,7 @@ namespace argus {
 
     using namespace glext;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_ShaderProgram), 512);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_ShaderProgram));
 
     // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {

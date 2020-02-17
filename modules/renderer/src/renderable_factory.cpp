@@ -20,8 +20,8 @@
 namespace argus {
 
     //TODO: 512 seems pretty reasonable, I think
-    AllocPool g_triangle_alloc_pool(sizeof(RenderableTriangle), 512);
-    AllocPool g_square_alloc_pool(sizeof(RenderableSquare), 512);
+    AllocPool g_triangle_alloc_pool(sizeof(RenderableTriangle));
+    AllocPool g_square_alloc_pool(sizeof(RenderableSquare));
 
     RenderableFactory::RenderableFactory(RenderGroup &parent):
             parent(parent) {

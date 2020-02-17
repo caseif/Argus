@@ -32,7 +32,7 @@ namespace argus {
 
     using namespace glext;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Renderable), 512);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_Renderable));
 
     Renderable::Renderable(RenderGroup &group):
             pimpl(&g_pimpl_pool.construct<pimpl_Renderable>(group)) {

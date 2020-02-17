@@ -26,7 +26,7 @@ namespace argus {
 
     using namespace glext;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData), 512);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData));
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const size_t width, const size_t height, unsigned char **&&image_data):

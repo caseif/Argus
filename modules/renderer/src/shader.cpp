@@ -29,7 +29,7 @@
 
 namespace argus {
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Shader), 64);
+    static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
     using namespace glext;
 
