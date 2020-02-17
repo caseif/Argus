@@ -28,9 +28,10 @@
 #endif
 
 #define MODULE_CORE "core"
+#define MODULE_ECS "ecs"
 #define MODULE_INPUT "input"
 #define MODULE_RESMAN "resman"
-#define MODULE_RENDERER "renderer"
+#define MODULE_RENDER "render"
 
 /**
  * \brief Macro for conveniently registering Argus modules contained by shared

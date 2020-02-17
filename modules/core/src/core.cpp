@@ -113,15 +113,17 @@ namespace argus {
 
     // module lifecycle hooks
     void init_module_core(void);
+    extern void init_module_ecs(void);
     extern void init_module_input(void);
     extern void init_module_resman(void);
-    extern void init_module_renderer(void);
+    extern void init_module_render(void);
 
     std::map<const std::string, const NullaryCallback> g_stock_module_initializers{
         {MODULE_CORE, init_module_core},
+        {MODULE_ECS, init_module_ecs},
         {MODULE_INPUT, init_module_input},
         {MODULE_RESMAN, init_module_resman},
-        {MODULE_RENDERER, init_module_renderer}
+        {MODULE_RENDER, init_module_render}
     };
 
     static void _interrupt_handler(int signal) {

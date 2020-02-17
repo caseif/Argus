@@ -14,10 +14,10 @@
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
-// module renderer
-#include "argus/renderer/window.hpp"
-#include "internal/renderer/window.hpp"
-#include "internal/renderer/pimpl/window.hpp"
+// module render
+#include "argus/render/window.hpp"
+#include "internal/render/window.hpp"
+#include "internal/render/pimpl/window.hpp"
 
 // module input
 #include "argus/keyboard.hpp"

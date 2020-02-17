@@ -10,13 +10,13 @@
 // module core
 #include "argus/core.hpp"
 
-// module renderer
-#include "argus/renderer/window_event.hpp"
-#include "internal/renderer/window.hpp"
-
 // module input
 #include "argus/input.hpp"
 #include "internal/input/input_helpers.hpp"
+
+// module render
+#include "argus/render/window_event.hpp"
+#include "internal/render/window.hpp"
 
 #include <string>
 

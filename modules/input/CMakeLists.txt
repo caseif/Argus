@@ -3,7 +3,7 @@ find_package(GLFW REQUIRED)
 # module name
 set(MODULE_NAME "input")
 # modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core;renderer")
+set(MODULE_DEPS "lowlevel;core;render")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "${GLFW_LIBRARY}")
 # includes this module depends on (as a list)
