@@ -28,6 +28,8 @@
                         glEnableVertexAttribArray, \
                         glGenVertexArrays, \
                         glVertexAttribPointer, \
+                        glTexImage3D, \
+                        glTexSubImage3D, \
                         glAttachShader, \
                         glBindAttribLocation, \
                         glBindFragDataLocation, \
@@ -50,6 +52,12 @@
                         glGetError
 
 #define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
+
+#ifdef _MSC_VER
+/*typedef GLbyte GLchar;
+typedef GLint *GLintptr;
+typedef GLsizei *GLsizeiptr;*/
+#endif
 
 namespace argus {
 
@@ -76,6 +84,10 @@ namespace argus {
         typedef void (APIENTRY *PTR_glEnableVertexAttribArray)(GLuint index);
         typedef void (APIENTRY *PTR_glGenVertexArrays)(GLsizei n, GLuint *arrays);
         typedef void (APIENTRY *PTR_glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+
+        // texture
+        typedef void (APIENTRY *PTR_glTexImage3D)(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *data);
+        typedef void (APIENTRY *PTR_glTexSubImage3D)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid *pixels);
 
         // shader
         typedef void (APIENTRY *PTR_glAttachShader)(GLuint program, GLuint shader);

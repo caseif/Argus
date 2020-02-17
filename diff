@@ -1,0 +1,355 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 39f64fe..1fadb3d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,7 +6,10 @@ if(POLICY CMP0048)
+   cmake_policy(SET CMP0048 NEW)
+ endif()
+ if(POLICY CMP0072)
+-  cmake_policy(SET CMP0072 OLD) # OpenGL library preference
++  cmake_policy(SET CMP0072 NEW) # OpenGL library preference
++endif()
++if(POLICY CMP0074)
++  cmake_policy(SET CMP0074 NEW) # use <package>_ROOT env var as hint
+ endif()
+ 
+ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+diff --git a/modules/core/include/argus/core.hpp b/modules/core/include/argus/core.hpp
+index d2b002e..899c75f 100644
+--- a/modules/core/include/argus/core.hpp
++++ b/modules/core/include/argus/core.hpp
+@@ -17,6 +17,7 @@
+ 
+ #include <functional>
+ #include <memory>
++#include <string>
+ #include <vector>
+ 
+ #ifdef _MSC_VER
+diff --git a/modules/core/src/core.cpp b/modules/core/src/core.cpp
+index d3ea750..db841cd 100644
+--- a/modules/core/src/core.cpp
++++ b/modules/core/src/core.cpp
+@@ -337,7 +337,7 @@ namespace argus {
+ 
+             void *handle;
+             #ifdef _WIN32
+-            handle = LoadLibrary(full_path);
++            handle = LoadLibraryA(full_path.c_str());
+             if (handle == nullptr) {
+                 _ARGUS_WARN("Failed to load external module file %s (errno: %d)\n", filename.c_str(), GetLastError());
+                 continue;
+@@ -358,7 +358,7 @@ namespace argus {
+     void _unload_external_modules(void) {
+         for (void *handle : g_external_module_handles) {
+             #ifdef _WIN32
+-            if (FreeLibrary(handle) == 0) {
++            if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
+                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
+             }
+             #else
+diff --git a/modules/ecs/src/component_type_registry.cpp b/modules/ecs/src/component_type_registry.cpp
+index aa6033f..13a823f 100644
+--- a/modules/ecs/src/component_type_registry.cpp
++++ b/modules/ecs/src/component_type_registry.cpp
+@@ -16,6 +16,7 @@
+ 
+ #include <algorithm>
+ #include <functional>
++#include <stdexcept>
+ 
+ namespace argus {
+ 
+@@ -36,7 +37,7 @@ namespace argus {
+         if (res == component_types.cend()) {
+             return nullptr;
+         }
+-        return res.base();
++        return &(*res);
+     }
+ 
+     inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
+diff --git a/modules/ecs/src/entity.cpp b/modules/ecs/src/entity.cpp
+index 752a985..c9b4aab 100644
+--- a/modules/ecs/src/entity.cpp
++++ b/modules/ecs/src/entity.cpp
+@@ -19,6 +19,7 @@ namespace argus {
+ 
+     Entity &Entity::create_entity(std::initializer_list<std::pair<ComponentTypeId, void*>> components) {
+         //TODO
++        throw std::runtime_error("Unimplemented"); // required for MSVC
+     }
+ 
+     void Entity::destroy(void) {
+diff --git a/modules/input/include/argus/keyboard.hpp b/modules/input/include/argus/keyboard.hpp
+index 562e895..5394644 100644
+--- a/modules/input/include/argus/keyboard.hpp
++++ b/modules/input/include/argus/keyboard.hpp
+@@ -106,7 +106,7 @@ namespace argus {
+         INSERT = 73,
+         HOME = 74,
+         PAGE_UP = 75,
+-        DELETE = 76,
++        DEL = 76,
+         END = 77,
+         PAGE_DOWN = 78,
+         ARROW_RIGHT = 79,
+@@ -172,7 +172,7 @@ namespace argus {
+         INSERT,
+         HOME,
+         PAGE_UP,
+-        DELETE,
++        DEL,
+         END,
+         PAGE_DOWN,
+         ARROW_UP,
+diff --git a/modules/input/include/internal/input/input_helpers.hpp b/modules/input/include/internal/input/input_helpers.hpp
+index 047db16..44b6887 100644
+--- a/modules/input/include/internal/input/input_helpers.hpp
++++ b/modules/input/include/internal/input/input_helpers.hpp
+@@ -9,6 +9,7 @@
+ 
+ #pragma once
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ namespace argus {
+diff --git a/modules/input/src/keyboard.cpp b/modules/input/src/keyboard.cpp
+index ffc6c2a..d770a62 100644
+--- a/modules/input/src/keyboard.cpp
++++ b/modules/input/src/keyboard.cpp
+@@ -22,6 +22,7 @@
+ // module input
+ #include "argus/keyboard.hpp"
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #include <stdexcept>
+@@ -62,7 +63,7 @@ namespace argus {
+         {GLFW_KEY_TAB, KeyboardScancode::TAB},
+         {GLFW_KEY_BACKSPACE, KeyboardScancode::BACKSPACE},
+         {GLFW_KEY_INSERT, KeyboardScancode::INSERT},
+-        {GLFW_KEY_DELETE, KeyboardScancode::DELETE},
++        {GLFW_KEY_DELETE, KeyboardScancode::DEL},
+         {GLFW_KEY_RIGHT, KeyboardScancode::ARROW_RIGHT},
+         {GLFW_KEY_LEFT, KeyboardScancode::ARROW_LEFT},
+         {GLFW_KEY_DOWN, KeyboardScancode::ARROW_DOWN},
+@@ -143,7 +144,7 @@ namespace argus {
+         {KeyboardScancode::TAB, GLFW_KEY_TAB},
+         {KeyboardScancode::BACKSPACE, GLFW_KEY_BACKSPACE},
+         {KeyboardScancode::INSERT, GLFW_KEY_INSERT},
+-        {KeyboardScancode::DELETE, GLFW_KEY_DELETE},
++        {KeyboardScancode::DEL, GLFW_KEY_DELETE},
+         {KeyboardScancode::ARROW_RIGHT, GLFW_KEY_RIGHT},
+         {KeyboardScancode::ARROW_LEFT, GLFW_KEY_LEFT},
+         {KeyboardScancode::ARROW_DOWN, GLFW_KEY_DOWN},
+diff --git a/modules/lowlevel/src/filesystem.cpp b/modules/lowlevel/src/filesystem.cpp
+index 032b967..1f52cb2 100644
+--- a/modules/lowlevel/src/filesystem.cpp
++++ b/modules/lowlevel/src/filesystem.cpp
+@@ -254,7 +254,7 @@ namespace argus {
+         int rc = 0;
+ 
+         #ifdef _WIN32
+-        GetModuleFileName(NULL, path, max_path_len);
++        GetModuleFileNameA(NULL, path, max_path_len);
+         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
+ 
+         validate_syscall(rc, "GetModuleFileName");
+@@ -293,8 +293,16 @@ namespace argus {
+         std::vector<std::string> res;
+ 
+         #ifdef _WIN32
+-        #error "Not yet supported"
+-        //TODO
++        WIN32_FIND_DATAA find_data;
++
++        HANDLE find_handle = FindFirstFileA(directory_path.c_str(), &find_data);
++        if (find_handle == INVALID_HANDLE_VALUE) {
++            return res;
++        }
++
++        do {
++            res.insert(res.end(), find_data.cFileName);
++        } while (FindNextFileA(find_handle, &find_data) != 0);
+         #else
+         DIR *dir = opendir(directory_path.c_str());
+         validate_syscall(dir != nullptr, "opendir");
+diff --git a/modules/lowlevel/src/memory.cpp b/modules/lowlevel/src/memory.cpp
+index d81d9ec..2ed3a92 100644
+--- a/modules/lowlevel/src/memory.cpp
++++ b/modules/lowlevel/src/memory.cpp
+@@ -15,13 +15,18 @@
+ #include <cmath>
+ #include <cstdlib>
+ 
++#ifdef _MSC_VER
++#include <intrin.h>
++#endif
++
+ #define MAX(a, b) (a > b ? a : b)
+ 
+-#ifdef __LP64__
++#if defined(__LP64__) || defined(_WIN64)
+ #define BLOCKS_PER_CHUNK 64
+ #define BlockBitField uint64_t
+ #ifdef _MSC_VER
+-#define __clz(x) BitScanReverse64(x, ~0L)
++#define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long*>(i), m)
++#pragma intrinsic(_BitScanReverse64)
+ #else
+ #define __clz(x) __builtin_clzl(x)
+ #endif
+@@ -29,7 +34,8 @@
+ #define BLOCKS_PER_CHUNK 32
+ #define BlockBitField uint32_t
+ #ifdef _MSC_VER
+-#define __clz(x) BitScanReverse(x, ~0)
++#define __bsr(i, m) _BitScanReverse(reinterpret_cast<unsigned long*>(i), m)
++#pragma intrinsic(_BitScanReverse)
+ #else
+ #define __clz(x) __builtin_clz(x)
+ #endif
+@@ -164,7 +170,12 @@ namespace argus {
+             pimpl->first_chunk = selected_chunk;
+         }
+ 
+-        size_t first_free_block_index = __clz(~selected_chunk->occupied_block_map);
++        size_t first_free_block_index;
++        #ifdef _MSC_VER
++        __bsr(&first_free_block_index, ~selected_chunk->occupied_block_map);
++        #else
++        first_free_block_index = __clz(~selected_chunk->occupied_block_map);
++        #endif
+ 
+         uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
+                 + (first_free_block_index * pimpl->real_block_size);
+diff --git a/modules/renderer/include/internal/renderer/glext.hpp b/modules/renderer/include/internal/renderer/glext.hpp
+index 0d5bf51..aaa077c 100644
+--- a/modules/renderer/include/internal/renderer/glext.hpp
++++ b/modules/renderer/include/internal/renderer/glext.hpp
+@@ -11,6 +11,7 @@
+ 
+ #include "internal/renderer/expansion_macros.hpp"
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #define GL_FUNCTIONS    glGenFramebuffers, \
+@@ -50,6 +51,12 @@
+ 
+ #define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
+ 
++#ifdef _MSC_VER
++typedef GLbyte GLchar;
++typedef GLint *GLintptr;
++typedef GLsizei *GLsizeiptr;
++#endif
++
+ namespace argus {
+ 
+     namespace glext {
+diff --git a/modules/renderer/include/internal/renderer/types.hpp b/modules/renderer/include/internal/renderer/types.hpp
+index e99fb94..a8e6045 100644
+--- a/modules/renderer/include/internal/renderer/types.hpp
++++ b/modules/renderer/include/internal/renderer/types.hpp
+@@ -9,6 +9,7 @@
+ 
+ #pragma once
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ namespace argus {
+diff --git a/modules/renderer/src/glext.cpp b/modules/renderer/src/glext.cpp
+index b47f84b..799cc63 100644
+--- a/modules/renderer/src/glext.cpp
++++ b/modules/renderer/src/glext.cpp
+@@ -14,6 +14,7 @@
+ #include "internal/renderer/expansion_macros.hpp"
+ #include "internal/renderer/glext.hpp"
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #include <map>
+diff --git a/modules/renderer/src/module_renderer.cpp b/modules/renderer/src/module_renderer.cpp
+index ab0dc5b..76082bb 100644
+--- a/modules/renderer/src/module_renderer.cpp
++++ b/modules/renderer/src/module_renderer.cpp
+@@ -23,6 +23,7 @@
+ #include "internal/renderer/glext.hpp"
+ #include "internal/renderer/texture_loader.hpp"
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #include <iterator>
+diff --git a/modules/renderer/src/render_group.cpp b/modules/renderer/src/render_group.cpp
+index 2d91544..090d97e 100644
+--- a/modules/renderer/src/render_group.cpp
++++ b/modules/renderer/src/render_group.cpp
+@@ -35,7 +35,8 @@
+ #include "internal/renderer/pimpl/shader_program.hpp"
+ #include "internal/renderer/pimpl/texture_data.hpp"
+ 
+-#include <GL/gl.h>
++#define GLFW_INCLUDE_GLEXT
++#include <GLFW/glfw3.h>
+ 
+ #include <atomic>
+ #include <map>
+diff --git a/modules/renderer/src/renderer.cpp b/modules/renderer/src/renderer.cpp
+index ce40ccf..f2ba3eb 100644
+--- a/modules/renderer/src/renderer.cpp
++++ b/modules/renderer/src/renderer.cpp
+@@ -26,6 +26,7 @@
+ #include "internal/renderer/pimpl/renderer.hpp"
+ #include "internal/renderer/pimpl/window.hpp"
+ 
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #include <algorithm>
+diff --git a/modules/renderer/src/shader_program.cpp b/modules/renderer/src/shader_program.cpp
+index 2151a07..6aad082 100644
+--- a/modules/renderer/src/shader_program.cpp
++++ b/modules/renderer/src/shader_program.cpp
+@@ -19,7 +19,8 @@
+ #include "internal/renderer/pimpl/shader.hpp"
+ #include "internal/renderer/pimpl/shader_program.hpp"
+ 
+-#include <GL/gl.h>
++#define GLFW_INCLUDE_GLEXT
++#include <GLFW/glfw3.h>
+ 
+ #include <algorithm>
+ #include <iterator>
+diff --git a/modules/renderer/src/texture_data.cpp b/modules/renderer/src/texture_data.cpp
+index 183d712..1cd5325 100644
+--- a/modules/renderer/src/texture_data.cpp
++++ b/modules/renderer/src/texture_data.cpp
+@@ -16,7 +16,8 @@
+ #include "internal/renderer/glext.hpp"
+ #include "internal/renderer/pimpl/texture_data.hpp"
+ 
+-#include <GL/gl.h>
++#define GLFW_INCLUDE_GLEXT
++#include <GLFW/glfw3.h>
+ 
+ #include <atomic>
+ 
+diff --git a/modules/renderer/src/window.cpp b/modules/renderer/src/window.cpp
+index ce6a5a1..ae847e6 100644
+--- a/modules/renderer/src/window.cpp
++++ b/modules/renderer/src/window.cpp
+@@ -28,6 +28,7 @@
+ #ifdef USE_GLES
+ #define GLFW_INCLUDE_ES3
+ #endif
++#define GLFW_INCLUDE_GLEXT
+ #include <GLFW/glfw3.h>
+ 
+ #include <atomic>

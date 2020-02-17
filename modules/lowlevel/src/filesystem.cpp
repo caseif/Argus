@@ -166,7 +166,7 @@ namespace argus {
         ::remove(this->path.c_str());
     }
 
-    const void FileHandle::to_istream(const ssize_t offset, std::ifstream &target) const {
+    const void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
         validate_arg(valid, "Non-valid FileHandle");
 
         fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
@@ -188,7 +188,7 @@ namespace argus {
         //stream->seekg(offset);
     }
 
-    const void FileHandle::read(const size_t offset, const size_t size, unsigned char *const buf) const {
+    const void FileHandle::read(const off_t offset, const size_t size, unsigned char *const buf) const {
         validate_arg(valid, "Non-valid FileHandle");
 
         validate_arg(size > 0, "Invalid size parameter");
@@ -202,7 +202,7 @@ namespace argus {
         validate_syscall(read_chunks == 1, "fread");
     }
 
-    const void FileHandle::write(const ssize_t offset, const size_t size, unsigned char *const buf) {
+    const void FileHandle::write(const off_t offset, const size_t size, unsigned char *const buf) {
         validate_arg(valid, "Non-valid FileHandle");
 
         validate_arg(size > 0, "Invalid size parameter");
@@ -224,7 +224,7 @@ namespace argus {
         this->size = file_stat.st_size;
     }
 
-    const std::future<void> FileHandle::read_async(const size_t offset, const size_t size, unsigned char *const buf,
+    const std::future<void> FileHandle::read_async(const off_t offset, const size_t size, unsigned char *const buf,
             const std::function<void(FileHandle&)> callback) {
         validate_arg(valid, "Non-valid FileHandle");
 
@@ -235,7 +235,7 @@ namespace argus {
         return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
     }
 
-    const std::future<void> FileHandle::write_async(const ssize_t offset, const size_t size, unsigned char *const buf,
+    const std::future<void> FileHandle::write_async(const off_t offset, const size_t size, unsigned char *const buf,
             std::function<void(FileHandle&)> callback) {
         validate_arg(valid, "Non-valid FileHandle");
 
@@ -254,7 +254,7 @@ namespace argus {
         int rc = 0;
 
         #ifdef _WIN32
-        GetModuleFileName(NULL, path, max_path_len);
+        GetModuleFileNameA(NULL, path, max_path_len);
         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
 
         validate_syscall(rc, "GetModuleFileName");
@@ -293,8 +293,16 @@ namespace argus {
         std::vector<std::string> res;
 
         #ifdef _WIN32
-        #error "Not yet supported"
-        //TODO
+        WIN32_FIND_DATAA find_data;
+
+        HANDLE find_handle = FindFirstFileA(directory_path.c_str(), &find_data);
+        if (find_handle == INVALID_HANDLE_VALUE) {
+            return res;
+        }
+
+        do {
+            res.insert(res.end(), find_data.cFileName);
+        } while (FindNextFileA(find_handle, &find_data) != 0);
         #else
         DIR *dir = opendir(directory_path.c_str());
         validate_syscall(dir != nullptr, "opendir");

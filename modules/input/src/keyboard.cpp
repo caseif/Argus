@@ -22,6 +22,7 @@
 // module input
 #include "argus/keyboard.hpp"
 
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <stdexcept>
@@ -62,7 +63,7 @@ namespace argus {
         {GLFW_KEY_TAB, KeyboardScancode::TAB},
         {GLFW_KEY_BACKSPACE, KeyboardScancode::BACKSPACE},
         {GLFW_KEY_INSERT, KeyboardScancode::INSERT},
-        {GLFW_KEY_DELETE, KeyboardScancode::DELETE},
+        {GLFW_KEY_DELETE, KeyboardScancode::DEL},
         {GLFW_KEY_RIGHT, KeyboardScancode::ARROW_RIGHT},
         {GLFW_KEY_LEFT, KeyboardScancode::ARROW_LEFT},
         {GLFW_KEY_DOWN, KeyboardScancode::ARROW_DOWN},
@@ -143,7 +144,7 @@ namespace argus {
         {KeyboardScancode::TAB, GLFW_KEY_TAB},
         {KeyboardScancode::BACKSPACE, GLFW_KEY_BACKSPACE},
         {KeyboardScancode::INSERT, GLFW_KEY_INSERT},
-        {KeyboardScancode::DELETE, GLFW_KEY_DELETE},
+        {KeyboardScancode::DEL, GLFW_KEY_DELETE},
         {KeyboardScancode::ARROW_RIGHT, GLFW_KEY_RIGHT},
         {KeyboardScancode::ARROW_LEFT, GLFW_KEY_LEFT},
         {KeyboardScancode::ARROW_DOWN, GLFW_KEY_DOWN},

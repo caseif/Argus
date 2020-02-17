@@ -6,7 +6,10 @@ if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
 if(POLICY CMP0072)
-  cmake_policy(SET CMP0072 OLD) # OpenGL library preference
+  cmake_policy(SET CMP0072 NEW) # OpenGL library preference
+endif()
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # use <package>_ROOT env var as hint
 endif()
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)

@@ -23,6 +23,7 @@
 #include "internal/render/glext.hpp"
 #include "internal/render/texture_loader.hpp"
 
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <iterator>

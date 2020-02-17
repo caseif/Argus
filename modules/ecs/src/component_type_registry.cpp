@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
 
 namespace argus {
 
@@ -34,7 +35,7 @@ namespace argus {
         if (res == component_types.cend()) {
             return nullptr;
         }
-        return res.base();
+        return &(*res);
     }
 
     inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,

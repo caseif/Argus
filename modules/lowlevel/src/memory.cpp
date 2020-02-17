@@ -15,13 +15,18 @@
 #include <cmath>
 #include <cstdlib>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 #define MAX(a, b) (a > b ? a : b)
 
-#ifdef __LP64__
+#if defined(__LP64__) || defined(_WIN64)
 #define BLOCKS_PER_CHUNK 64
 #define BlockBitField uint64_t
 #ifdef _MSC_VER
-#define __clz(x) BitScanReverse64(x, ~0L)
+#define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long*>(i), m)
+#pragma intrinsic(_BitScanReverse64)
 #else
 #define __clz(x) __builtin_clzl(x)
 #endif
@@ -29,7 +34,8 @@
 #define BLOCKS_PER_CHUNK 32
 #define BlockBitField uint32_t
 #ifdef _MSC_VER
-#define __clz(x) BitScanReverse(x, ~0)
+#define __bsr(i, m) _BitScanReverse(reinterpret_cast<unsigned long*>(i), m)
+#pragma intrinsic(_BitScanReverse)
 #else
 #define __clz(x) __builtin_clz(x)
 #endif
@@ -164,7 +170,12 @@ namespace argus {
             pimpl->first_chunk = selected_chunk;
         }
 
-        size_t first_free_block_index = __clz(~selected_chunk->occupied_block_map);
+        size_t first_free_block_index;
+        #ifdef _MSC_VER
+        __bsr(&first_free_block_index, ~selected_chunk->occupied_block_map);
+        #else
+        first_free_block_index = __clz(~selected_chunk->occupied_block_map);
+        #endif
 
         uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
                 + (first_free_block_index * pimpl->real_block_size);

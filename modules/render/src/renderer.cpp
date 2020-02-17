@@ -26,6 +26,7 @@
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
 
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <algorithm>

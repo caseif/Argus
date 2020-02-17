@@ -25,9 +25,7 @@
 #include <cstdio>
 
 #ifdef _WIN32
-// builds targeting 32-bit define size_t as a 32-bit int, which won't do
-#define size_t unsigned __int64
-#define ssize_t __int64
+#define ssize_t signed __int64
 
 /**
  * \brief The separator for elements in filesystem paths.
@@ -153,7 +151,7 @@ namespace argus {
              *
              * \throw std::invalid_argument If this handle is not valid.
              */
-            const void to_istream(const ssize_t offset, std::ifstream &target) const;
+            const void to_istream(const off_t offset, std::ifstream &target) const;
 
             /**
              * \brief Reads data from the file referenced by this handle.
@@ -171,7 +169,7 @@ namespace argus {
              * \throw std::system_error If an error occurs while reading from
              *        the file.
              */
-            const void read(const size_t offset, const size_t size, unsigned char *const buf) const;
+            const void read(const off_t offset, const size_t size, unsigned char *const buf) const;
 
             /**
              * \brief Writes data into the file referenced by this handle.
@@ -190,7 +188,7 @@ namespace argus {
              * \throw std::system_error If an error occurs while writing to the
              *        file.
              */
-            const void write(const ssize_t offset, const size_t size, unsigned char *const buf);
+            const void write(const off_t offset, const size_t size, unsigned char *const buf);
 
             /**
              * \brief Reads data from the file referenced by this handle
@@ -222,7 +220,7 @@ namespace argus {
              *
              * \sa FileHandle::read
              */
-            const std::future<void> read_async(const size_t offset, const size_t size,
+            const std::future<void> read_async(const off_t offset, const size_t size,
                     unsigned char *const buf, const std::function<void(FileHandle&)> callback);
 
             /**
@@ -256,7 +254,7 @@ namespace argus {
              *
              * \sa FileHandle::write
              */
-            const std::future<void> write_async(const ssize_t offset, const size_t size,
+            const std::future<void> write_async(const off_t offset, const size_t size,
                     unsigned char *const buf, const std::function<void(FileHandle&)> callback);
     };
 

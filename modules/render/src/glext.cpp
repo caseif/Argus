@@ -14,6 +14,7 @@
 #include "internal/render/expansion_macros.hpp"
 #include "internal/render/glext.hpp"
 
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <map>

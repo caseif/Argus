@@ -16,7 +16,8 @@
 #include "internal/render/glext.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
-#include <GL/gl.h>
+#define GLFW_INCLUDE_GLEXT
+#include <GLFW/glfw3.h>
 
 #include <atomic>
 

@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #ifdef _MSC_VER

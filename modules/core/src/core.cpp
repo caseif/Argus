@@ -339,7 +339,7 @@ namespace argus {
 
             void *handle;
             #ifdef _WIN32
-            handle = LoadLibrary(full_path);
+            handle = LoadLibraryA(full_path.c_str());
             if (handle == nullptr) {
                 _ARGUS_WARN("Failed to load external module file %s (errno: %d)\n", filename.c_str(), GetLastError());
                 continue;
@@ -360,7 +360,7 @@ namespace argus {
     void _unload_external_modules(void) {
         for (void *handle : g_external_module_handles) {
             #ifdef _WIN32
-            if (FreeLibrary(handle) == 0) {
+            if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
             }
             #else
