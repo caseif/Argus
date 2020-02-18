@@ -344,7 +344,7 @@ namespace argus {
      *
      * \param module_list The IDs of the modules to load on engine init.
      */
-    void set_load_modules(const std::initializer_list<const std::string> module_list);
+    void set_load_modules(const std::initializer_list<std::string> &module_list);
 
     /**
      * \brief Registers a callback for invocation on each game update.

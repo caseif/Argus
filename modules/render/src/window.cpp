@@ -105,7 +105,13 @@ namespace argus {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         #endif
+
         pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, "ArgusGame", nullptr, nullptr);
+
+        if (pimpl->handle == nullptr) {
+            _ARGUS_FATAL("Failed to create GLFW window");
+        }
+
         pimpl->state = WINDOW_STATE_VALID;
         pimpl->close_callback = nullptr;
 

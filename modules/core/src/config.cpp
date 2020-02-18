@@ -26,8 +26,8 @@ namespace argus {
         g_engine_config.target_framerate = target_framerate;
     }
 
-    void set_load_modules(const std::initializer_list<const std::string> module_list) {
-        g_engine_config.load_modules = module_list;
+    void set_load_modules(const std::initializer_list<std::string> &module_list) {
+        g_engine_config.load_modules.insert(g_engine_config.load_modules.begin(), module_list);
     }
 
 }

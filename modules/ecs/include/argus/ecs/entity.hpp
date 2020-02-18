@@ -17,7 +17,7 @@
 #include <cstdint>
 
 namespace argus {
-    typedef uint32_t EntityId;
+    typedef uint64_t EntityId;
 
     struct pimpl_Entity;
 

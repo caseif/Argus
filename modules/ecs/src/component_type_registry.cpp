@@ -107,7 +107,10 @@ namespace argus {
             "Component type with name " + name + " is already registered");
         validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
-        pimpl->component_types.insert(pimpl->component_types.begin(), ComponentTypeInfo(pimpl->next_id++, name, size));
+        ComponentTypeId new_id = pimpl->next_id++;
+        pimpl->component_types.insert(pimpl->component_types.begin(), ComponentTypeInfo(new_id, name, size));
+
+        return new_id;
     }
 
     void ComponentTypeRegistry::_seal(void) {

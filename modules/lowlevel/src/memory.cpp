@@ -10,6 +10,7 @@
 #include "argus/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
+#include <new>
 #include <stdexcept>
 
 #include <cmath>
@@ -111,6 +112,8 @@ namespace argus {
 
         *const_cast<uintptr_t*>(&new_chunk->unaligned_addr) = malloc_addr;
         new_chunk->occupied_blocks = 0;
+		new_chunk->occupied_block_map = 0;
+		new_chunk->next_chunk = nullptr;
 
         return new_chunk;
     }
@@ -170,18 +173,22 @@ namespace argus {
             pimpl->first_chunk = selected_chunk;
         }
 
-        size_t first_free_block_index;
+        size_t first_free_block_index = 0;
         #ifdef _MSC_VER
         __bsr(&first_free_block_index, ~selected_chunk->occupied_block_map);
         #else
         first_free_block_index = __clz(~selected_chunk->occupied_block_map);
         #endif
 
+        // MSB of the block map actually represents the first block sequentially in memory,
+        // so for instance we translate 63 (MSB position) to (64 - 63 - 1) == 0 (first block in memory)
+        first_free_block_index = BLOCKS_PER_CHUNK - first_free_block_index - 1;
+
         uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
                 + (first_free_block_index * pimpl->real_block_size);
         
         // set the relevant bit in the block map
-        selected_chunk->occupied_block_map |= (1 << (BLOCKS_PER_CHUNK - first_free_block_index - 1));
+        selected_chunk->occupied_block_map |= (1 << first_free_block_index);
 
         selected_chunk->occupied_blocks += 1;
 

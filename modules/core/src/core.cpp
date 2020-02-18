@@ -403,7 +403,7 @@ namespace argus {
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
-    void _load_modules(const std::initializer_list<const std::string> &modules) {
+    void _load_modules(const std::vector<std::string> &modules) {
         for (const std::string module : modules) {
             _enable_module(module, {});
         }

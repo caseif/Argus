@@ -60,10 +60,16 @@ namespace argus {
         glfwPollEvents();
     }
 
+    static void _on_glfw_error(int code, const char *desc) {
+        _ARGUS_WARN("GLFW Error: %s", desc);
+    }
+
     void _update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT: {
                 glfwInit();
+
+                glfwSetErrorCallback(_on_glfw_error);
 
                 register_render_callback(poll_events);
 
