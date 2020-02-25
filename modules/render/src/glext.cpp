@@ -14,7 +14,6 @@
 #include "internal/render/expansion_macros.hpp"
 #include "internal/render/glext.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <map>
@@ -106,7 +105,11 @@ namespace argus {
 
         using namespace glext;
 
+        #ifdef _MSC_VER
+        load_gl_extensions_for_current_context();
+        #else
         EXPAND_LIST(EXPAND_GL_INIT_GLOBAL, GL_FUNCTIONS);
+        #endif
     }
 
 }

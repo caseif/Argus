@@ -22,7 +22,6 @@
 // module input
 #include "argus/keyboard.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <stdexcept>

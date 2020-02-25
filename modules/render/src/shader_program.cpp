@@ -19,7 +19,6 @@
 #include "internal/render/pimpl/shader.hpp"
 #include "internal/render/pimpl/shader_program.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <algorithm>

@@ -11,7 +11,6 @@
 
 #include "internal/render/expansion_macros.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #define GL_FUNCTIONS    glGenFramebuffers, \
@@ -52,12 +51,6 @@
                         glGetError
 
 #define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
-
-#ifdef _MSC_VER
-/*typedef GLbyte GLchar;
-typedef GLint *GLintptr;
-typedef GLsizei *GLsizeiptr;*/
-#endif
 
 namespace argus {
 

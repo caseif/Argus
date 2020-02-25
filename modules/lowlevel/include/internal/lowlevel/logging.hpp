@@ -12,6 +12,14 @@
 #include <cstdio>
 #include <cstdlib>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#define DEBUG_BREAK() __debugbreak()
+#else
+#include <csignal>
+#define DEBUG_BREAK() raise(SIGTRAP)
+#endif
+
 #define STRINGIZE_DETAIL(x) #x
 #define STRINGIZE(x) STRINGIZE_DETAIL(x)
 
@@ -33,6 +41,7 @@
 #define _ARGUS_WARN(fmt, ...) _ARGUS_PRINT(stderr, "WARN", fmt, ##__VA_ARGS__)
 
 #define _ARGUS_FATAL(fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
+                                DEBUG_BREAK(); \
                                 exit(1)
 
 #define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) {     \

@@ -28,7 +28,6 @@
 #ifdef USE_GLES
 #define GLFW_INCLUDE_ES3
 #endif
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <atomic>
@@ -128,9 +127,6 @@ namespace argus {
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
-        glfwMakeContextCurrent(pimpl->handle);
-        init_opengl_extensions();
-
         return;
     }
 
@@ -198,6 +194,9 @@ namespace argus {
         }
 
         if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
+            glfwMakeContextCurrent(pimpl->handle);
+            init_opengl_extensions();
+
             pimpl->renderer.init();
             pimpl->state |= WINDOW_STATE_INITIALIZED;
 

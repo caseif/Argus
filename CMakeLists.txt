@@ -164,6 +164,8 @@ function(setup_submodule MODULE_NAME)
     add_definitions("-DGLFW_DLL")
   endif()
 
+  add_definitions("-DGLFW_INCLUDE_GLEXT")
+
   if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")

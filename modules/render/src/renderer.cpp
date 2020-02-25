@@ -26,7 +26,6 @@
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -43,6 +42,11 @@ namespace argus {
     extern bool g_render_module_initialized;
 
     static void _activate_gl_context(window_handle_t window) {
+        if (glfwGetCurrentContext() == window) {
+            // already current
+            return;
+        }
+
         glfwMakeContextCurrent(window);
         if (glfwGetCurrentContext() != window) {
              _ARGUS_FATAL("Failed to make GL context current\n");
@@ -91,11 +95,12 @@ namespace argus {
         const GLubyte *ver_str = glGetString(GL_VERSION);
         _ARGUS_DEBUG("Obtained context with version %s\n", ver_str);
 
-        //TODO: load GL library on Windows?
+        //TODO: actually do something
+        if (glDebugMessageCallback != nullptr) {
+            glDebugMessageCallback(_gl_debug_callback, nullptr);
+        }
 
-        glDebugMessageCallback(_gl_debug_callback, nullptr);
-
-        glDepthFunc(GL_ALWAYS);
+        //glDepthFunc(GL_ALWAYS);
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

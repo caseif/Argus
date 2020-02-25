@@ -35,7 +35,6 @@
 #include "internal/render/pimpl/shader_program.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
-#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 #include <atomic>
