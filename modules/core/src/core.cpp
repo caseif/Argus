@@ -469,7 +469,7 @@ namespace argus {
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
-            for (IndexedValue<DeltaCallback> callback : g_update_callbacks.list) {
+            for (auto &callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
             g_update_callbacks.list_mutex.unlock_shared();
@@ -495,7 +495,7 @@ namespace argus {
 
             // invoke render callbacks
             g_render_callbacks.list_mutex.lock_shared();
-            for (IndexedValue<DeltaCallback> callback : g_render_callbacks.list) {
+            for (auto &callback : g_render_callbacks.list) {
                 callback.value(delta);
             }
             g_render_callbacks.list_mutex.unlock_shared();

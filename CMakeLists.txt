@@ -23,12 +23,63 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_C_OUTPUT_EXTENSION_REPLACE 1)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
-project(argus
-        VERSION 0.1.0)
-
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+
+##########################
+# Dependency configuration
+##########################
+
+set(GLFW_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/glfw")
+set(ZLIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/zlib")
+set(PNG_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libpng")
+
+# disable extra GLFW build steps
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+
+find_package(OpenGL REQUIRED)
+
+# don't let libpng try to install itself
+set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+# configure libpng build steps
+set(PNG_STATIC ON CACHE BOOL "" FORCE)
+set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+
+# include dir for generated headers which must be copied (configs)
+set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
+
+# copy "generated" headers from dependencies to somewhere we can include easily
+configure_file("${PNG_SOURCE_DIR}/scripts/pnglibconf.h.prebuilt" "${TMP_INCLUDE_DIR}/libpng/pnglibconf.h")
+configure_file("${ZLIB_SOURCE_DIR}/zconf.h.in" "${TMP_INCLUDE_DIR}/zlib/zconf.h")
+
+# set relevant build variables so the dependencies can be discovered
+# note that we include the dirs for generated headers
+set(GLFW_LIBRARY_SHARED "glfw;${OPENGL_gl_LIBRARY}")
+set(GLFW_LIBRARY_STATIC "glfw;${OPENGL_gl_LIBRARY}")
+set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
+set(ZLIB_LIBRARY "zlib")
+set(ZLIB_LIBRARY_SHARED "zlib")
+set(ZLIB_LIBRARY_STATIC "zlibstatic")
+set(ZLIB_INCLUDE_DIR "${ZLIB_SOURCE_DIR};${TMP_INCLUDE_DIR}/zlib")
+set(PNG_LIBRARY_SHARED "png")
+set(PNG_LIBRARY_STATIC "png_static")
+set(PNG_INCLUDE_DIR "${PNG_SOURCE_DIR};${TMP_INCLUDE_DIR}/libpng")
+
+# add dependencies
+add_subdirectory("${CMAKE_SOURCE_DIR}/libs/glfw")
+add_subdirectory("${CMAKE_SOURCE_DIR}/libs/zlib")
+add_subdirectory("${CMAKE_SOURCE_DIR}/libs/libpng")
+
+###########################
+# /Dependency configuration
+###########################
+
+project(argus
+        VERSION 0.1.0)
 
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 option(USE_GLES "Use ES profile for OpenGL" OFF)
@@ -126,9 +177,9 @@ function(setup_submodule)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-  get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
-  list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
-  set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
+  get_property(GLOBAL_LIBS_SHARED GLOBAL PROPERTY GLOBAL_LIBS_SHARED)
+  list(APPEND GLOBAL_LIBS_SHARED "${LOCAL_LIBS_SHARED}")
+  set_property(GLOBAL PROPERTY GLOBAL_LIBS_SHARED "${GLOBAL_LIBS_SHARED}")
 
   string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
@@ -175,7 +226,7 @@ endforeach()
 add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
 add_library(${PROJECT_NAME}_static STATIC ${MODULE_LIBS})
 
-# set the linker language (since we're not including any sources)
+# set the linker language (since we're not directly including any sources)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(${PROJECT_NAME}_static PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
@@ -185,10 +236,18 @@ set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11)
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${PROJECT_NAME}_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# set compile flag for MSVC
+if(MSVC)
+  set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_DEFINITIONS BUILDER_STATIC_DEFINE)
+endif()
+
 # add libraries for linking
-get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
-list(REMOVE_DUPLICATES GLOBAL_LIBS)
-target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS})
+get_property(GLOBAL_LIBS_SHARED GLOBAL PROPERTY GLOBAL_LIBS_SHARED)
+get_property(GLOBAL_LIBS_STATIC GLOBAL PROPERTY GLOBAL_LIBS_STATIC)
+list(REMOVE_DUPLICATES GLOBAL_LIBS_SHARED)
+list(REMOVE_DUPLICATES GLOBAL_LIBS_STATIC)
+target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS_SHARED})
+target_link_libraries(${PROJECT_NAME}_static ${GLOBAL_LIBS_STATIC})
 
 # add global include list
 get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
