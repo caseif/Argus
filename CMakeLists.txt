@@ -1,7 +1,7 @@
 set(MODULE_IDS "lowlevel;core;ecs;resman;render;input")
 set(MODULE_PATH_PREFIX "modules/")
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
@@ -36,17 +36,18 @@ set(ZLIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/zlib")
 set(PNG_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libpng")
 
 # disable extra GLFW build steps
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 find_package(OpenGL REQUIRED)
 
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 # configure libpng build steps
-set(PNG_STATIC ON CACHE BOOL "" FORCE)
+set(PNG_STATIC OFF CACHE BOOL "" FORCE)
 set(PNG_TESTS OFF CACHE BOOL "" FORCE)
 
 # include dir for generated headers which must be copied (configs)
@@ -56,17 +57,19 @@ set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
 configure_file("${PNG_SOURCE_DIR}/scripts/pnglibconf.h.prebuilt" "${TMP_INCLUDE_DIR}/libpng/pnglibconf.h")
 configure_file("${ZLIB_SOURCE_DIR}/zconf.h.in" "${TMP_INCLUDE_DIR}/zlib/zconf.h")
 
+if(NOT DEFINED UNIX)
+  set(UNIX 0)
+endif()
+
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
-set(GLFW_LIBRARY_SHARED "glfw;${OPENGL_gl_LIBRARY}")
-set(GLFW_LIBRARY_STATIC "glfw;${OPENGL_gl_LIBRARY}")
+set(GLFW_LIBRARY_BASE "glfw")
+set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE};${OPENGL_gl_LIBRARY}")
+
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
 set(ZLIB_LIBRARY "zlib")
-set(ZLIB_LIBRARY_SHARED "zlib")
-set(ZLIB_LIBRARY_STATIC "zlibstatic")
 set(ZLIB_INCLUDE_DIR "${ZLIB_SOURCE_DIR};${TMP_INCLUDE_DIR}/zlib")
-set(PNG_LIBRARY_SHARED "png")
-set(PNG_LIBRARY_STATIC "png_static")
+set(PNG_LIBRARY "png")
 set(PNG_INCLUDE_DIR "${PNG_SOURCE_DIR};${TMP_INCLUDE_DIR}/libpng")
 
 # add dependencies
@@ -93,17 +96,17 @@ if (${USE_GLES})
 endif()
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
-function(load_dep_module_includes dest)
+function(load_dep_module_includes DEST)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")
   foreach(module ${MODULE_DEPS})
     get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
     list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
   endforeach()
-  set(${dest} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
+  set(${DEST} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
 # configures the module's top-level include dirs and saves them to the given variable
-function(load_module_includes dest)
+function(load_module_includes DEST)
   # load this module's include dir
   set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/include")
 
@@ -126,10 +129,10 @@ function(load_module_includes dest)
   set_property(GLOBAL PROPERTY ${PROJECT_NAME}_INCLUDE_DIRS "${ALL_INCLUDES}")
   set_property(GLOBAL PROPERTY INCLUDE_DIRECTORIES "${ALL_INCLUDES}")
 
-  set(${dest} "${ALL_INCLUDES}" PARENT_SCOPE)
+  set(${DEST} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
-function(setup_submodule)
+function(setup_submodule MODULE_NAME)
   project(${MODULE_NAME} C CXX)
 
   # source files
@@ -157,6 +160,10 @@ function(setup_submodule)
     add_definitions("-D_ARGUS_DEBUG_MODE")
   endif()
 
+  if(WIN32)
+    add_definitions("-DGLFW_DLL")
+  endif()
+
   if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
@@ -177,9 +184,9 @@ function(setup_submodule)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-  get_property(GLOBAL_LIBS_SHARED GLOBAL PROPERTY GLOBAL_LIBS_SHARED)
-  list(APPEND GLOBAL_LIBS_SHARED "${LOCAL_LIBS_SHARED}")
-  set_property(GLOBAL PROPERTY GLOBAL_LIBS_SHARED "${GLOBAL_LIBS_SHARED}")
+  get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
+  list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
+  set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
 
   string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
@@ -224,37 +231,41 @@ foreach(module ${MODULE_IDS})
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
-add_library(${PROJECT_NAME}_static STATIC ${MODULE_LIBS})
 
 # set the linker language (since we're not directly including any sources)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(${PROJECT_NAME}_static PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
-set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11)
 # enable PIC
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(${PROJECT_NAME}_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-# set compile flag for MSVC
-if(MSVC)
-  set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_DEFINITIONS BUILDER_STATIC_DEFINE)
-endif()
+# export all symbols (required on Windows)
+set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # add libraries for linking
-get_property(GLOBAL_LIBS_SHARED GLOBAL PROPERTY GLOBAL_LIBS_SHARED)
-get_property(GLOBAL_LIBS_STATIC GLOBAL PROPERTY GLOBAL_LIBS_STATIC)
-list(REMOVE_DUPLICATES GLOBAL_LIBS_SHARED)
-list(REMOVE_DUPLICATES GLOBAL_LIBS_STATIC)
-target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS_SHARED})
-target_link_libraries(${PROJECT_NAME}_static ${GLOBAL_LIBS_STATIC})
+get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
+list(REMOVE_DUPLICATES GLOBAL_LIBS)
+target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS})
 
 # add global include list
 get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
 list(REMOVE_DUPLICATES GLOBAL_INCLUDES)
 target_include_directories(${PROJECT_NAME} PUBLIC "${GLOBAL_INCLUDES}")
-target_include_directories(${PROJECT_NAME}_static PUBLIC "${GLOBAL_INCLUDES}")
 
 # make the copy headers target a dependency to force it to run
 add_dependencies(${PROJECT_NAME} ${HDR_TARGET})
-add_dependencies(${PROJECT_NAME}_static ${HDR_TARGET})
+
+# copy dependency output
+function(copy_dep_output DEP_TARGET)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
+  COMMAND "${CMAKE_COMMAND}" -E copy
+    "$<TARGET_FILE:${DEP_TARGET}>"
+    "${CMAKE_DIST_DIR}/lib/$<IF:${MSVC},$<CONFIGURATION>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
+  COMMAND "${CMAKE_COMMAND}" -E copy
+    "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
+    "${CMAKE_DIST_DIR}/lib/$<IF:${MSVC},$<CONFIGURATION>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
+  COMMENT "Copying dependency '${DEP_TARGET}' to output directory")
+endfunction()
+
+copy_dep_output("${ZLIB_LIBRARY}")
+copy_dep_output("${PNG_LIBRARY}")
+copy_dep_output("${GLFW_LIBRARY_BASE}")
