@@ -100,7 +100,7 @@ namespace argus {
             glDebugMessageCallback(_gl_debug_callback, nullptr);
         }
 
-        //glDepthFunc(GL_ALWAYS);
+        glDepthFunc(GL_ALWAYS);
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

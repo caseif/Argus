@@ -105,7 +105,7 @@ namespace argus {
 
         using namespace glext;
 
-        #ifdef _MSC_VER
+        #ifdef _WIN32
         load_gl_extensions_for_current_context();
         #endif
         
