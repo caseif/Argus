@@ -12,6 +12,12 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # use <package>_ROOT env var as hint
 endif()
 
+project(argus
+        VERSION 0.1.0)
+
+option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
+option(USE_GLES "Use ES profile for OpenGL" OFF)
+
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
@@ -80,12 +86,6 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/libs/libpng")
 ###########################
 # /Dependency configuration
 ###########################
-
-project(argus
-        VERSION 0.1.0)
-
-option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
-option(USE_GLES "Use ES profile for OpenGL" OFF)
 
 if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested")
@@ -259,13 +259,17 @@ add_dependencies(${PROJECT_NAME} ${HDR_TARGET})
 # copy dependency output
 function(copy_dep_output DEP_TARGET)
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
-  COMMAND "${CMAKE_COMMAND}" -E copy
-    "$<TARGET_FILE:${DEP_TARGET}>"
-    "${CMAKE_DIST_DIR}/lib/$<IF:${MSVC},$<CONFIGURATION>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
-  COMMAND "${CMAKE_COMMAND}" -E copy
-    "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-    "${CMAKE_DIST_DIR}/lib/$<IF:${MSVC},$<CONFIGURATION>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
-  COMMENT "Copying dependency '${DEP_TARGET}' to output directory")
+    COMMAND "${CMAKE_COMMAND}" -E copy
+      "$<TARGET_FILE:${DEP_TARGET}>"
+      "${CMAKE_DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
+    COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
+  if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy
+        "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
+        "${CMAKE_DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
+      COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
+  endif()
 endfunction()
 
 copy_dep_output("${ZLIB_LIBRARY}")
