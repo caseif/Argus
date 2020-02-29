@@ -12,12 +12,16 @@
 #include <cstdio>
 #include <cstdlib>
 
+#if _ARGUS_DEBUG_MODE
 #ifdef _MSC_VER
 #include <intrin.h>
 #define DEBUG_BREAK() __debugbreak()
 #else
 #include <csignal>
 #define DEBUG_BREAK() raise(SIGTRAP)
+#endif
+#else
+#define DEBUG_BREAK()
 #endif
 
 #define STRINGIZE_DETAIL(x) #x

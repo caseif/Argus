@@ -448,7 +448,7 @@ namespace argus {
         _unload_external_modules();
     }
 
-    static void _game_loop(void) {
+    static void *_game_loop(void *const _) {
         static Timestamp last_update = 0;
 
         while (1) {
@@ -479,10 +479,10 @@ namespace argus {
             }
         }
 
-        return;
+        return nullptr;
     }
 
-    static void *_render_loop(void *const _) {
+    static void _render_loop() {
         static Timestamp last_frame = 0;
 
         while (1) {
@@ -504,8 +504,6 @@ namespace argus {
                 _handle_idle(render_start, g_engine_config.target_framerate);
             }
         }
-
-        return nullptr;
     }
 
     template<typename T>
@@ -569,10 +567,10 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_render_thread = &Thread::create(_render_loop, nullptr);
+        g_render_thread = &Thread::create(_game_loop, nullptr);
 
-        // pass control over to the game loop
-        _game_loop();
+        // pass control over to the render loop
+        _render_loop();
 
         exit(0);
     }

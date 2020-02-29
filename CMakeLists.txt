@@ -95,6 +95,11 @@ if (${USE_GLES})
   message("Using GL ES profile as requested")
 endif()
 
+# disable the annoying (and wrong) class vs. struct warning
+if(MSVC)
+  add_compile_options("/wd4099")
+endif()
+
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes DEST)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")

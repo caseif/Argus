@@ -25,6 +25,8 @@
 #if defined(__LP64__) || defined(_WIN64)
 #define BLOCKS_PER_CHUNK 64
 #define BlockBitField uint64_t
+// 6 bits set, enough to represent any index in a 64-bit bitfield
+#define BF_INDEX_MASK 0x3F
 #ifdef _MSC_VER
 #define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long*>(i), m)
 #pragma intrinsic(_BitScanReverse64)
@@ -34,12 +36,22 @@
 #else
 #define BLOCKS_PER_CHUNK 32
 #define BlockBitField uint32_t
+// 5 bits set, enough to represent any index in a 32-bit bitfield
+#define BF_INDEX_MASK 0x1F
 #ifdef _MSC_VER
 #define __bsr(i, m) _BitScanReverse(reinterpret_cast<unsigned long*>(i), m)
 #pragma intrinsic(_BitScanReverse)
 #else
 #define __clz(x) __builtin_clz(x)
 #endif
+#endif
+
+#if _ARGUS_DEBUG_MODE
+#define CANARY_LEN 4
+#define CANARY_MAGIC 0xDEADD00D
+typedef uint32_t CanaryValue;
+#else
+#define CANARY_LEN 0
 #endif
 
 namespace argus {
@@ -49,6 +61,11 @@ namespace argus {
     //   chunk - a section of contiguous memory used to store multiple pool objects.
     //           a pool may contain many non-contiguous chunks.
 
+    // disable non-standard extension warning for flexible array member
+    #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4200)
+    #endif
     struct ChunkMetadata {
         const uintptr_t unaligned_addr; // the address returned by malloc when creating the chunk
         size_t occupied_blocks; // the number of occupied blocks in the chunk, used for bookkeeping
@@ -56,6 +73,9 @@ namespace argus {
         ChunkMetadata *next_chunk;
         unsigned char data[];
     };
+    #ifdef _MSC_VER
+    #pragma warning(pop)
+    #endif
 
     struct pimpl_AllocPool {
         const size_t nominal_block_size;
@@ -73,12 +93,13 @@ namespace argus {
             return base_val;
         }
 
-        size_t alignment_bytes = exp2(alignment_exp);
+        size_t alignment_bytes = int(exp2(alignment_exp));
         // We create a bitmask from the alignment "chunk" size by subtracting one (e.g. 0x0010 -> 0x000F)
-        // and then inverting it (0x000F -> 0xFFF0). Then, we AND it with the real address to get the next
-        // aligned address in the direction of zero, then add the alignment "chunk" size to get the next
-        // aligned address in the direction of max size_t.
-        return (base_val & ~(alignment_bytes - 1u)) + alignment_bytes;
+        // and then inverting it (0x000F -> 0xFFF0). Then, we AND it with the base address minus 1 to get
+        // the next aligned address in the direction of zero, then add the alignment "chunk" size to get
+        // the next aligned address in the direction of max size_t.
+        // Subtracting one from the base address accounts for the case where the address is already aligned.
+        return ((base_val - 1) & ~(alignment_bytes - 1u)) + alignment_bytes;
     }
 
     // helper function for allocating memory for an AllocPool
@@ -86,13 +107,17 @@ namespace argus {
         // because this function does a lot of pointer math, it mostly works with uintptr_t
         // to reduce the likelihood of mistakes related to type conversion
 
-        size_t alignment_bytes = exp2(pool->alignment_exp);
+        size_t alignment_bytes = int(exp2(pool->alignment_exp));
 
         // the actual allocated size is the chunk size in bytes,
         // plus the maximum possible alignment padding (the alignment multiple minus 1),
-        // plus the size of the chunk metadata
+        // plus the size of the chunk metadata,
+        // plus the canary length if we're in debug mode
         uintptr_t malloc_addr = reinterpret_cast<uintptr_t>(
-                malloc(pool->real_block_size * pool->blocks_per_chunk + alignment_bytes - 1 + sizeof(ChunkMetadata))
+                malloc(pool->real_block_size * pool->blocks_per_chunk
+                + alignment_bytes - 1
+                + sizeof(ChunkMetadata)
+                + CANARY_LEN)
         );
         if (malloc_addr == reinterpret_cast<uintptr_t>(nullptr)) {
             throw std::runtime_error("Failed to allocate chunk (is block size or alignment too large?)");
@@ -114,6 +139,13 @@ namespace argus {
         new_chunk->occupied_blocks = 0;
 		new_chunk->occupied_block_map = 0;
 		new_chunk->next_chunk = nullptr;
+
+        #if _ARGUS_DEBUG_MODE
+        CanaryValue *canary = reinterpret_cast<CanaryValue*>(
+            new_chunk->data + pool->real_block_size * pool->blocks_per_chunk
+        );
+        *canary = CANARY_MAGIC;
+        #endif
 
         return new_chunk;
     }
@@ -144,8 +176,8 @@ namespace argus {
         const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != NULL) {
             uintptr_t addr = chunk->unaligned_addr;
-            chunk = chunk->next_chunk;
             ::free(reinterpret_cast<void*>(addr));
+            chunk = chunk->next_chunk;
         }
     }
 
@@ -173,22 +205,33 @@ namespace argus {
             pimpl->first_chunk = selected_chunk;
         }
 
+        // this is ultimately set to the sequential memory index of the first free block
+        // note that this index is the reverse of the position of the corresponding bit in the bitfield
+        // e.g. the first block has index 0 and is flagged by the MSB at position 63 (on x64)
         size_t first_free_block_index = 0;
         #ifdef _MSC_VER
+        // returns the bit position of the first set bit (clear in this case, since we invert the bitfield)
+        // if the MSB is clear in the original bitfield, this returns 63 on x64
+        // if all except the LSB are clear in the original bitfield, this returns 0 on x64
         __bsr(&first_free_block_index, ~selected_chunk->occupied_block_map);
+        // we actually need the one's-complement to convert the bit position to a sequential index
+        // in order to match behavior on UNIX
+        // we also need to mask it because the higher bits are irrelevant when addressing the bitfield
+        first_free_block_index = (~first_free_block_index & BF_INDEX_MASK);
         #else
+        // returns the number of leading clear bits (leading set bits in this case, since we invert the bitfield)
+        // if the MSB is clear in the original bitfield, this returns 0
+        // if all except the LSB are clear in the original bitfield, this returns 63 on x64
         first_free_block_index = __clz(~selected_chunk->occupied_block_map);
         #endif
 
-        // MSB of the block map actually represents the first block sequentially in memory,
-        // so for instance we translate 63 (MSB position) to (64 - 63 - 1) == 0 (first block in memory)
-        first_free_block_index = BLOCKS_PER_CHUNK - first_free_block_index - 1;
+        // set the relevant bit in the block map
+        // we convert the index to a bit position by taking the one's-complement and masking
+        // it to exclude bits not relevant when addressing the bitfield
+        selected_chunk->occupied_block_map |= (BlockBitField(1) << (~first_free_block_index & BF_INDEX_MASK));
 
         uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
                 + (first_free_block_index * pimpl->real_block_size);
-        
-        // set the relevant bit in the block map
-        selected_chunk->occupied_block_map |= (1 << first_free_block_index);
 
         selected_chunk->occupied_blocks += 1;
 
@@ -211,7 +254,9 @@ namespace argus {
 
                 size_t block_index = offset_in_chunk / pimpl->real_block_size;
                 // clear appropriate bit in block map
-                chunk->occupied_block_map &= ~(1 << (BLOCKS_PER_CHUNK - block_index - 1));
+                // we convert the index to a bit position by taking the one's-complement and masking
+                // it to exclude bits not relevant when addressing the bitfield
+                chunk->occupied_block_map &= ~(1 << (~block_index & BF_INDEX_MASK));
 
                 // if the chunk is empty, delete it
                 if (--chunk->occupied_blocks == 0) {
@@ -231,6 +276,17 @@ namespace argus {
                     }
 
                     if (should_delete) {
+                        #if _ARGUS_DEBUG_MODE
+                        CanaryValue *canary = reinterpret_cast<CanaryValue*>(
+                            chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk
+                        );
+                        if (*canary != CANARY_MAGIC) {
+                            _ARGUS_FATAL("Detected heap overrun in chunk @ %p (aligned: %p)",
+                                reinterpret_cast<void*>(chunk->unaligned_addr),
+                                chunk);
+                        }
+                        #endif
+
                         ::free(reinterpret_cast<void*>(chunk->unaligned_addr));
                     }
                 }

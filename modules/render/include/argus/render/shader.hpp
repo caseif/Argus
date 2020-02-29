@@ -64,7 +64,7 @@ namespace argus {
              *
              * \return The constructed vertex Shader.
              */
-            static Shader create_vertex_shader(const std::string src, const std::string entry_point,
+            static Shader create_vertex_shader(const std::string &src, const std::string &entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
 
             /**
@@ -77,7 +77,7 @@ namespace argus {
              *
              * \return The constructed fragment Shader.
              */
-            static Shader create_fragment_shader(const std::string src, const std::string entry_point,
+            static Shader create_fragment_shader(const std::string &src, const std::string &entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
     };
 }

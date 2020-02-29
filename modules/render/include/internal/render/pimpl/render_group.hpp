@@ -22,8 +22,8 @@ namespace argus {
         std::vector<const Shader*> final_shaders;
         final_shaders.reserve(a.size() + b.size());
 
-        std::copy(a.begin(), a.end(), std::back_inserter(final_shaders));
-        std::copy(b.begin(), b.end(), std::back_inserter(final_shaders));
+        final_shaders.insert(final_shaders.cend(), a.begin(), a.end());
+        final_shaders.insert(final_shaders.cend(), b.begin(), b.end());
         return final_shaders;
     }
 

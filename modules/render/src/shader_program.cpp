@@ -146,7 +146,6 @@ namespace argus {
             R"(
             precision mediump float;
             precision mediump int;
-            precision mediump sampler2DArray;
 
             uniform sampler2DArray )" _UNIFORM_TEXTURE R"(;
 

@@ -48,12 +48,12 @@ namespace argus {
             )) {
     }
 
-    Shader Shader::create_vertex_shader(const std::string src, const std::string entry_point,
+    Shader Shader::create_vertex_shader(const std::string &src, const std::string &entry_point,
             const int priority, const std::initializer_list<std::string> &uniform_ids) {
         return Shader(SHADER_VERTEX, src, entry_point, priority, uniform_ids);
     }
 
-    Shader Shader::create_fragment_shader(const std::string src, const std::string entry_point,
+    Shader Shader::create_fragment_shader(const std::string &src, const std::string &entry_point,
             const int priority, const std::initializer_list<std::string> &uniform_ids) {
         return Shader(SHADER_FRAGMENT, src, entry_point, priority, uniform_ids);
     }

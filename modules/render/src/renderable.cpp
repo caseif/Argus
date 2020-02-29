@@ -101,7 +101,7 @@ namespace argus {
         pimpl->vertex_buffer[pimpl->buffer_head + 5] = vertex.color.a;
         pimpl->vertex_buffer[pimpl->buffer_head + 6] = vertex.tex_coord.x * pimpl->tex_max_uv.x;
         pimpl->vertex_buffer[pimpl->buffer_head + 7] = vertex.tex_coord.y * pimpl->tex_max_uv.y;
-        pimpl->vertex_buffer[pimpl->buffer_head + 8] = pimpl->tex_index;
+        pimpl->vertex_buffer[pimpl->buffer_head + 8] = float(pimpl->tex_index);
 
         pimpl->buffer_head += _VERTEX_LEN;
     }

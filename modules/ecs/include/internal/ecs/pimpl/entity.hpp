@@ -13,9 +13,17 @@
 
 namespace argus {
     
+    // disable non-standard extension warning for flexible array member
+    #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4200)
+    #endif
     struct pimpl_Entity {
         const EntityId id;
         void *component_pointers[0];
     };
+    #ifdef _MSC_VER
+    #pragma warning(pop)
+    #endif
 
 }
