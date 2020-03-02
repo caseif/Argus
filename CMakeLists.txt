@@ -162,7 +162,7 @@ function(setup_submodule MODULE_NAME)
   endif()
 
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions("-D_ARGUS_DEBUG_MODE")
+    add_definitions("-D_ARGUS_DEBUG")
   endif()
 
   if(WIN32)

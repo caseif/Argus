@@ -46,7 +46,7 @@
 #endif
 #endif
 
-#if _ARGUS_DEBUG_MODE
+#ifdef _ARGUS_DEBUG
 #define CANARY_LEN 4
 #define CANARY_MAGIC 0xDEADD00D
 typedef uint32_t CanaryValue;
@@ -140,7 +140,7 @@ namespace argus {
 		new_chunk->occupied_block_map = 0;
 		new_chunk->next_chunk = nullptr;
 
-        #if _ARGUS_DEBUG_MODE
+        #ifdef _ARGUS_DEBUG
         CanaryValue *canary = reinterpret_cast<CanaryValue*>(
             new_chunk->data + pool->real_block_size * pool->blocks_per_chunk
         );
@@ -276,7 +276,7 @@ namespace argus {
                     }
 
                     if (should_delete) {
-                        #if _ARGUS_DEBUG_MODE
+                        #ifdef _ARGUS_DEBUG
                         CanaryValue *canary = reinterpret_cast<CanaryValue*>(
                             chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk
                         );

@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if _ARGUS_DEBUG_MODE
+#ifdef _ARGUS_DEBUG
 #ifdef _MSC_VER
 #include <intrin.h>
 #define DEBUG_BREAK() __debugbreak()
@@ -27,7 +27,7 @@
 #define STRINGIZE_DETAIL(x) #x
 #define STRINGIZE(x) STRINGIZE_DETAIL(x)
 
-#ifdef _ARGUS_DEBUG_MODE
+#ifdef _ARGUS_DEBUG
 #define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " __FILE__ ":" STRINGIZE(__LINE__) ": " fmt, level, system, ##__VA_ARGS__)
 #else
 #define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " fmt, level, system, ##__VA_ARGS__)
@@ -35,7 +35,7 @@
 
 #define _ARGUS_PRINT(stream, level, fmt, ...) _GENERIC_PRINT(stream, level, "Argus", fmt, ##__VA_ARGS__)
 
-#ifdef _ARGUS_DEBUG_MODE
+#ifdef _ARGUS_DEBUG
 #define _ARGUS_DEBUG(fmt, ...) _ARGUS_PRINT(stdout, "DEBUG", fmt, ##__VA_ARGS__)
 #else
 #define _ARGUS_DEBUG(fmt, ...)
