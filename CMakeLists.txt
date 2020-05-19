@@ -50,6 +50,10 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 find_package(OpenGL REQUIRED)
 
+if(WIN32)
+  include_directories("${CMAKE_SOURCE_DIR}/external/include")
+endif()
+
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 # configure libpng build steps
