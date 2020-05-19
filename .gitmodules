@@ -1,9 +1,9 @@
 [submodule "libs/libpng"]
 	path = libs/libpng
-	url = ssh://git@github.com/glennrp/libpng.git
+	url = git://github.com/glennrp/libpng.git
 [submodule "libs/zlib"]
 	path = libs/zlib
-	url = ssh://git@github.com/madler/zlib.git
+	url = git://github.com/madler/zlib.git
 [submodule "libs/glfw"]
 	path = libs/glfw
-	url = ssh://git@github.com/glfw/glfw.git
+	url = git://github.com/glfw/glfw.git
