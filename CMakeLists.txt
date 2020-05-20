@@ -83,6 +83,18 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/libs/glfw")
 add_subdirectory("${CMAKE_SOURCE_DIR}/libs/zlib")
 add_subdirectory("${CMAKE_SOURCE_DIR}/libs/libpng")
 
+set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)
+if(TARGET example64)
+  set_target_properties(example64 PROPERTIES EXCLUDE_FROM_ALL TRUE)
+endif()
+set_target_properties(minigzip PROPERTIES EXCLUDE_FROM_ALL TRUE)
+if(TARGET mingzip64)
+  set_target_properties(minigzip64 PROPERTIES EXCLUDE_FROM_ALL TRUE)
+endif()
+set_target_properties(pngfix PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 ###########################
 # /Dependency configuration
 ###########################
@@ -206,15 +218,15 @@ endforeach()
 set(SRC_DIR src)
 set(INC_DIR include)
 
-set(CMAKE_DIST_DIR ${CMAKE_BINARY_DIR}/dist)
+set(DIST_DIR ${CMAKE_BINARY_DIR}/dist)
 
-set(CMAKE_LIB_OUT_DIR ${CMAKE_DIST_DIR}/lib)
+set(LIB_OUT_DIR ${CMAKE_BINARY_DIR}/lib)
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_LIB_OUT_DIR})
+set(LIBRARY_OUTPUT_PATH ${LIB_OUT_DIR})
 
 # configure the copy headers task
 set(HDR_TARGET "${PROJECT_NAME}_headers")
-set(HDR_OUT_DIR "${CMAKE_DIST_DIR}/include/argus/")
+set(HDR_OUT_DIR "${DIST_DIR}/include/argus/")
 add_custom_target(${HDR_TARGET})
 add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
@@ -266,17 +278,18 @@ function(copy_dep_output DEP_TARGET)
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
     COMMAND "${CMAKE_COMMAND}" -E copy
       "$<TARGET_FILE:${DEP_TARGET}>"
-      "${CMAKE_DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
+      "${DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
     COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
   if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E copy
         "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-        "${CMAKE_DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
+        "${DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
       COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
   endif()
 endfunction()
 
+copy_dep_output("${CMAKE_PROJECT_NAME}")
 copy_dep_output("${ZLIB_LIBRARY}")
 copy_dep_output("${PNG_LIBRARY}")
 copy_dep_output("${GLFW_LIBRARY_BASE}")
