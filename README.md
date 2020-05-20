@@ -1,4 +1,4 @@
-# Argus Game Engine ![Argus Build](https://github.com/caseif/Argus/workflows/Argus%20Build/badge.svg)
+# Argus Game Engine ![Argus](https://github.com/caseif/Argus/workflows/Argus/badge.svg)
 
 Argus is a 2D game engine written in C++11 and built on OpenGL/OpenGL ES and GLFW.
 

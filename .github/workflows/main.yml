@@ -1,4 +1,4 @@
-name: Argus Build
+name: Argus
 on: [push, pull_request]
 
 jobs:
