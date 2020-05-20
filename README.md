@@ -4,8 +4,8 @@ Argus is a 2D game engine written in C++11 and built on OpenGL/OpenGL ES and GLF
 
 ### Features
 
-Argus features a modular architecture which allows features to be enabled as needed. The engine also provides automatic
-support for loading additional modules (distributed as shared libraries) at runtime automatically and dynamically.
+Argus features a modular architecture which allows features to be enabled as needed. The engine also provides support
+for loading additional modules (distributed as shared libraries) at runtime automatically and dynamically.
 
 | Layer | Name | Description |
 | --- | --- | :-- |
