@@ -35,8 +35,8 @@ header_pf=${header//\@/\\@}
 count=0
 
 # discover all source/header files
-find "./modules" -type f \( -iname "*.c" -or -iname "*.h" -or -iname "*.cpp" -or -iname "*.hpp" \) -print0 | \
-        while IFS= read -r -d $'\0' file; do
+
+while read -r file; do
     #escape asterisks in the header
     header_esc=$(sed 's/[\*]/\\&/g' <<< "$header")
 
@@ -70,9 +70,11 @@ find "./modules" -type f \( -iname "*.c" -or -iname "*.h" -or -iname "*.cpp" -or
     output="${output:0:-1}"
     # finally, write it to disk!
     printf "$output" > $file
-done
+done <<< $(find "./modules" -type f \( -iname "*.c" -or -iname "*.h" -or -iname "*.cpp" -or -iname "*.hpp" \))
 
 # if we didn't update anything, say so (to avoid zero-output)
 if [ $count -eq 0 ]; then
     echo "All file headers up-to-date"
+else
+    echo "Updated $count file(s)"
 fi
