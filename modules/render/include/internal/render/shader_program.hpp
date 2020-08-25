@@ -9,10 +9,7 @@
 
 #pragma once
 
-// module render
-#include "argus/render/render_group.hpp"
-#include "argus/render/render_layer.hpp"
-#include "argus/render/shader.hpp"
+#include "internal/render/types.hpp"
 
 #include <initializer_list>
 #include <set>
@@ -29,8 +26,6 @@ namespace argus {
     //TODO: temporary until we implement a proper uniform API
     typedef unsigned int uniform_location_t;
 
-    struct pimpl_ShaderProgram;
-
     /**
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
@@ -40,7 +35,30 @@ namespace argus {
         friend class RenderLayer;
 
         private:
-            pimpl_ShaderProgram *pimpl;
+            /**
+             * \brief The set of Shaders encompassed by this program.
+             */
+            std::set<const Shader*, bool(*)(const Shader*, const Shader*)> shaders;
+            /**
+             * \brief A complete list of uniforms defined by this
+             *        program's Shaders.
+             */
+            std::unordered_map<std::string, handle_t> uniforms;
+
+            /**
+             * \brief Whether this program has been initially compiled and linked.
+             */
+            bool initialized;
+            /**
+             * \brief Whether this program must be rebuilt (due to the Shader
+             *        list updating).
+             */
+            bool needs_rebuild;
+
+            /**
+             * \brief A handle to the linked program in video memory.
+             */
+            handle_t program_handle;
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given

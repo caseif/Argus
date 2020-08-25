@@ -13,11 +13,10 @@
 
 // module render
 #include "argus/render/shader.hpp"
-#include "argus/render/shader_program.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/glext.hpp"
+#include "internal/render/shader_program.hpp"
 #include "internal/render/pimpl/shader.hpp"
-#include "internal/render/pimpl/shader_program.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -36,8 +35,6 @@ namespace argus {
 
     using namespace glext;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_ShaderProgram));
-
     // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {
         2.0,  0.0,  0.0,  0.0,
@@ -46,23 +43,22 @@ namespace argus {
        -1.0,  1.0,  1.0,  1.0
     };
 
-    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders):
-            pimpl(&g_pimpl_pool.construct<pimpl_ShaderProgram>()) {
-        pimpl->shaders = decltype(pimpl->shaders)(shaders.begin(), shaders.end(), [](auto a, auto b){
-            if (a->pimpl->priority != b->pimpl->priority) {
-                return a->pimpl->priority > b->pimpl->priority;
+    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders) {
+        this->shaders = decltype(this->shaders)(shaders.begin(), shaders.end(), [](const Shader *a, const Shader *b) {
+            if (a->pimpl->order != b->pimpl->order) {
+                return a->pimpl->order > b->pimpl->order;
             } else {
                 return a->pimpl->entry_point.compare(b->pimpl->entry_point) < 0;
             }
         });
-        pimpl->initialized = false;
-        pimpl->needs_rebuild = true;
+        initialized = false;
+        needs_rebuild = true;
     }
 
     void ShaderProgram::update_shaders(const std::vector<const Shader*> &shaders) {
-        pimpl->shaders.clear();
-        std::copy(shaders.cbegin(), shaders.cend(), std::inserter(pimpl->shaders, pimpl->shaders.end()));
-        pimpl->needs_rebuild = true;
+        this->shaders.clear();
+        std::copy(shaders.cbegin(), shaders.cend(), std::inserter(this->shaders, this->shaders.end()));
+        needs_rebuild = true;
     }
 
     static GLint _compile_shader(const GLenum type, const std::string &src) {
@@ -92,18 +88,18 @@ namespace argus {
     }
 
     void ShaderProgram::link(void) {
-        GLuint gl_program = static_cast<GLuint>(pimpl->program_handle);
+        GLuint gl_program = static_cast<GLuint>(program_handle);
 
-        if (pimpl->initialized) {
+        if (initialized) {
             glDeleteProgram(gl_program);
         }
 
         // create the program, to start
         gl_program = glCreateProgram();
-        pimpl->program_handle = static_cast<handle_t>(gl_program);
+        program_handle = static_cast<handle_t>(gl_program);
 
-        if (!pimpl->initialized) {
-            pimpl->initialized = true;
+        if (!initialized) {
+            initialized = true;
         }
 
         // We use a bit of a hack to enable multiple shaders while maintaining GLES support
@@ -157,7 +153,7 @@ namespace argus {
             // begin sub-shader concatenation)";
 
         // now we concatenate the source for each sub-shader
-        for (const Shader *const shader : pimpl->shaders) {
+        for (const Shader *const shader : shaders) {
             switch (shader->pimpl->type) {
                 case SHADER_VERTEX:
                     bootstrap_vert_ss << shader->pimpl->src << "\n";
@@ -188,7 +184,7 @@ namespace argus {
                 // begin sub-shader invocation)";
 
         // then we insert the calls to each sub-shaders entry point into the main() function
-        for (const Shader *const shader : pimpl->shaders) {
+        for (const Shader *const shader : shaders) {
             switch (shader->pimpl->type) {
                 case SHADER_VERTEX:
                     bootstrap_vert_ss << "\n    " << shader->pimpl->entry_point << "();";
@@ -226,65 +222,65 @@ namespace argus {
         // compile each bootstrap shader
 
         GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
-        glAttachShader(pimpl->program_handle, bootstrap_vert_handle);
+        glAttachShader(program_handle, bootstrap_vert_handle);
 
         GLint bootstrap_frag_handle = _compile_shader(GL_FRAGMENT_SHADER, bootstrap_frag_ss.str());
-        glAttachShader(pimpl->program_handle, bootstrap_frag_handle);
+        glAttachShader(program_handle, bootstrap_frag_handle);
 
-        glBindAttribLocation(pimpl->program_handle, _ATTRIB_LOC_POSITION, _ATTRIB_POSITION);
-        glBindAttribLocation(pimpl->program_handle, _ATTRIB_LOC_COLOR, _ATTRIB_COLOR);
-        glBindAttribLocation(pimpl->program_handle, _ATTRIB_LOC_TEXCOORD, _ATTRIB_TEXCOORD);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_POSITION, _ATTRIB_POSITION);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_COLOR, _ATTRIB_COLOR);
+        glBindAttribLocation(program_handle, _ATTRIB_LOC_TEXCOORD, _ATTRIB_TEXCOORD);
 
-        glBindFragDataLocation(pimpl->program_handle, 0, _OUT_FRAGDATA);
+        glBindFragDataLocation(program_handle, 0, _OUT_FRAGDATA);
 
-        glLinkProgram(pimpl->program_handle);
+        glLinkProgram(program_handle);
 
         int res;
-        glGetProgramiv(pimpl->program_handle, GL_LINK_STATUS, &res);
+        glGetProgramiv(program_handle, GL_LINK_STATUS, &res);
         if (res == GL_FALSE) {
             int log_len;
-            glGetShaderiv(pimpl->program_handle, GL_INFO_LOG_LENGTH, &log_len);
+            glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
-            glGetShaderInfoLog(pimpl->program_handle, _LOG_MAX_LEN, nullptr, log);
+            glGetShaderInfoLog(program_handle, _LOG_MAX_LEN, nullptr, log);
             _ARGUS_FATAL("Failed to link program:\n%s\n", log);
             delete[] log;
         }
 
         // delete bootstrap shaders
-        glDetachShader(pimpl->program_handle, bootstrap_vert_handle);
+        glDetachShader(program_handle, bootstrap_vert_handle);
         glDeleteShader(bootstrap_vert_handle);
-        glDetachShader(pimpl->program_handle, bootstrap_frag_handle);
+        glDetachShader(program_handle, bootstrap_frag_handle);
         glDeleteShader(bootstrap_frag_handle);
 
         std::vector<std::string> bootstrap_uniforms {_UNIFORM_PROJECTION, _UNIFORM_TEXTURE};
         for (std::string uniform_id : bootstrap_uniforms) {
-            GLint uniform_loc = glGetUniformLocation(pimpl->program_handle, uniform_id.c_str());
-            pimpl->uniforms.insert({uniform_id, uniform_loc});
+            GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
+            uniforms.insert({uniform_id, uniform_loc});
         }
 
-        for (const Shader *shader : pimpl->shaders) {
+        for (const Shader *shader : shaders) {
             for (const std::string &uniform_id : shader->pimpl->uniform_ids) {
-                GLint uniform_loc = glGetUniformLocation(pimpl->program_handle, uniform_id.c_str());
-                pimpl->uniforms.insert({uniform_id, uniform_loc});
+                GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
+                uniforms.insert({uniform_id, uniform_loc});
             }
         }
 
-        glUseProgram(pimpl->program_handle);
+        glUseProgram(program_handle);
         glUniformMatrix4fv(get_uniform_location(_UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
         glUseProgram(0);
 
-        pimpl->needs_rebuild = false;
+        needs_rebuild = false;
     }
 
     void ShaderProgram::delete_program(void) {
-        _ARGUS_ASSERT(pimpl->initialized, "Cannot delete uninitialized program.");
-        glDeleteProgram(pimpl->program_handle);
-        pimpl->initialized = false;
+        _ARGUS_ASSERT(initialized, "Cannot delete uninitialized program.");
+        glDeleteProgram(program_handle);
+        initialized = false;
     }
 
     uniform_location_t ShaderProgram::get_uniform_location(const std::string &uniform_id) const {
-        auto it = pimpl->uniforms.find(uniform_id);
-        if (it == pimpl->uniforms.end()) {
+        auto it = uniforms.find(uniform_id);
+        if (it == uniforms.end()) {
             _ARGUS_FATAL("Attempted to get non-existent shader uniform %s\n", uniform_id.c_str());
         }
         return it->second;

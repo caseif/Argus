@@ -55,6 +55,11 @@ namespace argus {
             pimpl(rhs.pimpl) {
     }
 
+    void Transform::operator=(Transform &rhs) {
+        this->pimpl->~pimpl_Transform();
+        new(this->pimpl) pimpl_Transform(rhs.get_translation(), rhs.get_rotation(), rhs.get_scale());
+    }
+
     Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
             pimpl(&g_pimpl_pool.construct<pimpl_Transform>(translation, rotation, scale)) {
     }

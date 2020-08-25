@@ -10,24 +10,26 @@
 #pragma once
 
 // module render
-#include "argus/render/render_group.hpp"
+#include "argus/render/render_object.hpp"
 #include "internal/render/types.hpp"
 
-#include <map>
 #include <vector>
 
 namespace argus {
-    struct pimpl_RenderGroup {
+    struct pimpl_RenderObject {
         RenderLayer &parent_layer;
         RenderGroup *const parent_group;
+        const Material &material;
+        std::vector<RenderPrim> primitives;
         Transform transform;
-        std::vector<RenderGroup*> child_groups;
-        std::vector<RenderObject*> child_objects;
 
-        pimpl_RenderGroup(RenderLayer &parent, RenderGroup *const parent_group, Transform &transform):
-                parent_layer(parent_layer),
-                parent_group(parent_group),
-                transform(transform) {
+        pimpl_RenderObject(RenderLayer &parent_layer, RenderGroup *const parent_group, const Material &material,
+                const std::vector<RenderPrim> &primitives, Transform &transform):
+            parent_layer(parent_layer),
+            parent_group(parent_group),
+            material(material),
+            primitives(primitives),
+            transform(transform) {
         }
     };
 }

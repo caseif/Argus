@@ -7,8 +7,14 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
+// module render
+#include "argus/render/shader.hpp"
+
 #include <initializer_list>
 #include <string>
+#include <vector>
 
 namespace argus {
     struct pimpl_Shader {
@@ -25,23 +31,22 @@ namespace argus {
          */
         const std::string entry_point;
         /**
-         * \brief The priority of this shader.
+         * \brief The order of this shader.
          *
-         * Higher priority shaders will be processed before lower priority
-         * ones within their respective stage.
+         * Shaders with a lower order value will be processed first.
          */
-        const int priority;
+        const int order;
         /**
          * \brief The uniforms defined by this shader.
          */
         const std::vector<std::string> uniform_ids;
 
         pimpl_Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
-            const int priority, const std::initializer_list<std::string> &uniform_ids):
+            const int order, const std::initializer_list<std::string> &uniform_ids):
                 type(type),
                 src(src),
                 entry_point(entry_point),
-                priority(priority),
+                order(order),
                 uniform_ids(uniform_ids) {
         }
     };

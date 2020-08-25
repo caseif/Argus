@@ -9,17 +9,14 @@
 
 #pragma once
 
-// module render
-#include "argus/render/shader_program.hpp"
-
 #include <initializer_list>
 #include <string>
 
 namespace argus {
     // forward declarations
-    class ShaderProgram;
-
     struct pimpl_Shader;
+
+    class ShaderProgram;
 
     /**
      * \brief Represents a shader for use with a RenderGroup or RenderLayer.
@@ -30,10 +27,8 @@ namespace argus {
      * respective entry point.
      */
     class Shader {
-        friend class ShaderProgram;
-
-        private:
-            pimpl_Shader *pimpl;
+        public:
+            pimpl_Shader *const pimpl;
 
             /**
              * \brief Constructs a new Shader with the given parameters.
@@ -50,7 +45,6 @@ namespace argus {
             Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
                     const int priority, const std::initializer_list<std::string> &uniform_ids);
 
-        public:
             /**
              * \brief Creates a new vertex shader with the given parameters.
              *

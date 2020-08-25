@@ -7,14 +7,16 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
 // module lowlevel
+#include "argus/math.hpp"
 #include "argus/threading.hpp"
 
 // module core
 #include "argus/core.hpp"
 
 // module render
-#include "argus/render/renderer.hpp"
 #include "internal/render/types.hpp"
 
 #include <atomic>

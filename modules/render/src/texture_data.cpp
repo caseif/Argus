@@ -13,8 +13,8 @@
 
 // module render
 #include "argus/render/texture_data.hpp"
-#include "internal/render/glext.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
+#include "internal/render/glext.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -26,16 +26,14 @@ namespace argus {
 
     using namespace glext;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData));
-
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const size_t width, const size_t height, unsigned char **&&image_data):
+            pimpl(new pimpl_TextureData()),
             width(width),
-            height(height),
-            pimpl(&g_pimpl_pool.construct<pimpl_TextureData>()) {
-        pimpl->image_data = image_data;
+            height(height) {
+        image_data = image_data;
         pimpl->prepared = false;
-        pimpl->image_data = nullptr;
+        image_data = nullptr;
     }
 
     TextureData::~TextureData(void) {
@@ -47,8 +45,6 @@ namespace argus {
             }
             delete[] pimpl->image_data;
         }
-
-        g_pimpl_pool.free(pimpl);
     }
 
     const bool TextureData::is_prepared(void) {

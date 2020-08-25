@@ -137,7 +137,7 @@ namespace argus {
     void Window::destroy(void) {
         pimpl->state &= ~WINDOW_STATE_VALID;
 
-        pimpl->renderer.destroy();
+        pimpl->renderer.~Renderer();
 
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);

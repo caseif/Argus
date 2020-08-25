@@ -10,5 +10,5 @@
 #pragma once
 
 namespace argus {
-    void *get_window_handle(Window &window);
+    void *get_window_handle(const Window &window);
 }

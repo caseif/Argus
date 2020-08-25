@@ -83,9 +83,9 @@ set(PNG_LIBRARY "png")
 set(PNG_INCLUDE_DIR "${PNG_SOURCE_DIR};${TMP_INCLUDE_DIR}/libpng")
 
 # add dependencies
-add_subdirectory("${CMAKE_SOURCE_DIR}/libs/glfw")
-add_subdirectory("${CMAKE_SOURCE_DIR}/libs/zlib")
-add_subdirectory("${CMAKE_SOURCE_DIR}/libs/libpng")
+add_subdirectory("${GLFW_SOURCE_DIR}")
+add_subdirectory("${ZLIB_SOURCE_DIR}")
+add_subdirectory("${PNG_SOURCE_DIR}")
 
 set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)

@@ -81,10 +81,10 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
-    Renderer::Renderer(Window &window): pimpl(new pimpl_Renderer(window)) {
+    Renderer::Renderer(Window &window):
+        pimpl(new pimpl_Renderer(window)) {
         _ARGUS_ASSERT(g_render_module_initialized, "Cannot create renderer before module is initialized.\n");
 
-        pimpl->window = window;
         pimpl->dirty_resolution = false;
     }
 
@@ -109,19 +109,16 @@ namespace argus {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    Renderer::~Renderer(void) = default;
-
-    void Renderer::destroy(void) {
+    Renderer::~Renderer(void) {
         delete pimpl;
-
-        return;
     }
 
-    RenderLayer &Renderer::create_render_layer(const int priority) {
-        RenderLayer *layer = new RenderLayer(*this, priority);
+    RenderLayer &Renderer::create_render_layer(const int index) {
+        Transform def_transform = Transform{};
+        RenderLayer *layer = new RenderLayer(*this, def_transform, index);
         pimpl->render_layers.insert(pimpl->render_layers.cend(), layer);
-        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](auto a, auto b) {
-            return a->pimpl->priority < b->pimpl->priority;
+        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](RenderLayer *a, RenderLayer *b) {
+            return a->pimpl->index < b->pimpl->index;
         });
         return *layer;
     }
@@ -148,7 +145,7 @@ namespace argus {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         for (RenderLayer *layer : pimpl->render_layers) {
-            layer->render();
+            //TODO
         }
 
         glfwSwapBuffers(pimpl->window.pimpl->handle);

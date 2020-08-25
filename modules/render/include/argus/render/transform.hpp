@@ -40,10 +40,9 @@ namespace argus {
      * \remark All member functions of this class are thread-safe.
      */
     class Transform {
-        private:
+        public:
             pimpl_Transform *pimpl;
 
-        public:
             /**
              * \brief Constructs a Transform with no translation or rotation and
              *        1x scaling.
@@ -66,6 +65,8 @@ namespace argus {
              * \param rhs The Transform to move.
              */
             Transform(Transform &&rhs);
+
+            void operator=(Transform &rhs);
 
             ~Transform(void);
 

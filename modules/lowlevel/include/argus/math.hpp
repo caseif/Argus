@@ -479,3 +479,5 @@ typedef Vector4<float> Vector4f;
  * \brief Represents a vector of four `double`s.
  */
 typedef Vector4<double> Vector4d;
+
+void multiply_matrices(float (&a)[16], float (&b)[16], float (&res)[16]);

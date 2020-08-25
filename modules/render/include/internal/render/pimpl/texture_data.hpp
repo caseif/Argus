@@ -11,9 +11,6 @@
 
 // module render
 #include "argus/render/texture_data.hpp"
-#include "internal/render/types.hpp"
-
-#include <atomic>
 
 namespace argus {
     struct pimpl_TextureData {

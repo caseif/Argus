@@ -22,14 +22,12 @@ namespace argus {
     class Renderer;
     class Window;
 
+    struct pimpl_Window;
+
     /**
      * \brief A callback which operates on a window-wise basis.
      */
     typedef std::function<void(Window &window)> WindowCallback;
-
-    class Renderer;
-
-    struct pimpl_Window;
 
     /**
      * \brief Represents an individual window on the screen.
@@ -39,13 +37,21 @@ namespace argus {
      * \sa Renderer
      */
     class Window {
-        friend class Renderer;
-        friend class pimpl_Renderer;
+        public:
+            /**
+             * \brief Creates a new Window.
+             *
+             * \return The created Window.
+             *
+             * \warning Not all platforms may support multiple
+             *          \link Window Windows \endlink.
+             *
+             * \attention The Window is created in heap memory, and will be
+             *            deallocated by Window#destroy(void).
+             */
+            static Window &create_window(void);
 
-        friend void *get_window_handle(const Window &window);
-
-        private:
-            pimpl_Window *pimpl;
+            pimpl_Window *const pimpl;
 
             /**
              * \brief The nullary and primary constructor.
@@ -82,20 +88,6 @@ namespace argus {
              * \param user_data A pointer to the Window to handle events for.
              */
             void event_callback(const ArgusEvent &event, void *user_data);
-
-        public:
-            /**
-             * \brief Creates a new Window.
-             *
-             * \return The created Window.
-             *
-             * \warning Not all platforms may support multiple
-             *          \link Window Windows \endlink.
-             *
-             * \attention The Window is created in heap memory, and will be
-             *            deallocated by Window#destroy(void).
-             */
-            static Window &create_window(void);
 
             /**
              * \brief Destroys this window.

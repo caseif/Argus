@@ -7,10 +7,10 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
 // module render
-#include "argus/render/render_layer.hpp"
 #include "argus/render/renderer.hpp"
-#include "argus/render/window.hpp"
 #include "internal/render/types.hpp"
 
 #include <atomic>

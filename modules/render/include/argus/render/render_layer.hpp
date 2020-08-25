@@ -10,20 +10,17 @@
 #pragma once
 
 // module render
-#include "argus/render/render_group.hpp"
-#include "argus/render/renderable_factory.hpp"
-#include "argus/render/renderer.hpp"
-#include "argus/render/shader.hpp"
 #include "argus/render/transform.hpp"
 
 #include <vector>
 
 namespace argus {
     // forward declarations
+    class Material;
     class RenderGroup;
-    class RenderableFactory;
+    class RenderObject;
+    class RenderPrim;
     class Renderer;
-    class Shader;
 
     struct pimpl_RenderLayer;
 
@@ -34,44 +31,57 @@ namespace argus {
      * when a frame is rendered.
      */
     class RenderLayer {
-        friend class Renderer;
-        friend class RenderGroup;
-        friend class pimpl_RenderGroup;
-        friend class RenderableFactory;
-
-        private:
-            pimpl_RenderLayer *pimpl;
+        public:
+            pimpl_RenderLayer *const pimpl;
 
             /**
              * \brief Constructs a new RenderLayer.
              *
              * \param parent The Renderer parent to the layer.
-             * \param priority The priority of the layer.
+             * \param transform The Transform of the layer.
+             * \param index The index of the layer. Higher-indexed layers are
+             *        rendered on top of lower-indexed ones.
+             */
+            RenderLayer(const Renderer &parent, Transform &transform, const int index);
+
+
+            ~RenderLayer(void);
+
+            /**
+             * \brief Creates a new RenderGroup as a child of this group.
              *
-             * \sa RenderLayer#priority
+             * \param transform The relative transform of the new group.
              */
-            RenderLayer(Renderer &parent, const int priority);
-
-            ~RenderLayer(void) = default;
+            RenderGroup &create_child_group(const Transform &transform);
 
             /**
-             * \brief Renders this layer to the screen.
-             */
-            void render(void);
-
-            /**
-             * \brief Removes the given RenderGroup from this layer.
+             * \brief Creates a new RenderObject as a child of this group.
              *
-             * \param group The RenderGroup to remove.
+             * \param material The Material to be used by the new object.
+             * \param primitives The \link RenderPrim primitives \endlink
+             *        comprising the new object.
+             * \param transform The relative transform of the new object.
              */
-            void remove_group(RenderGroup &group);
+            RenderObject &create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
+                const Transform &transform);
 
-        public:
             /**
-             * \brief Destroys this RenderLayer and removes it from the parent
-             *        Renderer.
+             * \brief Removes the supplied RenderGroup from this layer,
+             *        destroying it in the process.
+             * \param group The group to remove and destroy.
+             * \throw std::invalid_argument If the supplied RenderGroup is not a
+             *        child of this layer.
              */
-            void destroy(void);
+            void remove_child_group(RenderGroup &group);
+
+            /**
+             * \brief Removes the specified RenderObject from this layer,
+             *        destroying it in the process.
+             * \param object The RenderObject to remove and destroy.
+             * \throw std::invalid_argument If the supplied RenderObject is not
+             *        a child of this layer.
+             */
+            void remove_child_object(RenderObject &object);
 
             /**
              * \brief Gets the Transform of this layer.
@@ -81,40 +91,10 @@ namespace argus {
             Transform &get_transform(void);
 
             /**
-             * \brief Returns a factory for creating
-             *        \link Renderable Renderables \endlink attached to this
-             *        this RenderLayer's root RenderGroup.
+             * \brief Sets the Transform of this layer.
              *
-             * \returns This RenderLayer's root Renderable factory.
+             * \param transform The new Transform.
              */
-            RenderableFactory &get_renderable_factory(void);
-
-            /**
-             * \brief Creates a new RenderGroup as a child of this layer.
-             *
-             * \param priority The priority of the new RenderGroup.
-             *
-             * \return RenderGroup The created RenderGroup.
-             */
-            RenderGroup &create_render_group(const int priority);
-
-            /**
-             * \brief Gets the default RenderGroup of this layer.
-             */
-            RenderGroup &get_default_group(void);
-
-            /**
-             * \brief Adds the given Shader to this layer.
-             *
-             * \param shader The Shader to add.
-             */
-            void add_shader(const Shader &shader);
-
-            /**
-             * \brief Removes the given Shader from this layer.
-             *
-             * \param shader The Shader to remove.
-             */
-            void remove_shader(const Shader &shader);
+            void set_transform(Transform &transform);
     };
 }
