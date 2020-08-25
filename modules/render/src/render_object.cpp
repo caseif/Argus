@@ -31,7 +31,7 @@ namespace argus {
     }
 
     RenderObject::~RenderObject() {
-        //TODO
+        g_pimpl_pool.free(pimpl);
     }
 
     const Material &RenderObject::get_material(void) const {

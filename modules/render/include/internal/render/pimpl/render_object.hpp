@@ -11,6 +11,7 @@
 
 // module render
 #include "argus/render/render_object.hpp"
+#include "argus/render/render_prim.hpp"
 #include "internal/render/types.hpp"
 
 #include <vector>

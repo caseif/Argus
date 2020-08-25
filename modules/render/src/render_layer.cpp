@@ -17,9 +17,12 @@
 // module render
 #include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
+#include "argus/render/render_object.hpp"
+#include "argus/render/render_prim.hpp"
 #include "argus/render/renderer.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
+#include "internal/render/pimpl/render_object.hpp"
 
 #include <vector>
 
@@ -31,30 +34,46 @@ namespace argus {
         pimpl(&g_pimpl_pool.construct<pimpl_RenderLayer>(parent, transform, index)) {
         //TODO
     }
+
+    RenderLayer::~RenderLayer(void) {
+        g_pimpl_pool.free(pimpl);
+    }
     
-    RenderGroup &RenderLayer::create_child_group(const Transform &transform) {
-        //TODO
+    RenderGroup &RenderLayer::create_child_group(Transform &transform) {
+        auto group = new RenderGroup(*this, nullptr, transform);
+        pimpl->child_groups.push_back(group);
+        return *group;
     }
 
-    RenderObject &RenderLayer::create_child_object(const Material &material,
-            const std::vector<RenderPrim> &primitives, const Transform &transform) {
-        //TODO
+    RenderObject &RenderLayer::create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
+            Transform &transform) {
+        auto obj = new RenderObject(*this, nullptr, material, primitives, transform);
+        pimpl->child_objects.push_back(obj);
+        return *obj;
     }
 
     void RenderLayer::remove_child_group(RenderGroup &group) {
-        //TODO
+        if (&group.get_parent_layer() != this || group.get_parent_group() != nullptr) {
+            throw std::invalid_argument("Supplied RenderGroup is not a direct child of the RenderLayer");
+        }
+
+        remove_from_vector(pimpl->child_groups, &group);
     }
     
     void RenderLayer::remove_child_object(RenderObject &object) {
-        //TODO
+        if (&object.pimpl->parent_layer != this || object.pimpl->parent_group != nullptr) {
+            throw std::invalid_argument("Supplied RenderObject is not a direct child of the RenderLayer");
+        }
+
+        remove_from_vector(pimpl->child_objects, &object);
     }
 
-    Transform &RenderLayer::get_transform(void) {
-        //TODO
+    const Transform &RenderLayer::get_transform(void) {
+        return pimpl->transform;
     }
 
     void RenderLayer::set_transform(Transform &transform) {
-        //TODO
+        pimpl->transform = transform;
     }
 
 }

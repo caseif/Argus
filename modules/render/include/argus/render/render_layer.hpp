@@ -44,6 +44,10 @@ namespace argus {
              */
             RenderLayer(const Renderer &parent, Transform &transform, const int index);
 
+            RenderLayer(const Renderer &parent, Transform &&transform, const int index):
+                RenderLayer(parent, transform, index) {
+            }
+
 
             ~RenderLayer(void);
 
@@ -52,7 +56,7 @@ namespace argus {
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup &create_child_group(const Transform &transform);
+            RenderGroup &create_child_group(Transform &transform);
 
             /**
              * \brief Creates a new RenderObject as a child of this group.
@@ -63,7 +67,7 @@ namespace argus {
              * \param transform The relative transform of the new object.
              */
             RenderObject &create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
-                const Transform &transform);
+                Transform &transform);
 
             /**
              * \brief Removes the supplied RenderGroup from this layer,
@@ -88,7 +92,7 @@ namespace argus {
              *
              * \return The layer's Transform.
              */
-            Transform &get_transform(void);
+            const Transform &get_transform(void);
 
             /**
              * \brief Sets the Transform of this layer.

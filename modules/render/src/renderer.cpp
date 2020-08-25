@@ -113,26 +113,6 @@ namespace argus {
         delete pimpl;
     }
 
-    RenderLayer &Renderer::create_render_layer(const int index) {
-        Transform def_transform = Transform{};
-        RenderLayer *layer = new RenderLayer(*this, def_transform, index);
-        pimpl->render_layers.insert(pimpl->render_layers.cend(), layer);
-        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](RenderLayer *a, RenderLayer *b) {
-            return a->pimpl->index < b->pimpl->index;
-        });
-        return *layer;
-    }
-
-    void Renderer::remove_render_layer(RenderLayer &render_layer) {
-        _ARGUS_ASSERT(&render_layer.pimpl->parent_renderer == this,
-        "remove_render_layer called on RenderLayer with different parent");
-
-        remove_from_vector(pimpl->render_layers, &render_layer);
-        delete &render_layer;
-
-        return;
-    }
-
     void Renderer::render(const TimeDelta delta) {
         _activate_gl_context(pimpl->window.pimpl->handle);
 
@@ -151,4 +131,23 @@ namespace argus {
         glfwSwapBuffers(pimpl->window.pimpl->handle);
     }
 
+    RenderLayer &Renderer::create_render_layer(const int index) {
+        auto layer = new RenderLayer(*this, Transform{}, index);
+
+        pimpl->render_layers.push_back(layer);
+        
+        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(), [](RenderLayer *a, RenderLayer *b) {
+            return a->pimpl->index < b->pimpl->index;
+        });
+        
+        return *layer;
+    }
+
+    void Renderer::remove_render_layer(RenderLayer &layer) {
+        if (&layer.pimpl->parent_renderer != this) {
+            throw std::invalid_argument("Supplied RenderLayer does not belong to the Renderer");
+        }
+
+        remove_from_vector(pimpl->render_layers, &layer);
+    }
 }

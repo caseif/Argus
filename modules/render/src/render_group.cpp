@@ -24,44 +24,60 @@
 #include "argus/render/render_object.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/pimpl/render_group.hpp"
+#include "internal/render/pimpl/render_object.hpp"
 
 
 namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup));
 
-    RenderGroup::RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group,
-                    Transform &transform):
+    RenderGroup::RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup>(parent_layer, parent_group, transform)) {
         //TODO
     }
 
+    RenderGroup::~RenderGroup(void) {
+        g_pimpl_pool.free(pimpl);
+    }
+
     RenderGroup *const RenderGroup::get_parent_group(void) const {
-        //TODO
+        return pimpl->parent_group;
     }
 
     RenderGroup &RenderGroup::create_child_group(Transform &transform) {
-        //TODO
+        auto group = new RenderGroup(pimpl->parent_layer, this, transform);
+        pimpl->child_groups.push_back(group);
+        return *group;
     }
 
     RenderObject &RenderGroup::create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
             Transform &transform) {
-        //TODO
+        auto obj = new RenderObject(pimpl->parent_layer, this, material, primitives, transform);
+        pimpl->child_objects.push_back(obj);
+        return *obj;
     }
 
     void RenderGroup::remove_child_group(RenderGroup &group) {
-        //TODO
+        if (group.pimpl->parent_group != this) {
+            throw std::invalid_argument("Supplied RenderGroup is not a child of RenderGroup");
+        }
+
+        remove_from_vector(pimpl->child_groups, &group);
     }
 
     void RenderGroup::remove_child_object(RenderObject &object) {
-        //TODO
+        if (object.pimpl->parent_group != this) {
+            throw std::invalid_argument("Supplied RenderObject is not a child of RenderGroup");
+        }
+
+        remove_from_vector(pimpl->child_objects, &object);
     }
 
     const Transform &RenderGroup::get_transform(void) const {
-        //TODO
+        return pimpl->transform;
     }
 
     void RenderGroup::set_transform(Transform &transform) {
-        //TODO
+        pimpl->transform = transform;
     }
 }
