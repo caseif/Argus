@@ -53,7 +53,7 @@ namespace argus {
     }
 
     void RenderLayer::remove_child_group(RenderGroup &group) {
-        if (&group.get_parent_layer() != this || group.get_parent_group() != nullptr) {
+        if (&group.pimpl->parent_layer != this || group.pimpl->parent_layer != nullptr) {
             throw std::invalid_argument("Supplied RenderGroup is not a direct child of the RenderLayer");
         }
 
