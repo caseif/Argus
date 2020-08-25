@@ -15,7 +15,7 @@ jobs:
     - name: configure
       run: mkdir build && cd build && cmake ..
     - name: build
-      run: cmake --build build --config Debug
+      run: cmake --build build --config Debug --parallel 8
     - name: archive
       uses: actions/upload-artifact@v1
       with:
@@ -33,7 +33,7 @@ jobs:
     - name: configure
       run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
     - name: build
-      run: cmake --build build --config Debug
+      run: cmake --build build --config Debug --parallel 8
     - name: archive
       uses: actions/upload-artifact@v1
       with:
