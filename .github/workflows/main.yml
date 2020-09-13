@@ -4,12 +4,12 @@ on: [push, pull_request]
 jobs:
   build-ubuntu:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
     - name: submodule checkout
       run: git submodule update --init --recursive
     - name: configure
@@ -24,7 +24,7 @@ jobs:
 
   build-windows:
 
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
     - uses: actions/checkout@v1
