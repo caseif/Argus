@@ -24,7 +24,7 @@ namespace argus {
         std::vector<RenderGroup*> child_groups;
         std::vector<RenderObject*> child_objects;
 
-        pimpl_RenderGroup(RenderLayer &parent, RenderGroup *const parent_group, Transform &transform):
+        pimpl_RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform):
                 parent_layer(parent_layer),
                 parent_group(parent_group),
                 transform(transform) {

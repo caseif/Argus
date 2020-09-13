@@ -16,8 +16,9 @@
 
 #include <atomic>
 #include <mutex>
+#include <new>
 
-#include <cmath>
+#include <cmath> // IWYU pragma: keep
 
 namespace argus {
 

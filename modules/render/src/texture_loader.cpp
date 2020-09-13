@@ -18,13 +18,14 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/texture_loader.hpp"
 
-#include <png.h>
+#include "png.h"
+#include "pngconf.h"
 
 #include <istream>
 #include <stdexcept>
-#include <string>
 #include <utility>
 
+#include <csetjmp>
 #include <cstdio>
 
 #define RESOURCE_EXTENSION_PNG "png"

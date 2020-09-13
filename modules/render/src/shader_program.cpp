@@ -8,7 +8,6 @@
  */
 
 // module lowlevel
-#include "argus/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module render
@@ -16,6 +15,7 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/glext.hpp"
 #include "internal/render/shader_program.hpp"
+#include "internal/render/types.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
 #include <GLFW/glfw3.h>

@@ -8,9 +8,7 @@
  */
 
 // module lowlevel
-#include "argus/math.hpp"
 #include "argus/memory.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "internal/core/core_util.hpp"
@@ -19,6 +17,7 @@
 #include "argus/resource_manager.hpp"
 
 // module render
+#include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
 #include "argus/render/render_object.hpp"
@@ -26,6 +25,8 @@
 #include "internal/render/pimpl/render_group.hpp"
 #include "internal/render/pimpl/render_object.hpp"
 
+#include <stdexcept>
+#include <vector>
 
 namespace argus {
 

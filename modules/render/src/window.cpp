@@ -21,6 +21,7 @@
 #include "argus/render/window.hpp"
 #include "argus/render/window_event.hpp"
 #include "internal/render/glext.hpp"
+#include "internal/render/types.hpp"
 #include "internal/render/window.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -34,10 +35,10 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstddef>
-#include <cstdint>
 
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300

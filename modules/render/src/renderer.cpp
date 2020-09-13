@@ -19,6 +19,7 @@
 // module render
 #include "argus/render/render_layer.hpp"
 #include "argus/render/renderer.hpp"
+#include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
 #include "internal/render/glext.hpp"
 #include "internal/render/types.hpp"
@@ -30,7 +31,7 @@
 
 #include <algorithm>
 #include <atomic>
-#include <functional>
+#include <stdexcept>
 #include <vector>
 
 #include <cstdio>

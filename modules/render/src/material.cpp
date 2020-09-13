@@ -7,16 +7,16 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include <string>
-#include <vector>
-
 // module resman
 #include "argus/resource_manager.hpp"
 
 // module render
 #include "argus/render/material.hpp"
+#include "argus/render/shader.hpp"
 #include "argus/render/texture_data.hpp"
 #include "internal/render/pimpl/material.hpp"
+
+#include <vector>
 
 namespace argus {
 

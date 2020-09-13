@@ -10,21 +10,15 @@
 // module lowlevel
 #include "argus/math.hpp"
 #include "argus/memory.hpp"
-#include "internal/lowlevel/logging.hpp"
-
-// module resman
-#include "argus/resource_manager.hpp"
 
 // module render
-#include "argus/render/render_group.hpp"
 #include "argus/render/render_prim.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/glext.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/pimpl/render_prim.hpp"
 
-#include <atomic>
-#include <string>
+#include <vector>
 
 #include <cstdlib>
 
