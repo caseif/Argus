@@ -15,10 +15,11 @@
 #include "internal/input/input_helpers.hpp"
 
 // module render
+#include "argus/render/window.hpp"
 #include "argus/render/window_event.hpp"
 #include "internal/render/window.hpp"
 
-#include <string>
+#include "GLFW/glfw3.h"
 
 namespace argus {
 

@@ -17,17 +17,17 @@
 // module render
 #include "argus/render/window.hpp"
 #include "internal/render/window.hpp"
-#include "internal/render/pimpl/window.hpp"
 
 // module input
 #include "argus/keyboard.hpp"
 
 #include <GLFW/glfw3.h>
 
-#include <stdexcept>
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <cstdint>

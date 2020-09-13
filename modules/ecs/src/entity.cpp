@@ -18,6 +18,9 @@
 
 #include <initializer_list>
 #include <stdexcept>
+#include <string>
+
+#include <cstddef>
 
 namespace argus {
 
@@ -57,7 +60,7 @@ namespace argus {
 
     void *Entity::get_component(ComponentTypeId component_type) {
         void *cmp_ptr = pimpl->component_pointers[component_type];
-        validate_arg(cmp_ptr != nullptr, "Entity does not have component " + component_type);
+        validate_arg(cmp_ptr != nullptr, "Entity does not have component " + std::to_string(component_type));
         return cmp_ptr;
     }
 
