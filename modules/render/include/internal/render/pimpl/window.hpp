@@ -17,6 +17,7 @@
 #include "argus/core.hpp"
 
 // module render
+#include "argus/render/renderer.hpp"
 #include "internal/render/types.hpp"
 
 #include <atomic>

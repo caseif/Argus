@@ -9,9 +9,6 @@
 
 #pragma once
 
-// module render
-#include "argus/render/renderer.hpp"
-
 // module core
 #include "argus/core.hpp"
 

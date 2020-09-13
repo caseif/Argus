@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "internal/render/types.hpp"
-
 #include <atomic>
 
 #include <cstdio>

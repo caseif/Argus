@@ -11,6 +11,7 @@
 
 // module render
 #include "argus/render/texture_data.hpp"
+#include "internal/render/types.hpp"
 
 namespace argus {
     struct pimpl_TextureData {
