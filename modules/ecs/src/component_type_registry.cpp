@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/memory.hpp"
 #include "internal/lowlevel/error_util.hpp"
 
 // module ecs
@@ -16,7 +17,13 @@
 
 #include <algorithm>
 #include <functional>
-#include <stdexcept>
+#include <memory>
+#include <new>
+#include <string>
+#include <vector>
+
+#include <cctype>
+#include <cstdlib>
 
 namespace argus {
 
@@ -66,14 +73,14 @@ namespace argus {
 
     void *ComponentTypeRegistry::alloc_component(ComponentTypeId component_type) {
         validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
-            "Invalid component type ID " + component_type);
+            "Invalid component type ID " + std::to_string(component_type));
         
         return (*pimpl->component_pools)[component_type].alloc();
     }
 
     void ComponentTypeRegistry::free_component(ComponentTypeId component_type, void *ptr) {
         validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
-            "Invalid component type ID " + component_type);
+            "Invalid component type ID " + std::to_string(component_type));
 
         (*pimpl->component_pools)[component_type].free(ptr);
     }
@@ -98,7 +105,7 @@ namespace argus {
 
     size_t ComponentTypeRegistry::get_component_type_size(ComponentTypeId type_id) {
         ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types, type_id);
-        validate_arg(component == nullptr, "No component type registered with ID " + type_id);
+        validate_arg(component == nullptr, "No component type registered with ID " + std::to_string(type_id));
         return component->size;
     }
 

@@ -16,7 +16,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <map>
+#include <map> // IWYU pragma: keep
 
 #include <cstddef>
 

@@ -20,6 +20,10 @@ namespace argus {
             case LifecycleStage::INIT: {
                 // we only accept component registrations during the pre-init stage
                 ComponentTypeRegistry::instance()._seal();
+                break;
+            }
+            default: {
+                break;
             }
         }
     }

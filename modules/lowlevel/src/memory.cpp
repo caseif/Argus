@@ -10,7 +10,6 @@
 #include "argus/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-#include <new>
 #include <stdexcept>
 
 #include <cmath>
