@@ -10,7 +10,7 @@
 #pragma once
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/render_group.hpp"

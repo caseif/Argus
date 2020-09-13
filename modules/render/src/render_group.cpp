@@ -8,15 +8,15 @@
  */
 
 // module lowlevel
-#include "argus/math.hpp"
-#include "argus/memory.hpp"
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "internal/core/core_util.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/render_group.hpp"
@@ -35,7 +35,7 @@
 #include "internal/render/pimpl/shader_program.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <atomic>
 #include <map>

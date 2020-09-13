@@ -8,7 +8,7 @@
  */
 
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/error_util.hpp"
 
 // module ecs

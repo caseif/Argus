@@ -15,7 +15,7 @@
 #include "argus/render/transform.hpp"
 
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 namespace argus {
     // forward declarations

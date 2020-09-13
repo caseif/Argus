@@ -8,19 +8,19 @@
  */
 
 // module lowlevel
-#include "argus/math.hpp"
-#include "argus/memory.hpp"
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/render_group.hpp"
 #include "argus/render/renderable.hpp"
 #include "argus/render/transform.hpp"
-#include "internal/render/glext.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/glext.hpp"
 #include "internal/render/pimpl/renderable.hpp"
 
 #include <atomic>
@@ -34,8 +34,7 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Renderable));
 
-    Renderable::Renderable(RenderGroup &group):
-            pimpl(&g_pimpl_pool.construct<pimpl_Renderable>(group)) {
+    Renderable::Renderable(RenderGroup &group) : pimpl(&g_pimpl_pool.construct<pimpl_Renderable>(group)) {
         pimpl->vertex_buffer = nullptr;
         pimpl->buffer_size = 0;
         pimpl->max_buffer_size = 0;
@@ -89,8 +88,8 @@ namespace argus {
 
     void Renderable::buffer_vertex(const Vertex &vertex) {
         if (pimpl->buffer_head + _VERTEX_LEN > pimpl->buffer_size) {
-            _ARGUS_FATAL("Buffer overflow while buffering vertex (%zu > %zu)",
-                    pimpl->buffer_head + _VERTEX_LEN, pimpl->buffer_size);
+            _ARGUS_FATAL("Buffer overflow while buffering vertex (%zu > %zu)", pimpl->buffer_head + _VERTEX_LEN,
+                         pimpl->buffer_size);
         }
 
         pimpl->vertex_buffer[pimpl->buffer_head + 0] = vertex.position.x;
@@ -124,7 +123,7 @@ namespace argus {
             pimpl->tex_resource->release();
         } catch (ResourceException &ex) {
             _ARGUS_WARN("Previous texture %s for Renderable was invalid\n",
-                    ((std::string) pimpl->tex_resource->uid).c_str());
+                        ((std::string)pimpl->tex_resource->uid).c_str());
         }
     }
 

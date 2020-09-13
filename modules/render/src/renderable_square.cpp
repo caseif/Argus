@@ -8,7 +8,7 @@
  */
 
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 // module render
 #include "argus/render/render_group.hpp"

@@ -7,15 +7,15 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/lowlevel/memory.hpp"
+
 // module render
 #include "argus/render/render_group.hpp"
 #include "argus/render/renderable_factory.hpp"
 #include "argus/render/renderable_square.hpp"
 #include "argus/render/renderable_triangle.hpp"
 #include "argus/render/transform.hpp"
-
-// module lowlevel
-#include "argus/memory.hpp"
 
 namespace argus {
 

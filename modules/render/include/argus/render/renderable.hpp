@@ -10,14 +10,14 @@
 #pragma once
 
 // module lowlevel
-#include "argus/math.hpp"
-
-// module resman
-#include "argus/resource_manager.hpp"
+#include "argus/lowlevel/math.hpp"
 
 // module render
 #include "argus/render/render_group.hpp"
 #include "argus/render/transform.hpp"
+
+// module resman
+#include "argus/resman.hpp"
 
 #include <atomic>
 #include <string>

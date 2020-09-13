@@ -8,7 +8,7 @@
  */
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 #include <atomic>
 #include <string>

@@ -8,8 +8,8 @@
  */
 
 // module lowlevel
-#include "argus/math.hpp"
-#include "argus/threading.hpp"
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -28,7 +28,7 @@
 #ifdef USE_GLES
 #define GLFW_INCLUDE_ES3
 #endif
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <atomic>
 #include <functional>

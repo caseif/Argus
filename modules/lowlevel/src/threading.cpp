@@ -7,39 +7,38 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/threading.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 #include <exception>
 #include <functional>
 #include <memory>
 
 #ifdef USE_PTHREADS
-#include <pthread.h>
-#include <cstdlib>
+    #include <pthread.h>
+
+    #include <cstdlib>
 #else
-#include <thread>
+    #include <thread>
 #endif
 
 #ifdef _WIN32
-#include <Windows.h>
+    #include <Windows.h>
 #endif
 
 #include <cstddef>
 
 namespace argus {
 
-    #ifdef USE_PTHREADS
+#ifdef USE_PTHREADS
     struct FunctionDelegate {
         static void *invoke_static(void *self) {
-            return static_cast<FunctionDelegate*>(self)->invoke();
+            return static_cast<FunctionDelegate *>(self)->invoke();
         }
 
-        std::function<void*(void*)> &func;
+        std::function<void *(void *)> &func;
         void *arg;
 
-        FunctionDelegate(std::function<void*(void*)> &func, void *arg):
-                func(func),
-                arg(arg) {
+        FunctionDelegate(std::function<void *(void *)> &func, void *arg): func(func), arg(arg) {
         }
 
         void *invoke() {
@@ -47,7 +46,7 @@ namespace argus {
         }
     };
 
-    Thread &Thread::create(std::function<void*(void*)> routine, void *arg) {
+    Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
         pthread_t pthread;
 
         FunctionDelegate delegate(routine, arg);
@@ -56,8 +55,7 @@ namespace argus {
         return *new Thread(pthread);
     }
 
-    Thread::Thread(pthread_t handle):
-            handle(handle) {
+    Thread::Thread(pthread_t handle): handle(handle) {
     }
 
     void Thread::join() {
@@ -72,13 +70,12 @@ namespace argus {
         pthread_cancel(handle);
         delete this;
     }
-    #else
-    Thread &Thread::create(std::function<void*(void*)> routine, void *arg) {
+#else
+    Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
         return *new Thread(new std::thread(routine, arg));
     }
 
-    Thread::Thread(std::thread *handle):
-            handle(handle) {
+    Thread::Thread(std::thread *handle): handle(handle) {
     }
 
     void Thread::join() {
@@ -96,9 +93,9 @@ namespace argus {
         delete this;
         return;
     }
-    #endif
+#endif
 
-    #ifdef _WIN32
+#ifdef _WIN32
     SharedMutex::SharedMutex(void) {
         InitializeSRWLock(&handle);
     }
@@ -130,7 +127,7 @@ namespace argus {
     void SharedMutex::unlock_shared(void) {
         ReleaseSRWLockShared(&handle);
     }
-    #else
+#else
     SharedMutex::SharedMutex(void) {
         pthread_rwlock_init(&handle, NULL);
     }
@@ -162,25 +159,27 @@ namespace argus {
     void SharedMutex::unlock_shared(void) {
         pthread_rwlock_unlock(&handle);
     }
-    #endif
+#endif
 
     std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback) {
         auto promise_ptr = std::make_shared<std::promise<void>>();
         std::future<void> future = promise_ptr->get_future();
-        Thread thread = Thread::create([function, callback, promise_ptr](void*) mutable -> void* {
-            try {
-                function();
-                promise_ptr->set_value_at_thread_exit();
+        Thread thread = Thread::create(
+            [function, callback, promise_ptr](void *) mutable -> void * {
+                try {
+                    function();
+                    promise_ptr->set_value_at_thread_exit();
 
-                if (callback != nullptr) {
-                    callback();
+                    if (callback != nullptr) {
+                        callback();
+                    }
+                } catch (...) {
+                    promise_ptr->set_exception_at_thread_exit(std::current_exception());
                 }
-            } catch (...) {
-                promise_ptr->set_exception_at_thread_exit(std::current_exception());
-            }
 
-            return nullptr;
-        }, nullptr);
+                return nullptr;
+            },
+            nullptr);
 
         return future;
     }

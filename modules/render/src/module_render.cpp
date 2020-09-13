@@ -14,7 +14,7 @@
 #include "argus/core.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/window.hpp"
@@ -23,7 +23,7 @@
 #include "internal/render/glext.hpp"
 #include "internal/render/texture_loader.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <iterator>
 #include <map>

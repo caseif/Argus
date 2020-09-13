@@ -8,7 +8,7 @@
  */
 
 // module lowlevel
-#include "argus/threading.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 // module core
 #include "argus/core.hpp"
