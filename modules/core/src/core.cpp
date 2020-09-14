@@ -8,9 +8,9 @@
  */
 
 // module lowlevel
-#include "argus/filesystem.hpp"
-#include "argus/threading.hpp"
-#include "argus/time.hpp"
+#include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/threading.hpp"
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -40,9 +40,9 @@
 #include <cstdlib>
 
 #ifdef _WIN32
-#include <Windows.h>
+    #include <Windows.h>
 #else
-#include <dlfcn.h>
+    #include <dlfcn.h>
 #endif
 
 #define US_PER_S 1000000LLU
@@ -50,11 +50,11 @@
 
 #define MODULES_DIR_NAME "modules"
 #ifdef _WIN32
-#define SHARED_LIB_EXT "dll"
+    #define SHARED_LIB_EXT "dll"
 #elif defined(__APPLE__)
-#define SHARED_LIB_EXT "dylib"
+    #define SHARED_LIB_EXT "dylib"
 #else
-#define SHARED_LIB_EXT "so"
+    #define SHARED_LIB_EXT "so"
 #endif
 
 namespace argus {
@@ -69,7 +69,7 @@ namespace argus {
     // mutex. In this way, it facilitates a thread-safe callback list wherein
     // the callbacks themselves may modify the list, i.e. while the list is
     // being iterated.
-    template<typename T>
+    template <typename T>
     struct CallbackList {
         std::vector<IndexedValue<T>> list;
         std::queue<IndexedValue<T>> addition_queue;
@@ -91,17 +91,16 @@ namespace argus {
     static std::mutex g_event_queue_mutex;
 
     static std::map<const std::string, const ArgusModule> g_registered_modules;
-    static std::set<ArgusModule, bool(*)(const ArgusModule, const ArgusModule)> g_enabled_modules(
+    static std::set<ArgusModule, bool (*)(const ArgusModule, const ArgusModule)> g_enabled_modules(
         [](const ArgusModule a, const ArgusModule b) {
             if (a.layer != b.layer) {
                 return a.layer < b.layer;
             } else {
                 return a.id.compare(b.id) < 0;
             }
-        }
-    );
+        });
 
-    static std::vector<void*> g_external_module_handles;
+    static std::vector<void *> g_external_module_handles;
 
     static bool g_engine_stopping = false;
 
@@ -117,13 +116,11 @@ namespace argus {
     extern void init_module_resman(void);
     extern void init_module_render(void);
 
-    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{
-        {MODULE_CORE, init_module_core},
-        {MODULE_ECS, init_module_ecs},
-        {MODULE_INPUT, init_module_input},
-        {MODULE_RESMAN, init_module_resman},
-        {MODULE_RENDER, init_module_render}
-    };
+    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{{MODULE_CORE, init_module_core},
+                                                                                   {MODULE_ECS, init_module_ecs},
+                                                                                   {MODULE_INPUT, init_module_input},
+                                                                                   {MODULE_RESMAN, init_module_resman},
+                                                                                   {MODULE_RENDER, init_module_render}};
 
     static void _interrupt_handler(int signal) {
         stop_engine();
@@ -159,10 +156,9 @@ namespace argus {
         return delta;
     }
 
-    template<typename T>
+    template <typename T>
     static const bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
-        auto it = std::remove_if(vector.begin(), vector.end(),
-                [id](auto callback) {return callback.id == id;});
+        auto it = std::remove_if(vector.begin(), vector.end(), [id](auto callback) { return callback.id == id; });
         if (it != vector.end()) {
             vector.erase(it, vector.end());
             return true;
@@ -170,7 +166,7 @@ namespace argus {
         return false;
     }
 
-    template<typename T>
+    template <typename T>
     static void _flush_callback_list_queues(CallbackList<T> &list) {
         list.queue_mutex.lock_shared();
 
@@ -231,25 +227,19 @@ namespace argus {
         g_event_queue_mutex.unlock();
     }
 
-    constexpr inline ArgusEventType operator |(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(
-                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
-                | static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
-        );
+    constexpr inline ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
+                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
     }
 
-    constexpr inline ArgusEventType operator |=(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(
-                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
-                | static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
-        );
+    constexpr inline ArgusEventType operator|=(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
+                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
     }
 
-    constexpr inline ArgusEventType operator &(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(
-                static_cast<std::underlying_type<ArgusEventType>::type>(lhs)
-                & static_cast<std::underlying_type<ArgusEventType>::type>(rhs)
-        );
+    constexpr inline ArgusEventType operator&(const ArgusEventType lhs, const ArgusEventType rhs) {
+        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) &
+                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
     }
 
     void _update_lifecycle_core(LifecycleStage stage) {
@@ -280,7 +270,8 @@ namespace argus {
     }
 
     void register_module(const ArgusModule module) {
-        if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {;
+        if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {
+            ;
             throw std::invalid_argument("Module is already registered: " + module.id);
         }
 
@@ -329,28 +320,27 @@ namespace argus {
             }
 
             if (ext != SHARED_LIB_EXT) {
-                _ARGUS_WARN("Not loading file %s as module (bad extension %s)\n",
-                        filename.c_str(), ext.empty() ? "(none)" : ext.c_str());
+                _ARGUS_WARN("Not loading file %s as module (bad extension %s)\n", filename.c_str(),
+                            ext.empty() ? "(none)" : ext.c_str());
                 continue;
             }
 
             _ARGUS_INFO("Found external module file %s, attempting to load.\n", filename.c_str());
 
             void *handle;
-            #ifdef _WIN32
+#ifdef _WIN32
             handle = LoadLibraryA(full_path.c_str());
             if (handle == nullptr) {
                 _ARGUS_WARN("Failed to load external module file %s (errno: %d)\n", filename.c_str(), GetLastError());
                 continue;
             }
-            #else
+#else
             handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (handle == nullptr) {
                 _ARGUS_WARN("Failed to load external module file %s (error: %s)\n", filename.c_str(), dlerror());
                 continue;
             }
-            #endif
-            
+#endif
 
             g_external_module_handles.insert(g_external_module_handles.begin(), handle);
         }
@@ -358,15 +348,15 @@ namespace argus {
 
     void _unload_external_modules(void) {
         for (void *handle : g_external_module_handles) {
-            #ifdef _WIN32
+#ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
             }
-            #else
+#else
             if (dlclose(handle) != 0) {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", errno);
             }
-            #endif
+#endif
         }
     }
 
@@ -410,7 +400,7 @@ namespace argus {
 
     void _deinitialize_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PRE_DEINIT; stage <= LifecycleStage::POST_DEINIT;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+             stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (auto it = g_enabled_modules.rbegin(); it != g_enabled_modules.rend(); it++) {
                 it->lifecycle_update_callback(stage);
             }
@@ -434,7 +424,7 @@ namespace argus {
         }
 
         for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+             stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (auto it = g_enabled_modules.cbegin(); it != g_enabled_modules.cend(); it++) {
                 it->lifecycle_update_callback(stage);
             }
@@ -505,7 +495,7 @@ namespace argus {
         }
     }
 
-    template<typename T>
+    template <typename T>
     Index _add_callback(CallbackList<T> &list, T callback) {
         g_next_index_mutex.lock();
         Index index = g_next_index++;
@@ -518,7 +508,7 @@ namespace argus {
         return index;
     }
 
-    template<typename T>
+    template <typename T>
     void _remove_callback(CallbackList<T> &list, const Index index) {
         list.queue_mutex.lock();
         list.removal_queue.push(index);
@@ -580,8 +570,10 @@ namespace argus {
         g_engine_stopping = true;
     }
 
+    // clang-format off
     ArgusEvent::ArgusEvent(ArgusEventType type):
-            type(type) {
+        type(type) {
     }
+    // clang-format on
 
 }

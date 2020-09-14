@@ -19,9 +19,9 @@
 #include "internal/render/window.hpp"
 
 // module input
-#include "argus/keyboard.hpp"
+#include "argus/input/keyboard.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <algorithm>
 #include <string>
@@ -196,7 +196,7 @@ namespace argus {
         {KeyboardScancode::MENU, GLFW_KEY_MENU},
     });
 
-    static std::vector<TextInputContext*> g_input_contexts;
+    static std::vector<TextInputContext *> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
     static int g_keyboard_key_count = 0;
@@ -269,31 +269,26 @@ namespace argus {
     static void _update_callback(TimeDelta delta) {
     }
 
-    constexpr inline KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
-        return static_cast<KeyboardModifiers>(
-                static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs)
-        );
+    constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
+        return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
+                                              | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
-    constexpr inline KeyboardModifiers operator |=(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
-        return static_cast<KeyboardModifiers>(
-                static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs)
-        );
+    constexpr inline KeyboardModifiers operator|=(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
+        return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
+                                              | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
-    constexpr inline KeyboardModifiers operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
-        return static_cast<KeyboardModifiers>(
-                static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs)
-        );
+    constexpr inline KeyboardModifiers operator&(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
+        return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
+                                              & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
     void init_keyboard(GLFWwindow *handle) {
         glfwSetKeyCallback(handle, _on_key_event);
     }
 
+    // clang-format off
     KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
             const KeyboardModifiers modifiers):
             ArgusEvent(ArgusEventType::KEYBOARD),
@@ -301,6 +296,7 @@ namespace argus {
             scancode(scancode),
             modifiers(modifiers) {
     }
+    // clang-format on
 
     const std::string KeyboardEvent::get_key_name(void) const {
         return argus::get_key_name(scancode);
@@ -315,15 +311,17 @@ namespace argus {
         if (glfw_scancode == GLFW_KEY_UNKNOWN) {
             return false;
         }
-        return glfwGetKey(static_cast<GLFWwindow*>(get_window_handle(window)), glfw_scancode);
+        return glfwGetKey(static_cast<GLFWwindow *>(get_window_handle(window)), glfw_scancode);
     }
 
+    // clang-format off
     TextInputContext::TextInputContext(void):
             valid(true),
             active(false),
             text() {
         this->activate();
     }
+    // clang-format on
 
     TextInputContext &TextInputContext::create_context(void) {
         return *new TextInputContext();

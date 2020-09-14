@@ -8,18 +8,17 @@
  */
 
 // module lowlevel
-#include "argus/filesystem.hpp"
-#include "argus/threading.hpp"
+#include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 #include <algorithm>
-#include <cctype>
 #include <exception>
 #include <functional>
 #include <future>
@@ -29,6 +28,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <cctype>
 
 #define UID_SEPARATOR "."
 
@@ -98,12 +99,11 @@ namespace argus {
                 }
 
                 if (prototype_map.find(cur_uid) != prototype_map.cend()) {
-                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies",
-                            cur_uid.c_str());
+                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies", cur_uid.c_str());
                     continue;
                 }
 
-                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){return std::tolower(c);});
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
 
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {
@@ -114,7 +114,8 @@ namespace argus {
 
                 prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path, true}});
 
-                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(), full_child_path.c_str());
+                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(),
+                        full_child_path.c_str());
             }
         }
     }

@@ -1,0 +1,59 @@
+BasedOnStyle: Google
+
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+SpaceBeforeCtorInitializerColon: false
+BreakBeforeBinaryOperators: All
+AlignOperands: false
+
+SpacesBeforeTrailingComments: 1
+
+PointerAlignment: Right
+
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+ColumnLimit: 120
+IndentWidth: 4
+
+NamespaceIndentation: All
+FixNamespaceComments: false
+
+IndentPPDirectives: BeforeHash
+
+CommentPragmas: '^TODO'
+
+IncludeCategories:
+  - Regex:          '^"argus/lowlevel(/.*|\.hpp)$'
+    Priority:       1
+  - Regex:          '^"internal/lowlevel/.*'
+    Priority:       1
+  - Regex:          '^"argus/core(/.*|\.hpp)'
+    Priority:       2
+  - Regex:          '^"internal/core/.*'
+    Priority:       2
+  - Regex:          '^"argus/ecs(/.*|\.hpp)'
+    Priority:       3
+  - Regex:          '^"internal/ecs/.*'
+    Priority:       3
+  - Regex:          '^"argus/resman(/.*|\.hpp)'
+    Priority:       4
+  - Regex:          '^"internal/resman/.*'
+    Priority:       4
+  - Regex:          '^"argus/render(/.*|\.hpp)'
+    Priority:       5
+  - Regex:          '^"internal/render/.*'
+    Priority:       5
+  - Regex:          '^"argus/input(/.*|\.hpp)'
+    Priority:       6
+  - Regex:          '^"internal/input/.*'
+    Priority:       6
+  - Regex:      '^".*"$'
+    Priority:   101
+  - Regex:      '^<(chrono|co.*|ctgmath)>$'
+    Priority:   102
+  - Regex:      '^<c.*>$'
+    Priority:   103
+  - Regex:      '^<.*>$'
+    Priority:   102

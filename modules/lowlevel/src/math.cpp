@@ -7,7 +7,8 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/math.hpp"
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
 
 void multiply_matrices(float (&a)[16], float (&b)[16], float (&res)[16]) {
     // naive implementation

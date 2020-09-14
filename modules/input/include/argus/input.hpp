@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "argus/keyboard.hpp"
+#include "argus/input/keyboard.hpp"
 
 namespace argus {
     //TODO

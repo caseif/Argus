@@ -192,6 +192,7 @@ namespace argus {
      * keys, the Super key, and the num lock, caps lock, and scroll lock
      * toggles.
      */
+    // clang-format off
     enum class KeyboardModifiers : uint16_t {
         NONE            = 0x00,
         SHIFT           = 0x01,
@@ -199,6 +200,7 @@ namespace argus {
         SUPER           = 0x04,
         ALT             = 0x08
     };
+    // clang-format on
 
     /**
      * \brief Bitwise OR implementation for KeyboardModifiers bitmask elements.
@@ -208,7 +210,7 @@ namespace argus {
      *
      * \return The bitwise OR of the operands.
      */
-    constexpr inline KeyboardModifiers operator |(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
     /**
      * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
      *        elements.
@@ -220,7 +222,7 @@ namespace argus {
      *
      * \sa KeyboardModifiers::operator|
      */
-    constexpr inline KeyboardModifiers operator |=(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator|=(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
     /**
      * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
      *
@@ -229,11 +231,12 @@ namespace argus {
      *
      * \return The bitwise AND of the operands.
      */
-    constexpr inline KeyboardModifiers operator &(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator&(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
 
     /**
      * \brief Represents a specific type of keyboard event.
      */
+    // clang-format off
     enum class KeyboardEventType {
         /**
          * \brief A key has been pressed down.
@@ -244,6 +247,7 @@ namespace argus {
          */
         KEY_UP
     };
+    // clang-format on
 
     /**
      * \brief Represents a press of a keyboard key.
@@ -278,8 +282,8 @@ namespace argus {
          * \param scancode The scancode associated with this key event.
          * \param modifiers The modifiers active during this key event.
          */
-        KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
-                const KeyboardModifiers modifiers);
+        KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode,
+                      const KeyboardModifiers modifiers);
 
         /**
          * \brief Gets the semantic name of the pressed key.
@@ -316,49 +320,49 @@ namespace argus {
      * as well as to deactivate and release the input context.
      */
     class TextInputContext {
-        private:
-            bool valid;
-            bool active;
-            std::string text;
+       private:
+        bool valid;
+        bool active;
+        std::string text;
 
-            TextInputContext(void);
+        TextInputContext(void);
 
-            TextInputContext(TextInputContext &context) = delete;
+        TextInputContext(TextInputContext &context) = delete;
 
-            TextInputContext(TextInputContext &&context) = delete;
+        TextInputContext(TextInputContext &&context) = delete;
 
-        public:
-            /**
-             * \brief Creates a new TextInputContext.
-             *
-             * \sa TextInputContext#release(void)
-             */
-            TextInputContext &create_context(void);
+       public:
+        /**
+         * \brief Creates a new TextInputContext.
+         *
+         * \sa TextInputContext#release(void)
+         */
+        TextInputContext &create_context(void);
 
-            /**
-             * \brief Returns the context's current text.
-             */
-            const std::string &get_current_text(void) const;
+        /**
+         * \brief Returns the context's current text.
+         */
+        const std::string &get_current_text(void) const;
 
-            /**
-             * \brief Resumes capturing text input to the context.
-             *
-             * \attention Any other active context will be deactivated.
-             */
-            void activate(void);
+        /**
+         * \brief Resumes capturing text input to the context.
+         *
+         * \attention Any other active context will be deactivated.
+         */
+        void activate(void);
 
-            /**
-             * \brief Suspends text input capture for the context.
-             */
-            void deactivate(void);
+        /**
+         * \brief Suspends text input capture for the context.
+         */
+        void deactivate(void);
 
-            /**
-             * \brief Relases the context, invalidating it for any further use.
-             *
-             * \warning Invoking any function on the context following its
-             *          release is undefined behavior.
-             */
-            void release(void);
+        /**
+         * \brief Relases the context, invalidating it for any further use.
+         *
+         * \warning Invoking any function on the context following its
+         *          release is undefined behavior.
+         */
+        void release(void);
     };
 
 }

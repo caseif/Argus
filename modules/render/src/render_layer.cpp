@@ -8,7 +8,7 @@
  */
 
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 // module core
 #include "internal/core/core_util.hpp"

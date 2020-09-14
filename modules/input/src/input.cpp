@@ -24,11 +24,11 @@
 namespace argus {
 
     static void _init_window_input(const Window &window) {
-        init_keyboard(static_cast<GLFWwindow*>(get_window_handle(window)));
+        init_keyboard(static_cast<GLFWwindow *>(get_window_handle(window)));
     }
 
     static void _on_window_event(const ArgusEvent &event, void *data) {
-        const WindowEvent wevent = static_cast<const WindowEvent&>(event);
+        const WindowEvent wevent = static_cast<const WindowEvent &>(event);
         if (wevent.subtype == WindowEventType::CREATE) {
             _init_window_input(wevent.window);
         }

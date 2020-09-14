@@ -10,8 +10,7 @@
 #pragma once
 
 // module lowlevel
-#include "argus/math.hpp"
-#include "argus/threading.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 // module core
 #include "argus/core.hpp"

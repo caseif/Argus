@@ -8,8 +8,8 @@
  */
 
 // module lowlevel
-#include "argus/filesystem.hpp"
-#include "argus/threading.hpp"
+#include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/error_util.hpp"
 #include "internal/lowlevel/logging.hpp"
 

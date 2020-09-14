@@ -9,8 +9,8 @@
 
 // module lowlevel
 #include "internal/lowlevel/logging.hpp"
-#include "argus/math.hpp"
-#include "argus/threading.hpp"
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 // module core
 #include "argus/core.hpp"
@@ -27,7 +27,7 @@
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <algorithm>
 #include <atomic>
@@ -38,7 +38,7 @@
 
 namespace argus {
 
-    using namespace glext;
+        using namespace glext;
 
     extern bool g_render_module_initialized;
 

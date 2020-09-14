@@ -9,14 +9,14 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 // module ecs
 #include "argus/ecs/component_type_registry.hpp"
+
+#include <map>
+#include <vector>
 
 namespace argus {
 
@@ -25,13 +25,15 @@ namespace argus {
         std::string name;
         size_t size;
 
+        // clang-format off
         ComponentTypeInfo(ComponentTypeId id, std::string name, size_t size):
                 id(id),
                 name(name),
                 size(size) {
         }
+        // clang-format on
     };
-    
+
     struct pimpl_ComponentTypeRegistry {
         std::vector<ComponentTypeInfo> component_types;
         ComponentTypeId next_id = 0;

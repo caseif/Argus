@@ -18,7 +18,7 @@
 #include "internal/render/types.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <algorithm>
 #include <iterator>

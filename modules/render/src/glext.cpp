@@ -14,7 +14,7 @@
 #include "internal/render/expansion_macros.hpp"
 #include "internal/render/glext.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 #include <map> // IWYU pragma: keep
 

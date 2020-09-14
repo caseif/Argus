@@ -11,7 +11,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/texture_data.hpp"

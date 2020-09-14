@@ -10,7 +10,7 @@
 #pragma once
 
 // module lowlevel
-#include "argus/math.hpp"
+#include "argus/lowlevel/math.hpp"
 
 // module render
 #include "argus/render/transform.hpp"

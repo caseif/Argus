@@ -10,7 +10,7 @@
 #pragma once
 
 // module lowlevel
-#include "argus/math.hpp"
+#include "argus/lowlevel/math.hpp"
 
 namespace argus {
     /**

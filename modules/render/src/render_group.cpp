@@ -8,13 +8,13 @@
  */
 
 // module lowlevel
-#include "argus/memory.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 // module core
 #include "internal/core/core_util.hpp"
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 // module render
 #include "argus/render/material.hpp"

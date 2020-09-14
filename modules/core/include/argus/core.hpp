@@ -53,8 +53,8 @@
  * \sa argus::ArgusModule
  * \sa argus::register_argus_module
  */
-#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
-    _MODULE_REG_PREFIX { \
+#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback)                       \
+    _MODULE_REG_PREFIX {                                                                                \
         argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
     }
 
@@ -160,7 +160,7 @@ namespace argus {
      *
      * \return The bitwise OR of the operands.
      */
-    constexpr ArgusEventType operator |(const ArgusEventType lhs, const ArgusEventType rhs);
+    constexpr ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs);
     /**
      * \brief Bitwise OR-assignment implementation for ArgusEventType bitmask
      *        elements.
@@ -172,7 +172,7 @@ namespace argus {
      *
      * \sa KeyboardModifiers::operator|
      */
-    constexpr inline ArgusEventType operator |=(const ArgusEventType lhs, const ArgusEventType rhs);
+    constexpr inline ArgusEventType operator|=(const ArgusEventType lhs, const ArgusEventType rhs);
     /**
      * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
      *
@@ -181,26 +181,26 @@ namespace argus {
      *
      * \return The bitwise AND of the operands.
      */
-    constexpr inline ArgusEventType operator &(const ArgusEventType lhs, const ArgusEventType rhs);
+    constexpr inline ArgusEventType operator&(const ArgusEventType lhs, const ArgusEventType rhs);
 
     /**
      * \brief Represents an event pertaining to the current application,
      *        typically triggered by user interaction.
      */
     struct ArgusEvent {
-        protected:
-            /**
-             * \brief Aggregate constructor for ArgusEvent.
-             *
-             * \param type The \link ArgusEventType type \endlink of event.
-             */
-            ArgusEvent(ArgusEventType type);
+       protected:
+        /**
+         * \brief Aggregate constructor for ArgusEvent.
+         *
+         * \param type The \link ArgusEventType type \endlink of event.
+         */
+        ArgusEvent(ArgusEventType type);
 
-        public:
-            /**
-             * \brief The type of event.
-             */
-            const ArgusEventType type;
+       public:
+        /**
+         * \brief The type of event.
+         */
+        const ArgusEventType type;
     };
 
     /**
@@ -223,7 +223,7 @@ namespace argus {
      * \brief A callback that accepts an event and a piece of user-supplied
      *        data.
      */
-    typedef std::function<void(const ArgusEvent&, void*)> ArgusEventCallback;
+    typedef std::function<void(const ArgusEvent &, void *)> ArgusEventCallback;
 
     /**
      * \brief Represents a module for the Argus engine.
@@ -335,7 +335,7 @@ namespace argus {
      *            how frequently the game logic routine is called.
      */
     void set_target_framerate(const unsigned int target_framerate);
-    
+
     /**
      * \brief Sets the modules to load on engine initialization.
      *
@@ -402,7 +402,7 @@ namespace argus {
      * \return The ID of the new registration.
      */
     const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
-        void *const data = nullptr);
+                                       void *const data = nullptr);
 
     /**
      * \brief Unregisters an event handler.

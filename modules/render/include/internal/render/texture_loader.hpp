@@ -10,7 +10,7 @@
 #pragma once
 
 // module resman
-#include "argus/resource_manager.hpp"
+#include "argus/resman.hpp"
 
 namespace argus {
     class PngTextureLoader : public ResourceLoader {
