@@ -25,6 +25,11 @@
 namespace argus {
     struct pimpl_Window {
         /**
+         * \brief The graphics backend used by this Window.
+         */
+        RenderBackend backend;
+
+        /**
          * \brief The Renderer associated with this Window.
          */
         Renderer renderer;
@@ -73,8 +78,17 @@ namespace argus {
          */
         std::atomic<unsigned int> state;
 
-        pimpl_Window(Window &parent):
-                renderer(parent) {
+        /**
+         * \brief Whether the render resolution has recently been updated.
+         *
+         * \remark This must be atomic because the resolution can be updated
+         *         from the game thread.
+         */
+        std::atomic_bool dirty_resolution;
+
+        pimpl_Window(Window &parent, RenderBackend backend):
+                renderer(parent, backend),
+                backend(backend) {
         }
     };
 }

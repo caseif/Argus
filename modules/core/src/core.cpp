@@ -78,7 +78,7 @@ namespace argus {
         SharedMutex queue_mutex;
     };
 
-    Thread *g_render_thread;
+    Thread *g_game_thread;
 
     static Index g_next_index = 0;
     static std::mutex g_next_index_mutex;
@@ -256,8 +256,8 @@ namespace argus {
                 g_initialized = true;
                 break;
             case LifecycleStage::POST_DEINIT:
-                g_render_thread->detach();
-                g_render_thread->destroy();
+                g_game_thread->detach();
+                g_game_thread->destroy();
 
                 break;
             default:
@@ -556,7 +556,7 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_render_thread = &Thread::create(_game_loop, nullptr);
+        g_game_thread = &Thread::create(_game_loop, nullptr);
 
         // pass control over to the render loop
         _render_loop();

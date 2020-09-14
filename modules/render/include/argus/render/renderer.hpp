@@ -16,6 +16,7 @@ namespace argus {
     // forward declarations
     class RenderLayer;
     class Window;
+    enum class RenderBackend;
 
     struct pimpl_Renderer;
 
@@ -39,14 +40,22 @@ namespace argus {
              * \brief Constructs a new Renderer attached to the given Window.
              *
              * \param window The Window to attach the new Renderer to.
+             * \param backend The graphics backend to be used for the new
+             *        Renderer.
              */
-            Renderer(Window &window);
+            Renderer(Window &window, RenderBackend backend);
 
             Renderer(Renderer &rhs) = delete;
 
             Renderer(Renderer &&rhs) = delete;
 
             ~Renderer(void);
+
+            /**
+             * \brief Sets the context parameters requested by this Renderer
+             *        prior to window creation.
+             */
+            void init_context_hints(void);
 
             /**
              * \brief Initializes the Renderer.

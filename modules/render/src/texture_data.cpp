@@ -12,8 +12,8 @@
 
 // module render
 #include "argus/render/texture_data.hpp"
+#include "internal/render/gl/glext.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
-#include "internal/render/glext.hpp"
 
 #include "GLFW/glfw3.h"
 

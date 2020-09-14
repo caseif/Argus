@@ -11,6 +11,7 @@
 
 // module render
 #include "argus/render/renderer.hpp"
+#include "internal/render/renderer_impl.hpp"
 #include "internal/render/types.hpp"
 
 #include <atomic>
@@ -18,6 +19,10 @@
 
 namespace argus {
     struct pimpl_Renderer {
+        /**
+         * The specific Renderer implementation used by this wrapper.
+         */
+        RendererImpl *impl;
         /**
          * \brief The Window which this Renderer is mapped to.
          */
@@ -27,10 +32,6 @@ namespace argus {
          *        Renderer.
          */
         std::vector<RenderLayer*> render_layers;
-        /**
-         * \brief Whether the render resolution has recently been updated.
-         */
-        std::atomic_bool dirty_resolution;
 
         pimpl_Renderer(Window &window):
                 window(window) {

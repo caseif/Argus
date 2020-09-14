@@ -12,7 +12,7 @@
 
 // module render
 #include "internal/render/expansion_macros.hpp"
-#include "internal/render/glext.hpp"
+#include "internal/render/gl/glext.hpp"
 
 #include "GLFW/glfw3.h"
 

@@ -157,10 +157,10 @@ function(setup_submodule MODULE_NAME)
   project(${MODULE_NAME} C CXX)
 
   # source files
-  file(GLOB C_FILES ${SRC_DIR}/*.c)
-  file(GLOB CPP_FILES ${SRC_DIR}/*.cpp)
-  file(GLOB H_FILES ${SRC_DIR}/*.h)
-  file(GLOB HPP_FILES ${SRC_DIR}/*.hpp)
+  file(GLOB_RECURSE C_FILES ${SRC_DIR}/*.c)
+  file(GLOB_RECURSE CPP_FILES ${SRC_DIR}/*.cpp)
+  file(GLOB_RECURSE H_FILES ${SRC_DIR}/*.h)
+  file(GLOB_RECURSE HPP_FILES ${SRC_DIR}/*.hpp)
 
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
