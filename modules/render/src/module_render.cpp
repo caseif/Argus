@@ -12,6 +12,7 @@
 
 // module core
 #include "argus/core.hpp"
+#include "internal/core/lifecycle.hpp"
 
 // module resman
 #include "argus/resman.hpp"
@@ -83,8 +84,15 @@ namespace argus {
         }
     }
 
+    void load_backend_modules(void) {
+        //TODO: fail gracefully
+        enable_module(MODULE_RENDER_OPENGL);
+    }
+
     void init_module_render(void) {
         register_module({MODULE_RENDER, 3, {"core", "resman"}, _update_lifecycle_render});
+
+        register_early_init_callback(MODULE_RENDER, load_backend_modules);
     }
 
 }

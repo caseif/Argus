@@ -12,7 +12,6 @@
 
 // module render
 #include "argus/render/texture_data.hpp"
-#include "internal/render/gl/glext.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
 #include "GLFW/glfw3.h"
@@ -22,8 +21,6 @@
 #include <cstdio>
 
 namespace argus {
-
-    using namespace glext;
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const size_t width, const size_t height, unsigned char **&&image_data):
@@ -37,7 +34,7 @@ namespace argus {
 
     TextureData::~TextureData(void) {
         if (pimpl->prepared) {
-            glDeleteBuffers(1, &pimpl->buffer_handle);
+            //glDeleteBuffers(1, &pimpl->buffer_handle);
         } else {
             for (size_t y = 0; y < height; y++) {
                 delete[] pimpl->image_data[y];
@@ -53,7 +50,7 @@ namespace argus {
     void TextureData::prepare(void) {
         _ARGUS_ASSERT(!pimpl->prepared, "TextureData#prepare called twice\n");
 
-        glGenBuffers(1, &pimpl->buffer_handle);
+        /*glGenBuffers(1, &pimpl->buffer_handle);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pimpl->buffer_handle);
 
         if (!glIsBuffer(pimpl->buffer_handle)) {
@@ -69,7 +66,7 @@ namespace argus {
             offset += row_size;
         }
 
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);*/
 
         for (size_t y = 0; y < height; y++) {
             delete[] pimpl->image_data[y];

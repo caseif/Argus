@@ -1,4 +1,5 @@
 set(MODULE_IDS "lowlevel;core;ecs;resman;render;input")
+set(DYN_MODULE_IDS "render_opengl")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.8)
@@ -12,11 +13,14 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # use <package>_ROOT env var as hint
 endif()
 
-project(argus
+project(argus_root
         VERSION 0.1.0)
 
+set(LIB_BASE_NAME argus)
+
+set(DYN_MODULE_DIR "modules")
+
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
-option(USE_GLES "Use ES profile for OpenGL" OFF)
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
@@ -107,14 +111,30 @@ if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested")
 endif()
 
-if (${USE_GLES})
-  message("Using GL ES profile as requested")
-endif()
-
 # disable the annoying (and wrong) class vs. struct warning
 if(MSVC)
   add_compile_options("/wd4099")
 endif()
+
+# init task to copy dependency output
+function(copy_dep_output PARENT_TARGET DEP_TARGET PREFIX)
+  if(PREFIX MATCHES "^$")
+    set(PREFIX ".")
+  endif()
+  
+  add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD 
+    COMMAND "${CMAKE_COMMAND}" -E copy
+      "$<TARGET_FILE:${DEP_TARGET}>"
+      "${DIST_DIR}/lib/${PREFIX}/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
+    COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
+  if(WIN32)
+    add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy
+        "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
+        "${DIST_DIR}/lib/${PREFIX}/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
+      COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
+  endif()
+endfunction()
 
 # loads the include dirs of modules this one is dependent on and saves them to the given variable
 function(load_dep_module_includes DEST)
@@ -153,8 +173,12 @@ function(load_module_includes DEST)
   set(${DEST} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
-function(setup_submodule MODULE_NAME)
-  project(${MODULE_NAME} C CXX)
+function(setup_submodule MODULE_NAME DYN)
+  if(DYN)
+    project("${MODULE_NAME}" C CXX)
+  else()
+    project(${MODULE_NAME} C CXX)
+  endif()
 
   # source files
   file(GLOB_RECURSE C_FILES ${SRC_DIR}/*.c)
@@ -165,16 +189,15 @@ function(setup_submodule MODULE_NAME)
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
   include_directories("${MODULE_INCLUDES}")
-  get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
-  list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
-  set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
+
+  if(NOT DYN)
+    get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
+    list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
+    set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
+  endif()
 
   if(${USE_PTHREADS})
     add_definitions("-DUSE_PTHREADS")
-  endif()
-
-  if(${USE_GLES})
-    add_definitions("-DUSE_GLES")
   endif()
 
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -184,8 +207,6 @@ function(setup_submodule MODULE_NAME)
   if(WIN32)
     add_definitions("-DGLFW_DLL")
   endif()
-
-  add_definitions("-DGLFW_INCLUDE_GLEXT")
 
   if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
@@ -203,21 +224,35 @@ function(setup_submodule MODULE_NAME)
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()
 
-  add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
+  if(DYN)
+    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
+
+    # enable PIC
+    set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    # export all symbols (required on Windows)
+    set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    # output to separate directory
+    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${DYN_MODULE_DIR}")
+
+    target_link_libraries(${PROJECT_NAME} ${LOCAL_LIBS})
+
+    copy_dep_output("${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
+  else()
+    add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
+
+    get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
+    list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
+    set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
+
+    string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
+  endif()
+
+  # set the C++ standard
+  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-  get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
-  list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
-  set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
-
-  string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
 endfunction()
-
-# transform the module paths to add the prefix
-foreach(module ${MODULE_IDS})
-  list(APPEND MODULE_PATHS "${MODULE_PATH_PREFIX}${module}")
-endforeach()
 
 set(SRC_DIR src)
 set(INC_DIR include)
@@ -229,14 +264,12 @@ set(LIB_OUT_DIR ${CMAKE_BINARY_DIR}/lib)
 set(LIBRARY_OUTPUT_PATH ${LIB_OUT_DIR})
 
 # configure the copy headers task
-set(HDR_TARGET "${PROJECT_NAME}_headers")
+set(HDR_TARGET "${LIB_BASE_NAME}_headers")
 set(HDR_OUT_DIR "${DIST_DIR}/include/argus/")
 add_custom_target(${HDR_TARGET})
 add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
     make_directory ${HDR_OUT_DIR})
-foreach(MODULE_ID ${MODULE_IDS})
-endforeach()
 
 foreach(module ${MODULE_IDS})
   add_subdirectory(${MODULE_PATH_PREFIX}${module})
@@ -253,47 +286,39 @@ foreach(module ${MODULE_IDS})
   add_dependencies(${HDR_TARGET} ${module})
 endforeach()
 
-add_library(${PROJECT_NAME} SHARED ${MODULE_LIBS})
+foreach(module ${DYN_MODULE_IDS})
+  add_subdirectory("${MODULE_PATH_PREFIX}${module}")
+endforeach()
+
+add_library(${LIB_BASE_NAME} SHARED ${MODULE_LIBS})
 
 # set the linker language (since we're not directly including any sources)
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD 11)
 # enable PIC
-set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # export all symbols (required on Windows)
-set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # add libraries for linking
 get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
 list(REMOVE_DUPLICATES GLOBAL_LIBS)
-target_link_libraries(${PROJECT_NAME} ${GLOBAL_LIBS})
+target_link_libraries(${LIB_BASE_NAME} ${GLOBAL_LIBS})
 
 # add global include list
 get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
 list(REMOVE_DUPLICATES GLOBAL_INCLUDES)
-target_include_directories(${PROJECT_NAME} PUBLIC "${GLOBAL_INCLUDES}")
+target_include_directories(${LIB_BASE_NAME} PUBLIC "${GLOBAL_INCLUDES}")
+
+foreach(module ${DYN_MODULE_IDS})
+  add_dependencies("${module}" "${LIB_BASE_NAME}")
+endforeach()
 
 # make the copy headers target a dependency to force it to run
-add_dependencies(${PROJECT_NAME} ${HDR_TARGET})
+add_dependencies(${LIB_BASE_NAME} ${HDR_TARGET})
 
-# copy dependency output
-function(copy_dep_output DEP_TARGET)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
-    COMMAND "${CMAKE_COMMAND}" -E copy
-      "$<TARGET_FILE:${DEP_TARGET}>"
-      "${DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
-    COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
-  if(WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E copy
-        "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-        "${DIST_DIR}/lib/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
-      COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
-  endif()
-endfunction()
-
-copy_dep_output("${CMAKE_PROJECT_NAME}")
-copy_dep_output("${ZLIB_LIBRARY}")
-copy_dep_output("${PNG_LIBRARY}")
-copy_dep_output("${GLFW_LIBRARY_BASE}")
+copy_dep_output("${LIB_BASE_NAME}" "${LIB_BASE_NAME}" ".")
+copy_dep_output("${LIB_BASE_NAME}" "${ZLIB_LIBRARY}" ".")
+copy_dep_output("${LIB_BASE_NAME}" "${PNG_LIBRARY}" ".")
+copy_dep_output("${LIB_BASE_NAME}" "${GLFW_LIBRARY_BASE}" ".")

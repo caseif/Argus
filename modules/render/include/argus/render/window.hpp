@@ -27,17 +27,6 @@ namespace argus {
     typedef std::function<void(Window &window)> WindowCallback;
 
     /**
-     * \brief Represents a graphics backend used to instantiate a Window and
-     *        corresponding Renderer.
-     *
-     * \warning A Vulkan-based renderer is not yet implemented.
-     */
-    enum class RenderBackend {
-        OPENGL,
-        VULKAN
-    };
-
-    /**
      * \brief Represents an individual window on the screen.
      *
      * \attention Not all platforms may support multiple windows.
@@ -51,8 +40,6 @@ namespace argus {
             /**
              * \brief Creates a new Window.
              *
-             * \param backend The graphics backend to use for the new window.
-             *
              * \return The created Window.
              *
              * \warning Not all platforms may support multiple
@@ -61,7 +48,7 @@ namespace argus {
              * \remark A Renderer will be implicitly created upon construction
              *         of a Window.
              */
-            Window(RenderBackend backend);
+            Window();
 
             ~Window(void);
 

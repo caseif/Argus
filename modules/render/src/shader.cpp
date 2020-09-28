@@ -13,7 +13,6 @@
 // module render
 #include "argus/render/shader.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/gl/glext.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
 #include <initializer_list>
@@ -30,8 +29,6 @@
 namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
-
-    using namespace glext;
 
     Shader g_layer_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_layer_transform", _UNIFORM_LAYER_TRANSFORM);
 

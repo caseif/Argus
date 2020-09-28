@@ -10,6 +10,7 @@
             "${workspaceFolder}/modules/input/include",
             "${workspaceFolder}/modules/lowlevel/include",
             "${workspaceFolder}/modules/render/include",
+            "${workspaceFolder}/modules/render_opengl/include",
             "${workspaceFolder}/modules/resman/include"
         ]
     },

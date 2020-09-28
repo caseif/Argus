@@ -21,8 +21,8 @@
 #include "argus/render/renderer.hpp"
 #include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
-#include "internal/render/gl/glext.hpp"
-#include "internal/render/gl/renderer_gl.hpp"
+#include "internal/render_opengl/glext.hpp"
+#include "internal/render_opengl/gl_renderer.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -41,8 +41,6 @@
 namespace argus {
 
     using namespace glext;
-
-    extern bool g_render_module_initialized;
 
     static void _activate_gl_context(window_handle_t window) {
         if (glfwGetCurrentContext() == window) {

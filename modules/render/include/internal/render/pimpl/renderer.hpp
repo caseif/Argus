@@ -20,7 +20,11 @@
 namespace argus {
     struct pimpl_Renderer {
         /**
-         * The specific Renderer implementation used by this wrapper.
+         * \brief The graphics backend used by this renderer.
+         */
+        RenderBackend backend;
+        /**
+         * \brief The specific Renderer implementation used by this wrapper.
          */
         RendererImpl *impl;
         /**
@@ -33,8 +37,9 @@ namespace argus {
          */
         std::vector<RenderLayer*> render_layers;
 
-        pimpl_Renderer(Window &window):
-                window(window) {
+        pimpl_Renderer(Window &window, RendererImpl *impl):
+                window(window),
+                impl(impl) {
         }
     };
 }

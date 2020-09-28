@@ -25,11 +25,6 @@
 namespace argus {
     struct pimpl_Window {
         /**
-         * \brief The graphics backend used by this Window.
-         */
-        RenderBackend backend;
-
-        /**
          * \brief The Renderer associated with this Window.
          */
         Renderer renderer;
@@ -86,9 +81,8 @@ namespace argus {
          */
         std::atomic_bool dirty_resolution;
 
-        pimpl_Window(Window &parent, RenderBackend backend):
-                renderer(parent, backend),
-                backend(backend) {
+        pimpl_Window(Window &parent):
+                renderer(parent) {
         }
     };
 }

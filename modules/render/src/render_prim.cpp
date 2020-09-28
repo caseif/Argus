@@ -15,7 +15,6 @@
 #include "argus/render/render_prim.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/gl/glext.hpp"
 #include "internal/render/pimpl/render_prim.hpp"
 
 #include <vector>
@@ -23,8 +22,6 @@
 #include <cstdlib>
 
 namespace argus {
-
-    using namespace glext;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderPrim));
 

@@ -34,3 +34,11 @@
 #define _ATTRIB_LOC_TEXCOORD 2
 
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
+
+#define MODULE_RENDER_OPENGL "render_opengl"
+#define MODULE_RENDER_OPENGLES "render_opengles"
+#define MODULE_RENDER_VULKAN "render_vulkan"
+
+#define FN_CREATE_OPENGL_BACKEND "create_opengl_backend"
+#define FN_CREATE_OPENGLES_BACKEND "create_opengles_backend"
+#define FN_CREATE_VULKAN_BACKEND "create_vulkan_backend"

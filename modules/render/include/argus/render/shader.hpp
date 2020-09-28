@@ -16,8 +16,6 @@ namespace argus {
     // forward declarations
     struct pimpl_Shader;
 
-    class ShaderProgram;
-
     /**
      * \brief Represents a shader for use with a RenderGroup or RenderLayer.
      *

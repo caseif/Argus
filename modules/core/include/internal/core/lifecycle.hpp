@@ -9,18 +9,10 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "argus/core.hpp"
 
 namespace argus {
+    void register_early_init_callback(const std::string module_id, NullaryCallback callback);
 
-    typedef struct {
-        unsigned int target_tickrate;
-        unsigned int target_framerate;
-        std::vector<std::string> load_modules;
-        std::vector<RenderBackend> render_backends;
-    } EngineConfig;
-
-    EngineConfig get_engine_config();
-
+    void do_early_init();
 }

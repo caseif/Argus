@@ -15,7 +15,6 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/shader_program.hpp"
 #include "internal/render/types.hpp"
-#include "internal/render/gl/glext.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
 #include "GLFW/glfw3.h"
@@ -32,8 +31,6 @@
 #define _LOG_MAX_LEN 255
 
 namespace argus {
-
-    using namespace glext;
 
     // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {
@@ -62,7 +59,7 @@ namespace argus {
     }
 
     static GLint _compile_shader(const GLenum type, const std::string &src) {
-        GLint gl_shader = glCreateShader(type);
+        /*GLint gl_shader = glCreateShader(type);
 
         if (!glIsShader(gl_shader)) {
             _ARGUS_FATAL("Failed to create %s shader\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
@@ -84,18 +81,19 @@ namespace argus {
             delete[] log;
         }
 
-        return gl_shader;
+        return gl_shader;*/
+        return 0;
     }
 
     void ShaderProgram::link(void) {
         GLuint gl_program = static_cast<GLuint>(program_handle);
 
         if (initialized) {
-            glDeleteProgram(gl_program);
+            //glDeleteProgram(gl_program);
         }
 
         // create the program, to start
-        gl_program = glCreateProgram();
+        //gl_program = glCreateProgram();
         program_handle = static_cast<handle_t>(gl_program);
 
         if (!initialized) {
@@ -221,7 +219,7 @@ namespace argus {
 
         // compile each bootstrap shader
 
-        GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
+        /*GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
         glAttachShader(program_handle, bootstrap_vert_handle);
 
         GLint bootstrap_frag_handle = _compile_shader(GL_FRAGMENT_SHADER, bootstrap_frag_ss.str());
@@ -267,14 +265,14 @@ namespace argus {
 
         glUseProgram(program_handle);
         glUniformMatrix4fv(get_uniform_location(_UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
-        glUseProgram(0);
+        glUseProgram(0);*/
 
         needs_rebuild = false;
     }
 
     void ShaderProgram::delete_program(void) {
         _ARGUS_ASSERT(initialized, "Cannot delete uninitialized program.");
-        glDeleteProgram(program_handle);
+        //glDeleteProgram(program_handle);
         initialized = false;
     }
 

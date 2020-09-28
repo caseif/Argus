@@ -87,7 +87,7 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
-    Window::Window(RenderBackend backend): pimpl(new pimpl_Window(*this, backend)) {
+    Window::Window(): pimpl(new pimpl_Window(*this)) {
         _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before render module is initialized.");
 
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
@@ -158,7 +158,7 @@ namespace argus {
     }
 
     Window &Window::create_child_window(void) {
-        Window *child_window = new Window(pimpl->backend);
+        Window *child_window = new Window();
         child_window->pimpl->parent = this;
 
         pimpl->children.insert(pimpl->children.cend(), child_window);

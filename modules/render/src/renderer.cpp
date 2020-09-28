@@ -12,14 +12,17 @@
 
 // module core
 #include "argus/core.hpp"
+#include "internal/core/config.hpp"
 #include "internal/core/core_util.hpp"
+#include "internal/core/defines.hpp"
+#include "internal/core/dyn_invoke.hpp"
 
 // module render
 #include "argus/render/renderer.hpp"
 #include "argus/render/render_layer.hpp"
 #include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
-#include "internal/render/gl/renderer_gl.hpp"
+#include "internal/render/defines.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -28,25 +31,41 @@
 #include <vector>
 
 namespace argus {
-    Renderer::Renderer(Window &window, RenderBackend backend):
-            pimpl(new pimpl_Renderer(window)) {
-        RendererImpl *impl;
+    //TODO: figure out the appropriate backend during module init
+    static RendererImpl *_create_backend_impl(Renderer &parent) {
+        auto backends = get_engine_config().render_backends;
 
-        switch (backend) {
-            case RenderBackend::OPENGL:
-                impl = new GLRenderer(*this);
-                break;
-            case RenderBackend::VULKAN:
-                _ARGUS_FATAL("Vulkan is not yet supported\n");
-            default:
-                _ARGUS_FATAL("Unrecognized render backend index %d\n", static_cast<int>(backend));
+        for (auto backend : backends) {
+            switch (backend) {
+                case RenderBackend::OPENGL: {
+                    auto impl = call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND), parent);
+                    _ARGUS_INFO("Selecting OpenGL as graphics backend\n");
+                    return impl;
+                }
+                case RenderBackend::OPENGLES:
+                    _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported\n");
+                    break;
+                case RenderBackend::VULKAN:
+                    _ARGUS_INFO("Graphics backend Vulkan is not yet supported\n");
+                    break;
+                default:
+                    _ARGUS_WARN("Skipping unrecognized graphics backend index %d\n", static_cast<int>(backend));
+                    break;
+            }
+            _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next\n");
         }
 
-        pimpl->impl = impl;
+        _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL\n");
+        return call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND), parent);
+        return nullptr;
+    }
+
+    Renderer::Renderer(Window &window):
+            pimpl(new pimpl_Renderer(window, _create_backend_impl(*this))) {
     }
 
     Renderer::~Renderer() {
-        pimpl->impl->~RendererImpl();
+        delete pimpl->impl;
         delete pimpl;
     }
 

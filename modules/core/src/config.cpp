@@ -19,6 +19,10 @@ namespace argus {
 
     EngineConfig g_engine_config;
 
+    EngineConfig get_engine_config() {
+        return g_engine_config;
+    }
+
     void set_target_tickrate(const unsigned int target_tickrate) {
         g_engine_config.target_tickrate = target_tickrate;
     }
@@ -29,6 +33,14 @@ namespace argus {
 
     void set_load_modules(const std::initializer_list<std::string> &module_list) {
         g_engine_config.load_modules.insert(g_engine_config.load_modules.begin(), module_list);
+    }
+
+    void set_render_backend(const std::initializer_list<RenderBackend> backends) {
+        g_engine_config.render_backends = std::vector<RenderBackend>(backends);
+    }
+
+    void set_render_backend(const RenderBackend backend) {
+        set_render_backend({ backend });
     }
 
 }

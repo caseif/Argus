@@ -7,20 +7,16 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#pragma once
+#include "argus/core.hpp"
+#include "internal/core/lifecycle.hpp"
 
+#include <map>
 #include <string>
-#include <vector>
 
 namespace argus {
+    std::map<std::string, NullaryCallback> g_early_init_callbacks;
 
-    typedef struct {
-        unsigned int target_tickrate;
-        unsigned int target_framerate;
-        std::vector<std::string> load_modules;
-        std::vector<RenderBackend> render_backends;
-    } EngineConfig;
-
-    EngineConfig get_engine_config();
-
+    void register_early_init_callback(const std::string module_id, NullaryCallback callback) {
+        g_early_init_callbacks.insert({ module_id, callback });
+    }
 }

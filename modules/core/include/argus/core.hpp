@@ -25,7 +25,7 @@
 #elif defined(__GNUC__) || defined(__clang__)
 #define _MODULE_REG_PREFIX __attribute__((constructor)) void __argus_module_ctor(void)
 #else
-#warning "Module loading is unsupported on this platform."
+#error "Module loading is unsupported on this platform."
 #endif
 
 #define MODULE_CORE "core"
@@ -80,7 +80,7 @@ namespace argus {
      */
     enum class LifecycleStage {
         /**
-         * \brief The first lifecycle stage.
+         * \brief The first standard lifecycle stage.
          *
          * Should be used for performing early allocation or other early setup,
          * generally for the purpose of preparing the module for use in the
@@ -116,7 +116,7 @@ namespace argus {
          * \brief Very late initialization.
          *
          * Should be used for performing de-init contingent on parent modules
-         * being fully de-initializedm as well as for final deallocation and
+         * being fully de-initialized as well as for final deallocation and
          * similar tasks.
          */
         POST_DEINIT
@@ -204,6 +204,18 @@ namespace argus {
     };
 
     /**
+     * \brief Represents a graphics backend used to instantiate a Window and
+     *        corresponding Renderer.
+     *
+     * \warning A Vulkan-based renderer is not yet implemented.
+     */
+    enum class RenderBackend {
+        OPENGL = 0x01,
+        OPENGLES = 0x02,
+        VULKAN = 0x11
+    };
+
+    /**
      * \brief A callback for passing lifecycle changes to engine modules.
      */
     typedef std::function<void(const LifecycleStage)> LifecycleUpdateCallback;
@@ -283,6 +295,16 @@ namespace argus {
     void register_module(const ArgusModule module);
 
     /**
+     * \brief Enables a registered module on demand.
+     *
+     * \param module_id The ID of the module to enable.
+     *
+     * \throw std::invalid_argument If no module with the given ID is currently
+     *        registered.
+     */
+    void enable_module(const std::string module_id);
+
+    /**
      * \brief Initializes the engine.
      *
      * argus::set_load_modules(const std::initializer_list) should be invoked
@@ -345,6 +367,40 @@ namespace argus {
      * \param module_list The IDs of the modules to load on engine init.
      */
     void set_load_modules(const std::initializer_list<std::string> &module_list);
+
+    /**
+     * \brief Returns a list of graphics backends available for use on the
+     *        current platform.
+     *
+     * \return The available graphics backends.
+     */
+    std::vector<RenderBackend> get_available_render_backends(void);
+
+    /**
+     * \brief Sets the graphics backend to be used for rendering.
+     *
+     * \param backend A list of render backends to use in order of preference.
+     *
+     * \remark This option is treated like a "hint" and will not be honored in
+     *          the event that the preferred backend is not available, either
+     *          due to a missing implementation or lack of hardware support. If
+     *          none of the specified backends can be used, the OpenGL backend
+     *          will be used as the default fallback.
+     */
+    void set_render_backend(const std::initializer_list<RenderBackend> backend);
+
+    /**
+     * \brief Sets the graphics backend to be used for rendering.
+     *
+     * \param backend The preferred RenderBackend to use.
+     *
+     * \remark This option is treated like a "hint" and will not be honored in
+     *          the event that the preferred backend is not available, either
+     *          due to a missing implementation or lack of hardware support. If
+     *          none of the specified backends can be used, the OpenGL backend
+     *          will be used as the default fallback.
+     */
+    void set_render_backend(const RenderBackend backend);
 
     /**
      * \brief Registers a callback for invocation on each game update.
@@ -429,7 +485,7 @@ namespace argus {
      */
     template <typename EventType>
     void dispatch_event(const EventType &event) {
-        _dispatch_event_ptr(std::make_unique<EventType>(event));
+        _dispatch_event_ptr(std::unique_ptr<ArgusEvent>(new EventType(event)));
     }
 
 }
