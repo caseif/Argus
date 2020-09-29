@@ -15,18 +15,15 @@
 
 #pragma once
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
-
-#ifdef _MSC_VER
-#define _MODULE_REG_PREFIX BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-#elif defined(__GNUC__) || defined(__clang__)
-#define _MODULE_REG_PREFIX __attribute__((constructor)) void __argus_module_ctor(void)
-#else
-#error "Module loading is unsupported on this platform."
-#endif
 
 #define MODULE_CORE "core"
 #define MODULE_ECS "ecs"
@@ -53,10 +50,20 @@
  * \sa argus::ArgusModule
  * \sa argus::register_argus_module
  */
-#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback)                       \
-    _MODULE_REG_PREFIX {                                                                                \
+#ifdef _WIN32
+#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
+    BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
+        argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
+        return true; \
+    }
+#elif defined(__GNUC__) || defined(__clang__)
+#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
+    REGISTER_ARGUS___attribute__((constructor)) void __argus_module_ctor(void) { \
         argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
     }
+#else
+#error This platform is not supported.
+#endif
 
 namespace argus {
 

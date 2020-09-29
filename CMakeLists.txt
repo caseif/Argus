@@ -235,7 +235,9 @@ function(setup_submodule MODULE_NAME DYN)
     # output to separate directory
     set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${DYN_MODULE_DIR}")
 
-    target_link_libraries(${PROJECT_NAME} ${LOCAL_LIBS})
+    set(ALL_PROJECT_LIBS ${LOCAL_LIBS})
+    list(APPEND ALL_PROJECT_LIBS ${LIB_BASE_NAME})
+    target_link_libraries(${PROJECT_NAME} ${ALL_PROJECT_LIBS})
 
     copy_dep_output("${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
   else()

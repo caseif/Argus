@@ -11,6 +11,8 @@
 
 #include "internal/render/expansion_macros.hpp"
 
+#undef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_GLEXT
 #include "GLFW/glfw3.h"
 
 #define GL_FUNCTIONS    glGenFramebuffers, \

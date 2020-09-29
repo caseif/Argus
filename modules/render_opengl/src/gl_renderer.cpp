@@ -29,6 +29,8 @@
 #include "internal/render/renderer_impl.hpp"
 #include "internal/render/types.hpp"
 
+#undef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_GLEXT
 #include "GLFW/glfw3.h"
 
 #include <algorithm>
