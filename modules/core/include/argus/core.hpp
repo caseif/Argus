@@ -58,7 +58,7 @@
     }
 #elif defined(__GNUC__) || defined(__clang__)
 #define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
-    REGISTER_ARGUS___attribute__((constructor)) void __argus_module_ctor(void) { \
+    __attribute__((constructor)) void __argus_module_ctor(void) { \
         argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
     }
 #else
