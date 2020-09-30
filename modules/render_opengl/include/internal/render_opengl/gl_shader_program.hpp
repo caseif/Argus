@@ -29,7 +29,7 @@ namespace argus {
     /**
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
-    class ShaderProgram {
+    class GLShaderProgram {
         friend class RenderGroup;
         friend class pimpl_RenderGroup;
         friend class RenderLayer;
@@ -67,7 +67,7 @@ namespace argus {
              * \param shaders The \link Shader Shaders \endlink to construct the
              *        new program with.
              */
-            ShaderProgram(const std::vector<const Shader*> &shaders);
+            GLShaderProgram(const std::vector<const Shader*> &shaders);
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given
@@ -76,8 +76,8 @@ namespace argus {
              * \param shaders The \link Shader Shaders \endlink to construct the
              *        new program with.
              */
-            ShaderProgram(const std::initializer_list<const Shader*> &shaders):
-                    ShaderProgram(std::vector<const Shader*>(shaders)) {
+            GLShaderProgram(const std::initializer_list<const Shader*> &shaders):
+                    GLShaderProgram(std::vector<const Shader*>(shaders)) {
             }
 
             /**
@@ -126,7 +126,5 @@ namespace argus {
              *             abstract the setting of uniforms.
              */
             uniform_location_t get_uniform_location(const std::string &uniform_id) const;
-
-            //TODO: proper uniform API
     };
 }

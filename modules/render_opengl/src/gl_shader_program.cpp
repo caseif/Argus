@@ -13,10 +13,15 @@
 // module render
 #include "argus/render/shader.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/shader_program.hpp"
 #include "internal/render/types.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
+// module render_opengl
+#include "internal/render_opengl/gl_shader_program.hpp"
+#include "internal/render_opengl/glext.hpp"
+
+#undef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_GLEXT
 #include "GLFW/glfw3.h"
 
 #include <algorithm>
@@ -30,7 +35,19 @@
 
 #define _LOG_MAX_LEN 255
 
+#define TRANSFORM_SHADER_SRC(entry, uniform) "\
+        uniform mat4 " uniform ";       \n\
+                                        \n\
+        void " entry "() {              \n\
+            position = (" uniform " * vec4(position, 0.0, 1.0)).xy;   \n\
+        }                               \n\
+    "
+
+#define GEN_TRANSFORM_SHADER(entry, uniform) Shader::create_vertex_shader(TRANSFORM_SHADER_SRC(entry, uniform), \
+        sizeof(TRANSFORM_SHADER_SRC(entry, uniform)), entry, 2147483647, {uniform})
+
 namespace argus {
+    using namespace glext;
 
     // this is transposed from the actual matrix, since GL interprets it in column-major order
     float g_ortho_matrix[16] = {
@@ -40,7 +57,11 @@ namespace argus {
        -1.0,  1.0,  1.0,  1.0
     };
 
-    ShaderProgram::ShaderProgram(const std::vector<const Shader*> &shaders) {
+    Shader g_layer_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_layer_transform", _UNIFORM_LAYER_TRANSFORM);
+
+    Shader g_group_transform_shader = GEN_TRANSFORM_SHADER("_argus_apply_group_transform", _UNIFORM_GROUP_TRANSFORM);
+
+    GLShaderProgram::GLShaderProgram(const std::vector<const Shader*> &shaders) {
         this->shaders = decltype(this->shaders)(shaders.begin(), shaders.end(), [](const Shader *a, const Shader *b) {
             if (a->pimpl->order != b->pimpl->order) {
                 return a->pimpl->order > b->pimpl->order;
@@ -52,14 +73,14 @@ namespace argus {
         needs_rebuild = true;
     }
 
-    void ShaderProgram::update_shaders(const std::vector<const Shader*> &shaders) {
+    void GLShaderProgram::update_shaders(const std::vector<const Shader*> &shaders) {
         this->shaders.clear();
         std::copy(shaders.cbegin(), shaders.cend(), std::inserter(this->shaders, this->shaders.end()));
         needs_rebuild = true;
     }
 
     static GLint _compile_shader(const GLenum type, const std::string &src) {
-        /*GLint gl_shader = glCreateShader(type);
+        GLint gl_shader = glCreateShader(type);
 
         if (!glIsShader(gl_shader)) {
             _ARGUS_FATAL("Failed to create %s shader\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
@@ -81,19 +102,18 @@ namespace argus {
             delete[] log;
         }
 
-        return gl_shader;*/
-        return 0;
+        return gl_shader;
     }
 
-    void ShaderProgram::link(void) {
+    void GLShaderProgram::link(void) {
         GLuint gl_program = static_cast<GLuint>(program_handle);
 
         if (initialized) {
-            //glDeleteProgram(gl_program);
+            glDeleteProgram(gl_program);
         }
 
         // create the program, to start
-        //gl_program = glCreateProgram();
+        gl_program = glCreateProgram();
         program_handle = static_cast<handle_t>(gl_program);
 
         if (!initialized) {
@@ -219,7 +239,7 @@ namespace argus {
 
         // compile each bootstrap shader
 
-        /*GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
+        GLint bootstrap_vert_handle = _compile_shader(GL_VERTEX_SHADER, bootstrap_vert_ss.str());
         glAttachShader(program_handle, bootstrap_vert_handle);
 
         GLint bootstrap_frag_handle = _compile_shader(GL_FRAGMENT_SHADER, bootstrap_frag_ss.str());
@@ -265,18 +285,18 @@ namespace argus {
 
         glUseProgram(program_handle);
         glUniformMatrix4fv(get_uniform_location(_UNIFORM_PROJECTION), 1, GL_FALSE, g_ortho_matrix);
-        glUseProgram(0);*/
+        glUseProgram(0);
 
         needs_rebuild = false;
     }
 
-    void ShaderProgram::delete_program(void) {
+    void GLShaderProgram::delete_program(void) {
         _ARGUS_ASSERT(initialized, "Cannot delete uninitialized program.");
         //glDeleteProgram(program_handle);
         initialized = false;
     }
 
-    uniform_location_t ShaderProgram::get_uniform_location(const std::string &uniform_id) const {
+    uniform_location_t GLShaderProgram::get_uniform_location(const std::string &uniform_id) const {
         auto it = uniforms.find(uniform_id);
         if (it == uniforms.end()) {
             _ARGUS_FATAL("Attempted to get non-existent shader uniform %s\n", uniform_id.c_str());
