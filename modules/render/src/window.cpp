@@ -20,7 +20,6 @@
 #include "argus/render/renderer.hpp"
 #include "argus/render/window.hpp"
 #include "argus/render/window_event.hpp"
-#include "internal/render/types.hpp"
 #include "internal/render/window.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -52,7 +51,7 @@ namespace argus {
 
     extern bool g_render_module_initialized;
 
-    extern std::map<window_handle_t, Window*> g_window_map;
+    extern std::map<GLFWwindow*, Window*> g_window_map;
     extern size_t g_window_count;
 
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {

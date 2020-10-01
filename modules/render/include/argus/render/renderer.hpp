@@ -15,6 +15,7 @@
 namespace argus {
     // forward declarations
     class RenderLayer;
+    class TextureData;
     class Window;
 
     struct pimpl_Renderer;

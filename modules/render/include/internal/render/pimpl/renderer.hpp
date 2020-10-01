@@ -12,17 +12,12 @@
 // module render
 #include "argus/render/renderer.hpp"
 #include "internal/render/renderer_impl.hpp"
-#include "internal/render/types.hpp"
 
 #include <atomic>
 #include <vector>
 
 namespace argus {
     struct pimpl_Renderer {
-        /**
-         * \brief The graphics backend used by this renderer.
-         */
-        RenderBackend backend;
         /**
          * \brief The specific Renderer implementation used by this wrapper.
          */
@@ -37,7 +32,7 @@ namespace argus {
          */
         std::vector<RenderLayer*> render_layers;
 
-        pimpl_Renderer(Window &window, RendererImpl *impl):
+        pimpl_Renderer(Window &window):
                 window(window),
                 impl(impl) {
         }

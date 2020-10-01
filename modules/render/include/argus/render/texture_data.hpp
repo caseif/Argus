@@ -15,6 +15,7 @@
 
 namespace argus {
     // forward declarations
+    class Renderer;
     struct pimpl_TextureData;
 
     /**
@@ -57,18 +58,5 @@ namespace argus {
              *        memory currently in use.
              */
             ~TextureData(void);
-
-            /**
-             * \brief Gets whether the texture data has been prepared for use in
-             *        rendering.
-             *
-             * \return Whether the texture data has been prepared.
-             */
-            const bool is_prepared(void);
-
-            /**
-             * \brief Prepares the texture data for use in rendering.
-             */
-            void prepare(void);
     };
 }

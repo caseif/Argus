@@ -13,16 +13,12 @@
 // module render
 #include "argus/render/shader.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/types.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/gl_shader_program.hpp"
 #include "internal/render_opengl/glext.hpp"
-
-#undef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_GLEXT
-#include "GLFW/glfw3.h"
+#include "internal/render_opengl/glfw_include.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -114,7 +110,7 @@ namespace argus {
 
         // create the program, to start
         gl_program = glCreateProgram();
-        program_handle = static_cast<handle_t>(gl_program);
+        program_handle = static_cast<program_handle_t>(gl_program);
 
         if (!initialized) {
             initialized = true;
@@ -272,13 +268,13 @@ namespace argus {
 
         std::vector<std::string> bootstrap_uniforms {_UNIFORM_PROJECTION, _UNIFORM_TEXTURE};
         for (std::string uniform_id : bootstrap_uniforms) {
-            GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
+            auto uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
             uniforms.insert({uniform_id, uniform_loc});
         }
 
         for (const Shader *shader : shaders) {
             for (const std::string &uniform_id : shader->pimpl->uniform_ids) {
-                GLint uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
+                auto uniform_loc = glGetUniformLocation(program_handle, uniform_id.c_str());
                 uniforms.insert({uniform_id, uniform_loc});
             }
         }
@@ -296,7 +292,7 @@ namespace argus {
         initialized = false;
     }
 
-    uniform_location_t GLShaderProgram::get_uniform_location(const std::string &uniform_id) const {
+    uniform_handle_t GLShaderProgram::get_uniform_location(const std::string &uniform_id) const {
         auto it = uniforms.find(uniform_id);
         if (it == uniforms.end()) {
             _ARGUS_FATAL("Attempted to get non-existent shader uniform %s\n", uniform_id.c_str());

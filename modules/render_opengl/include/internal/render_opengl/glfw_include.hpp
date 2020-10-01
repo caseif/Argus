@@ -7,15 +7,11 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+/**
+ * \file This file sets required macros and includes the GLFW header.
+ */
 #pragma once
 
-// forward declarations
-class GLFWwindow;
-
-namespace argus {
-
-    void init_window_input(GLFWwindow *handle);
-
-    void init_keyboard(GLFWwindow *handle);
-
-}
+#undef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_GLEXT
+#include "GLFW/glfw3.h"

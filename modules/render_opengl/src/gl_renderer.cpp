@@ -19,19 +19,20 @@
 // module render
 #include "argus/render/render_layer.hpp"
 #include "argus/render/renderer.hpp"
+#include "argus/render/texture_data.hpp"
 #include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
-#include "internal/render_opengl/glext.hpp"
-#include "internal/render_opengl/gl_renderer.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
 #include "internal/render/pimpl/renderer.hpp"
+#include "internal/render/pimpl/texture_data.hpp"
 #include "internal/render/pimpl/window.hpp"
 #include "internal/render/renderer_impl.hpp"
-#include "internal/render/types.hpp"
 
-#undef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_GLEXT
-#include "GLFW/glfw3.h"
+// module render_opengl
+#include "internal/render_opengl/buffered_texture.hpp"
+#include "internal/render_opengl/gl_renderer.hpp"
+#include "internal/render_opengl/glext.hpp"
+#include "internal/render_opengl/glfw_include.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -44,7 +45,9 @@ namespace argus {
 
     using namespace glext;
 
-    static void _activate_gl_context(window_handle_t window) {
+    std::map<const TextureData*, BufferedTexture> g_buffered_textures;
+
+    static void _activate_gl_context(GLFWwindow *window) {
         if (glfwGetCurrentContext() == window) {
             // already current
             return;
@@ -84,7 +87,7 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
-    GLRenderer::GLRenderer(Renderer &renderer): RendererImpl(renderer) {
+    GLRenderer::GLRenderer(void): RendererImpl() {
     }
 
     void GLRenderer::init_context_hints(void) {
@@ -102,7 +105,7 @@ namespace argus {
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
-    void GLRenderer::init(void) {
+    void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
         init_opengl_extensions();
@@ -124,7 +127,46 @@ namespace argus {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    void GLRenderer::render(const TimeDelta delta) {
+    BufferedTexture &_as_buffered_texture(Renderer &renderer, const TextureData &texture) {
+        auto existing = g_buffered_textures.find(&texture);
+        if (existing != g_buffered_textures.end()) {
+            return existing->second;
+        }
+
+        auto buffered = BufferedTexture(texture.width, texture.height);
+
+        glGenBuffers(1, &buffered.gl_handle);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, buffered.gl_handle);
+
+        if (!glIsBuffer(buffered.gl_handle)) {
+            _ARGUS_FATAL("Failed to gen pixel buffer during texture preparation\n");
+        }
+
+        size_t row_size = texture.width * 32 / 8;
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, texture.height * row_size, nullptr, GL_STREAM_COPY);
+
+        size_t offset = 0;
+        for (size_t y = 0; y < texture.height; y++) {
+            glBufferSubData(GL_PIXEL_UNPACK_BUFFER, offset, row_size, texture.pimpl->image_data[y]);
+            offset += row_size;
+        }
+
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+        auto inserted = g_buffered_textures.insert({ &texture, buffered });
+        return inserted.first->second;
+    }
+
+    void GLRenderer::deinit_texture(Renderer &renderer, const TextureData &texture) {
+        auto buffered = g_buffered_textures.find(&texture);
+        if (buffered == g_buffered_textures.end()) {
+            return;
+        }
+
+        glDeleteBuffers(1, &buffered->second.gl_handle);
+    }
+
+    void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
         if (renderer.pimpl->window.pimpl->dirty_resolution) {

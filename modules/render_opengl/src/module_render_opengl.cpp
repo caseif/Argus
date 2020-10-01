@@ -20,8 +20,8 @@
 #include "internal/render_opengl/gl_renderer.hpp"
 
 namespace argus {
-    RendererImpl *create_opengl_backend(Renderer &parent) {
-        return new GLRenderer(parent);
+    RendererImpl *create_opengl_backend() {
+        return new GLRenderer();
     }
 
     void update_lifecycle_render_opengl(LifecycleStage stage) {

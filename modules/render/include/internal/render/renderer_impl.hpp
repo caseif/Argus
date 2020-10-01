@@ -11,22 +11,22 @@
 // module core
 #include "argus/core.hpp"
 
-// module render
-#include "argus/render/renderer.hpp"
-
 namespace argus {
-    class RendererImpl {
-       protected:
-        Renderer &renderer;
+    // forward declarations
+    class Renderer;
+    class TextureData;
 
+    class RendererImpl {
        public:
-        RendererImpl(Renderer &renderer): renderer(renderer) {
+        RendererImpl() {
         }
 
         virtual void init_context_hints(void) = 0;
 
-        virtual void init(void) = 0;
+        virtual void init(Renderer &renderer) = 0;
 
-        virtual void render(const TimeDelta delta) = 0;
+        virtual void deinit_texture(Renderer &renderer, const TextureData &texture) = 0;
+
+        virtual void render(Renderer &renderer, const TimeDelta delta) = 0;
     };
 }

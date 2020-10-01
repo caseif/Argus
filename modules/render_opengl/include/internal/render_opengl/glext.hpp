@@ -9,11 +9,11 @@
 
 #pragma once
 
+// module render
 #include "internal/render/expansion_macros.hpp"
 
-#undef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_GLEXT
-#include "GLFW/glfw3.h"
+// module render_opengl
+#include "internal/render_opengl/glfw_include.hpp"
 
 #define GL_FUNCTIONS    glGenFramebuffers, \
                         glBindBuffer, \

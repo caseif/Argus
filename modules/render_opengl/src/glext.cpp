@@ -13,10 +13,7 @@
 // module render
 #include "internal/render/expansion_macros.hpp"
 #include "internal/render_opengl/glext.hpp"
-
-#undef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_GLEXT
-#include "GLFW/glfw3.h"
+#include "internal/render_opengl/glfw_include.hpp"
 
 #include <map> // IWYU pragma: keep
 

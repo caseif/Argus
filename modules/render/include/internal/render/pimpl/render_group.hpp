@@ -11,7 +11,6 @@
 
 // module render
 #include "argus/render/render_group.hpp"
-#include "internal/render/types.hpp"
 
 #include <map>
 #include <vector>

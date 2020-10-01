@@ -11,6 +11,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module render
+#include "argus/render/renderer.hpp"
 #include "argus/render/texture_data.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
@@ -28,54 +29,14 @@ namespace argus {
             width(width),
             height(height) {
         image_data = image_data;
-        pimpl->prepared = false;
         image_data = nullptr;
     }
 
     TextureData::~TextureData(void) {
-        if (pimpl->prepared) {
-            //glDeleteBuffers(1, &pimpl->buffer_handle);
-        } else {
-            for (size_t y = 0; y < height; y++) {
-                delete[] pimpl->image_data[y];
-            }
-            delete[] pimpl->image_data;
-        }
-    }
-
-    const bool TextureData::is_prepared(void) {
-        return pimpl->prepared;
-    }
-
-    void TextureData::prepare(void) {
-        _ARGUS_ASSERT(!pimpl->prepared, "TextureData#prepare called twice\n");
-
-        /*glGenBuffers(1, &pimpl->buffer_handle);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pimpl->buffer_handle);
-
-        if (!glIsBuffer(pimpl->buffer_handle)) {
-            _ARGUS_FATAL("Failed to gen pixel buffer during texture preparation\n");
-        }
-
-        size_t row_size = width * 32 / 8;
-        glBufferData(GL_PIXEL_UNPACK_BUFFER, height * row_size, nullptr, GL_STREAM_COPY);
-
-        size_t offset = 0;
-        for (size_t y = 0; y < height; y++) {
-            glBufferSubData(GL_PIXEL_UNPACK_BUFFER, offset, row_size, pimpl->image_data[y]);
-            offset += row_size;
-        }
-
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);*/
-
         for (size_t y = 0; y < height; y++) {
             delete[] pimpl->image_data[y];
         }
         delete[] pimpl->image_data;
-
-        pimpl->image_data = nullptr;
-
-        pimpl->prepared = true;
     }
 
 }

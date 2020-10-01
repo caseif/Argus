@@ -31,37 +31,8 @@
 #include <vector>
 
 namespace argus {
-    //TODO: figure out the appropriate backend during module init
-    static RendererImpl *_create_backend_impl(Renderer &parent) {
-        auto backends = get_engine_config().render_backends;
-
-        for (auto backend : backends) {
-            switch (backend) {
-                case RenderBackend::OPENGL: {
-                    auto impl = call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND), parent);
-                    _ARGUS_INFO("Selecting OpenGL as graphics backend\n");
-                    return impl;
-                }
-                case RenderBackend::OPENGLES:
-                    _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported\n");
-                    break;
-                case RenderBackend::VULKAN:
-                    _ARGUS_INFO("Graphics backend Vulkan is not yet supported\n");
-                    break;
-                default:
-                    _ARGUS_WARN("Skipping unrecognized graphics backend index %d\n", static_cast<int>(backend));
-                    break;
-            }
-            _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next\n");
-        }
-
-        _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL\n");
-        return call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND), parent);
-        return nullptr;
-    }
-
     Renderer::Renderer(Window &window):
-            pimpl(new pimpl_Renderer(window, _create_backend_impl(*this))) {
+            pimpl(new pimpl_Renderer(window)) {
     }
 
     Renderer::~Renderer() {
@@ -74,11 +45,11 @@ namespace argus {
     }
 
     void Renderer::init(void) {
-        pimpl->impl->init();
+        pimpl->impl->init(*this);
     }
 
     void Renderer::render(const TimeDelta delta) {
-        pimpl->impl->render(delta);
+        pimpl->impl->render(*this, delta);
     }
 
     RenderLayer &Renderer::create_render_layer(const int index) {

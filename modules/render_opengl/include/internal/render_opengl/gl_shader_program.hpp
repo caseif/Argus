@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "internal/render/types.hpp"
+#include "internal/render_opengl/glfw_include.hpp"
 
 #include <initializer_list>
 #include <set>
@@ -23,8 +23,8 @@ namespace argus {
     class RenderLayer;
     class Shader;
 
-    //TODO: temporary until we implement a proper uniform API
-    typedef unsigned int uniform_location_t;
+    typedef GLint uniform_handle_t;
+    typedef GLuint program_handle_t;
 
     /**
      * \brief Represents a linked shader program for use with a RenderGroup.
@@ -43,7 +43,7 @@ namespace argus {
              * \brief A complete list of uniforms defined by this
              *        program's Shaders.
              */
-            std::unordered_map<std::string, handle_t> uniforms;
+            std::unordered_map<std::string, uniform_handle_t> uniforms;
 
             /**
              * \brief Whether this program has been initially compiled and linked.
@@ -58,7 +58,7 @@ namespace argus {
             /**
              * \brief A handle to the linked program in video memory.
              */
-            handle_t program_handle;
+            program_handle_t program_handle;
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given
@@ -125,6 +125,6 @@ namespace argus {
              * \deprecated This will be removed after functions are added to
              *             abstract the setting of uniforms.
              */
-            uniform_location_t get_uniform_location(const std::string &uniform_id) const;
+            uniform_handle_t get_uniform_location(const std::string &uniform_id) const;
     };
 }

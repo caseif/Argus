@@ -17,10 +17,12 @@
 
 // module render
 #include "argus/render/renderer.hpp"
-#include "internal/render/types.hpp"
 
 #include <atomic>
 #include <vector>
+
+// forward declarations
+class GLFWwindow;
 
 namespace argus {
     struct pimpl_Window {
@@ -33,7 +35,7 @@ namespace argus {
          * \brief A handle to the lower-level window represented by this
          *        object.
          */
-        window_handle_t handle;
+        GLFWwindow *handle;
 
         /**
          * \brief The ID of the engine callback registered for this Window.

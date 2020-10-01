@@ -9,21 +9,9 @@
 
 #pragma once
 
-// forward declarations
-class GLFWwindow;
-
 namespace argus {
-    /**
-     * \brief An unsigned integer handle to an object.
-     */
-    typedef unsigned int handle_t;
-    /**
-     * \brief A signed integer handle to an object.
-     */
-    typedef int shandle_t;
+    // forward declarations
+    class RendererImpl;
 
-    /**
-     * \brief A handle to a window.
-     */
-    typedef GLFWwindow *window_handle_t;
+    RendererImpl &get_renderer_impl(void);
 }
