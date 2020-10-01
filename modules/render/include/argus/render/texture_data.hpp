@@ -33,11 +33,11 @@ namespace argus {
             /**
              * \brief The width in pixels of the texture.
              */
-            const size_t width;
+            const unsigned int width;
             /**
              * \brief The height in pixels of the texture.
              */
-            const size_t height;
+            const unsigned int height;
 
             /**
              * \brief Constructs a new instance of this class with the given
@@ -51,7 +51,7 @@ namespace argus {
              *
              * \attention The pixel data must be in RGBA format with a bit-depth of 8.
              */
-            TextureData(const size_t width, const size_t height, unsigned char **&&image_data);
+            TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data);
 
             /**
              * \brief Destroys this object, deleting any buffers in system or video

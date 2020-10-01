@@ -22,7 +22,7 @@
 #include <vector>
 
 // forward declarations
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace argus {
     struct pimpl_Window {

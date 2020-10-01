@@ -42,7 +42,8 @@
             "intelliSenseMode": "msvc-x64",
             "compilerArgs": [
                 "/W4"
-            ]
+            ],
+            "includePath": ["${defIncludePath}"]
         }
     ],
     "version": 4

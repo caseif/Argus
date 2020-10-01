@@ -78,11 +78,11 @@ namespace argus {
 
         png_read_info(png_ptr, info_ptr);
 
-        size_t width = png_get_image_width(png_ptr, info_ptr);
-        size_t height = png_get_image_height(png_ptr, info_ptr);
-        size_t bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-        size_t channels = png_get_channels(png_ptr, info_ptr);
-        unsigned char color_type = png_get_color_type(png_ptr, info_ptr);
+        auto width = png_get_image_width(png_ptr, info_ptr);
+        auto height = png_get_image_height(png_ptr, info_ptr);
+        auto bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+        auto channels = png_get_channels(png_ptr, info_ptr);
+        auto color_type = png_get_color_type(png_ptr, info_ptr);
 
         if (bit_depth == 16) {
             png_set_strip_16(png_ptr);

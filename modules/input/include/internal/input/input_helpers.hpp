@@ -10,7 +10,7 @@
 #pragma once
 
 // forward declarations
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace argus {
 
