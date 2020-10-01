@@ -20,9 +20,5 @@ namespace argus {
          * \remark The data is stored in column-major form.
          */
         unsigned char **image_data;
-        /**
-         * \brief An opaque pointer to data used by the render backend.
-         */
-        void *backend_data;
     };
 }
