@@ -169,7 +169,7 @@ namespace argus {
         return pimpl->dirty;
     }
 
-    void Transform::clean(void) {
+    void Transform::clear_dirty(void) {
         pimpl->dirty = false;
     }
 

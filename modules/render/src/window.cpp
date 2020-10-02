@@ -234,10 +234,10 @@ namespace argus {
             }
         }
 
-        pimpl->properties.title.clean();
-        pimpl->properties.fullscreen.clean();
-        pimpl->properties.resolution.clean();
-        pimpl->properties.position.clean();
+        pimpl->properties.title.clear_dirty();
+        pimpl->properties.fullscreen.clear_dirty();
+        pimpl->properties.resolution.clear_dirty();
+        pimpl->properties.position.clear_dirty();
 
         pimpl->renderer.render(delta);
 

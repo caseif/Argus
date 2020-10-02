@@ -162,7 +162,7 @@ namespace argus {
 
             /**
              * \brief Gets whether this transform has been modified since the
-             *        last time the clean() member function was invoked.
+             *        last time the clear_dirty() function was invoked.
              *
              * \return Whether this transform is dirty.
              */
@@ -171,6 +171,6 @@ namespace argus {
             /**
              * \brief Unsets this Transform's dirty flag.
              */
-            void clean(void);
+            void clear_dirty(void);
     };
 }
