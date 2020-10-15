@@ -86,7 +86,7 @@ namespace argus {
         }
 #endif
         char const *level;
-        auto &stream = stdout;
+        auto stream = stdout;
         switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH:
                 level = "SEVERE";
