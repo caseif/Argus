@@ -13,7 +13,9 @@
 
 namespace argus {
     // forward declarations
+    class Material;
     class Renderer;
+    class Shader;
     class TextureData;
 
     class RendererImpl {
@@ -25,7 +27,11 @@ namespace argus {
 
         virtual void init(Renderer &renderer) = 0;
 
-        virtual void deinit_texture(Renderer &renderer, const TextureData &texture) = 0;
+        virtual void deinit_texture(const TextureData &texture) = 0;
+
+        virtual void deinit_shader(const Shader &shader) = 0;
+        
+        virtual void deinit_material(const Material &material) = 0;
 
         virtual void render(Renderer &renderer, const TimeDelta delta) = 0;
     };

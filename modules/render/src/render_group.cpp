@@ -32,13 +32,17 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup));
 
-    RenderGroup::RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform):
+    RenderGroup::RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup>(parent_layer, parent_group, transform)) {
         //TODO
     }
 
     RenderGroup::~RenderGroup(void) {
         g_pimpl_pool.free(pimpl);
+    }
+
+    const RenderLayer &RenderGroup::get_parent_layer(void) const {
+        return pimpl->parent_layer;
     }
 
     RenderGroup *const RenderGroup::get_parent_group(void) const {
@@ -53,7 +57,7 @@ namespace argus {
 
     RenderObject &RenderGroup::create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
             Transform &transform) {
-        auto obj = new RenderObject(pimpl->parent_layer, this, material, primitives, transform);
+        auto obj = new RenderObject(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
         return *obj;
     }
@@ -67,7 +71,7 @@ namespace argus {
     }
 
     void RenderGroup::remove_child_object(RenderObject &object) {
-        if (object.pimpl->parent_group != this) {
+        if (&object.pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderObject is not a child of RenderGroup");
         }
 

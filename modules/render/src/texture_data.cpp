@@ -13,6 +13,8 @@
 // module render
 #include "argus/render/renderer.hpp"
 #include "argus/render/texture_data.hpp"
+#include "internal/render/module_render.hpp"
+#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 
 #include "GLFW/glfw3.h"
@@ -25,14 +27,14 @@ namespace argus {
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data):
-            pimpl(new pimpl_TextureData()),
+            pimpl(new pimpl_TextureData(image_data)),
             width(width),
             height(height) {
-        image_data = image_data;
-        image_data = nullptr;
     }
 
     TextureData::~TextureData(void) {
+        get_renderer_impl().deinit_texture(*this);
+
         for (size_t y = 0; y < height; y++) {
             delete[] pimpl->image_data[y];
         }

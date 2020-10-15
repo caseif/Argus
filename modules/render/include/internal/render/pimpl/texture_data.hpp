@@ -20,5 +20,9 @@ namespace argus {
          * \remark The data is stored in column-major form.
          */
         unsigned char **image_data;
+
+        pimpl_TextureData(unsigned char **image_data):
+            image_data(image_data) {
+        }
     };
 }

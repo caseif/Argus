@@ -19,6 +19,7 @@
                         glBindBuffer, \
                         glBufferData, \
                         glBufferSubData, \
+                        glCopyBufferSubData, \
                         glDeleteBuffers, \
                         glGenBuffers, \
                         glIsBuffer, \
@@ -41,6 +42,7 @@
                         glDeleteShader, \
                         glDetachShader, \
                         glGetProgramiv, \
+                        glGetProgramInfoLog, \
                         glGetShaderiv, \
                         glGetShaderInfoLog, \
                         glGetUniformLocation, \
@@ -67,6 +69,7 @@ namespace argus {
         typedef void (APIENTRY *PTR_glBindBuffer)(GLenum target, GLuint buffer);
         typedef void (APIENTRY *PTR_glBufferData)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
         typedef void (APIENTRY *PTR_glBufferSubData)(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+        typedef void (APIENTRY *PTR_glCopyBufferSubData)(GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
         typedef void (APIENTRY *PTR_glDeleteBuffers)(GLsizei n, const GLuint *buffers);
         typedef void (APIENTRY *PTR_glGenBuffers)(GLsizei n, GLuint *buffers);
         typedef GLboolean (APIENTRY *PTR_glIsBuffer)(GLuint buffer);
@@ -95,6 +98,7 @@ namespace argus {
         typedef void (APIENTRY *PTR_glDeleteShader)(GLuint shader);
         typedef void (APIENTRY *PTR_glDetachShader)(GLuint program, GLuint shader);
         typedef void (APIENTRY *PTR_glGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+        typedef void (APIENTRY *PTR_glGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
         typedef void (APIENTRY *PTR_glGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
         typedef void (APIENTRY *PTR_glGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
         typedef GLint (APIENTRY *PTR_glGetUniformLocation)(GLuint program, const GLchar *name);
@@ -108,7 +112,7 @@ namespace argus {
         typedef void (APIENTRY *PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
         typedef GLenum (APIENTRY *PTR_glGetError)(void);
 
-        EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);
+        //EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);
     }
 
     void init_opengl_extensions(void);

@@ -17,15 +17,13 @@
 
 namespace argus {
     struct pimpl_RenderObject {
-        RenderLayer &parent_layer;
-        RenderGroup *const parent_group;
+        const RenderGroup &parent_group;
         const Material &material;
         std::vector<RenderPrim> primitives;
         Transform transform;
 
-        pimpl_RenderObject(RenderLayer &parent_layer, RenderGroup *const parent_group, const Material &material,
+        pimpl_RenderObject(const RenderGroup &parent_group, const Material &material,
                 const std::vector<RenderPrim> &primitives, Transform &transform):
-            parent_layer(parent_layer),
             parent_group(parent_group),
             material(material),
             primitives(primitives),

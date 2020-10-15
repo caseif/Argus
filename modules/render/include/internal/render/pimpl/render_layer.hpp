@@ -10,6 +10,7 @@
 #pragma once
 
 // module render
+#include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
 
 #include <vector>
@@ -19,13 +20,14 @@ namespace argus {
         const Renderer &parent_renderer;
         Transform transform;
         const int index;
-        std::vector<RenderGroup*> child_groups;
-        std::vector<RenderObject*> child_objects;
         
-        pimpl_RenderLayer(const Renderer &parent, Transform &transform, const int index):
-                parent_renderer(parent),
+        RenderGroup root_group;
+        
+        pimpl_RenderLayer(const Renderer &renderer, const RenderLayer &layer, Transform &transform, const int index):
+                parent_renderer(renderer),
                 transform(transform),
-                index(index) {
+                index(index),
+                root_group(layer, nullptr, {}) {
         }
     };
 }

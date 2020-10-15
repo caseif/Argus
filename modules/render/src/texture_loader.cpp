@@ -86,6 +86,12 @@ namespace argus {
 
         if (bit_depth == 16) {
             png_set_strip_16(png_ptr);
+        } else if (bit_depth < 8) {
+            png_set_packing(png_ptr);
+        }
+
+        if (color_type == PNG_COLOR_TYPE_RGB) {
+            png_set_add_alpha(png_ptr, 0xffffffff, PNG_FILLER_AFTER);
         }
 
         if (color_type == PNG_COLOR_TYPE_PALETTE) {

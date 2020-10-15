@@ -27,21 +27,10 @@ namespace argus {
 
     RenderPrim::RenderPrim(const std::vector<Vertex> &vertices):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim>(vertices)) {
-        pimpl->vertex_buffer = nullptr;
-
-        pimpl->vertex_buffer = static_cast<float*>(malloc(vertices.size() * _VERTEX_LEN));
-
-        for (size_t i = 0; i < vertices.size(); i++) {
-            const Vertex &vertex = vertices.at(i);
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 0] = vertex.position.x;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 1] = vertex.position.y;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 2] = vertex.color.r;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 3] = vertex.color.g;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 4] = vertex.color.b;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 5] = vertex.color.a;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 6] = vertex.tex_coord.x;
-            pimpl->vertex_buffer[i * _VERTEX_LEN + 7] = vertex.tex_coord.y;
-        }
+    }
+    
+    RenderPrim::RenderPrim(const std::initializer_list<Vertex> vertices):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim>(vertices)) {
     }
 
     RenderPrim::~RenderPrim(void) {
@@ -50,10 +39,6 @@ namespace argus {
 
     const size_t RenderPrim::get_vertex_count(void) const {
         return pimpl->vertices.size();
-    }
-
-    const float *RenderPrim::get_buffered_data(void) const {
-        return pimpl->vertex_buffer;
     }
 
 }

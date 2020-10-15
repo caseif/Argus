@@ -23,10 +23,6 @@ namespace argus {
          * \brief The vertices comprising this RenderPrim.
          */
         const std::vector<Vertex> vertices;
-        /**
-         * \brief The raw vertex buffer data for this Renderable.
-         */
-        float *vertex_buffer;
 
         pimpl_RenderPrim(const std::vector<Vertex> &vertices):
                 vertices(vertices) {

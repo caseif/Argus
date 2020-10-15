@@ -19,35 +19,22 @@
 namespace argus {
     struct pimpl_Shader {
         /**
-         * \brief The type of this shader as a magic value.
+         * \brief The stage this shader is to be run at.
          */
-        const unsigned int type;
+        const ShaderStage stage;
         /**
-         * \brief The source code of this shader.
+         * \brief The source code for this shader.
          */
-        const std::string src;
+        const char *const src;
         /**
-         * \brief The name of this shader's entry point.
+         * \brief The length of the shader's source code in bytes.
          */
-        const std::string entry_point;
-        /**
-         * \brief The order of this shader.
-         *
-         * Shaders with a lower order value will be processed first.
-         */
-        const int order;
-        /**
-         * \brief The uniforms defined by this shader.
-         */
-        const std::vector<std::string> uniform_ids;
+        const size_t src_len;
 
-        pimpl_Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
-            const int order, const std::initializer_list<std::string> &uniform_ids):
-                type(type),
+        pimpl_Shader(const ShaderStage stage, const char *const src, const size_t src_len):
+                stage(stage),
                 src(src),
-                entry_point(entry_point),
-                order(order),
-                uniform_ids(uniform_ids) {
+                src_len(src_len) {
         }
     };
 }

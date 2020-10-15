@@ -44,9 +44,9 @@ namespace argus {
              * \param parent_group The parent group this group belongs to, if
              *        applicable. This may be nullptr.
              */
-            RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform);
+            RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform);
 
-            RenderGroup(RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform):
+            RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform):
                 RenderGroup(parent_layer, parent_group, transform) {
             }
 
@@ -57,7 +57,7 @@ namespace argus {
              *
              * \return The parent RenderLayer to this group.
              */
-            RenderLayer &get_parent_layer(void) const;
+            const RenderLayer &get_parent_layer(void) const;
 
             /**
              * \brief Gets the parent RenderGroup, if applicable.

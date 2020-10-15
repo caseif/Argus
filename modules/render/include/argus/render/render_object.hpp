@@ -33,10 +33,17 @@ namespace argus {
         public:
             pimpl_RenderObject *const pimpl;
 
-            RenderObject(RenderLayer &parent_layer, RenderGroup *const parent_group, const Material &material,
+            RenderObject(const RenderGroup &parent_group, const Material &material,
                     const std::vector<RenderPrim> &primitives, Transform &transform);
 
             ~RenderObject();
+
+            /**
+             * \brief Gets the parent RenderLayer of this object.
+             *
+             * \return The parent RenderLayer.
+             */
+            const RenderLayer &get_parent_layer(void) const;
 
             /**
              * \brief Gets the Material used by this object.

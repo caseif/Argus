@@ -23,6 +23,7 @@
 #include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -36,20 +37,19 @@ namespace argus {
     }
 
     Renderer::~Renderer() {
-        delete pimpl->impl;
         delete pimpl;
     }
 
     void Renderer::init_context_hints(void) {
-        pimpl->impl->init_context_hints();
+        get_renderer_impl().init_context_hints();
     }
 
     void Renderer::init(void) {
-        pimpl->impl->init(*this);
+        get_renderer_impl().init(*this);
     }
 
     void Renderer::render(const TimeDelta delta) {
-        pimpl->impl->render(*this, delta);
+        get_renderer_impl().render(*this, delta);
     }
 
     RenderLayer &Renderer::create_render_layer(const int index) {

@@ -19,6 +19,7 @@
 #include <new>
 
 #include <cmath> // IWYU pragma: keep
+#include <cstring>
 
 namespace argus {
 
@@ -31,6 +32,8 @@ namespace argus {
         std::mutex scale_mutex;
 
         std::atomic_bool dirty;
+
+        mat4_flat_t matrix_rep;
 
         pimpl_Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
             translation(translation),
@@ -133,36 +136,46 @@ namespace argus {
         pimpl->dirty = true;
     }
 
-    void Transform::to_matrix(float (&dst_arr)[16]) {
-        float cos_rot = std::cos(pimpl->rotation);
-        float sin_rot = std::sin(pimpl->rotation);
+    static void _compute_matrix(Transform &transform) {
+        float cos_rot = std::cos(transform.pimpl->rotation);
+        float sin_rot = std::sin(transform.pimpl->rotation);
 
-        pimpl->translation_mutex.lock();
-        Vector2f translation_current = pimpl->translation;
-        pimpl->translation_mutex.unlock();
+        transform.pimpl->translation_mutex.lock();
+        Vector2f translation_current = transform.pimpl->translation;
+        transform.pimpl->translation_mutex.unlock();
 
-        pimpl->scale_mutex.lock();
-        Vector2f scale_current = pimpl->scale;
-        pimpl->scale_mutex.unlock();
+        transform.pimpl->scale_mutex.lock();
+        Vector2f scale_current = transform.pimpl->scale;
+        transform.pimpl->scale_mutex.unlock();
+
+        auto dst = transform.pimpl->matrix_rep;
 
         // this is transposed from the actual matrix, since GL interprets it in column-major order
         // also, really wish C++ had a more syntactically elegant way to do this
-        dst_arr[0] =  cos_rot * scale_current.x;
-        dst_arr[1] =  sin_rot;
-        dst_arr[2] =  0;
-        dst_arr[3] =  0;
-        dst_arr[4] =  -sin_rot;
-        dst_arr[5] =  cos_rot * scale_current.y;
-        dst_arr[6] =  0;
-        dst_arr[7] =  0;
-        dst_arr[8] =  0;
-        dst_arr[9] =  0;
-        dst_arr[10] =  1;
-        dst_arr[11] =  0;
-        dst_arr[12] =  translation_current.x;
-        dst_arr[13] =  translation_current.y;
-        dst_arr[14] =  0;
-        dst_arr[15] =  1;
+        dst[0] =  cos_rot * scale_current.x;
+        dst[1] =  sin_rot;
+        dst[2] =  0;
+        dst[3] =  0;
+        dst[4] =  -sin_rot;
+        dst[5] =  cos_rot * scale_current.y;
+        dst[6] =  0;
+        dst[7] =  0;
+        dst[8] =  0;
+        dst[9] =  0;
+        dst[10] =  1;
+        dst[11] =  0;
+        dst[12] =  translation_current.x;
+        dst[13] =  translation_current.y;
+        dst[14] =  0;
+        dst[15] =  1;
+    }
+
+    const mat4_flat_t &Transform::as_matrix(void) const {
+        return pimpl->matrix_rep;
+    }
+
+    void Transform::copy_matrix(mat4_flat_t target) const {
+        memcpy(&target, &pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));
     }
 
     const bool Transform::is_dirty(void) const {

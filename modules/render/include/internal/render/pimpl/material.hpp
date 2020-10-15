@@ -9,6 +9,7 @@
 
 #pragma once
 
+// module render
 #include "argus/render/material.hpp"
 
 #include <atomic>
@@ -17,22 +18,21 @@
 
 namespace argus {
     // forward declarations
-    class ShaderProgram;
+    class Shader;
+    class TextureData;
 
     struct pimpl_Material {
+        const std::string id;
         const TextureData &texture;
+        const std::vector<const Shader*> shaders;
+        const VertexAttributes attributes;
 
-        const std::vector<Shader*> shaders;
-        ShaderProgram *program;
-
-        const std::vector<VertexAttribDef> vertex_attribs;
-
-        pimpl_Material(const TextureData &texture, const std::vector<Shader*> &shaders,
-            const std::vector<VertexAttribDef> vertex_attribs):
+        pimpl_Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
+            const VertexAttributes attributes):
+            id(id),
             texture(texture),
             shaders(shaders),
-            vertex_attribs(vertex_attribs) {
+            attributes(attributes) {
         }
     };
-
 }

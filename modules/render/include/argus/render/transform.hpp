@@ -23,6 +23,10 @@ namespace argus {
          */
         Vector2f position;
         /**
+         * \brief The normal of this vertex in 2D space.
+         */
+        Vector2f normal;
+        /**
          * \brief The RGBA color of this vertex in [0,1] space.
          */
         Vector4f color;
@@ -152,13 +156,20 @@ namespace argus {
             void set_scale(const Vector2f &scale);
 
             /**
-             * \brief Generates a 4x4 matrix in column-major form representing
-             *        this Transform and stores it in the given parameter.
+             * \brief Returns an unmodifiable 4x4 matrix representation of this
+             *        Transform.
              *
-             * \param dst_arr A pointer to the location where the matrix data
-             *         will be stored.
+             * \return The matrix representation.
              */
-            void to_matrix(float (&dst_arr)[16]);
+            const mat4_flat_t &as_matrix(void) const;
+
+            /**
+             * \brief Copys a 4x4 matrix representation of this Transform into
+             *        the given array.
+             *
+             * \param target The array to copy the matrix representation into.
+             */
+            void copy_matrix(mat4_flat_t target) const;
 
             /**
              * \brief Gets whether this transform has been modified since the

@@ -38,16 +38,15 @@ namespace argus {
         #pragma pack(pop)
     }
 
-    template <typename FunctionSpec>
-    static void _load_gl_ext(const char *const func_name, FunctionSpec *target) {
+    static void _load_gl_ext(const char *const func_name, GLFWglproc *target) {
         _ARGUS_ASSERT(glfwGetCurrentContext() != nullptr, "No GL context is current\n");
         //TODO: verify the extension for each given function is supported
         GLFWglproc function = glfwGetProcAddress(func_name);
         if (function == nullptr) {
             _ARGUS_FATAL("Failed to get address for GL function %s\n", func_name);
-		}
+        }
 
-        *target = reinterpret_cast<FunctionSpec>(function);
+        *target = function;
     }
 
     #ifdef _WIN32
@@ -91,7 +90,7 @@ namespace argus {
         // _init_gl_ptr calls across platforms.
         *target = reinterpret_cast<RetType(APIENTRY*)(ParamTypes...)>(_gl_trampoline<FunctionIndex, RetType, ParamTypes...>);
         #else
-        _load_gl_ext(func_name, target);
+        _load_gl_ext(func_name, reinterpret_cast<GLFWglproc*>(&target));
         #endif
     }
 

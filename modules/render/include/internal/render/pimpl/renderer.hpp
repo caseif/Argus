@@ -19,10 +19,6 @@
 namespace argus {
     struct pimpl_Renderer {
         /**
-         * \brief The specific Renderer implementation used by this wrapper.
-         */
-        RendererImpl *impl;
-        /**
          * \brief The Window which this Renderer is mapped to.
          */
         Window &window;
@@ -33,8 +29,7 @@ namespace argus {
         std::vector<RenderLayer*> render_layers;
 
         pimpl_Renderer(Window &window):
-                window(window),
-                impl(impl) {
+                window(window) {
         }
     };
 }

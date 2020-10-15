@@ -24,14 +24,17 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject));
 
-    RenderObject::RenderObject(RenderLayer &parent_layer, RenderGroup *const parent_group,
-            const Material &material, const std::vector<RenderPrim> &primitives,
-            Transform &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject>(parent_layer, parent_group, material, primitives, transform)) {
+    RenderObject::RenderObject(const RenderGroup &parent_group, const Material &material,
+            const std::vector<RenderPrim> &primitives, Transform &transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject>(parent_group, material, primitives, transform)) {
     }
 
     RenderObject::~RenderObject() {
         g_pimpl_pool.free(pimpl);
+    }
+
+    const RenderLayer &RenderObject::get_parent_layer(void) const {
+        return pimpl->parent_group.get_parent_layer();
     }
 
     const Material &RenderObject::get_material(void) const {

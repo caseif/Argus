@@ -23,11 +23,25 @@ namespace argus {
 
     struct pimpl_Material;
 
-    struct VertexAttribDef {
-        std::string id;
-        char type;
-        size_t count;
+    /**
+     * Represents attributes to be enabled 
+     */
+    enum VertexAttributes : uint16_t {
+        POSITION = 0x1,
+        NORMAL = 0x2,
+        COLOR = 0x4,
+        TEXCOORD = 0x8
     };
+
+    constexpr inline VertexAttributes operator|(const VertexAttributes lhs, const VertexAttributes rhs) {
+        return static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
+                                             static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
+    }
+
+    constexpr inline VertexAttributes operator|=(const VertexAttributes lhs, const VertexAttributes rhs) {
+        return static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
+                                             static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
+    }
 
     class Material {
         public:
@@ -36,14 +50,18 @@ namespace argus {
             /**
              * \brief Constructs a new Material.
              *
-             * \param id The unique ID of the material.
+             * \param id The unique identifier of the material.
+             * \param texture The texture used by the Material.
+             * \param shaders The shaders used by the Material. Only one Shader
+             *        may be specified per \link ShaderStage shader stage \endlink.
+             * \param attributes The vertex attributes used by this material.
              */
-            Material(const TextureData &texture, const std::vector<Shader*> &shaders,
-                const std::vector<VertexAttribDef> &vertex_attribs);
+            Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
+                const VertexAttributes &attributes);
 
             ~Material(void);
 
-            void initialize(void);
+            const std::string get_id(void) const;
     };
 
 }

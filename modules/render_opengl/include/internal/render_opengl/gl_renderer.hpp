@@ -24,7 +24,11 @@ namespace argus {
 
         void init(Renderer &renderer) override;
 
-        void deinit_texture(Renderer &renderer, const TextureData &texture) override;
+        void deinit_texture(const TextureData &texture) override;
+        
+        void deinit_shader(const Shader &shader) override;
+        
+        void deinit_material(const Material &material) override;
 
         void render(Renderer &renderer, const TimeDelta delta) override;
     };

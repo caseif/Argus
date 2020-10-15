@@ -10,14 +10,16 @@
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-void multiply_matrices(float (&a)[16], float (&b)[16], float (&res)[16]) {
-    // naive implementation
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            int index = j * 4 + i;
-            res[index] = 0;
-            for (int k = 0; k < 4; k++) {
-                res[index] += a[k * 4 + i] * b[j * 4 + k];
+namespace argus {
+    void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res) {
+        // naive implementation
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                int index = j * 4 + i;
+                res[index] = 0;
+                for (int k = 0; k < 4; k++) {
+                    res[index] += a[k * 4 + i] * b[j * 4 + k];
+                }
             }
         }
     }

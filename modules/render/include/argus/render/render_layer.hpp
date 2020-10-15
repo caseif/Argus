@@ -52,19 +52,28 @@ namespace argus {
             ~RenderLayer(void);
 
             /**
-             * \brief Creates a new RenderGroup as a child of this group.
+             * \brief Gets the parent Renderer of this layer.
+             */
+            const Renderer &get_parent_renderer(void) const;
+
+            /**
+             * \brief Creates a new RenderGroup as a direct child of this layer.
              *
              * \param transform The relative transform of the new group.
              */
             RenderGroup &create_child_group(Transform &transform);
 
             /**
-             * \brief Creates a new RenderObject as a child of this group.
+             * \brief Creates a new RenderObject as a direct child of this
+             *        layer.
              *
              * \param material The Material to be used by the new object.
-             * \param primitives The \link RenderPrim primitives \endlink
-             *        comprising the new object.
+             * \param primitives The primitives comprising the new object.
              * \param transform The relative transform of the new object.
+             *
+             * \remark Internally, the object will be created as a child of the
+             *         implicit root RenderGroup contained by this layer. Thus,
+             *         no RenderObject is truly without a parent group.
              */
             RenderObject &create_child_object(const Material &material, const std::vector<RenderPrim> &primitives,
                 Transform &transform);
@@ -92,7 +101,7 @@ namespace argus {
              *
              * \return The layer's Transform.
              */
-            const Transform &get_transform(void);
+            const Transform &get_transform(void) const;
 
             /**
              * \brief Sets the Transform of this layer.

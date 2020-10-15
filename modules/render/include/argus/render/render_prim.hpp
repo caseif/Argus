@@ -37,9 +37,16 @@ namespace argus {
             /**
              * \brief Constructs a new RenderPrim object.
              *
-             * \param parent The RenderGroup parent to the new RenderPrim.
+             * \param vertices The vertices comprising the new primitive.
              */
             RenderPrim(const std::vector<Vertex> &vertices);
+
+            /**
+             * \brief Constructs a new RenderPrim object.
+             *
+             * \param vertices The vertices comprising the new primitive.
+             */
+            RenderPrim(const std::initializer_list<Vertex> vertices);
 
             ~RenderPrim(void);
 
@@ -49,7 +56,5 @@ namespace argus {
              * \return The current vertex count of this RenderPrim.
              */
             const size_t get_vertex_count(void) const;
-
-            const float *get_buffered_data(void) const;
     };
 }
