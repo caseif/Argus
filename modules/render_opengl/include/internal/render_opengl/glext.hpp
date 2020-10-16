@@ -15,7 +15,8 @@
 // module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
 
-#define GL_FUNCTIONS    glGetString, \
+#define GL_FUNCTIONS    glGetIntegerv, \
+                        glGetString, \
                         glGetStringi, \
                         glClear, \
                         glClearColor, \
@@ -81,6 +82,7 @@
 typedef void (APIENTRYP DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
 // utility
+typedef GLubyte *(APIENTRYP PTR_glGetIntegerv)(GLenum pname, GLint *data);
 typedef GLubyte *(APIENTRYP PTR_glGetString)(GLenum name);
 typedef GLubyte *(APIENTRYP PTR_glGetStringi)(GLenum name, GLuint index);
 

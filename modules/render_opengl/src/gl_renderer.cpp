@@ -120,6 +120,16 @@ namespace argus {
 
         init_opengl_extensions();
 
+        int gl_major;
+        int gl_minor;
+        glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+        glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+        if (gl_major < 3 || (gl_major == 3 && gl_minor < 3)) {
+            _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher\n");
+        }
+
+        _ARGUS_INFO("Obtained OpenGL %d.%d context\n", gl_major, gl_minor);
+
         const GLubyte *ver_str = glGetString(GL_VERSION);
 
         //TODO: actually do something
