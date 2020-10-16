@@ -58,9 +58,6 @@
 #include <cstring>
 
 namespace argus {
-
-    using namespace glext;
-
     static std::map<const Renderer*, RendererState> g_renderer_states;
 
     static AllocPool g_obj_pool(sizeof(ProcessedRenderObject));

@@ -13,6 +13,6 @@
 #pragma once
 
 #undef GLFW_INCLUDE_NONE
-#define GL_GLEXT_PROTOTYPES
+//#define GL_GLEXT_PROTOTYPES
 #define GLFW_INCLUDE_GLCOREARB
 #include "GLFW/glfw3.h"
