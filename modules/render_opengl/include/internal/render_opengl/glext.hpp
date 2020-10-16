@@ -74,7 +74,6 @@
 
 #define EXPAND_GL_DECLARATION(function) extern PTR_##function function;
 
-#define ARGUS_USE_GL_TRAMPOLINE
 #ifdef _WIN32
 #define ARGUS_USE_GL_TRAMPOLINE
 #endif
