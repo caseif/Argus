@@ -19,6 +19,7 @@
 #include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
+#include "argus/render/render_object.hpp"
 #include "argus/render/render_prim.hpp"
 #include "argus/render/renderer.hpp"
 #include "argus/render/shader.hpp"
