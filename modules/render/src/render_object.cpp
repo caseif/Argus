@@ -18,6 +18,7 @@
 #include "argus/render/render_prim.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/pimpl/render_object.hpp"
+#include "internal/render/pimpl/transform.hpp"
 
 #include <vector>
 
@@ -45,11 +46,12 @@ namespace argus {
         return pimpl->primitives;
     }
 
-    const Transform &RenderObject::get_transform(void) const {
+    Transform &RenderObject::get_transform(void) const {
         return pimpl->transform;
     }
 
     void RenderObject::set_transform(Transform &transform) const {
         pimpl->transform = transform;
+        pimpl->transform.pimpl->dirty = true;
     }
 }

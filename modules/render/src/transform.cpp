@@ -13,6 +13,7 @@
 
 // module render
 #include "argus/render/transform.hpp"
+#include "internal/render/pimpl/transform.hpp"
 
 #include <atomic>
 #include <mutex>
@@ -22,25 +23,6 @@
 #include <cstring>
 
 namespace argus {
-
-    struct pimpl_Transform {
-        Vector2f translation;
-        std::atomic<float> rotation;
-        Vector2f scale;
-
-        std::mutex translation_mutex;
-        std::mutex scale_mutex;
-
-        std::atomic_bool dirty;
-
-        mat4_flat_t matrix_rep;
-
-        pimpl_Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
-            translation(translation),
-            rotation(rotation),
-            scale(scale) {
-        }
-    };
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform));
 
@@ -60,7 +42,7 @@ namespace argus {
     }
 
     void Transform::operator=(Transform &rhs) {
-        this->pimpl->~pimpl_Transform();
+        g_pimpl_pool.free(this->pimpl);
         new(this->pimpl) pimpl_Transform(rhs.get_translation(), rhs.get_rotation(), rhs.get_scale());
     }
 
@@ -93,7 +75,7 @@ namespace argus {
         pimpl->translation = translation;
         pimpl->translation_mutex.unlock();
 
-        pimpl->dirty = true;
+        pimpl->set_dirty();
     }
 
     void Transform::add_translation(const Vector2f &translation_delta) {
@@ -101,7 +83,7 @@ namespace argus {
         pimpl->translation += translation_delta;
         pimpl->translation_mutex.unlock();
 
-        pimpl->dirty = true;
+        pimpl->set_dirty();
     }
 
     const float Transform::get_rotation(void) const {
@@ -111,13 +93,13 @@ namespace argus {
     void Transform::set_rotation(const float rotation_radians) {
         pimpl->rotation = rotation_radians;
 
-        pimpl->dirty = true;
+        pimpl->set_dirty();
     }
 
     void Transform::add_rotation(const float rotation_radians) {
         float current = pimpl->rotation.load();
         while (!pimpl->rotation.compare_exchange_weak(current, current + rotation_radians));
-        pimpl->dirty = true;
+        pimpl->set_dirty();
     }
 
     Vector2f const Transform::get_scale(void) {
@@ -133,10 +115,14 @@ namespace argus {
         pimpl->scale = scale;
         pimpl->scale_mutex.unlock();
 
-        pimpl->dirty = true;
+        pimpl->set_dirty();
     }
 
     static void _compute_matrix(Transform &transform) {
+        if (!transform.pimpl->dirty_matrix) {
+            return;
+        }
+
         float cos_rot = std::cos(transform.pimpl->rotation);
         float sin_rot = std::sin(transform.pimpl->rotation);
 
@@ -168,22 +154,24 @@ namespace argus {
         dst[13] =  translation_current.y;
         dst[14] =  0;
         dst[15] =  1;
+
+        transform.pimpl->dirty_matrix = false;
     }
 
-    const mat4_flat_t &Transform::as_matrix(void) const {
+    const mat4_flat_t &Transform::as_matrix(void) {
+        _compute_matrix(*this);
+
         return pimpl->matrix_rep;
     }
 
-    void Transform::copy_matrix(mat4_flat_t target) const {
-        memcpy(&target, &pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));
+    void Transform::copy_matrix(mat4_flat_t target) {
+        _compute_matrix(*this);
+
+        memcpy(target, pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));
     }
 
     const bool Transform::is_dirty(void) const {
         return pimpl->dirty;
-    }
-
-    void Transform::clear_dirty(void) {
-        pimpl->dirty = false;
     }
 
 }

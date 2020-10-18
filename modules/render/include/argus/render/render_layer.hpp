@@ -101,7 +101,7 @@ namespace argus {
              *
              * \return The layer's Transform.
              */
-            const Transform &get_transform(void) const;
+            Transform &get_transform(void) const;
 
             /**
              * \brief Sets the Transform of this layer.

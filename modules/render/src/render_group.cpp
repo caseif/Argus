@@ -78,7 +78,7 @@ namespace argus {
         remove_from_vector(pimpl->child_objects, &object);
     }
 
-    const Transform &RenderGroup::get_transform(void) const {
+    Transform &RenderGroup::get_transform(void) const {
         return pimpl->transform;
     }
 

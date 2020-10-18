@@ -161,7 +161,7 @@ namespace argus {
              *
              * \return The matrix representation.
              */
-            const mat4_flat_t &as_matrix(void) const;
+            const mat4_flat_t &as_matrix(void);
 
             /**
              * \brief Copys a 4x4 matrix representation of this Transform into
@@ -169,7 +169,7 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(mat4_flat_t target) const;
+            void copy_matrix(mat4_flat_t target);
 
             /**
              * \brief Gets whether this transform has been modified since the
@@ -178,10 +178,5 @@ namespace argus {
              * \return Whether this transform is dirty.
              */
             const bool is_dirty(void) const;
-
-            /**
-             * \brief Unsets this Transform's dirty flag.
-             */
-            void clear_dirty(void);
     };
 }

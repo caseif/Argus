@@ -219,7 +219,7 @@ function(setup_submodule MODULE_NAME DYN)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
   else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
-                         -Wmissing-declarations -Winit-self -pedantic -pedantic-errors -std=c++11")
+                         -Wmissing-declarations -Winit-self -Wshadow -pedantic -pedantic-errors -std=c++11")
     set(CMAKE_CXX_FLAGS_DEBUG "-g")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()

@@ -35,6 +35,7 @@
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/shader.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
+#include "internal/render/pimpl/transform.hpp"
 #include "internal/render/pimpl/window.hpp"
 #include "internal/render/renderer_impl.hpp"
 
@@ -223,7 +224,7 @@ namespace argus {
         buffer_handle_t vertex_buffer;
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
         auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
 
         auto vertex_attrs = object.get_material().pimpl->attributes;
@@ -240,9 +241,11 @@ namespace argus {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
+
                 if (vertex_attrs & VertexAttributes::POSITION) {
-                    mapped_buffer[major_off + minor_off++] = vertex.position.x;
-                    mapped_buffer[major_off + minor_off++] = vertex.position.y;
+                    auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                    mapped_buffer[major_off + minor_off++] = transformed_pos.x;
+                    mapped_buffer[major_off + minor_off++] = transformed_pos.y;
                 }
                 if (vertex_attrs & VertexAttributes::NORMAL) {
                     mapped_buffer[major_off + minor_off++] = vertex.normal.x;
@@ -273,6 +276,7 @@ namespace argus {
         if (existing != layer_state.processed_objs.end()) {
             g_obj_pool.free(existing->second);
             existing->second = &processed_obj;
+            processed_obj.visited = true;
 
             // the bucket should always exist if the object existed previously
             auto *bucket = layer_state.render_buckets[processed_obj.material];
@@ -296,6 +300,23 @@ namespace argus {
         }
     }
 
+    static void _compute_abs_group_transform(const RenderGroup &group, mat4_flat_t target) {
+        group.get_transform().copy_matrix(target);
+        const RenderGroup *cur = &group;
+        const RenderGroup *parent = group.get_parent_group();
+
+        while (parent != nullptr) {
+            cur = parent;
+            parent = parent->get_parent_group();
+
+            mat4_flat_t new_transform;
+
+            multiply_matrices(target, cur->get_transform().as_matrix(), new_transform);
+
+            memcpy(target, new_transform, 16 * sizeof(target[0]));
+        }
+    }
+
     static void _process_render_group(const RenderGroup &group, const bool recompute_transform,
             const mat4_flat_t running_transform) {
         auto &layer = group.get_parent_layer();
@@ -312,38 +333,42 @@ namespace argus {
             // branch since a parent was dirty
             _ARGUS_ASSERT(running_transform != nullptr, "running_transform is null\n");
             multiply_matrices(group.get_transform().as_matrix(), running_transform, cur_transform);
-        } else if (group.get_transform().is_dirty()) {
-            group.get_transform().copy_matrix(cur_transform);
-            const RenderGroup *cur = &group;
-            const RenderGroup *parent = group.get_parent_group();
-
-            while (parent != nullptr) {
-                cur = parent;
-                parent = parent->get_parent_group();
-
-                mat4_flat_t new_transform;
-
-                multiply_matrices(cur_transform, cur->get_transform().as_matrix(), new_transform);
-
-                memcpy(cur_transform, new_transform, 16 * sizeof(cur_transform[0]));
-            }
 
             new_recompute_transform = true;
+        } else if (group.get_transform().is_dirty()) {
+            _compute_abs_group_transform(group, cur_transform);
+
+            new_recompute_transform = true;
+
+            group.get_transform().pimpl->dirty = false;
         }
 
         for (const RenderObject *child_object : group.pimpl->child_objects) {
-            auto existing = layer_state.processed_objs.find(child_object);
-            if (existing != layer_state.processed_objs.end()) {
-                existing->second->updated = new_recompute_transform;
-                existing->second->visited = true;
+            mat4_flat_t final_obj_transform;
 
-                if (!new_recompute_transform) {
-                    // nothing else to do
-                    return;
-                }
+            auto existing = layer_state.processed_objs.find(child_object);
+            // if the object has already been processed previously
+            if (existing != layer_state.processed_objs.end()) {
+                // if a parent group or the object itself has had its transform updated
+                existing->second->updated = new_recompute_transform || child_object->get_transform().is_dirty();
+                existing->second->visited = true;
             }
 
-            _process_object(*child_object, cur_transform);
+            if (new_recompute_transform) {
+                multiply_matrices(child_object->get_transform().as_matrix(), cur_transform, final_obj_transform);
+            } else if (child_object->get_transform().is_dirty()) {
+                // parent transform hasn't been computed so we need to do it here
+                mat4_flat_t group_abs_transform;
+                _compute_abs_group_transform(group, group_abs_transform);
+
+                multiply_matrices(child_object->get_transform().as_matrix(), group_abs_transform,
+                        final_obj_transform);
+            } else {
+                // nothing else to do if object and all parent groups aren't dirty
+                return;
+            }
+
+            _process_object(*child_object, final_obj_transform);
         }
 
         for (auto *child_group : group.pimpl->child_groups) {
@@ -361,20 +386,22 @@ namespace argus {
         }
 
         for (auto it = layer_state.processed_objs.begin(); it != layer_state.processed_objs.end();) {
-            if (!it->second->visited) {
+            auto *processed_obj = it->second;
+            if (!processed_obj->visited) {
                 // wasn't visited this iteration, must not be present in the scene graph anymore
 
-                auto buffer = it->second->vertex_buffer;
-                glDeleteBuffers(1, &it->second->vertex_buffer);
+                auto buffer = processed_obj->vertex_buffer;
+                glDeleteBuffers(1, &processed_obj->vertex_buffer);
 
                 // we need to remove it from its containing bucket and flag the bucket for a rebuild
                 auto bucket = layer_state.render_buckets.find(it->second->material);
                 if (bucket != layer_state.render_buckets.end()) { // I think this should always be true
-                    remove_from_vector(bucket->second->objects, it->second);
+                    auto &bucket_objs = bucket->second->objects;
+                    remove_from_vector(bucket_objs, processed_obj);
                     bucket->second->needs_rebuild = true;
                 }
 
-                delete it->second;
+                g_obj_pool.free(processed_obj);
 
                 it = layer_state.processed_objs.erase(it);
 
@@ -386,12 +413,11 @@ namespace argus {
         }
     }
 
-    inline static void _set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint *attr_index, GLuint *attr_offset) {
-        glEnableVertexAttribArray(*attr_index);
-        glVertexAttribPointer(*attr_index, attr_len, GL_FLOAT, GL_FALSE, vertex_len * sizeof(GLfloat),
+    inline static void _set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
+        glEnableVertexAttribArray(attr_index);
+        glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE, vertex_len * sizeof(GLfloat),
                 reinterpret_cast<GLvoid*>(*attr_offset));
         *attr_offset += attr_len * sizeof(GLfloat);
-        *attr_index += 1;
     }
 
     static void _fill_buckets(const Renderer &renderer, const RenderLayer &layer) {
@@ -420,7 +446,7 @@ namespace argus {
 
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
-
+                
                 glGenBuffers(1, &bucket->vertex_buffer);
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
@@ -429,7 +455,7 @@ namespace argus {
                     size += obj->vertex_buffer_size;
                 }
                 
-                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STATIC_DRAW);
 
                 size_t offset = 0;
                 for (auto *processed : bucket->objects) {
@@ -450,20 +476,19 @@ namespace argus {
                         + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
                         + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
-                GLuint attr_index = 0;
                 GLuint attr_offset = 0;
 
                 if (vertex_attrs & VertexAttributes::POSITION) {
-                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_POSITION_LEN, &attr_index, &attr_offset);
+                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::NORMAL) {
-                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_NORMAL_LEN, &attr_index, &attr_offset);
+                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_NORMAL_LEN, SHADER_ATTRIB_LOC_NORMAL, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::COLOR) {
-                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_COLOR_LEN, &attr_index, &attr_offset);
+                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_COLOR_LEN, SHADER_ATTRIB_LOC_COLOR, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::TEXCOORD) {
-                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_TEXCOORD_LEN, &attr_index, &attr_offset);
+                    _set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
                 }
 
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -570,16 +595,16 @@ namespace argus {
 
         unsigned int attrib_index = 0;
         if (material.pimpl->attributes & VertexAttributes::POSITION) {
-            glBindAttribLocation(program_handle, attrib_index++, SHADER_ATTRIB_IN_POSITION);
+            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_POSITION, SHADER_ATTRIB_IN_POSITION);
         }
         if (material.pimpl->attributes & VertexAttributes::NORMAL) {
-            glBindAttribLocation(program_handle, attrib_index++, SHADER_ATTRIB_IN_NORMAL);
+            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_NORMAL, SHADER_ATTRIB_IN_NORMAL);
         }
         if (material.pimpl->attributes & VertexAttributes::COLOR) {
-            glBindAttribLocation(program_handle, attrib_index++, SHADER_ATTRIB_IN_COLOR);
+            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_COLOR, SHADER_ATTRIB_IN_COLOR);
         }
         if (material.pimpl->attributes & VertexAttributes::TEXCOORD) {
-            glBindAttribLocation(program_handle, attrib_index++, SHADER_ATTRIB_IN_TEXCOORD);
+            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_TEXCOORD, SHADER_ATTRIB_IN_TEXCOORD);
         }
 
         glBindFragDataLocation(program_handle, 0, SHADER_ATTRIB_OUT_FRAGDATA);

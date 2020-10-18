@@ -28,21 +28,23 @@
                         glPixelStorei, \
                         glViewport, \
                         glGenFramebuffers, \
+                        glBindAttribLocation, \
                         glBindBuffer, \
                         glBufferData, \
                         glBufferSubData, \
                         glCopyBufferSubData, \
                         glDeleteBuffers, \
+                        glEnableVertexAttribArray, \
                         glGenBuffers, \
                         glIsBuffer, \
                         glMapBuffer, \
                         glUnmapBuffer, \
+                        glVertexAttribDivisor, \
+                        glVertexAttribPointer, \
                         glBindVertexArray, \
                         glDeleteVertexArrays, \
                         glDrawArrays, \
-                        glEnableVertexAttribArray, \
                         glGenVertexArrays, \
-                        glVertexAttribPointer, \
                         glBindTexture, \
                         glDeleteTextures, \
                         glGenTextures, \
@@ -50,7 +52,6 @@
                         glTexParameteri, \
                         glTexSubImage2D, \
                         glAttachShader, \
-                        glBindAttribLocation, \
                         glBindFragDataLocation, \
                         glCompileShader, \
                         glCreateProgram, \
@@ -108,17 +109,18 @@ typedef void (APIENTRYP PTR_glBufferSubData)(GLenum target, GLintptr offset, GLs
 typedef void (APIENTRYP PTR_glCopyBufferSubData)(GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
 typedef void (APIENTRYP PTR_glDeleteBuffers)(GLsizei n, const GLuint *buffers);
 typedef void (APIENTRYP PTR_glDrawArrays)(GLenum mode, GLint first, GLsizei count);
+typedef void (APIENTRYP PTR_glEnableVertexAttribArray)(GLuint index);
 typedef void (APIENTRYP PTR_glGenBuffers)(GLsizei n, GLuint *buffers);
 typedef GLboolean (APIENTRYP PTR_glIsBuffer)(GLuint buffer);
 typedef void *(APIENTRYP PTR_glMapBuffer)(GLenum target, GLenum access);
 typedef GLboolean (APIENTRYP PTR_glUnmapBuffer)(GLenum target);
+typedef void (APIENTRYP PTR_glVertexAttribDivisor)(GLuint index, GLuint divisor);
+typedef void (APIENTRYP PTR_glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
 // vertex array
 typedef void (APIENTRYP PTR_glBindVertexArray)(GLuint array);
 typedef void (APIENTRYP PTR_glDeleteVertexArrays)(GLsizei n, const GLuint *arrays);
-typedef void (APIENTRYP PTR_glEnableVertexAttribArray)(GLuint index);
 typedef void (APIENTRYP PTR_glGenVertexArrays)(GLsizei n, GLuint *arrays);
-typedef void (APIENTRYP PTR_glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
 // texture
 typedef void (APIENTRYP PTR_glBindTexture)(GLenum target, GLuint texture);

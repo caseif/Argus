@@ -69,7 +69,7 @@ namespace argus {
         pimpl->root_group.remove_child_object(object);
     }
 
-    const Transform &RenderLayer::get_transform(void) const {
+    Transform &RenderLayer::get_transform(void) const {
         return pimpl->transform;
     }
 

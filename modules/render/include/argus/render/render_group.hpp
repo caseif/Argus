@@ -113,7 +113,7 @@ namespace argus {
              *         group's absolute transform with respect to the
              *         RenderLayer containing the group.
              */
-            const Transform &get_transform(void) const;
+            Transform &get_transform(void) const;
 
             /**
              * Sets the local Transform of this group.

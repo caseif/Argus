@@ -70,7 +70,7 @@ namespace argus {
              *         reflect the object's absolute transform with respect to
              *         the RenderLayer containing the object.
              */
-            const Transform &get_transform(void) const;
+            Transform &get_transform(void) const;
             
             /**
              * \brief Sets the local Transform of this object.
