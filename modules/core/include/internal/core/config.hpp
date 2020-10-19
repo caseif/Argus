@@ -25,7 +25,7 @@ namespace argus {
         ScreenSpace screen_space;
 
         EngineConfig(void):
-            screen_space({ left: -1, right: 1, bottom: -1, top: 1 }) {
+            screen_space(-1, 1, -1, 1) {
         }
     };
 

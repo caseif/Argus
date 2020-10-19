@@ -48,6 +48,6 @@ namespace argus {
     }
 
     void set_screen_space(float left, float right, float bottom, float top) {
-        g_engine_config.screen_space = { left: left, right: right, bottom: bottom, top: top };
+        g_engine_config.screen_space = ScreenSpace(left, right, bottom, top);
     }
 }

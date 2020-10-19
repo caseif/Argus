@@ -514,6 +514,13 @@ namespace argus {
         float right;
         float bottom;
         float top;
+
+        ScreenSpace(float left, float right, float bottom, float top):
+            left(left),
+            right(right),
+            bottom(bottom),
+            top(top) {
+        }
     };
 
     void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res);
