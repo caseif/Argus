@@ -250,7 +250,7 @@ namespace argus {
                 // clear appropriate bit in block map
                 // we convert the index to a bit position by taking the one's-complement and masking
                 // it to exclude bits not relevant when addressing the bitfield
-                uint64_t block_flag_mask = 1L << ((~block_index) & BF_INDEX_MASK);
+                uint64_t block_flag_mask = 1ULL << ((~block_index) & BF_INDEX_MASK);
 
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
                     throw std::invalid_argument("Invalid free (block not alloced, possible double-free?)\n");

@@ -631,7 +631,7 @@ namespace argus {
 
         auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
 
-        state.linked_programs[&material] = { handle: program_handle, view_matrix_uniform_loc: proj_mat_loc };
+        state.linked_programs[&material] = { program_handle, proj_mat_loc };
 
         for (auto *shader : material.pimpl->shaders) {
             glDetachShader(program_handle, state.compiled_shaders[shader]);
