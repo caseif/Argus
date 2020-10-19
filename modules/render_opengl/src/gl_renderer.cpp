@@ -40,10 +40,10 @@
 #include "internal/render/renderer_impl.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_renderer.hpp"
 #include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
+#include "internal/render_opengl/globals.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
@@ -53,6 +53,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstdio>
@@ -113,6 +114,9 @@ namespace argus {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        #ifdef _ARGUS_DEBUG_MODE
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+        #endif
     }
 
     // we do the init in a separate method so the GL context is always created from the render thread
@@ -135,6 +139,7 @@ namespace argus {
 
         //TODO: actually do something
         if (glDebugMessageCallback != nullptr) {
+            glGetError();
             glDebugMessageCallback(_gl_debug_callback, nullptr);
         } else {
         }
@@ -200,8 +205,10 @@ namespace argus {
             auto &programs = state.second.linked_programs;
             auto program = programs.find(&material);
             if (program != programs.end()) {
-                glDeleteProgram(program->second);
+                glDeleteProgram(program->second.handle);
             }
+
+            programs.erase(program);
         }
     }
 
@@ -234,13 +241,12 @@ namespace argus {
                 + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
                 + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
+        size_t total_vertices = 0;
         for (const RenderPrim &prim : object.get_primitives()) {
-            size_t total_vertices = 0;
             for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
                 const Vertex &vertex = prim.pimpl->vertices.at(i);
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
-
 
                 if (vertex_attrs & VertexAttributes::POSITION) {
                     auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
@@ -278,11 +284,12 @@ namespace argus {
             existing->second = &processed_obj;
             processed_obj.visited = true;
 
+            existing->second = &processed_obj;
+
             // the bucket should always exist if the object existed previously
             auto *bucket = layer_state.render_buckets[processed_obj.material];
             _ARGUS_ASSERT(!bucket->objects.empty(), "Bucket for existing object should not be empty");
-            bucket->objects.emplace(std::find(bucket->objects.begin(), bucket->objects.end(), existing->second),
-                    &processed_obj);
+            std::replace(bucket->objects.begin(), bucket->objects.end(), existing->second, &processed_obj);
         } else {
             layer_state.processed_objs.insert({ &object, &processed_obj });
 
@@ -622,7 +629,9 @@ namespace argus {
             delete[] log;
         }
 
-        state.linked_programs[&material] = program_handle;
+        auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
+
+        state.linked_programs[&material] = { handle: program_handle, view_matrix_uniform_loc: proj_mat_loc };
 
         for (auto *shader : material.pimpl->shaders) {
             glDetachShader(program_handle, state.compiled_shaders[shader]);
@@ -695,15 +704,22 @@ namespace argus {
 
         for (auto &bucket : layer_state.render_buckets) {
             auto &mat = bucket.second->material;
-            auto program_handle = state.linked_programs.find(&mat)->second;
+            auto program_info = state.linked_programs.find(&mat)->second;
             auto tex_handle = state.prepared_textures.find(&mat.pimpl->texture)->second;
 
-            if (program_handle != last_program) {
-                glUseProgram(program_handle);
+            if (program_info.handle != last_program) {
+                glUseProgram(program_info.handle);
+                last_program = program_info.handle;
+
+                auto view_mat_loc = program_info.view_matrix_uniform_loc;
+                if (view_mat_loc != -1) {
+                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, g_view_matrix);
+                }
             }
 
             if (tex_handle != last_texture) {
                 glBindTexture(GL_TEXTURE_2D, tex_handle);
+                last_texture = tex_handle;
             }
 
             glBindVertexArray(bucket.second->vertex_array);

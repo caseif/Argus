@@ -13,8 +13,8 @@
 #include "argus/render/transform.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
+#include "internal/render_opengl/globals.hpp"
 
 #include <numeric>
 

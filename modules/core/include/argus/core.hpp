@@ -15,6 +15,9 @@
 
 #pragma once
 
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -408,6 +411,33 @@ namespace argus {
      *          will be used as the default fallback.
      */
     void set_render_backend(const RenderBackend backend);
+
+    /**
+     * \brief Sets the screen space used to compute the projection matrix
+     *        passed to shader programs.
+     *
+     * If this value is not provided, it will default to [-1, 1] on both axes.
+     *
+     * \param screen_space The parameters for the screen space.
+     */
+    void set_screen_space(ScreenSpace screen_space);
+
+    /**
+     * \brief Sets the screen space used to compute the projection matrix
+     *        passed to shader programs.
+     *
+     * If this value is not provided, it will default to [-1, 1] on both axes.
+     *
+     * \param left The x-coordinate corresponding to the left side of the
+     *        screen.
+     * \param right The x-coordinate corresponding to the right side of the
+     *        screen.
+     * \param bottom The y-coordinate corresponding to the bottom side of the
+     *        screen.
+     * \param top The y-coordinate corresponding to the top side of the
+     *        screen.
+     */
+    void set_screen_space(float left, float right, float bottom, float top);
 
     /**
      * \brief Registers a callback for invocation on each game update.

@@ -28,5 +28,16 @@ namespace argus {
                 parent_group(parent_group),
                 transform(transform) {
         }
+
+        pimpl_RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform):
+                parent_layer(parent_layer),
+                parent_group(parent_group),
+                transform(transform) {
+        }
+
+        pimpl_RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group):
+                parent_layer(parent_layer),
+                parent_group(parent_group) {
+        }
     };
 }

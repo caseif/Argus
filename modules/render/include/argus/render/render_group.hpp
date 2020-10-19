@@ -46,9 +46,9 @@ namespace argus {
              */
             RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform);
 
-            RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform):
-                RenderGroup(parent_layer, parent_group, transform) {
-            }
+            RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform);
+
+            RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group);
 
             ~RenderGroup();
 

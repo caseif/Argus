@@ -32,7 +32,7 @@ namespace argus {
      */
     class RenderPrim {
         public:
-            pimpl_RenderPrim *const pimpl;
+            pimpl_RenderPrim *pimpl;
 
             /**
              * \brief Constructs a new RenderPrim object.
@@ -47,6 +47,12 @@ namespace argus {
              * \param vertices The vertices comprising the new primitive.
              */
             RenderPrim(const std::initializer_list<Vertex> vertices);
+
+            RenderPrim(void) = delete;
+
+            RenderPrim(const RenderPrim&) noexcept;
+
+            RenderPrim(RenderPrim&&) noexcept;
 
             ~RenderPrim(void);
 

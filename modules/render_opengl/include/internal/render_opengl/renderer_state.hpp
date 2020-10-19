@@ -10,10 +10,11 @@
 #pragma once
 
 // module render_opengl
-#include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/globals.hpp"
 
 #include <map>
 #include <string>
+#include <utility>
 
 namespace argus {
     // forward declarations
@@ -21,6 +22,11 @@ namespace argus {
     class RenderObject;
     
     class RenderBucket;
+
+    struct LinkedProgram {
+        program_handle_t handle;
+        uniform_location_t view_matrix_uniform_loc;
+    };
 
     struct LayerState {
         std::map<const RenderObject*, ProcessedRenderObject*> processed_objs;
@@ -35,7 +41,7 @@ namespace argus {
         std::map<const RenderLayer*, LayerState> layer_states;
         std::map<const TextureData*, texture_handle_t> prepared_textures;
         std::map<const Shader*, shader_handle_t> compiled_shaders;
-        std::map<const Material*, program_handle_t> linked_programs;
+        std::map<const Material*, LinkedProgram> linked_programs;
 
         RendererState(void) {
         }

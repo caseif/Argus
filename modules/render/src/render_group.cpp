@@ -34,7 +34,14 @@ namespace argus {
 
     RenderGroup::RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup>(parent_layer, parent_group, transform)) {
-        //TODO
+    }
+
+    RenderGroup::RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group, Transform &&transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup>(parent_layer, parent_group, transform)) {
+    }
+
+    RenderGroup::RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup>(parent_layer, parent_group)) {
     }
 
     RenderGroup::~RenderGroup(void) {

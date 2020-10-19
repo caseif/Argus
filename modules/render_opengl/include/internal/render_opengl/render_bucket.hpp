@@ -10,7 +10,7 @@
 #pragma once
 
 // module render_opengl
-#include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/globals.hpp"
 
 #include <vector>
 

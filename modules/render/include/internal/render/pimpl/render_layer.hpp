@@ -27,7 +27,7 @@ namespace argus {
                 parent_renderer(renderer),
                 transform(transform),
                 index(index),
-                root_group(layer, nullptr, {}) {
+                root_group(layer, nullptr) {
         }
     };
 }

@@ -9,17 +9,25 @@
 
 #pragma once
 
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
+
 #include <string>
 #include <vector>
 
 namespace argus {
 
-    typedef struct {
+    struct EngineConfig {
         unsigned int target_tickrate;
         unsigned int target_framerate;
         std::vector<std::string> load_modules;
         std::vector<RenderBackend> render_backends;
-    } EngineConfig;
+        ScreenSpace screen_space;
+
+        EngineConfig(void):
+            screen_space({ left: -1, right: 1, bottom: -1, top: 1 }) {
+        }
+    };
 
     EngineConfig get_engine_config();
 

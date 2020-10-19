@@ -509,6 +509,13 @@ namespace argus {
      */
     typedef Vector4<double> Vector4d;
 
+    struct ScreenSpace {
+        float left;
+        float right;
+        float bottom;
+        float top;
+    };
+
     void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res);
 
     Vector4f multiply_matrix_and_vector(const Vector4f vec, const mat4_flat_t mat);

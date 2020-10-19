@@ -28,13 +28,24 @@ namespace argus {
     RenderPrim::RenderPrim(const std::vector<Vertex> &vertices):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim>(vertices)) {
     }
-    
+
     RenderPrim::RenderPrim(const std::initializer_list<Vertex> vertices):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim>(vertices)) {
     }
 
+    RenderPrim::RenderPrim(const RenderPrim &rhs) noexcept:
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim>(rhs.pimpl->vertices)) {
+    }
+
+    RenderPrim::RenderPrim(RenderPrim &&rhs) noexcept:
+        pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
+    }
+
     RenderPrim::~RenderPrim(void) {
-        g_pimpl_pool.free(pimpl);
+        if (pimpl != nullptr) {
+            g_pimpl_pool.free(pimpl);
+        }
     }
 
     const size_t RenderPrim::get_vertex_count(void) const {
