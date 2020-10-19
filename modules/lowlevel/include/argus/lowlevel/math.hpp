@@ -320,10 +320,10 @@ namespace argus {
 
         operator Vector4<T>() const {
             return Vector4<T> {
-                x: this->x,
-                y: this->y,
-                z: this->z,
-                w: 1
+                this->x,
+                this->y,
+                this->z,
+                1
             };
         }
     };
@@ -433,18 +433,18 @@ namespace argus {
 
         operator Vector3<T>() const {
             return Vector3<T> {
-                x: this->x,
-                y: this->y,
-                z: 0
+                this->x,
+                this->y,
+                0
             };
         }
 
         operator Vector4<T>() const {
             return Vector4<T> {
-                x: this->x,
-                y: this->y,
-                z: 0,
-                w: 1
+                this->x,
+                this->y,
+                0,
+                1
             };
         }
     };
