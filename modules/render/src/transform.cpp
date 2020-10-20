@@ -40,7 +40,6 @@ namespace argus {
     Transform::Transform(const Transform &rhs) noexcept: Transform(
             rhs.pimpl->translation,
             rhs.pimpl->rotation,
-            rhs.pimpl->rotation,
             rhs.pimpl->scale
     ) {
     }
