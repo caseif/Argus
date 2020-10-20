@@ -83,44 +83,63 @@ namespace argus {
             Transform operator +(const Transform rhs);
 
             /**
-             * \brief Gets the translation component of this Transform.
+             * \brief Gets the translation component of the Transform.
              *
-             * \return The translation component of this Transform.
+             * \return The translation component of the Transform.
              */
             Vector2f const get_translation(void);
 
             /**
-             * \brief Sets the translation component of this Transform.
+             * \brief Sets the translation component of the Transform.
              *
-             * \param translation The new translation for this Transform.
+             * \param translation The new translation for the Transform.
              */
             void set_translation(const Vector2f &translation);
 
             /**
-             * \brief Adds the given value to this Transform's translation
+             * Sets the translation component of the Transform.
+             *
+             * \param x The new x-translation for the Transform.
+             * \param y The new y-translation for the Transform.
+             */
+            void set_translation(const float x, const float y);
+
+            /**
+             * \brief Adds the given value to the Transform's translation
              *        component.
              *
-             * \param translation_delta The value to add to this Transform's
-             *         translation component.
+             * \param translation_delta The value to add to the Transform's
+             *         translation.
              */
             void add_translation(const Vector2f &translation_delta);
 
             /**
-             * \brief Gets the rotation component of this Transform in radians.
+             * \brief Adds the given value to the Transform's translation
+             *        component.
              *
-             * \return The rotation component of this Transform in radians.
+             * \param x_delta The value to add to the Transform's translation on
+             *        the x-axis;
+             * \param y_delta The value to add to the Transform's translation on
+             *        the y-axis.
+             */
+            void add_translation(const float x_delta, const float y_delta);
+
+            /**
+             * \brief Gets the rotation component of the Transform in radians.
+             *
+             * \return The rotation component of the Transform in radians.
              */
             const float get_rotation(void) const;
 
             /**
-             * \brief Sets the rotation component of this Transform.
+             * \brief Sets the rotation component of the Transform.
              *
-             * \param rotation_radians The new rotation component for this Transform.
+             * \param rotation_radians The new rotation component for the Transform.
              */
             void set_rotation(const float rotation_radians);
 
             /**
-             * \brief Adds the given value to this Transform's rotation
+             * \brief Adds the given value to the Transform's rotation
              *        component.
              *
              * \param rotation_radians The value in radians to add to this
@@ -129,18 +148,26 @@ namespace argus {
             void add_rotation(const float rotation_radians);
 
             /**
-             * \brief Gets the scale component of this Transform.
+             * \brief Gets the scale component of the Transform.
              *
-             * \return The scale component of this Transform.
+             * \return The scale component of the Transform.
              */
             Vector2f const get_scale(void);
 
             /**
-             * \brief Sets the scale component of this Transform.
+             * \brief Sets the scale component of the Transform.
              *
-             * \param scale The new scale component for this Transform.
+             * \param scale The new scale for the Transform.
              */
             void set_scale(const Vector2f &scale);
+
+            /**
+             * \brief Sets the scale component of the Transform.
+             *
+             * \param x The new x-scale for the Transform.
+             * \param y The new y-scale for the Transform.
+             */
+            void set_scale(const float x, const float y);
 
             /**
              * \brief Returns an unmodifiable 4x4 matrix representation of this
@@ -151,7 +178,7 @@ namespace argus {
             const mat4_flat_t &as_matrix(void);
 
             /**
-             * \brief Copys a 4x4 matrix representation of this Transform into
+             * \brief Copys a 4x4 matrix representation of the Transform into
              *        the given array.
              *
              * \param target The array to copy the matrix representation into.
@@ -159,10 +186,10 @@ namespace argus {
             void copy_matrix(mat4_flat_t target);
 
             /**
-             * \brief Gets whether this transform has been modified since the
+             * \brief Gets whether the Transform has been modified since the
              *        last time the clear_dirty() function was invoked.
              *
-             * \return Whether this transform is dirty.
+             * \return Whether the Transform is dirty.
              */
             const bool is_dirty(void) const;
     };

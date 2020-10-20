@@ -42,6 +42,10 @@ namespace argus {
     }
 
     Shader::~Shader(void) {
+        if (pimpl == nullptr) {
+            return;
+        }
+
         get_renderer_impl().deinit_shader(*this);
 
         g_pimpl_pool.free(pimpl);

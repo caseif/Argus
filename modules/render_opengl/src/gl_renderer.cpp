@@ -318,7 +318,7 @@ namespace argus {
 
             mat4_flat_t new_transform;
 
-            multiply_matrices(target, cur->get_transform().as_matrix(), new_transform);
+            multiply_matrices(cur->get_transform().as_matrix(), target, new_transform);
 
             memcpy(target, new_transform, 16 * sizeof(target[0]));
         }
@@ -339,7 +339,7 @@ namespace argus {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
             _ARGUS_ASSERT(running_transform != nullptr, "running_transform is null\n");
-            multiply_matrices(group.get_transform().as_matrix(), running_transform, cur_transform);
+            multiply_matrices(running_transform, group.get_transform().as_matrix(), cur_transform);
 
             new_recompute_transform = true;
         } else if (group.get_transform().is_dirty()) {
@@ -362,14 +362,13 @@ namespace argus {
             }
 
             if (new_recompute_transform) {
-                multiply_matrices(child_object->get_transform().as_matrix(), cur_transform, final_obj_transform);
+                multiply_matrices(cur_transform, child_object->get_transform().as_matrix(), final_obj_transform);
             } else if (child_object->get_transform().is_dirty()) {
                 // parent transform hasn't been computed so we need to do it here
                 mat4_flat_t group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(child_object->get_transform().as_matrix(), group_abs_transform,
-                        final_obj_transform);
+                multiply_matrices(group_abs_transform, child_object->get_transform().as_matrix(), final_obj_transform);
             } else {
                 // nothing else to do if object and all parent groups aren't dirty
                 return;

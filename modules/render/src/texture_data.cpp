@@ -49,6 +49,10 @@ namespace argus {
     }
 
     TextureData::~TextureData(void) {
+        if (pimpl == nullptr) {
+            return;
+        }
+
         get_renderer_impl().deinit_texture(*this);
 
         for (size_t y = 0; y < height; y++) {
@@ -58,5 +62,4 @@ namespace argus {
 
         g_pimpl_pool.free(pimpl);
     }
-
 }

@@ -84,7 +84,7 @@ namespace argus {
         std::atomic_bool dirty_resolution;
 
         pimpl_Window(Window &parent):
-                renderer(parent) {
+            renderer(parent) {
         }
 
         pimpl_Window(const pimpl_Window&) = delete;

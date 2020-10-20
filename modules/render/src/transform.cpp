@@ -47,7 +47,9 @@ namespace argus {
     }
 
     Transform::~Transform(void) {
-        g_pimpl_pool.free(pimpl);
+        if (pimpl != nullptr) {
+            g_pimpl_pool.free(pimpl);
+        }
     }
 
     void Transform::operator=(const Transform &rhs) noexcept {
@@ -82,12 +84,20 @@ namespace argus {
         pimpl->set_dirty();
     }
 
+    void Transform::set_translation(const float x, const float y) {
+        this->set_translation({ x, y });
+    }
+
     void Transform::add_translation(const Vector2f &translation_delta) {
         pimpl->translation_mutex.lock();
         pimpl->translation += translation_delta;
         pimpl->translation_mutex.unlock();
 
         pimpl->set_dirty();
+    }
+
+    void Transform::add_translation(const float x, const float y) {
+        this->add_translation({ x, y });
     }
 
     const float Transform::get_rotation(void) const {
@@ -102,7 +112,9 @@ namespace argus {
 
     void Transform::add_rotation(const float rotation_radians) {
         float current = pimpl->rotation.load();
-        while (!pimpl->rotation.compare_exchange_weak(current, current + rotation_radians));
+        float updated = fmod(current + rotation_radians, 2 * M_PI);
+        //float updated = current + rotation_radians;
+        while (!pimpl->rotation.compare_exchange_weak(current, updated));
         pimpl->set_dirty();
     }
 
@@ -120,6 +132,10 @@ namespace argus {
         pimpl->scale_mutex.unlock();
 
         pimpl->set_dirty();
+    }
+
+    void Transform::set_scale(const float x, const float y) {
+        this->set_scale({ x, y });
     }
 
     static void _compute_matrix(Transform &transform) {
