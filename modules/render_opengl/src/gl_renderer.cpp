@@ -696,7 +696,7 @@ namespace argus {
         auto &state = g_renderer_states[&renderer];
         auto &layer_state = state.layer_states[&layer];
 
-        //TODO: post-processing fx support
+        //TODO: we should render this to a framebuffer first
 
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;

@@ -19,6 +19,9 @@
 #include <mutex>
 #include <new>
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
 #include <cmath> // IWYU pragma: keep
 #include <cstring>
 
@@ -113,7 +116,6 @@ namespace argus {
     void Transform::add_rotation(const float rotation_radians) {
         float current = pimpl->rotation.load();
         float updated = fmod(current + rotation_radians, 2 * M_PI);
-        //float updated = current + rotation_radians;
         while (!pimpl->rotation.compare_exchange_weak(current, updated));
         pimpl->set_dirty();
     }
