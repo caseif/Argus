@@ -39,5 +39,9 @@ namespace argus {
                 parent_layer(parent_layer),
                 parent_group(parent_group) {
         }
+
+        pimpl_RenderGroup(pimpl_RenderGroup&) = default;
+
+        pimpl_RenderGroup(pimpl_RenderGroup&&) = delete;
     };
 }

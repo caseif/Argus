@@ -39,7 +39,7 @@ namespace argus {
      */
     class Shader {
         public:
-            pimpl_Shader *const pimpl;
+            pimpl_Shader *pimpl;
 
             /**
              * \brief Constructs a new Shader with the given parameters.
@@ -50,6 +50,10 @@ namespace argus {
              * \param src_len The length of the Shader's source data.
              */
             Shader(const ShaderStage stage, const char *const src, const size_t src_len);
+
+            Shader(const Shader&) noexcept;
+
+            Shader(Shader&&) noexcept;
 
             ~Shader(void);
 

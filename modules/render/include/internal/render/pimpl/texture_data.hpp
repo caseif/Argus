@@ -24,5 +24,9 @@ namespace argus {
         pimpl_TextureData(unsigned char **image_data):
             image_data(image_data) {
         }
+
+        pimpl_TextureData(const pimpl_TextureData&) = default;
+
+        pimpl_TextureData(pimpl_TextureData&&) = delete;
     };
 }

@@ -31,5 +31,9 @@ namespace argus {
         pimpl_Renderer(Window &window):
                 window(window) {
         }
+
+        pimpl_Renderer(const pimpl_Renderer&) = delete;
+
+        pimpl_Renderer(pimpl_Renderer&&) = delete;
     };
 }

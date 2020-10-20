@@ -29,5 +29,9 @@ namespace argus {
                 index(index),
                 root_group(layer, nullptr) {
         }
+
+        pimpl_RenderLayer(const pimpl_RenderLayer&) = default;
+
+        pimpl_RenderLayer(pimpl_RenderLayer&&) = delete;
     };
 }

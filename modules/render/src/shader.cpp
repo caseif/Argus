@@ -32,8 +32,19 @@ namespace argus {
             )) {
     }
 
+    Shader::Shader(const Shader &rhs) noexcept:
+        pimpl(&g_pimpl_pool.construct<pimpl_Shader>(*rhs.pimpl)) {
+    }
+
+    Shader::Shader(Shader &&rhs) noexcept:
+        pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
+    }
+
     Shader::~Shader(void) {
         get_renderer_impl().deinit_shader(*this);
+
+        g_pimpl_pool.free(pimpl);
     }
 
     Shader Shader::create_shader(const ShaderStage stage, const char *const src, const size_t src_len) {

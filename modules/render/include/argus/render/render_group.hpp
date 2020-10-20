@@ -35,7 +35,7 @@ namespace argus {
      */
     class RenderGroup {
         public:
-            pimpl_RenderGroup *const pimpl;
+            pimpl_RenderGroup *pimpl;
 
             /**
              * \brief Constructs a new RenderGroup.
@@ -50,7 +50,11 @@ namespace argus {
 
             RenderGroup(const RenderLayer &parent_layer, RenderGroup *const parent_group);
 
-            ~RenderGroup();
+            RenderGroup(const RenderGroup&) noexcept;
+
+            RenderGroup(RenderGroup&&) noexcept;
+
+            ~RenderGroup(void);
 
             /**
              * \brief Gets the parent RenderLayer.

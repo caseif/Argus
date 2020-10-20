@@ -32,7 +32,7 @@ namespace argus {
      */
     class RenderLayer {
         public:
-            pimpl_RenderLayer *const pimpl;
+            pimpl_RenderLayer *pimpl;
 
             /**
              * \brief Constructs a new RenderLayer.
@@ -48,6 +48,9 @@ namespace argus {
                 RenderLayer(parent, transform, index) {
             }
 
+            RenderLayer(const RenderLayer&) noexcept;
+
+            RenderLayer(RenderLayer&&) noexcept;
 
             ~RenderLayer(void);
 

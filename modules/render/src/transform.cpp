@@ -29,7 +29,11 @@ namespace argus {
     Transform::Transform(void): Transform({0, 0}, 0, {1, 1}) {
     }
 
-    Transform::Transform(Transform &rhs): Transform(
+    Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
+            pimpl(&g_pimpl_pool.construct<pimpl_Transform>(translation, rotation, scale)) {
+    }
+
+    Transform::Transform(const Transform &rhs) noexcept: Transform(
             rhs.pimpl->translation,
             rhs.pimpl->rotation,
             rhs.pimpl->scale
@@ -37,21 +41,21 @@ namespace argus {
     }
 
     // for the move ctor, we just steal the pimpl
-    Transform::Transform(Transform &&rhs):
-            pimpl(rhs.pimpl) {
-    }
-
-    void Transform::operator=(Transform &rhs) {
-        g_pimpl_pool.free(this->pimpl);
-        new(this->pimpl) pimpl_Transform(rhs.get_translation(), rhs.get_rotation(), rhs.get_scale());
-    }
-
-    Transform::Transform(const Vector2f &translation, const float rotation, const Vector2f &scale):
-            pimpl(&g_pimpl_pool.construct<pimpl_Transform>(translation, rotation, scale)) {
+    Transform::Transform(Transform &&rhs) noexcept:
+        pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
     }
 
     Transform::~Transform(void) {
         g_pimpl_pool.free(pimpl);
+    }
+
+    void Transform::operator=(const Transform &rhs) noexcept {
+        pimpl->translation = rhs.pimpl->translation;
+        pimpl->rotation.store(rhs.pimpl->rotation);
+        pimpl->scale = rhs.pimpl->scale;
+        pimpl->dirty = true;
+        pimpl->dirty_matrix = true;
     }
 
     Transform Transform::operator +(const Transform rhs) {

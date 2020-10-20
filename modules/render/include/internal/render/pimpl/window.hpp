@@ -86,5 +86,9 @@ namespace argus {
         pimpl_Window(Window &parent):
                 renderer(parent) {
         }
+
+        pimpl_Window(const pimpl_Window&) = delete;
+
+        pimpl_Window(pimpl_Window&&) = delete;
     };
 }

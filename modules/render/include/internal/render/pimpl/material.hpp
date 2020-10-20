@@ -34,5 +34,9 @@ namespace argus {
             shaders(shaders),
             attributes(attributes) {
         }
+
+        pimpl_Material(const pimpl_Material&) = default;
+
+        pimpl_Material(pimpl_Material&&) = delete;
     };
 }

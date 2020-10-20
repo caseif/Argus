@@ -27,5 +27,9 @@ namespace argus {
         pimpl_RenderPrim(const std::vector<Vertex> &vertices):
                 vertices(vertices) {
         }
+
+        pimpl_RenderPrim(const pimpl_RenderPrim&) = default;
+
+        pimpl_RenderPrim(pimpl_RenderPrim&&) = delete;
     };
 }

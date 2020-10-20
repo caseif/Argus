@@ -53,24 +53,11 @@ namespace argus {
              */
             Transform(void);
 
-            // we need to explicitly define move/copy ctors to keep things atomic,
-            // and also because mutexes can't be moved/copied
+            Transform(const Transform &rhs) noexcept;
 
-            /**
-             * \brief The copy constructor.
-             *
-             * \param rhs The Transform to copy.
-             */
-            Transform(Transform &rhs);
+            Transform(Transform &&rhs) noexcept;
 
-            /**
-             * \brief The move constructor.
-             *
-             * \param rhs The Transform to move.
-             */
-            Transform(Transform &&rhs);
-
-            void operator=(Transform &rhs);
+            void operator=(const Transform &rhs) noexcept;
 
             ~Transform(void);
 

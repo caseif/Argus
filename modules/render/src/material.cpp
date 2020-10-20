@@ -9,6 +9,7 @@
 
 // module lowlevel
 #include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 // module resman
 #include "argus/resman.hpp"
@@ -26,9 +27,11 @@
 
 namespace argus {
 
+    static AllocPool g_pimpl_pool(sizeof(pimpl_Material));
+
     Material::Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
             const VertexAttributes &attribs):
-        pimpl(new pimpl_Material(id, texture, shaders, attribs)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_Material>(id, texture, shaders, attribs)) {
         ShaderStage seen = static_cast<ShaderStage>(0);
         for (const Shader *shader : shaders) {
             if (seen & shader->pimpl->stage) {
@@ -38,8 +41,20 @@ namespace argus {
         }
     }
 
+    Material::Material(const Material &rhs) noexcept:
+        pimpl(&g_pimpl_pool.construct<pimpl_Material>(*rhs.pimpl)) {
+    }
+
+    Material::Material(Material &&rhs) noexcept:
+        pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
+    }
+
     Material::~Material(void) {
-        get_renderer_impl().deinit_material(*this);
+        if (pimpl != nullptr) {
+            get_renderer_impl().deinit_material(*this);
+            g_pimpl_pool.free(pimpl);
+        }
     }
 
     const std::string Material::get_id(void) const {

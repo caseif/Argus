@@ -45,7 +45,7 @@ namespace argus {
 
     class Material {
         public:
-            pimpl_Material *const pimpl;
+            pimpl_Material *pimpl;
 
             /**
              * \brief Constructs a new Material.
@@ -58,6 +58,10 @@ namespace argus {
              */
             Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
                 const VertexAttributes &attributes);
+
+            Material(const Material&) noexcept;
+
+            Material(Material&&) noexcept;
 
             ~Material(void);
 

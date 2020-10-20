@@ -36,5 +36,9 @@ namespace argus {
                 src(src),
                 src_len(src_len) {
         }
+
+        pimpl_Shader(const pimpl_Shader&) = default;
+
+        pimpl_Shader(pimpl_Shader&&) = delete;
     };
 }

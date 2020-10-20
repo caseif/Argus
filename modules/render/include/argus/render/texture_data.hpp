@@ -28,7 +28,7 @@ namespace argus {
      */
     struct TextureData {
         public:
-            pimpl_TextureData *const pimpl;
+            pimpl_TextureData *pimpl;
 
             /**
              * \brief The width in pixels of the texture.
@@ -52,6 +52,10 @@ namespace argus {
              * \attention The pixel data must be in RGBA format with a bit-depth of 8.
              */
             TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data);
+
+            TextureData(const TextureData&) noexcept;
+
+            TextureData(TextureData&&) noexcept;
 
             /**
              * \brief Destroys this object, deleting any buffers in system or video

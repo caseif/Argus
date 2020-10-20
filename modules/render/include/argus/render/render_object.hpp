@@ -31,10 +31,14 @@ namespace argus {
      */
     class RenderObject {
         public:
-            pimpl_RenderObject *const pimpl;
+            pimpl_RenderObject *pimpl;
 
             RenderObject(const RenderGroup &parent_group, const Material &material,
                     const std::vector<RenderPrim> &primitives, Transform &transform);
+
+            RenderObject(const RenderObject&) noexcept;
+
+            RenderObject(RenderObject&&) noexcept;
 
             ~RenderObject();
 

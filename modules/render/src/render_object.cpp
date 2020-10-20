@@ -30,8 +30,19 @@ namespace argus {
         pimpl(&g_pimpl_pool.construct<pimpl_RenderObject>(parent_group, material, primitives, transform)) {
     }
 
+    RenderObject::RenderObject(const RenderObject &rhs) noexcept:
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject>(*rhs.pimpl)) {
+    }
+
+    RenderObject::RenderObject(RenderObject &&rhs) noexcept:
+        pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
+    }
+
     RenderObject::~RenderObject() {
-        g_pimpl_pool.free(pimpl);
+        if (pimpl != nullptr) {
+            g_pimpl_pool.free(pimpl);
+        }
     }
 
     const RenderLayer &RenderObject::get_parent_layer(void) const {

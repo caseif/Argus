@@ -29,5 +29,9 @@ namespace argus {
             primitives(primitives),
             transform(transform) {
         }
+
+        pimpl_RenderObject(const pimpl_RenderObject&) = default;
+
+        pimpl_RenderObject(pimpl_RenderObject&&) = delete;
     };
 }
