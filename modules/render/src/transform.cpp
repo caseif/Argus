@@ -7,6 +7,10 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
@@ -19,9 +23,6 @@
 #include <mutex>
 #include <new>
 
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#endif
 #include <cmath> // IWYU pragma: keep
 #include <cstring>
 
@@ -38,6 +39,7 @@ namespace argus {
 
     Transform::Transform(const Transform &rhs) noexcept: Transform(
             rhs.pimpl->translation,
+            rhs.pimpl->rotation,
             rhs.pimpl->rotation,
             rhs.pimpl->scale
     ) {
