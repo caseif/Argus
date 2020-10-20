@@ -1,5 +1,5 @@
 set(MODULE_IDS "lowlevel;core;ecs;resman;render;input")
-set(DYN_MODULE_IDS "render_opengl")
+set(DYN_MODULE_IDS "")
 set(MODULE_PATH_PREFIX "modules/")
 
 cmake_minimum_required(VERSION 3.8)
@@ -21,6 +21,9 @@ set(LIB_BASE_NAME argus)
 set(DYN_MODULE_DIR "modules")
 
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
+option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
+option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
+option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
@@ -51,8 +54,6 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-
-find_package(OpenGL REQUIRED)
 
 if(WIN32)
   include_directories("${CMAKE_SOURCE_DIR}/external/include")
@@ -109,6 +110,18 @@ set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested")
+endif()
+
+if(${BUILD_OPENGL_BACKEND})
+  message("OpenGL support will be built")
+  list(APPEND DYN_MODULE_IDS "render_opengl")
+endif()
+if(${BUILD_OPENGLES_BACKEND})
+  message(FATAL_ERROR "OpenGL ES support is not yet available")
+endif()
+
+if(${BUILD_VULKAN_BACKEND})
+  message(FATAL_ERROR "Vulkan support is not yet available")
 endif()
 
 # disable the annoying (and wrong) class vs. struct warning

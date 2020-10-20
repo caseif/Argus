@@ -1,3 +1,5 @@
+find_package(OpenGL REQUIRED)
+
 # module name
 set(MODULE_NAME "render_opengl")
 # modules this one depends on (as a list)
