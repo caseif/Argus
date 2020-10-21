@@ -114,6 +114,13 @@ namespace argus {
             void set_title(const std::string &title);
 
             /**
+             * \brief Gets whether the window is currently in fullscreen mode.
+             *
+             * \return The window's fullscreen state.
+             */
+            bool is_fullscreen(void) const;
+
+            /**
              * \brief Sets the fullscreen state of the window.
              *
              * Caution: This may not be supported on all platforms.
@@ -122,6 +129,13 @@ namespace argus {
              *        fullscreen.
              */
             void set_fullscreen(const bool fullscreen);
+
+            /**
+             * \brief Gets the window's current resolution.
+             *
+             * \return The window's resolution.
+             */
+            Vector2u get_resolution(void) const;
 
             /**
              * \brief Sets the resolution of the window when not in fullscreen

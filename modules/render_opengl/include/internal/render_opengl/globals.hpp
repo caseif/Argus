@@ -44,6 +44,8 @@
 
 #define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
 
+#define FRAME_SHADER_PASS_TEXCOORD "pass_TexCoord"
+
 namespace argus {
     extern float g_view_matrix[16];
 

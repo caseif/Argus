@@ -35,7 +35,12 @@ namespace argus {
 
         mat4_flat_t view_matrix;
 
-        LayerState(void) {
+        buffer_handle_t framebuffer;
+        texture_handle_t frame_texture;
+
+        LayerState(void):
+            framebuffer(0),
+            frame_texture(0) {
         }
     };
 
@@ -44,6 +49,12 @@ namespace argus {
         std::map<const TextureData*, texture_handle_t> prepared_textures;
         std::map<const Shader*, shader_handle_t> compiled_shaders;
         std::map<const Material*, LinkedProgram> linked_programs;
+
+        buffer_handle_t frame_vbo;
+        array_handle_t frame_vao;
+        program_handle_t frame_program;
+        shader_handle_t frame_vert_shader;
+        shader_handle_t frame_frag_shader;
 
         RendererState(void) {
         }

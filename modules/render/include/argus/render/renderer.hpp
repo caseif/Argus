@@ -49,6 +49,8 @@ namespace argus {
 
             ~Renderer(void);
 
+            Window &get_window() const;
+
             /**
              * \brief Sets the context parameters requested by this Renderer
              *        prior to window creation.

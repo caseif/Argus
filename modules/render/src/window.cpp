@@ -67,11 +67,13 @@ namespace argus {
     }
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
-        _dispatch_window_event(handle, WindowEventType::RESIZE);
+        dispatch_event(WindowEvent(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
+                { uint32_t(width), uint32_t(height) }, Vector2i()));
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
-        _dispatch_window_event(handle, WindowEventType::MOVE);
+        dispatch_event(WindowEvent(WindowEventType::MOVE, *g_window_map.find(handle)->second,
+                Vector2u(), { x, y }));
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -90,7 +92,7 @@ namespace argus {
         _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before render module is initialized.");
 
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
         pimpl->renderer.init_context_hints();
@@ -216,16 +218,15 @@ namespace argus {
             } else {
                 glfwSetWindowMonitor(pimpl->handle, nullptr, 0, 0, 0, 0, GLFW_DONT_CARE);
             }
-            if (pimpl->properties.resolution.dirty) {
-                pimpl->dirty_resolution = true;
-            }
+
+            pimpl->properties.fullscreen = glfwGetWindowMonitor(pimpl->handle) != nullptr;
         }
+
         if (!fullscreen) {
             if (pimpl->properties.resolution.dirty) {
                 glfwSetWindowSize(pimpl->handle,
                     Vector2u(pimpl->properties.resolution).x,
                     Vector2u(pimpl->properties.resolution).y);
-                pimpl->dirty_resolution = true;
             }
             if (pimpl->properties.position.dirty) {
                 glfwSetWindowPos(pimpl->handle,
@@ -233,6 +234,8 @@ namespace argus {
                     Vector2i(pimpl->properties.position).y);
             }
         }
+
+        pimpl->dirty_resolution = pimpl->properties.resolution.dirty.load();
 
         pimpl->properties.title.clear_dirty();
         pimpl->properties.fullscreen.clear_dirty();
@@ -260,9 +263,17 @@ namespace argus {
         return;
     }
 
+    bool Window::is_fullscreen(void) const {
+        return pimpl->properties.fullscreen;
+    }
+
     void Window::set_fullscreen(const bool fullscreen) {
         pimpl->properties.fullscreen = fullscreen;
         return;
+    }
+
+    Vector2u Window::get_resolution(void) const {
+        return pimpl->properties.resolution;
     }
 
     void Window::set_resolution(const unsigned int width, const unsigned int height) {
@@ -299,7 +310,9 @@ namespace argus {
         if (window_event.subtype == WindowEventType::CLOSE) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
         } else if (window_event.subtype == WindowEventType::RESIZE) {
-            pimpl->dirty_resolution = true;
+            pimpl->properties.resolution = window_event.resolution;
+        } else if (window_event.subtype == WindowEventType::MOVE) {
+            pimpl->properties.position = window_event.position;
         }
     }
 

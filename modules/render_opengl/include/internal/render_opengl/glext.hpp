@@ -26,8 +26,15 @@
                         glEnable, \
                         glPixelStore, \
                         glPixelStorei, \
+                        glPolygonMode, \
                         glViewport, \
+                        glBindFramebuffer, \
+                        glCheckFramebufferStatus, \
+                        glDeleteFramebuffers, \
+                        glDeleteRenderbuffers, \
+                        glFramebufferTexture, \
                         glGenFramebuffers, \
+                        glRenderbufferStorage, \
                         glBindAttribLocation, \
                         glBindBuffer, \
                         glBufferData, \
@@ -97,10 +104,17 @@ typedef void (APIENTRYP PTR_glDisable)(GLenum cap);
 typedef void (APIENTRYP PTR_glEnable)(GLenum cap);
 typedef void (APIENTRYP PTR_glPixelStore)(GLenum pname, GLfloat param);
 typedef void (APIENTRYP PTR_glPixelStorei)(GLenum pname, GLint param);
+typedef void (APIENTRYP PTR_glPolygonMode)(GLenum face, GLenum mode);
 typedef void (APIENTRYP PTR_glViewport)(GLint x, GLint y, GLsizei width, GLsizei height);
 
 // framebuffer
-typedef void (APIENTRYP PTR_glGenFramebuffers)(GLsizei n, GLuint* framebuffers);
+typedef void (APIENTRYP PTR_glBindFramebuffer)(GLenum target, GLuint framebuffer);
+typedef GLenum (APIENTRYP PTR_glCheckFramebufferStatus)(GLenum target);
+typedef void (APIENTRYP PTR_glDeleteFramebuffers)(GLsizei n, GLuint *framebuffers);
+typedef void (APIENTRYP PTR_glDeleteRenderbuffers)(GLsizei n, GLuint *renderbuffers);
+typedef void (APIENTRYP PTR_glFramebufferTexture)(GLenum target, GLenum attachment, GLuint texture, GLint level);
+typedef void (APIENTRYP PTR_glGenFramebuffers)(GLsizei n, GLuint *framebuffers);
+typedef void (APIENTRYP PTR_glRenderbufferStorage)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 
 // buffer
 typedef void (APIENTRYP PTR_glBindBuffer)(GLenum target, GLuint buffer);

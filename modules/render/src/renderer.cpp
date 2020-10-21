@@ -40,6 +40,10 @@ namespace argus {
         delete pimpl;
     }
 
+    Window &Renderer::get_window(void) const {
+        return pimpl->window;
+    }
+
     void Renderer::init_context_hints(void) {
         get_renderer_impl().init_context_hints();
     }

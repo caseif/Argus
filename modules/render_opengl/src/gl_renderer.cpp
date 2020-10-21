@@ -59,6 +59,25 @@
 #include <cstdio>
 #include <cstring>
 
+#define _FRAME_VERT_SHADER "\
+    #version 330 core \n\
+    in vec2 " SHADER_ATTRIB_IN_POSITION "; \n\
+    in vec2 " SHADER_ATTRIB_IN_TEXCOORD "; \n\
+    out vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
+    void main() { \n\
+        gl_Position = vec4(" SHADER_ATTRIB_IN_POSITION ", 0.0, 1.0); \n\
+        " FRAME_SHADER_PASS_TEXCOORD " = " SHADER_ATTRIB_IN_TEXCOORD "; \n\
+    }"
+
+#define _FRAME_FRAG_SHADER "\n\
+    #version 330 core \n\
+    in vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
+    out vec4 " SHADER_ATTRIB_OUT_FRAGDATA "; \n\
+    uniform sampler2D screenTex; \n\
+    void main() { \n\
+        " SHADER_ATTRIB_OUT_FRAGDATA " = texture(screenTex, " FRAME_SHADER_PASS_TEXCOORD "); \n\
+    }"
+
 namespace argus {
     static std::map<const Renderer*, RendererState> g_renderer_states;
 
@@ -108,55 +127,6 @@ namespace argus {
     GLRenderer::GLRenderer(void): RendererImpl() {
     }
 
-    void GLRenderer::init_context_hints(void) {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        #ifdef _ARGUS_DEBUG_MODE
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-        #endif
-    }
-
-    // we do the init in a separate method so the GL context is always created from the render thread
-    void GLRenderer::init(Renderer &renderer) {
-        _activate_gl_context(renderer.pimpl->window.pimpl->handle);
-
-        init_opengl_extensions();
-
-        int gl_major;
-        int gl_minor;
-        glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
-        glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
-        if (gl_major < 3 || (gl_major == 3 && gl_minor < 3)) {
-            _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher\n");
-        }
-
-        _ARGUS_INFO("Obtained OpenGL %d.%d context\n", gl_major, gl_minor);
-
-        const GLubyte *ver_str = glGetString(GL_VERSION);
-
-        //TODO: actually do something
-        if (glDebugMessageCallback != nullptr) {
-            glGetError();
-            glDebugMessageCallback(_gl_debug_callback, nullptr);
-        } else {
-        }
-
-        glDepthFunc(GL_ALWAYS);
-
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glDisable(GL_CULL_FACE);
-        
-        g_renderer_states[&renderer] = {};
-    }
-
     static void _delete_bucket(RenderBucket *const bucket) {
         if (bucket->vertex_array != 0) {
             glDeleteBuffers(1, &bucket->vertex_array);
@@ -167,49 +137,6 @@ namespace argus {
         }
 
         g_bucket_pool.free(bucket);
-    }
-
-    void GLRenderer::deinit_texture(const TextureData &texture) {
-        for (auto &state : g_renderer_states) {
-            auto &textures = state.second.prepared_textures;
-            auto existing = textures.find(&texture);
-            if (existing != textures.end()) {
-                glDeleteTextures(1, &existing->second);
-                textures.erase(existing);
-            }
-        }
-    }
-
-    void GLRenderer::deinit_shader(const Shader &shader) {
-        for (auto &state : g_renderer_states) {
-            auto &shaders = state.second.compiled_shaders;
-            auto existing = shaders.find(&shader);
-            if (existing != shaders.end()) {
-                glDeleteShader(existing->second);
-                shaders.erase(existing);
-            }
-        }
-    }
-
-    void GLRenderer::deinit_material(const Material &material) {
-        for (auto &state : g_renderer_states) {
-            for (auto &layer_state : state.second.layer_states) {
-                auto &buckets = layer_state.second.render_buckets;
-                auto bucket = buckets.find(&material);
-                if (bucket != buckets.end()) {
-                    _delete_bucket(bucket->second);
-                    buckets.erase(bucket);
-                }
-            }
-
-            auto &programs = state.second.linked_programs;
-            auto program = programs.find(&material);
-            if (program != programs.end()) {
-                glDeleteProgram(program->second.handle);
-            }
-
-            programs.erase(program);
-        }
     }
 
     static void _process_object(const RenderObject &object, const mat4_flat_t &transform) {
@@ -278,7 +205,7 @@ namespace argus {
         auto &processed_obj = g_obj_pool.construct<ProcessedRenderObject>(
                 object, object.get_material(), transform,
                 vertex_buffer, buffer_size);
-        
+
         if (existing != layer_state.processed_objs.end()) {
             g_obj_pool.free(existing->second);
             existing->second = &processed_obj;
@@ -452,7 +379,7 @@ namespace argus {
 
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
-                
+
                 glGenBuffers(1, &bucket->vertex_buffer);
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
@@ -460,8 +387,8 @@ namespace argus {
                 for (auto &obj : bucket->objects) {
                     size += obj->vertex_buffer_size;
                 }
-                
-                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STATIC_DRAW);
+
+                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 
                 size_t offset = 0;
                 for (auto *processed : bucket->objects) {
@@ -471,7 +398,7 @@ namespace argus {
 
                     offset += processed->vertex_buffer_size;
                 }
-                
+
                 auto &material = bucket->material;
                 auto program_handle = state.linked_programs.find(&material)->second;
 
@@ -518,12 +445,105 @@ namespace argus {
                     }
 
                     offset += processed->vertex_buffer_size;
-                    
+
                     bucket->vertex_count += processed->vertex_count;
                 }
             }
 
             it++;
+        }
+    }
+
+    void GLRenderer::init_context_hints(void) {
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        #ifdef _ARGUS_DEBUG_MODE
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+        #endif
+    }
+
+    static shader_handle_t _compile_shader(const ShaderStage stage, const char *src, const unsigned int src_len) {
+        GLuint shader_stage;
+        switch (stage) {
+            case ShaderStage::VERTEX:
+                shader_stage = GL_VERTEX_SHADER;
+                break;
+            case ShaderStage::FRAGMENT:
+                shader_stage = GL_FRAGMENT_SHADER;
+                break;
+            default:
+                _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n", stage);
+        }
+
+        auto shader_handle = glCreateShader(shader_stage);
+        if (!glIsShader(shader_handle)) {
+            _ARGUS_FATAL("Failed to create shader: %d\n", glGetError());
+        }
+
+        int src_len_i = src_len;
+
+        glShaderSource(shader_handle, 1, &src, &src_len_i);
+
+        glCompileShader(shader_handle);
+
+        int res;
+        glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
+        if (res == GL_FALSE) {
+            int log_len;
+            glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
+            char *log = new char[log_len + 1];
+            glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
+            std::string stage_str;
+            switch (stage) {
+                case ShaderStage::VERTEX:
+                    stage_str = "vertex";
+                    break;
+                case ShaderStage::FRAGMENT:
+                    stage_str = "fragment";
+                    break;
+                default:
+                    stage_str = "unknown";
+                    break;
+            }
+            _ARGUS_FATAL("Failed to compile %s shader: %s\n", stage_str.c_str(), log);
+            delete[] log;
+        }
+
+        return shader_handle;
+    }
+
+    // it is expected that the shaders will already be attached to the program when this function is called
+    static void _link_program(program_handle_t program, VertexAttributes attrs) {
+        unsigned int attrib_index = 0;
+        if (attrs & VertexAttributes::POSITION) {
+            glBindAttribLocation(program, SHADER_ATTRIB_LOC_POSITION, SHADER_ATTRIB_IN_POSITION);
+        }
+        if (attrs & VertexAttributes::NORMAL) {
+            glBindAttribLocation(program, SHADER_ATTRIB_LOC_NORMAL, SHADER_ATTRIB_IN_NORMAL);
+        }
+        if (attrs & VertexAttributes::COLOR) {
+            glBindAttribLocation(program, SHADER_ATTRIB_LOC_COLOR, SHADER_ATTRIB_IN_COLOR);
+        }
+        if (attrs & VertexAttributes::TEXCOORD) {
+            glBindAttribLocation(program, SHADER_ATTRIB_LOC_TEXCOORD, SHADER_ATTRIB_IN_TEXCOORD);
+        }
+
+        glBindFragDataLocation(program, 0, SHADER_ATTRIB_OUT_FRAGDATA);
+
+        glLinkProgram(program);
+
+        int res;
+        glGetProgramiv(program, GL_LINK_STATUS, &res);
+        if (res == GL_FALSE) {
+            int log_len;
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
+            char *log = new char[log_len];
+            glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, nullptr, log);
+            _ARGUS_FATAL("Failed to link program: %s\n", log);
+            delete[] log;
         }
     }
 
@@ -547,51 +567,7 @@ namespace argus {
             if (existing_shader != state.compiled_shaders.end()) {
                 shader_handle = existing_shader->second;
             } else {
-                GLuint shader_stage;
-                switch (shader->pimpl->stage) {
-                    case ShaderStage::VERTEX:
-                        shader_stage = GL_VERTEX_SHADER;
-                        break;
-                    case ShaderStage::FRAGMENT:
-                        shader_stage = GL_FRAGMENT_SHADER;
-                        break;
-                    default:
-                        _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n", shader->pimpl->stage);
-                }
-
-                shader_handle = glCreateShader(shader_stage);
-                if (!glIsShader(shader_handle)) {
-                    _ARGUS_FATAL("Failed to create shader: %d\n", glGetError());
-                }
-
-                const char *src = shader->pimpl->src;
-                const GLint src_len = shader->pimpl->src_len;
-                glShaderSource(shader_handle, 1, &src, &src_len);
-
-                glCompileShader(shader_handle);
-
-                int res;
-                glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
-                if (res == GL_FALSE) {
-                    int log_len;
-                    glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
-                    char *log = new char[log_len + 1];
-                    glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
-                    std::string stage_str;
-                    switch (shader->pimpl->stage) {
-                        case ShaderStage::VERTEX:
-                            stage_str = "vertex";
-                            break;
-                        case ShaderStage::FRAGMENT:
-                            stage_str = "fragment";
-                            break;
-                        default:
-                            stage_str = "unknown";
-                            break;
-                    }
-                    _ARGUS_FATAL("Failed to compile %s shader: %s\n", stage_str.c_str(), log);
-                    // fatal crash so we don't need to free the log string
-                }
+                shader_handle = _compile_shader(shader->pimpl->stage, shader->pimpl->src, shader->pimpl->src_len);
 
                 state.compiled_shaders.insert({ shader, shader_handle });
             }
@@ -599,34 +575,7 @@ namespace argus {
             glAttachShader(program_handle, shader_handle);
         }
 
-        unsigned int attrib_index = 0;
-        if (material.pimpl->attributes & VertexAttributes::POSITION) {
-            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_POSITION, SHADER_ATTRIB_IN_POSITION);
-        }
-        if (material.pimpl->attributes & VertexAttributes::NORMAL) {
-            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_NORMAL, SHADER_ATTRIB_IN_NORMAL);
-        }
-        if (material.pimpl->attributes & VertexAttributes::COLOR) {
-            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_COLOR, SHADER_ATTRIB_IN_COLOR);
-        }
-        if (material.pimpl->attributes & VertexAttributes::TEXCOORD) {
-            glBindAttribLocation(program_handle, SHADER_ATTRIB_LOC_TEXCOORD, SHADER_ATTRIB_IN_TEXCOORD);
-        }
-
-        glBindFragDataLocation(program_handle, 0, SHADER_ATTRIB_OUT_FRAGDATA);
-
-        glLinkProgram(program_handle);
-
-        int res;
-        glGetProgramiv(program_handle, GL_LINK_STATUS, &res);
-        if (res == GL_FALSE) {
-            int log_len;
-            glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
-            char *log = new char[log_len];
-            glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
-            _ARGUS_FATAL("Failed to link program: %s\n", log);
-            delete[] log;
-        }
+        _link_program(program_handle, material.pimpl->attributes);
 
         auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
 
@@ -699,11 +648,57 @@ namespace argus {
         }
     }
 
-    static void _render_layer(const Renderer &renderer, const RenderLayer &layer) {
+    static void _draw_layer(const Renderer &renderer, const RenderLayer &layer) {
         auto &state = g_renderer_states[&renderer];
         auto &layer_state = state.layer_states[&layer];
 
-        //TODO: we should render this to a framebuffer first
+        // framebuffer setup
+        if (layer_state.framebuffer == 0) {
+            glGenFramebuffers(1, &layer_state.framebuffer);
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, layer_state.framebuffer);
+
+        if (layer_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
+             if (layer_state.frame_texture != 0) {
+                 glDeleteTextures(1, &layer_state.frame_texture);
+             }
+
+             glGenTextures(1, &layer_state.frame_texture);
+             glBindTexture(GL_TEXTURE_2D, layer_state.frame_texture);
+
+             auto res = renderer.get_window().get_resolution();
+             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, res.x, res.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+             glBindTexture(GL_TEXTURE_2D, 0);
+
+             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, layer_state.frame_texture, 0);
+
+            auto fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                _ARGUS_FATAL("Framebuffer is incomplete (error %d)\n", fb_status);
+            }
+        }
+
+        // first render pass
+
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glDisable(GL_CULL_FACE);
+
+        Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
+
+        glViewport(0, 0, window_res.x, window_res.y);
 
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
@@ -737,6 +732,139 @@ namespace argus {
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glUseProgram(0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // second render pass
+
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glViewport(0, 0, window_res.x, window_res.y);
+
+        glBindVertexArray(state.frame_vao);
+
+        glUseProgram(state.frame_program);
+
+        glBindTexture(GL_TEXTURE_2D, layer_state.frame_texture);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUseProgram(0);
+        glBindVertexArray(0);
+    }
+
+    static void _setup_framebuffer(Renderer &renderer) {
+        auto &state = g_renderer_states[&renderer];
+
+        state.frame_vert_shader = _compile_shader(ShaderStage::VERTEX, _FRAME_VERT_SHADER, sizeof(_FRAME_VERT_SHADER));
+        state.frame_frag_shader = _compile_shader(ShaderStage::FRAGMENT, _FRAME_FRAG_SHADER, sizeof(_FRAME_FRAG_SHADER));
+
+        state.frame_program = glCreateProgram();
+
+        glAttachShader(state.frame_program, state.frame_vert_shader);
+        glAttachShader(state.frame_program, state.frame_frag_shader);
+
+        _link_program(state.frame_program, VertexAttributes::POSITION | VertexAttributes::TEXCOORD);
+
+        glGenVertexArrays(1, &state.frame_vao);
+        glBindVertexArray(state.frame_vao);
+
+        glGenBuffers(1, &state.frame_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, state.frame_vbo);
+
+        float frame_quad_vertex_data[] = {
+            -1.0, -1.0,  0.0,  0.0,
+            -1.0,  1.0,  0.0,  1.0,
+             1.0,  1.0,  1.0,  1.0,
+            -1.0, -1.0,  0.0,  0.0,
+             1.0,  1.0,  1.0,  1.0,
+             1.0, -1.0,  1.0,  0.0,
+        };
+        glBufferData(GL_ARRAY_BUFFER, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
+
+        unsigned int attr_offset = 0;
+        _set_attrib_pointer(4, SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
+        _set_attrib_pointer(4, SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    void GLRenderer::init(Renderer &renderer) {
+        _activate_gl_context(renderer.pimpl->window.pimpl->handle);
+
+        init_opengl_extensions();
+
+        int gl_major;
+        int gl_minor;
+        glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+        glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+        if (gl_major < 3 || (gl_major == 3 && gl_minor < 3)) {
+            _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher\n");
+        }
+
+        _ARGUS_INFO("Obtained OpenGL %d.%d context\n", gl_major, gl_minor);
+
+        const GLubyte *ver_str = glGetString(GL_VERSION);
+
+        g_renderer_states[&renderer] = {};
+
+        //TODO: actually do something
+        if (glDebugMessageCallback != nullptr) {
+            glDebugMessageCallback(_gl_debug_callback, nullptr);
+        }
+
+        _setup_framebuffer(renderer);
+    }
+
+    void GLRenderer::deinit_texture(const TextureData &texture) {
+        for (auto &state : g_renderer_states) {
+            auto &textures = state.second.prepared_textures;
+            auto existing = textures.find(&texture);
+            if (existing != textures.end()) {
+                glDeleteTextures(1, &existing->second);
+                textures.erase(existing);
+            }
+        }
+    }
+
+    void GLRenderer::deinit_shader(const Shader &shader) {
+        for (auto &state : g_renderer_states) {
+            auto &shaders = state.second.compiled_shaders;
+            auto existing = shaders.find(&shader);
+            if (existing != shaders.end()) {
+                glDeleteShader(existing->second);
+                shaders.erase(existing);
+            }
+        }
+    }
+
+    void GLRenderer::deinit_material(const Material &material) {
+        for (auto &state : g_renderer_states) {
+            for (auto &layer_state : state.second.layer_states) {
+                auto &buckets = layer_state.second.render_buckets;
+                auto bucket = buckets.find(&material);
+                if (bucket != buckets.end()) {
+                    _delete_bucket(bucket->second);
+                    buckets.erase(bucket);
+                }
+            }
+
+            auto &programs = state.second.linked_programs;
+            auto program = programs.find(&material);
+            if (program != programs.end()) {
+                glDeleteProgram(program->second.handle);
+            }
+
+            programs.erase(program);
+        }
     }
 
     void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
@@ -744,18 +872,10 @@ namespace argus {
 
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        if (renderer.pimpl->window.pimpl->dirty_resolution) {
-            Vector2u res = renderer.pimpl->window.pimpl->properties.resolution;
-            glViewport(0, 0, res.x, res.y);
-            renderer.pimpl->window.pimpl->dirty_resolution = false;
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         _rebuild_scene(renderer);
 
         for (auto *layer : renderer.pimpl->render_layers) {
-            _render_layer(renderer, *layer);
+            _draw_layer(renderer, *layer);
         }
 
         glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);

@@ -44,7 +44,21 @@ namespace argus {
         /**
          * \brief The Window associated with the event.
          */
-        const Window &window;
+        Window &window;
+
+        /**
+         * The new resolution of the Window.
+         *
+         * \note This is populated only for resize events.
+         */
+        const Vector2u resolution;
+
+        /**
+         * The new position of the Window.
+         *
+         * \note This is populated only for move events.
+         */
+        const Vector2i position;
 
         /**
          * \brief Constructs a new WindowEvent.
@@ -56,7 +70,26 @@ namespace argus {
         WindowEvent(const WindowEventType subtype, Window &window):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
-                window(window) {
+                window(window),
+                resolution(),
+                position() {
+        }
+
+        /**
+         * \brief Constructs a new WindowEvent with the given data.
+         *
+         * \param subtype The specific \link WindowEventType type \endlink of
+         *        WindowEvent.
+         * \param window The Window associated with the event.
+         * \param data The new position of resolution of the window following
+         *        the event.
+         */
+        WindowEvent(const WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position):
+                ArgusEvent{ArgusEventType::WINDOW},
+                subtype(subtype),
+                window(window),
+                resolution(resolution),
+                position(position) {
         }
     };
 }
