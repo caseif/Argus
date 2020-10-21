@@ -33,6 +33,8 @@ namespace argus {
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
         std::map<const Material*, RenderBucket*> render_buckets;
 
+        mat4_flat_t view_matrix;
+
         LayerState(void) {
         }
     };

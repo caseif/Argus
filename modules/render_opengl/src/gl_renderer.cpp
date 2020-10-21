@@ -678,6 +678,13 @@ namespace argus {
         auto &state = g_renderer_states[&renderer];
 
         for (auto *layer : renderer.pimpl->render_layers) {
+            auto &layer_state = state.layer_states[layer];
+            auto &layer_transform = layer->pimpl->transform;
+            if (layer_transform.is_dirty()) {
+                multiply_matrices(g_view_matrix, layer_transform.as_matrix(), layer_state.view_matrix);
+                layer_transform.pimpl->dirty = false;
+            }
+
             _process_objects(renderer, *layer);
 
             _fill_buckets(renderer, *layer);
@@ -712,7 +719,7 @@ namespace argus {
 
                 auto view_mat_loc = program_info.view_matrix_uniform_loc;
                 if (view_mat_loc != -1) {
-                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, g_view_matrix);
+                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, layer_state.view_matrix);
                 }
             }
 
