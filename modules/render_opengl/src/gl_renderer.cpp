@@ -76,6 +76,7 @@
     uniform sampler2D screenTex; \n\
     void main() { \n\
         " SHADER_ATTRIB_OUT_FRAGDATA " = texture(screenTex, " FRAME_SHADER_PASS_TEXCOORD "); \n\
+        //" SHADER_ATTRIB_OUT_FRAGDATA " = vec4(1.0, 0.0, 0.0, 1.0); \n\
     }"
 
 namespace argus {
@@ -146,8 +147,6 @@ namespace argus {
         auto &state = g_renderer_states[&renderer];
         auto &layer_state = state.layer_states[&layer];
 
-        auto existing = layer_state.processed_objs.find(&object);
-
         size_t vertex_count = 0;
         for (const RenderPrim &prim : object.get_primitives()) {
             vertex_count += prim.get_vertex_count();
@@ -205,25 +204,29 @@ namespace argus {
         auto &processed_obj = g_obj_pool.construct<ProcessedRenderObject>(
                 object, object.get_material(), transform,
                 vertex_buffer, buffer_size);
+        processed_obj.visited = true;
 
-        if (existing != layer_state.processed_objs.end()) {
-            g_obj_pool.free(existing->second);
-            existing->second = &processed_obj;
-            processed_obj.visited = true;
+        auto existing_it = layer_state.processed_objs.find(&object);
+        if (existing_it != layer_state.processed_objs.end()) {
+            // for some reason freeing the object before we replace it causes
+            // weird issues that seem like a race condition somehow
+            auto &old_obj = existing_it->second;
 
-            existing->second = &processed_obj;
+            existing_it->second = &processed_obj;
+
+            g_obj_pool.free(old_obj);
 
             // the bucket should always exist if the object existed previously
             auto *bucket = layer_state.render_buckets[processed_obj.material];
             _ARGUS_ASSERT(!bucket->objects.empty(), "Bucket for existing object should not be empty");
-            std::replace(bucket->objects.begin(), bucket->objects.end(), existing->second, &processed_obj);
+            std::replace(bucket->objects.begin(), bucket->objects.end(), existing_it->second, &processed_obj);
         } else {
             layer_state.processed_objs.insert({ &object, &processed_obj });
 
             RenderBucket *bucket;
-            auto existing_bucket = layer_state.render_buckets.find(processed_obj.material);
-            if (existing_bucket != layer_state.render_buckets.end()) {
-                bucket = existing_bucket->second;
+            auto existing_bucket_it = layer_state.render_buckets.find(processed_obj.material);
+            if (existing_bucket_it != layer_state.render_buckets.end()) {
+                bucket = existing_bucket_it->second;
             } else {
                 bucket = &g_bucket_pool.construct<RenderBucket>(*processed_obj.material);
                 layer_state.render_buckets[processed_obj.material] = bucket;
@@ -232,6 +235,8 @@ namespace argus {
             bucket->objects.push_back(&processed_obj);
             bucket->needs_rebuild = true;
         }
+
+        object.get_transform().pimpl->dirty = false;
     }
 
     static void _compute_abs_group_transform(const RenderGroup &group, mat4_flat_t target) {
@@ -280,12 +285,12 @@ namespace argus {
         for (const RenderObject *child_object : group.pimpl->child_objects) {
             mat4_flat_t final_obj_transform;
 
-            auto existing = layer_state.processed_objs.find(child_object);
+            auto existing_it = layer_state.processed_objs.find(child_object);
             // if the object has already been processed previously
-            if (existing != layer_state.processed_objs.end()) {
+            if (existing_it != layer_state.processed_objs.end()) {
                 // if a parent group or the object itself has had its transform updated
-                existing->second->updated = new_recompute_transform || child_object->get_transform().is_dirty();
-                existing->second->visited = true;
+                existing_it->second->updated = new_recompute_transform || child_object->get_transform().is_dirty();
+                existing_it->second->visited = true;
             }
 
             if (new_recompute_transform) {
@@ -313,10 +318,7 @@ namespace argus {
         auto &state = g_renderer_states[&renderer];
         auto &layer_state = state.layer_states[&layer];
 
-        for (auto *layer : renderer.pimpl->render_layers) {
-            std::vector<ProcessedRenderObject> processed;
-            _process_render_group(layer->pimpl->root_group, false, nullptr);
-        }
+        _process_render_group(layer.pimpl->root_group, false, nullptr);
 
         for (auto it = layer_state.processed_objs.begin(); it != layer_state.processed_objs.end();) {
             auto *processed_obj = it->second;
@@ -327,12 +329,9 @@ namespace argus {
                 glDeleteBuffers(1, &processed_obj->vertex_buffer);
 
                 // we need to remove it from its containing bucket and flag the bucket for a rebuild
-                auto bucket = layer_state.render_buckets.find(it->second->material);
-                if (bucket != layer_state.render_buckets.end()) { // I think this should always be true
-                    auto &bucket_objs = bucket->second->objects;
-                    remove_from_vector(bucket_objs, processed_obj);
-                    bucket->second->needs_rebuild = true;
-                }
+                auto *bucket = layer_state.render_buckets[it->second->material];
+                remove_from_vector(bucket->objects, processed_obj);
+                bucket->needs_rebuild = true;
 
                 g_obj_pool.free(processed_obj);
 
@@ -358,7 +357,7 @@ namespace argus {
         auto &layer_state = state.layer_states[&layer];
 
         for (auto it = layer_state.render_buckets.begin(); it != layer_state.render_buckets.end();) {
-            auto bucket = it->second;
+            auto *bucket = it->second;
 
             if (bucket->objects.empty()) {
                 _delete_bucket(it->second);
@@ -550,8 +549,8 @@ namespace argus {
     static void _build_shaders(const Renderer &renderer, const Material &material) {
         auto &state = g_renderer_states[&renderer];
 
-        auto existing_program = state.linked_programs.find(&material);
-        if (existing_program != state.linked_programs.end()) {
+        auto existing_program_it = state.linked_programs.find(&material);
+        if (existing_program_it != state.linked_programs.end()) {
             return;
         }
 
@@ -563,9 +562,9 @@ namespace argus {
         for (auto *shader : material.pimpl->shaders) {
             shader_handle_t shader_handle;
 
-            auto existing_shader = state.compiled_shaders.find(shader);
-            if (existing_shader != state.compiled_shaders.end()) {
-                shader_handle = existing_shader->second;
+            auto existing_shader_it = state.compiled_shaders.find(shader);
+            if (existing_shader_it != state.compiled_shaders.end()) {
+                shader_handle = existing_shader_it->second;
             } else {
                 shader_handle = _compile_shader(shader->pimpl->stage, shader->pimpl->src, shader->pimpl->src_len);
 
@@ -638,8 +637,8 @@ namespace argus {
 
             _fill_buckets(renderer, *layer);
 
-            for (auto bucket : state.layer_states[layer].render_buckets) {
-                auto &mat = bucket.second->material;
+            for (auto bucket_it : state.layer_states[layer].render_buckets) {
+                auto &mat = bucket_it.second->material;
 
                 _build_shaders(renderer, mat);
 
@@ -648,7 +647,9 @@ namespace argus {
         }
     }
 
-    static void _draw_layer(const Renderer &renderer, const RenderLayer &layer) {
+    static void _draw_layer_to_framebuffer(const RenderLayer &layer) {
+        auto &renderer = layer.get_parent_renderer();
+
         auto &state = g_renderer_states[&renderer];
         auto &layer_state = state.layer_states[&layer];
 
@@ -658,6 +659,10 @@ namespace argus {
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, layer_state.framebuffer);
+
+        // clear framebuffer
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (layer_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
              if (layer_state.frame_texture != 0) {
@@ -682,19 +687,6 @@ namespace argus {
                 _ARGUS_FATAL("Framebuffer is incomplete (error %d)\n", fb_status);
             }
         }
-
-        // first render pass
-
-        glClearColor(0.0, 0.0, 0.0, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_ALWAYS);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glDisable(GL_CULL_FACE);
 
         Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
 
@@ -734,16 +726,15 @@ namespace argus {
         glUseProgram(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
-        // second render pass
+    static void _draw_framebuffer_to_screen(RenderLayer &layer) {
+        auto &renderer = layer.get_parent_renderer();
 
-        glClearColor(0.0, 0.0, 0.0, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        auto &state = g_renderer_states[&renderer];
+        auto &layer_state = state.layer_states[&layer];
 
-        glDisable(GL_DEPTH_TEST);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
 
         glViewport(0, 0, window_res.x, window_res.y);
 
@@ -827,10 +818,10 @@ namespace argus {
     void GLRenderer::deinit_texture(const TextureData &texture) {
         for (auto &state : g_renderer_states) {
             auto &textures = state.second.prepared_textures;
-            auto existing = textures.find(&texture);
-            if (existing != textures.end()) {
-                glDeleteTextures(1, &existing->second);
-                textures.erase(existing);
+            auto existing_it = textures.find(&texture);
+            if (existing_it != textures.end()) {
+                glDeleteTextures(1, &existing_it->second);
+                textures.erase(existing_it);
             }
         }
     }
@@ -838,10 +829,10 @@ namespace argus {
     void GLRenderer::deinit_shader(const Shader &shader) {
         for (auto &state : g_renderer_states) {
             auto &shaders = state.second.compiled_shaders;
-            auto existing = shaders.find(&shader);
-            if (existing != shaders.end()) {
-                glDeleteShader(existing->second);
-                shaders.erase(existing);
+            auto existing_it = shaders.find(&shader);
+            if (existing_it != shaders.end()) {
+                glDeleteShader(existing_it->second);
+                shaders.erase(existing_it);
             }
         }
     }
@@ -850,20 +841,20 @@ namespace argus {
         for (auto &state : g_renderer_states) {
             for (auto &layer_state : state.second.layer_states) {
                 auto &buckets = layer_state.second.render_buckets;
-                auto bucket = buckets.find(&material);
-                if (bucket != buckets.end()) {
-                    _delete_bucket(bucket->second);
-                    buckets.erase(bucket);
+                auto bucket_it = buckets.find(&material);
+                if (bucket_it != buckets.end()) {
+                    _delete_bucket(bucket_it->second);
+                    buckets.erase(bucket_it);
                 }
             }
 
             auto &programs = state.second.linked_programs;
-            auto program = programs.find(&material);
-            if (program != programs.end()) {
-                glDeleteProgram(program->second.handle);
+            auto program_it = programs.find(&material);
+            if (program_it != programs.end()) {
+                glDeleteProgram(program_it->second.handle);
             }
 
-            programs.erase(program);
+            programs.erase(program_it);
         }
     }
 
@@ -874,8 +865,31 @@ namespace argus {
 
         _rebuild_scene(renderer);
 
+        // set up state for drawing scene to framebuffers
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glDisable(GL_CULL_FACE);
+
         for (auto *layer : renderer.pimpl->render_layers) {
-            _draw_layer(renderer, *layer);
+            _draw_layer_to_framebuffer(*layer);
+        }
+
+        // set up state for drawing framebuffers to screen
+
+        glClearColor(0.0, 0.0, 0.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        for (auto *layer : renderer.pimpl->render_layers) {
+            _draw_framebuffer_to_screen(*layer);
         }
 
         glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);
