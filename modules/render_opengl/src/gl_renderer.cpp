@@ -660,10 +660,6 @@ namespace argus {
 
         glBindFramebuffer(GL_FRAMEBUFFER, layer_state.framebuffer);
 
-        // clear framebuffer
-        glClearColor(0.0, 0.0, 0.0, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         if (layer_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
              if (layer_state.frame_texture != 0) {
                  glDeleteTextures(1, &layer_state.frame_texture);
@@ -687,6 +683,10 @@ namespace argus {
                 _ARGUS_FATAL("Framebuffer is incomplete (error %d)\n", fb_status);
             }
         }
+
+        // clear framebuffer
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
 
