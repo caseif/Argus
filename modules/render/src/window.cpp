@@ -20,7 +20,6 @@
 #include "argus/render/renderer.hpp"
 #include "argus/render/window.hpp"
 #include "argus/render/window_event.hpp"
-#include "internal/render/glext.hpp"
 #include "internal/render/window.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -34,10 +33,10 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstddef>
-#include <cstdint>
 
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300
@@ -52,7 +51,7 @@ namespace argus {
 
     extern bool g_render_module_initialized;
 
-    extern std::map<window_handle_t, Window*> g_window_map;
+    extern std::map<GLFWwindow*, Window*> g_window_map;
     extern size_t g_window_count;
 
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
@@ -68,11 +67,13 @@ namespace argus {
     }
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
-        _dispatch_window_event(handle, WindowEventType::RESIZE);
+        dispatch_event(WindowEvent(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
+                { uint32_t(width), uint32_t(height) }, Vector2i()));
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
-        _dispatch_window_event(handle, WindowEventType::MOVE);
+        dispatch_event(WindowEvent(WindowEventType::MOVE, *g_window_map.find(handle)->second,
+                Vector2u(), { x, y }));
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -87,25 +88,16 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
-    Window::Window(void): pimpl(new pimpl_Window(*this)) {
-        _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before renderer module is initialized.");
+    Window::Window(): pimpl(new pimpl_Window(*this)) {
+        _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before render module is initialized.");
 
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        #ifdef USE_GLES
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-        #else
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        #endif
 
-        pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, "ArgusGame", nullptr, nullptr);
+        pimpl->renderer.init_context_hints();
+
+        pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, DEF_TITLE, nullptr, nullptr);
 
         if (pimpl->handle == nullptr) {
             _ARGUS_FATAL("Failed to create GLFW window");
@@ -137,7 +129,7 @@ namespace argus {
     void Window::destroy(void) {
         pimpl->state &= ~WINDOW_STATE_VALID;
 
-        pimpl->renderer.destroy();
+        pimpl->renderer.~Renderer();
 
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
@@ -166,10 +158,6 @@ namespace argus {
         return;
     }
 
-    Window &Window::create_window(void) {
-        return *new Window();
-    }
-
     Window &Window::create_child_window(void) {
         Window *child_window = new Window();
         child_window->pimpl->parent = this;
@@ -194,9 +182,6 @@ namespace argus {
         }
 
         if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
-            glfwMakeContextCurrent(pimpl->handle);
-            init_opengl_extensions();
-
             pimpl->renderer.init();
             pimpl->state |= WINDOW_STATE_INITIALIZED;
 
@@ -223,26 +208,25 @@ namespace argus {
         if (pimpl->properties.fullscreen.dirty) {
             fullscreen = pimpl->properties.fullscreen;
             if (fullscreen) {
-            glfwSetWindowMonitor(pimpl->handle,
-                glfwGetPrimaryMonitor(),
-                Vector2i(pimpl->properties.position).x,
-                Vector2i(pimpl->properties.position).y,
-                Vector2u(pimpl->properties.resolution).x,
-                Vector2u(pimpl->properties.resolution).y,
-                GLFW_DONT_CARE);
+                glfwSetWindowMonitor(pimpl->handle,
+                    glfwGetPrimaryMonitor(),
+                    Vector2i(pimpl->properties.position).x,
+                    Vector2i(pimpl->properties.position).y,
+                    Vector2u(pimpl->properties.resolution).x,
+                    Vector2u(pimpl->properties.resolution).y,
+                    GLFW_DONT_CARE);
             } else {
                 glfwSetWindowMonitor(pimpl->handle, nullptr, 0, 0, 0, 0, GLFW_DONT_CARE);
             }
-            if (pimpl->properties.resolution.dirty) {
-                pimpl->renderer.pimpl->dirty_resolution = true;
-            }
+
+            pimpl->properties.fullscreen = glfwGetWindowMonitor(pimpl->handle) != nullptr;
         }
+
         if (!fullscreen) {
             if (pimpl->properties.resolution.dirty) {
                 glfwSetWindowSize(pimpl->handle,
                     Vector2u(pimpl->properties.resolution).x,
                     Vector2u(pimpl->properties.resolution).y);
-                pimpl->renderer.pimpl->dirty_resolution = true;
             }
             if (pimpl->properties.position.dirty) {
                 glfwSetWindowPos(pimpl->handle,
@@ -251,10 +235,12 @@ namespace argus {
             }
         }
 
-        pimpl->properties.title.clean();
-        pimpl->properties.fullscreen.clean();
-        pimpl->properties.resolution.clean();
-        pimpl->properties.position.clean();
+        pimpl->dirty_resolution = pimpl->properties.resolution.dirty.load();
+
+        pimpl->properties.title.clear_dirty();
+        pimpl->properties.fullscreen.clear_dirty();
+        pimpl->properties.resolution.clear_dirty();
+        pimpl->properties.position.clear_dirty();
 
         pimpl->renderer.render(delta);
 
@@ -277,9 +263,17 @@ namespace argus {
         return;
     }
 
+    bool Window::is_fullscreen(void) const {
+        return pimpl->properties.fullscreen;
+    }
+
     void Window::set_fullscreen(const bool fullscreen) {
         pimpl->properties.fullscreen = fullscreen;
         return;
+    }
+
+    Vector2u Window::get_resolution(void) const {
+        return pimpl->properties.resolution;
     }
 
     void Window::set_resolution(const unsigned int width, const unsigned int height) {
@@ -316,7 +310,9 @@ namespace argus {
         if (window_event.subtype == WindowEventType::CLOSE) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
         } else if (window_event.subtype == WindowEventType::RESIZE) {
-            pimpl->renderer.pimpl->dirty_resolution = true;
+            pimpl->properties.resolution = window_event.resolution;
+        } else if (window_event.subtype == WindowEventType::MOVE) {
+            pimpl->properties.position = window_event.position;
         }
     }
 

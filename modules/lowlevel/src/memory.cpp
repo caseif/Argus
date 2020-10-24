@@ -246,10 +246,17 @@ namespace argus {
                 }
 
                 size_t block_index = offset_in_chunk / pimpl->real_block_size;
+                
                 // clear appropriate bit in block map
                 // we convert the index to a bit position by taking the one's-complement and masking
                 // it to exclude bits not relevant when addressing the bitfield
-                chunk->occupied_block_map &= ~(1 << (~block_index & BF_INDEX_MASK));
+                uint64_t block_flag_mask = uint64_t(1) << ((~block_index) & BF_INDEX_MASK);
+
+                if (!(chunk->occupied_block_map & block_flag_mask)) {
+                    throw std::invalid_argument("Invalid free (block not alloced, possible double-free?)\n");
+                }
+
+                chunk->occupied_block_map &= ~block_flag_mask;
 
                 // if the chunk is empty, delete it
                 if (--chunk->occupied_blocks == 0) {

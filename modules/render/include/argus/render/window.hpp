@@ -9,9 +9,6 @@
 
 #pragma once
 
-// module render
-#include "argus/render/renderer.hpp"
-
 // module core
 #include "argus/core.hpp"
 
@@ -22,14 +19,12 @@ namespace argus {
     class Renderer;
     class Window;
 
+    struct pimpl_Window;
+
     /**
      * \brief A callback which operates on a window-wise basis.
      */
     typedef std::function<void(Window &window)> WindowCallback;
-
-    class Renderer;
-
-    struct pimpl_Window;
 
     /**
      * \brief Represents an individual window on the screen.
@@ -39,21 +34,25 @@ namespace argus {
      * \sa Renderer
      */
     class Window {
-        friend class Renderer;
-        friend class pimpl_Renderer;
-
-        friend void *get_window_handle(const Window &window);
-
-        private:
-            pimpl_Window *pimpl;
+        public:
+            pimpl_Window *const pimpl;
 
             /**
-             * \brief The nullary and primary constructor.
+             * \brief Creates a new Window.
+             *
+             * \return The created Window.
+             *
+             * \warning Not all platforms may support multiple
+             *          \link Window Windows \endlink.
              *
              * \remark A Renderer will be implicitly created upon construction
              *         of a Window.
              */
-            Window(void);
+            Window();
+
+            Window(const Window&) = delete;
+
+            Window(Window&&) = delete;
 
             ~Window(void);
 
@@ -82,20 +81,6 @@ namespace argus {
              * \param user_data A pointer to the Window to handle events for.
              */
             void event_callback(const ArgusEvent &event, void *user_data);
-
-        public:
-            /**
-             * \brief Creates a new Window.
-             *
-             * \return The created Window.
-             *
-             * \warning Not all platforms may support multiple
-             *          \link Window Windows \endlink.
-             *
-             * \attention The Window is created in heap memory, and will be
-             *            deallocated by Window#destroy(void).
-             */
-            static Window &create_window(void);
 
             /**
              * \brief Destroys this window.
@@ -129,6 +114,13 @@ namespace argus {
             void set_title(const std::string &title);
 
             /**
+             * \brief Gets whether the window is currently in fullscreen mode.
+             *
+             * \return The window's fullscreen state.
+             */
+            bool is_fullscreen(void) const;
+
+            /**
              * \brief Sets the fullscreen state of the window.
              *
              * Caution: This may not be supported on all platforms.
@@ -137,6 +129,13 @@ namespace argus {
              *        fullscreen.
              */
             void set_fullscreen(const bool fullscreen);
+
+            /**
+             * \brief Gets the window's current resolution.
+             *
+             * \return The window's resolution.
+             */
+            Vector2u get_resolution(void) const;
 
             /**
              * \brief Sets the resolution of the window when not in fullscreen

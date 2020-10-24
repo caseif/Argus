@@ -1,6 +1,6 @@
 # Argus Game Engine ![Argus](https://github.com/caseif/Argus/workflows/Argus/badge.svg)
 
-Argus is a 2D game engine written in C++11 and built on OpenGL/OpenGL ES and GLFW.
+Argus is a 2D game engine written in C++11 and built on GLFW.
 
 ### Features
 
@@ -20,9 +20,12 @@ A large number of additional modules are planned for future inclusion.
 
 ### Compiling
 
-Argus depends on GLFW, OpenGL (or alternatively OpenGL ES), and libpng. These libraries are included as Git submodules
-and are built automatically by the build script. The appropriate shared libraries will be generated as part of the
-distribution alongside Argus's shared library.
+The base Argus library depends on GLFW and libpng. These libraries are included as Git submodules and are built
+automatically by the build script. The appropriate shared libraries will be generated as part of the distribution
+alongside Argus's shared library.
+
+Additionally, the render backends require support from the OS for their respective graphics libraries. Argus currently
+provides an OpenGL-based backend, with OpenGL ES- and Vulkan-based backends planned for future inclusion.
 
 To set up the build files, please run the following commands:
 

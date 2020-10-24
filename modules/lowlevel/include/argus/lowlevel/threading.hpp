@@ -330,7 +330,7 @@ namespace argus {
                 return *this;
             };
 
-            inline void clean(void) {
+            inline void clear_dirty(void) {
                 this->dirty = false;
             }
     };

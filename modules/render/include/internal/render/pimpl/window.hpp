@@ -7,6 +7,8 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
 // module lowlevel
 #include "argus/lowlevel/threading.hpp"
 
@@ -15,10 +17,12 @@
 
 // module render
 #include "argus/render/renderer.hpp"
-#include "internal/render/types.hpp"
 
 #include <atomic>
 #include <vector>
+
+// forward declarations
+struct GLFWwindow;
 
 namespace argus {
     struct pimpl_Window {
@@ -31,7 +35,7 @@ namespace argus {
          * \brief A handle to the lower-level window represented by this
          *        object.
          */
-        window_handle_t handle;
+        GLFWwindow *handle;
 
         /**
          * \brief The ID of the engine callback registered for this Window.
@@ -71,8 +75,20 @@ namespace argus {
          */
         std::atomic<unsigned int> state;
 
+        /**
+         * \brief Whether the render resolution has recently been updated.
+         *
+         * \remark This must be atomic because the resolution can be updated
+         *         from the game thread.
+         */
+        std::atomic_bool dirty_resolution;
+
         pimpl_Window(Window &parent):
-                renderer(parent) {
+            renderer(parent) {
         }
+
+        pimpl_Window(const pimpl_Window&) = delete;
+
+        pimpl_Window(pimpl_Window&&) = delete;
     };
 }

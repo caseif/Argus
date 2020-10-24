@@ -18,13 +18,14 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/texture_loader.hpp"
 
-#include <png.h>
+#include "png.h"
+#include "pngconf.h"
 
 #include <istream>
 #include <stdexcept>
-#include <string>
 #include <utility>
 
+#include <csetjmp>
 #include <cstdio>
 
 #define RESOURCE_EXTENSION_PNG "png"
@@ -35,7 +36,7 @@ namespace argus {
         static_cast<std::ifstream*>(png_get_io_ptr(stream))->read((char*) buf, size);
     }
 
-    PngTextureLoader::PngTextureLoader(void):
+    PngTextureLoader::PngTextureLoader():
             ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG, {RESOURCE_EXTENSION_PNG}) {
     }
 
@@ -77,14 +78,20 @@ namespace argus {
 
         png_read_info(png_ptr, info_ptr);
 
-        size_t width = png_get_image_width(png_ptr, info_ptr);
-        size_t height = png_get_image_height(png_ptr, info_ptr);
-        size_t bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-        size_t channels = png_get_channels(png_ptr, info_ptr);
-        unsigned char color_type = png_get_color_type(png_ptr, info_ptr);
+        auto width = png_get_image_width(png_ptr, info_ptr);
+        auto height = png_get_image_height(png_ptr, info_ptr);
+        auto bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+        auto channels = png_get_channels(png_ptr, info_ptr);
+        auto color_type = png_get_color_type(png_ptr, info_ptr);
 
         if (bit_depth == 16) {
             png_set_strip_16(png_ptr);
+        } else if (bit_depth < 8) {
+            png_set_packing(png_ptr);
+        }
+
+        if (color_type == PNG_COLOR_TYPE_RGB) {
+            png_set_add_alpha(png_ptr, 0xffffffff, PNG_FILLER_AFTER);
         }
 
         if (color_type == PNG_COLOR_TYPE_PALETTE) {

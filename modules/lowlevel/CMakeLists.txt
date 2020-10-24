@@ -9,4 +9,4 @@ else()
   set(LOCAL_LIBS "")
 endif()
 
-setup_submodule(${MODULE_NAME})
+setup_submodule(${MODULE_NAME} 0)

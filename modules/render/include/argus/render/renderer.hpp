@@ -12,13 +12,10 @@
 // module core
 #include "argus/core.hpp"
 
-// module render
-#include "argus/render/render_layer.hpp"
-#include "argus/render/window.hpp"
-
 namespace argus {
     // forward declarations
     class RenderLayer;
+    class TextureData;
     class Window;
 
     struct pimpl_Renderer;
@@ -36,11 +33,8 @@ namespace argus {
      * \sa Window
      */
     class Renderer {
-        friend class Window;
-        friend class pimpl_Window;
-
-        private:
-            pimpl_Renderer *pimpl;
+        public:
+            pimpl_Renderer *const pimpl;
 
             /**
              * \brief Constructs a new Renderer attached to the given Window.
@@ -54,6 +48,14 @@ namespace argus {
             Renderer(Renderer &&rhs) = delete;
 
             ~Renderer(void);
+
+            Window &get_window() const;
+
+            /**
+             * \brief Sets the context parameters requested by this Renderer
+             *        prior to window creation.
+             */
+            void init_context_hints(void);
 
             /**
              * \brief Initializes the Renderer.
@@ -72,31 +74,27 @@ namespace argus {
              */
             void render(const TimeDelta delta);
 
-        public:
-            /**
-             * \brief Destroys this renderer.
-             *
-             * \warning This method destroys the Renderer object. No other
-             *          methods should be invoked upon it afterward.
-             */
-            void destroy(void);
-
             /**
              * \brief Creates a new RenderLayer with the given priority.
              *
              * Layers with higher priority will be rendered after (ergo in front
              * of) those with lower priority.
              *
-             * \param priority The priority of the new RenderLayer.
+             * \param index The index of the new RenderLayer. Higher-indexed
+             *        layers are rendered atop lower-indexed ones.
              *
              * \return The created RenderLayer.
              */
-            RenderLayer &create_render_layer(const int priority);
+            RenderLayer &create_render_layer(const int index);
 
             /**
-             * \brief Removes a render layer from this renderer and destroys it.
+             * \brief Removes a RenderLayer from this Renderer, destroying it in
+             *        the process.
              *
              * \param layer The child RenderLayer to remove.
+             *
+             * \throw std::invalid_argument If the supplied RenderLayer is not a
+             *        child of this Renderer.
              */
             void remove_render_layer(RenderLayer &layer);
     };

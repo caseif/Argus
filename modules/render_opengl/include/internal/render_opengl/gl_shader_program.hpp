@@ -9,10 +9,7 @@
 
 #pragma once
 
-// module render
-#include "argus/render/render_group.hpp"
-#include "argus/render/render_layer.hpp"
-#include "argus/render/shader.hpp"
+#include "internal/render_opengl/glfw_include.hpp"
 
 #include <initializer_list>
 #include <set>
@@ -26,21 +23,42 @@ namespace argus {
     class RenderLayer;
     class Shader;
 
-    //TODO: temporary until we implement a proper uniform API
-    typedef unsigned int uniform_location_t;
-
-    struct pimpl_ShaderProgram;
+    typedef GLint uniform_handle_t;
+    typedef GLuint program_handle_t;
 
     /**
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
-    class ShaderProgram {
+    class GLShaderProgram {
         friend class RenderGroup;
         friend class pimpl_RenderGroup;
         friend class RenderLayer;
 
         private:
-            pimpl_ShaderProgram *pimpl;
+            /**
+             * \brief The set of Shaders encompassed by this program.
+             */
+            std::set<const Shader*, bool(*)(const Shader*, const Shader*)> shaders;
+            /**
+             * \brief A complete list of uniforms defined by this
+             *        program's Shaders.
+             */
+            std::unordered_map<std::string, uniform_handle_t> uniforms;
+
+            /**
+             * \brief Whether this program has been initially compiled and linked.
+             */
+            bool initialized;
+            /**
+             * \brief Whether this program must be rebuilt (due to the Shader
+             *        list updating).
+             */
+            bool needs_rebuild;
+
+            /**
+             * \brief A handle to the linked program in video memory.
+             */
+            program_handle_t program_handle;
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given
@@ -49,7 +67,7 @@ namespace argus {
              * \param shaders The \link Shader Shaders \endlink to construct the
              *        new program with.
              */
-            ShaderProgram(const std::vector<const Shader*> &shaders);
+            GLShaderProgram(const std::vector<const Shader*> &shaders);
 
             /**
              * \brief Constructs a new ShaderProgram encompassing the given
@@ -58,8 +76,8 @@ namespace argus {
              * \param shaders The \link Shader Shaders \endlink to construct the
              *        new program with.
              */
-            ShaderProgram(const std::initializer_list<const Shader*> &shaders):
-                    ShaderProgram(std::vector<const Shader*>(shaders)) {
+            GLShaderProgram(const std::initializer_list<const Shader*> &shaders):
+                    GLShaderProgram(std::vector<const Shader*>(shaders)) {
             }
 
             /**
@@ -107,8 +125,6 @@ namespace argus {
              * \deprecated This will be removed after functions are added to
              *             abstract the setting of uniforms.
              */
-            uniform_location_t get_uniform_location(const std::string &uniform_id) const;
-
-            //TODO: proper uniform API
+            uniform_handle_t get_uniform_location(const std::string &uniform_id) const;
     };
 }

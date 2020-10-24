@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 
 namespace argus {
 

@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include "GLFW/glfw3.h"
+// forward declarations
+struct GLFWwindow;
 
 namespace argus {
 

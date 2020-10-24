@@ -451,3 +451,5 @@ MigrationBackup/
 bin/
 build/
 docs/generated/
+
+!.vscode/c_cpp_properties.json

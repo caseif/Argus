@@ -17,6 +17,7 @@
 #include "argus/core.hpp"
 #include "internal/core/config.hpp"
 #include "internal/core/core_util.hpp"
+#include "internal/core/defines.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -38,23 +39,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #ifdef _WIN32
     #include <Windows.h>
 #else
     #include <dlfcn.h>
-#endif
-
-#define US_PER_S 1000000LLU
-#define SLEEP_OVERHEAD_NS 120000LLU
-
-#define MODULES_DIR_NAME "modules"
-#ifdef _WIN32
-    #define SHARED_LIB_EXT "dll"
-#elif defined(__APPLE__)
-    #define SHARED_LIB_EXT "dylib"
-#else
-    #define SHARED_LIB_EXT "so"
 #endif
 
 namespace argus {
@@ -78,7 +68,7 @@ namespace argus {
         SharedMutex queue_mutex;
     };
 
-    Thread *g_render_thread;
+    Thread *g_game_thread;
 
     static Index g_next_index = 0;
     static std::mutex g_next_index_mutex;
@@ -87,7 +77,7 @@ namespace argus {
     static CallbackList<DeltaCallback> g_render_callbacks;
     static CallbackList<ArgusEventHandler> g_event_listeners;
 
-    static std::queue<std::unique_ptr<ArgusEvent>> g_event_queue;
+    static std::queue<std::unique_ptr<const ArgusEvent>> g_event_queue;
     static std::mutex g_event_queue_mutex;
 
     static std::map<const std::string, const ArgusModule> g_registered_modules;
@@ -99,6 +89,8 @@ namespace argus {
                 return a.id.compare(b.id) < 0;
             }
         });
+
+    extern std::map<std::string, NullaryCallback> g_early_init_callbacks;
 
     static std::vector<void *> g_external_module_handles;
 
@@ -158,7 +150,8 @@ namespace argus {
 
     template <typename T>
     static const bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
-        auto it = std::remove_if(vector.begin(), vector.end(), [id](auto callback) { return callback.id == id; });
+        auto it = std::remove_if(vector.begin(), vector.end(),
+                [id](IndexedValue<T> callback) { return callback.id == id; });
         if (it != vector.end()) {
             vector.erase(it, vector.end());
             return true;
@@ -214,7 +207,7 @@ namespace argus {
         g_event_listeners.list_mutex.lock_shared();
 
         while (!g_event_queue.empty()) {
-            ArgusEvent &event = *std::move(g_event_queue.front().get());
+            const ArgusEvent &event = *std::move(g_event_queue.front().get());
             for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
                 if (static_cast<int>(listener.value.type & event.type)) {
                     listener.value.callback(event, listener.value.data);
@@ -256,8 +249,8 @@ namespace argus {
                 g_initialized = true;
                 break;
             case LifecycleStage::POST_DEINIT:
-                g_render_thread->detach();
-                g_render_thread->destroy();
+                g_game_thread->detach();
+                g_game_thread->destroy();
 
                 break;
             default:
@@ -281,7 +274,7 @@ namespace argus {
             }
         }
 
-        g_registered_modules.insert(std::make_pair(module.id, module));
+        g_registered_modules.insert({ module.id, module });
 
         _ARGUS_INFO("Registered module %s\n", module.id.c_str());
     }
@@ -292,52 +285,72 @@ namespace argus {
         }
     }
 
-    void _load_external_modules(void) {
+    std::map<std::string, std::string> _get_present_modules(void) {
         std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
 
         if (!is_directory(modules_dir_path)) {
             _ARGUS_INFO("No external modules to load.\n");
-            return;
+            return std::map<std::string, std::string>();
         }
 
         std::vector<std::string> entries = list_directory_entries(modules_dir_path);
         if (entries.empty()) {
             _ARGUS_INFO("No external modules to load.\n");
-            return;
+            return std::map<std::string, std::string>();
         }
 
-        for (std::string filename : entries) {
+        std::map<std::string, std::string> modules;
+
+        for (auto filename : entries) {
             std::string full_path = modules_dir_path + PATH_SEPARATOR + filename;
 
             if (!is_regfile(full_path)) {
+                _ARGUS_DEBUG("Ignoring non-regular module file %s\n", full_path.c_str());
+                continue;
+            }
+
+            if (SHARED_LIB_PREFIX != "" && filename.find(SHARED_LIB_PREFIX) != 0) {
+                _ARGUS_DEBUG("Ignoring module file %s with invalid prefix\n", filename.c_str());
                 continue;
             }
 
             std::string ext = "";
-            size_t ext_index = filename.rfind(EXTENSION_SEPARATOR);
-            if (ext_index != std::string::npos) {
-                ext = filename.substr(ext_index + 1);
+            size_t ext_sep_index = filename.rfind(EXTENSION_SEPARATOR);
+            if (ext_sep_index != std::string::npos) {
+                ext = filename.substr(ext_sep_index + 1);
             }
 
             if (ext != SHARED_LIB_EXT) {
-                _ARGUS_WARN("Not loading file %s as module (bad extension %s)\n", filename.c_str(),
-                            ext.empty() ? "(none)" : ext.c_str());
+                _ARGUS_WARN("Ignoring module file %s with invalid extension\n", filename.c_str());
                 continue;
             }
 
-            _ARGUS_INFO("Found external module file %s, attempting to load.\n", filename.c_str());
+            auto base_name = filename.substr(std::strlen(SHARED_LIB_PREFIX),
+                    ext_sep_index - std::strlen(SHARED_LIB_PREFIX));
+            modules[base_name] = full_path;
+        }
+
+        return modules;
+    }
+
+    void _load_external_modules(void) {
+        auto modules = _get_present_modules();
+
+        for (auto module : modules) {
+            _ARGUS_INFO("Found external module %s as file %s, attempting to load.\n",
+                    module.first.c_str(), module.second.c_str());
 
             void *handle;
 #ifdef _WIN32
-            handle = LoadLibraryA(full_path.c_str());
+            handle = LoadLibraryA(module.second.c_str());
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module file %s (errno: %d)\n", filename.c_str(), GetLastError());
+                _ARGUS_WARN("Failed to load external module %s (errno: %d)\n", module.first.c_str(), GetLastError());
                 continue;
             }
 #else
-            handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            handle = dlopen(module.second.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module file %s (error: %s)\n", filename.c_str(), dlerror());
+                _ARGUS_WARN("Failed to load external module %s (error: %s)\n", module.first.c_str(), dlerror());
                 continue;
             }
 #endif
@@ -360,7 +373,7 @@ namespace argus {
         }
     }
 
-    void _enable_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
+    void enable_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
         // skip duplicates
         for (const ArgusModule enabled_module : g_enabled_modules) {
             if (enabled_module.id == module_id) {
@@ -384,7 +397,7 @@ namespace argus {
         std::vector<std::string> new_chain = dependent_chain;
         new_chain.insert(new_chain.cend(), module_id);
         for (const std::string dependency : it->second.dependencies) {
-            _enable_module(dependency, new_chain);
+            enable_module(dependency, new_chain);
         }
 
         g_enabled_modules.insert(it->second);
@@ -392,9 +405,13 @@ namespace argus {
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
+    void enable_module(const std::string module_id) {
+        enable_module(module_id, {});
+    }
+
     void _load_modules(const std::vector<std::string> &modules) {
         for (const std::string module : modules) {
-            _enable_module(module, {});
+            enable_module(module);
         }
     }
 
@@ -420,7 +437,14 @@ namespace argus {
             _load_modules({"core"});
         }
 
-        for (ArgusModule module : g_enabled_modules) {
+        // this is basically for the sole purpose of allowing dynamic module
+        // loading, e.g. allowing render to load render_opengl before any real
+        // lifecycle stages are executed
+        for (auto module : g_enabled_modules) {
+            auto ei_callback = g_early_init_callbacks.find(module.id);
+            if (ei_callback != g_early_init_callbacks.end()) {
+                ei_callback->second();
+            }
         }
 
         for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
@@ -515,6 +539,26 @@ namespace argus {
         list.queue_mutex.unlock();
     }
 
+    std::vector<RenderBackend> get_available_render_backends(void) {
+        std::vector<RenderBackend> backends;
+
+        auto modules = _get_present_modules();
+        
+        if (modules.find(std::string(RENDER_MODULE_OPENGL)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::OPENGL);
+        }
+
+        if (modules.find(std::string(RENDER_MODULE_OPENGLES)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::OPENGLES);
+        }
+
+        if (modules.find(std::string(RENDER_MODULE_VULKAN)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::VULKAN);
+        }
+
+        return backends;
+    }
+
     const Index register_update_callback(const DeltaCallback callback) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register update callback before engine initialization.");
         return _add_callback(g_update_callbacks, callback);
@@ -556,7 +600,7 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_render_thread = &Thread::create(_game_loop, nullptr);
+        g_game_thread = &Thread::create(_game_loop, nullptr);
 
         // pass control over to the render loop
         _render_loop();

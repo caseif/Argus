@@ -11,61 +11,27 @@
 
 // module render
 #include "argus/render/render_group.hpp"
-#include "argus/render/renderer.hpp"
-#include "argus/render/shader.hpp"
-#include "argus/render/transform.hpp"
+#include "argus/render/render_layer.hpp"
 
 #include <vector>
 
 namespace argus {
     struct pimpl_RenderLayer {
-        /**
-         * \brief The Renderer parent to this layer.
-         */
-        Renderer &parent_renderer;
-        /**
-         * \brief The priority of this layer.
-         *
-         * Higher-priority layers will be rendered later, on top of
-         * lower-priority ones.
-         */
-        const int priority;
-
-        /**
-         * \brief The \link RenderGroup RenderGroups \endlink contained by
-         *        this layer.
-         */
-        std::vector<RenderGroup*> children;
-        /**
-         * \brief The \link Shader Shaders \endlink contained by this layer.
-         */
-        std::vector<const Shader*> shaders;
-
-        /**
-         * \brief The implicit default RenderGroup of this layer.
-         *
-         * \remark A pointer to this RenderGroup is present in the children
-         *         vector.
-         */
-        RenderGroup *def_group; // this depends on shaders being initialized
-
-        /**
-         * \brief The Transform of this RenderLayer.
-         *
-         * \sa RenderGroup#get_transform
-         */
+        const Renderer &parent_renderer;
         Transform transform;
-
-        /**
-         * \brief Whether the shader list has been modified since it was
-         *        last built.
-         */
-        bool dirty_shaders;
+        const int index;
         
-        pimpl_RenderLayer(Renderer &parent, const int priority):
-                parent_renderer(parent),
-                priority(priority),
-                transform() {
+        RenderGroup root_group;
+        
+        pimpl_RenderLayer(const Renderer &renderer, const RenderLayer &layer, Transform &transform, const int index):
+                parent_renderer(renderer),
+                transform(transform),
+                index(index),
+                root_group(layer, nullptr) {
         }
+
+        pimpl_RenderLayer(const pimpl_RenderLayer&) = default;
+
+        pimpl_RenderLayer(pimpl_RenderLayer&&) = delete;
     };
 }

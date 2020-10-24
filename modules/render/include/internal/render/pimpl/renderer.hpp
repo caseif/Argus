@@ -7,11 +7,11 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
 // module render
-#include "argus/render/render_layer.hpp"
 #include "argus/render/renderer.hpp"
-#include "argus/render/window.hpp"
-#include "internal/render/types.hpp"
+#include "internal/render/renderer_impl.hpp"
 
 #include <atomic>
 #include <vector>
@@ -27,13 +27,13 @@ namespace argus {
          *        Renderer.
          */
         std::vector<RenderLayer*> render_layers;
-        /**
-         * \brief Whether the render resolution has recently been updated.
-         */
-        std::atomic_bool dirty_resolution;
 
         pimpl_Renderer(Window &window):
                 window(window) {
         }
+
+        pimpl_Renderer(const pimpl_Renderer&) = delete;
+
+        pimpl_Renderer(pimpl_Renderer&&) = delete;
     };
 }

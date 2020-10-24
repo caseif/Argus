@@ -7,42 +7,38 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#pragma once
+
+// module render
+#include "argus/render/shader.hpp"
+
 #include <initializer_list>
 #include <string>
+#include <vector>
 
 namespace argus {
     struct pimpl_Shader {
         /**
-         * \brief The type of this shader as a magic value.
+         * \brief The stage this shader is to be run at.
          */
-        const unsigned int type;
+        const ShaderStage stage;
         /**
-         * \brief The source code of this shader.
+         * \brief The source code for this shader.
          */
-        const std::string src;
+        const char *const src;
         /**
-         * \brief The name of this shader's entry point.
+         * \brief The length of the shader's source code in bytes.
          */
-        const std::string entry_point;
-        /**
-         * \brief The priority of this shader.
-         *
-         * Higher priority shaders will be processed before lower priority
-         * ones within their respective stage.
-         */
-        const int priority;
-        /**
-         * \brief The uniforms defined by this shader.
-         */
-        const std::vector<std::string> uniform_ids;
+        const size_t src_len;
 
-        pimpl_Shader(const unsigned int type, const std::string &src, const std::string &entry_point,
-            const int priority, const std::initializer_list<std::string> &uniform_ids):
-                type(type),
+        pimpl_Shader(const ShaderStage stage, const char *const src, const size_t src_len):
+                stage(stage),
                 src(src),
-                entry_point(entry_point),
-                priority(priority),
-                uniform_ids(uniform_ids) {
+                src_len(src_len) {
         }
+
+        pimpl_Shader(const pimpl_Shader&) = default;
+
+        pimpl_Shader(pimpl_Shader&&) = delete;
     };
 }

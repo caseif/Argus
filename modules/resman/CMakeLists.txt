@@ -5,4 +5,4 @@ set(MODULE_DEPS "core;lowlevel")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "")
 
-setup_submodule(${MODULE_NAME})
+setup_submodule(${MODULE_NAME} 0)

@@ -1,0 +1,50 @@
+{
+    "env": {
+        "defIncludePath": [
+            "${workspaceFolder}/external/include",
+            "${workspaceFolder}/libs/glfw/include",
+            "${workspaceFolder}/libs/libpng",
+            "${workspaceFolder}/libs/zlib",
+            "${workspaceFolder}/modules/core/include",
+            "${workspaceFolder}/modules/ecs/include",
+            "${workspaceFolder}/modules/input/include",
+            "${workspaceFolder}/modules/lowlevel/include",
+            "${workspaceFolder}/modules/render/include",
+            "${workspaceFolder}/modules/render_opengl/include",
+            "${workspaceFolder}/modules/resman/include"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "Linux",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/g++",
+            "compilerArgs": [
+                "-Wall",
+                "-Wextra",
+                "-Winit-self",
+                "-Wold-style-cast",
+                "-Woverloaded-virtual",
+                "-Wuninitialized",
+                "-Wmissing-declarations",
+                "-Winit-self",
+                "-pedantic",
+                "-pedantic-errors"
+            ],
+            "includePath": ["${defIncludePath}"]
+        },
+        {
+            "name": "Win32",
+            "cStandard": "c99",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "msvc-x64",
+            "compilerArgs": [
+                "/W4"
+            ],
+            "includePath": ["${defIncludePath}"]
+        }
+    ],
+    "version": 4
+}

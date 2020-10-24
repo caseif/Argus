@@ -16,14 +16,12 @@
 
 #pragma once
 
+#include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
-#include "argus/render/renderable_factory.hpp"
-#include "argus/render/renderable_square.hpp"
-#include "argus/render/renderable_triangle.hpp"
-#include "argus/render/renderable.hpp"
+#include "argus/render/render_object.hpp"
+#include "argus/render/render_prim.hpp"
 #include "argus/render/renderer.hpp"
-#include "argus/render/shader_program.hpp"
 #include "argus/render/shader.hpp"
 #include "argus/render/texture_data.hpp"
 #include "argus/render/transform.hpp"
