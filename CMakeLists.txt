@@ -79,7 +79,7 @@ endif()
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
 set(GLFW_LIBRARY_BASE "glfw")
-set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE};${OPENGL_gl_LIBRARY}")
+set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE};${OPENGL_LIBRARIES}")
 
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
 set(ZLIB_LIBRARY "zlib")

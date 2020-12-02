@@ -64,7 +64,7 @@ namespace argus {
     }
 
     static void _on_glfw_error(int code, const char *desc) {
-        _ARGUS_WARN("GLFW Error: %s", desc);
+        _ARGUS_WARN("GLFW Error: %s\n", desc);
     }
 
     static RendererImpl &_create_backend_impl() {
