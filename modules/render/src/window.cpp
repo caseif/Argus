@@ -111,10 +111,6 @@ namespace argus {
 
         pimpl->parent = nullptr;
 
-        // register the listener
-        pimpl->listener_id = register_event_handler(ArgusEventType::WINDOW,
-            std::bind(&Window::event_callback, this, std::placeholders::_1, std::placeholders::_2));
-
         _register_callbacks(pimpl->handle);
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
@@ -295,24 +291,21 @@ namespace argus {
         return;
     }
 
-    void Window::event_callback(const ArgusEvent &event, void *user_data) {
+    void window_window_event_callback(const ArgusEvent &event, void *user_data) {
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
+        const Window &window = window_event.window;
         // ignore events for uninitialized windows
 
-        if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
-            return;
-        }
-
-        if (&window_event.window != this) {
+        if (!(window.pimpl->state & WINDOW_STATE_INITIALIZED)) {
             return;
         }
 
         if (window_event.subtype == WindowEventType::CLOSE) {
-            pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+            window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
         } else if (window_event.subtype == WindowEventType::RESIZE) {
-            pimpl->properties.resolution = window_event.resolution;
+            window.pimpl->properties.resolution = window_event.resolution;
         } else if (window_event.subtype == WindowEventType::MOVE) {
-            pimpl->properties.position = window_event.position;
+            window.pimpl->properties.position = window_event.position;
         }
     }
 

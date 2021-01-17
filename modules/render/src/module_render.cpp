@@ -23,6 +23,7 @@
 #include "argus/render/window.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/texture_loader.hpp"
+#include "internal/render/window.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -110,11 +111,22 @@ namespace argus {
             case LifecycleStage::INIT: {
                 g_renderer_impl = &_create_backend_impl();
 
+            /**
+             * \brief Handles \link ArgusEvent events \endlink relating to a
+             *        Window.
+             *
+             * \param event The passed ArgusEvent.
+             * \param user_data A pointer to the Window to handle events for.
+             */
+            void event_callback(const ArgusEvent &event, void *user_data);
+
                 glfwInit();
 
                 glfwSetErrorCallback(_on_glfw_error);
 
                 register_render_callback(_poll_events);
+                
+                register_event_handler(ArgusEventType::WINDOW, window_window_event_callback);
 
                 ResourceManager::get_global_resource_manager()
                     .register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());

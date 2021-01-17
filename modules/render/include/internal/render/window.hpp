@@ -9,6 +9,14 @@
 
 #pragma once
 
+// module core
+#include "argus/core.hpp"
+
+// module render
+#include "argus/render/window.hpp"
+
 namespace argus {
     void *get_window_handle(const Window &window);
+
+    void window_window_event_callback(const ArgusEvent &event, void *user_data);
 }
