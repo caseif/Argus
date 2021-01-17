@@ -29,7 +29,7 @@ namespace argus {
         /**
          * \brief The Renderer associated with this Window.
          */
-        Renderer renderer;
+        Renderer &renderer;
 
         /**
          * \brief A handle to the lower-level window represented by this
@@ -41,11 +41,6 @@ namespace argus {
          * \brief The ID of the engine callback registered for this Window.
          */
         Index callback_id;
-
-        /**
-         * \brief The ID of the event listener registered for this Window.
-         */
-        Index listener_id;
 
         /**
          * \brief The Window parent to this one, if applicable.
@@ -84,7 +79,7 @@ namespace argus {
         std::atomic_bool dirty_resolution;
 
         pimpl_Window(Window &parent):
-            renderer(parent) {
+            renderer(*new Renderer(parent)) {
         }
 
         pimpl_Window(const pimpl_Window&) = delete;

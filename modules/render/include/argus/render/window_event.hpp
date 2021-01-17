@@ -21,7 +21,7 @@ namespace argus {
     enum class WindowEventType {
         CREATE,
         UPDATE,
-        CLOSE,
+        REQUEST_CLOSE,
         MINIMIZE,
         RESTORE,
         FOCUS,

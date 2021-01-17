@@ -153,10 +153,10 @@ namespace argus {
 
     template <typename T>
     static const bool _remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
-        auto it = std::remove_if(vector.begin(), vector.end(),
+        auto it = std::find_if(vector.begin(), vector.end(),
                 [id](IndexedValue<T> callback) { return callback.id == id; });
         if (it != vector.end()) {
-            vector.erase(it, vector.end());
+            vector.erase(it);
             return true;
         }
         return false;
@@ -587,7 +587,6 @@ namespace argus {
 
     const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback, void *const data) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
-        Index id = g_next_index++;
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
         ArgusEventHandler listener = {type, callback, data};
@@ -600,7 +599,10 @@ namespace argus {
 
     void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event, bool render_thread) {
         auto &queue = render_thread ? g_render_event_queue : g_event_queue;
+        auto &mutex = render_thread ? g_render_event_queue_mutex : g_event_queue_mutex;
+        mutex.lock();
         queue.push(std::move(event));
+        mutex.unlock();
     }
 
     void start_engine(const DeltaCallback game_loop) {

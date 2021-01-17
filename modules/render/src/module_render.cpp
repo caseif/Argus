@@ -48,12 +48,12 @@ namespace argus {
     size_t g_window_count = 0;
 
     static void _clean_up(void) {
-        // use a copy since Window::destroy modifies the global list
+        // use a copy since Window destructor modifies the global list
         auto windows_copy = g_window_map;
         // doing this in reverse ensures that child windows are destroyed before their parents
         for (auto it = windows_copy.rbegin();
                 it != windows_copy.rend(); it++) {
-            it->second->destroy();
+            delete it->second;
         }
 
         glfwTerminate();

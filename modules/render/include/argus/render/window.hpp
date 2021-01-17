@@ -74,14 +74,6 @@ namespace argus {
             void update(const Timestamp delta);
 
             /**
-             * \brief Destroys this window.
-             *
-             * \warning This method destroys the Window object. No other methods
-             *          should be invoked upon it after calling destroy().
-             */
-            void destroy(void);
-
-            /**
              * \brief Creates a new window as a child of this one.
              *
              * \return The new child window.

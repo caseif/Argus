@@ -67,7 +67,7 @@ namespace argus {
     }
 
     static void _on_window_close(GLFWwindow *handle) {
-        _dispatch_window_event(handle, WindowEventType::CLOSE);
+        _dispatch_window_event(handle, WindowEventType::REQUEST_CLOSE);
     }
 
     static void _on_window_minimize_restore(GLFWwindow *handle, int minimized) {
@@ -127,24 +127,17 @@ namespace argus {
     }
 
     Window::~Window(void) {
-        delete pimpl;
-    }
-
-    void Window::destroy(void) {
         pimpl->state &= ~WINDOW_STATE_VALID;
-
-        pimpl->renderer.~Renderer();
 
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
         }
 
         unregister_render_callback(pimpl->callback_id);
-        unregister_event_handler(pimpl->listener_id);
 
         for (Window *child : pimpl->children) {
             child->pimpl->parent = nullptr;
-            child->pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+            _dispatch_window_event(*child, WindowEventType::REQUEST_CLOSE);
         }
 
         if (pimpl->parent != nullptr) {
@@ -159,7 +152,7 @@ namespace argus {
             stop_engine();
         }
 
-        return;
+        delete pimpl;
     }
 
     Window &Window::create_child_window(void) {
@@ -200,7 +193,7 @@ namespace argus {
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
-            destroy();
+            delete this;
             return;
         }
 
@@ -302,13 +295,13 @@ namespace argus {
     void window_window_event_callback(const ArgusEvent &event, void *user_data) {
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
         const Window &window = window_event.window;
-        // ignore events for uninitialized windows
 
+        // ignore events for uninitialized windows
         if (!(window.pimpl->state & WINDOW_STATE_INITIALIZED)) {
             return;
         }
 
-        if (window_event.subtype == WindowEventType::CLOSE) {
+        if (window_event.subtype == WindowEventType::REQUEST_CLOSE) {
             window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
         } else if (window_event.subtype == WindowEventType::RESIZE) {
             window.pimpl->properties.resolution = window_event.resolution;
