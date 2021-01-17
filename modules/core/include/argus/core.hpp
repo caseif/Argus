@@ -513,7 +513,7 @@ namespace argus {
      * \param event An rreference to the event to be dispatched as wrapped by a
      *        std::unique_ptr.
      */
-    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event);
+    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event, bool on_render_thread);
 
     /**
      * \brief Dispatches an event to all respective registered listeners.
@@ -521,8 +521,8 @@ namespace argus {
      * \param event An lreference to the event to be dispatched.
      */
     template <typename EventType>
-    void dispatch_event(const EventType &event) {
-        _dispatch_event_ptr(std::unique_ptr<ArgusEvent>(new EventType(event)));
+    void dispatch_event(const EventType &event, bool on_render_thread = false) {
+        _dispatch_event_ptr(std::unique_ptr<ArgusEvent>(new EventType(event)), on_render_thread);
     }
 
 }

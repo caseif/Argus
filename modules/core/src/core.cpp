@@ -79,6 +79,9 @@ namespace argus {
 
     static std::queue<std::unique_ptr<const ArgusEvent>> g_event_queue;
     static std::mutex g_event_queue_mutex;
+    
+    static std::queue<std::unique_ptr<const ArgusEvent>> g_render_event_queue;
+    static std::mutex g_render_event_queue_mutex;
 
     static std::map<const std::string, const ArgusModule> g_registered_modules;
     static std::set<ArgusModule, bool (*)(const ArgusModule, const ArgusModule)> g_enabled_modules(
@@ -202,22 +205,25 @@ namespace argus {
         }
     }
 
-    static void _process_event_queue(void) {
-        g_event_queue_mutex.lock();
+    static void _process_event_queue(bool render_queue) {
+        auto &queue = render_queue ? g_render_event_queue : g_event_queue;
+        auto &mutex = render_queue ? g_render_event_queue_mutex : g_event_queue_mutex;
+
+        mutex.lock();
         g_event_listeners.list_mutex.lock_shared();
 
-        while (!g_event_queue.empty()) {
-            const ArgusEvent &event = *std::move(g_event_queue.front().get());
+        while (!queue.empty()) {
+            const ArgusEvent &event = *std::move(queue.front().get());
             for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
                 if (static_cast<int>(listener.value.type & event.type)) {
                     listener.value.callback(event, listener.value.data);
                 }
             }
-            g_event_queue.pop();
+            queue.pop();
         }
 
         g_event_listeners.list_mutex.unlock_shared();
-        g_event_queue_mutex.unlock();
+        mutex.unlock();
     }
 
     constexpr inline ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs) {
@@ -478,14 +484,14 @@ namespace argus {
             _flush_callback_list_queues(g_render_callbacks);
             _flush_callback_list_queues(g_event_listeners);
 
-            _process_event_queue();
-
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
             for (auto &callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
             g_update_callbacks.list_mutex.unlock_shared();
+
+            _process_event_queue(false);
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -512,6 +518,8 @@ namespace argus {
                 callback.value(delta);
             }
             g_render_callbacks.list_mutex.unlock_shared();
+
+            _process_event_queue(true);
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -590,8 +598,9 @@ namespace argus {
         _remove_callback(g_event_listeners, id);
     }
 
-    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event) {
-        g_event_queue.push(std::move(event));
+    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event, bool render_thread) {
+        auto &queue = render_thread ? g_render_event_queue : g_event_queue;
+        queue.push(std::move(event));
     }
 
     void start_engine(const DeltaCallback game_loop) {

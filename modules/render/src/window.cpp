@@ -55,7 +55,7 @@ namespace argus {
     extern size_t g_window_count;
 
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
-        dispatch_event(WindowEvent(type, *g_window_map.find(handle)->second));
+        dispatch_event(WindowEvent(type, *g_window_map.find(handle)->second), true);
     }
 
     static void _on_window_close(GLFWwindow *handle) {
@@ -68,12 +68,12 @@ namespace argus {
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
         dispatch_event(WindowEvent(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
-                { uint32_t(width), uint32_t(height) }, Vector2i()));
+                { uint32_t(width), uint32_t(height) }, Vector2i()), true);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
         dispatch_event(WindowEvent(WindowEventType::MOVE, *g_window_map.find(handle)->second,
-                Vector2u(), { x, y }));
+                Vector2u(), { x, y }), true);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -185,7 +185,7 @@ namespace argus {
             pimpl->renderer.init();
             pimpl->state |= WINDOW_STATE_INITIALIZED;
 
-            dispatch_event(WindowEvent(WindowEventType::CREATE, *this));
+            dispatch_event(WindowEvent(WindowEventType::CREATE, *this), true);
 
             return;
         }
@@ -298,7 +298,7 @@ namespace argus {
     void Window::event_callback(const ArgusEvent &event, void *user_data) {
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
         // ignore events for uninitialized windows
-        
+
         if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
             return;
         }
