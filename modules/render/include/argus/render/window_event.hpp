@@ -20,6 +20,7 @@ namespace argus {
      */
     enum class WindowEventType {
         CREATE,
+        UPDATE,
         CLOSE,
         MINIMIZE,
         RESTORE,
@@ -47,18 +48,26 @@ namespace argus {
         Window &window;
 
         /**
-         * The new resolution of the Window.
+         * \brief The new resolution of the Window.
          *
          * \note This is populated only for resize events.
          */
         const Vector2u resolution;
 
         /**
-         * The new position of the Window.
+         * \brief The new position of the Window.
          *
          * \note This is populated only for move events.
          */
         const Vector2i position;
+
+        /**
+         * \brief The \link TimeDelta delta \endlink of the current render
+         *        frame.
+         *
+         * \note This is populated only for update events.
+         */
+        const TimeDelta delta;
 
         /**
          * \brief Constructs a new WindowEvent.
@@ -72,7 +81,8 @@ namespace argus {
                 subtype(subtype),
                 window(window),
                 resolution(),
-                position() {
+                position(),
+                delta() {
         }
 
         /**
@@ -84,12 +94,14 @@ namespace argus {
          * \param data The new position of resolution of the window following
          *        the event.
          */
-        WindowEvent(const WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position):
+        WindowEvent(const WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
+            TimeDelta delta):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
                 window(window),
                 resolution(resolution),
-                position(position) {
+                position(position),
+                delta(delta) {
         }
     };
 }

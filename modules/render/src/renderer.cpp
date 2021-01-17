@@ -22,6 +22,7 @@
 #include "argus/render/render_layer.hpp"
 #include "argus/render/transform.hpp"
 #include "argus/render/window.hpp"
+#include "argus/render/window_event.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/renderer.hpp"
@@ -32,11 +33,15 @@
 #include <vector>
 
 namespace argus {
+    std::map<Window*, Renderer*> g_renderer_map;
+
     Renderer::Renderer(Window &window):
             pimpl(new pimpl_Renderer(window)) {
+        g_renderer_map.insert({&window, this});
     }
 
     Renderer::~Renderer() {
+        g_renderer_map.erase(&pimpl->window);
         delete pimpl;
     }
 
@@ -73,5 +78,21 @@ namespace argus {
         }
 
         remove_from_vector(pimpl->render_layers, &layer);
+    }
+
+    void renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
+        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
+        Window &window = window_event.window;
+
+        if (window_event.subtype == WindowEventType::UPDATE) {
+            auto it = g_renderer_map.find(&window);
+
+            if (it == g_renderer_map.cend()) {
+                return;
+            }
+
+            Renderer &renderer = *it->second;
+            renderer.render(window_event.delta);
+        }
     }
 }

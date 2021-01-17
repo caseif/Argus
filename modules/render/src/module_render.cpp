@@ -22,6 +22,7 @@
 // module render
 #include "argus/render/window.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/renderer.hpp"
 #include "internal/render/texture_loader.hpp"
 #include "internal/render/window.hpp"
 
@@ -127,6 +128,7 @@ namespace argus {
                 register_render_callback(_poll_events);
                 
                 register_event_handler(ArgusEventType::WINDOW, window_window_event_callback);
+                register_event_handler(ArgusEventType::WINDOW, renderer_window_event_callback);
 
                 ResourceManager::get_global_resource_manager()
                     .register_loader(RESOURCE_TYPE_TEXTURE_PNG, new PngTextureLoader());

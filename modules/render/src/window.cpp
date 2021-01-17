@@ -54,8 +54,16 @@ namespace argus {
     extern std::map<GLFWwindow*, Window*> g_window_map;
     extern size_t g_window_count;
 
+    static inline void _dispatch_window_event(Window &window, WindowEventType type) {
+        dispatch_event(WindowEvent(type, window), true);
+    }
+
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
-        dispatch_event(WindowEvent(type, *g_window_map.find(handle)->second), true);
+        _dispatch_window_event(*g_window_map.find(handle)->second, type);
+    }
+
+    static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
+        dispatch_event(WindowEvent(WindowEventType::UPDATE, window, Vector2u(), Vector2i(), delta), true);
     }
 
     static void _on_window_close(GLFWwindow *handle) {
@@ -68,12 +76,12 @@ namespace argus {
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
         dispatch_event(WindowEvent(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
-                { uint32_t(width), uint32_t(height) }, Vector2i()), true);
+                { uint32_t(width), uint32_t(height) }, Vector2i(), 0), true);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
         dispatch_event(WindowEvent(WindowEventType::MOVE, *g_window_map.find(handle)->second,
-                Vector2u(), { x, y }), true);
+                Vector2u(), { x, y }, 0), true);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -238,7 +246,7 @@ namespace argus {
         pimpl->properties.resolution.clear_dirty();
         pimpl->properties.position.clear_dirty();
 
-        pimpl->renderer.render(delta);
+        _dispatch_window_update_event(*this, delta);
 
         return;
     }
