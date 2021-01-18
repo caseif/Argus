@@ -491,9 +491,7 @@ namespace argus {
 
             //TODO: should we flush the queues before the engine stops?
             _flush_callback_list_queues(g_update_callbacks);
-            _flush_callback_list_queues(g_render_callbacks);
             _flush_callback_list_queues(g_update_event_listeners);
-            _flush_callback_list_queues(g_render_event_listeners);
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
@@ -520,8 +518,12 @@ namespace argus {
                 break;
             }
 
+
             Timestamp render_start = argus::microtime();
             TimeDelta delta = _compute_delta(last_frame);
+
+            _flush_callback_list_queues(g_render_callbacks);
+            _flush_callback_list_queues(g_render_event_listeners);
 
             // invoke render callbacks
             g_render_callbacks.list_mutex.lock_shared();

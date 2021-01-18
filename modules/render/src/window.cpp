@@ -41,11 +41,19 @@
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300
 
-#define WINDOW_STATE_INITIALIZED        1
-#define WINDOW_STATE_READY              2
-#define WINDOW_STATE_VISIBLE            4
-#define WINDOW_STATE_CLOSE_REQUESTED    8
-#define WINDOW_STATE_VALID              16
+// the window has no associated state yet
+#define WINDOW_STATE_NULL               0x00
+// the window has been created in memory and a CREATE event has been posted
+#define WINDOW_STATE_CREATED            0x01
+// the window has been configured for use (Window::activate has been invoked)
+#define WINDOW_STATE_CONFIGURED         0x02
+// the window and its renderer have been fully initialized and the window is
+// completely ready for use
+#define WINDOW_STATE_READY              0x04
+// the window has been made visible
+#define WINDOW_STATE_VISIBLE            0x08
+// someone has requested that the window be closed
+#define WINDOW_STATE_CLOSE_REQUESTED    0x10
 
 namespace argus {
 
@@ -99,6 +107,8 @@ namespace argus {
     Window::Window(): pimpl(new pimpl_Window(*this)) {
         _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before render module is initialized.");
 
+        pimpl->state = WINDOW_STATE_NULL;
+
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -111,7 +121,6 @@ namespace argus {
             _ARGUS_FATAL("Failed to create GLFW window");
         }
 
-        pimpl->state = WINDOW_STATE_VALID;
         pimpl->close_callback = nullptr;
 
         g_window_count++;
@@ -127,8 +136,6 @@ namespace argus {
     }
 
     Window::~Window(void) {
-        pimpl->state &= ~WINDOW_STATE_VALID;
-
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
         }
@@ -155,6 +162,10 @@ namespace argus {
         delete pimpl;
     }
 
+    bool Window::is_ready(void) {
+        return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
+    }
+
     Window &Window::create_child_window(void) {
         Window *child_window = new Window();
         child_window->pimpl->parent = this;
@@ -173,21 +184,37 @@ namespace argus {
     }
 
     void Window::update(const Timestamp delta) {
-        if (!(pimpl->state & WINDOW_STATE_VALID)) {
-            delete this;
-            return;
-        }
+        // The initial part of a Window's lifecycle looks something like this:
+        //   - Window gets constructed
+        //   - On next render iteration, Window has initial update and sets its
+        //     CREATED flag, dispatching an event
+        //   - Renderer picks up the event and initializes itself within the
+        //     same render iteration
+        //   - On subsequent render iterations, window checks if it has been
+        //     configured (via Window::activate) and aborts update if not.
+        //   - If activated, Window sets ready flag and continues as normal.
+        //
+        // By the time the ready flag is set, the Window is guaranteed to be
+        // configured and the renderer is guaranteed to have seen the CREATE
+        // event and initialized itself properly.
 
-        if (!(pimpl->state & WINDOW_STATE_INITIALIZED)) {
-            pimpl->renderer.init();
-            pimpl->state |= WINDOW_STATE_INITIALIZED;
+        if (!(pimpl->state & WINDOW_STATE_CREATED)) {
+            pimpl->state |= WINDOW_STATE_CREATED;
 
             dispatch_event(WindowEvent(WindowEventType::CREATE, *this));
 
             return;
         }
 
-        if (!(pimpl->state & WINDOW_STATE_VISIBLE) && (pimpl->state & WINDOW_STATE_READY)) {
+        if (!(pimpl->state & WINDOW_STATE_CONFIGURED)) {
+            return;
+        }
+
+        if (!(pimpl->state & WINDOW_STATE_READY)) {
+            pimpl->state |= WINDOW_STATE_READY;
+        }
+
+        if (!(pimpl->state & WINDOW_STATE_VISIBLE)) {
             glfwShowWindow(pimpl->handle);
             pimpl->state |= WINDOW_STATE_VISIBLE;
         }
@@ -288,7 +315,7 @@ namespace argus {
     }
 
     void Window::activate(void) {
-        pimpl->state |= WINDOW_STATE_READY;
+        pimpl->state |= WINDOW_STATE_CONFIGURED;
         return;
     }
 
@@ -297,12 +324,13 @@ namespace argus {
         const Window &window = window_event.window;
 
         // ignore events for uninitialized windows
-        if (!(window.pimpl->state & WINDOW_STATE_INITIALIZED)) {
+        if (!(window.pimpl->state & WINDOW_STATE_CREATED)) {
             return;
         }
 
         if (window_event.subtype == WindowEventType::REQUEST_CLOSE) {
             window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+            window.pimpl->state &= ~WINDOW_STATE_READY;
         } else if (window_event.subtype == WindowEventType::RESIZE) {
             window.pimpl->properties.resolution = window_event.resolution;
         } else if (window_event.subtype == WindowEventType::MOVE) {

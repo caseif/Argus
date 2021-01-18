@@ -57,6 +57,22 @@ namespace argus {
             ~Window(void);
 
             /**
+             * \brief Gets whether the Window is ready for manipulation or interaction.
+             *
+             * \return Whether the Window is ready.
+             */
+            bool is_ready(void);
+
+            /**
+             * \brief Creates a new window as a child of this one.
+             *
+             * \return The new child window.
+             *
+             * \note The child window will not be modal to the parent.
+             */
+            Window &create_child_window(void);
+
+            /**
              * \brief Removes the given Window from this Window's child list.
              *
              * \param child The child Window to remove.
@@ -72,15 +88,6 @@ namespace argus {
              * \param delta The time in microseconds since the last frame.
              */
             void update(const Timestamp delta);
-
-            /**
-             * \brief Creates a new window as a child of this one.
-             *
-             * \return The new child window.
-             *
-             * \note The child window will not be modal to the parent.
-             */
-            Window &create_child_window(void);
 
             /**
              * Gets this Window's associated Renderer.

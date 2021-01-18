@@ -112,15 +112,6 @@ namespace argus {
             case LifecycleStage::INIT: {
                 g_renderer_impl = &_create_backend_impl();
 
-            /**
-             * \brief Handles \link ArgusEvent events \endlink relating to a
-             *        Window.
-             *
-             * \param event The passed ArgusEvent.
-             * \param user_data A pointer to the Window to handle events for.
-             */
-            void event_callback(const ArgusEvent &event, void *user_data);
-
                 glfwInit();
 
                 glfwSetErrorCallback(_on_glfw_error);
