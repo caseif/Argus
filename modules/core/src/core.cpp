@@ -9,6 +9,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
@@ -75,12 +76,14 @@ namespace argus {
 
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
-    static CallbackList<ArgusEventHandler> g_event_listeners;
 
-    static std::queue<std::unique_ptr<const ArgusEvent>> g_event_queue;
-    static std::mutex g_event_queue_mutex;
+    static CallbackList<ArgusEventHandler> g_update_event_listeners;
+    static CallbackList<ArgusEventHandler> g_render_event_listeners;
+
+    static std::queue<ArgusEvent*> g_update_event_queue;
+    static std::mutex g_update_event_queue_mutex;
     
-    static std::queue<std::unique_ptr<const ArgusEvent>> g_render_event_queue;
+    static std::queue<ArgusEvent*> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
 
     static std::map<const std::string, const ArgusModule> g_registered_modules;
@@ -205,24 +208,31 @@ namespace argus {
         }
     }
 
-    static void _process_event_queue(bool render_queue) {
-        auto &queue = render_queue ? g_render_event_queue : g_event_queue;
-        auto &mutex = render_queue ? g_render_event_queue_mutex : g_event_queue_mutex;
+    static void _process_event_queue(const TargetThread target_thread) {
+        _ARGUS_ASSERT(target_thread == TargetThread::UPDATE || target_thread == TargetThread::RENDER,
+            "Unrecognized target thread ordinal %u\n", (unsigned int) target_thread);
+
+        auto render_thread = target_thread == TargetThread::RENDER;
+
+        auto &queue = render_thread ? g_render_event_queue : g_update_event_queue;
+        auto &mutex = render_thread ? g_render_event_queue_mutex : g_update_event_queue_mutex;
+        auto &listeners = render_thread ? g_render_event_listeners : g_update_event_listeners;
 
         mutex.lock();
-        g_event_listeners.list_mutex.lock_shared();
+        listeners.list_mutex.lock_shared();
 
         while (!queue.empty()) {
-            const ArgusEvent &event = *std::move(queue.front().get());
-            for (IndexedValue<ArgusEventHandler> listener : g_event_listeners.list) {
-                if (static_cast<int>(listener.value.type & event.type)) {
-                    listener.value.callback(event, listener.value.data);
+            ArgusEvent *event = queue.front();
+            for (IndexedValue<ArgusEventHandler> listener : listeners.list) {
+                if (static_cast<int>(listener.value.type & event->type)) {
+                    listener.value.callback(*event, listener.value.data);
                 }
             }
+            free(event);
             queue.pop();
         }
 
-        g_event_listeners.list_mutex.unlock_shared();
+        listeners.list_mutex.unlock_shared();
         mutex.unlock();
     }
 
@@ -482,7 +492,8 @@ namespace argus {
             //TODO: should we flush the queues before the engine stops?
             _flush_callback_list_queues(g_update_callbacks);
             _flush_callback_list_queues(g_render_callbacks);
-            _flush_callback_list_queues(g_event_listeners);
+            _flush_callback_list_queues(g_update_event_listeners);
+            _flush_callback_list_queues(g_render_event_listeners);
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
@@ -491,7 +502,7 @@ namespace argus {
             }
             g_update_callbacks.list_mutex.unlock_shared();
 
-            _process_event_queue(false);
+            _process_event_queue(TargetThread::UPDATE);
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -519,7 +530,7 @@ namespace argus {
             }
             g_render_callbacks.list_mutex.unlock_shared();
 
-            _process_event_queue(true);
+            _process_event_queue(TargetThread::RENDER);
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -541,10 +552,25 @@ namespace argus {
     }
 
     template <typename T>
-    void _remove_callback(CallbackList<T> &list, const Index index) {
+    static void _remove_callback(CallbackList<T> &list, const Index index) {
         list.queue_mutex.lock();
         list.removal_queue.push(index);
         list.queue_mutex.unlock();
+    }
+
+    template <typename T>
+    static bool _try_remove_callback(CallbackList<T> &list, const Index index) {
+        list.list_mutex.lock_shared();
+        auto it = std::find_if(list.list.cbegin(), list.list.cend(),
+            [index](IndexedValue<T> callback) { return callback.id == index; });
+        bool present = it != list.list.cend();
+        list.list_mutex.unlock_shared();
+
+        if (present) {
+            _remove_callback(list, index);
+        }
+
+        return present;
     }
 
     std::vector<RenderBackend> get_available_render_backends(void) {
@@ -585,24 +611,65 @@ namespace argus {
         _remove_callback(g_render_callbacks, id);
     }
 
-    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback, void *const data) {
+    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
+            const TargetThread target_thread, void *const data) {
         _ARGUS_ASSERT(g_initializing || g_initialized, "Cannot register event listener before engine initialization.");
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
+        CallbackList<ArgusEventHandler> *listeners_vec;
+        switch (target_thread) {
+            case TargetThread::UPDATE: {
+                listeners_vec = &g_update_event_listeners;
+                break;
+            }
+            case TargetThread::RENDER: {
+                listeners_vec = &g_render_event_listeners;
+                break;
+            }
+            default: {
+                _ARGUS_FATAL("Unrecognized target thread ordinal %u\n", (unsigned int) target_thread);
+            }
+        }
+
         ArgusEventHandler listener = {type, callback, data};
-        return _add_callback(g_event_listeners, listener);
+        return _add_callback(*listeners_vec, listener);
     }
 
     void unregister_event_handler(const Index id) {
-        _remove_callback(g_event_listeners, id);
+        if (!_try_remove_callback(g_update_event_listeners, id)) {
+            _remove_callback(g_render_event_listeners, id);
+        }
     }
 
-    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event, bool render_thread) {
-        auto &queue = render_thread ? g_render_event_queue : g_event_queue;
-        auto &mutex = render_thread ? g_render_event_queue_mutex : g_event_queue_mutex;
-        mutex.lock();
-        queue.push(std::move(event));
-        mutex.unlock();
+    void _dispatch_event_ptr(const ArgusEvent &event, size_t obj_size) {
+        // we push it to multiple queues so that each thread can pop its queue
+        // without affecting the other
+
+        // It's difficult to get around these mallocs while also still allowing
+        // for event inheritance, since each subclass can have a different size
+        // thus preventing us from using an AllocPool or even just directly
+        // storing the event data in the queue. Potential solutions include:
+        //   - Setting a maximum size. Setting such an arbitrary restriction
+        //     seems like a pretty bad hack and lets the implementation guide
+        //     the API, which should be avoided at all costs.
+        //   - Rolling all the event-specific data into a giant struct,
+        //     SDL-style. This means no inheritance, which means modules can't
+        //     specify their own events. This is a huge tradeoff in flexibility.
+        // In practice, using mallocs (even every frame) doesn't actually seem
+        // to incur a noticeable performance hit, so for now it's probably okay
+        // to just leave it as a "good enough" solution.
+        ArgusEvent *event_copy_1 = static_cast<ArgusEvent*>(malloc(obj_size));
+        ArgusEvent *event_copy_2 = static_cast<ArgusEvent*>(malloc(obj_size));
+        memcpy(event_copy_1, &event, obj_size);
+        memcpy(event_copy_2, &event, obj_size);
+
+        g_update_event_queue_mutex.lock();
+        g_update_event_queue.push(event_copy_1);
+        g_update_event_queue_mutex.unlock();
+
+        g_render_event_queue_mutex.lock();
+        g_render_event_queue.push(event_copy_2);
+        g_render_event_queue_mutex.unlock();
     }
 
     void start_engine(const DeltaCallback game_loop) {

@@ -213,6 +213,11 @@ namespace argus {
         const ArgusEventType type;
     };
 
+    enum class TargetThread {
+        UPDATE,
+        RENDER
+    };
+
     /**
      * \brief Represents a graphics backend used to instantiate a Window and
      *        corresponding Renderer.
@@ -489,13 +494,14 @@ namespace argus {
      *        event handler.
      * \param callback The \link ArgusEventCallback callback \endlink
      *        responsible for handling passed events.
+     * \param target_thread The thread to invoke the handler function on.
      * \param data The data pointer to supply to the filter and callback
      *        functions on each invocation.
      *
      * \return The ID of the new registration.
      */
     const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
-                                       void *const data = nullptr);
+            const TargetThread target_thread, void *const data = nullptr);
 
     /**
      * \brief Unregisters an event handler.
@@ -505,15 +511,14 @@ namespace argus {
     void unregister_event_handler(const Index id);
 
     /**
-     * \brief Dispatches an event as wrapped by a unique_ptr.
+     * \brief Dispatches an event.
      *
      * This function is intended for internal use only, and is exposed here
      * solely due to C++ templating restrictions.
      *
-     * \param event An rreference to the event to be dispatched as wrapped by a
-     *        std::unique_ptr.
+     * \param event The event to be dispatched.
      */
-    void _dispatch_event_ptr(std::unique_ptr<ArgusEvent> &&event, bool on_render_thread);
+    void _dispatch_event_ptr(const ArgusEvent &event, size_t obj_size);
 
     /**
      * \brief Dispatches an event to all respective registered listeners.
@@ -521,8 +526,8 @@ namespace argus {
      * \param event An lreference to the event to be dispatched.
      */
     template <typename EventType>
-    void dispatch_event(const EventType &event, bool on_render_thread = false) {
-        _dispatch_event_ptr(std::unique_ptr<ArgusEvent>(new EventType(event)), on_render_thread);
+    void dispatch_event(const EventType &event) {
+        _dispatch_event_ptr(event, sizeof(event));
     }
 
 }
