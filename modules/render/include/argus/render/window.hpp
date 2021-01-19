@@ -90,13 +90,6 @@ namespace argus {
             void update(const Timestamp delta);
 
             /**
-             * Gets this Window's associated Renderer.
-             *
-             * \return The Window's Renderer.
-             */
-            Renderer &get_renderer(void);
-
-            /**
              * Sets the window title.
              *
              * \param title The new window title.

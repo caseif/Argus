@@ -27,11 +27,6 @@ struct GLFWwindow;
 namespace argus {
     struct pimpl_Window {
         /**
-         * \brief The Renderer associated with this Window.
-         */
-        Renderer &renderer;
-
-        /**
          * \brief A handle to the lower-level window represented by this
          *        object.
          */
@@ -78,8 +73,7 @@ namespace argus {
          */
         std::atomic_bool dirty_resolution;
 
-        pimpl_Window(Window &parent):
-            renderer(*new Renderer(parent)) {
+        pimpl_Window(Window &parent) {
         }
 
         pimpl_Window(const pimpl_Window&) = delete;

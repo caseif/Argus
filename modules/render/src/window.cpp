@@ -20,6 +20,7 @@
 #include "argus/render/renderer.hpp"
 #include "argus/render/window.hpp"
 #include "argus/render/window_event.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/window.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/window.hpp"
@@ -56,11 +57,7 @@
 #define WINDOW_STATE_CLOSE_REQUESTED    0x10
 
 namespace argus {
-
-    extern bool g_render_module_initialized;
-
-    extern std::map<GLFWwindow*, Window*> g_window_map;
-    extern size_t g_window_count;
+    static WindowCallback g_window_construct_callback = nullptr;
 
     static inline void _dispatch_window_event(Window &window, WindowEventType type) {
         dispatch_event(WindowEvent(type, window));
@@ -130,6 +127,10 @@ namespace argus {
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
+        if (g_window_construct_callback != nullptr) {
+            g_window_construct_callback(*this);
+        }
+
         return;
     }
 
@@ -175,10 +176,6 @@ namespace argus {
 
     void Window::remove_child(const Window &child) {
         remove_from_vector(pimpl->children, &child);
-    }
-
-    Renderer &Window::get_renderer(void) {
-        return pimpl->renderer;
     }
 
     void Window::update(const Timestamp delta) {
@@ -317,6 +314,14 @@ namespace argus {
         return;
     }
 
+    void *get_window_handle(const Window &window) {
+        return static_cast<void*>(window.pimpl->handle);
+    }
+
+    void set_window_construct_callback(WindowCallback callback) {
+        g_window_construct_callback = callback;
+    }
+
     void window_window_event_callback(const ArgusEvent &event, void *user_data) {
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
         const Window &window = window_event.window;
@@ -334,10 +339,6 @@ namespace argus {
         } else if (window_event.subtype == WindowEventType::MOVE) {
             window.pimpl->properties.position = window_event.position;
         }
-    }
-
-    void *get_window_handle(const Window &window) {
-        return static_cast<void*>(window.pimpl->handle);
     }
 
 }

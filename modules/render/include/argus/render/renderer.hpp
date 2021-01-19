@@ -37,6 +37,15 @@ namespace argus {
             pimpl_Renderer *const pimpl;
 
             /**
+             * \brief Returns the Renderer associated with a given Window.
+             *
+             * \param window The Window to retrieve the Renderer for.
+             *
+             * \return The associated Renderer.
+             */
+            static Renderer &of_window(Window &window);
+
+            /**
              * \brief Constructs a new Renderer attached to the given Window.
              *
              * \param window The Window to attach the new Renderer to.

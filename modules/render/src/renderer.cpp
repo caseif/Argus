@@ -30,14 +30,20 @@
 #include "internal/render/pimpl/window.hpp"
 
 #include <algorithm>
+#include <map>
 #include <vector>
 
 namespace argus {
-    std::map<Window*, Renderer*> g_renderer_map;
+    Renderer &Renderer::of_window(Window &window) {
+        auto it = g_renderer_map.find(&window);
+        if (it == g_renderer_map.end()) {
+            throw std::runtime_error("No Renderer attached to requested Window");
+        }
+        return *it->second;
+    }
 
     Renderer::Renderer(Window &window):
             pimpl(new pimpl_Renderer(window)) {
-        g_renderer_map.insert({&window, this});
     }
 
     Renderer::~Renderer() {

@@ -20,6 +20,7 @@
 #include "argus/resman.hpp"
 
 // module render
+#include "argus/render/renderer.hpp"
 #include "argus/render/window.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer.hpp"
@@ -46,6 +47,8 @@ namespace argus {
     // maps GLFW window pointers to Window instance pointers
     std::map<GLFWwindow*, Window*> g_window_map;
     size_t g_window_count = 0;
+
+    std::map<Window*, Renderer*> g_renderer_map;
 
     static void _clean_up(void) {
         // use a copy since Window destructor modifies the global list
@@ -104,6 +107,12 @@ namespace argus {
         return *g_renderer_impl;
     }
 
+    static void _window_construct_callback(Window &window) {
+        auto *renderer = new Renderer(window);
+        g_renderer_map.insert({&window, renderer});
+        printf("callback invoked\n");
+    }
+
     void _update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PRE_INIT: {
@@ -115,6 +124,8 @@ namespace argus {
                 glfwInit();
 
                 glfwSetErrorCallback(_on_glfw_error);
+
+                set_window_construct_callback(_window_construct_callback);
 
                 register_render_callback(_poll_events);
                 
