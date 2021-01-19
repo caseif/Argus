@@ -57,6 +57,15 @@ namespace argus {
                 register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(create_opengl_backend));
                 break;
             case LifecycleStage::INIT:
+                glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+                #ifdef _ARGUS_DEBUG_MODE
+                glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+                #endif
+
                 _setup_view_matrix();
                 break;
         }

@@ -453,17 +453,6 @@ namespace argus {
         }
     }
 
-    void GLRenderer::init_context_hints(void) {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        #ifdef _ARGUS_DEBUG_MODE
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-        #endif
-    }
-
     static shader_handle_t _compile_shader(const ShaderStage stage, const char *src, const unsigned int src_len) {
         GLuint shader_stage;
         switch (stage) {
@@ -795,13 +784,14 @@ namespace argus {
 
         int gl_major;
         int gl_minor;
+        const unsigned char *gl_version_str = glGetString(GL_VERSION);
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
         if (gl_major < 3 || (gl_major == 3 && gl_minor < 3)) {
             _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher\n");
         }
 
-        _ARGUS_INFO("Obtained OpenGL %d.%d context\n", gl_major, gl_minor);
+        _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)\n", gl_major, gl_minor, gl_version_str);
 
         const GLubyte *ver_str = glGetString(GL_VERSION);
 

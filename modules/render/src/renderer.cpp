@@ -49,10 +49,6 @@ namespace argus {
         return pimpl->window;
     }
 
-    void Renderer::init_context_hints(void) {
-        get_renderer_impl().init_context_hints();
-    }
-
     void Renderer::init(void) {
         get_renderer_impl().init(*this);
     }

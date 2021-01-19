@@ -52,12 +52,6 @@ namespace argus {
             Window &get_window() const;
 
             /**
-             * \brief Sets the context parameters requested by this Renderer
-             *        prior to window creation.
-             */
-            void init_context_hints(void);
-
-            /**
              * \brief Initializes the Renderer.
              *
              * Initialization must be performed before render(TimeDelta) may be called.

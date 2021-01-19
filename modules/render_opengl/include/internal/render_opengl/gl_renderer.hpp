@@ -20,8 +20,6 @@ namespace argus {
        public:
         GLRenderer(void);
 
-        void init_context_hints(void) override;
-
         void init(Renderer &renderer) override;
 
         void deinit_texture(const TextureData &texture) override;

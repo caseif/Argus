@@ -89,9 +89,9 @@
 typedef void (APIENTRYP DEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
 // utility
-typedef GLubyte *(APIENTRYP PTR_glGetIntegerv)(GLenum pname, GLint *data);
-typedef GLubyte *(APIENTRYP PTR_glGetString)(GLenum name);
-typedef GLubyte *(APIENTRYP PTR_glGetStringi)(GLenum name, GLuint index);
+typedef void (APIENTRYP PTR_glGetIntegerv)(GLenum pname, GLint *data);
+typedef const GLubyte *(APIENTRYP PTR_glGetString)(GLenum name);
+typedef const GLubyte *(APIENTRYP PTR_glGetStringi)(GLenum name, GLuint index);
 
 // rendering
 typedef void (APIENTRYP PTR_glClear)(GLbitfield mask);

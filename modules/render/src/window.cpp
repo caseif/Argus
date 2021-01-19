@@ -113,8 +113,6 @@ namespace argus {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-        pimpl->renderer.init_context_hints();
-
         pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, DEF_TITLE, nullptr, nullptr);
 
         if (pimpl->handle == nullptr) {

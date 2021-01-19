@@ -23,8 +23,6 @@ namespace argus {
         RendererImpl() {
         }
 
-        virtual void init_context_hints(void) = 0;
-
         virtual void init(Renderer &renderer) = 0;
 
         virtual void deinit_texture(const TextureData &texture) = 0;
