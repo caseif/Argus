@@ -25,5 +25,3 @@
 #include "argus/render/shader.hpp"
 #include "argus/render/texture_data.hpp"
 #include "argus/render/transform.hpp"
-#include "argus/render/window_event.hpp"
-#include "argus/render/window.hpp"

@@ -19,13 +19,15 @@
 // module resman
 #include "argus/resman.hpp"
 
+// module wm
+#include "argus/wm/window.hpp"
+#include "internal/wm/window.hpp"
+
 // module render
 #include "argus/render/renderer.hpp"
-#include "argus/render/window.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer.hpp"
 #include "internal/render/texture_loader.hpp"
-#include "internal/render/window.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -44,33 +46,7 @@ namespace argus {
 
     RendererImpl *g_renderer_impl;
 
-    // maps GLFW window pointers to Window instance pointers
-    std::map<GLFWwindow*, Window*> g_window_map;
-    size_t g_window_count = 0;
-
     std::map<Window*, Renderer*> g_renderer_map;
-
-    static void _clean_up(void) {
-        // use a copy since Window destructor modifies the global list
-        auto windows_copy = g_window_map;
-        // doing this in reverse ensures that child windows are destroyed before their parents
-        for (auto it = windows_copy.rbegin();
-                it != windows_copy.rend(); it++) {
-            delete it->second;
-        }
-
-        glfwTerminate();
-
-        return;
-    }
-
-    static void _poll_events(const TimeDelta delta) {
-        glfwPollEvents();
-    }
-
-    static void _on_glfw_error(int code, const char *desc) {
-        _ARGUS_WARN("GLFW Error: %s\n", desc);
-    }
 
     static RendererImpl &_create_backend_impl() {
         auto backends = get_engine_config().render_backends;
@@ -115,21 +91,11 @@ namespace argus {
 
     void _update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::PRE_INIT: {
-                break;
-            }
             case LifecycleStage::INIT: {
                 g_renderer_impl = &_create_backend_impl();
 
-                glfwInit();
-
-                glfwSetErrorCallback(_on_glfw_error);
-
                 set_window_construct_callback(_window_construct_callback);
 
-                register_render_callback(_poll_events);
-                
-                register_event_handler(ArgusEventType::WINDOW, window_window_event_callback, TargetThread::RENDER);
                 register_event_handler(ArgusEventType::WINDOW, renderer_window_event_callback, TargetThread::RENDER);
 
                 ResourceManager::get_global_resource_manager()
@@ -139,9 +105,6 @@ namespace argus {
 
                 break;
             }
-            case LifecycleStage::DEINIT:
-                _clean_up();
-                break;
             default:
                 break;
         }
@@ -153,7 +116,7 @@ namespace argus {
     }
 
     void init_module_render(void) {
-        register_module({MODULE_RENDER, 3, {"core", "resman"}, _update_lifecycle_render});
+        register_module({MODULE_RENDER, 3, {"core", "wm", "resman"}, _update_lifecycle_render});
 
         register_early_init_callback(MODULE_RENDER, load_backend_modules);
     }

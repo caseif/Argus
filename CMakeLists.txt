@@ -1,4 +1,4 @@
-set(MODULE_IDS "lowlevel;core;ecs;resman;render;input")
+set(MODULE_IDS "lowlevel;core;wm;ecs;resman;render;input")
 set(DYN_MODULE_IDS "")
 set(MODULE_PATH_PREFIX "modules/")
 

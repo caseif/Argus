@@ -29,6 +29,7 @@
 #include <vector>
 
 #define MODULE_CORE "core"
+#define MODULE_WM "wm"
 #define MODULE_ECS "ecs"
 #define MODULE_INPUT "input"
 #define MODULE_RESMAN "resman"

@@ -17,17 +17,19 @@
 #include "internal/core/defines.hpp"
 #include "internal/core/dyn_invoke.hpp"
 
+// module wm
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
+#include "internal/wm/pimpl/window.hpp"
+
 // module render
 #include "argus/render/renderer.hpp"
 #include "argus/render/render_layer.hpp"
 #include "argus/render/transform.hpp"
-#include "argus/render/window.hpp"
-#include "argus/render/window_event.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/renderer.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
-#include "internal/render/pimpl/window.hpp"
 
 #include <algorithm>
 #include <map>

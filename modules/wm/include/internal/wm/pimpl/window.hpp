@@ -15,9 +15,6 @@
 // module core
 #include "argus/core.hpp"
 
-// module render
-#include "argus/render/renderer.hpp"
-
 #include <atomic>
 #include <vector>
 

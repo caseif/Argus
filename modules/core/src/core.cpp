@@ -109,12 +109,14 @@ namespace argus {
 
     // module lifecycle hooks
     void init_module_core(void);
+    extern void init_module_wm(void);
     extern void init_module_ecs(void);
     extern void init_module_input(void);
     extern void init_module_resman(void);
     extern void init_module_render(void);
 
     std::map<const std::string, const NullaryCallback> g_stock_module_initializers{{MODULE_CORE, init_module_core},
+                                                                                   {MODULE_WM, init_module_wm},
                                                                                    {MODULE_ECS, init_module_ecs},
                                                                                    {MODULE_INPUT, init_module_input},
                                                                                    {MODULE_RESMAN, init_module_resman},

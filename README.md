@@ -11,10 +11,11 @@ for loading additional modules (distributed as shared libraries) at runtime auto
 | --- | --- | :-- |
 | 0 | lowlevel | Low-level platform-independence code for features such as threading. Strictly speaking, this is not an engine "module," but rather a collection of support libraries. |
 | 1 | core | Core engine framework; facilitates basic operation and communication among components. |
+| 2 | wm | Window manager. |
 | 2 | ecs | Entity-component-system implementation. |
 | 2 | resman | Resource manager; facilitates resource loading and lifetime management. |
-| 3 | render | Renderer module; responsible for managing windows and rendering. |
-| 4 | input | Input manager; responsible for interpreting keyboard, mouse, and controller input. This is dependent on the render module because input reading is done respective to a window. |
+| 3 | render | Renderer module. |
+| 3 | input | Input manager; responsible for interpreting keyboard, mouse, and controller input. This is dependent on the render module because input reading is done respective to a window. |
 
 A large number of additional modules are planned for future inclusion.
 

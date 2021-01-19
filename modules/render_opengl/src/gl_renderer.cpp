@@ -17,6 +17,10 @@
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
+// module wm
+#include "argus/wm/window.hpp"
+#include "internal/wm/pimpl/window.hpp"
+
 // module render
 #include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
@@ -27,7 +31,6 @@
 #include "argus/render/shader.hpp"
 #include "argus/render/texture_data.hpp"
 #include "argus/render/transform.hpp"
-#include "argus/render/window.hpp"
 #include "internal/render/pimpl/material.hpp"
 #include "internal/render/pimpl/render_group.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
@@ -36,7 +39,6 @@
 #include "internal/render/pimpl/shader.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
 #include "internal/render/pimpl/transform.hpp"
-#include "internal/render/pimpl/window.hpp"
 #include "internal/render/renderer_impl.hpp"
 
 // module render_opengl

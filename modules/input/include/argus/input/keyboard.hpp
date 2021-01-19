@@ -18,8 +18,8 @@
 // module core
 #include "argus/core.hpp"
 
-// module render
-#include "argus/render/window.hpp"
+// module wm
+#include "argus/wm/window.hpp"
 
 namespace argus {
 

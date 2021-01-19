@@ -16,14 +16,12 @@
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
-// module render
-#include "argus/render/renderer.hpp"
-#include "argus/render/window.hpp"
-#include "argus/render/window_event.hpp"
-#include "internal/render/module_render.hpp"
-#include "internal/render/window.hpp"
-#include "internal/render/pimpl/renderer.hpp"
-#include "internal/render/pimpl/window.hpp"
+// module wm
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
+#include "internal/wm/module_wm.hpp"
+#include "internal/wm/window.hpp"
+#include "internal/wm/pimpl/window.hpp"
 
 #ifdef USE_GLES
 #define GLFW_INCLUDE_ES3
@@ -102,7 +100,7 @@ namespace argus {
     }
 
     Window::Window(): pimpl(new pimpl_Window(*this)) {
-        _ARGUS_ASSERT(g_render_module_initialized, "Cannot create window before render module is initialized.");
+        _ARGUS_ASSERT(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         pimpl->state = WINDOW_STATE_NULL;
 

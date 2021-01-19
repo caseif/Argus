@@ -14,10 +14,10 @@
 #include "argus/input.hpp"
 #include "internal/input/input_helpers.hpp"
 
-// module render
-#include "argus/render/window.hpp"
-#include "argus/render/window_event.hpp"
-#include "internal/render/window.hpp"
+// module wm
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
+#include "internal/wm/window.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -44,7 +44,7 @@ namespace argus {
     }
 
     void init_module_input(void) {
-        register_module({MODULE_INPUT, 4, {"core"}, _update_lifecycle_input});
+        register_module({MODULE_INPUT, 3, {"core", "wm"}, _update_lifecycle_input});
     }
 
 }

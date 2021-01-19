@@ -14,9 +14,9 @@
 #include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
-// module render
-#include "argus/render/window.hpp"
-#include "internal/render/window.hpp"
+// module wm
+#include "argus/wm/window.hpp"
+#include "internal/wm/window.hpp"
 
 // module input
 #include "argus/input/keyboard.hpp"
