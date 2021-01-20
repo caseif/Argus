@@ -9,5 +9,5 @@
 
 #pragma once
 
-#include "argus/window.hpp"
-#include "argus/window_event.hpp"
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"

@@ -9,12 +9,12 @@
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
-#include "internal/core/config.hpp"
+#include "argus/core/module.hpp"
 #include "internal/core/dyn_invoke.hpp"
-#include "internal/lowlevel/logging.hpp"
+#include "internal/core/engine_config.hpp"
 
 // module render
 #include "argus/render/renderer.hpp"

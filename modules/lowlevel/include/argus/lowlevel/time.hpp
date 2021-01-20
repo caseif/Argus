@@ -16,6 +16,10 @@
 #pragma once
 
 namespace argus {
+    /**
+     * \brief Represents a duration of time.
+     */
+    typedef unsigned long long TimeDelta;
 
     /**
      * \brief Sleeps for the specified amount of time in nanoseconds.

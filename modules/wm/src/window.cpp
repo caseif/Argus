@@ -10,10 +10,12 @@
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/threading.hpp"
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/event.hpp"
+#include "argus/core/engine.hpp"
 #include "internal/core/core_util.hpp"
 
 // module wm
@@ -176,7 +178,7 @@ namespace argus {
         remove_from_vector(pimpl->children, &child);
     }
 
-    void Window::update(const Timestamp delta) {
+    void Window::update(const TimeDelta delta) {
         // The initial part of a Window's lifecycle looks something like this:
         //   - Window gets constructed
         //   - On next render iteration, Window has initial update and sets its

@@ -13,7 +13,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/module.hpp"
 
 // module resman
 #include "argus/resman.hpp"

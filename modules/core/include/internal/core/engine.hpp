@@ -7,16 +7,8 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-/**
- * \file argus/core.hpp
- *
- * Contains core engine functionality, primarily for bootstrapping.
- */
-
 #pragma once
 
-#include "argus/core/callback.hpp"
-#include "argus/core/engine.hpp"
-#include "argus/core/engine_config.hpp"
-#include "argus/core/event.hpp"
-#include "argus/core/module.hpp"
+namespace argus {
+    void kill_game_thread(void);
+}

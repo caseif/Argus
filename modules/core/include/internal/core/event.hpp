@@ -7,16 +7,13 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include "argus/core.hpp"
-#include "internal/core/lifecycle.hpp"
+#pragma once
 
-#include <map>
-#include <string>
+// module core
+#include "argus/core/event.hpp"
 
 namespace argus {
-    std::map<std::string, NullaryCallback> g_early_init_callbacks;
+    void process_event_queue(const TargetThread target_thread);
 
-    void register_early_init_callback(const std::string module_id, NullaryCallback callback) {
-        g_early_init_callbacks.insert({ module_id, callback });
-    }
+    void flush_event_listener_queues(const TargetThread target_thread);
 }

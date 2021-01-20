@@ -12,11 +12,13 @@
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 
+// module core
+#include "argus/core/engine_config.hpp"
+
 #include <string>
 #include <vector>
 
 namespace argus {
-
     struct EngineConfig {
         unsigned int target_tickrate;
         unsigned int target_framerate;

@@ -8,14 +8,11 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
-#include "internal/core/config.hpp"
 #include "internal/core/core_util.hpp"
-#include "internal/core/defines.hpp"
-#include "internal/core/dyn_invoke.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"

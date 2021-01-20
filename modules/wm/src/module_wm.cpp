@@ -11,10 +11,8 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
-#include "internal/core/config.hpp"
-#include "internal/core/dyn_invoke.hpp"
-#include "internal/core/lifecycle.hpp"
+#include "argus/core/engine.hpp"
+#include "argus/core/module.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"

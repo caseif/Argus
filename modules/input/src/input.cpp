@@ -8,7 +8,7 @@
  */
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/module.hpp"
 
 // module input
 #include "argus/input.hpp"

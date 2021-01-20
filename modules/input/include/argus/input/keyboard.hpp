@@ -16,7 +16,7 @@
 #pragma once
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/event.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"

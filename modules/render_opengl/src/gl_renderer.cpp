@@ -14,7 +14,6 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
 #include "internal/core/core_util.hpp"
 
 // module wm

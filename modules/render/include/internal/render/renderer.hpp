@@ -10,7 +10,7 @@
 #pragma once
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/event.hpp"
 
 namespace argus {
     void renderer_window_event_callback(const ArgusEvent &event, void *user_data);

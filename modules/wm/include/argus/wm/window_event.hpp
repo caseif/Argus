@@ -9,6 +9,12 @@
 
 #pragma once
 
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
+
+// module core
+#include "argus/core/event.hpp"
+
 namespace argus {
     // forward declarations
     class Window;

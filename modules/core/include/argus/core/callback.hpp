@@ -9,10 +9,6 @@
 
 #pragma once
 
-#include "argus/core.hpp"
-
 namespace argus {
-    void register_early_init_callback(const std::string module_id, NullaryCallback callback);
-
-    void do_early_init();
+    typedef unsigned long long Index;
 }

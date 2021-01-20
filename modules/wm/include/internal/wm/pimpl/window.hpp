@@ -13,7 +13,7 @@
 #include "argus/lowlevel/threading.hpp"
 
 // module core
-#include "argus/core.hpp"
+#include "argus/core/callback.hpp"
 
 #include <atomic>
 #include <vector>

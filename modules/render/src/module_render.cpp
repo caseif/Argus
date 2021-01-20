@@ -11,10 +11,9 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "argus/core.hpp"
-#include "internal/core/config.hpp"
 #include "internal/core/dyn_invoke.hpp"
-#include "internal/core/lifecycle.hpp"
+#include "internal/core/engine_config.hpp"
+#include "internal/core/module.hpp"
 
 // module resman
 #include "argus/resman.hpp"

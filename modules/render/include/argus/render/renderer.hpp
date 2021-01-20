@@ -10,7 +10,7 @@
 #pragma once
 
 // module core
-#include "argus/core.hpp"
+#include "argus/lowlevel/time.hpp"
 
 namespace argus {
     // forward declarations

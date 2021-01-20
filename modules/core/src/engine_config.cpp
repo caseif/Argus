@@ -7,9 +7,14 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
+
 // module core
-#include "argus/core.hpp"
-#include "internal/core/config.hpp"
+#include "argus/core/engine.hpp"
+#include "argus/core/engine_config.hpp"
+#include "internal/core/engine_config.hpp"
+#include "internal/core/module.hpp"
 
 #include <initializer_list>
 #include <string>
@@ -21,6 +26,26 @@ namespace argus {
 
     EngineConfig get_engine_config() {
         return g_engine_config;
+    }
+
+    std::vector<RenderBackend> get_available_render_backends(void) {
+        std::vector<RenderBackend> backends;
+
+        auto modules = get_present_external_modules();
+        
+        if (modules.find(std::string(RENDER_MODULE_OPENGL)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::OPENGL);
+        }
+
+        if (modules.find(std::string(RENDER_MODULE_OPENGLES)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::OPENGLES);
+        }
+
+        if (modules.find(std::string(RENDER_MODULE_VULKAN)) != modules.cend()) {
+            backends.insert(backends.begin(), RenderBackend::VULKAN);
+        }
+
+        return backends;
     }
 
     void set_target_tickrate(const unsigned int target_tickrate) {

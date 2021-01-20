@@ -9,9 +9,11 @@
 
 #pragma once
 
-// module core
-#include "argus/core.hpp"
+// module lowlevel
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/time.hpp"
 
+#include <functional>
 #include <string>
 
 namespace argus {
@@ -87,7 +89,7 @@ namespace argus {
              *
              * \param delta The time in microseconds since the last frame.
              */
-            void update(const Timestamp delta);
+            void update(const TimeDelta delta);
 
             /**
              * Sets the window title.

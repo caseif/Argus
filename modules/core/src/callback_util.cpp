@@ -7,16 +7,12 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-/**
- * \file argus/core.hpp
- *
- * Contains core engine functionality, primarily for bootstrapping.
- */
-
-#pragma once
-
+// module core
 #include "argus/core/callback.hpp"
-#include "argus/core/engine.hpp"
-#include "argus/core/engine_config.hpp"
-#include "argus/core/event.hpp"
-#include "argus/core/module.hpp"
+
+#include <mutex>
+
+namespace argus {
+    Index g_next_index = 0;
+    std::mutex g_next_index_mutex;
+}

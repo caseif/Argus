@@ -8,8 +8,8 @@
  */
 #pragma once
 
-// module core
-#include "argus/core.hpp"
+// module lowlevel
+#include "argus/lowlevel/time.hpp"
 
 namespace argus {
     // forward declarations
