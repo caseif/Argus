@@ -13,7 +13,7 @@
 
 #include <cstddef>
 
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace argus {
     // forward declarations

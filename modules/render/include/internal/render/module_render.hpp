@@ -13,8 +13,6 @@
 
 #include <cstddef>
 
-class GLFWwindow;
-
 namespace argus {
     // forward declarations
     class Renderer;
@@ -24,9 +22,6 @@ namespace argus {
     extern bool g_render_module_initialized;
 
     extern RendererImpl *g_renderer_impl;
-
-    extern std::map<GLFWwindow*, Window*> g_window_map;
-    extern size_t g_window_count;
 
     extern std::map<Window*, Renderer*> g_renderer_map;
 
