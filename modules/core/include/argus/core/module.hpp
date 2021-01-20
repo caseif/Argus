@@ -15,6 +15,11 @@
 
 #include <cstddef>
 
+#ifdef _WIN32
+// required for REGISTER_ARGUS_MODULE macro
+#include <windows.h>
+#endif
+
 #define MODULE_CORE "core"
 #define MODULE_WM "wm"
 #define MODULE_ECS "ecs"
