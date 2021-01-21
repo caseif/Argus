@@ -66,6 +66,10 @@ namespace argus {
         }
 
         registered_loaders.insert({type_id, loader});
+
+        for (std::string ext : loader->extensions) {
+            this->extension_registrations.insert({ext, type_id});
+        }
     }
 
     static void _discover_fs_resources_recursively(const std::string &root_path, const std::string &prefix,

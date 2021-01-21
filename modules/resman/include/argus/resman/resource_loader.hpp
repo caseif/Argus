@@ -8,6 +8,9 @@
 #include <cstddef>
 
 namespace argus {
+    // forward declarations
+    class ResourceManager;
+
     /**
      * \brief Handles deserialization of Resource data.
      */
@@ -65,6 +68,6 @@ namespace argus {
              * \throw ResourceException If any dependency Resource cannot be
              *        loaded.
              */
-            void load_dependencies(std::initializer_list<std::string> dependencies);
+            void load_dependencies(ResourceManager &manager, std::initializer_list<std::string> dependencies);
     };
 }
