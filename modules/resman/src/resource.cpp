@@ -8,7 +8,9 @@
  */
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_manager.hpp"
+#include "internal/resman/pimpl/resource.hpp"
 
 #include <atomic>
 #include <string>
@@ -16,27 +18,30 @@
 #include <vector>
 
 namespace argus {
-
     Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data_ptr,
             std::vector<std::string> &dependencies):
-            manager(manager),
             prototype(prototype),
-            data_ptr(data_ptr),
-            dependencies(dependencies),
-            ref_count(0) {
+            pimpl(new pimpl_Resource(manager, data_ptr, dependencies)) {
     }
 
     Resource::Resource(Resource &&rhs):
-            manager(rhs.manager),
             prototype(std::move(rhs.prototype)),
-            data_ptr(rhs.data_ptr),
-            ref_count(rhs.ref_count.load()) {
+            pimpl(new pimpl_Resource(rhs.pimpl->manager, rhs.pimpl->data_ptr, rhs.pimpl->dependencies,
+                    rhs.pimpl->ref_count.load())) {
+    }
+
+    Resource::~Resource(void) {
+        delete pimpl;
     }
 
     void Resource::release(void) {
-        if (--ref_count == 0) {
-            manager.unload_resource(prototype.uid);
+        if (--pimpl->ref_count == 0) {
+            pimpl->manager.unload_resource(prototype.uid);
         }
+    }
+
+    void *Resource::get_data_raw_ptr(void) {
+        return pimpl->data_ptr;
     }
 
 }

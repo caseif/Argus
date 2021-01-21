@@ -10,6 +10,7 @@
 namespace argus {
     // forward declarations
     class ResourceManager;
+    struct pimpl_ResourceLoader;
 
     /**
      * \brief Handles deserialization of Resource data.
@@ -18,19 +19,7 @@ namespace argus {
         friend class ResourceManager;
 
         private:
-            /**
-             * \brief The ID of the type handled by this loader.
-             */
-            const std::string type_id;
-            /**
-             * \brief The file extensions this loader can handle.
-             */
-            const std::vector<std::string> extensions;
-
-            /**
-             * \brief The dependencies of the Resource last loaded.
-             */
-            std::vector<std::string> last_dependencies;
+            pimpl_ResourceLoader *pimpl;
 
             /**
              * \brief Loads a resource from an std::istream.
@@ -55,6 +44,11 @@ namespace argus {
              * \param extensions The file extensions handled by this loader.
              */
             ResourceLoader(std::string type_id, std::initializer_list<std::string> extensions);
+
+            /**
+             * \brief Destroys the ResourceLoader.
+             */
+            ~ResourceLoader(void);
 
             /**
              * \brief Loads \link Resource Resources \endlink this one is

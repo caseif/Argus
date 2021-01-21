@@ -8,36 +8,37 @@
 namespace argus {
     // forward declarations
     class Resource;
-    class ResourcePrototype;
     class ResourceLoader;
+    struct pimpl_ResourceManager;
 
     /**
      * \brief Manages Resource lifetimes and provides a high-level interface for
      *        loading, retrieving, and unloading them.
      */
     class ResourceManager {
-        friend class ResourceLoader;
-        friend class Resource;
-
-        private:
-            /**
-             * \brief Prototypes for all resources discovered on the filesystem.
-             */
-            std::map<std::string, ResourcePrototype> discovered_resource_prototypes;
-            /**
-             * \brief All currently loaded resources.
-             */
-            std::map<std::string, Resource*> loaded_resources;
+        public:
+            pimpl_ResourceManager *pimpl;
 
             /**
-             * \brief All currently registered resource loaders.
+             * \brief Gets the global ResourceManager instance.
+             *
+             * \return The global ResourceManager.
              */
-            std::map<std::string, ResourceLoader*> registered_loaders;
+            static ResourceManager &get_global_resource_manager(void);
+
             /**
-             * \brief All current extension registrations, with extensions being
-             *        mapped to formal types.
+             * \brief Constructs a new ResourceManager.
              */
-            std::map<std::string, std::string> extension_registrations;
+            ResourceManager(void);
+
+            ResourceManager(ResourceManager&) = delete;
+
+            ResourceManager(ResourceManager&&) = delete;
+
+            /**
+             * \brief Destroys the ResourceManager.
+             */
+            ~ResourceManager(void);
 
             /**
              * \brief Unloads the Resource with the given UID.
@@ -46,14 +47,6 @@ namespace argus {
              *        currently loaded.
              */
             int unload_resource(const std::string &uid);
-
-        public:
-            /**
-             * \brief Gets the global ResourceManager instance.
-             *
-             * \return The global ResourceManager.
-             */
-            static ResourceManager &get_global_resource_manager(void);
 
             /**
              * \brief Discovers all present resources from the filesystem.

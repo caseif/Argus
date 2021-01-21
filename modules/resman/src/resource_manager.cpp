@@ -20,6 +20,8 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
+#include "internal/resman/pimpl/resource_loader.hpp"
+#include "internal/resman/pimpl/resource_manager.hpp"
 
 #include <algorithm>
 #include <exception>
@@ -60,15 +62,23 @@ namespace argus {
         return g_global_resource_manager;
     }
 
+    ResourceManager::ResourceManager(void):
+            pimpl(new pimpl_ResourceManager()) {
+    }
+
+    ResourceManager::~ResourceManager(void) {
+        delete pimpl;
+    }
+
     void ResourceManager::register_loader(const std::string &type_id, ResourceLoader *const loader) {
-        if (registered_loaders.find(type_id) != registered_loaders.cend()) {
+        if (pimpl->registered_loaders.find(type_id) != pimpl->registered_loaders.cend()) {
             throw std::invalid_argument("Cannot register loader for type more than once");
         }
 
-        registered_loaders.insert({type_id, loader});
+        pimpl->registered_loaders.insert({type_id, loader});
 
-        for (std::string ext : loader->extensions) {
-            this->extension_registrations.insert({ext, type_id});
+        for (std::string ext : loader->pimpl->extensions) {
+            pimpl->extension_registrations.insert({ext, type_id});
         }
     }
 
@@ -134,19 +144,19 @@ namespace argus {
         std::string exe_dir = get_parent(exe_path);
 
         _discover_fs_resources_recursively(exe_dir + PATH_SEPARATOR + RESOURCES_DIR, "",
-                discovered_resource_prototypes, extension_registrations);
+                pimpl->discovered_resource_prototypes, pimpl->extension_registrations);
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
         }
     }
 
     Resource &ResourceManager::get_resource(const std::string &uid) {
-        if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
+        if (pimpl->discovered_resource_prototypes.find(uid) == pimpl->discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
 
-        auto it = loaded_resources.find(uid);
-        if (it != loaded_resources.cend()) {
+        auto it = pimpl->loaded_resources.find(uid);
+        if (it != pimpl->loaded_resources.cend()) {
             return *it->second;
         } else {
             return load_resource(uid);
@@ -154,12 +164,12 @@ namespace argus {
     }
 
     Resource &ResourceManager::try_get_resource(const std::string &uid) const {
-        if (discovered_resource_prototypes.find(uid) == discovered_resource_prototypes.cend()) {
+        if (pimpl->discovered_resource_prototypes.find(uid) == pimpl->discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
 
-        auto it = loaded_resources.find(uid);
-        if (it == loaded_resources.cend()) {
+        auto it = pimpl->loaded_resources.find(uid);
+        if (it == pimpl->loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);
         }
 
@@ -167,12 +177,12 @@ namespace argus {
     }
 
     Resource &ResourceManager::load_resource(const std::string &uid) {
-        if (loaded_resources.find(uid) != loaded_resources.cend()) {
+        if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
         }
 
-        auto pt_it = discovered_resource_prototypes.find(uid);
-        if (pt_it == discovered_resource_prototypes.cend()) {
+        auto pt_it = pimpl->discovered_resource_prototypes.find(uid);
+        if (pt_it == pimpl->discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
         ResourcePrototype proto = pt_it->second;
@@ -180,8 +190,8 @@ namespace argus {
         if (!proto.fs_path.empty()) {
             FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
-            auto loader_it = registered_loaders.find(proto.type_id);
-            if (loader_it == registered_loaders.end()) {
+            auto loader_it = pimpl->registered_loaders.find(proto.type_id);
+            if (loader_it == pimpl->registered_loaders.end()) {
                 throw NoLoaderException(uid, proto.type_id);
             }
 
@@ -189,7 +199,7 @@ namespace argus {
             file_handle.to_istream(0, stream);
 
             ResourceLoader *loader = loader_it->second;
-            loader->last_dependencies = {};
+            loader->pimpl->last_dependencies = {};
             void *const data_ptr = loader->load(stream, file_handle.get_size());
 
             if (!data_ptr) {
@@ -198,8 +208,8 @@ namespace argus {
                 throw LoadFailedException(uid);
             }
 
-            Resource *res = new Resource(*this, proto, data_ptr, loader->last_dependencies);
-            loaded_resources.insert({proto.uid, res});
+            Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
+            pimpl->loaded_resources.insert({proto.uid, res});
 
             stream.close();
             file_handle.release();
@@ -221,14 +231,14 @@ namespace argus {
     }
 
     int ResourceManager::unload_resource(const std::string &uid) {
-        auto it = loaded_resources.find(uid);
-        if (it == loaded_resources.cend()) {
+        auto it = pimpl->loaded_resources.find(uid);
+        if (it == pimpl->loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);
         }
 
         Resource *res = it->second;
 
-        loaded_resources.erase(uid);
+        pimpl->loaded_resources.erase(uid);
 
         delete res;
 

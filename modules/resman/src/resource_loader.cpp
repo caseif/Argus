@@ -11,6 +11,7 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
+#include "internal/resman/pimpl/resource_loader.hpp"
 
 #include <exception>
 #include <initializer_list>
@@ -48,13 +49,16 @@ namespace argus {
             throw thrown_exception;
         }
 
-        last_dependencies = dependencies;
+        pimpl->last_dependencies = dependencies;
     }
 
     ResourceLoader::ResourceLoader(std::string type_id,
             std::initializer_list<std::string> extensions):
-            type_id(type_id),
-            extensions(extensions) {
+            pimpl(new pimpl_ResourceLoader(type_id, extensions)) {
+    }
+
+    ResourceLoader::~ResourceLoader(void) {
+        delete pimpl;
     }
 
     void *const ResourceLoader::load(std::istream &stream, const size_t size) const {
@@ -62,6 +66,7 @@ namespace argus {
     }
 
     void ResourceLoader::unload(void *const data_ptr) const {
+        // This function is intentionally left blank.
     }
 
 }

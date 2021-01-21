@@ -7,6 +7,7 @@
 namespace argus {
     // forward declarations
     class ResourceManager;
+    struct pimpl_Resource;
 
     /**
      * \brief The minimum information required to uniquely identify and locate
@@ -50,30 +51,6 @@ namespace argus {
 
         private:
             /**
-             * \brief The ResourceManager parent to this Resource.
-             */
-            ResourceManager &manager;
-
-            /**
-             * \brief The number of current handles to this Resource.
-             *
-             * \remark When the refcount reaches zero, the Resource will be
-             *         unloaded.
-             */
-            std::atomic<unsigned int> ref_count;
-
-            /**
-             * \brief The UIDs of \link Resource Resources \endlink this one is
-             *        dependent on.
-             */
-            std::vector<std::string> dependencies;
-
-            /**
-             * \brief A generic pointer to the data contained by this Resource.
-             */
-            void *const data_ptr;
-
-            /**
              * \brief Constructs a new Resource.
              *
              * \param manager The parent ResourceManager of the new Resource.
@@ -91,6 +68,8 @@ namespace argus {
             Resource operator=(Resource &ref) = delete;
 
         public:
+            pimpl_Resource *pimpl;
+
             /**
              * \brief The prototype of this Resource.
              */
@@ -156,12 +135,30 @@ namespace argus {
             Resource(Resource &&rhs);
 
             /**
+             * \brief Destroys the Resource.
+             */
+            //TODO: revisit if this should be public (probably not)
+            ~Resource(void);
+
+            /**
              * \brief Releases a handle on this Resource.
              *
              * \remark This simply decrements an internal refcount, as the class
              *         has no way of tracking specific acquisitions.
              */
             void release(void);
+
+            /**
+             * \brief Gets a raw pointer to the underlying data of this
+             *        Resource.
+             *
+             * \note In almost all cases, the templated function
+             *       Resource::get_data is preferable and should be used
+             *       instead.
+             *
+             * \return A pointer to the Resource data.
+             */
+            void *get_data_raw_ptr(void);
 
             /**
              * \brief Gets the underlying data of this Resource.
@@ -172,7 +169,7 @@ namespace argus {
              */
             template <typename DataType>
             DataType &get_data(void) {
-                return *static_cast<DataType*>(data_ptr);
+                return *static_cast<DataType*>(get_data_raw_ptr());
             }
     };
 }
