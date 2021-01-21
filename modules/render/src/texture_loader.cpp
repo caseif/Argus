@@ -21,6 +21,7 @@
 #include "png.h"
 #include "pngconf.h"
 
+#include <fstream>
 #include <istream>
 #include <stdexcept>
 #include <utility>

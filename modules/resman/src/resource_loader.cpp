@@ -8,7 +8,9 @@
  */
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_loader.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 #include <exception>
 #include <initializer_list>

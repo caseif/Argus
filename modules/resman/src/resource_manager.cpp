@@ -16,7 +16,10 @@
 #include "argus/core/module.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/exception.hpp"
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_loader.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 #include <algorithm>
 #include <exception>
