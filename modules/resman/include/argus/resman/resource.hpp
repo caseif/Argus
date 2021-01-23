@@ -71,9 +71,10 @@ namespace argus {
             Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data,
                     std::vector<std::string> &dependencies);
 
-            Resource(Resource &res) = delete;
-
-            Resource operator=(Resource &ref) = delete;
+            /**
+             * \brief Destroys the Resource.
+             */
+            ~Resource(void);
 
         public:
             pimpl_Resource *pimpl;
@@ -135,18 +136,16 @@ namespace argus {
                 }
             } type_id {*this};
 
+            Resource(Resource &res) = delete;
+
+            Resource operator=(Resource &ref) = delete;
+
             /**
              * \brief The move constructor.
              *
              * \param rhs The Resource to move.
              */
             Resource(Resource &&rhs);
-
-            /**
-             * \brief Destroys the Resource.
-             */
-            //TODO: revisit if this should be public (probably not)
-            ~Resource(void);
 
             /**
              * \brief Releases a handle on this Resource.
