@@ -30,11 +30,7 @@ namespace argus {
      * \brief Represents a linked shader program for use with a RenderGroup.
      */
     class GLShaderProgram {
-        friend class RenderGroup;
-        friend class pimpl_RenderGroup;
-        friend class RenderLayer;
-
-        private:
+        public:
             /**
              * \brief The set of Shaders encompassed by this program.
              */
@@ -111,7 +107,6 @@ namespace argus {
              */
             void update_projection_matrix(const unsigned int viewport_width, const unsigned int viewport_height);
 
-        public:
             /**
              * \brief Gets a handle to a given uniform defined by this program.
              *
