@@ -12,13 +12,11 @@
 
 // module render
 #include "argus/render/shader.hpp"
-#include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
-#include <initializer_list>
-#include <string>
+#include <cstddef>
 
 namespace argus {
 

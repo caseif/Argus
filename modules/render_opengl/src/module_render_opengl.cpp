@@ -9,7 +9,6 @@
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core/module.hpp"
@@ -17,12 +16,12 @@
 #include "internal/core/engine_config.hpp"
 
 // module render
-#include "argus/render/renderer.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/renderer_impl.hpp"
+#include "internal/render_opengl/glfw_include.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/gl_renderer.hpp"
-#include "internal/render_opengl/globals.hpp"
 
 #include <cstring>
 

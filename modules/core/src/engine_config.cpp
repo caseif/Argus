@@ -11,12 +11,13 @@
 #include "argus/lowlevel/math.hpp"
 
 // module core
-#include "argus/core/engine.hpp"
 #include "argus/core/engine_config.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/module.hpp"
 
+#include <algorithm>
 #include <initializer_list>
+#include <map>
 #include <string>
 #include <vector>
 

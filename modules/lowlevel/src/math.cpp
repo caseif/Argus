@@ -10,9 +10,6 @@
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-#include <cstdint>
-#include <cstdio>
-
 namespace argus {
     void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res) {
         // naive implementation

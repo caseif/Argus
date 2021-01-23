@@ -11,7 +11,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource_loader.hpp"
 
 // module render
 #include "argus/render/texture_data.hpp"
@@ -21,8 +21,8 @@
 #include "png.h"
 #include "pngconf.h"
 
-#include <fstream>
-#include <istream>
+#include <fstream> // IWYU pragma: keep
+#include <istream> // IWYU pragma: keep
 #include <stdexcept>
 #include <utility>
 

@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core

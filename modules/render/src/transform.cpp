@@ -21,7 +21,6 @@
 
 #include <atomic>
 #include <mutex>
-#include <new>
 
 #include <cmath> // IWYU pragma: keep
 #include <cstring>

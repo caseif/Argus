@@ -8,10 +8,10 @@
  */
 
 // module core
+#include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
 // module input
-#include "argus/input.hpp"
 #include "internal/input/input_helpers.hpp"
 
 // module wm

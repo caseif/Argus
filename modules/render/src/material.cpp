@@ -11,9 +11,6 @@
 #include "internal/lowlevel/logging.hpp"
 #include "argus/lowlevel/memory.hpp"
 
-// module resman
-#include "argus/resman.hpp"
-
 // module render
 #include "argus/render/material.hpp"
 #include "argus/render/shader.hpp"
@@ -23,6 +20,7 @@
 #include "internal/render/pimpl/material.hpp"
 #include "internal/render/pimpl/shader.hpp"
 
+#include <string>
 #include <vector>
 
 namespace argus {

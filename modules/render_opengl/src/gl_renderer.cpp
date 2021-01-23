@@ -11,6 +11,7 @@
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/threading.hpp"
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -51,8 +52,7 @@
 
 #include <algorithm>
 #include <atomic>
-#include <numeric>
-#include <stdexcept>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>

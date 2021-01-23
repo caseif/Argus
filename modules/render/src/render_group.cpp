@@ -13,18 +13,17 @@
 // module core
 #include "internal/core/core_util.hpp"
 
-// module resman
-#include "argus/resman.hpp"
-
 // module render
 #include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
 #include "argus/render/render_layer.hpp"
 #include "argus/render/render_object.hpp"
+#include "argus/render/render_prim.hpp"
 #include "argus/render/transform.hpp"
 #include "internal/render/pimpl/render_group.hpp"
 #include "internal/render/pimpl/render_object.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <vector>
 

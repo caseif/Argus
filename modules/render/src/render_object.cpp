@@ -20,6 +20,7 @@
 #include "internal/render/pimpl/render_object.hpp"
 #include "internal/render/pimpl/transform.hpp"
 
+#include <atomic>
 #include <vector>
 
 namespace argus {

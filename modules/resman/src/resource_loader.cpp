@@ -13,10 +13,9 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource_loader.hpp"
 
-#include <exception>
+#include <exception> // IWYU pragma: keep
 #include <initializer_list>
 #include <istream>
-#include <map>
 #include <string>
 #include <vector>
 

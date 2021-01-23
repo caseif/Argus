@@ -11,12 +11,15 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
+#include "argus/core/engine_config.hpp"
+#include "argus/core/event.hpp"
+#include "argus/core/module.hpp"
 #include "internal/core/dyn_invoke.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/module.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"
@@ -28,14 +31,12 @@
 #include "internal/render/renderer.hpp"
 #include "internal/render/texture_loader.hpp"
 
-#include "GLFW/glfw3.h"
-
-#include <iterator>
 #include <map>
+#include <stdexcept>
 #include <string>
-#include <utility>
+#include <vector>
 
-#include <cstddef>
+#include <cstdio>
 
 namespace argus {
     // forward declarations

@@ -9,18 +9,12 @@
 
 // module lowlevel
 #include "argus/lowlevel/memory.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 // module render
-#include "argus/render/renderer.hpp"
 #include "argus/render/texture_data.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/texture_data.hpp"
-
-#include "GLFW/glfw3.h"
-
-#include <atomic>
 
 #include <cstdio>
 

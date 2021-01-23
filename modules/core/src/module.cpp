@@ -17,10 +17,19 @@
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <algorithm>
+#include <functional>
+#include <iterator>
 #include <map>
 #include <set>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include <cerrno>
+#include <cstdint>
 #include <cstring>
 
 #ifdef _WIN32

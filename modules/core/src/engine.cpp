@@ -13,6 +13,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
+#include "argus/core/callback.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
@@ -22,10 +23,16 @@
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <functional>
 #include <map>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <csignal>
+#include <cstdint>
+#include <cstdlib>
 
 namespace argus {
     /**

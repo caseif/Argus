@@ -10,9 +10,6 @@
 // module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
-// module core
-#include "internal/core/core_util.hpp"
-
 // module render
 #include "argus/render/material.hpp"
 #include "argus/render/render_group.hpp"
@@ -21,7 +18,6 @@
 #include "argus/render/render_prim.hpp"
 #include "argus/render/renderer.hpp"
 #include "argus/render/transform.hpp"
-#include "internal/render/pimpl/render_group.hpp"
 #include "internal/render/pimpl/render_layer.hpp"
 #include "internal/render/pimpl/render_object.hpp"
 

@@ -24,7 +24,7 @@
 #include "internal/resman/pimpl/resource_manager.hpp"
 
 #include <algorithm>
-#include <exception>
+#include <exception> // IWYU pragma: keep
 #include <functional>
 #include <future>
 #include <istream>

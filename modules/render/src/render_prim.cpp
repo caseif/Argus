@@ -8,15 +8,14 @@
  */
 
 // module lowlevel
-#include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
 // module render
 #include "argus/render/render_prim.hpp"
 #include "argus/render/transform.hpp"
-#include "internal/render/defines.hpp"
 #include "internal/render/pimpl/render_prim.hpp"
 
+#include <initializer_list>
 #include <vector>
 
 #include <cstdlib>

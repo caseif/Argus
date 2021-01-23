@@ -38,6 +38,7 @@
 #include <vector>
 
 #include <cstddef>
+#include <cstdint>
 
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300

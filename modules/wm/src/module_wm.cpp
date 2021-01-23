@@ -8,10 +8,12 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core/engine.hpp"
+#include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
 // module wm
@@ -22,7 +24,6 @@
 
 #include <iterator>
 #include <map>
-#include <string>
 #include <utility>
 
 #include <cstddef>

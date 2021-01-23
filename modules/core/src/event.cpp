@@ -8,15 +8,21 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
+#include "argus/core/callback.hpp"
 #include "argus/core/event.hpp"
 #include "internal/core/callback_util.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <algorithm>
+#include <functional>
 #include <mutex>
 #include <queue>
+#include <type_traits>
+#include <vector>
 
 #include <cstdlib>
 #include <cstring>
