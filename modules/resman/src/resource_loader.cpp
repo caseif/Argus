@@ -27,9 +27,8 @@ namespace argus {
         std::vector<Resource*> acquired;
 
         bool failed = false;
-        auto it = dependencies.begin();
         std::exception thrown_exception;
-        for (it; it < dependencies.end(); it++) {
+        for (auto it = dependencies.begin(); it < dependencies.end(); it++) {
             try {
                 Resource &res = manager.get_resource(*it);
                 acquired.insert(acquired.end(), &res);

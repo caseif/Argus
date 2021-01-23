@@ -37,7 +37,7 @@ namespace argus {
     }
 
     static inline void _swap_f(float *a, float *b) {
-        register float temp = *a;
+        float temp = *a;
         *a = *b;
         *b = temp;
     }

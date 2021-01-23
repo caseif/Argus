@@ -96,7 +96,7 @@ namespace argus {
                 continue;
             }
 
-            if (SHARED_LIB_PREFIX != "" && filename.find(SHARED_LIB_PREFIX) != 0) {
+            if (SHARED_LIB_PREFIX[0] != '\0' && filename.find(SHARED_LIB_PREFIX) != 0) {
                 _ARGUS_DEBUG("Ignoring module file %s with invalid prefix\n", filename.c_str());
                 continue;
             }

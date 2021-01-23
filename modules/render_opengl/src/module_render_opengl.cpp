@@ -52,10 +52,11 @@ namespace argus {
 
     void update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::PRE_INIT:
+            case LifecycleStage::PRE_INIT: {
                 register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(create_opengl_backend));
                 break;
-            case LifecycleStage::INIT:
+            }
+            case LifecycleStage::INIT: {
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -67,6 +68,10 @@ namespace argus {
 
                 _setup_view_matrix();
                 break;
+            }
+            default: {
+                break;
+            }
         }
     }
 

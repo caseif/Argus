@@ -116,6 +116,9 @@ namespace argus {
                 delete &renderer;
                 break;
             }
+            default: {
+                break;
+            }
         }
     }
 }
