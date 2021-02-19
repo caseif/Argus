@@ -2,6 +2,8 @@
 
 This is a non-exhaustive list of tasks that need to be completed in order to bring Argus into a usable state.
 
+This list was last updated on 2021/02/19.
+
 ### Resource management
 
 Resource management is being overhauled to support the use of both [ARP](https://github.com/caseif/libarp) packages and
@@ -36,6 +38,12 @@ The `input` module needs a significant rewrite to abstract away lower-level inpu
 The ECS module was never completed and needs some additional work to bring it into a usable state.
 
 - Finish `ecs` module (ETA 2-4 weeks)
+
+### Sound
+
+A module for managing sound will be needed.
+
+- Write `sound` module (ETA 1-2 months)
 
 ### Scripting
 
