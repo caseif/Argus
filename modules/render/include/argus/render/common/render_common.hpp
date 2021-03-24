@@ -7,13 +7,13 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-/**
- * \file argus/render.hpp
- *
- * Primary rendering engine interface, providing high-level abstractions for
- * rendering concepts.
- */
-
 #pragma once
 
-#include "argus/render/render_2d.hpp"
+#include "material.hpp"
+#include "render_layer.hpp"
+#include "render_layer_type.hpp"
+#include "renderer.hpp"
+#include "shader.hpp"
+#include "texture_data.hpp"
+#include "transform.hpp"
+#include "vertex.hpp"

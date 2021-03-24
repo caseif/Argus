@@ -235,7 +235,7 @@ namespace argus {
          *
          * \param rhs The vector to add to this one.
          *
-         * \return The element-wise sum of the two vectors as a new Vector2.
+         * \return The element-wise sum of the two vectors as a new Vector3.
          */
         Vector3<T> operator +(const Vector3<T> &rhs) {
             return {x + rhs.x, y + rhs.y, z + rhs.z};
@@ -251,7 +251,7 @@ namespace argus {
          * \param rhs The vector to subtract from this one.
          *
          * \return The element-wise difference between the two vectors as a new
-         *         Vector2.
+         *         Vector3.
          */
         Vector3<T> operator -(const Vector3<T> &rhs) {
             return {x - rhs.x, y - rhs.y, z - rhs.z};
@@ -263,9 +263,9 @@ namespace argus {
          *
          * \param rhs The vector to multiply this one by.
          *
-         * \return The element-wise product of the two vectors as a new Vector2.
+         * \return The element-wise product of the two vectors as a new Vector3.
          */
-        T operator *(const Vector3<T> &rhs) {
+        Vector3<T> operator *(const Vector3<T> &rhs) {
             return {x * rhs.x, y * rhs.y, z * rhs.z};
         }
 

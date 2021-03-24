@@ -21,7 +21,7 @@
 #include "internal/render_opengl/glfw_include.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/gl_renderer.hpp"
+#include "internal/render_opengl/gl_renderer_base.hpp"
 
 #include <cstring>
 

@@ -14,7 +14,7 @@
 #include "argus/resman/resource_loader.hpp"
 
 // module render
-#include "argus/render/texture_data.hpp"
+#include "argus/render/common/texture_data.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/texture_loader.hpp"
 

@@ -10,10 +10,13 @@
 /**
  * \file argus/render.hpp
  *
- * Primary rendering engine interface, providing high-level abstractions for
- * rendering concepts.
+ * Primary interface for the 2D component of the rendering engine.
  */
 
 #pragma once
 
-#include "argus/render/render_2d.hpp"
+#include "argus/render/common/render_common.hpp"
+#include "argus/render/2d/render_group_2d.hpp"
+#include "argus/render/2d/render_layer_2d.hpp"
+#include "argus/render/2d/render_object_2d.hpp"
+#include "argus/render/2d/render_prim_2d.hpp"

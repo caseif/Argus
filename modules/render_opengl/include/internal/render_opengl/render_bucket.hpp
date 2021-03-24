@@ -20,6 +20,8 @@ namespace argus {
     class ProcessedRenderObject;
 
     struct RenderBucket {
+        friend class AllocPool;
+
         const Material &material;
         std::vector<ProcessedRenderObject*> objects;
         buffer_handle_t vertex_buffer;
@@ -28,13 +30,21 @@ namespace argus {
 
         bool needs_rebuild;
 
-        RenderBucket(const Material &material):
-            material(material),
-            objects(),
-            vertex_buffer(0),
-            vertex_array(0),
-            vertex_count(0),
-            needs_rebuild(true) {
-        }
+        static RenderBucket &create(const Material &material);
+
+        void destroy(void);
+
+        private:
+            RenderBucket(const Material &material):
+                material(material),
+                objects(),
+                vertex_buffer(0),
+                vertex_array(0),
+                vertex_count(0),
+                needs_rebuild(true) {
+            }
+
+            ~RenderBucket(void) {
+            }
     };
 }

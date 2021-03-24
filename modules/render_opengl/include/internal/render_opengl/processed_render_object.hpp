@@ -10,7 +10,7 @@
 #pragma once
 
 // module render
-#include "argus/render/transform.hpp"
+#include "argus/render/common/transform.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
@@ -18,15 +18,17 @@
 
 #include <numeric>
 
+#include <cstddef>
 #include <cstring>
 
 namespace argus {
     // forward definitions
     class Material;
-    class RenderObject;
+    class RenderObject2D;
 
     struct ProcessedRenderObject {
-        const RenderObject *orig;
+        friend class AllocPool;
+
         const Material *material;
         float abs_transform[16];
         buffer_handle_t vertex_buffer;
@@ -35,17 +37,22 @@ namespace argus {
         bool visited;
         bool updated;
 
-        ProcessedRenderObject(const RenderObject &orig, const Material &material, const mat4_flat_t abs_transform,
-                const buffer_handle_t vertex_buffer, const size_t vertex_buffer_size): 
-            orig(&orig),
-            material(&material),
-            vertex_buffer(vertex_buffer),
-            vertex_buffer_size(vertex_buffer_size),
-            vertex_count(std::accumulate(orig.get_primitives().cbegin(), orig.get_primitives().cend(), 0,
-                    [](const size_t acc, const RenderPrim &prim) {
-                        return acc + prim.get_vertex_count();
-                    })) {
-            memcpy(this->abs_transform, abs_transform, 16 * sizeof(this->abs_transform[0]));
-        }
+        static ProcessedRenderObject &create(const Material &material, const mat4_flat_t abs_transform,
+                const buffer_handle_t vertex_buffer, const size_t vertex_buffer_size, const size_t vertex_count);
+        
+        void destroy(void);
+
+        private:
+            ProcessedRenderObject(const Material &material, const mat4_flat_t abs_transform,
+                    const buffer_handle_t vertex_buffer, const size_t vertex_buffer_size, const size_t vertex_count):
+                material(&material),
+                vertex_buffer(vertex_buffer),
+                vertex_buffer_size(vertex_buffer_size),
+                vertex_count(vertex_count) {
+                memcpy(this->abs_transform, abs_transform, 16 * sizeof(this->abs_transform[0]));
+            }
+
+            ~ProcessedRenderObject() {
+            }
     };
 }
