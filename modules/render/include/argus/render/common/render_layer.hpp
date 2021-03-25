@@ -41,9 +41,9 @@ namespace argus {
 
             RenderLayer(const RenderLayer &&rhs) = delete;
 
-            ~RenderLayer(void);
-
         public:
+            virtual ~RenderLayer(void) = 0;
+
             const RenderLayerType type;
 
             virtual pimpl_RenderLayer *get_pimpl(void) const = 0;

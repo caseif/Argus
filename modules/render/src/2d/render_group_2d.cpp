@@ -57,6 +57,14 @@ namespace argus {
 
     RenderGroup2D::~RenderGroup2D(void) {
         if (pimpl != nullptr) {
+            for (auto *group : pimpl->child_groups) {
+                delete group;
+            }
+
+            for (auto *obj : pimpl->child_objects) {
+                delete obj;
+            }
+
             g_pimpl_pool.free(pimpl);
         }
     }

@@ -170,7 +170,7 @@ namespace argus {
         const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != NULL) {
             uintptr_t addr = chunk->unaligned_addr;
-            ::free(reinterpret_cast<void *>(addr));
+            ::free(reinterpret_cast<void*>(addr));
             chunk = chunk->next_chunk;
         }
     }
@@ -253,7 +253,7 @@ namespace argus {
                 uint64_t block_flag_mask = uint64_t(1) << ((~block_index) & BF_INDEX_MASK);
 
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
-                    throw std::invalid_argument("Invalid free (block not alloced, possible double-free?)\n");
+                    throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)\n");
                 }
 
                 chunk->occupied_block_map &= ~block_flag_mask;

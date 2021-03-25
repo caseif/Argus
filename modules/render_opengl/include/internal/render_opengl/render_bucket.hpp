@@ -32,7 +32,7 @@ namespace argus {
 
         static RenderBucket &create(const Material &material);
 
-        void destroy(void);
+        ~RenderBucket(void);
 
         private:
             RenderBucket(const Material &material):
@@ -42,9 +42,6 @@ namespace argus {
                 vertex_array(0),
                 vertex_count(0),
                 needs_rebuild(true) {
-            }
-
-            ~RenderBucket(void) {
             }
     };
 }

@@ -39,8 +39,10 @@ namespace argus {
 
         static ProcessedRenderObject &create(const Material &material, const mat4_flat_t abs_transform,
                 const buffer_handle_t vertex_buffer, const size_t vertex_buffer_size, const size_t vertex_count);
-        
-        void destroy(void);
+
+        ProcessedRenderObject(ProcessedRenderObject&) = delete;
+
+        ~ProcessedRenderObject();
 
         private:
             ProcessedRenderObject(const Material &material, const mat4_flat_t abs_transform,
@@ -50,9 +52,6 @@ namespace argus {
                 vertex_buffer_size(vertex_buffer_size),
                 vertex_count(vertex_count) {
                 memcpy(this->abs_transform, abs_transform, 16 * sizeof(this->abs_transform[0]));
-            }
-
-            ~ProcessedRenderObject() {
             }
     };
 }

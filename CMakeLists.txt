@@ -233,7 +233,7 @@ function(setup_submodule MODULE_NAME DYN)
   else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
                          -Wmissing-declarations -Winit-self -Wshadow -pedantic -pedantic-errors -std=c++11")
-    set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=address -O1 -fno-omit-frame-pointer -g")
+    set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=address -fno-omit-frame-pointer -g")
     set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "-fno-omit-frame-pointer -fsanitize=address")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
   endif()

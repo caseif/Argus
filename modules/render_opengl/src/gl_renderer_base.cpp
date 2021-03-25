@@ -42,6 +42,7 @@
 #include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/layer_state.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
@@ -79,8 +80,6 @@
 namespace argus {
     // forward declarations
     class RenderLayer2D;
-
-    static std::map<const Renderer*, RendererState> g_renderer_states;
 
     static void _activate_gl_context(GLFWwindow *window) {
         if (glfwGetCurrentContext() == window) {
@@ -173,12 +172,6 @@ namespace argus {
         }
 
         return shader_handle;
-    }
-
-    static RendererState &_get_renderer_state(const Renderer &renderer) {
-        auto it = g_renderer_states.find(&renderer);
-        _ARGUS_ASSERT(it != g_renderer_states.cend(), "Cannot find renderer state");
-        return it->second;
     }
 
     // it is expected that the shaders will already be attached to the program when this function is called
@@ -285,10 +278,8 @@ namespace argus {
         state.prepared_textures.insert({ &texture, handle });
     }
 
-    static void _rebuild_scene(const Renderer &renderer) {
-        auto &state = _get_renderer_state(renderer);
-
-        for (auto *layer : renderer.pimpl->render_layers) {
+    static void _rebuild_scene(RendererState &state) {
+        for (auto *layer : state.renderer.pimpl->render_layers) {
             LayerState &layer_state = state.get_layer_state(*layer, true);
 
             auto &layer_transform = layer->get_transform();
@@ -310,11 +301,10 @@ namespace argus {
         }
     }
 
-    static void _draw_layer_to_framebuffer(const RenderLayer &layer) {
-        auto &renderer = layer.get_parent_renderer();
-
-        auto &state = _get_renderer_state(renderer);
-        auto &layer_state = state.get_layer_state(layer);
+    static void _draw_layer_to_framebuffer(LayerState &layer_state) {
+        auto &layer = layer_state.layer;
+        auto &state = layer_state.parent_state;
+        auto &renderer = state.renderer;
 
         // framebuffer setup
         if (layer_state.framebuffer == 0) {
@@ -391,11 +381,10 @@ namespace argus {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    static void _draw_framebuffer_to_screen(RenderLayer &layer) {
-        auto &renderer = layer.get_parent_renderer();
-
-        auto &state = _get_renderer_state(renderer);
-        auto &layer_state = state.get_layer_state(layer);
+    static void _draw_framebuffer_to_screen(LayerState &layer_state) {
+        auto &layer = layer_state.layer;
+        auto &state = layer_state.parent_state;
+        auto &renderer = state.renderer;
 
         Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
 
@@ -414,9 +403,7 @@ namespace argus {
         glBindVertexArray(0);
     }
 
-    static void _setup_framebuffer(Renderer &renderer) {
-        auto &state = _get_renderer_state(renderer);
-
+    static void _setup_framebuffer(RendererState &state) {
         state.frame_vert_shader = _compile_shader(ShaderStage::VERTEX, _FRAME_VERT_SHADER, sizeof(_FRAME_VERT_SHADER));
         state.frame_frag_shader = _compile_shader(ShaderStage::FRAGMENT, _FRAME_FRAG_SHADER, sizeof(_FRAME_FRAG_SHADER));
 
@@ -469,18 +456,22 @@ namespace argus {
 
         const GLubyte *ver_str = glGetString(GL_VERSION);
 
-        g_renderer_states.insert({ &renderer, RendererState(renderer) });
+        renderer_states.insert({ &renderer, RendererState(renderer) });
 
         //TODO: actually do something
         if (glDebugMessageCallback != nullptr) {
             glDebugMessageCallback(_gl_debug_callback, nullptr);
         }
 
-        _setup_framebuffer(renderer);
+        _setup_framebuffer(get_renderer_state(renderer));
+    }
+
+    void GLRenderer::deinit(Renderer &renderer) {
+        get_renderer_state(renderer).~RendererState();
     }
 
     void GLRenderer::deinit_texture(const TextureData &texture) {
-        for (auto &state : g_renderer_states) {
+        for (auto &state : renderer_states) {
             auto &textures = state.second.prepared_textures;
             auto existing_it = textures.find(&texture);
             if (existing_it != textures.end()) {
@@ -491,7 +482,7 @@ namespace argus {
     }
 
     void GLRenderer::deinit_shader(const Shader &shader) {
-        for (auto &state : g_renderer_states) {
+        for (auto &state : renderer_states) {
             auto &shaders = state.second.compiled_shaders;
             auto existing_it = shaders.find(&shader);
             if (existing_it != shaders.end()) {
@@ -502,14 +493,14 @@ namespace argus {
     }
 
     void GLRenderer::deinit_material(const Material &material) {
-        for (auto &state : g_renderer_states) {
+        for (auto &state : renderer_states) {
             for (auto *layer_state : state.second.all_layer_states) {
                 auto &buckets = layer_state->render_buckets;
                 auto bucket_it = buckets.find(&material);
                 if (bucket_it != buckets.end()) {
                     try_delete_buffer(bucket_it->second->vertex_array);
                     try_delete_buffer(bucket_it->second->vertex_buffer);
-                    bucket_it->second->destroy();
+                    bucket_it->second->~RenderBucket();
                     buckets.erase(bucket_it);
                 }
             }
@@ -525,11 +516,11 @@ namespace argus {
     }
 
     void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
-        auto &state = _get_renderer_state(renderer);
+        auto &state = get_renderer_state(renderer);
 
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        _rebuild_scene(renderer);
+        _rebuild_scene(state);
 
         // set up state for drawing scene to framebuffers
         glEnable(GL_DEPTH_TEST);
@@ -541,7 +532,8 @@ namespace argus {
         glDisable(GL_CULL_FACE);
 
         for (auto *layer : renderer.pimpl->render_layers) {
-            _draw_layer_to_framebuffer(*layer);
+            auto &layer_state = state.get_layer_state(*layer);
+            _draw_layer_to_framebuffer(layer_state);
         }
 
         // set up state for drawing framebuffers to screen
@@ -555,9 +547,17 @@ namespace argus {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         for (auto *layer : renderer.pimpl->render_layers) {
-            _draw_framebuffer_to_screen(*layer);
+            auto &layer_state = state.get_layer_state(*layer);
+
+            _draw_framebuffer_to_screen(layer_state);
         }
 
         glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);
+    }
+
+    RendererState &GLRenderer::get_renderer_state(Renderer &renderer) {
+        auto it = renderer_states.find(&renderer);
+        _ARGUS_ASSERT(it != renderer_states.cend(), "Cannot find renderer state");
+        return it->second;
     }
 }

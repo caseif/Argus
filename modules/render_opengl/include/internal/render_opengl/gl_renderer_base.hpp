@@ -12,22 +12,33 @@
 // module render
 #include "internal/render/renderer_impl.hpp"
 
+#include <map>
+
 namespace argus {
     // forward declarations
     class Renderer;
 
+    struct RendererState;
+
     class GLRenderer : public RendererImpl {
-       public:
-        GLRenderer(void);
+        private:
+            std::map<const Renderer*, RendererState> renderer_states;
 
-        void init(Renderer &renderer) override;
+        public:
+            GLRenderer(void);
 
-        void deinit_texture(const TextureData &texture) override;
-        
-        void deinit_shader(const Shader &shader) override;
-        
-        void deinit_material(const Material &material) override;
+            void init(Renderer &renderer) override;
 
-        void render(Renderer &renderer, const TimeDelta delta) override;
+            void deinit(Renderer &renderer) override;
+
+            void deinit_texture(const TextureData &texture) override;
+
+            void deinit_shader(const Shader &shader) override;
+
+            void deinit_material(const Material &material) override;
+
+            void render(Renderer &renderer, const TimeDelta delta) override;
+
+            RendererState &get_renderer_state(Renderer &renderer);
     };
 }

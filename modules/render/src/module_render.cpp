@@ -86,7 +86,6 @@ namespace argus {
     static void _window_construct_callback(Window &window) {
         auto *renderer = new Renderer(window);
         g_renderer_map.insert({&window, renderer});
-        printf("callback invoked\n");
     }
 
     void _update_lifecycle_render(LifecycleStage stage) {

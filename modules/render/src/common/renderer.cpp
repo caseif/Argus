@@ -49,6 +49,12 @@ namespace argus {
     }
 
     Renderer::~Renderer() {
+        g_renderer_impl->deinit(*this);
+
+        for (auto *layer : pimpl->render_layers) {
+            delete layer;
+        }
+
         g_renderer_map.erase(&pimpl->window);
         delete pimpl;
     }

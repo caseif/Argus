@@ -26,6 +26,8 @@ namespace argus {
 
         virtual void init(Renderer &renderer) = 0;
 
+        virtual void deinit(Renderer &renderer) = 0;
+
         virtual void deinit_texture(const TextureData &texture) = 0;
 
         virtual void deinit_shader(const Shader &shader) = 0;

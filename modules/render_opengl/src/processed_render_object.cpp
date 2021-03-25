@@ -1,4 +1,6 @@
 #include <cstddef>
+#include <cstdio>
+
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
@@ -20,7 +22,7 @@ namespace argus {
                 vertex_count);
     }
         
-    void ProcessedRenderObject::destroy(void) {
+    ProcessedRenderObject::~ProcessedRenderObject(void) {
         g_obj_pool.free(this);
     }
 }

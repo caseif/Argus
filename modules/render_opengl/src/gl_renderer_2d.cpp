@@ -28,6 +28,7 @@
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/layer_state.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
@@ -49,7 +50,7 @@ namespace argus {
             if (bucket->objects.empty()) {
                 try_delete_buffer(it->second->vertex_array);
                 try_delete_buffer(it->second->vertex_buffer);
-                it->second->destroy();
+                it->second->~RenderBucket();
 
                 it = layer_state.render_buckets.erase(it);
 
@@ -210,11 +211,11 @@ namespace argus {
         if (existing_it != layer_state.processed_objs.end()) {
             // for some reason freeing the object before we replace it causes
             // weird issues that seem like a race condition somehow
-            auto &old_obj = existing_it->second;
+            auto *old_obj = existing_it->second;
 
             existing_it->second = &processed_obj;
 
-            old_obj->destroy();
+            old_obj->~ProcessedRenderObject();
 
             // the bucket should always exist if the object existed previously
             auto *bucket = layer_state.render_buckets[processed_obj.material];
@@ -328,7 +329,7 @@ namespace argus {
                 remove_from_vector(bucket->objects, processed_obj);
                 bucket->needs_rebuild = true;
 
-                processed_obj->destroy();
+                processed_obj->~ProcessedRenderObject();
 
                 it = layer_state.processed_objs.erase(it);
 
