@@ -1,40 +1,37 @@
 name: Argus
 on: [push, pull_request]
-
 jobs:
   build-ubuntu:
-
     runs-on: ubuntu-20.04
-
     steps:
     - uses: actions/checkout@v2
-    - name: install dependencies
+      with:
+        token: ${{secrets.ACCESS_TOKEN}}
+        submodules: recursive
+    - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
-    - name: submodule checkout
-      run: git submodule update --init --recursive
-    - name: configure
+    - name: Configure
       run: mkdir build && cd build && cmake ..
-    - name: build
+    - name: Build
       run: cmake --build build --config Debug --parallel 8
-    - name: archive
+    - name: Archive
       uses: actions/upload-artifact@v1
       with:
         name: argus_dist_linux
         path: build/dist/
 
   build-windows:
-
     runs-on: windows-2019
-
     steps:
-    - uses: actions/checkout@v1
-    - name: submodule checkout
-      run: git submodule update --init --recursive
-    - name: configure
+    - uses: actions/checkout@v2
+      with:
+        token: ${{secrets.ACCESS_TOKEN}}
+        submodules: recursive
+    - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
-    - name: build
+    - name: Build
       run: cmake --build build --config Debug --parallel 8
-    - name: archive
+    - name: Archive
       uses: actions/upload-artifact@v1
       with:
         name: argus_dist_windows
