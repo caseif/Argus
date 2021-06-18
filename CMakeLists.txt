@@ -25,7 +25,7 @@ option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+#set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
@@ -47,6 +47,7 @@ endif()
 set(GLFW_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/glfw")
 set(ZLIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/zlib")
 set(PNG_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libpng")
+set(ARP_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libarp")
 
 # disable extra GLFW build steps
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -80,17 +81,23 @@ endif()
 # note that we include the dirs for generated headers
 set(GLFW_LIBRARY_BASE "glfw")
 set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE};${OPENGL_LIBRARIES}")
-
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
+
 set(ZLIB_LIBRARY "zlib")
 set(ZLIB_INCLUDE_DIR "${ZLIB_SOURCE_DIR};${TMP_INCLUDE_DIR}/zlib")
+
 set(PNG_LIBRARY "png")
 set(PNG_INCLUDE_DIR "${PNG_SOURCE_DIR};${TMP_INCLUDE_DIR}/libpng")
+
+set(ARP_LIBRARY_BASE "arp")
+set(ARP_LIBRARY "${ARP_LIBRARY_BASE};${ZLIB_LIBRARY}")
+set(ARP_INCLUDE_DIR "${ARP_SOURCE_DIR}/include")
 
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
+add_subdirectory("${ARP_SOURCE_DIR}")
 
 set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)
@@ -338,3 +345,4 @@ copy_dep_output("${LIB_BASE_NAME}" "${LIB_BASE_NAME}" ".")
 copy_dep_output("${LIB_BASE_NAME}" "${ZLIB_LIBRARY}" ".")
 copy_dep_output("${LIB_BASE_NAME}" "${PNG_LIBRARY}" ".")
 copy_dep_output("${LIB_BASE_NAME}" "${GLFW_LIBRARY_BASE}" ".")
+copy_dep_output("${LIB_BASE_NAME}" "${ARP_LIBRARY_BASE}" ".")

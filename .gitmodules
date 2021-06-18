@@ -7,3 +7,6 @@
 [submodule "libs/glfw"]
 	path = libs/glfw
 	url = git://github.com/glfw/glfw.git
+[submodule "libs/libarp"]
+	path = libs/libarp
+	url = git@github.com:caseif/libarp.git
