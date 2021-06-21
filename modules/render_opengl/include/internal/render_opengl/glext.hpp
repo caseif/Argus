@@ -15,7 +15,7 @@
 // module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
 
-#define GL_FUNCTIONS    glGetIntegerv, \
+/*#define GL_FUNCTIONS    glGetIntegerv, \
                         glGetString, \
                         glGetStringi, \
                         glClear, \
@@ -170,8 +170,8 @@ typedef void (APIENTRYP PTR_glUseProgram)(GLuint program);
 typedef void (APIENTRYP PTR_glDebugMessageCallback)(DEBUGPROC callback, void *userParam);
 typedef GLenum (APIENTRYP PTR_glGetError)(void);
 
-EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);
+EXPAND_LIST(EXPAND_GL_DECLARATION, GL_FUNCTIONS);*/
 
-namespace argus {
+namespace glext {
     void init_opengl_extensions(void);
 }

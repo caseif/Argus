@@ -34,7 +34,10 @@
                 "-pedantic",
                 "-pedantic-errors"
             ],
-            "includePath": ["${defIncludePath}"]
+            "includePath": [
+                "${defIncludePath}"
+            ],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         },
         {
             "name": "Win32",
@@ -44,7 +47,9 @@
             "compilerArgs": [
                 "/W4"
             ],
-            "includePath": ["${defIncludePath}"]
+            "includePath": [
+                "${defIncludePath}"
+            ]
         }
     ],
     "version": 4

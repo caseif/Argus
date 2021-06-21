@@ -441,7 +441,7 @@ namespace argus {
     void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        init_opengl_extensions();
+        glext::init_opengl_extensions();
 
         int gl_major;
         int gl_minor;

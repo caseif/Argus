@@ -16,6 +16,8 @@ endif()
 project(argus_root
         VERSION 0.1.0)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 set(LIB_BASE_NAME argus)
 
 set(DYN_MODULE_DIR "modules")
@@ -56,9 +58,8 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-if(WIN32)
-  include_directories("${CMAKE_SOURCE_DIR}/external/include")
-endif()
+include_directories("${CMAKE_SOURCE_DIR}/external/EGL-Registry/api")
+include_directories("${CMAKE_SOURCE_DIR}/external/OpenGL-Registry/api")
 
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
@@ -205,6 +206,16 @@ function(setup_submodule MODULE_NAME DYN)
   file(GLOB_RECURSE CPP_FILES ${SRC_DIR}/*.cpp)
   file(GLOB_RECURSE H_FILES ${SRC_DIR}/*.h)
   file(GLOB_RECURSE HPP_FILES ${SRC_DIR}/*.hpp)
+
+  list(LENGTH LOCAL_SRC_PATHS LEN)
+  if(LEN GREATER 0)
+    foreach(path ${LOCAL_SRC_PATHS})
+      file(GLOB_RECURSE LOCAL_C_FILES ${path}/*.c)
+      file(GLOB_RECURSE LOCAL_CPP_FILES ${path}/*.cpp)
+      list(APPEND C_FILES "${LOCAL_C_FILES}")
+      list(APPEND CPP_FILES "${LOCAL_CPP_FILES}")
+    endforeach()
+  endif()
 
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
