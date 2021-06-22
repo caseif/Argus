@@ -8,39 +8,43 @@ GL_REGISTRY_PATH = "#{__dir__}/../../external/OpenGL-Registry/xml/gl.xml"
 
 GL_PROC_TYPE = "GLFWglproc"
 GL_LOOKUP_FN = "glfwGetProcAddress"
-ADDR_ARR = 'fn_addrs'
+ADDR_ARR = 'opengl_fn_addrs'
 
-SRC_HEADER =
+ASM_COMMENT_PREFIX = '# '
+
+CPP_HEADER =
 '/* Auto-generated file; do not modify! */
 
 #define GL_GLEXT_PROTOTYPES
 
-#include "GL/gl.h"
-#include "GL/glext.h"
 #include "GLFW/glfw3.h"
 '
 
-EXTERN_C_START =
-'#ifdef __cplusplus
-extern "C" {
-#endif
+S_HEADER =
+ASM_COMMENT_PREFIX + 'Auto-generated file; do not modify!
+
+.intel_syntax noprefix
+
+.extern ' + ADDR_ARR + '
+.text
 '
 
-EXTERN_C_END =
-'#ifdef __cplusplus
-}
-#endif
+S_FN_TEMPLATE_X64 =
+'.global %{name}
+%{name}:
+    movq r11, [' + ADDR_ARR + '@GOTPCREL[rip]]
+    add r11, %{index}*8
+    jmp [r11]
 '
 
 INIT_CODE_GLOBAL =
-"static #{GL_PROC_TYPE} #{ADDR_ARR}[%d];
+"#{GL_PROC_TYPE} #{ADDR_ARR}[%d];
 
 namespace glext {
     void init_opengl_extensions() {
 %s
     }
 }
-
 "
 
 class FnParam
@@ -130,9 +134,11 @@ def load_fn_defs(fn_names)
     fns
 end
 
-def write_src_file(out_file, fns, per_context)
-    out_file << SRC_HEADER
-    out_file << "\n"
+def write_src_file(out_cpp, out_s, fns, per_context)
+    out_cpp << CPP_HEADER
+    out_cpp << "\n"
+
+    out_s << S_HEADER
 
     init_code = ''
     decl_code = ''
@@ -142,27 +148,26 @@ def write_src_file(out_file, fns, per_context)
 
         typed_params = fn.params.join ', '
         untyped_params = fn.params.map { |p| p.name }.join ', '
-        decl_code << "\nAPIENTRY #{fn} {\n"
-        decl_code << "    return ((#{fn.ret_type} (*)(#{typed_params})) #{ADDR_ARR}[#{i}])(#{untyped_params});\n"
-        decl_code << "}\n"
+
+        decl_code << "\n"
+        decl_code << S_FN_TEMPLATE_X64 % [name: fn.name, index: i]
     end
 
     init_code.delete_suffix! "\n"
 
-    out_file << INIT_CODE_GLOBAL % [fns.size, init_code]
+    out_cpp << INIT_CODE_GLOBAL % [fns.size, init_code]
 
-    out_file << EXTERN_C_START
-    out_file << decl_code
-    out_file << EXTERN_C_END
+    out_s << decl_code
 end
 
 args = parse_args
 
 per_context = args[:per_context]
-out_path = args[:output]
+out_dir = args[:output]
 
 fns = load_fn_defs(get_requested_fn_names())
 
-out_file = File.open(out_path, 'w')
+out_cpp = File.open(out_dir + "/glext.cpp", 'w')
+out_s = File.open(out_dir + "/glext.s", 'w')
 
-write_src_file(out_file, fns, per_context)
+write_src_file(out_cpp, out_s, fns, per_context)

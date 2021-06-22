@@ -14,6 +14,7 @@ if(POLICY CMP0074)
 endif()
 
 project(argus_root
+        LANGUAGES C CXX ASM
         VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -196,9 +197,9 @@ endfunction()
 
 function(setup_submodule MODULE_NAME DYN)
   if(DYN)
-    project("${MODULE_NAME}" C CXX)
+    project("${MODULE_NAME}" C CXX ASM)
   else()
-    project(${MODULE_NAME} C CXX)
+    project("${MODULE_NAME}" C CXX ASM)
   endif()
 
   # source files
@@ -212,8 +213,10 @@ function(setup_submodule MODULE_NAME DYN)
     foreach(path ${LOCAL_SRC_PATHS})
       file(GLOB_RECURSE LOCAL_C_FILES ${path}/*.c)
       file(GLOB_RECURSE LOCAL_CPP_FILES ${path}/*.cpp)
+      file(GLOB_RECURSE LOCAL_S_FILES ${path}/*.s)
       list(APPEND C_FILES "${LOCAL_C_FILES}")
       list(APPEND CPP_FILES "${LOCAL_CPP_FILES}")
+      list(APPEND S_FILES "${LOCAL_S_FILES}")
     endforeach()
   endif()
 
@@ -257,7 +260,7 @@ function(setup_submodule MODULE_NAME DYN)
   endif()
 
   if(DYN)
-    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
+    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES} ${H_FILES} ${HPP_FILES})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
