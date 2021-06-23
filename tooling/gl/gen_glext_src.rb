@@ -3,9 +3,6 @@
 require 'nokogiri'
 require 'optparse'
 
-REQUESTED_PROFILE_PATH = "#{__dir__}/../../res/gen/opengl_profile.xml"
-GL_REGISTRY_PATH = "#{__dir__}/../../external/OpenGL-Registry/xml/gl.xml"
-
 GL_PROC_TYPE = "GLFWglproc"
 GL_LOOKUP_FN = "glfwGetProcAddress"
 ADDR_ARR = 'opengl_fn_addrs'
@@ -33,8 +30,7 @@ S_FN_TEMPLATE_X64 =
 '.global %{name}
 %{name}:
     movq r11, [' + ADDR_ARR + '@GOTPCREL[rip]]
-    add r11, %{index}*8
-    jmp [r11]
+    jmp [r11]+%{index}*8
 '
 
 INIT_CODE_GLOBAL =
