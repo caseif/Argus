@@ -3,7 +3,7 @@
 require 'nokogiri'
 require 'optparse'
 
-REQUESTED_FNS_PATH = "#{__dir__}/../../res/gen/gl_fns.txt"
+REQUESTED_PROFILE_PATH = "#{__dir__}/../../res/gen/opengl_profile.xml"
 GL_REGISTRY_PATH = "#{__dir__}/../../external/OpenGL-Registry/xml/gl.xml"
 
 GL_PROC_TYPE = "GLFWglproc"
@@ -83,37 +83,82 @@ end
 def parse_args()
     options = {}
     OptionParser.new do |opts|
-        opts.banner = "Usage: gen_glext_src.rb [--per-context] <output>"
+        opts.banner = "Usage: gen_glext_src.rb -r <registry> -p <profile> -o <output dir> [--per-context]"
 
-        opts.on("-c", "--per-context", "Load functions per-context rather than globally") do |pc|
-            options[:per_context] = true
+        opts.on('-r REGISTRY', '--registry=REGISTRY', 'Path to registry file') do |r|
+            options[:registry] = r
+        end
+        opts.on('-p PROFILE', '--profile=PROFILE', 'Path to profile file') do |p|
+            options[:profile] = p
+        end
+        opts.on('-o OUTPUT', '--output=OUTPUT', 'Path to output directory') do |o|
+            options[:output] = o
         end
     end.parse!
 
-    options[:output] = ARGV.pop
+    raise "Registry path is required" unless options[:registry]
+    raise "Profile path is required" unless options[:profile]
     raise "Output path is required" unless options[:output]
 
     options
 end
 
-def get_requested_fn_names()
-    File.readlines(REQUESTED_FNS_PATH).each do |line|
-        line.strip!
+def get_requested_fn_names(reg, profile_path)
+    require_fns = []
+    remove_fns = []
+
+    profile = File.open(profile_path) { |f| Nokogiri::XML(f) }
+    profile_api = profile.xpath('//profile/api/text()').text
+    profile_core = profile.xpath('//profile/core/text()').text
+    profile_version = profile.xpath('//profile//apiVersion/text()').text
+
+    req_major, req_minor = profile_version.split('.')
+
+    gl_feature_spec = reg.xpath('//registry//feature[@api="%s"]' % profile_api)
+    gl_feature_spec.each do |ver|
+        feature_number = ver.xpath('@number').text
+        feature_major, feature_minor = feature_number.split('.')
+        next if feature_major > req_major or (feature_major == req_major and feature_minor > req_minor)
+
+        require_fns.concat ver.xpath('.//require//command/@name').map { |c| c.text }
+        remove_fns.concat ver.xpath('.//remove[@profile="core"]//command/@name').map { |c| c.text } if profile_core
     end
+
+    profile_extensions = profile.xpath('//profile//extensions//extension/text()').map { |e| e.text }
+
+    support_api = profile_api.dup
+    support_api.concat 'core' if support_api == 'gl' and profile_core
+
+    reg.xpath('//registry//extensions//extension').each do |ext|
+        supported = ext.xpath('@supported').text
+        next unless supported == nil or supported.split('|').include? profile_api
+
+        ext_name = ext.xpath('@name').text
+        next unless profile_extensions.include? ext_name
+
+        require_fns.concat ext.xpath('.//require//command/@name').map { |n| n.text }
+        remove_fns.concat ext.xpath('.//remove//command/@name').map { |n| n.text }
+    end
+
+    final_fns = require_fns - remove_fns
+
+    fmt_version = profile_version + (profile_core ? ' (core)' : '')
+    print "Found #{final_fns.length} functions for profile \"#{profile_api} #{fmt_version}\"\n"
+
+    return final_fns
 end
 
 def parse_param_type(raw)
     raw.gsub(/<name>.*<\/name>/, '').gsub(/<\/?ptype>/, '')
 end
 
-def load_fn_defs(fn_names)
+def load_fn_defs(reg, req_fns)
     fns = []
 
-    spec = File.open(GL_REGISTRY_PATH) { |f| Nokogiri::XML(f) }
-    spec.xpath("//registry//commands//command").each do |cmd_root|
+    reg.xpath("//registry//commands//command").each do |cmd_root|
         cmd_name = cmd_root.xpath('.//proto//name')
 
-        next unless fn_names.include? cmd_name.text
+        next unless req_fns.include? cmd_name.text
 
         name = cmd_name.text.strip
 
@@ -162,12 +207,13 @@ end
 
 args = parse_args
 
-per_context = args[:per_context]
-out_dir = args[:output]
+reg = File.open(args[:registry]) { |f| Nokogiri::XML(f) }
 
-fns = load_fn_defs(get_requested_fn_names())
+req_fns = get_requested_fn_names(reg, args[:profile])
+fn_defs = load_fn_defs(reg, req_fns)
 
-out_cpp = File.open(out_dir + "/glext.cpp", 'w')
-out_s = File.open(out_dir + "/glext.s", 'w')
+out_dir_path = args[:output]
+out_cpp = File.open(out_dir_path + "/glext.cpp", 'w')
+out_s = File.open(out_dir_path + "/glext.s", 'w')
 
-write_src_file(out_cpp, out_s, fns, per_context)
+write_src_file(out_cpp, out_s, fn_defs, false)

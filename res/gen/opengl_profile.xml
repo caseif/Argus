@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+    <api>gl</api>
+    <core>true</core>
+    <apiVersion>3.3</apiVersion>
+    <extensions>
+        <extension>GL_ARB_debug_output</extension>
+    </extensions>
+</profile>
