@@ -47,10 +47,13 @@ endif()
 # Dependency configuration
 ##########################
 
-set(GLFW_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/glfw")
-set(ZLIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/zlib")
-set(PNG_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libpng")
-set(ARP_SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/libarp")
+set(EXT_LIBS_DIR "${CMAKE_SOURCE_DIR}/external/libs")
+set(EXT_SPECS_DIR "${CMAKE_SOURCE_DIR}/external/specs")
+
+set(GLFW_SOURCE_DIR "${EXT_LIBS_DIR}/glfw")
+set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
+set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
+set(ARP_SOURCE_DIR "${EXT_LIBS_DIR}/libarp")
 
 # disable extra GLFW build steps
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -59,8 +62,9 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-include_directories("${CMAKE_SOURCE_DIR}/external/EGL-Registry/api")
-include_directories("${CMAKE_SOURCE_DIR}/external/OpenGL-Registry/api")
+
+include_directories("${EXT_SPECS_DIR}/EGL-Registry/api")
+include_directories("${EXT_SPECS_DIR}/OpenGL-Registry/api")
 
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)

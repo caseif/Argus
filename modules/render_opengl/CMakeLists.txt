@@ -19,7 +19,7 @@ set(TOOLING_DIR "${PROJECT_SOURCE_DIR}/tooling")
 message("Generating glext.cpp")
 file(MAKE_DIRECTORY "${TEMP_SRC_DIR}")
 execute_process(COMMAND "ruby" "${TOOLING_DIR}/gl/gen_glext_src.rb"
-    "-r" "${PROJECT_SOURCE_DIR}/external/OpenGL-Registry/xml/gl.xml"
+    "-r" "${PROJECT_SOURCE_DIR}/external/specs/OpenGL-Registry/xml/gl.xml"
     "-p" "${PROJECT_SOURCE_DIR}/res/gen/opengl_profile.xml"
     "-o" "${TEMP_SRC_DIR}/"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
