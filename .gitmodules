@@ -16,3 +16,6 @@
 [submodule "external/OpenGL-Registry"]
 	path = external/specs/OpenGL-Registry
 	url = git@github.com:KhronosGroup/OpenGL-Registry.git
+[submodule "external/tooling/Aglet"]
+	path = external/tooling/Aglet
+	url = git@github.com:caseif/Aglet.git

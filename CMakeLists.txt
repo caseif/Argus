@@ -62,10 +62,6 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-
-include_directories("${EXT_SPECS_DIR}/EGL-Registry/api")
-include_directories("${EXT_SPECS_DIR}/OpenGL-Registry/api")
-
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 # configure libpng build steps

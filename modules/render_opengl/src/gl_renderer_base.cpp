@@ -47,6 +47,8 @@
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
 
+#include "aglet.h"
+
 #include <algorithm>
 #include <atomic>
 #include <map>
@@ -54,6 +56,7 @@
 #include <utility>
 #include <vector>
 
+#include <cstdbool>
 #include <cstdio>
 #include <cstring>
 
@@ -441,7 +444,7 @@ namespace argus {
     void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        glext::init_opengl_extensions();
+        agletLoad();
 
         int gl_major;
         int gl_minor;
