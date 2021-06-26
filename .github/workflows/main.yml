@@ -9,7 +9,7 @@ jobs:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev && gem install nokogiri
+      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev && gem install --user-install nokogiri
     - name: Configure
       run: mkdir build && cd build && cmake ..
     - name: Build
@@ -28,7 +28,7 @@ jobs:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
     - name: Install dependencies
-      run: gem install nokogiri
+      run: gem install --user-install nokogiri
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
     - name: Build

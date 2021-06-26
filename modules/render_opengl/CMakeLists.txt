@@ -20,7 +20,7 @@ set(EXT_TOOLING_DIR "${PROJECT_SOURCE_DIR}/external/tooling")
 
 message("Generating OpenGL loader")
 file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
-execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/Aglet/aglet.rb"
+execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
     "-p" "${PROJECT_SOURCE_DIR}/res/aglet/opengl_profile.xml"
     "-o" "${MODULE_GEN_DIR}"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
