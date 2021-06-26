@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/globals.hpp"
 

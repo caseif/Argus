@@ -39,7 +39,6 @@
 #include "internal/render_opengl/gl_renderer_base.hpp"
 #include "internal/render_opengl/gl_renderer_2d.hpp"
 #include "internal/render_opengl/gl_util.hpp"
-#include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/globals.hpp"
 #include "internal/render_opengl/layer_state.hpp"
@@ -47,7 +46,7 @@
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
 
-#include "aglet.h"
+#include "aglet/aglet.h"
 
 #include <algorithm>
 #include <atomic>
@@ -444,7 +443,7 @@ namespace argus {
     void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        agletLoad();
+        agletLoad((AgletLoadProc) glfwGetProcAddress);
 
         int gl_major;
         int gl_minor;

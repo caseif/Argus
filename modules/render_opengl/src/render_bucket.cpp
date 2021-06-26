@@ -13,7 +13,6 @@
 #include "argus/lowlevel/memory.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
 #include "internal/render_opengl/render_bucket.hpp"
 

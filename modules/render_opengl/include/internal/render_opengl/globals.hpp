@@ -12,6 +12,8 @@
 // module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
 
+#include "aglet/aglet.h"
+
 #define _VERTEX_POSITION_LEN 2
 #define _VERTEX_COLOR_LEN 4
 #define _VERTEX_TEXCOORD_LEN 2

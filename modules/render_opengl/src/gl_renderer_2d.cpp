@@ -7,12 +7,6 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include <algorithm>
-#include <iterator>
-#include <numeric>
-
-#include <cstddef>
-
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "internal/lowlevel/logging.hpp"
@@ -35,12 +29,19 @@
 // module render_opengl
 #include "internal/render_opengl/gl_renderer_2d.hpp"
 #include "internal/render_opengl/gl_util.hpp"
-#include "internal/render_opengl/glext.hpp"
 #include "internal/render_opengl/globals.hpp"
 #include "internal/render_opengl/layer_state.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
 #include "internal/render_opengl/render_bucket.hpp"
 #include "internal/render_opengl/renderer_state.hpp"
+
+#include "aglet/aglet.h"
+
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+
+#include <cstddef>
 
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {
