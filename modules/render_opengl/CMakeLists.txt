@@ -23,7 +23,7 @@ file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
 execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
     "-p" "${PROJECT_SOURCE_DIR}/res/aglet/opengl_profile.xml"
     "-o" "${MODULE_GEN_DIR}"
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/external/tooling/aglet/"
     RESULT_VARIABLE CMD_RES)
 if(CMD_RES)
 message(FATAL_ERROR "    gen_glext_src.rb: ${CMD_RES}")
