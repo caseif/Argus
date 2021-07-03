@@ -3,6 +3,6 @@
     <api>glcore</api>
     <apiVersion>3.3</apiVersion>
     <extensions>
-        <extension required="false">GL_ARB_debug_output</extension>
+        <extension required="false">GL_KHR_debug</extension>
     </extensions>
 </profile>

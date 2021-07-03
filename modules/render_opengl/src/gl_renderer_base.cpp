@@ -461,8 +461,8 @@ namespace argus {
         renderer_states.insert({ &renderer, RendererState(renderer) });
 
         //TODO: actually do something
-        if (AGLET_GL_ARB_debug_output) {
-            glDebugMessageCallbackARB(_gl_debug_callback, nullptr);
+        if (AGLET_GL_KHR_debug) {
+            glDebugMessageCallback(_gl_debug_callback, nullptr);
         }
 
         _setup_framebuffer(get_renderer_state(renderer));
