@@ -8,8 +8,13 @@ jobs:
       with:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
+    - uses: ruby/setup-ruby@v1
+      with:
+        working-directory: external/tooling/aglet
+        ruby-version: 3.0.x
+        bundler-cache: true
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev && gem install --user-install nokogiri
+      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
     - name: Configure
       run: mkdir build && cd build && cmake ..
     - name: Build
@@ -27,8 +32,11 @@ jobs:
       with:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
-    - name: Install dependencies
-      run: gem install --user-install nokogiri
+    - uses: ruby/setup-ruby@v1
+      with:
+        working-directory: external/tooling/aglet
+        ruby-version: 3.0.x
+        bundler-cache: true
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
     - name: Build

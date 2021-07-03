@@ -450,7 +450,7 @@ namespace argus {
         const unsigned char *gl_version_str = glGetString(GL_VERSION);
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
-        if (gl_major < 3 || (gl_major == 3 && gl_minor < 3)) {
+        if (!AGLET_GL_VERSION_3_3) {
             _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher (got %d.%d)\n", gl_major, gl_minor);
         }
 
