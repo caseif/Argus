@@ -11,7 +11,7 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         working-directory: external/tooling/aglet
-        ruby-version: 3.0.x
+        ruby-version: 3.0
         bundler-cache: true
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
@@ -26,7 +26,7 @@ jobs:
         path: build/dist/
 
   build-windows:
-    runs-on: windows-2019
+    runs-on: windows-2016
     steps:
     - uses: actions/checkout@v2
       with:
@@ -35,7 +35,7 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         working-directory: external/tooling/aglet
-        ruby-version: 3.0.x
+        ruby-version: 3.0
         bundler-cache: true
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
