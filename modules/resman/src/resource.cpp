@@ -7,6 +7,9 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/lowlevel/memory.hpp"
+
 // module resman
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
@@ -18,20 +21,21 @@
 #include <vector>
 
 namespace argus {
+    static AllocPool g_pimpl_pool(sizeof(pimpl_Resource));
+
     Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data_ptr,
             std::vector<std::string> &dependencies):
             prototype(prototype),
-            pimpl(new pimpl_Resource(manager, data_ptr, dependencies)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, data_ptr, dependencies)) {
     }
 
     Resource::Resource(Resource &&rhs):
             prototype(std::move(rhs.prototype)),
-            pimpl(new pimpl_Resource(rhs.pimpl->manager, rhs.pimpl->data_ptr, rhs.pimpl->dependencies,
-                    rhs.pimpl->ref_count.load())) {
+            pimpl(pimpl) {
     }
 
     Resource::~Resource(void) {
-        delete pimpl;
+        g_pimpl_pool.free(pimpl);
     }
 
     void Resource::release(void) {
