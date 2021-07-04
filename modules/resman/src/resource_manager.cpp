@@ -215,7 +215,7 @@ namespace argus {
 
             ResourceLoader *loader = loader_it->second;
             loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(stream, file_handle.get_size());
+            void *const data_ptr = loader->load(proto, stream, file_handle.get_size());
 
             if (!data_ptr) {
                 stream.close();
@@ -258,16 +258,18 @@ namespace argus {
 
         std::ifstream stream;
 
+        ResourcePrototype proto = { uid, type_id, "", false };
+
         ResourceLoader *loader = loader_it->second;
         loader->pimpl->last_dependencies = {};
-        void *const data_ptr = loader->load(stream, len);
+        void *const data_ptr = loader->load(proto, stream, len);
 
         if (!data_ptr) {
             stream.close();
             throw LoadFailedException(uid);
         }
 
-        Resource *res = new Resource(*this, { uid, type_id, "", false }, data_ptr, loader->pimpl->last_dependencies);
+        Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
 
         stream.close();

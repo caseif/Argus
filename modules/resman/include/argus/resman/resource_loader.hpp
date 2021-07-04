@@ -9,6 +9,9 @@
 
 #pragma once
 
+// module resman
+#include "argus/resman/resource.hpp"
+
 #include <initializer_list>
 #include <istream>
 #include <string>
@@ -33,10 +36,11 @@ namespace argus {
             /**
              * \brief Loads a resource from an std::istream.
              *
-             * \param stream THe stream to load the Resource from.
-             * \param size The size in bytes of the resource data.
+             * \param proto The prototype of the Resource being loaded.
+             * \param stream The stream to load the Resource from.
+             * \param size The size in bytes of the Resource data.
              */
-            virtual void *const load(std::istream &stream, const size_t size) const;
+            virtual void *const load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const;
 
             /**
              * \brief Performs necessary deinitialization for loaded resource

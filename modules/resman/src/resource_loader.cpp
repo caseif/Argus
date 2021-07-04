@@ -59,7 +59,7 @@ namespace argus {
         delete pimpl;
     }
 
-    void *const ResourceLoader::load(std::istream &stream, const size_t size) const {
+    void *const ResourceLoader::load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const {
         return nullptr;
     }
 

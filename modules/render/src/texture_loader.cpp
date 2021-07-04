@@ -41,7 +41,7 @@ namespace argus {
             ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG, {RESOURCE_EXTENSION_PNG}) {
     }
 
-    void *const PngTextureLoader::load(std::istream &stream, const size_t size) const {
+    void *const PngTextureLoader::load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const {
         unsigned char sig[8];
         stream.read((char*) sig, 8);
 
