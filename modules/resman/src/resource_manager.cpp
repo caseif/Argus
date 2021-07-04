@@ -9,6 +9,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
@@ -200,6 +201,7 @@ namespace argus {
         if (pt_it == pimpl->discovered_resource_prototypes.cend()) {
             throw ResourceNotPresentException(uid);
         }
+
         ResourcePrototype proto = pt_it->second;
 
         if (!proto.fs_path.empty()) {
@@ -256,7 +258,7 @@ namespace argus {
             throw NoLoaderException(uid, type_id);
         }
 
-        std::ifstream stream;
+        MemIstream stream(data, len);
 
         ResourcePrototype proto = { uid, type_id, "", false };
 
@@ -265,14 +267,11 @@ namespace argus {
         void *const data_ptr = loader->load(proto, stream, len);
 
         if (!data_ptr) {
-            stream.close();
             throw LoadFailedException(uid);
         }
 
         Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
-
-        stream.close();
 
         return *res;
     }
