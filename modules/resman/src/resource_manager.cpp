@@ -70,16 +70,19 @@ namespace argus {
         delete pimpl;
     }
 
-    void ResourceManager::register_loader(const std::string &type_id, ResourceLoader *const loader) {
-        if (pimpl->registered_loaders.find(type_id) != pimpl->registered_loaders.cend()) {
-            throw std::invalid_argument("Cannot register loader for type more than once");
+    int ResourceManager::unload_resource(const std::string &uid) {
+        auto it = pimpl->loaded_resources.find(uid);
+        if (it == pimpl->loaded_resources.cend()) {
+            throw ResourceNotLoadedException(uid);
         }
 
-        pimpl->registered_loaders.insert({type_id, loader});
+        Resource *res = it->second;
 
-        for (std::string ext : loader->pimpl->extensions) {
-            pimpl->extension_registrations.insert({ext, type_id});
-        }
+        pimpl->loaded_resources.erase(uid);
+
+        delete res;
+
+        return 0;
     }
 
     static void _discover_fs_resources_recursively(const std::string &root_path, const std::string &prefix,
@@ -147,6 +150,18 @@ namespace argus {
                 pimpl->discovered_resource_prototypes, pimpl->extension_registrations);
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
+        }
+    }
+
+    void ResourceManager::register_loader(const std::string &type_id, ResourceLoader *const loader) {
+        if (pimpl->registered_loaders.find(type_id) != pimpl->registered_loaders.cend()) {
+            throw std::invalid_argument("Cannot register loader for type more than once");
+        }
+
+        pimpl->registered_loaders.insert({type_id, loader});
+
+        for (std::string ext : loader->pimpl->extensions) {
+            pimpl->extension_registrations.insert({ext, type_id});
         }
     }
 
@@ -230,19 +245,33 @@ namespace argus {
         return load_resource_async(uid, nullptr);
     }
 
-    int ResourceManager::unload_resource(const std::string &uid) {
-        auto it = pimpl->loaded_resources.find(uid);
-        if (it == pimpl->loaded_resources.cend()) {
-            throw ResourceNotLoadedException(uid);
+    Resource &ResourceManager::create_resource(const std::string &uid, const std::string &type_id, const void *data,
+            size_t len) {
+        if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
+            throw ResourceLoadedException(uid);
+        }
+        
+        auto loader_it = pimpl->registered_loaders.find(type_id);
+        if (loader_it == pimpl->registered_loaders.end()) {
+            throw NoLoaderException(uid, type_id);
         }
 
-        Resource *res = it->second;
+        std::ifstream stream;
 
-        pimpl->loaded_resources.erase(uid);
+        ResourceLoader *loader = loader_it->second;
+        loader->pimpl->last_dependencies = {};
+        void *const data_ptr = loader->load(stream, len);
 
-        delete res;
+        if (!data_ptr) {
+            stream.close();
+            throw LoadFailedException(uid);
+        }
 
-        return 0;
+        Resource *res = new Resource(*this, { uid, type_id, "", false }, data_ptr, loader->pimpl->last_dependencies);
+        pimpl->loaded_resources.insert({uid, res});
+
+        stream.close();
+
+        return *res;
     }
-
 }

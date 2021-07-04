@@ -176,5 +176,21 @@ namespace argus {
              * \sa ResourceManager#load_resource
              */
             std::future<Resource&> load_resource_async(const std::string &uid);
+
+            /**
+             * \brief Creates a Resource with the given UID from data presently
+             *        in memory.
+             *
+             * \param uid The UID of the new Resource.
+             * \param type_id The type ID of the Resource.
+             * \param data The in-memory data of the Resource.
+             * \param len The size of the Resource in bytes.
+             *
+             * \return The created Resource.
+             *
+             * \throw ResourceLoadedException If a Resource with the given UID
+             *        is already loaded.
+             */
+            Resource &create_resource(const std::string &uid, const std::string &type_id, const void *data, size_t len);
     };
 }
