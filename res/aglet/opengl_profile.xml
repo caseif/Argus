@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <profile>
-    <api>glcore</api>
-    <apiVersion>3.3</apiVersion>
+    <api>
+        <name>glcore</name>
+        <version>3.3</apiVersion>
+    </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>
     </extensions>
