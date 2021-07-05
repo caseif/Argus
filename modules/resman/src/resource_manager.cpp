@@ -176,10 +176,6 @@ namespace argus {
         }
 
         pimpl->registered_loaders.insert({type_id, loader});
-
-        for (std::string ext : loader->pimpl->extensions) {
-            pimpl->extension_mappings.insert({ext, type_id});
-        }
     }
 
     void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {

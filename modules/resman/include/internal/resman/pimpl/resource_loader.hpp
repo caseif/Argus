@@ -18,19 +18,14 @@ namespace argus {
          * \brief The media type handled by this loader.
          */
         const std::string media_type;
-        /**
-         * \brief The file extensions this loader can handle.
-         */
-        const std::vector<std::string> extensions;
 
         /**
          * \brief The dependencies of the Resource last loaded.
          */
         std::vector<std::string> last_dependencies;
 
-        pimpl_ResourceLoader(const std::string media_type, const std::vector<std::string> extensions):
-            media_type(media_type),
-            extensions(extensions) {
+        pimpl_ResourceLoader(const std::string media_type):
+            media_type(media_type) {
         }
 
         pimpl_ResourceLoader(const pimpl_ResourceLoader&) = delete;
