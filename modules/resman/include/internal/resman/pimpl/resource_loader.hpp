@@ -15,17 +15,17 @@
 namespace argus {
     struct pimpl_ResourceLoader {
         /**
-         * \brief The media type handled by this loader.
+         * \brief The media types handled by this loader.
          */
-        const std::string media_type;
+        const std::vector<std::string> media_types;
 
         /**
          * \brief The dependencies of the Resource last loaded.
          */
         std::vector<std::string> last_dependencies;
 
-        pimpl_ResourceLoader(const std::string media_type):
-            media_type(media_type) {
+        pimpl_ResourceLoader(std::initializer_list<std::string> &media_types):
+            media_types(media_types) {
         }
 
         pimpl_ResourceLoader(const pimpl_ResourceLoader&) = delete;

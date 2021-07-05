@@ -170,12 +170,14 @@ namespace argus {
         }
     }
 
-    void ResourceManager::register_loader(const std::string &media_type, ResourceLoader *const loader) {
-        if (pimpl->registered_loaders.find(media_type) != pimpl->registered_loaders.cend()) {
-            throw std::invalid_argument("Cannot register loader for type more than once");
+    void ResourceManager::register_loader(ResourceLoader &loader) {
+        for (const std::string &media_type : loader.pimpl->media_types) {
+            if (pimpl->registered_loaders.find(media_type) != pimpl->registered_loaders.cend()) {
+                throw std::invalid_argument("Cannot register loader for type more than once");
+            }
+            pimpl->registered_loaders.insert({media_type, &loader});
         }
 
-        pimpl->registered_loaders.insert({media_type, loader});
     }
 
     void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {

@@ -50,8 +50,8 @@ namespace argus {
         pimpl->last_dependencies = dependencies;
     }
     
-    ResourceLoader::ResourceLoader(std::string media_type):
-            pimpl(new pimpl_ResourceLoader(media_type)) {
+    ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types):
+            pimpl(new pimpl_ResourceLoader(media_types)) {
     }
 
     ResourceLoader::~ResourceLoader(void) {

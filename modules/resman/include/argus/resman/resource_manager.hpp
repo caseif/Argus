@@ -65,13 +65,12 @@ namespace argus {
             /**
              * \brief Registers a ResourceLoader for the given type.
              *
-             * \param media_type The media type to register a loader for.
              * \param loader The ResourceLoader to register.
              *
              * \throw std::invalid_argument If a loader is already registered
              *        for the provided type.
              */
-            void register_loader(const std::string &media_type, ResourceLoader *const loader);
+            void register_loader(ResourceLoader &loader);
 
             /**
              * \brief Registers extension mappings for this manager, overriding

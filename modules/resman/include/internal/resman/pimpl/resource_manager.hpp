@@ -29,7 +29,7 @@ namespace argus {
         /**
          * \brief All currently registered resource loaders.
          */
-        std::map<std::string, ResourceLoader*> registered_loaders;
+        std::map<const std::string, ResourceLoader*> registered_loaders;
 
         /**
          * \brief All current extension registrations, with extensions being
