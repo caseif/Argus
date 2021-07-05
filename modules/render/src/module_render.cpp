@@ -29,7 +29,7 @@
 #include "argus/render/common/renderer.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer.hpp"
-#include "internal/render/texture_loader.hpp"
+#include "internal/render/loader/texture_loader.hpp"
 
 #include <map>
 #include <stdexcept>

@@ -16,7 +16,7 @@
 // module render
 #include "argus/render/common/texture_data.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/texture_loader.hpp"
+#include "internal/render/loader/texture_loader.hpp"
 
 #include "png.h"
 #include "pngconf.h"
