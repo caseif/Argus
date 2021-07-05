@@ -58,7 +58,7 @@ namespace argus {
 
     static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
         size_t count = 0;
-        const extension_mapping_t *mappings = arp_get_extension_mappings(&count);
+        extension_mapping_t *mappings = arp_get_extension_mappings(&count);
 
         if (count == 0) {
             return;
@@ -68,6 +68,8 @@ namespace argus {
             const extension_mapping_t *mapping = &mappings[i];
             target.insert({std::string(mapping->extension), std::string(mapping->media_type) });
         }
+
+        arp_free_extension_mappings(mappings);
     }
 
     void init_module_resman(void) {
