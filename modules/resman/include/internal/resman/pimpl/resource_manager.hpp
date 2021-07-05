@@ -30,11 +30,12 @@ namespace argus {
          * \brief All currently registered resource loaders.
          */
         std::map<std::string, ResourceLoader*> registered_loaders;
+
         /**
          * \brief All current extension registrations, with extensions being
          *        mapped to formal types.
          */
-        std::map<std::string, std::string> extension_registrations;
+        std::map<std::string, std::string> extension_mappings;
 
         pimpl_ResourceManager(void) {
         }

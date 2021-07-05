@@ -24,6 +24,8 @@
 #include "internal/resman/pimpl/resource_loader.hpp"
 #include "internal/resman/pimpl/resource_manager.hpp"
 
+#include "arp/util/media_types.h"
+
 #include <algorithm>
 #include <exception> // IWYU pragma: keep
 #include <functional>
@@ -42,7 +44,6 @@
 #define RESOURCES_DIR "resources"
 
 namespace argus {
-
     ResourceManager g_global_resource_manager;
 
     void _update_lifecycle_resman(LifecycleStage stage) {
@@ -52,6 +53,20 @@ namespace argus {
                 break;
             default:
                 break;
+        }
+    }
+
+    static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
+        size_t count = 0;
+        const extension_mapping_t *mappings = arp_get_extension_mappings(&count);
+
+        if (count == 0) {
+            return;
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            const extension_mapping_t *mapping = &mappings[i];
+            target.insert({std::string(mapping->extension), std::string(mapping->media_type) });
         }
     }
 
@@ -65,6 +80,7 @@ namespace argus {
 
     ResourceManager::ResourceManager(void):
             pimpl(new pimpl_ResourceManager()) {
+        _load_initial_ext_mappings(pimpl->extension_mappings);
     }
 
     ResourceManager::~ResourceManager(void) {
@@ -148,7 +164,7 @@ namespace argus {
         std::string exe_dir = get_parent(exe_path);
 
         _discover_fs_resources_recursively(exe_dir + PATH_SEPARATOR + RESOURCES_DIR, "",
-                pimpl->discovered_resource_prototypes, pimpl->extension_registrations);
+                pimpl->discovered_resource_prototypes, pimpl->extension_mappings);
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
         }
@@ -162,8 +178,12 @@ namespace argus {
         pimpl->registered_loaders.insert({type_id, loader});
 
         for (std::string ext : loader->pimpl->extensions) {
-            pimpl->extension_registrations.insert({ext, type_id});
+            pimpl->extension_mappings.insert({ext, type_id});
         }
+    }
+
+    void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {
+        pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
     Resource &ResourceManager::get_resource(const std::string &uid) {

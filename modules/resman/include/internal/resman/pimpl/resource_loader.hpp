@@ -15,9 +15,9 @@
 namespace argus {
     struct pimpl_ResourceLoader {
         /**
-         * \brief The ID of the type handled by this loader.
+         * \brief The media type handled by this loader.
          */
-        const std::string type_id;
+        const std::string media_type;
         /**
          * \brief The file extensions this loader can handle.
          */
@@ -28,8 +28,8 @@ namespace argus {
          */
         std::vector<std::string> last_dependencies;
 
-        pimpl_ResourceLoader(const std::string type_id, const std::vector<std::string> extensions):
-            type_id(type_id),
+        pimpl_ResourceLoader(const std::string media_type, const std::vector<std::string> extensions):
+            media_type(media_type),
             extensions(extensions) {
         }
 

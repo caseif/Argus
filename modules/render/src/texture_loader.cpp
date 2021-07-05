@@ -29,8 +29,6 @@
 #include <csetjmp>
 #include <cstdio>
 
-#define RESOURCE_EXTENSION_PNG "png"
-
 namespace argus {
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
@@ -38,7 +36,7 @@ namespace argus {
     }
 
     PngTextureLoader::PngTextureLoader():
-            ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG, {RESOURCE_EXTENSION_PNG}) {
+            ResourceLoader(RESOURCE_TYPE_TEXTURE_PNG) {
     }
 
     void *const PngTextureLoader::load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const {

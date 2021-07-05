@@ -74,6 +74,15 @@ namespace argus {
             void register_loader(const std::string &type_id, ResourceLoader *const loader);
 
             /**
+             * \brief Registers extension mappings for this manager, overriding
+             *        any conflicting presets.
+             *
+             * \param mappings The mappings to register, with keys being
+             *        extensions and values being media type IDs.
+             */
+            void register_extension_mappings(const std::map<std::string, std::string> &mappings);
+
+            /**
              * \brief Attempts to get the Resource with the given UID.
              *
              * \param uid The UID of the Resource to retrieve.
