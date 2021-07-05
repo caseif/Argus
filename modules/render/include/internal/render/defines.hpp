@@ -13,6 +13,8 @@
 #define SHADER_FRAGMENT 2
 
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
+#define RESOURCE_TYPE_SHADER_GLSL_VERT "application/x-glsl-vert"
+#define RESOURCE_TYPE_SHADER_GLSL_FRAG "application/x-glsl-frag"
 
 #define MODULE_RENDER_OPENGL "render_opengl"
 #define MODULE_RENDER_OPENGLES "render_opengles"

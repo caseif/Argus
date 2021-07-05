@@ -24,7 +24,7 @@ namespace argus {
         FRAGMENT = 0x02
     };
 
-    constexpr inline ShaderStage operator|=(const ShaderStage lhs, const ShaderStage rhs) {
+    constexpr inline ShaderStage operator|=(ShaderStage lhs, ShaderStage rhs) {
         return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
                                         static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
@@ -47,26 +47,13 @@ namespace argus {
              * \param stage The stage of the graphics pipeline this shader is to
 *                     be run at.
              * \param src The source data of the Shader.
-             * \param src_len The length of the Shader's source data.
              */
-            Shader(const ShaderStage stage, const char *const src, const size_t src_len);
+            Shader(ShaderStage stage, const std::string &src);
 
             Shader(const Shader&) noexcept;
 
             Shader(Shader&&) noexcept;
 
             ~Shader(void);
-
-            /**
-             * \brief Creates a new Shader with the given parameters.
-             *
-             * \param stage The stage of the graphics pipeline this shader is to
-*                     be run at.
-             * \param src The source data of the Shader.
-             * \param src_len The length of the Shader's source data.
-             *
-             * \return The constructed Shader.
-             */
-            static Shader create_shader(const ShaderStage stage, const char *const src, const size_t src_len);
     };
 }

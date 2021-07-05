@@ -126,7 +126,7 @@ namespace argus {
     GLRenderer::GLRenderer(void): RendererImpl() {
     }
 
-    static shader_handle_t _compile_shader(const ShaderStage stage, const char *src, const unsigned int src_len) {
+    static shader_handle_t _compile_shader(const ShaderStage stage, const std::string src) {
         GLuint shader_stage;
         switch (stage) {
             case ShaderStage::VERTEX:
@@ -144,9 +144,10 @@ namespace argus {
             _ARGUS_FATAL("Failed to create shader: %d\n", glGetError());
         }
 
-        int src_len_i = src_len;
+        const char *const src_c = src.c_str();
+        const int src_len = (int) src.length();
 
-        glShaderSource(shader_handle, 1, &src, &src_len_i);
+        glShaderSource(shader_handle, 1, &src_c, &src_len);
 
         glCompileShader(shader_handle);
 
@@ -226,7 +227,7 @@ namespace argus {
             if (existing_shader_it != state.compiled_shaders.end()) {
                 shader_handle = existing_shader_it->second;
             } else {
-                shader_handle = _compile_shader(shader->pimpl->stage, shader->pimpl->src, shader->pimpl->src_len);
+                shader_handle = _compile_shader(shader->pimpl->stage, shader->pimpl->src);
 
                 state.compiled_shaders.insert({ shader, shader_handle });
             }
@@ -406,8 +407,8 @@ namespace argus {
     }
 
     static void _setup_framebuffer(RendererState &state) {
-        state.frame_vert_shader = _compile_shader(ShaderStage::VERTEX, _FRAME_VERT_SHADER, sizeof(_FRAME_VERT_SHADER));
-        state.frame_frag_shader = _compile_shader(ShaderStage::FRAGMENT, _FRAME_FRAG_SHADER, sizeof(_FRAME_FRAG_SHADER));
+        state.frame_vert_shader = _compile_shader(ShaderStage::VERTEX, std::string(_FRAME_VERT_SHADER));
+        state.frame_frag_shader = _compile_shader(ShaderStage::FRAGMENT, std::string(_FRAME_FRAG_SHADER));
 
         state.frame_program = glCreateProgram();
 

@@ -25,16 +25,11 @@ namespace argus {
         /**
          * \brief The source code for this shader.
          */
-        const char *const src;
-        /**
-         * \brief The length of the shader's source code in bytes.
-         */
-        const size_t src_len;
+        const std::string src;
 
-        pimpl_Shader(const ShaderStage stage, const char *const src, const size_t src_len):
+        pimpl_Shader(ShaderStage stage, const std::string src):
                 stage(stage),
-                src(src),
-                src_len(src_len) {
+                src(src) {
         }
 
         pimpl_Shader(const pimpl_Shader&) = default;

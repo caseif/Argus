@@ -22,11 +22,10 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
-    Shader::Shader(const ShaderStage stage, const char *const src, const size_t src_len):
+    Shader::Shader(ShaderStage stage, const std::string &src):
             pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
                 stage,
-                src,
-                src_len
+                src
             )) {
     }
 
@@ -47,10 +46,6 @@ namespace argus {
         get_renderer_impl().deinit_shader(*this);
 
         g_pimpl_pool.free(pimpl);
-    }
-
-    Shader Shader::create_shader(const ShaderStage stage, const char *const src, const size_t src_len) {
-        return Shader(stage, src, src_len);
     }
 
 }
