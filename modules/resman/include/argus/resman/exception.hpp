@@ -114,11 +114,12 @@ namespace argus {
              *
              * \param res_uid The UID of the Resource associated with the
              *        exception.
-             * \param type_id The type of Resource for which a load failed.
+             * \param media_type The media type of the Resource for which a load
+             *        failed.
              */
-            NoLoaderException(const std::string &res_uid, const std::string &type_id):
+            NoLoaderException(const std::string &res_uid, const std::string &media_type):
                     ResourceException(res_uid, "No registered loader for type"),
-                    resource_type(type_id) {
+                    resource_type(media_type) {
             }
     };
 

@@ -65,20 +65,20 @@ namespace argus {
             /**
              * \brief Registers a ResourceLoader for the given type.
              *
-             * \param type_id The resource type ID to register a loader for.
+             * \param media_type The media type to register a loader for.
              * \param loader The ResourceLoader to register.
              *
              * \throw std::invalid_argument If a loader is already registered
              *        for the provided type.
              */
-            void register_loader(const std::string &type_id, ResourceLoader *const loader);
+            void register_loader(const std::string &media_type, ResourceLoader *const loader);
 
             /**
              * \brief Registers extension mappings for this manager, overriding
              *        any conflicting presets.
              *
              * \param mappings The mappings to register, with keys being
-             *        extensions and values being media type IDs.
+             *        extensions and values being media types.
              */
             void register_extension_mappings(const std::map<std::string, std::string> &mappings);
 
@@ -191,7 +191,7 @@ namespace argus {
              *        in memory.
              *
              * \param uid The UID of the new Resource.
-             * \param type_id The type ID of the Resource.
+             * \param media_type The media type of the Resource.
              * \param data The in-memory data of the Resource.
              * \param len The size of the Resource in bytes.
              *
@@ -200,6 +200,7 @@ namespace argus {
              * \throw ResourceLoadedException If a Resource with the given UID
              *        is already loaded.
              */
-            Resource &create_resource(const std::string &uid, const std::string &type_id, const void *data, size_t len);
+            Resource &create_resource(const std::string &uid, const std::string &media_type, const void *data,
+                    size_t len);
     };
 }

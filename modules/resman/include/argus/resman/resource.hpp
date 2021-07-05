@@ -34,7 +34,7 @@ namespace argus {
         /**
          * \brief The ID of the resource's type.
          */
-        std::string type_id;
+        std::string media_type;
         /**
          * \brief The path to the resource on the filesystem.
          *
@@ -84,7 +84,7 @@ namespace argus {
              */
             const ResourcePrototype prototype;
 
-            // the uid and type_id fields are inline structs which implement
+            // the uid and media_type fields are inline structs which implement
             // a std::string conversion operator so as to allow the fields of
             // the same name from the underlying prototype to be used in a
             // mostly-transparent manner
@@ -113,7 +113,7 @@ namespace argus {
                 }
             } uid {*this};
             /**
-             * \brief The type ID of this resource.
+             * \brief The media type of this resource.
              *
              * \attention This is a proxy to the same field of the underlying
              *            ResourcePrototype and has been implemented in a way
@@ -126,15 +126,15 @@ namespace argus {
                  */
                 Resource &parent;
                 /**
-                 * \brief Extracts the resource's type ID from its
+                 * \brief Extracts the resource's media type from its
                  *        ResourcePrototype.
                  *
-                 * \return The resource's type ID.
+                 * \return The resource's media type.
                  */
                 inline operator std::string(void) const {
-                    return parent.prototype.type_id;
+                    return parent.prototype.media_type;
                 }
-            } type_id {*this};
+            } media_type {*this};
 
             Resource(Resource &res) = delete;
 

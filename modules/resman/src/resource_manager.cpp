@@ -170,12 +170,12 @@ namespace argus {
         }
     }
 
-    void ResourceManager::register_loader(const std::string &type_id, ResourceLoader *const loader) {
-        if (pimpl->registered_loaders.find(type_id) != pimpl->registered_loaders.cend()) {
+    void ResourceManager::register_loader(const std::string &media_type, ResourceLoader *const loader) {
+        if (pimpl->registered_loaders.find(media_type) != pimpl->registered_loaders.cend()) {
             throw std::invalid_argument("Cannot register loader for type more than once");
         }
 
-        pimpl->registered_loaders.insert({type_id, loader});
+        pimpl->registered_loaders.insert({media_type, loader});
     }
 
     void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {
@@ -223,9 +223,9 @@ namespace argus {
         if (!proto.fs_path.empty()) {
             FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
-            auto loader_it = pimpl->registered_loaders.find(proto.type_id);
+            auto loader_it = pimpl->registered_loaders.find(proto.media_type);
             if (loader_it == pimpl->registered_loaders.end()) {
-                throw NoLoaderException(uid, proto.type_id);
+                throw NoLoaderException(uid, proto.media_type);
             }
 
             std::ifstream stream;
@@ -263,20 +263,20 @@ namespace argus {
         return load_resource_async(uid, nullptr);
     }
 
-    Resource &ResourceManager::create_resource(const std::string &uid, const std::string &type_id, const void *data,
+    Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, const void *data,
             size_t len) {
         if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
         }
         
-        auto loader_it = pimpl->registered_loaders.find(type_id);
+        auto loader_it = pimpl->registered_loaders.find(media_type);
         if (loader_it == pimpl->registered_loaders.end()) {
-            throw NoLoaderException(uid, type_id);
+            throw NoLoaderException(uid, media_type);
         }
 
         MemIstream stream(data, len);
 
-        ResourcePrototype proto = { uid, type_id, "", false };
+        ResourcePrototype proto = { uid, media_type, "", false };
 
         ResourceLoader *loader = loader_it->second;
         loader->pimpl->last_dependencies = {};

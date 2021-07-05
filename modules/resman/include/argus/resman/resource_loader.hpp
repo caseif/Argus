@@ -53,7 +53,7 @@ namespace argus {
             /**
              * \brief Constructs a new ResourceLoader.
              *
-             * \param type_id The media type handled by this loader.
+             * \param media_type The media type handled by this loader.
              * \param extensions The file extensions handled by this loader.
              */
             ResourceLoader(std::string media_type, std::initializer_list<std::string> extensions);
