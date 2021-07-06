@@ -20,7 +20,8 @@ namespace argus {
         /**
          * \brief Prototypes for all resources discovered on the filesystem.
          */
-        std::map<std::string, ResourcePrototype> discovered_resource_prototypes;
+        std::map<std::string, ResourcePrototype> discovered_fs_protos;
+
         /**
          * \brief All currently loaded resources.
          */

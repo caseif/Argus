@@ -126,7 +126,7 @@ namespace argus {
             std::string cur_uid;
             if (prefix.empty()) {
                 if (is_regfile(full_child_path)) {
-                    _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s\n", name);
+                    _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s\n", name.c_str());
                 }
 
                 cur_uid = name + UID_NS_SEPARATOR;
@@ -175,7 +175,7 @@ namespace argus {
         std::string exe_dir = get_parent(exe_path);
 
         _discover_fs_resources_recursively(exe_dir + PATH_SEPARATOR + RESOURCES_DIR, "",
-                pimpl->discovered_resource_prototypes, pimpl->extension_mappings);
+                pimpl->discovered_fs_protos, pimpl->extension_mappings);
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
         }
@@ -196,10 +196,6 @@ namespace argus {
     }
 
     Resource &ResourceManager::get_resource(const std::string &uid) {
-        if (pimpl->discovered_resource_prototypes.find(uid) == pimpl->discovered_resource_prototypes.cend()) {
-            throw ResourceNotPresentException(uid);
-        }
-
         auto it = pimpl->loaded_resources.find(uid);
         if (it != pimpl->loaded_resources.cend()) {
             return *it->second;
@@ -209,10 +205,6 @@ namespace argus {
     }
 
     Resource &ResourceManager::try_get_resource(const std::string &uid) const {
-        if (pimpl->discovered_resource_prototypes.find(uid) == pimpl->discovered_resource_prototypes.cend()) {
-            throw ResourceNotPresentException(uid);
-        }
-
         auto it = pimpl->loaded_resources.find(uid);
         if (it == pimpl->loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);
@@ -226,43 +218,43 @@ namespace argus {
             throw ResourceLoadedException(uid);
         }
 
-        auto pt_it = pimpl->discovered_resource_prototypes.find(uid);
-        if (pt_it == pimpl->discovered_resource_prototypes.cend()) {
-            throw ResourceNotPresentException(uid);
-        }
+        auto pt_it = pimpl->discovered_fs_protos.find(uid);
+        if (pt_it != pimpl->discovered_fs_protos.cend()) {
+            ResourcePrototype proto = pt_it->second;
 
-        ResourcePrototype proto = pt_it->second;
+            if (!proto.fs_path.empty()) {
+                FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
-        if (!proto.fs_path.empty()) {
-            FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
+                auto loader_it = pimpl->registered_loaders.find(proto.media_type);
+                if (loader_it == pimpl->registered_loaders.end()) {
+                    throw NoLoaderException(uid, proto.media_type);
+                }
 
-            auto loader_it = pimpl->registered_loaders.find(proto.media_type);
-            if (loader_it == pimpl->registered_loaders.end()) {
-                throw NoLoaderException(uid, proto.media_type);
-            }
+                std::ifstream stream;
+                file_handle.to_istream(0, stream);
 
-            std::ifstream stream;
-            file_handle.to_istream(0, stream);
+                ResourceLoader *loader = loader_it->second;
+                loader->pimpl->last_dependencies = {};
+                void *const data_ptr = loader->load(proto, stream, file_handle.get_size());
 
-            ResourceLoader *loader = loader_it->second;
-            loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(proto, stream, file_handle.get_size());
+                if (!data_ptr) {
+                    stream.close();
+                    file_handle.release();
+                    throw LoadFailedException(uid);
+                }
 
-            if (!data_ptr) {
+                Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
+                pimpl->loaded_resources.insert({proto.uid, res});
+
                 stream.close();
                 file_handle.release();
-                throw LoadFailedException(uid);
+
+                return *res;
+            } else {
+                //TODO: read from resource package
+                throw ResourceNotPresentException(uid);
             }
-
-            Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
-            pimpl->loaded_resources.insert({proto.uid, res});
-
-            stream.close();
-            file_handle.release();
-
-            return *res;
         } else {
-            //TODO: read from resource package
             throw ResourceNotPresentException(uid);
         }
     }
@@ -301,7 +293,6 @@ namespace argus {
 
         Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
-        pimpl->discovered_resource_prototypes.insert({uid, proto});
 
         return *res;
     }
