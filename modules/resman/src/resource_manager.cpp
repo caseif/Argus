@@ -39,7 +39,8 @@
 
 #include <cctype>
 
-#define UID_SEPARATOR "."
+#define UID_NS_SEPARATOR ':'
+#define UID_PATH_SEPARATOR '/'
 
 #define RESOURCES_DIR "resources"
 
@@ -124,9 +125,17 @@ namespace argus {
 
             std::string cur_uid;
             if (prefix.empty()) {
-                cur_uid = name;
+                if (is_regfile(full_child_path)) {
+                    _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s\n", name);
+                }
+
+                cur_uid = name + UID_NS_SEPARATOR;
             } else {
-                cur_uid = prefix + UID_SEPARATOR + name;
+                if (prefix.back() == UID_NS_SEPARATOR) {
+                    cur_uid = prefix + name;
+                } else {
+                    cur_uid = prefix + UID_PATH_SEPARATOR + name;
+                }
             }
 
             if (is_directory(full_child_path)) {

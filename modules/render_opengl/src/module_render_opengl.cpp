@@ -75,9 +75,9 @@ namespace argus {
             }
             case LifecycleStage::POST_INIT: {
                 ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_VERT_PATH,
-                        "application/x-glsl-vert", FB_SHADER_VERT, sizeof(FB_SHADER_VERT));
+                        "text/x-glsl-vert", FB_SHADER_VERT, sizeof(FB_SHADER_VERT));
                 ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_FRAG_PATH,
-                        "application/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));
+                        "text/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));
                 break;
             }
             default: {
