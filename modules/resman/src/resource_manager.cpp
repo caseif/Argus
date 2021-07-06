@@ -278,7 +278,7 @@ namespace argus {
             throw NoLoaderException(uid, media_type);
         }
 
-        MemIstream stream(data, len);
+        IMemStream stream(data, len);
 
         ResourcePrototype proto = { uid, media_type, "", false };
 
@@ -292,6 +292,7 @@ namespace argus {
 
         Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
+        pimpl->discovered_resource_prototypes.insert({uid, proto});
 
         return *res;
     }

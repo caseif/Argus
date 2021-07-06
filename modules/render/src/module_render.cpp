@@ -29,6 +29,7 @@
 #include "argus/render/common/renderer.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer.hpp"
+#include "internal/render/loader/shader_loader.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 
 #include <map>
@@ -98,6 +99,7 @@ namespace argus {
                 register_event_handler(ArgusEventType::WINDOW, renderer_window_event_callback, TargetThread::RENDER);
 
                 ResourceManager::get_global_resource_manager().register_loader(*new PngTextureLoader());
+                ResourceManager::get_global_resource_manager().register_loader(*new ShaderLoader());
 
                 g_render_module_initialized = true;
 

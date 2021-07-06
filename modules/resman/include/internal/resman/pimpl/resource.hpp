@@ -44,7 +44,7 @@ namespace argus {
         void *const data_ptr;
 
         pimpl_Resource(ResourceManager &manager, void *const data_ptr, std::vector<std::string> &dependencies,
-                unsigned int ref_count = 0):
+                unsigned int ref_count = 1):
             manager(manager),
             data_ptr(data_ptr),
             dependencies(dependencies),

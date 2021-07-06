@@ -16,14 +16,14 @@
 namespace argus {
     struct MemBuf : std::streambuf {
         MemBuf(const char *buf, size_t len) {
-            this->setbuf(const_cast<char*>(buf), len);
+            this->setg(const_cast<char*>(buf), const_cast<char*>(buf), const_cast<char*>(buf) + len);
         }
     };
 
-    struct MemIstream : std::istream {
+    struct IMemStream : std::istream {
         MemBuf membuf;
 
-        MemIstream(const void *buf, size_t len) :
+        IMemStream(const void *buf, size_t len) :
             membuf(MemBuf(static_cast<const char*>(buf), len)),
             std::istream(&membuf) {
         }

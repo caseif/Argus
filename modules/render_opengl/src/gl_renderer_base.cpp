@@ -17,6 +17,9 @@
 // module core
 #include "internal/core/core_util.hpp"
 
+// module resman
+#include "argus/resman.hpp"
+
 // module wm
 #include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"
@@ -58,26 +61,6 @@
 #include <cstdbool>
 #include <cstdio>
 #include <cstring>
-
-#define _FRAME_VERT_SHADER "\
-    #version 330 core \n\
-    in vec2 " SHADER_ATTRIB_IN_POSITION "; \n\
-    in vec2 " SHADER_ATTRIB_IN_TEXCOORD "; \n\
-    out vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
-    void main() { \n\
-        gl_Position = vec4(" SHADER_ATTRIB_IN_POSITION ", 0.0, 1.0); \n\
-        " FRAME_SHADER_PASS_TEXCOORD " = " SHADER_ATTRIB_IN_TEXCOORD "; \n\
-    }"
-
-#define _FRAME_FRAG_SHADER "\n\
-    #version 330 core \n\
-    in vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
-    out vec4 " SHADER_ATTRIB_OUT_FRAGDATA "; \n\
-    uniform sampler2D screenTex; \n\
-    void main() { \n\
-        " SHADER_ATTRIB_OUT_FRAGDATA " = texture(screenTex, " FRAME_SHADER_PASS_TEXCOORD "); \n\
-        //" SHADER_ATTRIB_OUT_FRAGDATA " = vec4(1.0, 0.0, 0.0, 1.0); \n\
-    }"
 
 namespace argus {
     // forward declarations
@@ -126,20 +109,23 @@ namespace argus {
     GLRenderer::GLRenderer(void): RendererImpl() {
     }
 
-    static shader_handle_t _compile_shader(const ShaderStage stage, const std::string src) {
-        GLuint shader_stage;
+    static shader_handle_t _compile_shader(const Shader &shader) {
+        auto &src = shader.pimpl->src;
+        auto stage = shader.pimpl->stage;
+
+        GLuint gl_shader_stage;
         switch (stage) {
             case ShaderStage::VERTEX:
-                shader_stage = GL_VERTEX_SHADER;
+                gl_shader_stage = GL_VERTEX_SHADER;
                 break;
             case ShaderStage::FRAGMENT:
-                shader_stage = GL_FRAGMENT_SHADER;
+                gl_shader_stage = GL_FRAGMENT_SHADER;
                 break;
             default:
                 _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n", stage);
         }
 
-        auto shader_handle = glCreateShader(shader_stage);
+        auto shader_handle = glCreateShader(gl_shader_stage);
         if (!glIsShader(shader_handle)) {
             _ARGUS_FATAL("Failed to create shader: %d\n", glGetError());
         }
@@ -227,7 +213,7 @@ namespace argus {
             if (existing_shader_it != state.compiled_shaders.end()) {
                 shader_handle = existing_shader_it->second;
             } else {
-                shader_handle = _compile_shader(shader->pimpl->stage, shader->pimpl->src);
+                shader_handle = _compile_shader(*shader);
 
                 state.compiled_shaders.insert({ shader, shader_handle });
             }
@@ -407,8 +393,11 @@ namespace argus {
     }
 
     static void _setup_framebuffer(RendererState &state) {
-        state.frame_vert_shader = _compile_shader(ShaderStage::VERTEX, std::string(_FRAME_VERT_SHADER));
-        state.frame_frag_shader = _compile_shader(ShaderStage::FRAGMENT, std::string(_FRAME_FRAG_SHADER));
+        auto &fb_vert_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_VERT_PATH);
+        auto &fb_frag_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_FRAG_PATH);
+
+        state.frame_vert_shader = _compile_shader(fb_vert_shader_res.get_data<Shader>());
+        state.frame_frag_shader = _compile_shader(fb_frag_shader_res.get_data<Shader>());
 
         state.frame_program = glCreateProgram();
 

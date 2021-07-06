@@ -15,6 +15,9 @@
 #include "internal/core/dyn_invoke.hpp"
 #include "internal/core/engine_config.hpp"
 
+// module resman
+#include "argus/resman.hpp"
+
 // module render
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer_impl.hpp"
@@ -22,6 +25,7 @@
 
 // module render_opengl
 #include "internal/render_opengl/gl_renderer_base.hpp"
+#include "internal/render_opengl/globals.hpp"
 
 #include <cstring>
 
@@ -67,6 +71,13 @@ namespace argus {
                 #endif
 
                 _setup_view_matrix();
+                break;
+            }
+            case LifecycleStage::POST_INIT: {
+                ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_VERT_PATH,
+                        "application/x-glsl-vert", FB_SHADER_VERT, sizeof(FB_SHADER_VERT));
+                ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_FRAG_PATH,
+                        "application/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));
                 break;
             }
             default: {

@@ -48,6 +48,29 @@
 
 #define FRAME_SHADER_PASS_TEXCOORD "pass_TexCoord"
 
+#define FB_SHADER_VERT "\
+    #version 330 core \n\
+    in vec2 " SHADER_ATTRIB_IN_POSITION "; \n\
+    in vec2 " SHADER_ATTRIB_IN_TEXCOORD "; \n\
+    out vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
+    void main() { \n\
+        gl_Position = vec4(" SHADER_ATTRIB_IN_POSITION ", 0.0, 1.0); \n\
+        " FRAME_SHADER_PASS_TEXCOORD " = " SHADER_ATTRIB_IN_TEXCOORD "; \n\
+    }"
+
+#define FB_SHADER_FRAG "\n\
+    #version 330 core \n\
+    in vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
+    out vec4 " SHADER_ATTRIB_OUT_FRAGDATA "; \n\
+    uniform sampler2D screenTex; \n\
+    void main() { \n\
+        " SHADER_ATTRIB_OUT_FRAGDATA " = texture(screenTex, " FRAME_SHADER_PASS_TEXCOORD "); \n\
+        //" SHADER_ATTRIB_OUT_FRAGDATA " = vec4(1.0, 0.0, 0.0, 1.0); \n\
+    }"
+
+#define FB_SHADER_VERT_PATH "argus:shader/framebuffer_vert"
+#define FB_SHADER_FRAG_PATH "argus:shader/framebuffer_frag"
+
 namespace argus {
     extern float g_view_matrix[16];
 
