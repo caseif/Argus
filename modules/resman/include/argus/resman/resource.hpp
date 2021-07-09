@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "arp/arp.h"
+
 #include <string>
 #include <vector>
 
@@ -25,16 +27,19 @@ namespace argus {
         /**
          * \brief The unique identifier of the resource.
          *
-         * The UID does not include a file extension, and the path separator for
-         * resources is a dot (.). For instance, a loose resource file with the
-         * relative path `foo/bar/resource.dat` can be accessed with UID
-         * `foo.bar.resource`.
+         * The UID does not include a file extension and is prefixed with a
+         * namespace. The delimiter following the namespace is a colon (:), and
+         * the delimiter for path elements is a dot (/). For instance, a loose
+         * resource file with the relative path `foo/bar/resource.dat` can be
+         * accessed with UID `foo/bar/resource`.
          */
         std::string uid;
+
         /**
          * \brief The ID of the resource's type.
          */
         std::string media_type;
+
         /**
          * \brief The path to the resource on the filesystem.
          *
@@ -42,12 +47,12 @@ namespace argus {
          *            disk, or the archive containing the resource data.
          */
         std::string fs_path;
+
         /**
-         * \brief Whether the resource is in an archive.
-         *
-         * If `false`, the resource is present as a loose file on the disk.
+         * \brief Creates a ResourcePrototype from an arp_resource_meta_t
+         *        structure.
          */
-        bool archived;
+        static ResourcePrototype from_arp_meta(std::string uid, const arp_resource_meta_t &meta);
     };
 
     /**
@@ -165,7 +170,7 @@ namespace argus {
              *
              * \return A pointer to the Resource data.
              */
-            void *get_data_raw_ptr(void);
+            const void *get_data_raw_ptr(void);
 
             /**
              * \brief Gets the underlying data of this Resource.

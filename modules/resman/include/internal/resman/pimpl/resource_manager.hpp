@@ -12,6 +12,8 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 
+#include "arp/unpack/set.h"
+
 #include <map>
 #include <string>
 
@@ -21,6 +23,11 @@ namespace argus {
          * \brief Prototypes for all resources discovered on the filesystem.
          */
         std::map<std::string, ResourcePrototype> discovered_fs_protos;
+
+        /**
+         * \brief A set of all ARP packages currently loaded.
+         */
+        ArpPackageSet package_set;
 
         /**
          * \brief All currently loaded resources.

@@ -118,7 +118,7 @@ namespace argus {
              *        failed.
              */
             NoLoaderException(const std::string &res_uid, const std::string &media_type):
-                    ResourceException(res_uid, "No registered loader for type"),
+                    ResourceException(res_uid, "No registered loader for type " + media_type),
                     resource_type(media_type) {
             }
     };

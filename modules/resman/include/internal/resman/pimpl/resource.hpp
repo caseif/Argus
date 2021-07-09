@@ -41,7 +41,12 @@ namespace argus {
         /**
          * \brief A generic pointer to the data contained by this Resource.
          */
-        void *const data_ptr;
+        const void *const data_ptr;
+
+        /**
+         * \brief The ARP resource backing this Resource.
+         */
+        arp_resource_t *arp_resource;
 
         pimpl_Resource(ResourceManager &manager, void *const data_ptr, std::vector<std::string> &dependencies,
                 unsigned int ref_count = 1):

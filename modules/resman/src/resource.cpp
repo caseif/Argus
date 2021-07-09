@@ -15,6 +15,8 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource.hpp"
 
+#include "arp/arp.h"
+
 #include <atomic>
 #include <string>
 #include <utility>
@@ -22,6 +24,14 @@
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Resource));
+    
+    ResourcePrototype ResourcePrototype::from_arp_meta(std::string uid, const arp_resource_meta_t &meta) {
+        return ResourcePrototype {
+            uid: uid,
+            media_type: meta.media_type,
+            fs_path: ""
+        };
+    }
 
     Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data_ptr,
             std::vector<std::string> &dependencies):
@@ -44,7 +54,7 @@ namespace argus {
         }
     }
 
-    void *Resource::get_data_raw_ptr(void) {
+    const void *Resource::get_data_raw_ptr(void) {
         return pimpl->data_ptr;
     }
 
