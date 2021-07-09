@@ -324,6 +324,8 @@ namespace argus {
                 throw LoadFailedException(uid);
             }
 
+            arp_unload_resource(arp_res);
+
             auto &res = *new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
 
             return res;
