@@ -5,7 +5,7 @@ YEAR="2019-2021"
 AUTHOR="Max Roncace"
 EMAIL="mproncace@gmail.com"
 
-hdr_file="./res/HEADER.txt"
+hdr_file="./etc/HEADER.txt"
 
 # read the header template
 header=$(cat $hdr_file)
