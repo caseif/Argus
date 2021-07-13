@@ -36,7 +36,7 @@ namespace argus {
         std::string uid;
 
         /**
-         * \brief The ID of the resource's type.
+         * \brief The resource's type.
          */
         std::string media_type;
 
@@ -47,6 +47,20 @@ namespace argus {
          *            disk, or the archive containing the resource data.
          */
         std::string fs_path;
+
+        /**
+         * \brief Creates a new ResourcePrototype.
+         *
+         * \param uid The unique identifier of the resource.
+         * \param media_type The media type of the resource.
+         * \param fs_path The path to the resource or archive containing the
+         *        resource on the filesystem.
+         */
+        ResourcePrototype(std::string uid, std::string media_type, std::string fs_path):
+            uid(uid),
+            media_type(media_type),
+            fs_path(fs_path) {
+        }
 
         /**
          * \brief Creates a ResourcePrototype from an arp_resource_meta_t
