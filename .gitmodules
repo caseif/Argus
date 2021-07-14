@@ -1,21 +1,21 @@
-[submodule "libs/libpng"]
+[submodule "external/libs/libpng"]
 	path = external/libs/libpng
 	url = git://github.com/glennrp/libpng.git
-[submodule "libs/zlib"]
+[submodule "external/libs/zlib"]
 	path = external/libs/zlib
 	url = git://github.com/madler/zlib.git
-[submodule "libs/glfw"]
+[submodule "external/libs/glfw"]
 	path = external/libs/glfw
 	url = git://github.com/glfw/glfw.git
-[submodule "libs/libarp"]
+[submodule "external/libs/libarp"]
 	path = external/libs/libarp
 	url = git@github.com:caseif/libarp.git
-[submodule "external/EGL-Registry"]
-	path = external/specs/EGL-Registry
-	url = git@github.com:KhronosGroup/EGL-Registry.git
-[submodule "external/OpenGL-Registry"]
-	path = external/specs/OpenGL-Registry
-	url = git@github.com:KhronosGroup/OpenGL-Registry.git
-[submodule "external/tooling/Aglet"]
+[submodule "external/tooling/aglet"]
 	path = external/tooling/aglet
 	url = git@github.com:caseif/Aglet.git
+[submodule "external/tooling/arptool"]
+	path = external/tooling/arptool
+	url = git@github.com:caseif/arptool.git
+[submodule "external/tooling/abacus"]
+	path = external/tooling/abacus
+	url = git@github.com:caseif/Abacus

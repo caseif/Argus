@@ -1,6 +1,6 @@
 set(MODULE_IDS "lowlevel;core;wm;ecs;resman;render;input")
 set(DYN_MODULE_IDS "")
-set(MODULE_PATH_PREFIX "modules/")
+set(MODULES_SRC_PATH "${CMAKE_SOURCE_DIR}/modules")
 
 cmake_minimum_required(VERSION 3.8)
 if(POLICY CMP0048)
@@ -138,12 +138,33 @@ if(MSVC)
   add_compile_options("/wd4099")
 endif()
 
+message("Configuring arptool")
+set(arptool_wd "${CMAKE_BINARY_DIR}/tooling/arptool")
+execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
+execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"
+                        "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+                        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+                        "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
+                WORKING_DIRECTORY "${arptool_wd}"
+                RESULT_VARIABLE CMD_RES)
+if(CMD_RES)
+  message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
+endif()
+
+set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/arptool${CMAKE_EXECUTABLE_SUFFIX}")
+
+add_custom_command(OUTPUT "${arptool_exe}"
+                  COMMAND "${CMAKE_COMMAND}" "--build" "."
+                  DEPENDS "${arptool_source_files}"
+                  WORKING_DIRECTORY "${arptool_wd}")
+add_custom_target("arptool" DEPENDS "${arptool_exe}")
+
 # init task to copy dependency output
 function(copy_dep_output PARENT_TARGET DEP_TARGET PREFIX)
   if(PREFIX MATCHES "^$")
     set(PREFIX ".")
   endif()
-  
+
   add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD 
     COMMAND "${CMAKE_COMMAND}" -E copy
       "$<TARGET_FILE:${DEP_TARGET}>"
@@ -219,6 +240,48 @@ function(setup_submodule MODULE_NAME DYN)
       list(APPEND S_FILES "${LOCAL_S_FILES}")
     endforeach()
   endif()
+  
+  set(res_dir "${MODULES_SRC_PATH}/${MODULE_NAME}/res")
+  set(res_pack_target "pack_resources_${MODULE_NAME}")
+  set(res_gen_target "gen_resources_${MODULE_NAME}")
+  if(EXISTS "${res_dir}")
+    set(arp_out_dir "${CMAKE_BINARY_DIR}/res/arp")
+    set(arp_out_name "resources_${MODULE_NAME}")
+    set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
+
+    file(MAKE_DIRECTORY "${arp_out_dir}")
+
+    file(GLOB_RECURSE res_files "${res_dir}/*")
+    add_custom_command(OUTPUT "${arp_out_path}"
+                       COMMAND "${arptool_exe}" "pack" "${res_dir}"
+                               "-n" "argus"
+                               "-o" "${arp_out_dir}"
+                               "-f" "${arp_out_name}"
+                       DEPENDS "${res_files}")
+
+    add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
+
+    set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
+    set(h_out_dir "${CMAKE_BINARY_DIR}/res/abacus/include/internal/${module}")
+    set(c_out_dir "${CMAKE_BINARY_DIR}/res/abacus/src/res/")
+
+    file(MAKE_DIRECTORY "${h_out_dir}")
+    file(MAKE_DIRECTORY "${c_out_dir}")
+
+    set(h_out_path "${h_out_dir}/${arp_out_name}.arp.h")
+    set(c_out_path "${c_out_dir}/${arp_out_name}.arp.c")
+    add_custom_command(OUTPUT "${h_out_path}" "${c_out_path}"
+                       COMMAND "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
+                               "-i" "${arp_out_path}"
+                               "-h" "${h_out_dir}"
+                               "-c" "${c_out_dir}"
+                       DEPENDS "${res_pack_target}" "${arp_out_path}")
+
+    add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
+
+    list(APPEND H_FILES "${h_out_path}")
+    list(APPEND C_FILES "${c_out_path}")
+  endif()
 
   # recursively load this module's include dirs
   load_module_includes(MODULE_INCLUDES)
@@ -285,6 +348,10 @@ function(setup_submodule MODULE_NAME DYN)
     string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
   endif()
 
+  if(TARGET ${res_gen_target})
+    add_dependencies("${PROJECT_NAME}" "${res_gen_target}")
+  endif()
+
   # set the C++ standard
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
 
@@ -309,11 +376,11 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
     make_directory ${HDR_OUT_DIR})
 
 foreach(module ${MODULE_IDS})
-  add_subdirectory(${MODULE_PATH_PREFIX}${module})
+  add_subdirectory("${MODULES_SRC_PATH}/${module}")
   set(MODULE_LIBS "$<TARGET_OBJECTS:${module}>;${MODULE_LIBS}")
 
   # configure the copy headers task to include this module
-  set(MODULE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/${MODULE_PATH_PREFIX}${module}/include/argus")
+  set(MODULE_INCLUDE_DIR "${MODULES_SRC_PATH}/${module}/include/argus")
   add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
     COMMENT "Copying headers for module ${module}"
     COMMAND ${CMAKE_COMMAND} -E
@@ -324,7 +391,7 @@ foreach(module ${MODULE_IDS})
 endforeach()
 
 foreach(module ${DYN_MODULE_IDS})
-  add_subdirectory("${MODULE_PATH_PREFIX}${module}")
+  add_subdirectory("${MODULES_SRC_PATH}/${module}")
 endforeach()
 
 add_library(${LIB_BASE_NAME} SHARED ${MODULE_LIBS})
