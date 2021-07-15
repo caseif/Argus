@@ -270,12 +270,16 @@ function(setup_submodule MODULE_NAME DYN)
 
     set(h_out_path "${h_out_dir}/${arp_out_name}.arp.h")
     set(c_out_path "${c_out_dir}/${arp_out_name}.arp.c")
-    add_custom_command(OUTPUT "${h_out_path}" "${c_out_path}"
+    add_custom_command(OUTPUT "${c_out_path}"
                        COMMAND "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
                                "-i" "${arp_out_path}"
-                               "-h" "${h_out_dir}"
+                               "-n" "resources_${module}.arp"
                                "-c" "${c_out_dir}"
                        DEPENDS "${res_pack_target}" "${arp_out_path}")
+
+    execute_process(COMMAND "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
+                            "-n" "resources_${module}.arp"
+                            "-h" "${h_out_dir}")
 
     add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
 
