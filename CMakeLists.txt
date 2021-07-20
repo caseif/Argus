@@ -151,7 +151,7 @@ if(CMD_RES)
   message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
 endif()
 
-set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/arptool${CMAKE_EXECUTABLE_SUFFIX}")
+set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>arptool${CMAKE_EXECUTABLE_SUFFIX}")
 
 add_custom_command(OUTPUT "${arptool_exe}"
                   COMMAND "${CMAKE_COMMAND}" "--build" "."
