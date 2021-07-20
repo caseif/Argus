@@ -257,12 +257,14 @@ function(setup_submodule MODULE_NAME DYN)
                                "-n" "argus"
                                "-o" "${arp_out_dir}"
                                "-f" "${arp_out_name}"
+                               "-c" "deflate"
                        DEPENDS "${res_files}")
 
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
     set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-    set(h_out_dir "${CMAKE_BINARY_DIR}/res/abacus/include/internal/${module}")
+    set(h_out_dir_base "${CMAKE_BINARY_DIR}/res/abacus/include")
+    set(h_out_dir "${h_out_dir_base}/internal/${module}")
     set(c_out_dir "${CMAKE_BINARY_DIR}/res/abacus/src/res/")
 
     file(MAKE_DIRECTORY "${h_out_dir}")
@@ -274,7 +276,7 @@ function(setup_submodule MODULE_NAME DYN)
                        COMMAND "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
                                "-i" "${arp_out_path}"
                                "-n" "resources_${module}.arp"
-                               "-c" "${c_out_dir}"
+                               "-s" "${c_out_dir}"
                        DEPENDS "${res_pack_target}" "${arp_out_path}")
 
     execute_process(COMMAND "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
@@ -283,13 +285,9 @@ function(setup_submodule MODULE_NAME DYN)
 
     add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
 
-    list(APPEND H_FILES "${h_out_path}")
+    list(APPEND H_FILES "${h_out_dir_base}")
     list(APPEND C_FILES "${c_out_path}")
   endif()
-
-  # recursively load this module's include dirs
-  load_module_includes(MODULE_INCLUDES)
-  include_directories("${MODULE_INCLUDES}")
 
   if(NOT DYN)
     get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
@@ -351,6 +349,11 @@ function(setup_submodule MODULE_NAME DYN)
 
     string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
   endif()
+
+  # recursively load this module's include dirs
+  load_module_includes(MODULE_INCLUDES)
+  list(APPEND H_FILES "${MODULE_INCLUDES}")
+  target_include_directories("${PROJECT_NAME}" PUBLIC "${H_FILES}")
 
   if(TARGET ${res_gen_target})
     add_dependencies("${PROJECT_NAME}" "${res_gen_target}")

@@ -63,6 +63,14 @@ namespace argus {
             void discover_resources(void);
 
             /**
+             * \brief Loads an in-memory ARP package for this resource manager.
+             *
+             * \param buf The buffer containing the in-memory package.
+             * \param len The length of the in-memory package.
+             */
+            void add_memory_package(const unsigned char *buf, size_t len);
+
+            /**
              * \brief Registers a ResourceLoader for the given type.
              *
              * \param loader The ResourceLoader to register.

@@ -46,7 +46,7 @@ namespace argus {
         } else if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
             stage = ShaderStage::FRAGMENT;
         } else {
-            _ARGUS_FATAL("Unrecognized shader media type %s\n", proto.media_type);
+            _ARGUS_FATAL("Unrecognized shader media type %s\n", proto.media_type.c_str());
         }
 
         std::string src(std::istreambuf_iterator<char>(stream), {});

@@ -26,6 +26,7 @@
 // module render_opengl
 #include "internal/render_opengl/gl_renderer_base.hpp"
 #include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/resources_render_opengl.arp.h"
 
 #include <cstring>
 
@@ -74,10 +75,12 @@ namespace argus {
                 break;
             }
             case LifecycleStage::POST_INIT: {
-                ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_VERT_PATH,
+                ResourceManager::get_global_resource_manager().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
+                        RESOURCES_RENDER_OPENGL_ARP_LEN);
+                /*ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_VERT_PATH,
                         "text/x-glsl-vert", FB_SHADER_VERT, sizeof(FB_SHADER_VERT));
                 ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_FRAG_PATH,
-                        "text/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));
+                        "text/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));*/
                 break;
             }
             default: {

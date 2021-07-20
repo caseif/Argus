@@ -211,18 +211,28 @@ namespace argus {
 
     void ResourceManager::discover_resources(void) {
         try {
-        std::string exe_path = get_executable_path();
+            std::string exe_path = get_executable_path();
 
-        std::string exe_dir = get_parent(exe_path);
+            std::string exe_dir = get_parent(exe_path);
 
-        std::string res_dir = exe_dir + PATH_SEPARATOR + RESOURCES_DIR;
+            std::string res_dir = exe_dir + PATH_SEPARATOR + RESOURCES_DIR;
 
-        _discover_arp_packages(pimpl->package_set, res_dir);
+            _discover_arp_packages(pimpl->package_set, res_dir);
 
-        _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos, pimpl->extension_mappings);
+            _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos, pimpl->extension_mappings);
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
         }
+    }
+
+    void ResourceManager::add_memory_package(const unsigned char *buf, size_t len) {
+        int rc = 0;
+
+        ArpPackage pack = NULL;
+        if ((rc = arp_load_from_memory(buf, len, &pack)) != 0) {
+            _ARGUS_FATAL("Failed to load in-memory package");
+        }
+        arp_add_to_set(pimpl->package_set, pack);
     }
 
     void ResourceManager::register_loader(ResourceLoader &loader) {

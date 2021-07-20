@@ -22,11 +22,6 @@
 
 #define _GL_LOG_MAX_LEN 255
 
-#define _UNIFORM_PROJECTION "_argus_uni_projection_matrix"
-#define _UNIFORM_TEXTURE "_argus_uni_sampler_array"
-#define _UNIFORM_LAYER_TRANSFORM "_argus_uni_layer_transform"
-#define _UNIFORM_GROUP_TRANSFORM "_argus_uni_group_transform"
-
 #define SHADER_ATTRIB_IN_POSITION "in_Position"
 #define SHADER_ATTRIB_IN_NORMAL "in_Normal"
 #define SHADER_ATTRIB_IN_COLOR "in_Color"
@@ -45,28 +40,6 @@
 #define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
 
 #define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
-
-#define FRAME_SHADER_PASS_TEXCOORD "pass_TexCoord"
-
-#define FB_SHADER_VERT "\
-    #version 330 core \n\
-    in vec2 " SHADER_ATTRIB_IN_POSITION "; \n\
-    in vec2 " SHADER_ATTRIB_IN_TEXCOORD "; \n\
-    out vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
-    void main() { \n\
-        gl_Position = vec4(" SHADER_ATTRIB_IN_POSITION ", 0.0, 1.0); \n\
-        " FRAME_SHADER_PASS_TEXCOORD " = " SHADER_ATTRIB_IN_TEXCOORD "; \n\
-    }"
-
-#define FB_SHADER_FRAG "\n\
-    #version 330 core \n\
-    in vec2 " FRAME_SHADER_PASS_TEXCOORD "; \n\
-    out vec4 " SHADER_ATTRIB_OUT_FRAGDATA "; \n\
-    uniform sampler2D screenTex; \n\
-    void main() { \n\
-        " SHADER_ATTRIB_OUT_FRAGDATA " = texture(screenTex, " FRAME_SHADER_PASS_TEXCOORD "); \n\
-        //" SHADER_ATTRIB_OUT_FRAGDATA " = vec4(1.0, 0.0, 0.0, 1.0); \n\
-    }"
 
 #define FB_SHADER_VERT_PATH "argus:shader/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/framebuffer_frag"
