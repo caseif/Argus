@@ -133,11 +133,6 @@ if(${BUILD_VULKAN_BACKEND})
   message(FATAL_ERROR "Vulkan support is not yet available")
 endif()
 
-# disable the annoying (and wrong) class vs. struct warning
-if(MSVC)
-  add_compile_options("/wd4099")
-endif()
-
 message("Configuring arptool")
 set(arptool_wd "${CMAKE_BINARY_DIR}/tooling/arptool")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
