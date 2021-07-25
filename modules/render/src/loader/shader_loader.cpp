@@ -18,23 +18,14 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/loader/shader_loader.hpp"
 
-#include "png.h"
-#include "pngconf.h"
-
 #include <fstream> // IWYU pragma: keep
 #include <istream> // IWYU pragma: keep
 #include <stdexcept>
 #include <utility>
 
-#include <csetjmp>
 #include <cstdio>
 
 namespace argus {
-
-    static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
-        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read((char*) buf, size);
-    }
-
     ShaderLoader::ShaderLoader():
             ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }
