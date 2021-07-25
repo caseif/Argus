@@ -290,7 +290,7 @@ namespace argus {
 
             ResourceLoader *loader = loader_it->second;
             loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(proto, stream, file_handle.get_size());
+            void *const data_ptr = loader->load(*this, proto, stream, file_handle.get_size());
 
             if (!data_ptr) {
                 stream.close();
@@ -328,7 +328,7 @@ namespace argus {
 
             ResourceLoader *loader = loader_it->second;
             loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(proto, stream, arp_res->meta.size);
+            void *const data_ptr = loader->load(*this, proto, stream, arp_res->meta.size);
 
             if (!data_ptr) {
                 throw LoadFailedException(uid);
@@ -372,7 +372,7 @@ namespace argus {
 
         ResourceLoader *loader = loader_it->second;
         loader->pimpl->last_dependencies = {};
-        void *const data_ptr = loader->load(proto, stream, len);
+        void *const data_ptr = loader->load(*this, proto, stream, len);
 
         if (!data_ptr) {
             throw LoadFailedException(uid);
