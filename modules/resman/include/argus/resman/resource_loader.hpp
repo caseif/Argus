@@ -40,7 +40,8 @@ namespace argus {
              * \param stream The stream to load the Resource from.
              * \param size The size in bytes of the Resource data.
              */
-            virtual void *const load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const;
+            virtual void *const load(ResourceManager &manager, const ResourcePrototype &proto,
+                    std::istream &stream, size_t size) const;
 
             /**
              * \brief Performs necessary deinitialization for loaded resource
@@ -74,6 +75,6 @@ namespace argus {
              * \throw ResourceException If any dependency Resource cannot be
              *        loaded.
              */
-            void load_dependencies(ResourceManager &manager, std::initializer_list<std::string> dependencies);
+            void load_dependencies(ResourceManager &manager, const std::vector<std::string> &dependencies) const;
     };
 }

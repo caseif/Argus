@@ -23,7 +23,8 @@
 
 namespace argus {
 
-    void ResourceLoader::load_dependencies(ResourceManager &manager, std::initializer_list<std::string> dependencies) {
+    void ResourceLoader::load_dependencies(ResourceManager &manager, const std::vector<std::string> &dependencies)
+            const {
         std::vector<Resource*> acquired;
 
         bool failed = false;
@@ -58,7 +59,8 @@ namespace argus {
         delete pimpl;
     }
 
-    void *const ResourceLoader::load(const ResourcePrototype &proto, std::istream &stream, const size_t size) const {
+    void *const ResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+            std::istream &stream, const size_t size) const {
         return nullptr;
     }
 
