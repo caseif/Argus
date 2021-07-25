@@ -25,7 +25,7 @@ if(NOT RUBY_EXE)
   message(FATAL_ERROR "Ruby must be installed and available on the path")
 endif()
 
-if(WIN32)
+if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
   set(BUNDLER_EXE "bundler.bat")
 else()
   set(BUNDLER_EXE "bundler")
