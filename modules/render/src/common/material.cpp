@@ -35,7 +35,8 @@ namespace argus {
             if (seen & shader->pimpl->stage) {
                 _ARGUS_FATAL("Multiple shaders supplied for single stage\n");
             }
-            seen |= shader->pimpl->stage;
+            //TODO: need a custom |= operator for ShaderStage
+            seen = (ShaderStage) (seen | shader->pimpl->stage);
         }
     }
 

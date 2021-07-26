@@ -22,7 +22,7 @@ namespace argus {
     /**
      * \brief Represents a class of event dispatched by the engine.
      */
-    enum class ArgusEventType : uint16_t {
+    enum class ArgusEventType : uint64_t {
         /**
          * \brief An event of an unknown or undefined class.
          */
@@ -46,7 +46,11 @@ namespace argus {
         /**
          * \brief An event signifying some type of abstracted input.
          */
-        INPUT = KEYBOARD | MOUSE | JOYSTICK
+        INPUT = KEYBOARD | MOUSE | JOYSTICK,
+        /**
+         * \brief An event sent by a resource manager.
+         */
+        RESOURCE = 0x20
     };
 
     /**
@@ -69,7 +73,7 @@ namespace argus {
      *
      * \sa ArgusEventType::operator|
      */
-    constexpr inline ArgusEventType operator|=(const ArgusEventType lhs, const ArgusEventType rhs);
+    inline ArgusEventType operator|=(ArgusEventType &lhs, const ArgusEventType rhs);
     /**
      * \brief Bitwise AND implementation for ArgusEventType bitmask elements.
      *

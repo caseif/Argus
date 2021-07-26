@@ -16,6 +16,7 @@
 
 namespace argus {
     // forward declarations
+    class ResourceLoader;
     class ResourceManager;
     struct pimpl_Resource;
 
@@ -81,14 +82,16 @@ namespace argus {
              * \brief Constructs a new Resource.
              *
              * \param manager The parent ResourceManager of the new Resource.
+             * \param loader The ResourceLoader responsible for the new
+             *        Resource.
              * \param prototype The \link ResourcePrototype prototype \endlink
              *        of the new Resource.
              * \param data A pointer to the resource data.
              * \param dependencies The UIDs of Resources the new one is
              *        dependent on.
              */
-            Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data,
-                    std::vector<std::string> &dependencies);
+            Resource(ResourceManager &manager, const ResourceLoader &loader, const ResourcePrototype prototype,
+                    void *const data, std::vector<std::string> &dependencies);
 
             /**
              * \brief Destroys the Resource.

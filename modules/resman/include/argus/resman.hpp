@@ -17,5 +17,6 @@
 
 #include "argus/resman/exception.hpp"
 #include "argus/resman/resource.hpp"
+#include "argus/resman/resource_event.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"

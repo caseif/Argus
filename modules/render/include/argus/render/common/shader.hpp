@@ -24,11 +24,6 @@ namespace argus {
         FRAGMENT = 0x02
     };
 
-    constexpr inline ShaderStage operator|=(ShaderStage lhs, ShaderStage rhs) {
-        return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
-                                        static_cast<std::underlying_type<ShaderStage>::type>(rhs));
-    }
-
     /**
      * \brief Represents a shader for use with a RenderObject.
      *

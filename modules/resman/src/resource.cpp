@@ -12,6 +12,7 @@
 
 // module resman
 #include "argus/resman/resource.hpp"
+#include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource.hpp"
 
@@ -29,15 +30,15 @@ namespace argus {
         return ResourcePrototype(uid, meta.media_type, "");
     }
 
-    Resource::Resource(ResourceManager &manager, const ResourcePrototype prototype, void *const data_ptr,
-            std::vector<std::string> &dependencies):
-            prototype(prototype),
-            pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, data_ptr, dependencies)) {
+    Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, const ResourcePrototype prototype,
+            void *const data_ptr, std::vector<std::string> &dependencies):
+        prototype(prototype),
+        pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)) {
     }
 
     Resource::Resource(Resource &&rhs):
             prototype(std::move(rhs.prototype)),
-            pimpl(pimpl) {
+            pimpl(rhs.pimpl) {
     }
 
     Resource::~Resource(void) {
@@ -53,5 +54,4 @@ namespace argus {
     const void *Resource::get_data_raw_ptr(void) {
         return pimpl->data_ptr;
     }
-
 }

@@ -95,23 +95,19 @@ namespace argus {
             VertexAttributes attrs = VertexAttributes::NONE;
             for (auto attr : attrs_arr) {
                 if (attr == ATTR_POS) {
-                    _ARGUS_DEBUG("pos\n");
                     attrs |= VertexAttributes::POSITION;
                 } else if (attr == ATTR_NORM) {
                     attrs |= VertexAttributes::NORMAL;
                 } else if (attr == ATTR_COLOR) {
                     attrs |= VertexAttributes::COLOR;
                 } else if (attr == ATTR_TEXCOORD) {
-                    _ARGUS_DEBUG("texcoord\n");
                     attrs |= VertexAttributes::TEXCOORD;
                 } else {
                     // invalid attribute name
                     _ARGUS_DEBUG("Invalid vertex attribute name in material\n");
                     return NULL;
                 }
-                _ARGUS_DEBUG("attrs inter: %d\n", attrs);
             }
-            _ARGUS_DEBUG("attrs final: %d\n", attrs);
 
             std::vector<std::string> deps;
             deps.push_back(tex_uid);

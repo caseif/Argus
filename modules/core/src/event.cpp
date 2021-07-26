@@ -48,8 +48,8 @@ namespace argus {
                                            static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
     }
 
-    constexpr inline ArgusEventType operator|=(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
+    inline ArgusEventType operator|=(ArgusEventType &lhs, const ArgusEventType rhs) {
+        return lhs = static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
                                            static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
     }
 
@@ -68,22 +68,30 @@ namespace argus {
         auto &mutex = render_thread ? g_render_event_queue_mutex : g_update_event_queue_mutex;
         auto &listeners = render_thread ? g_render_event_listeners : g_update_event_listeners;
 
+        // We copy the queue so that we're not holding onto the mutex while we
+        // execute listener callbacks. Otherwise, dispatching an event from a
+        // listener would result in deadlock since it wouldn't be able to
+        // re-lock the queue.
         mutex.lock();
+        auto queue_copy = queue;
+        std::queue<ArgusEvent*>().swap(queue); // clear queue
+        mutex.unlock();
+
         listeners.list_mutex.lock_shared();
 
-        while (!queue.empty()) {
-            ArgusEvent *event = queue.front();
+        while (!queue_copy.empty()) {
+            ArgusEvent *event = queue_copy.front();
+            auto listeners_copy = listeners;
             for (IndexedValue<ArgusEventHandler> listener : listeners.list) {
                 if (static_cast<int>(listener.value.type & event->type)) {
                     listener.value.callback(*event, listener.value.data);
                 }
             }
             free(event);
-            queue.pop();
+            queue_copy.pop();
         }
 
         listeners.list_mutex.unlock_shared();
-        mutex.unlock();
     }
 
     void flush_event_listener_queues(const TargetThread target_thread) {

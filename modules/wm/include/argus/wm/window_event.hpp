@@ -11,6 +11,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/time.hpp"
 
 // module core
 #include "argus/core/event.hpp"

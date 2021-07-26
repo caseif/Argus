@@ -22,6 +22,7 @@ namespace argus {
         /**
          * \brief The dependencies of the Resource last loaded.
          */
+        //TODO: this is super non-threadsafe and needs to be reworked
         std::vector<std::string> last_dependencies;
 
         pimpl_ResourceLoader(std::initializer_list<std::string> &media_types):

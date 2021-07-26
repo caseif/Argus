@@ -16,13 +16,22 @@
 namespace argus {
     // forward declarations
     class Resource;
+    class ResourceLoader;
     class ResourceManager;
 
     struct pimpl_Resource {
+        friend class ResourceManager;
+
         /**
          * \brief The ResourceManager parent to this Resource.
          */
         ResourceManager &manager;
+
+        /**
+         * \brief The ResourceLoader responsible for the handling of the loading
+         *        and unloading of the Resource.
+         */
+        const ResourceLoader &loader;
 
         /**
          * \brief The number of current handles to this Resource.
@@ -41,16 +50,17 @@ namespace argus {
         /**
          * \brief A generic pointer to the data contained by this Resource.
          */
-        const void *const data_ptr;
+        void *const data_ptr;
 
         /**
          * \brief The ARP resource backing this Resource.
          */
         arp_resource_t *arp_resource;
 
-        pimpl_Resource(ResourceManager &manager, void *const data_ptr, std::vector<std::string> &dependencies,
-                unsigned int ref_count = 1):
+        pimpl_Resource(ResourceManager &manager, const ResourceLoader &loader, void *const data_ptr,
+                std::vector<std::string> &dependencies, unsigned int ref_count = 1):
             manager(manager),
+            loader(loader),
             data_ptr(data_ptr),
             dependencies(dependencies),
             ref_count(ref_count) {

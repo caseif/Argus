@@ -14,13 +14,17 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module core
+#include "argus/core/engine.hpp"
+#include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
 // module resman
 #include "argus/resman/exception.hpp"
 #include "argus/resman/resource.hpp"
+#include "argus/resman/resource_event.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
+#include "internal/resman/pimpl/resource.hpp"
 #include "internal/resman/pimpl/resource_loader.hpp"
 #include "internal/resman/pimpl/resource_manager.hpp"
 
@@ -47,16 +51,6 @@
 namespace argus {
     ResourceManager g_global_resource_manager;
 
-    void _update_lifecycle_resman(LifecycleStage stage) {
-        switch (stage) {
-            case LifecycleStage::POST_INIT:
-                g_global_resource_manager.discover_resources();
-                break;
-            default:
-                break;
-        }
-    }
-
     static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
         size_t count = 0;
         extension_mapping_t *mappings = arp_get_extension_mappings(&count);
@@ -73,10 +67,6 @@ namespace argus {
         arp_free_extension_mappings(mappings);
     }
 
-    void init_module_resman(void) {
-        register_module({MODULE_RESMAN, 2, {"core"}, _update_lifecycle_resman});
-    }
-
     ResourceManager &ResourceManager::get_global_resource_manager(void) {
         return g_global_resource_manager;
     }
@@ -90,21 +80,6 @@ namespace argus {
 
     ResourceManager::~ResourceManager(void) {
         delete pimpl;
-    }
-
-    int ResourceManager::unload_resource(const std::string &uid) {
-        auto it = pimpl->loaded_resources.find(uid);
-        if (it == pimpl->loaded_resources.cend()) {
-            throw ResourceNotLoadedException(uid);
-        }
-
-        Resource *res = it->second;
-
-        pimpl->loaded_resources.erase(uid);
-
-        delete res;
-
-        return 0;
     }
     
     static void _discover_arp_packages(ArpPackageSet set, const std::string &root_path) {
@@ -272,6 +247,10 @@ namespace argus {
             throw ResourceLoadedException(uid);
         }
 
+        _ARGUS_DEBUG("Initiating load for resource %s\n", uid.c_str());
+
+        Resource *res = nullptr;
+
         auto pt_it = pimpl->discovered_fs_protos.find(uid);
         if (pt_it != pimpl->discovered_fs_protos.cend()) {
             ResourcePrototype proto = pt_it->second;
@@ -288,31 +267,32 @@ namespace argus {
             std::ifstream stream;
             file_handle.to_istream(0, stream);
 
-            ResourceLoader *loader = loader_it->second;
-            loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(*this, proto, stream, file_handle.get_size());
-
-            if (!data_ptr) {
-                stream.close();
-                file_handle.release();
-                throw LoadFailedException(uid);
-            }
-
-            Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
-            pimpl->loaded_resources.insert({proto.uid, res});
+            auto &loader = *loader_it->second;
+            loader.pimpl->last_dependencies = {};
+            void *const data_ptr = loader.load(*this, proto, stream, file_handle.get_size());
 
             stream.close();
             file_handle.release();
 
-            _ARGUS_DEBUG("Loaded FS resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
+            if (!data_ptr) {
+                throw LoadFailedException(uid);
+            }
 
-            return *res;
-        }
+            res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-        arp_resource_meta_t res_meta = {};
-        int rc = arp_find_resource_in_set(pimpl->package_set, uid.c_str(), &res_meta);
+            _ARGUS_DEBUG("Loaded filesystem resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
+        } else {
+            arp_resource_meta_t res_meta = {};
+            int rc = arp_find_resource_in_set(pimpl->package_set, uid.c_str(), &res_meta);
 
-        if (rc == 0) {
+            if (rc != 0) {
+                if (rc == E_ARP_RESOURCE_NOT_FOUND) {
+                    throw ResourceNotPresentException(uid);
+                } else {
+                    throw LoadFailedException(uid);
+                }
+            }
+
             auto *arp_res = arp_load_resource(&res_meta);
 
             if (arp_res == NULL) {
@@ -328,9 +308,9 @@ namespace argus {
 
             IMemStream stream(arp_res->data, arp_res->meta.size);
 
-            ResourceLoader *loader = loader_it->second;
-            loader->pimpl->last_dependencies = {};
-            void *const data_ptr = loader->load(*this, proto, stream, arp_res->meta.size);
+            auto &loader = *loader_it->second;
+            loader.pimpl->last_dependencies = {};
+            void *const data_ptr = loader.load(*this, proto, stream, arp_res->meta.size);
 
             if (!data_ptr) {
                 throw LoadFailedException(uid);
@@ -338,16 +318,21 @@ namespace argus {
 
             arp_unload_resource(arp_res);
 
-            auto &res = *new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
+            res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
             _ARGUS_DEBUG("Loaded ARP resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
-
-            return res;
-        } else if (rc != E_ARP_RESOURCE_NOT_FOUND) {
-            throw LoadFailedException(uid);
         }
 
-        throw ResourceNotPresentException(uid);
+        if (res == nullptr) {
+            throw ResourceNotPresentException(uid);
+        }
+
+        pimpl->loaded_resources.insert({res->uid, res});
+
+        ResourceEvent event(ResourceEventType::LOAD, res->prototype, res);
+        dispatch_event(event);
+
+        return *res;
     }
 
     std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid,
@@ -374,17 +359,36 @@ namespace argus {
 
         ResourcePrototype proto = { uid, media_type, "" };
 
-        ResourceLoader *loader = loader_it->second;
-        loader->pimpl->last_dependencies = {};
-        void *const data_ptr = loader->load(*this, proto, stream, len);
+        auto &loader = *loader_it->second;
+        loader.pimpl->last_dependencies = {};
+        void *const data_ptr = loader.load(*this, proto, stream, len);
 
         if (!data_ptr) {
             throw LoadFailedException(uid);
         }
 
-        Resource *res = new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
+        Resource *res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
 
         return *res;
+    }
+
+    int ResourceManager::unload_resource(const std::string &uid) {
+        auto it = pimpl->loaded_resources.find(uid);
+        if (it == pimpl->loaded_resources.cend()) {
+            throw ResourceNotLoadedException(uid);
+        }
+
+        auto *res = it->second;
+
+        dispatch_event(ResourceEvent(ResourceEventType::UNLOAD, res->prototype, nullptr));
+
+        pimpl->loaded_resources.erase(res->uid);
+
+        res->pimpl->loader.unload(res->pimpl->data_ptr);
+
+        delete res;
+
+        return 0;
     }
 }
