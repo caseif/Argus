@@ -22,14 +22,12 @@ namespace argus {
     class TextureData;
 
     struct pimpl_Material {
-        const std::string id;
         const TextureData &texture;
         const std::vector<const Shader*> shaders;
         const VertexAttributes attributes;
 
-        pimpl_Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
+        pimpl_Material(const TextureData &texture, const std::vector<const Shader*> &shaders,
             const VertexAttributes attributes):
-            id(id),
             texture(texture),
             shaders(shaders),
             attributes(attributes) {

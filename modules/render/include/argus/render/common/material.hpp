@@ -27,6 +27,7 @@ namespace argus {
      * Represents attributes to be enabled 
      */
     enum VertexAttributes : uint16_t {
+        NONE = 0x0,
         POSITION = 0x1,
         NORMAL = 0x2,
         COLOR = 0x4,
@@ -38,8 +39,8 @@ namespace argus {
                                              static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
     }
 
-    constexpr inline VertexAttributes operator|=(const VertexAttributes lhs, const VertexAttributes rhs) {
-        return static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
+    inline VertexAttributes operator|=(VertexAttributes &lhs, const VertexAttributes rhs) {
+        return lhs = static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
                                              static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
     }
 
@@ -50,22 +51,19 @@ namespace argus {
             /**
              * \brief Constructs a new Material.
              *
-             * \param id The unique identifier of the material.
              * \param texture The texture used by the Material.
              * \param shaders The shaders used by the Material. Only one Shader
              *        may be specified per \link ShaderStage shader stage \endlink.
              * \param attributes The vertex attributes used by this material.
              */
-            Material(const std::string id, const TextureData &texture, const std::vector<const Shader*> &shaders,
-                const VertexAttributes &attributes);
+            Material(const TextureData &texture, const std::vector<const Shader*> &shaders,
+                    const VertexAttributes &attributes);
 
             Material(const Material&) noexcept;
 
             Material(Material&&) noexcept;
 
             ~Material(void);
-
-            const std::string get_id(void) const;
     };
 
 }

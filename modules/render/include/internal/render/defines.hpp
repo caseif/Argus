@@ -9,12 +9,10 @@
 
 #pragma once
 
-#define SHADER_VERTEX 1
-#define SHADER_FRAGMENT 2
-
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vert"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-frag"
+#define RESOURCE_TYPE_MATERIAL "text/x-argus-material+json"
 
 #define MODULE_RENDER_OPENGL "render_opengl"
 #define MODULE_RENDER_OPENGLES "render_opengles"

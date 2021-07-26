@@ -55,5 +55,7 @@ namespace argus {
             Shader(Shader&&) noexcept;
 
             ~Shader(void);
+
+            ShaderStage get_stage(void) const;
     };
 }

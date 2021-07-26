@@ -53,6 +53,7 @@ set(EXT_SPECS_DIR "${CMAKE_SOURCE_DIR}/external/specs")
 set(GLFW_SOURCE_DIR "${EXT_LIBS_DIR}/glfw")
 set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
 set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
+set(JSON_SOURCE_DIR "${EXT_LIBS_DIR}/json")
 set(ARP_SOURCE_DIR "${EXT_LIBS_DIR}/libarp")
 
 # disable extra GLFW build steps
@@ -67,6 +68,9 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 # configure libpng build steps
 set(PNG_STATIC OFF CACHE BOOL "" FORCE)
 set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+
+set(LIBARP_FEATURE_PACK OFF)
+set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv")
 
 # include dir for generated headers which must be copied (configs)
 set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
@@ -90,6 +94,8 @@ set(ZLIB_INCLUDE_DIR "${ZLIB_SOURCE_DIR};${TMP_INCLUDE_DIR}/zlib")
 
 set(PNG_LIBRARY "png")
 set(PNG_INCLUDE_DIR "${PNG_SOURCE_DIR};${TMP_INCLUDE_DIR}/libpng")
+
+set(JSON_INCLUDE_DIR "${JSON_SOURCE_DIR}/include")
 
 set(ARP_LIBRARY_BASE "arp")
 set(ARP_LIBRARY "${ARP_LIBRARY_BASE};${ZLIB_LIBRARY}")

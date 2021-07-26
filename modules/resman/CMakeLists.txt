@@ -7,6 +7,4 @@ set(LOCAL_LIBS "${ARP_LIBRARY}")
 # include dirs this module uses
 set(LOCAL_INC_DIRS "${ARP_INCLUDE_DIR}")
 
-set(LIBARP_FEATURE_PACK OFF)
-
 setup_submodule(${MODULE_NAME} 0)

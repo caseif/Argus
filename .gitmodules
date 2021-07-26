@@ -19,3 +19,6 @@
 [submodule "external/tooling/abacus"]
 	path = external/tooling/abacus
 	url = git@github.com:caseif/Abacus
+[submodule "external/libs/json"]
+	path = external/libs/json
+	url = git@github.com:nlohmann/json.git

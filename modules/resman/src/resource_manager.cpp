@@ -304,6 +304,8 @@ namespace argus {
             stream.close();
             file_handle.release();
 
+            _ARGUS_DEBUG("Loaded FS resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
+
             return *res;
         }
 
@@ -337,6 +339,8 @@ namespace argus {
             arp_unload_resource(arp_res);
 
             auto &res = *new Resource(*this, proto, data_ptr, loader->pimpl->last_dependencies);
+
+            _ARGUS_DEBUG("Loaded ARP resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
 
             return res;
         } else if (rc != E_ARP_RESOURCE_NOT_FOUND) {

@@ -48,4 +48,7 @@ namespace argus {
         g_pimpl_pool.free(pimpl);
     }
 
+    ShaderStage Shader::get_stage(void) const {
+        return pimpl->stage;
+    }
 }
