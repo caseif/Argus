@@ -69,8 +69,8 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 set(PNG_STATIC OFF CACHE BOOL "" FORCE)
 set(PNG_TESTS OFF CACHE BOOL "" FORCE)
 
-set(LIBARP_FEATURE_PACK OFF)
-set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv")
+set(LIBARP_FEATURE_PACK OFF CACHE BOOL "" FORCE)
+set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv" CACHE STRING "" FORCE)
 
 # include dir for generated headers which must be copied (configs)
 set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
