@@ -388,6 +388,8 @@ namespace argus {
     }
 
     int ResourceManager::unload_resource(const std::string &uid) {
+        _ARGUS_DEBUG("Unloading resource %s\n", uid.c_str());
+
         auto it = pimpl->loaded_resources.find(uid);
         if (it == pimpl->loaded_resources.cend()) {
             throw ResourceNotLoadedException(uid);

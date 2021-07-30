@@ -14,6 +14,7 @@
 
 #include <initializer_list>
 #include <istream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -69,12 +70,14 @@ namespace argus {
              *
              * Subclasses should invoke this during Resource loading.
              *
+             * \param manager The ResourceManager requesting the load.
              * \param dependencies A std::vector of UIDs of dependency
              *        \link Resource Resources \endlink.
              *
              * \throw ResourceException If any dependency Resource cannot be
              *        loaded.
              */
-            void load_dependencies(ResourceManager &manager, const std::vector<std::string> &dependencies) const;
+            std::map<std::string, const Resource*> load_dependencies(ResourceManager &manager,
+                    const std::vector<std::string> &dependencies) const;
     };
 }

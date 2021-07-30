@@ -187,7 +187,7 @@ namespace argus {
              *
              * \return A pointer to the Resource data.
              */
-            const void *get_data_raw_ptr(void);
+            const void *get_data_raw_ptr(void) const;
 
             /**
              * \brief Gets the underlying data of this Resource.
@@ -197,7 +197,7 @@ namespace argus {
              * \return The Resource data.
              */
             template <typename DataType>
-            DataType &get_data(void) {
+            DataType &get_data(void) const {
                 return *static_cast<DataType*>(get_data_raw_ptr());
             }
     };

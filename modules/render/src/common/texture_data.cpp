@@ -24,7 +24,7 @@ namespace argus {
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data):
-            pimpl(new pimpl_TextureData(image_data)),
+            pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(image_data)),
             width(width),
             height(height) {
     }
