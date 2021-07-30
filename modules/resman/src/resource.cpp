@@ -9,12 +9,14 @@
 
 // module lowlevel
 #include "argus/lowlevel/memory.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module resman
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource.hpp"
+#include "internal/resman/pimpl/resource_manager.hpp"
 
 #include "arp/arp.h"
 
@@ -45,8 +47,11 @@ namespace argus {
         g_pimpl_pool.free(pimpl);
     }
 
-    void Resource::release(void) {
-        if (--pimpl->ref_count == 0) {
+    void Resource::release(void) const {
+        unsigned int new_ref_count = pimpl->ref_count.fetch_sub(1) - 1;
+        _ARGUS_DEBUG("Releasing handle on resource %s (new refcount is %d)\n",
+                this->prototype.uid.c_str(), new_ref_count);
+        if (new_ref_count == 0) {
             pimpl->manager.unload_resource(prototype.uid);
         }
     }

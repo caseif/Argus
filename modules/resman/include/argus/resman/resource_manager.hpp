@@ -25,6 +25,17 @@ namespace argus {
      *        loading, retrieving, and unloading them.
      */
     class ResourceManager {
+        friend class Resource;
+
+        private:
+            /**
+             * \brief Unloads the Resource with the given UID.
+             *
+             * \throw ResourceNotLoadedException If the Resource is not
+             *        currently loaded.
+             */
+            int unload_resource(const std::string &uid);
+
         public:
             pimpl_ResourceManager *pimpl;
 
@@ -48,14 +59,6 @@ namespace argus {
              * \brief Destroys the ResourceManager.
              */
             ~ResourceManager(void);
-
-            /**
-             * \brief Unloads the Resource with the given UID.
-             *
-             * \throw ResourceNotLoadedException If the Resource is not
-             *        currently loaded.
-             */
-            int unload_resource(const std::string &uid);
 
             /**
              * \brief Discovers all present resources from the filesystem.

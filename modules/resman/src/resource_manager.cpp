@@ -224,22 +224,33 @@ namespace argus {
         pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
+    static Resource *_acquire_resource(const ResourceManager &mgr, const std::string &uid) {
+        auto it = mgr.pimpl->loaded_resources.find(uid);
+        if (it != mgr.pimpl->loaded_resources.cend()) {
+            auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
+            _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)\n", uid.c_str(), new_ref_count);
+            return it->second;
+        } else {
+            return nullptr;
+        }
+    }
+
     Resource &ResourceManager::get_resource(const std::string &uid) {
-        auto it = pimpl->loaded_resources.find(uid);
-        if (it != pimpl->loaded_resources.cend()) {
-            return *it->second;
+        auto *res = _acquire_resource(*this, uid);
+        if (res != nullptr) {
+            return *res;
         } else {
             return load_resource(uid);
         }
     }
 
     Resource &ResourceManager::try_get_resource(const std::string &uid) const {
-        auto it = pimpl->loaded_resources.find(uid);
-        if (it == pimpl->loaded_resources.cend()) {
+        auto *res = _acquire_resource(*this, uid);
+        if (res != nullptr) {
+            return *res;
+        } else {
             throw ResourceNotLoadedException(uid);
         }
-
-        return *it->second;
     }
 
     Resource &ResourceManager::load_resource(const std::string &uid) {
@@ -274,7 +285,7 @@ namespace argus {
             stream.close();
             file_handle.release();
 
-            if (!data_ptr) {
+            if (data_ptr == nullptr) {
                 throw LoadFailedException(uid);
             }
 
@@ -331,6 +342,9 @@ namespace argus {
 
         ResourceEvent event(ResourceEventType::LOAD, res->prototype, res);
         dispatch_event(event);
+
+        _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)\n",
+                res->prototype.uid.c_str(), res->pimpl->ref_count.load());
 
         return *res;
     }

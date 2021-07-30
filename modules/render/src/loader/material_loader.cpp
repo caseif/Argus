@@ -141,8 +141,8 @@ namespace argus {
         } catch (std::out_of_range &ex) {
             _ARGUS_DEBUG("Material is incomplete or malformed\n");
             return NULL;
-        } catch (...) {
-            _ARGUS_DEBUG("Unspecified exception while parsing material\n");
+        } catch (std::exception &ex) {
+            _ARGUS_DEBUG("Unspecified exception while parsing material (what: %s)\n", ex.what());
             return NULL;
         }
     }

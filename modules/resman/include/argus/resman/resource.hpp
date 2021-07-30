@@ -175,7 +175,7 @@ namespace argus {
              * \remark This simply decrements an internal refcount, as the class
              *         has no way of tracking specific acquisitions.
              */
-            void release(void);
+            void release(void) const;
 
             /**
              * \brief Gets a raw pointer to the underlying data of this
