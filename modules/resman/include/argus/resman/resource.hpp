@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "arp/arp.h"
-
 #include <string>
 #include <vector>
 
@@ -62,12 +60,6 @@ namespace argus {
             media_type(media_type),
             fs_path(fs_path) {
         }
-
-        /**
-         * \brief Creates a ResourcePrototype from an arp_resource_meta_t
-         *        structure.
-         */
-        static ResourcePrototype from_arp_meta(std::string uid, const arp_resource_meta_t &meta);
     };
 
     /**

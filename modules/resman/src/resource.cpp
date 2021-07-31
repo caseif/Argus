@@ -27,10 +27,6 @@
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Resource));
-    
-    ResourcePrototype ResourcePrototype::from_arp_meta(std::string uid, const arp_resource_meta_t &meta) {
-        return ResourcePrototype(uid, meta.media_type, "");
-    }
 
     Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, const ResourcePrototype prototype,
             void *const data_ptr, std::vector<std::string> &dependencies):

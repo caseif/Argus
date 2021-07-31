@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "arp/arp.h"
+
 #include <atomic>
 #include <string>
 #include <vector>

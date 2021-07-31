@@ -310,7 +310,7 @@ namespace argus {
                 throw LoadFailedException(uid);
             }
 
-            ResourcePrototype proto = ResourcePrototype::from_arp_meta(uid, res_meta);
+            ResourcePrototype proto(uid, res_meta.media_type, "");
 
             auto loader_it = pimpl->registered_loaders.find(proto.media_type);
             if (loader_it == pimpl->registered_loaders.end()) {
