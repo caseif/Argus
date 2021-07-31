@@ -15,6 +15,7 @@
 #include "argus/core/callback.hpp"
 #include "argus/core/event.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/event.hpp"
 #include "internal/core/module_core.hpp"
 
 #include <algorithm>
@@ -37,10 +38,10 @@ namespace argus {
     static CallbackList<ArgusEventHandler> g_update_event_listeners;
     static CallbackList<ArgusEventHandler> g_render_event_listeners;
 
-    static std::queue<ArgusEvent*> g_update_event_queue;
+    static std::queue<RefCountable<ArgusEvent>*> g_update_event_queue;
     static std::mutex g_update_event_queue_mutex;
     
-    static std::queue<ArgusEvent*> g_render_event_queue;
+    static std::queue<RefCountable<ArgusEvent>*> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
 
     constexpr inline ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs) {
@@ -74,20 +75,26 @@ namespace argus {
         // re-lock the queue.
         mutex.lock();
         auto queue_copy = queue;
-        std::queue<ArgusEvent*>().swap(queue); // clear queue
+        std::queue<RefCountable<ArgusEvent>*>().swap(queue); // clear queue
         mutex.unlock();
 
         listeners.list_mutex.lock_shared();
 
         while (!queue_copy.empty()) {
-            ArgusEvent *event = queue_copy.front();
+            auto &event = *queue_copy.front();
             auto listeners_copy = listeners;
             for (IndexedValue<ArgusEventHandler> listener : listeners.list) {
-                if (static_cast<int>(listener.value.type & event->type)) {
-                    listener.value.callback(*event, listener.value.data);
+                if (static_cast<int>(listener.value.type & event.ptr->type)) {
+                    listener.value.callback(*event.ptr, listener.value.data);
                 }
             }
-            free(event);
+
+            auto rc = event.release();
+            if (rc == 0) {
+                free(event.ptr);
+                delete &event;
+            }
+
             queue_copy.pop();
         }
 
@@ -160,17 +167,19 @@ namespace argus {
         // In practice, using mallocs (even every frame) doesn't actually seem
         // to incur a noticeable performance hit, so for now it's probably okay
         // to just leave it as a "good enough" solution.
-        ArgusEvent *event_copy_1 = static_cast<ArgusEvent*>(malloc(obj_size));
-        ArgusEvent *event_copy_2 = static_cast<ArgusEvent*>(malloc(obj_size));
-        memcpy(event_copy_1, &event, obj_size);
-        memcpy(event_copy_2, &event, obj_size);
+        ArgusEvent *event_copy = static_cast<ArgusEvent*>(malloc(obj_size));
+        memcpy(event_copy, &event, obj_size);
+
+        auto event_ref = new RefCountable<ArgusEvent>(event_copy);
 
         g_update_event_queue_mutex.lock();
-        g_update_event_queue.push(event_copy_1);
+        event_ref->acquire();
+        g_update_event_queue.push(event_ref);
         g_update_event_queue_mutex.unlock();
 
         g_render_event_queue_mutex.lock();
-        g_render_event_queue.push(event_copy_2);
+        event_ref->acquire();
+        g_render_event_queue.push(event_ref);
         g_render_event_queue_mutex.unlock();
     }
 
