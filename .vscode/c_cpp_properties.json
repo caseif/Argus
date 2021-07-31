@@ -1,10 +1,10 @@
 {
     "env": {
         "defIncludePath": [
-            "${workspaceFolder}/external/include",
-            "${workspaceFolder}/libs/glfw/include",
-            "${workspaceFolder}/libs/libpng",
-            "${workspaceFolder}/libs/zlib",
+            "${workspaceFolder}/external/libs/glfw/include",
+            "${workspaceFolder}/external/libs/libarp",
+            "${workspaceFolder}/external/libs/libpng",
+            "${workspaceFolder}/external/libs/zlib",
             "${workspaceFolder}/modules/core/include",
             "${workspaceFolder}/modules/ecs/include",
             "${workspaceFolder}/modules/input/include",
