@@ -38,7 +38,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: true
     - name: Configure
-      run: mkdir build && cd build && cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
+      run: mkdir build && cd build && cmake ..
     - name: Build
       run: cmake --build build --config Debug --parallel 8
     - name: Archive
