@@ -82,12 +82,12 @@ namespace argus {
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
         dispatch_event<WindowEvent>(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
-                (Vector2u) { uint32_t(width), uint32_t(height) }, Vector2i(), 0);
+                Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
         dispatch_event<WindowEvent>(WindowEventType::MOVE, *g_window_map.find(handle)->second,
-                Vector2u(), (Vector2i) { x, y }, 0);
+                Vector2u(), Vector2i { x, y }, 0);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
