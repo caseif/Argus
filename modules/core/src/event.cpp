@@ -154,20 +154,6 @@ namespace argus {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
 
-        // It's difficult to get around these mallocs while also still allowing
-        // for event inheritance, since each subclass can have a different size
-        // thus preventing us from using an AllocPool or even just directly
-        // storing the event data in the queue. Potential solutions include:
-        //   - Setting a maximum size. Setting such an arbitrary restriction
-        //     seems like a pretty bad hack and lets the implementation guide
-        //     the API, which should be avoided at all costs.
-        //   - Rolling all the event-specific data into a giant struct,
-        //     SDL-style. This means no inheritance, which means modules can't
-        //     specify their own events. This is a huge tradeoff in flexibility.
-        // In practice, using mallocs (even every frame) doesn't actually seem
-        // to incur a noticeable performance hit, so for now it's probably okay
-        // to just leave it as a "good enough" solution.
-
         auto event_ref = new RefCountable<ArgusEvent>(&event);
 
         g_update_event_queue_mutex.lock();
