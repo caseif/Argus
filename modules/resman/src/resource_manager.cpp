@@ -340,7 +340,6 @@ namespace argus {
 
         pimpl->loaded_resources.insert({res->uid, res});
 
-        ResourceEvent event();
         dispatch_event<ResourceEvent>(ResourceEventType::LOAD, res->prototype, res);
 
         _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)\n",

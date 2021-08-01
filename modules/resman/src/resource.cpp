@@ -52,7 +52,7 @@ namespace argus {
         }
     }
 
-    const void *Resource::get_data_raw_ptr(void) const {
+    const void *Resource::get_data_ptr(void) const {
         return pimpl->data_ptr;
     }
 }

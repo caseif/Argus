@@ -121,10 +121,10 @@ namespace argus {
                 return NULL;
             }
 
-            auto &tex_res = deps[tex_uid];
+            auto &tex_res = *deps[tex_uid];
             std::vector<const Shader*> shaders;
             for (auto shader_info : shader_map) {
-                auto &shader = deps[shader_info.second]->get_data<const Shader>();
+                const Shader &shader = deps[shader_info.second]->get<const Shader>();
                 if (shader.get_stage() != shader_info.first) {
                     // stage of loaded shader does not match stage specified by material
                     _ARGUS_DEBUG("Mismatched shader stage in material\n");
@@ -135,7 +135,7 @@ namespace argus {
             }
 
             _ARGUS_DEBUG("Successfully loaded material\n");
-            return new Material(tex_res->get_data<const TextureData>(), shaders, attrs);
+            return new Material(tex_res.get<const TextureData>(), shaders, attrs);
         } catch (nlohmann::detail::parse_error &ex) {
             _ARGUS_DEBUG("Failed to parse material\n");
             return NULL;

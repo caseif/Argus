@@ -396,8 +396,8 @@ namespace argus {
         auto &fb_vert_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_VERT_PATH);
         auto &fb_frag_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_FRAG_PATH);
 
-        state.frame_vert_shader = _compile_shader(fb_vert_shader_res.get_data<const Shader>());
-        state.frame_frag_shader = _compile_shader(fb_frag_shader_res.get_data<const Shader>());
+        state.frame_vert_shader = _compile_shader(fb_vert_shader_res);
+        state.frame_frag_shader = _compile_shader(fb_frag_shader_res);
 
         state.frame_program = glCreateProgram();
 
