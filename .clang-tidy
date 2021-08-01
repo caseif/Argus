@@ -1,0 +1,42 @@
+{
+    "Checks": "*,\
+        -abseil-*,\
+        -altera-struct-pack-align,\
+        -android-cloexec-fopen,\
+        -bugprone-reserved-identifier,\
+        -cert-dcl37-c,\
+        -cert-dcl51-cpp,\
+        -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,\
+        -clang-diagnostic-empty-translation-unit,\
+        -cppcoreguidelines-avoid-non-const-global-variables,\
+        -cppcoreguidelines-macro-usage,\
+        -cppcoreguidelines-no-malloc,\
+        -cppcoreguidelines-non-private-member-variables-in-classes,\
+        -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
+        -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
+        -cppcoreguidelines-pro-type-const-cast,\
+        -cppcoreguidelines-pro-type-reinterpret-cast,\
+        -cppcoreguidelines-pro-type-union-access,\
+        -cppcoreguidelines-pro-type-vararg,\
+        -cppcoreguidelines-special-member-functions,\
+        -fuchsia-*,\
+        -google-readability-namespace-comments,\
+        -google-readability-todo,\
+        -hicpp-*,\
+        -llvm-else-after-return,\
+        -llvm-header-guard,\
+        -llvm-include-order,\
+        -llvmlibc-*,\
+        -llvm-namespace-comment,\
+        -misc-no-recursion,\
+        -misc-non-private-member-variables-in-classes,\
+        -modernize-redundant-void-arg,\
+        -modernize-use-auto,\
+        -modernize-use-trailing-return-type,\
+        -modernize-use-using,\
+        -performance-inefficient-string-concatenation,\
+        -performance-no-int-to-ptr,\
+        -readability-else-after-return,\
+        -readability-implicit-bool-conversion,\
+        -readability-redundant-control-flow"
+}
