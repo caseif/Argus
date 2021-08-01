@@ -149,15 +149,15 @@ namespace argus {
      *
      * \param event The event to be dispatched.
      */
-    void _dispatch_event_ptr(const ArgusEvent &event, size_t obj_size);
+    void _dispatch_event_ptr(ArgusEvent &event);
 
     /**
      * \brief Dispatches an event to all respective registered listeners.
      *
      * \param event An lreference to the event to be dispatched.
      */
-    template <typename EventType>
-    void dispatch_event(const EventType &event) {
-        _dispatch_event_ptr(event, sizeof(event));
+    template <typename T, typename... Args>
+    void dispatch_event(Args && ... args) {
+        _dispatch_event_ptr(*new T(args...));
     }
 }

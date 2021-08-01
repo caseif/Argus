@@ -91,7 +91,7 @@ namespace argus {
 
             auto rc = event.release();
             if (rc == 0) {
-                free(event.ptr);
+                delete event.ptr;
                 delete &event;
             }
 
@@ -150,7 +150,7 @@ namespace argus {
         }
     }
 
-    void _dispatch_event_ptr(const ArgusEvent &event, size_t obj_size) {
+    void _dispatch_event_ptr(ArgusEvent &event) {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
 
@@ -167,10 +167,8 @@ namespace argus {
         // In practice, using mallocs (even every frame) doesn't actually seem
         // to incur a noticeable performance hit, so for now it's probably okay
         // to just leave it as a "good enough" solution.
-        ArgusEvent *event_copy = static_cast<ArgusEvent*>(malloc(obj_size));
-        memcpy(event_copy, &event, obj_size);
 
-        auto event_ref = new RefCountable<ArgusEvent>(event_copy);
+        auto event_ref = new RefCountable<ArgusEvent>(&event);
 
         g_update_event_queue_mutex.lock();
         event_ref->acquire();

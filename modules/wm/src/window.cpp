@@ -61,7 +61,7 @@ namespace argus {
     static WindowCallback g_window_construct_callback = nullptr;
 
     static inline void _dispatch_window_event(Window &window, WindowEventType type) {
-        dispatch_event(WindowEvent(type, window));
+        dispatch_event<WindowEvent>(type, window);
     }
 
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
@@ -69,7 +69,7 @@ namespace argus {
     }
 
     static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
-        dispatch_event(WindowEvent(WindowEventType::UPDATE, window, Vector2u(), Vector2i(), delta));
+        dispatch_event<WindowEvent>(WindowEventType::UPDATE, window, Vector2u(), Vector2i(), delta);
     }
 
     static void _on_window_close(GLFWwindow *handle) {
@@ -81,13 +81,13 @@ namespace argus {
     }
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
-        dispatch_event(WindowEvent(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
-                { uint32_t(width), uint32_t(height) }, Vector2i(), 0));
+        dispatch_event<WindowEvent>(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
+                (Vector2u) { uint32_t(width), uint32_t(height) }, Vector2i(), 0);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
-        dispatch_event(WindowEvent(WindowEventType::MOVE, *g_window_map.find(handle)->second,
-                Vector2u(), { x, y }, 0));
+        dispatch_event<WindowEvent>(WindowEventType::MOVE, *g_window_map.find(handle)->second,
+                Vector2u(), (Vector2i) { x, y }, 0);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -197,7 +197,7 @@ namespace argus {
         if (!(pimpl->state & WINDOW_STATE_CREATED)) {
             pimpl->state |= WINDOW_STATE_CREATED;
 
-            dispatch_event(WindowEvent(WindowEventType::CREATE, *this));
+            dispatch_event<WindowEvent>(WindowEventType::CREATE, *this);
 
             return;
         }

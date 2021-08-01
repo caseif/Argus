@@ -83,7 +83,7 @@ namespace argus {
          *        WindowEvent.
          * \param window The Window associated with the event.
          */
-        WindowEvent(const WindowEventType subtype, Window &window):
+        WindowEvent(WindowEventType subtype, Window &window):
                 ArgusEvent{ArgusEventType::WINDOW},
                 subtype(subtype),
                 window(window),
@@ -101,14 +101,18 @@ namespace argus {
          * \param data The new position of resolution of the window following
          *        the event.
          */
-        WindowEvent(const WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
-            TimeDelta delta):
-                ArgusEvent{ArgusEventType::WINDOW},
-                subtype(subtype),
-                window(window),
-                resolution(resolution),
-                position(position),
-                delta(delta) {
+        WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
+                TimeDelta delta):
+            ArgusEvent{ArgusEventType::WINDOW},
+            subtype(subtype),
+            window(window),
+            resolution(resolution),
+            position(position),
+            delta(delta) {
+        }
+
+        WindowEvent(WindowEvent &rhs):
+            WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
         }
     };
 }

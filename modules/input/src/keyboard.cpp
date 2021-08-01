@@ -264,7 +264,7 @@ namespace argus {
         KeyboardScancode scancode = _translate_glfw_keycode(glfw_keycode);
         KeyboardModifiers mod = _translate_glfw_keymod(glfw_mods);
 
-        dispatch_event(KeyboardEvent(key_event_type, scancode, mod));
+        dispatch_event<KeyboardEvent>(key_event_type, scancode, mod);
     }
 
     static void _update_callback(TimeDelta delta) {

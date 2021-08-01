@@ -340,8 +340,8 @@ namespace argus {
 
         pimpl->loaded_resources.insert({res->uid, res});
 
-        ResourceEvent event(ResourceEventType::LOAD, res->prototype, res);
-        dispatch_event(event);
+        ResourceEvent event();
+        dispatch_event<ResourceEvent>(ResourceEventType::LOAD, res->prototype, res);
 
         _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)\n",
                 res->prototype.uid.c_str(), res->pimpl->ref_count.load());
@@ -397,7 +397,7 @@ namespace argus {
 
         auto *res = it->second;
 
-        dispatch_event(ResourceEvent(ResourceEventType::UNLOAD, res->prototype, nullptr));
+        dispatch_event<ResourceEvent>(ResourceEventType::UNLOAD, res->prototype, nullptr);
 
         pimpl->loaded_resources.erase(res->uid);
 

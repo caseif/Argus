@@ -27,7 +27,7 @@ namespace argus {
     }
 
     static void _on_window_event(const ArgusEvent &event, void *data) {
-        const WindowEvent wevent = static_cast<const WindowEvent&>(event);
+        auto &wevent = static_cast<const WindowEvent&>(event);
         if (wevent.subtype == WindowEventType::CREATE) {
             _init_window_input(wevent.window);
         }
