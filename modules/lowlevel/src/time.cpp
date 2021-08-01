@@ -23,17 +23,21 @@
     #endif
 #endif
 
+#include <cstdint>
+
 #define NS_PER_S 1000000000LLU
+#define US_PER_S 1000000LLU
+#define NS_PER_US 1000LLU
 
 namespace argus {
 
 #ifdef _WIN32
     #define WIN32_EPOCH_OFFSET 11644473600000000ULL
 
-    const unsigned long long microtime(void) {
+    uint64_t microtime(void) {
         FILETIME ft;
         GetSystemTimeAsFileTime(&ft);
-        unsigned long long tt = ft.dwHighDateTime;
+        uint64_t tt = ft.dwHighDateTime;
         tt <<= 32;
         tt |= ft.dwLowDateTime;
         tt /= 10;
@@ -41,20 +45,20 @@ namespace argus {
         return tt;
     }
 #else
-    const unsigned long long microtime(void) {
-        timespec now;
+    uint64_t microtime(void) {
+        timespec now{};
         clock_gettime(CLOCK_MONOTONIC, &now);
-        return now.tv_sec * 1000000 + now.tv_nsec / 1000;
+        return now.tv_sec * US_PER_S + now.tv_nsec / NS_PER_US;
     }
 #endif
 
 #ifdef USE_PTHREADS
-    void sleep_nanos(const unsigned long long ns) {
+    void sleep_nanos(const uint64_t ns) {
         const struct timespec spec = {(long)(ns / NS_PER_S), (long)(ns % NS_PER_S)};
         nanosleep(&spec, NULL);
     }
 #else
-    void sleep_nanos(const unsigned long long ns) {
+    void sleep_nanos(const uint64_t ns) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(ns));
     }
 #endif

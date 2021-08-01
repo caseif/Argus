@@ -10,6 +10,7 @@
 #pragma once
 
 #include "argus/render/2d/render_group_2d.hpp"
+#include "argus/render/2d/render_layer_2d.hpp"
 #include "internal/render/pimpl/common/render_layer.hpp"
 
 namespace argus {
@@ -19,10 +20,10 @@ namespace argus {
     struct pimpl_RenderLayer2D : public pimpl_RenderLayer {
         RenderGroup2D root_group;
         
-        pimpl_RenderLayer2D(const Renderer &renderer, const RenderLayer2D &layer, Transform2D &transform,
+        pimpl_RenderLayer2D(const Renderer &renderer, RenderLayer2D &layer, const Transform2D &transform,
                 const int index):
-            pimpl_RenderLayer(renderer, dynamic_cast<const RenderLayer&>(layer), transform, index),
-            root_group(layer, nullptr) {
+                pimpl_RenderLayer(renderer, dynamic_cast<RenderLayer&>(layer), transform, index),
+                root_group(layer, nullptr) {
         }
 
         pimpl_RenderLayer2D(const pimpl_RenderLayer2D&) = default;

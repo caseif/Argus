@@ -55,15 +55,17 @@ namespace argus {
         }
     }
 
-    void Transform3D::operator=(const Transform3D &rhs) noexcept {
+    Transform3D &Transform3D::operator =(const Transform3D &rhs) noexcept {
         pimpl->translation = rhs.pimpl->translation;
         pimpl->rotation = rhs.pimpl->rotation;
         pimpl->scale = rhs.pimpl->scale;
-        pimpl->dirty = true;
-        pimpl->dirty_matrix = true;
+        pimpl->dirty = (&rhs != this) || this->pimpl->dirty;
+        pimpl->dirty_matrix = (&rhs != this) || this->pimpl->dirty_matrix;
+
+        return *this;
     }
 
-    Transform3D Transform3D::operator +(const Transform3D rhs) {
+    Transform3D Transform3D::operator +(const Transform3D &rhs) const {
         return Transform3D(
                 pimpl->translation + rhs.pimpl->translation,
                 pimpl->rotation + rhs.pimpl->rotation,
@@ -71,12 +73,12 @@ namespace argus {
         );
     }
 
-    const Vector3f Transform3D::get_translation(void) {
+    Vector3f Transform3D::get_translation(void) const {
         pimpl->translation_mutex.lock();
         Vector3f translation_current = pimpl->translation;
         pimpl->translation_mutex.unlock();
 
-        return this->pimpl->translation;
+        return translation_current;
     }
 
     void Transform3D::set_translation(const Vector3f &translation) {
@@ -103,7 +105,7 @@ namespace argus {
         this->add_translation({ x, y, z });
     }
 
-    const Vector3f Transform3D::get_rotation(void) const {
+    Vector3f Transform3D::get_rotation(void) const {
         return pimpl->rotation;
     }
 
@@ -129,7 +131,7 @@ namespace argus {
         this->add_rotation(pitch_delta, yaw_delta, roll_delta);
     }
 
-    Vector3f const Transform3D::get_scale(void) {
+    Vector3f Transform3D::get_scale(void) const {
         pimpl->scale_mutex.lock();
         Vector3f scale_current = pimpl->scale;
         pimpl->scale_mutex.unlock();
@@ -182,7 +184,7 @@ namespace argus {
         return pimpl->matrix_rep;
     }
 
-    void Transform3D::copy_matrix(mat4_flat_t target) {
+    void Transform3D::copy_matrix(mat4_flat_t &target) {
         _compute_matrix(*this);
 
         memcpy(target, pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));

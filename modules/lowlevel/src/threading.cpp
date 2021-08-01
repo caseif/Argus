@@ -29,7 +29,7 @@
 
 namespace argus {
 
-#ifdef USE_PTHREADS
+    #ifdef USE_PTHREADS
     struct FunctionDelegate {
         static void *invoke_static(void *self) {
             return static_cast<FunctionDelegate *>(self)->invoke();
@@ -70,7 +70,7 @@ namespace argus {
         pthread_cancel(handle);
         delete this;
     }
-#else
+    #else
     Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
         return *new Thread(new std::thread(routine, arg));
     }
@@ -93,9 +93,9 @@ namespace argus {
         delete this;
         return;
     }
-#endif
+    #endif
 
-#ifdef _WIN32
+    #ifdef _WIN32
     SharedMutex::SharedMutex(void) {
         InitializeSRWLock(&handle);
     }
@@ -127,9 +127,9 @@ namespace argus {
     void SharedMutex::unlock_shared(void) {
         ReleaseSRWLockShared(&handle);
     }
-#else
+    #else
     SharedMutex::SharedMutex(void) {
-        pthread_rwlock_init(&handle, NULL);
+        pthread_rwlock_init(&handle, nullptr);
     }
 
     SharedMutex::~SharedMutex(void) {
@@ -159,13 +159,16 @@ namespace argus {
     void SharedMutex::unlock_shared(void) {
         pthread_rwlock_unlock(&handle);
     }
-#endif
+    #endif
 
-    std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback) {
+    std::future<void> make_future(const std::function<void(void)> &function,
+            const std::function<void(void)> &callback) {
         auto promise_ptr = std::make_shared<std::promise<void>>();
         std::future<void> future = promise_ptr->get_future();
-        Thread thread = Thread::create(
-            [function, callback, promise_ptr](void *) mutable -> void * {
+        Thread *thread = nullptr;
+        thread = &Thread::create(
+            //NOLINTNEXTLINE(clang-diagnostic-unused-parameter)
+            [thread, function, callback, promise_ptr](const void *_) mutable -> void * {
                 try {
                     function();
                     promise_ptr->set_value_at_thread_exit();
@@ -177,11 +180,12 @@ namespace argus {
                     promise_ptr->set_exception_at_thread_exit(std::current_exception());
                 }
 
+                thread->destroy();
+
                 return nullptr;
             },
-            nullptr);
+        nullptr);
 
         return future;
     }
-
 }

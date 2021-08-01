@@ -46,11 +46,11 @@ namespace argus {
              * \param parent_group The parent group this group belongs to, if
              *        applicable. This may be nullptr.
              */
-            RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group, Transform2D &transform);
+            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group, const Transform2D &transform);
 
-            RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group, Transform2D &&transform);
+            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group, Transform2D &&transform);
 
-            RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group);
+            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group);
 
             RenderGroup2D(const RenderGroup2D&) noexcept;
 
@@ -63,7 +63,7 @@ namespace argus {
              *
              * \return The parent RenderLayer to this group.
              */
-            const RenderLayer2D &get_parent_layer(void) const;
+            RenderLayer2D &get_parent_layer(void) const;
 
             /**
              * \brief Gets the parent RenderGroup, if applicable.
@@ -71,14 +71,14 @@ namespace argus {
              * \return The parent group to this one, or nullptr if this is a
              *         root group.
              */
-            RenderGroup2D *const get_parent_group(void) const;
+            RenderGroup2D *get_parent_group(void) const;
 
             /**
              * \brief Creates a new RenderGroup as a child of this group.
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup2D &create_child_group(Transform2D &transform);
+            RenderGroup2D &create_child_group(const Transform2D &transform);
 
             /**
              * \brief Creates a new RenderObject as a child of this group.
@@ -89,12 +89,14 @@ namespace argus {
              * \param transform The relative transform of the new object.
              */
             RenderObject2D &create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
-                Transform2D &transform);
+                const Transform2D &transform);
 
             /**
              * \brief Removes the supplied RenderGroup from this group,
              *        destroying it in the process.
+             *
              * \param group The group to remove and destroy.
+             *
              * \throw std::invalid_argument If the supplied RenderGroup is not a
              *        child of this group.
              */
@@ -103,7 +105,9 @@ namespace argus {
             /**
              * \brief Removes the specified RenderObject from this group,
              *        destroying it in the process.
+             *
              * \param object The RenderObject to remove and destroy.
+             *
              * \throw std::invalid_argument If the supplied RenderObject is not
              *        a child of this group.
              */
@@ -126,6 +130,6 @@ namespace argus {
              *
              * \param transform The new local Transform for this group.
              */
-            void set_transform(Transform2D &transform);
+            void set_transform(const Transform2D &transform);
     };
 }

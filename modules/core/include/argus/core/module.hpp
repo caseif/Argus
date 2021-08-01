@@ -20,12 +20,12 @@
 #include <windows.h>
 #endif
 
-#define MODULE_CORE "core"
-#define MODULE_WM "wm"
-#define MODULE_ECS "ecs"
-#define MODULE_INPUT "input"
-#define MODULE_RESMAN "resman"
-#define MODULE_RENDER "render"
+constexpr const char *ModuleCore = "core";
+constexpr const char *ModuleWm = "wm";
+constexpr const char *ModuleEcs = "ecs";
+constexpr const char *ModuleInput = "input";
+constexpr const char *ModuleResman = "resman";
+constexpr const char *ModuleRender = "render";
 
 /**
  * \brief Macro for conveniently registering Argus modules contained by shared
@@ -169,7 +169,7 @@ namespace argus {
      * \throw std::invalid_argument If a module with the given ID is already
      *        registered.
      */
-    void register_module(const ArgusModule module);
+    void register_module(const ArgusModule &module);
 
     /**
      * \brief Enables a registered module on demand.
@@ -179,5 +179,5 @@ namespace argus {
      * \throw std::invalid_argument If no module with the given ID is currently
      *        registered.
      */
-    void enable_module(const std::string module_id);
+    void enable_module(const std::string &module_id);
 }

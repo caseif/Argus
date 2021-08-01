@@ -13,8 +13,8 @@
 #include "argus/lowlevel/math.hpp"
 
 namespace argus {
-    class pimpl_Transform2D;
-    class pimpl_Transform3D;
+    struct pimpl_Transform2D;
+    struct pimpl_Transform3D;
 
     /**
      * \brief A transformation in 2D space.
@@ -35,7 +35,7 @@ namespace argus {
 
             Transform2D(Transform2D &&rhs) noexcept;
 
-            void operator=(const Transform2D &rhs) noexcept;
+            Transform2D &operator =(const Transform2D &rhs) noexcept;
 
             ~Transform2D(void);
 
@@ -46,7 +46,7 @@ namespace argus {
              * \param rotation The single-axis rotation.
              * \param scale The scale in 2D space.
              */
-            Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale);
+            Transform2D(const Vector2f &translation, float rotation, const Vector2f &scale);
 
             /**
              * \brief Adds one transform to another.
@@ -58,14 +58,14 @@ namespace argus {
              *
              * \return The resulting transform.
              */
-            Transform2D operator +(const Transform2D rhs);
+            Transform2D operator +(const Transform2D &rhs) const;
 
             /**
              * \brief Gets the translation component of the transform.
              *
              * \return The translation component of the transform.
              */
-            Vector2f const get_translation(void);
+            Vector2f get_translation(void) const;
 
             /**
              * \brief Sets the translation component of the transform.
@@ -80,7 +80,7 @@ namespace argus {
              * \param x The new x-translation for the transform.
              * \param y The new y-translation for the transform.
              */
-            void set_translation(const float x, const float y);
+            void set_translation(float x, float y);
 
             /**
              * \brief Adds the given value to the transform's translation
@@ -100,21 +100,21 @@ namespace argus {
              * \param y_delta The value to add to the transform's translation on
              *        the y-axis.
              */
-            void add_translation(const float x_delta, const float y_delta);
+            void add_translation(float x_delta, float y_delta);
 
             /**
              * \brief Gets the rotation component of the transform in radians.
              *
              * \return The rotation component of the transform in radians.
              */
-            const float get_rotation(void) const;
+            float get_rotation(void) const;
 
             /**
              * \brief Sets the rotation component of the transform.
              *
              * \param rotation_radians The new rotation component for the transform.
              */
-            void set_rotation(const float rotation_radians);
+            void set_rotation(float rotation_radians);
 
             /**
              * \brief Adds the given value to the transform's rotation
@@ -123,14 +123,14 @@ namespace argus {
              * \param rotation_radians The value in radians to add to this
              *         transform's rotation component.
              */
-            void add_rotation(const float rotation_radians);
+            void add_rotation(float rotation_radians);
 
             /**
              * \brief Gets the scale component of the transform.
              *
              * \return The scale component of the transform.
              */
-            Vector2f const get_scale(void);
+            Vector2f get_scale(void) const;
 
             /**
              * \brief Sets the scale component of the transform.
@@ -145,7 +145,7 @@ namespace argus {
              * \param x The new x-scale for the transform.
              * \param y The new y-scale for the transform.
              */
-            void set_scale(const float x, const float y);
+            void set_scale(float x, float y);
 
             /**
              * \brief Returns an unmodifiable 4x4 matrix representation of this
@@ -161,7 +161,7 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(mat4_flat_t target);
+            void copy_matrix(mat4_flat_t &target);
     };
 
     /**
@@ -183,7 +183,7 @@ namespace argus {
 
             Transform3D(Transform3D &&rhs) noexcept;
 
-            void operator=(const Transform3D &rhs) noexcept;
+            Transform3D &operator =(const Transform3D &rhs) noexcept;
 
             ~Transform3D(void);
 
@@ -207,14 +207,14 @@ namespace argus {
              *
              * \return The resulting transform.
              */
-            Transform3D operator +(const Transform3D rhs);
+            Transform3D operator +(const Transform3D &rhs) const;
 
             /**
              * \brief Gets the translation component of the transform.
              *
              * \return The translation component of the transform.
              */
-            const Vector3f get_translation(void);
+            Vector3f get_translation(void) const;
 
             /**
              * \brief Sets the translation component of the transform.
@@ -230,7 +230,7 @@ namespace argus {
              * \param y The new y-translation for the transform.
              * \param y The new z-translation for the transform.
              */
-            void set_translation(const float x, const float y, const float z);
+            void set_translation(float x, float y, float z);
 
             /**
              * \brief Adds the given value to the transform's translation
@@ -252,7 +252,7 @@ namespace argus {
              * \param z_delta The value to add to the transform's translation on
              *        the y-axis.
              */
-            void add_translation(const float x_delta, const float y_delta, const float z_delta);
+            void add_translation(float x_delta, float y_delta, float z_delta);
 
             /**
              * \brief Gets the rotation component of the transform in radians.
@@ -260,7 +260,7 @@ namespace argus {
              * \return The rotation component of the transform in radians in the
              *         order (pitch, yaw, roll).
              */
-            const Vector3f get_rotation(void) const;
+            Vector3f get_rotation(void) const;
 
             /**
              * \brief Sets the rotation component of the transform.
@@ -277,7 +277,7 @@ namespace argus {
              * \param yaw The new yaw for the transform in radians.
              * \param roll The new roll for the transform in radians.
              */
-            void set_rotation(const float pitch, const float yaw, const float roll);
+            void set_rotation(float pitch, float yaw, float roll);
 
             /**
              * \brief Adds the given value to the transform's rotation
@@ -300,14 +300,14 @@ namespace argus {
              * \param roll_delta The value in radians to add to the transform's
              *        roll.
              */
-            void add_rotation(const float pitch_delta, const float yaw_delta, const float roll_delta);
+            void add_rotation(float pitch_delta, float yaw_delta, float roll_delta);
 
             /**
              * \brief Gets the scale component of the transform.
              *
              * \return The scale component of the transform.
              */
-            Vector3f const get_scale(void);
+            Vector3f get_scale(void) const;
 
             /**
              * \brief Sets the scale component of the transform.
@@ -323,7 +323,7 @@ namespace argus {
              * \param y The new y-scale for the transform.
              * \param y The new z-scale for the transform.
              */
-            void set_scale(const float x, const float y, const float z);
+            void set_scale(float x, float y, float z);
 
             /**
              * \brief Returns an unmodifiable 4x4 matrix representation of this
@@ -339,6 +339,6 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(mat4_flat_t target);
+            void copy_matrix(mat4_flat_t &target);
     };
 }

@@ -46,17 +46,17 @@ namespace argus {
     extern void init_module_resman(void);
     extern void init_module_render(void);
 
-    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{{MODULE_CORE, init_module_core},
-                                                                                   {MODULE_WM, init_module_wm},
-                                                                                   {MODULE_ECS, init_module_ecs},
-                                                                                   {MODULE_INPUT, init_module_input},
-                                                                                   {MODULE_RESMAN, init_module_resman},
-                                                                                   {MODULE_RENDER, init_module_render}};
+    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{{ModuleCore, init_module_core},
+                                                                                   {ModuleWm, init_module_wm},
+                                                                                   {ModuleEcs, init_module_ecs},
+                                                                                   {ModuleInput, init_module_input},
+                                                                                   {ModuleResman, init_module_resman},
+                                                                                   {ModuleRender, init_module_render}};
 
     std::map<const std::string, const ArgusModule> g_registered_modules;
 
-    std::set<ArgusModule, bool (*)(const ArgusModule, const ArgusModule)> g_enabled_modules(
-        [](const ArgusModule a, const ArgusModule b) {
+    std::set<ArgusModule, bool (*)(const ArgusModule&, const ArgusModule&)> g_enabled_modules(
+        [](const ArgusModule &a, const ArgusModule &b) {
             if (a.layer != b.layer) {
                 return a.layer < b.layer;
             } else {
@@ -67,8 +67,8 @@ namespace argus {
     static std::vector<void *> g_external_module_handles;
 
     void init_stock_modules(void) {
-        for (auto it = g_stock_module_initializers.cbegin(); it != g_stock_module_initializers.cend(); it++) {
-            it->second();
+        for (const auto &mod_init : g_stock_module_initializers) {
+            mod_init.second();
         }
     }
 
@@ -88,7 +88,7 @@ namespace argus {
 
         std::map<std::string, std::string> modules;
 
-        for (auto filename : entries) {
+        for (const auto &filename : entries) {
             std::string full_path = modules_dir_path + PATH_SEPARATOR + filename;
 
             if (!is_regfile(full_path)) {
@@ -101,7 +101,7 @@ namespace argus {
                 continue;
             }
 
-            std::string ext = "";
+            std::string ext;
             size_t ext_sep_index = filename.rfind(EXTENSION_SEPARATOR);
             if (ext_sep_index != std::string::npos) {
                 ext = filename.substr(ext_sep_index + 1);
@@ -123,11 +123,11 @@ namespace argus {
     void load_external_modules(void) {
         auto modules = get_present_external_modules();
 
-        for (auto module : modules) {
+        for (const auto &module : modules) {
             _ARGUS_INFO("Found external module %s as file %s, attempting to load.\n",
                     module.first.c_str(), module.second.c_str());
 
-            void *handle;
+            void *handle = nullptr;
             #ifdef _WIN32
             handle = LoadLibraryA(module.second.c_str());
             if (handle == nullptr) {
@@ -161,12 +161,12 @@ namespace argus {
     }
 
     void load_modules(const std::vector<std::string> &modules) {
-        for (const std::string module : modules) {
+        for (const auto &module : modules) {
             enable_module(module);
         }
     }
 
-    void register_module(const ArgusModule module) {
+    void register_module(const ArgusModule &module) {
         if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {
             ;
             throw std::invalid_argument("Module is already registered: " + module.id);
@@ -183,9 +183,9 @@ namespace argus {
         _ARGUS_INFO("Registered module %s\n", module.id.c_str());
     }
 
-    void enable_module(const std::string module_id, const std::vector<std::string> dependent_chain) {
+    void enable_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
         // skip duplicates
-        for (const ArgusModule enabled_module : g_enabled_modules) {
+        for (const auto &enabled_module : g_enabled_modules) {
             if (enabled_module.id == module_id) {
                 if (dependent_chain.empty()) {
                     _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
@@ -198,7 +198,7 @@ namespace argus {
         if (it == g_registered_modules.cend()) {
             std::stringstream err_msg;
             err_msg << "Module \"" << module_id << "\" was requested, but is not registered";
-            for (const std::string dependent : dependent_chain) {
+            for (const auto &dependent : dependent_chain) {
                 err_msg << "\n    Required by module \"" << dependent << "\"";
             }
             throw std::invalid_argument(err_msg.str());
@@ -206,7 +206,7 @@ namespace argus {
 
         std::vector<std::string> new_chain = dependent_chain;
         new_chain.insert(new_chain.cend(), module_id);
-        for (const std::string dependency : it->second.dependencies) {
+        for (const auto &dependency : it->second.dependencies) {
             enable_module(dependency, new_chain);
         }
 
@@ -215,7 +215,7 @@ namespace argus {
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
-    void enable_module(const std::string module_id) {
+    void enable_module(const std::string &module_id) {
         enable_module(module_id, {});
     }
 

@@ -36,6 +36,7 @@ namespace argus {
         Index id;
         ValueType value;
 
+        //NOLINTNEXTLINE(google-explicit-constructor)
         operator ValueType &() const {
             return value;
         }
@@ -52,12 +53,21 @@ namespace argus {
         std::queue<Index> removal_queue;
         SharedMutex list_mutex;
         SharedMutex queue_mutex;
+
+        CallbackList(void) {
+        }
+
+        CallbackList(const CallbackList &rhs):
+                list(rhs.list),
+                addition_queue(rhs.addition_queue),
+                removal_queue(rhs.removal_queue) {
+        }
     };
 
     // since IndexedValue is templated we have to define the utility functions here
 
     template <typename T>
-    const bool remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
+    bool remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
         auto it = std::find_if(vector.begin(), vector.end(),
                 [id](IndexedValue<T> callback) { return callback.id == id; });
         if (it != vector.end()) {

@@ -11,16 +11,19 @@
 
 // module render_opengl
 #include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/layer_state.hpp"
 
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace argus {
     // forward declarations
+    class Renderer;
     class RenderLayer;
     class Shader;
-    struct TextureData;
+    class TextureData;
     class RenderLayer2D;
     class RenderObject2D;
 

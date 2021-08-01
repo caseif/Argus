@@ -67,8 +67,10 @@ namespace argus {
             #else
             std::thread* handle;
 
-            Thread(std::thread *handle);
+            explicit Thread(std::thread *handle);
             #endif
+
+            Thread(Thread&) = delete;
 
         public:
             /**
@@ -123,6 +125,11 @@ namespace argus {
              * \brief Constructs a new SharedMutex.
              */
             SharedMutex(void);
+
+            SharedMutex(SharedMutex&) = delete;
+            SharedMutex(SharedMutex&&) = delete;
+            SharedMutex &operator =(SharedMutex&) = delete;
+            SharedMutex &operator =(SharedMutex&&) = delete;
 
             ~SharedMutex(void);
 
@@ -209,8 +216,7 @@ namespace argus {
              *        empty value.
              */
             ComplexAtomic(void):
-                    value(),
-                    mutex() {
+                    value() {
             }
 
             /**
@@ -218,9 +224,8 @@ namespace argus {
              *
              * \param val The value to copy into this `ComplexAtomic`'s state.
              */
-            ComplexAtomic(ValueType &val):
-                    value(std::move(val)),
-                    mutex() {
+            explicit ComplexAtomic(ValueType &val):
+                    value(val) {
             }
 
             /**
@@ -228,9 +233,8 @@ namespace argus {
              *
              * \param val The value to move into this `ComplexAtomic`'s state.
              */
-            ComplexAtomic(ValueType &&val):
-                    value(std::move(val)),
-                    mutex() {
+            explicit ComplexAtomic(ValueType &&val):
+                    value(val) {
             }
 
             /**
@@ -353,27 +357,33 @@ namespace argus {
      *            be performed on a new thread.
      */
     template <typename Out>
-    std::future<Out> make_future(const std::function<Out(void)> function, const std::function<void(Out)> callback) {
+    std::future<Out> make_future(const std::function<Out(void)> &function, const std::function<void(Out)> &callback) {
         if (!function) {
             throw std::invalid_argument("make_future: Function must be present");
         }
 
         auto promise_ptr = std::make_shared<std::promise<Out>>();
         std::future<Out> future = promise_ptr->get_future();
-        Thread thread = Thread::create([function, callback, promise_ptr](void*) mutable -> void* {
-            try {
-                Out res = function();
-                promise_ptr->set_value_at_thread_exit(res);
+        Thread *thread = nullptr;
+        thread = &Thread::create(
+            //NOLINTNEXTLINE(clang-diagnostic-unused-parameter)
+            [thread, function, callback, promise_ptr](const void *_) mutable -> void* {
+                try {
+                    Out res = function();
+                    promise_ptr->set_value_at_thread_exit(res);
 
-                if (callback != nullptr) {
-                    callback(res);
+                    if (callback != nullptr) {
+                        callback(res);
+                    }
+                } catch (...) {
+                    promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
                 }
-            } catch (...) {
-                promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
-            }
+                
+                thread->destroy();
 
-            return nullptr;
-        }, nullptr);
+                return nullptr;
+            },
+        nullptr);
 
         return future;
     }
@@ -391,5 +401,5 @@ namespace argus {
      *         `void` type has unique language semantics which require special
      *         handling.
      */
-    std::future<void> make_future(const std::function<void(void)> function, const std::function<void(void)> callback);
+    std::future<void> make_future(const std::function<void(void)> &function, const std::function<void(void)> &callback);
 }

@@ -44,9 +44,9 @@ namespace argus {
              * \param index The index of the layer. Higher-indexed layers are
              *        rendered on top of lower-indexed ones.
              */
-            RenderLayer2D(const Renderer &parent, Transform2D &transform, const int index);
+            RenderLayer2D(const Renderer &parent, const Transform2D &transform, int index);
 
-            RenderLayer2D(const Renderer &parent, Transform2D &&transform, const int index):
+            RenderLayer2D(const Renderer &parent, Transform2D &&transform, int index):
                 RenderLayer2D(parent, transform, index) {
             }
 
@@ -64,7 +64,7 @@ namespace argus {
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup2D &create_child_group(Transform2D &transform);
+            RenderGroup2D &create_child_group(const Transform2D &transform);
 
             /**
              * \brief Creates a new RenderObject2D as a direct child of this
@@ -79,7 +79,7 @@ namespace argus {
              *         no RenderObject is truly without a parent group.
              */
             RenderObject2D &create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
-                Transform2D &transform);
+                const Transform2D &transform);
 
             /**
              * \brief Removes the supplied RenderGroup2D from this layer,

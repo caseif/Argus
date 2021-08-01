@@ -55,15 +55,15 @@ namespace argus {
         }
     }
 
-    void Transform2D::operator=(const Transform2D &rhs) noexcept {
+    Transform2D &Transform2D::operator=(const Transform2D &rhs) noexcept {
         pimpl->translation = rhs.pimpl->translation;
         pimpl->rotation.store(rhs.pimpl->rotation);
         pimpl->scale = rhs.pimpl->scale;
-        pimpl->dirty = true;
-        pimpl->dirty_matrix = true;
+        pimpl->dirty = &rhs != this || pimpl->dirty;
+        pimpl->dirty_matrix = &rhs != this || pimpl->dirty_matrix;
     }
 
-    Transform2D Transform2D::operator +(const Transform2D rhs) {
+    Transform2D Transform2D::operator +(const Transform2D &rhs) const {
         return Transform2D(
                 pimpl->translation + rhs.pimpl->translation,
                 pimpl->rotation.load() + rhs.pimpl->rotation,
@@ -71,12 +71,12 @@ namespace argus {
         );
     }
 
-    Vector2f const Transform2D::get_translation(void) {
+    Vector2f Transform2D::get_translation(void) const {
         pimpl->translation_mutex.lock();
         Vector2f translation_current = pimpl->translation;
         pimpl->translation_mutex.unlock();
 
-        return this->pimpl->translation;
+        return translation_current;
     }
 
     void Transform2D::set_translation(const Vector2f &translation) {
@@ -103,7 +103,7 @@ namespace argus {
         this->add_translation({ x, y });
     }
 
-    const float Transform2D::get_rotation(void) const {
+    float Transform2D::get_rotation(void) const {
         return pimpl->rotation;
     }
 
@@ -120,7 +120,7 @@ namespace argus {
         pimpl->set_dirty();
     }
 
-    Vector2f const Transform2D::get_scale(void) {
+    Vector2f Transform2D::get_scale(void) const {
         pimpl->scale_mutex.lock();
         Vector2f scale_current = pimpl->scale;
         pimpl->scale_mutex.unlock();
@@ -186,7 +186,7 @@ namespace argus {
         return pimpl->matrix_rep;
     }
 
-    void Transform2D::copy_matrix(mat4_flat_t target) {
+    void Transform2D::copy_matrix(mat4_flat_t &target) {
         _compute_matrix(*this);
 
         memcpy(target, pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));

@@ -118,9 +118,9 @@ namespace argus {
     }
 
     void init_module_render(void) {
-        register_module({MODULE_RENDER, 3, {"core", "wm", "resman"}, _update_lifecycle_render});
+        register_module({ModuleRender, 3, {"core", "wm", "resman"}, _update_lifecycle_render});
 
-        register_early_init_callback(MODULE_RENDER, load_backend_modules);
+        register_early_init_callback(ModuleRender, load_backend_modules);
     }
 
 }

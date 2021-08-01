@@ -22,13 +22,13 @@ namespace argus {
      * \param fn_name The name of the function.
      * \param addr A pointer to the function.
      */
-    void register_module_fn(std::string fn_name, void *addr);
+    void register_module_fn(const std::string &fn_name, const void *addr);
 
-    void *lookup_module_fn(std::string fn_name);
+    const void *lookup_module_fn(const std::string &fn_name);
 
-    template <typename Ret, typename... Args>
-    Ret call_module_fn(std::string fn_name, Args&&... args) {
-        auto fn_ptr = reinterpret_cast<Ret(*)(Args...)>(lookup_module_fn(fn_name));
+    template <typename Ret, typename... Args, typename Fn = Ret(*)(Args...)>
+    Ret call_module_fn(const std::string &fn_name, Args &&...args) {
+        auto fn_ptr = reinterpret_cast<Fn>(const_cast<void*>(lookup_module_fn(fn_name)));
 
         if (fn_ptr != nullptr) {
             return fn_ptr(std::forward<Args>(args)...);

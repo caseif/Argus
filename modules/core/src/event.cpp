@@ -61,7 +61,7 @@ namespace argus {
 
     void process_event_queue(const TargetThread target_thread) {
         _ARGUS_ASSERT(target_thread == TargetThread::UPDATE || target_thread == TargetThread::RENDER,
-            "Unrecognized target thread ordinal %u\n", (unsigned int) target_thread);
+            "Unrecognized target thread ordinal %u\n", static_cast<unsigned int>(target_thread));
 
         auto render_thread = target_thread == TargetThread::RENDER;
 
@@ -83,7 +83,7 @@ namespace argus {
         while (!queue_copy.empty()) {
             auto &event = *queue_copy.front();
             auto listeners_copy = listeners;
-            for (IndexedValue<ArgusEventHandler> listener : listeners.list) {
+            for (const IndexedValue<ArgusEventHandler> &listener : listeners.list) {
                 if (static_cast<int>(listener.value.type & event.ptr->type)) {
                     listener.value.callback(*event.ptr, listener.value.data);
                 }
@@ -91,8 +91,8 @@ namespace argus {
 
             auto rc = event.release();
             if (rc == 0) {
-                delete event.ptr;
-                delete &event;
+                delete event.ptr; //NOLINT(cppcoreguidelines-owning-memory)
+                delete &event; //NOLINT(cppcoreguidelines-owning-memory)
             }
 
             queue_copy.pop();
@@ -102,7 +102,7 @@ namespace argus {
     }
 
     void flush_event_listener_queues(const TargetThread target_thread) {
-        CallbackList<ArgusEventHandler> *listeners;
+        CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {
             case TargetThread::UPDATE: {
                 listeners = &g_update_event_listeners;
@@ -113,19 +113,19 @@ namespace argus {
                 break;
             }
             default: {
-                _ARGUS_FATAL("Unrecognized target thread ordinal %u\n", (unsigned int) target_thread);
+                _ARGUS_FATAL("Unrecognized target thread ordinal %u\n", static_cast<unsigned int>(target_thread));
             }
         }
 
         flush_callback_list_queues(*listeners);
     }
 
-    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
+    Index register_event_handler(const ArgusEventType type, const ArgusEventCallback &callback,
             const TargetThread target_thread, void *const data) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
-        CallbackList<ArgusEventHandler> *listeners;
+        CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {
             case TargetThread::UPDATE: {
                 listeners = &g_update_event_listeners;
@@ -136,7 +136,7 @@ namespace argus {
                 break;
             }
             default: {
-                _ARGUS_FATAL("Unrecognized target thread ordinal %u\n", (unsigned int) target_thread);
+                _ARGUS_FATAL("Unrecognized target thread ordinal %u\n", static_cast<unsigned int>(target_thread));
             }
         }
 
@@ -154,7 +154,7 @@ namespace argus {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
 
-        auto event_ref = new RefCountable<ArgusEvent>(&event);
+        auto event_ref = new RefCountable<ArgusEvent>(&event); //NOLINT(cppcoreguidelines-owning-memory)
 
         g_update_event_queue_mutex.lock();
         event_ref->acquire();

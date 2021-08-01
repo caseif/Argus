@@ -43,11 +43,11 @@ namespace argus {
 
     extern std::map<const std::string, const ArgusModule> g_registered_modules;
 
-    extern std::set<ArgusModule, bool (*)(const ArgusModule, const ArgusModule)> g_enabled_modules;
+    extern std::set<ArgusModule, bool (*)(const ArgusModule&, const ArgusModule&)> g_enabled_modules;
 
     void init_stock_modules(void);
     
-    void register_early_init_callback(const std::string module_id, NullaryCallback callback);
+    void register_early_init_callback(const std::string &module_id, NullaryCallback callback);
 
     void do_early_init();
 

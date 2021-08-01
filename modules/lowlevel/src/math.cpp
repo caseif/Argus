@@ -27,12 +27,12 @@ namespace argus {
         }
     }
 
-    Vector4f multiply_matrix_and_vector(const Vector4f vec, const mat4_flat_t mat) {
+    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const mat4_flat_t mat) {
         return Vector4f {
-            mat[0] * vec.x + mat[4] * vec.y + mat[8] * vec.z + mat[12] * vec.w,
-            mat[1] * vec.x + mat[5] * vec.y + mat[9] * vec.z + mat[13] * vec.w,
-            mat[2] * vec.x + mat[6] * vec.y + mat[10] * vec.z + mat[14] * vec.w,
-            mat[3] * vec.x + mat[7] * vec.y + mat[11] * vec.z + mat[15] * vec.w
+            { mat[0] * vec.x + mat[4] * vec.y + mat[8] * vec.z + mat[12] * vec.w },
+            { mat[1] * vec.x + mat[5] * vec.y + mat[9] * vec.z + mat[13] * vec.w },
+            { mat[2] * vec.x + mat[6] * vec.y + mat[10] * vec.z + mat[14] * vec.w },
+            { mat[3] * vec.x + mat[7] * vec.y + mat[11] * vec.z + mat[15] * vec.w }
         };
     }
 

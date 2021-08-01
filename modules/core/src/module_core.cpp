@@ -39,6 +39,6 @@ namespace argus {
     }
 
     void init_module_core(void) {
-        register_module({MODULE_CORE, 1, {}, _update_lifecycle_core});
+        register_module({ModuleCore, 1, {}, _update_lifecycle_core});
     }
 }

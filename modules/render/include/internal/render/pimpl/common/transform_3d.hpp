@@ -30,7 +30,7 @@ namespace argus {
         std::atomic_bool dirty;
         std::atomic_bool dirty_matrix;
 
-        mat4_flat_t matrix_rep;
+        mat4_flat_t matrix_rep{};
 
         pimpl_Transform3D(const Vector3f &translation, const Vector3f rotation, const Vector3f &scale):
             translation(translation),

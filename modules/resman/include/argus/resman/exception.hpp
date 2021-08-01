@@ -33,9 +33,9 @@ namespace argus {
              *        exception.
              * \param msg The message associated with the exception.
              */
-            ResourceException(const std::string &res_uid, const std::string msg):
-                    res_uid(res_uid),
-                    msg(msg) {
+            ResourceException(std::string res_uid, std::string msg):
+                    msg(std::move(msg)),
+                    res_uid(std::move(res_uid)) {
             }
 
             /**
@@ -60,7 +60,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceNotLoadedException(const std::string &res_uid):
+            explicit ResourceNotLoadedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource is not loaded") {
             }
     };
@@ -76,7 +76,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceLoadedException(const std::string &res_uid):
+            explicit ResourceLoadedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource is already loaded") {
             }
     };
@@ -93,7 +93,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            ResourceNotPresentException(const std::string &res_uid):
+            explicit ResourceNotPresentException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource does not exist") {
             }
     };
@@ -135,7 +135,7 @@ namespace argus {
              * \param res_uid The UID of the Resource associated with the
              *        exception.
              */
-            LoadFailedException(const std::string &res_uid):
+            explicit LoadFailedException(const std::string &res_uid):
                     ResourceException(res_uid, "Resource loading failed") {
             }
     };

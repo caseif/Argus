@@ -47,7 +47,7 @@ namespace argus {
      *
      * \param game_loop The callback representing the main game loop.
      */
-    void start_engine(const DeltaCallback game_loop);
+    void start_engine(const DeltaCallback &game_loop);
 
     /**
      * \brief Requests that the engine halt execution, performing cleanup as
@@ -66,14 +66,14 @@ namespace argus {
      *
      * \sa DeltaCallback
      */
-    const Index register_update_callback(const DeltaCallback update_callback);
+    Index register_update_callback(const DeltaCallback &update_callback);
 
     /**
      * \brief Unregisters an update callback.
      *
      * \param id The ID of the callback to unregister.
      */
-    void unregister_update_callback(const Index id);
+    void unregister_update_callback(Index id);
 
     /**
      * \brief Registers a callback for invocation on each render update.
@@ -86,12 +86,12 @@ namespace argus {
      *
      * \sa DeltaCallback
      */
-    const Index register_render_callback(const DeltaCallback render_callback);
+    Index register_render_callback(const DeltaCallback &render_callback);
 
     /**
      * \brief Unregisters a render callback.
      *
      * \param id The ID of the callback to unregister.
      */
-    void unregister_render_callback(const Index id);
+    void unregister_render_callback(Index id);
 }

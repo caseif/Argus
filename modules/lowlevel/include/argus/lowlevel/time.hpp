@@ -15,24 +15,26 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace argus {
     /**
      * \brief Represents a duration of time.
      */
-    typedef unsigned long long TimeDelta;
+    typedef uint64_t TimeDelta;
 
     /**
      * \brief Sleeps for the specified amount of time in nanoseconds.
      *
      * \param ns The number of nanoseconds to sleep for.
      */
-    void sleep_nanos(const unsigned long long ns);
+    void sleep_nanos(uint64_t ns);
 
     /**
      * \brief Returns the number of microseconds since the Unix epoch.
      *
      * \return The number of microseconds since the Unix epoch.
      */
-    const unsigned long long microtime(void);
+    uint64_t microtime(void);
 
 }

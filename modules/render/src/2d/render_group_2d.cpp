@@ -32,17 +32,17 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 
-    RenderGroup2D::RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
-            Transform2D &transform):
+    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
+            const Transform2D &transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
             Transform2D &&transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(const RenderLayer2D &parent_layer, RenderGroup2D *const parent_group):
+    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group)) {
     }
 
@@ -58,34 +58,36 @@ namespace argus {
     RenderGroup2D::~RenderGroup2D(void) {
         if (pimpl != nullptr) {
             for (auto *group : pimpl->child_groups) {
-                delete group;
+                delete group; //NOLINT(cppcoreguidelines-owning-memory)
             }
 
             for (auto *obj : pimpl->child_objects) {
-                delete obj;
+                delete obj; //NOLINT(cppcoreguidelines-owning-memory)
             }
 
             g_pimpl_pool.free(pimpl);
         }
     }
 
-    const RenderLayer2D &RenderGroup2D::get_parent_layer(void) const {
+    RenderLayer2D &RenderGroup2D::get_parent_layer(void) const {
         return pimpl->parent_layer;
     }
 
-    RenderGroup2D *const RenderGroup2D::get_parent_group(void) const {
+    RenderGroup2D *RenderGroup2D::get_parent_group(void) const {
         return pimpl->parent_group;
     }
 
-    RenderGroup2D &RenderGroup2D::create_child_group(Transform2D &transform) {
-        auto group = new RenderGroup2D(pimpl->parent_layer, this, transform);
+    RenderGroup2D &RenderGroup2D::create_child_group(const Transform2D &transform) {
+        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        auto *group = new RenderGroup2D(pimpl->parent_layer, this, transform);
         pimpl->child_groups.push_back(group);
         return *group;
     }
 
     RenderObject2D &RenderGroup2D::create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
-            Transform2D &transform) {
-        auto obj = new RenderObject2D(*this, material, primitives, transform);
+            const Transform2D &transform) {
+        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        auto *obj = new RenderObject2D(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
         return *obj;
     }
@@ -110,7 +112,8 @@ namespace argus {
         return pimpl->transform;
     }
 
-    void RenderGroup2D::set_transform(Transform2D &transform) {
+    //NOLINTNEXTLINE(readability-make-member-function-const)
+    void RenderGroup2D::set_transform(const Transform2D &transform) {
         pimpl->transform = transform;
     }
 }

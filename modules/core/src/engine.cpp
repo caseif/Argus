@@ -34,11 +34,13 @@
 #include <cstdint>
 #include <cstdlib>
 
+#define NS_PER_US 1000ULL
+
 namespace argus {
     /**
      * \brief Represents an instant in time.
      */
-    typedef unsigned long long Timestamp;
+    typedef uint64_t Timestamp;
 
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
@@ -51,7 +53,7 @@ namespace argus {
 
     extern EngineConfig g_engine_config;
 
-    static void _interrupt_handler(int signal) {
+    static void _interrupt_handler(const int signal) {
         stop_engine();
     }
 
@@ -60,7 +62,7 @@ namespace argus {
         g_game_thread->destroy();
     }
 
-    const Index register_update_callback(const DeltaCallback callback) {
+    Index register_update_callback(const DeltaCallback &callback) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
                 "Cannot register update callback before engine initialization.");
         return add_callback(g_update_callbacks, callback);
@@ -70,7 +72,7 @@ namespace argus {
         remove_callback(g_update_callbacks, id);
     }
 
-    const Index register_render_callback(const DeltaCallback callback) {
+    Index register_render_callback(const DeltaCallback &callback) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
                 "Cannot register render callback before engine initialization.");
         return add_callback(g_render_callbacks, callback);
@@ -80,11 +82,11 @@ namespace argus {
         remove_callback(g_render_callbacks, id);
     }
 
-    void register_early_init_callback(const std::string module_id, NullaryCallback callback) {
+    void register_early_init_callback(const std::string &module_id, NullaryCallback callback) {
         g_early_init_callbacks.insert({ module_id, callback });
     }
 
-    static void _handle_idle(const Timestamp start_timestamp, const unsigned int target_rate) {
+    static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
         if (target_rate == 0) {
             return;
         }
@@ -93,7 +95,7 @@ namespace argus {
 
         unsigned int frametime_target_us = US_PER_S / target_rate;
         if (delta < frametime_target_us) {
-            unsigned long long sleep_time_ns = (frametime_target_us - delta) * 1000;
+            uint64_t sleep_time_ns = (frametime_target_us - delta) * NS_PER_US;
             if (sleep_time_ns <= SLEEP_OVERHEAD_NS) {
                 return;
             }
@@ -101,8 +103,8 @@ namespace argus {
         }
     }
 
-    static const TimeDelta _compute_delta(Timestamp &last_timestamp) {
-        TimeDelta delta;
+    static TimeDelta _compute_delta(Timestamp &last_timestamp) {
+        TimeDelta delta = 0;
 
         if (last_timestamp != 0) {
             delta = argus::microtime() - last_timestamp;
@@ -132,7 +134,7 @@ namespace argus {
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
-            for (auto &callback : g_update_callbacks.list) {
+            for (const auto &callback : g_update_callbacks.list) {
                 callback.value(delta);
             }
             g_update_callbacks.list_mutex.unlock_shared();
@@ -150,7 +152,7 @@ namespace argus {
     static void _render_loop() {
         static Timestamp last_frame = 0;
 
-        while (1) {
+        while (true) {
             if (g_engine_stopping) {
                 break;
             }
@@ -164,7 +166,7 @@ namespace argus {
 
             // invoke render callbacks
             g_render_callbacks.list_mutex.lock_shared();
-            for (auto &callback : g_render_callbacks.list) {
+            for (const auto &callback : g_render_callbacks.list) {
                 callback.value(delta);
             }
             g_render_callbacks.list_mutex.unlock_shared();
@@ -184,7 +186,7 @@ namespace argus {
 
         load_external_modules();
 
-        if (g_engine_config.load_modules.size() > 0) {
+        if (!g_engine_config.load_modules.empty()) {
             load_modules(g_engine_config.load_modules);
         } else {
             load_modules({"core"});
@@ -193,8 +195,8 @@ namespace argus {
         // this is basically for the sole purpose of allowing dynamic module
         // loading, e.g. allowing render to load render_opengl before any real
         // lifecycle stages are executed
-        for (auto module : g_enabled_modules) {
-            auto ei_callback = g_early_init_callbacks.find(module.id);
+        for (const auto &mod_info : g_enabled_modules) {
+            auto ei_callback = g_early_init_callbacks.find(mod_info.id);
             if (ei_callback != g_early_init_callbacks.end()) {
                 ei_callback->second();
             }
@@ -202,13 +204,13 @@ namespace argus {
 
         for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (auto it = g_enabled_modules.cbegin(); it != g_enabled_modules.cend(); it++) {
-                it->lifecycle_update_callback(stage);
+            for (const auto &mod_info : g_enabled_modules) {
+                mod_info.lifecycle_update_callback(stage);
             }
         }
     }
 
-    void start_engine(const DeltaCallback game_loop) {
+    void start_engine(const DeltaCallback &game_loop) {
         _ARGUS_ASSERT(g_core_initialized, "Cannot start engine before it is initialized.");
         _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 

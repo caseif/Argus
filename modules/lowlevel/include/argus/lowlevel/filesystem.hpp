@@ -43,7 +43,7 @@
 /**
  * \brief The separator between a file's name and extension.
  */
-#define EXTENSION_SEPARATOR "."
+#define EXTENSION_SEPARATOR '.'
 
 /**
  * \brief File mode mask denoting read access.
@@ -76,7 +76,7 @@ namespace argus {
 
             bool valid;
 
-            FileHandle(const std::string path, const int mode, const size_t size, void *const handle);
+            FileHandle(const std::string &path, int mode, size_t size, void *handle);
 
         public:
             /**
@@ -96,7 +96,7 @@ namespace argus {
              * \throw std::system_error If an error occurs while opening or
              *        creating the file.
              */
-            static FileHandle create(const std::string path, const int mode);
+            static FileHandle create(const std::string &path, int mode);
 
             /**
              * \brief Gets the absolute path of the file referenced by this
@@ -114,27 +114,27 @@ namespace argus {
              *
              * \return The size of the file referenced by this handle.
              */
-            const size_t get_size(void) const;
+            size_t get_size(void) const;
 
             /**
-             * \brief Releases this file handle.
+             * \brief Releases the file handle.
              *
              * \attention The handle will thereafter be invalidated and thus
              *            ineligible for further use.
              *
-             * \throw std::invalid_argument If this handle is not valid.
+             * \throw std::runtime_error If the handle is not valid.
              * \throw std::system_error If an error occurs while closing the
              *        file.
              */
             void release(void);
 
             /**
-             * \brief Removes the file referenced by this handle.
+             * \brief Removes the file referenced by the handle.
              *
              * \attention This operation implicitly releases the handle,
              *            invalidating it.
              *
-             * \throw std::invalid_argument If this handle is not valid.
+             * \throw std::runtime_error If the handle is not valid.
              * \throw std::system_error If an error occurs while removing the
              *        file or closing its handle.
              *
@@ -143,59 +143,59 @@ namespace argus {
             void remove(void);
 
             /**
-             * \brief Creates an std::istream from this file handle.
+             * \brief Creates an std::istream from the file handle.
              *
              * \param offset The offset in bytes at which to open the
              *        std::istream.
              * \param target The object to use when opening the stream.
              *
-             * \throw std::invalid_argument If this handle is not valid.
+             * \throw std::runtime_error If the handle is not valid.
              */
-            const void to_istream(const off_t offset, std::ifstream &target) const;
+            void to_istream(off_t offset, std::ifstream &target) const;
 
             /**
-             * \brief Reads data from the file referenced by this handle.
+             * \brief Reads data from the file referenced by the handle.
              *
              * \param offset The offset in bytes from which to begin reading.
-             * \param size The number of bytes to read.
+             * \param read_size The number of bytes to read.
              * \param buf The buffer to store data into. This buffer _must_ be
              *            at least `size` bytes in length to avoid a buffer
              *            overflow.
              *
-             * \throw std::invalid_argument If this handle is not valid, if the
-             *        current mode does not support reading, or if `size` or
-             *        `offset` are nonsensical (individiually or in
-             *        conjunction).
+             * \throw std::runtime_error If the handle is not valid.
+             * \throw std::invalid_argument If the current mode does not support
+             *        reading, or if `size` or `offset` are nonsensical
+             *        (individiually or in conjunction).
              * \throw std::system_error If an error occurs while reading from
              *        the file.
              */
-            const void read(const off_t offset, const size_t size, unsigned char *const buf) const;
+            void read(off_t offset, size_t read_size, unsigned char *buf) const;
 
             /**
-             * \brief Writes data into the file referenced by this handle.
+             * \brief Writes data into the file referenced by the handle.
              *
              * \param offset The offset in bytes at which to begin writing, or
              *        `-1` to append to the end of the file.
-             * \param size The number of bytes to write.
+             * \param write_size The number of bytes to write.
              * \param buf A buffer containing the data to be written. This
              *            buffer _must_ be at least `size` bytes in length to
              *            avoid a buffer over-read.
              *
-             * \throw std::invalid_argument If this handle is not valid, if the
-             *        current mode does not support reading, or if `size` or
-             *        `offset` are nonsensical (individiually or in
-             *        conjunction).
+             * \throw std::runtime_error If the handle is not valid.
+             * \throw std::invalid_argument If the current mode does not support
+             *        writing, or if `size` or `offset` are nonsensical
+             *        (individiually or in conjunction).
              * \throw std::system_error If an error occurs while writing to the
              *        file.
              */
-            const void write(const off_t offset, const size_t size, unsigned char *const buf);
+            void write(off_t offset, size_t write_size, unsigned char *buf);
 
             /**
              * \brief Reads data from the file referenced by this handle
              *        asynchronously.
              *
              * \param offset The offset in bytes from which to begin reading.
-             * \param size The number of bytes to read.
+             * \param read_size The number of bytes to read.
              * \param buf The buffer to store data into. This buffer _must_ be
              *        at least `size` bytes in length to avoid a buffer
              *        overflow.
@@ -209,10 +209,9 @@ namespace argus {
              *         been fully read, or after the read operation generates an
              *         exception.
              *
-             * \throw std::invalid_argument If this handle is not valid, if the
-             *        current mode does not support reading, or if `size` or
-             *        `offset` are nonsensical (individiually or in
-             *        conjunction).
+             * \throw std::invalid_argument If the current mode does not support
+             *        reading, or if `size` or `offset` are nonsensical
+             *        (individiually or in conjunction).
              *
              * \attention Any exceptions thrown by the read operation itself (not
              *            including parameter validation) are exposed through the
@@ -220,16 +219,16 @@ namespace argus {
              *
              * \sa FileHandle::read
              */
-            const std::future<void> read_async(const off_t offset, const size_t size,
-                    unsigned char *const buf, const std::function<void(FileHandle&)> callback);
+            const std::future<void> read_async(off_t offset, size_t read_size,
+                    unsigned char *buf, std::function<void(FileHandle&)> callback);
 
             /**
-             * \brief Writes data into the file referenced by this handle
+             * \brief Writes data into the file referenced by the handle
              *        asynchronously.
              *
              * \param offset The offset in bytes at which to begin writing, or
              *        `-1` to append to the end of the file.
-             * \param size The number of bytes to write.
+             * \param write_size The number of bytes to write.
              * \param buf A buffer containing the data to be written. This
              *            buffer _must_ be at least `size` bytes in length to
              *            avoid a buffer overflow.
@@ -243,10 +242,10 @@ namespace argus {
              *         been fully written, or after the write operation
              *         generates an exception.
              *
-             * \throw std::invalid_argument If this handle is not valid, if the
-             *        current mode does not support reading, or if `size` or
-             *        `offset` are nonsensical (individiually or in
-             *        conjunction).
+             * \throw std::runtime_error If the handle is not valid.
+             * \throw std::invalid_argument If the current mode does not support
+             *        writing, or if `size` or `offset` are nonsensical
+             *        (individiually or in conjunction).
              *
              * \attention Any exceptions thrown by the read operation itself (not
              *            including parameter validation) are exposed through the
@@ -254,8 +253,8 @@ namespace argus {
              *
              * \sa FileHandle::write
              */
-            const std::future<void> write_async(const off_t offset, const size_t size,
-                    unsigned char *const buf, const std::function<void(FileHandle&)> callback);
+            const std::future<void> write_async(off_t offset, size_t write_size,
+                    unsigned char *buf, std::function<void(FileHandle&)> callback);
     };
 
     /**

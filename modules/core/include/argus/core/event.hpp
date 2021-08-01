@@ -61,7 +61,7 @@ namespace argus {
      *
      * \return The bitwise OR of the operands.
      */
-    constexpr ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs);
+    constexpr ArgusEventType operator|(ArgusEventType lhs, ArgusEventType rhs);
     /**
      * \brief Bitwise OR-assignment implementation for ArgusEventType bitmask
      *        elements.
@@ -73,7 +73,7 @@ namespace argus {
      *
      * \sa ArgusEventType::operator|
      */
-    inline ArgusEventType operator|=(ArgusEventType &lhs, const ArgusEventType rhs);
+    inline ArgusEventType operator|=(ArgusEventType &lhs, ArgusEventType rhs);
     /**
      * \brief Bitwise AND implementation for ArgusEventType bitmask elements.
      *
@@ -82,7 +82,7 @@ namespace argus {
      *
      * \return The bitwise AND of the operands.
      */
-    constexpr inline ArgusEventType operator&(const ArgusEventType lhs, const ArgusEventType rhs);
+    constexpr inline ArgusEventType operator&(ArgusEventType lhs, ArgusEventType rhs);
 
     /**
      * \brief Represents an event pertaining to the current application,
@@ -95,7 +95,7 @@ namespace argus {
          *
          * \param type The \link ArgusEventType type \endlink of event.
          */
-        ArgusEvent(ArgusEventType type);
+        explicit ArgusEvent(ArgusEventType type);
 
        public:
         /**
@@ -131,15 +131,15 @@ namespace argus {
      *
      * \return The ID of the new registration.
      */
-    const Index register_event_handler(const ArgusEventType type, const ArgusEventCallback callback,
-            const TargetThread target_thread, void *const data = nullptr);
+    Index register_event_handler(ArgusEventType type, const ArgusEventCallback &callback,
+            TargetThread target_thread, void *data = nullptr);
 
     /**
      * \brief Unregisters an event handler.
      *
      * \param id The ID of the callback to unregister.
      */
-    void unregister_event_handler(const Index id);
+    void unregister_event_handler(Index id);
 
     /**
      * \brief Dispatches an event.

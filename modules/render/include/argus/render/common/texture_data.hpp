@@ -26,7 +26,7 @@ namespace argus {
      * object may or may not contain the image data. Image data is deleted
      * after it has been uploaded to the GPU during texture preparation.
      */
-    struct TextureData {
+    class TextureData {
         public:
             pimpl_TextureData *pimpl;
 

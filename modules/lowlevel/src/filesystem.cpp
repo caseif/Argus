@@ -79,7 +79,7 @@
 
 namespace argus {
 
-    FileHandle::FileHandle(const std::string path, const int mode, const size_t size, void *const handle):
+    FileHandle::FileHandle(const std::string &path, const int mode, const size_t size, void *const handle):
             path(path),
             mode(mode),
             size(size),
@@ -88,8 +88,8 @@ namespace argus {
     }
 
     //TODO: use the native Windows file API, if available
-    FileHandle FileHandle::create(const std::string path, const int mode) {
-        const char *std_mode;
+    FileHandle FileHandle::create(const std::string &path, const int mode) {
+        const char *std_mode = "";
         // we check for the following invalid cases:
         // - no modes set at all
         // - create set without any other modes
@@ -108,7 +108,7 @@ namespace argus {
             _ARGUS_FATAL("Unable to determine mode string");
         }
 
-        FILE *file;
+        FILE *file = NULL;
         if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {
             stat_t stat_buf;
             int stat_rc = stat(path.c_str(), &stat_buf);
@@ -148,14 +148,12 @@ namespace argus {
         return path;
     }
 
-    const size_t FileHandle::get_size(void) const {
+    size_t FileHandle::get_size(void) const {
         return size;
     }
 
     void FileHandle::release(void) {
-        if (!this->valid) {
-            throw std::invalid_argument("Non-valid FileHandle");
-        }
+        validate_state(this->valid, "Non-valid FileHandle");
 
         this->valid = false;
         validate_syscall(fclose(static_cast<FILE*>(this->handle)), "fclose");
@@ -166,20 +164,20 @@ namespace argus {
         ::remove(this->path.c_str());
     }
 
-    const void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
-        validate_arg(valid, "Non-valid FileHandle");
+    void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
+        validate_state(valid, "Non-valid FileHandle");
 
         fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
 
-        std::ios::openmode mode = std::ios::binary;
+        std::ios::openmode omode = std::ios::binary;
         if (this->mode & FILE_MODE_READ) {
-            mode |= std::ios::in;
+            omode |= std::ios::in;
         }
         if (this->mode & FILE_MODE_WRITE) {
-            mode |= std::ios::out;
+            omode |= std::ios::out;
         }
 
-        target.open(path, mode);
+        target.open(path, omode);
 
         if (!target.good()) {
             throw std::runtime_error("Failed to create file stream");
@@ -188,24 +186,24 @@ namespace argus {
         //stream->seekg(offset);
     }
 
-    const void FileHandle::read(const off_t offset, const size_t size, unsigned char *const buf) const {
-        validate_arg(valid, "Non-valid FileHandle");
+    void FileHandle::read(const off_t offset, const size_t read_size, unsigned char *const buf) const {
+        validate_state(valid, "Non-valid FileHandle");
 
-        validate_arg(size > 0, "Invalid size parameter");
+        validate_arg(read_size > 0, "Invalid size parameter");
 
-        validate_arg(offset + size <= this->size, "Invalid offset/size combination");
+        validate_arg(offset + read_size <= this->size, "Invalid offset/size combination");
 
         fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
 
-        size_t read_chunks = fread(buf, size, 1, static_cast<FILE*>(handle));
+        size_t read_chunks = fread(buf, read_size, 1, static_cast<FILE*>(handle));
 
         validate_syscall(read_chunks == 1, "fread");
     }
 
-    const void FileHandle::write(const off_t offset, const size_t size, unsigned char *const buf) {
-        validate_arg(valid, "Non-valid FileHandle");
+    void FileHandle::write(const off_t offset, const size_t write_size, unsigned char *const buf) {
+        validate_state(valid, "Non-valid FileHandle");
 
-        validate_arg(size > 0, "Invalid size parameter");
+        validate_arg(write_size > 0, "Invalid size parameter");
 
         validate_arg(offset >= -1, "Invalid offset parameter");
 
@@ -215,7 +213,7 @@ namespace argus {
             fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
         }
 
-        size_t write_chunks = fwrite(buf, size, 1, static_cast<FILE*>(handle));
+        size_t write_chunks = fwrite(buf, write_size, 1, static_cast<FILE*>(handle));
         validate_syscall(write_chunks == 1, "fwrite");
 
         stat_t file_stat;
@@ -224,26 +222,26 @@ namespace argus {
         this->size = file_stat.st_size;
     }
 
-    const std::future<void> FileHandle::read_async(const off_t offset, const size_t size, unsigned char *const buf,
+    const std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
             const std::function<void(FileHandle&)> callback) {
-        validate_arg(valid, "Non-valid FileHandle");
+        validate_state(valid, "Non-valid FileHandle");
 
-        validate_arg(size > 0, "Invalid size parameter");
+        validate_arg(read_size > 0, "Invalid size parameter");
 
-        validate_arg(offset + size <= this->size, "Invalid offset/size combintation");
+        validate_arg(offset + read_size <= this->size, "Invalid offset/size combintation");
 
         return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
     }
 
-    const std::future<void> FileHandle::write_async(const off_t offset, const size_t size, unsigned char *const buf,
-            std::function<void(FileHandle&)> callback) {
-        validate_arg(valid, "Non-valid FileHandle");
+    const std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
+            unsigned char *const buf, std::function<void(FileHandle&)> callback) {
+        validate_state(valid, "Non-valid FileHandle");
 
-        validate_arg(size > 0, "Invalid size parameter");
+        validate_arg(write_size > 0, "Invalid size parameter");
 
         validate_arg(offset >= -1, "Invalid offset parameter");
 
-        return make_future(std::bind(&FileHandle::write, this, offset, size, buf), std::bind(callback, *this));
+        return make_future(std::bind(&FileHandle::write, this, offset, write_size, buf), std::bind(callback, *this));
     }
 
     const std::string get_executable_path(void) {

@@ -44,7 +44,7 @@ namespace argus {
     }
 
     void init_module_input(void) {
-        register_module({MODULE_INPUT, 3, {"core", "wm"}, _update_lifecycle_input});
+        register_module({ModuleInput, 3, {"core", "wm"}, _update_lifecycle_input});
     }
 
 }

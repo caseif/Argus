@@ -53,7 +53,7 @@ namespace argus {
         glfwPollEvents();
     }
 
-    static void _on_glfw_error(int code, const char *desc) {
+    static void _on_glfw_error(const int code, const char *desc) {
         _ARGUS_WARN("GLFW Error: %s\n", desc);
     }
 
@@ -81,7 +81,7 @@ namespace argus {
     }
 
     void init_module_wm(void) {
-        register_module({MODULE_WM, 2, {"core"}, _update_lifecycle_wm});
+        register_module({ModuleWm, 2, {"core"}, _update_lifecycle_wm});
     }
 
 }

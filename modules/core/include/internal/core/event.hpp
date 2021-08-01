@@ -19,12 +19,11 @@ namespace argus {
     class RefCountable {
         public:
 
-        std::atomic_uint32_t refcount;
+        std::atomic_uint32_t refcount{0};
         T *ptr;
 
-        RefCountable(T *ptr) {
+        explicit RefCountable(T *ptr) {
             this->ptr = ptr;
-            this->refcount = 0;
         }
 
         void acquire() {
@@ -36,7 +35,7 @@ namespace argus {
         }
     };
 
-    void process_event_queue(const TargetThread target_thread);
+    void process_event_queue(TargetThread target_thread);
 
-    void flush_event_listener_queues(const TargetThread target_thread);
+    void flush_event_listener_queues(TargetThread target_thread);
 }

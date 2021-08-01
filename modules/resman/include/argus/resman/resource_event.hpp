@@ -64,10 +64,10 @@ namespace argus {
          *        ResourceEvent.
          * \param resource The Resource associated with the event.
          */
-        ResourceEvent(const ResourceEventType subtype, const ResourcePrototype &prototype, Resource *resource):
+        ResourceEvent(const ResourceEventType subtype, ResourcePrototype prototype, Resource *resource):
                 ArgusEvent { ArgusEventType::RESOURCE },
                 subtype(subtype),
-                prototype(prototype),
+                prototype(std::move(prototype)),
                 resource(resource) {
         }
     };

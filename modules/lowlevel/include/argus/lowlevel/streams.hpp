@@ -24,8 +24,8 @@ namespace argus {
         MemBuf membuf;
 
         IMemStream(const void *buf, size_t len) :
-            membuf(MemBuf(static_cast<const char*>(buf), len)),
-            std::istream(&membuf) {
+            std::istream(&membuf),
+            membuf(MemBuf(static_cast<const char*>(buf), len)) {
         }
     };
 }

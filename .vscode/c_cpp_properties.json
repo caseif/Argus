@@ -30,9 +30,7 @@
                 "-Woverloaded-virtual",
                 "-Wuninitialized",
                 "-Wmissing-declarations",
-                "-Winit-self",
-                "-pedantic",
-                "-pedantic-errors"
+                "-Winit-self"
             ],
             "includePath": [
                 "${defIncludePath}"

@@ -24,7 +24,7 @@ namespace argus {
         Transform2D transform;
 
         pimpl_RenderObject2D(const RenderGroup2D &parent_group, const Material &material,
-                const std::vector<RenderPrim2D> &primitives, Transform2D &transform):
+                const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
             parent_group(parent_group),
             material(material),
             primitives(primitives),

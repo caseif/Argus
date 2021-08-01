@@ -20,7 +20,8 @@ namespace argus {
         Transform2D transform;
         const int index;
         
-        pimpl_RenderLayer(const Renderer &renderer, const RenderLayer &layer, Transform2D &transform, const int index):
+        pimpl_RenderLayer(const Renderer &renderer, const RenderLayer &layer, const Transform2D &transform,
+                const int index):
                 parent_renderer(renderer),
                 transform(transform),
                 index(index) {

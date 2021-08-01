@@ -27,7 +27,15 @@ namespace argus {
             void validate_block_size(size_t size) const;
 
         public:
-            AllocPool(size_t block_size, uint8_t alignment_exp = 3);
+            explicit AllocPool(size_t block_size, uint8_t alignment_exp = 3);
+
+            AllocPool(AllocPool&) = delete;
+
+            AllocPool(AllocPool&&) = delete;
+
+            AllocPool &operator =(AllocPool&) = delete;
+
+            AllocPool &operator =(AllocPool&&) = delete;
 
             ~AllocPool(void);
 

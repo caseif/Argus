@@ -25,6 +25,6 @@ namespace argus {
     }
 
     void init_module_resman(void) {
-        register_module({MODULE_RESMAN, 2, {"core"}, _update_lifecycle_resman});
+        register_module({ModuleResman, 2, {"core"}, _update_lifecycle_resman});
     }
 }

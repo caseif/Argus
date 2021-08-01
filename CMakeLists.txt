@@ -28,6 +28,8 @@ option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
+option(USE_ASAN "Build with AddressSanitizer support" OFF)
+
 #set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
@@ -329,10 +331,17 @@ function(setup_submodule MODULE_NAME DYN)
         OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmismatched-tags" CACHE STRING "" FORCE)
     endif()
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -g"
+
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g"
         CACHE STRING "" FORCE)
-    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
-        CACHE STRING "" FORCE)
+
+    if(USE_ASAN)
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer"
+          CACHE STRING "" FORCE)
+      set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
+          CACHE STRING "" FORCE)
+    endif()
+
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" CACHE STRING "" FORCE)
   endif()
 

@@ -318,6 +318,7 @@ namespace argus {
             return *this;
         }
 
+        //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
             return Vector4<T> {
                 this->x,
@@ -431,6 +432,7 @@ namespace argus {
             return *this;
         }
 
+        //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector3<T>() const {
             return Vector3<T> {
                 this->x,
@@ -439,6 +441,7 @@ namespace argus {
             };
         }
 
+        //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
             return Vector4<T> {
                 this->x,
@@ -525,7 +528,7 @@ namespace argus {
 
     void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res);
 
-    Vector4f multiply_matrix_and_vector(const Vector4f vec, const mat4_flat_t mat);
+    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const mat4_flat_t mat);
 
     void transpose_matrix(const mat4_flat_t mat);
 }

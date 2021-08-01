@@ -14,13 +14,13 @@
 #include <string>
 
 namespace argus {
-    static std::map<std::string, void*> dyn_fns;
+    static std::map<std::string, const void*> dyn_fns;
 
-    void register_module_fn(std::string fn_name, void *addr) {
+    void register_module_fn(const std::string &fn_name, const void *addr) {
         dyn_fns.insert({ fn_name, addr });
     }
 
-    void *lookup_module_fn(std::string fn_name) {
+    const void *lookup_module_fn(const std::string &fn_name) {
         auto it = dyn_fns.find(fn_name);
         if (it != dyn_fns.end()) {
             return it->second;

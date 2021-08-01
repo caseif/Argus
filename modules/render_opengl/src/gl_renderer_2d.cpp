@@ -250,7 +250,7 @@ namespace argus {
         object.get_transform().pimpl->dirty = false;
     }
 
-    static void _compute_abs_group_transform(const RenderGroup2D &group, mat4_flat_t target) {
+    static void _compute_abs_group_transform(const RenderGroup2D &group, mat4_flat_t &target) {
         group.get_transform().copy_matrix(target);
         const RenderGroup2D *cur = &group;
         const RenderGroup2D *parent = group.get_parent_group();
