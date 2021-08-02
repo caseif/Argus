@@ -1,6 +1,8 @@
 {
     "env": {
         "defIncludePath": [
+            "${workspaceFolder}/build/gen/render_opengl/include",
+            "${workspaceFolder}/build/res/abacus/include",
             "${workspaceFolder}/external/libs/glfw/include",
             "${workspaceFolder}/external/libs/libarp",
             "${workspaceFolder}/external/libs/libpng",
