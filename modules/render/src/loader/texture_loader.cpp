@@ -27,22 +27,23 @@
 #include <utility>
 
 #include <csetjmp>
+#include <cstdint>
 #include <cstdio>
 
 namespace argus {
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
-        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read((char*) buf, size);
+        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), size);
     }
 
     PngTextureLoader::PngTextureLoader():
             ResourceLoader({ RESOURCE_TYPE_TEXTURE_PNG }) {
     }
 
-    void *const PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    void *PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         unsigned char sig[8];
-        stream.read((char*) sig, 8);
+        stream.read(reinterpret_cast<char*>(sig), 8);
 
         if (png_sig_cmp(sig, 0, 8) != 0) {
             throw std::invalid_argument("Invalid PNG file");
@@ -81,7 +82,6 @@ namespace argus {
         auto width = png_get_image_width(png_ptr, info_ptr);
         auto height = png_get_image_height(png_ptr, info_ptr);
         auto bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-        auto channels = png_get_channels(png_ptr, info_ptr);
         auto color_type = png_get_color_type(png_ptr, info_ptr);
 
         if (bit_depth == 16) {
@@ -120,7 +120,7 @@ namespace argus {
         png_read_update_info(png_ptr, info_ptr);
 
         unsigned char **row_pointers = new unsigned char*[sizeof(png_bytep) * height];
-        for(int y = 0; y < height; y++) {
+        for (uint32_t y = 0; y < height; y++) {
             row_pointers[y] = new unsigned char[png_get_rowbytes(png_ptr, info_ptr)];
         }
 

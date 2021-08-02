@@ -62,6 +62,6 @@ namespace argus {
              *
              * \return The current vertex count of this RenderPrim2D.
              */
-            const size_t get_vertex_count(void) const;
+            size_t get_vertex_count(void) const;
     };
 }

@@ -32,11 +32,11 @@ namespace argus {
         pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders, attribs)) {
         ShaderStage seen = static_cast<ShaderStage>(0);
         for (const Shader *shader : shaders) {
-            if (seen & shader->pimpl->stage) {
+            if (static_cast<std::underlying_type<ShaderStage>::type>(seen & shader->pimpl->stage) != 0) {
                 _ARGUS_FATAL("Multiple shaders supplied for single stage\n");
             }
-            //TODO: need a custom |= operator for ShaderStage
-            seen = (ShaderStage) (seen | shader->pimpl->stage);
+
+            seen |= shader->pimpl->stage;
         }
     }
 

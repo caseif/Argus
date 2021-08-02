@@ -58,11 +58,11 @@ namespace argus {
     RenderGroup2D::~RenderGroup2D(void) {
         if (pimpl != nullptr) {
             for (auto *group : pimpl->child_groups) {
-                delete group; //NOLINT(cppcoreguidelines-owning-memory)
+                delete group;
             }
 
             for (auto *obj : pimpl->child_objects) {
-                delete obj; //NOLINT(cppcoreguidelines-owning-memory)
+                delete obj;
             }
 
             g_pimpl_pool.free(pimpl);
@@ -78,7 +78,6 @@ namespace argus {
     }
 
     RenderGroup2D &RenderGroup2D::create_child_group(const Transform2D &transform) {
-        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto *group = new RenderGroup2D(pimpl->parent_layer, this, transform);
         pimpl->child_groups.push_back(group);
         return *group;
@@ -86,7 +85,6 @@ namespace argus {
 
     RenderObject2D &RenderGroup2D::create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
             const Transform2D &transform) {
-        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto *obj = new RenderObject2D(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
         return *obj;

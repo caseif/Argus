@@ -91,8 +91,8 @@ namespace argus {
 
             auto rc = event.release();
             if (rc == 0) {
-                delete event.ptr; //NOLINT(cppcoreguidelines-owning-memory)
-                delete &event; //NOLINT(cppcoreguidelines-owning-memory)
+                delete event.ptr;
+                delete &event;
             }
 
             queue_copy.pop();
@@ -154,7 +154,7 @@ namespace argus {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
 
-        auto event_ref = new RefCountable<ArgusEvent>(&event); //NOLINT(cppcoreguidelines-owning-memory)
+        auto event_ref = new RefCountable<ArgusEvent>(&event);
 
         g_update_event_queue_mutex.lock();
         event_ref->acquire();

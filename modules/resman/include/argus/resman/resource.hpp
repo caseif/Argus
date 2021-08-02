@@ -56,9 +56,9 @@ namespace argus {
          *        resource on the filesystem.
          */
         ResourcePrototype(std::string uid, std::string media_type, std::string fs_path):
-            uid(uid),
-            media_type(media_type),
-            fs_path(fs_path) {
+            uid(std::move(uid)),
+            media_type(std::move(media_type)),
+            fs_path(std::move(fs_path)) {
         }
     };
 
@@ -82,8 +82,8 @@ namespace argus {
              * \param dependencies The UIDs of Resources the new one is
              *        dependent on.
              */
-            Resource(ResourceManager &manager, const ResourceLoader &loader, const ResourcePrototype prototype,
-                    void *const data, std::vector<std::string> &dependencies);
+            Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
+                    void *data, const std::vector<std::string> &dependencies);
 
             /**
              * \brief Destroys the Resource.
@@ -159,7 +159,7 @@ namespace argus {
              *
              * \param rhs The Resource to move.
              */
-            Resource(Resource &&rhs);
+            Resource(Resource &&rhs) noexcept;
 
             /**
              * \brief Releases a handle on this Resource.
@@ -194,7 +194,7 @@ namespace argus {
             }
 
             template <typename DataType>
-            operator DataType&() {
+            operator DataType&() { //NOLINT(google-explicit-constructor)
                 return get<DataType>();
             }
     };

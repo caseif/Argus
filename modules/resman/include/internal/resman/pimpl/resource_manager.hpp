@@ -27,7 +27,7 @@ namespace argus {
         /**
          * \brief A set of all ARP packages currently loaded.
          */
-        ArpPackageSet package_set;
+        ArpPackageSet package_set{nullptr};
 
         /**
          * \brief All currently loaded resources.
@@ -45,8 +45,7 @@ namespace argus {
          */
         std::map<std::string, std::string> extension_mappings;
 
-        pimpl_ResourceManager(void) {
-        }
+        pimpl_ResourceManager(void) = default;
 
         pimpl_ResourceManager(const pimpl_ResourceManager&) = delete;
 

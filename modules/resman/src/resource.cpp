@@ -28,15 +28,15 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Resource));
 
-    Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, const ResourcePrototype prototype,
-            void *const data_ptr, std::vector<std::string> &dependencies):
-        prototype(prototype),
-        pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)) {
+    Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
+            void *const data_ptr, const std::vector<std::string> &dependencies):
+        pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)),
+        prototype(std::move(prototype)) {
     }
 
-    Resource::Resource(Resource &&rhs):
-            prototype(std::move(rhs.prototype)),
-            pimpl(rhs.pimpl) {
+    Resource::Resource(Resource &&rhs) noexcept:
+            pimpl(rhs.pimpl),
+            prototype(rhs.prototype) {
     }
 
     Resource::~Resource(void) {

@@ -48,6 +48,21 @@ namespace argus {
         g_pimpl_pool.free(pimpl);
     }
 
+    constexpr ShaderStage operator |(ShaderStage lhs, ShaderStage rhs) {
+        return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
+                                        static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+    }
+
+    ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs) {
+        return lhs = static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
+                                              static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+    }
+
+    constexpr ShaderStage operator &(ShaderStage lhs, ShaderStage rhs) {
+        return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) &
+                                        static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+    }
+
     ShaderStage Shader::get_stage(void) const {
         return pimpl->stage;
     }

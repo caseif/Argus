@@ -210,7 +210,7 @@ namespace argus {
      *
      * \return The bitwise OR of the operands.
      */
-    constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator|(KeyboardModifiers lhs, KeyboardModifiers rhs);
     /**
      * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
      *        elements.
@@ -222,7 +222,7 @@ namespace argus {
      *
      * \sa KeyboardModifiers::operator|
      */
-    constexpr inline KeyboardModifiers operator|=(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    inline KeyboardModifiers operator|=(KeyboardModifiers &lhs, KeyboardModifiers rhs);
     /**
      * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
      *
@@ -231,7 +231,7 @@ namespace argus {
      *
      * \return The bitwise AND of the operands.
      */
-    constexpr inline KeyboardModifiers operator&(const KeyboardModifiers lhs, const KeyboardModifiers rhs);
+    constexpr inline KeyboardModifiers operator&(KeyboardModifiers lhs, KeyboardModifiers rhs);
 
     /**
      * \brief Represents a specific type of keyboard event.
@@ -282,15 +282,14 @@ namespace argus {
          * \param scancode The scancode associated with this key event.
          * \param modifiers The modifiers active during this key event.
          */
-        KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode,
-                      const KeyboardModifiers modifiers);
+        KeyboardEvent(KeyboardEventType subtype, KeyboardScancode scancode, KeyboardModifiers modifiers);
 
         /**
          * \brief Gets the semantic name of the pressed key.
          *
          * \return The name of the pressed key.
          */
-        const std::string get_key_name(void) const;
+        std::string get_key_name(void) const;
     };
 
     /**
@@ -299,7 +298,7 @@ namespace argus {
      *
      * \return The name of the key.
      */
-    const std::string get_key_name(const KeyboardScancode scancode);
+    std::string get_key_name(KeyboardScancode scancode);
 
     /**
      * \brief Gets whether the key associated with a scancode is currently being
@@ -310,7 +309,7 @@ namespace argus {
      *
      * \return Whether the key is being pressed.
      */
-    const bool is_key_down(const Window &window, const KeyboardScancode scancode);
+    bool is_key_down(const Window &window, KeyboardScancode scancode);
 
     //TODO: this doc needs some love
     /**
@@ -342,7 +341,7 @@ namespace argus {
         /**
          * \brief Returns the context's current text.
          */
-        const std::string &get_current_text(void) const;
+        std::string get_current_text(void) const;
 
         /**
          * \brief Resumes capturing text input to the context.

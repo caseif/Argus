@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace argus {
-    typedef unsigned long long Index;
+    typedef uint64_t Index;
 }

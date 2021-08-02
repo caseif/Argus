@@ -154,7 +154,7 @@ namespace argus {
              * \sa ResourceManager#get_resource
              */
             std::future<Resource&> get_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> callback);
+                    const std::function<void(Resource&)> &callback);
             /**
              * \brief Attempts to retrieve the Resource with the given UID
              *        asynchronously, loading it if it is not already loaded.
@@ -182,7 +182,7 @@ namespace argus {
              * \sa ResourceManager#load_resource
              */
             std::future<Resource&> load_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> callback);
+                    const std::function<void(Resource&)> &callback);
             /**
              * \brief Attempts to load the Resource with the given UID
              *        asynchronously, failing if it is already loaded.

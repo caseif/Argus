@@ -19,10 +19,16 @@ namespace argus {
     /**
      * \brief Represents a stage corresponding to a step in the render pipeline.
      */
-    enum ShaderStage : uint32_t {
+    enum class ShaderStage : uint32_t {
         VERTEX = 0x01,
         FRAGMENT = 0x02
     };
+
+    constexpr ShaderStage operator |(ShaderStage lhs, ShaderStage rhs);
+
+    ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs);
+
+    constexpr ShaderStage operator &(ShaderStage lhs, ShaderStage rhs);
 
     /**
      * \brief Represents a shader for use with a RenderObject.

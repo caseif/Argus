@@ -189,7 +189,7 @@ namespace argus {
         if (!g_engine_config.load_modules.empty()) {
             load_modules(g_engine_config.load_modules);
         } else {
-            load_modules({"core"});
+            load_modules({ ModuleCore });
         }
 
         // this is basically for the sole purpose of allowing dynamic module

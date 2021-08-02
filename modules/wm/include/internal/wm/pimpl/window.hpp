@@ -10,10 +10,14 @@
 #pragma once
 
 // module lowlevel
+#include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/threading.hpp"
 
 // module core
 #include "argus/core/callback.hpp"
+
+// module wm
+#include "argus/wm/window.hpp"
 
 #include <atomic>
 #include <vector>

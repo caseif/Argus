@@ -30,7 +30,7 @@ namespace argus {
             ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }
 
-    void *const ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         ShaderStage stage;
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {

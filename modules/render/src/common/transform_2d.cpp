@@ -61,6 +61,8 @@ namespace argus {
         pimpl->scale = rhs.pimpl->scale;
         pimpl->dirty = &rhs != this || pimpl->dirty;
         pimpl->dirty_matrix = &rhs != this || pimpl->dirty_matrix;
+
+        return *this;
     }
 
     Transform2D Transform2D::operator +(const Transform2D &rhs) const {
@@ -115,7 +117,7 @@ namespace argus {
 
     void Transform2D::add_rotation(const float rotation_radians) {
         float current = pimpl->rotation.load();
-        float updated = fmod(current + rotation_radians, 2 * M_PI);
+        float updated = float(fmod(current + rotation_radians, 2 * M_PI));
         while (!pimpl->rotation.compare_exchange_weak(current, updated));
         pimpl->set_dirty();
     }

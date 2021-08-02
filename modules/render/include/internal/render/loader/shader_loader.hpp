@@ -15,7 +15,7 @@
 namespace argus {
     class ShaderLoader : public ResourceLoader {
         private:
-            void *const load(ResourceManager &manager, const ResourcePrototype &proto,
+            void *load(ResourceManager &manager, const ResourcePrototype &proto,
                     std::istream &stream, size_t size) const override;
 
             void unload(void *const data_ptr) const override;

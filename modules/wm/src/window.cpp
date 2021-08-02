@@ -221,7 +221,7 @@ namespace argus {
         }
 
         if (pimpl->properties.title.dirty) {
-            glfwSetWindowTitle(pimpl->handle, ((std::string) pimpl->properties.title).c_str());
+            glfwSetWindowTitle(pimpl->handle, std::string(pimpl->properties.title).c_str());
         }
 
         bool fullscreen = false;

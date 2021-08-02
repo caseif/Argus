@@ -57,15 +57,15 @@ namespace argus {
         /**
          * \brief The ARP resource backing this Resource.
          */
-        arp_resource_t *arp_resource;
+        arp_resource_t *arp_resource{nullptr};
 
         pimpl_Resource(ResourceManager &manager, const ResourceLoader &loader, void *const data_ptr,
-                std::vector<std::string> &dependencies, unsigned int ref_count = 1):
+                const std::vector<std::string> &dependencies, unsigned int ref_count = 1):
             manager(manager),
             loader(loader),
-            data_ptr(data_ptr),
+            ref_count(ref_count),
             dependencies(dependencies),
-            ref_count(ref_count) {
+            data_ptr(data_ptr) {
         }
 
         pimpl_Resource(pimpl_Resource&) = delete;

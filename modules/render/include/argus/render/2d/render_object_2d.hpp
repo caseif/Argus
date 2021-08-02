@@ -20,6 +20,7 @@ namespace argus {
     class RenderLayer;
 
     class RenderGroup2D;
+    class RenderLayer2D;
     class RenderPrim2D;
 
     struct pimpl_RenderObject2D;

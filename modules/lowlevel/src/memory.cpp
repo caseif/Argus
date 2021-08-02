@@ -113,7 +113,6 @@ namespace argus {
         // plus the maximum possible alignment padding (the alignment multiple minus 1),
         // plus the size of the chunk metadata,
         // plus the canary length if we're in debug mode
-        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         uintptr_t malloc_addr = reinterpret_cast<uintptr_t>(
                 malloc(pool->real_block_size * pool->blocks_per_chunk
                 + alignment_bytes - 1
@@ -171,7 +170,7 @@ namespace argus {
         const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != nullptr) {
             uintptr_t addr = chunk->unaligned_addr;
-            ::free(reinterpret_cast<void*>(addr)); //NOLINT(cppcoreguidelines-owning-memory)
+            ::free(reinterpret_cast<void*>(addr));
             chunk = chunk->next_chunk;
         }
     }
@@ -286,7 +285,6 @@ namespace argus {
                         }
                         #endif
 
-                        //NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
                         ::free(reinterpret_cast<void *>(chunk->unaligned_addr));
                     }
                 }

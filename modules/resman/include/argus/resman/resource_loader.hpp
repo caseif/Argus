@@ -41,7 +41,7 @@ namespace argus {
              * \param stream The stream to load the Resource from.
              * \param size The size in bytes of the Resource data.
              */
-            virtual void *const load(ResourceManager &manager, const ResourcePrototype &proto,
+            virtual void *load(ResourceManager &manager, const ResourcePrototype &proto,
                     std::istream &stream, size_t size) const;
 
             /**
@@ -49,7 +49,7 @@ namespace argus {
              *        data.
              * \param data_ptr A pointer to the resource data to be deinitialized.
              */
-            virtual void unload(void *const data_ptr) const;
+            virtual void unload(void *data_ptr) const;
 
         protected:
             /**

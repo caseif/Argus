@@ -29,24 +29,26 @@ namespace argus {
         std::map<std::string, const Resource*> acquired;
 
         bool failed = false;
-        std::exception thrown_exception;
+        std::exception *thrown_exception = nullptr;
         for (auto it = dependencies.begin(); it < dependencies.end(); it++) {
             try {
                 auto &res = manager.get_resource(*it);
                 acquired.insert({ res.uid, &res });
             } catch (std::exception &ex) {
                 failed = true;
-                thrown_exception = ex;
+                thrown_exception = &ex;
                 break;
             }
         }
 
         if (failed) {
-            for (auto it : acquired) {
-                it.second->release();
+            for (const auto &res : acquired) {
+                res.second->release();
             }
 
-            throw thrown_exception;
+            if (thrown_exception != nullptr) {
+                throw *thrown_exception;
+            }
         }
 
         pimpl->last_dependencies = dependencies;
@@ -62,7 +64,7 @@ namespace argus {
         delete pimpl;
     }
 
-    void *const ResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    void *ResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, const size_t size) const {
         return nullptr;
     }

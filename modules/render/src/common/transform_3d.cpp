@@ -128,7 +128,7 @@ namespace argus {
     }
 
     void Transform3D::add_rotation(const float pitch_delta, const float yaw_delta, const float roll_delta) {
-        this->add_rotation(pitch_delta, yaw_delta, roll_delta);
+        this->add_rotation(Vector3f { pitch_delta, yaw_delta, roll_delta });
     }
 
     Vector3f Transform3D::get_scale(void) const {

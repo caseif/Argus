@@ -55,7 +55,7 @@ namespace argus {
             ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
     }
 
-    void *const MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    void *MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         _ARGUS_DEBUG("Loading material\n");
         try {

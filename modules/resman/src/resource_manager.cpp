@@ -91,7 +91,7 @@ namespace argus {
             return;
         }
 
-        for (std::string child : children) {
+        for (const std::string &child : children) {
             std::string full_child_path = root_path + PATH_SEPARATOR + child;
 
             auto name_and_ext = get_name_and_extension(child);
@@ -104,7 +104,7 @@ namespace argus {
 
             //TODO: skip part files
 
-            ArpPackage package = NULL;
+            ArpPackage package = nullptr;
             int rc = 0;
             if ((rc = arp_load_from_file(full_child_path.c_str(), &package)) != 0) {
                 _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)\n",
@@ -129,7 +129,7 @@ namespace argus {
             return;
         }
 
-        for (std::string child : children) {
+        for (const std::string &child : children) {
             std::string full_child_path = root_path + PATH_SEPARATOR + child;
 
             auto name_and_ext = get_name_and_extension(child);
@@ -203,9 +203,9 @@ namespace argus {
     void ResourceManager::add_memory_package(const unsigned char *buf, size_t len) {
         int rc = 0;
 
-        ArpPackage pack = NULL;
+        ArpPackage pack = nullptr;
         if ((rc = arp_load_from_memory(buf, len, &pack)) != 0) {
-            _ARGUS_FATAL("Failed to load in-memory package");
+            _ARGUS_FATAL("Failed to load in-memory package (return code %d)\n", rc);
         }
         arp_add_to_set(pimpl->package_set, pack);
     }
@@ -306,7 +306,7 @@ namespace argus {
 
             auto *arp_res = arp_load_resource(&res_meta);
 
-            if (arp_res == NULL) {
+            if (arp_res == nullptr) {
                 throw LoadFailedException(uid);
             }
 
@@ -349,7 +349,7 @@ namespace argus {
     }
 
     std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> callback) {
+                    const std::function<void(Resource&)> &callback) {
         return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
     }
 

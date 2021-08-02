@@ -275,8 +275,8 @@ namespace argus {
                                               | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
-    constexpr inline KeyboardModifiers operator|=(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
-        return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
+    inline KeyboardModifiers operator|=(KeyboardModifiers &lhs, const KeyboardModifiers rhs) {
+        return lhs = static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
                                               | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
@@ -299,15 +299,15 @@ namespace argus {
     }
     // clang-format on
 
-    const std::string KeyboardEvent::get_key_name(void) const {
+    std::string KeyboardEvent::get_key_name(void) const {
         return argus::get_key_name(scancode);
     }
 
-    const std::string get_key_name(const KeyboardScancode scancode) {
+    std::string get_key_name(const KeyboardScancode scancode) {
         return glfwGetKeyName(0, _translate_argus_keycode(scancode));
     }
 
-    const bool is_key_down(const Window &window, const KeyboardScancode scancode) {
+    bool is_key_down(const Window &window, const KeyboardScancode scancode) {
         int glfw_scancode = _translate_argus_keycode(scancode);
         if (glfw_scancode == GLFW_KEY_UNKNOWN) {
             return false;
@@ -328,7 +328,7 @@ namespace argus {
         return *new TextInputContext();
     }
 
-    const std::string &TextInputContext::get_current_text(void) const {
+    std::string TextInputContext::get_current_text(void) const {
         return text;
     }
 
