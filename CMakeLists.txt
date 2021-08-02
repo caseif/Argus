@@ -30,13 +30,25 @@ option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
+#####################
+# CMake configuration
+#####################
+
 #set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
-set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
+######################
+# /CMake configuration
+######################
+
+########################
+# Compiler configuration
+########################
 
 set(CMAKE_C_OUTPUT_EXTENSION_REPLACE 1)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
@@ -44,6 +56,41 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+
+if(MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od" CACHE STRING "" FORCE)
+if(MSVC_VERSION LESS 1911)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FULL /Od" CACHE STRING "" FORCE)
+else()
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG /Od" CACHE STRING "" FORCE)
+endif()
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
+else()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual \
+                     -Wuninitialized -Wmissing-declarations -Winit-self -Wshadow \
+                     -std=c++11" CACHE STRING "" FORCE)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+    OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmismatched-tags" CACHE STRING "" FORCE)
+endif()
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g"
+    CACHE STRING "" FORCE)
+
+if(USE_ASAN)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer"
+      CACHE STRING "" FORCE)
+  set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
+      CACHE STRING "" FORCE)
+endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" CACHE STRING "" FORCE)
+endif()
+
+#########################
+# /Compiler configuration
+#########################
 
 ##########################
 # Dependency configuration
@@ -125,6 +172,10 @@ set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # /Dependency configuration
 ###########################
 
+#######################
+# Feature configuration
+#######################
+
 if(${USE_PTHREADS})
   message("Using pthreads instead of std::thread as requested")
 endif()
@@ -140,6 +191,14 @@ endif()
 if(${BUILD_VULKAN_BACKEND})
   message(FATAL_ERROR "Vulkan support is not yet available")
 endif()
+
+########################
+# /Feature configuration
+########################
+
+#######################
+# arptool configuration
+#######################
 
 message("Configuring arptool")
 set(arptool_wd "${CMAKE_BINARY_DIR}/tooling/arptool")
@@ -161,6 +220,10 @@ add_custom_command(OUTPUT "${arptool_exe}"
                   DEPENDS "${arptool_source_files}"
                   WORKING_DIRECTORY "${arptool_wd}")
 add_custom_target("arptool" DEPENDS "${arptool_exe}")
+
+########################
+# /arptool configuration
+########################
 
 # init task to copy dependency output
 function(copy_dep_output PARENT_TARGET DEP_TARGET PREFIX)
@@ -302,49 +365,6 @@ function(setup_submodule MODULE_NAME DYN)
     set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
   endif()
 
-  if(${USE_PTHREADS})
-    add_definitions("-DUSE_PTHREADS")
-  endif()
-
-  if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions("-D_ARGUS_DEBUG_MODE")
-  endif()
-
-  if(WIN32)
-    add_definitions("-DGLFW_DLL")
-  endif()
-
-  if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4" CACHE STRING "" FORCE)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od" CACHE STRING "" FORCE)
-    if(MSVC_VERSION LESS 1911)
-      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FULL /Od" CACHE STRING "" FORCE)
-    else()
-      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG /Od" CACHE STRING "" FORCE)
-    endif()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual \
-                         -Wuninitialized -Wmissing-declarations -Winit-self -Wshadow \
-                         -std=c++11" CACHE STRING "" FORCE)
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-        OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmismatched-tags" CACHE STRING "" FORCE)
-    endif()
-
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g"
-        CACHE STRING "" FORCE)
-
-    if(USE_ASAN)
-      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer"
-          CACHE STRING "" FORCE)
-      set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
-          CACHE STRING "" FORCE)
-    endif()
-
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" CACHE STRING "" FORCE)
-  endif()
-
   if(DYN)
     add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES} ${H_FILES} ${HPP_FILES})
 
@@ -369,6 +389,18 @@ function(setup_submodule MODULE_NAME DYN)
     set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
 
     string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
+  endif()
+
+  if(${USE_PTHREADS})
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-DUSE_PTHREADS")
+  endif()
+
+  if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-D_ARGUS_DEBUG_MODE")
+  endif()
+
+  if(WIN32)
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-DGLFW_DLL")
   endif()
 
   # recursively load this module's include dirs
