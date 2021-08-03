@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/threading.hpp"
@@ -80,11 +81,16 @@ namespace argus {
 
     static void APIENTRY _gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                             const GLchar *message, const void *userParam) {
-#ifndef _ARGUS_DEBUG_MODE
+        UNUSED(source);
+        UNUSED(type);
+        UNUSED(id);
+        UNUSED(length);
+        UNUSED(userParam);
+        #ifndef _ARGUS_DEBUG_MODE
         if (severity == GL_DEBUG_SEVERITY_NOTIFICATION || severity == GL_DEBUG_SEVERITY_LOW) {
             return;
         }
-#endif
+        #endif
         char const *level;
         auto stream = stdout;
         switch (severity) {
@@ -101,6 +107,10 @@ namespace argus {
                 break;
             case GL_DEBUG_SEVERITY_NOTIFICATION:
                 level = "TRACE";
+                break;
+            default: // shouldn't happen
+                level = "UNKNOWN";
+                stream = stderr;
                 break;
         }
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
@@ -122,7 +132,8 @@ namespace argus {
                 gl_shader_stage = GL_FRAGMENT_SHADER;
                 break;
             default:
-                _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n", stage);
+                _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n",
+                        static_cast<std::underlying_type<ShaderStage>::type>(stage));
         }
 
         auto shader_handle = glCreateShader(gl_shader_stage);
@@ -131,7 +142,7 @@ namespace argus {
         }
 
         const char *const src_c = src.c_str();
-        const int src_len = (int) src.length();
+        const int src_len = int(src.length());
 
         glShaderSource(shader_handle, 1, &src_c, &src_len);
 
@@ -165,7 +176,6 @@ namespace argus {
 
     // it is expected that the shaders will already be attached to the program when this function is called
     static void _link_program(program_handle_t program, VertexAttributes attrs) {
-        unsigned int attrib_index = 0;
         if (attrs & VertexAttributes::POSITION) {
             glBindAttribLocation(program, SHADER_ATTRIB_LOC_POSITION, SHADER_ATTRIB_IN_POSITION);
         }
@@ -291,7 +301,6 @@ namespace argus {
     }
 
     static void _draw_layer_to_framebuffer(LayerState &layer_state) {
-        auto &layer = layer_state.layer;
         auto &state = layer_state.parent_state;
         auto &renderer = state.renderer;
 
@@ -371,7 +380,6 @@ namespace argus {
     }
 
     static void _draw_framebuffer_to_screen(LayerState &layer_state) {
-        auto &layer = layer_state.layer;
         auto &state = layer_state.parent_state;
         auto &renderer = state.renderer;
 
@@ -433,7 +441,7 @@ namespace argus {
     void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        agletLoad((AgletLoadProc) glfwGetProcAddress);
+        agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress));
 
         int gl_major;
         int gl_minor;
@@ -446,11 +454,8 @@ namespace argus {
 
         _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)\n", gl_major, gl_minor, gl_version_str);
 
-        const GLubyte *ver_str = glGetString(GL_VERSION);
-
         renderer_states.insert({ &renderer, RendererState(renderer) });
 
-        //TODO: actually do something
         if (AGLET_GL_KHR_debug) {
             glDebugMessageCallback(_gl_debug_callback, nullptr);
         }
@@ -508,6 +513,7 @@ namespace argus {
     }
 
     void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
+        UNUSED(delta);
         auto &state = get_renderer_state(renderer);
 
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);

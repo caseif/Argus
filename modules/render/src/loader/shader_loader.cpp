@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
@@ -32,6 +33,8 @@ namespace argus {
 
     void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
+        UNUSED(manager);
+        UNUSED(size);
         ShaderStage stage;
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {
             stage = ShaderStage::VERTEX;

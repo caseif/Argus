@@ -54,7 +54,7 @@ constexpr const char *ModuleRender = "render";
     }
 #elif defined(__GNUC__) || defined(__clang__)
 #define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
-    __attribute__((constructor)) void __argus_module_ctor(void) { \
+    __attribute__((constructor)) static void __argus_module_ctor(void) { \
         argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
     }
 #else
@@ -62,6 +62,12 @@ constexpr const char *ModuleRender = "render";
 #endif
 
 namespace argus {
+    extern void init_module_wm(void);
+    extern void init_module_ecs(void);
+    extern void init_module_input(void);
+    extern void init_module_resman(void);
+    extern void init_module_render(void);
+
     /**
      * \brief Represents the stages of engine bring-up or spin-down.
      */

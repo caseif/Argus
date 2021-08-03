@@ -17,7 +17,7 @@
 namespace argus {
     // forward declarations
     class Material;
-    class ProcessedRenderObject;
+    struct ProcessedRenderObject;
 
     struct RenderBucket {
         friend class AllocPool;

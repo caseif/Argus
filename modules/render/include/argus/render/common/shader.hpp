@@ -24,11 +24,11 @@ namespace argus {
         FRAGMENT = 0x02
     };
 
-    constexpr ShaderStage operator |(ShaderStage lhs, ShaderStage rhs);
+    ShaderStage operator |(ShaderStage lhs, ShaderStage rhs);
 
     ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs);
 
-    constexpr ShaderStage operator &(ShaderStage lhs, ShaderStage rhs);
+    ShaderStage operator &(ShaderStage lhs, ShaderStage rhs);
 
     /**
      * \brief Represents a shader for use with a RenderObject.

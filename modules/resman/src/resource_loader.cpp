@@ -7,6 +7,9 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/lowlevel/macros.hpp"
+
 // module resman
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
@@ -66,10 +69,15 @@ namespace argus {
 
     void *ResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, const size_t size) const {
+        UNUSED(manager);
+        UNUSED(proto);
+        UNUSED(stream);
+        UNUSED(size);
         return nullptr;
     }
 
     void ResourceLoader::unload(void *const data_ptr) const {
+        UNUSED(data_ptr);
         // This function is intentionally left blank.
     }
 

@@ -28,6 +28,7 @@
 // module render
 #include "argus/render/common/renderer.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/renderer.hpp"
 #include "internal/render/loader/material_loader.hpp"
 #include "internal/render/loader/shader_loader.hpp"
@@ -90,7 +91,7 @@ namespace argus {
         g_renderer_map.insert({&window, renderer});
     }
 
-    void _update_lifecycle_render(LifecycleStage stage) {
+    static void _update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT: {
                 g_renderer_impl = &_create_backend_impl();
@@ -112,7 +113,7 @@ namespace argus {
         }
     }
 
-    void load_backend_modules(void) {
+    static void _load_backend_modules(void) {
         //TODO: fail gracefully
         enable_module(MODULE_RENDER_OPENGL);
     }
@@ -120,7 +121,7 @@ namespace argus {
     void init_module_render(void) {
         register_module({ModuleRender, 3, {"core", "wm", "resman"}, _update_lifecycle_render});
 
-        register_early_init_callback(ModuleRender, load_backend_modules);
+        register_early_init_callback(ModuleRender, _load_backend_modules);
     }
 
 }

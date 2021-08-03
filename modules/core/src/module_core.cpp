@@ -19,7 +19,7 @@ namespace argus {
     bool g_core_initializing = false;
     bool g_core_initialized = false;
 
-    void _update_lifecycle_core(LifecycleStage stage) {
+    static void _update_lifecycle_core(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PRE_INIT:
                 _ARGUS_ASSERT(!g_core_initializing && !g_core_initialized, "Cannot initialize engine more than once.");

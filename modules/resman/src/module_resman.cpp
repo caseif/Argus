@@ -14,7 +14,7 @@
 #include "argus/resman/resource_manager.hpp"
 
 namespace argus {
-    void _update_lifecycle_resman(LifecycleStage stage) {
+    static void _update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::POST_INIT:
                 ResourceManager::get_global_resource_manager().discover_resources();

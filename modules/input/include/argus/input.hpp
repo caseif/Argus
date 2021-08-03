@@ -16,7 +16,3 @@
 #pragma once
 
 #include "argus/input/keyboard.hpp"
-
-namespace argus {
-    //TODO
-}

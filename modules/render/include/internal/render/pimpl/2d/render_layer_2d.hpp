@@ -22,7 +22,7 @@ namespace argus {
         
         pimpl_RenderLayer2D(const Renderer &renderer, RenderLayer2D &layer, const Transform2D &transform,
                 const int index):
-                pimpl_RenderLayer(renderer, dynamic_cast<RenderLayer&>(layer), transform, index),
+                pimpl_RenderLayer(renderer, transform, index),
                 root_group(layer, nullptr) {
         }
 

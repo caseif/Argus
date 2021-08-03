@@ -52,8 +52,7 @@ namespace argus {
         );
     }
 
-    static void _fill_buckets_2d(RendererState &state, Layer2DState &layer_state,
-            const RenderLayer2D &layer) {
+    static void _fill_buckets_2d(Layer2DState &layer_state) {
         for (auto it = layer_state.render_buckets.begin(); it != layer_state.render_buckets.end();) {
             auto *bucket = it->second;
 
@@ -99,7 +98,6 @@ namespace argus {
                 }
 
                 auto &material = bucket->material;
-                auto program_handle = state.linked_programs.find(&material)->second;
 
                 auto vertex_attrs = material.pimpl->attributes;
 
@@ -153,11 +151,8 @@ namespace argus {
         }
     }
     
-    static void _process_object_2d(RendererState &state, Layer2DState &layer_state,
+    static void _process_object_2d(Layer2DState &layer_state,
             const RenderObject2D &object, const mat4_flat_t &transform) {
-        auto &renderer = state.renderer;
-        auto &layer = object.get_parent_layer();
-
         size_t vertex_count = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
             vertex_count += prim.get_vertex_count();
@@ -252,7 +247,7 @@ namespace argus {
 
     static void _compute_abs_group_transform(const RenderGroup2D &group, mat4_flat_t &target) {
         group.get_transform().copy_matrix(target);
-        const RenderGroup2D *cur = &group;
+        const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
 
         while (parent != nullptr) {
@@ -269,9 +264,6 @@ namespace argus {
 
     static void _process_render_group_2d(RendererState &state, Layer2DState &layer_state, const RenderGroup2D &group,
             const bool recompute_transform, const mat4_flat_t running_transform) {
-        auto &renderer = state.renderer;
-        auto &layer = group.get_parent_layer();
-
         bool new_recompute_transform = recompute_transform;
         mat4_flat_t cur_transform;
 
@@ -314,7 +306,7 @@ namespace argus {
                 return;
             }
 
-            _process_object_2d(state, layer_state, *child_object, final_obj_transform);
+            _process_object_2d(layer_state, *child_object, final_obj_transform);
         }
 
         for (auto *child_group : group.pimpl->child_groups) {
@@ -331,7 +323,6 @@ namespace argus {
             if (!processed_obj->visited) {
                 // wasn't visited this iteration, must not be present in the scene graph anymore
 
-                auto buffer = processed_obj->vertex_buffer;
                 glDeleteBuffers(1, &processed_obj->vertex_buffer);
 
                 // we need to remove it from its containing bucket and flag the bucket for a rebuild
@@ -353,6 +344,6 @@ namespace argus {
 
     void render_layer_2d(RenderLayer2D &layer, RendererState &renderer_state, Layer2DState &layer_state) {
         _process_objects_2d(renderer_state, layer_state, layer);
-        _fill_buckets_2d(renderer_state, layer_state, layer);
+        _fill_buckets_2d(layer_state);
     }
 }

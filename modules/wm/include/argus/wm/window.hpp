@@ -42,6 +42,9 @@ namespace argus {
             /**
              * \brief Creates a new Window.
              *
+             * \param parent The Window which is parent to the new one, or
+             *        `nullptr` if the window does not have a parent.
+             * 
              * \return The created Window.
              *
              * \warning Not all platforms may support multiple
@@ -50,7 +53,7 @@ namespace argus {
              * \remark A Renderer will be implicitly created upon construction
              *         of a Window.
              */
-            Window();
+            Window(Window *parent = nullptr);
 
             Window(const Window&) = delete;
 

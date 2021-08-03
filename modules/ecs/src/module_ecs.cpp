@@ -15,7 +15,7 @@
 
 namespace argus {
 
-    void _update_lifecycle_ecs(LifecycleStage stage) {
+    static void _update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT: {
                 // we only accept component registrations during the pre-init stage
@@ -29,7 +29,7 @@ namespace argus {
     }
 
     void init_module_ecs(void) {
-        //TODO
+        register_module({ModuleEcs, 2, {"core"}, _update_lifecycle_ecs});
     }
 
 }

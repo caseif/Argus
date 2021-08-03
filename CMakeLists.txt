@@ -68,8 +68,7 @@ endif()
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
 else()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual \
-                     -Wuninitialized -Wmissing-declarations -Winit-self -Wshadow \
-                     -std=c++11" CACHE STRING "" FORCE)
+                     -Wuninitialized -Wmissing-declarations -Winit-self -std=c++11" CACHE STRING "" FORCE)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
     OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmismatched-tags" CACHE STRING "" FORCE)

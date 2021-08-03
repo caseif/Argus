@@ -157,7 +157,7 @@ namespace argus {
         pimpl(new pimpl_AllocPool(
             {block_size, _next_aligned_value(block_size, alignment_exp), // objects must be aligned within the pool
              alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
-        //TODO: do we still need this?
+        //TODO: do we still need this check?
         if (block_size < sizeof(size_t)) {
             throw std::invalid_argument("Block size too small");
         }

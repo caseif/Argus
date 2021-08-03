@@ -183,7 +183,7 @@ namespace argus {
         _ARGUS_INFO("Registered module %s\n", module.id.c_str());
     }
 
-    void enable_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
+    static void _enable_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
         // skip duplicates
         for (const auto &enabled_module : g_enabled_modules) {
             if (enabled_module.id == module_id) {
@@ -207,7 +207,7 @@ namespace argus {
         std::vector<std::string> new_chain = dependent_chain;
         new_chain.insert(new_chain.cend(), module_id);
         for (const auto &dependency : it->second.dependencies) {
-            enable_module(dependency, new_chain);
+            _enable_module(dependency, new_chain);
         }
 
         g_enabled_modules.insert(it->second);
@@ -216,10 +216,10 @@ namespace argus {
     }
 
     void enable_module(const std::string &module_id) {
-        enable_module(module_id, {});
+        _enable_module(module_id, {});
     }
 
-    void _deinitialize_modules(void) {
+    static void _deinitialize_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PRE_DEINIT; stage <= LifecycleStage::POST_DEINIT;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (auto it = g_enabled_modules.rbegin(); it != g_enabled_modules.rend(); it++) {

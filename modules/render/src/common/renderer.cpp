@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 
 // module core
@@ -25,6 +26,7 @@
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_layer_2d.hpp"
 #include "internal/render/module_render.hpp"
+#include "internal/render/renderer.hpp"
 #include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
 #include "internal/render/pimpl/common/render_layer.hpp"
@@ -96,6 +98,7 @@ namespace argus {
     }
 
     void renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
+        UNUSED(user_data);
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
 
         if (window_event.subtype != WindowEventType::CREATE

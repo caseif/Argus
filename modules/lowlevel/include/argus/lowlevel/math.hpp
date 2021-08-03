@@ -530,5 +530,5 @@ namespace argus {
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const mat4_flat_t mat);
 
-    void transpose_matrix(const mat4_flat_t mat);
+    void transpose_matrix(mat4_flat_t mat);
 }

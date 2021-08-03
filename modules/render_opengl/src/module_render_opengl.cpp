@@ -33,7 +33,7 @@
 namespace argus {
     mat4_flat_t g_view_matrix;
 
-    RendererImpl *create_opengl_backend() {
+    static RendererImpl *_create_opengl_backend() {
         return new GLRenderer();
     }
 
@@ -55,10 +55,10 @@ namespace argus {
         memcpy(g_view_matrix, mat, sizeof(mat));
     }
 
-    void update_lifecycle_render_opengl(LifecycleStage stage) {
+    static void _update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PRE_INIT: {
-                register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(create_opengl_backend));
+                register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(_create_opengl_backend));
                 break;
             }
             case LifecycleStage::INIT: {
@@ -77,10 +77,6 @@ namespace argus {
             case LifecycleStage::POST_INIT: {
                 ResourceManager::get_global_resource_manager().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
                         RESOURCES_RENDER_OPENGL_ARP_LEN);
-                /*ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_VERT_PATH,
-                        "text/x-glsl-vert", FB_SHADER_VERT, sizeof(FB_SHADER_VERT));
-                ResourceManager::get_global_resource_manager().create_resource(FB_SHADER_FRAG_PATH,
-                        "text/x-glsl-frag", FB_SHADER_FRAG, sizeof(FB_SHADER_FRAG));*/
                 break;
             }
             default: {
@@ -89,5 +85,5 @@ namespace argus {
         }
     }
 
-    REGISTER_ARGUS_MODULE("render_opengl", 4, { "render" }, update_lifecycle_render_opengl);
+    REGISTER_ARGUS_MODULE("render_opengl", 4, { "render" }, _update_lifecycle_render_opengl);
 }

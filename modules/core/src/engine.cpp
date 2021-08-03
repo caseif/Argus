@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
@@ -18,6 +19,7 @@
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/engine.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/event.hpp"
 #include "internal/core/module.hpp"
@@ -54,6 +56,7 @@ namespace argus {
     extern EngineConfig g_engine_config;
 
     static void _interrupt_handler(const int signal) {
+        UNUSED(signal);
         stop_engine();
     }
 
@@ -116,7 +119,8 @@ namespace argus {
         return delta;
     }
 
-    static void *_game_loop(void *const _) {
+    static void *_game_loop(void *const user_data) {
+        UNUSED(user_data);
         static Timestamp last_update = 0;
 
         while (1) {
@@ -128,7 +132,7 @@ namespace argus {
             Timestamp update_start = argus::microtime();
             TimeDelta delta = _compute_delta(last_update);
 
-            //TODO: should we flush the queues before the engine stops?
+            //TODO: do we need to flush the queues before the engine stops?
             flush_callback_list_queues(g_update_callbacks);
             flush_event_listener_queues(TargetThread::UPDATE);
 

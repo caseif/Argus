@@ -7,6 +7,9 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
+#include "argus/lowlevel/macros.hpp"
+
 // module core
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
@@ -27,13 +30,14 @@ namespace argus {
     }
 
     static void _on_window_event(const ArgusEvent &event, void *data) {
+        UNUSED(data);
         auto &wevent = static_cast<const WindowEvent&>(event);
         if (wevent.subtype == WindowEventType::CREATE) {
             _init_window_input(wevent.window);
         }
     }
 
-    void _update_lifecycle_input(const LifecycleStage stage) {
+    static void _update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT:
                 register_event_handler(ArgusEventType::WINDOW, _on_window_event, TargetThread::UPDATE);

@@ -93,7 +93,7 @@ namespace argus {
                 Index id = list.removal_queue.front();
                 list.removal_queue.pop();
                 if (!remove_from_indexed_vector(list.list, id)) {
-                    _ARGUS_WARN("Game attempted to unregister unknown callback %llu\n", id);
+                    _ARGUS_WARN("Game attempted to unregister unknown callback %lu\n", id);
                 }
             }
             list.queue_mutex.unlock();

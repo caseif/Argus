@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
@@ -21,6 +22,7 @@
 
 // module input
 #include "argus/input/keyboard.hpp"
+#include "internal/input/input_helpers.hpp"
 
 #include "GLFW/glfw3.h"
 
@@ -200,8 +202,6 @@ namespace argus {
     static std::vector<TextInputContext *> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
-    static int g_keyboard_key_count = 0;
-
     static KeyboardModifiers _translate_glfw_keymod(uint16_t glfw_keymod) {
         KeyboardModifiers mod = KeyboardModifiers::NONE;
 
@@ -250,6 +250,8 @@ namespace argus {
     }
 
     static void _on_key_event(GLFWwindow *window, int glfw_keycode, int glfw_scancode, int glfw_action, int glfw_mods) {
+        UNUSED(window);
+        UNUSED(glfw_scancode);
         //TODO: determine if a key press is actually supported by Argus's API
 
         KeyboardEventType key_event_type;
@@ -265,9 +267,6 @@ namespace argus {
         KeyboardModifiers mod = _translate_glfw_keymod(glfw_mods);
 
         dispatch_event<KeyboardEvent>(key_event_type, scancode, mod);
-    }
-
-    static void _update_callback(TimeDelta delta) {
     }
 
     constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {

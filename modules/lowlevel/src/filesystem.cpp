@@ -246,12 +246,10 @@ namespace argus {
 
     const std::string get_executable_path(void) {
         const size_t max_path_len = 4097;
-        size_t path_len = max_path_len;
         char path[max_path_len];
 
-        int rc = 0;
-
         #ifdef _WIN32
+        int rc = 0;
         GetModuleFileNameA(NULL, path, max_path_len);
         rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
 

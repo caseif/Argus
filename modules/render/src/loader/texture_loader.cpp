@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
@@ -42,6 +43,9 @@ namespace argus {
 
     void *PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
+        UNUSED(manager);
+        UNUSED(proto);
+        UNUSED(size);
         unsigned char sig[8];
         stream.read(reinterpret_cast<char*>(sig), 8);
 

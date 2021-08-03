@@ -15,6 +15,9 @@
 
 #pragma once
 
+// module lowlevel
+#include "argus/lowlevel/macros.hpp"
+
 #include <atomic>
 #include <exception>
 #include <functional>
@@ -366,8 +369,8 @@ namespace argus {
         std::future<Out> future = promise_ptr->get_future();
         Thread *thread = nullptr;
         thread = &Thread::create(
-            //NOLINTNEXTLINE(clang-diagnostic-unused-parameter)
-            [thread, function, callback, promise_ptr](const void *_) mutable -> void* {
+            [thread, function, callback, promise_ptr](const void *user_data) mutable -> void* {
+                UNUSED(user_data);
                 try {
                     Out res = function();
                     promise_ptr->set_value_at_thread_exit(res);

@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
@@ -50,14 +51,16 @@ namespace argus {
     }
 
     static void _poll_events(const TimeDelta delta) {
+        UNUSED(delta);
         glfwPollEvents();
     }
 
     static void _on_glfw_error(const int code, const char *desc) {
+        UNUSED(code);
         _ARGUS_WARN("GLFW Error: %s\n", desc);
     }
 
-    void _update_lifecycle_wm(LifecycleStage stage) {
+    static void _update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::INIT: {
                 glfwInit();

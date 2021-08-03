@@ -28,7 +28,7 @@ namespace argus {
     class RenderObject2D;
 
     struct ProcessedRenderObject;
-    class RenderBucket;
+    struct RenderBucket;
 
     struct LinkedProgram {
         program_handle_t handle;

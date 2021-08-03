@@ -11,6 +11,8 @@
 
 #include "internal/render_opengl/glfw_include.hpp"
 
+#include "aglet/aglet.h"
+
 #include <initializer_list>
 #include <set>
 #include <string>

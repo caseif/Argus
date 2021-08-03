@@ -7,6 +7,7 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 
 #include <exception>
@@ -167,8 +168,8 @@ namespace argus {
         std::future<void> future = promise_ptr->get_future();
         Thread *thread = nullptr;
         thread = &Thread::create(
-            //NOLINTNEXTLINE(clang-diagnostic-unused-parameter)
-            [thread, function, callback, promise_ptr](const void *_) mutable -> void * {
+            [thread, function, callback, promise_ptr](const void *user_data) mutable -> void * {
+                UNUSED(user_data);
                 try {
                     function();
                     promise_ptr->set_value_at_thread_exit();

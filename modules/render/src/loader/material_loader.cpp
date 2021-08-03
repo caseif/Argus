@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
@@ -57,6 +58,8 @@ namespace argus {
 
     void *MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
+        UNUSED(proto);
+        UNUSED(size);
         _ARGUS_DEBUG("Loading material\n");
         try {
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);

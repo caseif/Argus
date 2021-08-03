@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
@@ -102,7 +103,8 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
-    Window::Window(): pimpl(new pimpl_Window(*this)) {
+    Window::Window(Window *parent):
+            pimpl(new pimpl_Window(parent)) {
         _ARGUS_ASSERT(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         pimpl->state = WINDOW_STATE_NULL;
@@ -121,8 +123,6 @@ namespace argus {
 
         g_window_count++;
         g_window_map.insert({pimpl->handle, this});
-
-        pimpl->parent = nullptr;
 
         _register_callbacks(pimpl->handle);
 
@@ -167,8 +167,7 @@ namespace argus {
     }
 
     Window &Window::create_child_window(void) {
-        Window *child_window = new Window();
-        child_window->pimpl->parent = this;
+        Window *child_window = new Window(this);
 
         pimpl->children.insert(pimpl->children.cend(), child_window);
 
@@ -324,6 +323,7 @@ namespace argus {
     }
 
     void window_window_event_callback(const ArgusEvent &event, void *user_data) {
+        UNUSED(user_data);
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
         const Window &window = window_event.window;
 
