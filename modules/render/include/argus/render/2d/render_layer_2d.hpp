@@ -78,7 +78,7 @@ namespace argus {
              *         implicit root RenderGroup contained by this layer. Thus,
              *         no RenderObject is truly without a parent group.
              */
-            RenderObject2D &create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
+            RenderObject2D &create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
                 const Transform2D &transform);
 
             /**

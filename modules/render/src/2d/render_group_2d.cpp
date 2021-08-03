@@ -83,8 +83,8 @@ namespace argus {
         return *group;
     }
 
-    RenderObject2D &RenderGroup2D::create_child_object(const Material &material, const std::vector<RenderPrim2D> &primitives,
-            const Transform2D &transform) {
+    RenderObject2D &RenderGroup2D::create_child_object(const std::string &material,
+            const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
         auto *obj = new RenderObject2D(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
         return *obj;

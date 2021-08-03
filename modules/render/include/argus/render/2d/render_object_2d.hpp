@@ -35,7 +35,7 @@ namespace argus {
         public:
             pimpl_RenderObject2D *pimpl;
 
-            RenderObject2D(const RenderGroup2D &parent_group, const Material &material,
+            RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
 
             RenderObject2D(const RenderObject2D&) noexcept;
@@ -52,11 +52,11 @@ namespace argus {
             const RenderLayer2D &get_parent_layer(void) const;
 
             /**
-             * \brief Gets the Material used by this object.
+             * \brief Gets the UID of the Material used by the object.
              *
-             * \return The Material used by this object.
+             * \return The UID of the Material used by the object.
              */
-            const Material &get_material(void) const;
+            std::string get_material(void) const;
 
             /**
              * \brief Gets the \link RenderPrim RenderPrims \endlink comprising this

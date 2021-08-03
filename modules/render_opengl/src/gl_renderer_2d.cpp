@@ -14,6 +14,9 @@
 // module core
 #include "internal/core/core_util.hpp"
 
+// module resman
+#include "argus/resman.hpp"
+
 // module render
 #include "argus/render/common/material.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
@@ -166,7 +169,10 @@ namespace argus {
         glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
         auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
 
-        auto vertex_attrs = object.get_material().pimpl->attributes;
+        auto &mat_res = ResourceManager::get_global_resource_manager().get_resource(object.get_material());
+        auto &mat = mat_res.get<Material>();
+
+        auto vertex_attrs = mat.pimpl->attributes;
 
         size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
                 + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
@@ -208,7 +214,7 @@ namespace argus {
         glBindBuffer(GL_COPY_READ_BUFFER, 0);
 
         auto &processed_obj = ProcessedRenderObject::create(
-                object.get_material(), transform,
+                mat, transform,
                 vertex_buffer, buffer_size, _count_vertices(object));
         processed_obj.visited = true;
 

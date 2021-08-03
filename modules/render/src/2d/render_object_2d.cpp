@@ -26,7 +26,7 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
-    RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const Material &material,
+    RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
         pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(parent_group, material, primitives, transform)) {
     }
@@ -54,7 +54,7 @@ namespace argus {
         return pimpl->parent_group.get_parent_layer();
     }
 
-    const Material &RenderObject2D::get_material(void) const {
+    std::string RenderObject2D::get_material(void) const {
         return pimpl->material;
     }
 

@@ -56,7 +56,7 @@ namespace argus {
         return pimpl->root_group.create_child_group(transform);
     }
 
-    RenderObject2D &RenderLayer2D::create_child_object(const Material &material,
+    RenderObject2D &RenderLayer2D::create_child_object(const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
         return pimpl->root_group.create_child_object(material, primitives, transform);
     }
