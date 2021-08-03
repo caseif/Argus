@@ -106,8 +106,34 @@ namespace argus {
              *            not already in memory.
              *
              * \sa ResourceManager#get_resource_async
+             * \sa ResourceManager#try_get_resource
              */
             Resource &get_resource(const std::string &uid);
+
+            /**
+             * \brief Attempts to get the Resource with the given UID without
+             *        incrementing the Resource's refcount. This function
+             *        assumes the Resource is already loaded and will fail if it
+             *        is not.
+             *
+             * \param uid The UID of the Resource to retrieve.
+             *
+             * \return The retrieved Resource.
+             *
+             * \throw ResourceNotPresentException If no Resource with the given
+             *        UID exists.
+             * \throw ResourceNotLoadedException If the Resource is not already
+             *        loaded.
+             *
+             * \warning This should not be used unless you know what you are
+             *          doing. This function is intended for use with dependent
+             *          Resources guaranteed to have a lifetime extending until
+             *          or beyond that of the returned reference, and improper
+             *          use may lead to incorrect or strange behavior.
+             *
+             * \sa ResourceManager#get_resource
+             */
+            Resource &get_resource_weak(const std::string &uid);
 
             /**
              * \brief Attempts to get the Resource with the given UID, failing
@@ -121,6 +147,8 @@ namespace argus {
              *        UID exists.
              * \throw ResourceNotLoadedException If the Resource is not already
              *        loaded.
+             *
+             * \sa ResourceManager#get_resource
              */
             Resource &try_get_resource(const std::string &uid) const;
 

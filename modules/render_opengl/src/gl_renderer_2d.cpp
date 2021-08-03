@@ -214,7 +214,7 @@ namespace argus {
         glBindBuffer(GL_COPY_READ_BUFFER, 0);
 
         auto &processed_obj = ProcessedRenderObject::create(
-                mat, transform,
+                mat_res, transform,
                 vertex_buffer, buffer_size, _count_vertices(object));
         processed_obj.visited = true;
 

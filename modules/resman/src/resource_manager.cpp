@@ -224,11 +224,14 @@ namespace argus {
         pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
-    static Resource *_acquire_resource(const ResourceManager &mgr, const std::string &uid) {
+    static Resource *_acquire_resource(const ResourceManager &mgr, const std::string &uid, bool inc_refcount = true) {
         auto it = mgr.pimpl->loaded_resources.find(uid);
         if (it != mgr.pimpl->loaded_resources.cend()) {
-            auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
-            _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)\n", uid.c_str(), new_ref_count);
+            if (inc_refcount) {
+                auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
+                _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)\n", uid.c_str(), new_ref_count);
+            }
+
             return it->second;
         } else {
             return nullptr;
@@ -241,6 +244,15 @@ namespace argus {
             return *res;
         } else {
             return load_resource(uid);
+        }
+    }
+
+    Resource &ResourceManager::get_resource_weak(const std::string &uid) {
+        auto *res = _acquire_resource(*this, uid, false);
+        if (res != nullptr) {
+            return *res;
+        } else {
+            throw ResourceNotLoadedException(uid);
         }
     }
 
