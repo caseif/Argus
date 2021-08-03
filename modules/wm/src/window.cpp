@@ -70,29 +70,29 @@ namespace argus {
     }
 
     static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
-        dispatch_event<WindowEvent>(WindowEventType::UPDATE, window, Vector2u(), Vector2i(), delta);
+        dispatch_event<WindowEvent>(WindowEventType::Update, window, Vector2u(), Vector2i(), delta);
     }
 
     static void _on_window_close(GLFWwindow *handle) {
-        _dispatch_window_event(handle, WindowEventType::REQUEST_CLOSE);
+        _dispatch_window_event(handle, WindowEventType::RequestClose);
     }
 
     static void _on_window_minimize_restore(GLFWwindow *handle, int minimized) {
-        _dispatch_window_event(handle, minimized ? WindowEventType::MINIMIZE : WindowEventType::RESTORE);
+        _dispatch_window_event(handle, minimized ? WindowEventType::Minimize : WindowEventType::Restore);
     }
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
-        dispatch_event<WindowEvent>(WindowEventType::RESIZE, *g_window_map.find(handle)->second,
+        dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_map.find(handle)->second,
                 Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
-        dispatch_event<WindowEvent>(WindowEventType::MOVE, *g_window_map.find(handle)->second,
+        dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_map.find(handle)->second,
                 Vector2u(), Vector2i { x, y }, 0);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
-        _dispatch_window_event(handle, focused == GLFW_TRUE ? WindowEventType::FOCUS : WindowEventType::UNFOCUS);
+        _dispatch_window_event(handle, focused == GLFW_TRUE ? WindowEventType::Focus : WindowEventType::Unfocus);
     }
 
     static void _register_callbacks(GLFWwindow *handle) {
@@ -144,7 +144,7 @@ namespace argus {
 
         for (Window *child : pimpl->children) {
             child->pimpl->parent = nullptr;
-            _dispatch_window_event(*child, WindowEventType::REQUEST_CLOSE);
+            _dispatch_window_event(*child, WindowEventType::RequestClose);
         }
 
         if (pimpl->parent != nullptr) {
@@ -196,7 +196,7 @@ namespace argus {
         if (!(pimpl->state & WINDOW_STATE_CREATED)) {
             pimpl->state |= WINDOW_STATE_CREATED;
 
-            dispatch_event<WindowEvent>(WindowEventType::CREATE, *this);
+            dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
             return;
         }
@@ -332,12 +332,12 @@ namespace argus {
             return;
         }
 
-        if (window_event.subtype == WindowEventType::REQUEST_CLOSE) {
+        if (window_event.subtype == WindowEventType::RequestClose) {
             window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
             window.pimpl->state &= ~WINDOW_STATE_READY;
-        } else if (window_event.subtype == WindowEventType::RESIZE) {
+        } else if (window_event.subtype == WindowEventType::Resize) {
             window.pimpl->properties.resolution = window_event.resolution;
-        } else if (window_event.subtype == WindowEventType::MOVE) {
+        } else if (window_event.subtype == WindowEventType::Move) {
             window.pimpl->properties.position = window_event.position;
         }
     }

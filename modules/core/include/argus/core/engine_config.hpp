@@ -60,9 +60,9 @@ namespace argus {
      * \warning A Vulkan-based renderer is not yet implemented.
      */
     enum class RenderBackend {
-        OPENGL = 0x01,
-        OPENGLES = 0x02,
-        VULKAN = 0x11
+        OpenGL = 0x01,
+        OpenGLES = 0x02,
+        Vulkan = 0x11
     };
 
     /**

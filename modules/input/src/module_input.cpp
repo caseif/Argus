@@ -32,15 +32,15 @@ namespace argus {
     static void _on_window_event(const ArgusEvent &event, void *data) {
         UNUSED(data);
         auto &wevent = static_cast<const WindowEvent&>(event);
-        if (wevent.subtype == WindowEventType::CREATE) {
+        if (wevent.subtype == WindowEventType::Create) {
             _init_window_input(wevent.window);
         }
     }
 
     static void _update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::INIT:
-                register_event_handler(ArgusEventType::WINDOW, _on_window_event, TargetThread::UPDATE);
+            case LifecycleStage::Init:
+                register_event_handler(ArgusEventType::Window, _on_window_event, TargetThread::Update);
                 break;
             default:
                 break;

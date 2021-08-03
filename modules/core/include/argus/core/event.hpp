@@ -26,31 +26,31 @@ namespace argus {
         /**
          * \brief An event of an unknown or undefined class.
          */
-        UNDEFINED = 0x01,
+        Undefined = 0x01,
         /**
          * \brief An event pertaining to a game window.
          */
-        WINDOW = 0x02,
+        Window = 0x02,
         /**
          * \brief An event pertaining to keyboard input.
          */
-        KEYBOARD = 0x04,
+        Keyboard = 0x04,
         /**
          * \brief An event pertaining to mouse input.
          */
-        MOUSE = 0x08,
+        Mouse = 0x08,
         /**
          * \brief An event pertaining to joystick input.
          */
-        JOYSTICK = 0x10,
+        Joystick = 0x10,
         /**
          * \brief An event signifying some type of abstracted input.
          */
-        INPUT = KEYBOARD | MOUSE | JOYSTICK,
+        Input = Keyboard | Mouse | Joystick,
         /**
          * \brief An event sent by a resource manager.
          */
-        RESOURCE = 0x20
+        Resource = 0x20
     };
 
     /**
@@ -111,8 +111,8 @@ namespace argus {
     typedef std::function<void(const ArgusEvent &, void *)> ArgusEventCallback;
 
     enum class TargetThread {
-        UPDATE,
-        RENDER
+        Update,
+        Render
     };
 
     /**

@@ -134,7 +134,7 @@ namespace argus {
 
             //TODO: do we need to flush the queues before the engine stops?
             flush_callback_list_queues(g_update_callbacks);
-            flush_event_listener_queues(TargetThread::UPDATE);
+            flush_event_listener_queues(TargetThread::Update);
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
@@ -143,7 +143,7 @@ namespace argus {
             }
             g_update_callbacks.list_mutex.unlock_shared();
 
-            process_event_queue(TargetThread::UPDATE);
+            process_event_queue(TargetThread::Update);
 
             if (g_engine_config.target_tickrate != 0) {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
@@ -166,7 +166,7 @@ namespace argus {
             TimeDelta delta = _compute_delta(last_frame);
 
             flush_callback_list_queues(g_render_callbacks);
-            flush_event_listener_queues(TargetThread::RENDER);
+            flush_event_listener_queues(TargetThread::Render);
 
             // invoke render callbacks
             g_render_callbacks.list_mutex.lock_shared();
@@ -175,7 +175,7 @@ namespace argus {
             }
             g_render_callbacks.list_mutex.unlock_shared();
 
-            process_event_queue(TargetThread::RENDER);
+            process_event_queue(TargetThread::Render);
 
             if (g_engine_config.target_framerate != 0) {
                 _handle_idle(render_start, g_engine_config.target_framerate);
@@ -206,7 +206,7 @@ namespace argus {
             }
         }
 
-        for (LifecycleStage stage = LifecycleStage::PRE_INIT; stage <= LifecycleStage::POST_INIT;
+        for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (const auto &mod_info : g_enabled_modules) {
                 mod_info.lifecycle_update_callback(stage);

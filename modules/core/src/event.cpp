@@ -60,10 +60,10 @@ namespace argus {
     }
 
     void process_event_queue(const TargetThread target_thread) {
-        _ARGUS_ASSERT(target_thread == TargetThread::UPDATE || target_thread == TargetThread::RENDER,
+        _ARGUS_ASSERT(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
             "Unrecognized target thread ordinal %u\n", static_cast<unsigned int>(target_thread));
 
-        auto render_thread = target_thread == TargetThread::RENDER;
+        auto render_thread = target_thread == TargetThread::Render;
 
         auto &queue = render_thread ? g_render_event_queue : g_update_event_queue;
         auto &mutex = render_thread ? g_render_event_queue_mutex : g_update_event_queue_mutex;
@@ -104,11 +104,11 @@ namespace argus {
     void flush_event_listener_queues(const TargetThread target_thread) {
         CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {
-            case TargetThread::UPDATE: {
+            case TargetThread::Update: {
                 listeners = &g_update_event_listeners;
                 break;
             }
-            case TargetThread::RENDER: {
+            case TargetThread::Render: {
                 listeners = &g_render_event_listeners;
                 break;
             }
@@ -127,11 +127,11 @@ namespace argus {
 
         CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {
-            case TargetThread::UPDATE: {
+            case TargetThread::Update: {
                 listeners = &g_update_event_listeners;
                 break;
             }
-            case TargetThread::RENDER: {
+            case TargetThread::Render: {
                 listeners = &g_render_event_listeners;
                 break;
             }

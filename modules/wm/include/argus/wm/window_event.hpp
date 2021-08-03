@@ -26,15 +26,15 @@ namespace argus {
      * \sa WindowEvent
      */
     enum class WindowEventType {
-        CREATE,
-        UPDATE,
-        REQUEST_CLOSE,
-        MINIMIZE,
-        RESTORE,
-        FOCUS,
-        UNFOCUS,
-        RESIZE,
-        MOVE
+        Create,
+        Update,
+        RequestClose,
+        Minimize,
+        Restore,
+        Focus,
+        Unfocus,
+        Resize,
+        Move
     };
 
     /**
@@ -84,7 +84,7 @@ namespace argus {
          * \param window The Window associated with the event.
          */
         WindowEvent(WindowEventType subtype, Window &window):
-                ArgusEvent{ArgusEventType::WINDOW},
+                ArgusEvent{ArgusEventType::Window},
                 subtype(subtype),
                 window(window),
                 resolution(),
@@ -103,7 +103,7 @@ namespace argus {
          */
         WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
                 TimeDelta delta):
-            ArgusEvent{ArgusEventType::WINDOW},
+            ArgusEvent{ArgusEventType::Window},
             subtype(subtype),
             window(window),
             resolution(resolution),

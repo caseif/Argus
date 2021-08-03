@@ -76,9 +76,9 @@ namespace argus {
 
                 ShaderStage stage;
                 if (shader_type == SHADER_VERT) {
-                    stage = ShaderStage::VERTEX;
+                    stage = ShaderStage::Vertex;
                 } else if (shader_type == SHADER_FRAG) {
-                    stage = ShaderStage::FRAGMENT;
+                    stage = ShaderStage::Fragment;
                 } else {
                     // we don't support any other shader stages right now
                     _ARGUS_DEBUG("Invalid shader stage in material\n");

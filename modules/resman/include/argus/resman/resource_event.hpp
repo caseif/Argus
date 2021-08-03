@@ -25,8 +25,8 @@ namespace argus {
      * \sa ResourceEvent
      */
     enum class ResourceEventType {
-        LOAD,
-        UNLOAD
+        Load,
+        Unload
     };
 
     /**
@@ -65,7 +65,7 @@ namespace argus {
          * \param resource The Resource associated with the event.
          */
         ResourceEvent(const ResourceEventType subtype, ResourcePrototype prototype, Resource *resource):
-                ArgusEvent { ArgusEventType::RESOURCE },
+                ArgusEvent { ArgusEventType::Resource },
                 subtype(subtype),
                 prototype(std::move(prototype)),
                 resource(resource) {

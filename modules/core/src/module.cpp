@@ -220,7 +220,7 @@ namespace argus {
     }
 
     static void _deinitialize_modules(void) {
-        for (LifecycleStage stage = LifecycleStage::PRE_DEINIT; stage <= LifecycleStage::POST_DEINIT;
+        for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (auto it = g_enabled_modules.rbegin(); it != g_enabled_modules.rend(); it++) {
                 it->lifecycle_update_callback(stage);

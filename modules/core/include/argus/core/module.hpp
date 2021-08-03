@@ -79,17 +79,17 @@ namespace argus {
          * generally for the purpose of preparing the module for use in the
          * initialization of dependent modules.
          */
-        PRE_INIT,
+        PreInit,
         /**
          * \brief Primary initialization stage, for performing most
          *        initialization tasks.
          */
-        INIT,
+        Init,
         /**
          * \brief Post-initialization stage, for performing initialization
          *        contingent on all parent modules being initialized.
          */
-        POST_INIT,
+        PostInit,
         /**
          * \brief Early de-initialization. This occurs immediately after the
          *        engine has committed to shutting down.
@@ -98,21 +98,21 @@ namespace argus {
          * saving user data. Changes during this stage should not be visible to
          * dependent modules.
          */
-        PRE_DEINIT,
+        PreDeinit,
         /**
          * \brief Primary de-initialization.
          *
          * Should be used for performing most de-initialization tasks.
          */
-        DEINIT,
+        Deinit,
         /**
-         * \brief Very late initialization.
+         * \brief Very late de-initialization.
          *
          * Should be used for performing de-init contingent on parent modules
          * being fully de-initialized as well as for final deallocation and
          * similar tasks.
          */
-        POST_DEINIT
+        PostDeinit
     };
 
     /**

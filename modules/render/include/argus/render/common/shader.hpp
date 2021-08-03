@@ -20,8 +20,8 @@ namespace argus {
      * \brief Represents a stage corresponding to a step in the render pipeline.
      */
     enum class ShaderStage : uint32_t {
-        VERTEX = 0x01,
-        FRAGMENT = 0x02
+        Vertex = 0x01,
+        Fragment = 0x02
     };
 
     ShaderStage operator |(ShaderStage lhs, ShaderStage rhs);

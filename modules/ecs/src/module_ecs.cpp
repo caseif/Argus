@@ -17,7 +17,7 @@ namespace argus {
 
     static void _update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::INIT: {
+            case LifecycleStage::Init: {
                 // we only accept component registrations during the pre-init stage
                 ComponentTypeRegistry::instance()._seal();
                 break;

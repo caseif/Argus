@@ -62,20 +62,20 @@ namespace argus {
 
     static void _update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::INIT: {
+            case LifecycleStage::Init: {
                 glfwInit();
 
                 glfwSetErrorCallback(_on_glfw_error);
 
                 register_render_callback(_poll_events);
                 
-                register_event_handler(ArgusEventType::WINDOW, window_window_event_callback, TargetThread::RENDER);
+                register_event_handler(ArgusEventType::Window, window_window_event_callback, TargetThread::Render);
 
                 g_wm_module_initialized = true;
 
                 break;
             }
-            case LifecycleStage::DEINIT:
+            case LifecycleStage::Deinit:
                 _clean_up();
                 break;
             default:

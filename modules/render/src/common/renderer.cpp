@@ -101,9 +101,9 @@ namespace argus {
         UNUSED(user_data);
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
 
-        if (window_event.subtype != WindowEventType::CREATE
-                && window_event.subtype != WindowEventType::UPDATE
-                && window_event.subtype != WindowEventType::REQUEST_CLOSE) {
+        if (window_event.subtype != WindowEventType::Create
+                && window_event.subtype != WindowEventType::Update
+                && window_event.subtype != WindowEventType::RequestClose) {
             return;
         }
 
@@ -118,17 +118,17 @@ namespace argus {
         Renderer &renderer = *it->second;
 
         switch (window_event.subtype) {
-            case WindowEventType::CREATE: {
+            case WindowEventType::Create: {
                 renderer.init();
                 break;
             }
-            case WindowEventType::UPDATE: {
+            case WindowEventType::Update: {
                 if (window.is_ready()) {
                     renderer.render(window_event.delta);
                 }
                 break;
             }
-            case WindowEventType::REQUEST_CLOSE: {
+            case WindowEventType::RequestClose: {
                 delete &renderer;
                 break;
             }

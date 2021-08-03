@@ -21,15 +21,15 @@ namespace argus {
 
     static void _update_lifecycle_core(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::PRE_INIT:
+            case LifecycleStage::PreInit:
                 _ARGUS_ASSERT(!g_core_initializing && !g_core_initialized, "Cannot initialize engine more than once.");
 
                 g_core_initializing = true;
                 break;
-            case LifecycleStage::INIT:
+            case LifecycleStage::Init:
                 g_core_initialized = true;
                 break;
-            case LifecycleStage::POST_DEINIT:
+            case LifecycleStage::PostDeinit:
                 kill_game_thread();
 
                 break;

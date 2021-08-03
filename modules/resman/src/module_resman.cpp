@@ -16,7 +16,7 @@
 namespace argus {
     static void _update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::POST_INIT:
+            case LifecycleStage::PostInit:
                 ResourceManager::get_global_resource_manager().discover_resources();
                 break;
             default:

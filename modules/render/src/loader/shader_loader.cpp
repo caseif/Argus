@@ -37,9 +37,9 @@ namespace argus {
         UNUSED(size);
         ShaderStage stage;
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {
-            stage = ShaderStage::VERTEX;
+            stage = ShaderStage::Vertex;
         } else if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
-            stage = ShaderStage::FRAGMENT;
+            stage = ShaderStage::Fragment;
         } else {
             _ARGUS_FATAL("Unrecognized shader media type %s\n", proto.media_type.c_str());
         }

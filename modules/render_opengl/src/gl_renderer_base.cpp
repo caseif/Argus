@@ -125,10 +125,10 @@ namespace argus {
 
         GLuint gl_shader_stage;
         switch (stage) {
-            case ShaderStage::VERTEX:
+            case ShaderStage::Vertex:
                 gl_shader_stage = GL_VERTEX_SHADER;
                 break;
-            case ShaderStage::FRAGMENT:
+            case ShaderStage::Fragment:
                 gl_shader_stage = GL_FRAGMENT_SHADER;
                 break;
             default:
@@ -157,10 +157,10 @@ namespace argus {
             glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
             std::string stage_str;
             switch (stage) {
-                case ShaderStage::VERTEX:
+                case ShaderStage::Vertex:
                     stage_str = "vertex";
                     break;
-                case ShaderStage::FRAGMENT:
+                case ShaderStage::Fragment:
                     stage_str = "fragment";
                     break;
                 default:

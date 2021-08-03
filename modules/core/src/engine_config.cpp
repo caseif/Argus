@@ -35,15 +35,15 @@ namespace argus {
         auto modules = get_present_external_modules();
         
         if (modules.find(std::string(RENDER_MODULE_OPENGL)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::OPENGL);
+            backends.insert(backends.begin(), RenderBackend::OpenGL);
         }
 
         if (modules.find(std::string(RENDER_MODULE_OPENGLES)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::OPENGLES);
+            backends.insert(backends.begin(), RenderBackend::OpenGLES);
         }
 
         if (modules.find(std::string(RENDER_MODULE_VULKAN)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::VULKAN);
+            backends.insert(backends.begin(), RenderBackend::Vulkan);
         }
 
         return backends;

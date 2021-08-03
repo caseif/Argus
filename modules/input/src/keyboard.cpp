@@ -291,7 +291,7 @@ namespace argus {
     // clang-format off
     KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
             const KeyboardModifiers modifiers):
-            ArgusEvent(ArgusEventType::KEYBOARD),
+            ArgusEvent(ArgusEventType::Keyboard),
             subtype(subtype),
             scancode(scancode),
             modifiers(modifiers) {

@@ -56,15 +56,15 @@ namespace argus {
 
         for (auto backend : backends) {
             switch (backend) {
-                case RenderBackend::OPENGL: {
+                case RenderBackend::OpenGL: {
                     auto impl = call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL as graphics backend\n");
                     return *impl;
                 }
-                case RenderBackend::OPENGLES:
+                case RenderBackend::OpenGLES:
                     _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported\n");
                     break;
-                case RenderBackend::VULKAN:
+                case RenderBackend::Vulkan:
                     _ARGUS_INFO("Graphics backend Vulkan is not yet supported\n");
                     break;
                 default:
@@ -93,12 +93,12 @@ namespace argus {
 
     static void _update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::INIT: {
+            case LifecycleStage::Init: {
                 g_renderer_impl = &_create_backend_impl();
 
                 set_window_construct_callback(_window_construct_callback);
 
-                register_event_handler(ArgusEventType::WINDOW, renderer_window_event_callback, TargetThread::RENDER);
+                register_event_handler(ArgusEventType::Window, renderer_window_event_callback, TargetThread::Render);
 
                 ResourceManager::get_global_resource_manager().register_loader(*new MaterialLoader());
                 ResourceManager::get_global_resource_manager().register_loader(*new PngTextureLoader());
