@@ -8,7 +8,7 @@
  */
 
 /**
- * \file argus/keyboard.hpp
+ * \file argus/input/keyboard.hpp
  *
  * API for detecting and interpreting keyboard events.
  */

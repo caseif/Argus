@@ -8,7 +8,7 @@
  */
 
 /**
- * \file argus/time.hpp
+ * \file argus/lowlevel/time.hpp
  *
  * Time-related utility functions.
  */

@@ -8,7 +8,9 @@
  */
 
 /**
- * \file This file sets required macros and includes the GLFW header.
+ * \file internal/render/glfw_include.hpp
+ *
+ * Sets required macros and includes the GLFW header.
  */
 #pragma once
 

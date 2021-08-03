@@ -8,7 +8,7 @@
  */
 
 /**
- * \file argus/filesystem.hpp
+ * \file argus/lowlevel/filesystem.hpp
  *
  * Low-level filesystem API.
  */

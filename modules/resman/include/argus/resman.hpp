@@ -8,7 +8,7 @@
  */
 
 /**
- * \file argus/resource_manager.hpp
+ * \file argus/resman.hpp
  *
  * High-level resource management API.
  */
