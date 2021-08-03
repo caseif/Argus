@@ -216,17 +216,22 @@ namespace argus {
             _ARGUS_FATAL("Failed to create program: %d\n", glGetError());
         }
 
-        for (auto *shader : material.pimpl->shaders) {
+        for (auto &shader_uid : material.pimpl->shaders) {
             shader_handle_t shader_handle;
 
-            auto existing_shader_it = state.compiled_shaders.find(shader);
+            auto &shader_res = ResourceManager::get_global_resource_manager().get_resource(shader_uid);
+            auto &shader = shader_res.get<Shader>();
+
+            auto existing_shader_it = state.compiled_shaders.find(&shader);
             if (existing_shader_it != state.compiled_shaders.end()) {
                 shader_handle = existing_shader_it->second;
             } else {
-                shader_handle = _compile_shader(*shader);
+                shader_handle = _compile_shader(shader);
 
-                state.compiled_shaders.insert({ shader, shader_handle });
+                state.compiled_shaders.insert({ &shader, shader_handle });
             }
+
+            shader_res.release();
 
             glAttachShader(program_handle, shader_handle);
         }
@@ -237,15 +242,20 @@ namespace argus {
 
         state.linked_programs[&material] = { program_handle, proj_mat_loc };
 
-        for (auto *shader : material.pimpl->shaders) {
-            glDetachShader(program_handle, state.compiled_shaders[shader]);
+        for (auto &shader_uid : material.pimpl->shaders) {
+            auto &shader_res = ResourceManager::get_global_resource_manager().get_resource(shader_uid);
+            glDetachShader(program_handle, state.compiled_shaders[&shader_res.get<Shader>()]);
+            shader_res.release();
         }
     }
 
     static void _prepare_texture(RendererState &state, const Material &material) {
-        auto &texture = material.pimpl->texture;
+        auto &texture_uid = material.pimpl->texture;
+        auto &texture_res = ResourceManager::get_global_resource_manager().get_resource(texture_uid);
+        auto &texture = texture_res.get<TextureData>();
 
         if (state.prepared_textures.find(&texture) != state.prepared_textures.end()) {
+            texture_res.release();
             return;
         }
 
@@ -275,6 +285,8 @@ namespace argus {
         glBindTexture(GL_TEXTURE_2D, 0);
 
         state.prepared_textures.insert({ &texture, handle });
+
+        texture_res.release();
     }
 
     static void _rebuild_scene(RendererState &state) {
@@ -349,7 +361,9 @@ namespace argus {
         for (auto &bucket : layer_state.render_buckets) {
             auto &mat = bucket.second->material;
             auto program_info = state.linked_programs.find(&mat)->second;
-            auto tex_handle = state.prepared_textures.find(&mat.pimpl->texture)->second;
+            auto &texture_res = ResourceManager::get_global_resource_manager().get_resource(mat.pimpl->texture);
+            auto &texture = texture_res.get<TextureData>();
+            auto tex_handle = state.prepared_textures.find(&texture)->second;
 
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
@@ -371,6 +385,8 @@ namespace argus {
             glDrawArrays(GL_TRIANGLES, 0, bucket.second->vertex_count);
 
             glBindVertexArray(0);
+
+            texture_res.release();
         }
 
         glBindTexture(GL_TEXTURE_2D, 0);

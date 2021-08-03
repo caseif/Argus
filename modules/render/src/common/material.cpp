@@ -27,17 +27,9 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Material));
 
-    Material::Material(const TextureData &texture, const std::vector<const Shader*> &shaders,
+    Material::Material(const std::string &texture, const std::vector<std::string> &shaders,
             const VertexAttributes &attribs):
         pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders, attribs)) {
-        ShaderStage seen = static_cast<ShaderStage>(0);
-        for (const Shader *shader : shaders) {
-            if (static_cast<std::underlying_type<ShaderStage>::type>(seen & shader->pimpl->stage) != 0) {
-                _ARGUS_FATAL("Multiple shaders supplied for single stage\n");
-            }
-
-            seen |= shader->pimpl->stage;
-        }
     }
 
     Material::Material(const Material &rhs) noexcept:

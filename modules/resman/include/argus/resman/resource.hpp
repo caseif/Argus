@@ -189,8 +189,8 @@ namespace argus {
              * \return The Resource data.
              */
             template <typename DataType>
-            DataType &get(void) const {
-                return *static_cast<DataType*>(get_data_ptr());
+            const DataType &get(void) const {
+                return *static_cast<const DataType*>(get_data_ptr());
             }
 
             template <typename DataType>

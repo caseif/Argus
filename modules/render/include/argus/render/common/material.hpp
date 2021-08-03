@@ -45,18 +45,22 @@ namespace argus {
     }
 
     class Material {
+        friend class MaterialLoader;
+
         public:
             pimpl_Material *pimpl;
 
+        private:
             /**
              * \brief Constructs a new Material.
              *
-             * \param texture The texture used by the Material.
-             * \param shaders The shaders used by the Material. Only one Shader
-             *        may be specified per \link ShaderStage shader stage \endlink.
+             * \param texture The UID of the texture used by the Material.
+             * \param shaders The UIDs of the shaders used by the Material. Only
+             *        one Shader may be specified per \link ShaderStage shader
+             *        stage \endlink.
              * \param attributes The vertex attributes used by this material.
              */
-            Material(const TextureData &texture, const std::vector<const Shader*> &shaders,
+            Material(const std::string &texture, const std::vector<std::string> &shaders,
                     const VertexAttributes &attributes);
 
             Material(const Material&) noexcept;
