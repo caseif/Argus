@@ -16,7 +16,7 @@
 #include "internal/core/engine_config.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 // module render
 #include "internal/render/defines.hpp"

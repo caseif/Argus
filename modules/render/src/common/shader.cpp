@@ -30,11 +30,11 @@ namespace argus {
     }
 
     Shader::Shader(const Shader &rhs) noexcept:
-        pimpl(&g_pimpl_pool.construct<pimpl_Shader>(*rhs.pimpl)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_Shader>(*rhs.pimpl)) {
     }
 
     Shader::Shader(Shader &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -42,8 +42,6 @@ namespace argus {
         if (pimpl == nullptr) {
             return;
         }
-
-        get_renderer_impl().deinit_shader(*this);
 
         g_pimpl_pool.free(pimpl);
     }

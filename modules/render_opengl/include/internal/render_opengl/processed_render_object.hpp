@@ -33,7 +33,6 @@ namespace argus {
         friend class AllocPool;
 
         const Resource &material_res;
-        const Material *material;
         float abs_transform[16];
         buffer_handle_t vertex_buffer;
         size_t vertex_buffer_size;
@@ -52,7 +51,6 @@ namespace argus {
             ProcessedRenderObject(const Resource &material_res, const mat4_flat_t abs_transform,
                     const buffer_handle_t vertex_buffer, const size_t vertex_buffer_size, const size_t vertex_count):
                 material_res(material_res),
-                material(&material_res.get<Material>()),
                 vertex_buffer(vertex_buffer),
                 vertex_buffer_size(vertex_buffer_size),
                 vertex_count(vertex_count) {

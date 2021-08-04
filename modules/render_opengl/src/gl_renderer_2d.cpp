@@ -100,7 +100,7 @@ namespace argus {
                     offset += processed->vertex_buffer_size;
                 }
 
-                auto &material = bucket->material;
+                auto &material = bucket->material_res.get<Material>();
 
                 auto vertex_attrs = material.pimpl->attributes;
 
@@ -220,28 +220,29 @@ namespace argus {
 
         auto existing_it = layer_state.processed_objs.find(&object);
         if (existing_it != layer_state.processed_objs.end()) {
+            //TODO: what the hell does this comment mean?
             // for some reason freeing the object before we replace it causes
             // weird issues that seem like a race condition somehow
-            auto *old_obj = existing_it->second;
+            auto &old_obj = *existing_it->second;
 
-            existing_it->second = &processed_obj;
-
-            old_obj->~ProcessedRenderObject();
+            glDeleteBuffers(1, &old_obj.vertex_buffer);
+            old_obj.~ProcessedRenderObject();
 
             // the bucket should always exist if the object existed previously
-            auto *bucket = layer_state.render_buckets[processed_obj.material];
+            auto *bucket = layer_state.render_buckets[processed_obj.material_res.uid];
             _ARGUS_ASSERT(!bucket->objects.empty(), "Bucket for existing object should not be empty");
-            std::replace(bucket->objects.begin(), bucket->objects.end(), existing_it->second, &processed_obj);
+            std::replace(bucket->objects.begin(), bucket->objects.end(), &old_obj, &processed_obj);
+            existing_it->second = &processed_obj;
         } else {
             layer_state.processed_objs.insert({ &object, &processed_obj });
 
             RenderBucket *bucket;
-            auto existing_bucket_it = layer_state.render_buckets.find(processed_obj.material);
+            auto existing_bucket_it = layer_state.render_buckets.find(processed_obj.material_res.uid);
             if (existing_bucket_it != layer_state.render_buckets.end()) {
                 bucket = existing_bucket_it->second;
             } else {
-                bucket = &RenderBucket::create(*processed_obj.material);
-                layer_state.render_buckets[processed_obj.material] = bucket;
+                bucket = &RenderBucket::create(processed_obj.material_res);
+                layer_state.render_buckets[processed_obj.material_res.uid] = bucket;
             }
 
             bucket->objects.push_back(&processed_obj);
@@ -332,7 +333,7 @@ namespace argus {
                 glDeleteBuffers(1, &processed_obj->vertex_buffer);
 
                 // we need to remove it from its containing bucket and flag the bucket for a rebuild
-                auto *bucket = layer_state.render_buckets[it->second->material];
+                auto *bucket = layer_state.render_buckets[it->second->material_res.uid];
                 remove_from_vector(bucket->objects, processed_obj);
                 bucket->needs_rebuild = true;
 

@@ -40,9 +40,9 @@ namespace argus {
 
         std::map<const RenderLayer2D*, Layer2DState> layer_states_2d;
         std::vector<LayerState*> all_layer_states;
-        std::map<const TextureData*, texture_handle_t> prepared_textures;
-        std::map<const Shader*, shader_handle_t> compiled_shaders;
-        std::map<const Material*, LinkedProgram> linked_programs;
+        std::map<std::string, texture_handle_t> prepared_textures;
+        std::map<std::string, shader_handle_t> compiled_shaders;
+        std::map<std::string, LinkedProgram> linked_programs;
 
         buffer_handle_t frame_vbo;
         array_handle_t frame_vao;

@@ -47,8 +47,6 @@ namespace argus {
             return;
         }
 
-        get_renderer_impl().deinit_texture(*this);
-
         for (size_t y = 0; y < height; y++) {
             delete[] pimpl->image_data[y];
         }

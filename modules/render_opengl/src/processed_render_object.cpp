@@ -10,10 +10,12 @@
 #include <cstddef>
 #include <cstdio>
 
-
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
+
+// module resman
+#include "argus/resman/resource.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/globals.hpp"

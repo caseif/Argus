@@ -151,7 +151,7 @@ namespace argus {
     }
 
     void MaterialLoader::unload(void *const data_buf) const {
-        delete static_cast<Shader*>(data_buf);
+        delete static_cast<Material*>(data_buf);
     }
 
 }

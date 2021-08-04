@@ -13,6 +13,7 @@
 #include "internal/render/renderer_impl.hpp"
 
 #include <map>
+#include <string>
 
 namespace argus {
     // forward declarations
@@ -30,12 +31,6 @@ namespace argus {
             void init(Renderer &renderer) override;
 
             void deinit(Renderer &renderer) override;
-
-            void deinit_texture(const TextureData &texture) override;
-
-            void deinit_shader(const Shader &shader) override;
-
-            void deinit_material(const Material &material) override;
 
             void render(Renderer &renderer, const TimeDelta delta) override;
 

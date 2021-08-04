@@ -16,6 +16,7 @@
 #include "internal/render_opengl/globals.hpp"
 
 #include <map>
+#include <string>
 
 namespace argus {
     // forward declarations
@@ -33,7 +34,7 @@ namespace argus {
         RenderLayer &layer;
 
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
-        std::map<const Material*, RenderBucket*> render_buckets;
+        std::map<std::string, RenderBucket*> render_buckets;
 
         mat4_flat_t view_matrix;
 

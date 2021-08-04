@@ -9,9 +9,13 @@
 
 #pragma once
 
+// module resman
+#include "argus/resman/resource.hpp"
+
 // module render_opengl
 #include "internal/render_opengl/globals.hpp"
 
+#include <string>
 #include <vector>
 
 namespace argus {
@@ -22,7 +26,7 @@ namespace argus {
     struct RenderBucket {
         friend class AllocPool;
 
-        const Material &material;
+        const Resource &material_res;
         std::vector<ProcessedRenderObject*> objects;
         buffer_handle_t vertex_buffer;
         buffer_handle_t vertex_array;
@@ -30,13 +34,13 @@ namespace argus {
 
         bool needs_rebuild;
 
-        static RenderBucket &create(const Material &material);
+        static RenderBucket &create(const Resource &material_res);
 
         ~RenderBucket(void);
 
         private:
-            RenderBucket(const Material &material):
-                material(material),
+            RenderBucket(const Resource &material_res):
+                material_res(material_res),
                 objects(),
                 vertex_buffer(0),
                 vertex_array(0),

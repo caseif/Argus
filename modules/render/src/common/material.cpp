@@ -43,7 +43,6 @@ namespace argus {
 
     Material::~Material(void) {
         if (pimpl != nullptr) {
-            get_renderer_impl().deinit_material(*this);
             g_pimpl_pool.free(pimpl);
         }
     }

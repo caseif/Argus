@@ -32,12 +32,13 @@
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/texture_data.hpp"
 #include "argus/render/common/transform.hpp"
+#include "internal/render/defines.hpp"
+#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
 #include "internal/render/pimpl/common/shader.hpp"
 #include "internal/render/pimpl/common/texture_data.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
-#include "internal/render/renderer_impl.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/gl_renderer_base.hpp"
@@ -205,8 +206,8 @@ namespace argus {
         }
     }
 
-    static void _build_shaders(RendererState &state, const Material &material) {
-        auto existing_program_it = state.linked_programs.find(&material);
+    static void _build_shaders(RendererState &state, const Resource &material_res) {
+        auto existing_program_it = state.linked_programs.find(material_res.uid);
         if (existing_program_it != state.linked_programs.end()) {
             return;
         }
@@ -216,19 +217,21 @@ namespace argus {
             _ARGUS_FATAL("Failed to create program: %d\n", glGetError());
         }
 
+        auto &material = material_res.get<Material>();
+
         for (auto &shader_uid : material.pimpl->shaders) {
             shader_handle_t shader_handle;
 
             auto &shader_res = ResourceManager::get_global_resource_manager().get_resource_weak(shader_uid);
             auto &shader = shader_res.get<Shader>();
 
-            auto existing_shader_it = state.compiled_shaders.find(&shader);
+            auto existing_shader_it = state.compiled_shaders.find(shader_uid);
             if (existing_shader_it != state.compiled_shaders.end()) {
                 shader_handle = existing_shader_it->second;
             } else {
                 shader_handle = _compile_shader(shader);
 
-                state.compiled_shaders.insert({ &shader, shader_handle });
+                state.compiled_shaders.insert({ shader_uid, shader_handle });
             }
 
             glAttachShader(program_handle, shader_handle);
@@ -238,22 +241,22 @@ namespace argus {
 
         auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
 
-        state.linked_programs[&material] = { program_handle, proj_mat_loc };
+        state.linked_programs[material_res.uid] = { program_handle, proj_mat_loc };
 
         for (auto &shader_uid : material.pimpl->shaders) {
-            auto &shader_res = ResourceManager::get_global_resource_manager().get_resource_weak(shader_uid);
-            glDetachShader(program_handle, state.compiled_shaders[&shader_res.get<Shader>()]);
+            glDetachShader(program_handle, state.compiled_shaders[shader_uid]);
         }
     }
 
-    static void _prepare_texture(RendererState &state, const Material &material) {
-        auto &texture_uid = material.pimpl->texture;
-        auto &texture_res = ResourceManager::get_global_resource_manager().get_resource_weak(texture_uid);
-        auto &texture = texture_res.get<TextureData>();
+    static void _prepare_texture(RendererState &state, const Resource &material_res) {
+        auto &texture_uid = material_res.get<Material>().pimpl->texture;
 
-        if (state.prepared_textures.find(&texture) != state.prepared_textures.end()) {
+        if (state.prepared_textures.find(texture_uid) != state.prepared_textures.end()) {
             return;
         }
+
+        auto &texture_res = ResourceManager::get_global_resource_manager().get_resource_weak(texture_uid);
+        auto &texture = texture_res.get<TextureData>();
 
         texture_handle_t handle;
 
@@ -280,7 +283,7 @@ namespace argus {
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        state.prepared_textures.insert({ &texture, handle });
+        state.prepared_textures.insert({ texture_uid, handle });
     }
 
     static void _rebuild_scene(RendererState &state) {
@@ -297,7 +300,7 @@ namespace argus {
                     reinterpret_cast<Layer2DState&>(layer_state));
 
             for (auto bucket_it : layer_state.render_buckets) {
-                auto &mat = bucket_it.second->material;
+                auto &mat = bucket_it.second->material_res;
 
                 _build_shaders(state, mat);
 
@@ -353,11 +356,10 @@ namespace argus {
         texture_handle_t last_texture = 0;
 
         for (auto &bucket : layer_state.render_buckets) {
-            auto &mat = bucket.second->material;
-            auto program_info = state.linked_programs.find(&mat)->second;
-            auto &texture_res = ResourceManager::get_global_resource_manager().get_resource_weak(mat.pimpl->texture);
-            auto &texture = texture_res.get<TextureData>();
-            auto tex_handle = state.prepared_textures.find(&texture)->second;
+            auto &mat = bucket.second->material_res;
+            auto program_info = state.linked_programs.find(mat.uid)->second;
+            auto &texture_uid = mat.get<Material>().pimpl->texture;
+            auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
@@ -446,6 +448,66 @@ namespace argus {
         glBindVertexArray(0);
     }
 
+    static void _deinit_texture(RendererState &state, const std::string &texture) {
+        _ARGUS_DEBUG("De-initializing texture %s\n", texture.c_str());
+        auto &textures = state.prepared_textures;
+        auto existing_it = textures.find(texture);
+        if (existing_it != textures.end()) {
+            glDeleteTextures(1, &existing_it->second);
+            textures.erase(existing_it);
+        }
+    }
+
+    static void _deinit_shader(RendererState &state, const std::string &shader) {
+        _ARGUS_DEBUG("De-initializing shader %s\n", shader.c_str());
+        auto &shaders = state.compiled_shaders;
+        auto existing_it = shaders.find(shader);
+        if (existing_it != shaders.end()) {
+            glDeleteShader(existing_it->second);
+            shaders.erase(existing_it);
+        }
+    }
+
+    static void _deinit_material(RendererState &state, const std::string &material) {
+        _ARGUS_DEBUG("De-initializing material %s\n", material.c_str());
+        for (auto *layer_state : state.all_layer_states) {
+            auto &buckets = layer_state->render_buckets;
+            auto bucket_it = buckets.find(material);
+            if (bucket_it != buckets.end()) {
+                try_delete_buffer(bucket_it->second->vertex_array);
+                try_delete_buffer(bucket_it->second->vertex_buffer);
+                bucket_it->second->~RenderBucket();
+                buckets.erase(bucket_it);
+            }
+        }
+
+        auto &programs = state.linked_programs;
+        auto program_it = programs.find(material);
+        if (program_it != programs.end()) {
+            glDeleteProgram(program_it->second.handle);
+        }
+
+        programs.erase(program_it);
+    }
+
+    static void _handle_resource_event(const ArgusEvent &base_event, void *renderer_state) {
+        auto &event = static_cast<const ResourceEvent&>(base_event);
+        if (event.subtype != ResourceEventType::Unload) {
+            return;
+        }
+
+        auto &state = *static_cast<RendererState*>(renderer_state);
+
+        std::string mt = event.prototype.media_type;
+        if (mt == RESOURCE_TYPE_TEXTURE_PNG) {
+            _deinit_texture(state, event.prototype.uid);
+        } else if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+            _deinit_shader(state, event.prototype.uid);
+        } else if (mt == RESOURCE_TYPE_MATERIAL) {
+            _deinit_material(state, event.prototype.uid);
+        }
+    }
+
     void GLRenderer::init(Renderer &renderer) {
         _activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
@@ -462,7 +524,9 @@ namespace argus {
 
         _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)\n", gl_major, gl_minor, gl_version_str);
 
-        renderer_states.insert({ &renderer, RendererState(renderer) });
+        auto &state = renderer_states.insert({ &renderer, RendererState(renderer) }).first->second;
+
+        register_event_handler(ArgusEventType::Resource, _handle_resource_event, TargetThread::Render, &state);
 
         if (AGLET_GL_KHR_debug) {
             glDebugMessageCallback(_gl_debug_callback, nullptr);
@@ -473,51 +537,6 @@ namespace argus {
 
     void GLRenderer::deinit(Renderer &renderer) {
         get_renderer_state(renderer).~RendererState();
-    }
-
-    void GLRenderer::deinit_texture(const TextureData &texture) {
-        for (auto &state : renderer_states) {
-            auto &textures = state.second.prepared_textures;
-            auto existing_it = textures.find(&texture);
-            if (existing_it != textures.end()) {
-                glDeleteTextures(1, &existing_it->second);
-                textures.erase(existing_it);
-            }
-        }
-    }
-
-    void GLRenderer::deinit_shader(const Shader &shader) {
-        for (auto &state : renderer_states) {
-            auto &shaders = state.second.compiled_shaders;
-            auto existing_it = shaders.find(&shader);
-            if (existing_it != shaders.end()) {
-                glDeleteShader(existing_it->second);
-                shaders.erase(existing_it);
-            }
-        }
-    }
-
-    void GLRenderer::deinit_material(const Material &material) {
-        for (auto &state : renderer_states) {
-            for (auto *layer_state : state.second.all_layer_states) {
-                auto &buckets = layer_state->render_buckets;
-                auto bucket_it = buckets.find(&material);
-                if (bucket_it != buckets.end()) {
-                    try_delete_buffer(bucket_it->second->vertex_array);
-                    try_delete_buffer(bucket_it->second->vertex_buffer);
-                    bucket_it->second->~RenderBucket();
-                    buckets.erase(bucket_it);
-                }
-            }
-
-            auto &programs = state.second.linked_programs;
-            auto program_it = programs.find(&material);
-            if (program_it != programs.end()) {
-                glDeleteProgram(program_it->second.handle);
-            }
-
-            programs.erase(program_it);
-        }
     }
 
     void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
