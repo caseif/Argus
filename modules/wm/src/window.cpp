@@ -223,7 +223,6 @@ namespace argus {
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
-            printf("deleting window\n");
             delete this;
             return;
         } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
