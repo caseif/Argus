@@ -69,6 +69,16 @@ namespace argus {
             bool is_ready(void);
 
             /**
+             * \brief Gets whether the Window is preparing to close.
+             * 
+             * Once this is observed to return `true`, the Window object should
+             * not be used again.
+             *
+             * \return Whether the Window is preparing to close.
+             */
+            bool is_closed(void);
+
+            /**
              * \brief Creates a new window as a child of this one.
              *
              * \return The new child window.

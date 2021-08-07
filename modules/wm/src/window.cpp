@@ -44,19 +44,23 @@
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300
 
-// the window has no associated state yet
-#define WINDOW_STATE_NULL               0x00
-// the window has been created in memory and a CREATE event has been posted
-#define WINDOW_STATE_CREATED            0x01
-// the window has been configured for use (Window::activate has been invoked)
-#define WINDOW_STATE_CONFIGURED         0x02
-// the window and its renderer have been fully initialized and the window is
-// completely ready for use
-#define WINDOW_STATE_READY              0x04
-// the window has been made visible
-#define WINDOW_STATE_VISIBLE            0x08
-// someone has requested that the window be closed
-#define WINDOW_STATE_CLOSE_REQUESTED    0x10
+// The window has no associated state yet.
+#define WINDOW_STATE_NULL                   0x00
+// The window has been created in memory and a Create event has been posted.
+#define WINDOW_STATE_CREATED                0x01
+// The window has been configured for use (Window::activate has been invoked).
+#define WINDOW_STATE_CONFIGURED             0x02
+// The window and its renderer have been fully initialized and the window is
+// completely ready for use.
+#define WINDOW_STATE_READY                  0x04
+// The window has been made visible.
+#define WINDOW_STATE_VISIBLE                0x08
+// Someone has requested that the window be closed.
+#define WINDOW_STATE_CLOSE_REQUESTED        0x10
+// The Window has acknowledged the close request and will honor it on its next
+// update. This delay allows clients a chance to observe and react to the closed
+// status before the Window object is deinitialized.
+#define WINDOW_STATE_CLOSE_REQUEST_ACKED    0x20
 
 namespace argus {
     static WindowCallback g_window_construct_callback = nullptr;
@@ -166,6 +170,10 @@ namespace argus {
         return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
     }
 
+    bool Window::is_closed(void) {
+        return pimpl->state & WINDOW_STATE_CLOSE_REQUESTED;
+    }
+
     Window &Window::create_child_window(void) {
         Window *child_window = new Window(this);
 
@@ -214,9 +222,13 @@ namespace argus {
             pimpl->state |= WINDOW_STATE_VISIBLE;
         }
 
-        if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
+        if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
+            printf("deleting window\n");
             delete this;
             return;
+        } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
+            pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
+            return; // we forgo doing anything to the Window on its last update cycle
         }
 
         if (pimpl->properties.title.dirty) {
