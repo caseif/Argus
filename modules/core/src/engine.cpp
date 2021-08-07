@@ -25,8 +25,10 @@
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <condition_variable>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
 #include <utility>
@@ -52,6 +54,9 @@ namespace argus {
     Thread *g_game_thread;
 
     static bool g_engine_stopping = false;
+    static std::mutex g_engine_stop_mutex;
+    static std::condition_variable g_engine_stop_notifier;
+    static std::atomic_bool g_render_thread_halted;
 
     extern EngineConfig g_engine_config;
 
@@ -123,8 +128,16 @@ namespace argus {
         UNUSED(user_data);
         static Timestamp last_update = 0;
 
-        while (1) {
+        while (true) {
             if (g_engine_stopping) {
+                // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
+                if (!g_render_thread_halted) {
+                    _ARGUS_DEBUG("Render thread not halted, waiting\n");
+                    std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
+                    g_engine_stop_notifier.wait(lock);
+                }
+                _ARGUS_DEBUG("Render thread is halted, proceeding with engine bring-down\n");
+
                 deinit_loaded_modules();
                 break;
             }
@@ -158,9 +171,12 @@ namespace argus {
 
         while (true) {
             if (g_engine_stopping) {
+                _ARGUS_DEBUG("Engine halt is acknowledged by render thread\n");
+                std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
+                g_render_thread_halted = true;
+                g_engine_stop_notifier.notify_one();
                 break;
             }
-
 
             Timestamp render_start = argus::microtime();
             TimeDelta delta = _compute_delta(last_frame);
