@@ -357,7 +357,7 @@ namespace argus {
 
         for (auto &bucket : layer_state.render_buckets) {
             auto &mat = bucket.second->material_res;
-            auto program_info = state.linked_programs.find(mat.uid)->second;
+            auto &program_info = state.linked_programs.find(mat.uid)->second;
             auto &texture_uid = mat.get<Material>().pimpl->texture;
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
@@ -526,7 +526,8 @@ namespace argus {
 
         auto &state = renderer_states.insert({ &renderer, RendererState(renderer) }).first->second;
 
-        register_event_handler(ArgusEventType::Resource, _handle_resource_event, TargetThread::Render, &state);
+        resource_event_handler = register_event_handler(ArgusEventType::Resource, _handle_resource_event,
+                TargetThread::Render, &state);
 
         if (AGLET_GL_KHR_debug) {
             glDebugMessageCallback(_gl_debug_callback, nullptr);
@@ -536,6 +537,7 @@ namespace argus {
     }
 
     void GLRenderer::deinit(Renderer &renderer) {
+        unregister_event_handler(resource_event_handler);
         get_renderer_state(renderer).~RendererState();
     }
 

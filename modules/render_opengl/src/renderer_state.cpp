@@ -35,6 +35,22 @@ namespace argus {
         for (auto &layer_state : this->all_layer_states) {
             layer_state->~LayerState();
         }
+
+        for (auto &program : this->linked_programs) {
+            glDeleteProgram(program.second.handle);
+        }
+
+        for (auto &shader : this->compiled_shaders) {
+            glDeleteShader(shader.second);
+        }
+
+        for (auto &texture : this->prepared_textures) {
+            glDeleteTextures(1, &texture.second);
+        }
+
+        this->linked_programs.clear();
+        this->compiled_shaders.clear();
+        this->prepared_textures.clear();
     }
     
     LayerState &RendererState::get_layer_state(RenderLayer &layer, bool create) {

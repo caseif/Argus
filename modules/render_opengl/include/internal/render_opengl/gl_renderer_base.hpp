@@ -9,6 +9,9 @@
 
 #pragma once
 
+// module core
+#include "argus/core/event.hpp"
+
 // module render
 #include "internal/render/renderer_impl.hpp"
 
@@ -24,6 +27,7 @@ namespace argus {
     class GLRenderer : public RendererImpl {
         private:
             std::map<const Renderer*, RendererState> renderer_states;
+            Index resource_event_handler;
 
         public:
             GLRenderer(void);
