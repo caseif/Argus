@@ -76,6 +76,10 @@ namespace argus {
         pimpl->package_set = arp_create_set();
         pimpl->discovery_done = false;
 
+        for (auto &res : pimpl->loaded_resources) {
+            this->unload_resource(res.first);
+        }
+
         _load_initial_ext_mappings(pimpl->extension_mappings);
     }
 
@@ -419,6 +423,10 @@ namespace argus {
         pimpl->loaded_resources.erase(res->uid);
 
         res->pimpl->loader.unload(res->pimpl->data_ptr);
+
+        for (auto &dep_uid : res->pimpl->dependencies) {
+            this->get_resource_weak(dep_uid).release();
+        }
 
         delete res;
 
