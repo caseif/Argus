@@ -74,14 +74,18 @@ namespace argus {
     ResourceManager::ResourceManager(void):
             pimpl(new pimpl_ResourceManager()) {
         pimpl->package_set = arp_create_set();
+        pimpl->discovery_done = false;
 
         _load_initial_ext_mappings(pimpl->extension_mappings);
     }
 
     ResourceManager::~ResourceManager(void) {
+        arp_unload_set_packages(pimpl->package_set);
+        arp_destroy_set(pimpl->package_set);
+
         delete pimpl;
     }
-    
+
     static void _discover_arp_packages(ArpPackageSet set, const std::string &root_path) {
         std::vector<std::string> children;
         try {
@@ -195,6 +199,8 @@ namespace argus {
             _discover_arp_packages(pimpl->package_set, res_dir);
 
             _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos, pimpl->extension_mappings);
+
+            pimpl->discovery_done = true;
         } catch (std::exception &ex) {
             _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
         }

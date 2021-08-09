@@ -35,6 +35,12 @@ namespace argus {
         std::map<std::string, Resource*> loaded_resources;
 
         /**
+         * \brief Whether discovery of resources from the filesystem has taken
+         *        place.
+         */
+        bool discovery_done;
+
+        /**
          * \brief All currently registered resource loaders.
          */
         std::map<const std::string, ResourceLoader*> registered_loaders;

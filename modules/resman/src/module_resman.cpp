@@ -19,6 +19,9 @@ namespace argus {
             case LifecycleStage::PostInit:
                 ResourceManager::get_global_resource_manager().discover_resources();
                 break;
+            case LifecycleStage::PostDeinit:
+                ResourceManager::get_global_resource_manager().~ResourceManager();
+                break;
             default:
                 break;
         }
