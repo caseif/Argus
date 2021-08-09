@@ -538,6 +538,7 @@ namespace argus {
 
     void GLRenderer::deinit(Renderer &renderer) {
         unregister_event_handler(resource_event_handler);
+
         get_renderer_state(renderer).~RendererState();
     }
 

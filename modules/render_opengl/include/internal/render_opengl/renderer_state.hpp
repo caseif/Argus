@@ -9,6 +9,9 @@
 
 #pragma once
 
+// module resman
+#include "argus/resman/resource.hpp"
+
 // module render_opengl
 #include "internal/render_opengl/globals.hpp"
 #include "internal/render_opengl/layer_state.hpp"
@@ -37,6 +40,8 @@ namespace argus {
 
     struct RendererState {
         Renderer &renderer;
+
+        std::vector<Resource*> intrinsic_resources;
 
         std::map<const RenderLayer2D*, Layer2DState> layer_states_2d;
         std::vector<LayerState*> all_layer_states;

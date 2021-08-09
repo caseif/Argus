@@ -7,11 +7,15 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include <cstdio>
+// module resman
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/layer_state.hpp"
 #include "internal/render_opengl/processed_render_object.hpp"
+
+#include <cstdio>
 
 namespace argus {
     // forward declarations

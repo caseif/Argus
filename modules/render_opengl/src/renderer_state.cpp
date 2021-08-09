@@ -32,25 +32,27 @@ namespace argus {
     }
 
     RendererState::~RendererState(void) {
-        for (auto &layer_state : this->all_layer_states) {
-            layer_state->~LayerState();
-        }
+        // the destructor will be automatically called for each layer state since we're storing the states directly
+        this->layer_states_2d.clear();
 
         for (auto &program : this->linked_programs) {
             glDeleteProgram(program.second.handle);
         }
+        this->linked_programs.clear();
 
         for (auto &shader : this->compiled_shaders) {
             glDeleteShader(shader.second);
         }
+        this->compiled_shaders.clear();
 
         for (auto &texture : this->prepared_textures) {
             glDeleteTextures(1, &texture.second);
         }
-
-        this->linked_programs.clear();
-        this->compiled_shaders.clear();
         this->prepared_textures.clear();
+
+        for (auto *res : this->intrinsic_resources) {
+            res->release();
+        }
     }
     
     LayerState &RendererState::get_layer_state(RenderLayer &layer, bool create) {

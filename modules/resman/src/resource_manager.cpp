@@ -76,14 +76,14 @@ namespace argus {
         pimpl->package_set = arp_create_set();
         pimpl->discovery_done = false;
 
-        for (auto &res : pimpl->loaded_resources) {
-            this->unload_resource(res.first);
-        }
-
         _load_initial_ext_mappings(pimpl->extension_mappings);
     }
 
     ResourceManager::~ResourceManager(void) {
+        /*for (auto &res : pimpl->loaded_resources) {
+            this->unload_resource(res.first);
+        }*/
+
         arp_unload_set_packages(pimpl->package_set);
         arp_destroy_set(pimpl->package_set);
 
