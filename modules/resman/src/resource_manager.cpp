@@ -370,13 +370,22 @@ namespace argus {
         return *res;
     }
 
+    std::future<Resource&> ResourceManager::get_resource_async(const std::string &uid,
+            const std::function<void(Resource&)> &callback) {
+        auto *res = _acquire_resource(*this, uid);
+        if (res != nullptr) {
+            auto promise_ptr = std::make_shared<std::promise<Resource&>>();
+            std::future<Resource&> future = promise_ptr->get_future();
+            promise_ptr->set_value(*res);
+            return future;
+        } else {
+            return load_resource_async(uid, callback);
+        }
+    }
+
     std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid,
                     const std::function<void(Resource&)> &callback) {
         return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
-    }
-
-    std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid) {
-        return load_resource_async(uid, nullptr);
     }
 
     Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, const void *data,

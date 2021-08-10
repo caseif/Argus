@@ -182,19 +182,7 @@ namespace argus {
              * \sa ResourceManager#get_resource
              */
             std::future<Resource&> get_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> &callback);
-            /**
-             * \brief Attempts to retrieve the Resource with the given UID
-             *        asynchronously, loading it if it is not already loaded.
-             *
-             * \param uid The UID of the Resource to retrieve.
-             *
-             * \return A std::future which will provide the retrieved Resource
-             *         (or any exception thrown by the load routine).
-             *
-             * \sa ResourceManager#get_resource
-             */
-            std::future<Resource&> get_resource_async(const std::string &uid);
+                    const std::function<void(Resource&)> &callback = nullptr);
 
             /**
              * \brief Attempts to load the Resource with the given UID
@@ -210,19 +198,7 @@ namespace argus {
              * \sa ResourceManager#load_resource
              */
             std::future<Resource&> load_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> &callback);
-            /**
-             * \brief Attempts to load the Resource with the given UID
-             *        asynchronously, failing if it is already loaded.
-             *
-             * \param uid The UID to look up.
-             *
-             * \return A std::future which will provide the loaded Resource (or
-             *         any exception thrown by the load routine).
-             *
-             * \sa ResourceManager#load_resource
-             */
-            std::future<Resource&> load_resource_async(const std::string &uid);
+                    const std::function<void(Resource&)> &callback = nullptr);
 
             /**
              * \brief Creates a Resource with the given UID from data presently
