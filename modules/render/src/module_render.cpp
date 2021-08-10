@@ -31,7 +31,6 @@
 #include "internal/render/module_render.hpp"
 #include "internal/render/renderer.hpp"
 #include "internal/render/loader/material_loader.hpp"
-#include "internal/render/loader/shader_loader.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 
 #include <map>
@@ -102,7 +101,6 @@ namespace argus {
 
                 ResourceManager::get_global_resource_manager().register_loader(*new MaterialLoader());
                 ResourceManager::get_global_resource_manager().register_loader(*new PngTextureLoader());
-                ResourceManager::get_global_resource_manager().register_loader(*new ShaderLoader());
 
                 g_render_module_initialized = true;
 

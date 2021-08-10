@@ -27,6 +27,7 @@
 #include "internal/render_opengl/gl_renderer_base.hpp"
 #include "internal/render_opengl/globals.hpp"
 #include "internal/render_opengl/resources_render_opengl.arp.h"
+#include "internal/render_opengl/loader/shader_loader.hpp"
 
 #include <cstring>
 
@@ -62,6 +63,8 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Init: {
+                ResourceManager::get_global_resource_manager().register_loader(*new ShaderLoader());                
+
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
