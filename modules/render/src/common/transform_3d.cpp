@@ -56,11 +56,19 @@ namespace argus {
     }
 
     Transform3D &Transform3D::operator =(const Transform3D &rhs) noexcept {
+        pimpl->translation_mutex.lock();
+        pimpl->rotation_mutex.lock();
+        pimpl->scale_mutex.lock();
+
         pimpl->translation = rhs.pimpl->translation;
         pimpl->rotation = rhs.pimpl->rotation;
         pimpl->scale = rhs.pimpl->scale;
         pimpl->dirty = (&rhs != this) || this->pimpl->dirty;
         pimpl->dirty_matrix = (&rhs != this) || this->pimpl->dirty_matrix;
+        
+        pimpl->scale_mutex.unlock();
+        pimpl->rotation_mutex.unlock();
+        pimpl->translation_mutex.unlock();
 
         return *this;
     }
@@ -110,7 +118,9 @@ namespace argus {
     }
 
     void Transform3D::set_rotation(const Vector3f &rotation_radians) {
+        pimpl->rotation_mutex.lock();
         pimpl->rotation = rotation_radians;
+        pimpl->rotation_mutex.unlock();
 
         pimpl->set_dirty();
     }
@@ -120,9 +130,9 @@ namespace argus {
     }
 
     void Transform3D::add_rotation(const Vector3f &rotation_delta) {
-        pimpl->translation_mutex.lock();
-        pimpl->translation += rotation_delta;
-        pimpl->translation_mutex.unlock();
+        pimpl->rotation_mutex.lock();
+        pimpl->rotation += rotation_delta;
+        pimpl->rotation_mutex.unlock();
 
         pimpl->set_dirty();
     }
@@ -164,8 +174,12 @@ namespace argus {
         float sin_r = std::sin(transform.pimpl->rotation.z);
 
         transform.pimpl->translation_mutex.lock();
-        Vector3f translation_current = transform.pimpl->translation;
+        Vector3f trans_current = transform.pimpl->translation;
         transform.pimpl->translation_mutex.unlock();
+
+        transform.pimpl->rotation_mutex.lock();
+        Vector3f rot_current = transform.pimpl->rotation;
+        transform.pimpl->rotation_mutex.unlock();
 
         transform.pimpl->scale_mutex.lock();
         Vector3f scale_current = transform.pimpl->scale;

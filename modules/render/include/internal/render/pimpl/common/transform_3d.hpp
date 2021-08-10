@@ -25,6 +25,7 @@ namespace argus {
         Vector3f scale;
 
         std::mutex translation_mutex;
+        std::mutex rotation_mutex;
         std::mutex scale_mutex;
 
         std::atomic_bool dirty;
