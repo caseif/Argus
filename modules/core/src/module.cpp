@@ -222,8 +222,8 @@ namespace argus {
     static void _deinitialize_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (auto it = g_enabled_modules.rbegin(); it != g_enabled_modules.rend(); it++) {
-                it->lifecycle_update_callback(stage);
+            for (const auto &module : g_enabled_modules) {
+                module.lifecycle_update_callback(stage);
             }
         }
     }

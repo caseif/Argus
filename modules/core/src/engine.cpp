@@ -124,8 +124,7 @@ namespace argus {
         return delta;
     }
 
-    static void *_game_loop(void *const user_data) {
-        UNUSED(user_data);
+    static void _game_loop() {
         static Timestamp last_update = 0;
 
         while (true) {
@@ -162,11 +161,11 @@ namespace argus {
                 _handle_idle(update_start, g_engine_config.target_tickrate);
             }
         }
-
-        return nullptr;
     }
 
-    static void _render_loop() {
+    static void *_render_loop(void *const user_data) {
+        UNUSED(user_data);
+
         static Timestamp last_frame = 0;
 
         while (true) {
@@ -197,6 +196,8 @@ namespace argus {
                 _handle_idle(render_start, g_engine_config.target_framerate);
             }
         }
+
+        return nullptr;
     }
 
     void initialize_engine() {
@@ -236,10 +237,10 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_game_thread = &Thread::create(_game_loop, nullptr);
+        g_game_thread = &Thread::create(_render_loop, nullptr);
 
-        // pass control over to the render loop
-        _render_loop();
+        // pass control over to the game loop
+        _game_loop();
 
         exit(0);
     }
