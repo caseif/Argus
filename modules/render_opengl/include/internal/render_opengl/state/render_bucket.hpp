@@ -13,7 +13,7 @@
 #include "argus/resman/resource.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/types.hpp"
 
 #include <string>
 #include <vector>

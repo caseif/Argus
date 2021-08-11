@@ -30,13 +30,14 @@
 #include "internal/render/pimpl/2d/render_prim_2d.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/gl_renderer_2d.hpp"
+#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
-#include "internal/render_opengl/globals.hpp"
-#include "internal/render_opengl/layer_state.hpp"
-#include "internal/render_opengl/processed_render_object.hpp"
-#include "internal/render_opengl/render_bucket.hpp"
-#include "internal/render_opengl/renderer_state.hpp"
+#include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/gl_renderer_2d.hpp"
+#include "internal/render_opengl/state/layer_state.hpp"
+#include "internal/render_opengl/state/processed_render_object.hpp"
+#include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
 

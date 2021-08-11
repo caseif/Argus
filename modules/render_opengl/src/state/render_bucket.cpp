@@ -11,8 +11,8 @@
 #include "argus/lowlevel/memory.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/processed_render_object.hpp"
-#include "internal/render_opengl/render_bucket.hpp"
+#include "internal/render_opengl/state/processed_render_object.hpp"
+#include "internal/render_opengl/state/render_bucket.hpp"
 
 #include <string>
 

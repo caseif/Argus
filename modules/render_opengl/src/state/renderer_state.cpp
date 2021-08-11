@@ -15,9 +15,9 @@
 #include "argus/render/common/render_layer_type.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/globals.hpp"
-#include "internal/render_opengl/layer_state.hpp"
-#include "internal/render_opengl/renderer_state.hpp"
+#include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/state/layer_state.hpp"
+#include "internal/render_opengl/state/renderer_state.hpp"
 
 #include <map>
 #include <vector>

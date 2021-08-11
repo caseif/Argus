@@ -17,6 +17,9 @@
 // module render
 #include "argus/render/common/shader.hpp"
 #include "internal/render/defines.hpp"
+
+// module render_opengl
+#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 
 #include <fstream> // IWYU pragma: keep

@@ -12,8 +12,8 @@
 #include "argus/resman/resource_manager.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/layer_state.hpp"
-#include "internal/render_opengl/processed_render_object.hpp"
+#include "internal/render_opengl/state/layer_state.hpp"
+#include "internal/render_opengl/state/processed_render_object.hpp"
 
 #include <cstdio>
 

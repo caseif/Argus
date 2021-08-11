@@ -24,10 +24,10 @@
 #include "internal/render_opengl/glfw_include.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/gl_renderer_base.hpp"
-#include "internal/render_opengl/globals.hpp"
+#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/resources_render_opengl.arp.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
+#include "internal/render_opengl/renderer/gl_renderer_base.hpp"
 
 #include <cstring>
 

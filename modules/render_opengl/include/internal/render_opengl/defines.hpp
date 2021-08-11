@@ -9,9 +9,6 @@
 
 #pragma once
 
-// module render_opengl
-#include "internal/render_opengl/glfw_include.hpp"
-
 #include "aglet/aglet.h"
 
 #define _VERTEX_POSITION_LEN 2
@@ -41,18 +38,8 @@
 
 #define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
 
+#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vert"
+#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-frag"
+
 #define FB_SHADER_VERT_PATH "argus:shader/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/framebuffer_frag"
-
-namespace argus {
-    extern float g_view_matrix[16];
-
-    // all typedefs here serve purely to provide semantic information to declarations
-
-    typedef GLuint buffer_handle_t;
-    typedef GLuint array_handle_t;
-    typedef GLuint texture_handle_t;
-    typedef GLuint shader_handle_t;
-    typedef GLuint program_handle_t;
-    typedef GLint uniform_location_t;
-}

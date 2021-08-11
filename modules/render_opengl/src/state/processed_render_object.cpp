@@ -18,8 +18,8 @@
 #include "argus/resman/resource.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/globals.hpp"
-#include "internal/render_opengl/processed_render_object.hpp"
+#include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/state/processed_render_object.hpp"
 
 namespace argus {
     // forward declarations

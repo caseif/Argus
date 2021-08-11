@@ -9,12 +9,17 @@
 
 #pragma once
 
-#include "internal/render_opengl/types.hpp"
-
 #include "aglet/aglet.h"
 
 namespace argus {
-    void set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset);
+    extern float g_view_matrix[16];
 
-    void try_delete_buffer(buffer_handle_t buffer);
+    // all typedefs here serve purely to provide semantic information to declarations
+
+    typedef GLuint buffer_handle_t;
+    typedef GLuint array_handle_t;
+    typedef GLuint texture_handle_t;
+    typedef GLuint shader_handle_t;
+    typedef GLuint program_handle_t;
+    typedef GLint uniform_location_t;
 }
