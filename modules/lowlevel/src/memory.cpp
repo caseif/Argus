@@ -170,8 +170,9 @@ namespace argus {
         const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != nullptr) {
             uintptr_t addr = chunk->unaligned_addr;
+            const ChunkMetadata *next_chunk = chunk->next_chunk;
             ::free(reinterpret_cast<void*>(addr));
-            chunk = chunk->next_chunk;
+            chunk = next_chunk;
         }
     }
 
