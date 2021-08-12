@@ -65,7 +65,7 @@ namespace argus {
                 delete obj;
             }
 
-            g_pimpl_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 
@@ -104,6 +104,8 @@ namespace argus {
         }
 
         remove_from_vector(pimpl->child_objects, &object);
+
+        delete &object;
     }
 
     Transform2D &RenderGroup2D::get_transform(void) const {

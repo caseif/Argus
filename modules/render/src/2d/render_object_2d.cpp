@@ -42,11 +42,7 @@ namespace argus {
 
     RenderObject2D::~RenderObject2D() {
         if (pimpl != nullptr) {
-            for (auto &prim : pimpl->primitives) {
-                prim.~RenderPrim2D();
-            }
-
-            g_pimpl_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 

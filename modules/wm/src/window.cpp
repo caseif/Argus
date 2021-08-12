@@ -159,6 +159,8 @@ namespace argus {
 
         glfwDestroyWindow(pimpl->handle);
 
+        printf("destroyed window\n");
+
         if (--g_window_count == 0) {
             stop_engine();
         }

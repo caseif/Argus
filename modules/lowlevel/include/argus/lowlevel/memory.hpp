@@ -41,12 +41,18 @@ namespace argus {
 
             void *alloc(void);
 
+            void free(void *addr);
+
             template <typename T, typename... Args>
             T &construct(Args & ... args) {
                 return *new (this->alloc()) T(args...);
             }
 
-            void free(void *addr);
+            template <typename T>
+            void destroy(T obj) {
+                obj.~T();
+                this->free(obj);
+            }
     };
 
 }

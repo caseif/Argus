@@ -51,7 +51,7 @@ namespace argus {
 
     Transform3D::~Transform3D(void) {
         if (pimpl != nullptr) {
-            g_pimpl_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 

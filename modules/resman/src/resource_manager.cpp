@@ -393,7 +393,7 @@ namespace argus {
         if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
         }
-        
+
         auto loader_it = pimpl->registered_loaders.find(media_type);
         if (loader_it == pimpl->registered_loaders.end()) {
             throw NoLoaderException(uid, media_type);

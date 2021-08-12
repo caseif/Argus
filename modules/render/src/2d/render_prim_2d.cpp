@@ -43,9 +43,7 @@ namespace argus {
 
     RenderPrim2D::~RenderPrim2D(void) {
         if (pimpl != nullptr) {
-            pimpl->vertices.~vector();
-
-            g_pimpl_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 

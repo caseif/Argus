@@ -20,7 +20,8 @@ namespace argus {
                 ResourceManager::get_global_resource_manager().discover_resources();
                 break;
             case LifecycleStage::PostDeinit:
-                ResourceManager::get_global_resource_manager().~ResourceManager();
+                // not necessary for now since it's static
+                //ResourceManager::get_global_resource_manager().~ResourceManager();
                 break;
             default:
                 break;

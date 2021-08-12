@@ -40,7 +40,7 @@ namespace argus {
     }
 
     Resource::~Resource(void) {
-        g_pimpl_pool.free(pimpl);
+        g_pimpl_pool.destroy(pimpl);
     }
 
     void Resource::release(void) const {

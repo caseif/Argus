@@ -130,6 +130,8 @@ namespace argus {
 
         png_read_image(png_ptr, row_pointers);
 
+        png_read_end(png_ptr, end_info_ptr);
+
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
         return new TextureData{width, height, std::move(row_pointers)};

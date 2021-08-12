@@ -42,9 +42,7 @@ namespace argus {
 
     RenderLayer2D::~RenderLayer2D(void) {
         if (pimpl != nullptr) {
-            pimpl->root_group.~RenderGroup2D();
-
-            g_pimpl_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 

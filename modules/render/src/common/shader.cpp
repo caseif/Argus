@@ -43,7 +43,7 @@ namespace argus {
             return;
         }
 
-        g_pimpl_pool.free(pimpl);
+        g_pimpl_pool.destroy(pimpl);
     }
 
     ShaderStage operator |(ShaderStage lhs, ShaderStage rhs) {
