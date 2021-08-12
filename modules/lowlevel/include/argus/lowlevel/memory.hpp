@@ -49,8 +49,8 @@ namespace argus {
             }
 
             template <typename T>
-            void destroy(T obj) {
-                obj.~T();
+            void destroy(T *obj) {
+                obj->~T();
                 this->free(obj);
             }
     };
