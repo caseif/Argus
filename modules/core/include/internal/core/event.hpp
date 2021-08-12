@@ -14,6 +14,8 @@
 
 #include <atomic>
 
+#include <cstdint>
+
 namespace argus {
     template <typename T>
     class RefCountable {
@@ -26,12 +28,12 @@ namespace argus {
             this->ptr = ptr;
         }
 
-        void acquire() {
-            refcount.fetch_add(1);
+        void acquire(uint32_t count = 1) {
+            refcount.fetch_add(count);
         }
 
-        uint32_t release() {
-            return refcount.fetch_sub(1) - 1;
+        uint32_t release(uint32_t count = 1) {
+            return refcount.fetch_sub(count) - count;
         }
     };
 

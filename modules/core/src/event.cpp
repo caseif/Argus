@@ -156,13 +156,13 @@ namespace argus {
 
         auto event_ref = new RefCountable<ArgusEvent>(&event);
 
+        event_ref->acquire(2);
+
         g_update_event_queue_mutex.lock();
-        event_ref->acquire();
         g_update_event_queue.push(event_ref);
         g_update_event_queue_mutex.unlock();
 
         g_render_event_queue_mutex.lock();
-        event_ref->acquire();
         g_render_event_queue.push(event_ref);
         g_render_event_queue_mutex.unlock();
     }
