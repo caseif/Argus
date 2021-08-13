@@ -220,6 +220,7 @@ namespace argus {
 
         auto &material = material_res.get<Material>();
 
+        std::vector<shader_handle_t> attached_shaders;
         for (auto &shader_uid : material.pimpl->shaders) {
             shader_handle_t shader_handle;
 
@@ -236,13 +237,15 @@ namespace argus {
             }
 
             glAttachShader(program_handle, shader_handle);
+
+            attached_shaders.push_back(shader_handle);
         }
 
         _link_program(program_handle, material.pimpl->attributes);
 
         auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
 
-        state.linked_programs[material_res.uid] = { program_handle, proj_mat_loc };
+        state.linked_programs[material_res.uid] = { program_handle, proj_mat_loc, attached_shaders };
 
         for (auto &shader_uid : material.pimpl->shaders) {
             glDetachShader(program_handle, state.compiled_shaders[shader_uid]);
@@ -485,6 +488,10 @@ namespace argus {
         auto &programs = state.linked_programs;
         auto program_it = programs.find(material);
         if (program_it != programs.end()) {
+            for (auto shader : program_it->second.attached_shaders) {
+                glDetachShader(program_it->second.handle, shader);
+            }
+
             glDeleteProgram(program_it->second.handle);
         }
 
