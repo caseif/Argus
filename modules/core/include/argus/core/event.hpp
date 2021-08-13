@@ -102,6 +102,9 @@ namespace argus {
          * \brief The type of event.
          */
         const ArgusEventType type;
+
+        virtual ~ArgusEvent() {
+        }
     };
 
     /**
@@ -158,6 +161,6 @@ namespace argus {
      */
     template <typename T, typename... Args>
     void dispatch_event(Args && ... args) {
-        _dispatch_event_ptr(*new T(args...));
+        _dispatch_event_ptr(*new T(std::forward<Args>(args)...));
     }
 }
