@@ -3,6 +3,8 @@ find_package(OpenGL REQUIRED)
 # module name
 set(MODULE_NAME "render_opengl")
 
+set(MODULE_SOURCE_DIR "${PROJECT_SOURCE_DIR}/modules/${MODULE_NAME}")
+
 set(MODULE_GEN_DIR "${PROJECT_BINARY_DIR}/gen/${MODULE_NAME}")
 set(GEN_INC_DIR "${MODULE_GEN_DIR}/include")
 set(GEN_SRC_DIR "${MODULE_GEN_DIR}/src")
@@ -52,7 +54,7 @@ endif()
 
 file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
 execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
-    "-p" "${PROJECT_SOURCE_DIR}/etc/tooling/aglet/opengl_profile.xml"
+    "-p" "${MODULE_SOURCE_DIR}/tooling/aglet/opengl_profile.xml"
     "-o" "${MODULE_GEN_DIR}"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/external/tooling/aglet/"
     RESULT_VARIABLE CMD_RES)
