@@ -36,10 +36,6 @@ namespace argus {
         this->layer_states_2d.clear();
 
         for (auto &program : this->linked_programs) {
-            for (auto shader : program.second.attached_shaders) {
-                glDetachShader(program.second.handle, shader);
-            }
-
             glDeleteProgram(program.second.handle);
         }
         this->linked_programs.clear();

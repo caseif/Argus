@@ -36,7 +36,6 @@ namespace argus {
     struct LinkedProgram {
         program_handle_t handle;
         uniform_location_t view_matrix_uniform_loc;
-        std::vector<shader_handle_t> attached_shaders;
     };
 
     struct RendererState {

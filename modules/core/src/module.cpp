@@ -153,9 +153,9 @@ namespace argus {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
             }
             #else
-            /*if (dlclose(handle) != 0) {
+            if (dlclose(handle) != 0) {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", errno);
-            }*/
+            }
             #endif
         }
     }
