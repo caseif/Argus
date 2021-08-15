@@ -14,6 +14,7 @@
 // module render_opengl
 #include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
+#include "internal/render_opengl/state/render_bucket.hpp"
 
 #include <cstdio>
 
@@ -31,6 +32,9 @@ namespace argus {
     }
 
     LayerState::~LayerState(void) {
+        for (auto &bucket : render_buckets) {
+            bucket.second->~RenderBucket();
+        }
     }
 
     Layer2DState::Layer2DState(RendererState &parent_state, RenderLayer &layer):
