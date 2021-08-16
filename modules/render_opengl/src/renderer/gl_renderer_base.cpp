@@ -47,7 +47,7 @@
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
 #include "internal/render_opengl/renderer/gl_renderer_base.hpp"
-#include "internal/render_opengl/renderer/gl_renderer_2d.hpp"
+#include "internal/render_opengl/renderer/2d/gl_renderer_2d.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/layer_state.hpp"
