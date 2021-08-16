@@ -9,11 +9,17 @@
 
 #pragma once
 
+#include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
 
 #include "aglet/aglet.h"
 
 namespace argus {
+    void activate_gl_context(GLFWwindow *window);
+
+    void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+            const GLchar *message, const void *userParam);
+
     void set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset);
 
     void try_delete_buffer(buffer_handle_t buffer);
