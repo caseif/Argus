@@ -177,14 +177,14 @@ namespace argus {
             return *this;
         }
 
-        Vector4<T>(T x, T y, T z, T w):
+        Vector4(T x, T y, T z, T w):
                 x(x),
                 y(y),
                 z(z),
                 w(w) {
         }
 
-        Vector4<T>(void): Vector4<T>(0, 0, 0, 0) {
+        Vector4(void): Vector4<T>(0, 0, 0, 0) {
         }
     };
 
@@ -333,13 +333,13 @@ namespace argus {
             return Vector4<T>(this->x, this->y, this->z, 1);
         }
 
-        Vector3<T>(T x, T y, T z):
+        Vector3(T x, T y, T z):
                 x(x),
                 y(y),
                 z(z) {
         }
 
-        Vector3<T>(void): Vector3<T>(0, 0, 0) {
+        Vector3(void): Vector3<T>(0, 0, 0) {
         }
     };
 
@@ -456,12 +456,12 @@ namespace argus {
             return Vector4<T>(this->x, this->y, 0, 1);
         }
 
-        Vector2<T>(T x, T y):
+        Vector2(T x, T y):
                 x(x),
                 y(y) {
         }
 
-        Vector2<T>(void): Vector2<T>(0, 0) {
+        Vector2(void): Vector2<T>(0, 0) {
         }
     };
 
