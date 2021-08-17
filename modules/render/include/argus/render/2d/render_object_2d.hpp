@@ -12,6 +12,7 @@
 // module render
 #include "argus/render/common/transform.hpp"
 
+#include <string>
 #include <vector>
 
 namespace argus {

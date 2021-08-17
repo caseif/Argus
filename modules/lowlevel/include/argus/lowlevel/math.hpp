@@ -94,7 +94,7 @@ namespace argus {
          * \return The element-wise sum of the two vectors as a new Vector4.
          */
         Vector4<T> operator +(const Vector4<T> &rhs) {
-            return {x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w};
+            return Vector4<T>(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
         }
 
         /**
@@ -110,7 +110,7 @@ namespace argus {
          *         Vector4.
          */
         Vector4<T> operator -(const Vector4<T> &rhs) {
-            return {x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w};
+            return Vector4<T>(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
         }
 
         /**
@@ -122,7 +122,7 @@ namespace argus {
          * \return The element-wise product of the two vectors as a new Vector4.
          */
         Vector4<T> operator *(const Vector4<T> &rhs) {
-            return {x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w};
+            return Vector4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
         }
 
         /**
@@ -175,6 +175,16 @@ namespace argus {
             z *= rhs.z;
             w *= rhs.w;
             return *this;
+        }
+
+        Vector4<T>(T x, T y, T z, T w):
+                x(x),
+                y(y),
+                z(z),
+                w(w) {
+        }
+
+        Vector4<T>(void): Vector4<T>(0, 0, 0, 0) {
         }
     };
 
@@ -238,7 +248,7 @@ namespace argus {
          * \return The element-wise sum of the two vectors as a new Vector3.
          */
         Vector3<T> operator +(const Vector3<T> &rhs) {
-            return {x + rhs.x, y + rhs.y, z + rhs.z};
+            return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
 
         /**
@@ -254,7 +264,7 @@ namespace argus {
          *         Vector3.
          */
         Vector3<T> operator -(const Vector3<T> &rhs) {
-            return {x - rhs.x, y - rhs.y, z - rhs.z};
+            return Vector3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
         }
 
         /**
@@ -266,7 +276,7 @@ namespace argus {
          * \return The element-wise product of the two vectors as a new Vector3.
          */
         Vector3<T> operator *(const Vector3<T> &rhs) {
-            return {x * rhs.x, y * rhs.y, z * rhs.z};
+            return Vector3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
         }
 
         /**
@@ -320,12 +330,16 @@ namespace argus {
 
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
-            return Vector4<T> {
-                this->x,
-                this->y,
-                this->z,
-                1
-            };
+            return Vector4<T>(this->x, this->y, this->z, 1);
+        }
+
+        Vector3<T>(T x, T y, T z):
+                x(x),
+                y(y),
+                z(z) {
+        }
+
+        Vector3<T>(void): Vector3<T>(0, 0, 0) {
         }
     };
 
@@ -355,7 +369,7 @@ namespace argus {
          * \return The element-wise sum of the two vectors as a new Vector2.
          */
         Vector2<T> operator +(const Vector2<T> &rhs) {
-            return {x + rhs.x, y + rhs.y};
+            return Vector2<T>(x + rhs.x, y + rhs.y);
         }
 
         /**
@@ -371,7 +385,7 @@ namespace argus {
          *         Vector2.
          */
         Vector2<T> operator -(const Vector2<T> &rhs) {
-            return {x - rhs.x, y - rhs.y};
+            return Vector2<T>(x - rhs.x, y - rhs.y);
         }
 
         /**
@@ -383,7 +397,7 @@ namespace argus {
          * \return The element-wise product of the two vectors as a new Vector2.
          */
         Vector2<T> operator *(const Vector2<T> &rhs) {
-            return {x * rhs.x, y * rhs.y};
+            return Vector2<T>(x * rhs.x, y * rhs.y);
         }
 
         /**
@@ -434,21 +448,20 @@ namespace argus {
 
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector3<T>() const {
-            return Vector3<T> {
-                this->x,
-                this->y,
-                0
-            };
+            return Vector3<T>(this->x, this->y, 0);
         }
 
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
-            return Vector4<T> {
-                this->x,
-                this->y,
-                0,
-                1
-            };
+            return Vector4<T>(this->x, this->y, 0, 1);
+        }
+
+        Vector2<T>(T x, T y):
+                x(x),
+                y(y) {
+        }
+
+        Vector2<T>(void): Vector2<T>(0, 0) {
         }
     };
 
