@@ -4,7 +4,7 @@
 # module name
 set(MODULE_NAME "render")
 # modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core;wm;ecs;resman")
+set(MODULE_DEPS "lowlevel;core;wm;resman")
 # libraries this module depends on (as a list)
 set(LOCAL_LIBS "${PNG_LIBRARY}")
 # include dirs this module uses
