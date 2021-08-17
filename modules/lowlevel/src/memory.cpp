@@ -7,8 +7,8 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
 #include "argus/lowlevel/memory.hpp"
-
 #include "internal/lowlevel/logging.hpp"
 
 #include <stdexcept>

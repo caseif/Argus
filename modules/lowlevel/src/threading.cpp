@@ -7,17 +7,18 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
+// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 
 #include <exception>
 #include <functional>
+#include <future>
 #include <memory>
 
 #ifdef USE_PTHREADS
-    #include <pthread.h>
-
     #include <cstdlib>
+    #include <pthread.h>
 #else
     #include <thread>
 #endif
@@ -29,7 +30,6 @@
 #include <cstddef>
 
 namespace argus {
-
     #ifdef USE_PTHREADS
     struct FunctionDelegate {
         static void *invoke_static(void *self) {

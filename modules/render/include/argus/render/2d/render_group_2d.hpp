@@ -13,6 +13,7 @@
 #include "argus/render/common/transform.hpp"
 
 #include <map>
+#include <string>
 #include <vector>
 
 namespace argus {

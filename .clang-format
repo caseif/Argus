@@ -45,10 +45,14 @@ IncludeCategories:
     Priority:       5
   - Regex:          '^"internal/render/.*'
     Priority:       5
-  - Regex:          '^"argus/input(/.*|\.hpp)'
+  - Regex:          '^"argus/render_(.*)(/.*|\.hpp)'
     Priority:       6
+  - Regex:          '^"internal/render_([^/]*)/.*'
+    Priority:       6
+  - Regex:          '^"argus/input(/[^/]*|\.hpp)'
+    Priority:       7
   - Regex:          '^"internal/input/.*'
-    Priority:       6
+    Priority:       7
   - Regex:      '^".*"$'
     Priority:   101
   - Regex:      '^<(chrono|co.*|ctgmath)>$'

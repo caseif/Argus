@@ -9,7 +9,6 @@
 
 // module lowlevel
 #include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -26,7 +25,6 @@
 
 #include "GLFW/glfw3.h"
 
-#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -36,7 +34,6 @@
 #include <cstdint>
 
 namespace argus {
-
     static const std::unordered_map<int, KeyboardScancode> g_keycode_glfw_to_argus({
         {GLFW_KEY_SPACE, KeyboardScancode::SPACE},
         {GLFW_KEY_APOSTROPHE, KeyboardScancode::APOSTROPHE},

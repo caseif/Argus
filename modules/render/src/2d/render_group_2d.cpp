@@ -14,21 +14,21 @@
 #include "internal/core/core_util.hpp"
 
 // module render
-#include "argus/render/common/material.hpp"
-#include "argus/render/common/render_layer.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/render_layer_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
-#include "argus/render/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace argus {
+    // forward declarations
+    class RenderLayer2D;
+    class RenderPrim2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 

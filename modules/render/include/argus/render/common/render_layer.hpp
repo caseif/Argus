@@ -11,16 +11,11 @@
 
 // module render
 #include "argus/render/common/render_layer_type.hpp"
-#include "argus/render/common/transform.hpp"
-
-#include <vector>
 
 namespace argus {
-    // forward declarations
-    class Material;
     class Renderer;
-
     struct pimpl_RenderLayer;
+class Transform2D;
 
     /**
      * \brief Represents a layer to which geometry may be rendered.

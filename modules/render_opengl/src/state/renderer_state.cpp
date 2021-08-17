@@ -9,6 +9,11 @@
 
 // module lowlevel
 #include "internal/lowlevel/logging.hpp"
+#include "internal/render_opengl/state/layer_state.hpp"
+#include "internal/render_opengl/state/renderer_state.hpp"
+
+// module resman
+#include "argus/resman/resource.hpp"
 
 // module render
 #include "argus/render/common/render_layer.hpp"
@@ -16,10 +21,12 @@
 
 // module render_opengl
 #include "internal/render_opengl/types.hpp"
-#include "internal/render_opengl/state/layer_state.hpp"
-#include "internal/render_opengl/state/renderer_state.hpp"
+
+#include "aglet/aglet.h"
 
 #include <map>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace argus {

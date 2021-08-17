@@ -23,7 +23,7 @@
 #include "pngconf.h"
 
 #include <fstream> // IWYU pragma: keep
-#include <istream> // IWYU pragma: keep
+#include <istream>
 #include <stdexcept>
 #include <utility>
 
@@ -32,6 +32,9 @@
 #include <cstdio>
 
 namespace argus {
+    // forward declarations
+    class ResourceManager;
+    struct ResourcePrototype;
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
         static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), size);

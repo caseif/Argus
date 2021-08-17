@@ -25,6 +25,7 @@
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <map>

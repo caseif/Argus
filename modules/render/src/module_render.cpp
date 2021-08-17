@@ -22,7 +22,6 @@
 #include "argus/resman/resource_manager.hpp"
 
 // module wm
-#include "argus/wm/window.hpp"
 #include "internal/wm/window.hpp"
 
 // module render
@@ -38,11 +37,10 @@
 #include <string>
 #include <vector>
 
-#include <cstdio>
-
 namespace argus {
     // forward declarations
     class RendererImpl;
+    class Window;
 
     bool g_render_module_initialized = false;
 

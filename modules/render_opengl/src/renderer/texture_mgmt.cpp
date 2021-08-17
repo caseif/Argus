@@ -27,6 +27,12 @@
 
 #include "aglet/aglet.h"
 
+#include <map>
+#include <string>
+#include <utility>
+
+#include <cstddef>
+
 namespace argus {
     void prepare_texture(RendererState &state, const Resource &material_res) {
         auto &texture_uid = material_res.get<Material>().pimpl->texture;

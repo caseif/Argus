@@ -15,19 +15,16 @@
 #include "internal/core/core_util.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource.hpp"
 
 // module render
-#include "argus/render/common/material.hpp"
+#include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_layer_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
-#include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/render_layer_2d.hpp"
-#include "internal/render/pimpl/2d/render_object_2d.hpp"
-#include "internal/render/pimpl/2d/render_prim_2d.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
@@ -36,15 +33,19 @@
 #include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
-#include "internal/render_opengl/state/renderer_state.hpp"
 
-#include <algorithm>
-#include <iterator>
-#include <numeric>
+#include <atomic>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <cstddef>
+#include <cstring>
 
 namespace argus {
+    // forward declarations
+    struct RendererState;
+
     static void _compute_abs_group_transform(const RenderGroup2D &group, mat4_flat_t &target) {
         group.get_transform().copy_matrix(target);
         const RenderGroup2D *cur = nullptr;

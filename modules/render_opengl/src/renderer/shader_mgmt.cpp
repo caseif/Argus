@@ -15,16 +15,24 @@
 #include "argus/resman/resource_manager.hpp"
 
 // module render
+#include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/shader.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
+
+#include <map>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace argus {
     shader_handle_t compile_shader(const Shader &shader) {

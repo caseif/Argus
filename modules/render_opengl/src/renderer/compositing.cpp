@@ -8,9 +8,12 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module wm
+#include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
 // module resman
@@ -33,6 +36,11 @@
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
+
+#include <atomic>
+#include <map>
+#include <string>
+#include <utility>
 
 namespace argus {
     void draw_layer_to_framebuffer(LayerState &layer_state) {

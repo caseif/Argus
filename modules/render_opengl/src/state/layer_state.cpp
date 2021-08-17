@@ -7,21 +7,18 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-// module resman
-#include "argus/resman/resource.hpp"
-#include "argus/resman/resource_manager.hpp"
-
 // module render_opengl
 #include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 
-#include <cstdio>
+#include <map>
+#include <string>
+#include <utility>
 
 namespace argus {
     // forward declarations
     class RenderLayer;
-
     struct RendererState;
 
     LayerState::LayerState(RendererState &parent_state, RenderLayer &layer):

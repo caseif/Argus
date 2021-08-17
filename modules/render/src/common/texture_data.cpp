@@ -12,14 +12,11 @@
 
 // module render
 #include "argus/render/common/texture_data.hpp"
-#include "internal/render/module_render.hpp"
-#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/texture_data.hpp"
 
 #include <cstdio>
 
 namespace argus {
-
     static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData));
 
     // IMPORTANT: image_data is assumed to be allocated on the heap

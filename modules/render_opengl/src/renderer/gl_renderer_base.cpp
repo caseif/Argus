@@ -10,34 +10,27 @@
 // module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
-#include "internal/core/core_util.hpp"
+#include "argus/core/event.hpp"
 
 // module resman
-#include "argus/resman.hpp"
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_event.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
 // module render
-#include "argus/render/common/material.hpp"
 #include "argus/render/common/render_layer.hpp"
 #include "argus/render/common/renderer.hpp"
-#include "argus/render/common/shader.hpp"
-#include "argus/render/common/texture_data.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/renderer_impl.hpp"
-#include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
-#include "internal/render/pimpl/common/shader.hpp"
-#include "internal/render/pimpl/common/texture_data.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 
 // module render_opengl
@@ -45,28 +38,22 @@
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/2d/gl_renderer_2d.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
 #include "internal/render_opengl/renderer/gl_renderer_base.hpp"
-#include "internal/render_opengl/renderer/2d/gl_renderer_2d.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/layer_state.hpp"
-#include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
 
-#include <algorithm>
 #include <atomic>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <cstdbool>
-#include <cstdio>
-#include <cstring>
 
 namespace argus {
     // forward declarations

@@ -25,9 +25,6 @@
 #include <type_traits>
 #include <vector>
 
-#include <cstdlib>
-#include <cstring>
-
 namespace argus {
     struct ArgusEventHandler {
         ArgusEventType type;

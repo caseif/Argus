@@ -7,21 +7,15 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-// module lowlevel
-#include "argus/lowlevel/memory.hpp"
-
 // module render
-#include "argus/render/common/material.hpp"
 #include "argus/render/common/render_layer.hpp"
 #include "argus/render/common/render_layer_type.hpp"
-#include "argus/render/common/renderer.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/render_layer.hpp"
 
-#include <stdexcept>
-#include <vector>
-
 namespace argus {
+    class Renderer;
+
     RenderLayer::RenderLayer(RenderLayerType type):
         type(type) {
     }

@@ -12,24 +12,26 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
+#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 
 // module render
 #include "argus/render/common/shader.hpp"
-#include "internal/render/defines.hpp"
 
 // module render_opengl
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 
-#include <fstream> // IWYU pragma: keep
-#include <istream> // IWYU pragma: keep
-#include <stdexcept>
-#include <utility>
+#include <istream>
+#include <iterator>
+#include <string>
 
 #include <cstdio>
 
 namespace argus {
+    // forward declarations
+    class ResourceManager;
+
     ShaderLoader::ShaderLoader():
             ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }

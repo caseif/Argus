@@ -12,7 +12,6 @@
 #include "argus/lowlevel/time.hpp"
 
 // module core
-#include "argus/core/event.hpp"
 #include "internal/core/core_util.hpp"
 
 // module wm
@@ -38,6 +37,9 @@
 #include <vector>
 
 namespace argus {
+    // forward declarations
+    struct ArgusEvent;
+
     Renderer &Renderer::of_window(Window &window) {
         auto it = g_renderer_map.find(&window);
         if (it == g_renderer_map.end()) {

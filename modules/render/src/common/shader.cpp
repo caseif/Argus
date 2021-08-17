@@ -12,14 +12,12 @@
 
 // module render
 #include "argus/render/common/shader.hpp"
-#include "internal/render/module_render.hpp"
-#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/shader.hpp"
 
-#include <cstddef>
+#include <string>
+#include <type_traits>
 
 namespace argus {
-
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
     Shader::Shader(ShaderStage stage, const std::string &src):

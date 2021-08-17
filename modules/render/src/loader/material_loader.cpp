@@ -12,23 +12,32 @@
 #include "internal/lowlevel/logging.hpp"
 
 // module resman
+#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
+#include "argus/resman/resource_manager.hpp" // IWYU pragma: keep
 
 // module render
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
-#include "argus/render/common/texture_data.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/loader/material_loader.hpp"
 
+
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
+#include "nlohmann/detail/exceptions.hpp"
 
+#include <algorithm>
+#include <exception>
 #include <fstream> // IWYU pragma: keep
-#include <istream> // IWYU pragma: keep
+#include <initializer_list>
+#include <istream>
+#include <map>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include <csetjmp>
 #include <cstdio>
 
 #define KEY_TEXTURE "texture"

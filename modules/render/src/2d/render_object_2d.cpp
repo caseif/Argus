@@ -11,19 +11,21 @@
 #include "argus/lowlevel/memory.hpp"
 
 // module render
-#include "argus/render/common/material.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/render_layer_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
-#include "argus/render/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 
 #include <atomic>
 #include <vector>
+#include <string>
 
 namespace argus {
+    // forward declarations
+    class RenderLayer2D;
+    class RenderPrim2D;
+
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,

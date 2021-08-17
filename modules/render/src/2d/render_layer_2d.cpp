@@ -7,21 +7,31 @@
  * license text may be accessed at https://opensource.org/licenses/MIT.
  */
 
-#include <stdexcept>
-
 // module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
 // module render
+#include "argus/render/common/render_layer.hpp"
 #include "argus/render/common/render_layer_type.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_layer_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
-#include "internal/render/pimpl/common/render_layer.hpp"
 #include "internal/render/pimpl/2d/render_layer_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 namespace argus {
+    // forward declarations
+    class Renderer;
+
+    class RenderPrim2D;
+    class Transform2D;
+
+    struct pimpl_RenderLayer;
+
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderLayer2D));
 
     RenderLayer2D::RenderLayer2D(const Renderer &parent, const Transform2D &transform, const int index):

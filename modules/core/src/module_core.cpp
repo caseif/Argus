@@ -15,6 +15,8 @@
 #include "internal/core/engine.hpp"
 #include "internal/core/module_core.hpp"
 
+#include <string>
+
 namespace argus {
     bool g_core_initializing = false;
     bool g_core_initialized = false;

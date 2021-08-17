@@ -25,6 +25,7 @@
 
 #include <iterator>
 #include <map>
+#include <string>
 #include <utility>
 
 #include <cstddef>

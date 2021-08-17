@@ -20,18 +20,20 @@
 
 // module render
 #include "internal/render/defines.hpp"
-#include "internal/render/renderer_impl.hpp"
-#include "internal/render_opengl/glfw_include.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/resources_render_opengl.arp.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 #include "internal/render_opengl/renderer/gl_renderer_base.hpp"
 
+#include <string>
+
 #include <cstring>
 
 namespace argus {
+class RendererImpl;
+
     mat4_flat_t g_view_matrix;
 
     static RendererImpl *_create_opengl_backend() {

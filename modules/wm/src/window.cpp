@@ -26,9 +26,6 @@
 #include "internal/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
-#ifdef USE_GLES
-#define GLFW_INCLUDE_ES3
-#endif
 #include "GLFW/glfw3.h"
 
 #include <atomic>
@@ -40,6 +37,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 
 #define DEF_TITLE "ArgusGame"
 #define DEF_WINDOW_DIM 300

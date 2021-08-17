@@ -12,12 +12,7 @@
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
-
-// module core
-#include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
-#include "argus/core/module.hpp"
-
 // module resman
 #include "argus/resman/exception.hpp"
 #include "argus/resman/resource.hpp"
@@ -28,20 +23,28 @@
 #include "internal/resman/pimpl/resource_loader.hpp"
 #include "internal/resman/pimpl/resource_manager.hpp"
 
-#include "arp/arp.h"
+#include "arp/unpack/load.h"
+#include "arp/unpack/resource.h"
+#include "arp/unpack/set.h"
+#include "arp/unpack/types.h"
+#include "arp/util/error.h"
+#include "arp/util/media_types.h"
 
 #include <algorithm>
-#include <exception> // IWYU pragma: keep
+#include <atomic>
+#include <exception>
 #include <functional>
 #include <future>
 #include <istream>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <cctype>
+#include <cstddef>
 
 #define UID_NS_SEPARATOR ':'
 #define UID_PATH_SEPARATOR '/'

@@ -16,9 +16,6 @@
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource.hpp"
-#include "internal/resman/pimpl/resource_manager.hpp"
-
-#include "arp/arp.h"
 
 #include <atomic>
 #include <string>

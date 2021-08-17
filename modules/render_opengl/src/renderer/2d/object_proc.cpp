@@ -8,6 +8,8 @@
 
 // module render
 #include "argus/render/common/material.hpp"
+#include "argus/render/common/transform.hpp"
+#include "argus/render/common/vertex.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/common/material.hpp"
@@ -16,7 +18,7 @@
 
 // module render_opengl
 #include "internal/render_opengl/defines.hpp"
-#include "internal/render_opengl/renderer/shader_mgmt.hpp"
+#include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc.hpp"
 #include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
@@ -25,8 +27,13 @@
 #include "aglet/aglet.h"
 
 #include <algorithm>
-
 #include <cstddef>
+#include <atomic>
+#include <map>
+#include <numeric>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {

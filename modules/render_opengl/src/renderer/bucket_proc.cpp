@@ -1,4 +1,8 @@
+// module resman
+#include "argus/resman/resource.hpp"
+
 // module render
+#include "argus/render/common/material.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 
 // module render_opengl
@@ -10,6 +14,11 @@
 #include "internal/render_opengl/state/render_bucket.hpp"
 
 #include "aglet/aglet.h"
+
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <cstddef>
 

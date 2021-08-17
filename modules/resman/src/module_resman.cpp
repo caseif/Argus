@@ -13,6 +13,8 @@
 // module resman
 #include "argus/resman/resource_manager.hpp"
 
+#include <string>
+
 namespace argus {
     static void _update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {

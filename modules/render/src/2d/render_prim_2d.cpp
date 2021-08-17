@@ -11,7 +11,6 @@
 #include "argus/lowlevel/memory.hpp"
 
 // module render
-#include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/2d/render_prim_2d.hpp"
 
@@ -21,6 +20,8 @@
 #include <cstdlib>
 
 namespace argus {
+    // forward declarations
+    struct Vertex2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderPrim2D));
 

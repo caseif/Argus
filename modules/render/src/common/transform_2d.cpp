@@ -22,11 +22,10 @@
 #include <atomic>
 #include <mutex>
 
-#include <cmath> // IWYU pragma: keep
+#include <cmath>
 #include <cstring>
 
 namespace argus {
-
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform2D));
 
     Transform2D::Transform2D(void): Transform2D({0, 0}, 0, {1, 1}) {

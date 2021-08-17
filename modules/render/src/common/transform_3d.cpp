@@ -26,7 +26,6 @@
 #include <cstring>
 
 namespace argus {
-
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform3D));
 
     Transform3D::Transform3D(void): Transform3D({0, 0, 0}, {0, 0, 0}, {1, 1, 1}) {

@@ -13,8 +13,9 @@
 // module ecs
 #include "argus/ecs/component_type_registry.hpp"
 
-namespace argus {
+#include <string>
 
+namespace argus {
     static void _update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {

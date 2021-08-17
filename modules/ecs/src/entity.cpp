@@ -23,7 +23,6 @@
 #include <cstddef>
 
 namespace argus {
-
     static AllocPool *g_entity_pool;
 
     Entity &Entity::create_entity(std::initializer_list<ComponentTypeId> component_types) {

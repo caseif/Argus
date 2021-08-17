@@ -24,6 +24,8 @@
 
 #include "GLFW/glfw3.h"
 
+#include <string>
+
 namespace argus {
     static void _init_window_input(const Window &window) {
         init_keyboard(static_cast<GLFWwindow*>(get_window_handle(window)));

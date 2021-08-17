@@ -11,16 +11,11 @@
 #include "argus/lowlevel/memory.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
-
-#include <string>
-
-#include <cstdio>
 
 namespace argus {
     // forward declarations
-    class Material;
+    class Resource;
 
     static AllocPool g_bucket_pool(sizeof(RenderBucket));
 

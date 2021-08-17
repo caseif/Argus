@@ -16,17 +16,17 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource_loader.hpp"
 
-#include <exception> // IWYU pragma: keep
+#include <exception>
 #include <initializer_list>
 #include <istream>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstddef>
 
 namespace argus {
-
     std::map<std::string, const Resource*> ResourceLoader::load_dependencies(ResourceManager &manager,
             const std::vector<std::string> &dependencies) const {
         std::map<std::string, const Resource*> acquired;

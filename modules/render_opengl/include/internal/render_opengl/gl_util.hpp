@@ -9,6 +9,7 @@
 
 #pragma once
 
+// module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
 
