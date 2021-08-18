@@ -163,12 +163,16 @@ namespace argus {
         }
     }
 
-    void deinit_shader(RendererState &state, const std::string &shader_uid) {
+    void deinit_shader(shader_handle_t shader) {
+        glDeleteShader(shader);
+    }
+
+    void remove_shader(RendererState &state, const std::string &shader_uid) {
         _ARGUS_DEBUG("De-initializing shader %s\n", shader_uid.c_str());
         auto &shaders = state.compiled_shaders;
         auto existing_it = shaders.find(shader_uid);
         if (existing_it != shaders.end()) {
-            glDeleteShader(existing_it->second);
+            deinit_shader(existing_it->second);
             shaders.erase(existing_it);
         }
     }

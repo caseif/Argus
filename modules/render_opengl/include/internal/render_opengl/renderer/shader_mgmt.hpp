@@ -32,7 +32,9 @@ namespace argus {
 
     void build_shaders(RendererState &state, const Resource &material_res);
 
-    void deinit_shader(RendererState &state, const std::string &shader_uid);
+    void deinit_shader(shader_handle_t shader);
+
+    void remove_shader(RendererState &state, const std::string &shader_uid);
 
     void deinit_program(program_handle_t program);
 }

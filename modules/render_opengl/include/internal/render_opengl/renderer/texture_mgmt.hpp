@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "internal/render_opengl/types.hpp"
+
 #include <string>
 
 namespace argus {
@@ -18,5 +20,7 @@ namespace argus {
 
     void prepare_texture(RendererState &state, const Resource &material_res);
 
-    void deinit_texture(RendererState &state, const std::string &texture_uid);
+    void deinit_texture(texture_handle_t texture);
+
+    void remove_texture(RendererState &state, const std::string &texture_uid);
 }

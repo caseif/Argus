@@ -117,9 +117,9 @@ namespace argus {
 
         std::string mt = event.prototype.media_type;
         if (mt == RESOURCE_TYPE_TEXTURE_PNG) {
-            deinit_texture(state, event.prototype.uid);
+            remove_texture(state, event.prototype.uid);
         } else if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
-            deinit_shader(state, event.prototype.uid);
+            remove_shader(state, event.prototype.uid);
         } else if (mt == RESOURCE_TYPE_MATERIAL) {
             _deinit_material(state, event.prototype.uid);
         }

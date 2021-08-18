@@ -20,6 +20,8 @@
 
 // module render_opengl
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/shader_mgmt.hpp"
+#include "internal/render_opengl/renderer/texture_mgmt.hpp"
 
 #include "aglet/aglet.h"
 
@@ -42,17 +44,17 @@ namespace argus {
         this->scene_states_2d.clear();
 
         for (auto &program : this->linked_programs) {
-            glDeleteProgram(program.second.handle);
+            deinit_program(program.second.handle);
         }
         this->linked_programs.clear();
 
         for (auto &shader : this->compiled_shaders) {
-            glDeleteShader(shader.second);
+            deinit_shader(shader.second);
         }
         this->compiled_shaders.clear();
 
         for (auto &texture : this->prepared_textures) {
-            glDeleteTextures(1, &texture.second);
+            deinit_texture(texture.second);
         }
         this->prepared_textures.clear();
 

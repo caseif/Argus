@@ -72,12 +72,16 @@ namespace argus {
         state.prepared_textures.insert({ texture_uid, handle });
     }
 
-    void deinit_texture(RendererState &state, const std::string &texture_uid) {
+    void deinit_texture(texture_handle_t texture) {
+        glDeleteTextures(1, &texture);
+    }
+
+    void remove_texture(RendererState &state, const std::string &texture_uid) {
         _ARGUS_DEBUG("De-initializing texture %s\n", texture_uid.c_str());
         auto &textures = state.prepared_textures;
         auto existing_it = textures.find(texture_uid);
         if (existing_it != textures.end()) {
-            glDeleteTextures(1, &existing_it->second);
+            deinit_texture(existing_it->second);
             textures.erase(existing_it);
         }
     }
