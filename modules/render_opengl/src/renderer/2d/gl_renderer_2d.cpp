@@ -30,9 +30,9 @@
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/renderer/2d/gl_renderer_2d.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc.hpp"
-#include "internal/render_opengl/state/scene_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include <atomic>
 #include <map>
