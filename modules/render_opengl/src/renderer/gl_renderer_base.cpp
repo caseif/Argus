@@ -25,7 +25,7 @@
 #include "internal/wm/pimpl/window.hpp"
 
 // module render
-#include "argus/render/common/render_layer.hpp"
+#include "argus/render/common/scene.hpp"
 #include "argus/render/common/renderer.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/defines.hpp"
@@ -43,9 +43,9 @@
 #include "internal/render_opengl/renderer/gl_renderer_base.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -57,25 +57,25 @@
 
 namespace argus {
     // forward declarations
-    class RenderLayer2D;
+    class Scene2D;
 
     GLRenderer::GLRenderer(void): RendererImpl() {
     }
 
     static void _rebuild_scene(RendererState &state) {
-        for (auto *layer : state.renderer.pimpl->render_layers) {
-            LayerState &layer_state = state.get_layer_state(*layer, true);
+        for (auto *scene : state.renderer.pimpl->scenes) {
+            SceneState &scene_state = state.get_scene_state(*scene, true);
 
-            auto &layer_transform = layer->get_transform();
-            if (layer_transform.pimpl->dirty) {
-                multiply_matrices(g_view_matrix, layer_transform.as_matrix(), layer_state.view_matrix);
-                layer_transform.pimpl->dirty = false;
+            auto &scene_transform = scene->get_transform();
+            if (scene_transform.pimpl->dirty) {
+                multiply_matrices(g_view_matrix, scene_transform.as_matrix(), scene_state.view_matrix);
+                scene_transform.pimpl->dirty = false;
             }
 
-            render_layer_2d(reinterpret_cast<RenderLayer2D&>(*layer), state,
-                    reinterpret_cast<Layer2DState&>(layer_state));
+            render_scene_2d(reinterpret_cast<Scene2D&>(*scene), state,
+                    reinterpret_cast<Scene2DState&>(scene_state));
 
-            for (auto bucket_it : layer_state.render_buckets) {
+            for (auto bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
 
                 build_shaders(state, mat);
@@ -87,8 +87,8 @@ namespace argus {
 
     static void _deinit_material(RendererState &state, const std::string &material) {
         _ARGUS_DEBUG("De-initializing material %s\n", material.c_str());
-        for (auto *layer_state : state.all_layer_states) {
-            auto &buckets = layer_state->render_buckets;
+        for (auto *scene_state : state.all_scene_states) {
+            auto &buckets = scene_state->render_buckets;
             auto bucket_it = buckets.find(material);
             if (bucket_it != buckets.end()) {
                 try_delete_buffer(bucket_it->second->vertex_array);
@@ -176,9 +176,9 @@ namespace argus {
 
         glDisable(GL_CULL_FACE);
 
-        for (auto *layer : renderer.pimpl->render_layers) {
-            auto &layer_state = state.get_layer_state(*layer);
-            draw_layer_to_framebuffer(layer_state);
+        for (auto *scene : renderer.pimpl->scenes) {
+            auto &scene_state = state.get_scene_state(*scene);
+            draw_scene_to_framebuffer(scene_state);
         }
 
         // set up state for drawing framebuffers to screen
@@ -191,10 +191,10 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
-        for (auto *layer : renderer.pimpl->render_layers) {
-            auto &layer_state = state.get_layer_state(*layer);
+        for (auto *scene : renderer.pimpl->scenes) {
+            auto &scene_state = state.get_scene_state(*scene);
 
-            draw_framebuffer_to_screen(layer_state);
+            draw_framebuffer_to_screen(scene_state);
         }
 
         glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);

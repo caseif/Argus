@@ -23,8 +23,8 @@
 
 namespace argus {
     // forward declarations
-    class RenderLayer2D;
     class RenderPrim2D;
+    class Scene2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
@@ -48,8 +48,8 @@ namespace argus {
         }
     }
 
-    const RenderLayer2D &RenderObject2D::get_parent_layer(void) const {
-        return pimpl->parent_group.get_parent_layer();
+    const Scene2D &RenderObject2D::get_scene(void) const {
+        return pimpl->parent_group.get_scene();
     }
 
     std::string RenderObject2D::get_material(void) const {

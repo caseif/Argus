@@ -20,12 +20,12 @@ namespace argus {
     // forward declarations
     class Material;
     class Renderer;
-    class RenderLayer;
+    class Scene;
 
     class RenderGroup2D;
-    class RenderLayer2D;
     class RenderObject2D;
     class RenderPrim2D;
+    class Scene2D;
 
     struct pimpl_RenderGroup2D;
 
@@ -43,15 +43,15 @@ namespace argus {
             /**
              * \brief Constructs a new RenderGroup.
              *
-             * \param parent_layer The RenderLayer this group belongs to.
+             * \param scene The Scene this group belongs to.
              * \param parent_group The parent group this group belongs to, if
              *        applicable. This may be nullptr.
              */
-            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group, const Transform2D &transform);
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group, const Transform2D &transform);
 
-            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group, Transform2D &&transform);
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group, Transform2D &&transform);
 
-            RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *parent_group);
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group);
 
             RenderGroup2D(const RenderGroup2D&) noexcept;
 
@@ -60,11 +60,11 @@ namespace argus {
             ~RenderGroup2D(void);
 
             /**
-             * \brief Gets the parent RenderLayer.
+             * \brief Gets the parent Scene.
              *
-             * \return The parent RenderLayer to this group.
+             * \return The parent Scene to this group.
              */
-            RenderLayer2D &get_parent_layer(void) const;
+            Scene2D &get_scene(void) const;
 
             /**
              * \brief Gets the parent RenderGroup, if applicable.
@@ -101,7 +101,7 @@ namespace argus {
              * \throw std::invalid_argument If the supplied RenderGroup is not a
              *        child of this group.
              */
-            void remove_child_group(RenderGroup2D &group);
+            void remove_member_group(RenderGroup2D &group);
 
             /**
              * \brief Removes the specified RenderObject from this group,
@@ -122,7 +122,7 @@ namespace argus {
              * \remark The returned Transform is local and, if this group is a
              *         child of another, does not necessarily reflect the
              *         group's absolute transform with respect to the
-             *         RenderLayer containing the group.
+             *         Scene containing the group.
              */
             Transform2D &get_transform(void) const;
 

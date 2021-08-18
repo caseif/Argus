@@ -8,9 +8,9 @@
  */
 
 // module render_opengl
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include <map>
 #include <string>
@@ -18,27 +18,28 @@
 
 namespace argus {
     // forward declarations
-    class RenderLayer;
+    class Scene;
+
     struct RendererState;
 
-    LayerState::LayerState(RendererState &parent_state, RenderLayer &layer):
+    SceneState::SceneState(RendererState &parent_state, Scene &scene):
             parent_state(parent_state),
-            layer(layer),
+            scene(scene),
             framebuffer(0),
             frame_texture(0) {
     }
 
-    LayerState::~LayerState(void) {
+    SceneState::~SceneState(void) {
         for (auto &bucket : render_buckets) {
             bucket.second->~RenderBucket();
         }
     }
 
-    Layer2DState::Layer2DState(RendererState &parent_state, RenderLayer &layer):
-            LayerState(parent_state, layer) {
+    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
+            SceneState(parent_state, scene) {
     }
 
-    Layer2DState::~Layer2DState(void) {
+    Scene2DState::~Scene2DState(void) {
         for (auto &obj : this->processed_objs) {
             obj.second->~ProcessedRenderObject();
         }

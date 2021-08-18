@@ -17,6 +17,6 @@
 
 #include "argus/render/common/render_common.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/render_layer_2d.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"

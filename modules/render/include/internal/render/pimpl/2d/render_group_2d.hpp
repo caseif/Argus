@@ -17,26 +17,26 @@
 
 namespace argus {
     struct pimpl_RenderGroup2D {
-        RenderLayer2D &parent_layer;
+        Scene2D &scene;
         RenderGroup2D *const parent_group;
         Transform2D transform;
         std::vector<RenderGroup2D*> child_groups;
         std::vector<RenderObject2D*> child_objects;
 
-        pimpl_RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group, const Transform2D &transform):
-                parent_layer(parent_layer),
+        pimpl_RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group, const Transform2D &transform):
+                scene(scene),
                 parent_group(parent_group),
                 transform(transform) {
         }
 
-        pimpl_RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group, Transform2D &&transform):
-                parent_layer(parent_layer),
+        pimpl_RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group, Transform2D &&transform):
+                scene(scene),
                 parent_group(parent_group),
                 transform(transform) {
         }
 
-        pimpl_RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group):
-                parent_layer(parent_layer),
+        pimpl_RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group):
+                scene(scene),
                 parent_group(parent_group) {
         }
 

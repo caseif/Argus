@@ -20,7 +20,7 @@
 namespace argus {
     // forward declarations
     class RenderGroup;
-    class RenderLayer;
+    class Scene;
     class Shader;
 
     typedef GLint uniform_handle_t;

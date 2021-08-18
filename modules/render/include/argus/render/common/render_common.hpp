@@ -10,9 +10,8 @@
 #pragma once
 
 #include "material.hpp"
-#include "render_layer.hpp"
-#include "render_layer_type.hpp"
 #include "renderer.hpp"
+#include "scene.hpp"
 #include "shader.hpp"
 #include "texture_data.hpp"
 #include "transform.hpp"

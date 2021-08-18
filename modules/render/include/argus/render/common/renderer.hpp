@@ -13,12 +13,13 @@
 #include "argus/lowlevel/time.hpp"
 
 // module render
-#include "argus/render/common/render_layer_type.hpp"
+#include "argus/render/common/scene.hpp"
 
 namespace argus {
     // forward declarations
-    class RenderLayer;
+    class Scene;
     class TextureData;
+
     class Window;
 
     struct pimpl_Renderer;
@@ -28,10 +29,10 @@ namespace argus {
      *        screen space at once.
      *
      * Each Renderer has a one-to-one mapping with a Window, and a one-to-many
-     * mapping with one or more \link RenderLayer RenderLayers \endlink.
+     * mapping with one or more \link Scene Scenes \endlink.
      *
-     * A Renderer is guaranteed to have at least one RenderLayer, considered to
-     * be the "base" layer.
+     * A Renderer is guaranteed to have at least one Scene, considered to
+     * be the "base" scene.
      *
      * \sa Window
      */
@@ -81,27 +82,27 @@ namespace argus {
             void render(const TimeDelta delta);
 
             /**
-             * \brief Creates a new RenderLayer with the given priority.
+             * \brief Creates a new Scene with the given priority.
              *
-             * Layers with higher priority will be rendered after (ergo in front
+             * Scenes with higher priority will be rendered after (ergo in front
              * of) those with lower priority.
              *
-             * \param index The index of the new RenderLayer. Higher-indexed
-             *        layers are rendered atop lower-indexed ones.
+             * \param index The index of the new Scene. Higher-indexed
+             *        Scenes are rendered atop lower-indexed ones.
              *
-             * \return The created RenderLayer.
+             * \return The created Scene.
              */
-            RenderLayer &create_layer(const RenderLayerType type, const int index);
+            Scene &create_scene(const SceneType type, const int index);
 
             /**
-             * \brief Removes a RenderLayer from this Renderer, destroying it in
-             *        the process.
+             * \brief Removes a Scene from this Renderer, destroying it in the
+             *        process.
              *
-             * \param layer The child RenderLayer to remove.
+             * \param scene The child Scene to remove.
              *
-             * \throw std::invalid_argument If the supplied RenderLayer is not a
-             *        child of this Renderer.
+             * \throw std::invalid_argument If the supplied Scene is not owned
+             *        by this Renderer.
              */
-            void remove_render_layer(RenderLayer &layer);
+            void remove_scene(Scene &scene);
     };
 }

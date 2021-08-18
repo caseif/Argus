@@ -20,9 +20,9 @@
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc.hpp"
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -44,7 +44,7 @@ namespace argus {
         );
     }
 
-    void process_object_2d(Layer2DState &layer_state, const RenderObject2D &object, const mat4_flat_t &transform) {
+    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform) {
         size_t vertex_count = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
             vertex_count += prim.get_vertex_count();
@@ -107,8 +107,8 @@ namespace argus {
                 vertex_buffer, buffer_size, _count_vertices(object));
         processed_obj.visited = true;
 
-        auto existing_it = layer_state.processed_objs.find(&object);
-        if (existing_it != layer_state.processed_objs.end()) {
+        auto existing_it = scene_state.processed_objs.find(&object);
+        if (existing_it != scene_state.processed_objs.end()) {
             //TODO: what the hell does this comment mean?
             // for some reason freeing the object before we replace it causes
             // weird issues that seem like a race condition somehow
@@ -118,20 +118,20 @@ namespace argus {
             old_obj.~ProcessedRenderObject();
 
             // the bucket should always exist if the object existed previously
-            auto *bucket = layer_state.render_buckets[processed_obj.material_res.uid];
+            auto *bucket = scene_state.render_buckets[processed_obj.material_res.uid];
             _ARGUS_ASSERT(!bucket->objects.empty(), "Bucket for existing object should not be empty");
             std::replace(bucket->objects.begin(), bucket->objects.end(), &old_obj, &processed_obj);
             existing_it->second = &processed_obj;
         } else {
-            layer_state.processed_objs.insert({ &object, &processed_obj });
+            scene_state.processed_objs.insert({ &object, &processed_obj });
 
             RenderBucket *bucket;
-            auto existing_bucket_it = layer_state.render_buckets.find(processed_obj.material_res.uid);
-            if (existing_bucket_it != layer_state.render_buckets.end()) {
+            auto existing_bucket_it = scene_state.render_buckets.find(processed_obj.material_res.uid);
+            if (existing_bucket_it != scene_state.render_buckets.end()) {
                 bucket = existing_bucket_it->second;
             } else {
                 bucket = &RenderBucket::create(processed_obj.material_res);
-                layer_state.render_buckets[processed_obj.material_res.uid] = bucket;
+                scene_state.render_buckets[processed_obj.material_res.uid] = bucket;
             }
 
             bucket->objects.push_back(&processed_obj);

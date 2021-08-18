@@ -13,8 +13,8 @@
 #include "argus/resman/resource.hpp"
 
 // module render_opengl
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include <map>
 #include <string>
@@ -24,11 +24,12 @@
 namespace argus {
     // forward declarations
     class Renderer;
-    class RenderLayer;
+    class Scene;
     class Shader;
     class TextureData;
-    class RenderLayer2D;
+
     class RenderObject2D;
+    class Scene2D;
 
     struct ProcessedRenderObject;
     struct RenderBucket;
@@ -43,8 +44,8 @@ namespace argus {
 
         std::vector<Resource*> intrinsic_resources;
 
-        std::map<const RenderLayer2D*, Layer2DState> layer_states_2d;
-        std::vector<LayerState*> all_layer_states;
+        std::map<const Scene2D*, Scene2DState> scene_states_2d;
+        std::vector<SceneState*> all_scene_states;
         std::map<std::string, texture_handle_t> prepared_textures;
         std::map<std::string, shader_handle_t> compiled_shaders;
         std::map<std::string, LinkedProgram> linked_programs;
@@ -59,6 +60,6 @@ namespace argus {
 
         ~RendererState(void);
         
-        LayerState &get_layer_state(RenderLayer &layer, bool create = false);
+        SceneState &get_scene_state(Scene &scene, bool create = false);
     };
 }

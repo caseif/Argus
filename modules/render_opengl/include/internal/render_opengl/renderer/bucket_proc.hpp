@@ -4,7 +4,7 @@
 
 namespace argus {
     // forward declarations
-    struct LayerState;
+    struct SceneState;
 
-    void fill_buckets(LayerState &layer_state);
+    void fill_buckets(SceneState &scene_state);
 }

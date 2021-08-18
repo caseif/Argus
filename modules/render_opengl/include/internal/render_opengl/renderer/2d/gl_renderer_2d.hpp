@@ -11,9 +11,10 @@
 
 namespace argus {
     // forward declarations
-    struct Layer2DState;
-    struct RendererState;
-    class RenderLayer2D;
+    class Scene2D;
 
-    void render_layer_2d(RenderLayer2D &layer, RendererState &renderer_state, Layer2DState &layer_state);
+    struct RendererState;
+    struct Scene2DState;
+
+    void render_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state);
 }

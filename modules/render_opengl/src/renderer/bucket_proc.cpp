@@ -9,9 +9,9 @@
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -23,8 +23,8 @@
 #include <cstddef>
 
 namespace argus {
-    void fill_buckets(LayerState &layer_state) {
-        for (auto it = layer_state.render_buckets.begin(); it != layer_state.render_buckets.end();) {
+    void fill_buckets(SceneState &scene_state) {
+        for (auto it = scene_state.render_buckets.begin(); it != scene_state.render_buckets.end();) {
             auto *bucket = it->second;
 
             if (bucket->objects.empty()) {
@@ -32,7 +32,7 @@ namespace argus {
                 try_delete_buffer(it->second->vertex_buffer);
                 it->second->~RenderBucket();
 
-                it = layer_state.render_buckets.erase(it);
+                it = scene_state.render_buckets.erase(it);
 
                 continue;
             }

@@ -21,17 +21,17 @@
 namespace argus {
     // forward declarations
     class Material;
-    class RenderLayer;
     class RenderObject2D;
+    class Scene;
 
     struct ProcessedRenderObject;
     struct RenderBucket;
     struct RendererState;
 
-    struct LayerState {
+    struct SceneState {
         RendererState &parent_state;
 
-        RenderLayer &layer;
+        Scene &scene;
 
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
         std::map<std::string, RenderBucket*> render_buckets;
@@ -41,16 +41,16 @@ namespace argus {
         buffer_handle_t framebuffer;
         texture_handle_t frame_texture;
 
-        LayerState(RendererState &parent_state, RenderLayer &layer);
+        SceneState(RendererState &parent_state, Scene &scene);
 
-        ~LayerState(void);
+        ~SceneState(void);
     };
 
-    struct Layer2DState : public LayerState {
+    struct Scene2DState : public SceneState {
         std::map<const RenderObject2D*, ProcessedRenderObject*> processed_objs;
 
-        Layer2DState(RendererState &parent_state, RenderLayer &layer);
+        Scene2DState(RendererState &parent_state, Scene &scene);
 
-        ~Layer2DState(void);
+        ~Scene2DState(void);
     };
 }

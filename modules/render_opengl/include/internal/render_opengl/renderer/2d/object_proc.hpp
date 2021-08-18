@@ -5,11 +5,12 @@
 
 namespace argus {
     // forward declarations
-    struct Layer2DState;
-    struct ProcessedRenderObject;
     class RenderObject2D;
 
-    void process_object_2d(Layer2DState &layer_state, const RenderObject2D &object, const mat4_flat_t &transform);
+    struct ProcessedRenderObject;
+    struct Scene2DState;
+
+    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform);
 
     void deinit_object_2d(ProcessedRenderObject &obj);
 }

@@ -20,15 +20,14 @@
 
 // module render
 #include "argus/render/common/renderer.hpp"
-#include "argus/render/common/render_layer.hpp"
-#include "argus/render/common/render_layer_type.hpp"
+#include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
-#include "argus/render/2d/render_layer_2d.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/renderer.hpp"
 #include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
-#include "internal/render/pimpl/common/render_layer.hpp"
+#include "internal/render/pimpl/common/scene.hpp"
 
 #include <algorithm>
 #include <map>
@@ -55,8 +54,8 @@ namespace argus {
     Renderer::~Renderer() {
         g_renderer_impl->deinit(*this);
 
-        for (auto *layer : pimpl->render_layers) {
-            delete layer;
+        for (auto *scene : pimpl->scenes) {
+            delete scene;
         }
 
         g_renderer_map.erase(&pimpl->window);
@@ -75,28 +74,28 @@ namespace argus {
         get_renderer_impl().render(*this, delta);
     }
 
-    RenderLayer &Renderer::create_layer(RenderLayerType type, const int index) {
-        RenderLayer *layer;
-        if (type == RenderLayerType::Render2D) {
-            layer = new RenderLayer2D(*this, Transform2D{}, index);
+    Scene &Renderer::create_scene(SceneType type, const int index) {
+        Scene *scene;
+        if (type == SceneType::TwoD) {
+            scene = new Scene2D(*this, Transform2D{}, index);
         } else {
-            throw std::invalid_argument("Unsupported layer type");
+            throw std::invalid_argument("Unsupported scene type");
         }
 
-        pimpl->render_layers.push_back(layer);
+        pimpl->scenes.push_back(scene);
 
-        std::sort(pimpl->render_layers.begin(), pimpl->render_layers.end(),
-                  [](RenderLayer *a, RenderLayer *b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
+        std::sort(pimpl->scenes.begin(), pimpl->scenes.end(),
+                  [](Scene *a, Scene *b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
 
-        return *layer;
+        return *scene;
     }
 
-    void Renderer::remove_render_layer(RenderLayer &layer) {
-        if (&layer.get_parent_renderer() != this) {
-            throw std::invalid_argument("Supplied RenderLayer does not belong to the Renderer");
+    void Renderer::remove_scene(Scene &scene) {
+        if (&scene.get_parent_renderer() != this) {
+            throw std::invalid_argument("Supplied Scene does not belong to the Renderer");
         }
 
-        remove_from_vector(pimpl->render_layers, &layer);
+        remove_from_vector(pimpl->scenes, &scene);
     }
 
     void renderer_window_event_callback(const ArgusEvent &event, void *user_data) {

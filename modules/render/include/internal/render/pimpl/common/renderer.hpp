@@ -23,10 +23,10 @@ namespace argus {
          */
         Window &window;
         /**
-         * \brief The child \link RenderLayer RenderLayers \endlink of this
+         * \brief The child \link Scene Scenes \endlink of this
          *        Renderer.
          */
-        std::vector<RenderLayer*> render_layers;
+        std::vector<Scene*> scenes;
 
         pimpl_Renderer(Window &window):
                 window(window) {

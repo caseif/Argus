@@ -31,9 +31,9 @@
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
-#include "internal/render_opengl/state/layer_state.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
+#include "internal/render_opengl/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -43,24 +43,24 @@
 #include <utility>
 
 namespace argus {
-    void draw_layer_to_framebuffer(LayerState &layer_state) {
-        auto &state = layer_state.parent_state;
+    void draw_scene_to_framebuffer(SceneState &scene_state) {
+        auto &state = scene_state.parent_state;
         auto &renderer = state.renderer;
 
         // framebuffer setup
-        if (layer_state.framebuffer == 0) {
-            glGenFramebuffers(1, &layer_state.framebuffer);
+        if (scene_state.framebuffer == 0) {
+            glGenFramebuffers(1, &scene_state.framebuffer);
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, layer_state.framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, scene_state.framebuffer);
 
-        if (layer_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
-             if (layer_state.frame_texture != 0) {
-                 glDeleteTextures(1, &layer_state.frame_texture);
+        if (scene_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
+             if (scene_state.frame_texture != 0) {
+                 glDeleteTextures(1, &scene_state.frame_texture);
              }
 
-             glGenTextures(1, &layer_state.frame_texture);
-             glBindTexture(GL_TEXTURE_2D, layer_state.frame_texture);
+             glGenTextures(1, &scene_state.frame_texture);
+             glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
 
              auto res = renderer.get_window().get_resolution();
              glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, res.x, res.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -70,7 +70,7 @@ namespace argus {
 
              glBindTexture(GL_TEXTURE_2D, 0);
 
-             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, layer_state.frame_texture, 0);
+             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, scene_state.frame_texture, 0);
 
             auto fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -89,7 +89,7 @@ namespace argus {
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
 
-        for (auto &bucket : layer_state.render_buckets) {
+        for (auto &bucket : scene_state.render_buckets) {
             auto &mat = bucket.second->material_res;
             auto &program_info = state.linked_programs.find(mat.uid)->second;
             auto &texture_uid = mat.get<Material>().pimpl->texture;
@@ -101,7 +101,7 @@ namespace argus {
 
                 auto view_mat_loc = program_info.view_matrix_uniform_loc;
                 if (view_mat_loc != -1) {
-                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, layer_state.view_matrix);
+                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, scene_state.view_matrix);
                 }
             }
 
@@ -123,8 +123,8 @@ namespace argus {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void draw_framebuffer_to_screen(LayerState &layer_state) {
-        auto &state = layer_state.parent_state;
+    void draw_framebuffer_to_screen(SceneState &scene_state) {
+        auto &state = scene_state.parent_state;
         auto &renderer = state.renderer;
 
         Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
@@ -135,7 +135,7 @@ namespace argus {
 
         glUseProgram(state.frame_program);
 
-        glBindTexture(GL_TEXTURE_2D, layer_state.frame_texture);
+        glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

@@ -18,11 +18,11 @@
 namespace argus {
     // forward declarations
     class Material;
-    class RenderLayer;
+    class Scene;
 
     class RenderGroup2D;
-    class RenderLayer2D;
     class RenderPrim2D;
+    class Scene2D;
 
     struct pimpl_RenderObject2D;
 
@@ -46,11 +46,11 @@ namespace argus {
             ~RenderObject2D();
 
             /**
-             * \brief Gets the parent RenderLayer of this object.
+             * \brief Gets the parent Scene of this object.
              *
-             * \return The parent RenderLayer.
+             * \return The parent Scene.
              */
-            const RenderLayer2D &get_parent_layer(void) const;
+            const Scene2D &get_scene(void) const;
 
             /**
              * \brief Gets the UID of the Material used by the object.
@@ -75,7 +75,7 @@ namespace argus {
              *
              * \remark The returned Transform is local and does not necessarily
              *         reflect the object's absolute transform with respect to
-             *         the RenderLayer containing the object.
+             *         the Scene containing the object.
              */
             Transform2D &get_transform(void) const;
             

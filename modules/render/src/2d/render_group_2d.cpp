@@ -27,23 +27,23 @@
 
 namespace argus {
     // forward declarations
-    class RenderLayer2D;
     class RenderPrim2D;
+    class Scene2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 
-    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             Transform2D &&transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(RenderLayer2D &parent_layer, RenderGroup2D *const parent_group):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(parent_layer, parent_group)) {
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group)) {
     }
 
     RenderGroup2D::RenderGroup2D(const RenderGroup2D &rhs) noexcept:
@@ -69,8 +69,8 @@ namespace argus {
         }
     }
 
-    RenderLayer2D &RenderGroup2D::get_parent_layer(void) const {
-        return pimpl->parent_layer;
+    Scene2D &RenderGroup2D::get_scene(void) const {
+        return pimpl->scene;
     }
 
     RenderGroup2D *RenderGroup2D::get_parent_group(void) const {
@@ -78,7 +78,7 @@ namespace argus {
     }
 
     RenderGroup2D &RenderGroup2D::create_child_group(const Transform2D &transform) {
-        auto *group = new RenderGroup2D(pimpl->parent_layer, this, transform);
+        auto *group = new RenderGroup2D(pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
         return *group;
     }
@@ -90,7 +90,7 @@ namespace argus {
         return *obj;
     }
 
-    void RenderGroup2D::remove_child_group(RenderGroup2D &group) {
+    void RenderGroup2D::remove_member_group(RenderGroup2D &group) {
         if (group.pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderGroup2D is not a child of RenderGroup2D");
         }
