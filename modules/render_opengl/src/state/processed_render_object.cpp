@@ -24,8 +24,8 @@ namespace argus {
     static AllocPool g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const mat4_flat_t abs_transform,
-                                                         const buffer_handle_t vertex_buffer,
-                                                         const size_t vertex_buffer_size, const size_t vertex_count) {
+            const buffer_handle_t vertex_buffer,
+            const size_t vertex_buffer_size, const size_t vertex_count) {
         return g_obj_pool.construct<ProcessedRenderObject>(material_res, abs_transform, vertex_buffer,
                                                            vertex_buffer_size, vertex_count);
     }

@@ -66,10 +66,14 @@ namespace argus {
                     size += obj->vertex_buffer_size;
                 }
 
-                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_COPY);
 
                 size_t offset = 0;
                 for (auto *processed : bucket->objects) {
+                    if (processed == NULL) {
+                        continue;
+                    }
+
                     glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
                     glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset, processed->vertex_buffer_size);
                     glBindBuffer(GL_COPY_READ_BUFFER, 0);
@@ -110,6 +114,10 @@ namespace argus {
 
                 size_t offset = 0;
                 for (auto *processed : bucket->objects) {
+                    if (processed == NULL) {
+                        continue;
+                    }
+
                     if (processed->updated) {
                         glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
                         glBindBuffer(GL_COPY_WRITE_BUFFER, bucket->vertex_buffer);

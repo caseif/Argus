@@ -59,14 +59,6 @@ namespace argus {
             vertex_count += prim.get_vertex_count();
         }
 
-        size_t buffer_size = vertex_count * _VERTEX_LEN * sizeof(GLfloat);
-
-        buffer_handle_t vertex_buffer;
-        glGenBuffers(1, &vertex_buffer);
-        glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-        auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
-
         auto &mat_res = ResourceManager::get_global_resource_manager().get_resource(object.get_material());
         auto &mat = mat_res.get<Material>();
 
@@ -76,6 +68,14 @@ namespace argus {
                 + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
                 + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
                 + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+
+        size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
+
+        buffer_handle_t vertex_buffer;
+        glGenBuffers(1, &vertex_buffer);
+        glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+        auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {

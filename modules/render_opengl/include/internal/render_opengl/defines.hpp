@@ -12,9 +12,9 @@
 #include "aglet/aglet.h"
 
 #define _VERTEX_POSITION_LEN 2
+#define _VERTEX_NORMAL_LEN 2
 #define _VERTEX_COLOR_LEN 4
 #define _VERTEX_TEXCOORD_LEN 2
-#define _VERTEX_LEN (_VERTEX_POSITION_LEN + _VERTEX_COLOR_LEN + _VERTEX_TEXCOORD_LEN)
 #define _VERTEX_WORD_LEN sizeof(GLfloat)
 
 #define _GL_LOG_MAX_LEN 255
