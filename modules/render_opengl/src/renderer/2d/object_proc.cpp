@@ -54,84 +54,111 @@ namespace argus {
     }
 
     void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform) {
-        size_t vertex_count = 0;
-        for (const RenderPrim2D &prim : object.get_primitives()) {
-            vertex_count += prim.get_vertex_count();
-        }
-
-        auto &mat_res = ResourceManager::get_global_resource_manager().get_resource(object.get_material());
-        auto &mat = mat_res.get<Material>();
-
-        auto vertex_attrs = mat.pimpl->attributes;
-
-        size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
-
-        size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
-
-        buffer_handle_t vertex_buffer;
-        glGenBuffers(1, &vertex_buffer);
-        glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-        auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
-
-        size_t total_vertices = 0;
-        for (const RenderPrim2D &prim : object.get_primitives()) {
-            for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
-                const Vertex2D &vertex = prim.pimpl->vertices.at(i);
-                size_t major_off = total_vertices * vertex_len;
-                size_t minor_off = 0;
-
-                if (vertex_attrs & VertexAttributes::POSITION) {
-                    auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
-                    mapped_buffer[major_off + minor_off++] = transformed_pos.x;
-                    mapped_buffer[major_off + minor_off++] = transformed_pos.y;
-                }
-                if (vertex_attrs & VertexAttributes::NORMAL) {
-                    mapped_buffer[major_off + minor_off++] = vertex.normal.x;
-                    mapped_buffer[major_off + minor_off++] = vertex.normal.y;
-                }
-                if (vertex_attrs & VertexAttributes::COLOR) {
-                    mapped_buffer[major_off + minor_off++] = vertex.color.r;
-                    mapped_buffer[major_off + minor_off++] = vertex.color.g;
-                    mapped_buffer[major_off + minor_off++] = vertex.color.b;
-                    mapped_buffer[major_off + minor_off++] = vertex.color.a;
-                }
-                if (vertex_attrs & VertexAttributes::TEXCOORD) {
-                    mapped_buffer[major_off + minor_off++] = vertex.tex_coord.x;
-                    mapped_buffer[major_off + minor_off++] = vertex.tex_coord.y;
-                }
-
-                total_vertices += 1;
-            }
-        }
-
-        glUnmapBuffer(GL_COPY_READ_BUFFER);
-        glBindBuffer(GL_COPY_READ_BUFFER, 0);
-
-        auto &processed_obj = ProcessedRenderObject::create(
-                mat_res, transform,
-                vertex_buffer, buffer_size, _count_vertices(object));
-        processed_obj.visited = true;
-
         auto existing_it = scene_state.processed_objs.find(&object);
         if (existing_it != scene_state.processed_objs.end()) {
             //TODO: what the hell does this comment mean?
             // for some reason freeing the object before we replace it causes
             // weird issues that seem like a race condition somehow
-            auto &old_obj = *existing_it->second;
+            auto &proc_obj = *existing_it->second;
 
-            glDeleteBuffers(1, &old_obj.vertex_buffer);
-            old_obj.~ProcessedRenderObject();
+            // we basically just need to update the transform and position data since everything else is immutable
+            memcpy(proc_obj.abs_transform, transform, sizeof(proc_obj.abs_transform));
 
-            // the bucket should always exist if the object existed previously
-            auto *bucket = scene_state.render_buckets[processed_obj.material_res.uid];
-            _ARGUS_ASSERT(!bucket->objects.empty(), "Bucket for existing object should not be empty");
-            std::replace(bucket->objects.begin(), bucket->objects.end(), &old_obj, &processed_obj);
-            existing_it->second = &processed_obj;
+            auto vertex_attrs = proc_obj.material_res.get<Material>().pimpl->attributes;
+            // not sure whether this would actually ever be false in practice
+            if (vertex_attrs & VertexAttributes::POSITION) {
+                size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                        + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                        + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                        + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+
+                glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.vertex_buffer);
+
+                auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+
+                size_t total_vertices = 0;
+                for (const RenderPrim2D &prim : object.get_primitives()) {
+                    for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
+                        const Vertex2D &vertex = prim.pimpl->vertices.at(i);
+                        size_t major_off = total_vertices * vertex_len;
+                        size_t minor_off = 0;
+
+                        auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                        mapped_buffer[major_off + minor_off++] = transformed_pos.x;
+                        mapped_buffer[major_off + minor_off++] = transformed_pos.y;
+
+                        total_vertices += 1;
+                    }
+                }
+
+                glUnmapBuffer(GL_COPY_READ_BUFFER);
+            }
+
+            proc_obj.visited = true;
+            proc_obj.updated = true;
         } else {
+            size_t vertex_count = 0;
+            for (const RenderPrim2D &prim : object.get_primitives()) {
+                vertex_count += prim.get_vertex_count();
+            }
+
+            const auto &mat_res = ResourceManager::get_global_resource_manager().get_resource(object.get_material());
+            auto &mat = mat_res.get<Material>();
+
+            auto vertex_attrs = mat.pimpl->attributes;
+
+            size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                    + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                    + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                    + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+
+            size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
+
+            buffer_handle_t vertex_buffer;
+            glGenBuffers(1, &vertex_buffer);
+            glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+            glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+
+            size_t total_vertices = 0;
+            for (const RenderPrim2D &prim : object.get_primitives()) {
+                for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
+                    const Vertex2D &vertex = prim.pimpl->vertices.at(i);
+                    size_t major_off = total_vertices * vertex_len;
+                    size_t minor_off = 0;
+
+                    if (vertex_attrs & VertexAttributes::POSITION) {
+                        auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                        mapped_buffer[major_off + minor_off++] = transformed_pos.x;
+                        mapped_buffer[major_off + minor_off++] = transformed_pos.y;
+                    }
+                    if (vertex_attrs & VertexAttributes::NORMAL) {
+                        mapped_buffer[major_off + minor_off++] = vertex.normal.x;
+                        mapped_buffer[major_off + minor_off++] = vertex.normal.y;
+                    }
+                    if (vertex_attrs & VertexAttributes::COLOR) {
+                        mapped_buffer[major_off + minor_off++] = vertex.color.r;
+                        mapped_buffer[major_off + minor_off++] = vertex.color.g;
+                        mapped_buffer[major_off + minor_off++] = vertex.color.b;
+                        mapped_buffer[major_off + minor_off++] = vertex.color.a;
+                    }
+                    if (vertex_attrs & VertexAttributes::TEXCOORD) {
+                        mapped_buffer[major_off + minor_off++] = vertex.tex_coord.x;
+                        mapped_buffer[major_off + minor_off++] = vertex.tex_coord.y;
+                    }
+
+                    total_vertices += 1;
+                }
+            }
+
+            glUnmapBuffer(GL_COPY_READ_BUFFER);
+            glBindBuffer(GL_COPY_READ_BUFFER, 0);
+
+            auto &processed_obj = ProcessedRenderObject::create(
+                    mat_res, transform,
+                    vertex_buffer, buffer_size, _count_vertices(object));
+            processed_obj.visited = true;
+
             scene_state.processed_objs.insert({ &object, &processed_obj });
 
             RenderBucket *bucket;
