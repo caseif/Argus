@@ -147,6 +147,24 @@ namespace argus {
             void set_resolution(const unsigned int width, const unsigned int height);
 
             /**
+             * \brief Gets whether the window has vertical synchronization
+             *        (vsync) enabled.
+             *
+             * \return Whether the window has vertical synchronization (vsync)
+             *         enabled.
+             */
+            bool is_vsync_enabled(void);
+            
+            /**
+             * \brief Enabled or disabled vertical synchronization (vsync) for
+             *        the window.
+             *
+             * \param enabled Whether vertical synchronization (vsync) should be
+             *        enabled for the window.
+             */
+            void set_vsync_enabled(bool enabled);
+
+            /**
              * \brief Sets the position of the window on the screen when in
              *        windowed mode.
              *

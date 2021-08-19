@@ -52,6 +52,7 @@ namespace argus {
             AtomicDirtiable<bool> fullscreen;
             AtomicDirtiable<Vector2u> resolution;
             AtomicDirtiable<Vector2i> position;
+            AtomicDirtiable<bool> vsync;
         } properties;
 
         /**

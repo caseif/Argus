@@ -166,6 +166,10 @@ namespace argus {
 
         activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
+        if (renderer.get_window().pimpl->properties.vsync.dirty) {
+            glfwSwapInterval(renderer.get_window().pimpl->properties.vsync ? 1 : 0);
+        }
+
         _rebuild_scene(state);
 
         // set up state for drawing scene to framebuffers

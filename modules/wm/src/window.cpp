@@ -311,6 +311,15 @@ namespace argus {
         return;
     }
 
+    bool Window::is_vsync_enabled(void) {
+        return pimpl->properties.vsync;
+    }
+
+    void Window::set_vsync_enabled(bool enabled) {
+        pimpl->properties.vsync = enabled;
+        return;
+    }
+
     void Window::set_windowed_position(const int x, const int y) {
         pimpl->properties.position = {x, y};
         return;
