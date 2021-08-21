@@ -72,9 +72,14 @@ namespace argus {
                         + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
                         + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
-                glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.vertex_buffer);
+                GLfloat *mapped_buffer;
 
-                auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+                if (AGLET_GL_ARB_direct_state_access) {
+                    mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(proc_obj.vertex_buffer, GL_WRITE_ONLY));
+                } else {
+                    glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.vertex_buffer);
+                    mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+                }
 
                 size_t total_vertices = 0;
                 for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -91,7 +96,12 @@ namespace argus {
                     }
                 }
 
-                glUnmapBuffer(GL_COPY_READ_BUFFER);
+                if (AGLET_GL_ARB_direct_state_access) {
+                    glUnmapNamedBuffer(proc_obj.vertex_buffer);
+                } else {
+                    glUnmapBuffer(GL_COPY_READ_BUFFER);
+                    glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                }
             }
 
             proc_obj.visited = true;
@@ -115,10 +125,18 @@ namespace argus {
             size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
             buffer_handle_t vertex_buffer;
-            glGenBuffers(1, &vertex_buffer);
-            glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-            glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-            auto mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+            GLfloat *mapped_buffer;
+
+            if (AGLET_GL_ARB_direct_state_access) {
+                glCreateBuffers(1, &vertex_buffer);
+                glNamedBufferData(vertex_buffer, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+                mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY));
+            } else {
+                glGenBuffers(1, &vertex_buffer);
+                glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+                glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+                mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+            }
 
             size_t total_vertices = 0;
             for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -151,8 +169,12 @@ namespace argus {
                 }
             }
 
-            glUnmapBuffer(GL_COPY_READ_BUFFER);
-            glBindBuffer(GL_COPY_READ_BUFFER, 0);
+            if (AGLET_GL_ARB_direct_state_access) {
+                glUnmapNamedBuffer(vertex_buffer);
+            } else {
+                glUnmapBuffer(GL_COPY_READ_BUFFER);
+                glBindBuffer(GL_COPY_READ_BUFFER, 0);
+            }
 
             auto &processed_obj = ProcessedRenderObject::create(
                     mat_res, transform,

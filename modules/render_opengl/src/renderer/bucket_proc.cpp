@@ -47,6 +47,11 @@ namespace argus {
             }
 
             if (bucket->needs_rebuild) {
+                size_t buffer_len = 0;
+                for (auto &obj : bucket->objects) {
+                    buffer_len += obj->vertex_buffer_size;
+                }
+
                 if (bucket->vertex_array != 0) {
                     glDeleteVertexArrays(1, &bucket->vertex_array);
                 }
@@ -55,30 +60,20 @@ namespace argus {
                     glDeleteBuffers(1, &bucket->vertex_buffer);
                 }
 
-                glGenVertexArrays(1, &bucket->vertex_array);
-                glBindVertexArray(bucket->vertex_array);
+                if (AGLET_GL_ARB_direct_state_access) {
+                    glCreateVertexArrays(1, &bucket->vertex_array);
 
-                glGenBuffers(1, &bucket->vertex_buffer);
-                glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
+                    glCreateBuffers(1, &bucket->vertex_buffer);
+                
+                    glNamedBufferData(bucket->vertex_buffer, buffer_len, nullptr, GL_DYNAMIC_COPY);
+                } else {
+                    glGenVertexArrays(1, &bucket->vertex_array);
+                    glBindVertexArray(bucket->vertex_array);
+                    
+                    glGenBuffers(1, &bucket->vertex_buffer);
+                    glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
-                size_t size = 0;
-                for (auto &obj : bucket->objects) {
-                    size += obj->vertex_buffer_size;
-                }
-
-                glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_COPY);
-
-                size_t offset = 0;
-                for (auto *processed : bucket->objects) {
-                    if (processed == NULL) {
-                        continue;
-                    }
-
-                    glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
-                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset, processed->vertex_buffer_size);
-                    glBindBuffer(GL_COPY_READ_BUFFER, 0);
-
-                    offset += processed->vertex_buffer_size;
+                    glBufferData(GL_ARRAY_BUFFER, buffer_len, nullptr, GL_DYNAMIC_COPY);
                 }
 
                 auto &material = bucket->material_res.get<Material>();
@@ -93,47 +88,57 @@ namespace argus {
                 GLuint attr_offset = 0;
 
                 if (vertex_attrs & VertexAttributes::POSITION) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
+                    set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
+                            SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::NORMAL) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_NORMAL_LEN, SHADER_ATTRIB_LOC_NORMAL, &attr_offset);
+                    set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
+                            SHADER_ATTRIB_IN_NORMAL_LEN, SHADER_ATTRIB_LOC_NORMAL, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::COLOR) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_COLOR_LEN, SHADER_ATTRIB_LOC_COLOR, &attr_offset);
+                    set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
+                            SHADER_ATTRIB_IN_COLOR_LEN, SHADER_ATTRIB_LOC_COLOR, &attr_offset);
                 }
                 if (vertex_attrs & VertexAttributes::TEXCOORD) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
+                    set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
+                            SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
                 }
-
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glBindVertexArray(bucket->vertex_array);
-
-                bucket->needs_rebuild = false;
             } else {
-                bucket->vertex_count = 0;
-
-                size_t offset = 0;
-                for (auto *processed : bucket->objects) {
-                    if (processed == NULL) {
-                        continue;
-                    }
-
-                    if (processed->updated) {
-                        glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
-                        glBindBuffer(GL_COPY_WRITE_BUFFER, bucket->vertex_buffer);
-
-                        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
-                                processed->vertex_buffer_size);
-
-                        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-                        glBindBuffer(GL_COPY_READ_BUFFER, 0);
-                    }
-
-                    offset += processed->vertex_buffer_size;
-
-                    bucket->vertex_count += processed->vertex_count;
+                if (!AGLET_GL_ARB_direct_state_access) {
+                    glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
                 }
             }
+
+            bucket->vertex_count = 0;
+
+            size_t offset = 0;
+            for (auto *processed : bucket->objects) {
+                if (processed == NULL) {
+                    continue;
+                }
+
+                if (bucket->needs_rebuild || processed->updated) {
+                    if (AGLET_GL_ARB_direct_state_access) {
+                        glCopyNamedBufferSubData(processed->vertex_buffer, bucket->vertex_buffer, 0, offset, processed->vertex_buffer_size);
+                    } else {
+                        glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
+                        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset, processed->vertex_buffer_size);
+                        glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                    }
+                }
+
+                offset += processed->vertex_buffer_size;
+
+                bucket->vertex_count += processed->vertex_count;
+            }
+
+            if (!AGLET_GL_ARB_direct_state_access) {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                glBindVertexArray(bucket->vertex_array);
+            }
+
+            bucket->needs_rebuild = false;
 
             it++;
         }

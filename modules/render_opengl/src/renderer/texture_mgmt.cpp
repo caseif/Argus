@@ -46,28 +46,50 @@ namespace argus {
 
         texture_handle_t handle;
 
-        glGenTextures(1, &handle);
+        if (AGLET_GL_ARB_direct_state_access) {
+            glCreateTextures(GL_TEXTURE_2D, 1, &handle);
 
-        glBindTexture(GL_TEXTURE_2D, handle);
+            glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        } else {
+            glGenTextures(1, &handle);
+            glBindTexture(GL_TEXTURE_2D, handle);
 
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        }
+
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
         size_t row_size = texture.width * 32 / 8;
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        if (AGLET_GL_ARB_direct_state_access) {
+            glTextureStorage2D(handle, 1, GL_RGBA8, texture.width, texture.height);
+        } else if (AGLET_GL_ARB_texture_storage) {
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, texture.width, texture.height);
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                    nullptr);
+        }
 
         size_t offset = 0;
         for (size_t y = 0; y < texture.height; y++) {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, texture.width, 1, GL_RGBA, GL_UNSIGNED_BYTE,
-                    texture.pimpl->image_data[y]);
+            if (AGLET_GL_ARB_direct_state_access) {
+                glTextureSubImage2D(handle, 0, 0, y, texture.width, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                        texture.pimpl->image_data[y]);
+            } else {
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, texture.width, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                        texture.pimpl->image_data[y]);
+            }
             offset += row_size;
         }
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
+        if (!AGLET_GL_ARB_direct_state_access) {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
         state.prepared_textures.insert({ texture_uid, handle });
     }

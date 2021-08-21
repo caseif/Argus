@@ -129,7 +129,10 @@ namespace argus {
     void GLRenderer::init(Renderer &renderer) {
         activate_gl_context(renderer.pimpl->window.pimpl->handle);
 
-        agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress));
+        int rc = 0;
+        if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
+            _ARGUS_FATAL("Failed to load OpenGL bindings (Aglet returned code %d)\n", rc);
+        }
 
         int gl_major;
         int gl_minor;

@@ -70,10 +70,19 @@ namespace argus {
         _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
     }
 
-    void set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
-        glEnableVertexAttribArray(attr_index);
-        glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE, vertex_len * sizeof(GLfloat),
-                reinterpret_cast<GLvoid*>(*attr_offset));
+    void set_attrib_pointer(array_handle_t array_obj, buffer_handle_t buffer_obj, GLuint vertex_len, GLuint attr_len,
+            GLuint attr_index, GLuint *attr_offset) {
+        if (AGLET_GL_ARB_direct_state_access) {
+            glVertexArrayVertexBuffer(array_obj, 0, buffer_obj, 0, vertex_len * sizeof(GLfloat));
+            glEnableVertexArrayAttrib(array_obj, attr_index);
+            glVertexArrayAttribFormat(array_obj, attr_index, attr_len, GL_FLOAT, GL_FALSE, *attr_offset);
+            glVertexArrayAttribBinding(array_obj, attr_index, 0);
+        } else {
+            glEnableVertexAttribArray(attr_index);
+            glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE, vertex_len * sizeof(GLfloat),
+                    reinterpret_cast<GLvoid*>(*attr_offset));
+        }
+
         *attr_offset += attr_len * sizeof(GLfloat);
     }
 

@@ -6,5 +6,7 @@
     </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>
+        <extension required="false">GL_ARB_texture_storage</extension>
+        <extension required="false">GL_ARB_direct_state_access</extension>
     </extensions>
 </profile>
