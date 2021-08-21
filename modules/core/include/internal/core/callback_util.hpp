@@ -10,7 +10,7 @@
 #pragma once
 
 // module lowlevel
-#include "argus/lowlevel/threading.hpp"
+#include "argus/lowlevel/atomic.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core

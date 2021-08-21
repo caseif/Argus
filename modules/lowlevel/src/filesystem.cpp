@@ -9,7 +9,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
-#include "argus/lowlevel/threading.hpp"
+#include "argus/lowlevel/threading/future.hpp"
 #include "internal/lowlevel/error_util.hpp"
 #include "internal/lowlevel/logging.hpp"
 

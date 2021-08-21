@@ -8,6 +8,7 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"

@@ -8,8 +8,8 @@
  */
 
 // module lowlevel
+#include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "argus/lowlevel/threading.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module wm
