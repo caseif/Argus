@@ -58,6 +58,11 @@ namespace argus {
     }
 
     std::future<void*> ThreadPool::submit(std::function<void*(void)> task) {
-        //TODO
+        auto &worker = pimpl->workers.at(pimpl->next_worker);
+        if (++pimpl->next_worker >= pimpl->thread_count) {
+            pimpl->next_worker = 0;
+        }
+
+        worker->add_task(task);
     }
 }

@@ -11,6 +11,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/threading/thread_pool.hpp"
 
 #include <atomic>
 #include <condition_variable>
@@ -30,6 +31,8 @@ namespace argus {
         ThreadPoolTask(void);
 
         ThreadPoolTask(WorkerFunction func);
+
+        ~ThreadPoolTask(void);
     };
 
     class ThreadPoolWorker {

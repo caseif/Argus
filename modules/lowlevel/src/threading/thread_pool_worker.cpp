@@ -37,7 +37,7 @@ namespace argus {
 
     std::future<void*> ThreadPoolWorker::add_task(WorkerFunction func) {
         task_queue_mutex.lock();
-        task_queue.push_back(ThreadPoolTask(func));
+        task_queue.emplace_back(func);
         std::promise<void*> &promise = task_queue.back().promise;
         task_queue_mutex.unlock();
 

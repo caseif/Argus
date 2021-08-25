@@ -13,19 +13,22 @@
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/threading/thread_pool_worker.hpp"
 
-#include <list>
+#include <memory>
+#include <vector>
 
 #include <cstdint>
 
 namespace argus {
     struct pimpl_ThreadPool {
         uint16_t thread_count;
-        std::list<ThreadPoolWorker> workers;
+        std::vector<std::unique_ptr<ThreadPoolWorker>> workers;
+        uint16_t next_worker;
 
         pimpl_ThreadPool(ThreadPool &pool, uint16_t thread_count):
-                thread_count(thread_count) {
+                thread_count(thread_count),
+                next_worker(0) {
             for (uint16_t i = 0; i < thread_count; i++) {
-                workers.emplace_back(pool);
+                workers.push_back(std::unique_ptr<ThreadPoolWorker>(new ThreadPoolWorker(pool)));
             }
         }
     };
