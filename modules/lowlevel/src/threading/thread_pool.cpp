@@ -50,7 +50,7 @@ namespace argus {
     }
 
     ThreadPool::ThreadPool(uint16_t threads):
-            pimpl(&g_pimpl_pool.construct<pimpl_ThreadPool>(threads)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_ThreadPool>(*this, threads)) {
     }
 
     ThreadPool::~ThreadPool(void) {

@@ -83,7 +83,7 @@ namespace argus {
              *         execution.
              */
             std::future<void*> submit(std::function<void*(void*)> task, void *param) {
-                this->submit(std::bind(task, param));
+                return this->submit(std::bind(task, param));
             }
 
             /**
