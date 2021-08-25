@@ -21,9 +21,5 @@ namespace argus {
     struct RendererState;
     struct Scene2DState;
 
-    typedef void (*ObjectProcFn)(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform);
-    typedef void (*ObjectDeinitFn)(ProcessedRenderObject &obj);
-
-    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state,
-            ObjectProcFn proc_fn, ObjectDeinitFn deinit_fn);
+    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state);
 }

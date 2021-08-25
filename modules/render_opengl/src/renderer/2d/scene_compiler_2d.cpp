@@ -64,7 +64,7 @@ namespace argus {
     }
 
     static void _process_render_group_2d(RendererState &state, Scene2DState &scene_state, const RenderGroup2D &group,
-            ObjectProcFn proc_fn, const bool recompute_transform, const mat4_flat_t running_transform) {
+            const bool recompute_transform, const mat4_flat_t running_transform) {
         bool new_recompute_transform = recompute_transform;
         mat4_flat_t cur_transform;
 
@@ -107,24 +107,23 @@ namespace argus {
                 return;
             }
 
-            proc_fn(scene_state, *child_object, final_obj_transform);
+            process_object_2d(scene_state, *child_object, final_obj_transform);
         }
 
         for (auto *child_group : group.pimpl->child_groups) {
-            _process_render_group_2d(state, scene_state, *child_group, proc_fn, new_recompute_transform, cur_transform);
+            _process_render_group_2d(state, scene_state, *child_group, new_recompute_transform, cur_transform);
         }
     }
 
-    static void _process_objects_2d(RendererState &state, Scene2DState &scene_state, const Scene2D &scene,
-            ObjectProcFn proc_fn, ObjectDeinitFn deinit_fn) {
-        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, proc_fn, false, nullptr);
+    static void _process_objects_2d(RendererState &state, Scene2DState &scene_state, const Scene2D &scene) {
+        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, false, nullptr);
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
             auto *processed_obj = it->second;
             if (!processed_obj->visited) {
                 // wasn't visited this iteration, must not be present in the scene graph anymore
 
-                deinit_fn(*processed_obj);
+                deinit_object_2d(*processed_obj);
 
                 // we need to remove it from its containing bucket and flag the bucket for a rebuild
                 auto *bucket = scene_state.render_buckets[it->second->material_res.uid];
@@ -143,9 +142,8 @@ namespace argus {
         }
     }
 
-    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state,
-            ObjectProcFn proc_fn, ObjectDeinitFn deinit_fn) {
-        _process_objects_2d(renderer_state, scene_state, scene, proc_fn, deinit_fn);
+    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state) {
+        _process_objects_2d(renderer_state, scene_state, scene);
         fill_buckets(scene_state);
     }
 }

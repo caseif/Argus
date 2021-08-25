@@ -73,8 +73,7 @@ namespace argus {
                 scene_transform.pimpl->dirty = false;
             }
 
-            compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), state, reinterpret_cast<Scene2DState&>(scene_state),
-                    process_object_2d, deinit_object_2d);
+            compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), state, reinterpret_cast<Scene2DState&>(scene_state));
 
             for (auto bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
