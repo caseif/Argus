@@ -29,10 +29,9 @@ namespace argus {
      * available threads to ensure efficiency.
      */
     class ThreadPool {
-        private:
+        public:
             pimpl_ThreadPool *pimpl;
 
-        public:
             /**
              * \brief Constructs a new ThreadPool with the thread count being
              * initialized automatically based on the number of available
@@ -50,21 +49,11 @@ namespace argus {
              */
             ThreadPool(uint16_t threads);
 
-            /**
-             * \brief Submits a new task to the ThreadPool, passing the extra
-             *        parameter through to the provided callback.
-             *
-             * The pointer returned by the callback will be passed back through
-             * the std::future returned by this function.
-             *
-             * \param task The callback which the ThreadPool will invoke to
-             *        complete the task.
-             * \param param A parameter which will be passed through to the
-             *        callback.
-             * \return A std::future representing the result of the task
-             *         execution.
-             */
-            std::future<void*> submit(std::function<void*(void*)> task, void *param);
+            ThreadPool(const ThreadPool&) = delete;
+
+            ThreadPool(ThreadPool&&) = delete;
+
+            ~ThreadPool(void);
 
             /**
              * \brief Submits a new task to the ThreadPool.
@@ -86,9 +75,6 @@ namespace argus {
              * The pointer returned by the callback will be passed back through
              * the std::future returned by this function.
              *
-             * \tparam R The type returned by the callback function.
-             * \tparam P The type of the parameter accepted by the callback
-             *         function.
              * \param task The callback which the ThreadPool will invoke to
              *        complete the task.
              * \param param A parameter which will be passed through to the
@@ -96,9 +82,8 @@ namespace argus {
              * \return A std::future representing the result of the task
              *         execution.
              */
-            template <typename R, typename P>
-            std::future<R*> submit(std::function<R*(P*)> task, P *param) {
-                return static_cast<R*>(this->submit(task, static_cast<void*>(param)));
+            std::future<void*> submit(std::function<void*(void*)> task, void *param) {
+                this->submit(std::bind(task, param));
             }
 
             /**
@@ -116,6 +101,28 @@ namespace argus {
             template <typename R>
             std::future<R*> submit(std::function<R*(void)> task) {
                 return static_cast<R*>(this->submit(task));
+            }
+
+            /**
+             * \brief Submits a new task to the ThreadPool, passing the extra
+             *        parameter through to the provided callback.
+             *
+             * The pointer returned by the callback will be passed back through
+             * the std::future returned by this function.
+             *
+             * \tparam R The type returned by the callback function.
+             * \tparam P The type of the parameter accepted by the callback
+             *         function.
+             * \param task The callback which the ThreadPool will invoke to
+             *        complete the task.
+             * \param param A parameter which will be passed through to the
+             *        callback.
+             * \return A std::future representing the result of the task
+             *         execution.
+             */
+            template <typename R, typename P>
+            std::future<R*> submit(std::function<R*(P*)> task, P *param) {
+                return static_cast<R*>(this->submit(task, static_cast<void*>(param)));
             }
     };
 }
