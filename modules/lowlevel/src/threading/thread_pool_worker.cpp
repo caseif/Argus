@@ -25,6 +25,11 @@ namespace argus {
             ThreadPoolTask(nullptr) {
     }
 
+    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs):
+            func(rhs.func) {
+        promise.swap(rhs.promise);
+    }
+
     ThreadPoolTask::ThreadPoolTask(WorkerFunction func):
             func(func) {
     }
@@ -32,14 +37,15 @@ namespace argus {
     ThreadPoolWorker::ThreadPoolWorker(ThreadPool &pool):
             pool(pool),
             thread(std::bind(&ThreadPoolWorker::worker_impl, this)) {
-        //TODO
     }
 
     std::future<void*> ThreadPoolWorker::add_task(WorkerFunction func) {
         task_queue_mutex.lock();
-        task_queue.emplace_back(func);
-        std::promise<void*> &promise = task_queue.back().promise;
+        task_queue.push_back(std::unique_ptr<ThreadPoolTask>(new ThreadPoolTask(func)));
+        std::promise<void*> &promise = task_queue.back()->promise;
         task_queue_mutex.unlock();
+
+        notify();
 
         return promise.get_future();
     }
@@ -54,6 +60,14 @@ namespace argus {
     }
 
     void ThreadPoolWorker::worker_impl() {
+        std::mutex cond_mutex;
+        std::unique_lock<std::mutex> cond_lock(cond_mutex);
+
+        busy = false;
+
+        // wait until we have an iniital task to run
+        cond.wait(cond_lock);
+
         while (true) {
             if (terminate) {
                 return;
@@ -71,15 +85,17 @@ namespace argus {
                 // try to steal work from another worker
                 bool stole_task = false;
                 for (auto &worker : pool.pimpl->workers) {
-                    worker.task_queue_mutex.lock(); //TODO: should we try_lock instead?
-                    if (worker.task_queue.size() > 0) {
-                        current_task = std::move(worker.task_queue.back());
-                        worker.task_queue.pop_back();
-                        worker.task_queue_mutex.unlock();
+                    if (!worker->task_queue_mutex.try_lock()) {
+                        continue;
+                    }
+                    if (worker->task_queue.size() > 0) {
+                        current_task = std::move(worker->task_queue.back());
+                        worker->task_queue.pop_back();
+                        worker->task_queue_mutex.unlock();
                         stole_task = true;
                         break;
                     } else {
-                        worker.task_queue_mutex.unlock();
+                        worker->task_queue_mutex.unlock();
                     }
                 }
 
@@ -96,10 +112,10 @@ namespace argus {
 
             // this is self-explanatory
             try {
-                void *rv = current_task.func();
-                current_task.promise.set_value(rv);
+                void *rv = current_task->func();
+                current_task->promise.set_value(rv);
             } catch (...) {
-                current_task.promise.set_exception(std::make_exception_ptr(std::current_exception));
+                current_task->promise.set_exception(std::make_exception_ptr(std::current_exception));
             }
         }
     }

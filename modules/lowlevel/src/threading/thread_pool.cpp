@@ -63,6 +63,6 @@ namespace argus {
             pimpl->next_worker = 0;
         }
 
-        worker->add_task(task);
+        return worker->add_task(task);
     }
 }
