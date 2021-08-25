@@ -11,28 +11,23 @@
 #include "argus/lowlevel/math.hpp"
 
 namespace argus {
-    void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res) {
+    void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res) {
         // naive implementation
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                int index = j * 4 + i;
-                res[index] = 0;
                 for (int k = 0; k < 4; k++) {
-                    auto a_index = k * 4 + i;
-                    auto b_index = j * 4 + k;
-
-                    res[index] += a[a_index] * b[b_index];
+                    res[i][j] += a[k][j] * b[i][k];
                 }
             }
         }
     }
 
-    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const mat4_flat_t mat) {
+    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat) {
         return Vector4f {
-            mat[0] * vec.x + mat[4] * vec.y + mat[8] * vec.z + mat[12] * vec.w,
-            mat[1] * vec.x + mat[5] * vec.y + mat[9] * vec.z + mat[13] * vec.w,
-            mat[2] * vec.x + mat[6] * vec.y + mat[10] * vec.z + mat[14] * vec.w,
-            mat[3] * vec.x + mat[7] * vec.y + mat[11] * vec.z + mat[15] * vec.w
+            mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w,
+            mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w,
+            mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w,
+            mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w
         };
     }
 
@@ -42,12 +37,12 @@ namespace argus {
         *b = temp;
     }
 
-    void transpose_matrix(mat4_flat_t mat) {
-        _swap_f(&(mat[1]), &(mat[4]));
-        _swap_f(&(mat[2]), &(mat[8]));
-        _swap_f(&(mat[3]), &(mat[12]));
-        _swap_f(&(mat[6]), &(mat[9]));
-        _swap_f(&(mat[7]), &(mat[13]));
-        _swap_f(&(mat[11]), &(mat[14]));
+    void transpose_matrix(Matrix4 &mat) {
+        _swap_f(&(mat[0][1]), &(mat[1][4]));
+        _swap_f(&(mat[0][2]), &(mat[2][0]));
+        _swap_f(&(mat[0][3]), &(mat[3][0]));
+        _swap_f(&(mat[1][2]), &(mat[2][1]));
+        _swap_f(&(mat[1][3]), &(mat[3][1]));
+        _swap_f(&(mat[2][3]), &(mat[3][2]));
     }
 }

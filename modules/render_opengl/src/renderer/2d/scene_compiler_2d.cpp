@@ -46,7 +46,7 @@ namespace argus {
     // forward declarations
     struct RendererState;
 
-    static void _compute_abs_group_transform(const RenderGroup2D &group, mat4_flat_t &target) {
+    static void _compute_abs_group_transform(const RenderGroup2D &group, Matrix4 &target) {
         group.get_transform().copy_matrix(target);
         const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
@@ -55,23 +55,22 @@ namespace argus {
             cur = parent;
             parent = parent->get_parent_group();
 
-            mat4_flat_t new_transform;
+            Matrix4 new_transform;
 
             multiply_matrices(cur->get_transform().as_matrix(), target, new_transform);
 
-            memcpy(target, new_transform, 16 * sizeof(target[0]));
+            target = new_transform;
         }
     }
 
     static void _process_render_group_2d(RendererState &state, Scene2DState &scene_state, const RenderGroup2D &group,
-            const bool recompute_transform, const mat4_flat_t running_transform) {
+            const bool recompute_transform, const Matrix4 running_transform) {
         bool new_recompute_transform = recompute_transform;
-        mat4_flat_t cur_transform;
+        Matrix4 cur_transform;
 
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            _ARGUS_ASSERT(running_transform != nullptr, "running_transform is null\n");
             multiply_matrices(running_transform, group.get_transform().as_matrix(), cur_transform);
 
             new_recompute_transform = true;
@@ -84,7 +83,7 @@ namespace argus {
         }
 
         for (const RenderObject2D *child_object : group.pimpl->child_objects) {
-            mat4_flat_t final_obj_transform;
+            Matrix4 final_obj_transform;
 
             auto existing_it = scene_state.processed_objs.find(child_object);
             // if the object has already been processed previously
@@ -98,7 +97,7 @@ namespace argus {
                 multiply_matrices(cur_transform, child_object->get_transform().as_matrix(), final_obj_transform);
             } else if (child_object->get_transform().pimpl->dirty) {
                 // parent transform hasn't been computed so we need to do it here
-                mat4_flat_t group_abs_transform;
+                Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
                 multiply_matrices(group_abs_transform, child_object->get_transform().as_matrix(), final_obj_transform);
@@ -116,7 +115,7 @@ namespace argus {
     }
 
     static void _process_objects_2d(RendererState &state, Scene2DState &scene_state, const Scene2D &scene) {
-        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, false, nullptr);
+        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, false, {});
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
             auto *processed_obj = it->second;

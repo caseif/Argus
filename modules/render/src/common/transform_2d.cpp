@@ -157,40 +157,26 @@ namespace argus {
         Vector2f scale_current = transform.pimpl->scale;
         transform.pimpl->scale_mutex.unlock();
 
-        auto dst = transform.pimpl->matrix_rep;
-
-        // this is transposed from the actual matrix, since GL interprets it in column-major order
-        // also, really wish C++ had a more syntactically elegant way to do this
-        dst[0] =  cos_rot * scale_current.x;
-        dst[1] =  sin_rot;
-        dst[2] =  0;
-        dst[3] =  0;
-        dst[4] =  -sin_rot;
-        dst[5] =  cos_rot * scale_current.y;
-        dst[6] =  0;
-        dst[7] =  0;
-        dst[8] =  0;
-        dst[9] =  0;
-        dst[10] =  1;
-        dst[11] =  0;
-        dst[12] =  translation_current.x;
-        dst[13] =  translation_current.y;
-        dst[14] =  0;
-        dst[15] =  1;
+        transform.pimpl->matrix_rep = {
+            {cos_rot * scale_current.x, -sin_rot, 0, translation_current.x},
+            {sin_rot, cos_rot * scale_current.y, 0, translation_current.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+        };
 
         transform.pimpl->dirty_matrix = false;
     }
 
-    const mat4_flat_t &Transform2D::as_matrix(void) {
+    const Matrix4 &Transform2D::as_matrix(void) {
         _compute_matrix(*this);
 
         return pimpl->matrix_rep;
     }
 
-    void Transform2D::copy_matrix(mat4_flat_t &target) {
+    void Transform2D::copy_matrix(Matrix4 &target) {
         _compute_matrix(*this);
 
-        memcpy(target, pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));
+        target = pimpl->matrix_rep;
     }
 
 }

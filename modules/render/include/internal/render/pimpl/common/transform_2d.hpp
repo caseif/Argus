@@ -30,7 +30,7 @@ namespace argus {
         std::atomic_bool dirty;
         std::atomic_bool dirty_matrix;
 
-        mat4_flat_t matrix_rep;
+        Matrix4 matrix_rep;
 
         pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale):
             translation(translation),

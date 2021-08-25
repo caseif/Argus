@@ -53,7 +53,7 @@ namespace argus {
         );
     }
 
-    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform) {
+    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const Matrix4 &transform) {
         auto existing_it = scene_state.processed_objs.find(&object);
         if (existing_it != scene_state.processed_objs.end()) {
             //TODO: what the hell does this comment mean?
@@ -62,7 +62,7 @@ namespace argus {
             auto &proc_obj = *existing_it->second;
 
             // we basically just need to update the transform and position data since everything else is immutable
-            memcpy(proc_obj.abs_transform, transform, sizeof(proc_obj.abs_transform));
+            proc_obj.abs_transform = transform;
 
             auto vertex_attrs = proc_obj.material_res.get<Material>().pimpl->attributes;
             // not sure whether this would actually ever be false in practice

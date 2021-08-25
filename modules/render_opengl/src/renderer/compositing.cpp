@@ -117,7 +117,7 @@ namespace argus {
 
                 auto view_mat_loc = program_info.view_matrix_uniform_loc;
                 if (view_mat_loc != -1) {
-                    glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, scene_state.view_matrix);
+                    glUniformMatrix4fv(view_mat_loc, 1, GL_TRUE, scene_state.view_matrix.data);
                 }
             }
 

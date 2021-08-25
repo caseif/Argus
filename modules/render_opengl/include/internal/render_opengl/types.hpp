@@ -9,10 +9,12 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
+
 #include "aglet/aglet.h"
 
 namespace argus {
-    extern float g_view_matrix[16];
+    extern Matrix4 g_view_matrix;
 
     // all typedefs here serve purely to provide semantic information to declarations
 

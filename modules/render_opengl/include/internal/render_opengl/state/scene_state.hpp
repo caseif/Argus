@@ -36,7 +36,7 @@ namespace argus {
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
         std::map<std::string, RenderBucket*> render_buckets;
 
-        mat4_flat_t view_matrix;
+        Matrix4 view_matrix;
 
         buffer_handle_t framebuffer;
         texture_handle_t frame_texture;

@@ -34,7 +34,7 @@
 namespace argus {
 class RendererImpl;
 
-    mat4_flat_t g_view_matrix;
+    Matrix4 g_view_matrix;
 
     static RendererImpl *_create_opengl_backend() {
         return new GLRenderer();
@@ -48,14 +48,12 @@ class RendererImpl;
         auto b = screen_space.bottom;
         auto t = screen_space.top;
         
-        float mat[16] = {
-            2 / (r - l), 0, 0, 0,
-            0, 2 / (t - b), 0, 0,
-            0, 0, 1, 0,
-            -(r + l) / (r - l), -(t + b) / (t - b), 0, 1
+        g_view_matrix = {
+            {2 / (r - l), 0, 0, 0},
+            {0, 2 / (t - b), 0, 0},
+            {0, 0, 1, 0},
+            {-(r + l) / (r - l), -(t + b) / (t - b), 0, 1}
         };
-
-        memcpy(g_view_matrix, mat, sizeof(mat));
     }
 
     static void _update_lifecycle_render_opengl(LifecycleStage stage) {

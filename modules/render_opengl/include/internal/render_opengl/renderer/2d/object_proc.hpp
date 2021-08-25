@@ -19,7 +19,7 @@ namespace argus {
     struct ProcessedRenderObject;
     struct Scene2DState;
 
-    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const mat4_flat_t &transform);
+    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const Matrix4 &transform);
 
     void deinit_object_2d(ProcessedRenderObject &obj);
 }

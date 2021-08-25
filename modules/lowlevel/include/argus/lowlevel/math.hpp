@@ -18,6 +18,55 @@
 #include <type_traits>
 
 namespace argus {
+    #pragma pack(push, 1)
+    struct Matrix4Row {
+        float data[4];
+
+        float &operator[](int i) {
+            return data[i];
+        }
+
+        float operator[](int i) const {
+            return data[i];
+        }
+
+        Matrix4Row(float a, float b, float c, float d) {
+            data[0] = a;
+            data[1] = b;
+            data[2] = c;
+            data[3] = d;
+        }
+
+        Matrix4Row(void): Matrix4Row(0, 0, 0, 0) {
+        }
+    };
+
+    struct Matrix4 {
+        union {
+            float data[16];
+            Matrix4Row rows[4];
+        };
+
+        Matrix4(Matrix4Row a, Matrix4Row b, Matrix4Row c, Matrix4Row d) {
+            rows[0] = a;
+            rows[1] = b;
+            rows[2] = c;
+            rows[3] = d;
+        }
+
+        Matrix4(void): Matrix4({}, {}, {}, {}) {
+        }
+
+        Matrix4Row &operator[](int i) {
+            return rows[i];
+        }
+
+        const Matrix4Row &operator[](int i) const {
+            return rows[i];
+        }
+    };
+    #pragma pack(pop)
+
     typedef float mat4_flat_t[16];
 
     /**
@@ -539,9 +588,9 @@ namespace argus {
         }
     };
 
-    void multiply_matrices(const mat4_flat_t a, const mat4_flat_t b, mat4_flat_t res);
+    void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res);
 
-    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const mat4_flat_t mat);
+    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat);
 
-    void transpose_matrix(mat4_flat_t mat);
+    void transpose_matrix(Matrix4 &mat);
 }

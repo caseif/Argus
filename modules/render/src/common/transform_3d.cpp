@@ -191,16 +191,15 @@ namespace argus {
         transform.pimpl->dirty_matrix = false;
     }
 
-    const mat4_flat_t &Transform3D::as_matrix(void) {
+    const Matrix4 &Transform3D::as_matrix(void) {
         _compute_matrix(*this);
 
         return pimpl->matrix_rep;
     }
 
-    void Transform3D::copy_matrix(mat4_flat_t &target) {
+    void Transform3D::copy_matrix(Matrix4 &target) {
         _compute_matrix(*this);
 
-        memcpy(target, pimpl->matrix_rep, 16 * sizeof(pimpl->matrix_rep[0]));
+        target = pimpl->matrix_rep;
     }
-
 }

@@ -153,7 +153,7 @@ namespace argus {
              *
              * \return The matrix representation.
              */
-            const mat4_flat_t &as_matrix(void);
+            const Matrix4 &as_matrix(void);
 
             /**
              * \brief Copys a 4x4 matrix representation of the transform into
@@ -161,7 +161,7 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(mat4_flat_t &target);
+            void copy_matrix(Matrix4 &target);
     };
 
     /**
@@ -331,7 +331,7 @@ namespace argus {
              *
              * \return The matrix representation.
              */
-            const mat4_flat_t &as_matrix(void);
+            const Matrix4 &as_matrix(void);
 
             /**
              * \brief Copys a 4x4 matrix representation of the transform into
@@ -339,6 +339,6 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(mat4_flat_t &target);
+            void copy_matrix(Matrix4 &target);
     };
 }
