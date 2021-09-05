@@ -49,7 +49,7 @@ namespace argus {
             if (bucket->needs_rebuild) {
                 size_t buffer_len = 0;
                 for (auto &obj : bucket->objects) {
-                    buffer_len += obj->vertex_buffer_size;
+                    buffer_len += obj->staging_buffer_size;
                 }
 
                 if (bucket->vertex_array != 0) {
@@ -119,15 +119,17 @@ namespace argus {
 
                 if (bucket->needs_rebuild || processed->updated) {
                     if (AGLET_GL_ARB_direct_state_access) {
-                        glCopyNamedBufferSubData(processed->vertex_buffer, bucket->vertex_buffer, 0, offset, processed->vertex_buffer_size);
+                        glCopyNamedBufferSubData(processed->staging_buffer, bucket->vertex_buffer, 0, offset,
+                                processed->staging_buffer_size);
                     } else {
-                        glBindBuffer(GL_COPY_READ_BUFFER, processed->vertex_buffer);
-                        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset, processed->vertex_buffer_size);
+                        glBindBuffer(GL_COPY_READ_BUFFER, processed->staging_buffer);
+                        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset,
+                                processed->staging_buffer_size);
                         glBindBuffer(GL_COPY_READ_BUFFER, 0);
                     }
                 }
 
-                offset += processed->vertex_buffer_size;
+                offset += processed->staging_buffer_size;
 
                 bucket->vertex_count += processed->vertex_count;
             }

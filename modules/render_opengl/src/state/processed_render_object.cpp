@@ -24,10 +24,10 @@ namespace argus {
     static AllocPool g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Matrix4 abs_transform,
-            const buffer_handle_t vertex_buffer,
-            const size_t vertex_buffer_size, const size_t vertex_count) {
-        return g_obj_pool.construct<ProcessedRenderObject>(material_res, abs_transform, vertex_buffer,
-                                                           vertex_buffer_size, vertex_count);
+            const buffer_handle_t staging_buffer, const size_t staging_buffer_size, const size_t vertex_count,
+            void *mapped_buffer) {
+        return g_obj_pool.construct<ProcessedRenderObject>(material_res, abs_transform, staging_buffer,
+                staging_buffer_size, vertex_count, mapped_buffer);
     }
 
     ProcessedRenderObject::~ProcessedRenderObject(void) {

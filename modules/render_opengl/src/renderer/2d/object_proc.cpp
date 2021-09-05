@@ -74,10 +74,12 @@ namespace argus {
 
                 GLfloat *mapped_buffer;
 
-                if (AGLET_GL_ARB_direct_state_access) {
-                    mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(proc_obj.vertex_buffer, GL_WRITE_ONLY));
+                if (proc_obj.mapped_buffer != nullptr) {
+                    mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
+                } else if (AGLET_GL_ARB_direct_state_access) {
+                    mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(proc_obj.staging_buffer, GL_WRITE_ONLY));
                 } else {
-                    glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.vertex_buffer);
+                    glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
                     mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
                 }
 
@@ -96,11 +98,13 @@ namespace argus {
                     }
                 }
 
-                if (AGLET_GL_ARB_direct_state_access) {
-                    glUnmapNamedBuffer(proc_obj.vertex_buffer);
-                } else {
-                    glUnmapBuffer(GL_COPY_READ_BUFFER);
-                    glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                if (proc_obj.mapped_buffer == nullptr) {
+                    if (AGLET_GL_ARB_direct_state_access) {
+                        glUnmapNamedBuffer(proc_obj.staging_buffer);
+                    } else {
+                        glUnmapBuffer(GL_COPY_READ_BUFFER);
+                        glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                    }
                 }
             }
 
@@ -126,11 +130,19 @@ namespace argus {
 
             buffer_handle_t vertex_buffer;
             GLfloat *mapped_buffer;
+            bool persistent_buffer = false;
 
             if (AGLET_GL_ARB_direct_state_access) {
                 glCreateBuffers(1, &vertex_buffer);
-                glNamedBufferData(vertex_buffer, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-                mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY));
+                if (AGLET_GL_ARB_buffer_storage) {
+                    glNamedBufferStorage(vertex_buffer, buffer_size, nullptr, GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
+                    persistent_buffer = true;
+                    mapped_buffer = static_cast<GLfloat*>(glMapNamedBufferRange(vertex_buffer, 0, buffer_size,
+                            GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT));
+                } else {
+                    glNamedBufferData(vertex_buffer, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+                    mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY));
+                }
             } else {
                 glGenBuffers(1, &vertex_buffer);
                 glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
@@ -169,16 +181,15 @@ namespace argus {
                 }
             }
 
-            if (AGLET_GL_ARB_direct_state_access) {
-                glUnmapNamedBuffer(vertex_buffer);
-            } else {
+            if (!AGLET_GL_ARB_direct_state_access) {
                 glUnmapBuffer(GL_COPY_READ_BUFFER);
                 glBindBuffer(GL_COPY_READ_BUFFER, 0);
             }
 
             auto &processed_obj = ProcessedRenderObject::create(
                     mat_res, transform,
-                    vertex_buffer, buffer_size, _count_vertices(object));
+                    vertex_buffer, buffer_size, _count_vertices(object),
+                    persistent_buffer ? mapped_buffer : nullptr);
             processed_obj.visited = true;
 
             scene_state.processed_objs.insert({ &object, &processed_obj });
@@ -200,6 +211,15 @@ namespace argus {
     }
 
     void deinit_object_2d(ProcessedRenderObject &obj) {
-        glDeleteBuffers(1, &obj.vertex_buffer);
+        if (obj.mapped_buffer != nullptr) {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glUnmapNamedBuffer(obj.staging_buffer);
+            } else {
+                glBindBuffer(GL_ARRAY_BUFFER, obj.staging_buffer);
+                glUnmapBuffer(GL_ARRAY_BUFFER);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+        }
+        glDeleteBuffers(1, &obj.staging_buffer);
     }
 }
