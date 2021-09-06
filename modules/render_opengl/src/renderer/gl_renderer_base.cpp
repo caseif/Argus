@@ -144,7 +144,8 @@ namespace argus {
 
         _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)\n", gl_major, gl_minor, gl_version_str);
 
-        auto &state = renderer_states.insert({ &renderer, RendererState(renderer) }).first->second;
+        auto &state = renderer_states.emplace(std::piecewise_construct, std::forward_as_tuple(&renderer),
+                std::forward_as_tuple(renderer)).first->second;
 
         resource_event_handler = register_event_handler(ArgusEventType::Resource, _handle_resource_event,
                 TargetThread::Render, &state);

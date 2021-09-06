@@ -16,6 +16,7 @@
 #include "internal/render_opengl/types.hpp"
 
 #include <map>
+#include <mutex>
 #include <string>
 
 namespace argus {
@@ -47,6 +48,8 @@ namespace argus {
     };
 
     struct Scene2DState : public SceneState {
+        std::map<const RenderObject2D*, Matrix4> computed_obj_transforms;
+        std::mutex computed_obj_transforms_mutex;
         std::map<const RenderObject2D*, ProcessedRenderObject*> processed_objs;
 
         Scene2DState(RendererState &parent_state, Scene &scene);

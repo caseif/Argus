@@ -76,13 +76,14 @@ namespace argus {
                     _ARGUS_FATAL("Failed to get scene state");
                 }
 
-                Scene2DState state = Scene2DState(*this, scene);
-                auto insert_res = this->scene_states_2d.insert({&scene_2d, state});
+                auto insert_res = this->scene_states_2d.emplace(std::piecewise_construct,
+                        std::forward_as_tuple(&scene_2d),
+                        std::forward_as_tuple(*this, scene));
                 if (!insert_res.second) {
                     _ARGUS_FATAL("Failed to create new scene state");
                 }
 
-                return insert_res.first->second;
+                return *(&insert_res.first->second);
             }
             case SceneType::ThreeD: {
                 _ARGUS_FATAL("Unimplemented scene type");

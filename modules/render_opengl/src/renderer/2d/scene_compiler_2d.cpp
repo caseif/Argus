@@ -9,6 +9,7 @@
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -35,6 +36,7 @@
 #include "internal/render_opengl/state/scene_state.hpp"
 
 #include <atomic>
+#include <future>
 #include <map>
 #include <string>
 #include <utility>
@@ -45,6 +47,8 @@
 namespace argus {
     // forward declarations
     struct RendererState;
+
+    ThreadPool obj_proc_pool;
 
     static void _compute_abs_group_transform(const RenderGroup2D &group, Matrix4 &target) {
         group.get_transform().copy_matrix(target);
@@ -63,8 +67,9 @@ namespace argus {
         }
     }
 
-    static void _process_render_group_2d(RendererState &state, Scene2DState &scene_state, const RenderGroup2D &group,
-            const bool recompute_transform, const Matrix4 running_transform) {
+    static void _compute_object_transforms(RendererState &state, Scene2DState &scene_state, const RenderGroup2D &group,
+            const bool recompute_transform, const Matrix4 running_transform, std::vector<std::future<void*>> &futures,
+            std::mutex &futures_mutex) {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
 
@@ -106,16 +111,40 @@ namespace argus {
                 return;
             }
 
-            process_object_2d(scene_state, *child_object, final_obj_transform);
+            scene_state.computed_obj_transforms_mutex.lock();
+            scene_state.computed_obj_transforms[child_object] = final_obj_transform;
+            scene_state.computed_obj_transforms_mutex.unlock();
         }
 
+        std::vector<std::future<void*>> children_futures;
+        children_futures.reserve(group.pimpl->child_groups.size());
+        futures_mutex.lock();
         for (auto *child_group : group.pimpl->child_groups) {
-            _process_render_group_2d(state, scene_state, *child_group, new_recompute_transform, cur_transform);
+            auto future = obj_proc_pool.submit([&state, &scene_state, child_group,
+                    new_recompute_transform, cur_transform, &futures, &futures_mutex] () {
+                _compute_object_transforms(state, scene_state, *child_group, new_recompute_transform, cur_transform, 
+                        futures, futures_mutex);
+                return nullptr;
+            });
+            futures.push_back(std::move(future));
         }
+        futures_mutex.unlock();
     }
 
     static void _process_objects_2d(RendererState &state, Scene2DState &scene_state, const Scene2D &scene) {
-        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, false, {});
+        scene_state.computed_obj_transforms.clear();
+        std::vector<std::future<void*>> obj_futures;
+        std::mutex obj_futures_mutex;
+        _compute_object_transforms(state, scene_state, scene.pimpl->root_group, false, {}, obj_futures,
+                obj_futures_mutex);
+
+        for (const auto &future : obj_futures) {
+            future.wait();
+        }
+
+        for (auto &obj : scene_state.computed_obj_transforms) {
+            process_object_2d(scene_state, *obj.first, obj.second);
+        }
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
             auto *processed_obj = it->second;
