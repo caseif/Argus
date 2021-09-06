@@ -153,22 +153,6 @@ namespace argus {
             Resource &try_get_resource(const std::string &uid) const;
 
             /**
-             * \brief Attempts to load the Resource with the given UID, failing
-             *        if it is already loaded.
-             *
-             * This method differs semantically from
-             * ResourceManager#get_resource in that it expects the Resource to
-             * not yet be loaded.
-             *
-             * \param uid The UID of the Resource to load.
-             *
-             * \return The loaded Resource.
-             *
-             * \sa ResourceManager#load_resource_async
-             */
-            Resource &load_resource(const std::string &uid);
-
-            /**
              * \brief Attempts to retrieve the Resource with the given UID
              *        asynchronously, loading it if it is not already loaded.
              *
@@ -182,22 +166,6 @@ namespace argus {
              * \sa ResourceManager#get_resource
              */
             std::future<Resource&> get_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> &callback = nullptr);
-
-            /**
-             * \brief Attempts to load the Resource with the given UID
-             *        asynchronously, failing if it is already loaded.
-             *
-             * \param uid The UID of the Resource to load.
-             * \param callback A callback to execute upon completion of the load
-             *        routine. This callback _must_ be thread-safe.
-             *
-             * \return A std::future which will provide the loaded Resource (or
-             *         any exception thrown by the load routine).
-             *
-             * \sa ResourceManager#load_resource
-             */
-            std::future<Resource&> load_resource_async(const std::string &uid,
                     const std::function<void(Resource&)> &callback = nullptr);
 
             /**

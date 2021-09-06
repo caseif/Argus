@@ -11,6 +11,7 @@
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading/future.hpp"
+#include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 // module core
@@ -56,6 +57,8 @@
 
 namespace argus {
     ResourceManager g_global_resource_manager;
+
+    static ThreadPool res_load_pool;
 
     static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
         size_t count = 0;
@@ -255,35 +258,9 @@ namespace argus {
     }
 
     Resource &ResourceManager::get_resource(const std::string &uid) {
-        auto *res = _acquire_resource(*this, uid);
-        if (res != nullptr) {
-            return *res;
-        } else {
-            return load_resource(uid);
-        }
-    }
-
-    Resource &ResourceManager::get_resource_weak(const std::string &uid) {
-        auto *res = _acquire_resource(*this, uid, false);
-        if (res != nullptr) {
-            return *res;
-        } else {
-            throw ResourceNotLoadedException(uid);
-        }
-    }
-
-    Resource &ResourceManager::try_get_resource(const std::string &uid) const {
-        auto *res = _acquire_resource(*this, uid);
-        if (res != nullptr) {
-            return *res;
-        } else {
-            throw ResourceNotLoadedException(uid);
-        }
-    }
-
-    Resource &ResourceManager::load_resource(const std::string &uid) {
-        if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
-            throw ResourceLoadedException(uid);
+        auto *existing_res = _acquire_resource(*this, uid);
+        if (existing_res != nullptr) {
+            return *existing_res;
         }
 
         _ARGUS_DEBUG("Initiating load for resource %s\n", uid.c_str());
@@ -376,6 +353,24 @@ namespace argus {
         return *res;
     }
 
+    Resource &ResourceManager::get_resource_weak(const std::string &uid) {
+        auto *res = _acquire_resource(*this, uid, false);
+        if (res != nullptr) {
+            return *res;
+        } else {
+            throw ResourceNotLoadedException(uid);
+        }
+    }
+
+    Resource &ResourceManager::try_get_resource(const std::string &uid) const {
+        auto *res = _acquire_resource(*this, uid);
+        if (res != nullptr) {
+            return *res;
+        } else {
+            throw ResourceNotLoadedException(uid);
+        }
+    }
+
     std::future<Resource&> ResourceManager::get_resource_async(const std::string &uid,
             const std::function<void(Resource&)> &callback) {
         auto *res = _acquire_resource(*this, uid);
@@ -385,13 +380,8 @@ namespace argus {
             promise_ptr->set_value(*res);
             return future;
         } else {
-            return load_resource_async(uid, callback);
+            return make_future<Resource&>(std::bind(&ResourceManager::get_resource, this, uid), callback);
         }
-    }
-
-    std::future<Resource&> ResourceManager::load_resource_async(const std::string &uid,
-                    const std::function<void(Resource&)> &callback) {
-        return make_future<Resource&>(std::bind(&ResourceManager::load_resource, this, uid), callback);
     }
 
     Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, const void *data,
