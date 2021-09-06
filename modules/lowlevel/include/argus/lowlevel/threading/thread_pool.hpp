@@ -56,6 +56,17 @@ namespace argus {
             ~ThreadPool(void);
 
             /**
+             * \brief Returns whether the ThreadPool is full initialized and
+             *        ready for use.
+             *
+             * \return Whether the ThreadPool is ready.
+             *
+             * \remark This is primarily intended for internal use during
+             *         construction of the pool and its workers.
+             */
+            bool is_ready(void) const;
+
+            /**
              * \brief Submits a new task to the ThreadPool.
              *
              * The pointer returned by the callback will be passed back through

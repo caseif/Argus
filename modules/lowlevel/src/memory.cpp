@@ -259,8 +259,8 @@ namespace argus {
 
                 chunk->occupied_block_map &= ~block_flag_mask;
 
-                // if the chunk is empty, delete it
-                if (--chunk->occupied_blocks == 0) {
+                // if the chunk is empty and not the last one, delete it
+                if (--chunk->occupied_blocks == 0 && pimpl->chunk_count > 1) {
                     bool should_delete = true;
 
                     // if this is the head, delete it and make the next one the new head

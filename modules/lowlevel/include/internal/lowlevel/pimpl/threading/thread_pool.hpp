@@ -28,7 +28,7 @@ namespace argus {
                 thread_count(thread_count),
                 next_worker(0) {
             for (uint16_t i = 0; i < thread_count; i++) {
-                workers.push_back(std::unique_ptr<ThreadPoolWorker>(new ThreadPoolWorker(pool)));
+                workers.emplace_back(new ThreadPoolWorker(pool));
             }
         }
     };
