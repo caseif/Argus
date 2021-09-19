@@ -9,12 +9,14 @@ set(MODULE_GEN_DIR "${PROJECT_BINARY_DIR}/gen/${MODULE_NAME}")
 set(GEN_INC_DIR "${MODULE_GEN_DIR}/include")
 set(GEN_SRC_DIR "${MODULE_GEN_DIR}/src")
 
-# modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core;wm;resman;render")
+# engine modules this one depends on at runtime (as a list)
+set(MODULE_ENGINE_MOD_DEPS "core;wm;resman;render")
+# engine libraries this one depends on (as a list)
+set(MODULE_ENGINE_LIB_DEPS "lowlevel")
 # libraries this module depends on (as a list)
-set(LOCAL_LIBS "${GLFW_LIBRARY};${OPENGL_LIBRARIES}")
+set(MODULE_LINKER_DEPS "${GLFW_LIBRARY};${OPENGL_LIBRARIES}")
 # include dirs this module uses
-set(LOCAL_INC_DIRS "${GLFW_INCLUDE_DIR};${OPENGL_INCLUDE_DIR};${GEN_INC_DIR}")
+set(MODULE_INCLUDES "${GLFW_INCLUDE_DIR};${OPENGL_INCLUDE_DIR};${GEN_INC_DIR}")
 # source paths for this module
 set(LOCAL_SRC_PATHS "${GEN_SRC_DIR}")
 
@@ -62,4 +64,4 @@ if(CMD_RES)
   message(FATAL_ERROR "    aglet.rb: ${CMD_RES}")
 endif()
 
-setup_submodule(${MODULE_NAME} 1)
+configure_subproject(${MODULE_NAME} 1)

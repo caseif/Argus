@@ -3,11 +3,13 @@
 
 # module name
 set(MODULE_NAME "render")
-# modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core;wm;resman")
+# engine modules this one depends on at runtime (as a list)
+set(MODULE_ENGINE_MOD_DEPS "core;wm;resman")
+# engine libraries this one depends on (as a list)
+set(MODULE_ENGINE_LIB_DEPS "lowlevel")
 # libraries this module depends on (as a list)
-set(LOCAL_LIBS "${PNG_LIBRARY}")
+set(MODULE_LINKER_DEPS "${PNG_LIBRARY}")
 # include dirs this module uses
-set(LOCAL_INC_DIRS "${PNG_INCLUDE_DIR};${JSON_INCLUDE_DIR}")
+set(MODULE_INCLUDES "${PNG_INCLUDE_DIR};${JSON_INCLUDE_DIR}")
 
-setup_submodule(${MODULE_NAME} 0)
+configure_subproject(${MODULE_NAME} 0)

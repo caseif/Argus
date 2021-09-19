@@ -1,10 +1,12 @@
 # module name
 set(MODULE_NAME "resman")
-# modules this one depends on (as a list)
-set(MODULE_DEPS "core;lowlevel")
+# engine modules this one depends on at runtime (as a list)
+set(MODULE_ENGINE_MOD_DEPS "core")
+# engine libraries this one depends on (as a list)
+set(MODULE_ENGINE_LIB_DEPS "lowlevel")
 # libraries this module depends on (as a list)
-set(LOCAL_LIBS "${ARP_LIBRARY}")
+set(MODULE_LINKER_DEPS "${ARP_LIBRARY}")
 # include dirs this module uses
-set(LOCAL_INC_DIRS "${ARP_INCLUDE_DIR}")
+set(MODULE_INCLUDES "${ARP_INCLUDE_DIR}")
 
-setup_submodule(${MODULE_NAME} 0)
+configure_subproject(${MODULE_NAME} 0)

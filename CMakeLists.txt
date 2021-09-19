@@ -243,32 +243,36 @@ function(copy_dep_output PARENT_TARGET DEP_TARGET PREFIX)
   endif()
 endfunction()
 
-# loads the include dirs of modules this one is dependent on and saves them to the given variable
-function(load_dep_module_includes DEST)
+# recursively finds the include paths of dependency engine modules/libraries and saves them to the given variable
+function(find_dep_module_includes DEST)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")
-  foreach(module ${MODULE_DEPS})
+  foreach(module ${MODULE_ENGINE_MOD_DEPS})
+    get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
+    list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
+  endforeach()
+  foreach(module ${MODULE_ENGINE_LIB_DEPS})
     get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
     list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
   endforeach()
   set(${DEST} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
-# configures the module's top-level include dirs and saves them to the given variable
-function(load_module_includes DEST)
+# recursively finds the module's top-level include dirs and saves them to the given variable
+function(find_module_includes DEST)
   # load this module's include dir
   set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/include")
 
   # load include dirs defined by module dependencies
-  load_dep_module_includes(PARENT_INCLUDES)
+  find_dep_module_includes(PARENT_INCLUDES)
   list(LENGTH PARENT_INCLUDES LEN)
   if(LEN GREATER 0)
     list(APPEND ALL_INCLUDES "${PARENT_INCLUDES}")
   endif()
 
   # load include dirs defined by this module
-  list(LENGTH LOCAL_INC_DIRS LEN)
+  list(LENGTH MODULE_INCLUDES LEN)
   if(LEN GREATER 0)
-    list(APPEND ALL_INCLUDES "${LOCAL_INC_DIRS}")
+    list(APPEND ALL_INCLUDES "${MODULE_INCLUDES}")
   endif()
 
   # remove any duplicates
@@ -280,7 +284,7 @@ function(load_module_includes DEST)
   set(${DEST} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
-function(setup_submodule MODULE_NAME DYN)
+function(configure_subproject MODULE_NAME DYN)
   if(DYN)
     project("${MODULE_NAME}" C CXX ASM)
   else()
@@ -358,9 +362,9 @@ function(setup_submodule MODULE_NAME DYN)
   endif()
 
   if(NOT DYN)
-    get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
-    list(APPEND GLOBAL_INCLUDES "${MODULE_INCLUDES}")
-    set_property(GLOBAL PROPERTY GLOBAL_INCLUDES "${GLOBAL_INCLUDES}")
+    get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
+    list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
+    set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
   endif()
 
   if(DYN)
@@ -374,19 +378,17 @@ function(setup_submodule MODULE_NAME DYN)
     # output to separate directory
     set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${DYN_MODULE_DIR}")
 
-    set(ALL_PROJECT_LIBS ${LOCAL_LIBS})
-    list(APPEND ALL_PROJECT_LIBS ${LIB_BASE_NAME})
-    target_link_libraries(${PROJECT_NAME} ${ALL_PROJECT_LIBS})
+    set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
+    list(APPEND PROJECT_LINKER_DEPS ${LIB_BASE_NAME})
+    target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
 
     copy_dep_output("${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
   else()
     add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
 
-    get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
-    list(APPEND GLOBAL_LIBS "${LOCAL_LIBS}")
-    set_property(GLOBAL PROPERTY GLOBAL_LIBS "${GLOBAL_LIBS}")
-
-    string(REPLACE ";" " " MODULE_LIBS "${MODULE_DEPS}")
+    get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
+    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
+    set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   endif()
 
   if(${USE_PTHREADS})
@@ -402,8 +404,8 @@ function(setup_submodule MODULE_NAME DYN)
   endif()
 
   # recursively load this module's include dirs
-  load_module_includes(MODULE_INCLUDES)
-  list(APPEND H_FILES "${MODULE_INCLUDES}")
+  find_module_includes(PROJECT_INCLUDES)
+  list(APPEND H_FILES "${PROJECT_INCLUDES}")
   target_include_directories("${PROJECT_NAME}" PUBLIC "${H_FILES}")
 
   if(TARGET ${res_gen_target})
@@ -466,14 +468,14 @@ set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # add libraries for linking
-get_property(GLOBAL_LIBS GLOBAL PROPERTY GLOBAL_LIBS)
-list(REMOVE_DUPLICATES GLOBAL_LIBS)
-target_link_libraries(${LIB_BASE_NAME} ${GLOBAL_LIBS})
+get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
+list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
+target_link_libraries(${LIB_BASE_NAME} ${COMBINED_TARGET_LINKER_DEPS})
 
 # add global include list
-get_property(GLOBAL_INCLUDES GLOBAL PROPERTY GLOBAL_INCLUDES)
-list(REMOVE_DUPLICATES GLOBAL_INCLUDES)
-target_include_directories(${LIB_BASE_NAME} PUBLIC "${GLOBAL_INCLUDES}")
+get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
+list(REMOVE_DUPLICATES COMBINED_TARGET_INCLUDES)
+target_include_directories(${LIB_BASE_NAME} PUBLIC "${COMBINED_TARGET_INCLUDES}")
 
 foreach(module ${DYN_MODULE_IDS})
   add_dependencies("${module}" "${LIB_BASE_NAME}")

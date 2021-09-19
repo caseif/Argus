@@ -1,10 +1,12 @@
 # module name
 set(MODULE_NAME "ecs")
-# modules this one depends on (as a list)
-set(MODULE_DEPS "lowlevel;core")
+# engine modules this one depends on at runtime (as a list)
+set(MODULE_ENGINE_MOD_DEPS "core")
+# engine libraries this one depends on (as a list)
+set(MODULE_ENGINE_LIB_DEPS "lowlevel")
 # libraries this module depends on (as a list)
-set(LOCAL_LIBS "")
+set(MODULE_LINKER_DEPS "")
 # includes this module depends on (as a list)
-set(LOCAL_INC_DIRS "")
+set(MODULE_INCLUDES "")
 
-setup_submodule(${MODULE_NAME} 0)
+configure_subproject(${MODULE_NAME} 0)
