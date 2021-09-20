@@ -19,6 +19,7 @@
 
 // module wm
 #include "argus/wm/window.hpp"
+#include "internal/wm/module_wm.hpp"
 #include "internal/wm/window.hpp"
 
 #include "GLFW/glfw3.h"

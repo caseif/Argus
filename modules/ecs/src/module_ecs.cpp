@@ -12,6 +12,7 @@
 
 // module ecs
 #include "argus/ecs/component_type_registry.hpp"
+#include "internal/ecs/module_ecs.hpp"
 
 #include <string>
 

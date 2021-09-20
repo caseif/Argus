@@ -23,6 +23,7 @@
 
 // module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
+#include "internal/render_opengl/module_render_opengl.hpp"
 #include "internal/render_opengl/resources_render_opengl.arp.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 #include "internal/render_opengl/renderer/gl_renderer_base.hpp"

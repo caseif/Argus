@@ -16,6 +16,7 @@
 
 // module input
 #include "internal/input/input_helpers.hpp"
+#include "internal/input/module_input.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"

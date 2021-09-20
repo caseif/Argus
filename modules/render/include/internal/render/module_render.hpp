@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "argus/core/module.hpp"
+
 #include <map>
 
 #include <cstddef>
@@ -26,4 +28,8 @@ namespace argus {
     extern std::map<Window*, Renderer*> g_renderer_map;
 
     RendererImpl &get_renderer_impl(void);
+
+    void init_module_render(void);
+
+    void update_lifecycle_render(LifecycleStage stage);
 }

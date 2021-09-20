@@ -12,6 +12,7 @@
 
 // module resman
 #include "argus/resman/resource_manager.hpp"
+#include "internal/resman/module_resman.hpp"
 
 #include <string>
 
