@@ -25,6 +25,7 @@
 #include "internal/core/event.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
+#include "internal/core/module_defs.hpp"
 
 #include <atomic>
 #include <condition_variable>
@@ -205,20 +206,20 @@ namespace argus {
     void initialize_engine() {
         signal(SIGINT, _interrupt_handler);
 
-        init_stock_modules();
+        init_static_modules();
 
         load_external_modules();
 
         if (!g_engine_config.load_modules.empty()) {
-            load_modules(g_engine_config.load_modules);
+            enable_static_modules(g_engine_config.load_modules);
         } else {
-            load_modules({ ModuleCore });
+            enable_static_modules({ ModuleCore });
         }
 
         // this is basically for the sole purpose of allowing dynamic module
         // loading, e.g. allowing render to load render_opengl before any real
         // lifecycle stages are executed
-        for (const auto &mod_info : g_enabled_modules) {
+        for (const auto &mod_info : g_enabled_static_modules) {
             auto ei_callback = g_early_init_callbacks.find(mod_info.id);
             if (ei_callback != g_early_init_callbacks.end()) {
                 ei_callback->second();
@@ -226,8 +227,12 @@ namespace argus {
         }
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
-             stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (const auto &mod_info : g_enabled_modules) {
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+            for (const auto &mod : g_enabled_static_modules) {
+                mod.lifecycle_update_callback(stage);
+            }
+
+            for (const auto &mod_info : g_enabled_dynamic_modules) {
                 mod_info.lifecycle_update_callback(stage);
             }
         }

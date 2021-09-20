@@ -39,7 +39,7 @@ namespace argus {
         }
     }
 
-    static void _update_lifecycle_input(const LifecycleStage stage) {
+    void update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init:
                 register_event_handler(ArgusEventType::Window, _on_window_event, TargetThread::Update);
@@ -50,7 +50,6 @@ namespace argus {
     }
 
     void init_module_input(void) {
-        register_module({ModuleInput, 3, {"core", "wm"}, _update_lifecycle_input});
     }
 
 }

@@ -11,6 +11,7 @@
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/module.hpp"
 
 #include <map>
 #include <set>
@@ -41,11 +42,18 @@ namespace argus {
 
     extern std::map<std::string, NullaryCallback> g_early_init_callbacks;
 
-    extern std::map<const std::string, const ArgusModule> g_registered_modules;
+    extern std::map<const std::string, const DynamicModule> g_registered_modules;
 
-    extern std::set<ArgusModule, bool (*)(const ArgusModule&, const ArgusModule&)> g_enabled_modules;
+    struct StaticModule {
+        const std::string id;
+        const LifecycleUpdateCallback lifecycle_update_callback;
+        const NullaryCallback init_callback;
+    };
 
-    void init_stock_modules(void);
+    extern std::vector<StaticModule> g_enabled_static_modules;
+    extern std::set<DynamicModule, bool (*)(const DynamicModule&, const DynamicModule&)> g_enabled_dynamic_modules;
+
+    void init_static_modules(void);
     
     void register_early_init_callback(const std::string &module_id, NullaryCallback callback);
 
@@ -55,7 +63,7 @@ namespace argus {
 
     void unload_external_modules(void);
 
-    void load_modules(const std::vector<std::string> &modules);
+    void enable_static_modules(const std::vector<std::string> &modules);
 
     std::map<std::string, std::string> get_present_external_modules(void);
 

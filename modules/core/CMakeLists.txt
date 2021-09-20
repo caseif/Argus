@@ -12,4 +12,4 @@ endif()
 # includes this module depends on (as a list)
 set(MODULE_INCLUDES "")
 
-configure_subproject(${MODULE_NAME} 0)
+configure_static_module(${MODULE_NAME} 0)

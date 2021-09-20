@@ -61,7 +61,8 @@ namespace argus {
         _ARGUS_WARN("GLFW Error: %s\n", desc);
     }
 
-    static void _update_lifecycle_wm(LifecycleStage stage) {
+    void update_lifecycle_wm(LifecycleStage stage) {
+        printf("wm got lifecycle update\n");
         switch (stage) {
             case LifecycleStage::Init: {
                 glfwInit();
@@ -85,7 +86,5 @@ namespace argus {
     }
 
     void init_module_wm(void) {
-        register_module({ModuleWm, 2, {"core"}, _update_lifecycle_wm});
     }
-
 }

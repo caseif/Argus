@@ -5,9 +5,9 @@ set(MODULE_NAME "render_opengl")
 
 set(MODULE_SOURCE_DIR "${PROJECT_SOURCE_DIR}/modules/${MODULE_NAME}")
 
-set(MODULE_GEN_DIR "${PROJECT_BINARY_DIR}/gen/${MODULE_NAME}")
-set(GEN_INC_DIR "${MODULE_GEN_DIR}/include")
-set(GEN_SRC_DIR "${MODULE_GEN_DIR}/src")
+set(MODULE_GEN_DIR "${GENERATED_BASE_DIR}/${MODULE_NAME}")
+set(GEN_INC_DIR "${MODULE_GEN_DIR}/${INC_DIR_NAME}")
+set(GEN_SRC_DIR "${MODULE_GEN_DIR}/${SRC_DIR_NAME}")
 
 # engine modules this one depends on at runtime (as a list)
 set(MODULE_ENGINE_MOD_DEPS "core;wm;resman;render")
@@ -18,7 +18,7 @@ set(MODULE_LINKER_DEPS "${GLFW_LIBRARY};${OPENGL_LIBRARIES}")
 # include dirs this module uses
 set(MODULE_INCLUDES "${GLFW_INCLUDE_DIR};${OPENGL_INCLUDE_DIR};${GEN_INC_DIR}")
 # source paths for this module
-set(LOCAL_SRC_PATHS "${GEN_SRC_DIR}")
+set(LOCAL_SRC_PATHS "")
 
 set(EXT_TOOLING_DIR "${PROJECT_SOURCE_DIR}/external/tooling")
 
@@ -64,4 +64,4 @@ if(CMD_RES)
   message(FATAL_ERROR "    aglet.rb: ${CMD_RES}")
 endif()
 
-configure_subproject(${MODULE_NAME} 1)
+configure_dynamic_module(${MODULE_NAME} 1)

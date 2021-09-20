@@ -16,7 +16,7 @@
 #include <string>
 
 namespace argus {
-    static void _update_lifecycle_resman(LifecycleStage stage) {
+    void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit:
                 ResourceManager::get_global_resource_manager().discover_resources();
@@ -31,6 +31,5 @@ namespace argus {
     }
 
     void init_module_resman(void) {
-        register_module({ModuleResman, 2, {"core"}, _update_lifecycle_resman});
     }
 }

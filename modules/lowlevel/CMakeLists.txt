@@ -11,4 +11,4 @@ else()
   set(MODULE_LINKER_DEPS "")
 endif()
 
-configure_subproject(${MODULE_NAME} 0)
+configure_engine_library(${MODULE_NAME} 0)

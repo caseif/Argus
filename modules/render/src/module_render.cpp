@@ -88,7 +88,7 @@ namespace argus {
         g_renderer_map.insert({&window, renderer});
     }
 
-    static void _update_lifecycle_render(LifecycleStage stage) {
+    void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
                 g_renderer_impl = &_create_backend_impl();
@@ -115,8 +115,6 @@ namespace argus {
     }
 
     void init_module_render(void) {
-        register_module({ModuleRender, 3, {"core", "wm", "resman"}, _update_lifecycle_render});
-
         register_early_init_callback(ModuleRender, _load_backend_modules);
     }
 

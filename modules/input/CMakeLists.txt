@@ -11,4 +11,4 @@ set(MODULE_LINKER_DEPS "${GLFW_LIBRARY}")
 # includes this module depends on (as a list)
 set(MODULE_INCLUDES "${GLFW_INCLUDE_DIR}")
 
-configure_subproject(${MODULE_NAME} 0)
+configure_static_module(${MODULE_NAME} 0)

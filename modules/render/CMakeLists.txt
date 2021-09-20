@@ -12,4 +12,4 @@ set(MODULE_LINKER_DEPS "${PNG_LIBRARY}")
 # include dirs this module uses
 set(MODULE_INCLUDES "${PNG_INCLUDE_DIR};${JSON_INCLUDE_DIR}")
 
-configure_subproject(${MODULE_NAME} 0)
+configure_static_module(${MODULE_NAME} 0)

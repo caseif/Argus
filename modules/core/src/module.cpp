@@ -16,6 +16,7 @@
 #include "internal/core/callback_util.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
+#include "internal/core/module_defs.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -38,36 +39,19 @@
 #endif
 
 namespace argus {
-    // external module lifecycle hooks
-    extern void init_module_wm(void);
-    extern void init_module_ecs(void);
-    extern void init_module_input(void);
-    extern void init_module_resman(void);
-    extern void init_module_render(void);
+    std::map<const std::string, const DynamicModule> g_registered_modules;
 
-    std::map<const std::string, const NullaryCallback> g_stock_module_initializers{{ModuleCore, init_module_core},
-                                                                                   {ModuleWm, init_module_wm},
-                                                                                   {ModuleEcs, init_module_ecs},
-                                                                                   {ModuleInput, init_module_input},
-                                                                                   {ModuleResman, init_module_resman},
-                                                                                   {ModuleRender, init_module_render}};
-
-    std::map<const std::string, const ArgusModule> g_registered_modules;
-
-    std::set<ArgusModule, bool (*)(const ArgusModule&, const ArgusModule&)> g_enabled_modules(
-        [](const ArgusModule &a, const ArgusModule &b) {
-            if (a.layer != b.layer) {
-                return a.layer < b.layer;
-            } else {
-                return a.id.compare(b.id) < 0;
-            }
-        });
+    std::vector<StaticModule> g_enabled_static_modules;
+    std::set<DynamicModule, bool (*)(const DynamicModule&, const DynamicModule&)> g_enabled_dynamic_modules;
 
     static std::vector<void *> g_external_module_handles;
 
-    void init_stock_modules(void) {
-        for (const auto &mod_init : g_stock_module_initializers) {
+    void init_static_modules(void) {
+        /*for (const auto &mod_init : g_stock_module_initializers) {
             mod_init.second();
+        }*/
+        for (auto &module : g_static_modules) {
+            module.init_callback();
         }
     }
 
@@ -159,15 +143,18 @@ namespace argus {
         }
     }
 
-    void load_modules(const std::vector<std::string> &modules) {
-        for (const auto &module : modules) {
-            enable_module(module);
+    void enable_static_modules(const std::vector<std::string> &modules) {
+        for (const auto &module : g_static_modules) {
+            printf("checking module %s\n", module.id.c_str());
+            if (std::count(modules.begin(), modules.end(), module.id) != 0) {
+                printf("enabled module %s\n", module.id.c_str());
+                g_enabled_static_modules.push_back(module);
+            }
         }
     }
 
-    void register_module(const ArgusModule &module) {
+    void register_module(const DynamicModule &module) {
         if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {
-            ;
             throw std::invalid_argument("Module is already registered: " + module.id);
         }
 
@@ -184,7 +171,7 @@ namespace argus {
 
     static void _enable_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
         // skip duplicates
-        for (const auto &enabled_module : g_enabled_modules) {
+        for (const auto &enabled_module : g_enabled_dynamic_modules) {
             if (enabled_module.id == module_id) {
                 if (dependent_chain.empty()) {
                     _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
@@ -206,10 +193,15 @@ namespace argus {
         std::vector<std::string> new_chain = dependent_chain;
         new_chain.insert(new_chain.cend(), module_id);
         for (const auto &dependency : it->second.dependencies) {
+            // skip static modules since they're always loaded
+            if (g_static_module_ids.find(dependency) != g_static_module_ids.end()) {
+                continue;
+            }
+
             _enable_module(dependency, new_chain);
         }
 
-        g_enabled_modules.insert(it->second);
+        g_enabled_dynamic_modules.insert(it->second);
 
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
@@ -221,7 +213,11 @@ namespace argus {
     static void _deinitialize_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (const auto &module : g_enabled_modules) {
+            for (auto it = g_enabled_static_modules.rbegin(); it != g_enabled_static_modules.rend(); ++it) {
+                it->lifecycle_update_callback(stage);
+            }
+
+            for (const auto &module : g_enabled_dynamic_modules) {
                 module.lifecycle_update_callback(stage);
             }
         }

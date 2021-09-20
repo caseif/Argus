@@ -56,7 +56,7 @@ class RendererImpl;
         };
     }
 
-    static void _update_lifecycle_render_opengl(LifecycleStage stage) {
+    void update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(_create_opengl_backend));
@@ -88,5 +88,5 @@ class RendererImpl;
         }
     }
 
-    REGISTER_ARGUS_MODULE("render_opengl", 4, { "render" }, _update_lifecycle_render_opengl);
+    REGISTER_ARGUS_MODULE("render_opengl", update_lifecycle_render_opengl, { "render" });
 }

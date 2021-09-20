@@ -47,27 +47,21 @@ constexpr const char *ModuleRender = "render";
  * \sa argus::register_argus_module
  */
 #ifdef _WIN32
-#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
+#define REGISTER_ARGUS_MODULE(id, dependencies, lifecycle_update_callback) \
     BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
+        argus::register_module(argus::DynamicModule{id, dependencies, lifecycle_update_callback}); \
         return true; \
     }
 #elif defined(__GNUC__) || defined(__clang__)
-#define REGISTER_ARGUS_MODULE(id, layer, dependencies, lifecycle_update_callback) \
+#define REGISTER_ARGUS_MODULE(id, dependencies, lifecycle_update_callback) \
     __attribute__((constructor)) static void __argus_module_ctor(void) { \
-        argus::register_module(argus::ArgusModule{id, layer, dependencies, lifecycle_update_callback}); \
+        argus::register_module(argus::DynamicModule{id, dependencies, lifecycle_update_callback}); \
     }
 #else
 #error This platform is not supported.
 #endif
 
 namespace argus {
-    extern void init_module_wm(void);
-    extern void init_module_ecs(void);
-    extern void init_module_input(void);
-    extern void init_module_resman(void);
-    extern void init_module_render(void);
-
     /**
      * \brief Represents the stages of engine bring-up or spin-down.
      */
@@ -121,12 +115,12 @@ namespace argus {
     typedef std::function<void(const LifecycleStage)> LifecycleUpdateCallback;
 
     /**
-     * \brief Represents a module for the Argus engine.
+     * \brief Represents a module to be dynamically loaded by the Argus engine.
      *
      * This struct contains all information required to initialize and update
      * the module appropriately.
      */
-    struct ArgusModule {
+    struct DynamicModule {
         /**
          * \brief The ID of the module.
          *
@@ -134,22 +128,7 @@ namespace argus {
          *            (`[a-z]`), numbers (`[0-9]`), and underscores (`[_]`).
          */
         const std::string id;
-        /**
-         * \brief The layer of the module.
-         *
-         * A module may be dependent on another module only if the dependency
-         * specifies a lower layer than the dependent. For example, a module
-         * on with layer `3` may depend on a module on layer `2`, but not on one
-         * on `3` or `4`. This requirements removes any possibility of circular
-         * dependencies by necessitating a well-defined load order.
-         */
-        const uint8_t layer;
-        /**
-         * \brief A list of IDs of modules this one is dependent on.
-         *
-         * If any dependency fails to load, the dependent module will also fail.
-         */
-        const std::vector<std::string> dependencies;
+
         /**
          * \brief The function which handles lifecycle updates for this module.
          *
@@ -162,6 +141,13 @@ namespace argus {
          * \sa LifecycleStage
          */
         const LifecycleUpdateCallback lifecycle_update_callback;
+
+        /**
+         * \brief A list of IDs of modules this one is dependent on.
+         *
+         * If any dependency fails to load, the dependent module will also fail.
+         */
+        const std::vector<std::string> dependencies;
     };
 
     /**
@@ -175,7 +161,7 @@ namespace argus {
      * \throw std::invalid_argument If a module with the given ID is already
      *        registered.
      */
-    void register_module(const ArgusModule &module);
+    void register_module(const DynamicModule &module);
 
     /**
      * \brief Enables a registered module on demand.

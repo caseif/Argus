@@ -1,8 +1,9 @@
-set(MODULE_IDS "lowlevel;core;wm;ecs;resman;render;input")
-set(DYN_MODULE_IDS "")
+set(ENGINE_LIBRARY_IDS "lowlevel")
+set(STATIC_MODULE_IDS "core;wm;ecs;resman;render;input")
+set(DYNAMIC_MODULE_IDS "")
 set(MODULES_SRC_PATH "${CMAKE_SOURCE_DIR}/modules")
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
@@ -23,6 +24,8 @@ set(LIB_BASE_NAME argus)
 
 set(DYN_MODULE_DIR "modules")
 
+set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
+
 option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
@@ -37,7 +40,7 @@ option(USE_ASAN "Build with AddressSanitizer support" OFF)
 #set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
-  message(SEND_ERROR "In-source builds are not allowed.")
+  message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
@@ -166,6 +169,19 @@ endif()
 set_target_properties(pngfix PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+set(PROJECT_TYPE_STATIC "static")
+set(PROJECT_TYPE_DYNAMIC "dynamic")
+set(PROJECT_TYPE_LIBRARY "library")
+
+set(SRC_DIR_NAME "src")
+set(INC_DIR_NAME "include")
+
+set(MODULE_DEFS_HPP_IN "${MODULES_SRC_PATH}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp.in")
+set(MODULE_DEFS_HPP_OUT "${GENERATED_BASE_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp")
+# we can't configure the file until after the subprojects have been configured, so we create it just so it gets picked up as an include
+#TODO: not sure if this is necessary
+#file(TOUCH "${MODULE_DEFS_HPP_PATH}")
+
 ###########################
 # /Dependency configuration
 ###########################
@@ -180,7 +196,7 @@ endif()
 
 if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
-  list(APPEND DYN_MODULE_IDS "render_opengl")
+  list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
 endif()
 if(${BUILD_OPENGLES_BACKEND})
   message(FATAL_ERROR "OpenGL ES support is not yet available")
@@ -246,12 +262,8 @@ endfunction()
 # recursively finds the include paths of dependency engine modules/libraries and saves them to the given variable
 function(find_dep_module_includes DEST)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")
-  foreach(module ${MODULE_ENGINE_MOD_DEPS})
-    get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
-    list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
-  endforeach()
-  foreach(module ${MODULE_ENGINE_LIB_DEPS})
-    get_property(MODULE_INC_DIR GLOBAL PROPERTY ${module}_INCLUDE_DIRS)
+  foreach(id IN LISTS MODULE_ENGINE_LIB_DEPS MODULE_ENGINE_MOD_DEPS)
+    get_property(MODULE_INC_DIR GLOBAL PROPERTY ${id}_INCLUDE_DIRS)
     list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
   endforeach()
   set(${DEST} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
@@ -259,8 +271,8 @@ endfunction()
 
 # recursively finds the module's top-level include dirs and saves them to the given variable
 function(find_module_includes DEST)
-  # load this module's include dir
-  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/include")
+  # load this module's include dirs
+  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/${INC_DIR_NAME};${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
 
   # load include dirs defined by module dependencies
   find_dep_module_includes(PARENT_INCLUDES)
@@ -284,37 +296,143 @@ function(find_module_includes DEST)
   set(${DEST} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
-function(configure_subproject MODULE_NAME DYN)
-  if(DYN)
-    project("${MODULE_NAME}" C CXX ASM)
-  else()
-    project("${MODULE_NAME}" C CXX ASM)
-  endif()
+function(compute_dep_edges)
+  get_property(EDGES GLOBAL PROPERTY "DEPENDENCY_GRAPH_EDGES")
 
-  # source files
-  file(GLOB_RECURSE C_FILES ${SRC_DIR}/*.c)
-  file(GLOB_RECURSE CPP_FILES ${SRC_DIR}/*.cpp)
-  file(GLOB_RECURSE H_FILES ${SRC_DIR}/*.h)
-  file(GLOB_RECURSE HPP_FILES ${SRC_DIR}/*.hpp)
-
-  list(LENGTH LOCAL_SRC_PATHS LEN)
-  if(LEN GREATER 0)
-    foreach(path ${LOCAL_SRC_PATHS})
-      file(GLOB_RECURSE LOCAL_C_FILES ${path}/*.c)
-      file(GLOB_RECURSE LOCAL_CPP_FILES ${path}/*.cpp)
-      file(GLOB_RECURSE LOCAL_S_FILES ${path}/*.s)
-      list(APPEND C_FILES "${LOCAL_C_FILES}")
-      list(APPEND CPP_FILES "${LOCAL_CPP_FILES}")
-      list(APPEND S_FILES "${LOCAL_S_FILES}")
+  if(NOT "${MODULE_ENGINE_MOD_DEPS}" STREQUAL "")
+    foreach(dep ${MODULE_ENGINE_MOD_DEPS})
+      list(APPEND EDGES "${dep}/${PROJECT_NAME}")
     endforeach()
   endif()
+
+  set_property(GLOBAL PROPERTY "DEPENDENCY_GRAPH_EDGES" "${EDGES}")
+endfunction()
+
+function(top_sort NODES EDGES OUT_LIST)
+  # make sure the edges are valid wrt the given node list (i.e. projects aren't declaring bogus dependencies)
+  foreach(edge ${EDGES})
+    string(REPLACE "/" ";" edge_arr "${edge}")
+    list(GET edge_arr 0 SRC_NODE)
+    list(GET edge_arr 1 DEST_NODE)
+    list(FIND NODES "${SRC_NODE}" SRC_INDEX)
+    list(FIND NODES "${DEST_NODE}" DEST_INDEX)
+
+    if(SRC_INDEX EQUAL -1)
+      message(FATAL_ERROR "Project \"${SRC_NODE}\" exists in dependency graph but could not be found.")
+    endif()
+
+    if(DEST_INDEX EQUAL -1)
+      message(FATAL_ERROR "Project \"${SRC_NODE}\" declares dependency on \"${DEST_NODE}\" but no such project was found.")
+    endif()
+  endforeach()
+
+  set(START_NODES "${NODES}")
+
+  # find the initial list of start nodes (nodes without an incoming edge)
+  foreach(edge ${EDGES})
+    string(REPLACE "/" ";" edge_arr "${edge}")
+    list(GET edge_arr 1 DEST_NODE)
+    list(REMOVE_ITEM START_NODES "${DEST_NODE}")
+  endforeach()
+
+  list(REMOVE_DUPLICATES START_NODES)
+
+  set(SORTED_NODES "")
+
+  set(CUR_EDGES "${EDGES}")
+
+  # perform a topological sort using Kahn's algorithm
+  while(1)
+    list(LENGTH START_NODES SN_COUNT)
+    if(${SN_COUNT} EQUAL 0)
+      break()
+    endif()
+
+    list(GET START_NODES 0 CUR_NODE)
+    list(REMOVE_AT START_NODES 0)
+    list(APPEND SORTED_NODES "${CUR_NODE}")
+
+    set(CUR_OUT_EDGES "${CUR_EDGES}")
+    list(FILTER CUR_OUT_EDGES INCLUDE REGEX "^${CUR_NODE}/")
+    foreach(edge ${CUR_OUT_EDGES})
+      string(REPLACE "/" ";" edge_arr "${edge}")
+      # get the destination of the edge (the current node is the source)
+      list(GET edge_arr 1 DEST_NODE)
+      # remove the edge from the graph
+      list(REMOVE_ITEM CUR_EDGES "${edge}")
+      # find the number of other incoming edges to the destination node
+      list(FILTER DEST_IN_EDGES INCLUDE REGEX "/${DEST_NODE}$")
+      list(LENGTH DEST_IN_EDGES DEST_IN_EDGE_COUNT)
+      # if no edges, add it to the list of start nodes
+      if(${DEST_IN_EDGE_COUNT} EQUAL 0)
+        list(APPEND START_NODES "${DEST_NODE}")
+      endif()
+    endforeach()
+  endwhile()
+
+  list(LENGTH CUR_EDGES CUR_EDGES_COUNT)
+  if(${CUR_EDGES_COUNT} GREATER 0)
+    message(FATAL_ERROR "Project dependency graph contains at least one cycle; cannot continue.")
+  endif()
+
+  list(REMOVE_DUPLICATES SORTED_NODES)
+
+  set(${OUT_LIST} "${SORTED_NODES}" PARENT_SCOPE)
+endfunction()
+
+function(add_header_files BASE_DIR)
+  file(GLOB_RECURSE LOCAL_H_FILES ${BASE_DIR}/*.h)
+  file(GLOB_RECURSE LOCAL_HPP_FILES ${BASE_DIR}/*.hpp)
+
+  set(CONCAT_H_FILES ${H_FILES})
+  set(CONCAT_HPP_FILES ${HPP_FILES})
+
+  list(APPEND CONCAT_H_FILES ${LOCAL_H_FILES})
+  list(APPEND CONCAT_HPP_FILES ${LOCAL_HPP_FILES})
+
+  set(H_FILES ${CONCAT_H_FILES} PARENT_SCOPE)
+  set(HPP_FILES ${CONCAT_HPP_FILES} PARENT_SCOPE)
+endfunction()
+
+function(add_source_files BASE_DIR)
+  file(GLOB_RECURSE LOCAL_C_FILES ${BASE_DIR}/*.c)
+  file(GLOB_RECURSE LOCAL_CPP_FILES ${BASE_DIR}/*.cpp)
+
+  set(CONCAT_C_FILES ${C_FILES})
+  set(CONCAT_CPP_FILES ${CPP_FILES})
+
+  list(APPEND CONCAT_C_FILES ${LOCAL_C_FILES})
+  list(APPEND CONCAT_CPP_FILES ${LOCAL_CPP_FILES})
+
+  set(C_FILES ${CONCAT_C_FILES} PARENT_SCOPE)
+  set(CPP_FILES ${CONCAT_CPP_FILES} PARENT_SCOPE)
+endfunction()
+
+function(add_source_file FILE_PATH)
+  if(FILE_PATH MATCHES "\.c$")
+    set(CONCAT_FILES ${C_FILES})
+    list(APPEND CONCAT_FILES "${FILE_PATH}")
+    set(C_FILES ${CONCAT_FILES} PARENT_SCOPE)
+  elseif(FILE_PATH MATCHES "\.cpp$")
+    set(CONCAT_FILES ${CPP_FILES})
+    list(APPEND CONCAT_FILES "${FILE_PATH}")
+    set(CPP_FILES ${CONCAT_FILES} PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
+  project("${SUBPROJECT_NAME}" C CXX ASM)
+
+  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    compute_dep_edges()
+  endif()
   
-  set(res_dir "${MODULES_SRC_PATH}/${MODULE_NAME}/res")
-  set(res_pack_target "pack_resources_${MODULE_NAME}")
-  set(res_gen_target "gen_resources_${MODULE_NAME}")
+  set(res_dir "${MODULES_SRC_PATH}/${PROJECT_NAME}/res")
+  set(res_pack_target "pack_resources_${PROJECT_NAME}")
+  set(res_gen_target "gen_resources_${PROJECT_NAME}")
   if(EXISTS "${res_dir}")
     set(arp_out_dir "${CMAKE_BINARY_DIR}/res/arp")
-    set(arp_out_name "resources_${MODULE_NAME}")
+    set(arp_out_name "resources_${PROJECT_NAME}")
     set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
 
     file(MAKE_DIRECTORY "${arp_out_dir}")
@@ -331,9 +449,10 @@ function(configure_subproject MODULE_NAME DYN)
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
     set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-    set(h_out_dir_base "${CMAKE_BINARY_DIR}/res/abacus/include")
-    set(h_out_dir "${h_out_dir_base}/internal/${module}")
-    set(c_out_dir "${CMAKE_BINARY_DIR}/res/abacus/src/res/")
+    set(h_out_dir_base "${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
+    set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
+    set(c_out_dir_base "${GENERATED_BASE_DIR}/${PROJECT_NAME}/${SRC_DIR_NAME}")
+    set(c_out_dir "${c_out_dir_base}/res")
 
     file(MAKE_DIRECTORY "${h_out_dir}")
     file(MAKE_DIRECTORY "${c_out_dir}")
@@ -357,17 +476,32 @@ function(configure_subproject MODULE_NAME DYN)
 
     add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
 
-    list(APPEND H_FILES "${h_out_dir_base}")
-    list(APPEND C_FILES "${c_out_path}")
+    #add_header_files("${h_out_dir_base}")
+    add_source_file("${c_out_path}")
   endif()
 
-  if(NOT DYN)
+  # basic source files
+  add_header_files("${PROJECT_SOURCE_DIR}/${INC_DIR_NAME}")
+  add_source_files("${PROJECT_SOURCE_DIR}/${SRC_DIR_NAME}")
+
+  # generated source files
+  add_header_files("${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
+  add_source_files("${GENERATED_BASE_DIR}/${PROJECT_NAME}/${SRC_DIR_NAME}")
+
+  list(LENGTH LOCAL_SRC_PATHS LEN)
+  if(LEN GREATER 0)
+    foreach(path ${LOCAL_SRC_PATHS})
+      add_source_files("${path}")
+    endforeach()
+  endif()
+
+  if(NOT "${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
   endif()
 
-  if(DYN)
+  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
     add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES} ${H_FILES} ${HPP_FILES})
 
     # enable PIC
@@ -420,8 +554,17 @@ function(configure_subproject MODULE_NAME DYN)
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
 
-set(SRC_DIR src)
-set(INC_DIR include)
+function(configure_static_module MODULE_NAME)
+  configure_subproject("${MODULE_NAME}" "${PROJECT_TYPE_STATIC}")
+endfunction()
+
+function(configure_dynamic_module MODULE_NAME)
+  configure_subproject("${MODULE_NAME}" "${PROJECT_TYPE_DYNAMIC}")
+endfunction()
+
+function(configure_engine_library LIBRARY_NAME)
+  configure_subproject("${LIBRARY_NAME}" "${PROJECT_TYPE_LIBRARY}")
+endfunction()
 
 set(DIST_DIR ${CMAKE_BINARY_DIR}/dist)
 
@@ -431,30 +574,55 @@ set(LIBRARY_OUTPUT_PATH ${LIB_OUT_DIR})
 
 # configure the copy headers task
 set(HDR_TARGET "${LIB_BASE_NAME}_headers")
-set(HDR_OUT_DIR "${DIST_DIR}/include/argus/")
+set(HDR_OUT_DIR "${DIST_DIR}/${INC_DIR_NAME}/argus/")
 add_custom_target(${HDR_TARGET})
 add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
     make_directory ${HDR_OUT_DIR})
 
-foreach(module ${MODULE_IDS})
-  add_subdirectory("${MODULES_SRC_PATH}/${module}")
-  set(MODULE_LIBS "$<TARGET_OBJECTS:${module}>;${MODULE_LIBS}")
+foreach(id IN LISTS ENGINE_LIBRARY_IDS STATIC_MODULE_IDS)
+  add_subdirectory("${MODULES_SRC_PATH}/${id}")
+  set(MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${MODULE_LIBS}")
 
-  # configure the copy headers task to include this module
-  set(MODULE_INCLUDE_DIR "${MODULES_SRC_PATH}/${module}/include/argus")
+  # configure the copy headers task to include this project
+  set(MODULE_INCLUDE_DIR "${MODULES_SRC_PATH}/${id}/${INC_DIR_NAME}/argus")
   add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
-    COMMENT "Copying headers for module ${module}"
+    COMMENT "Copying headers for module ${id}"
     COMMAND ${CMAKE_COMMAND} -E
       copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
 
-  # add this module as a dependency of the copy headers task
-  add_dependencies(${HDR_TARGET} ${module})
+  # add this project as a dependency of the copy headers task
+  add_dependencies(${HDR_TARGET} ${id})
 endforeach()
 
-foreach(module ${DYN_MODULE_IDS})
-  add_subdirectory("${MODULES_SRC_PATH}/${module}")
+foreach(id ${DYNAMIC_MODULE_IDS})
+  add_subdirectory("${MODULES_SRC_PATH}/${id}")
 endforeach()
+
+# configure module dependency information
+
+get_property(DEP_EDGES GLOBAL PROPERTY "DEPENDENCY_GRAPH_EDGES")
+top_sort("${STATIC_MODULE_IDS}" "${DEP_EDGES}" STATIC_MODULE_IDS)
+
+set(STATIC_MODULE_ID_SET_LIST ${STATIC_MODULE_IDS})
+list(TRANSFORM STATIC_MODULE_ID_SET_LIST REPLACE "^(.+)$" "\"\\1\"")
+list(JOIN STATIC_MODULE_ID_SET_LIST ",\n        " STATIC_MODULE_ID_SET)
+
+set(STATIC_MODULE_DEFS_LIST ${STATIC_MODULE_IDS})
+list(TRANSFORM STATIC_MODULE_DEFS_LIST REPLACE "^(.+)$" "{\"\\1\", update_lifecycle_\\1, init_module_\\1}")
+list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
+
+list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)
+
+set(MODULE_INIT_FNS_LIST "${STATIC_MODULE_IDS}")
+list(TRANSFORM MODULE_INIT_FNS_LIST REPLACE "^(.+)$" "extern void init_module_\\1(void)\\\;")
+list(JOIN MODULE_INIT_FNS_LIST "\n    " MODULE_INIT_FNS)
+
+set(MODULE_LIFECYCLE_FNS_LIST "${STATIC_MODULE_IDS}")
+list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(LifecycleStage stage)\\\;")
+list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
+
+configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
 add_library(${LIB_BASE_NAME} SHARED ${MODULE_LIBS})
 
@@ -477,7 +645,7 @@ get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
 list(REMOVE_DUPLICATES COMBINED_TARGET_INCLUDES)
 target_include_directories(${LIB_BASE_NAME} PUBLIC "${COMBINED_TARGET_INCLUDES}")
 
-foreach(module ${DYN_MODULE_IDS})
+foreach(module ${DYNAMIC_MODULE_IDS})
   add_dependencies("${module}" "${LIB_BASE_NAME}")
 endforeach()
 
