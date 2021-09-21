@@ -1,21 +1,46 @@
 # Argus Game Engine ![Argus](https://github.com/caseif/Argus/workflows/Argus/badge.svg)
 
-Argus is a 2D game engine written in C++11 and built atop GLFW.
+Argus is a 2D game engine written in C++14 and built atop GLFW.
 
 ## Features
 
-Argus features a modular architecture which allows features to be enabled as needed. The engine also provides support
-for loading additional modules (distributed as shared libraries) as plug-ins at runtime automatically and dynamically.
+Argus features a modular architecture which allows features to be enabled as needed. There are three types of modules
+present in the engine at this point:
 
-| Layer | Name | Description |
-| --- | --- | :-- |
-| 0 | lowlevel | Low-level platform-independence code for features such as threading. Strictly speaking, this is not an engine "module," but rather a collection of support libraries. |
-| 1 | core | Core engine framework; facilitates basic operation and communication among components. |
-| 2 | wm | Window manager. |
-| 2 | ecs | Entity-component-system implementation. |
-| 2 | resman | Resource manager; facilitates resource loading and lifetime management. |
-| 3 | render | Renderer module. |
-| 3 | input | Input manager; responsible for interpreting keyboard, mouse, and controller input. This is dependent on the wm module because input polling is done with respect to a window. |
+### Static Modules
+
+A collection of built-in modules comprising the "core" of the engine. These modules are statically linked into a single
+shared library and can be enabled as needed at runtime.
+
+| Name | Description |
+| --- | :-- |
+| core | Core engine framework; facilitates basic operation and communication among components. |
+| wm | Window manager. |
+| ecs | Entity-component-system implementation. |
+| resman | Resource manager; facilitates resource loading and lifetime management. |
+| render | The base renderer. This performs tasks related to scene and resource management but does not provide a standalone renderer implementation and must be supplemented by a dynamic backend. |
+| input | Input manager; responsible for interpreting keyboard, mouse, and controller input. This is dependent on the wm module because input polling is done with respect to a window. |
+
+### Dynamic Modules
+
+External modules which exist as plug-ins to the core of the engine. These modules are distributed as separate shared
+libraries and are loaded dynamically at runtime by the engine core.
+
+Render backends are distributed as dynamic modules to ease shipping them on platforms which may not necessarily support
+the respsective graphics API.
+
+| Name | Description |
+| --- | :-- |
+| render_opengl | An implementation of the renderer atop OpenGL. |
+
+### Engine Libraries
+
+Engine libraries are collections of common utilities which do not partake in the lifecycle of the engine and are instead
+intended for use by other parts of the engine. They are statically linked but cannot be enabled or disabled at runtime.
+
+| Name | Description |
+| --- | :-- |
+| lowlevel | Low-level platform-independence and utility code for features such as threading, memory management, and math. |
 
 A large number of additional modules are planned for future inclusion.
 
@@ -46,6 +71,12 @@ Argus is designed to be as modular as possible. A game engine by nature will pos
 belief is that implementing barriers between functional areas will help it scale as more and more functionality is
 added. This also helps to delineate internal and external dependencies of different parts of the code base very clearly,
 as modules must explicitly specify which other modules and external libraries they require.
+
+### Code/Architecture Quality
+
+One of the main focuses for Argus has been the quality of the overall architecture as well as of the code comprising the
+project. This has lead to a large number of rewrites and refactors and generally has slowed the project down greatly,
+but because the primary goal is not necessarily to ship a game I consider this tradeoff justified.
 
 ## Compiling
 
