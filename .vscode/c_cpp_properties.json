@@ -21,7 +21,7 @@
         {
             "name": "Linux",
             "cStandard": "c11",
-            "cppStandard": "c++11",
+            "cppStandard": "c++14",
             "intelliSenseMode": "gcc-x64",
             "compilerPath": "/usr/bin/g++",
             "compilerArgs": [

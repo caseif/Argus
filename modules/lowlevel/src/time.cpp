@@ -26,9 +26,9 @@
 
 #include <cstdint>
 
-#define NS_PER_S 1000000000LLU
-#define US_PER_S 1000000LLU
-#define NS_PER_US 1000LLU
+#define NS_PER_S 1'000'000'000ULL
+#define US_PER_S 1'000'000ULL
+#define NS_PER_US 1'000ULL
 
 namespace argus {
 

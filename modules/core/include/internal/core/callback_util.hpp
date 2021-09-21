@@ -69,7 +69,7 @@ namespace argus {
     template <typename T>
     bool remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
         auto it = std::find_if(vector.begin(), vector.end(),
-                [id](IndexedValue<T> callback) { return callback.id == id; });
+                [id](auto callback) { return callback.id == id; });
         if (it != vector.end()) {
             vector.erase(it);
             return true;
@@ -144,7 +144,7 @@ namespace argus {
     bool try_remove_callback(CallbackList<T> &list, const Index index) {
         list.list_mutex.lock_shared();
         auto it = std::find_if(list.list.cbegin(), list.list.cend(),
-            [index](IndexedValue<T> callback) { return callback.id == index; });
+            [index](auto callback) { return callback.id == index; });
         bool present = it != list.list.cend();
         list.list_mutex.unlock_shared();
 

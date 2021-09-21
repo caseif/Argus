@@ -32,7 +32,7 @@ namespace argus {
     inline static std::string to_lower(std::string &str) {
         std::string str_copy = str;
         std::transform(str_copy.begin(), str_copy.end(), str_copy.begin(),
-                [](unsigned char c) { return std::tolower(c); });
+                [](auto c) { return std::tolower(c); });
         return str_copy;
     }
 
@@ -47,14 +47,14 @@ namespace argus {
 
     inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
             ComponentTypeId type_id) {
-        return _lookup_component_type(component_types, [type_id](ComponentTypeInfo cmpnt) {
+        return _lookup_component_type(component_types, [type_id](auto cmpnt) {
             return cmpnt.id == type_id;
         });
     }
 
     inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
             std::string &component_name) {
-        return _lookup_component_type(component_types, [component_name](ComponentTypeInfo cmpnt) {
+        return _lookup_component_type(component_types, [component_name](auto cmpnt) {
             return cmpnt.name == component_name;
         });
     }
@@ -93,7 +93,7 @@ namespace argus {
         std::string name_lower = type_name;
         to_lower(type_name);
         ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types,
-            [name_lower](ComponentTypeInfo cmpnt) {
+            [name_lower](auto cmpnt) {
                 return cmpnt.name == name_lower;
             }
         );

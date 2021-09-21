@@ -85,7 +85,7 @@ namespace argus {
         pimpl->scenes.push_back(scene);
 
         std::sort(pimpl->scenes.begin(), pimpl->scenes.end(),
-                  [](Scene *a, Scene *b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
+                  [](const auto a, const auto b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
 
         return *scene;
     }

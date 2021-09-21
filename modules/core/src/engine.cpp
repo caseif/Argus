@@ -28,6 +28,7 @@
 #include "internal/core/module_defs.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <map>
@@ -41,7 +42,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-#define NS_PER_US 1000ULL
+#define NS_PER_US 1'000ULL
 
 namespace argus {
     /**

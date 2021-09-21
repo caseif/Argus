@@ -182,7 +182,7 @@ namespace argus {
                     continue;
                 }
 
-                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](auto c){ return std::tolower(c); });
 
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {

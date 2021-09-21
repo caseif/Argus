@@ -24,7 +24,7 @@ namespace argus {
         std::future<void> future = promise_ptr->get_future();
         Thread *thread = nullptr;
         thread = &Thread::create(
-            [thread, function, callback, promise_ptr](const void *user_data) mutable -> void * {
+            [thread, function, callback, promise_ptr](const auto user_data) mutable -> void * {
                 UNUSED(user_data);
                 try {
                     function();

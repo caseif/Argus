@@ -47,7 +47,7 @@
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {
         return std::accumulate(obj.get_primitives().cbegin(), obj.get_primitives().cend(), 0,
-                [](const size_t acc, const RenderPrim2D &prim) {
+                [](const auto acc, const auto &prim) {
                     return acc + prim.get_vertex_count();
                 }
         );
