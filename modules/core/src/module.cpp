@@ -144,11 +144,20 @@ namespace argus {
     }
 
     void enable_static_modules(const std::vector<std::string> &modules) {
-        for (const auto &module : g_static_modules) {
-            printf("checking module %s\n", module.id.c_str());
-            if (std::count(modules.begin(), modules.end(), module.id) != 0) {
-                printf("enabled module %s\n", module.id.c_str());
-                g_enabled_static_modules.push_back(module);
+        std::vector<std::string> all_modules = modules;
+        for (const auto &mod : g_static_modules) {
+            if (std::count(modules.begin(), modules.end(), mod.id) != 0) {
+                for (const auto &dep : mod.dependencies) {
+                    if (std::count(all_modules.begin(), all_modules.end(), dep) == 0) {
+                        all_modules.push_back(dep);
+                    }
+                }
+            }
+        }
+
+        for (const auto &mod : g_static_modules) {
+            if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
+                g_enabled_static_modules.push_back(mod);
             }
         }
     }

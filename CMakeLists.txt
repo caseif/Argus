@@ -425,7 +425,9 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
     compute_dep_edges()
+    set(MODULE_${SUBPROJECT_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
+
   
   set(res_dir "${MODULES_SRC_PATH}/${PROJECT_NAME}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
@@ -608,8 +610,14 @@ set(STATIC_MODULE_ID_SET_LIST ${STATIC_MODULE_IDS})
 list(TRANSFORM STATIC_MODULE_ID_SET_LIST REPLACE "^(.+)$" "\"\\1\"")
 list(JOIN STATIC_MODULE_ID_SET_LIST ",\n        " STATIC_MODULE_ID_SET)
 
-set(STATIC_MODULE_DEFS_LIST ${STATIC_MODULE_IDS})
-list(TRANSFORM STATIC_MODULE_DEFS_LIST REPLACE "^(.+)$" "{\"\\1\", update_lifecycle_\\1, init_module_\\1}")
+set(STATIC_MODULE_DEFS_LIST "")
+foreach(id ${STATIC_MODULE_IDS})
+  set(deps_list ${MODULE_${id}_DEPS})
+  list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
+  list(JOIN deps_list ", " deps)
+  list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, update_lifecycle_${id}, init_module_${id}}")
+endforeach()
+#list(TRANSFORM STATIC_MODULE_DEFS_LIST REPLACE "^(.+)$" "\{\"\\1\", \{\${\$\{MODULE_\\1_DEPS\}\}\}, update_lifecycle_\\1, init_module_\\1\}")
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
 
 list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)

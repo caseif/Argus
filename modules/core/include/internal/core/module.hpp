@@ -46,6 +46,7 @@ namespace argus {
 
     struct StaticModule {
         const std::string id;
+        const std::set<std::string> dependencies;
         const LifecycleUpdateCallback lifecycle_update_callback;
         const NullaryCallback init_callback;
     };
