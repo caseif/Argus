@@ -63,7 +63,6 @@ namespace argus {
     }
 
     void update_lifecycle_wm(LifecycleStage stage) {
-        printf("wm got lifecycle update\n");
         switch (stage) {
             case LifecycleStage::Init: {
                 glfwInit();

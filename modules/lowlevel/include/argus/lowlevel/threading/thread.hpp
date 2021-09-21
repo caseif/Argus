@@ -12,36 +12,15 @@
 #include <functional>
 #include <thread>
 
-#ifdef USE_PTHREADS
-#include <pthread.h>
-#else
-#include <thread>
-#endif
-
 namespace argus {
-    /**
-     * \brief An abstract handle to a system thread.
-     */
-    #ifdef USE_PTHREADS
-    typedef pthread_t thread_handle_t;
-    #else
-    typedef std::thread* thread_handle_t;
-    #endif
-
     /**
      * \brief Simple abstraction for system threads.
      */
     class Thread {
         private:
-            #ifdef USE_PTHREADS
-            pthread_t handle;
-
-            Thread(pthread_t handle);
-            #else
             std::thread* handle;
 
             explicit Thread(std::thread *handle);
-            #endif
 
             Thread(Thread&) = delete;
 

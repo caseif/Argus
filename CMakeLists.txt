@@ -26,7 +26,6 @@ set(DYN_MODULE_DIR "modules")
 
 set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
 
-option(USE_PTHREADS "Use pthreads instead of std::thread" OFF)
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
@@ -189,10 +188,6 @@ set(MODULE_DEFS_HPP_OUT "${GENERATED_BASE_DIR}/core/${INC_DIR_NAME}/internal/cor
 #######################
 # Feature configuration
 #######################
-
-if(${USE_PTHREADS})
-  message("Using pthreads instead of std::thread as requested")
-endif()
 
 if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
@@ -525,10 +520,6 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
     list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
-  endif()
-
-  if(${USE_PTHREADS})
-    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-DUSE_PTHREADS")
   endif()
 
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

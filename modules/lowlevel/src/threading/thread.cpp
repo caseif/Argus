@@ -13,48 +13,6 @@
 #include <thread>
 
 namespace argus {
-    #ifdef USE_PTHREADS
-    struct FunctionDelegate {
-        static void *invoke_static(void *self) {
-            return static_cast<FunctionDelegate *>(self)->invoke();
-        }
-
-        std::function<void *(void *)> &func;
-        void *arg;
-
-        FunctionDelegate(std::function<void *(void *)> &func, void *arg): func(func), arg(arg) {
-        }
-
-        void *invoke() {
-            return func(arg);
-        }
-    };
-
-    Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
-        pthread_t pthread;
-
-        FunctionDelegate delegate(routine, arg);
-        pthread_create(&pthread, NULL, delegate.invoke_static, &delegate);
-
-        return *new Thread(pthread);
-    }
-
-    Thread::Thread(pthread_t handle): handle(handle) {
-    }
-
-    void Thread::join() {
-        pthread_join(handle, NULL);
-    }
-
-    void Thread::detach() {
-        pthread_detach(handle);
-    }
-
-    void Thread::destroy() {
-        pthread_cancel(handle);
-        delete this;
-    }
-    #else
     Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
         return *new Thread(new std::thread(routine, arg));
     }
@@ -77,5 +35,4 @@ namespace argus {
         delete this;
         return;
     }
-    #endif
 }

@@ -19,9 +19,6 @@
     #include <sys/time.h>
 
     #include <ctime>
-    #ifdef USE_PTHREADS
-        #include <unistd.h>
-    #endif
 #endif
 
 #include <cstdint>
@@ -53,15 +50,7 @@ namespace argus {
     }
 #endif
 
-#ifdef USE_PTHREADS
-    void sleep_nanos(const uint64_t ns) {
-        const struct timespec spec = {(long)(ns / NS_PER_S), (long)(ns % NS_PER_S)};
-        nanosleep(&spec, NULL);
-    }
-#else
     void sleep_nanos(const uint64_t ns) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(ns));
     }
-#endif
-
 }
