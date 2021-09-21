@@ -3,7 +3,7 @@
 PROJECT="Argus"
 YEAR="2019-2021"
 AUTHOR="Max Roncace"
-EMAIL="mproncace@gmail.com"
+EMAIL="mproncace@protonmail.com"
 
 hdr_file="./etc/HEADER.txt"
 

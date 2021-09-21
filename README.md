@@ -115,5 +115,9 @@ directly or run `cmake --build .`.
 
 ## License
 
-Argus is made available under the [MIT license](https://opensource.org/licenses/MIT). You may use, modify, and
+Argus is made available under the [LGPLv3 license](https://opensource.org/licenses/LGPL-3.0). You may use, modify, and
 distribute the project within its terms.
+
+While modifications to static modules must be distributed under the same license, dynamically linked plug-in modules
+need not be, nor do any resources (including scripts) used alongside the engine, whether on the filesystem or in
+packaged form.
