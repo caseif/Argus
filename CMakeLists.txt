@@ -549,7 +549,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   # set the C++ standard
-  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14)
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
@@ -637,7 +637,7 @@ add_library(${LIB_BASE_NAME} SHARED ${MODULE_LIBS})
 # set the linker language (since we're not directly including any sources)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
-set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD 11)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD 14)
 # enable PIC
 set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # export all symbols (required on Windows)
