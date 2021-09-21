@@ -84,13 +84,17 @@ namespace argus {
     }
 
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
+        using namespace std::chrono_literals;
+
         dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_map.find(handle)->second,
-                Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0);
+                Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0s);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
+        using namespace std::chrono_literals;
+
         dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_map.find(handle)->second,
-                Vector2u(), Vector2i { x, y }, 0);
+                Vector2u(), Vector2i { x, y }, 0s);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {

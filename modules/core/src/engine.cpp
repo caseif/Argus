@@ -45,11 +45,6 @@
 #define NS_PER_US 1'000ULL
 
 namespace argus {
-    /**
-     * \brief Represents an instant in time.
-     */
-    typedef uint64_t Timestamp;
-
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
 
@@ -99,37 +94,41 @@ namespace argus {
     }
 
     static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
+        using namespace std::chrono_literals;
+
         if (target_rate == 0) {
             return;
         }
 
-        TimeDelta delta = argus::microtime() - start_timestamp;
+        TimeDelta delta = argus::now() - start_timestamp;
 
-        unsigned int frametime_target_us = US_PER_S / target_rate;
-        if (delta < frametime_target_us) {
-            uint64_t sleep_time_ns = (frametime_target_us - delta) * NS_PER_US;
+        auto frametime_target = std::chrono::microseconds(US_PER_S / target_rate);
+        if (delta < frametime_target) {
+            std::chrono::nanoseconds sleep_time_ns = frametime_target - delta;
             if (sleep_time_ns <= SLEEP_OVERHEAD_NS) {
                 return;
             }
-            sleep_nanos(sleep_time_ns - SLEEP_OVERHEAD_NS);
+            std::this_thread::sleep_for(sleep_time_ns - SLEEP_OVERHEAD_NS);
         }
     }
 
     static TimeDelta _compute_delta(Timestamp &last_timestamp) {
-        TimeDelta delta = 0;
+        using namespace std::chrono_literals;
 
-        if (last_timestamp != 0) {
-            delta = argus::microtime() - last_timestamp;
+        TimeDelta delta;
+
+        if (last_timestamp.time_since_epoch() != 0s) {
+            delta = argus::now() - last_timestamp;
         } else {
-            delta = 0;
+            delta = {};
         }
-        last_timestamp = argus::microtime();
+        last_timestamp = argus::now();
 
         return delta;
     }
 
     static void _game_loop() {
-        static Timestamp last_update = 0;
+        static Timestamp last_update;
 
         while (true) {
             if (g_engine_stopping) {
@@ -145,7 +144,7 @@ namespace argus {
                 break;
             }
 
-            Timestamp update_start = argus::microtime();
+            Timestamp update_start = argus::now();
             TimeDelta delta = _compute_delta(last_update);
 
             //TODO: do we need to flush the queues before the engine stops?
@@ -170,7 +169,7 @@ namespace argus {
     static void *_render_loop(void *const user_data) {
         UNUSED(user_data);
 
-        static Timestamp last_frame = 0;
+        static Timestamp last_frame;
 
         while (true) {
             if (g_engine_stopping) {
@@ -181,7 +180,7 @@ namespace argus {
                 break;
             }
 
-            Timestamp render_start = argus::microtime();
+            Timestamp render_start = argus::now();
             TimeDelta delta = _compute_delta(last_frame);
 
             flush_callback_list_queues(g_render_callbacks);

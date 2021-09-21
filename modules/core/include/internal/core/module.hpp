@@ -31,7 +31,7 @@
 #endif
 
 #define US_PER_S 1'000'000ULL
-#define SLEEP_OVERHEAD_NS 120'000ULL
+#define SLEEP_OVERHEAD_NS 120'000ns
 
 #define RENDER_MODULE_OPENGL "argus_render_opengl"
 #define RENDER_MODULE_OPENGLES "argus_render_opengles"

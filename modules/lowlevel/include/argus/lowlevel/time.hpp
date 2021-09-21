@@ -15,26 +15,25 @@
 
 #pragma once
 
+#include <chrono>
+
 #include <cstdint>
 
 namespace argus {
     /**
+     * \brief Represents an instant in time.
+     */
+    typedef std::chrono::time_point<std::chrono::steady_clock> Timestamp;
+
+    /**
      * \brief Represents a duration of time.
      */
-    typedef uint64_t TimeDelta;
+    typedef std::chrono::nanoseconds TimeDelta;
 
     /**
-     * \brief Sleeps for the specified amount of time in nanoseconds.
+     * \brief Returns the current monotonic time.
      *
-     * \param ns The number of nanoseconds to sleep for.
+     * \return The current monotonic time.
      */
-    void sleep_nanos(uint64_t ns);
-
-    /**
-     * \brief Returns the number of microseconds since the Unix epoch.
-     *
-     * \return The number of microseconds since the Unix epoch.
-     */
-    uint64_t microtime(void);
-
+    Timestamp now(void);
 }

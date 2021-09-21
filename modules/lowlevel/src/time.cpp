@@ -24,33 +24,9 @@
 #include <cstdint>
 
 #define NS_PER_S 1'000'000'000ULL
-#define US_PER_S 1'000'000ULL
-#define NS_PER_US 1'000ULL
 
 namespace argus {
-
-#ifdef _WIN32
-    #define WIN32_EPOCH_OFFSET 11644473600000000ULL
-
-    uint64_t microtime(void) {
-        FILETIME ft;
-        GetSystemTimeAsFileTime(&ft);
-        uint64_t tt = ft.dwHighDateTime;
-        tt <<= 32;
-        tt |= ft.dwLowDateTime;
-        tt /= 10;
-        tt -= WIN32_EPOCH_OFFSET;
-        return tt;
-    }
-#else
-    uint64_t microtime(void) {
-        timespec now{};
-        clock_gettime(CLOCK_MONOTONIC, &now);
-        return now.tv_sec * US_PER_S + now.tv_nsec / NS_PER_US;
-    }
-#endif
-
-    void sleep_nanos(const uint64_t ns) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(ns));
+    Timestamp now(void) {
+        return std::chrono::steady_clock::now();
     }
 }
