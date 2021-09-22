@@ -1,7 +1,11 @@
 set(ENGINE_LIBRARY_IDS "lowlevel")
 set(STATIC_MODULE_IDS "core;wm;ecs;resman;render;input")
 set(DYNAMIC_MODULE_IDS "")
-set(MODULES_SRC_PATH "${CMAKE_SOURCE_DIR}/modules")
+
+set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
+set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
+set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
+set(ENGINE_LIBS_SRC_DIR "${ENGINE_SRC_PATH}/libs")
 
 cmake_minimum_required(VERSION 3.12)
 if(POLICY CMP0048)
@@ -24,7 +28,12 @@ set(LIB_BASE_NAME argus)
 
 set(DYN_MODULE_DIR "modules")
 
+set(ROOT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
+
 set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
+set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
+set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
+set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
@@ -175,11 +184,8 @@ set(PROJECT_TYPE_LIBRARY "library")
 set(SRC_DIR_NAME "src")
 set(INC_DIR_NAME "include")
 
-set(MODULE_DEFS_HPP_IN "${MODULES_SRC_PATH}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp.in")
-set(MODULE_DEFS_HPP_OUT "${GENERATED_BASE_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp")
-# we can't configure the file until after the subprojects have been configured, so we create it just so it gets picked up as an include
-#TODO: not sure if this is necessary
-#file(TOUCH "${MODULE_DEFS_HPP_PATH}")
+set(MODULE_DEFS_HPP_IN "${STATIC_MODULES_SRC_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp.in")
+set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp")
 
 ###########################
 # /Dependency configuration
@@ -267,7 +273,7 @@ endfunction()
 # recursively finds the module's top-level include dirs and saves them to the given variable
 function(find_module_includes DEST)
   # load this module's include dirs
-  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/${INC_DIR_NAME};${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
+  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/${INC_DIR_NAME};${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
 
   # load include dirs defined by module dependencies
   find_dep_module_includes(PARENT_INCLUDES)
@@ -416,7 +422,16 @@ function(add_source_file FILE_PATH)
 endfunction()
 
 function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
-  project("${SUBPROJECT_NAME}" C CXX ASM)
+  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
+    set(CURRENT_SOURCE_DIR "${ENGINE_LIBS_SRC_DIR}/${SUBPROJECT_NAME}")
+    set(CURRENT_GENERATED_DIR "${ENGINE_LIBS_GENERATED_DIR}/${SUBPROJECT_NAME}")
+  elseif("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    set(CURRENT_SOURCE_DIR "${STATIC_MODULES_SRC_DIR}/${SUBPROJECT_NAME}")
+    set(CURRENT_GENERATED_DIR "${STATIC_MODULES_GENERATED_DIR}/${SUBPROJECT_NAME}")
+  elseif("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+    set(CURRENT_SOURCE_DIR "${DYNAMIC_MODULES_SRC_DIR}/${SUBPROJECT_NAME}")
+    set(CURRENT_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${SUBPROJECT_NAME}")
+  endif()
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
     compute_dep_edges()
@@ -424,7 +439,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   
-  set(res_dir "${MODULES_SRC_PATH}/${PROJECT_NAME}/res")
+  set(res_dir "${CURRENT_SOURCE_DIR}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
   set(res_gen_target "gen_resources_${PROJECT_NAME}")
   if(EXISTS "${res_dir}")
@@ -446,9 +461,9 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
     set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-    set(h_out_dir_base "${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
+    set(h_out_dir_base "${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
     set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
-    set(c_out_dir_base "${GENERATED_BASE_DIR}/${PROJECT_NAME}/${SRC_DIR_NAME}")
+    set(c_out_dir_base "${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
     set(c_out_dir "${c_out_dir_base}/res")
 
     file(MAKE_DIRECTORY "${h_out_dir}")
@@ -482,8 +497,8 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   add_source_files("${PROJECT_SOURCE_DIR}/${SRC_DIR_NAME}")
 
   # generated source files
-  add_header_files("${GENERATED_BASE_DIR}/${PROJECT_NAME}/${INC_DIR_NAME}")
-  add_source_files("${GENERATED_BASE_DIR}/${PROJECT_NAME}/${SRC_DIR_NAME}")
+  add_header_files("${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
+  add_source_files("${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
 
   list(LENGTH LOCAL_SRC_PATHS LEN)
   if(LEN GREATER 0)
@@ -573,12 +588,20 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
     make_directory ${HDR_OUT_DIR})
 
-foreach(id IN LISTS ENGINE_LIBRARY_IDS STATIC_MODULE_IDS)
-  add_subdirectory("${MODULES_SRC_PATH}/${id}")
-  set(MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${MODULE_LIBS}")
+function(configure_builtin_project id type)
+  if("${type}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
+    set(CURRENT_SOURCE_DIR "${ENGINE_LIBS_SRC_DIR}/${id}")
+  elseif("${type}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    set(CURRENT_SOURCE_DIR "${STATIC_MODULES_SRC_DIR}/${id}")
+  elseif("${type}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+    set(CURRENT_SOURCE_DIR "${DYNAMIC_MODULES_SRC_DIR}/${id}")
+  endif()
+
+  add_subdirectory("${CURRENT_SOURCE_DIR}")
+  set(MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${MODULE_LIBS}" PARENT_SCOPE)
 
   # configure the copy headers task to include this project
-  set(MODULE_INCLUDE_DIR "${MODULES_SRC_PATH}/${id}/${INC_DIR_NAME}/argus")
+  set(MODULE_INCLUDE_DIR "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}/argus")
   add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
     COMMENT "Copying headers for module ${id}"
     COMMAND ${CMAKE_COMMAND} -E
@@ -586,10 +609,18 @@ foreach(id IN LISTS ENGINE_LIBRARY_IDS STATIC_MODULE_IDS)
 
   # add this project as a dependency of the copy headers task
   add_dependencies(${HDR_TARGET} ${id})
+endfunction()
+
+foreach(id ${ENGINE_LIBRARY_IDS})
+  configure_builtin_project("${id}" "${PROJECT_TYPE_LIBRARY}")
+endforeach()
+
+foreach(id ${STATIC_MODULE_IDS})
+  configure_builtin_project("${id}" "${PROJECT_TYPE_STATIC}")
 endforeach()
 
 foreach(id ${DYNAMIC_MODULE_IDS})
-  add_subdirectory("${MODULES_SRC_PATH}/${id}")
+  add_subdirectory("${DYNAMIC_MODULES_SRC_DIR}/${id}")
 endforeach()
 
 # configure module dependency information

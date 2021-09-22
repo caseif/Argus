@@ -1,5 +1,8 @@
 # module name
 set(MODULE_NAME "lowlevel")
+
+project("${MODULE_NAME}" C CXX)
+
 # engine modules this one depends on at runtime (as a list)
 set(MODULE_ENGINE_MOD_DEPS "")
 # engine libraries this one depends on (as a list)
