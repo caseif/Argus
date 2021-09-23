@@ -1,7 +1,4 @@
-# module name
-set(MODULE_NAME "core")
-
-project("${MODULE_NAME}" C CXX)
+project("core" C CXX)
 
 # engine modules this one depends on at runtime (as a list)
 set(MODULE_ENGINE_MOD_DEPS "")
@@ -14,5 +11,3 @@ if(UNIX)
 endif()
 # includes this module depends on (as a list)
 set(MODULE_INCLUDES "")
-
-configure_static_module(${MODULE_NAME} 0)

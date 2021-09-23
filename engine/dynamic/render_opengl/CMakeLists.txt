@@ -1,13 +1,9 @@
-# module name
-set(MODULE_NAME "render_opengl")
-
-project("${MODULE_NAME}" C CXX)
+project("render_opengl" C CXX)
 
 find_package(OpenGL REQUIRED)
 
-set(GEN_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
-set(GEN_INC_DIR "${GEN_DIR}/${INC_DIR_NAME}")
-set(GEN_SRC_DIR "${GEN_DIR}/${SRC_DIR_NAME}")
+set(GEN_INC_DIR "${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
+set(GEN_SRC_DIR "${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
 
 # engine modules this one depends on at runtime (as a list)
 set(MODULE_ENGINE_MOD_DEPS "core;wm;resman;render")
@@ -55,14 +51,12 @@ if(CMD_RES)
 endif()
 
 file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
-set(OPENGL_PROFILE_PATH "${PROJECT_SOURCE_DIR}/tooling/aglet/opengl_profile.xml")
+set(OPENGL_PROFILE_PATH "${CURRENT_SOURCE_DIR}/tooling/aglet/opengl_profile.xml")
 execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
     "-p" "${OPENGL_PROFILE_PATH}"
-    "-o" "${GEN_DIR}"
+    "-o" "${CURRENT_GENERATED_DIR}"
     WORKING_DIRECTORY "${ROOT_SOURCE_DIR}/external/tooling/aglet/"
     RESULT_VARIABLE CMD_RES)
 if(CMD_RES)
   message(FATAL_ERROR "    aglet.rb: ${CMD_RES}")
 endif()
-
-configure_dynamic_module(${MODULE_NAME} 1)

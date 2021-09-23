@@ -1,7 +1,5 @@
 # module name
-set(MODULE_NAME "lowlevel")
-
-project("${MODULE_NAME}" C CXX)
+project("lowlevel" C CXX)
 
 # engine modules this one depends on at runtime (as a list)
 set(MODULE_ENGINE_MOD_DEPS "")
@@ -13,5 +11,3 @@ if(MSVC)
 else()
   set(MODULE_LINKER_DEPS "")
 endif()
-
-configure_engine_library(${MODULE_NAME} 0)

@@ -273,7 +273,7 @@ endfunction()
 # recursively finds the module's top-level include dirs and saves them to the given variable
 function(find_module_includes DEST)
   # load this module's include dirs
-  set(ALL_INCLUDES "${PROJECT_SOURCE_DIR}/${INC_DIR_NAME};${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
+  set(ALL_INCLUDES "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME};${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
 
   # load include dirs defined by module dependencies
   find_dep_module_includes(PARENT_INCLUDES)
@@ -433,12 +433,13 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     set(CURRENT_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${SUBPROJECT_NAME}")
   endif()
 
+  include("${CURRENT_SOURCE_DIR}/CMakeLists.txt")
+
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
     compute_dep_edges()
     set(MODULE_${SUBPROJECT_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
 
-  
   set(res_dir "${CURRENT_SOURCE_DIR}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
   set(res_gen_target "gen_resources_${PROJECT_NAME}")
@@ -493,8 +494,8 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   # basic source files
-  add_header_files("${PROJECT_SOURCE_DIR}/${INC_DIR_NAME}")
-  add_source_files("${PROJECT_SOURCE_DIR}/${SRC_DIR_NAME}")
+  add_header_files("${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}")
+  add_source_files("${CURRENT_SOURCE_DIR}/${SRC_DIR_NAME}")
 
   # generated source files
   add_header_files("${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
@@ -511,6 +512,17 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
+
+    set(STATIC_MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${STATIC_MODULE_LIBS}" PARENT_SCOPE)
+    # configure the copy headers task to include this project
+    set(MODULE_INCLUDE_DIR "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}/argus")
+    add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
+      COMMENT "Copying headers for module ${id}"
+      COMMAND ${CMAKE_COMMAND} -E
+        copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
+
+    # add this project as a dependency of the copy headers task
+    add_dependencies(${HDR_TARGET} ${id})
   endif()
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
@@ -562,18 +574,6 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
 
-function(configure_static_module MODULE_NAME)
-  configure_subproject("${MODULE_NAME}" "${PROJECT_TYPE_STATIC}")
-endfunction()
-
-function(configure_dynamic_module MODULE_NAME)
-  configure_subproject("${MODULE_NAME}" "${PROJECT_TYPE_DYNAMIC}")
-endfunction()
-
-function(configure_engine_library LIBRARY_NAME)
-  configure_subproject("${LIBRARY_NAME}" "${PROJECT_TYPE_LIBRARY}")
-endfunction()
-
 set(DIST_DIR ${CMAKE_BINARY_DIR}/dist)
 
 set(LIB_OUT_DIR ${CMAKE_BINARY_DIR}/lib)
@@ -588,39 +588,16 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
     make_directory ${HDR_OUT_DIR})
 
-function(configure_builtin_project id type)
-  if("${type}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
-    set(CURRENT_SOURCE_DIR "${ENGINE_LIBS_SRC_DIR}/${id}")
-  elseif("${type}" STREQUAL "${PROJECT_TYPE_STATIC}")
-    set(CURRENT_SOURCE_DIR "${STATIC_MODULES_SRC_DIR}/${id}")
-  elseif("${type}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    set(CURRENT_SOURCE_DIR "${DYNAMIC_MODULES_SRC_DIR}/${id}")
-  endif()
-
-  add_subdirectory("${CURRENT_SOURCE_DIR}")
-  set(MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${MODULE_LIBS}" PARENT_SCOPE)
-
-  # configure the copy headers task to include this project
-  set(MODULE_INCLUDE_DIR "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}/argus")
-  add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
-    COMMENT "Copying headers for module ${id}"
-    COMMAND ${CMAKE_COMMAND} -E
-      copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
-
-  # add this project as a dependency of the copy headers task
-  add_dependencies(${HDR_TARGET} ${id})
-endfunction()
-
 foreach(id ${ENGINE_LIBRARY_IDS})
-  configure_builtin_project("${id}" "${PROJECT_TYPE_LIBRARY}")
+  configure_subproject("${id}" "${PROJECT_TYPE_LIBRARY}")
 endforeach()
 
 foreach(id ${STATIC_MODULE_IDS})
-  configure_builtin_project("${id}" "${PROJECT_TYPE_STATIC}")
+  configure_subproject("${id}" "${PROJECT_TYPE_STATIC}")
 endforeach()
 
 foreach(id ${DYNAMIC_MODULE_IDS})
-  add_subdirectory("${DYNAMIC_MODULES_SRC_DIR}/${id}")
+  configure_subproject("${id}" "${PROJECT_TYPE_DYNAMIC}")
 endforeach()
 
 # configure module dependency information
@@ -654,7 +631,7 @@ list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 
 configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
-add_library(${LIB_BASE_NAME} SHARED ${MODULE_LIBS})
+add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIBS})
 
 # set the linker language (since we're not directly including any sources)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
