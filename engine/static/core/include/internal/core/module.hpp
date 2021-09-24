@@ -47,12 +47,6 @@
 #define RENDER_MODULE_VULKAN "argus_render_vulkan"
 
 namespace argus {
-    extern std::map<const std::string, const NullaryCallback> g_stock_module_initializers;
-
-    extern std::map<std::string, NullaryCallback> g_early_init_callbacks;
-
-    extern std::map<const std::string, const DynamicModule> g_registered_modules;
-
     struct StaticModule {
         const std::string id;
         const std::set<std::string> dependencies;
@@ -60,12 +54,7 @@ namespace argus {
         const NullaryCallback init_callback;
     };
 
-    extern std::vector<StaticModule> g_enabled_static_modules;
-    extern std::set<DynamicModule, bool (*)(const DynamicModule&, const DynamicModule&)> g_enabled_dynamic_modules;
-
     void init_static_modules(void);
-    
-    void register_early_init_callback(const std::string &module_id, NullaryCallback callback);
 
     void do_early_init();
 
@@ -77,5 +66,7 @@ namespace argus {
 
     std::map<std::string, std::string> get_present_external_modules(void);
 
-    void deinit_loaded_modules(void);
+    void init_modules(void);
+
+    void deinit_modules(void);
 }

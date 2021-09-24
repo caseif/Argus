@@ -97,8 +97,17 @@ namespace argus {
         g_renderer_map.insert({&window, renderer});
     }
 
+    static void _load_backend_modules(void) {
+        //TODO: fail gracefully
+        enable_dynamic_module(MODULE_RENDER_OPENGL);
+    }
+
     void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
+            case LifecycleStage::Load: {
+                _load_backend_modules();
+                break;
+            }
             case LifecycleStage::Init: {
                 g_renderer_impl = &_create_backend_impl();
 
@@ -118,13 +127,7 @@ namespace argus {
         }
     }
 
-    static void _load_backend_modules(void) {
-        //TODO: fail gracefully
-        enable_module(MODULE_RENDER_OPENGL);
-    }
-
     void init_module_render(void) {
-        register_early_init_callback(ModuleRender, _load_backend_modules);
     }
 
 }

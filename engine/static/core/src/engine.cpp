@@ -57,8 +57,6 @@ namespace argus {
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
 
-    std::map<std::string, NullaryCallback> g_early_init_callbacks;
-
     Thread *g_game_thread;
 
     static bool g_engine_stopping = false;
@@ -96,10 +94,6 @@ namespace argus {
 
     void unregister_render_callback(const Index id) {
         remove_callback(g_render_callbacks, id);
-    }
-
-    void register_early_init_callback(const std::string &module_id, NullaryCallback callback) {
-        g_early_init_callbacks.insert({ module_id, callback });
     }
 
     static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
@@ -149,7 +143,7 @@ namespace argus {
                 }
                 _ARGUS_DEBUG("Render thread is halted, proceeding with engine bring-down\n");
 
-                deinit_loaded_modules();
+                deinit_modules();
                 break;
             }
 
@@ -225,26 +219,7 @@ namespace argus {
             enable_static_modules({ ModuleCore });
         }
 
-        // this is basically for the sole purpose of allowing dynamic module
-        // loading, e.g. allowing render to load render_opengl before any real
-        // lifecycle stages are executed
-        for (const auto &mod_info : g_enabled_static_modules) {
-            auto ei_callback = g_early_init_callbacks.find(mod_info.id);
-            if (ei_callback != g_early_init_callbacks.end()) {
-                ei_callback->second();
-            }
-        }
-
-        for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (const auto &mod : g_enabled_static_modules) {
-                mod.lifecycle_update_callback(stage);
-            }
-
-            for (const auto &mod_info : g_enabled_dynamic_modules) {
-                mod_info.lifecycle_update_callback(stage);
-            }
-        }
+        init_modules();
     }
 
     void start_engine(const DeltaCallback &game_loop) {

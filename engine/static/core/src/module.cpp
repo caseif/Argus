@@ -48,17 +48,12 @@
 #endif
 
 namespace argus {
-    std::map<const std::string, const DynamicModule> g_registered_modules;
+    std::map<const std::string, DynamicModule> g_registered_dyn_modules;
 
     std::vector<StaticModule> g_enabled_static_modules;
-    std::set<DynamicModule, bool (*)(const DynamicModule&, const DynamicModule&)> g_enabled_dynamic_modules;
-
-    static std::vector<void *> g_external_module_handles;
+    std::vector<DynamicModule> g_enabled_dyn_modules;
 
     void init_static_modules(void) {
-        /*for (const auto &mod_init : g_stock_module_initializers) {
-            mod_init.second();
-        }*/
         for (auto &module : g_static_modules) {
             module.init_callback();
         }
@@ -116,30 +111,34 @@ namespace argus {
         auto modules = get_present_external_modules();
 
         for (const auto &module : modules) {
+            auto &module_id = module.first;
+            auto &so_path = module.second;
+
             _ARGUS_INFO("Found external module %s as file %s, attempting to load.\n",
-                    module.first.c_str(), module.second.c_str());
+                    module_id.c_str(), so_path.c_str());
 
             void *handle = nullptr;
             #ifdef _WIN32
-            handle = LoadLibraryA(module.second.c_str());
+            handle = LoadLibraryA(so_path.c_str());
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module %s (errno: %d)\n", module.first.c_str(), GetLastError());
+                _ARGUS_WARN("Failed to load external module %s (errno: %d)\n", module_id.c_str(), GetLastError());
                 continue;
             }
             #else
-            handle = dlopen(module.second.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            handle = dlopen(so_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module %s (error: %s)\n", module.first.c_str(), dlerror());
+                _ARGUS_WARN("Failed to load external module %s (error: %s)\n", module_id.c_str(), dlerror());
                 continue;
             }
             #endif
 
-            g_external_module_handles.insert(g_external_module_handles.begin(), handle);
+            g_registered_dyn_modules.find(module_id)->second.handle = handle;
         }
     }
 
     void unload_external_modules(void) {
-        for (void *handle : g_external_module_handles) {
+        for (auto &mod : g_registered_dyn_modules) {
+            auto handle = mod.second.handle;
             #ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
                 _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
@@ -164,6 +163,7 @@ namespace argus {
             }
         }
 
+        // we add them to the master list like this in order to preserve the hardcoded load order
         for (const auto &mod : g_static_modules) {
             if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
                 g_enabled_static_modules.push_back(mod);
@@ -171,25 +171,28 @@ namespace argus {
         }
     }
 
-    void register_module(const DynamicModule &module) {
-        if (g_registered_modules.find(module.id) != g_registered_modules.cend()) {
-            throw std::invalid_argument("Module is already registered: " + module.id);
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
+            std::initializer_list<std::string> dependencies) {
+        if (g_registered_dyn_modules.find(id) != g_registered_dyn_modules.cend()) {
+            throw std::invalid_argument("Module is already registered: " + id);
         }
 
-        for (char ch : module.id) {
+        for (char ch : id) {
             if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || (ch == '_'))) {
-                throw std::invalid_argument("Invalid module identifier: " + module.id);
+                throw std::invalid_argument("Invalid module identifier: " + id);
             }
         }
 
-        g_registered_modules.insert({ module.id, module });
+        auto mod = DynamicModule { id, lifecycle_callback, dependencies, nullptr };
 
-        _ARGUS_INFO("Registered module %s\n", module.id.c_str());
+        g_registered_dyn_modules.insert({ id, std::move(mod) });
+
+        _ARGUS_INFO("Registered module %s\n", id.c_str());
     }
 
-    static void _enable_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
+    static void _enable_dynamic_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
         // skip duplicates
-        for (const auto &enabled_module : g_enabled_dynamic_modules) {
+        for (const auto &enabled_module : g_enabled_dyn_modules) {
             if (enabled_module.id == module_id) {
                 if (dependent_chain.empty()) {
                     _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
@@ -198,8 +201,8 @@ namespace argus {
             }
         }
 
-        auto it = g_registered_modules.find(module_id);
-        if (it == g_registered_modules.cend()) {
+        auto it = g_registered_dyn_modules.find(module_id);
+        if (it == g_registered_dyn_modules.cend()) {
             std::stringstream err_msg;
             err_msg << "Module \"" << module_id << "\" was requested, but is not registered";
             for (const auto &dependent : dependent_chain) {
@@ -216,16 +219,29 @@ namespace argus {
                 continue;
             }
 
-            _enable_module(dependency, new_chain);
+            _enable_dynamic_module(dependency, new_chain);
         }
 
-        g_enabled_dynamic_modules.insert(it->second);
+        g_enabled_dyn_modules.push_back(it->second);
 
         _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
     }
 
-    void enable_module(const std::string &module_id) {
-        _enable_module(module_id, {});
+    void enable_dynamic_module(const std::string &module_id) {
+        _enable_dynamic_module(module_id, {});
+    }
+
+    void init_modules(void) {
+        for (LifecycleStage stage = LifecycleStage::Load; stage <= LifecycleStage::PostInit;
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+            for (const auto &mod : g_enabled_static_modules) {
+                mod.lifecycle_update_callback(stage);
+            }
+
+            for (const auto &mod_info : g_enabled_dyn_modules) {
+                mod_info.lifecycle_update_callback(stage);
+            }
+        }
     }
 
     static void _deinitialize_modules(void) {
@@ -235,13 +251,13 @@ namespace argus {
                 it->lifecycle_update_callback(stage);
             }
 
-            for (const auto &module : g_enabled_dynamic_modules) {
-                module.lifecycle_update_callback(stage);
+            for (auto it = g_enabled_dyn_modules.rbegin(); it != g_enabled_dyn_modules.rend(); ++it) {
+                it->lifecycle_update_callback(stage);
             }
         }
     }
 
-    void deinit_loaded_modules(void) {
+    void deinit_modules(void) {
         _deinitialize_modules();
 
         unload_external_modules();

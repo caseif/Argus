@@ -40,31 +40,30 @@ constexpr const char *ModuleRender = "render";
  * \brief Macro for conveniently registering Argus modules contained by shared
  *        libraries.
  *
- * This macro implicitly invokes argus::register_module upon library load.
+ * This macro implicitly invokes argus::register_dynamic_module upon library load.
  *
  * \remark If desired, the library entry point may be specified manually and the
  * argus::register_argus_module function invoked explicitly, removing any need
  * for this macro.
  *
  * \param id The ID of the module.
- * \param layer The layer of the module.
- * \param dependencies A list of IDs of modules this one is dependent on.
  * \param lifecycle_update_callback The function which handles lifecycle updates
  *        for this module.
+ * \param dependencies A list of IDs of modules this one is dependent on.
  *
  * \sa argus::ArgusModule
  * \sa argus::register_argus_module
  */
 #ifdef _WIN32
-#define REGISTER_ARGUS_MODULE(id, dependencies, lifecycle_update_callback) \
+#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, dependencies) \
     BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        argus::register_module(argus::DynamicModule{id, dependencies, lifecycle_update_callback}); \
+        argus::register_dynamic_module(id, lifecycle_update_callback, dependencies); \
         return true; \
     }
 #elif defined(__GNUC__) || defined(__clang__)
-#define REGISTER_ARGUS_MODULE(id, dependencies, lifecycle_update_callback) \
+#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, dependencies) \
     __attribute__((constructor)) static void __argus_module_ctor(void) { \
-        argus::register_module(argus::DynamicModule{id, dependencies, lifecycle_update_callback}); \
+        argus::register_dynamic_module(id, lifecycle_update_callback, dependencies); \
     }
 #else
 #error This platform is not supported.
@@ -76,7 +75,14 @@ namespace argus {
      */
     enum class LifecycleStage {
         /**
-         * \brief The first standard lifecycle stage.
+         * \brief The very first lifecycle stage, intended to be used for tasks
+         *        such as shared library loading which need to occur before any
+         *        "real" lifecycle stages are loaded.
+         */
+        Load,
+        /**
+         * \brief Early initialization stage for performing initialization
+         *        which other modules may be contingent on.
          *
          * Should be used for performing early allocation or other early setup,
          * generally for the purpose of preparing the module for use in the
@@ -84,18 +90,19 @@ namespace argus {
          */
         PreInit,
         /**
-         * \brief Primary initialization stage, for performing most
+         * \brief Primary initialization stage for performing most
          *        initialization tasks.
          */
         Init,
         /**
-         * \brief Post-initialization stage, for performing initialization
+         * \brief Post-initialization stage for performing initialization
          *        contingent on all parent modules being initialized.
          */
         PostInit,
         /**
-         * \brief Early de-initialization. This occurs immediately after the
-         *        engine has committed to shutting down.
+         * \brief Early de-initialization. This occurs directly after the engine
+         *        has committed to shutting down and has halted update callbacks
+         *        on all primary threads.
          *
          * Should be used for performing early de-initialization tasks, such as
          * saving user data. Changes during this stage should not be visible to
@@ -157,6 +164,13 @@ namespace argus {
          * If any dependency fails to load, the dependent module will also fail.
          */
         const std::vector<std::string> dependencies;
+
+        /**
+         * \brief An opaque handle to the shared library containing the module.
+         *
+         * \warning This is intended for internal use only.
+         */
+        void *handle;
     };
 
     /**
@@ -164,21 +178,26 @@ namespace argus {
      *
      * This function should be invoked upon the module library being loaded.
      *
+     * \param id The ID of the module.
+     * \param lifecycle_callback The lifecycle callback of the module.
+     * \param dependencies The IDs of modules this one is dependent on.
+     *
      * \attention For convenience, the macro REGISTER_ARGUS_MODULE registers an
      *            entry point which invokes this function automatically.
      *
      * \throw std::invalid_argument If a module with the given ID is already
      *        registered.
      */
-    void register_module(const DynamicModule &module);
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
+            std::initializer_list<std::string> dependencies = {});
 
     /**
-     * \brief Enables a registered module on demand.
+     * \brief Enables a registered dynamic module on demand.
      *
-     * \param module_id The ID of the module to enable.
+     * \param module_id The ID of the dynamic module to enable.
      *
-     * \throw std::invalid_argument If no module with the given ID is currently
-     *        registered.
+     * \throw std::invalid_argument If no dynamic module with the given ID is
+     *        currently registered.
      */
-    void enable_module(const std::string &module_id);
+    void enable_dynamic_module(const std::string &module_id);
 }
