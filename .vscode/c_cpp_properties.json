@@ -1,20 +1,20 @@
 {
     "env": {
         "defIncludePath": [
-            "${workspaceFolder}/build/gen/render_opengl/include",
-            "${workspaceFolder}/build/res/abacus/include",
+            "${workspaceFolder}/build/generated/static/core/include",
+            "${workspaceFolder}/build/generated/dynamic/render_opengl/include",
             "${workspaceFolder}/external/libs/glfw/include",
             "${workspaceFolder}/external/libs/libarp",
             "${workspaceFolder}/external/libs/libpng",
             "${workspaceFolder}/external/libs/zlib",
-            "${workspaceFolder}/modules/core/include",
-            "${workspaceFolder}/modules/ecs/include",
-            "${workspaceFolder}/modules/input/include",
-            "${workspaceFolder}/modules/lowlevel/include",
-            "${workspaceFolder}/modules/render/include",
-            "${workspaceFolder}/modules/render_opengl/include",
-            "${workspaceFolder}/modules/resman/include",
-            "${workspaceFolder}/modules/wm/include"
+            "${workspaceFolder}/engine/libs/lowlevel/include",
+            "${workspaceFolder}/engine/static/core/include",
+            "${workspaceFolder}/engine/static/ecs/include",
+            "${workspaceFolder}/engine/static/input/include",
+            "${workspaceFolder}/engine/static/render/include",
+            "${workspaceFolder}/engine/static/resman/include",
+            "${workspaceFolder}/engine/static/wm/include",
+            "${workspaceFolder}/engine/dynamic/render_opengl/include"
         ]
     },
     "configurations": [
