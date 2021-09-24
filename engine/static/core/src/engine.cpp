@@ -209,8 +209,6 @@ namespace argus {
     void initialize_engine() {
         signal(SIGINT, _interrupt_handler);
 
-        init_static_modules();
-
         load_external_modules();
 
         if (!g_engine_config.load_modules.empty()) {

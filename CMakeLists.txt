@@ -614,16 +614,12 @@ foreach(id ${STATIC_MODULE_IDS})
   set(deps_list ${MODULE_${id}_DEPS})
   list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
   list(JOIN deps_list ", " deps)
-  list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, update_lifecycle_${id}, init_module_${id}}")
+  list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, update_lifecycle_${id}}")
 endforeach()
 #list(TRANSFORM STATIC_MODULE_DEFS_LIST REPLACE "^(.+)$" "\{\"\\1\", \{\${\$\{MODULE_\\1_DEPS\}\}\}, update_lifecycle_\\1, init_module_\\1\}")
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
 
 list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)
-
-set(MODULE_INIT_FNS_LIST "${STATIC_MODULE_IDS}")
-list(TRANSFORM MODULE_INIT_FNS_LIST REPLACE "^(.+)$" "extern void init_module_\\1(void)\\\;")
-list(JOIN MODULE_INIT_FNS_LIST "\n    " MODULE_INIT_FNS)
 
 set(MODULE_LIFECYCLE_FNS_LIST "${STATIC_MODULE_IDS}")
 list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(LifecycleStage stage)\\\;")

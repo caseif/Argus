@@ -9,8 +9,6 @@
 #include <string>
 
 namespace argus {
-    @MODULE_INIT_FNS@
-
     @MODULE_LIFECYCLE_FNS@
 
     const std::set<std::string> g_static_module_ids = {

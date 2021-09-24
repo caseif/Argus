@@ -53,12 +53,6 @@ namespace argus {
     std::vector<StaticModule> g_enabled_static_modules;
     std::vector<DynamicModule> g_enabled_dyn_modules;
 
-    void init_static_modules(void) {
-        for (auto &module : g_static_modules) {
-            module.init_callback();
-        }
-    }
-
     std::map<std::string, std::string> get_present_external_modules(void) {
         std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
 
