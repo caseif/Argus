@@ -19,6 +19,7 @@
 #pragma once
 
 #include <functional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -49,21 +50,21 @@ constexpr const char *ModuleRender = "render";
  * \param id The ID of the module.
  * \param lifecycle_update_callback The function which handles lifecycle updates
  *        for this module.
- * \param dependencies A list of IDs of modules this one is dependent on.
+ * \param ... A list of IDs of modules this one is dependent on.
  *
  * \sa argus::ArgusModule
  * \sa argus::register_argus_module
  */
 #ifdef _WIN32
-#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, dependencies) \
+#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        argus::register_dynamic_module(id, lifecycle_update_callback, dependencies); \
+        argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
         return true; \
     }
 #elif defined(__GNUC__) || defined(__clang__)
-#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, dependencies) \
+#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     __attribute__((constructor)) static void __argus_module_ctor(void) { \
-        argus::register_dynamic_module(id, lifecycle_update_callback, dependencies); \
+        argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
     }
 #else
 #error This platform is not supported.
@@ -163,7 +164,7 @@ namespace argus {
          *
          * If any dependency fails to load, the dependent module will also fail.
          */
-        const std::vector<std::string> dependencies;
+        const std::set<std::string> dependencies;
 
         /**
          * \brief An opaque handle to the shared library containing the module.
