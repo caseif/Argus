@@ -53,17 +53,17 @@ namespace argus {
     std::vector<StaticModule> g_enabled_static_modules;
     std::vector<DynamicModule> g_enabled_dyn_modules;
 
-    std::map<std::string, std::string> get_present_external_modules(void) {
+    std::map<std::string, std::string> get_present_dynamic_modules(void) {
         std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
 
         if (!is_directory(modules_dir_path)) {
-            _ARGUS_INFO("No external modules to load.\n");
+            _ARGUS_INFO("No dynamic modules to load.\n");
             return std::map<std::string, std::string>();
         }
 
         std::vector<std::string> entries = list_directory_entries(modules_dir_path);
         if (entries.empty()) {
-            _ARGUS_INFO("No external modules to load.\n");
+            _ARGUS_INFO("No dynamic modules to load.\n");
             return std::map<std::string, std::string>();
         }
 
@@ -101,27 +101,27 @@ namespace argus {
         return modules;
     }
 
-    void load_external_modules(void) {
-        auto modules = get_present_external_modules();
+    void load_dynamic_modules(void) {
+        auto modules = get_present_dynamic_modules();
 
         for (const auto &module : modules) {
             auto &module_id = module.first;
             auto &so_path = module.second;
 
-            _ARGUS_INFO("Found external module %s as file %s, attempting to load.\n",
+            _ARGUS_INFO("Found dynamic module %s as file %s, attempting to load.\n",
                     module_id.c_str(), so_path.c_str());
 
             void *handle = nullptr;
             #ifdef _WIN32
             handle = LoadLibraryA(so_path.c_str());
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module %s (errno: %d)\n", module_id.c_str(), GetLastError());
+                _ARGUS_WARN("Failed to load dynamic module %s (errno: %d)\n", module_id.c_str(), GetLastError());
                 continue;
             }
             #else
             handle = dlopen(so_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load external module %s (error: %s)\n", module_id.c_str(), dlerror());
+                _ARGUS_WARN("Failed to load dynamic module %s (error: %s)\n", module_id.c_str(), dlerror());
                 continue;
             }
             #endif
@@ -130,22 +130,22 @@ namespace argus {
         }
     }
 
-    void unload_external_modules(void) {
+    void unload_dynamic_modules(void) {
         for (auto &mod : g_registered_dyn_modules) {
             auto handle = mod.second.handle;
             #ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
-                _ARGUS_WARN("Failed to unload external module (errno: %d)\n", GetLastError());
+                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)\n", GetLastError());
             }
             #else
             if (dlclose(handle) != 0) {
-                _ARGUS_WARN("Failed to unload external module (errno: %d)\n", errno);
+                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)\n", errno);
             }
             #endif
         }
     }
 
-    void enable_static_modules(const std::vector<std::string> &modules) {
+    void enable_modules(const std::vector<std::string> &modules) {
         std::vector<std::string> all_modules = modules;
         for (const auto &mod : g_static_modules) {
             if (std::count(modules.begin(), modules.end(), mod.id) != 0) {
@@ -238,7 +238,7 @@ namespace argus {
         }
     }
 
-    static void _deinitialize_modules(void) {
+    void deinit_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
              stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
             for (auto it = g_enabled_static_modules.rbegin(); it != g_enabled_static_modules.rend(); ++it) {
@@ -249,11 +249,5 @@ namespace argus {
                 it->lifecycle_update_callback(stage);
             }
         }
-    }
-
-    void deinit_modules(void) {
-        _deinitialize_modules();
-
-        unload_external_modules();
     }
 }

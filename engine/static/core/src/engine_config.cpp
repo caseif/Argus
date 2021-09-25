@@ -41,8 +41,8 @@ namespace argus {
     std::vector<RenderBackend> get_available_render_backends(void) {
         std::vector<RenderBackend> backends;
 
-        auto modules = get_present_external_modules();
-        
+        auto modules = get_present_dynamic_modules();
+
         if (modules.find(std::string(RENDER_MODULE_OPENGL)) != modules.cend()) {
             backends.insert(backends.begin(), RenderBackend::OpenGL);
         }

@@ -144,6 +144,9 @@ namespace argus {
                 _ARGUS_DEBUG("Render thread is halted, proceeding with engine bring-down\n");
 
                 deinit_modules();
+
+                unload_dynamic_modules();
+
                 break;
             }
 
@@ -209,12 +212,12 @@ namespace argus {
     void initialize_engine() {
         signal(SIGINT, _interrupt_handler);
 
-        load_external_modules();
+        load_dynamic_modules();
 
         if (!g_engine_config.load_modules.empty()) {
-            enable_static_modules(g_engine_config.load_modules);
+            enable_modules(g_engine_config.load_modules);
         } else {
-            enable_static_modules({ ModuleCore });
+            enable_modules({ ModuleCore });
         }
 
         init_modules();
