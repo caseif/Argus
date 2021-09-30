@@ -55,11 +55,11 @@ namespace argus {
 
     void do_early_init();
 
-    void load_dynamic_modules(void);
+    void enable_modules(const std::vector<std::string> &modules);
+    
+    //void load_dynamic_modules(void);
 
     void unload_dynamic_modules(void);
-
-    void enable_modules(const std::vector<std::string> &modules);
 
     std::map<std::string, std::string> get_present_dynamic_modules(void);
 

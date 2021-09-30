@@ -212,13 +212,13 @@ namespace argus {
     void initialize_engine() {
         signal(SIGINT, _interrupt_handler);
 
-        load_dynamic_modules();
-
         if (!g_engine_config.load_modules.empty()) {
             enable_modules(g_engine_config.load_modules);
         } else {
             enable_modules({ ModuleCore });
         }
+
+        //load_dynamic_modules();
 
         init_modules();
     }

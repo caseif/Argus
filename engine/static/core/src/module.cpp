@@ -49,11 +49,30 @@
 #endif
 
 namespace argus {
-    std::map<const std::string, DynamicModule> g_dyn_module_registrations;
-    std::vector<DynamicModule> g_sorted_dyn_modules;
+    static std::map<const std::string, DynamicModule> g_dyn_module_registrations;
+    static std::vector<DynamicModule> g_sorted_dyn_modules;
 
-    std::vector<StaticModule> g_enabled_static_modules;
-    std::vector<DynamicModule> g_enabled_dyn_modules;
+    static std::vector<StaticModule> g_enabled_static_modules;
+    static std::map<const std::string, DynamicModule> g_enabled_dyn_modules_staging;
+    static std::vector<DynamicModule> g_enabled_dyn_modules;
+
+    static std::string _locate_dynamic_module(const std::string &id) {
+        std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
+
+        if (!is_directory(modules_dir_path)) {
+            _ARGUS_WARN("Dynamic module directory not found.\n");
+            return "";
+        }
+
+        std::string module_path = modules_dir_path + PATH_SEPARATOR
+                + SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR + SHARED_LIB_EXT;
+        if (!is_regfile(module_path)) {
+            _ARGUS_WARN("Item referred to by %s is not a regular file or is inaccessible\n", module_path.c_str());
+            return "";
+        }
+
+        return module_path;
+    }
 
     std::map<std::string, std::string> get_present_dynamic_modules(void) {
         std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
@@ -101,47 +120,6 @@ namespace argus {
         }
 
         return modules;
-    }
-
-    static std::set<std::string> _resolve_transitive_dependencies(const std::set<std::string> initial,
-            const std::vector<std::string> &blame_chain) {
-        std::set<std::string> target;
-
-        for (const auto &module_id : initial) {
-            target.insert(module_id);
-
-            const auto *found_static = std::find_if(g_static_modules.begin(), g_static_modules.end(),
-                    [module_id](auto &sm) { return sm.id == module_id; });
-            if (found_static != g_static_modules.end()) {
-                target.insert(found_static->dependencies.begin(), found_static->dependencies.end());
-                // no need to search recursively since static modules are
-                // guaranteed to have a complete dependency list
-                continue;
-            }
-
-            const auto &found_dyn = g_dyn_module_registrations.find(module_id);
-            if (found_dyn != g_dyn_module_registrations.end()) {
-                target.insert(found_dyn->second.dependencies.begin(), found_dyn->second.dependencies.end());
-
-                std::vector<std::string> new_blame_chain(blame_chain);
-                new_blame_chain.push_back(module_id);
-                auto trans_deps = _resolve_transitive_dependencies(found_dyn->second.dependencies, new_blame_chain);
-                target.insert(trans_deps.begin(), trans_deps.end());
-
-                continue;
-            }
-
-            std::stringstream blame_str;
-            for (auto &dependency : blame_chain) {
-                blame_str << dependency << " -> ";
-            }
-            blame_str << module_id;
-
-            _ARGUS_FATAL("Failed to resolve transitive dependency \"%s\" (dependency chain: %s)\n", module_id.c_str(),
-                    blame_str.str().c_str());
-        }
-
-        return target;
     }
 
     template <typename T>
@@ -226,39 +204,130 @@ namespace argus {
         return sorted_modules;
     }
 
-    void load_dynamic_modules(void) {
-        //TODO: we really shouldn't be loading modules that aren't explicitly requested
-        auto present_modules = get_present_dynamic_modules();
+    static std::string _format_load_error(std::string msg, std::vector<std::string> dependent_chain) {
+        std::stringstream ss;
+        ss << msg << "\n";
+        for (const auto &dependent : dependent_chain) {
+            ss << "    Required by module \"" << dependent << "\"\n";
+        }
+        return ss.str();
+    }
 
-        for (const auto &mod : present_modules) {
-            const auto &module_id = mod.first;
-            const auto &so_path = mod.second;
-
-            _ARGUS_INFO("Found dynamic module %s as file %s, attempting to load.\n",
-                    module_id.c_str(), so_path.c_str());
-
-            void *handle = nullptr;
-            #ifdef _WIN32
-            handle = LoadLibraryA(so_path.c_str());
-            if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load dynamic module %s (errno: %d)\n", module_id.c_str(), GetLastError());
-                continue;
-            }
-            #else
-            handle = dlopen(so_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-            if (handle == nullptr) {
-                _ARGUS_WARN("Failed to load dynamic module %s (error: %s)\n", module_id.c_str(), dlerror());
-                continue;
-            }
-            #endif
-
-            g_dyn_module_registrations.find(module_id)->second.handle = handle;
+    static DynamicModule &_load_dynamic_module(std::string id,
+            std::vector<std::string> dependent_chain = {}) {
+        auto path = _locate_dynamic_module(id);
+        if (path == "") {
+            _ARGUS_FATAL("%s", _format_load_error("Dynamic module " + id + " was requested but could not be located",
+                    dependent_chain).c_str());
         }
 
-        auto sorted_modules = _topo_sort_modules(g_dyn_module_registrations);
-        for (auto &mod : sorted_modules) {
-            g_sorted_dyn_modules.push_back(mod);
+        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file " + path,
+                dependent_chain).c_str());
+
+        void *handle = nullptr;
+        #ifdef _WIN32
+        handle = LoadLibraryA(path.c_str());
+        if (handle == nullptr) {
+            auto err_msg = _format_load_error("Failed to load dynamic module " + id
+                    + " (error " + GetLastError() + ")", dependent_chain);
+            _ARGUS_FATAL("%s", err_msg.str().c_str());
         }
+        #else
+        handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+        if (handle == nullptr) {
+            auto err_msg = _format_load_error("Failed to load dynamic module " + id
+                    + " (error " + dlerror() + ")", dependent_chain);
+            _ARGUS_FATAL("%s", err_msg.c_str());
+        }
+        #endif
+
+        if (g_dyn_module_registrations.find(id) == g_dyn_module_registrations.end()) {
+            auto err_msg = _format_load_error("Module " + id
+                    + " attempted to register itself by a different ID than indicated by its filename",
+                    dependent_chain);
+            _ARGUS_FATAL("%s", err_msg.c_str());
+        }
+
+        auto &mod = g_dyn_module_registrations.find(id)->second;
+        mod.handle = handle;
+        return mod;
+    }
+
+    static void _enable_dynamic_module(const std::string &module_id,
+            const std::vector<std::string> &dependent_chain = {}) {
+        if (g_enabled_dyn_modules_staging.find(module_id) != g_enabled_dyn_modules_staging.end()) {
+            return;
+        }
+
+        // skip duplicates
+        for (const auto &enabled_module : g_enabled_dyn_modules_staging) {
+            if (enabled_module.first == module_id) {
+                if (dependent_chain.empty()) {
+                    _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
+                }
+                return;
+            }
+        }
+
+        auto it = g_dyn_module_registrations.find(module_id);
+        if (it == g_dyn_module_registrations.cend()) {
+            auto loaded_modules = _load_dynamic_module(module_id);
+
+            it = g_dyn_module_registrations.find(module_id);
+            if (it == g_dyn_module_registrations.cend()) {
+                std::stringstream err_msg;
+                err_msg << "Module \"" << module_id
+                        << "\" was loaded but a matching registration was not found (name mismatch?)";
+                for (const auto &dependent : dependent_chain) {
+                    err_msg << "\n    Required by module \"" << dependent << "\"";
+                }
+                throw std::invalid_argument(err_msg.str());
+            }
+        }
+
+        std::vector<std::string> new_chain = dependent_chain;
+        new_chain.insert(new_chain.cend(), module_id);
+        for (const auto &dependency : it->second.dependencies) {
+            // skip static modules since they're always loaded
+            if (g_static_module_ids.find(dependency) != g_static_module_ids.end()) {
+                continue;
+            }
+
+            _enable_dynamic_module(dependency, new_chain);
+        }
+
+        g_enabled_dyn_modules_staging.insert({module_id, it->second});
+
+        _ARGUS_INFO("Enabled dynamic module %s.\n", module_id.c_str());
+    }
+
+    void enable_dynamic_module(const std::string &module_id) {
+        _enable_dynamic_module(module_id);
+    }
+
+    void enable_modules(const std::vector<std::string> &modules) {
+        std::set<std::string> all_modules; // requested + transitive modules
+
+        for (const auto &module_id : modules) {
+            auto *found_static = std::find_if(g_static_modules.begin(), g_static_modules.end(),
+                [module_id](auto &sm) { return sm.id == module_id; });
+            if (found_static != g_static_modules.end()) {
+                all_modules.insert({found_static->id});
+                all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
+            } else {
+                enable_dynamic_module(module_id);
+            }
+        }
+
+        // we add them to the master list like this in order to preserve the hardcoded load order
+        for (const auto &mod : g_static_modules) {
+            if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
+                g_enabled_static_modules.push_back(mod);
+            }
+        }
+
+        // we'll sort the dynamic modules just before bringing them up, since
+        // they can still be requested during the Load lifecycle event
     }
 
     void unload_dynamic_modules(void) {
@@ -273,41 +342,6 @@ namespace argus {
                 _ARGUS_WARN("Failed to unload dynamic module (errno: %d)\n", errno);
             }
             #endif
-        }
-    }
-
-    void enable_modules(const std::vector<std::string> &modules) {
-        std::set<std::string> all_modules; // requested + transitive modules
-
-        for (const auto &module_id : modules) {
-            auto *found_static = std::find_if(g_static_modules.begin(), g_static_modules.end(),
-                [module_id](auto &sm) { return sm.id == module_id; });
-            if (found_static != g_static_modules.end()) {
-                all_modules.insert({found_static->id});
-                all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
-            } else {
-                auto found_dyn = g_dyn_module_registrations.find(module_id);
-                if (found_dyn != g_dyn_module_registrations.end()) {
-                    all_modules.insert({found_dyn->first});
-                    auto trans_deps = _resolve_transitive_dependencies(found_dyn->second.dependencies, { module_id });
-                    all_modules.insert(trans_deps.begin(), trans_deps.end());
-                } else {
-                    _ARGUS_FATAL("Module %s was requested but could not be found.\n", module_id.c_str());
-                }
-            }
-        }
-
-        // we add them to the master list like this in order to preserve the hardcoded load order
-        for (const auto &mod : g_static_modules) {
-            if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
-                g_enabled_static_modules.push_back(mod);
-            }
-        }
-
-        for (const auto &mod : g_sorted_dyn_modules) {
-            if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
-                g_enabled_dyn_modules.push_back(mod);
-            }
         }
     }
 
@@ -331,60 +365,37 @@ namespace argus {
 
         g_dyn_module_registrations.insert({ id, std::move(mod) });
 
-        _ARGUS_INFO("Registered dynamic module %s\n", id.c_str());
+        _ARGUS_DEBUG("Registered dynamic module %s\n", id.c_str());
     }
 
-    static void _enable_dynamic_module(const std::string &module_id, const std::vector<std::string> &dependent_chain) {
-        // skip duplicates
-        for (const auto &enabled_module : g_enabled_dyn_modules) {
-            if (enabled_module.id == module_id) {
-                if (dependent_chain.empty()) {
-                    _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
-                }
-                return;
-            }
+    static void _send_lifecycle_update(LifecycleStage stage) {
+        for (const auto &mod : g_enabled_static_modules) {
+            mod.lifecycle_update_callback(stage);
         }
 
-        auto it = g_dyn_module_registrations.find(module_id);
-        if (it == g_dyn_module_registrations.cend()) {
-            std::stringstream err_msg;
-            err_msg << "Module \"" << module_id << "\" was requested, but is not registered";
-            for (const auto &dependent : dependent_chain) {
-                err_msg << "\n    Required by module \"" << dependent << "\"";
-            }
-            throw std::invalid_argument(err_msg.str());
+        for (const auto &mod : g_enabled_dyn_modules) {
+            mod.lifecycle_update_callback(stage);
         }
-
-        std::vector<std::string> new_chain = dependent_chain;
-        new_chain.insert(new_chain.cend(), module_id);
-        for (const auto &dependency : it->second.dependencies) {
-            // skip static modules since they're always loaded
-            if (g_static_module_ids.find(dependency) != g_static_module_ids.end()) {
-                continue;
-            }
-
-            _enable_dynamic_module(dependency, new_chain);
-        }
-
-        g_enabled_dyn_modules.push_back(it->second);
-
-        _ARGUS_INFO("Enabled module %s.\n", module_id.c_str());
-    }
-
-    void enable_dynamic_module(const std::string &module_id) {
-        _enable_dynamic_module(module_id, {});
     }
 
     void init_modules(void) {
-        for (LifecycleStage stage = LifecycleStage::Load; stage <= LifecycleStage::PostInit;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
-            for (const auto &mod : g_enabled_static_modules) {
-                mod.lifecycle_update_callback(stage);
-            }
+        auto dyn_mod_initial_count = g_enabled_dyn_modules_staging.size();
+        g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
 
-            for (const auto &mod_info : g_enabled_dyn_modules) {
-                mod_info.lifecycle_update_callback(stage);
-            }
+        _ARGUS_DEBUG("Propagating Load lifecycle stage\n");
+        // give modules a chance to request additional dynamic modules
+        _send_lifecycle_update(LifecycleStage::Load);
+        // re-sort the dynamic module if it was augmented
+        if (g_enabled_dyn_modules_staging.size() > dyn_mod_initial_count) {
+            _ARGUS_DEBUG("Dynamic module list changed, must re-sort\n");
+            g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
+        }
+
+        _ARGUS_DEBUG("Propagating remaining bring-up lifecycle stages\n");
+
+        for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
+                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+            _send_lifecycle_update(stage);
         }
     }
 
