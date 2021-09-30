@@ -229,14 +229,14 @@ namespace argus {
         handle = LoadLibraryA(path.c_str());
         if (handle == nullptr) {
             auto err_msg = _format_load_error("Failed to load dynamic module " + id
-                    + " (error " + GetLastError() + ")", dependent_chain);
-            _ARGUS_FATAL("%s", err_msg.str().c_str());
+                    + " (error " + std::to_string(GetLastError()) + ")", dependent_chain);
+            _ARGUS_FATAL("%s", err_msg.c_str());
         }
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle == nullptr) {
             auto err_msg = _format_load_error("Failed to load dynamic module " + id
-                    + " (error " + dlerror() + ")", dependent_chain);
+                    + " (error: " + dlerror() + ")", dependent_chain);
             _ARGUS_FATAL("%s", err_msg.c_str());
         }
         #endif
@@ -309,9 +309,13 @@ namespace argus {
         std::set<std::string> all_modules; // requested + transitive modules
 
         for (const auto &module_id : modules) {
-            auto *found_static = std::find_if(g_static_modules.begin(), g_static_modules.end(),
+            // Important: MSVC uses iterators for std::array whereas GCC/Clang
+            // take a shortcut and use a pointer directly, so the `auto` type
+            // here is actually different per-platform. For instance, forcing it
+            // to be a pointer breaks MSVC compilation.
+            auto found_static = std::find_if(g_static_modules.cbegin(), g_static_modules.cend(),
                 [module_id](auto &sm) { return sm.id == module_id; });
-            if (found_static != g_static_modules.end()) {
+            if (found_static != g_static_modules.cend()) {
                 all_modules.insert({found_static->id});
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
             } else {
