@@ -228,7 +228,13 @@ if(CMD_RES)
   message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
 endif()
 
-set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>arptool${CMAKE_EXECUTABLE_SUFFIX}")
+if(MSVC)
+  set(arptool_exe_dir "${CMAKE_BUILD_TYPE}/")
+  else()
+  set(arptool_exe_dir "")
+endif()
+
+set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/${arptool_exe_dir}arptool${CMAKE_EXECUTABLE_SUFFIX}")
 
 add_custom_command(OUTPUT "${arptool_exe}"
                   COMMAND "${CMAKE_COMMAND}" "--build" "."
@@ -353,6 +359,7 @@ function(top_sort NODES EDGES OUT_LIST)
     list(REMOVE_AT START_NODES 0)
     list(APPEND SORTED_NODES "${CUR_NODE}")
 
+    set(DEST_IN_EDGES "")
     set(CUR_OUT_EDGES "${CUR_EDGES}")
     list(FILTER CUR_OUT_EDGES INCLUDE REGEX "^${CUR_NODE}/")
     foreach(edge ${CUR_OUT_EDGES})
