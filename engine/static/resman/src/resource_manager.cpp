@@ -59,6 +59,12 @@
 #include <cctype>
 #include <cstddef>
 
+#ifdef _WIN32
+    #include <direct.h>
+#else
+    #include <unistd.h>
+#endif
+
 #define UID_NS_SEPARATOR ':'
 #define UID_PATH_SEPARATOR '/'
 
@@ -210,11 +216,13 @@ namespace argus {
 
     void ResourceManager::discover_resources(void) {
         try {
-            std::string exe_path = get_executable_path();
+            /*std::string exe_path = get_executable_path();
 
-            std::string exe_dir = get_parent(exe_path);
+            std::string exe_dir = get_parent(exe_path);*/
 
-            std::string res_dir = exe_dir + PATH_SEPARATOR + RESOURCES_DIR;
+            auto cwd = getcwd(NULL, 0);
+            std::string res_dir = std::string(cwd) + PATH_SEPARATOR + RESOURCES_DIR;
+            free(cwd);
 
             _discover_arp_packages(pimpl->package_set, res_dir);
 

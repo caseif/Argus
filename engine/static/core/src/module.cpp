@@ -43,9 +43,11 @@
 #include <cstring>
 
 #ifdef _WIN32
+    #include <direct.h>
     #include <Windows.h>
 #else
     #include <dlfcn.h>
+    #include <unistd.h>
 #endif
 
 namespace argus {
@@ -57,7 +59,9 @@ namespace argus {
     static std::vector<DynamicModule> g_enabled_dyn_modules;
 
     static std::string _locate_dynamic_module(const std::string &id) {
-        std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
+        auto cwd = getcwd(NULL, 0);
+        std::string modules_dir_path = std::string(cwd) + PATH_SEPARATOR MODULES_DIR_NAME;
+        free(cwd);
 
         if (!is_directory(modules_dir_path)) {
             _ARGUS_WARN("Dynamic module directory not found.\n");
@@ -75,7 +79,9 @@ namespace argus {
     }
 
     std::map<std::string, std::string> get_present_dynamic_modules(void) {
-        std::string modules_dir_path = get_parent(get_executable_path()) + PATH_SEPARATOR MODULES_DIR_NAME;
+        auto cwd = getcwd(NULL, 0);
+        std::string modules_dir_path = std::string(cwd) + PATH_SEPARATOR MODULES_DIR_NAME;
+        free(cwd);
 
         if (!is_directory(modules_dir_path)) {
             _ARGUS_INFO("No dynamic modules to load.\n");
