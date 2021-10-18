@@ -217,10 +217,16 @@ endif()
 
 message("Configuring arptool")
 set(arptool_wd "${CMAKE_BINARY_DIR}/tooling/arptool")
+
+set(arptool_exe_dir "${CMAKE_BINARY_DIR}/tooling/arptool")
+
 execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
 execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"
                         "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                         "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+                        "-DLIBRARY_OUTPUT_DIRECTORY=${arptool_exe_dir}"
+                        "-DLIBRARY_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
+                        "-DLIBRARY_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
                         "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
                 WORKING_DIRECTORY "${arptool_wd}"
                 RESULT_VARIABLE CMD_RES)
@@ -228,13 +234,7 @@ if(CMD_RES)
   message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
 endif()
 
-if(MSVC)
-  set(arptool_exe_dir "${CMAKE_BUILD_TYPE}/")
-  else()
-  set(arptool_exe_dir "")
-endif()
-
-set(arptool_exe "${CMAKE_BINARY_DIR}/tooling/arptool/${arptool_exe_dir}arptool${CMAKE_EXECUTABLE_SUFFIX}")
+set(arptool_exe "${arptool_exe_dir}/arptool${CMAKE_EXECUTABLE_SUFFIX}")
 
 add_custom_command(OUTPUT "${arptool_exe}"
                   COMMAND "${CMAKE_COMMAND}" "--build" "."
@@ -389,17 +389,13 @@ function(top_sort NODES EDGES OUT_LIST)
 endfunction()
 
 function(add_header_files BASE_DIR)
-  file(GLOB_RECURSE LOCAL_H_FILES ${BASE_DIR}/*.h)
-  file(GLOB_RECURSE LOCAL_HPP_FILES ${BASE_DIR}/*.hpp)
+  list(APPEND LOCAL_INCLUDE_DIRS ${BASE_DIR})
 
-  set(CONCAT_H_FILES ${H_FILES})
-  set(CONCAT_HPP_FILES ${HPP_FILES})
+  set(CONCAT_INCLUDE_DIRS ${INCLUDE_DIRS})
 
-  list(APPEND CONCAT_H_FILES ${LOCAL_H_FILES})
-  list(APPEND CONCAT_HPP_FILES ${LOCAL_HPP_FILES})
+  list(APPEND CONCAT_INCLUDE_DIRS ${LOCAL_INCLUDE_DIRS})
 
-  set(H_FILES ${CONCAT_H_FILES} PARENT_SCOPE)
-  set(HPP_FILES ${CONCAT_HPP_FILES} PARENT_SCOPE)
+  set(INCLUDE_DIRS ${CONCAT_INCLUDE_DIRS} PARENT_SCOPE)
 endfunction()
 
 function(add_source_files BASE_DIR)
@@ -533,7 +529,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES} ${H_FILES} ${HPP_FILES})
+    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -549,7 +545,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
 
     copy_dep_output("${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
   else()
-    add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES} ${H_FILES} ${HPP_FILES})
+    add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
 
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
     list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
@@ -566,8 +562,8 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
 
   # recursively load this module's include dirs
   find_module_includes(PROJECT_INCLUDES)
-  list(APPEND H_FILES "${PROJECT_INCLUDES}")
-  target_include_directories("${PROJECT_NAME}" PUBLIC "${H_FILES}")
+  list(APPEND INCLUDE_DIRS "${PROJECT_INCLUDES}")
+  target_include_directories("${PROJECT_NAME}" PUBLIC "${INCLUDE_DIRS}")
 
   if(TARGET ${res_gen_target})
     add_dependencies("${PROJECT_NAME}" "${res_gen_target}")

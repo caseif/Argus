@@ -174,7 +174,7 @@ namespace argus {
             return;
         }
 
-        float cos_p = std::cos(transform.pimpl->rotation.x);
+        /*float cos_p = std::cos(transform.pimpl->rotation.x);
         float sin_p = std::sin(transform.pimpl->rotation.x);
         float cos_y = std::cos(transform.pimpl->rotation.y);
         float sin_y = std::sin(transform.pimpl->rotation.y);
@@ -193,7 +193,7 @@ namespace argus {
         Vector3f scale_current = transform.pimpl->scale;
         transform.pimpl->scale_mutex.unlock();
 
-        auto dst = transform.pimpl->matrix_rep;
+        auto dst = transform.pimpl->matrix_rep;*/
 
         //TODO: compute matrix (probably going to use glm)
 

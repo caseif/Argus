@@ -256,6 +256,7 @@ namespace argus {
             if (inc_refcount) {
                 auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
                 _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)\n", uid.c_str(), new_ref_count);
+                UNUSED(new_ref_count); // suppress unused warning in release configuration
             }
 
             return it->second;

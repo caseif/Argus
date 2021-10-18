@@ -197,7 +197,7 @@ namespace argus {
             for (auto &id : sorted_ids) {
                 sorted_modules.push_back(module_map.find(id)->second);
             }
-        } catch (std::invalid_argument) {
+        } catch (std::invalid_argument const&) {
             _ARGUS_FATAL("Circular dependency detected in dynamic modules, cannot proceed.\n");
         }
 
