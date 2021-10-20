@@ -224,9 +224,9 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
 execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"
                         "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                         "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
-                        "-DLIBRARY_OUTPUT_DIRECTORY=${arptool_exe_dir}"
-                        "-DLIBRARY_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
-                        "-DLIBRARY_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
+                        "-DRUNTIME_OUTPUT_DIRECTORY=${arptool_exe_dir}"
+                        "-DRUNTIME_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
+                        "-DRUNTIME_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
                         "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
                 WORKING_DIRECTORY "${arptool_wd}"
                 RESULT_VARIABLE CMD_RES)
@@ -255,13 +255,13 @@ function(copy_dep_output PARENT_TARGET DEP_TARGET PREFIX)
   add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD 
     COMMAND "${CMAKE_COMMAND}" -E copy
       "$<TARGET_FILE:${DEP_TARGET}>"
-      "${DIST_DIR}/lib/${PREFIX}/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_FILE_NAME:${DEP_TARGET}>"
+      "${DIST_DIR}/lib/${PREFIX}/$<TARGET_FILE_NAME:${DEP_TARGET}>"
     COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
   if(WIN32)
     add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E copy
         "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-        "${DIST_DIR}/lib/${PREFIX}/$<IF:$<BOOL:${MSVC}>,$<CONFIG>/,>$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
+        "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
       COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
   endif()
 endfunction()
