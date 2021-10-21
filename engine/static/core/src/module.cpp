@@ -64,14 +64,15 @@ namespace argus {
         free(cwd);
 
         if (!is_directory(modules_dir_path)) {
-            _ARGUS_WARN("Dynamic module directory not found.\n");
+            _ARGUS_WARN("Dynamic module directory not found. (Searched at %s)\n", modules_dir_path.c_str());
             return "";
         }
 
         std::string module_path = modules_dir_path + PATH_SEPARATOR
                 + SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR + SHARED_LIB_EXT;
         if (!is_regfile(module_path)) {
-            _ARGUS_WARN("Item referred to by %s is not a regular file or is inaccessible\n", module_path.c_str());
+            _ARGUS_WARN("Item referred to by %s does not exist, is not a regular file, or is inaccessible\n",
+                    module_path.c_str());
             return "";
         }
 

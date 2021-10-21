@@ -55,10 +55,14 @@ constexpr const char *ModuleRender = "render";
  * \sa argus::ArgusModule
  * \sa argus::register_argus_module
  */
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
-    BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
+    extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
+        switch (fdwReason) { \
+            case DLL_PROCESS_ATTACH: \
+                argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
+                break; \
+        } \
         return true; \
     }
 #elif defined(__GNUC__) || defined(__clang__)
