@@ -529,7 +529,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    add_library(${PROJECT_NAME} SHARED ${C_FILES} ${CPP_FILES} ${S_FILES})
+    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${S_FILES})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
