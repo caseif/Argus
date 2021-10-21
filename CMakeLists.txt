@@ -224,9 +224,9 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
 execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"
                         "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                         "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
-                        "-DRUNTIME_OUTPUT_DIRECTORY=${arptool_exe_dir}"
-                        "-DRUNTIME_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
-                        "-DRUNTIME_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
+                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${arptool_exe_dir}"
+                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
+                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
                         "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
                 WORKING_DIRECTORY "${arptool_wd}"
                 RESULT_VARIABLE CMD_RES)
