@@ -145,7 +145,7 @@ namespace argus {
         }
 
         while (!start_nodes.empty()) {
-            auto &cur_node = start_nodes.front();
+            auto cur_node = start_nodes.front();
             start_nodes.pop_front();
             if (std::count(sorted_nodes.begin(), sorted_nodes.end(), cur_node) == 0) {
                 sorted_nodes.push_back(cur_node);
