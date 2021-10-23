@@ -124,22 +124,9 @@ namespace argus {
 
         pimpl->state = WINDOW_STATE_NULL;
 
-        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-
-        pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, DEF_TITLE, nullptr, nullptr);
-
-        if (pimpl->handle == nullptr) {
-            _ARGUS_FATAL("Failed to create GLFW window");
-        }
-
         pimpl->close_callback = nullptr;
 
         g_window_count++;
-        g_window_map.insert({pimpl->handle, this});
-
-        _register_callbacks(pimpl->handle);
 
         pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
 
@@ -169,8 +156,6 @@ namespace argus {
         g_window_map.erase(pimpl->handle);
 
         glfwDestroyWindow(pimpl->handle);
-
-        printf("destroyed window\n");
 
         if (--g_window_count == 0) {
             stop_engine();
@@ -218,6 +203,20 @@ namespace argus {
         // event and initialized itself properly.
 
         if (!(pimpl->state & WINDOW_STATE_CREATED)) {
+            glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+            glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, DEF_TITLE, nullptr, nullptr);
+
+            if (pimpl->handle == nullptr) {
+                _ARGUS_FATAL("Failed to create GLFW window");
+            }
+
+            g_window_map.insert({pimpl->handle, this});
+
+            _register_callbacks(pimpl->handle);
+
             pimpl->state |= WINDOW_STATE_CREATED;
 
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
