@@ -201,14 +201,17 @@ namespace argus {
 
     void Window::update(const TimeDelta delta) {
         // The initial part of a Window's lifecycle looks something like this:
-        //   - Window gets constructed
+        //   - Window gets constructed.
         //   - On next render iteration, Window has initial update and sets its
-        //     CREATED flag, dispatching an event
+        //     CREATED flag and dispatches an event.
         //   - Renderer picks up the event and initializes itself within the
-        //     same render iteration
+        //     same render iteration (after applying any properties which have
+        //     been configured).
         //   - On subsequent render iterations, window checks if it has been
         //     configured (via Window::activate) and aborts update if not.
         //   - If activated, Window sets ready flag and continues as normal.
+        //   - If any at any point a close request is dispatched to the window,
+        //     it will supercede any other initialization steps.
         //
         // By the time the ready flag is set, the Window is guaranteed to be
         // configured and the renderer is guaranteed to have seen the CREATE
@@ -224,15 +227,6 @@ namespace argus {
 
         if (!(pimpl->state & WINDOW_STATE_CONFIGURED)) {
             return;
-        }
-
-        if (!(pimpl->state & WINDOW_STATE_READY)) {
-            pimpl->state |= WINDOW_STATE_READY;
-        }
-
-        if (!(pimpl->state & WINDOW_STATE_VISIBLE)) {
-            glfwShowWindow(pimpl->handle);
-            pimpl->state |= WINDOW_STATE_VISIBLE;
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
@@ -284,6 +278,15 @@ namespace argus {
         pimpl->properties.fullscreen.clear_dirty();
         pimpl->properties.resolution.clear_dirty();
         pimpl->properties.position.clear_dirty();
+
+        if (!(pimpl->state & WINDOW_STATE_READY)) {
+            pimpl->state |= WINDOW_STATE_READY;
+        }
+
+        if (!(pimpl->state & WINDOW_STATE_VISIBLE)) {
+            glfwShowWindow(pimpl->handle);
+            pimpl->state |= WINDOW_STATE_VISIBLE;
+        }
 
         _dispatch_window_update_event(*this, delta);
 
