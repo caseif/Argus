@@ -45,7 +45,7 @@ option(USE_ASAN "Build with AddressSanitizer support" OFF)
 # CMake configuration
 #####################
 
-#set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
@@ -492,7 +492,6 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
 
     add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
 
-    #add_header_files("${h_out_dir_base}")
     add_source_file("${c_out_path}")
   endif()
 
@@ -619,7 +618,6 @@ foreach(id ${STATIC_MODULE_IDS})
   list(JOIN deps_list ", " deps)
   list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, update_lifecycle_${id}}")
 endforeach()
-#list(TRANSFORM STATIC_MODULE_DEFS_LIST REPLACE "^(.+)$" "\{\"\\1\", \{\${\$\{MODULE_\\1_DEPS\}\}\}, update_lifecycle_\\1, init_module_\\1\}")
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
 
 list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)
