@@ -300,14 +300,18 @@ namespace argus {
         #ifdef _WIN32
         WIN32_FIND_DATAA find_data;
 
-        HANDLE find_handle = FindFirstFileA(directory_path.c_str(), &find_data);
+        HANDLE find_handle = FindFirstFile((directory_path + "\\*").c_str(), &find_data);
         if (find_handle == INVALID_HANDLE_VALUE) {
             return res;
         }
 
         do {
+            if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) {
+                continue;
+            }
+
             res.insert(res.end(), find_data.cFileName);
-        } while (FindNextFileA(find_handle, &find_data) != 0);
+        } while (FindNextFile(find_handle, &find_data) != 0);
         #else
         DIR *dir = opendir(directory_path.c_str());
         validate_syscall(dir != nullptr, "opendir");
