@@ -26,7 +26,7 @@ jobs:
         path: build/dist/
 
   build-windows:
-    runs-on: windows-2016
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
       with:
@@ -38,7 +38,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: true
     - name: Configure
-      run: mkdir build && cd build && cmake -G "Visual Studio 15 2017" -DCMAKE_GENERATOR_PLATFORM=x64 ..
+      run: mkdir build && cd build && cmake -DCMAKE_SYSTEM_VERSION=10.0.19041.0 -DCMAKE_GENERATOR_PLATFORM=x64 ..
     - name: Build
       run: cmake --build build --config Debug --parallel 8
     - name: Archive

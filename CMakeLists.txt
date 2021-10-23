@@ -22,6 +22,11 @@ project(argus_root
         LANGUAGES C CXX ASM
         VERSION 0.1.0)
 
+if("${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}" STREQUAL "10.0.17763.0")
+  message(FATAL_ERROR "Compilation against Windows SDK version 10.0.17763 is broken due to a bug in the SDK headers. \
+  Please use a different SDK version.")
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 set(LIB_BASE_NAME argus)
