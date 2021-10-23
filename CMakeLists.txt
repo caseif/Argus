@@ -19,7 +19,7 @@ if(POLICY CMP0074)
 endif()
 
 project(argus_root
-        LANGUAGES C CXX ASM
+        LANGUAGES C CXX
         VERSION 0.1.0)
 
 if("${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}" STREQUAL "10.0.17763.0")
@@ -533,7 +533,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${S_FILES})
+    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
