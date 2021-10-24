@@ -85,11 +85,15 @@ namespace argus {
         }
 
         #ifdef _MSC_VER
-        #pragma warning(suppress: 4611)
+        #pragma warning(push, 3)
+        #pragma warning(disable: 4611)
         #endif
         if (setjmp(png_jmpbuf(png_ptr)) != 0) {
             _ARGUS_FATAL("libpng failed\n");
         }
+        #ifdef _MSC_VER
+        #pragma warning(pop)
+        #endif
 
         png_set_read_fn(png_ptr, static_cast<void*>(&stream), _read_stream);
 

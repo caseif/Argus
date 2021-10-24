@@ -89,7 +89,8 @@ namespace argus {
         } else {
             glEnableVertexAttribArray(attr_index);
             glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE,
-                    vertex_len * static_cast<uint32_t>(sizeof(GLfloat)), reinterpret_cast<GLvoid*>(*attr_offset));
+                    vertex_len * static_cast<uint32_t>(sizeof(GLfloat)),
+                    reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(*attr_offset)));
         }
 
         *attr_offset += attr_len * static_cast<uint32_t>(sizeof(GLfloat));
