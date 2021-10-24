@@ -60,8 +60,8 @@ constexpr const char *ModuleRender = "render";
 #ifdef _MSC_VER
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        UNUSED(hinstDll);
-        UNUSED(lpvReserved);
+        UNUSED(hinstDll); \
+        UNUSED(lpvReserved); \
         switch (fdwReason) { \
             case DLL_PROCESS_ATTACH: \
                 argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
