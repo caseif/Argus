@@ -60,7 +60,7 @@ constexpr const char *ModuleRender = "render";
 #ifdef _MSC_VER
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        UNUSED(hinstDll); \
+        UNUSED(hinstDLL); \
         UNUSED(lpvReserved); \
         switch (fdwReason) { \
             case DLL_PROCESS_ATTACH: \
