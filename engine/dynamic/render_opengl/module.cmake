@@ -1,20 +1,5 @@
-project("render_opengl" C CXX)
-
-find_package(OpenGL REQUIRED)
-
-set(GEN_INC_DIR "${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
-set(GEN_SRC_DIR "${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
-
-# engine modules this one depends on at runtime (as a list)
-set(MODULE_ENGINE_MOD_DEPS "core;wm;resman;render")
-# engine libraries this one depends on (as a list)
-set(MODULE_ENGINE_LIB_DEPS "lowlevel")
-# libraries this module depends on (as a list)
-set(MODULE_LINKER_DEPS "${GLFW_LIBRARY};${OPENGL_LIBRARIES}")
-# include dirs this module uses
-set(MODULE_INCLUDES "${GLFW_INCLUDE_DIR};${OPENGL_INCLUDE_DIR};${GEN_INC_DIR}")
-# source paths for this module
-set(LOCAL_SRC_PATHS "")
+set(GEN_INC_DIR "${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
+set(GEN_SRC_DIR "${MODULE_GENERATED_DIR}/${SRC_DIR_NAME}")
 
 set(EXT_TOOLING_DIR "${ROOT_SOURCE_DIR}/external/tooling")
 
@@ -51,10 +36,10 @@ if(CMD_RES)
 endif()
 
 file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
-set(OPENGL_PROFILE_PATH "${CURRENT_SOURCE_DIR}/tooling/aglet/opengl_profile.xml")
+set(OPENGL_PROFILE_PATH "${MODULE_PATH}/tooling/aglet/opengl_profile.xml")
 execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
     "-p" "${OPENGL_PROFILE_PATH}"
-    "-o" "${CURRENT_GENERATED_DIR}"
+    "-o" "${MODULE_GENERATED_DIR}"
     WORKING_DIRECTORY "${ROOT_SOURCE_DIR}/external/tooling/aglet/"
     RESULT_VARIABLE CMD_RES)
 if(CMD_RES)

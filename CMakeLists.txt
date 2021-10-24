@@ -46,6 +46,22 @@ option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
+###########################
+# Module property constants
+###########################
+
+set(MODULE_PROP_NAME "name")
+set(MODULE_PROP_TYPE "type")
+set(MODULE_PROP_LANGS "languages")
+set(MODULE_PROP_INCLUDE_DIRS "include_dirs")
+set(MODULE_PROP_MOD_DEPS "engine_module_deps")
+set(MODULE_PROP_LIB_DEPS "engine_library_deps")
+set(MODULE_PROP_LINKER_DEPS "linker_deps")
+set(MODULE_PROP_LINKER_DEPS_MSVC "linker_deps_msvc")
+set(MODULE_PROP_LINKER_DEPS_GCC "linker_deps_gcc")
+set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
+set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
+
 #####################
 # CMake configuration
 #####################
@@ -285,7 +301,7 @@ endfunction()
 # recursively finds the module's top-level include dirs and saves them to the given variable
 function(find_module_includes DEST)
   # load this module's include dirs
-  set(ALL_INCLUDES "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME};${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
+  set(ALL_INCLUDES "${MODULE_PATH}/${INC_DIR_NAME};${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
 
   # load include dirs defined by module dependencies
   find_dep_module_includes(PARENT_INCLUDES)
@@ -430,26 +446,124 @@ function(add_source_file FILE_PATH)
   endif()
 endfunction()
 
-function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
-  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
-    set(CURRENT_SOURCE_DIR "${ENGINE_LIBS_SRC_DIR}/${SUBPROJECT_NAME}")
-    set(CURRENT_GENERATED_DIR "${ENGINE_LIBS_GENERATED_DIR}/${SUBPROJECT_NAME}")
-  elseif("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
-    set(CURRENT_SOURCE_DIR "${STATIC_MODULES_SRC_DIR}/${SUBPROJECT_NAME}")
-    set(CURRENT_GENERATED_DIR "${STATIC_MODULES_GENERATED_DIR}/${SUBPROJECT_NAME}")
-  elseif("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    set(CURRENT_SOURCE_DIR "${DYNAMIC_MODULES_SRC_DIR}/${SUBPROJECT_NAME}")
-    set(CURRENT_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${SUBPROJECT_NAME}")
+function(configure_module MODULE_PATH)
+  set(MODULE_PROPS_PATH "${MODULE_PATH}/module.properties")
+  if((NOT EXISTS "${MODULE_PROPS_PATH}") OR (IS_DIRECTORY "${MODULE_PROPS_PATH}"))
+    message(AUTHOR_WARNING "Failed to find module.properties in requested path ${MODULE_PATH} - skipping")
+    return()
   endif()
 
-  include("${CURRENT_SOURCE_DIR}/CMakeLists.txt")
+  file(READ "${MODULE_PROPS_PATH}" MODULE_PROPS_CONTENT)
+  string(REPLACE "\r\n" "\n" MODULE_PROPS_CONTENT "${MODULE_PROPS_CONTENT}")
+  # next line is a hack to avoid inadvertently escaping the list separator
+  string(REPLACE "\\\n" "\\ \n" MODULE_PROPS_CONTENT "${MODULE_PROPS_CONTENT}")
+  string(REPLACE ";" "\\;" MODULE_PROPS_CONTENT "${MODULE_PROPS_CONTENT}")
+  string(REPLACE "\n" ";" MODULE_PROPS_LINES "${MODULE_PROPS_CONTENT}")
+  set(span_lines 0)
+  foreach(line ${MODULE_PROPS_LINES})
+    string(STRIP "${line}" trimmed)
 
-  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    if("${trimmed}" STREQUAL "")
+      continue()
+    endif()
+
+    if("${trimmed}" MATCHES "^[!#]")
+      continue()
+    endif()
+
+    string(REGEX MATCH "\\\\s*$" trailing_slash "${trimmed}")
+
+    set(value_only "${span_lines}")
+
+    if(trailing_slash)
+      set(span_lines 1)
+      string(REGEX REPLACE "\\\\s*$" "" trimmed "${trimmed}")
+    else()
+      set(span_lines 0)
+    endif()
+
+    if(${value_only})
+      set(cur_value "${cur_value}${trimmed}")
+    else()
+      string(REGEX MATCH "^(.*[^\\\\])=" cur_key "${trimmed}")
+      string(REGEX REPLACE "\\s*=$" "" cur_key "${cur_key}")
+      string(STRIP "${cur_key}" cur_key)
+      string(REGEX MATCH "[^\\\\]=(.*)$" cur_value "${trimmed}")
+      string(REGEX REPLACE "^.=\\s*" "" cur_value "${cur_value}")
+      string(STRIP "${cur_value}" cur_value)
+    endif()
+
+    if(NOT ${span_lines})
+      string(REPLACE "\\\\" "\\" cur_value "${cur_value}") 
+      string(REGEX REPLACE "(^|[^\\])\\\\n" "\\1\n" cur_value "${cur_value}")
+      string(REGEX REPLACE "(^|[^\\])\\\\r" "\\1\r" cur_value "${cur_value}")
+      string(REGEX REPLACE "(^|[^\\])\\\\t" "\\1\t" cur_value "${cur_value}")
+
+      # try to match key
+      if("${cur_key}" STREQUAL "${MODULE_PROP_NAME}")
+        set(MODULE_NAME "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_TYPE}")
+        set(MODULE_TYPE "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_LANGS}")
+        list(APPEND MODULE_LANGUAGES "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_INCLUDE_DIRS}")
+        list(APPEND MODULE_INCLUDES "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_MOD_DEPS}")
+        list(APPEND MODULE_ENGINE_MOD_DEPS "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_LIB_DEPS}")
+        list(APPEND MODULE_ENGINE_LIB_DEPS "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS}")
+        list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_MSVC}")
+        if(MSVC)
+          list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+        endif()
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_GCC}")
+        if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+          list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+        endif()
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_REQUIRED_PACKAGES}")
+        list(APPEND MODULE_REQUIRED_PACKAGES "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_OPTIONAL_PACKAGES}")
+        list(APPEND MODULE_OPTIONAL_PACKAGES "${cur_value}")
+      endif()
+    endif()
+  endforeach()
+
+  foreach(pack ${MODULE_REQUIRED_PACKAGES})
+    find_package("${pack}" REQUIRED)
+  endforeach()
+
+  foreach(pack ${MODULE_OPTIONAL_PACKAGES})
+    find_package("${pack}")
+  endforeach()
+
+  project("${MODULE_NAME}" LANGUAGES ${MODULE_LANGUAGES})
+
+  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
+    set(MODULE_GENERATED_DIR "${ENGINE_LIBS_GENERATED_DIR}/${MODULE_NAME}")
+  elseif("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    set(MODULE_GENERATED_DIR "${STATIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
+  elseif("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+    set(MODULE_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
+  endif()
+
+  set(MODULE_CMAKE_PATH "${MODULE_PATH}/module.cmake")
+  if(EXISTS "${MODULE_CMAKE_PATH}")
+    include("${MODULE_CMAKE_PATH}")
+  endif()
+
+  string(CONFIGURE "${MODULE_INCLUDES}" MODULE_INCLUDES)
+  string(CONFIGURE "${MODULE_ENGINE_MOD_DEPS}" MODULE_ENGINE_MOD_DEPS)
+  string(CONFIGURE "${MODULE_ENGINE_LIB_DEPS}" MODULE_ENGINE_LIB_DEPS)
+  string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
+
+  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
     compute_dep_edges()
-    set(MODULE_${SUBPROJECT_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
+    set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
 
-  set(res_dir "${CURRENT_SOURCE_DIR}/res")
+  set(res_dir "${MODULE_PATH}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
   set(res_gen_target "gen_resources_${PROJECT_NAME}")
   if(EXISTS "${res_dir}")
@@ -471,9 +585,9 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
     set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-    set(h_out_dir_base "${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
+    set(h_out_dir_base "${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
     set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
-    set(c_out_dir_base "${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
+    set(c_out_dir_base "${MODULE_GENERATED_DIR}/${SRC_DIR_NAME}")
     set(c_out_dir "${c_out_dir_base}/res")
 
     file(MAKE_DIRECTORY "${h_out_dir}")
@@ -502,12 +616,12 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
   endif()
 
   # basic source files
-  add_header_files("${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}")
-  add_source_files("${CURRENT_SOURCE_DIR}/${SRC_DIR_NAME}")
+  add_header_files("${MODULE_PATH}/${INC_DIR_NAME}")
+  add_source_files("${MODULE_PATH}/${SRC_DIR_NAME}")
 
   # generated source files
-  add_header_files("${CURRENT_GENERATED_DIR}/${INC_DIR_NAME}")
-  add_source_files("${CURRENT_GENERATED_DIR}/${SRC_DIR_NAME}")
+  add_header_files("${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
+  add_source_files("${MODULE_GENERATED_DIR}/${SRC_DIR_NAME}")
 
   list(LENGTH LOCAL_SRC_PATHS LEN)
   if(LEN GREATER 0)
@@ -516,14 +630,14 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     endforeach()
   endif()
 
-  if(NOT "${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+  if(NOT "${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
 
     set(STATIC_MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${STATIC_MODULE_LIBS}" PARENT_SCOPE)
     # configure the copy headers task to include this project
-    set(MODULE_INCLUDE_DIR "${CURRENT_SOURCE_DIR}/${INC_DIR_NAME}/argus")
+    set(MODULE_INCLUDE_DIR "${MODULE_PATH}/${INC_DIR_NAME}/argus")
     add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
       COMMENT "Copying headers for module ${id}"
       COMMAND ${CMAKE_COMMAND} -E
@@ -533,7 +647,7 @@ function(configure_subproject SUBPROJECT_NAME SUBPROJECT_TYPE)
     add_dependencies(${HDR_TARGET} ${id})
   endif()
 
-  if("${SUBPROJECT_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
     add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES})
 
     # enable PIC
@@ -597,15 +711,15 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
     make_directory ${HDR_OUT_DIR})
 
 foreach(id ${ENGINE_LIBRARY_IDS})
-  configure_subproject("${id}" "${PROJECT_TYPE_LIBRARY}")
+  configure_module("${ENGINE_LIBS_SRC_DIR}/${id}")
 endforeach()
 
 foreach(id ${STATIC_MODULE_IDS})
-  configure_subproject("${id}" "${PROJECT_TYPE_STATIC}")
+  configure_module("${STATIC_MODULES_SRC_DIR}/${id}")
 endforeach()
 
 foreach(id ${DYNAMIC_MODULE_IDS})
-  configure_subproject("${id}" "${PROJECT_TYPE_DYNAMIC}")
+  configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}")
 endforeach()
 
 # configure module dependency information
