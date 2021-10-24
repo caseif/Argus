@@ -41,6 +41,7 @@
 #include <utility>
 
 #include <cstddef>
+#include <cstdint>
 
 namespace argus {
     void prepare_texture(RendererState &state, const Resource &material_res) {
@@ -52,6 +53,9 @@ namespace argus {
 
         auto &texture_res = ResourceManager::get_global_resource_manager().get_resource_weak(texture_uid);
         auto &texture = texture_res.get<TextureData>();
+        
+        _ARGUS_ASSERT(texture.width <= INT32_MAX, "Texture width is too big");
+        _ARGUS_ASSERT(texture.height <= INT32_MAX, "Texture height is too big");
 
         texture_handle_t handle;
 
@@ -85,13 +89,13 @@ namespace argus {
         }
 
         size_t offset = 0;
-        for (size_t y = 0; y < texture.height; y++) {
+        for (uint32_t y = 0; y < texture.height; y++) {
             if (AGLET_GL_ARB_direct_state_access) {
-                glTextureSubImage2D(handle, 0, 0, y, texture.width, 1, GL_RGBA, GL_UNSIGNED_BYTE,
-                        texture.pimpl->image_data[y]);
+                glTextureSubImage2D(handle, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
+                        GL_UNSIGNED_BYTE, texture.pimpl->image_data[y]);
             } else {
-                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, texture.width, 1, GL_RGBA, GL_UNSIGNED_BYTE,
-                        texture.pimpl->image_data[y]);
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
+                        GL_UNSIGNED_BYTE, texture.pimpl->image_data[y]);
             }
             offset += row_size;
         }

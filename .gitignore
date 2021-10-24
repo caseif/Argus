@@ -456,3 +456,4 @@ docs/generated/
 
 .bundle/
 Gemfile.lock
+zconf.h.included

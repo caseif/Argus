@@ -137,7 +137,7 @@ namespace argus {
 
             glBindVertexArray(bucket.second->vertex_array);
 
-            glDrawArrays(GL_TRIANGLES, 0, bucket.second->vertex_count);
+            glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(bucket.second->vertex_count));
 
             glBindVertexArray(0);
         }

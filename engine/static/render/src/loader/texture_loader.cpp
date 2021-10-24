@@ -100,6 +100,10 @@ namespace argus {
         auto bit_depth = png_get_bit_depth(png_ptr, info_ptr);
         auto color_type = png_get_color_type(png_ptr, info_ptr);
 
+        if (width > INT32_MAX || height > INT32_MAX) {
+            throw std::runtime_error("Texture dimensions are too large (max 2147483647 pixels)");
+        }
+
         if (bit_depth == 16) {
             png_set_strip_16(png_ptr);
         } else if (bit_depth < 8) {
