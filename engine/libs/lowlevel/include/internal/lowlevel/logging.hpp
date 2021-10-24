@@ -52,11 +52,18 @@
 
 #define _ARGUS_INFO(fmt, ...) _ARGUS_PRINT(stdout, "INFO", fmt, ##__VA_ARGS__)
 #define _ARGUS_WARN(fmt, ...) _ARGUS_PRINT(stderr, "WARN", fmt, ##__VA_ARGS__)
+#define _ARGUS_FATAL_SOFT(fmt, ...) 
 
-#define _ARGUS_FATAL(fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
-                                DEBUG_BREAK(); \
+#define _ARGUS_ABORT()          DEBUG_BREAK(); \
                                 exit(1)
 
-#define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) {     \
-                                        _ARGUS_FATAL(fmt, ##__VA_ARGS__);   \
+#define _ARGUS_FATAL(fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
+                                _ARGUS_ABORT();
+
+#define _ARGUS_FATAL_DEINIT(deinit_body, fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
+                                                    deinit_body; \
+                                                    _ARGUS_ABORT();
+
+#define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) { \
+                                        _ARGUS_FATAL(fmt, ##__VA_ARGS__); \
                                     }

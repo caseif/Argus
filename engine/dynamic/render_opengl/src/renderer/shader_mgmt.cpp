@@ -92,8 +92,7 @@ namespace argus {
                     stage_str = "unknown";
                     break;
             }
-            _ARGUS_FATAL("Failed to compile %s shader: %s\n", stage_str.c_str(), log);
-            delete[] log;
+            _ARGUS_FATAL_DEINIT(delete[] log, "Failed to compile %s shader: %s\n", stage_str.c_str(), log);
         }
 
         return shader_handle;
@@ -125,8 +124,7 @@ namespace argus {
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
             glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, nullptr, log);
-            _ARGUS_FATAL("Failed to link program: %s\n", log);
-            delete[] log;
+            _ARGUS_FATAL_DEINIT(delete[] log, "Failed to link program: %s\n", log);
         }
     }
 

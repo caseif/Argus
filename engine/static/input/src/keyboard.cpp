@@ -249,7 +249,7 @@ namespace argus {
             auto res = g_keycode_argus_to_glfw.find(argus_keycode);
             if (res == g_keycode_argus_to_glfw.end()) {
                 _ARGUS_WARN("Saw unknown Argus scancode %d\n", static_cast<int>(argus_keycode));
-                return GLFW_KEY_UNKNOWN;
+                return static_cast<uint32_t>(GLFW_KEY_UNKNOWN);
             }
             return res->second;
         }

@@ -84,9 +84,11 @@ namespace argus {
             throw std::runtime_error("Failed to create PNG end info struct");
         }
 
+        #ifdef _MSC_VER
+        #pragma warning(suppress: 4611)
+        #endif
         if (setjmp(png_jmpbuf(png_ptr)) != 0) {
             _ARGUS_FATAL("libpng failed\n");
-            return nullptr;
         }
 
         png_set_read_fn(png_ptr, static_cast<void*>(&stream), _read_stream);

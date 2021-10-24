@@ -156,13 +156,14 @@ namespace argus {
 
             _ARGUS_DEBUG("Successfully loaded material %s\n", proto.uid.c_str());
             return new Material(tex_uid, shader_uids, attrs);
-        } catch (nlohmann::detail::parse_error &ex) {
+        } catch (nlohmann::detail::parse_error&) {
             _ARGUS_WARN("Failed to parse material %s\n", proto.uid.c_str());
             return NULL;
-        } catch (std::out_of_range &ex) {
+        } catch (std::out_of_range&) {
             _ARGUS_DEBUG("Material %s is incomplete or malformed\n", proto.uid.c_str());
             return NULL;
         } catch (std::exception &ex) {
+            UNUSED(ex); // only gets used in debug mode
             _ARGUS_DEBUG("Unspecified exception while parsing material %s (what: %s)\n", proto.uid.c_str(), ex.what());
             return NULL;
         }
