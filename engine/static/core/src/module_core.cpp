@@ -48,7 +48,4 @@ namespace argus {
                 break;
         }
     }
-
-    void init_module_core(void) {
-    }
 }

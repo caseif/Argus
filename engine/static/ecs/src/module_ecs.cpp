@@ -38,7 +38,4 @@ namespace argus {
             }
         }
     }
-
-    void init_module_ecs(void) {
-    }
 }

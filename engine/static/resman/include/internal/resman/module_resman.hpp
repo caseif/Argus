@@ -21,7 +21,5 @@
 #include "argus/core/module.hpp"
 
 namespace argus {
-    void init_module_resman(void);
-
     void update_lifecycle_resman(LifecycleStage stage);
 }

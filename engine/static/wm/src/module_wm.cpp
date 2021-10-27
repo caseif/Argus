@@ -93,7 +93,4 @@ namespace argus {
                 break;
         }
     }
-
-    void init_module_wm(void) {
-    }
 }

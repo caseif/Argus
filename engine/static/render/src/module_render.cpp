@@ -127,7 +127,4 @@ namespace argus {
         }
     }
 
-    void init_module_render(void) {
-    }
-
 }

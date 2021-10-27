@@ -38,7 +38,5 @@ namespace argus {
 
     RendererImpl &get_renderer_impl(void);
 
-    void init_module_render(void);
-
     void update_lifecycle_render(LifecycleStage stage);
 }

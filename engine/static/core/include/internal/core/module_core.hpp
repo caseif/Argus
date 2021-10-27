@@ -24,7 +24,5 @@ namespace argus {
     extern bool g_core_initializing;
     extern bool g_core_initialized;
 
-    void init_module_core(void);
-
     void update_lifecycle_core(LifecycleStage stage);
 }
