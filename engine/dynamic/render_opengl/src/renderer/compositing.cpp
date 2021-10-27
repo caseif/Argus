@@ -171,8 +171,8 @@ namespace argus {
     }
 
     void setup_framebuffer(RendererState &state) {
-        auto &fb_vert_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_VERT_PATH);
-        auto &fb_frag_shader_res = ResourceManager::get_global_resource_manager().get_resource(FB_SHADER_FRAG_PATH);
+        auto &fb_vert_shader_res = ResourceManager::instance().get_resource(FB_SHADER_VERT_PATH);
+        auto &fb_frag_shader_res = ResourceManager::instance().get_resource(FB_SHADER_FRAG_PATH);
 
         state.frame_vert_shader = compile_shader(fb_vert_shader_res);
         state.frame_frag_shader = compile_shader(fb_frag_shader_res);

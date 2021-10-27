@@ -73,7 +73,7 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Init: {
-                ResourceManager::get_global_resource_manager().register_loader(*new ShaderLoader());
+                ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -88,7 +88,7 @@ namespace argus {
                 break;
             }
             case LifecycleStage::PostInit: {
-                ResourceManager::get_global_resource_manager().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
+                ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
                         RESOURCES_RENDER_OPENGL_ARP_LEN);
                 break;
             }

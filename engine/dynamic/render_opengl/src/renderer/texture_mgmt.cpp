@@ -51,7 +51,7 @@ namespace argus {
             return;
         }
 
-        auto &texture_res = ResourceManager::get_global_resource_manager().get_resource_weak(texture_uid);
+        auto &texture_res = ResourceManager::instance().get_resource_weak(texture_uid);
         auto &texture = texture_res.get<TextureData>();
         
         _ARGUS_ASSERT(texture.width <= INT32_MAX, "Texture width is too big");

@@ -45,16 +45,6 @@ namespace argus {
              */
             int unload_resource(const std::string &uid);
 
-        public:
-            pimpl_ResourceManager *pimpl;
-
-            /**
-             * \brief Gets the global ResourceManager instance.
-             *
-             * \return The global ResourceManager.
-             */
-            static ResourceManager &get_global_resource_manager(void);
-
             /**
              * \brief Constructs a new ResourceManager.
              */
@@ -68,6 +58,15 @@ namespace argus {
              * \brief Destroys the ResourceManager.
              */
             ~ResourceManager(void);
+        public:
+            pimpl_ResourceManager *pimpl;
+
+            /**
+             * \brief Gets the global ResourceManager instance.
+             *
+             * \return The global ResourceManager.
+             */
+            static ResourceManager &instance(void);
 
             /**
              * \brief Discovers all present resources from the filesystem.

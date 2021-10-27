@@ -144,7 +144,7 @@ namespace argus {
         for (auto &shader_uid : material.pimpl->shaders) {
             shader_handle_t shader_handle;
 
-            auto &shader_res = ResourceManager::get_global_resource_manager().get_resource_weak(shader_uid);
+            auto &shader_res = ResourceManager::instance().get_resource_weak(shader_uid);
             auto &shader = shader_res.get<Shader>();
 
             auto existing_shader_it = state.compiled_shaders.find(shader_uid);

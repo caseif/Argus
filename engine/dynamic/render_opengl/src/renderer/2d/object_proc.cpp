@@ -125,7 +125,7 @@ namespace argus {
                 vertex_count += prim.get_vertex_count();
             }
 
-            const auto &mat_res = ResourceManager::get_global_resource_manager().get_resource(object.get_material());
+            const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
             auto &mat = mat_res.get<Material>();
 
             auto vertex_attrs = mat.pimpl->attributes;

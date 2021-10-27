@@ -71,8 +71,6 @@
 #define RESOURCES_DIR "resources"
 
 namespace argus {
-    ResourceManager g_global_resource_manager;
-
     static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
         size_t count = 0;
         extension_mapping_t *mappings = arp_get_extension_mappings(&count);
@@ -89,8 +87,9 @@ namespace argus {
         arp_free_extension_mappings(mappings);
     }
 
-    ResourceManager &ResourceManager::get_global_resource_manager(void) {
-        return g_global_resource_manager;
+    ResourceManager &ResourceManager::instance(void) {
+        static ResourceManager instance;
+        return instance;
     }
 
     ResourceManager::ResourceManager(void):

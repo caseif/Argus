@@ -115,8 +115,8 @@ namespace argus {
 
                 register_event_handler(ArgusEventType::Window, renderer_window_event_callback, TargetThread::Render);
 
-                ResourceManager::get_global_resource_manager().register_loader(*new MaterialLoader());
-                ResourceManager::get_global_resource_manager().register_loader(*new PngTextureLoader());
+                ResourceManager::instance().register_loader(*new MaterialLoader());
+                ResourceManager::instance().register_loader(*new PngTextureLoader());
 
                 g_render_module_initialized = true;
 
