@@ -24,7 +24,7 @@
 #include "argus/core/module.hpp"
 
 // module input
-#include "internal/input/input_helpers.hpp"
+#include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"
 
 // module wm
@@ -32,13 +32,15 @@
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
 
+#define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
 #include <string>
 
 namespace argus {
     static void _init_window_input(const Window &window) {
-        init_keyboard(static_cast<GLFWwindow*>(get_window_handle(window)));
+        auto glfw_handle = static_cast<GLFWwindow*>(get_window_handle(window));
+        init_keyboard(glfw_handle);
     }
 
     static void _on_window_event(const ArgusEvent &event, void *data) {
@@ -52,7 +54,7 @@ namespace argus {
     void update_lifecycle_input(const LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init:
-                register_event_handler(ArgusEventType::Window, _on_window_event, TargetThread::Update);
+                register_event_handler(ArgusEventType::Window, _on_window_event, TargetThread::Render);
                 break;
             default:
                 break;

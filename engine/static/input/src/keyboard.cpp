@@ -30,8 +30,9 @@
 
 // module input
 #include "argus/input/keyboard.hpp"
-#include "internal/input/input_helpers.hpp"
+#include "internal/input/keyboard.hpp"
 
+#define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
 #include <string>
