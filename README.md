@@ -4,45 +4,9 @@ Argus is a 2D game engine written in C++14 and built atop GLFW.
 
 ## Features
 
-Argus features a modular architecture which allows features to be enabled as needed. There are three types of modules
-present in the engine at this point:
-
-### Static Modules
-
-A collection of built-in modules comprising the "core" of the engine. These modules are statically linked into a single
-shared library and can be enabled as needed at runtime.
-
-| Name | Description |
-| --- | :-- |
-| core | Core engine framework; facilitates basic operation and communication among components. |
-| wm | Window manager. |
-| ecs | Entity-component-system implementation. |
-| resman | Resource manager; facilitates resource loading and lifetime management. |
-| render | The base renderer. This performs tasks related to scene and resource management but does not provide a standalone renderer implementation and must be supplemented by a dynamic backend. |
-| input | Input manager; responsible for interpreting keyboard, mouse, and controller input. This is dependent on the wm module because input polling is done with respect to a window. |
-
-### Dynamic Modules
-
-External modules which exist as plug-ins to the core of the engine. These modules are distributed as separate shared
-libraries and are loaded dynamically at runtime by the engine core.
-
-Render backends are distributed as dynamic modules to ease shipping them on platforms which may not necessarily support
-the respsective graphics API.
-
-| Name | Description |
-| --- | :-- |
-| render_opengl | An implementation of the renderer atop OpenGL. |
-
-### Engine Libraries
-
-Engine libraries are collections of common utilities which do not partake in the lifecycle of the engine and are instead
-intended for use by other parts of the engine. They are statically linked but cannot be enabled or disabled at runtime.
-
-| Name | Description |
-| --- | :-- |
-| lowlevel | Low-level platform-independence and utility code for features such as threading, memory management, and math. |
-
-A large number of additional modules are planned for future inclusion.
+Argus features a modular architecture which allows features to be enabled as needed. See the
+[module system wiki page](https://github.com/caseif/Argus/wiki/Module-System) for more information on how this
+architecture works.
 
 ## Philosophy
 

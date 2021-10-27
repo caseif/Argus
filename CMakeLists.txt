@@ -33,7 +33,7 @@ set(LIB_BASE_NAME argus)
 
 set(DYN_MODULE_DIR "modules")
 
-set(ROOT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
+set(ROOT_PROJECT_DIR "${PROJECT_SOURCE_DIR}")
 
 set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
 set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
@@ -72,7 +72,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PROJECT_DIR ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 ######################
 # /CMake configuration
@@ -202,11 +202,11 @@ set(PROJECT_TYPE_STATIC "static")
 set(PROJECT_TYPE_DYNAMIC "dynamic")
 set(PROJECT_TYPE_LIBRARY "library")
 
-set(SRC_DIR_NAME "src")
-set(INC_DIR_NAME "include")
+set(SOURCE_DIR_NAME "src")
+set(INCLUDE_DIR_NAME "include")
 
-set(MODULE_DEFS_HPP_IN "${STATIC_MODULES_SRC_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp.in")
-set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INC_DIR_NAME}/internal/core/module_defs.hpp")
+set(MODULE_DEFS_HPP_IN "${STATIC_MODULES_SRC_DIR}/core/${INCLUDE_DIR_NAME}/internal/core/module_defs.hpp.in")
+set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INCLUDE_DIR_NAME}/internal/core/module_defs.hpp")
 
 ###########################
 # /Dependency configuration
@@ -301,7 +301,7 @@ endfunction()
 # recursively finds the module's top-level include dirs and saves them to the given variable
 function(find_module_includes DEST)
   # load this module's include dirs
-  set(ALL_INCLUDES "${MODULE_PATH}/${INC_DIR_NAME};${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
+  set(ALL_INCLUDES "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME};${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
 
   # load include dirs defined by module dependencies
   find_dep_module_includes(PARENT_INCLUDES)
@@ -446,10 +446,10 @@ function(add_source_file FILE_PATH)
   endif()
 endfunction()
 
-function(configure_module MODULE_PATH)
-  set(MODULE_PROPS_PATH "${MODULE_PATH}/module.properties")
+function(configure_module MODULE_PROJECT_DIR)
+  set(MODULE_PROPS_PATH "${MODULE_PROJECT_DIR}/module.properties")
   if((NOT EXISTS "${MODULE_PROPS_PATH}") OR (IS_DIRECTORY "${MODULE_PROPS_PATH}"))
-    message(AUTHOR_WARNING "Failed to find module.properties in requested path ${MODULE_PATH} - skipping")
+    message(AUTHOR_WARNING "Failed to find module.properties in requested path ${MODULE_PROJECT_DIR} - skipping")
     return()
   endif()
 
@@ -505,26 +505,37 @@ function(configure_module MODULE_PATH)
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_TYPE}")
         set(MODULE_TYPE "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LANGS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_LANGUAGES "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_INCLUDE_DIRS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_INCLUDES "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_MOD_DEPS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_ENGINE_MOD_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LIB_DEPS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_ENGINE_LIB_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_LINKER_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_MSVC}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         if(MSVC)
-          list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+      list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         endif()
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_GCC}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+          string(REPLACE "," ";" cur_value "${cur_value}")
           list(APPEND MODULE_LINKER_DEPS "${cur_value}")
         endif()
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_REQUIRED_PACKAGES}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_REQUIRED_PACKAGES "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_OPTIONAL_PACKAGES}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_OPTIONAL_PACKAGES "${cur_value}")
       endif()
     endif()
@@ -548,7 +559,7 @@ function(configure_module MODULE_PATH)
     set(MODULE_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
   endif()
 
-  set(MODULE_CMAKE_PATH "${MODULE_PATH}/module.cmake")
+  set(MODULE_CMAKE_PATH "${MODULE_PROJECT_DIR}/module.cmake")
   if(EXISTS "${MODULE_CMAKE_PATH}")
     include("${MODULE_CMAKE_PATH}")
   endif()
@@ -563,7 +574,7 @@ function(configure_module MODULE_PATH)
     set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
 
-  set(res_dir "${MODULE_PATH}/res")
+  set(res_dir "${MODULE_PROJECT_DIR}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
   set(res_gen_target "gen_resources_${PROJECT_NAME}")
   if(EXISTS "${res_dir}")
@@ -585,9 +596,9 @@ function(configure_module MODULE_PATH)
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
     set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-    set(h_out_dir_base "${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
+    set(h_out_dir_base "${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
     set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
-    set(c_out_dir_base "${MODULE_GENERATED_DIR}/${SRC_DIR_NAME}")
+    set(c_out_dir_base "${MODULE_GENERATED_DIR}/${SOURCE_DIR_NAME}")
     set(c_out_dir "${c_out_dir_base}/res")
 
     file(MAKE_DIRECTORY "${h_out_dir}")
@@ -616,12 +627,12 @@ function(configure_module MODULE_PATH)
   endif()
 
   # basic source files
-  add_header_files("${MODULE_PATH}/${INC_DIR_NAME}")
-  add_source_files("${MODULE_PATH}/${SRC_DIR_NAME}")
+  add_header_files("${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}")
+  add_source_files("${MODULE_PROJECT_DIR}/${SOURCE_DIR_NAME}")
 
   # generated source files
-  add_header_files("${MODULE_GENERATED_DIR}/${INC_DIR_NAME}")
-  add_source_files("${MODULE_GENERATED_DIR}/${SRC_DIR_NAME}")
+  add_header_files("${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
+  add_source_files("${MODULE_GENERATED_DIR}/${SOURCE_DIR_NAME}")
 
   list(LENGTH LOCAL_SRC_PATHS LEN)
   if(LEN GREATER 0)
@@ -637,7 +648,7 @@ function(configure_module MODULE_PATH)
 
     set(STATIC_MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${STATIC_MODULE_LIBS}" PARENT_SCOPE)
     # configure the copy headers task to include this project
-    set(MODULE_INCLUDE_DIR "${MODULE_PATH}/${INC_DIR_NAME}/argus")
+    set(MODULE_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
     add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
       COMMENT "Copying headers for module ${id}"
       COMMAND ${CMAKE_COMMAND} -E
@@ -704,7 +715,7 @@ set(LIBRARY_OUTPUT_PATH ${LIB_OUT_DIR})
 
 # configure the copy headers task
 set(HDR_TARGET "${LIB_BASE_NAME}_headers")
-set(HDR_OUT_DIR "${DIST_DIR}/${INC_DIR_NAME}/argus/")
+set(HDR_OUT_DIR "${DIST_DIR}/${INCLUDE_DIR_NAME}/argus/")
 add_custom_target(${HDR_TARGET})
 add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E
