@@ -25,3 +25,4 @@
 #pragma once
 
 #include "argus/input/keyboard.hpp"
+#include "argus/input/text_input_context.hpp"
