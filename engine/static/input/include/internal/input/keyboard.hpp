@@ -22,5 +22,5 @@
 #include <GLFW/glfw3.h>
 
 namespace argus {
-    void init_keyboard(GLFWwindow *handle);
+    void init_keyboard(const Window &window);
 }

@@ -288,8 +288,9 @@ namespace argus {
                                               & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
-    void init_keyboard(GLFWwindow *handle) {
-        glfwSetKeyCallback(handle, _on_key_event);
+    void init_keyboard(const Window &window) {
+        auto glfw_handle = static_cast<GLFWwindow*>(get_window_handle(window));
+        glfwSetKeyCallback(glfw_handle, _on_key_event);
     }
 
     // clang-format off

@@ -26,4 +26,8 @@ namespace argus {
      *        frame.
      */
     Vector2d get_mouse_delta(void);
+    /**
+     * \brief Gets the current position of the mouse within the window.
+     */
+    Vector2d get_mouse_pos(void);
 }

@@ -23,14 +23,15 @@
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
-// module input
-#include "internal/input/keyboard.hpp"
-#include "internal/input/module_input.hpp"
-
 // module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
+
+// module input
+#include "internal/input/keyboard.hpp"
+#include "internal/input/module_input.hpp"
+#include "internal/input/mouse.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -39,8 +40,8 @@
 
 namespace argus {
     static void _init_window_input(const Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(get_window_handle(window));
-        init_keyboard(glfw_handle);
+        init_keyboard(window);
+        init_mouse(window);
     }
 
     static void _on_window_event(const ArgusEvent &event, void *data) {
