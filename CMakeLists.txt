@@ -604,19 +604,20 @@ function(configure_module MODULE_PROJECT_DIR)
     file(MAKE_DIRECTORY "${h_out_dir}")
     file(MAKE_DIRECTORY "${c_out_dir}")
 
-    set(h_out_path "${h_out_dir}/${arp_out_name}.arp.h")
+    set(arp_file_name "${arp_out_name}.arp")
+    set(h_out_path "${h_out_dir}/resources.h")
     set(c_out_path "${c_out_dir}/${arp_out_name}.arp.c")
     add_custom_command(OUTPUT "${c_out_path}"
                        COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
                                "-i" "${arp_out_path}"
-                               "-n" "${arp_out_name}.arp"
-                               "-s" "${c_out_dir}"
+                               "-n" "${arp_file_name}"
+                               "-s" "${c_out_path}"
                        DEPENDS "${res_pack_target}" "${arp_out_path}")
 
     execute_process(COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
                             "-n" "${arp_out_name}.arp"
-                            "-h" "${h_out_dir}"
-                            RESULT_VARIABLE CMD_RES)
+                            "-h" "${h_out_path}"
+                    RESULT_VARIABLE CMD_RES)
     if(CMD_RES)
       message(FATAL_ERROR "    abacus.rb: ${CMD_RES}")
     endif()
