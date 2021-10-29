@@ -40,22 +40,22 @@
 
 namespace argus {
     static void _init_window_input(const Window &window) {
-        init_keyboard(window);
-        init_mouse(window);
+        input::init_keyboard(window);
+        input::init_mouse(window);
     }
 
-    static void _on_window_event(const ArgusEvent &event, void *data) {
+    static void _on_window_event(const argus::ArgusEvent &event, void *data) {
         UNUSED(data);
-        auto &wevent = static_cast<const WindowEvent&>(event);
-        if (wevent.subtype == WindowEventType::Create) {
+        auto &wevent = static_cast<const argus::WindowEvent&>(event);
+        if (wevent.subtype == argus::WindowEventType::Create) {
             _init_window_input(wevent.window);
         }
     }
 
-    void update_lifecycle_input(const LifecycleStage stage) {
+    void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::Init:
-                register_event_handler(ArgusEventType::Window, _on_window_event, TargetThread::Render);
+            case argus::LifecycleStage::Init:
+                register_event_handler(argus::ArgusEventType::Window, _on_window_event, argus::TargetThread::Render);
                 break;
             default:
                 break;

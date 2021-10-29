@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-namespace argus {
+namespace argus::input {
     static std::vector<TextInputContext*> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 

@@ -43,7 +43,7 @@
 
 #include <cstdint>
 
-namespace argus {
+namespace argus::input {
     static const std::unordered_map<int, KeyboardScancode> g_keycode_glfw_to_argus({
         {GLFW_KEY_SPACE, KeyboardScancode::SPACE},
         {GLFW_KEY_APOSTROPHE, KeyboardScancode::APOSTROPHE},
@@ -289,14 +289,14 @@ namespace argus {
     }
 
     void init_keyboard(const Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(get_window_handle(window));
+        auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
         glfwSetKeyCallback(glfw_handle, _on_key_event);
     }
 
     // clang-format off
     KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
             const KeyboardModifiers modifiers):
-            ArgusEvent(ArgusEventType::Keyboard),
+            argus::ArgusEvent(argus::ArgusEventType::Keyboard),
             subtype(subtype),
             scancode(scancode),
             modifiers(modifiers) {
@@ -304,18 +304,18 @@ namespace argus {
     // clang-format on
 
     std::string KeyboardEvent::get_key_name(void) const {
-        return argus::get_key_name(scancode);
+        return argus::input::get_key_name(scancode);
     }
 
     std::string get_key_name(const KeyboardScancode scancode) {
         return glfwGetKeyName(0, _translate_argus_keycode(scancode));
     }
 
-    bool is_key_down(const Window &window, const KeyboardScancode scancode) {
+    bool keyboard_key_down(const argus::Window &window, const KeyboardScancode scancode) {
         int glfw_scancode = _translate_argus_keycode(scancode);
         if (glfw_scancode == GLFW_KEY_UNKNOWN) {
             return false;
         }
-        return glfwGetKey(static_cast<GLFWwindow *>(get_window_handle(window)), glfw_scancode);
+        return glfwGetKey(static_cast<GLFWwindow *>(argus::get_window_handle(window)), glfw_scancode);
     }
 }

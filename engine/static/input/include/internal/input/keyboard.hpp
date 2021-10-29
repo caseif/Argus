@@ -21,6 +21,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-namespace argus {
+namespace argus::input {
     void init_keyboard(const Window &window);
 }

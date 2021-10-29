@@ -20,7 +20,7 @@
 
 #include <string>
 
-namespace argus {
+namespace argus::input {
 
     //TODO: this doc needs some love
     /**

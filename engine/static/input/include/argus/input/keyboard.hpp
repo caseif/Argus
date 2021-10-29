@@ -30,7 +30,7 @@
 // module wm
 #include "argus/wm/window.hpp"
 
-namespace argus {
+namespace argus::input {
 
     /**
      * \brief Represents a scancode tied to a key press.
@@ -318,5 +318,5 @@ namespace argus {
      *
      * \return Whether the key is being pressed.
      */
-    bool is_key_down(const Window &window, KeyboardScancode scancode);
+    bool keyboard_key_down(const Window &window, KeyboardScancode scancode);
 }

@@ -11,22 +11,24 @@
 
 #include <GLFW/glfw3.h>
 
-namespace argus {
-    static Vector2d g_last_mouse_pos;
+namespace argus::input {
+    static argus::Vector2d g_last_mouse_pos;
 
-    void init_mouse(const Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(get_window_handle(window));
+    void init_mouse(const argus::Window &window) {
+        auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
         UNUSED(glfw_handle);
         //TODO
     }
 
-    Vector2d get_mouse_pos(void) {
+    argus::Vector2d mouse_position(const argus::Window &window) {
         //TODO
+        UNUSED(window);
         return {};
     }
 
-    Vector2d get_mouse_delta(void) {
+    argus::Vector2d mouse_delta(const argus::Window &window) {
         //TODO
+        UNUSED(window);
         return {};
     }
 }
