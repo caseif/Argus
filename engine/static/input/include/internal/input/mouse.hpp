@@ -5,8 +5,8 @@
 namespace argus {
     // forward declarations
     class Window;
-}
 
-namespace argus::input {
-    void init_mouse(const argus::Window &window);
+    namespace input {
+        void init_mouse(const argus::Window &window);
+    }
 }

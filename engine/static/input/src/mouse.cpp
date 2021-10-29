@@ -11,7 +11,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace argus::input {
+namespace argus { namespace input {
     static argus::Vector2d g_last_mouse_pos;
 
     void init_mouse(const argus::Window &window) {
@@ -31,4 +31,4 @@ namespace argus::input {
         UNUSED(window);
         return {};
     }
-}
+}}

@@ -20,7 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
-namespace argus::input {
+namespace argus { namespace input {
     /**
      * \brief Returns the change in position of the mouse from the previous
      *        frame.
@@ -30,4 +30,4 @@ namespace argus::input {
      * \brief Gets the current position of the mouse within the window.
      */
     argus::Vector2d mouse_pos(const argus::Window &window);
-}
+}}

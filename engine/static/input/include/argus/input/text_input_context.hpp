@@ -20,8 +20,7 @@
 
 #include <string>
 
-namespace argus::input {
-
+namespace argus { namespace input {
     //TODO: this doc needs some love
     /**
      * \brief Represents context regarding captured text input.
@@ -74,4 +73,4 @@ namespace argus::input {
          */
         void release(void);
     };
-}
+}}
