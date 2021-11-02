@@ -242,65 +242,6 @@ namespace argus { namespace input {
     constexpr inline KeyboardModifiers operator&(KeyboardModifiers lhs, KeyboardModifiers rhs);
 
     /**
-     * \brief Represents a specific type of keyboard event.
-     */
-    // clang-format off
-    enum class KeyboardEventType {
-        /**
-         * \brief A key has been pressed down.
-         */
-        KeyDown,
-        /**
-         * \brief A key has been released.
-         */
-        KeyUp
-    };
-    // clang-format on
-
-    /**
-     * \brief Represents a press of a keyboard key.
-     *
-     * This provides access to inforrmation regarding the emitted scancode, the
-     * active modifiers, and the semantic value of the key press.
-     */
-    struct KeyboardEvent : public ArgusEvent {
-        /**
-         * \brief The particular \link KeyboardEventType type \endlink of
-         *        KeyboardEvent.
-         */
-        const KeyboardEventType subtype;
-
-        /**
-         * \brief The scancode associated with this key event.
-         */
-        const KeyboardScancode scancode;
-        /**
-         * \brief The modifiers active during this key event.
-         *
-         * \remark If the key press is associated with a modifier key, said key
-         *         will not be included by this field.
-         */
-        const KeyboardModifiers modifiers;
-
-        /**
-         * \brief Aggregate constructor for KeyboardEvent.
-         *
-         * \param subtype The particlar \link KeyboardEventType type \endlink of
-         *        the KeyboardEvent.
-         * \param scancode The scancode associated with this key event.
-         * \param modifiers The modifiers active during this key event.
-         */
-        KeyboardEvent(KeyboardEventType subtype, KeyboardScancode scancode, KeyboardModifiers modifiers);
-
-        /**
-         * \brief Gets the semantic name of the pressed key.
-         *
-         * \return The name of the pressed key.
-         */
-        std::string get_key_name(void) const;
-    };
-
-    /**
      * \brief Gets the semantic name of the key associated with the given
      *        scancode.
      *

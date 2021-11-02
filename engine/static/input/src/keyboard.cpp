@@ -206,7 +206,7 @@ namespace argus { namespace input {
         { KeyboardScancode::Menu, GLFW_KEY_MENU },
     });
 
-    static KeyboardModifiers _translate_glfw_keymod(uint16_t glfw_keymod) {
+    /*static KeyboardModifiers _translate_glfw_keymod(uint16_t glfw_keymod) {
         KeyboardModifiers mod = KeyboardModifiers::None;
 
         if (glfw_keymod & GLFW_MOD_SHIFT) {
@@ -223,9 +223,9 @@ namespace argus { namespace input {
         }
 
         return mod;
-    }
+    }*/
 
-    static KeyboardScancode _translate_glfw_keycode(uint32_t glfw_keycode) {
+    /*static KeyboardScancode _translate_glfw_keycode(uint32_t glfw_keycode) {
         if (glfw_keycode >= GLFW_KEY_A && glfw_keycode <= GLFW_KEY_Z) {
             // GLFW shifts letter scancodes up by 61 to match ASCII
             return static_cast<KeyboardScancode>(glfw_keycode - 61);
@@ -237,7 +237,7 @@ namespace argus { namespace input {
             }
             return res->second;
         }
-    }
+    }*/
 
     static uint32_t _translate_argus_keycode(KeyboardScancode argus_keycode) {
         if (argus_keycode >= KeyboardScancode::A && argus_keycode <= KeyboardScancode::Z) {
@@ -255,22 +255,10 @@ namespace argus { namespace input {
 
     static void _on_key_event(GLFWwindow *window, int glfw_keycode, int glfw_scancode, int glfw_action, int glfw_mods) {
         UNUSED(window);
+        UNUSED(glfw_keycode);
         UNUSED(glfw_scancode);
-        //TODO: determine if a key press is actually supported by Argus's API
-
-        KeyboardEventType key_event_type;
-        if (glfw_action == GLFW_PRESS) {
-            key_event_type = KeyboardEventType::KeyDown;
-        } else if (glfw_action == GLFW_RELEASE) {
-            key_event_type = KeyboardEventType::KeyUp;
-        } else {
-            return;
-        }
-
-        KeyboardScancode scancode = _translate_glfw_keycode(glfw_keycode);
-        KeyboardModifiers mod = _translate_glfw_keymod(static_cast<uint16_t>(glfw_mods));
-
-        dispatch_event<KeyboardEvent>(key_event_type, scancode, mod);
+        UNUSED(glfw_action);
+        UNUSED(glfw_mods);
     }
 
     constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
@@ -291,20 +279,6 @@ namespace argus { namespace input {
     void init_keyboard(const Window &window) {
         auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
         glfwSetKeyCallback(glfw_handle, _on_key_event);
-    }
-
-    // clang-format off
-    KeyboardEvent::KeyboardEvent(const KeyboardEventType subtype, const KeyboardScancode scancode, 
-            const KeyboardModifiers modifiers):
-            argus::ArgusEvent(argus::ArgusEventType::Keyboard),
-            subtype(subtype),
-            scancode(scancode),
-            modifiers(modifiers) {
-    }
-    // clang-format on
-
-    std::string KeyboardEvent::get_key_name(void) const {
-        return argus::input::get_key_name(scancode);
     }
 
     std::string get_key_name(const KeyboardScancode scancode) {
