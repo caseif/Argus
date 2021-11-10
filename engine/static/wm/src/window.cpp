@@ -55,8 +55,8 @@
 #define WINDOW_STATE_NULL                   0x00
 // The window has been created in memory and a Create event has been posted.
 #define WINDOW_STATE_CREATED                0x01
-// The window has been configured for use (Window::activate has been invoked).
-#define WINDOW_STATE_CONFIGURED             0x02
+// The window has been configured for use (Window::commit has been invoked).
+#define WINDOW_STATE_COMMITTED              0x02
 // The window and its renderer have been fully initialized and the window is
 // completely ready for use.
 #define WINDOW_STATE_READY                  0x04
@@ -188,15 +188,16 @@ namespace argus {
         // The initial part of a Window's lifecycle looks something like this:
         //   - Window gets constructed.
         //   - On next render iteration, Window has initial update and sets its
-        //     CREATED flag and dispatches an event.
+        //       CREATED flag and dispatches an event.
         //   - Renderer picks up the event and initializes itself within the
-        //     same render iteration (after applying any properties which have
-        //     been configured).
+        //       same render iteration (after applying any properties which have
+        //       been configured).
         //   - On subsequent render iterations, window checks if it has been
-        //     configured (via Window::activate) and aborts update if not.
-        //   - If activated, Window sets ready flag and continues as normal.
+        //       committed by the client (via Window::commit) and aborts update
+        //       if not.
+        //   - If committed, Window sets ready flag and continues as normal.
         //   - If any at any point a close request is dispatched to the window,
-        //     it will supercede any other initialization steps.
+        //       it will supercede any other initialization steps.
         //
         // By the time the ready flag is set, the Window is guaranteed to be
         // configured and the renderer is guaranteed to have seen the CREATE
@@ -224,7 +225,7 @@ namespace argus {
             return;
         }
 
-        if (!(pimpl->state & WINDOW_STATE_CONFIGURED)) {
+        if (!(pimpl->state & WINDOW_STATE_COMMITTED)) {
             return;
         }
 
@@ -344,8 +345,8 @@ namespace argus {
         pimpl->close_callback = callback;
     }
 
-    void Window::activate(void) {
-        pimpl->state |= WINDOW_STATE_CONFIGURED;
+    void Window::commit(void) {
+        pimpl->state |= WINDOW_STATE_COMMITTED;
         return;
     }
 

@@ -193,10 +193,11 @@ namespace argus {
             void set_close_callback(WindowCallback callback);
 
             /**
-             * \brief Activates the window.
+             * \brief Commits the window configuration, prompting the engine to
+             *        create it.
              *
              * \note This function should be invoked only once.
              */
-            void activate(void);
+            void commit(void);
     };
 }
