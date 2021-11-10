@@ -56,7 +56,7 @@ namespace argus {
              *
              * \return The associated Renderer.
              */
-            static Renderer &of_window(Window &window);
+            static Renderer &of_window(const Window &window);
 
             /**
              * \brief Constructs a new Renderer attached to the given Window.
@@ -71,24 +71,12 @@ namespace argus {
 
             ~Renderer(void);
 
-            Window &get_window() const;
-
             /**
              * \brief Initializes the Renderer.
              *
              * Initialization must be performed before render(TimeDelta) may be called.
              */
             void init(void);
-
-            /**
-             * \brief Outputs the Renderer's current state to the screen.
-             *
-             * \param delta The time in microseconds since the last frame.
-             *
-             * \remark This method accepts a TimeDelta to comply with the spec
-             *         for engine callbacks as defined in the core module.
-             */
-            void render(const TimeDelta delta);
 
             /**
              * \brief Creates a new Scene with the given priority.

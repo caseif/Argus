@@ -20,7 +20,6 @@
 
 // module render
 #include "argus/render/common/renderer.hpp"
-#include "internal/render/renderer_impl.hpp"
 
 #include <atomic>
 #include <vector>

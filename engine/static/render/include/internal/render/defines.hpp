@@ -25,6 +25,6 @@
 #define MODULE_RENDER_OPENGLES "render_opengles"
 #define MODULE_RENDER_VULKAN "render_vulkan"
 
-#define FN_CREATE_OPENGL_BACKEND "create_opengl_backend"
-#define FN_CREATE_OPENGLES_BACKEND "create_opengles_backend"
-#define FN_CREATE_VULKAN_BACKEND "create_vulkan_backend"
+#define FN_ACTIVATE_OPENGL_BACKEND "activate_opengl_backend"
+#define FN_ACTIVATE_OPENGLES_BACKEND "activate_opengles_backend"
+#define FN_ACTIVATE_VULKAN_BACKEND "activate_vulkan_backend"

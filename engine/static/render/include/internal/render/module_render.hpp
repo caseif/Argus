@@ -27,16 +27,11 @@
 namespace argus {
     // forward declarations
     class Renderer;
-    class RendererImpl;
     class Window;
 
     extern bool g_render_module_initialized;
 
-    extern RendererImpl *g_renderer_impl;
-
-    extern std::map<Window*, Renderer*> g_renderer_map;
-
-    RendererImpl &get_renderer_impl(void);
+    extern std::map<const Window*, Renderer*> g_renderer_map;
 
     void update_lifecycle_render(LifecycleStage stage);
 }

@@ -38,7 +38,6 @@
 #include "argus/render/common/renderer.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 
@@ -48,7 +47,7 @@
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
-#include "internal/render_opengl/renderer/gl_renderer_base.hpp"
+#include "internal/render_opengl/renderer/gl_renderer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc.hpp"
@@ -69,11 +68,9 @@ namespace argus {
     // forward declarations
     class Scene2D;
 
-    GLRenderer::GLRenderer(void): RendererImpl() {
-    }
-
-    static void _rebuild_scene(RendererState &state) {
-        for (auto *scene : state.renderer.pimpl->scenes) {
+    static void _rebuild_scene(const Window &window, RendererState &state) {
+        auto &renderer = Renderer::of_window(window);
+        for (auto *scene : renderer.pimpl->scenes) {
             SceneState &scene_state = state.get_scene_state(*scene, true);
 
             auto &scene_transform = scene->get_transform();
@@ -134,8 +131,10 @@ namespace argus {
         }
     }
 
-    void GLRenderer::init(Renderer &renderer) {
-        activate_gl_context(renderer.pimpl->window.pimpl->handle);
+    GLRenderer::GLRenderer(const Window &window):
+            window(window),
+            state(*this) {
+        activate_gl_context(window.pimpl->handle);
 
         int rc = 0;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
@@ -153,8 +152,6 @@ namespace argus {
 
         _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)\n", gl_major, gl_minor, gl_version_str);
 
-        auto &state = renderer_states.insert({ &renderer, RendererState(renderer) }).first->second;
-
         resource_event_handler = register_event_handler(ArgusEventType::Resource, _handle_resource_event,
                 TargetThread::Render, &state);
 
@@ -162,26 +159,23 @@ namespace argus {
             glDebugMessageCallback(gl_debug_callback, nullptr);
         }
 
-        setup_framebuffer(get_renderer_state(renderer));
+        setup_framebuffer(state);
     }
 
-    void GLRenderer::deinit(Renderer &renderer) {
+    GLRenderer::~GLRenderer(void) {
         unregister_event_handler(resource_event_handler);
-
-        get_renderer_state(renderer).~RendererState();
     }
 
-    void GLRenderer::render(Renderer &renderer, const TimeDelta delta) {
+    void GLRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
-        auto &state = get_renderer_state(renderer);
 
-        activate_gl_context(renderer.pimpl->window.pimpl->handle);
+        activate_gl_context(window.pimpl->handle);
 
-        if (renderer.get_window().pimpl->properties.vsync.dirty) {
-            glfwSwapInterval(renderer.get_window().pimpl->properties.vsync ? 1 : 0);
+        if (window.pimpl->properties.vsync.dirty) {
+            glfwSwapInterval(window.pimpl->properties.vsync ? 1 : 0);
         }
 
-        _rebuild_scene(state);
+        _rebuild_scene(window, state);
 
         // set up state for drawing scene to framebuffers
         glEnable(GL_DEPTH_TEST);
@@ -192,9 +186,11 @@ namespace argus {
 
         glDisable(GL_CULL_FACE);
 
+        auto &renderer = Renderer::of_window(window);
+
         for (auto *scene : renderer.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
-            draw_scene_to_framebuffer(scene_state);
+            draw_scene_to_framebuffer(window, scene_state);
         }
 
         // set up state for drawing framebuffers to screen
@@ -210,15 +206,9 @@ namespace argus {
         for (auto *scene : renderer.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
 
-            draw_framebuffer_to_screen(scene_state);
+            draw_framebuffer_to_screen(window, scene_state);
         }
 
         glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);
-    }
-
-    RendererState &GLRenderer::get_renderer_state(Renderer &renderer) {
-        auto it = renderer_states.find(&renderer);
-        _ARGUS_ASSERT(it != renderer_states.cend(), "Cannot find renderer state");
-        return it->second;
     }
 }

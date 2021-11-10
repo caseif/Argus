@@ -18,11 +18,16 @@
 
 // module lowlevel
 #include "argus/lowlevel/math.hpp"
+#include "internal/lowlevel/logging.hpp"
 
 // module core
 #include "argus/core/module.hpp"
 #include "internal/core/dyn_invoke.hpp"
 #include "internal/core/engine_config.hpp"
+
+// module wm
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
 
 // module resman
 #include "argus/resman/resource_manager.hpp"
@@ -35,19 +40,20 @@
 #include "internal/render_opengl/module_render_opengl.hpp"
 #include "internal/render_opengl/resources.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
-#include "internal/render_opengl/renderer/gl_renderer_base.hpp"
+#include "internal/render_opengl/renderer/gl_renderer.hpp"
 
 #include <string>
 
 #include <cstring>
 
 namespace argus {
-    class RendererImpl;
+    static bool g_backend_active = false;
+    static std::map<const Window*, GLRenderer*> g_renderer_map;
 
     Matrix4 g_view_matrix;
 
-    static RendererImpl *_create_opengl_backend() {
-        return new GLRenderer();
+    static void _activate_opengl_backend() {
+        g_backend_active = true;
     }
 
     static void _setup_view_matrix() {
@@ -66,14 +72,56 @@ namespace argus {
         };
     }
 
+    static void _renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
+        UNUSED(user_data);
+        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
+
+        const Window &window = window_event.window;
+
+        switch (window_event.subtype) {
+            case WindowEventType::Create: {
+                auto *renderer = new GLRenderer(window);
+                g_renderer_map.insert({ &window, renderer });
+                break;
+            }
+            case WindowEventType::Update: {
+                if (!window.is_ready()) {
+                    return;
+                }
+                
+                auto it = g_renderer_map.find(&window);
+                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!\n")
+
+                it->second->render(window_event.delta);
+                break;
+            }
+            case WindowEventType::RequestClose: {
+                auto it = g_renderer_map.find(&window);
+                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window close request but no renderer was registered!\n")
+
+                delete it->second;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
     void update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
-                register_module_fn(FN_CREATE_OPENGL_BACKEND, reinterpret_cast<void*>(_create_opengl_backend));
+                register_module_fn(FN_ACTIVATE_OPENGL_BACKEND, reinterpret_cast<void*>(_activate_opengl_backend));
                 break;
             }
             case LifecycleStage::Init: {
+                if (!g_backend_active) {
+                    return;
+                }
+
                 ResourceManager::instance().register_loader(*new ShaderLoader());
+
+                register_event_handler(ArgusEventType::Window, _renderer_window_event_callback, TargetThread::Render);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -88,6 +136,10 @@ namespace argus {
                 break;
             }
             case LifecycleStage::PostInit: {
+                if (!g_backend_active) {
+                    return;
+                }
+
                 ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
                         RESOURCES_RENDER_OPENGL_ARP_LEN);
                 break;

@@ -75,7 +75,7 @@ namespace argus {
              *
              * \return Whether the Window is ready.
              */
-            bool is_ready(void);
+            bool is_ready(void) const;
 
             /**
              * \brief Gets whether the Window is preparing to close.
@@ -85,7 +85,7 @@ namespace argus {
              *
              * \return Whether the Window is preparing to close.
              */
-            bool is_closed(void);
+            bool is_closed(void) const;
 
             /**
              * \brief Creates a new window as a child of this one.

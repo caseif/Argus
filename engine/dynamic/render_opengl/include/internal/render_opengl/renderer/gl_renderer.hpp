@@ -18,27 +18,33 @@
 
 #pragma once
 
-// module lowlevel
-#include "argus/lowlevel/time.hpp"
+// module core
+#include "argus/core/event.hpp"
 
+// module wm
+#include "argus/wm/window.hpp"
+
+// module render_opengl
+#include "internal/render_opengl/state/renderer_state.hpp"
+
+#include <map>
 #include <string>
 
 namespace argus {
     // forward declarations
-    class Material;
     class Renderer;
-    class Shader;
-    class TextureData;
 
-    class RendererImpl {
-       public:
-        RendererImpl() {
-        }
+    class GLRenderer {
+        private:
+            const Window &window;
+            RendererState state;
+            Index resource_event_handler;
 
-        virtual void init(Renderer &renderer) = 0;
+        public:
+            GLRenderer(const Window &window);
 
-        virtual void deinit(Renderer &renderer) = 0;
+            ~GLRenderer(void);
 
-        virtual void render(Renderer &renderer, const TimeDelta delta) = 0;
+            void render(TimeDelta delta);
     };
 }

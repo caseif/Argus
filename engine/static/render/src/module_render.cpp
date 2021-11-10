@@ -48,24 +48,21 @@
 
 namespace argus {
     // forward declarations
-    class RendererImpl;
     class Window;
 
     bool g_render_module_initialized = false;
 
-    RendererImpl *g_renderer_impl;
+    std::map<const Window*, Renderer*> g_renderer_map;
 
-    std::map<Window*, Renderer*> g_renderer_map;
-
-    static RendererImpl &_create_backend_impl() {
+    static void _activate_backend() {
         auto backends = get_engine_config().render_backends;
 
         for (auto backend : backends) {
             switch (backend) {
                 case RenderBackend::OpenGL: {
-                    auto impl = call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND));
+                    call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL as graphics backend\n");
-                    return *impl;
+                    return;
                 }
                 case RenderBackend::OpenGLES:
                     _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported\n");
@@ -80,16 +77,11 @@ namespace argus {
             _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next\n");
         }
 
+        //TODO: select fallback based on platform
         _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL\n");
-        return *call_module_fn<RendererImpl*>(std::string(FN_CREATE_OPENGL_BACKEND));
-    }
 
-    RendererImpl &get_renderer_impl(void) {
-        if (!g_render_module_initialized) {
-            throw std::runtime_error("Cannot get renderer implementation before render module is initialized");
-        }
-
-        return *g_renderer_impl;
+        call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
+        return;
     }
 
     static void _window_construct_callback(Window &window) {
@@ -109,7 +101,7 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Init: {
-                g_renderer_impl = &_create_backend_impl();
+                _activate_backend();
 
                 set_window_construct_callback(_window_construct_callback);
 
@@ -126,5 +118,4 @@ namespace argus {
                 break;
         }
     }
-
 }

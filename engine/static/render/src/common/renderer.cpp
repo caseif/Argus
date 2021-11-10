@@ -34,7 +34,6 @@
 #include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/renderer.hpp"
-#include "internal/render/renderer_impl.hpp"
 #include "internal/render/pimpl/common/renderer.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
@@ -48,7 +47,7 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
-    Renderer &Renderer::of_window(Window &window) {
+    Renderer &Renderer::of_window(const Window &window) {
         auto it = g_renderer_map.find(&window);
         if (it == g_renderer_map.end()) {
             throw std::runtime_error("No Renderer attached to requested Window");
@@ -61,8 +60,6 @@ namespace argus {
     }
 
     Renderer::~Renderer() {
-        g_renderer_impl->deinit(*this);
-
         for (auto *scene : pimpl->scenes) {
             delete scene;
         }
@@ -71,16 +68,7 @@ namespace argus {
         delete pimpl;
     }
 
-    Window &Renderer::get_window(void) const {
-        return pimpl->window;
-    }
-
     void Renderer::init(void) {
-        get_renderer_impl().init(*this);
-    }
-
-    void Renderer::render(const TimeDelta delta) {
-        get_renderer_impl().render(*this, delta);
     }
 
     Scene &Renderer::create_scene(SceneType type, const int index) {
@@ -110,36 +98,16 @@ namespace argus {
     void renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
         UNUSED(user_data);
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
-
-        if (window_event.subtype != WindowEventType::Create
-                && window_event.subtype != WindowEventType::Update
-                && window_event.subtype != WindowEventType::RequestClose) {
-            return;
-        }
-
         Window &window = window_event.window;
 
-        auto it = g_renderer_map.find(&window);
-
-        if (it == g_renderer_map.cend()) {
-            return;
-        }
-
-        Renderer &renderer = *it->second;
-
         switch (window_event.subtype) {
-            case WindowEventType::Create: {
-                renderer.init();
-                break;
-            }
-            case WindowEventType::Update: {
-                if (window.is_ready()) {
-                    renderer.render(window_event.delta);
-                }
-                break;
-            }
             case WindowEventType::RequestClose: {
-                delete &renderer;
+                auto it = g_renderer_map.find(&window);
+
+                if (it != g_renderer_map.cend()) {
+                    delete it->second;
+                }
+
                 break;
             }
             default: {

@@ -44,7 +44,7 @@ namespace argus {
     class Renderer;
     class Scene2D;
 
-    RendererState::RendererState(Renderer &renderer):
+    RendererState::RendererState(GLRenderer &renderer):
         renderer(renderer) {
     }
 

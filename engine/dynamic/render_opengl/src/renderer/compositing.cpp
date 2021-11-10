@@ -52,9 +52,8 @@
 #include <utility>
 
 namespace argus {
-    void draw_scene_to_framebuffer(SceneState &scene_state) {
+    void draw_scene_to_framebuffer(const Window &window, SceneState &scene_state) {
         auto &state = scene_state.parent_state;
-        auto &renderer = state.renderer;
 
         // framebuffer setup
         if (scene_state.framebuffer == 0) {
@@ -67,8 +66,8 @@ namespace argus {
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.framebuffer);
 
-        if (scene_state.frame_texture == 0 || renderer.get_window().pimpl->dirty_resolution) {
-            auto window_res = renderer.get_window().get_resolution();
+        if (scene_state.frame_texture == 0 || window.pimpl->dirty_resolution) {
+            auto window_res = window.get_resolution();
 
             if (scene_state.frame_texture != 0) {
                 glDeleteTextures(1, &scene_state.frame_texture);
@@ -107,7 +106,7 @@ namespace argus {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
+        Vector2u window_res = window.pimpl->properties.resolution;
 
         glViewport(0, 0, window_res.x, window_res.y);
 
@@ -151,11 +150,10 @@ namespace argus {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
-    void draw_framebuffer_to_screen(SceneState &scene_state) {
+    void draw_framebuffer_to_screen(const Window &window, SceneState &scene_state) {
         auto &state = scene_state.parent_state;
-        auto &renderer = state.renderer;
 
-        Vector2u window_res = renderer.get_window().pimpl->properties.resolution;
+        Vector2u window_res = window.pimpl->properties.resolution;
 
         glViewport(0, 0, window_res.x, window_res.y);
 

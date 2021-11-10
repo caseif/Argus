@@ -164,11 +164,11 @@ namespace argus {
         delete pimpl;
     }
 
-    bool Window::is_ready(void) {
+    bool Window::is_ready(void) const {
         return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
     }
 
-    bool Window::is_closed(void) {
+    bool Window::is_closed(void) const {
         return pimpl->state & WINDOW_STATE_CLOSE_REQUESTED;
     }
 

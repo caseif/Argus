@@ -25,9 +25,9 @@ namespace argus {
     struct RendererState;
     struct SceneState;
 
-    void draw_scene_to_framebuffer(SceneState &scene_state);
+    void draw_scene_to_framebuffer(const Window &window, SceneState &scene_state);
 
-    void draw_framebuffer_to_screen(SceneState &scene_state);
+    void draw_framebuffer_to_screen(const Window &window, SceneState &scene_state);
 
     void setup_framebuffer(RendererState &state);
 }

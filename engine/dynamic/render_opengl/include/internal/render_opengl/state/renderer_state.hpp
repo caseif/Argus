@@ -40,6 +40,7 @@ namespace argus {
     class RenderObject2D;
     class Scene2D;
 
+    class GLRenderer;
     struct ProcessedRenderObject;
     struct RenderBucket;
 
@@ -49,7 +50,7 @@ namespace argus {
     };
 
     struct RendererState {
-        Renderer &renderer;
+        GLRenderer &renderer;
 
         std::vector<Resource*> intrinsic_resources;
 
@@ -65,7 +66,7 @@ namespace argus {
         shader_handle_t frame_vert_shader;
         shader_handle_t frame_frag_shader;
 
-        RendererState(Renderer &renderer);
+        RendererState(GLRenderer &renderer);
 
         ~RendererState(void);
         
