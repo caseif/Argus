@@ -64,7 +64,7 @@ namespace argus {
 
     /**
      * \brief Represents a graphics backend used to instantiate a Window and
-     *        corresponding Renderer.
+     *        corresponding Canvas.
      *
      * \warning A Vulkan-based renderer is not yet implemented.
      */

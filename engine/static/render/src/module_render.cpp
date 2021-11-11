@@ -31,13 +31,14 @@
 #include "argus/resman/resource_manager.hpp"
 
 // module wm
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
 
 // module render
-#include "argus/render/common/renderer.hpp"
+#include "argus/render/common/canvas.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
-#include "internal/render/renderer.hpp"
 #include "internal/render/loader/material_loader.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 
@@ -51,8 +52,6 @@ namespace argus {
     class Window;
 
     bool g_render_module_initialized = false;
-
-    std::map<const Window*, Renderer*> g_renderer_map;
 
     static void _activate_backend() {
         auto backends = get_engine_config().render_backends;
@@ -84,14 +83,17 @@ namespace argus {
         return;
     }
 
-    static void _window_construct_callback(Window &window) {
-        auto *renderer = new Renderer(window);
-        g_renderer_map.insert({&window, renderer});
-    }
-
     static void _load_backend_modules(void) {
         //TODO: fail gracefully
         enable_dynamic_module(MODULE_RENDER_OPENGL);
+    }
+
+    static Canvas &_construct_canvas(Window &window) {
+        return *new Canvas(window);
+    }
+
+    static void _destroy_canvas(Canvas &canvas) {
+        delete &canvas;
     }
 
     void update_lifecycle_render(LifecycleStage stage) {
@@ -103,9 +105,7 @@ namespace argus {
             case LifecycleStage::Init: {
                 _activate_backend();
 
-                set_window_construct_callback(_window_construct_callback);
-
-                register_event_handler(ArgusEventType::Window, renderer_window_event_callback, TargetThread::Render);
+                Window::set_canvas_ctor_and_dtor(_construct_canvas, _destroy_canvas);
 
                 ResourceManager::instance().register_loader(*new MaterialLoader());
                 ResourceManager::instance().register_loader(*new PngTextureLoader());

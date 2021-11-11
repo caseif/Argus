@@ -34,11 +34,11 @@
 #include "internal/wm/pimpl/window.hpp"
 
 // module render
+#include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
-#include "argus/render/common/renderer.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/defines.hpp"
-#include "internal/render/pimpl/common/renderer.hpp"
+#include "internal/render/pimpl/common/canvas.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 
 // module render_opengl
@@ -69,8 +69,8 @@ namespace argus {
     class Scene2D;
 
     static void _rebuild_scene(const Window &window, RendererState &state) {
-        auto &renderer = Renderer::of_window(window);
-        for (auto *scene : renderer.pimpl->scenes) {
+        auto &canvas = window.canvas();
+        for (auto *scene : canvas.pimpl->scenes) {
             SceneState &scene_state = state.get_scene_state(*scene, true);
 
             auto &scene_transform = scene->get_transform();
@@ -186,9 +186,9 @@ namespace argus {
 
         glDisable(GL_CULL_FACE);
 
-        auto &renderer = Renderer::of_window(window);
+        auto &canvas = window.canvas();
 
-        for (auto *scene : renderer.pimpl->scenes) {
+        for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
             draw_scene_to_framebuffer(window, scene_state);
         }
@@ -203,12 +203,12 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
-        for (auto *scene : renderer.pimpl->scenes) {
+        for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
 
             draw_framebuffer_to_screen(window, scene_state);
         }
 
-        glfwSwapBuffers(renderer.pimpl->window.pimpl->handle);
+        glfwSwapBuffers(canvas.pimpl->window.pimpl->handle);
     }
 }

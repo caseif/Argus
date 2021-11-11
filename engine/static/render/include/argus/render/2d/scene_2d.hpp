@@ -28,7 +28,7 @@
 namespace argus {
     // forward declarations
     class Material;
-    class Renderer;
+    class Canvas;
 
     class RenderGroup2D;
     class RenderObject2D;
@@ -50,15 +50,15 @@ namespace argus {
             /**
              * \brief Constructs a new Scene2D.
              *
-             * \param parent The Renderer parent to the Scene.
+             * \param parent The Canvas parent to the Scene.
              * \param transform The Transform of the Scene.
              * \param index The compositing index of the Scene. Higher-indexed
              *        Scenes are rendered on top of lower-indexed ones.
              */
-            Scene2D(const Renderer &parent, const Transform2D &transform, int index);
+            Scene2D(const Canvas &canvas, const Transform2D &transform, int index);
 
-            Scene2D(const Renderer &parent, Transform2D &&transform, int index):
-                Scene2D(parent, transform, index) {
+            Scene2D(const Canvas &canvas, Transform2D &&transform, int index):
+                Scene2D(canvas, transform, index) {
             }
 
             Scene2D(const Scene2D&) noexcept;

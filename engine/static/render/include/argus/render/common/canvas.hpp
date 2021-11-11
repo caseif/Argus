@@ -31,52 +31,36 @@ namespace argus {
 
     class Window;
 
-    struct pimpl_Renderer;
+    struct pimpl_Canvas;
 
     /**
-     * \brief A construct which exposes functionality for rendering the entire
-     *        screen space at once.
+     * \brief A construct which contains a set of Scenes which will be rendered
+     *        to the screen by a renderer implementation.
      *
-     * Each Renderer has a one-to-one mapping with a Window, and a one-to-many
+     * Each Canvas has a one-to-one mapping with a Window, and a one-to-many
      * mapping with one or more \link Scene Scenes \endlink.
      *
-     * A Renderer is guaranteed to have at least one Scene, considered to
+     * A Canvas is guaranteed to have at least one Scene, considered to
      * be the "base" scene.
      *
      * \sa Window
      */
-    class Renderer {
+    class Canvas {
         public:
-            pimpl_Renderer *const pimpl;
+            pimpl_Canvas *const pimpl;
 
             /**
-             * \brief Returns the Renderer associated with a given Window.
+             * \brief Constructs a new Canvas attached to the given Window.
              *
-             * \param window The Window to retrieve the Renderer for.
-             *
-             * \return The associated Renderer.
+             * \param window The Window to attach the new Canvas to.
              */
-            static Renderer &of_window(const Window &window);
+            Canvas(Window &window);
 
-            /**
-             * \brief Constructs a new Renderer attached to the given Window.
-             *
-             * \param window The Window to attach the new Renderer to.
-             */
-            Renderer(Window &window);
+            Canvas(Canvas &rhs) = delete;
 
-            Renderer(Renderer &rhs) = delete;
+            Canvas(Canvas &&rhs) = delete;
 
-            Renderer(Renderer &&rhs) = delete;
-
-            ~Renderer(void);
-
-            /**
-             * \brief Initializes the Renderer.
-             *
-             * Initialization must be performed before render(TimeDelta) may be called.
-             */
-            void init(void);
+            ~Canvas(void);
 
             /**
              * \brief Creates a new Scene with the given priority.
@@ -92,13 +76,13 @@ namespace argus {
             Scene &create_scene(const SceneType type, const int index);
 
             /**
-             * \brief Removes a Scene from this Renderer, destroying it in the
+             * \brief Removes a Scene from this Canvas, destroying it in the
              *        process.
              *
              * \param scene The child Scene to remove.
              *
              * \throw std::invalid_argument If the supplied Scene is not owned
-             *        by this Renderer.
+             *        by this Canvas.
              */
             void remove_scene(Scene &scene);
     };

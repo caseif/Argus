@@ -71,6 +71,8 @@
 
 namespace argus {
     static WindowCallback g_window_construct_callback = nullptr;
+    static CanvasCtor g_canvas_ctor = nullptr;
+    static CanvasDtor g_canvas_dtor = nullptr;
 
     static inline void _dispatch_window_event(Window &window, WindowEventType type) {
         dispatch_event<WindowEvent>(type, window);
@@ -118,9 +120,26 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
+    void Window::set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor) {
+        if (ctor == nullptr || dtor == nullptr) {
+            throw std::invalid_argument("Canvas constructor/destructor cannot be nullptr.");
+        }
+
+        if (g_canvas_ctor != nullptr || g_canvas_dtor != nullptr) {
+            throw std::runtime_error("Cannot set canvas constructor/destructor more than once");
+        }
+
+        g_canvas_ctor = ctor;
+        g_canvas_dtor = dtor;
+    }
+
     Window::Window(Window *parent):
             pimpl(new pimpl_Window(parent)) {
         _ARGUS_ASSERT(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
+
+        if (g_canvas_ctor != nullptr) {
+            pimpl->canvas = &g_canvas_ctor(*this);
+        }
 
         pimpl->state = WINDOW_STATE_NULL;
 
@@ -162,6 +181,13 @@ namespace argus {
         }
 
         delete pimpl;
+    }
+
+    Canvas &Window::canvas() const {
+        if (pimpl->canvas == nullptr) {
+            throw std::runtime_error("Canvas member was not set for window! (Ensure the render module is loaded)");
+        }
+        return *pimpl->canvas;
     }
 
     bool Window::is_ready(void) const {
@@ -371,6 +397,10 @@ namespace argus {
         if (window_event.subtype == WindowEventType::RequestClose) {
             window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
             window.pimpl->state &= ~WINDOW_STATE_READY;
+
+            if (window.pimpl->canvas != nullptr) {
+                g_canvas_dtor(*window.pimpl->canvas);
+            }
         } else if (window_event.subtype == WindowEventType::Resize) {
             window.pimpl->properties.resolution = window_event.resolution;
         } else if (window_event.subtype == WindowEventType::Move) {

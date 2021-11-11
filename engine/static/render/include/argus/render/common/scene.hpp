@@ -19,7 +19,7 @@
 #pragma once
 
 namespace argus {
-    class Renderer;
+    class Canvas;
     class Transform2D;
 
     struct pimpl_Scene;
@@ -56,9 +56,9 @@ namespace argus {
             virtual pimpl_Scene *get_pimpl(void) const = 0;
 
             /**
-             * \brief Gets the Renderer which owns this Scene.
+             * \brief Gets the Canvas which is parent to this Scene.
              */
-            const Renderer &get_parent_renderer(void) const;
+            const Canvas &get_canvas(void) const;
 
             /**
              * \brief Gets the Transform of this Scene.

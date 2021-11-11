@@ -22,7 +22,7 @@
 #include "internal/render/pimpl/common/scene.hpp"
 
 namespace argus {
-    class Renderer;
+    class Canvas;
 
     Scene::Scene(SceneType type):
         type(type) {
@@ -31,8 +31,8 @@ namespace argus {
     Scene::~Scene(void) {
     }
 
-    const Renderer &Scene::get_parent_renderer(void) const {
-        return get_pimpl()->parent_renderer;
+    const Canvas &Scene::get_canvas(void) const {
+        return get_pimpl()->canvas;
     }
 
     Transform2D &Scene::get_transform(void) const {

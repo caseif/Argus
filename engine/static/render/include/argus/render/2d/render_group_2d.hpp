@@ -28,7 +28,7 @@
 namespace argus {
     // forward declarations
     class Material;
-    class Renderer;
+    class Canvas;
     class Scene;
 
     class RenderGroup2D;

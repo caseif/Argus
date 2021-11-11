@@ -43,6 +43,14 @@ namespace argus {
         GLFWwindow *handle;
 
         /**
+         * \brief The Canvas associated with this Window.
+         *
+         * This is only set if the Canvas constructor has been set by the module
+         * responsible for implementing canvases.
+         */
+        Canvas *canvas;
+
+        /**
          * \brief The ID of the engine callback registered for this Window.
          */
         Index callback_id;

@@ -29,9 +29,8 @@ namespace argus {
     struct pimpl_Scene2D : public pimpl_Scene {
         RenderGroup2D root_group;
         
-        pimpl_Scene2D(const Renderer &renderer, Scene2D &scene, const Transform2D &transform,
-                const int index):
-                pimpl_Scene(renderer, transform, index),
+        pimpl_Scene2D(const Canvas &canvas, Scene2D &scene, const Transform2D &transform, const int index):
+                pimpl_Scene(canvas, transform, index),
                 root_group(scene, nullptr) {
         }
 

@@ -72,7 +72,7 @@ namespace argus {
         };
     }
 
-    static void _renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
+    static void _window_event_callback(const ArgusEvent &event, void *user_data) {
         UNUSED(user_data);
         const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
 
@@ -121,7 +121,7 @@ namespace argus {
 
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
-                register_event_handler(ArgusEventType::Window, _renderer_window_event_callback, TargetThread::Render);
+                register_event_handler(ArgusEventType::Window, _window_event_callback, TargetThread::Render);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

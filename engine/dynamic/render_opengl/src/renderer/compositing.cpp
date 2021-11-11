@@ -30,8 +30,8 @@
 #include "argus/resman/resource_manager.hpp"
 
 // module render
+#include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
-#include "argus/render/common/renderer.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 
 // module render_opengl

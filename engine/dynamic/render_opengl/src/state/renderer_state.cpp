@@ -41,7 +41,7 @@
 
 namespace argus {
     // forward declarations
-    class Renderer;
+    class Canvas;
     class Scene2D;
 
     RendererState::RendererState(GLRenderer &renderer):

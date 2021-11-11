@@ -18,9 +18,29 @@
 
 #pragma once
 
-// module core
-#include "argus/core/event.hpp"
+// module render
+#include "argus/render/common/canvas.hpp"
+
+#include <atomic>
+#include <vector>
 
 namespace argus {
-    void renderer_window_event_callback(const ArgusEvent &event, void *user_data);
+    struct pimpl_Canvas {
+        /**
+         * \brief The Window which this Canvas is mapped to.
+         */
+        Window &window;
+        /**
+         * \brief The child \link Scene Scenes \endlink of the Canvas.
+         */
+        std::vector<Scene*> scenes;
+
+        pimpl_Canvas(Window &window):
+                window(window) {
+        }
+
+        pimpl_Canvas(const pimpl_Canvas&) = delete;
+
+        pimpl_Canvas(pimpl_Canvas&&) = delete;
+    };
 }

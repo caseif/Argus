@@ -27,7 +27,7 @@
 
 namespace argus {
     // forward declarations
-    class Renderer;
+    class Canvas;
     class Window;
 
     struct pimpl_Window;
@@ -35,19 +35,50 @@ namespace argus {
     /**
      * \brief A callback which operates on a window-wise basis.
      */
-    typedef std::function<void(Window &window)> WindowCallback;
+    typedef std::function<void(Window&)> WindowCallback;
+
+    /**
+     * \brief A callback which constructs a Canvas associated with a given
+     *        Window.
+     */
+    typedef std::function<Canvas&(Window&)> CanvasCtor;
+
+    /**
+     * \brief A callback which destructs and deallocates a Canvas.
+     */
+    typedef std::function<void(Canvas&)> CanvasDtor;
 
     /**
      * \brief Represents an individual window on the screen.
      *
      * \attention Not all platforms may support multiple windows.
      *
-     * \sa Renderer
+     * \sa Canvas
      */
     class Window {
         public:
             pimpl_Window *const pimpl;
 
+            /**
+             * \brief Sets the callbacks used to construct and destroy a Canvas
+             *        during the lifecycle of a Window.
+             *
+             * The constructor will be invoked when the Window is constructed or
+             * shortly thereafter, and the resulting Canvas will be associated
+             * with the Window for the duration of its lifespan.
+             * 
+             * The destructor will be invoked when a Window receives a close
+             * request or shortly thereafter. The destructor should deinitialize
+             * and deallocate the Canvas passed to it.
+             *
+             * \param ctor The constructor used to create Canvases.
+             * \param dtor The destructor used to deinitialize and deallocate
+             *        Canvases.
+             *
+             * \throw std::invalid_argument If either parameter is nullptr.
+             * \throw std::runtime_error If the callbacks have already been set.
+             */
+            static void set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor);
             /**
              * \brief Creates a new Window.
              *
@@ -59,7 +90,7 @@ namespace argus {
              * \warning Not all platforms may support multiple
              *          \link Window Windows \endlink.
              *
-             * \remark A Renderer will be implicitly created upon construction
+             * \remark A Canvas will be implicitly created upon construction
              *         of a Window.
              */
             Window(Window *parent = nullptr);
@@ -69,6 +100,17 @@ namespace argus {
             Window(Window&&) = delete;
 
             ~Window(void);
+
+            /**
+             * \brief Gets the Canvas associated with the Window.
+             * 
+             * \return The Canvas associated with the Window.
+             *
+             * \throw std::runtime_error If a Canvas has not been associated
+             *        with the Window. This can occur if a renderer module has
+             *        not been requested or if the renderer module is buggy.
+             */
+            Canvas &canvas(void) const;
 
             /**
              * \brief Gets whether the Window is ready for manipulation or interaction.

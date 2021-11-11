@@ -32,7 +32,7 @@
 
 namespace argus {
     // forward declarations
-    class Renderer;
+    class Canvas;
     class Scene;
     class Shader;
     class TextureData;

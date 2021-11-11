@@ -26,12 +26,12 @@
 
 namespace argus {
     struct pimpl_Scene {
-        const Renderer &parent_renderer;
+        const Canvas &canvas;
         Transform2D transform;
         const int index;
         
-        pimpl_Scene(const Renderer &renderer, const Transform2D &transform, const int index):
-                parent_renderer(renderer),
+        pimpl_Scene(const Canvas &canvas, const Transform2D &transform, const int index):
+                canvas(canvas),
                 transform(transform),
                 index(index) {
         }

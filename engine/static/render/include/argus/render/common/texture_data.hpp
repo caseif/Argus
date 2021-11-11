@@ -24,7 +24,7 @@
 
 namespace argus {
     // forward declarations
-    class Renderer;
+    class Canvas;
     struct pimpl_TextureData;
 
     /**

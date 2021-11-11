@@ -28,13 +28,12 @@
 #include "argus/wm/window_event.hpp"
 
 // module render
-#include "argus/render/common/renderer.hpp"
+#include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/module_render.hpp"
-#include "internal/render/renderer.hpp"
-#include "internal/render/pimpl/common/renderer.hpp"
+#include "internal/render/pimpl/common/canvas.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
 #include <algorithm>
@@ -47,31 +46,19 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
-    Renderer &Renderer::of_window(const Window &window) {
-        auto it = g_renderer_map.find(&window);
-        if (it == g_renderer_map.end()) {
-            throw std::runtime_error("No Renderer attached to requested Window");
-        }
-        return *it->second;
+    Canvas::Canvas(Window &window):
+            pimpl(new pimpl_Canvas(window)) {
     }
 
-    Renderer::Renderer(Window &window):
-            pimpl(new pimpl_Renderer(window)) {
-    }
-
-    Renderer::~Renderer() {
+    Canvas::~Canvas() {
         for (auto *scene : pimpl->scenes) {
             delete scene;
         }
 
-        g_renderer_map.erase(&pimpl->window);
         delete pimpl;
     }
 
-    void Renderer::init(void) {
-    }
-
-    Scene &Renderer::create_scene(SceneType type, const int index) {
+    Scene &Canvas::create_scene(SceneType type, const int index) {
         Scene *scene;
         if (type == SceneType::TwoD) {
             scene = new Scene2D(*this, Transform2D{}, index);
@@ -87,32 +74,11 @@ namespace argus {
         return *scene;
     }
 
-    void Renderer::remove_scene(Scene &scene) {
-        if (&scene.get_parent_renderer() != this) {
-            throw std::invalid_argument("Supplied Scene does not belong to the Renderer");
+    void Canvas::remove_scene(Scene &scene) {
+        if (&scene.get_canvas() != this) {
+            throw std::invalid_argument("Supplied Scene does not belong to the Canvas");
         }
 
         remove_from_vector(pimpl->scenes, &scene);
-    }
-
-    void renderer_window_event_callback(const ArgusEvent &event, void *user_data) {
-        UNUSED(user_data);
-        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
-        Window &window = window_event.window;
-
-        switch (window_event.subtype) {
-            case WindowEventType::RequestClose: {
-                auto it = g_renderer_map.find(&window);
-
-                if (it != g_renderer_map.cend()) {
-                    delete it->second;
-                }
-
-                break;
-            }
-            default: {
-                break;
-            }
-        }
     }
 }

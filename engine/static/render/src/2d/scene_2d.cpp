@@ -33,7 +33,7 @@
 
 namespace argus {
     // forward declarations
-    class Renderer;
+    class Canvas;
 
     class RenderPrim2D;
     class Transform2D;
@@ -42,9 +42,9 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Scene2D));
 
-    Scene2D::Scene2D(const Renderer &parent, const Transform2D &transform, const int index):
+    Scene2D::Scene2D(const Canvas &canvas, const Transform2D &transform, const int index):
         Scene(SceneType::TwoD),
-        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(parent, *this, transform, index)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(canvas, *this, transform, index)) {
     }
 
     Scene2D::Scene2D(const Scene2D &rhs) noexcept:
