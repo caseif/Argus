@@ -55,7 +55,7 @@ namespace argus {
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
-                register_event_handler(argus::ArgusEventType::Window, _on_window_event, argus::TargetThread::Render);
+                register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
                 break;
             default:
                 break;

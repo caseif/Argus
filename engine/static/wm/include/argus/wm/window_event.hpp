@@ -25,6 +25,8 @@
 // module core
 #include "argus/core/event.hpp"
 
+#include <typeinfo>
+
 namespace argus {
     // forward declarations
     class Window;
@@ -93,7 +95,7 @@ namespace argus {
          * \param window The Window associated with the event.
          */
         WindowEvent(WindowEventType subtype, Window &window):
-                ArgusEvent{ArgusEventType::Window},
+                ArgusEvent{std::type_index(typeid(WindowEvent))},
                 subtype(subtype),
                 window(window),
                 resolution(),
@@ -112,7 +114,7 @@ namespace argus {
          */
         WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
                 TimeDelta delta):
-            ArgusEvent{ArgusEventType::Window},
+            ArgusEvent{std::type_index(typeid(WindowEvent))},
             subtype(subtype),
             window(window),
             resolution(resolution),

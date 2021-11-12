@@ -28,6 +28,7 @@
 
 // module wm
 #include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
 #include "internal/wm/module_wm.hpp"
 #include "internal/wm/window.hpp"
 
@@ -80,7 +81,7 @@ namespace argus {
 
                 register_render_callback(_poll_events);
                 
-                register_event_handler(ArgusEventType::Window, window_window_event_callback, TargetThread::Render);
+                register_event_handler<WindowEvent>(window_window_event_callback, TargetThread::Render);
 
                 g_wm_module_initialized = true;
 

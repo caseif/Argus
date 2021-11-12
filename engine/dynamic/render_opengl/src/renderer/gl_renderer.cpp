@@ -152,7 +152,7 @@ namespace argus {
 
         _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
 
-        resource_event_handler = register_event_handler(ArgusEventType::Resource, _handle_resource_event,
+        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);
 
         if (AGLET_GL_KHR_debug) {

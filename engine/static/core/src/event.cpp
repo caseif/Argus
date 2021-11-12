@@ -31,12 +31,14 @@
 #include <functional>
 #include <mutex>
 #include <queue>
+#include <typeindex>
+#include <typeinfo>
 #include <type_traits>
 #include <vector>
 
 namespace argus {
     struct ArgusEventHandler {
-        ArgusEventType type;
+        std::type_index type;
         ArgusEventCallback callback;
         void *data;
     };
@@ -49,21 +51,6 @@ namespace argus {
     
     static std::queue<RefCountable<ArgusEvent>*> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
-
-    constexpr inline ArgusEventType operator|(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
-                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
-    }
-
-    inline ArgusEventType operator|=(ArgusEventType &lhs, const ArgusEventType rhs) {
-        return lhs = static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) |
-                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
-    }
-
-    constexpr inline ArgusEventType operator&(const ArgusEventType lhs, const ArgusEventType rhs) {
-        return static_cast<ArgusEventType>(static_cast<std::underlying_type<ArgusEventType>::type>(lhs) &
-                                           static_cast<std::underlying_type<ArgusEventType>::type>(rhs));
-    }
 
     void process_event_queue(const TargetThread target_thread) {
         _ARGUS_ASSERT(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
@@ -90,7 +77,7 @@ namespace argus {
             auto &event = *queue_copy.front();
             auto listeners_copy = listeners;
             for (const IndexedValue<ArgusEventHandler> &listener : listeners.list) {
-                if (static_cast<int>(listener.value.type & event.ptr->type)) {
+                if (static_cast<int>(listener.value.type == event.ptr->type)) {
                     listener.value.callback(*event.ptr, listener.value.data);
                 }
             }
@@ -126,7 +113,7 @@ namespace argus {
         flush_callback_list_queues(*listeners);
     }
 
-    Index register_event_handler(const ArgusEventType type, const ArgusEventCallback &callback,
+    Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
             const TargetThread target_thread, void *const data) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
@@ -173,7 +160,7 @@ namespace argus {
         g_render_event_queue_mutex.unlock();
     }
 
-    ArgusEvent::ArgusEvent(ArgusEventType type):
+    ArgusEvent::ArgusEvent(std::type_index type):
         type(type) {
     }
 }

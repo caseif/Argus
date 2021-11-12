@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "material.hpp"
-#include "renderer.hpp"
-#include "scene.hpp"
-#include "shader.hpp"
-#include "texture_data.hpp"
-#include "transform.hpp"
-#include "vertex.hpp"
+#include "argus/render/common/canvas.hpp"
+#include "argus/render/common/material.hpp"
+#include "argus/render/common/scene.hpp"
+#include "argus/render/common/shader.hpp"
+#include "argus/render/common/texture_data.hpp"
+#include "argus/render/common/transform.hpp"
+#include "argus/render/common/vertex.hpp"

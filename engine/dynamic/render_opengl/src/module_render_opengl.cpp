@@ -121,7 +121,7 @@ namespace argus {
 
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
-                register_event_handler(ArgusEventType::Window, _window_event_callback, TargetThread::Render);
+                register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
