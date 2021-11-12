@@ -76,7 +76,7 @@ namespace argus {
                 stream = stderr;
                 break;
         }
-        _GENERIC_PRINT(stream, level, "GL", "%s\n", message);
+        _GENERIC_PRINT(stream, level, "GL", "%s", message);
     }
 
     void set_attrib_pointer(array_handle_t array_obj, buffer_handle_t buffer_obj, GLuint vertex_len, GLuint attr_len,

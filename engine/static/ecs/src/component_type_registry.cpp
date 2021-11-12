@@ -130,7 +130,7 @@ namespace argus {
     }
 
     void ComponentTypeRegistry::_seal(void) {
-        validate_state(!pimpl->sealed, "Cannot seal component registry because it is already sealed.\n");
+        validate_state(!pimpl->sealed, "Cannot seal component registry because it is already sealed.");
 
         pimpl->sealed = true;
 

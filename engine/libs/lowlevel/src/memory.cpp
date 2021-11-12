@@ -263,7 +263,7 @@ namespace argus {
                 uint64_t block_flag_mask = uint64_t(1) << ((~block_index) & BF_INDEX_MASK);
 
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
-                    throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)\n");
+                    throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)");
                 }
 
                 chunk->occupied_block_map &= ~block_flag_mask;

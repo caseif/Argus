@@ -213,9 +213,9 @@ namespace argus {
 
     static std::string _format_load_error(std::string msg, std::vector<std::string> dependent_chain) {
         std::stringstream ss;
-        ss << msg << "\n";
+        ss << msg;
         for (const auto &dependent : dependent_chain) {
-            ss << "    Required by module \"" << dependent << "\"\n";
+            ss << "\n    Required by module \"" << dependent << "\"";
         }
         return ss.str();
     }

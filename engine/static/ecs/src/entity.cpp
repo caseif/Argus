@@ -74,7 +74,7 @@ namespace argus {
 
     bool Entity::has_component(ComponentTypeId component_type) {
         if (component_type >= ComponentTypeRegistry::instance().get_component_type_count()) {
-            throw std::invalid_argument("Invalid component ID\n");
+            throw std::invalid_argument("Invalid component ID");
         }
         return pimpl->component_pointers[component_type] != nullptr;
     }
