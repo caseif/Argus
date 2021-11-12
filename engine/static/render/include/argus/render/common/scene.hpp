@@ -72,6 +72,6 @@ namespace argus {
              *
              * \param transform The new Transform.
              */
-            void set_transform(Transform2D &transform);
+            void set_transform(const Transform2D &transform);
     };
 }

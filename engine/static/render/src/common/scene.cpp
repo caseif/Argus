@@ -39,7 +39,7 @@ namespace argus {
         return get_pimpl()->transform;
     }
 
-    void Scene::set_transform(Transform2D &transform) {
+    void Scene::set_transform(const Transform2D &transform) {
         get_pimpl()->transform = transform;
     }
 }
