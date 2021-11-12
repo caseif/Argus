@@ -110,7 +110,7 @@ namespace argus {
              *        with the Window. This can occur if a renderer module has
              *        not been requested or if the renderer module is buggy.
              */
-            Canvas &canvas(void) const;
+            Canvas &get_canvas(void) const;
 
             /**
              * \brief Gets whether the Window is ready for manipulation or interaction.

@@ -69,7 +69,7 @@ namespace argus {
     class Scene2D;
 
     static void _rebuild_scene(const Window &window, RendererState &state) {
-        auto &canvas = window.canvas();
+        auto &canvas = window.get_canvas();
         for (auto *scene : canvas.pimpl->scenes) {
             SceneState &scene_state = state.get_scene_state(*scene, true);
 
@@ -185,7 +185,7 @@ namespace argus {
 
         glDisable(GL_CULL_FACE);
 
-        auto &canvas = window.canvas();
+        auto &canvas = window.get_canvas();
 
         for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);

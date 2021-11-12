@@ -185,7 +185,7 @@ namespace argus {
         delete pimpl;
     }
 
-    Canvas &Window::canvas() const {
+    Canvas &Window::get_canvas(void) const {
         if (pimpl->canvas == nullptr) {
             throw std::runtime_error("Canvas member was not set for window! (Ensure the render module is loaded)");
         }
