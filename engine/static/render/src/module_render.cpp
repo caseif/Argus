@@ -60,24 +60,24 @@ namespace argus {
             switch (backend) {
                 case RenderBackend::OpenGL: {
                     call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
-                    _ARGUS_INFO("Selecting OpenGL as graphics backend\n");
+                    _ARGUS_INFO("Selecting OpenGL as graphics backend");
                     return;
                 }
                 case RenderBackend::OpenGLES:
-                    _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported\n");
+                    _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported");
                     break;
                 case RenderBackend::Vulkan:
-                    _ARGUS_INFO("Graphics backend Vulkan is not yet supported\n");
+                    _ARGUS_INFO("Graphics backend Vulkan is not yet supported");
                     break;
                 default:
-                    _ARGUS_WARN("Skipping unrecognized graphics backend index %d\n", static_cast<int>(backend));
+                    _ARGUS_WARN("Skipping unrecognized graphics backend index %d", static_cast<int>(backend));
                     break;
             }
-            _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next\n");
+            _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next");
         }
 
         //TODO: select fallback based on platform
-        _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL\n");
+        _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL");
 
         call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
         return;

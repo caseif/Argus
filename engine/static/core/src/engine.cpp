@@ -137,11 +137,11 @@ namespace argus {
             if (g_engine_stopping) {
                 // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
                 if (!g_render_thread_halted) {
-                    _ARGUS_DEBUG("Render thread not halted, waiting\n");
+                    _ARGUS_DEBUG("Render thread not halted, waiting");
                     std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                     g_engine_stop_notifier.wait(lock);
                 }
-                _ARGUS_DEBUG("Render thread is halted, proceeding with engine bring-down\n");
+                _ARGUS_DEBUG("Render thread is halted, proceeding with engine bring-down");
 
                 deinit_modules();
 
@@ -179,7 +179,7 @@ namespace argus {
 
         while (true) {
             if (g_engine_stopping) {
-                _ARGUS_DEBUG("Engine halt is acknowledged by render thread\n");
+                _ARGUS_DEBUG("Engine halt is acknowledged by render thread");
                 std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                 g_render_thread_halted = true;
                 g_engine_stop_notifier.notify_one();

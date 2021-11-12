@@ -89,7 +89,7 @@ namespace argus {
         #pragma warning(disable: 4611)
         #endif
         if (setjmp(png_jmpbuf(png_ptr)) != 0) {
-            _ARGUS_FATAL("libpng failed\n");
+            _ARGUS_FATAL("libpng failed");
         }
         #ifdef _MSC_VER
         #pragma warning(pop)

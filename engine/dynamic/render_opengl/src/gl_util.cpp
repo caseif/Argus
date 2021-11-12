@@ -38,7 +38,7 @@ namespace argus {
 
         glfwMakeContextCurrent(window);
         if (glfwGetCurrentContext() != window) {
-            _ARGUS_FATAL("Failed to make GL context current\n");
+            _ARGUS_FATAL("Failed to make GL context current");
         }
     }
 

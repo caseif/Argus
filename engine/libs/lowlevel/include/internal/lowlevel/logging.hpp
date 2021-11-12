@@ -37,9 +37,9 @@
 #define STRINGIZE(x) STRINGIZE_DETAIL(x)
 
 #ifdef _ARGUS_DEBUG_MODE
-#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " __FILE__ ":" STRINGIZE(__LINE__) ": " fmt, level, system, ##__VA_ARGS__)
+#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " __FILE__ ":" STRINGIZE(__LINE__) ": " fmt "\n", level, system, ##__VA_ARGS__)
 #else
-#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " fmt, level, system, ##__VA_ARGS__)
+#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " fmt "\n", level, system, ##__VA_ARGS__)
 #endif
 
 #define _ARGUS_PRINT(stream, level, fmt, ...) _GENERIC_PRINT(stream, level, "Argus", fmt, ##__VA_ARGS__)
@@ -65,5 +65,5 @@
                                                     _ARGUS_ABORT();
 
 #define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) { \
-                                        _ARGUS_FATAL(fmt, ##__VA_ARGS__); \
+                                        _ARGUS_FATAL("Assertion failed: " fmt, ##__VA_ARGS__); \
                                     }

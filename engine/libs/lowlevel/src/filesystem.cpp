@@ -268,7 +268,7 @@ namespace argus {
         rc = _NSGetExecutablePath(path, &size);
 
         if (rc != 0) {
-            _ARGUS_WARN("Need %u bytes to store full executable path\n", size);
+            _ARGUS_WARN("Need %u bytes to store full executable path", size);
             throw std::runtime_error("Executable path too long for buffer");
             return rc;
         }

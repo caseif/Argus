@@ -78,7 +78,7 @@ namespace argus {
             std::istream &stream, size_t size) const {
         UNUSED(proto);
         UNUSED(size);
-        _ARGUS_DEBUG("Loading material %s\n", proto.uid.c_str());
+        _ARGUS_DEBUG("Loading material %s", proto.uid.c_str());
         try {
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 
@@ -99,13 +99,13 @@ namespace argus {
                     stage = ShaderStage::Fragment;
                 } else {
                     // we don't support any other shader stages right now
-                    _ARGUS_WARN("Invalid shader stage in material %s\n", proto.uid.c_str());
+                    _ARGUS_WARN("Invalid shader stage in material %s", proto.uid.c_str());
                     return NULL;
                 }
 
                 if (shader_map.find(stage) != shader_map.end()) {
                     // only one shader can be specified per stage
-                    _ARGUS_WARN("Duplicate shader stage in material %s\n", proto.uid.c_str());
+                    _ARGUS_WARN("Duplicate shader stage in material %s", proto.uid.c_str());
                     return NULL;
                 }
 
@@ -125,7 +125,7 @@ namespace argus {
                     attrs |= VertexAttributes::TEXCOORD;
                 } else {
                     // invalid attribute name
-                    _ARGUS_WARN("Invalid vertex attribute name in material %s\n", proto.uid.c_str());
+                    _ARGUS_WARN("Invalid vertex attribute name in material %s", proto.uid.c_str());
                     return NULL;
                 }
             }
@@ -138,7 +138,7 @@ namespace argus {
             try {
                 deps = load_dependencies(manager, dep_uids);
             } catch (...) {
-                _ARGUS_WARN("Failed to load dependencies for material %s\n", proto.uid.c_str());
+                _ARGUS_WARN("Failed to load dependencies for material %s", proto.uid.c_str());
                 return NULL;
             }
 
@@ -147,24 +147,24 @@ namespace argus {
                 const Shader &shader = deps[shader_info.second]->get<const Shader>();
                 if (shader.get_stage() != shader_info.first) {
                     // stage of loaded shader does not match stage specified by material
-                    _ARGUS_WARN("Mismatched shader stage in material %s\n", proto.uid.c_str());
+                    _ARGUS_WARN("Mismatched shader stage in material %s", proto.uid.c_str());
                     return NULL;
                 }
 
                 shaders.push_back(&shader);
             }
 
-            _ARGUS_DEBUG("Successfully loaded material %s\n", proto.uid.c_str());
+            _ARGUS_DEBUG("Successfully loaded material %s", proto.uid.c_str());
             return new Material(tex_uid, shader_uids, attrs);
         } catch (nlohmann::detail::parse_error&) {
-            _ARGUS_WARN("Failed to parse material %s\n", proto.uid.c_str());
+            _ARGUS_WARN("Failed to parse material %s", proto.uid.c_str());
             return NULL;
         } catch (std::out_of_range&) {
-            _ARGUS_DEBUG("Material %s is incomplete or malformed\n", proto.uid.c_str());
+            _ARGUS_DEBUG("Material %s is incomplete or malformed", proto.uid.c_str());
             return NULL;
         } catch (std::exception &ex) {
             UNUSED(ex); // only gets used in debug mode
-            _ARGUS_DEBUG("Unspecified exception while parsing material %s (what: %s)\n", proto.uid.c_str(), ex.what());
+            _ARGUS_DEBUG("Unspecified exception while parsing material %s (what: %s)", proto.uid.c_str(), ex.what());
             return NULL;
         }
     }

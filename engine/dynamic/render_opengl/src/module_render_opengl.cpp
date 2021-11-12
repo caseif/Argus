@@ -90,14 +90,14 @@ namespace argus {
                 }
                 
                 auto it = g_renderer_map.find(&window);
-                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!\n")
+                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!");
 
                 it->second->render(window_event.delta);
                 break;
             }
             case WindowEventType::RequestClose: {
                 auto it = g_renderer_map.find(&window);
-                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window close request but no renderer was registered!\n")
+                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window close request but no renderer was registered!");
 
                 delete it->second;
                 break;

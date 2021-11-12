@@ -116,7 +116,7 @@ namespace argus {
         try {
             children = list_directory_entries(root_path);
         } catch (std::exception &ex) {
-            _ARGUS_WARN("Failed to discover resources: %s\n", ex.what());
+            _ARGUS_WARN("Failed to discover resources: %s", ex.what());
             return;
         }
 
@@ -136,12 +136,12 @@ namespace argus {
             ArpPackage package = nullptr;
             int rc = 0;
             if ((rc = arp_load_from_file(full_child_path.c_str(), &package)) != 0) {
-                _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)\n",
+                _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)",
                         full_child_path.c_str(), rc);
             }
 
             if ((rc = arp_add_to_set(set, package)) != 0) {
-                _ARGUS_WARN("Failed to add package at path %s to set (libarp returned error code %d)\n",
+                _ARGUS_WARN("Failed to add package at path %s to set (libarp returned error code %d)",
                         full_child_path.c_str(), rc);
             }
         }
@@ -154,7 +154,7 @@ namespace argus {
         try {
             children = list_directory_entries(root_path);
         } catch (std::exception &ex) {
-            _ARGUS_WARN("Failed to discover resources: %s\n", ex.what());
+            _ARGUS_WARN("Failed to discover resources: %s", ex.what());
             return;
         }
 
@@ -169,7 +169,7 @@ namespace argus {
             if (prefix.empty()) {
                 if (is_regfile(full_child_path)) {
                     if (ext != "arp") {
-                        _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s\n", name.c_str());
+                        _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s", name.c_str());
                     }
                     continue;
                 }
@@ -187,12 +187,12 @@ namespace argus {
                 _discover_fs_resources_recursively(full_child_path, cur_uid, prototype_map, extension_map);
             } else if (is_regfile(full_child_path)) {
                 if (ext.empty()) {
-                    _ARGUS_WARN("Resource %s does not have an extension, ignoring\n", full_child_path.c_str());
+                    _ARGUS_WARN("Resource %s does not have an extension, ignoring", full_child_path.c_str());
                     continue;
                 }
 
                 if (prototype_map.find(cur_uid) != prototype_map.cend()) {
-                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies\n", cur_uid.c_str());
+                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies", cur_uid.c_str());
                     continue;
                 }
 
@@ -200,14 +200,14 @@ namespace argus {
 
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {
-                    _ARGUS_WARN("Discovered filesystem resource %s with unknown extension %s, ignoring\n",
+                    _ARGUS_WARN("Discovered filesystem resource %s with unknown extension %s, ignoring",
                             cur_uid.c_str(), ext.c_str());
                     continue;
                 }
 
                 prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path}});
 
-                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s\n", cur_uid.c_str(),
+                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s", cur_uid.c_str(),
                         full_child_path.c_str());
             }
         }
@@ -229,7 +229,7 @@ namespace argus {
 
             pimpl->discovery_done = true;
         } catch (std::exception &ex) {
-            _ARGUS_FATAL("Failed to get executable directory: %s\n", ex.what());
+            _ARGUS_FATAL("Failed to get executable directory: %s", ex.what());
         }
     }
 
@@ -238,7 +238,7 @@ namespace argus {
 
         ArpPackage pack = nullptr;
         if ((rc = arp_load_from_memory(buf, len, &pack)) != 0) {
-            _ARGUS_FATAL("Failed to load in-memory package (return code %d)\n", rc);
+            _ARGUS_FATAL("Failed to load in-memory package (return code %d)", rc);
         }
         arp_add_to_set(pimpl->package_set, pack);
     }
@@ -262,7 +262,7 @@ namespace argus {
         if (it != mgr.pimpl->loaded_resources.cend()) {
             if (inc_refcount) {
                 auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
-                _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)\n", uid.c_str(), new_ref_count);
+                _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)", uid.c_str(), new_ref_count);
                 UNUSED(new_ref_count); // suppress unused warning in release configuration
             }
 
@@ -278,7 +278,7 @@ namespace argus {
             return *existing_res;
         }
 
-        _ARGUS_DEBUG("Initiating load for resource %s\n", uid.c_str());
+        _ARGUS_DEBUG("Initiating load for resource %s", uid.c_str());
 
         Resource *res = nullptr;
 
@@ -286,7 +286,7 @@ namespace argus {
         if (pt_it != pimpl->discovered_fs_protos.cend()) {
             ResourcePrototype proto = pt_it->second;
 
-            _ARGUS_ASSERT(!proto.fs_path.empty(), "FS resource path is empty\n");
+            _ARGUS_ASSERT(!proto.fs_path.empty(), "FS resource path is empty");
 
             FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
@@ -311,7 +311,7 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            _ARGUS_DEBUG("Loaded filesystem resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
+            _ARGUS_DEBUG("Loaded filesystem resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
         } else {
             arp_resource_meta_t res_meta = {};
             int rc = arp_find_resource_in_set(pimpl->package_set, uid.c_str(), &res_meta);
@@ -351,7 +351,7 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            _ARGUS_DEBUG("Loaded ARP resource %s of type %s\n", proto.uid.c_str(), proto.media_type.c_str());
+            _ARGUS_DEBUG("Loaded ARP resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
         }
 
         if (res == nullptr) {
@@ -362,7 +362,7 @@ namespace argus {
 
         dispatch_event<ResourceEvent>(ResourceEventType::Load, res->prototype, res);
 
-        _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)\n",
+        _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)",
                 res->prototype.uid.c_str(), res->pimpl->ref_count.load());
 
         return *res;
@@ -429,7 +429,7 @@ namespace argus {
     }
 
     int ResourceManager::unload_resource(const std::string &uid) {
-        _ARGUS_DEBUG("Unloading resource %s\n", uid.c_str());
+        _ARGUS_DEBUG("Unloading resource %s", uid.c_str());
 
         auto it = pimpl->loaded_resources.find(uid);
         if (it == pimpl->loaded_resources.cend()) {

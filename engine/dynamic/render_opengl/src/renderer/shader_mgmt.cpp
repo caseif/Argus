@@ -57,13 +57,13 @@ namespace argus {
                 gl_shader_stage = GL_FRAGMENT_SHADER;
                 break;
             default:
-                _ARGUS_FATAL("Unrecognized shader stage ordinal %d\n",
+                _ARGUS_FATAL("Unrecognized shader stage ordinal %d",
                         static_cast<std::underlying_type<ShaderStage>::type>(stage));
         }
 
         auto shader_handle = glCreateShader(gl_shader_stage);
         if (!glIsShader(shader_handle)) {
-            _ARGUS_FATAL("Failed to create shader: %d\n", glGetError());
+            _ARGUS_FATAL("Failed to create shader: %d", glGetError());
         }
 
         const char *const src_c = src.c_str();
@@ -136,7 +136,7 @@ namespace argus {
 
         auto program_handle = glCreateProgram();
         if (!glIsProgram(program_handle)) {
-            _ARGUS_FATAL("Failed to create program: %d\n", glGetError());
+            _ARGUS_FATAL("Failed to create program: %d", glGetError());
         }
 
         auto &material = material_res.get<Material>();
@@ -175,7 +175,7 @@ namespace argus {
     }
 
     void remove_shader(RendererState &state, const std::string &shader_uid) {
-        _ARGUS_DEBUG("De-initializing shader %s\n", shader_uid.c_str());
+        _ARGUS_DEBUG("De-initializing shader %s", shader_uid.c_str());
         auto &shaders = state.compiled_shaders;
         auto existing_it = shaders.find(shader_uid);
         if (existing_it != shaders.end()) {

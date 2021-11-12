@@ -68,7 +68,7 @@ namespace argus {
 
     static void _on_glfw_error(const int code, const char *desc) {
         UNUSED(code);
-        _ARGUS_WARN("GLFW Error: %s\n", desc);
+        _ARGUS_WARN("GLFW Error: %s", desc);
     }
 
     void update_lifecycle_wm(LifecycleStage stage) {

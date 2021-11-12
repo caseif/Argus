@@ -64,14 +64,14 @@ namespace argus {
         free(cwd);
 
         if (!is_directory(modules_dir_path)) {
-            _ARGUS_WARN("Dynamic module directory not found. (Searched at %s)\n", modules_dir_path.c_str());
+            _ARGUS_WARN("Dynamic module directory not found. (Searched at %s)", modules_dir_path.c_str());
             return "";
         }
 
         std::string module_path = modules_dir_path + PATH_SEPARATOR
                 + SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR + SHARED_LIB_EXT;
         if (!is_regfile(module_path)) {
-            _ARGUS_WARN("Item referred to by %s does not exist, is not a regular file, or is inaccessible\n",
+            _ARGUS_WARN("Item referred to by %s does not exist, is not a regular file, or is inaccessible",
                     module_path.c_str());
             return "";
         }
@@ -85,13 +85,13 @@ namespace argus {
         free(cwd);
 
         if (!is_directory(modules_dir_path)) {
-            _ARGUS_INFO("No dynamic modules to load.\n");
+            _ARGUS_INFO("No dynamic modules to load.");
             return std::map<std::string, std::string>();
         }
 
         std::vector<std::string> entries = list_directory_entries(modules_dir_path);
         if (entries.empty()) {
-            _ARGUS_INFO("No dynamic modules to load.\n");
+            _ARGUS_INFO("No dynamic modules to load.");
             return std::map<std::string, std::string>();
         }
 
@@ -101,12 +101,12 @@ namespace argus {
             std::string full_path = modules_dir_path + PATH_SEPARATOR + filename;
 
             if (!is_regfile(full_path)) {
-                _ARGUS_DEBUG("Ignoring non-regular module file %s\n", full_path.c_str());
+                _ARGUS_DEBUG("Ignoring non-regular module file %s", full_path.c_str());
                 continue;
             }
 
             if (SHARED_LIB_PREFIX[0] != '\0' && filename.find(SHARED_LIB_PREFIX) != 0) {
-                _ARGUS_DEBUG("Ignoring module file %s with invalid prefix\n", filename.c_str());
+                _ARGUS_DEBUG("Ignoring module file %s with invalid prefix", filename.c_str());
                 continue;
             }
 
@@ -117,7 +117,7 @@ namespace argus {
             }
 
             if (ext != SHARED_LIB_EXT) {
-                _ARGUS_WARN("Ignoring module file %s with invalid extension\n", filename.c_str());
+                _ARGUS_WARN("Ignoring module file %s with invalid extension", filename.c_str());
                 continue;
             }
 
@@ -205,7 +205,7 @@ namespace argus {
                 sorted_modules.push_back(module_map.find(id)->second);
             }
         } catch (std::invalid_argument const&) {
-            _ARGUS_FATAL("Circular dependency detected in dynamic modules, cannot proceed.\n");
+            _ARGUS_FATAL("Circular dependency detected in dynamic modules, cannot proceed.");
         }
 
         return sorted_modules;
@@ -270,7 +270,7 @@ namespace argus {
         for (const auto &enabled_module : g_enabled_dyn_modules_staging) {
             if (enabled_module.first == module_id) {
                 if (dependent_chain.empty()) {
-                    _ARGUS_WARN("Module \"%s\" requested more than once.\n", module_id.c_str());
+                    _ARGUS_WARN("Module \"%s\" requested more than once.", module_id.c_str());
                 }
                 return;
             }
@@ -305,7 +305,7 @@ namespace argus {
 
         g_enabled_dyn_modules_staging.insert({module_id, it->second});
 
-        _ARGUS_INFO("Enabled dynamic module %s.\n", module_id.c_str());
+        _ARGUS_INFO("Enabled dynamic module %s.", module_id.c_str());
     }
 
     void enable_dynamic_module(const std::string &module_id) {
@@ -346,11 +346,11 @@ namespace argus {
             auto handle = mod.second.handle;
             #ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
-                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)\n", GetLastError());
+                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)", GetLastError());
             }
             #else
             if (dlclose(handle) != 0) {
-                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)\n", errno);
+                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)", errno);
             }
             #endif
         }
@@ -376,7 +376,7 @@ namespace argus {
 
         g_dyn_module_registrations.insert({ id, std::move(mod) });
 
-        _ARGUS_DEBUG("Registered dynamic module %s\n", id.c_str());
+        _ARGUS_DEBUG("Registered dynamic module %s", id.c_str());
     }
 
     static void _send_lifecycle_update(LifecycleStage stage) {
@@ -393,16 +393,16 @@ namespace argus {
         auto dyn_mod_initial_count = g_enabled_dyn_modules_staging.size();
         g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
 
-        _ARGUS_DEBUG("Propagating Load lifecycle stage\n");
+        _ARGUS_DEBUG("Propagating Load lifecycle stage");
         // give modules a chance to request additional dynamic modules
         _send_lifecycle_update(LifecycleStage::Load);
         // re-sort the dynamic module if it was augmented
         if (g_enabled_dyn_modules_staging.size() > dyn_mod_initial_count) {
-            _ARGUS_DEBUG("Dynamic module list changed, must re-sort\n");
+            _ARGUS_DEBUG("Dynamic module list changed, must re-sort");
             g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
         }
 
-        _ARGUS_DEBUG("Propagating remaining bring-up lifecycle stages\n");
+        _ARGUS_DEBUG("Propagating remaining bring-up lifecycle stages");
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
                 stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {

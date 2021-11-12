@@ -112,7 +112,7 @@ namespace argus {
     }
 
     void remove_texture(RendererState &state, const std::string &texture_uid) {
-        _ARGUS_DEBUG("De-initializing texture %s\n", texture_uid.c_str());
+        _ARGUS_DEBUG("De-initializing texture %s", texture_uid.c_str());
         auto &textures = state.prepared_textures;
         auto existing_it = textures.find(texture_uid);
         if (existing_it != textures.end()) {
