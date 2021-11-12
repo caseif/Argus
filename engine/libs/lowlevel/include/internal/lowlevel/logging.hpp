@@ -65,5 +65,5 @@
                                                     _ARGUS_ABORT();
 
 #define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) { \
-                                        _ARGUS_FATAL("Assertion failed: " fmt, ##__VA_ARGS__); \
+                                        _ARGUS_FATAL("Assertion failed: " #c " (" fmt ")", ##__VA_ARGS__); \
                                     }
