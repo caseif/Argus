@@ -386,28 +386,26 @@ namespace argus {
         g_window_construct_callback = callback;
     }
 
-    void window_window_event_callback(const ArgusEvent &event, void *user_data) {
+    void window_window_event_callback(const WindowEvent &event, void *user_data) {
         UNUSED(user_data);
-        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
-        const Window &window = window_event.window;
+        const Window &window = event.window;
 
         // ignore events for uninitialized windows
         if (!(window.pimpl->state & WINDOW_STATE_CREATED)) {
             return;
         }
 
-        if (window_event.subtype == WindowEventType::RequestClose) {
+        if (event.subtype == WindowEventType::RequestClose) {
             window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
             window.pimpl->state &= ~WINDOW_STATE_READY;
 
             if (window.pimpl->canvas != nullptr) {
                 g_canvas_dtor(*window.pimpl->canvas);
             }
-        } else if (window_event.subtype == WindowEventType::Resize) {
-            window.pimpl->properties.resolution = window_event.resolution;
-        } else if (window_event.subtype == WindowEventType::Move) {
-            window.pimpl->properties.position = window_event.position;
+        } else if (event.subtype == WindowEventType::Resize) {
+            window.pimpl->properties.resolution = event.resolution;
+        } else if (event.subtype == WindowEventType::Move) {
+            window.pimpl->properties.position = event.position;
         }
     }
-
 }

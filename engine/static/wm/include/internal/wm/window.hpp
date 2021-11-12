@@ -23,11 +23,12 @@
 
 // module wm
 #include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
 
 namespace argus {
     void *get_window_handle(const Window &window);
 
     void set_window_construct_callback(WindowCallback callback);
 
-    void window_window_event_callback(const ArgusEvent &event, void *user_data);
+    void window_window_event_callback(const WindowEvent &event, void *user_data);
 }

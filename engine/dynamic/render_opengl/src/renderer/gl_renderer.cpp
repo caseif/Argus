@@ -113,8 +113,7 @@ namespace argus {
         programs.erase(program_it);
     }
 
-    static void _handle_resource_event(const ArgusEvent &base_event, void *renderer_state) {
-        auto &event = static_cast<const ResourceEvent&>(base_event);
+    static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
         if (event.subtype != ResourceEventType::Unload) {
             return;
         }

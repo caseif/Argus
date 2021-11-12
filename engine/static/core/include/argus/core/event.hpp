@@ -24,7 +24,9 @@
 #include <functional>
 #include <typeindex>
 #include <typeinfo>
+#include <type_traits>
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 
@@ -91,9 +93,14 @@ namespace argus {
      * \return The ID of the new registration.
      */
     template<typename EventType>
-    Index register_event_handler(const ArgusEventCallback &callback,
+    Index register_event_handler(const std::function<void(const EventType&, void*)> &callback,
             const TargetThread target_thread, void *const data = nullptr) {
-        return register_event_handler_with_type(std::type_index(typeid(EventType)), callback, target_thread, data);
+        return register_event_handler_with_type(std::type_index(typeid(EventType)),
+                [callback](const ArgusEvent &e, void *d) {
+                    assert(e.type == std::type_index(typeid(EventType)));
+                    callback(reinterpret_cast<const EventType&>(e), d);
+                },
+                target_thread, data);
     }
 
     /**

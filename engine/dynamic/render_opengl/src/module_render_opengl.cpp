@@ -72,13 +72,11 @@ namespace argus {
         };
     }
 
-    static void _window_event_callback(const ArgusEvent &event, void *user_data) {
+    static void _window_event_callback(const WindowEvent &event, void *user_data) {
         UNUSED(user_data);
-        const WindowEvent &window_event = static_cast<const WindowEvent&>(event);
+        const Window &window = event.window;
 
-        const Window &window = window_event.window;
-
-        switch (window_event.subtype) {
+        switch (event.subtype) {
             case WindowEventType::Create: {
                 auto *renderer = new GLRenderer(window);
                 g_renderer_map.insert({ &window, renderer });
@@ -92,7 +90,7 @@ namespace argus {
                 auto it = g_renderer_map.find(&window);
                 _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!");
 
-                it->second->render(window_event.delta);
+                it->second->render(event.delta);
                 break;
             }
             case WindowEventType::RequestClose: {

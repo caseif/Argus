@@ -44,11 +44,10 @@ namespace argus {
         input::init_mouse(window);
     }
 
-    static void _on_window_event(const argus::ArgusEvent &event, void *data) {
+    static void _on_window_event(const argus::WindowEvent &event, void *data) {
         UNUSED(data);
-        auto &wevent = static_cast<const argus::WindowEvent&>(event);
-        if (wevent.subtype == argus::WindowEventType::Create) {
-            _init_window_input(wevent.window);
+        if (event.subtype == argus::WindowEventType::Create) {
+            _init_window_input(event.window);
         }
     }
 
