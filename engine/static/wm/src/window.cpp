@@ -139,6 +139,8 @@ namespace argus {
 
         if (g_canvas_ctor != nullptr) {
             pimpl->canvas = &g_canvas_ctor(*this);
+        } else {
+            _ARGUS_WARN("No canvas callbacks were set - new window will not have associated canvas!");
         }
 
         pimpl->state = WINDOW_STATE_NULL;
