@@ -16,37 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
-#include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/math.hpp"
+#pragma once
 
-// module wm
-#include "argus/wm/window.hpp"
-#include "internal/wm/window.hpp"
+#include "argus/input/controller.hpp"
+#include "argus/input/keyboard.hpp"
 
-// module input
-#include "argus/input/mouse.hpp"
-
-#include <GLFW/glfw3.h>
+#include <map>
 
 namespace argus { namespace input {
-    static argus::Vector2d g_last_mouse_pos;
+    struct pimpl_Controller {
+        ControllerIndex index;
+        std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
+        std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
 
-    void init_mouse(const argus::Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
-        UNUSED(glfw_handle);
-        //TODO
-    }
-
-    argus::Vector2d mouse_position(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
-    }
-
-    argus::Vector2d mouse_delta(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
-    }
+        pimpl_Controller(ControllerIndex index):
+                index(index) {
+        }
+    };
 }}

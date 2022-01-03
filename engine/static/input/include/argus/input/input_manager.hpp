@@ -16,37 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
-#include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/math.hpp"
+#pragma once
 
-// module wm
-#include "argus/wm/window.hpp"
-#include "internal/wm/window.hpp"
-
-// module input
-#include "argus/input/mouse.hpp"
-
-#include <GLFW/glfw3.h>
+#include "argus/input/controller.hpp"
 
 namespace argus { namespace input {
-    static argus::Vector2d g_last_mouse_pos;
+    struct pimpl_InputManager;
 
-    void init_mouse(const argus::Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
-        UNUSED(glfw_handle);
-        //TODO
-    }
+    class InputManager {
+        private:
+            pimpl_InputManager *pimpl;
 
-    argus::Vector2d mouse_position(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
-    }
+            InputManager(void);
 
-    argus::Vector2d mouse_delta(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
-    }
+            InputManager(InputManager&) = delete;
+            
+            InputManager(InputManager&&) = delete;
+
+            ~InputManager(void);
+        public:
+            static InputManager &instance(void);
+
+            Controller &get_controller(ControllerIndex controller_index);
+
+            Controller &add_controller(void);
+
+            void remove_controller(Controller &controller);
+
+            void remove_controller(ControllerIndex controller_index);
+    };
 }}

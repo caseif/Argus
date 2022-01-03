@@ -16,37 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
-#include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/math.hpp"
+#include <string>
 
-// module wm
-#include "argus/wm/window.hpp"
-#include "internal/wm/window.hpp"
+#include "argus/core/event.hpp"
 
-// module input
-#include "argus/input/mouse.hpp"
-
-#include <GLFW/glfw3.h>
+#include "argus/input/controller.hpp"
+#include "argus/input/input_event.hpp"
 
 namespace argus { namespace input {
-    static argus::Vector2d g_last_mouse_pos;
-
-    void init_mouse(const argus::Window &window) {
-        auto glfw_handle = static_cast<GLFWwindow*>(argus::get_window_handle(window));
-        UNUSED(glfw_handle);
-        //TODO
-    }
-
-    argus::Vector2d mouse_position(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
-    }
-
-    argus::Vector2d mouse_delta(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
+    InputEvent::InputEvent(InputEventType type, ControllerIndex controller_index, std::string &action,
+        double axis_value, double axis_delta):
+            ArgusEvent(type_index_of<InputEvent>()),
+            input_type(type),
+            controller_index(controller_index),
+            action(action),
+            axis_value(axis_value),
+            axis_delta(axis_delta) {
     }
 }}
