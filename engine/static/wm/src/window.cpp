@@ -192,6 +192,10 @@ namespace argus {
         return *pimpl->canvas;
     }
 
+    bool Window::is_created(void) const {
+        return pimpl->state & WINDOW_STATE_CREATED;
+    }
+
     bool Window::is_ready(void) const {
         return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
     }
@@ -235,6 +239,9 @@ namespace argus {
             glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
             glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
             glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+            glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
+            glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+            glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);
 
             pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, DEF_TITLE, nullptr, nullptr);
 
@@ -248,6 +255,7 @@ namespace argus {
 
             pimpl->state |= WINDOW_STATE_CREATED;
 
+            printf("dispatching create event\n");
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
             return;

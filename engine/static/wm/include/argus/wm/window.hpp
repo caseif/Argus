@@ -111,6 +111,14 @@ namespace argus {
              *        not been requested or if the renderer module is buggy.
              */
             Canvas &get_canvas(void) const;
+            
+            /**
+             * \brief Gets whether the Window has been created by the windowing
+             *        manager.
+             *
+             * \return Whether the Window has been created.
+             */
+            bool is_created(void) const;
 
             /**
              * \brief Gets whether the Window is ready for manipulation or interaction.

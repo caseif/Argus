@@ -46,8 +46,13 @@ namespace argus {
 
     static void _on_window_event(const argus::WindowEvent &event, void *data) {
         UNUSED(data);
+
+        auto *glfw_window = static_cast<GLFWwindow*>(argus::get_window_handle(event.window));
+
         if (event.subtype == argus::WindowEventType::Create) {
             _init_window_input(event.window);
+        } else if (event.subtype == argus::WindowEventType::Focus) {
+            //TODO: figure out how to move cursor inside window boundary
         }
     }
 
