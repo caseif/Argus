@@ -71,14 +71,14 @@ namespace argus { namespace input {
         // actions and each action may have multiple keys bound to it
         
         // insert into the key-to-actions map
-        auto kta_vec = pimpl->key_to_action_bindings[key];
+        auto &kta_vec = pimpl->key_to_action_bindings[key];
         if (std::find(kta_vec.begin(), kta_vec.end(), action) == kta_vec.end()) {
             kta_vec.push_back(action);
         }
         // nothing to do if the binding already exists
 
         // insert into the action-to-keys map
-        auto atk_vec = pimpl->action_to_key_bindings[action];
+        auto &atk_vec = pimpl->action_to_key_bindings[action];
         if (std::find(atk_vec.begin(), atk_vec.end(), key) != atk_vec.end()) {
             atk_vec.push_back(key);
         }

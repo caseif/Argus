@@ -24,5 +24,8 @@
 
 #pragma once
 
+#include "argus/input/controller.hpp"
+#include "argus/input/input_event.hpp"
+#include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "argus/input/text_input_context.hpp"

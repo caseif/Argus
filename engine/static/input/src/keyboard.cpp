@@ -29,6 +29,7 @@
 #include "internal/wm/window.hpp"
 
 // module input
+#include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "internal/input/keyboard.hpp"
 
@@ -225,7 +226,7 @@ namespace argus { namespace input {
         return mod;
     }*/
 
-    /*static KeyboardScancode _translate_glfw_keycode(uint32_t glfw_keycode) {
+    static KeyboardScancode _translate_glfw_keycode(uint32_t glfw_keycode) {
         if (glfw_keycode >= GLFW_KEY_A && glfw_keycode <= GLFW_KEY_Z) {
             // GLFW shifts letter scancodes up by 61 to match ASCII
             return static_cast<KeyboardScancode>(glfw_keycode - 61);
@@ -237,7 +238,7 @@ namespace argus { namespace input {
             }
             return res->second;
         }
-    }*/
+    }
 
     static uint32_t _translate_argus_keycode(KeyboardScancode argus_keycode) {
         if (argus_keycode >= KeyboardScancode::A && argus_keycode <= KeyboardScancode::Z) {
@@ -253,12 +254,21 @@ namespace argus { namespace input {
         }
     }
 
-    static void _on_key_event(GLFWwindow *window, int glfw_keycode, int glfw_scancode, int glfw_action, int glfw_mods) {
-        UNUSED(window);
-        UNUSED(glfw_keycode);
+    static void _on_key_event(GLFWwindow *glfw_window, int glfw_keycode, int glfw_scancode, int glfw_action, int glfw_mods) {
         UNUSED(glfw_scancode);
-        UNUSED(glfw_action);
         UNUSED(glfw_mods);
+
+        if (glfw_action != GLFW_PRESS && glfw_action != GLFW_RELEASE) {
+            return;
+        }
+
+        auto *window = get_window_from_handle(glfw_window);
+        if (window == nullptr) {
+            return;
+        }
+
+        auto key = _translate_glfw_keycode(glfw_keycode);
+        InputManager::instance().handle_key_press(*window, key, glfw_action == GLFW_RELEASE);
     }
 
     constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {

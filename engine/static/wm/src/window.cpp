@@ -382,6 +382,15 @@ namespace argus {
         return static_cast<void*>(window.pimpl->handle);
     }
 
+    Window *get_window_from_handle(const void *handle) {
+        auto it = g_window_map.find(static_cast<GLFWwindow*>(const_cast<void*>(handle)));
+        if (it == g_window_map.end()) {
+            return nullptr;
+        }
+
+        return it->second;
+    }
+
     void set_window_construct_callback(WindowCallback callback) {
         g_window_construct_callback = callback;
     }

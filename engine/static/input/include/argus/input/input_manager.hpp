@@ -44,5 +44,7 @@ namespace argus { namespace input {
             void remove_controller(Controller &controller);
 
             void remove_controller(ControllerIndex controller_index);
+
+            void handle_key_press(const Window &window, KeyboardScancode key, bool release) const;
     };
 }}

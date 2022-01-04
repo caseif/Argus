@@ -30,13 +30,14 @@ namespace argus { namespace input {
     };
 
     struct InputEvent : public ArgusEvent {
-        InputEventType input_type;
-        ControllerIndex controller_index;
-        std::string action;
-        double axis_value;
-        double axis_delta;
+        const InputEventType input_type;
+        const Window &window;
+        const ControllerIndex controller_index;
+        const std::string action;
+        const double axis_value;
+        const double axis_delta;
 
-        InputEvent(InputEventType type, ControllerIndex controller_index, std::string &action,
-                double axis_value, double axis_delta);
+        InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
+                const std::string &action, double axis_value, double axis_delta);
     };
 }}

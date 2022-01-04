@@ -18,7 +18,10 @@
 
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/input/controller.hpp"
+#include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
+#include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
 #include <algorithm>
@@ -110,5 +113,29 @@ namespace argus { namespace input {
         delete res->second;
 
         pimpl->controllers.erase(res);
+    }
+
+    static void _dispatch_button_event(const Window &window, ControllerIndex controller_index, std::string &action,
+            bool release) {
+        auto event_type = release ? InputEventType::ButtonUp : InputEventType::ButtonDown;
+        dispatch_event<InputEvent>(event_type, window, controller_index, action, 0.0, 0.0);
+    }
+
+    void InputManager::handle_key_press(const Window &window, KeyboardScancode key, bool release) const {
+        //TODO: ignore while in a TextInputContext once we properly implement that
+
+        for (auto &pair : pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+            
+            auto it = controller.pimpl->key_to_action_bindings.find(key);
+            if (it == controller.pimpl->key_to_action_bindings.end()) {
+                continue;
+            }
+
+            for (auto &action : it->second) {
+                _dispatch_button_event(window, controller_index, action, release);
+            }
+        }
     }
 }}
