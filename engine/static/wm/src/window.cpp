@@ -255,7 +255,6 @@ namespace argus {
 
             pimpl->state |= WINDOW_STATE_CREATED;
 
-            printf("dispatching create event\n");
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
             return;

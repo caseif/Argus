@@ -79,24 +79,10 @@ namespace argus { namespace input {
 
         // insert into the action-to-keys map
         auto &atk_vec = pimpl->action_to_key_bindings[action];
-        if (std::find(atk_vec.begin(), atk_vec.end(), key) != atk_vec.end()) {
+        if (std::find(atk_vec.begin(), atk_vec.end(), key) == atk_vec.end()) {
             atk_vec.push_back(key);
         }
         // nothing to do if the binding already exists
-    }
-
-    void Controller::unbind_keyboard_action(const std::string &action) {
-        if (pimpl->action_to_key_bindings.find(action) == pimpl->action_to_key_bindings.end()) {
-            return;
-        }
-
-        // remove action from binding list of keys it's bound to
-        for (auto key : pimpl->action_to_key_bindings[action]) {
-            remove_from_vector(pimpl->key_to_action_bindings[key], action);
-        }
-
-        // remove binding list of action
-        pimpl->action_to_key_bindings.erase(action);
     }
 
     void Controller::unbind_keyboard_key(KeyboardScancode key) {
@@ -111,5 +97,31 @@ namespace argus { namespace input {
 
         // remove binding list of key
         pimpl->key_to_action_bindings.erase(key);
+    }
+
+    void Controller::unbind_keyboard_action(const std::string &action, KeyboardScancode key) {
+        auto actions_it = pimpl->action_to_key_bindings.find(action);
+        if (actions_it != pimpl->action_to_key_bindings.end()) {
+            remove_from_vector(actions_it->second, key);
+        }
+
+        auto keys_it = pimpl->key_to_action_bindings.find(key);
+        if (keys_it != pimpl->key_to_action_bindings.end()) {
+            remove_from_vector(keys_it->second, action);
+        }
+    }
+
+    void Controller::unbind_action(const std::string &action) {
+        if (pimpl->action_to_key_bindings.find(action) == pimpl->action_to_key_bindings.end()) {
+            return;
+        }
+
+        // remove action from binding list of keys it's bound to
+        for (auto key : pimpl->action_to_key_bindings[action]) {
+            remove_from_vector(pimpl->key_to_action_bindings[key], action);
+        }
+
+        // remove binding list of action
+        pimpl->action_to_key_bindings.erase(action);
     }
 }}

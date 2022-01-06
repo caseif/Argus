@@ -54,8 +54,10 @@ namespace argus { namespace input {
 
             void bind_keyboard_action(const std::string &action, KeyboardScancode key);
 
-            void unbind_keyboard_action(const std::string &action);
-
             void unbind_keyboard_key(KeyboardScancode key);
+
+            void unbind_keyboard_action(const std::string &action, KeyboardScancode key);
+
+            void unbind_action(const std::string &action);
     };
 }}

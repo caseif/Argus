@@ -125,7 +125,6 @@ namespace argus { namespace input {
         auto it_captured = g_pending_mouse_captured.find(&window);
         if (it_captured != g_pending_mouse_captured.end()) {
             _set_mouse_captured_0(*it_captured->first, it_captured->second);
-            printf("set captured\n");
         }
         
         auto it_visible = g_pending_mouse_visible.find(&window);
