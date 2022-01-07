@@ -139,7 +139,7 @@ namespace argus { namespace input {
 
         auto release = action == GLFW_RELEASE;
 
-        InputManager::instance().handle_mouse_button_press(*window, static_cast<MouseButton>(button), release);
+        InputManager::instance().handle_mouse_button_press(*window, static_cast<MouseButtonIndex>(button), release);
     }
 
     static void _cursor_pos_callback(GLFWwindow *glfw_window, double x, double y) {

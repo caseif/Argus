@@ -31,7 +31,6 @@ namespace argus { namespace input {
     struct pimpl_Controller;
 
     typedef uint16_t ControllerIndex;
-    typedef uint16_t MouseButton;
 
     class Controller {
         friend class InputManager;
@@ -62,11 +61,11 @@ namespace argus { namespace input {
 
             void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
 
-            void bind_mouse_button(MouseButton button, const std::string &action);
+            void bind_mouse_button(MouseButtonIndex button, const std::string &action);
 
-            void unbind_mouse_button(MouseButton button);
+            void unbind_mouse_button(MouseButtonIndex button);
 
-            void unbind_mouse_button(MouseButton button, const std::string &action);
+            void unbind_mouse_button(MouseButtonIndex button, const std::string &action);
 
             void bind_mouse_axis(MouseAxis axis, const std::string &action);
 

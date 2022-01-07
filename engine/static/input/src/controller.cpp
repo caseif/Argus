@@ -143,15 +143,15 @@ namespace argus { namespace input {
         _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
     }
 
-    void Controller::bind_mouse_button(MouseButton button, const std::string &action) {
+    void Controller::bind_mouse_button(MouseButtonIndex button, const std::string &action) {
         _bind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);
     }
 
-    void Controller::unbind_mouse_button(MouseButton button) {
+    void Controller::unbind_mouse_button(MouseButtonIndex button) {
         _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button);
     }
 
-    void Controller::unbind_mouse_button(MouseButton button, const std::string &action) {
+    void Controller::unbind_mouse_button(MouseButtonIndex button, const std::string &action) {
         _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);//TODO
     }
 
