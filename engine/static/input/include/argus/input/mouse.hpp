@@ -21,6 +21,11 @@
 #include "argus/lowlevel/math.hpp"
 
 namespace argus { namespace input {
+    enum class MouseAxis {
+        AxisX,
+        AxisY
+    };
+
     /**
      * \brief Returns the change in position of the mouse from the previous
      *        frame.

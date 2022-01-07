@@ -27,9 +27,9 @@ namespace argus { namespace input {
     // forward declarations
     class InputManager;
 
-    typedef uint16_t ControllerIndex;
-
     struct pimpl_Controller;
+
+    typedef uint16_t ControllerIndex;
 
     class Controller {
         friend class InputManager;
@@ -48,16 +48,16 @@ namespace argus { namespace input {
         public:
             ControllerIndex get_index(void);
 
+            void unbind_action(const std::string &action);
+
             const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key);
 
             const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action);
 
-            void bind_keyboard_action(const std::string &action, KeyboardScancode key);
+            void bind_keyboard_key(KeyboardScancode key, const std::string &action);
 
             void unbind_keyboard_key(KeyboardScancode key);
 
-            void unbind_keyboard_action(const std::string &action, KeyboardScancode key);
-
-            void unbind_action(const std::string &action);
+            void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
     };
 }}
