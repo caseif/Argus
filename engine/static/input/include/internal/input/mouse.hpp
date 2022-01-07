@@ -18,13 +18,30 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/types.hpp"
+
 #include <GLFW/glfw3.h>
+
+#include <mutex>
 
 namespace argus {
     // forward declarations
     class Window;
 
     namespace input {
+        struct MouseState {
+            Vector2d last_mouse_pos;
+            Vector2d mouse_delta;
+            bool got_first_mouse_pos;
+
+            TriState pending_mouse_captured;
+            TriState pending_mouse_visible;
+            TriState pending_mouse_raw_input;
+
+            std::mutex window_mutex;
+        };
+
         void init_mouse(const argus::Window &window);
     }
 }

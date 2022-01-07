@@ -19,38 +19,39 @@
 // module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/types.hpp"
 
 // module wm
 #include "argus/wm/window.hpp"
 #include "internal/wm/window.hpp"
 
 // module input
+#include "argus/input/input_manager.hpp"
 #include "argus/input/mouse.hpp"
+#include "internal/input/mouse.hpp"
 
 #include <GLFW/glfw3.h>
 
 #include <map>
 #include <mutex>
 
+#include <cmath>
+
 namespace argus { namespace input {
-    static argus::Vector2d g_last_mouse_pos;
-
-    static std::mutex g_window_mutex;
-
-    static std::map<const argus::Window*, bool> g_pending_mouse_captured;
-    static std::map<const argus::Window*, bool> g_pending_mouse_visible;
-    static std::map<const argus::Window*, bool> g_pending_mouse_raw_input;
+    static std::map<const argus::Window*, MouseState> g_mouse_states;
 
     argus::Vector2d mouse_position(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
+        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
+
+        double x;
+        double y;
+        glfwGetCursorPos(glfw_window, &x, &y);
+
+        return Vector2d(x, y);
     }
 
     argus::Vector2d mouse_delta(const argus::Window &window) {
-        //TODO
-        UNUSED(window);
-        return {};
+        return g_mouse_states[&window].mouse_delta;
     }
 
     static void _set_mouse_captured_0(const argus::Window &window, bool captured) {
@@ -60,11 +61,12 @@ namespace argus { namespace input {
     }
 
     void set_mouse_captured(const argus::Window &window, bool captured) {
+        auto &state = g_mouse_states[&window];
         {
-            std::lock_guard<std::mutex> guard(g_window_mutex);
+            std::lock_guard<std::mutex> guard(state.window_mutex);
 
             if (!window.is_created()) {
-                g_pending_mouse_captured[&window] = captured;
+                state.pending_mouse_captured = captured;
                 return;
             }
         }
@@ -84,11 +86,13 @@ namespace argus { namespace input {
     }
 
     void set_mouse_visible(const argus::Window &window, bool visible) {
+        auto &state = g_mouse_states[&window];
+
         {
-            std::lock_guard<std::mutex> guard(g_window_mutex);
+            std::lock_guard<std::mutex> guard(state.window_mutex);
 
             if (!window.is_created()) {
-                g_pending_mouse_visible[&window] = visible;
+                state.pending_mouse_visible = visible;
                 return;
             }
         }
@@ -107,11 +111,13 @@ namespace argus { namespace input {
     }
 
     void set_mouse_raw_input(const argus::Window &window, bool raw_input) {
+        auto &state = g_mouse_states[&window];
+
         {
-            std::lock_guard<std::mutex> guard(g_window_mutex);
+            std::lock_guard<std::mutex> guard(state.window_mutex);
 
             if (!window.is_created()) {
-                g_pending_mouse_raw_input[&window] = raw_input;
+                state.pending_mouse_raw_input = raw_input;
                 return;
             }
         }
@@ -119,22 +125,74 @@ namespace argus { namespace input {
         _set_mouse_raw_input_0(window, raw_input);
     }
 
+    static void _mouse_button_callback(GLFWwindow *glfw_window, int button, int action, int mods) {
+        UNUSED(mods);
+
+        if (action != GLFW_PRESS && action != GLFW_RELEASE) {
+            return;
+        }
+
+        auto *window = get_window_from_handle(glfw_window);
+        if (window == nullptr) {
+            return;
+        }
+
+        auto release = action == GLFW_RELEASE;
+
+        InputManager::instance().handle_mouse_button_press(*window, static_cast<MouseButton>(button), release);
+    }
+
+    static void _cursor_pos_callback(GLFWwindow *glfw_window, double x, double y) {
+        auto *window = get_window_from_handle(glfw_window);
+        if (window == nullptr) {
+            return;
+        }
+
+        auto &state = g_mouse_states[window];
+
+        if (state.got_first_mouse_pos) {
+            auto dx = x - state.last_mouse_pos.x;
+            auto dy = -(y - state.last_mouse_pos.y);
+
+            const auto res = window->get_resolution();
+            const auto min_window_dim = std::min(res.x, res.y);
+
+            state.mouse_delta.x = dx / min_window_dim;
+            state.mouse_delta.y = dy / min_window_dim;
+        } else {
+            state.got_first_mouse_pos = true;
+
+            state.mouse_delta.x = 0;
+            state.mouse_delta.y = 0;
+        }
+
+        state.last_mouse_pos.x = x;
+        state.last_mouse_pos.y = y;
+
+        InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Horizontal, x, state.mouse_delta.x);
+        InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Vertical, y, state.mouse_delta.y);
+    }
+
     void init_mouse(const argus::Window &window) {
-        std::lock_guard<std::mutex> guard(g_window_mutex);
-        
-        auto it_captured = g_pending_mouse_captured.find(&window);
-        if (it_captured != g_pending_mouse_captured.end()) {
-            _set_mouse_captured_0(*it_captured->first, it_captured->second);
+        auto &state = g_mouse_states[&window];
+
+        std::lock_guard<std::mutex> guard(state.window_mutex);
+
+        if (state.pending_mouse_captured.is_set()) {
+            _set_mouse_captured_0(window, state.pending_mouse_captured);
         }
         
-        auto it_visible = g_pending_mouse_visible.find(&window);
-        if (it_visible != g_pending_mouse_visible.end()) {
-            _set_mouse_visible_0(*it_visible->first, it_visible->second);
+        if (state.pending_mouse_visible.is_set()) {
+            _set_mouse_visible_0(window, state.pending_mouse_visible);
         }
         
-        auto it_raw_input = g_pending_mouse_raw_input.find(&window);
-        if (it_raw_input != g_pending_mouse_raw_input.end()) {
-            _set_mouse_raw_input_0(*it_raw_input->first, it_raw_input->second);
+        if (state.pending_mouse_raw_input.is_set()) {
+            _set_mouse_raw_input_0(window, state.pending_mouse_raw_input);
         }
+
+        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
+
+        glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
+        glfwSetCursorPosCallback(glfw_window, _cursor_pos_callback);
     }
 }}

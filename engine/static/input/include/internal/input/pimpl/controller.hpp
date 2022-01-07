@@ -26,8 +26,15 @@
 namespace argus { namespace input {
     struct pimpl_Controller {
         ControllerIndex index;
+
         std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
         std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
+
+        std::map<MouseButton, std::vector<std::string>> mouse_button_to_action_bindings;
+        std::map<std::string, std::vector<MouseButton>> action_to_mouse_button_bindings;
+
+        std::map<MouseAxis, std::vector<std::string>> mouse_axis_to_action_bindings;
+        std::map<std::string, std::vector<MouseAxis>> action_to_mouse_axis_bindings;
 
         pimpl_Controller(ControllerIndex index):
                 index(index) {

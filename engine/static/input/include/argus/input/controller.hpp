@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/input/keyboard.hpp"
+#include "argus/input/mouse.hpp"
 
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@ namespace argus { namespace input {
     struct pimpl_Controller;
 
     typedef uint16_t ControllerIndex;
+    typedef uint16_t MouseButton;
 
     class Controller {
         friend class InputManager;
@@ -46,18 +48,30 @@ namespace argus { namespace input {
             ~Controller(void);
 
         public:
-            ControllerIndex get_index(void);
+            ControllerIndex get_index(void) const;
 
             void unbind_action(const std::string &action);
 
-            const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key);
+            const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
 
-            const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action);
+            const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
 
             void bind_keyboard_key(KeyboardScancode key, const std::string &action);
 
             void unbind_keyboard_key(KeyboardScancode key);
 
             void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
+
+            void bind_mouse_button(MouseButton button, const std::string &action);
+
+            void unbind_mouse_button(MouseButton button);
+
+            void unbind_mouse_button(MouseButton button, const std::string &action);
+
+            void bind_mouse_axis(MouseAxis axis, const std::string &action);
+
+            void unbind_mouse_axis(MouseAxis axis);
+
+            void unbind_mouse_axis(MouseAxis axis, const std::string &action);
     };
 }}

@@ -41,7 +41,7 @@ namespace argus { namespace input {
         }
     }
 
-    ControllerIndex Controller::get_index(void) {
+    ControllerIndex Controller::get_index(void) const {
         return pimpl->index;
     }
 
@@ -59,7 +59,59 @@ namespace argus { namespace input {
         pimpl->action_to_key_bindings.erase(action);
     }
 
-    const std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) {
+    template <typename T>
+    static void _bind_thing(std::map<T, std::vector<std::string>> &to_map,
+            std::map<std::string, std::vector<T>> &from_map, T thing, const std::string action) {
+        // we maintain two binding maps because actions and "things" have a
+        // many-to-many relationship; i.e. each key may be bound to multiple
+        // actions and each action may have multiple keys bound to it
+        
+        // insert into the thing-to-actions map
+        auto &tta_vec = to_map[thing];
+        if (std::find(tta_vec.begin(), tta_vec.end(), action) == tta_vec.end()) {
+            tta_vec.push_back(action);
+        }
+        // nothing to do if the binding already exists
+
+        // insert into the action-to-things map
+        auto &att_vec = from_map[action];
+        if (std::find(att_vec.begin(), att_vec.end(), thing) == att_vec.end()) {
+            att_vec.push_back(thing);
+        }
+        // nothing to do if the binding already exists
+    }
+
+    template <typename T>
+    static void _unbind_thing(std::map<T, std::vector<std::string>> &to_map,
+            std::map<std::string, std::vector<T>> &from_map, T thing) {
+        if (to_map.find(thing) == to_map.end()) {
+            return;
+        }
+
+        // remove action from binding list of things it's bound to
+        for (auto action : to_map[thing]) {
+            remove_from_vector(from_map[action], thing);
+        }
+
+        // remove binding list of thing
+        to_map.erase(thing);
+    }
+
+    template <typename T>
+    static void _unbind_thing(std::map<T, std::vector<std::string>> &to_map,
+            std::map<std::string, std::vector<T>> &from_map, T thing, const std::string &action) {
+        auto actions_it = from_map.find(action);
+        if (actions_it != from_map.end()) {
+            remove_from_vector(actions_it->second, thing);
+        }
+
+        auto things_it = to_map.find(thing);
+        if (things_it != to_map.end()) {
+            remove_from_vector(things_it->second, action);
+        }
+    }
+
+    const std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) const {
         auto it = pimpl->key_to_action_bindings.find(key);
         if (it != pimpl->key_to_action_bindings.end()) {
             return it->second; // implicitly deep-copied
@@ -69,7 +121,7 @@ namespace argus { namespace input {
         return {};
     }
 
-    const std::vector<KeyboardScancode> Controller::get_keyboard_action_bindings(const std::string &action) {
+    const std::vector<KeyboardScancode> Controller::get_keyboard_action_bindings(const std::string &action) const {
         auto it = pimpl->action_to_key_bindings.find(action);
         if (it != pimpl->action_to_key_bindings.end()) {
             return it->second; // implicitly deep-copied
@@ -80,48 +132,38 @@ namespace argus { namespace input {
     }
 
     void Controller::bind_keyboard_key(KeyboardScancode key, const std::string &action) {
-        // we maintain two binding maps because actions and keys have a
-        // many-to-many relationship; i.e. each key may be bound to multiple
-        // actions and each action may have multiple keys bound to it
-        
-        // insert into the key-to-actions map
-        auto &kta_vec = pimpl->key_to_action_bindings[key];
-        if (std::find(kta_vec.begin(), kta_vec.end(), action) == kta_vec.end()) {
-            kta_vec.push_back(action);
-        }
-        // nothing to do if the binding already exists
-
-        // insert into the action-to-keys map
-        auto &atk_vec = pimpl->action_to_key_bindings[action];
-        if (std::find(atk_vec.begin(), atk_vec.end(), key) == atk_vec.end()) {
-            atk_vec.push_back(key);
-        }
-        // nothing to do if the binding already exists
+        _bind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
     }
 
     void Controller::unbind_keyboard_key(KeyboardScancode key) {
-        if (pimpl->key_to_action_bindings.find(key) == pimpl->key_to_action_bindings.end()) {
-            return;
-        }
-
-        // remove action from binding list of keys it's bound to
-        for (auto action : pimpl->key_to_action_bindings[key]) {
-            remove_from_vector(pimpl->action_to_key_bindings[action], key);
-        }
-
-        // remove binding list of key
-        pimpl->key_to_action_bindings.erase(key);
+        _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key);
     }
 
     void Controller::unbind_keyboard_key(KeyboardScancode key, const std::string &action) {
-        auto actions_it = pimpl->action_to_key_bindings.find(action);
-        if (actions_it != pimpl->action_to_key_bindings.end()) {
-            remove_from_vector(actions_it->second, key);
-        }
+        _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
+    }
 
-        auto keys_it = pimpl->key_to_action_bindings.find(key);
-        if (keys_it != pimpl->key_to_action_bindings.end()) {
-            remove_from_vector(keys_it->second, action);
-        }
+    void Controller::bind_mouse_button(MouseButton button, const std::string &action) {
+        _bind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);
+    }
+
+    void Controller::unbind_mouse_button(MouseButton button) {
+        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button);
+    }
+
+    void Controller::unbind_mouse_button(MouseButton button, const std::string &action) {
+        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);//TODO
+    }
+
+    void Controller::bind_mouse_axis(MouseAxis axis, const std::string &action) {
+        _bind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
+    }
+
+    void Controller::unbind_mouse_axis(MouseAxis axis) {
+        _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis);
+    }
+
+    void Controller::unbind_mouse_axis(MouseAxis axis, const std::string &action) {
+        _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
     }
 }}

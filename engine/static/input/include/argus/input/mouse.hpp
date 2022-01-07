@@ -22,8 +22,8 @@
 
 namespace argus { namespace input {
     enum class MouseAxis {
-        AxisX,
-        AxisY
+        Horizontal,
+        Vertical
     };
 
     /**

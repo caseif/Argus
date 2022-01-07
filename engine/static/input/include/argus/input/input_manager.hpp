@@ -46,5 +46,9 @@ namespace argus { namespace input {
             void remove_controller(ControllerIndex controller_index);
 
             void handle_key_press(const Window &window, KeyboardScancode key, bool release) const;
+
+            void handle_mouse_button_press(const Window &window, MouseButton button, bool release) const;
+
+            void handle_mouse_axis_change(const Window &window, MouseAxis axis, double value, double delta) const;
     };
 }}
