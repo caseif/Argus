@@ -18,5 +18,6 @@
 
 #pragma once
 
+#include "argus/wm/display.hpp"
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
