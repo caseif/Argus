@@ -21,6 +21,7 @@
 
 #include "GLFW/glfw3.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -56,6 +57,18 @@ namespace argus {
         g_displays.push_back(&display);
     }
 
+    static void _remove_display(GLFWmonitor *monitor) {
+        auto it = std::find_if(g_displays.begin(), g_displays.end(),
+                [monitor](auto *display) { return display->pimpl->handle == monitor; });
+        if (it == g_displays.end()) {
+            return;
+        }
+
+        auto *display = *it;
+        g_displays.erase(it);
+        delete display;
+    }
+
     static void _enumerate_displays(void) {
         std::vector<Display> displays;
 
@@ -69,10 +82,18 @@ namespace argus {
         }
     }
 
+    static void _monitor_callback(GLFWmonitor *monitor, int type) {
+        if (type == GLFW_CONNECTED) {
+            _add_display(monitor);
+        } else if (type == GLFW_DISCONNECTED) {
+            _remove_display(monitor);
+        }
+    }
+
     void init_display(void) {
         _enumerate_displays();
 
-        //TODO: register display event handlers once the events are implemented
+        glfwSetMonitorCallback(_monitor_callback);
     }
 
     const std::vector<Display*> &Display::get_available_displays(void) {
