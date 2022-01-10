@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module resman
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"

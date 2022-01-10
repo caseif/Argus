@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module core
 #include "argus/core/event.hpp"
 
-// module resman
 #include "argus/resman/resource.hpp"
 
 namespace argus {

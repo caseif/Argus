@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/state/render_bucket.hpp"
 
 namespace argus {

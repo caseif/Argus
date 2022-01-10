@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
-// module render
 #include "argus/render/common/material.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 

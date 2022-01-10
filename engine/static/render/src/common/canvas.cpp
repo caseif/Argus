@@ -16,18 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 
-// module core
 #include "internal/core/core_util.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
-// module render
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"

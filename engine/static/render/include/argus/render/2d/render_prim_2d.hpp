@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-// module render
 #include "argus/render/common/transform.hpp"
 #include "argus/render/common/vertex.hpp"
 

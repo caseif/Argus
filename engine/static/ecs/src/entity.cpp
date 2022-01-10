@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/error_util.hpp"
 
-// module ecs
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
 #include "internal/ecs/pimpl/entity.hpp"

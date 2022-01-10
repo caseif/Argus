@@ -16,26 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/module.hpp"
 #include "internal/core/dyn_invoke.hpp"
 #include "internal/core/engine_config.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
-// module resman
 #include "argus/resman/resource_manager.hpp"
 
-// module render
 #include "internal/render/defines.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/module_render_opengl.hpp"
 #include "internal/render_opengl/resources.h"

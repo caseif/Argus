@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module core
 #include "argus/core/module.hpp"
 
-// module resman
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/module_resman.hpp"
 

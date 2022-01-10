@@ -16,17 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading/future.hpp"
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/event.hpp"
 
-// module resman
 #include "argus/resman/exception.hpp"
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"

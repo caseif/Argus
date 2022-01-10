@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
-// module ecs
 #include "argus/ecs/component_type_registry.hpp"
 
 #include <map>

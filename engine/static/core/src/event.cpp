@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/atomic.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/callback.hpp"
 #include "argus/core/event.hpp"
 #include "internal/core/callback_util.hpp"

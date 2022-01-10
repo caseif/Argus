@@ -24,10 +24,8 @@
 
 #pragma once
 
-// module core
 #include "argus/core/event.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 
 namespace argus { namespace input {

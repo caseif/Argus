@@ -18,13 +18,10 @@
 
 #pragma once
 
-// module core
 #include "argus/core/event.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include <map>

@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-// module core
 #include "argus/core/engine_config.hpp"
 
 #include <string>

@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-// module core
 #include "argus/core/engine_config.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/module.hpp"

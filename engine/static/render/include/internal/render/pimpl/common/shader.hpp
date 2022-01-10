@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module render
 #include "argus/render/common/shader.hpp"
 
 #include <initializer_list>

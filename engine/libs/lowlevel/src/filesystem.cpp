@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/threading/future.hpp"
 #include "internal/lowlevel/error_util.hpp"

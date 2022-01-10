@@ -20,11 +20,9 @@
 #define _USE_MATH_DEFINES
 #endif
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
-// module render
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/transform_3d.hpp"
 

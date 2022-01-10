@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module core
 #include "internal/core/dyn_invoke.hpp"
 
 #include <map>

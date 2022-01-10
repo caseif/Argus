@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module core
 #include "argus/core/callback.hpp"
 
 #include <functional>

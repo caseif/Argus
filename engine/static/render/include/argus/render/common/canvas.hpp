@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module core
 #include "argus/lowlevel/time.hpp"
 
-// module render
 #include "argus/render/common/scene.hpp"
 
 namespace argus {

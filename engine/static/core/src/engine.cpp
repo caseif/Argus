@@ -16,14 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/callback.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"

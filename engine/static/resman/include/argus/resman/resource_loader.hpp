@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module resman
 #include "argus/resman/resource.hpp"
 
 #include <initializer_list>

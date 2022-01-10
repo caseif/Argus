@@ -16,19 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 
-// module core
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
 
-// module input
 #include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"

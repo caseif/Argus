@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module render
 #include "argus/render/common/material.hpp"
 
 #include <atomic>

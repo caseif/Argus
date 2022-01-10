@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module core
 #include "argus/core/event.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 

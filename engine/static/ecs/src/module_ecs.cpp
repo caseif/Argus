@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module core
 #include "argus/core/module.hpp"
 
-// module ecs
 #include "argus/ecs/component_type_registry.hpp"
 #include "internal/ecs/module_ecs.hpp"
 

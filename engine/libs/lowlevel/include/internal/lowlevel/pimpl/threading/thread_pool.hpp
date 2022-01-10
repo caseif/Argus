@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/threading/thread_pool_worker.hpp"
 

@@ -16,14 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render
 #include "argus/render/common/material.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/renderer/bucket_proc.hpp"

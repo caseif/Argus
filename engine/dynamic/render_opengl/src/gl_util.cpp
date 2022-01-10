@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"

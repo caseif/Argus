@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module render
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 

@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 
 #include <initializer_list>

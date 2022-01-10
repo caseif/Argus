@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"

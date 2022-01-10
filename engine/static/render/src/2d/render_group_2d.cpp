@@ -16,13 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/memory.hpp"
 
-// module core
 #include "internal/core/core_util.hpp"
 
-// module render
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"

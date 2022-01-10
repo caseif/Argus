@@ -18,11 +18,9 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/atomic.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/callback.hpp"
 
 #include <algorithm>

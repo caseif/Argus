@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading/thread.hpp"
 

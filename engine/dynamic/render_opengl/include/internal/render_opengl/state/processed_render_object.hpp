@@ -18,13 +18,10 @@
 
 #pragma once
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render
 #include "argus/render/common/transform.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 
 #include <numeric>

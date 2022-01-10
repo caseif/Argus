@@ -16,20 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "internal/lowlevel/logging.hpp"
 
-// module resman
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-// module render
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/texture_data.hpp"
 #include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/texture_data.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"

@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module core
 #include "internal/core/core_util.hpp"
 
-// module input
 #include "argus/input/text_input_context.hpp"
 
 #include <string>

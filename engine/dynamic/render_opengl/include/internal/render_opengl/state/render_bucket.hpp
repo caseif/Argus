@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 
 #include <string>

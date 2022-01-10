@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
@@ -27,15 +25,12 @@
 #include "internal/core/engine_config.hpp"
 #include "internal/core/module.hpp"
 
-// module resman
 #include "argus/resman/resource_manager.hpp"
 
-// module wm
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
 
-// module render
 #include "argus/render/common/canvas.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"

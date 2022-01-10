@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module render
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/scene.hpp"

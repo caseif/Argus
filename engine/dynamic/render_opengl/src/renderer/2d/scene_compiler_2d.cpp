@@ -16,17 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "internal/core/core_util.hpp"
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
@@ -35,7 +31,6 @@
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc.hpp"
 #include "internal/render_opengl/renderer/2d/scene_compiler_2d.hpp"

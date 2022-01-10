@@ -16,14 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
-// module resman
 #include "argus/resman/resource.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 

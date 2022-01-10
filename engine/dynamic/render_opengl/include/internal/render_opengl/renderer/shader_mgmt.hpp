@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module render
 #include "argus/render/common/material.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 
 #include "aglet/aglet.h"

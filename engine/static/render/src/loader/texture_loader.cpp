@@ -16,14 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/macros.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module resman
 #include "argus/resman/resource_loader.hpp"
 
-// module render
 #include "argus/render/common/texture_data.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/loader/texture_loader.hpp"

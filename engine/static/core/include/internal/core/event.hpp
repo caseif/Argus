@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module core
 #include "argus/core/event.hpp"
 
 #include <atomic>

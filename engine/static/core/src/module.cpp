@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// module lowlevel
 #include "argus/lowlevel/filesystem.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-// module core
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
 #include "internal/core/module.hpp"

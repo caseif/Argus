@@ -18,10 +18,8 @@
 
 #pragma once
 
-// module lowlevel
 #include "argus/lowlevel/math.hpp"
 
-// module render_opengl
 #include "internal/render_opengl/types.hpp"
 
 #include <map>

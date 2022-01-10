@@ -18,7 +18,6 @@
 
 #pragma once
 
-// module render
 #include "argus/render/common/vertex.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 
