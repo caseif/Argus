@@ -101,7 +101,7 @@ namespace argus {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Vector2u window_res = window.pimpl->properties.resolution;
+        auto window_res = window.pimpl->properties.resolution.peek();
 
         glViewport(0, 0, window_res.x, window_res.y);
 
@@ -148,7 +148,7 @@ namespace argus {
     void draw_framebuffer_to_screen(const Window &window, SceneState &scene_state) {
         auto &state = scene_state.parent_state;
 
-        Vector2u window_res = window.pimpl->properties.resolution;
+        auto window_res = window.pimpl->properties.resolution.peek();
 
         glViewport(0, 0, window_res.x, window_res.y);
 

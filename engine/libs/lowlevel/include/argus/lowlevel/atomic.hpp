@@ -19,6 +19,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <utility>
 
@@ -178,7 +179,10 @@ namespace argus {
              * \return The base value.
              */
             inline operator ValueType(void) {
-                return value;
+                mutex.lock();
+                ValueType val_copy = value;
+                mutex.unlock();
+                return val_copy;
             }
 
             /**
@@ -208,6 +212,25 @@ namespace argus {
                 mutex.unlock();
                 return *this;
             }
+
+            ValueType &operator *(void) = delete;
+    };
+
+    /**
+     *
+     */
+    template <typename ValueType>
+    struct ValueAndDirtyFlag {
+        ValueType value;
+        bool dirty;
+
+        inline operator ValueType(void) const {
+            return value;
+        }
+
+        ValueType *operator ->(void) {
+            return &value;
+        }
     };
 
     /**
@@ -222,22 +245,44 @@ namespace argus {
     template <typename ValueType>
     class AtomicDirtiable {
         private:
-            ComplexAtomic<ValueType> value;
+            ValueType value;
+            bool dirty;
+            std::mutex mutex;
 
         public:
             /**
-             * \brief The current dirtiness of the value.
+             * \brief Atomically fetches the current value and clears the dirty
+             *        flag, returning both the copied value and the previous
+             *        dirty state.
+             *
+             * \return A `struct` containing the copied value and the previous
+             *         state of the dirty flag.
              */
-            std::atomic_bool dirty;
+            const ValueAndDirtyFlag<ValueType> read(void) {
+                mutex.lock();
+
+                auto val_copy = value;
+                bool old_dirty = dirty;
+                
+                dirty = false;
+
+                mutex.unlock();
+
+                return ValueAndDirtyFlag<ValueType> { val_copy, old_dirty };
+            };
 
             /**
-             * \brief Converts the AtomicDirtiable to its base type, effectively
-             *        "unwrapping" it.
+             * \brief Atomically fetches the current value without affecting the
+                      dirty flag.
              *
-             * \return The base value.
+             * \return A copy of the current value.
              */
-            inline operator ValueType() {
-                return value;
+            ValueType peek(void) {
+                mutex.lock();
+                auto val_copy = value;
+                mutex.unlock();
+
+                return val_copy;
             };
 
             /**
@@ -249,8 +294,10 @@ namespace argus {
              * \return This AtomicDirtiable.
              */
             inline AtomicDirtiable &operator =(const ValueType &rhs) {
+                mutex.lock();
                 value = rhs;
                 dirty = true;
+                mutex.unlock();
                 return *this;
             };
 
@@ -263,13 +310,11 @@ namespace argus {
              * \return This AtomicDirtiable.
              */
             inline AtomicDirtiable &operator =(const ValueType &&rhs) {
+                mutex.lock();
                 value = std::move(rhs);
                 dirty = true;
+                mutex.unlock();
                 return *this;
             };
-
-            inline void clear_dirty(void) {
-                this->dirty = false;
-            }
     };
 }

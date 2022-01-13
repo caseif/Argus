@@ -130,7 +130,7 @@ namespace argus {
     }
 
     template<typename T>
-    constexpr std::type_index type_index_of() {
+    std::type_index type_index_of() {
         return std::type_index(typeid(T));
     }
 }

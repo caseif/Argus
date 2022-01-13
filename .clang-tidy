@@ -34,7 +34,6 @@ Checks: >
     -cppcoreguidelines-pro-type-union-access,
     -cppcoreguidelines-pro-type-vararg,
 
-
     -google-explicit-constructor,
     -google-readability-namespace-comments,
     -google-readability-todo,

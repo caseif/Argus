@@ -21,6 +21,8 @@
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/wm/display.hpp"
+
 #include <functional>
 #include <string>
 
@@ -232,6 +234,55 @@ namespace argus {
              * \warning This may not be supported on all platforms.
              */
             void set_windowed_position(const int x, const int y);
+
+            /**
+             * \brief Gets the Display this Window will attempt to show on in
+             *        fullscreen mode.
+             *
+             * If this parameter has not been configured for the Window, it
+             * will default to the primary display or otherwise the first
+             * display available.
+             *
+             * \return The Display to show on.
+             */
+            Display &get_display_affinity(void);
+
+            /**
+             * \brief Sets the Display this Window will attempt to show on in
+             *        fullscreen mode.
+             *
+             * \param display The Display to show on.
+             *
+             * \sa Display::get_available_displays
+             */
+            void set_display_affinity(const Display &display);
+
+            /**
+             * \brief Gets the DisplayMode used by the Window while in
+             *        fullscreen mode.
+             *
+             * If this parameter has not been configured for the Window, it will
+             * default to the "best" available mode for its Display.
+             *
+             * The display mode controls parameters such as resolution, refresh
+             * rate, and color depth.
+             *
+             * \return The display mode of the Window.
+             */
+            DisplayMode get_display_mode(void);
+
+            /**
+             * \brief Sets the DisplayMode of this Window while in fullscreen
+             *        mode.
+             *
+             * The display mode controls parameters such as resolution, refresh
+             * rate, and color depth.
+             *
+             * \param mode The display mode of the window.
+             *
+             * \sa Display::get_display_modes
+             */
+            void set_display_mode(DisplayMode mode);
 
             /**
              * \brief Sets the WindowCallback to invoke upon this window being

@@ -30,9 +30,9 @@ namespace argus {
     struct pimpl_Display;
 
     struct DisplayMode {
-        const Vector2u resolution;
-        const uint16_t refresh_rate;
-        const Vector3u color_depth;
+        Vector2u resolution;
+        uint16_t refresh_rate;
+        Vector3u color_depth;
     };
 
     class Display {

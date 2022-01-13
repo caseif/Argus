@@ -164,8 +164,9 @@ namespace argus {
 
         activate_gl_context(window.pimpl->handle);
 
-        if (window.pimpl->properties.vsync.dirty) {
-            glfwSwapInterval(window.pimpl->properties.vsync ? 1 : 0);
+        auto vsync = window.pimpl->properties.vsync.read();
+        if (vsync.dirty) {
+            glfwSwapInterval(vsync ? 1 : 0);
         }
 
         _rebuild_scene(window, state);

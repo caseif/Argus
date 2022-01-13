@@ -28,8 +28,10 @@
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
+#include "internal/wm/display.hpp"
 #include "internal/wm/module_wm.hpp"
 #include "internal/wm/window.hpp"
+#include "internal/wm/pimpl/display.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
 #include "GLFW/glfw3.h"
@@ -269,47 +271,47 @@ namespace argus {
             return; // we forgo doing anything to the Window on its last update cycle
         }
 
-        if (pimpl->properties.title.dirty) {
-            glfwSetWindowTitle(pimpl->handle, std::string(pimpl->properties.title).c_str());
+        auto title = pimpl->properties.title.read();
+        auto fullscreen = pimpl->properties.fullscreen.read();
+        auto resolution = pimpl->properties.resolution.read();
+        auto position = pimpl->properties.position.read();
+        auto vsync = pimpl->properties.vsync.read();
+
+        if (title.dirty) {
+            glfwSetWindowTitle(pimpl->handle, title->c_str());
         }
 
-        bool fullscreen = false;
-        if (pimpl->properties.fullscreen.dirty) {
-            fullscreen = pimpl->properties.fullscreen;
+        if (fullscreen.dirty) {
             if (fullscreen) {
                 glfwSetWindowMonitor(pimpl->handle,
                     glfwGetPrimaryMonitor(),
-                    Vector2i(pimpl->properties.position).x,
-                    Vector2i(pimpl->properties.position).y,
-                    Vector2u(pimpl->properties.resolution).x,
-                    Vector2u(pimpl->properties.resolution).y,
+                    position->x,
+                    position->y,
+                    resolution->x,
+                    resolution->y,
                     GLFW_DONT_CARE);
-            } else {
-                glfwSetWindowMonitor(pimpl->handle, nullptr, 0, 0, 0, 0, GLFW_DONT_CARE);
             }
 
             pimpl->properties.fullscreen = glfwGetWindowMonitor(pimpl->handle) != nullptr;
+            pimpl->properties.fullscreen.read(); // clear dirty flag
         }
 
         if (!fullscreen) {
-            if (pimpl->properties.resolution.dirty) {
+            if (resolution.dirty) {
                 glfwSetWindowSize(pimpl->handle,
-                    Vector2u(pimpl->properties.resolution).x,
-                    Vector2u(pimpl->properties.resolution).y);
+                    resolution->x,
+                    resolution->y);
             }
-            if (pimpl->properties.position.dirty) {
+            if (position.dirty) {
                 glfwSetWindowPos(pimpl->handle,
-                    Vector2i(pimpl->properties.position).x,
-                    Vector2i(pimpl->properties.position).y);
+                    position->x,
+                    position->y);
             }
         }
 
-        pimpl->dirty_resolution = pimpl->properties.resolution.dirty.load();
+        UNUSED(vsync); //TODO
 
-        pimpl->properties.title.clear_dirty();
-        pimpl->properties.fullscreen.clear_dirty();
-        pimpl->properties.resolution.clear_dirty();
-        pimpl->properties.position.clear_dirty();
+        pimpl->dirty_resolution = resolution.dirty;
 
         if (!(pimpl->state & WINDOW_STATE_READY)) {
             pimpl->state |= WINDOW_STATE_READY;
@@ -342,7 +344,7 @@ namespace argus {
     }
 
     bool Window::is_fullscreen(void) const {
-        return pimpl->properties.fullscreen;
+        return pimpl->properties.fullscreen.peek();
     }
 
     void Window::set_fullscreen(const bool fullscreen) {
@@ -351,7 +353,7 @@ namespace argus {
     }
 
     Vector2u Window::get_resolution(void) const {
-        return pimpl->properties.resolution;
+        return pimpl->properties.resolution.peek();
     }
 
     void Window::set_resolution(const unsigned int width, const unsigned int height) {
@@ -360,7 +362,7 @@ namespace argus {
     }
 
     bool Window::is_vsync_enabled(void) {
-        return pimpl->properties.vsync;
+        return pimpl->properties.vsync.peek();
     }
 
     void Window::set_vsync_enabled(bool enabled) {

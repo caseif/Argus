@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/core/core_util.hpp"
+
 #include "argus/wm/display.hpp"
+#include "internal/wm/display.hpp"
 #include "internal/wm/pimpl/display.hpp"
 
 #include "GLFW/glfw3.h"
@@ -58,14 +61,13 @@ namespace argus {
     }
 
     static void _remove_display(GLFWmonitor *monitor) {
-        auto it = std::find_if(g_displays.begin(), g_displays.end(),
-                [monitor](auto *display) { return display->pimpl->handle == monitor; });
-        if (it == g_displays.end()) {
+        auto *display = get_display_from_handle(monitor);
+
+        if (display == nullptr) {
             return;
         }
 
-        auto *display = *it;
-        g_displays.erase(it);
+        remove_from_vector(g_displays, display);
         delete display;
     }
 
@@ -94,6 +96,16 @@ namespace argus {
         _enumerate_displays();
 
         glfwSetMonitorCallback(_monitor_callback);
+    }
+
+    Display *get_display_from_handle(GLFWmonitor *monitor) {
+        auto it = std::find_if(g_displays.begin(), g_displays.end(),
+                [monitor](auto *display) { return display->pimpl->handle == monitor; });
+        if (it == g_displays.end()) {
+            return nullptr;
+        }
+
+        return *it;
     }
 
     const std::vector<Display*> &Display::get_available_displays(void) {

@@ -18,6 +18,14 @@
 
 #pragma once
 
+// forward declarations
+struct GLFWmonitor;
+
 namespace argus {
+    // forward declarations
+    class Display;
+
     void init_display(void);
+
+    Display *get_display_from_handle(GLFWmonitor *monitor);
 }
