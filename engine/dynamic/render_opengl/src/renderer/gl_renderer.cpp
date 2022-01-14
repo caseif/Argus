@@ -182,9 +182,11 @@ namespace argus {
 
         auto &canvas = window.get_canvas();
 
+        auto resolution = window.pimpl->cur_resolution.read();
+
         for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
-            draw_scene_to_framebuffer(window, scene_state);
+            draw_scene_to_framebuffer(scene_state, resolution);
         }
 
         // set up state for drawing framebuffers to screen
@@ -200,7 +202,7 @@ namespace argus {
         for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
 
-            draw_framebuffer_to_screen(window, scene_state);
+            draw_framebuffer_to_screen(scene_state, resolution);
         }
 
         glfwSwapBuffers(canvas.pimpl->window.pimpl->handle);

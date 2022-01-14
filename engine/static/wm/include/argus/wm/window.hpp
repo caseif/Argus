@@ -196,15 +196,19 @@ namespace argus {
             Vector2u get_resolution(void) const;
 
             /**
-             * \brief Sets the resolution of the window when not in fullscreen
-             *        mode.
+             * \brief Gets the window's configured windowed resolution.
              *
-             * \param width The new width of the window.
-             * \param height The new height of the window.
-             *
-             * \warning This may not be supported on all platforms.
+             * \return The windowed resolution.
              */
-            void set_resolution(const unsigned int width, const unsigned int height);
+            Vector2u get_windowed_resolution(void) const;
+
+            /**
+             * \brief Sets the window's windowed resolution.
+             *
+             * \param width The horizontal resolution.
+             * \param height The vertical resolution.
+             */
+            void set_windowed_resolution(const unsigned int width, const unsigned int height);
 
             /**
              * \brief Gets whether the window has vertical synchronization
@@ -213,7 +217,7 @@ namespace argus {
              * \return Whether the window has vertical synchronization (vsync)
              *         enabled.
              */
-            bool is_vsync_enabled(void);
+            bool is_vsync_enabled(void) const;
             
             /**
              * \brief Enabled or disabled vertical synchronization (vsync) for
@@ -245,7 +249,7 @@ namespace argus {
              *
              * \return The Display to show on.
              */
-            Display &get_display_affinity(void);
+            const Display &get_display_affinity(void) const;
 
             /**
              * \brief Sets the Display this Window will attempt to show on in
@@ -269,7 +273,7 @@ namespace argus {
              *
              * \return The display mode of the Window.
              */
-            DisplayMode get_display_mode(void);
+            DisplayMode get_display_mode(void) const;
 
             /**
              * \brief Sets the DisplayMode of this Window while in fullscreen

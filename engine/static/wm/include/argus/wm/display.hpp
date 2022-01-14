@@ -48,7 +48,7 @@ namespace argus {
 
             ~Display(void);
 
-            static const std::vector<Display*> &get_available_displays(void);
+            static const std::vector<const Display*> &get_available_displays(void);
 
             const std::string &get_name(void) const;
 

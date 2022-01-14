@@ -273,45 +273,93 @@ namespace argus {
 
         auto title = pimpl->properties.title.read();
         auto fullscreen = pimpl->properties.fullscreen.read();
-        auto resolution = pimpl->properties.resolution.read();
+        auto display = pimpl->properties.display.read();
+        auto custom_display_mode = pimpl->properties.custom_display_mode.read();
+        auto display_mode = pimpl->properties.display_mode.read();
+        auto windowed_res = pimpl->properties.windowed_resolution.read();
         auto position = pimpl->properties.position.read();
-        auto vsync = pimpl->properties.vsync.read();
 
         if (title.dirty) {
             glfwSetWindowTitle(pimpl->handle, title->c_str());
         }
 
-        if (fullscreen.dirty) {
+        if (fullscreen.dirty || (fullscreen && display.dirty)) {
             if (fullscreen) {
+                // switch to fullscreen mode (or switch fullscreen monitor)
+
+                DisplayMode cur_display_mode;
+                if (custom_display_mode) {
+                    cur_display_mode = display_mode;
+                } else {
+                    cur_display_mode = get_display_mode();
+                }
+
                 glfwSetWindowMonitor(pimpl->handle,
-                    glfwGetPrimaryMonitor(),
+                    get_display_affinity().pimpl->handle,
+                    0,
+                    0,
+                    cur_display_mode.resolution.x,
+                    cur_display_mode.resolution.y,
+                    cur_display_mode.refresh_rate);
+
+                pimpl->cur_resolution = cur_display_mode.resolution;
+                pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
+            } else {
+                // switch to windowed mode
+                glfwSetWindowMonitor(pimpl->handle,
+                    NULL,
                     position->x,
                     position->y,
-                    resolution->x,
-                    resolution->y,
+                    windowed_res->x,
+                    windowed_res->y,
                     GLFW_DONT_CARE);
+                pimpl->cur_resolution = windowed_res;
+            }
+        } else if (fullscreen && (custom_display_mode.dirty || display_mode.dirty)) {
+            // switch fullscreen display mode
+
+            DisplayMode cur_display_mode;
+            if (custom_display_mode) {
+                cur_display_mode = display_mode;
+            } else {
+                cur_display_mode = get_display_mode();
             }
 
-            pimpl->properties.fullscreen = glfwGetWindowMonitor(pimpl->handle) != nullptr;
-            pimpl->properties.fullscreen.read(); // clear dirty flag
-        }
-
-        if (!fullscreen) {
-            if (resolution.dirty) {
+            if (cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
+                glfwSetWindowMonitor(pimpl->handle,
+                    get_display_affinity().pimpl->handle,
+                    0,
+                    0,
+                    cur_display_mode.resolution.x,
+                    cur_display_mode.resolution.y,
+                    cur_display_mode.refresh_rate);
+                
+                pimpl->cur_resolution = cur_display_mode.resolution;
+                pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
+            } else {
                 glfwSetWindowSize(pimpl->handle,
-                    resolution->x,
-                    resolution->y);
+                    cur_display_mode.resolution.x,
+                    cur_display_mode.resolution.y);
+
+                pimpl->cur_resolution = cur_display_mode.resolution;
             }
+        } else if (!fullscreen) {
+            // update windowed positon and/or resolution
+
+            if (windowed_res.dirty) {
+                glfwSetWindowSize(pimpl->handle,
+                    windowed_res->x,
+                    windowed_res->y);
+
+                pimpl->cur_resolution = windowed_res;
+            }
+
             if (position.dirty) {
                 glfwSetWindowPos(pimpl->handle,
                     position->x,
                     position->y);
             }
         }
-
-        UNUSED(vsync); //TODO
-
-        pimpl->dirty_resolution = resolution.dirty;
 
         if (!(pimpl->state & WINDOW_STATE_READY)) {
             pimpl->state |= WINDOW_STATE_READY;
@@ -353,15 +401,19 @@ namespace argus {
     }
 
     Vector2u Window::get_resolution(void) const {
-        return pimpl->properties.resolution.peek();
+        return pimpl->cur_resolution.peek();
     }
 
-    void Window::set_resolution(const unsigned int width, const unsigned int height) {
-        pimpl->properties.resolution = {width, height};
+    Vector2u Window::get_windowed_resolution(void) const {
+        return pimpl->properties.windowed_resolution.peek();
+    }
+
+    void Window::set_windowed_resolution(const unsigned int width, const unsigned int height) {
+        pimpl->properties.windowed_resolution = {width, height};
         return;
     }
 
-    bool Window::is_vsync_enabled(void) {
+    bool Window::is_vsync_enabled(void) const {
         return pimpl->properties.vsync.peek();
     }
 
@@ -373,6 +425,53 @@ namespace argus {
     void Window::set_windowed_position(const int x, const int y) {
         pimpl->properties.position = {x, y};
         return;
+    }
+
+    const Display &Window::get_display_affinity(void) const {
+        const Display *display = pimpl->properties.display.peek();
+        if (display != nullptr) {
+            auto *found = get_display_from_handle(display->pimpl->handle);
+            if (found != nullptr) {
+                return *found;
+            }
+        }
+
+        auto *primary = get_display_from_handle(glfwGetPrimaryMonitor());
+
+        if (primary == nullptr) {
+            throw std::runtime_error("No available displays!");
+        }
+
+        return *primary;
+    }
+
+    void Window::set_display_affinity(const Display &display) {
+        auto *cur_display = pimpl->properties.display.peek();
+        if (cur_display != nullptr && display.pimpl->handle == cur_display->pimpl->handle) {
+            return;
+        }
+
+        auto *found = get_display_from_handle(display.pimpl->handle);
+        if (found == nullptr) {
+            return;
+        }
+
+        pimpl->properties.display = found;
+        // reset display mode since it's not necessarily valid on the new display
+        pimpl->properties.custom_display_mode = false;
+    }
+
+    DisplayMode Window::get_display_mode(void) const {
+        if (pimpl->properties.custom_display_mode.peek()) {
+            return pimpl->properties.display_mode.peek();
+        } else {
+            return get_display_affinity().get_display_modes().back();
+        }
+    }
+
+    void Window::set_display_mode(DisplayMode mode) {
+        pimpl->properties.custom_display_mode = true;
+        pimpl->properties.display_mode = mode;
     }
 
     void Window::set_close_callback(WindowCallback callback) {
@@ -418,9 +517,11 @@ namespace argus {
                 g_canvas_dtor(*window.pimpl->canvas);
             }
         } else if (event.subtype == WindowEventType::Resize) {
-            window.pimpl->properties.resolution = event.resolution;
+            window.pimpl->cur_resolution = event.resolution;
         } else if (event.subtype == WindowEventType::Move) {
-            window.pimpl->properties.position = event.position;
+            if (glfwGetWindowMonitor(window.pimpl->handle) == nullptr) {
+                window.pimpl->properties.position.set_quietly(event.position);
+            }
         }
     }
 }

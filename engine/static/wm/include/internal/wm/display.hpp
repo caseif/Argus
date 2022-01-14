@@ -27,5 +27,5 @@ namespace argus {
 
     void init_display(void);
 
-    Display *get_display_from_handle(GLFWmonitor *monitor);
+    const Display *get_display_from_handle(const GLFWmonitor *monitor);
 }

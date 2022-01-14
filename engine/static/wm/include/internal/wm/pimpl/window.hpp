@@ -64,7 +64,10 @@ namespace argus {
         struct {
             AtomicDirtiable<std::string> title;
             AtomicDirtiable<bool> fullscreen;
-            AtomicDirtiable<Vector2u> resolution;
+            AtomicDirtiable<const Display*> display;
+            AtomicDirtiable<bool> custom_display_mode;
+            AtomicDirtiable<DisplayMode> display_mode;
+            AtomicDirtiable<Vector2u> windowed_resolution;
             AtomicDirtiable<Vector2i> position;
             AtomicDirtiable<bool> vsync;
         } properties;
@@ -81,13 +84,9 @@ namespace argus {
          */
         std::atomic<unsigned int> state;
 
-        /**
-         * \brief Whether the render resolution has recently been updated.
-         *
-         * \remark This must be atomic because the resolution can be updated
-         *         from the game thread.
-         */
-        std::atomic_bool dirty_resolution;
+        AtomicDirtiable<Vector2u> cur_resolution;
+
+        uint16_t cur_refresh_rate;
 
         pimpl_Window(Window *parent):
                 parent(parent) {

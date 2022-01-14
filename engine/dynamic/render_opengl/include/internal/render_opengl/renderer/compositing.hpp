@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/math.hpp"
+
 #include "aglet/aglet.h"
 
 namespace argus {
@@ -25,9 +28,9 @@ namespace argus {
     struct RendererState;
     struct SceneState;
 
-    void draw_scene_to_framebuffer(const Window &window, SceneState &scene_state);
+    void draw_scene_to_framebuffer(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution);
 
-    void draw_framebuffer_to_screen(const Window &window, SceneState &scene_state);
+    void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution);
 
     void setup_framebuffer(RendererState &state);
 }

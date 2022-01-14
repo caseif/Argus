@@ -29,7 +29,7 @@
 #include <vector>
 
 namespace argus {
-    static std::vector<Display*> g_displays;
+    static std::vector<const Display*> g_displays;
 
     static void _add_display(GLFWmonitor *monitor) {
         auto &display = *new Display();
@@ -60,7 +60,7 @@ namespace argus {
         g_displays.push_back(&display);
     }
 
-    static void _remove_display(GLFWmonitor *monitor) {
+    static void _remove_display(const GLFWmonitor *monitor) {
         auto *display = get_display_from_handle(monitor);
 
         if (display == nullptr) {
@@ -98,7 +98,7 @@ namespace argus {
         glfwSetMonitorCallback(_monitor_callback);
     }
 
-    Display *get_display_from_handle(GLFWmonitor *monitor) {
+    const Display *get_display_from_handle(const GLFWmonitor *monitor) {
         auto it = std::find_if(g_displays.begin(), g_displays.end(),
                 [monitor](auto *display) { return display->pimpl->handle == monitor; });
         if (it == g_displays.end()) {
@@ -108,7 +108,7 @@ namespace argus {
         return *it;
     }
 
-    const std::vector<Display*> &Display::get_available_displays(void) {
+    const std::vector<const Display*> &Display::get_available_displays(void) {
         return g_displays;
     }
 

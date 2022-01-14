@@ -47,7 +47,7 @@
 #include <utility>
 
 namespace argus {
-    void draw_scene_to_framebuffer(const Window &window, SceneState &scene_state) {
+    void draw_scene_to_framebuffer(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
 
         // framebuffer setup
@@ -61,9 +61,7 @@ namespace argus {
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.framebuffer);
 
-        if (scene_state.frame_texture == 0 || window.pimpl->dirty_resolution) {
-            auto window_res = window.get_resolution();
-
+        if (scene_state.frame_texture == 0 || resolution.dirty) {
             if (scene_state.frame_texture != 0) {
                 glDeleteTextures(1, &scene_state.frame_texture);
             }
@@ -71,7 +69,7 @@ namespace argus {
             if (AGLET_GL_ARB_direct_state_access) {
                 glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.frame_texture);
 
-                glTextureStorage2D(scene_state.frame_texture, 1, GL_RGBA8, window_res.x, window_res.y);
+                glTextureStorage2D(scene_state.frame_texture, 1, GL_RGBA8, resolution->x, resolution->y);
 
                 glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -81,7 +79,7 @@ namespace argus {
                 glGenTextures(1, &scene_state.frame_texture);
                 glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_res.x, window_res.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -101,9 +99,7 @@ namespace argus {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto window_res = window.pimpl->properties.resolution.peek();
-
-        glViewport(0, 0, window_res.x, window_res.y);
+        glViewport(0, 0, resolution->x, resolution->y);
 
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
@@ -145,12 +141,12 @@ namespace argus {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
-    void draw_framebuffer_to_screen(const Window &window, SceneState &scene_state) {
+    void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
 
-        auto window_res = window.pimpl->properties.resolution.peek();
-
-        glViewport(0, 0, window_res.x, window_res.y);
+        if (resolution.dirty) {
+            glViewport(0, 0, resolution->x, resolution->y);
+        }
 
         glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program);

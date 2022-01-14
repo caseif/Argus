@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/macros.hpp"
+
 #include <atomic>
 #include <functional>
 #include <mutex>
@@ -249,7 +251,26 @@ namespace argus {
             bool dirty;
             std::mutex mutex;
 
+            template <typename V = ValueType>
+            typename std::enable_if<std::is_integral<V>::value, bool>::type
+            is_same_value(V &new_val) {
+                return new_val == this->value;
+            }
+
+            template <typename V = ValueType>
+            typename std::enable_if<!std::is_integral<V>::value, bool>::type
+            is_same_value(V &new_val) {
+                UNUSED(new_val);
+                return false;
+            }
+
         public:
+            AtomicDirtiable(void):
+                value(),
+                dirty(false),
+                mutex() {
+            }
+
             /**
              * \brief Atomically fetches the current value and clears the dirty
              *        flag, returning both the copied value and the previous
@@ -295,8 +316,10 @@ namespace argus {
              */
             inline AtomicDirtiable &operator =(const ValueType &rhs) {
                 mutex.lock();
-                value = rhs;
-                dirty = true;
+                if (!is_same_value(rhs)) {
+                    value = rhs;
+                    dirty = true;
+                }
                 mutex.unlock();
                 return *this;
             };
@@ -311,10 +334,36 @@ namespace argus {
              */
             inline AtomicDirtiable &operator =(const ValueType &&rhs) {
                 mutex.lock();
-                value = std::move(rhs);
-                dirty = true;
+                if (!is_same_value(rhs)) {
+                    value = std::move(rhs);
+                    dirty = true;
+                }
                 mutex.unlock();
                 return *this;
             };
+
+            /**
+             * Performs an atomic assignment to an lvalue without setting the
+             * dirty flag.
+             *
+             * \param rhs The value to assign.
+             */
+            void set_quietly(const ValueType &rhs) {
+                mutex.lock();
+                value = rhs;
+                mutex.unlock();
+            }
+
+            /**
+             * Performs an atomic assignment to an rvalue without setting the
+             * dirty flag.
+             *
+             * \param rhs The value to assign.
+             */
+            void set_quietly(const ValueType &&rhs) {
+                mutex.lock();
+                value = std::move(rhs);
+                mutex.unlock();
+            }
     };
 }
