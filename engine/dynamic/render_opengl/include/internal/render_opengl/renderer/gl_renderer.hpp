@@ -43,5 +43,7 @@ namespace argus {
             ~GLRenderer(void);
 
             void render(TimeDelta delta);
+
+            void notify_window_resize(const Vector2u &resolution);
     };
 }

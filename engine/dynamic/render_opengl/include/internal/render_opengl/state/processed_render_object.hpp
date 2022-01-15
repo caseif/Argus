@@ -38,7 +38,6 @@ namespace argus {
         friend class AllocPool;
 
         const Resource &material_res;
-        Matrix4 abs_transform;
         buffer_handle_t staging_buffer;
         size_t staging_buffer_size;
         size_t vertex_count;
@@ -46,8 +45,8 @@ namespace argus {
         bool visited;
         bool updated;
 
-        static ProcessedRenderObject &create(const Resource &material_res, const Matrix4 abs_transform,
-                const buffer_handle_t staging_buffer, const size_t staging_buffer_size, const size_t vertex_count,
+        static ProcessedRenderObject &create(const Resource &material_res, const buffer_handle_t staging_buffer,
+                const size_t staging_buffer_size, const size_t vertex_count,
                 void *mapped_buffer);
 
         ProcessedRenderObject(ProcessedRenderObject&) = delete;
@@ -55,11 +54,10 @@ namespace argus {
         ~ProcessedRenderObject();
 
         private:
-            ProcessedRenderObject(const Resource &material_res, const Matrix4 &abs_transform,
-                    const buffer_handle_t staging_buffer, const size_t staging_buffer_size, const size_t vertex_count,
+            ProcessedRenderObject(const Resource &material_res, const buffer_handle_t staging_buffer,
+                const size_t staging_buffer_size, const size_t vertex_count,
                     void *mapped_buffer):
                     material_res(material_res),
-                    abs_transform(abs_transform),
                     staging_buffer(staging_buffer),
                     staging_buffer_size(staging_buffer_size),
                     vertex_count(vertex_count),

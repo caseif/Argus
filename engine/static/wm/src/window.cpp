@@ -326,7 +326,6 @@ namespace argus {
             }
 
             if (true || cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
-                printf("changing display mode on monitor %s (%dx%d)\n", glfwGetMonitorName(get_display_affinity().pimpl->handle), cur_display_mode.resolution.x, cur_display_mode.resolution.y);
                 glfwSetWindowMonitor(pimpl->handle,
                     get_display_affinity().pimpl->handle,
                     0,

@@ -22,6 +22,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/event.hpp"
+#include "internal/core/engine_config.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
@@ -62,6 +63,72 @@ namespace argus {
     // forward declarations
     class Scene2D;
 
+    static Matrix4 _compute_view_matrix(unsigned int res_hor, unsigned int res_ver) {
+        auto screen_space = get_engine_config().screen_space;
+        
+        auto l = screen_space.left;
+        auto r = screen_space.right;
+        auto b = screen_space.bottom;
+        auto t = screen_space.top;
+
+        float hor_scale = 1;
+        float ver_scale = 1;
+
+        auto res_hor_f = static_cast<float>(res_hor);
+        auto res_ver_f = static_cast<float>(res_ver);
+
+        switch (get_engine_config().screen_space_scale_mode) {
+            case ScreenSpaceScaleMode::NormalizeMinDimension:
+                if (res_hor > res_ver) {
+                    hor_scale = res_hor_f / res_ver_f;
+                } else {
+                    ver_scale = res_ver_f / res_hor_f;
+                }
+                break;
+            case ScreenSpaceScaleMode::NormalizeMaxDimension:
+                if (res_hor > res_ver) {
+                    ver_scale = res_ver_f / res_hor_f;
+                } else {
+                    hor_scale = res_hor_f / res_ver_f;
+                }
+                break;
+            case ScreenSpaceScaleMode::NormalizeVertical:
+                hor_scale = res_hor_f / res_ver_f;
+                break;
+            case ScreenSpaceScaleMode::NormalizeHorizontal:
+                ver_scale = res_ver_f / res_hor_f;
+                break;
+            case ScreenSpaceScaleMode::None:
+                break;
+        }
+
+        return {
+            {2 / ((r - l) * hor_scale), 0, 0, 0},
+            {0, 2 / ((t - b) * ver_scale), 0, 0},
+            {0, 0, 1, 0},
+            {-(r + l) / ((r - l) * hor_scale), -(t + b) / ((t - b) * ver_scale), 0, 1}
+        };
+    }
+
+    static Matrix4 _compute_view_matrix(const Vector2u &resolution) {
+        return _compute_view_matrix(resolution.x, resolution.y);
+    }
+
+    static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
+        return _compute_view_matrix(resolution.x, resolution.y);
+    }
+
+    static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
+        auto &canvas = window.get_canvas();
+        for (auto *scene : canvas.pimpl->scenes) {
+            SceneState &scene_state = state.get_scene_state(*scene, true);
+            auto &scene_transform = scene->get_transform();
+
+            multiply_matrices(_compute_view_matrix(resolution), scene_transform.as_matrix(),
+                    scene_state.view_matrix);
+        }
+    }
+
     static void _rebuild_scene(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
         for (auto *scene : canvas.pimpl->scenes) {
@@ -69,7 +136,8 @@ namespace argus {
 
             auto &scene_transform = scene->get_transform();
             if (scene_transform.pimpl->dirty) {
-                multiply_matrices(g_view_matrix, scene_transform.as_matrix(), scene_state.view_matrix);
+                multiply_matrices(_compute_view_matrix(window.get_resolution()), scene_transform.as_matrix(),
+                        scene_state.view_matrix);
                 scene_transform.pimpl->dirty = false;
             }
 
@@ -206,5 +274,9 @@ namespace argus {
         }
 
         glfwSwapBuffers(canvas.pimpl->window.pimpl->handle);
+    }
+
+    void GLRenderer::notify_window_resize(const Vector2u &resolution) {
+        _update_view_matrix(this->window, this->state, resolution);
     }
 }

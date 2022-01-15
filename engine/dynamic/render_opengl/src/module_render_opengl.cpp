@@ -44,26 +44,8 @@ namespace argus {
     static bool g_backend_active = false;
     static std::map<const Window*, GLRenderer*> g_renderer_map;
 
-    Matrix4 g_view_matrix;
-
     static void _activate_opengl_backend() {
         g_backend_active = true;
-    }
-
-    static void _setup_view_matrix() {
-        auto screen_space = get_engine_config().screen_space;
-        
-        auto l = screen_space.left;
-        auto r = screen_space.right;
-        auto b = screen_space.bottom;
-        auto t = screen_space.top;
-        
-        g_view_matrix = {
-            {2 / (r - l), 0, 0, 0},
-            {0, 2 / (t - b), 0, 0},
-            {0, 0, 1, 0},
-            {-(r + l) / (r - l), -(t + b) / (t - b), 0, 1}
-        };
     }
 
     static void _window_event_callback(const WindowEvent &event, void *user_data) {
@@ -85,6 +67,17 @@ namespace argus {
                 _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!");
 
                 it->second->render(event.delta);
+                break;
+            }
+            case WindowEventType::Resize: {
+                if (!window.is_ready()) {
+                    return;
+                }
+                
+                auto it = g_renderer_map.find(&window);
+                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window resize but no renderer was registered!");
+
+                it->second->notify_window_resize(event.resolution);
                 break;
             }
             case WindowEventType::RequestClose: {
@@ -124,7 +117,6 @@ namespace argus {
                 glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
                 #endif
 
-                _setup_view_matrix();
                 break;
             }
             case LifecycleStage::PostInit: {

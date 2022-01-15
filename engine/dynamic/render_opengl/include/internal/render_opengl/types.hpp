@@ -23,8 +23,6 @@
 #include "aglet/aglet.h"
 
 namespace argus {
-    extern Matrix4 g_view_matrix;
-
     // all typedefs here serve purely to provide semantic information to declarations
 
     typedef GLuint buffer_handle_t;

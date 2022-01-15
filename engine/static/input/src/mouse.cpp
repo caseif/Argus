@@ -149,7 +149,7 @@ namespace argus { namespace input {
 
         if (state.got_first_mouse_pos) {
             auto dx = x - state.last_mouse_pos.x;
-            auto dy = -(y - state.last_mouse_pos.y);
+            auto dy = y - state.last_mouse_pos.y;
 
             const auto res = window->get_resolution();
             const auto min_window_dim = std::min(res.x, res.y);

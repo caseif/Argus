@@ -66,9 +66,6 @@ namespace argus {
             // weird issues that seem like a race condition somehow
             auto &proc_obj = *existing_it->second;
 
-            // we basically just need to update the transform and position data since everything else is immutable
-            proc_obj.abs_transform = transform;
-
             auto vertex_attrs = proc_obj.material_res.get<Material>().pimpl->attributes;
             // not sure whether this would actually ever be false in practice
             if (vertex_attrs & VertexAttributes::POSITION) {
@@ -192,8 +189,7 @@ namespace argus {
             }
 
             auto &processed_obj = ProcessedRenderObject::create(
-                    mat_res, transform,
-                    vertex_buffer, buffer_size, _count_vertices(object),
+                    mat_res, vertex_buffer, buffer_size, _count_vertices(object),
                     persistent_buffer ? mapped_buffer : nullptr);
             processed_obj.visited = true;
 

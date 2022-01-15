@@ -32,6 +32,7 @@ namespace argus {
         std::vector<std::string> load_modules;
         std::vector<RenderBackend> render_backends;
         ScreenSpace screen_space{-1, 1, -1, 1};
+        ScreenSpaceScaleMode screen_space_scale_mode;
     };
 
     EngineConfig get_engine_config();
