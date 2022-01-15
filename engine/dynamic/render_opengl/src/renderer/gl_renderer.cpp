@@ -124,7 +124,7 @@ namespace argus {
             SceneState &scene_state = state.get_scene_state(*scene, true);
             auto &scene_transform = scene->get_transform();
 
-            multiply_matrices(_compute_view_matrix(resolution), scene_transform.as_matrix(),
+            multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(resolution),
                     scene_state.view_matrix);
         }
     }
@@ -136,7 +136,7 @@ namespace argus {
 
             auto &scene_transform = scene->get_transform();
             if (scene_transform.pimpl->dirty) {
-                multiply_matrices(_compute_view_matrix(window.get_resolution()), scene_transform.as_matrix(),
+                multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(window.get_resolution()),
                         scene_state.view_matrix);
                 scene_transform.pimpl->dirty = false;
             }
