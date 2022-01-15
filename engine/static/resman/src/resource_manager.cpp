@@ -220,9 +220,15 @@ namespace argus {
             std::string res_dir = std::string(cwd) + PATH_SEPARATOR + RESOURCES_DIR;
             free(cwd);
 
+            _ARGUS_DEBUG("Discovering ARP packages");
+
             _discover_arp_packages(pimpl->package_set, res_dir);
 
+            _ARGUS_DEBUG("Discovering loose resources from filesystem");
+
             _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos, pimpl->extension_mappings);
+
+            _ARGUS_DEBUG("Resource discovery completed");
 
             pimpl->discovery_done = true;
         } catch (std::exception &ex) {
@@ -241,16 +247,20 @@ namespace argus {
     }
 
     void ResourceManager::register_loader(ResourceLoader &loader) {
+        _ARGUS_DEBUG("Registering new resource loader");
+
         for (const std::string &media_type : loader.pimpl->media_types) {
             if (pimpl->registered_loaders.find(media_type) != pimpl->registered_loaders.cend()) {
                 throw std::invalid_argument("Cannot register loader for type more than once");
             }
             pimpl->registered_loaders.insert({media_type, &loader});
+            _ARGUS_DEBUG("Registered loader for media type %s", media_type.c_str());
         }
 
     }
 
     void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {
+        _ARGUS_DEBUG("Registering resource extension mappings");
         pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
@@ -398,6 +408,8 @@ namespace argus {
 
     Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, const void *data,
             size_t len) {
+        _ARGUS_DEBUG("Creating ad hoc resource %s (%zu bytes)", uid.c_str(), len);
+
         if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
         }
@@ -421,6 +433,8 @@ namespace argus {
 
         Resource *res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
+
+        _ARGUS_DEBUG("Created ad hoc resource %s", uid.c_str());
 
         return *res;
     }

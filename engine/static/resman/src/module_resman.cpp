@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/lowlevel/logging.hpp"
+
 #include "argus/core/module.hpp"
 
 #include "argus/resman/resource_manager.hpp"
@@ -27,6 +29,7 @@ namespace argus {
     void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit:
+                _ARGUS_DEBUG("Discovering resources");
                 ResourceManager::instance().discover_resources();
                 break;
             case LifecycleStage::PostDeinit:

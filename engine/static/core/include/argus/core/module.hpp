@@ -79,6 +79,10 @@ constexpr const char *ModuleRender = "render";
 #endif
 
 namespace argus {
+    static constexpr const char *g_lifecycle_stage_names[] = {
+        "Load", "PreInit", "Init", "PostInit", "PreDeinit", "Deinit", "PostDeinit"
+    };
+
     /**
      * \brief Represents the stages of engine bring-up or spin-down.
      */
@@ -133,6 +137,10 @@ namespace argus {
          */
         PostDeinit
     };
+
+    constexpr const char *lifecycle_stage_to_str(LifecycleStage stage) {
+        return g_lifecycle_stage_names[static_cast<std::underlying_type<LifecycleStage>::type>(stage)];
+    }
 
     /**
      * \brief A callback for passing lifecycle changes to engine modules.

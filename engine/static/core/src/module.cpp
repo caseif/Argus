@@ -379,11 +379,19 @@ namespace argus {
 
     static void _send_lifecycle_update(LifecycleStage stage) {
         for (const auto &mod : g_enabled_static_modules) {
+            _ARGUS_DEBUG("Sent %s lifecycle stage to module %s",
+                    lifecycle_stage_to_str(stage), mod.id.c_str());
             mod.lifecycle_update_callback(stage);
+            _ARGUS_DEBUG("Lifecycle stage %s was completed by module %s",
+                    lifecycle_stage_to_str(stage), mod.id.c_str());
         }
 
         for (const auto &mod : g_enabled_dyn_modules) {
+            _ARGUS_DEBUG("Sent %s lifecycle stage to module %s",
+                    lifecycle_stage_to_str(stage), mod.id.c_str());
             mod.lifecycle_update_callback(stage);
+            _ARGUS_DEBUG("Lifecycle stage %s was completed by module %s",
+                    lifecycle_stage_to_str(stage), mod.id.c_str());
         }
     }
 

@@ -72,9 +72,15 @@ namespace argus {
         }
 
         //TODO: select fallback based on platform
-        _ARGUS_WARN("Failed to select graphics backend from preference list, defaulting to OpenGL");
+        _ARGUS_WARN("Failed to select graphics backend from preference list, falling back to platform default");
 
+        #if defined(__linux__) && !defined(__ANDROID__)
+        _ARGUS_INFO("Detected Linux, using OpenGL as platform default");
         call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
+        #else
+        _ARGUS_INFO("Failed to select default for current system, using OpenGL as meta-default");
+        call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
+        #endif
         return;
     }
 
@@ -94,10 +100,15 @@ namespace argus {
     void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Load: {
+                _ARGUS_DEBUG("Loading backend modules for rendering");
+
                 _load_backend_modules();
+
                 break;
             }
             case LifecycleStage::Init: {
+                _ARGUS_DEBUG("Activating render backend module");
+
                 _activate_backend();
 
                 Window::set_canvas_ctor_and_dtor(_construct_canvas, _destroy_canvas);

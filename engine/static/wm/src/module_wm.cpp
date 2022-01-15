@@ -77,6 +77,8 @@ namespace argus {
 
                 glfwSetErrorCallback(_on_glfw_error);
 
+                _ARGUS_DEBUG("Initialized GLFW");
+
                 register_render_callback(_poll_events);
                 
                 register_event_handler<WindowEvent>(window_window_event_callback, TargetThread::Render);
@@ -84,11 +86,14 @@ namespace argus {
                 init_display();
 
                 g_wm_module_initialized = true;
-
+                
                 break;
             }
             case LifecycleStage::Deinit:
                 _clean_up();
+
+                _ARGUS_DEBUG("Finished deinitializing wm");
+
                 break;
             default:
                 break;
