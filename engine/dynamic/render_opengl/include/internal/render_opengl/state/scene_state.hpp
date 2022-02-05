@@ -20,6 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 #include "internal/render_opengl/types.hpp"
 
 #include <map>
@@ -54,7 +55,7 @@ namespace argus {
     };
 
     struct Scene2DState : public SceneState {
-        std::map<const RenderObject2D*, ProcessedRenderObject*> processed_objs;
+        std::map<const RenderObject2D*, ProcessedRenderObject2DPtr> processed_objs;
 
         Scene2DState(RendererState &parent_state, Scene &scene);
 

@@ -20,14 +20,27 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <functional>
+#include <map>
+
 namespace argus {
     // forward declarations
     class RenderObject2D;
+    class Scene2D;
 
     struct ProcessedRenderObject;
+    struct RendererState;
     struct Scene2DState;
 
-    void process_object_2d(Scene2DState &scene_state, const RenderObject2D &object, const Matrix4 &transform);
+    typedef void *ProcessedRenderObject2DPtr;
+    typedef std::map<const RenderObject2D*, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
 
-    void deinit_object_2d(ProcessedRenderObject &obj);
+        typedef std::function<ProcessedRenderObject2DPtr(const RenderObject2D &obj,
+        const Matrix4 &transform)> ProcessRenderObj2DFn;
+
+    typedef std::function<void(const RenderObject2D &obj, ProcessedRenderObject2DPtr proc_obj,
+        const Matrix4 &transform, bool is_transform_dirty)> UpdateRenderObj2DFn;
+
+    void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
+            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn);
 }

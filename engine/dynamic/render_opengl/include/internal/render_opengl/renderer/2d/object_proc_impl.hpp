@@ -19,15 +19,20 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 
 namespace argus {
     // forward declarations
     class RenderObject2D;
-    class Scene2D;
 
     struct ProcessedRenderObject;
-    struct RendererState;
     struct Scene2DState;
 
-    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state);
+    ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object,
+            const Matrix4 &transform);
+
+    void update_processed_object_2d(const RenderObject2D &object,
+            ProcessedRenderObject2DPtr proc_obj_ptr, const Matrix4 &transform, bool is_transform_dirty);
+
+    void deinit_object_2d(ProcessedRenderObject &obj);
 }

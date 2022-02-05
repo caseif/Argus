@@ -42,6 +42,7 @@ namespace argus {
         size_t staging_buffer_size;
         size_t vertex_count;
         void *mapped_buffer;
+        bool newly_created;
         bool visited;
         bool updated;
 

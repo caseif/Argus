@@ -49,7 +49,7 @@ namespace argus {
 
     Scene2DState::~Scene2DState(void) {
         for (auto &obj : this->processed_objs) {
-            obj.second->~ProcessedRenderObject();
+            reinterpret_cast<ProcessedRenderObject*>(obj.second)->~ProcessedRenderObject();
         }
     }
 }

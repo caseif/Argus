@@ -28,8 +28,6 @@
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 
-#include "aglet/aglet.h"
-
 #include <map>
 #include <string>
 #include <utility>

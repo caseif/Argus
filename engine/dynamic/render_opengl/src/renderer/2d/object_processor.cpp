@@ -31,12 +31,7 @@
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
-#include "internal/render_opengl/renderer/bucket_proc.hpp"
-#include "internal/render_opengl/renderer/2d/object_proc.hpp"
-#include "internal/render_opengl/renderer/2d/scene_compiler_2d.hpp"
-#include "internal/render_opengl/state/processed_render_object.hpp"
-#include "internal/render_opengl/state/render_bucket.hpp"
-#include "internal/render_opengl/state/scene_state.hpp"
+#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 
 #include <atomic>
 #include <map>
@@ -67,8 +62,9 @@ namespace argus {
         }
     }
 
-    static void _process_render_group_2d(RendererState &state, Scene2DState &scene_state, const RenderGroup2D &group,
-            const bool recompute_transform, const Matrix4 running_transform) {
+    static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, const RenderGroup2D &group,
+            const bool recompute_transform, const Matrix4 running_transform, ProcessRenderObj2DFn process_new_fn,
+            UpdateRenderObj2DFn update_fn) {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
 
@@ -89,14 +85,6 @@ namespace argus {
         for (const RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
-            auto existing_it = scene_state.processed_objs.find(child_object);
-            // if the object has already been processed previously
-            if (existing_it != scene_state.processed_objs.end()) {
-                // if a parent group or the object itself has had its transform updated
-                existing_it->second->updated = new_recompute_transform || child_object->get_transform().pimpl->dirty;
-                existing_it->second->visited = true;
-            }
-
             if (new_recompute_transform) {
                 multiply_matrices(cur_transform, child_object->get_transform().as_matrix(), final_obj_transform);
             } else if (child_object->get_transform().pimpl->dirty) {
@@ -110,43 +98,27 @@ namespace argus {
                 return;
             }
 
-            process_object_2d(scene_state, *child_object, final_obj_transform);
+            auto existing_it = processed_obj_map.find(child_object);
+            if (existing_it != processed_obj_map.end()) {
+                update_fn(*child_object, existing_it->second, final_obj_transform,
+                        new_recompute_transform || child_object->get_transform().pimpl->dirty);
+            } else {
+                auto *processed_obj = process_new_fn(*child_object, final_obj_transform);
+
+                processed_obj_map.insert({ child_object, processed_obj });
+            }
+        
+            child_object->get_transform().pimpl->dirty = false;
         }
 
         for (auto *child_group : group.pimpl->child_groups) {
-            _process_render_group_2d(state, scene_state, *child_group, new_recompute_transform, cur_transform);
+            _process_render_group_2d(processed_obj_map, *child_group,
+                new_recompute_transform, cur_transform, process_new_fn, update_fn);
         }
     }
 
-    static void _process_objects_2d(RendererState &state, Scene2DState &scene_state, const Scene2D &scene) {
-        _process_render_group_2d(state, scene_state, scene.pimpl->root_group, false, {});
-
-        for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
-            auto *processed_obj = it->second;
-            if (!processed_obj->visited) {
-                // wasn't visited this iteration, must not be present in the scene graph anymore
-
-                deinit_object_2d(*processed_obj);
-
-                // we need to remove it from its containing bucket and flag the bucket for a rebuild
-                auto *bucket = scene_state.render_buckets[it->second->material_res.uid];
-                remove_from_vector(bucket->objects, processed_obj);
-                bucket->needs_rebuild = true;
-
-                processed_obj->~ProcessedRenderObject();
-
-                it = scene_state.processed_objs.erase(it);
-
-                continue;
-            }
-
-            it->second->visited = false;
-            ++it;
-        }
-    }
-
-    void compile_scene_2d(Scene2D &scene, RendererState &renderer_state, Scene2DState &scene_state) {
-        _process_objects_2d(renderer_state, scene_state, scene);
-        fill_buckets(scene_state);
+    void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
+            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn) {
+        _process_render_group_2d(processed_obj_map, scene.pimpl->root_group, false, {}, process_new_fn, update_fn);
     }
 }

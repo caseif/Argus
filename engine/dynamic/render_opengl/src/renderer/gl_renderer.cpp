@@ -41,12 +41,13 @@
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
-#include "internal/render_opengl/renderer/2d/object_proc.hpp"
-#include "internal/render_opengl/renderer/2d/scene_compiler_2d.hpp"
+#include "internal/render_opengl/renderer/2d/object_processor.hpp"
+#include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
@@ -141,7 +142,9 @@ namespace argus {
                 scene_transform.pimpl->dirty = false;
             }
 
-            compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), state, reinterpret_cast<Scene2DState&>(scene_state));
+            compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
+
+            fill_buckets(reinterpret_cast<Scene2DState&>(scene_state));
 
             for (auto bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
