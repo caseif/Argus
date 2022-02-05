@@ -74,7 +74,6 @@ namespace argus {
 
         //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-        size_t row_size = texture.width * 32 / 8;
         if (AGLET_GL_ARB_direct_state_access) {
             glTextureStorage2D(handle, 1, GL_RGBA8, texture.width, texture.height);
         } else if (AGLET_GL_ARB_texture_storage) {
@@ -84,7 +83,6 @@ namespace argus {
                     nullptr);
         }
 
-        size_t offset = 0;
         for (uint32_t y = 0; y < texture.height; y++) {
             if (AGLET_GL_ARB_direct_state_access) {
                 glTextureSubImage2D(handle, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
@@ -93,7 +91,6 @@ namespace argus {
                 glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
                         GL_UNSIGNED_BYTE, texture.pimpl->image_data[y]);
             }
-            offset += row_size;
         }
 
         if (!AGLET_GL_ARB_direct_state_access) {
