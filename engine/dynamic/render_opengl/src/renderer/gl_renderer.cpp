@@ -36,6 +36,7 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/pimpl/common/canvas.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
+#include "internal/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
@@ -46,7 +47,6 @@
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 #include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"

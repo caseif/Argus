@@ -20,8 +20,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 #include "internal/render_opengl/types.hpp"
+
+#include "internal/render/util/object_processor.hpp"
 
 #include <map>
 #include <string>

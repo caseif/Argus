@@ -30,8 +30,8 @@
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
+#include "internal/render/util/object_processor.hpp"
 
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 
 #include <atomic>
 #include <map>

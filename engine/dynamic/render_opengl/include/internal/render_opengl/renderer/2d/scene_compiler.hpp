@@ -19,9 +19,9 @@
 #pragma once
 
 #include "argus/render/2d/scene_2d.hpp"
+#include "internal/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 
 namespace argus {
     void compile_scene_2d(const Scene2D &scene, Scene2DState &scene_state);

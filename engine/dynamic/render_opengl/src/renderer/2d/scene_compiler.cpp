@@ -19,9 +19,9 @@
 #include "internal/core/core_util.hpp"
 
 #include "argus/render/2d/scene_2d.hpp"
+#include "internal/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 #include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"

@@ -30,9 +30,9 @@
 #include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
+#include "internal/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/defines.hpp"
-#include "internal/render_opengl/renderer/2d/object_processor.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
