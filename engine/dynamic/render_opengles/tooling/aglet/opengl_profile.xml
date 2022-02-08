@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+    <api>
+        <name>gles</name>
+        <version>3.0</version>
+    </api>
+    <extensions>
+        <extension required="false">GL_KHR_debug</extension>
+        <!--extension required="false">GL_ARB_texture_storage</extension-->
+        <extension required="false">GL_EXT_buffer_storage</extension>
+        <!--extension required="false">GL_ARB_direct_state_access</extension-->
+    </extensions>
+</profile>

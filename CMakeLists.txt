@@ -41,7 +41,7 @@ set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
 set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
-option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" OFF)
+option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
@@ -221,7 +221,7 @@ if(${BUILD_OPENGL_BACKEND})
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
 endif()
 if(${BUILD_OPENGLES_BACKEND})
-  message(FATAL_ERROR "OpenGL ES support is not yet available")
+  list(APPEND DYNAMIC_MODULE_IDS "render_opengles")
 endif()
 
 if(${BUILD_VULKAN_BACKEND})
@@ -522,8 +522,8 @@ function(configure_module MODULE_PROJECT_DIR)
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_MSVC}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         if(MSVC)
-      list(APPEND MODULE_LINKER_DEPS "${cur_value}")
-        string(REPLACE "," ";" cur_value "${cur_value}")
+          list(APPEND MODULE_LINKER_DEPS "${cur_value}")
+          string(REPLACE "," ";" cur_value "${cur_value}")
         endif()
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS_GCC}")
         string(REPLACE "," ";" cur_value "${cur_value}")
@@ -664,8 +664,10 @@ function(configure_module MODULE_PROJECT_DIR)
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    # export all symbols (required on Windows)
-    set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    if(NOT MSVC)
+      target_compile_options("${PROJECT_NAME}" PRIVATE "-fvisibility=hidden")
+    endif()
 
     # output to separate directory
     set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${DYN_MODULE_DIR}")

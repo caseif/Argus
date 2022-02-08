@@ -51,6 +51,7 @@ namespace argus {
     static void _activate_backend() {
         auto backends = get_engine_config().render_backends;
 
+        //TODO: test backend before selecting
         for (auto backend : backends) {
             switch (backend) {
                 case RenderBackend::OpenGL: {
@@ -59,8 +60,9 @@ namespace argus {
                     return;
                 }
                 case RenderBackend::OpenGLES:
-                    _ARGUS_INFO("Graphics backend OpenGL ES is not yet supported");
-                    break;
+                    call_module_fn<void>(std::string(FN_ACTIVATE_OPENGLES_BACKEND));
+                    _ARGUS_INFO("Selecting OpenGL ES as graphics backend");
+                    return;
                 case RenderBackend::Vulkan:
                     _ARGUS_INFO("Graphics backend Vulkan is not yet supported");
                     break;
@@ -87,6 +89,7 @@ namespace argus {
     static void _load_backend_modules(void) {
         //TODO: fail gracefully
         enable_dynamic_module(MODULE_RENDER_OPENGL);
+        enable_dynamic_module(MODULE_RENDER_OPENGLES);
     }
 
     static Canvas &_construct_canvas(Window &window) {

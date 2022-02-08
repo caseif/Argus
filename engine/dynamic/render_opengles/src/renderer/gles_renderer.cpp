@@ -38,19 +38,19 @@
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/util/object_processor.hpp"
 
-#include "internal/render_opengl/defines.hpp"
-#include "internal/render_opengl/gl_util.hpp"
-#include "internal/render_opengl/glfw_include.hpp"
-#include "internal/render_opengl/types.hpp"
-#include "internal/render_opengl/renderer/bucket_proc.hpp"
-#include "internal/render_opengl/renderer/compositing.hpp"
-#include "internal/render_opengl/renderer/gl_renderer.hpp"
-#include "internal/render_opengl/renderer/shader_mgmt.hpp"
-#include "internal/render_opengl/renderer/texture_mgmt.hpp"
-#include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
-#include "internal/render_opengl/state/render_bucket.hpp"
-#include "internal/render_opengl/state/renderer_state.hpp"
-#include "internal/render_opengl/state/scene_state.hpp"
+#include "internal/render_opengles/defines.hpp"
+#include "internal/render_opengles/gl_util.hpp"
+#include "internal/render_opengles/glfw_include.hpp"
+#include "internal/render_opengles/types.hpp"
+#include "internal/render_opengles/renderer/bucket_proc.hpp"
+#include "internal/render_opengles/renderer/compositing.hpp"
+#include "internal/render_opengles/renderer/gles_renderer.hpp"
+#include "internal/render_opengles/renderer/shader_mgmt.hpp"
+#include "internal/render_opengles/renderer/texture_mgmt.hpp"
+#include "internal/render_opengles/renderer/2d/scene_compiler.hpp"
+#include "internal/render_opengles/state/render_bucket.hpp"
+#include "internal/render_opengles/state/renderer_state.hpp"
+#include "internal/render_opengles/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -195,26 +195,28 @@ namespace argus {
         }
     }
 
-    GLRenderer::GLRenderer(const Window &window):
+    GLESRenderer::GLESRenderer(const Window &window):
             window(window),
             state(*this) {
         activate_gl_context(window.pimpl->handle);
 
         int rc = 0;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
-            _ARGUS_FATAL("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
+            _ARGUS_FATAL("Failed to load OpenGL ES bindings (Aglet returned code %d)", rc);
         }
+
+        _ARGUS_DEBUG("Successfully loaded OpenGL ES bindings");
 
         int gl_major;
         int gl_minor;
         const unsigned char *gl_version_str = glGetString(GL_VERSION);
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
-        if (!AGLET_GL_VERSION_3_3) {
-            _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher (got %d.%d)", gl_major, gl_minor);
+        if (!AGLET_GL_ES_VERSION_3_0) {
+            _ARGUS_FATAL("Argus requires support for OpenGL ES 3.0 or higher (got %d.%d)", gl_major, gl_minor);
         }
 
-        _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
+        _ARGUS_INFO("Obtained OpenGL ES %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
 
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);
@@ -226,11 +228,11 @@ namespace argus {
         setup_framebuffer(state);
     }
 
-    GLRenderer::~GLRenderer(void) {
+    GLESRenderer::~GLESRenderer(void) {
         unregister_event_handler(resource_event_handler);
     }
 
-    void GLRenderer::render(const TimeDelta delta) {
+    void GLESRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
 
         activate_gl_context(window.pimpl->handle);
@@ -262,7 +264,7 @@ namespace argus {
 
         // set up state for drawing framebuffers to screen
 
-        glClearColor(0.0, 1.0, 0.0, 1.0);
+        glClearColor(1.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glDisable(GL_DEPTH_TEST);
@@ -279,7 +281,7 @@ namespace argus {
         glfwSwapBuffers(canvas.pimpl->window.pimpl->handle);
     }
 
-    void GLRenderer::notify_window_resize(const Vector2u &resolution) {
+    void GLESRenderer::notify_window_resize(const Vector2u &resolution) {
         _update_view_matrix(this->window, this->state, resolution);
     }
 }

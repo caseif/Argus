@@ -1,4 +1,6 @@
-#version 330 core
+#version 300 es
+
+precision mediump float;
 
 in vec2 pass_TexCoord;
 
@@ -8,5 +10,4 @@ uniform sampler2D screenTex;
 
 void main() {
     out_Color = texture(screenTex, pass_TexCoord);
-    //out_Color = vec4(1.0, 0.0, 0.0, 1.0);
 }
