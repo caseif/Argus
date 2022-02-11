@@ -19,11 +19,13 @@
 #pragma once
 
 #include <string>
+#include <typeindex>
+#include <typeinfo>
+#include <type_traits>
 
 #include <cstdint>
 
 namespace argus {
-    typedef void *ComponentHandle;
     typedef uint16_t ComponentTypeId;
 
     struct pimpl_ComponentTypeRegistry;
@@ -37,17 +39,37 @@ namespace argus {
         public:
             static ComponentTypeRegistry &instance(void);
 
-            void *alloc_component(ComponentTypeId type_id);
+            void *alloc(std::type_index type);
 
-            void free_component(ComponentTypeId type_id, void *ptr);
+            template <typename T>
+            T &alloc(void) {
+                return *static_cast<T*>(alloc(std::type_index(typeid(T))));
+            }
 
-            size_t get_component_type_count(void);
+            void free(std::type_index type, void *ptr);
 
-            ComponentTypeId get_component_type_id(std::string &type_name);
+            void free(ComponentTypeId id, void *ptr);
 
-            size_t get_component_type_size(ComponentTypeId type_id);
+            template <typename T>
+            void free(void *ptr) {
+                free(std::type_index(typeid(T)), ptr);
+            }
 
-            ComponentTypeId register_component_type(std::string &name, size_t size);
+            size_t get_type_count(void);
+
+            ComponentTypeId get_id(std::type_index type);
+            
+            template <typename T>
+            ComponentTypeId get_id(void) {
+                return get_id(std::type_index(typeid(T)));
+            }
+
+            void register_type(std::type_index type, size_t size);
+
+            template <typename T>
+            void register_type(void) {
+                register_type(std::type_index(typeid(T)), sizeof(T));
+            }
 
             void _seal(void);
 

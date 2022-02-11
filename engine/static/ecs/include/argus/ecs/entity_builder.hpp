@@ -18,6 +18,34 @@
 
 #pragma once
 
-#include "argus/ecs/component_type_registry.hpp"
-#include "argus/ecs/entity.hpp"
-#include "argus/ecs/entity_builder.hpp"
+#include <typeindex>
+#include <vector>
+
+namespace argus {
+    class Entity;
+
+    class EntityBuilder {
+        friend class Entity;
+
+        private:
+            std::vector<std::type_index> types;
+
+            EntityBuilder(void);
+
+            EntityBuilder(EntityBuilder&) = delete;
+
+            EntityBuilder(EntityBuilder&&) = delete;
+
+            ~EntityBuilder(void);
+
+        public:
+            template <typename T>
+            EntityBuilder &with(void) {
+                return with(std::type_index(typeid(T)));
+            }
+
+            EntityBuilder &with(std::type_index type);
+
+            Entity &build(void);
+    };
+}

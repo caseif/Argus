@@ -16,23 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
+#include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
+#include "argus/ecs/entity_builder.hpp"
+
+#include <typeindex>
+#include <vector>
 
 namespace argus {
+    EntityBuilder::EntityBuilder(void) {
+    }
 
-// disable non-standard extension warning for flexible array member
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable : 4200)
-#endif
-    struct pimpl_Entity {
-        const EntityId id;
-        void *component_pointers[0];
-    };
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif
+    EntityBuilder::~EntityBuilder(void) {
+    }
 
+    EntityBuilder &EntityBuilder::with(std::type_index type) {
+        types.push_back(type);
+        return *this;
+    }
+
+    Entity &EntityBuilder::build(void) {
+        auto &entity = Entity::create(this->types);
+
+        this->~EntityBuilder();
+
+        return entity;
+    }
 }

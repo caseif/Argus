@@ -36,36 +36,6 @@ namespace argus {
 
     static ComponentTypeRegistry *g_comp_reg_singleton;
 
-    inline static std::string to_lower(std::string &str) {
-        std::string str_copy = str;
-        std::transform(str_copy.begin(), str_copy.end(), str_copy.begin(),
-                [](auto c) { return std::tolower(c); });
-        return str_copy;
-    }
-
-    inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
-            std::function<bool(ComponentTypeInfo)> predicate) {
-        auto res = std::find_if(component_types.begin(), component_types.end(), predicate);
-        if (res == component_types.cend()) {
-            return nullptr;
-        }
-        return &(*res);
-    }
-
-    inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
-            ComponentTypeId type_id) {
-        return _lookup_component_type(component_types, [type_id](auto cmpnt) {
-            return cmpnt.id == type_id;
-        });
-    }
-
-    inline static ComponentTypeInfo *_lookup_component_type(std::vector<ComponentTypeInfo> &component_types,
-            std::string &component_name) {
-        return _lookup_component_type(component_types, [component_name](auto cmpnt) {
-            return cmpnt.name == component_name;
-        });
-    }
-
     ComponentTypeRegistry::ComponentTypeRegistry(void):
             pimpl(new pimpl_ComponentTypeRegistry()) {
         //TODO
@@ -78,53 +48,42 @@ namespace argus {
         return *g_comp_reg_singleton;
     }
 
-    void *ComponentTypeRegistry::alloc_component(ComponentTypeId component_type) {
-        validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
-            "Invalid component type ID " + std::to_string(component_type));
+    void *ComponentTypeRegistry::alloc(std::type_index type) {
+        auto info_it = pimpl->component_types.find(type);
+        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
         
-        return (*pimpl->component_pools)[component_type].alloc();
+        return pimpl->component_pools[info_it->second.id].alloc();
     }
 
-    void ComponentTypeRegistry::free_component(ComponentTypeId component_type, void *ptr) {
-        validate_arg(component_type < ComponentTypeRegistry::instance().get_component_type_count(),
-            "Invalid component type ID " + std::to_string(component_type));
+    void ComponentTypeRegistry::free(std::type_index type, void *ptr) {
+        auto info_it = pimpl->component_types.find(type);
+        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
 
-        (*pimpl->component_pools)[component_type].free(ptr);
+        pimpl->component_pools[info_it->second.id].free(ptr);
     }
 
-    size_t ComponentTypeRegistry::get_component_type_count(void) {
+    void ComponentTypeRegistry::free(ComponentTypeId id, void *ptr) {
+        validate_arg(id < get_type_count(), "Invalid component type ID " + std::to_string(id));
+
+        pimpl->component_pools[id].free(ptr);
+    }
+
+    size_t ComponentTypeRegistry::get_type_count(void) {
         return pimpl->next_id;
     }
 
-    ComponentTypeId ComponentTypeRegistry::get_component_type_id(std::string &type_name) {
-        std::string name_lower = type_name;
-        to_lower(type_name);
-        ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types,
-            [name_lower](auto cmpnt) {
-                return cmpnt.name == name_lower;
-            }
-        );
+    ComponentTypeId ComponentTypeRegistry::get_id(std::type_index type) {
+        auto info_it = pimpl->component_types.find(type);
+        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
 
-        validate_arg(component == nullptr, "No component type registered with name " + type_name);
-
-        return component->id;
+        return info_it->second.id;
     }
 
-    size_t ComponentTypeRegistry::get_component_type_size(ComponentTypeId type_id) {
-        ComponentTypeInfo *component = _lookup_component_type(pimpl->component_types, type_id);
-        validate_arg(component == nullptr, "No component type registered with ID " + std::to_string(type_id));
-        return component->size;
-    }
-
-    ComponentTypeId ComponentTypeRegistry::register_component_type(std::string &name, size_t size) {
-        validate_arg(_lookup_component_type(pimpl->component_types, name) != nullptr,
-            "Component type with name " + name + " is already registered");
+    void ComponentTypeRegistry::register_type(std::type_index type, size_t size) {
         validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
         ComponentTypeId new_id = pimpl->next_id++;
-        pimpl->component_types.insert(pimpl->component_types.begin(), ComponentTypeInfo(new_id, name, size));
-
-        return new_id;
+        pimpl->component_types.insert({ type, ComponentTypeInfo(new_id, size) });
     }
 
     void ComponentTypeRegistry::_seal(void) {
@@ -132,10 +91,16 @@ namespace argus {
 
         pimpl->sealed = true;
 
-        *pimpl->component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
-        for (size_t i = 0; i < pimpl->next_id; i++) {
-            AllocPool &target = ((*pimpl->component_pools)[i]);
-            new (&target) AllocPool(pimpl->component_types.at(i).size);
+        if (pimpl->next_id == 0) {
+            // no need to allocate pools if no components are registered
+            return;
+        }
+
+        pimpl->component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
+        for (auto cmpt : pimpl->component_types) {
+            auto index = cmpt.second.id;
+            AllocPool &target = pimpl->component_pools[index];
+            new (&target) AllocPool(cmpt.second.size);
         }
     }
 

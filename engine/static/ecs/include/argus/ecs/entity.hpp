@@ -20,35 +20,59 @@
 
 #include "argus/ecs/component_type_registry.hpp"
 
-#include <initializer_list>
+#include <typeindex>
+#include <typeinfo>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <cstdint>
 
 namespace argus {
     typedef uint64_t EntityId;
 
-    struct pimpl_Entity;
+    class EntityBuilder;
 
+// disable non-standard extension warning for flexible array member
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4200)
+#endif
     class Entity {
         private:
-            pimpl_Entity *pimpl;
+            const EntityId id;
+            void *component_pointers[0];
+
+            Entity(void);
+
+            Entity(Entity&) = delete;
+            Entity(Entity&&) = delete;
 
         public:
-            static Entity &create_entity(std::initializer_list<ComponentTypeId> components);
+
+            static EntityBuilder &builder(void);
+
+            static Entity &create(std::vector<std::type_index> components);
 
             void destroy(void);
 
             EntityId get_id(void);
 
-            void *get_component(ComponentTypeId component_type);
+            void *get(std::type_index type);
 
             template <typename T>
-            T *get_component(ComponentTypeId component_type) {
-                return static_cast<T*>(get_component(component_type));
+            T &get() {
+                return *static_cast<T*>(get(std::type_index(typeid(T))));
             }
 
-            bool has_component(ComponentTypeId component_type);
-    };
+            bool has(std::type_index type);
 
+            template <typename T>
+            bool has(void) {
+                return has(std::type_index(typeid(T)));
+            }
+    };
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 }

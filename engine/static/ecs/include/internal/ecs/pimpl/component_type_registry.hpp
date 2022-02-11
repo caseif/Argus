@@ -23,28 +23,26 @@
 #include "argus/ecs/component_type_registry.hpp"
 
 #include <map>
-#include <vector>
 
 namespace argus {
-
     struct ComponentTypeInfo {
         ComponentTypeId id;
-        std::string name;
+        //std::string name;
         size_t size;
 
         // clang-format off
-        ComponentTypeInfo(ComponentTypeId id, std::string name, size_t size):
+        ComponentTypeInfo(ComponentTypeId id, size_t size):
                 id(id),
-                name(name),
+                //name(name),
                 size(size) {
         }
         // clang-format on
     };
 
     struct pimpl_ComponentTypeRegistry {
-        std::vector<ComponentTypeInfo> component_types;
+        std::map<std::type_index, ComponentTypeInfo> component_types;
         ComponentTypeId next_id = 0;
-        AllocPool **component_pools;
+        AllocPool *component_pools;
         bool sealed = false;
     };
 

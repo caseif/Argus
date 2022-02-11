@@ -163,12 +163,9 @@ namespace argus {
 
     AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp):
         pimpl(new pimpl_AllocPool(
-            {block_size, _next_aligned_value(block_size, alignment_exp), // objects must be aligned within the pool
+            // we pass both the real block size and the size in the pool so objects can be aligned in the pool
+            {block_size, _next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
              alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
-        //TODO: do we still need this check?
-        if (block_size < sizeof(size_t)) {
-            throw std::invalid_argument("Block size too small");
-        }
 
         ChunkMetadata *first_chunk = _create_chunk(pimpl);
         pimpl->first_chunk = first_chunk;
