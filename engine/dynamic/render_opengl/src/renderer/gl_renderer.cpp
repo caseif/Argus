@@ -65,12 +65,11 @@ namespace argus {
     class Scene2D;
 
     static Matrix4 _compute_view_matrix(unsigned int res_hor, unsigned int res_ver) {
-        auto screen_space = get_engine_config().screen_space;
-        
-        auto l = screen_space.left;
-        auto r = screen_space.right;
-        auto b = screen_space.bottom;
-        auto t = screen_space.top;
+        // screen space is [0, 1] on both axes with the origin in the top-left
+        auto l = 0;
+        auto r = 1;
+        auto b = 1;
+        auto t = 0;
 
         float hor_scale = 1;
         float ver_scale = 1;
@@ -104,10 +103,10 @@ namespace argus {
         }
 
         return {
-            {2 / ((r - l) * hor_scale), 0, 0, 0},
-            {0, 2 / ((t - b) * ver_scale), 0, 0},
+            {2 / ((r - l) * hor_scale), 0, 0, -(r + l) / ((r - l) * hor_scale)},
+            {0, 2 / ((t - b) * ver_scale), 0, -(t + b) / ((t - b) * ver_scale)},
             {0, 0, 1, 0},
-            {-(r + l) / ((r - l) * hor_scale), -(t + b) / ((t - b) * ver_scale), 0, 1}
+            {0, 0, 0, 1}
         };
     }
 

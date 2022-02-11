@@ -31,7 +31,6 @@ namespace argus {
         unsigned int target_framerate{0};
         std::vector<std::string> load_modules;
         std::vector<RenderBackend> render_backends;
-        ScreenSpace screen_space{-1, 1, -1, 1};
         ScreenSpaceScaleMode screen_space_scale_mode;
     };
 

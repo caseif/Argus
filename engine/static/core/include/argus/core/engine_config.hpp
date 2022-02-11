@@ -108,34 +108,6 @@ namespace argus {
     void set_render_backend(const RenderBackend backend);
 
     /**
-     * \brief Sets the screen space used to compute the view matrix passed to
-     *        shader programs.
-     *
-     * If this value is not provided, it will default to [-1, 1] on both axes
-     * (from left-to-right and top-to-bottom).
-     *
-     * \param screen_space The parameters for the screen space.
-     */
-    void set_screen_space(ScreenSpace screen_space);
-
-    /**
-     * \brief Sets the screen space used to compute the projection matrix
-     *        passed to shader programs.
-     *
-     * If this value is not provided, it will default to [-1, 1] on both axes.
-     *
-     * \param left The x-coordinate corresponding to the left side of the
-     *        screen.
-     * \param right The x-coordinate corresponding to the right side of the
-     *        screen.
-     * \param top The y-coordinate corresponding to the top side of the
-     *        screen.
-     * \param bottom The y-coordinate corresponding to the bottom side of the
-     *        screen.
-     */
-    void set_screen_space(float left, float right, float top, float bottom);
-
-    /**
      * \brief Sets the screen space scale mode used to compute the view matrix
      *        passed to shader programs.
      *

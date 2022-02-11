@@ -78,14 +78,6 @@ namespace argus {
         set_render_backend({ backend });
     }
 
-    void set_screen_space(ScreenSpace screen_space) {
-        g_engine_config.screen_space = screen_space;
-    }
-
-    void set_screen_space(const float left, const float right, const float bottom, const float top) {
-        g_engine_config.screen_space = ScreenSpace(left, right, bottom, top);
-    }
-
     void set_screen_space_scale_mode(ScreenSpaceScaleMode scale_mode) {
         g_engine_config.screen_space_scale_mode = scale_mode;
     }
