@@ -11,9 +11,6 @@ cmake_minimum_required(VERSION 3.12)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
-if(POLICY CMP0072)
-  cmake_policy(SET CMP0072 NEW) # OpenGL library preference
-endif()
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # use <package>_ROOT env var as hint
 endif()
@@ -165,7 +162,7 @@ endif()
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
 set(GLFW_LIBRARY_BASE "glfw")
-set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE};${OPENGL_LIBRARIES}")
+set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE}")
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
 
 set(ZLIB_LIBRARY "zlib")
@@ -221,6 +218,7 @@ if(${BUILD_OPENGL_BACKEND})
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
 endif()
 if(${BUILD_OPENGLES_BACKEND})
+  message("OpenGL ES support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengles")
 endif()
 
