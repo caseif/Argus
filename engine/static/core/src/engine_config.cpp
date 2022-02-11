@@ -95,7 +95,6 @@ namespace argus {
     }
 
     void set_selected_render_backend(RenderBackend backend) {
-        printf("set backend to %d\n", backend);
         g_selected_render_backend = backend;
     }
 }
