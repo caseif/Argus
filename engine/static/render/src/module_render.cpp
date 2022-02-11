@@ -55,11 +55,13 @@ namespace argus {
         for (auto backend : backends) {
             switch (backend) {
                 case RenderBackend::OpenGL: {
+                    set_selected_render_backend(backend);
                     call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL as graphics backend");
                     return;
                 }
                 case RenderBackend::OpenGLES:
+                    set_selected_render_backend(backend);
                     call_module_fn<void>(std::string(FN_ACTIVATE_OPENGLES_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL ES as graphics backend");
                     return;
@@ -76,13 +78,20 @@ namespace argus {
         //TODO: select fallback based on platform
         _ARGUS_WARN("Failed to select graphics backend from preference list, falling back to platform default");
 
+        RenderBackend selected_backend;
+
         #if defined(__linux__) && !defined(__ANDROID__)
         _ARGUS_INFO("Detected Linux, using OpenGL as platform default");
+        selected_backend = RenderBackend::OpenGL;
         call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
         #else
         _ARGUS_INFO("Failed to select default for current system, using OpenGL as meta-default");
+        selected_backend = RenderBackend::OpenGL;
         call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
         #endif
+
+        set_selected_render_backend(selected_backend);
+
         return;
     }
 

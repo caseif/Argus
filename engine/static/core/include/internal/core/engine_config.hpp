@@ -37,4 +37,7 @@ namespace argus {
 
     EngineConfig get_engine_config();
 
+    RenderBackend get_selected_render_backend(void);
+
+    void set_selected_render_backend(RenderBackend backend);
 }

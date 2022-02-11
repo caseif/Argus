@@ -32,6 +32,8 @@ namespace argus {
 
     EngineConfig g_engine_config;
 
+    RenderBackend g_selected_render_backend;
+
     EngineConfig get_engine_config() {
         return g_engine_config;
     }
@@ -86,5 +88,14 @@ namespace argus {
 
     void set_screen_space_scale_mode(ScreenSpaceScaleMode scale_mode) {
         g_engine_config.screen_space_scale_mode = scale_mode;
+    }
+
+    RenderBackend get_selected_render_backend(void) {
+        return g_selected_render_backend;
+    }
+
+    void set_selected_render_backend(RenderBackend backend) {
+        printf("set backend to %d\n", backend);
+        g_selected_render_backend = backend;
     }
 }
