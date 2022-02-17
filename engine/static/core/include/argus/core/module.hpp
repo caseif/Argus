@@ -148,6 +148,12 @@ namespace argus {
     typedef std::function<void(const LifecycleStage)> LifecycleUpdateCallback;
 
     /**
+     * \brief A pointer to a callback for passing lifecycle changes to engine
+     *       modules.
+     */
+    typedef void(*LifecycleUpdateCallbackPtr)(const LifecycleStage);
+
+    /**
      * \brief Represents a module to be dynamically loaded by the Argus engine.
      *
      * This struct contains all information required to initialize and update
@@ -160,7 +166,7 @@ namespace argus {
          * \attention This ID must contain only lowercase Latin letters
          *            (`[a-z]`), numbers (`[0-9]`), and underscores (`[_]`).
          */
-        const std::string id;
+        std::string id;
 
         /**
          * \brief The function which handles lifecycle updates for this module.
@@ -173,14 +179,14 @@ namespace argus {
          *
          * \sa LifecycleStage
          */
-        const LifecycleUpdateCallback lifecycle_update_callback;
+        LifecycleUpdateCallbackPtr lifecycle_update_callback;
 
         /**
          * \brief A list of IDs of modules this one is dependent on.
          *
          * If any dependency fails to load, the dependent module will also fail.
          */
-        const std::set<std::string> dependencies;
+        std::set<std::string> dependencies;
 
         /**
          * \brief An opaque handle to the shared library containing the module.
@@ -188,6 +194,10 @@ namespace argus {
          * \warning This is intended for internal use only.
          */
         void *handle;
+
+        bool operator ==(const DynamicModule &rhs) const {
+            return rhs.id == this->id;
+        }
     };
 
     /**
@@ -205,7 +215,7 @@ namespace argus {
      * \throw std::invalid_argument If a module with the given ID is already
      *        registered.
      */
-    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
             std::initializer_list<std::string> dependencies = {});
 
     /**

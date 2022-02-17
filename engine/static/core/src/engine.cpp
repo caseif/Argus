@@ -94,6 +94,11 @@ namespace argus {
         remove_callback(g_render_callbacks, id);
     }
 
+    static void _deinit_callbacks(void) {
+        g_update_callbacks.list.clear();
+        g_render_callbacks.list.clear();
+    }
+
     static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
         using namespace std::chrono_literals;
 
@@ -142,11 +147,27 @@ namespace argus {
                     g_engine_stop_notifier.wait(lock);
                 }
 
+                // at this point all event and callback execution should have
+                // stopped which allows us to start doing non-thread-safe things
+
                 _ARGUS_DEBUG("Game thread observed render thread is halted, proceeding with engine bring-down");
 
                 _ARGUS_DEBUG("Deinitializing engine modules");
 
                 deinit_modules();
+
+                _ARGUS_DEBUG("Deinitializing event callbacks");
+
+                // if we don't do this explicitly, the callback lists (and thus
+                // the callback function objects) will be deinitialized
+                // statically and will segfault on handlers registered by
+                // external libraries (which will have already been unloaded)
+                deinit_event_handlers();
+
+                _ARGUS_DEBUG("Deinitializing general callbacks");
+
+                // same deal here
+                _deinit_callbacks();
 
                 _ARGUS_DEBUG("Unloading dynamic engine modules");
 
@@ -258,6 +279,9 @@ namespace argus {
     }
 
     void stop_engine(void) {
+        if (g_engine_stopping) {
+            _ARGUS_WARN("Engine is already halting");
+        }
         _ARGUS_INFO("Engine halt requested");
 
         _ARGUS_ASSERT(g_core_initialized, "Cannot stop engine before it is initialized.");

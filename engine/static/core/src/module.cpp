@@ -21,6 +21,7 @@
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/core_util.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 #include "internal/core/module_defs.hpp"
@@ -50,10 +51,9 @@
 
 namespace argus {
     static std::map<const std::string, DynamicModule> g_dyn_module_registrations;
-    static std::vector<DynamicModule> g_sorted_dyn_modules;
 
     static std::vector<StaticModule> g_enabled_static_modules;
-    static std::map<const std::string, DynamicModule> g_enabled_dyn_modules_staging;
+    static std::map<std::string, DynamicModule> g_enabled_dyn_modules_staging;
     static std::vector<DynamicModule> g_enabled_dyn_modules;
 
     static std::string _locate_dynamic_module(const std::string &id) {
@@ -183,7 +183,7 @@ namespace argus {
         return sorted_nodes;
     }
 
-    static std::vector<DynamicModule> _topo_sort_modules(const std::map<const std::string, DynamicModule> module_map) {
+    static std::vector<DynamicModule> _topo_sort_modules(const std::map<std::string, DynamicModule> module_map) {
         std::vector<std::string> module_ids;
         std::vector<std::pair<std::string, std::string>> edges;
 
@@ -340,21 +340,28 @@ namespace argus {
     }
 
     void unload_dynamic_modules(void) {
-        for (const auto &mod : g_dyn_module_registrations) {
-            auto handle = mod.second.handle;
+        for (auto it = g_dyn_module_registrations.begin(); it != g_dyn_module_registrations.end();) {
+            DynamicModule &mod = it->second;
+
+            auto handle = mod.handle;
+
+            remove_from_vector(g_enabled_dyn_modules, mod);
+
+            it = g_dyn_module_registrations.erase(it);
+
             #ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
                 _ARGUS_WARN("Failed to unload dynamic module (errno: %d)", GetLastError());
             }
             #else
             if (dlclose(handle) != 0) {
-                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)", errno);
+                _ARGUS_WARN("Failed to unload dynamic module %s (errno: %d)", "foobar", errno);
             }
             #endif
         }
     }
 
-    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
             std::initializer_list<std::string> dependencies) {
         if (std::count(g_static_module_ids.begin(), g_static_module_ids.end(), id)) {
             throw std::invalid_argument("Module identifier is already in use by static module: " + id);
@@ -407,6 +414,8 @@ namespace argus {
             _ARGUS_DEBUG("Dynamic module list changed, must re-sort");
             g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
         }
+
+        g_enabled_dyn_modules_staging.clear();
 
         _ARGUS_DEBUG("Propagating remaining bring-up lifecycle stages");
 

@@ -48,4 +48,10 @@ namespace argus {
     void process_event_queue(TargetThread target_thread);
 
     void flush_event_listener_queues(TargetThread target_thread);
+
+    // WARNING: This method is not thread-safe and assumes that we have
+    // exclusive access to the event handler callback lists. If you attempt to
+    // invoke this while other threads might be reading the lists, you will have
+    // a bad time. This should only ever be used after the engine has spun down.
+    void deinit_event_handlers(void);
 }

@@ -141,6 +141,11 @@ namespace argus {
         }
     }
 
+    void deinit_event_handlers(void) {
+        g_update_event_listeners.list.clear();
+        g_render_event_listeners.list.clear();
+    }
+
     void _dispatch_event_ptr(ArgusEvent &event) {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
