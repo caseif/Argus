@@ -103,8 +103,13 @@ namespace argus {
         create_info.enabledLayerCount = 0; //TODO
 
         if (_ARGUS_DEBUG_MODE) {
-            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-            create_info.ppEnabledLayerNames = validation_layers.data();
+            if (_check_required_validation_layers()) {
+                create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+                create_info.ppEnabledLayerNames = validation_layers.data();
+            } else {
+                _ARGUS_WARN("Vulkan validation layers are not available");
+                create_info.enabledLayerCount = 0;
+            }
         } else {
             create_info.enabledLayerCount = 0;
         }
@@ -122,9 +127,6 @@ namespace argus {
 
         _ARGUS_ASSERT(_check_required_glfw_extensions(available_exts),
                 "Required Vulkan extensions for GLFW are not available");
-
-        _ARGUS_ASSERT(_check_required_validation_layers(),
-                "Required Vulkan validation layers are not available");
 
         auto instance = _create_instance();
 

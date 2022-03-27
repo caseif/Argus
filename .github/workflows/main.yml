@@ -14,7 +14,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: true
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
       env:
@@ -40,7 +40,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: true
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+      run: sudo apt-get update && sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
       env:
@@ -65,6 +65,12 @@ jobs:
         working-directory: external/tooling/aglet
         ruby-version: '3.0'
         bundler-cache: true
+    - name: Prepare Vulkan SDK
+      uses: humbletim/setup-vulkan-sdk@v1.2.0
+      with:
+        vulkan-query-version: 1.3.204.1
+        vulkan-components: Vulkan-Loader, Glslang
+        vulkan-use-cache: true
     - name: Configure
       run: mkdir build && cd build && cmake -G "Visual Studio 16" -DCMAKE_SYSTEM_VERSION=10.0.19041.0 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Debug ..
     - name: Build
