@@ -38,7 +38,6 @@
 
 #include "aglet/aglet.h"
 
-#include <GL/glext.h>
 #include <string>
 
 #include <cstring>
