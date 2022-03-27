@@ -2,7 +2,8 @@
 <profile>
     <api>
         <name>gles</name>
-        <version>3.0</version>
+        <minVersion>3.0</minVersion>
+        <targetVersion>3.0</targetVersion>
     </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>

@@ -28,4 +28,5 @@
 #include "argus/core/engine.hpp"
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
+#include "argus/core/macros.hpp"
 #include "argus/core/module.hpp"

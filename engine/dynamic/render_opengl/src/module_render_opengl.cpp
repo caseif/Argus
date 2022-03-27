@@ -36,6 +36,9 @@
 #include "internal/render_opengl/loader/shader_loader.hpp"
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 
+#include "aglet/aglet.h"
+
+#include <GL/glext.h>
 #include <string>
 
 #include <cstring>
@@ -44,8 +47,54 @@ namespace argus {
     static bool g_backend_active = false;
     static std::map<const Window*, GLRenderer*> g_renderer_map;
 
-    static void _activate_opengl_backend() {
+    static bool _test_opengl_support() {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        // we _could_ set the minimum GL version as a window hint here, but the
+        // error message would then be totally useless to end users
+        auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+
+        if (window == nullptr) {
+            _ARGUS_WARN("Failed to detect OpenGL capabilities (GLFW failed to open window)");
+            return false;
+        }
+
+        glfwMakeContextCurrent(window);
+
+        auto cap_rc = agletLoadCapabilities(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress));
+
+        switch (cap_rc) {
+            case AGLET_ERROR_NONE:
+                break;
+            case AGLET_ERROR_UNSPECIFIED:
+                _ARGUS_WARN("Aglet failed to load OpenGL bindings (unspecified error)");
+                return false;
+            case AGLET_ERROR_PROC_LOAD:
+                _ARGUS_WARN("Aglet failed to load prerequisite OpenGL procs");
+                return false;
+            case AGLET_ERROR_GL_ERROR:
+                _ARGUS_WARN("Aglet failed to load OpenGL bindings (OpenGL error)");
+                return false;
+            case AGLET_ERROR_MINIMUM_VERSION:
+                _ARGUS_WARN("Argus requires support for OpenGL 3.3 or higher");
+                return false;
+            case AGLET_ERROR_MISSING_EXTENSION:
+                _ARGUS_WARN("Required OpenGL extensions are not available");
+                return false;
+        }
+
+        glfwDestroyWindow(window);
+
+        return true;
+    }
+
+    static bool _activate_opengl_backend() {
+        if (!_test_opengl_support()) {
+            return false;
+        }
+        
         g_backend_active = true;
+        return true;
     }
 
     static void _window_event_callback(const WindowEvent &event, void *user_data) {

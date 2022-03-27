@@ -2,7 +2,8 @@
 <profile>
     <api>
         <name>glcore</name>
-        <version>3.3</version>
+        <minVersion>3.3</minVersion>
+        <targetVersion>3.3</targetVersion>
     </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>

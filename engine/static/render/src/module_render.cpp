@@ -51,19 +51,35 @@ namespace argus {
     static void _activate_backend() {
         auto backends = get_engine_config().render_backends;
 
+        std::map<RenderBackend, bool> attempted_backends;
+
         //TODO: test backend before selecting
         for (auto backend : backends) {
             switch (backend) {
                 case RenderBackend::OpenGL: {
+                    attempted_backends[backend] = true;
+
+                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_OPENGL_BACKEND))) {
+                        _ARGUS_WARN("Unable to select OpenGL as graphics backend");
+                        continue;
+                    }
+                    
                     set_selected_render_backend(backend);
-                    call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL as graphics backend");
+                    
                     return;
                 }
                 case RenderBackend::OpenGLES:
+                    attempted_backends[backend] = true;
+
+                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_OPENGLES_BACKEND))) {
+                        _ARGUS_WARN("Unable to select OpenGL as graphics backend");
+                        continue;
+                    }
+                    
                     set_selected_render_backend(backend);
-                    call_module_fn<void>(std::string(FN_ACTIVATE_OPENGLES_BACKEND));
                     _ARGUS_INFO("Selecting OpenGL ES as graphics backend");
+                    
                     return;
                 case RenderBackend::Vulkan:
                     _ARGUS_INFO("Graphics backend Vulkan is not yet supported");
@@ -82,6 +98,11 @@ namespace argus {
 
         #if defined(__linux__) && !defined(__ANDROID__)
         _ARGUS_INFO("Detected Linux, using OpenGL as platform default");
+
+        if (attempted_backends.find(RenderBackend::OpenGL) != attempted_backends.end()) {
+            _ARGUS_FATAL("Already attempted to use OpenGL, unable to use platform default");
+        }
+
         selected_backend = RenderBackend::OpenGL;
         call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
         #else

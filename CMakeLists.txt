@@ -39,7 +39,7 @@ set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
-option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" OFF)
+option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" ON)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
@@ -217,13 +217,15 @@ if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
 endif()
+
 if(${BUILD_OPENGLES_BACKEND})
   message("OpenGL ES support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengles")
 endif()
 
 if(${BUILD_VULKAN_BACKEND})
-  message(FATAL_ERROR "Vulkan support is not yet available")
+  message("Vulkan support will be built")
+  list(APPEND DYNAMIC_MODULE_IDS "render_vulkan")
 endif()
 
 ########################

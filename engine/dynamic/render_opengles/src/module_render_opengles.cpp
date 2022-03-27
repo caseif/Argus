@@ -44,8 +44,9 @@ namespace argus {
     static bool g_backend_active = false;
     static std::map<const Window*, GLESRenderer*> g_renderer_map;
 
-    static void _activate_opengles_backend() {
+    static bool _activate_opengles_backend() {
         g_backend_active = true;
+        return true;
     }
 
     static void _window_event_callback(const WindowEvent &event, void *user_data) {
