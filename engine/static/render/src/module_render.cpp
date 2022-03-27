@@ -82,8 +82,17 @@ namespace argus {
                     
                     return;
                 case RenderBackend::Vulkan:
-                    _ARGUS_INFO("Graphics backend Vulkan is not yet supported");
-                    break;
+                    attempted_backends[backend] = true;
+
+                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_VULKAN_BACKEND))) {
+                        _ARGUS_WARN("Unable to select Vulkan as graphics backend");
+                        continue;
+                    }
+                    
+                    set_selected_render_backend(backend);
+                    _ARGUS_INFO("Selecting Vulkan as graphics backend");
+
+                    return;
                 default:
                     _ARGUS_WARN("Skipping unrecognized graphics backend index %d", static_cast<int>(backend));
                     break;
@@ -120,6 +129,7 @@ namespace argus {
         //TODO: fail gracefully
         enable_dynamic_module(MODULE_RENDER_OPENGL);
         enable_dynamic_module(MODULE_RENDER_OPENGLES);
+        enable_dynamic_module(MODULE_RENDER_VULKAN);
     }
 
     static Canvas &_construct_canvas(Window &window) {
