@@ -21,7 +21,5 @@
 #include "vulkan/vulkan.h"
 
 namespace argus {
-    VkInstance create_and_init_vk_instance(void);
-
-    VkDevice create_vulkan_device(void);
+    VkDevice create_vk_device(VkInstance instance);
 }

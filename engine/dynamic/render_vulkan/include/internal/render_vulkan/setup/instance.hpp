@@ -16,16 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/macros.hpp"
-
-#include "internal/render_vulkan/device.hpp"
+#pragma once
 
 #include "vulkan/vulkan.h"
 
 namespace argus {
-    VkDevice create_vk_device(VkInstance *instance) {
-        //TODO
-        UNUSED(instance);
-        return {};
-    }
+    VkInstance create_vk_instance(void);
 }

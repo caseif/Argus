@@ -32,7 +32,9 @@
 
 #include "internal/render/defines.hpp"
 
-#include "internal/render_vulkan/instance.hpp"
+#include "internal/render_vulkan/setup/device_logical.hpp"
+#include "internal/render_vulkan/setup/device_physical.hpp"
+#include "internal/render_vulkan/setup/instance.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -130,7 +132,9 @@ namespace argus {
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
 
-                g_vk_instance = create_and_init_vk_instance();
+                g_vk_instance = create_vk_instance();
+
+                create_vk_device(g_vk_instance);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
