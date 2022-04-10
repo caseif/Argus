@@ -17,9 +17,12 @@
  */
 
 #include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/optional.hpp"
 #include "internal/lowlevel/logging.hpp"
 
-#include "internal/render_vulkan/setup/device_physical.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
+#include "internal/render_vulkan/setup/queues.hpp"
+#include "vulkan/vulkan_core.h"
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -35,28 +38,23 @@
 namespace argus {
     static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
 
-    static bool _is_queue_family_suitable(VkInstance instance, VkPhysicalDevice device,
-            VkQueueFamilyProperties queue_family) {
-        if (glfwGetPhysicalDevicePresentationSupport(instance, device, queue_family.queueCount) == GLFW_FALSE) {
-            return false;
-        }
-
-        if (!(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    static bool _is_physical_device_suitable(VkInstance instance, VkPhysicalDevice device,
+    static Optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
             std::vector<VkQueueFamilyProperties> queue_families) {
+        QueueFamilyIndices indices = {};
+
+        uint32_t i = 0;
         for (auto queue_family : queue_families) {
-            if (_is_queue_family_suitable(instance, device, queue_family)) {
-                return true;
+            // check if queue family is suitable for graphics
+            if (glfwGetPhysicalDevicePresentationSupport(instance, device, i) == GLFW_TRUE) {
+                if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                    indices.graphics_family = i;
+                }
             }
+
+            i++;
         }
 
-        return false;
+        return indices;
     }
 
     static uint32_t _rate_physical_device(VkInstance instance, VkPhysicalDevice device,
@@ -83,7 +81,7 @@ namespace argus {
         return score;
     }
 
-    static VkPhysicalDevice _select_physical_device(VkInstance instance) {
+    static std::pair<VkPhysicalDevice, QueueFamilyIndices> _select_physical_device(VkInstance instance) {
         uint32_t dev_count = 0;
         auto enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, nullptr);
         if (enum_res) {
@@ -96,7 +94,9 @@ namespace argus {
         enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, devs.data());
 
         VkPhysicalDevice best_dev = nullptr;
+        QueueFamilyIndices best_dev_indices;
         uint32_t best_rating = 0;
+
         for (auto dev : devs) {
             VkPhysicalDeviceProperties dev_props;
             vkGetPhysicalDeviceProperties(dev, &dev_props);
@@ -113,7 +113,8 @@ namespace argus {
             std::vector<VkQueueFamilyProperties> queue_families(qf_props_count);
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &qf_props_count, queue_families.data());
 
-            if (!_is_physical_device_suitable(instance, dev, queue_families)) {
+            auto indices = _get_queue_family_indices(instance, dev, queue_families);
+            if (!indices.has_value()) {
                 _ARGUS_DEBUG("Physical device '%s' is not suitable", dev_props.deviceName);
                 continue;
             }
@@ -122,19 +123,22 @@ namespace argus {
             _ARGUS_DEBUG("Physical device '%s' was assigned rating of %d", dev_props.deviceName, rating);
             if (rating > best_rating) {
                 best_dev = dev;
+                best_dev_indices = indices;
                 best_rating = rating;
             }
         }
-        
+
         if (best_rating == 0) {
             _ARGUS_FATAL("Failed to find suitable video device");
         }
 
-        return best_dev;
+        return std::make_pair(best_dev, best_dev_indices);
     }
 
     VkDevice create_vk_device(VkInstance instance) {
-        auto phys_dev = _select_physical_device(instance);
+        VkPhysicalDevice phys_dev;
+        QueueFamilyIndices qf_indices;
+        std::tie(phys_dev, qf_indices) = _select_physical_device(instance);
         VkPhysicalDeviceProperties phys_dev_props;
         vkGetPhysicalDeviceProperties(phys_dev, &phys_dev_props);
 

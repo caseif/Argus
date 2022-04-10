@@ -22,6 +22,7 @@
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace argus {
     /**
@@ -49,7 +50,8 @@ namespace argus {
             Optional<T>(std::nullptr_t) noexcept: present(false) {
             }
 
-            template <std::is_copy_constructible<T>>
+            template <typename U = T,
+                typename std::enable_if<std::is_copy_constructible<U>::value, int>::type = 0>
             Optional<T>(const Optional<T> &other):
                     present(other.present) {
                 if (other.present) {
@@ -57,26 +59,28 @@ namespace argus {
                 }
             }
 
-            template <std::is_move_constructible<T>>
+            template <typename U = T,
+                typename std::enable_if<std::is_move_constructible<U>::value, int>::type = 0>
             Optional<T>(Optional<T> &&other) noexcept:
                     present(other.present) {
                 if (other.present) {
-                    val(std::move(other.val));
+                    val = std::move(other.val);
                 }
             }
 
-            template <typename... Args,
-                std::is_constructible<T, std::initializer_list<T>&, Args&&...>>
+            template <typename U = T,
+                typename... Args,
+                typename std::enable_if<std::is_constructible<T, std::initializer_list<U>&, Args&&...>::value, int>::type = 0>
             Optional<T>(Args &&... args) noexcept:
                     present(true),
-                    val(std::forward(args)...) {
+                    val(std::forward<U>(args)...) {
             }
 
             template <typename U = T,
-                std::is_constructible<T, U&&>>
-            Optional<T>(T &&val) noexcept:
+                typename std::enable_if<std::is_constructible<T, U&&>::value, int>::type = 0>
+            Optional<T>(U &&val) noexcept:
                     present(true),
-                    val(std::forward(val)) {
+                    val(std::forward<U>(val)) {
             }
 
             ~Optional(void) {
@@ -131,13 +135,17 @@ namespace argus {
             }
 
             template<class U = T,
-                std::is_assignable<T&, U>> 
+                typename std::enable_if<std::is_assignable<T&, U>::value>::type = 0>
             Optional<T> &operator =(U &&value) {
                 if (this->present) {
                     this->val = std::forward(value);
                 } else {
                     this->val(std::forward(value));
                 }
+            }
+
+            constexpr operator T&() noexcept {
+                return val;
             }
 
             constexpr const T *operator ->() const noexcept {

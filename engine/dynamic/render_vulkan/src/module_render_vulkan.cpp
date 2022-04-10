@@ -32,8 +32,7 @@
 
 #include "internal/render/defines.hpp"
 
-#include "internal/render_vulkan/setup/device_logical.hpp"
-#include "internal/render_vulkan/setup/device_physical.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
 #define GLFW_INCLUDE_NONE
@@ -134,7 +133,8 @@ namespace argus {
 
                 g_vk_instance = create_vk_instance();
 
-                create_vk_device(g_vk_instance);
+                auto vk_dev = create_vk_device(g_vk_instance);
+                UNUSED(vk_dev);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 

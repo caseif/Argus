@@ -102,11 +102,11 @@ namespace argus {
         
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wold-style-cast"
-        
+
         app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0); //TODO: same thing
         app_info.engineVersion = VK_MAKE_API_VERSION(0, ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_INCR);
         app_info.apiVersion = VK_API_VERSION_1_0;
-        
+
         #pragma GCC diagnostic pop
 
         VkInstanceCreateInfo create_info = {};
