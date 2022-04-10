@@ -270,7 +270,7 @@ namespace argus {
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
+
         for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
 

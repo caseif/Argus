@@ -152,6 +152,12 @@ namespace argus {
         // if a parent group or the object itself has had its transform updated
         proc_obj.updated = is_transform_dirty;
 
+        if (!is_transform_dirty) {
+            // nothing to do
+            proc_obj.visited = true;
+            return;
+        }
+
         auto vertex_attrs = proc_obj.material_res.get<Material>().pimpl->attributes;
         // not sure whether this would actually ever be false in practice
         if (vertex_attrs & VertexAttributes::POSITION) {

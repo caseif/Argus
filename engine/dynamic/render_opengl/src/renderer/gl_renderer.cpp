@@ -231,7 +231,7 @@ namespace argus {
 
     void GLRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
-
+        
         activate_gl_context(window.pimpl->handle);
 
         auto vsync = window.pimpl->properties.vsync.read();

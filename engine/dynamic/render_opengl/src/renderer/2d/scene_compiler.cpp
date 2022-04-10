@@ -40,11 +40,11 @@ namespace argus {
 
         bucket->objects.push_back(&processed_obj);
         bucket->needs_rebuild = true;
+
+        processed_obj.newly_created = false;
     }
 
     static void _handle_stale_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {
-        // wasn't visited this iteration, must not be present in the scene graph anymore
-
         deinit_object_2d(processed_obj);
 
         // we need to remove it from its containing bucket and flag the bucket for a rebuild
@@ -63,6 +63,7 @@ namespace argus {
             if (processed_obj.newly_created) {
                 _handle_new_obj(scene_state, processed_obj);
             } else if (!processed_obj.visited) {
+                // wasn't visited this iteration, must not be present in the scene graph anymore
                 _handle_stale_obj(scene_state, processed_obj);
                 it = scene_state.processed_objs.erase(it);
                 continue;
