@@ -75,9 +75,9 @@ namespace argus {
     }
 
     static bool _check_required_layers(const char *const *layers, uint32_t layers_count) {
-        if (_ARGUS_DEBUG_MODE) {
+        #ifdef _ARGUS_DEBUG_MODE
             return true;
-        }
+        #endif
 
         auto available_layers = _get_available_layers();
 
@@ -89,6 +89,8 @@ namespace argus {
                 return false;
             }
         }
+
+        return true;
     }
 
     static VkInstance _create_instance(const char *const *extensions, uint32_t extensions_count,
@@ -138,13 +140,13 @@ namespace argus {
 
         const char *const *layers;
         uint32_t layers_count;
-        if (_ARGUS_DEBUG_MODE) {
+        #ifdef _ARGUS_DEBUG_MODE
             layers = validation_layers.data();
             layers_count = static_cast<uint32_t>(validation_layers.size());
-        } else {
+        #else
             layers = nullptr;
             layers_count = 0;
-        }
+        #endif
 
         if (!_check_required_layers(layers, layers_count)) {
             _ARGUS_WARN("Required Vulkan extensions for GLFW are not available");
