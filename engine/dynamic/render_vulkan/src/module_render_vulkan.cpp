@@ -26,7 +26,6 @@
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/window.hpp"
-#include "vulkan/vulkan_core.h"
 
 #include "argus/resman/resource_manager.hpp"
 
