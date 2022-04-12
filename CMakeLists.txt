@@ -58,6 +58,7 @@ set(MODULE_PROP_LINKER_DEPS_MSVC "linker_deps_msvc")
 set(MODULE_PROP_LINKER_DEPS_GCC "linker_deps_gcc")
 set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
 set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
+set(MODULE_PROP_DEFINITIONS "definitions")
 
 #####################
 # CMake configuration
@@ -537,6 +538,9 @@ function(configure_module MODULE_PROJECT_DIR)
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_OPTIONAL_PACKAGES}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_OPTIONAL_PACKAGES "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_DEFINITIONS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
+        list(APPEND MODULE_DEFINITIONS "${cur_value}")
       endif()
     endif()
   endforeach()
@@ -565,6 +569,7 @@ function(configure_module MODULE_PROJECT_DIR)
   endif()
 
   string(CONFIGURE "${MODULE_INCLUDES}" MODULE_INCLUDES)
+  string(CONFIGURE "${MODULE_DEFINITIONS}" MODULE_DEFINITIONS)
   string(CONFIGURE "${MODULE_ENGINE_MOD_DEPS}" MODULE_ENGINE_MOD_DEPS)
   string(CONFIGURE "${MODULE_ENGINE_LIB_DEPS}" MODULE_ENGINE_LIB_DEPS)
   string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
@@ -685,12 +690,14 @@ function(configure_module MODULE_PROJECT_DIR)
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   endif()
 
+  target_compile_definitions("${PROJECT_NAME}" PUBLIC "${MODULE_DEFINITIONS}")
+
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-D_ARGUS_DEBUG_MODE")
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "_ARGUS_DEBUG_MODE")
   endif()
 
   if(WIN32)
-    target_compile_definitions("${PROJECT_NAME}" PUBLIC "-DGLFW_DLL")
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "GLFW_DLL")
   endif()
 
   # recursively load this module's include dirs

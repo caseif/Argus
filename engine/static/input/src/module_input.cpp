@@ -29,7 +29,6 @@
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"
 
-#define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
 #include <string>

@@ -23,7 +23,6 @@
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/queues.hpp"
 
-#define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
 
