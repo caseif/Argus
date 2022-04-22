@@ -79,9 +79,14 @@ directly or run `cmake --build .`.
 
 ## License
 
-Argus is made available under the [LGPLv3 license](https://opensource.org/licenses/LGPL-3.0). You may use, modify, and
+Argus is made available under the [LGPLv3](https://opensource.org/licenses/LGPL-3.0). You may use, modify, and
 distribute the project within its terms.
 
-While modifications to static modules must be distributed under the same license, dynamically linked plug-in modules
-need not be, nor do any resources (including scripts) used alongside the engine, whether on the filesystem or in
-packaged form.
+Modifications to the engine in the form of alterations to existing library or static modules as well as newly-created
+library or static modules must be distributed under the same license. Additionally, alterations to dynamic modules
+subject to the LGPL licensing terms (i.e. those included in the canonical version of this repository) must also be
+distributed under the same license. This includes changes both to code and to resources compiled into the module binary.
+
+Newly-created dynamic modules are not subject to the same licensing terms and thus need not be published under the LGPL.
+Newly-created resources which are not compiled into the output of engine modules covered by the LGPL license need not be
+published under the LGPL either.
