@@ -16,30 +16,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/ecs/component_type_registry.hpp"
-#include "argus/ecs/entity.hpp"
-#include "argus/ecs/entity_builder.hpp"
+#pragma once
 
+#include "argus/ecs/system.hpp"
+
+#include <functional>
+#include <string>
 #include <typeindex>
 #include <vector>
 
 namespace argus {
-    EntityBuilder::EntityBuilder(void) {
-    }
+    class Entity;
+    class System;
 
-    EntityBuilder::~EntityBuilder(void) {
-    }
+    class SystemBuilder {
+        friend class System;
 
-    EntityBuilder &EntityBuilder::with(std::type_index type) {
-        types.push_back(type);
-        return *this;
-    }
+        private:
+            std::string name;
+            std::vector<std::type_index> types;
+            EntityCallback callback;
 
-    Entity &EntityBuilder::build(void) {
-        auto &entity = Entity::create(this->types);
+            SystemBuilder(void) = default;
 
-        delete this;
+            ~SystemBuilder(void) = default;
 
-        return entity;
-    }
+        public:
+            SystemBuilder &with_name(std::string name);
+
+            template <typename T>
+            SystemBuilder &targets(void) {
+                return targets(std::type_index(typeid(T)));
+            }
+
+            SystemBuilder &targets(std::type_index type);
+
+            SystemBuilder &with_callback(EntityCallback callback_fn);
+
+            System &build(void);
+    };
 }

@@ -49,7 +49,6 @@ namespace argus {
             Entity(Entity&&) = delete;
 
         public:
-
             static EntityBuilder &builder(void);
 
             static Entity &create(std::vector<std::type_index> components);
