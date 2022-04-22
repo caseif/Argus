@@ -34,8 +34,8 @@ namespace argus {
 
     static size_t g_next_id;
 
-    EntityBuilder &Entity::builder(void) {
-        return *new EntityBuilder();
+    EntityBuilder Entity::builder(void) {
+        return EntityBuilder();
     }
 
     Entity &Entity::create(std::vector<std::type_index> component_types) {

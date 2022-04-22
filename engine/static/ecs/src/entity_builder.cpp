@@ -36,10 +36,6 @@ namespace argus {
     }
 
     Entity &EntityBuilder::build(void) {
-        auto &entity = Entity::create(this->types);
-
-        delete this;
-
-        return entity;
+        return Entity::create(this->types);
     }
 }

@@ -32,10 +32,6 @@ namespace argus {
 
             EntityBuilder(void);
 
-            EntityBuilder(EntityBuilder&) = delete;
-
-            EntityBuilder(EntityBuilder&&) = delete;
-
             ~EntityBuilder(void);
 
         public:
