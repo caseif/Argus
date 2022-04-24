@@ -19,11 +19,16 @@
 #include "argus/ecs/system.hpp"
 #include "argus/ecs/system_builder.hpp"
 
+#include <stdexcept>
 #include <string>
 #include <typeindex>
 
 namespace argus {
     SystemBuilder &SystemBuilder::with_name(std::string name) {
+        if (name.empty()) {
+            throw std::invalid_argument("System name must be non-empty");
+        }
+
         this->name = name;
 
         return *this;
@@ -35,13 +40,29 @@ namespace argus {
         return *this;
     }
 
-    SystemBuilder &SystemBuilder::with_callback(EntityCallback callback_fn) {
-        this->callback = callback_fn;
+    SystemBuilder &SystemBuilder::with_callback(EntityCallback callback) {
+        if (callback == nullptr) {
+            throw std::invalid_argument("System callback must be non-null"); 
+        }
+
+        this->callback = callback;
 
         return *this;
     }
 
     System &SystemBuilder::build(void) {
+        if (this->name.empty()) {
+            throw std::runtime_error("Name must be supplied before building system");
+        }
+
+        if (this->types.empty()) {
+            throw std::runtime_error("At least one component type must be supplied before building system");
+        }
+
+        if (this->callback == nullptr) {
+            throw std::runtime_error("Callback must be supplied before building system");
+        }
+        
         return System::create(this->name, this->types, this->callback);
     }
 }

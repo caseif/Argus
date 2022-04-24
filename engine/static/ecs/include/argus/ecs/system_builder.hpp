@@ -51,7 +51,7 @@ namespace argus {
 
             SystemBuilder &targets(std::type_index type);
 
-            SystemBuilder &with_callback(EntityCallback callback_fn);
+            SystemBuilder &with_callback(EntityCallback callback);
 
             System &build(void);
     };

@@ -20,6 +20,7 @@
 #include "argus/ecs/system_builder.hpp"
 #include "internal/ecs/pimpl/system.hpp"
 
+#include <stdexcept>
 #include <vector>
 
 namespace argus {
@@ -30,6 +31,18 @@ namespace argus {
     }
 
     System &System::create(std::string name, std::vector<std::type_index> component_types, EntityCallback callback) {
+        if (name.empty()) {
+            throw std::invalid_argument("System name must be non-empty");
+        }
+
+        if (component_types.empty()) {
+            throw std::invalid_argument("At least one component type must be supplied for system");
+        }
+
+        if (callback == nullptr) {
+            throw std::invalid_argument("System callback must be non-null");
+        }
+
         auto system = new System(name, component_types, callback);
         g_systems.push_back(system);
         return *system;
