@@ -82,11 +82,21 @@ directly or run `cmake --build .`.
 Argus is made available under the [LGPLv3](https://opensource.org/licenses/LGPL-3.0). You may use, modify, and
 distribute the project within its terms.
 
-Modifications to the engine in the form of alterations to existing library or static modules as well as newly-created
-library or static modules must be distributed under the same license. Additionally, alterations to dynamic modules
-subject to the LGPL licensing terms (i.e. those included in the canonical version of this repository) must also be
-distributed under the same license. This includes changes both to code and to resources compiled into the module binary.
+Argus employs a modular architecture and makes a distinction between library, static, and dynamic modules. Library and
+static modules are directly compiled into the "core" engine library (libargus.so, argus.dll, etc.), while dynamic
+modules are compiled into individual shared libraries. Because the LGPL provides a safe harbor for dynamically linked
+libraries, this distinction affects how modifications and additions to the engine must be licensed.
 
-Newly-created dynamic modules are not subject to the same licensing terms and thus need not be published under the LGPL.
-Newly-created resources which are not compiled into the output of engine modules covered by the LGPL license need not be
-published under the LGPL either.
+Modifications to any modules contained by this repository, including dynamic modules, must be published under the LGPL.
+This includes resources which will be compiled into the target binary, via Aglet or any other means. No safe harbor
+applies because dynamic modules in this repository are licensed under the LGPL.
+
+Newly created library or static modules which are not contained by this repository must also be published under the
+LGPL, because they will be compiled into a single shared library which inherits the LGPL licensing. This again includes
+resources which will be compiled into the shared library.
+
+Newly created dynamic modules which are not contained by this repository fall under the safe harbor and do not need to
+be published under the LGPL.
+
+Newly created resources which are not compiled into any binary and are instead dynamically loaded at runtime also do not
+need to be published under the LGPL.
