@@ -16,16 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/ecs/entity.hpp"
-
-#include <mutex>
-#include <vector>
+#include "argus/core/engine.hpp"
+#include "argus/core/module.hpp"
 
 namespace argus {
-    extern std::vector<const Entity*> g_created_entities;
-    extern std::vector<EntityId> g_destroyed_entities;
+    void update_lifecycle_game2d(LifecycleStage stage) {
+        switch (stage) {
+            case LifecycleStage::Init: {
+                //TODO
 
-    extern std::mutex g_entity_changes_mutex;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
 }
