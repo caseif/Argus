@@ -20,39 +20,9 @@
 
 #include "argus/lowlevel/time.hpp"
 
-#include <functional>
-#include <string>
-#include <typeindex>
-#include <vector>
-
 namespace argus {
     // forward declarations
-    class Entity;
-    class SystemBuilder;
-    struct pimpl_System;
+    class System;
 
-    typedef std::function<void(const Entity&, TimeDelta delta)> EntityCallback;
-
-    class System {
-        private:
-            System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback);
-
-            System(System&) = delete;
-            System(System&&) = delete;
-        public:
-            pimpl_System *pimpl;
-
-            static SystemBuilder builder(void);
-
-            static System &create(std::string name, std::vector<std::type_index> component_types,
-                    EntityCallback callback);
-
-            ~System(void);
-
-            const std::string get_name(void);
-
-            bool is_active(void);
-
-            void set_active(bool active);
-    };
+    void execute_all_systems(TimeDelta delta);
 }

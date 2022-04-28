@@ -16,8 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/lowlevel/error_util.hpp"
+
 #include "argus/ecs/system.hpp"
 #include "argus/ecs/system_builder.hpp"
+#include "internal/ecs/module_ecs.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -25,9 +28,7 @@
 
 namespace argus {
     SystemBuilder &SystemBuilder::with_name(std::string name) {
-        if (name.empty()) {
-            throw std::invalid_argument("System name must be non-empty");
-        }
+        validate_arg(!name.empty(), "System name must be non-empty");
 
         this->name = name;
 
@@ -41,9 +42,7 @@ namespace argus {
     }
 
     SystemBuilder &SystemBuilder::with_callback(EntityCallback callback) {
-        if (callback == nullptr) {
-            throw std::invalid_argument("System callback must be non-null"); 
-        }
+        validate_arg(callback != nullptr, "System callback must be non-null");
 
         this->callback = callback;
 
@@ -51,17 +50,10 @@ namespace argus {
     }
 
     System &SystemBuilder::build(void) {
-        if (this->name.empty()) {
-            throw std::runtime_error("Name must be supplied before building system");
-        }
-
-        if (this->types.empty()) {
-            throw std::runtime_error("At least one component type must be supplied before building system");
-        }
-
-        if (this->callback == nullptr) {
-            throw std::runtime_error("Callback must be supplied before building system");
-        }
+        validate_state(!g_ecs_initialized, "Systems may not be registered beyond the init lifecycle stage");
+        validate_state(!this->name.empty(), "Name must be supplied before building system");
+        validate_state(!this->types.empty(), "At least one component type must be supplied before building system");
+        validate_state(this->callback != nullptr, "Callback must be supplied before building system");
         
         return System::create(this->name, this->types, this->callback);
     }

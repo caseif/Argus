@@ -55,19 +55,19 @@ namespace argus {
 
             void destroy(void);
 
-            EntityId get_id(void);
+            EntityId get_id(void) const;
 
-            void *get(std::type_index type);
+            void *get(std::type_index type) const;
 
             template <typename T>
-            T &get() {
+            T &get() const {
                 return *static_cast<T*>(get(std::type_index(typeid(T))));
             }
 
-            bool has(std::type_index type);
+            bool has(std::type_index type) const;
 
             template <typename T>
-            bool has(void) {
+            bool has(void) const {
                 return has(std::type_index(typeid(T)));
             }
     };

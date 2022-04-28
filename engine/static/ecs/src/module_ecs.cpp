@@ -16,19 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
 #include "argus/ecs/component_type_registry.hpp"
 #include "internal/ecs/module_ecs.hpp"
+#include "internal/ecs/system_executor.hpp"
 
 #include <string>
 
 namespace argus {
+    bool g_ecs_initialized = false;
+
     void update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
-            case LifecycleStage::Init: {
-                // we only accept component registrations during the pre-init stage
+            case LifecycleStage::PostInit: {
+                // we only accept component and system registrations during the pre-init and init stages
                 ComponentTypeRegistry::instance()._seal();
+
+                g_ecs_initialized = true;
+
+                register_update_callback(execute_all_systems);
+
                 break;
             }
             default: {

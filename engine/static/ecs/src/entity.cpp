@@ -19,8 +19,11 @@
 #include "argus/lowlevel/memory.hpp"
 #include "internal/lowlevel/error_util.hpp"
 
+#include "internal/core/core_util.hpp"
+
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
+#include "internal/ecs/entity.hpp"
 #include "argus/ecs/entity_builder.hpp"
 
 #include <stdexcept>
@@ -30,6 +33,12 @@
 #include <cstddef>
 
 namespace argus {
+    std::vector<const Entity*> g_created_entities;
+    std::vector<EntityId> g_destroyed_entities;
+
+    std::mutex g_entity_changes_mutex;
+
+    //TODO: eventually implement some kind of periodic defragmentation routine that can run asynchronously
     static AllocPool *g_entity_pool;
 
     static size_t g_next_id;
@@ -52,6 +61,14 @@ namespace argus {
             entity.component_pointers[cmp_id] = ComponentTypeRegistry::instance().alloc(cmp_type);
         }
 
+        {
+            g_entity_changes_mutex.lock();
+
+            g_created_entities.push_back(&entity);
+
+            g_entity_changes_mutex.unlock();
+        }
+
         return entity;
     }
 
@@ -67,21 +84,30 @@ namespace argus {
             }
         }
 
+        {
+            g_entity_changes_mutex.lock();
+
+            remove_from_vector(g_created_entities, this);
+            g_destroyed_entities.push_back(this->get_id());
+
+            g_entity_changes_mutex.unlock();
+        }
+
         g_entity_pool->free(this);
     }
 
-    EntityId Entity::get_id(void) {
+    EntityId Entity::get_id(void) const {
         return id;
     }
 
-    void *Entity::get(std::type_index type) {
+    void *Entity::get(std::type_index type) const {
         auto cmp_id = ComponentTypeRegistry::instance().get_id(type);
         void *cmp_ptr = component_pointers[cmp_id];
         validate_arg(cmp_ptr != nullptr, "Entity does not have component " "TODO");
         return cmp_ptr;
     }
 
-    bool Entity::has(std::type_index type) {
+    bool Entity::has(std::type_index type) const {
         auto cmp_id = ComponentTypeRegistry::instance().get_id(type);
         return component_pointers[cmp_id] != nullptr;
     }

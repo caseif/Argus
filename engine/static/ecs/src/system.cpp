@@ -16,32 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/lowlevel/error_util.hpp"
+
 #include "argus/ecs/system.hpp"
 #include "argus/ecs/system_builder.hpp"
+#include "internal/ecs/module_ecs.hpp"
+#include "internal/ecs/system.hpp"
 #include "internal/ecs/pimpl/system.hpp"
 
 #include <stdexcept>
 #include <vector>
 
 namespace argus {
-    static std::vector<System*> g_systems;
+    std::vector<System*> g_systems;
 
     SystemBuilder System::builder(void) {
+        validate_state(!g_ecs_initialized, "Systems may not be registered beyond the init lifecycle stage");
+
         return SystemBuilder();
     }
 
     System &System::create(std::string name, std::vector<std::type_index> component_types, EntityCallback callback) {
-        if (name.empty()) {
-            throw std::invalid_argument("System name must be non-empty");
-        }
-
-        if (component_types.empty()) {
-            throw std::invalid_argument("At least one component type must be supplied for system");
-        }
-
-        if (callback == nullptr) {
-            throw std::invalid_argument("System callback must be non-null");
-        }
+        validate_state(!g_ecs_initialized, "Systems may not be registered beyond the init lifecycle stage");
+        validate_arg(!name.empty(), "System name must be non-empty");
+        validate_arg(!component_types.empty(), "At least one component type must be supplied for system");
+        validate_arg(callback != nullptr, "System callback must be non-null");
 
         auto system = new System(name, component_types, callback);
         g_systems.push_back(system);
