@@ -63,7 +63,7 @@ respective shared libraries (where applicable) will be generated as part of the 
 library.
 
 Additionally, the render backends require support from the OS for their respective graphics libraries. Argus currently
-provides an OpenGL-based backend, with OpenGL ES- and Vulkan-based backends planned for future inclusion.
+provides OpenGL-based and OpenGL ES-based backends, and a Vulkan backend is currently under development.
 
 To set up the build files, please run the following commands:
 
