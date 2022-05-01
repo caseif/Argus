@@ -20,7 +20,7 @@
 #include "argus/core/module.hpp"
 
 namespace argus {
-    void update_lifecycle_meta(LifecycleStage stage) {
+    void update_lifecycle_manifest(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
                 //TODO
