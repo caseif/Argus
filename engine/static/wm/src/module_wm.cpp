@@ -74,7 +74,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::Init: {
                 int glfw_init_rc = glfwInit();
-                if (glfw_init_rc != 0) {
+                if (glfw_init_rc != GLFW_TRUE) {
                     _ARGUS_FATAL("GLFW init failed (return code %d)", glfw_init_rc);
                 }
 
