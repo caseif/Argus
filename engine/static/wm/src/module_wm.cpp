@@ -73,7 +73,12 @@ namespace argus {
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                glfwInit();
+                int glfw_init_rc = glfwInit();
+                if (glfw_init_rc != 0) {
+                    _ARGUS_FATAL("GLFW init failed (return code %d)", glfw_init_rc);
+                }
+
+                _ARGUS_INFO("GLFW initialized successfully");
 
                 glfwSetErrorCallback(_on_glfw_error);
 
