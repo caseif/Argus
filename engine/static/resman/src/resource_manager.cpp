@@ -132,7 +132,7 @@ namespace argus {
 
             ArpPackage package = nullptr;
             int rc = 0;
-            if ((rc = arp_load_from_file(full_child_path.c_str(), &package)) != 0) {
+            if ((rc = arp_load_from_file(full_child_path.c_str(), NULL, &package)) != 0) {
                 _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)",
                         full_child_path.c_str(), rc);
             }
@@ -240,10 +240,12 @@ namespace argus {
         int rc = 0;
 
         ArpPackage pack = nullptr;
-        if ((rc = arp_load_from_memory(buf, len, &pack)) != 0) {
+        if ((rc = arp_load_from_memory(buf, len, NULL, &pack)) != 0) {
             _ARGUS_FATAL("Failed to load in-memory package (return code %d)", rc);
         }
         arp_add_to_set(pimpl->package_set, pack);
+
+        _ARGUS_DEBUG("Successfully loaded ARP package from memory with length %lu", len);
     }
 
     void ResourceManager::register_loader(ResourceLoader &loader) {
