@@ -25,6 +25,7 @@
 #pragma once
 
 #include "argus/core/callback.hpp"
+#include "argus/core/client_config.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"

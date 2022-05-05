@@ -19,11 +19,15 @@
 #include "argus/core/client_config.hpp"
 #include "internal/core/client_config.hpp"
 
+#include <string>
+
 namespace argus {
     static ClientConfig g_client_config;
 
     void set_client_id(const std::string &id) {
+        printf("set client id 1: %s\n", get_client_config().id.c_str());
         g_client_config.id = id;
+        printf("set client id 2: %s\n", get_client_config().id.c_str());
     }
 
     void set_client_name(const std::string &name) {
