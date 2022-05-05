@@ -20,6 +20,7 @@
 #include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/macros.hpp"
+#include "internal/core/client_config.hpp"
 
 #include "internal/render_vulkan/setup/instance.hpp"
 
@@ -96,13 +97,13 @@ namespace argus {
             const char *const *validation_layers, uint32_t validation_layers_count) {
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = "Argus Game"; //TODO: use the client application name eventually
+        app_info.pApplicationName = get_client_config().name.c_str();
         app_info.pEngineName = ENGINE_NAME;
         
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-        app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0); //TODO: same thing
+        app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0); //TODO: parse out client version into three components
         app_info.engineVersion = VK_MAKE_API_VERSION(0, ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_INCR);
         app_info.apiVersion = VK_API_VERSION_1_0;
 
