@@ -21,11 +21,11 @@
 #include <string>
 
 namespace argus {
-    struct ClientConfig {
+    struct ClientProperties {
         std::string id;
         std::string name;
         std::string version;
     };
 
-    ClientConfig &get_client_config(void);
+    ClientProperties &get_client_properties(void);
 }

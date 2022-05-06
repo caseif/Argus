@@ -16,19 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/core.hpp
- *
- * Contains core engine functionality, primarily for bootstrapping.
- */
-
 #pragma once
 
-#include "argus/core/callback.hpp"
-#include "argus/core/client_config.hpp"
-#include "argus/core/client_properties.hpp"
-#include "argus/core/engine.hpp"
-#include "argus/core/engine_config.hpp"
-#include "argus/core/event.hpp"
-#include "argus/core/macros.hpp"
-#include "argus/core/module.hpp"
+#include <string>
+
+namespace argus {
+    void set_client_id(const std::string &id);
+
+    void set_client_name(const std::string &id);
+
+    void set_client_version(const std::string &id);
+}

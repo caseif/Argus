@@ -21,9 +21,5 @@
 #include <string>
 
 namespace argus {
-    void set_client_id(const std::string &id);
-
-    void set_client_name(const std::string &id);
-
-    void set_client_version(const std::string &id);
+    void load_client_config(const std::string &config_namespace);
 }

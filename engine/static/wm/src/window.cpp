@@ -24,7 +24,7 @@
 
 #include "argus/core/event.hpp"
 #include "argus/core/engine.hpp"
-#include "internal/core/client_config.hpp"
+#include "internal/core/client_properties.hpp"
 #include "internal/core/core_util.hpp"
 
 #include "argus/wm/window.hpp"
@@ -242,7 +242,7 @@ namespace argus {
             glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
             glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);
 
-            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_config().name.c_str(), nullptr, nullptr);
+            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_properties().name.c_str(), nullptr, nullptr);
 
             if (pimpl->handle == nullptr) {
                 _ARGUS_FATAL("Failed to create GLFW window");
