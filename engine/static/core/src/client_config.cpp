@@ -28,6 +28,12 @@
 
 #include <sstream>
 
+#ifdef _WIN32
+    #include <direct.h>
+#else
+    #include <unistd.h>
+#endif
+
 #define EXT_SEPARATOR "."
 
 #define ARP_NS_SEPARATOR ":"
