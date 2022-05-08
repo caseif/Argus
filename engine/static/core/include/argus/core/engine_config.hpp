@@ -62,6 +62,16 @@ namespace argus {
     void set_load_modules(const std::initializer_list<std::string> &module_list);
 
     /**
+     * \brief Sets the modules to load on engine initialization.
+     *
+     * If any provided module or any its respective dependencies cannot be
+     * loaded, engine initialization will fail.
+     *
+     * \param module_list The IDs of the modules to load on engine init.
+     */
+    void set_load_modules(const std::vector<std::string> &module_list);
+
+    /**
      * \brief Represents a graphics backend used to instantiate a Window and
      *        corresponding Canvas.
      *
@@ -92,7 +102,20 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backend(const std::initializer_list<RenderBackend> backend);
+    void set_render_backends(const std::initializer_list<RenderBackend> &backend);
+
+    /**
+     * \brief Sets the graphics backend to be used for rendering.
+     *
+     * \param backend A list of render backends to use in order of preference.
+     *
+     * \remark This option is treated like a "hint" and will not be honored in
+     *          the event that the preferred backend is not available, either
+     *          due to a missing implementation or lack of hardware support. If
+     *          none of the specified backends can be used, the OpenGL backend
+     *          will be used as the default fallback.
+     */
+    void set_render_backends(const std::vector<RenderBackend> &backend);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.

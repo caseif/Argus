@@ -22,6 +22,8 @@
 #include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/client_config.hpp"
+#include "internal/core/client_properties.hpp"
+#include "internal/core/engine_config.hpp"
 
 #include "arp/arp.h"
 #include "nlohmann/json.hpp"
@@ -46,6 +48,32 @@
 #define RESOURCES_DIR "resources"
 #define ARP_EXT "arp"
 
+#define KEY_CLIENT "client"
+#define KEY_CLIENT_ID "id"
+#define KEY_CLIENT_NAME "name"
+#define KEY_CLIENT_VERSION "version"
+
+#define KEY_ENGINE "engine"
+#define KEY_ENGINE_MODULES "modules"
+#define KEY_ENGINE_RENDER_BACKENDS "render_backends"
+#define KEY_ENGINE_TICKRATE "target_tickrate"
+#define KEY_ENGINE_FRAMERATE "target_framerate"
+
+#define KEY_WINDOW "window"
+#define KEY_WINDOW_ID "id"
+#define KEY_WINDOW_TITLE "title"
+#define KEY_WINDOW_MODE "mode"
+#define KEY_WINDOW_POSITION "position"
+#define KEY_WINDOW_POSITION_X "x"
+#define KEY_WINDOW_POSITION_Y "y"
+#define KEY_WINDOW_DIMENSIONS "dimensions"
+#define KEY_WINDOW_DIMENSIONS_X "x"
+#define KEY_WINDOW_DIMENSIONS_Y "y"
+
+#define KEY_BINDINGS "bindings"
+#define KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE "default_bindings_resource"
+#define KEY_BINDINGS_SAVE_USER_BINDINGS "save_user_bindings"
+
 namespace argus {
     static inline bool _ends_with(const std::string &haystack, const std::string &needle)
     {
@@ -62,9 +90,86 @@ namespace argus {
         return res_dir;
     }
 
-    static bool _ingest_config_content(std::istream &stream) {
-        UNUSED(stream);
+    static void _ingest_client_properties(nlohmann::json client_obj) {
+        if (client_obj.contains(KEY_CLIENT_ID) && client_obj[KEY_CLIENT_ID].is_string()) {
+            get_client_properties().id = client_obj[KEY_CLIENT_ID];
+        }
+
+        if (client_obj.contains(KEY_CLIENT_NAME) && client_obj[KEY_CLIENT_NAME].is_string()) {
+            get_client_properties().name = client_obj[KEY_CLIENT_NAME];
+        }
+
+        if (client_obj.contains(KEY_CLIENT_VERSION) && client_obj[KEY_CLIENT_VERSION].is_string()) {
+            get_client_properties().version = client_obj[KEY_CLIENT_VERSION];
+        }
+    }
+
+    static void _ingest_engine_config(nlohmann::json engine_obj) {
+        if (engine_obj.contains(KEY_ENGINE_MODULES) && engine_obj[KEY_ENGINE_MODULES].is_array()) {
+            std::vector<std::string> modules;
+            for (auto module_obj : engine_obj[KEY_ENGINE_MODULES]) {
+                if (module_obj.is_string()) {
+                    modules.push_back(module_obj);
+                }
+            }
+
+            if (modules.size() > 0) {
+                set_load_modules(modules);
+            }
+        }
+
+        if (engine_obj.contains(KEY_ENGINE_RENDER_BACKENDS) && engine_obj[KEY_ENGINE_RENDER_BACKENDS].is_array()) {
+            std::vector<std::string> backends;
+            for (auto rb_obj : engine_obj[KEY_ENGINE_RENDER_BACKENDS]) {
+                if (rb_obj.is_string()) {
+                    backends.push_back(rb_obj);
+                }
+            }
+
+            if (backends.size() > 0) {
+                //TODO
+                //set_render_backends(backends);
+            }
+        }
+
+        if (engine_obj.contains(KEY_ENGINE_TICKRATE) && engine_obj[KEY_ENGINE_TICKRATE].is_number_integer()) {
+            set_target_tickrate(engine_obj[KEY_ENGINE_TICKRATE]);
+        }
+
+        if (engine_obj.contains(KEY_ENGINE_FRAMERATE) && engine_obj[KEY_ENGINE_TICKRATE].is_number_integer()) {
+            set_target_framerate(engine_obj[KEY_ENGINE_FRAMERATE]);
+        }
+    }
+
+    static void _ingest_window_config(nlohmann::json window_obj) {
+        UNUSED(window_obj);
         //TODO
+    }
+
+    static void _ingest_bindings_config(nlohmann::json bindings_obj) {
+        UNUSED(bindings_obj);
+        //TODO
+    }
+
+    static bool _ingest_config_content(std::istream &stream) {
+        nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
+
+        if (json_root.contains(KEY_CLIENT)) {
+            _ingest_client_properties(json_root.at(KEY_CLIENT));
+        }
+
+        if (json_root.contains(KEY_ENGINE)) {
+            _ingest_engine_config(json_root.at(KEY_ENGINE));
+        }
+
+        if (json_root.contains(KEY_WINDOW)) {
+            _ingest_window_config(json_root.at(KEY_WINDOW));
+        }
+
+        if (json_root.contains(KEY_BINDINGS)) {
+            _ingest_bindings_config(json_root.at(KEY_BINDINGS));
+        }
+
         return true;
     }
 

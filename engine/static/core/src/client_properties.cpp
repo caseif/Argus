@@ -25,9 +25,7 @@ namespace argus {
     static ClientProperties g_client_properties;
 
     void set_client_id(const std::string &id) {
-        printf("set client id 1: %s\n", get_client_properties().id.c_str());
         g_client_properties.id = id;
-        printf("set client id 2: %s\n", get_client_properties().id.c_str());
     }
 
     void set_client_name(const std::string &name) {

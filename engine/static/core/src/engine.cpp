@@ -265,7 +265,6 @@ namespace argus {
         _ARGUS_ASSERT(g_core_initialized, "Cannot start engine before it is initialized.");
         _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
-        printf("client id: %s\n", get_client_properties().id.c_str());
         _ARGUS_ASSERT(!get_client_properties().id.empty(), "Client ID must be set prior to engine start");
         _ARGUS_ASSERT(!get_client_properties().name.empty(), "Client ID must be set prior to engine start");
         _ARGUS_ASSERT(!get_client_properties().version.empty(), "Client ID must be set prior to engine start");

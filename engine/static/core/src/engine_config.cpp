@@ -67,15 +67,23 @@ namespace argus {
     }
 
     void set_load_modules(const std::initializer_list<std::string> &module_list) {
-        g_engine_config.load_modules.insert(g_engine_config.load_modules.begin(), module_list);
+        g_engine_config.load_modules = std::vector<std::string>(module_list);
     }
 
-    void set_render_backend(const std::initializer_list<RenderBackend> backends) {
+    void set_load_modules(const std::vector<std::string> &module_list) {
+        g_engine_config.load_modules = module_list;
+    }
+
+    void set_render_backends(const std::initializer_list<RenderBackend> &backends) {
         g_engine_config.render_backends = std::vector<RenderBackend>(backends);
     }
 
+    void set_render_backends(const std::vector<RenderBackend> &backends) {
+        g_engine_config.render_backends = backends;
+    }
+
     void set_render_backend(const RenderBackend backend) {
-        set_render_backend({ backend });
+        set_render_backends({ backend });
     }
 
     void set_screen_space_scale_mode(ScreenSpaceScaleMode scale_mode) {
