@@ -59,14 +59,14 @@ namespace argus {
 
     static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
         for (auto backend : backends) {
-            auto activate_it = g_render_backend_activate_fns.find(backend);
-            if (activate_it == g_render_backend_activate_fns.end()) {
+            auto activate_fn = get_render_backend_activate_fn(backend);
+            if (!activate_fn.has_value()) {
                 _ARGUS_INFO("Skipping unknown graphics backend \"%s\"", backend.c_str());
                 attempted_backends.push_back(backend);
                 continue;
             }
 
-            if (!activate_it->second()) {
+            if (!(*activate_fn)()) {
                 _ARGUS_INFO("Unable to select graphics backend \"%s\"", backend.c_str());
                 attempted_backends.push_back(backend);
                 continue;
@@ -138,6 +138,10 @@ namespace argus {
 
                 g_render_module_initialized = true;
 
+                break;
+            }
+            case LifecycleStage::PostDeinit: {
+                unregister_backend_activate_fns();
                 break;
             }
             default:
