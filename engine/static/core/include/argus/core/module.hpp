@@ -33,11 +33,6 @@
 #endif
 
 constexpr const char *ModuleCore = "core";
-constexpr const char *ModuleWm = "wm";
-constexpr const char *ModuleEcs = "ecs";
-constexpr const char *ModuleInput = "input";
-constexpr const char *ModuleResman = "resman";
-constexpr const char *ModuleRender = "render";
 
 /**
  * \brief Macro for conveniently registering Argus modules contained by shared
