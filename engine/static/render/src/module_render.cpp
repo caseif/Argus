@@ -43,6 +43,8 @@
 #include <string>
 #include <vector>
 
+#define RENDER_BACKEND_MODULE_PREFIX "render_"
+
 namespace argus {
     // forward declarations
     class Window;
@@ -103,10 +105,14 @@ namespace argus {
     }
 
     static void _load_backend_modules(void) {
-        //TODO: fail gracefully
-        enable_dynamic_module(MODULE_RENDER_OPENGL);
-        enable_dynamic_module(MODULE_RENDER_OPENGLES);
-        enable_dynamic_module(MODULE_RENDER_VULKAN);
+        _ARGUS_DEBUG("Loading render backend modules");
+        for (auto &module : get_present_dynamic_modules()) {
+            auto module_id = module.first;
+            if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
+                //TODO: fail gracefully
+                enable_dynamic_module(module_id);
+            }
+        }
     }
 
     static Canvas &_construct_canvas(Window &window) {
@@ -120,8 +126,6 @@ namespace argus {
     void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Load: {
-                _ARGUS_DEBUG("Loading backend modules for rendering");
-
                 _load_backend_modules();
 
                 break;
