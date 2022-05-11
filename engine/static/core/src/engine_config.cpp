@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <initializer_list>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -32,30 +33,10 @@ namespace argus {
 
     EngineConfig g_engine_config;
 
-    RenderBackend g_selected_render_backend;
+    std::string g_selected_render_backend;
 
     EngineConfig get_engine_config() {
         return g_engine_config;
-    }
-
-    std::vector<RenderBackend> get_available_render_backends(void) {
-        std::vector<RenderBackend> backends;
-
-        auto modules = get_present_dynamic_modules();
-
-        if (modules.find(std::string(RENDER_MODULE_OPENGL)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::OpenGL);
-        }
-
-        if (modules.find(std::string(RENDER_MODULE_OPENGLES)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::OpenGLES);
-        }
-
-        if (modules.find(std::string(RENDER_MODULE_VULKAN)) != modules.cend()) {
-            backends.insert(backends.begin(), RenderBackend::Vulkan);
-        }
-
-        return backends;
     }
 
     void set_target_tickrate(const unsigned int target_tickrate) {
@@ -74,15 +55,15 @@ namespace argus {
         g_engine_config.load_modules = module_list;
     }
 
-    void set_render_backends(const std::initializer_list<RenderBackend> &backends) {
-        g_engine_config.render_backends = std::vector<RenderBackend>(backends);
+    void set_render_backends(const std::initializer_list<std::string> &backends) {
+        g_engine_config.render_backends = std::vector<std::string>(backends);
     }
 
-    void set_render_backends(const std::vector<RenderBackend> &backends) {
+    void set_render_backends(const std::vector<std::string> &backends) {
         g_engine_config.render_backends = backends;
     }
 
-    void set_render_backend(const RenderBackend backend) {
+    void set_render_backend(const std::string backend) {
         set_render_backends({ backend });
     }
 
@@ -90,11 +71,11 @@ namespace argus {
         g_engine_config.screen_space_scale_mode = scale_mode;
     }
 
-    RenderBackend get_selected_render_backend(void) {
+    const std::string &get_selected_render_backend(void) {
         return g_selected_render_backend;
     }
 
-    void set_selected_render_backend(RenderBackend backend) {
+    void set_selected_render_backend(const std::string &backend) {
         g_selected_render_backend = backend;
     }
 }

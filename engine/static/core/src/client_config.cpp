@@ -127,8 +127,7 @@ namespace argus {
             }
 
             if (backends.size() > 0) {
-                //TODO
-                //set_render_backends(backends);
+                set_render_backends(backends);
             }
         }
 

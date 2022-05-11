@@ -34,6 +34,7 @@
 #include "argus/render/common/canvas.hpp"
 #include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
+#include "internal/render/common/backend.hpp"
 #include "internal/render/loader/material_loader.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 
@@ -46,81 +47,57 @@ namespace argus {
     // forward declarations
     class Window;
 
+    #if defined(__linux__) || defined(__ANDROID__)
+    static const std::vector<std::string> g_default_backends = { "opengl", "opengl_es" };
+    #elif defined(_WIN32) || defined(__MINGW__)
+    static const std::vector<std::string> g_default_backends = { "opengl", "opengl_es" };
+    #else
+    static const std::vector<std::string> g_default_backends = { "opengl" };
+    #endif
+
     bool g_render_module_initialized = false;
+
+    static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
+        for (auto backend : backends) {
+            auto activate_it = g_render_backend_activate_fns.find(backend);
+            if (activate_it == g_render_backend_activate_fns.end()) {
+                _ARGUS_INFO("Skipping unknown graphics backend \"%s\"", backend.c_str());
+                attempted_backends.push_back(backend);
+                continue;
+            }
+
+            if (!activate_it->second()) {
+                _ARGUS_INFO("Unable to select graphics backend \"%s\"", backend.c_str());
+                attempted_backends.push_back(backend);
+                continue;
+            }
+
+            _ARGUS_INFO("Successfully activated graphics backend \"%s\"", backend.c_str());
+
+            set_selected_render_backend(backend);
+
+            return true;
+        }
+
+        return false;
+    }
 
     static void _activate_backend() {
         auto backends = get_engine_config().render_backends;
 
-        std::map<RenderBackend, bool> attempted_backends;
+        std::vector<std::string> attempted_backends;
 
-        //TODO: test backend before selecting
-        for (auto backend : backends) {
-            switch (backend) {
-                case RenderBackend::OpenGL: {
-                    attempted_backends[backend] = true;
-
-                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_OPENGL_BACKEND))) {
-                        _ARGUS_WARN("Unable to select OpenGL as graphics backend");
-                        continue;
-                    }
-                    
-                    set_selected_render_backend(backend);
-                    _ARGUS_INFO("Selecting OpenGL as graphics backend");
-                    
-                    return;
-                }
-                case RenderBackend::OpenGLES:
-                    attempted_backends[backend] = true;
-
-                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_OPENGLES_BACKEND))) {
-                        _ARGUS_WARN("Unable to select OpenGL as graphics backend");
-                        continue;
-                    }
-                    
-                    set_selected_render_backend(backend);
-                    _ARGUS_INFO("Selecting OpenGL ES as graphics backend");
-                    
-                    return;
-                case RenderBackend::Vulkan:
-                    attempted_backends[backend] = true;
-
-                    if (!call_module_fn<bool>(std::string(FN_ACTIVATE_VULKAN_BACKEND))) {
-                        _ARGUS_WARN("Unable to select Vulkan as graphics backend");
-                        continue;
-                    }
-                    
-                    set_selected_render_backend(backend);
-                    _ARGUS_INFO("Selecting Vulkan as graphics backend");
-
-                    return;
-                default:
-                    _ARGUS_WARN("Skipping unrecognized graphics backend index %d", static_cast<int>(backend));
-                    break;
-            }
-            _ARGUS_INFO("Current graphics backend cannot be selected, continuing to next");
+        if (_try_backends(backends, attempted_backends)) {
+            return;
         }
 
-        //TODO: select fallback based on platform
         _ARGUS_WARN("Failed to select graphics backend from preference list, falling back to platform default");
 
-        RenderBackend selected_backend;
-
-        #if defined(__linux__) && !defined(__ANDROID__)
-        _ARGUS_INFO("Detected Linux, using OpenGL as platform default");
-
-        if (attempted_backends.find(RenderBackend::OpenGL) != attempted_backends.end()) {
-            _ARGUS_FATAL("Already attempted to use OpenGL, unable to use platform default");
+        if (_try_backends(g_default_backends, attempted_backends)) {
+            return;
         }
 
-        selected_backend = RenderBackend::OpenGL;
-        call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
-        #else
-        _ARGUS_INFO("Failed to select default for current system, using OpenGL as meta-default");
-        selected_backend = RenderBackend::OpenGL;
-        call_module_fn<void>(std::string(FN_ACTIVATE_OPENGL_BACKEND));
-        #endif
-
-        set_selected_render_backend(selected_backend);
+        _ARGUS_FATAL("Failed to select graphics backend");
 
         return;
     }

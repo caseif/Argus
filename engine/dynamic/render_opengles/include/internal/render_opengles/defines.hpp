@@ -20,6 +20,8 @@
 
 #include "aglet/aglet.h"
 
+#define BACKEND_ID "opengl_es"
+
 #define _VERTEX_POSITION_LEN 2
 #define _VERTEX_NORMAL_LEN 2
 #define _VERTEX_COLOR_LEN 4

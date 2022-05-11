@@ -22,21 +22,23 @@
 
 #include "argus/core/engine_config.hpp"
 
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
-namespace argus {
+namespace argus {    
     struct EngineConfig {
         unsigned int target_tickrate{0};
         unsigned int target_framerate{0};
         std::vector<std::string> load_modules;
-        std::vector<RenderBackend> render_backends;
+        std::vector<std::string> render_backends;
         ScreenSpaceScaleMode screen_space_scale_mode;
     };
 
     EngineConfig get_engine_config();
 
-    RenderBackend get_selected_render_backend(void);
+    const std::string &get_selected_render_backend(void);
 
-    void set_selected_render_backend(RenderBackend backend);
+    void set_selected_render_backend(const std::string &backend);
 }

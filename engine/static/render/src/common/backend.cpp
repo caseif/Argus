@@ -16,11 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "internal/lowlevel/logging.hpp"
 
-#define RESOURCE_TYPE_TEXTURE_PNG "image/png"
-#define RESOURCE_TYPE_MATERIAL "text/x-argus-material+json"
+#include "argus/render/common/backend.hpp"
+#include "internal/render/common/backend.hpp"
 
-#define MODULE_RENDER_OPENGL "render_opengl"
-#define MODULE_RENDER_OPENGLES "render_opengles"
-#define MODULE_RENDER_VULKAN "render_vulkan"
+#include <map>
+#include <stdexcept>
+#include <string>
+
+namespace argus {
+    std::map<std::string, ActivateRenderBackendFn> g_render_backend_activate_fns;
+
+    void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn) {
+        if (g_render_backend_activate_fns.find(id) != g_render_backend_activate_fns.end()) {
+            throw std::invalid_argument("Render backend is already registered for provided ID");
+        }
+        g_render_backend_activate_fns[id] = activate_fn;
+        _ARGUS_DEBUG("Successfully registered render backend with ID %s", id.c_str());
+    }
+}

@@ -18,9 +18,4 @@
 
 #pragma once
 
-#define RESOURCE_TYPE_TEXTURE_PNG "image/png"
-#define RESOURCE_TYPE_MATERIAL "text/x-argus-material+json"
-
-#define MODULE_RENDER_OPENGL "render_opengl"
-#define MODULE_RENDER_OPENGLES "render_opengles"
-#define MODULE_RENDER_VULKAN "render_vulkan"
+#define BACKEND_ID "vulkan"

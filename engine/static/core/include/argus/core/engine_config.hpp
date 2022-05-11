@@ -72,24 +72,12 @@ namespace argus {
     void set_load_modules(const std::vector<std::string> &module_list);
 
     /**
-     * \brief Represents a graphics backend used to instantiate a Window and
-     *        corresponding Canvas.
-     *
-     * \warning A Vulkan-based renderer is not yet implemented.
-     */
-    enum class RenderBackend {
-        OpenGL = 0x01,
-        OpenGLES = 0x02,
-        Vulkan = 0x11
-    };
-
-    /**
      * \brief Returns a list of graphics backends available for use on the
      *        current platform.
      *
      * \return The available graphics backends.
      */
-    std::vector<RenderBackend> get_available_render_backends(void);
+    const std::vector<std::string> &get_available_render_backends(void);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.
@@ -102,7 +90,7 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backends(const std::initializer_list<RenderBackend> &backend);
+    void set_render_backends(const std::initializer_list<std::string> &backend);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.
@@ -115,12 +103,12 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backends(const std::vector<RenderBackend> &backend);
+    void set_render_backends(const std::vector<std::string> &backend);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.
      *
-     * \param backend The preferred RenderBackend to use.
+     * \param backend The preferred backend to use.
      *
      * \remark This option is treated like a "hint" and will not be honored in
      *          the event that the preferred backend is not available, either
@@ -128,7 +116,7 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backend(const RenderBackend backend);
+    void set_render_backend(const std::string backend);
 
     /**
      * \brief Sets the screen space scale mode used to compute the view matrix

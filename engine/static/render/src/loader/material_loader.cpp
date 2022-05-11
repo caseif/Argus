@@ -81,19 +81,7 @@ namespace argus {
         UNUSED(size);
         _ARGUS_DEBUG("Loading material %s", proto.uid.c_str());
         try {
-
-            std::string expected_api;
-            switch (get_selected_render_backend()) {
-                case RenderBackend::OpenGL:
-                    expected_api = "opengl";
-                    break;
-                case RenderBackend::OpenGLES:
-                    expected_api = "opengl_es";
-                    break;
-                case RenderBackend::Vulkan:
-                    expected_api = "vulkan";
-                    break;
-            }
+            std::string expected_api = get_selected_render_backend();
 
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 

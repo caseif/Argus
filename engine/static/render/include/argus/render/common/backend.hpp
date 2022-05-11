@@ -18,9 +18,12 @@
 
 #pragma once
 
-#define RESOURCE_TYPE_TEXTURE_PNG "image/png"
-#define RESOURCE_TYPE_MATERIAL "text/x-argus-material+json"
+#include <functional>
+#include <map>
+#include <string>
 
-#define MODULE_RENDER_OPENGL "render_opengl"
-#define MODULE_RENDER_OPENGLES "render_opengles"
-#define MODULE_RENDER_VULKAN "render_vulkan"
+namespace argus {
+    typedef std::function<bool(void)> ActivateRenderBackendFn;
+
+    void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn);
+}

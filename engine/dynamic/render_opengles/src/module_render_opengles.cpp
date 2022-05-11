@@ -28,8 +28,10 @@
 
 #include "argus/resman/resource_manager.hpp"
 
+#include "argus/render/common/backend.hpp"
 #include "internal/render/defines.hpp"
 
+#include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/glfw_include.hpp"
 #include "internal/render_opengles/module_render_opengl.hpp"
 #include "internal/render_opengles/resources.h"
@@ -97,7 +99,7 @@ namespace argus {
     void update_lifecycle_render_opengles(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
-                register_module_fn(FN_ACTIVATE_OPENGLES_BACKEND, reinterpret_cast<void*>(_activate_opengles_backend));
+                register_render_backend(BACKEND_ID, _activate_opengles_backend);
                 break;
             }
             case LifecycleStage::Init: {
