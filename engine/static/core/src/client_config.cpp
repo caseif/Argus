@@ -29,7 +29,10 @@
 #include "arp/arp.h"
 #include "nlohmann/json.hpp"
 
+#include <optional>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #ifdef _WIN32
     #include <direct.h>
@@ -95,17 +98,49 @@ namespace argus {
         return res_dir;
     }
 
+    static std::optional<std::string> _get_json_string(nlohmann::json root, std::string key) {
+        if (root.contains(key) && root[key].is_string()) {
+            return root[key];
+        } else {
+            return nullptr;
+        }
+    }
+
+    static std::optional<unsigned int> _get_json_uint(nlohmann::json root, std::string key) {
+        if (root.contains(key) && root[key].is_number_integer()) {
+            return root[key];
+        } else {
+            return std::make_optional<unsigned int>();
+        }
+    }
+
+    static std::optional<int> _get_json_int(nlohmann::json root, std::string key) {
+        if (root.contains(key) && root[key].is_number_integer()) {
+            return root[key];
+        } else {
+            return std::make_optional<int>();
+        }
+    }
+
+    static std::optional<bool> _get_json_bool(nlohmann::json root, std::string key) {
+        if (root.contains(key) && root[key].is_boolean()) {
+            return root[key];
+        } else {
+            return std::make_optional<bool>();
+        }
+    }
+
     static void _ingest_client_properties(nlohmann::json client_obj) {
-        if (client_obj.contains(KEY_CLIENT_ID) && client_obj[KEY_CLIENT_ID].is_string()) {
-            get_client_properties().id = client_obj[KEY_CLIENT_ID];
+        if (auto id = _get_json_string(client_obj, KEY_CLIENT_ID); id.has_value()) {
+            get_client_properties().id = id.value();
         }
 
-        if (client_obj.contains(KEY_CLIENT_NAME) && client_obj[KEY_CLIENT_NAME].is_string()) {
-            get_client_properties().name = client_obj[KEY_CLIENT_NAME];
+        if (auto name = _get_json_string(client_obj, KEY_CLIENT_NAME); name.has_value()) {
+            get_client_properties().name = name.value();
         }
 
-        if (client_obj.contains(KEY_CLIENT_VERSION) && client_obj[KEY_CLIENT_VERSION].is_string()) {
-            get_client_properties().version = client_obj[KEY_CLIENT_VERSION];
+        if (auto version = _get_json_string(client_obj, KEY_CLIENT_VERSION); version.has_value()) {
+            get_client_properties().version = version.value();
         }
     }
 
@@ -136,66 +171,66 @@ namespace argus {
             }
         }
 
-        if (engine_obj.contains(KEY_ENGINE_TICKRATE) && engine_obj[KEY_ENGINE_TICKRATE].is_number_integer()) {
-            set_target_tickrate(engine_obj[KEY_ENGINE_TICKRATE]);
+        if (auto tickrate = _get_json_uint(engine_obj, KEY_ENGINE_TICKRATE); tickrate.has_value()) {
+            set_target_tickrate(tickrate.value());
         }
 
-        if (engine_obj.contains(KEY_ENGINE_FRAMERATE) && engine_obj[KEY_ENGINE_TICKRATE].is_number_integer()) {
-            set_target_framerate(engine_obj[KEY_ENGINE_FRAMERATE]);
+        if (auto framerate = _get_json_uint(engine_obj, KEY_ENGINE_FRAMERATE); framerate.has_value()) {
+            set_target_framerate(framerate.value());
         }
     }
 
     static void _ingest_window_config(nlohmann::json window_obj) {
         InitialWindowParameters win_params;
-        if (window_obj.contains(KEY_WINDOW_ID) && window_obj[KEY_WINDOW_ID].is_string()) {
-            win_params.id = window_obj[KEY_WINDOW_ID];
+        if (auto id = _get_json_string(window_obj, KEY_WINDOW_ID); id.has_value()) {
+            win_params.id = id.value();
         }
         
-        if (window_obj.contains(KEY_WINDOW_TITLE) && window_obj[KEY_WINDOW_TITLE].is_string()) {
-            win_params.title = window_obj[KEY_WINDOW_TITLE];
+        if (auto title = _get_json_string(window_obj, KEY_WINDOW_TITLE); title.has_value()) {
+            win_params.title = title.value();
         }
 
-        if (window_obj.contains(KEY_WINDOW_MODE) && window_obj[KEY_WINDOW_MODE].is_string()) {
-            win_params.mode = window_obj[KEY_WINDOW_MODE];
+        if (auto mode = _get_json_string(window_obj, KEY_WINDOW_MODE); mode.has_value()) {
+            win_params.mode = mode.value();
         }
 
-        if (window_obj.contains(KEY_WINDOW_VSYNC) && window_obj[KEY_WINDOW_VSYNC].is_boolean()) {
-            win_params.vsync = window_obj[KEY_WINDOW_VSYNC];
+        if (auto vsync = _get_json_bool(window_obj, KEY_WINDOW_VSYNC); vsync.has_value()) {
+            win_params.vsync = vsync.value();
         }
 
         if (window_obj.contains(KEY_WINDOW_MOUSE) && window_obj[KEY_WINDOW_MOUSE].is_object()) {
             auto mouse_obj = window_obj[KEY_WINDOW_MOUSE];
 
-            if (mouse_obj.contains(KEY_WINDOW_MOUSE_VISIBLE) && mouse_obj[KEY_WINDOW_MOUSE_VISIBLE].is_boolean()) {
-                win_params.mouse_visible = mouse_obj[KEY_WINDOW_MOUSE_VISIBLE];
+            if (auto visible = _get_json_bool(mouse_obj, KEY_WINDOW_MOUSE_VISIBLE); visible.has_value()) {
+                win_params.mouse_visible = visible.value();
             }
 
-            if (mouse_obj.contains(KEY_WINDOW_MOUSE_CAPTURE) && mouse_obj[KEY_WINDOW_MOUSE_CAPTURE].is_boolean()) {
-                win_params.mouse_captured = mouse_obj[KEY_WINDOW_MOUSE_CAPTURE];
+            if (auto capture = _get_json_bool(mouse_obj, KEY_WINDOW_MOUSE_CAPTURE); capture.has_value()) {
+                win_params.mouse_captured = capture.value();
             }
         }
 
         if (window_obj.contains(KEY_WINDOW_POSITION) && window_obj[KEY_WINDOW_POSITION].is_object()) {
             auto pos_obj = window_obj[KEY_WINDOW_POSITION];
 
-            if (pos_obj.contains(KEY_WINDOW_POSITION_X) && pos_obj[KEY_WINDOW_POSITION_X].is_number_integer()) {
-                win_params.position.x = pos_obj[KEY_WINDOW_POSITION_X];
+            if (auto pos_x = _get_json_int(pos_obj, KEY_WINDOW_POSITION_X); pos_x.has_value()) {
+                win_params.position.x = pos_x.value();
             }
 
-            if (pos_obj.contains(KEY_WINDOW_POSITION_Y) && pos_obj[KEY_WINDOW_POSITION_Y].is_number_integer()) {
-                win_params.position.y = pos_obj[KEY_WINDOW_POSITION_Y];
+            if (auto pos_y = _get_json_int(pos_obj, KEY_WINDOW_POSITION_Y); pos_y.has_value()) {
+                win_params.position.y = pos_y.value();
             }
         }
 
         if (window_obj.contains(KEY_WINDOW_DIMENSIONS) && window_obj[KEY_WINDOW_DIMENSIONS].is_object()) {
             auto dim_obj = window_obj[KEY_WINDOW_DIMENSIONS];
 
-            if (dim_obj.contains(KEY_WINDOW_DIMENSIONS_W) && dim_obj[KEY_WINDOW_DIMENSIONS_W].is_number_integer()) {
-                win_params.dimensions.x = dim_obj[KEY_WINDOW_DIMENSIONS_W];
+            if (auto dim_w = _get_json_uint(dim_obj, KEY_WINDOW_DIMENSIONS_W); dim_w.has_value()) {
+                win_params.dimensions.x = dim_w.value();
             }
 
-            if (dim_obj.contains(KEY_WINDOW_DIMENSIONS_H) && dim_obj[KEY_WINDOW_DIMENSIONS_H].is_number_integer()) {
-                win_params.dimensions.y = dim_obj[KEY_WINDOW_DIMENSIONS_H];
+            if (auto dim_h = _get_json_uint(dim_obj, KEY_WINDOW_DIMENSIONS_H); dim_h.has_value()) {
+                win_params.dimensions.y = dim_h.value();
             }
         }
 
@@ -203,14 +238,12 @@ namespace argus {
     }
 
     static void _ingest_bindings_config(nlohmann::json bindings_obj) {
-        if (bindings_obj.contains(KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE)
-                && bindings_obj[KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE].is_string()) {
-            set_default_bindings_resource_id(bindings_obj[KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE]);
+        if (auto res_id = _get_json_string(bindings_obj, KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE); res_id.has_value()) {
+            set_default_bindings_resource_id(res_id.value());
         }
 
-        if (bindings_obj.contains(KEY_BINDINGS_SAVE_USER_BINDINGS)
-                && bindings_obj[KEY_BINDINGS_SAVE_USER_BINDINGS].is_boolean()) {
-            set_save_user_bindings(bindings_obj[KEY_BINDINGS_SAVE_USER_BINDINGS]);
+        if (auto save = _get_json_bool(bindings_obj, KEY_BINDINGS_SAVE_USER_BINDINGS); save.has_value()) {
+            set_save_user_bindings(save.value());
         }
     }
 
