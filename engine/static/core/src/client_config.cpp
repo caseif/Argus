@@ -18,10 +18,12 @@
 
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/optional.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/client_config.hpp"
+#include "argus/core/downstream_config.hpp"
 #include "internal/core/client_properties.hpp"
 #include "internal/core/engine_config.hpp"
 
@@ -63,12 +65,16 @@
 #define KEY_WINDOW_ID "id"
 #define KEY_WINDOW_TITLE "title"
 #define KEY_WINDOW_MODE "mode"
+#define KEY_WINDOW_VSYNC "vsync"
+#define KEY_WINDOW_MOUSE "mouse"
+#define KEY_WINDOW_MOUSE_VISIBLE "visible"
+#define KEY_WINDOW_MOUSE_CAPTURE "capture"
 #define KEY_WINDOW_POSITION "position"
 #define KEY_WINDOW_POSITION_X "x"
 #define KEY_WINDOW_POSITION_Y "y"
 #define KEY_WINDOW_DIMENSIONS "dimensions"
-#define KEY_WINDOW_DIMENSIONS_X "x"
-#define KEY_WINDOW_DIMENSIONS_Y "y"
+#define KEY_WINDOW_DIMENSIONS_W "width"
+#define KEY_WINDOW_DIMENSIONS_H "height"
 
 #define KEY_BINDINGS "bindings"
 #define KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE "default_bindings_resource"
@@ -141,13 +147,72 @@ namespace argus {
     }
 
     static void _ingest_window_config(nlohmann::json window_obj) {
-        UNUSED(window_obj);
-        //TODO
+        InitialWindowParameters win_params;
+        if (window_obj.contains(KEY_WINDOW_ID) && window_obj[KEY_WINDOW_ID].is_string()) {
+            win_params.id = window_obj[KEY_WINDOW_ID];
+        }
+        
+        if (window_obj.contains(KEY_WINDOW_TITLE) && window_obj[KEY_WINDOW_TITLE].is_string()) {
+            win_params.title = window_obj[KEY_WINDOW_TITLE];
+        }
+
+        if (window_obj.contains(KEY_WINDOW_MODE) && window_obj[KEY_WINDOW_MODE].is_string()) {
+            win_params.mode = window_obj[KEY_WINDOW_MODE];
+        }
+
+        if (window_obj.contains(KEY_WINDOW_VSYNC) && window_obj[KEY_WINDOW_VSYNC].is_boolean()) {
+            win_params.vsync = window_obj[KEY_WINDOW_VSYNC];
+        }
+
+        if (window_obj.contains(KEY_WINDOW_MOUSE) && window_obj[KEY_WINDOW_MOUSE].is_object()) {
+            auto mouse_obj = window_obj[KEY_WINDOW_MOUSE];
+
+            if (mouse_obj.contains(KEY_WINDOW_MOUSE_VISIBLE) && mouse_obj[KEY_WINDOW_MOUSE_VISIBLE].is_boolean()) {
+                win_params.mouse_visible = mouse_obj[KEY_WINDOW_MOUSE_VISIBLE];
+            }
+
+            if (mouse_obj.contains(KEY_WINDOW_MOUSE_CAPTURE) && mouse_obj[KEY_WINDOW_MOUSE_CAPTURE].is_boolean()) {
+                win_params.mouse_captured = mouse_obj[KEY_WINDOW_MOUSE_CAPTURE];
+            }
+        }
+
+        if (window_obj.contains(KEY_WINDOW_POSITION) && window_obj[KEY_WINDOW_POSITION].is_object()) {
+            auto pos_obj = window_obj[KEY_WINDOW_POSITION];
+
+            if (pos_obj.contains(KEY_WINDOW_POSITION_X) && pos_obj[KEY_WINDOW_POSITION_X].is_number_integer()) {
+                win_params.position.x = pos_obj[KEY_WINDOW_POSITION_X];
+            }
+
+            if (pos_obj.contains(KEY_WINDOW_POSITION_Y) && pos_obj[KEY_WINDOW_POSITION_Y].is_number_integer()) {
+                win_params.position.y = pos_obj[KEY_WINDOW_POSITION_Y];
+            }
+        }
+
+        if (window_obj.contains(KEY_WINDOW_DIMENSIONS) && window_obj[KEY_WINDOW_DIMENSIONS].is_object()) {
+            auto dim_obj = window_obj[KEY_WINDOW_DIMENSIONS];
+
+            if (dim_obj.contains(KEY_WINDOW_DIMENSIONS_W) && dim_obj[KEY_WINDOW_DIMENSIONS_W].is_number_integer()) {
+                win_params.dimensions.x = dim_obj[KEY_WINDOW_DIMENSIONS_W];
+            }
+
+            if (dim_obj.contains(KEY_WINDOW_DIMENSIONS_H) && dim_obj[KEY_WINDOW_DIMENSIONS_H].is_number_integer()) {
+                win_params.dimensions.y = dim_obj[KEY_WINDOW_DIMENSIONS_H];
+            }
+        }
+
+        set_initial_window_parameters(win_params);
     }
 
     static void _ingest_bindings_config(nlohmann::json bindings_obj) {
-        UNUSED(bindings_obj);
-        //TODO
+        if (bindings_obj.contains(KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE)
+                && bindings_obj[KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE].is_string()) {
+            set_default_bindings_resource_id(bindings_obj[KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE]);
+        }
+
+        if (bindings_obj.contains(KEY_BINDINGS_SAVE_USER_BINDINGS)
+                && bindings_obj[KEY_BINDINGS_SAVE_USER_BINDINGS].is_boolean()) {
+            set_save_user_bindings(bindings_obj[KEY_BINDINGS_SAVE_USER_BINDINGS]);
+        }
     }
 
     static bool _ingest_config_content(std::istream &stream) {
