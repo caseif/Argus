@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/optional.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
@@ -28,6 +27,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -36,7 +36,7 @@
 namespace argus {
     static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
 
-    static Optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
+    static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
             std::vector<VkQueueFamilyProperties> queue_families) {
         QueueFamilyIndices indices = {};
 
@@ -121,7 +121,7 @@ namespace argus {
             _ARGUS_DEBUG("Physical device '%s' was assigned rating of %d", dev_props.deviceName, rating);
             if (rating > best_rating) {
                 best_dev = dev;
-                best_dev_indices = indices;
+                best_dev_indices = indices.value();
                 best_rating = rating;
             }
         }

@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/optional.hpp"
 #include "internal/lowlevel/logging.hpp"
 
 #include "argus/render/common/backend.hpp"
 #include "internal/render/common/backend.hpp"
 
 #include <map>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -37,7 +37,7 @@ namespace argus {
         _ARGUS_DEBUG("Successfully registered render backend with ID %s", id.c_str());
     }
 
-    Optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id) {
+    std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id) {
         auto it = g_render_backend_activate_fns.find(backend_id);
         if (it != g_render_backend_activate_fns.end()) {
             return it->second;

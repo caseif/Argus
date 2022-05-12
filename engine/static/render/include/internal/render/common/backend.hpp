@@ -18,15 +18,14 @@
 
 #pragma once
 
-#include "argus/lowlevel/optional.hpp"
-
 #include "argus/render/common/backend.hpp"
 
 #include <map>
+#include <optional>
 #include <string>
 
 namespace argus {
-    Optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id);
+    std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id);
     
     void unregister_backend_activate_fns(void);
 }

@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "argus/lowlevel/optional.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "internal/lowlevel/logging.hpp"
 
