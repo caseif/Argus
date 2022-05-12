@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-namespace argus { namespace input {
+namespace argus::input {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Controller));
 
     Controller::Controller(ControllerIndex index):
@@ -166,4 +166,4 @@ namespace argus { namespace input {
     void Controller::unbind_mouse_axis(MouseAxis axis, const std::string &action) {
         _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
     }
-}}
+}

@@ -22,7 +22,7 @@
 
 #include "argus/core/event.hpp"
 
-namespace argus { namespace input {
+namespace argus::input {
     enum class InputEventType {
         ButtonDown,
         ButtonUp,
@@ -40,4 +40,4 @@ namespace argus { namespace input {
         InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
                 const std::string &action, double axis_value, double axis_delta);
     };
-}}
+}

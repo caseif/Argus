@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-namespace argus { namespace input {
+namespace argus::input {
     static std::vector<TextInputContext*> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
@@ -65,4 +65,4 @@ namespace argus { namespace input {
         this->valid = false;
         remove_from_vector(g_input_contexts, this);
     }
-}}
+}

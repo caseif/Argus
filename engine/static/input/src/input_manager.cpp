@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace argus { namespace input {
+namespace argus::input {
     static AllocPool g_pimpl_pool(sizeof(pimpl_InputManager));
 
     InputManager &InputManager::instance(void) {
@@ -176,4 +176,4 @@ namespace argus { namespace input {
             }
         }
     }
-}}
+}

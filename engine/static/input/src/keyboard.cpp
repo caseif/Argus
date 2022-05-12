@@ -39,7 +39,7 @@
 
 #include <cstdint>
 
-namespace argus { namespace input {
+namespace argus::input {
     static const std::unordered_map<int, KeyboardScancode> g_keycode_glfw_to_argus({
         { GLFW_KEY_SPACE, KeyboardScancode::Space },
         { GLFW_KEY_APOSTROPHE, KeyboardScancode::Apostrophe },
@@ -297,4 +297,4 @@ namespace argus { namespace input {
         }
         return glfwGetKey(static_cast<GLFWwindow *>(argus::get_window_handle(window)), glfw_scancode);
     }
-}}
+}

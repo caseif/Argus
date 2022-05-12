@@ -20,7 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
-namespace argus { namespace input {
+namespace argus::input {
     typedef uint16_t MouseButtonIndex;
 
     struct MouseButton {
@@ -97,4 +97,4 @@ namespace argus { namespace input {
      * \param visible Whether raw mouse input should be used.
      */
     void set_mouse_raw_input(const argus::Window &window, bool raw_input);
-}}
+}

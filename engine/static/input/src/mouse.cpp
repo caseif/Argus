@@ -34,7 +34,7 @@
 
 #include <cmath>
 
-namespace argus { namespace input {
+namespace argus::input {
     static std::map<const argus::Window*, MouseState> g_mouse_states;
 
     argus::Vector2d mouse_position(const argus::Window &window) {
@@ -192,4 +192,4 @@ namespace argus { namespace input {
         glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
         glfwSetCursorPosCallback(glfw_window, _cursor_pos_callback);
     }
-}}
+}

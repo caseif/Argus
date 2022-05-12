@@ -20,7 +20,7 @@
 
 #include "argus/input/controller.hpp"
 
-namespace argus { namespace input {
+namespace argus::input {
     struct pimpl_InputManager;
 
     class InputManager {
@@ -51,4 +51,4 @@ namespace argus { namespace input {
 
             void handle_mouse_axis_change(const Window &window, MouseAxis axis, double value, double delta) const;
     };
-}}
+}

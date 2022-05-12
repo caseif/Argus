@@ -22,11 +22,11 @@
 
 #include <map>
 
-namespace argus { namespace input {
+namespace argus::input {
     struct pimpl_InputManager {
         std::map<ControllerIndex, Controller*> controllers;
 
         pimpl_InputManager(void) {
         }
     };
-}}
+}

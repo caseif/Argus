@@ -23,7 +23,7 @@
 
 #include <map>
 
-namespace argus { namespace input {
+namespace argus::input {
     struct pimpl_Controller {
         ControllerIndex index;
 
@@ -40,4 +40,4 @@ namespace argus { namespace input {
                 index(index) {
         }
     };
-}}
+}

@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-namespace argus { namespace input {
+namespace argus::input {
     // forward declarations
     class InputManager;
 
@@ -73,4 +73,4 @@ namespace argus { namespace input {
 
             void unbind_mouse_axis(MouseAxis axis, const std::string &action);
     };
-}}
+}

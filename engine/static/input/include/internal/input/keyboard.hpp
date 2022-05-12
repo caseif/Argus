@@ -25,6 +25,6 @@ namespace argus {
     class Window;
 }
 
-namespace argus { namespace input {
+namespace argus::input {
     void init_keyboard(const Window &window);
-}}
+}
