@@ -45,6 +45,7 @@ jobs:
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
       env:
         CC: clang
+        CXX: clang++
     - name: Build
       run: cmake --build build --config Debug --parallel 8
     - name: Archive

@@ -296,7 +296,7 @@ namespace argus {
         std::vector<std::filesystem::path> candidate_packages;
 
         for (const auto &child : std::filesystem::directory_iterator(res_dir)) {
-            if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT != 0) {
+            if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT) {
                 continue;
             }
 
