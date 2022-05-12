@@ -27,6 +27,7 @@
 #include <functional>
 #include <mutex>
 #include <queue>
+#include <shared_mutex>
 #include <vector>
 
 namespace argus {
@@ -58,8 +59,8 @@ namespace argus {
         std::vector<IndexedValue<T>> list;
         std::queue<IndexedValue<T>> addition_queue;
         std::queue<Index> removal_queue;
-        SharedMutex list_mutex;
-        SharedMutex queue_mutex;
+        std::shared_mutex list_mutex;
+        std::shared_mutex queue_mutex;
 
         CallbackList(void) {
         }
