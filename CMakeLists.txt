@@ -26,6 +26,9 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+set(PROJECT_CXX_VERSION 17)
+set(PROJECT_CXX_EXTENSIONS NO)
+
 set(LIB_BASE_NAME argus)
 
 set(DYN_MODULE_DIR "modules")
@@ -710,9 +713,9 @@ function(configure_module MODULE_PROJECT_DIR)
   endif()
 
   # set the C++ standard
-  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14)
+  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
+  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
-  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
@@ -774,7 +777,9 @@ add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIBS})
 # set the linker language (since we're not directly including any sources)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
-set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD 14)
+set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
+set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
+set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 # enable PIC
 set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # export all symbols (required on Windows)
