@@ -105,14 +105,18 @@ namespace argus {
     }
 
     static void _load_backend_modules(void) {
-        _ARGUS_DEBUG("Loading render backend modules");
+        _ARGUS_DEBUG("Loading graphics backend modules");
+        size_t count = 0;
         for (auto &module : get_present_dynamic_modules()) {
             auto module_id = module.first;
+            printf("%s\n", module_id.c_str());
             if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
                 //TODO: fail gracefully
                 enable_dynamic_module(module_id);
+                count++;
             }
         }
+        _ARGUS_DEBUG("Loaded %lu graphics backend modules", count);
     }
 
     static Canvas &_construct_canvas(Window &window) {

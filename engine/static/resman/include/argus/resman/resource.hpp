@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -54,7 +55,7 @@ namespace argus {
          * \attention This will point either to the loose resource file on the
          *            disk, or the archive containing the resource data.
          */
-        std::string fs_path;
+        std::filesystem::path fs_path;
 
         /**
          * \brief Creates a new ResourcePrototype.
@@ -64,7 +65,7 @@ namespace argus {
          * \param fs_path The path to the resource or archive containing the
          *        resource on the filesystem.
          */
-        ResourcePrototype(std::string uid, std::string media_type, std::string fs_path):
+        ResourcePrototype(std::string uid, std::string media_type, std::filesystem::path fs_path):
             uid(std::move(uid)),
             media_type(std::move(media_type)),
             fs_path(std::move(fs_path)) {

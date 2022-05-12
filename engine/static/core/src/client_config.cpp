@@ -29,6 +29,7 @@
 #include "arp/arp.h"
 #include "nlohmann/json.hpp"
 
+#include <filesystem>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -83,19 +84,16 @@
 #define KEY_BINDINGS_SAVE_USER_BINDINGS "save_user_bindings"
 
 namespace argus {
-    static inline bool _ends_with(const std::string &haystack, const std::string &needle)
+    /*static inline bool _ends_with(const std::string &haystack, const std::string &needle)
     {
         if (needle.size() > haystack.size()) {
             return false;
         }
         return std::equal(needle.rbegin(), needle.rend(), haystack.rbegin());
-    }
+    }*/
 
-    static std::string _get_resources_path(void) {
-        auto cwd = getcwd(NULL, 0);
-        std::string res_dir = std::string(cwd) + PATH_SEPARATOR + RESOURCES_DIR;
-        free(cwd);
-        return res_dir;
+    static std::filesystem::path _get_resources_path(void) {
+        return std::filesystem::current_path() / RESOURCES_DIR;
     }
 
     static std::optional<std::string> _get_json_string(nlohmann::json root, std::string key) {
@@ -270,11 +268,9 @@ namespace argus {
     }
 
     static bool _ingest_config_from_file(const std::string &ns) {
-        std::string config_path = _get_resources_path()
-            + PATH_SEPARATOR + ns
-            + PATH_SEPARATOR + CONFIG_FILE_NAME;
+        auto config_path = _get_resources_path() / ns / CONFIG_FILE_NAME;
 
-        if (!is_regfile(config_path)) {
+        if (!std::filesystem::is_regular_file(config_path)) {
             return false;
         }
 
@@ -297,32 +293,22 @@ namespace argus {
     static bool _ingest_config_from_arp(const std::string &ns) {
         auto res_dir = _get_resources_path();
 
-        std::vector<std::string> children;
-        try {
-            children = list_directory_entries(res_dir);
-        } catch (std::exception &ex) {
-            _ARGUS_WARN("Failed to search for config in ARP files: %s", ex.what());
-            return false;
-        }
+        std::vector<std::filesystem::path> candidate_packages;
 
-        std::vector<std::string> candidate_packages;
-
-        for (const std::string &child : children) {
-            if (!_ends_with(child, EXT_SEPARATOR ARP_EXT)) {
+        for (const auto &child : std::filesystem::directory_iterator(res_dir)) {
+            if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT != 0) {
                 continue;
             }
-            
-            auto full_child_path = res_dir + PATH_SEPARATOR + child;
 
-            if (!arp_is_base_archive(full_child_path.c_str())) {
+            if (!arp_is_base_archive(child.path().c_str())) {
                 continue;
             }
 
             arp_package_meta_t meta;
-            auto rc = arp_load_from_file(full_child_path.c_str(), &meta, nullptr);
+            auto rc = arp_load_from_file(child.path().c_str(), &meta, nullptr);
             if (rc != 0) {
                 _ARGUS_WARN("Failed to load package %s while searching for config (libarp says: %s)",
-                    child.c_str(), arp_get_error());
+                    child.path().filename().c_str(), arp_get_error());
                 continue;
             }
 
@@ -331,33 +317,32 @@ namespace argus {
             }
         }
 
-        for (const std::string &candidate_name : candidate_packages) {
-            _ARGUS_DEBUG("Searching for client config in package %s (namespace matches)", candidate_name.c_str());
+        for (const auto &candidate : candidate_packages) {
+            auto filename = candidate.filename().c_str();
 
-            auto full_path = res_dir + PATH_SEPARATOR + candidate_name;
+            _ARGUS_DEBUG("Searching for client config in package %s (namespace matches)", filename);
 
             ArpPackage pack;
-            auto rc = arp_load_from_file(full_path.c_str(), nullptr, &pack);
+            auto rc = arp_load_from_file(candidate.c_str(), nullptr, &pack);
             if (rc != 0) {
                 _ARGUS_WARN("Failed to load package at %s while searching for config (libarp says: %s)",
-                    candidate_name.c_str(), arp_get_error());
+                    filename, arp_get_error());
                 continue;
             }
 
             arp_resource_meta_t res_meta;
             rc = arp_find_resource(pack, (ns + ARP_NS_SEPARATOR + CONFIG_BASE_NAME).c_str(), &res_meta);
             if (rc == E_ARP_RESOURCE_NOT_FOUND) {
-                _ARGUS_DEBUG("Did not find config in package %s", candidate_name.c_str());
+                _ARGUS_DEBUG("Did not find config in package %s", candidate.filename().c_str());
                 continue;
             } else if (rc != 0) {
-                _ARGUS_WARN("Failed to find config in package %s (libarp says: %s)",
-                    candidate_name.c_str(), arp_get_error());
+                _ARGUS_WARN("Failed to find config in package %s (libarp says: %s)", filename, arp_get_error());
                 continue;
             }
 
             if (strcmp(res_meta.media_type, CONFIG_MEDIA_TYPE) != 0) {
                 _ARGUS_WARN("File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
-                    CONFIG_BASE_NAME, candidate_name.c_str(), res_meta.media_type);
+                    CONFIG_BASE_NAME, filename, res_meta.media_type);
                 continue;
             }
 
@@ -365,15 +350,14 @@ namespace argus {
 
             auto *res = arp_load_resource(&res_meta);
             if (res == nullptr) {
-                _ARGUS_WARN("Failed to load config from package %s (libarp says: %s)",
-                    candidate_name.c_str(), arp_get_error());
+                _ARGUS_WARN("Failed to load config from package %s (libarp says: %s)", filename, arp_get_error());
                 continue;
             }
 
             IMemStream stream(res->data, res->meta.size);
             _ingest_config_content(stream);
 
-            _ARGUS_INFO("Successfully loaded config from package at %s", candidate_name.c_str());
+            _ARGUS_INFO("Successfully loaded config from package at %s", filename);
             return true;
         }
 

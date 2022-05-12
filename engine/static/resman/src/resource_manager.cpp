@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <atomic>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <istream>
@@ -64,6 +65,8 @@
 
 #define UID_NS_SEPARATOR ':'
 #define UID_PATH_SEPARATOR '/'
+
+#define ARP_EXT "arp"
 
 #define RESOURCES_DIR "resources"
 
@@ -108,23 +111,11 @@ namespace argus {
         delete pimpl;
     }
 
-    static void _discover_arp_packages(ArpPackageSet set, const std::string &root_path) {
+    static void _discover_arp_packages(ArpPackageSet set, const std::filesystem::path &root_path) {
         std::vector<std::string> children;
-        try {
-            children = list_directory_entries(root_path);
-        } catch (std::exception &ex) {
-            _ARGUS_WARN("Failed to discover resources: %s", ex.what());
-            return;
-        }
 
-        for (const std::string &child : children) {
-            std::string full_child_path = root_path + PATH_SEPARATOR + child;
-
-            auto name_and_ext = get_name_and_extension(child);
-            std::string name = name_and_ext.first;
-            std::string ext = name_and_ext.second;
-
-            if (ext != "arp") {
+        for (const auto &child : std::filesystem::directory_iterator(root_path)) {
+            if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT) {
                 continue;
             }
 
@@ -132,59 +123,45 @@ namespace argus {
 
             ArpPackage package = nullptr;
             int rc = 0;
-            if ((rc = arp_load_from_file(full_child_path.c_str(), NULL, &package)) != 0) {
+            if ((rc = arp_load_from_file(child.path().c_str(), NULL, &package)) != 0) {
                 _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)",
-                        full_child_path.c_str(), rc);
+                        child.path().c_str(), rc);
             }
 
             if ((rc = arp_add_to_set(set, package)) != 0) {
                 _ARGUS_WARN("Failed to add package at path %s to set (libarp returned error code %d)",
-                        full_child_path.c_str(), rc);
+                        child.path().c_str(), rc);
             }
         }
     }
 
-    static void _discover_fs_resources_recursively(const std::string &root_path, const std::string &prefix,
+    static void _discover_fs_resources_recursively(const std::filesystem::path &root_path, const std::string &prefix,
             std::map<std::string, ResourcePrototype> &prototype_map,
             const std::map<std::string, std::string> &extension_map) {
-        std::vector<std::string> children;
-        try {
-            children = list_directory_entries(root_path);
-        } catch (std::exception &ex) {
-            _ARGUS_WARN("Failed to discover resources: %s", ex.what());
-            return;
-        }
-
-        for (const std::string &child : children) {
-            std::string full_child_path = root_path + PATH_SEPARATOR + child;
-
-            auto name_and_ext = get_name_and_extension(child);
-            std::string name = name_and_ext.first;
-            std::string ext = name_and_ext.second;
-
+        for (const auto &child : std::filesystem::directory_iterator(root_path)) {
             std::string cur_uid;
             if (prefix.empty()) {
-                if (is_regfile(full_child_path)) {
-                    if (ext != "arp") {
-                        _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s", name.c_str());
+                if (child.is_regular_file()) {
+                    if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT) {
+                        _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s", child.path().stem().c_str());
                     }
                     continue;
                 }
 
-                cur_uid = name + UID_NS_SEPARATOR;
+                cur_uid = child.path().stem().string() + UID_NS_SEPARATOR;
             } else {
                 if (prefix.back() == UID_NS_SEPARATOR) {
-                    cur_uid = prefix + name;
+                    cur_uid = prefix + child.path().stem().string();
                 } else {
-                    cur_uid = prefix + UID_PATH_SEPARATOR + name;
+                    cur_uid = prefix + UID_PATH_SEPARATOR + child.path().stem().string();
                 }
             }
 
-            if (is_directory(full_child_path)) {
-                _discover_fs_resources_recursively(full_child_path, cur_uid, prototype_map, extension_map);
-            } else if (is_regfile(full_child_path)) {
-                if (ext.empty()) {
-                    _ARGUS_WARN("Resource %s does not have an extension, ignoring", full_child_path.c_str());
+            if (child.is_directory()) {
+                _discover_fs_resources_recursively(child, cur_uid, prototype_map, extension_map);
+            } else if (child.is_regular_file()) {
+                if (!child.path().has_extension() || child.path().extension() == EXTENSION_SEPARATOR) {
+                    _ARGUS_WARN("Resource %s does not have an extension, ignoring", child.path().c_str());
                     continue;
                 }
 
@@ -193,6 +170,7 @@ namespace argus {
                     continue;
                 }
 
+                auto ext = child.path().extension().string().substr(1);
                 std::transform(ext.begin(), ext.end(), ext.begin(), [](auto c){ return std::tolower(c); });
 
                 auto type_it = extension_map.find(ext);
@@ -202,31 +180,26 @@ namespace argus {
                     continue;
                 }
 
-                prototype_map.insert({cur_uid, {cur_uid, type_it->second, full_child_path}});
+                prototype_map.insert({cur_uid, {cur_uid, type_it->second, child}});
 
                 _ARGUS_DEBUG("Discovered filesystem resource %s at path %s", cur_uid.c_str(),
-                        full_child_path.c_str());
+                        child.path().c_str());
             }
         }
     }
 
     void ResourceManager::discover_resources(void) {
         try {
-            /*std::string exe_path = get_executable_path();
-
-            std::string exe_dir = get_parent(exe_path);*/
-
-            auto cwd = getcwd(NULL, 0);
-            std::string res_dir = std::string(cwd) + PATH_SEPARATOR + RESOURCES_DIR;
-            free(cwd);
+            auto res_dir = std::filesystem::current_path() / RESOURCES_DIR;
 
             _ARGUS_DEBUG("Discovering ARP packages");
 
-            _discover_arp_packages(pimpl->package_set, res_dir);
+            _discover_arp_packages(pimpl->package_set, res_dir.c_str());
 
             _ARGUS_DEBUG("Discovering loose resources from filesystem");
 
-            _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos, pimpl->extension_mappings);
+            _discover_fs_resources_recursively(res_dir.c_str(), "", pimpl->discovered_fs_protos,
+                    pimpl->extension_mappings);
 
             _ARGUS_DEBUG("Resource discovery completed");
 

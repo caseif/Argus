@@ -27,6 +27,7 @@
 #include "internal/core/module_defs.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <map>
 #include <set>
@@ -56,19 +57,16 @@ namespace argus {
     static std::map<std::string, DynamicModule> g_enabled_dyn_modules_staging;
     static std::vector<DynamicModule> g_enabled_dyn_modules;
 
-    static std::string _locate_dynamic_module(const std::string &id) {
-        auto cwd = getcwd(NULL, 0);
-        std::string modules_dir_path = std::string(cwd) + PATH_SEPARATOR MODULES_DIR_NAME;
-        free(cwd);
+    static std::filesystem::path _locate_dynamic_module(const std::string &id) {
+        auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
-        if (!is_directory(modules_dir_path)) {
+        if (!std::filesystem::is_directory(modules_dir_path)) {
             _ARGUS_WARN("Dynamic module directory not found. (Searched at %s)", modules_dir_path.c_str());
             return "";
         }
 
-        std::string module_path = modules_dir_path + PATH_SEPARATOR
-                + SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR + SHARED_LIB_EXT;
-        if (!is_regfile(module_path)) {
+        auto module_path = modules_dir_path / (SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR SHARED_LIB_EXT);
+        if (!std::filesystem::is_regular_file(module_path)) {
             _ARGUS_WARN("Item referred to by %s does not exist, is not a regular file, or is inaccessible",
                     module_path.c_str());
             return "";
@@ -77,51 +75,41 @@ namespace argus {
         return module_path;
     }
 
-    std::map<std::string, std::string> get_present_dynamic_modules(void) {
-        auto cwd = getcwd(NULL, 0);
-        std::string modules_dir_path = std::string(cwd) + PATH_SEPARATOR MODULES_DIR_NAME;
-        free(cwd);
+    std::map<std::string, std::filesystem::path> get_present_dynamic_modules(void) {
+        auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
-        if (!is_directory(modules_dir_path)) {
+        if (!std::filesystem::is_directory(modules_dir_path)) {
             _ARGUS_INFO("No dynamic modules to load.");
-            return std::map<std::string, std::string>();
+            return std::map<std::string, std::filesystem::path>();
         }
 
-        std::vector<std::string> entries = list_directory_entries(modules_dir_path);
-        if (entries.empty()) {
-            _ARGUS_INFO("No dynamic modules to load.");
-            return std::map<std::string, std::string>();
+        std::map<std::string, std::filesystem::path> modules;
+
+        for (const auto &entry : std::filesystem::directory_iterator(modules_dir_path)) {
+            auto filename = entry.path().filename();
+
+            if (!entry.is_regular_file()) {
+                _ARGUS_DEBUG("Ignoring non-regular module file %s", filename.c_str());
+                continue;
+            }
+
+            if (strlen(SHARED_LIB_PREFIX) > 0
+                    && entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
+                _ARGUS_DEBUG("Ignoring module file %s with non-library prefix", filename.c_str());
+                continue;
+            }
+
+            if (entry.path().extension() != EXTENSION_SEPARATOR SHARED_LIB_EXT) {
+                _ARGUS_WARN("Ignoring module file %s with non-library extension", filename.c_str());
+                continue;
+            }
+
+            auto base_name = entry.path().stem().string().substr(strlen(SHARED_LIB_PREFIX));
+            modules[base_name] = entry;
         }
 
-        std::map<std::string, std::string> modules;
-
-        for (const auto &filename : entries) {
-            std::string full_path = modules_dir_path + PATH_SEPARATOR + filename;
-
-            if (!is_regfile(full_path)) {
-                _ARGUS_DEBUG("Ignoring non-regular module file %s", full_path.c_str());
-                continue;
-            }
-
-            if (SHARED_LIB_PREFIX[0] != '\0' && filename.find(SHARED_LIB_PREFIX) != 0) {
-                _ARGUS_DEBUG("Ignoring module file %s with invalid prefix", filename.c_str());
-                continue;
-            }
-
-            std::string ext;
-            size_t ext_sep_index = filename.rfind(EXTENSION_SEPARATOR);
-            if (ext_sep_index != std::string::npos) {
-                ext = filename.substr(ext_sep_index + 1);
-            }
-
-            if (ext != SHARED_LIB_EXT) {
-                _ARGUS_WARN("Ignoring module file %s with invalid extension", filename.c_str());
-                continue;
-            }
-
-            auto base_name = filename.substr(std::strlen(SHARED_LIB_PREFIX),
-                    ext_sep_index - std::strlen(SHARED_LIB_PREFIX));
-            modules[base_name] = full_path;
+        if (modules.empty()) {
+            _ARGUS_INFO("No dynamic modules present");
         }
 
         return modules;
@@ -221,12 +209,12 @@ namespace argus {
     static DynamicModule &_load_dynamic_module(std::string id,
             std::vector<std::string> dependent_chain = {}) {
         auto path = _locate_dynamic_module(id);
-        if (path == "") {
+        if (path.empty()) {
             _ARGUS_FATAL("%s", _format_load_error("Dynamic module " + id + " was requested but could not be located",
                     dependent_chain).c_str());
         }
 
-        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file " + path,
+        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file " + path.c_str(),
                 dependent_chain).c_str());
 
         void *handle = nullptr;

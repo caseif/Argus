@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <future>
@@ -35,24 +36,15 @@
 
 #ifdef _WIN32
 #define ssize_t signed __int64
-
-/**
- * \brief The separator for elements in filesystem paths.
- */
-#define PATH_SEPARATOR "\\"
 #else
 #include <sys/types.h>
-
-/**
- * \brief The separator for elements in filesystem paths.
- */
-#define PATH_SEPARATOR "/"
 #endif
 
 /**
  * \brief The separator between a file's name and extension.
  */
-#define EXTENSION_SEPARATOR '.'
+#define EXTENSION_SEPARATOR "."
+#define EXTENSION_SEPARATOR_CHAR '.'
 
 /**
  * \brief File mode mask denoting read access.
@@ -78,14 +70,14 @@ namespace argus {
      */
     class FileHandle {
         private:
-            std::string path;
+            std::filesystem::path path;
             int mode;
             size_t size;
             void *handle;
 
             bool valid;
 
-            FileHandle(const std::string &path, int mode, size_t size, void *handle);
+            FileHandle(const std::filesystem::path &path, int mode, size_t size, void *handle);
 
         public:
             /**
@@ -105,15 +97,14 @@ namespace argus {
              * \throw std::system_error If an error occurs while opening or
              *        creating the file.
              */
-            static FileHandle create(const std::string &path, int mode);
+            static FileHandle create(const std::filesystem::path &path, int mode);
 
             /**
-             * \brief Gets the absolute path of the file referenced by this
-             *        handle.
+             * \brief Gets the path of the file referenced by this handle.
              *
-             * \return The absolute path of the file referenced by this handle.
+             * \return The path of the file referenced by this handle.
              */
-            const std::string &get_path(void) const;
+            const std::filesystem::path &get_path(void) const;
 
             /**
              * \brief Gets the size of the file referenced by this handle.
@@ -265,80 +256,4 @@ namespace argus {
             const std::future<void> write_async(off_t offset, size_t write_size,
                     unsigned char *buf, std::function<void(FileHandle&)> callback);
     };
-
-    /**
-     * \brief Gets the path to the current executable. This function has various
-     *        implementations depending on the target platform.
-     *
-     * \return The path to the current executable.
-     *
-     * \throw std::runtime_error (Windows only) If the executable path is too
-     *        large for the engine's buffer.
-     * \throw std::system_error If an error occurs while obtaining the
-     *        executable path.
-     */
-    const std::string get_executable_path(void);
-
-    /**
-     * \brief Returns a list of entries in the current directory.
-     *
-     * \param directory_path The relative or absolute path to the directory to
-     *                       query.
-     *
-     * \return A std::vector containing the unqualified names of all entries in
-     *         the specified directory.
-     *
-     * \throw std::system_error If an error occurs while opening the directory.
-     */
-    const std::vector<std::string> list_directory_entries(const std::string &directory_path);
-
-    /**
-     * \brief Gets whether the entry at the given path is a directory.
-     *
-     * If the entry does not exist, this function will return `false`.
-     *
-     * \param path The path to query.
-     *
-     * \return Whether the entry at the path is a directory.
-     */
-    bool is_directory(const std::string &path);
-
-    /**
-     * \brief Gets whether the entry at the given path is a regular file.
-     *
-     * If the entry does not exist, this function will return `false`.
-     *
-     * \param path The path to query.
-     *
-     * \return Whether the entry at the path is a regular file.
-     */
-    bool is_regfile(const std::string &path);
-
-    /**
-     * \brief Parses the parent of the entry at the given path.
-     *
-     * If the given path is at the root of a filesystem, the original string
-     * will be returned.
-     *
-     * \param path The path to query.
-     *
-     * \return The parent of the given path.
-     *
-     * \throw std::system_error If the `path` parameter is an empty string.
-     */
-    std::string get_parent(const std::string &path);
-
-    /**
-     * \brief Parses the name and extension from the given file name.
-     *
-     * \param file_name The file name to parse.
-     *
-     * \return A std::pair containing the name and extension of the given file
-     *         name, respectively.
-     *
-     * \warning This function does not operate on paths (relative or absolute)
-     *          and will not handle them correctly.
-     */
-    std::pair<const std::string, const std::string> get_name_and_extension(const std::string &file_name);
-
 }

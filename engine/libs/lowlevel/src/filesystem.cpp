@@ -21,6 +21,7 @@
 #include "internal/lowlevel/error_util.hpp"
 #include "internal/lowlevel/logging.hpp"
 
+#include <filesystem>
 #include <future>
 #include <stdexcept>
 
@@ -87,7 +88,7 @@
 
 namespace argus {
 
-    FileHandle::FileHandle(const std::string &path, const int mode, const size_t size, void *const handle):
+    FileHandle::FileHandle(const std::filesystem::path &path, const int mode, const size_t size, void *const handle):
             path(path),
             mode(mode),
             size(size),
@@ -96,7 +97,7 @@ namespace argus {
     }
 
     //TODO: use the native Windows file API, if available
-    FileHandle FileHandle::create(const std::string &path, const int mode) {
+    FileHandle FileHandle::create(const std::filesystem::path &path, const int mode) {
         const char *std_mode = "";
         // we check for the following invalid cases:
         // - no modes set at all
@@ -152,7 +153,7 @@ namespace argus {
         return FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file));
     }
 
-    const std::string &FileHandle::get_path(void) const {
+    const std::filesystem::path &FileHandle::get_path(void) const {
         return path;
     }
 
@@ -251,132 +252,4 @@ namespace argus {
 
         return make_future(std::bind(&FileHandle::write, this, offset, write_size, buf), std::bind(callback, *this));
     }
-
-    const std::string get_executable_path(void) {
-        const size_t max_path_len = 4097;
-        char path[max_path_len];
-
-        #ifdef _WIN32
-        int rc = 0;
-        GetModuleFileNameA(NULL, path, max_path_len);
-        rc = GetLastError(); // it so happens that ERROR_SUCCESS == 0
-
-        validate_syscall(rc, "GetModuleFileName");
-        #elif defined __APPLE__
-        uint32_t size;
-        rc = _NSGetExecutablePath(path, &size);
-
-        if (rc != 0) {
-            _ARGUS_WARN("Need %u bytes to store full executable path", size);
-            throw std::runtime_error("Executable path too long for buffer");
-            return rc;
-        }
-        #elif defined __linux__
-        ssize_t size = readlink("/proc/self/exe", path, max_path_len);
-        validate_syscall(size != -1, "readlink");
-        #elif defined __FreeBSD__
-        int mib[4];
-        mib[0] = CTL_KERN;
-        mib[1] = KERN_PROC;
-        mib[2] = KERN_PROC_PATHNAME;
-        mib[3] = -1;
-
-        validate_syscall(sysctl(mib, 4, path, &path_len, NULL, 0), "sysctl");
-        #elif defined __NetBSD__
-        readlink("/proc/curproc/exe", path, max_path_len);
-        validate_syscall(size != -1, "readlink");
-        #elif defined __DragonFly__
-        readlink("/proc/curproc/file", path, max_path_len);
-        validate_syscall(size != -1, "readlink");
-        #endif
-
-        return std::string(path);
-    }
-
-    const std::vector<std::string> list_directory_entries(const std::string &directory_path) {
-        std::vector<std::string> res;
-
-        #ifdef _WIN32
-        WIN32_FIND_DATAA find_data;
-
-        HANDLE find_handle = FindFirstFile((directory_path + "\\*").c_str(), &find_data);
-        if (find_handle == INVALID_HANDLE_VALUE) {
-            return res;
-        }
-
-        do {
-            if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) {
-                continue;
-            }
-
-            res.insert(res.end(), find_data.cFileName);
-        } while (FindNextFile(find_handle, &find_data) != 0);
-        #else
-        DIR *dir = opendir(directory_path.c_str());
-        validate_syscall(dir != nullptr, "opendir");
-
-        struct dirent *ent;
-        while ((ent = readdir(dir)) != NULL) {
-            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
-                continue;
-            }
-
-            res.insert(res.cbegin(), std::string(ent->d_name));
-        }
-
-        closedir(dir);
-        #endif
-
-        return res;
-    }
-
-    bool is_directory(const std::string &path) {
-        stat_t path_stat;
-        if (stat(path.c_str(), &path_stat) != 0) {
-            return false;
-        }
-        return S_ISDIR(path_stat.st_mode);
-    }
-
-    bool is_regfile(const std::string &path) {
-        stat_t path_stat;
-        if (stat(path.c_str(), &path_stat) != 0) {
-            return false;
-        }
-        return S_ISREG(path_stat.st_mode);
-    }
-
-    std::string get_parent(const std::string &path) {
-        #ifdef _WIN32
-        char path_separator = '\\';
-        #else
-        char path_separator = '/';
-        #endif
-
-        validate_arg(path.length() > 0, "Cannot get parent of zero-length path");
-
-        size_t start = path.length() - 1;
-        // skip any trailing slashes
-        if (path[start] == path_separator) {
-            start--;
-        }
-
-        //TOOD: this probably doesn't handle Windows paths too well right now
-        size_t index = path.find_last_of(path_separator, start);
-        if (index == std::string::npos) {
-            return path;
-        }
-
-        return path.substr(0, index);
-    }
-
-    std::pair<const std::string, const std::string> get_name_and_extension(const std::string &file_name) {
-        size_t index = file_name.find_last_of(EXTENSION_SEPARATOR);
-        if (index == std::string::npos) {
-            return {file_name, ""};
-        } else {
-            return {file_name.substr(0, index), file_name.substr(index + 1)};
-        }
-    }
-
 }
