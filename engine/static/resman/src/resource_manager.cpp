@@ -123,7 +123,7 @@ namespace argus {
 
             ArpPackage package = nullptr;
             int rc = 0;
-            if ((rc = arp_load_from_file(child.path().c_str(), NULL, &package)) != 0) {
+            if ((rc = arp_load_from_file(child.path().string().c_str(), NULL, &package)) != 0) {
                 _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)",
                         child.path().c_str(), rc);
             }
@@ -194,11 +194,11 @@ namespace argus {
 
             _ARGUS_DEBUG("Discovering ARP packages");
 
-            _discover_arp_packages(pimpl->package_set, res_dir.c_str());
+            _discover_arp_packages(pimpl->package_set, res_dir);
 
             _ARGUS_DEBUG("Discovering loose resources from filesystem");
 
-            _discover_fs_resources_recursively(res_dir.c_str(), "", pimpl->discovered_fs_protos,
+            _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos,
                     pimpl->extension_mappings);
 
             _ARGUS_DEBUG("Resource discovery completed");

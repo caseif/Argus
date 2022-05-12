@@ -214,12 +214,12 @@ namespace argus {
                     dependent_chain).c_str());
         }
 
-        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file " + path.c_str(),
-                dependent_chain).c_str());
+        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file "
+                + path.string().c_str(), dependent_chain).c_str());
 
         void *handle = nullptr;
         #ifdef _WIN32
-        handle = LoadLibraryA(path.c_str());
+        handle = LoadLibraryA(path.string().c_str());
         if (handle == nullptr) {
             auto err_msg = _format_load_error("Failed to load dynamic module " + id
                     + " (error " + std::to_string(GetLastError()) + ")", dependent_chain);

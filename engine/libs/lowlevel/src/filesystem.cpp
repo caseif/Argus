@@ -120,7 +120,7 @@ namespace argus {
         FILE *file = NULL;
         if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {
             stat_t stat_buf;
-            int stat_rc = stat(path.c_str(), &stat_buf);
+            int stat_rc = stat(path.string().c_str(), &stat_buf);
 
             if (stat_rc) {
                 // throw the error directly if it's not ENOENT (file not found)
@@ -129,7 +129,7 @@ namespace argus {
                 // if the file doesn't exist, create it
                 #ifdef _WIN32
                 FILE *file_tmp;
-                fopen_s(&file_tmp, path.c_str(), "w");
+                fopen_s(&file_tmp, path.string().c_str(), "w");
                 #else
                 FILE *file_tmp = fopen(path.c_str(), "w");
                 #endif
@@ -140,9 +140,9 @@ namespace argus {
         }
 
         #ifdef _WIN32
-        fopen_s(&file, path.c_str(), std_mode);
+        fopen_s(&file, path.string().c_str(), std_mode);
         #else
-        file = fopen(path.c_str(), std_mode);
+        file = fopen(path.string().c_str(), std_mode);
         #endif
 
         validate_syscall(file != nullptr, "fopen");
@@ -170,7 +170,7 @@ namespace argus {
 
     void FileHandle::remove(void) {
         this->release();
-        ::remove(this->path.c_str());
+        ::remove(this->path.string().c_str());
     }
 
     void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {

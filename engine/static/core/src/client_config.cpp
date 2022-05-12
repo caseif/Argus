@@ -300,12 +300,12 @@ namespace argus {
                 continue;
             }
 
-            if (!arp_is_base_archive(child.path().c_str())) {
+            if (!arp_is_base_archive(child.path().string().c_str())) {
                 continue;
             }
 
             arp_package_meta_t meta;
-            auto rc = arp_load_from_file(child.path().c_str(), &meta, nullptr);
+            auto rc = arp_load_from_file(child.path().string().c_str(), &meta, nullptr);
             if (rc != 0) {
                 _ARGUS_WARN("Failed to load package %s while searching for config (libarp says: %s)",
                     child.path().filename().c_str(), arp_get_error());
@@ -323,7 +323,7 @@ namespace argus {
             _ARGUS_DEBUG("Searching for client config in package %s (namespace matches)", filename);
 
             ArpPackage pack;
-            auto rc = arp_load_from_file(candidate.c_str(), nullptr, &pack);
+            auto rc = arp_load_from_file(candidate.string().c_str(), nullptr, &pack);
             if (rc != 0) {
                 _ARGUS_WARN("Failed to load package at %s while searching for config (libarp says: %s)",
                     filename, arp_get_error());
