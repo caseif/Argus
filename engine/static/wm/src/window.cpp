@@ -278,6 +278,9 @@ namespace argus {
         auto display_mode = pimpl->properties.display_mode.read();
         auto windowed_res = pimpl->properties.windowed_resolution.read();
         auto position = pimpl->properties.position.read();
+        auto mouse_capture = pimpl->properties.mouse_capture.read();
+        auto mouse_visible = pimpl->properties.mouse_visible.read();
+        auto mouse_raw_input = pimpl->properties.mouse_raw_input.read();
 
         if (title.dirty) {
             glfwSetWindowTitle(pimpl->handle, title->c_str());
@@ -359,6 +362,18 @@ namespace argus {
                     position->x,
                     position->y);
             }
+        }
+
+        if (mouse_capture.dirty || mouse_visible.dirty) {
+            glfwSetInputMode(pimpl->handle, GLFW_CURSOR, mouse_capture
+                ? GLFW_CURSOR_DISABLED
+                : mouse_visible
+                    ? GLFW_CURSOR_NORMAL
+                    : GLFW_CURSOR_HIDDEN);
+        }
+
+        if (mouse_raw_input.dirty) {
+            glfwSetInputMode(pimpl->handle, GLFW_RAW_MOUSE_MOTION, mouse_raw_input ? GLFW_TRUE : GLFW_FALSE);
         }
 
         if (!(pimpl->state & WINDOW_STATE_READY)) {
@@ -472,6 +487,26 @@ namespace argus {
     void Window::set_display_mode(DisplayMode mode) {
         pimpl->properties.custom_display_mode = true;
         pimpl->properties.display_mode = mode;
+    }
+
+
+    bool Window::is_mouse_captured(void) {
+        return pimpl->properties.mouse_capture.peek();
+    }
+    void Window::set_mouse_captured(bool captured) {
+        pimpl->properties.mouse_capture = captured;
+    }
+    bool Window::is_mouse_visible(void) {
+        return pimpl->properties.mouse_visible.peek();
+    }
+    void Window::set_mouse_visible(bool visible) {
+        pimpl->properties.mouse_visible = visible;
+    }
+    bool Window::is_mouse_raw_input(void) {
+        return pimpl->properties.mouse_raw_input.peek();
+    }
+    void Window::set_mouse_raw_input(bool raw_input) {
+        pimpl->properties.mouse_raw_input = raw_input;
     }
 
     void Window::set_close_callback(WindowCallback callback) {

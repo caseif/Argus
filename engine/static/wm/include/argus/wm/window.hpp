@@ -289,6 +289,54 @@ namespace argus {
             void set_display_mode(DisplayMode mode);
 
             /**
+             * \brief Gets whether the mouse cursor should be captured by the
+             *        window while it is focused.
+             *
+             * \return Whether the mouse cursor should be captured.
+             */
+            bool is_mouse_captured(void);
+
+            /**
+             * \brief Sets whether the mouse cursor should be captured by the
+             *        window while it is focused.
+             *
+             * \param captured Whether the mouse cursor should be captured.
+             */
+            void set_mouse_captured(bool captured);
+
+            /**
+             * \brief Gets whether the mouse cursor is visible within the
+             *        window.
+             *
+             * \return Whether the mouse cursor is visible.
+             */
+            bool is_mouse_visible(void);
+
+            /**
+             * \brief Sets whether the mouse cursor is visible within the
+             *        window.
+             *
+             * \param visible Whether the mouse cursor is visible.
+             */
+            void set_mouse_visible(bool visible);
+
+            /**
+             * \brief Gets whether the raw input from the mouse should be used
+             *        by the window.
+             *
+             * \return Whether the raw mouse input should be used.
+             */
+            bool is_mouse_raw_input(void);
+
+            /**
+             * \brief Sets whether the raw input from the mouse should be used
+             *        by the window.
+             *
+             * \param raw_input Whether the raw mouse input should be used.
+             */
+            void set_mouse_raw_input(bool raw_input);
+
+            /**
              * \brief Sets the WindowCallback to invoke upon this window being
              *        closed.
              *

@@ -70,6 +70,9 @@ namespace argus {
             AtomicDirtiable<Vector2u> windowed_resolution;
             AtomicDirtiable<Vector2i> position;
             AtomicDirtiable<bool> vsync;
+            AtomicDirtiable<bool> mouse_capture;
+            AtomicDirtiable<bool> mouse_visible;
+            AtomicDirtiable<bool> mouse_raw_input;
         } properties;
 
         /**

@@ -35,10 +35,6 @@ namespace argus {
             Vector2d mouse_delta;
             bool got_first_mouse_pos;
 
-            TriState pending_mouse_captured;
-            TriState pending_mouse_visible;
-            TriState pending_mouse_raw_input;
-
             std::mutex window_mutex;
         };
 

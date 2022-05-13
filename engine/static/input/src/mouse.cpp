@@ -51,65 +51,6 @@ namespace argus::input {
         return g_mouse_states[&window].mouse_delta;
     }
 
-    static void _set_mouse_captured_0(const argus::Window &window, bool captured) {
-        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
-
-        glfwSetInputMode(glfw_window, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    }
-
-    void set_mouse_captured(const argus::Window &window, bool captured) {
-        auto &state = g_mouse_states[&window];
-        if (std::lock_guard<std::mutex> guard(state.window_mutex); !window.is_created()) {
-            state.pending_mouse_captured = captured;
-            return;
-        }
-
-        _set_mouse_captured_0(window, captured);
-    }
-    
-    static void _set_mouse_visible_0(const argus::Window &window, bool visible) {
-        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
-        
-        auto cur_mode = glfwGetInputMode(glfw_window, GLFW_CURSOR);
-        if (cur_mode == GLFW_CURSOR_DISABLED) {
-            return;
-        }
-
-        glfwSetInputMode(glfw_window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
-    }
-
-    void set_mouse_visible(const argus::Window &window, bool visible) {
-        auto &state = g_mouse_states[&window];
-
-        if (std::lock_guard<std::mutex> guard(state.window_mutex); !window.is_created()) {
-            state.pending_mouse_visible = visible;
-            return;
-        }
-
-        _set_mouse_visible_0(window, visible);
-    }
-
-    static void _set_mouse_raw_input_0(const argus::Window &window, bool raw_input) {
-        if (!glfwRawMouseMotionSupported()) {
-            return;
-        }
-
-        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
-
-        glfwSetInputMode(glfw_window, GLFW_RAW_MOUSE_MOTION, raw_input ? GLFW_TRUE : GLFW_FALSE);
-    }
-
-    void set_mouse_raw_input(const argus::Window &window, bool raw_input) {
-        auto &state = g_mouse_states[&window];
-
-        if (std::lock_guard<std::mutex> guard(state.window_mutex); !window.is_created()) {
-            state.pending_mouse_raw_input = raw_input;
-            return;
-        }
-
-        _set_mouse_raw_input_0(window, raw_input);
-    }
-
     static void _mouse_button_callback(GLFWwindow *glfw_window, int button, int action, int mods) {
         UNUSED(mods);
 
@@ -159,24 +100,6 @@ namespace argus::input {
     }
 
     void init_mouse(const argus::Window &window) {
-        auto &state = g_mouse_states[&window];
-
-        {
-            std::lock_guard<std::mutex> guard(state.window_mutex);
-
-            if (state.pending_mouse_captured.is_set()) {
-                _set_mouse_captured_0(window, state.pending_mouse_captured);
-            }
-            
-            if (state.pending_mouse_visible.is_set()) {
-                _set_mouse_visible_0(window, state.pending_mouse_visible);
-            }
-            
-            if (state.pending_mouse_raw_input.is_set()) {
-                _set_mouse_raw_input_0(window, state.pending_mouse_raw_input);
-            }
-        }
-
         auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
 
         glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
