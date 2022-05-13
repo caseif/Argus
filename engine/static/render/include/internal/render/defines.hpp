@@ -19,4 +19,4 @@
 #pragma once
 
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
-#define RESOURCE_TYPE_MATERIAL "text/x-argus-material+json"
+#define RESOURCE_TYPE_MATERIAL "application/x-argus-material+json"

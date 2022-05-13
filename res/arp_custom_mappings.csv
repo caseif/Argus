@@ -1,4 +1,3 @@
-mat,text/x-argus-material+json
 csh,text/x-glsl-comp
 comp,text/x-glsl-comp
 fsh,text/x-glsl-frag
@@ -9,3 +8,5 @@ tese,text/x-glsl-tess-eval
 vsh,text/x-glsl-vert
 vert,text/x-glsl-vert
 lua,text/x-lua
+mat,application/x-argus-material+json
+bindings,application/x-argus-bindings+json
