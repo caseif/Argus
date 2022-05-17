@@ -26,6 +26,7 @@
 #include "argus/wm/window.hpp"
 
 #include <atomic>
+#include <string>
 #include <vector>
 
 // forward declarations
@@ -38,6 +39,11 @@ namespace argus {
          *        object.
          */
         GLFWwindow *handle;
+
+        /**
+         * \brief The unique identifier of the window.
+         */
+         std::string id;
 
         /**
          * \brief The Canvas associated with this Window.
@@ -91,7 +97,8 @@ namespace argus {
 
         uint16_t cur_refresh_rate;
 
-        pimpl_Window(Window *parent):
+        pimpl_Window(const std::string &id, Window *parent):
+                id(id),
                 parent(parent) {
         }
 

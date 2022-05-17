@@ -78,7 +78,7 @@ namespace argus {
     }
 
     static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
-        _dispatch_window_event(*g_window_map.find(handle)->second, type);
+        _dispatch_window_event(*g_window_handle_map.find(handle)->second, type);
     }
 
     static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
@@ -96,14 +96,14 @@ namespace argus {
     static void _on_window_resize(GLFWwindow *handle, int width, int height) {
         using namespace std::chrono_literals;
 
-        dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_map.find(handle)->second,
+        dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_handle_map.find(handle)->second,
                 Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0s);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
         using namespace std::chrono_literals;
 
-        dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_map.find(handle)->second,
+        dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_handle_map.find(handle)->second,
                 Vector2u(), Vector2i { x, y }, 0s);
     }
 
@@ -119,6 +119,14 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
+    Window &get_window(const std::string &id) {
+        auto it = g_window_id_map.find(id);
+        if (it == g_window_id_map.end()) {
+            throw std::invalid_argument("Unknown window ID");
+        }
+        return *it->second;
+    }
+
     void Window::set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor) {
         if (ctor == nullptr || dtor == nullptr) {
             throw std::invalid_argument("Canvas constructor/destructor cannot be nullptr.");
@@ -132,8 +140,8 @@ namespace argus {
         g_canvas_dtor = dtor;
     }
 
-    Window::Window(Window *parent):
-            pimpl(new pimpl_Window(parent)) {
+    Window::Window(const std::string &id, Window *parent):
+            pimpl(new pimpl_Window(id, parent)) {
         _ARGUS_ASSERT(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         if (g_canvas_ctor != nullptr) {
@@ -145,6 +153,8 @@ namespace argus {
         pimpl->state = WINDOW_STATE_NULL;
 
         pimpl->close_callback = nullptr;
+
+        g_window_id_map.insert({id, this});
 
         g_window_count++;
 
@@ -173,15 +183,21 @@ namespace argus {
             pimpl->parent->remove_child(*this);
         }
 
-        g_window_map.erase(pimpl->handle);
+        g_window_id_map.erase(pimpl->id);
+        g_window_handle_map.erase(pimpl->handle);
 
         glfwDestroyWindow(pimpl->handle);
 
+        //TODO: make this behavior configurable
         if (--g_window_count == 0) {
             stop_engine();
         }
 
         delete pimpl;
+    }
+
+    const std::string &Window::get_id(void) const {
+        return pimpl->id;
     }
 
     Canvas &Window::get_canvas(void) const {
@@ -203,8 +219,8 @@ namespace argus {
         return pimpl->state & WINDOW_STATE_CLOSE_REQUESTED;
     }
 
-    Window &Window::create_child_window(void) {
-        Window *child_window = new Window(this);
+    Window &Window::create_child_window(const std::string &id) {
+        Window *child_window = new Window(id, this);
 
         pimpl->children.insert(pimpl->children.cend(), child_window);
 
@@ -248,7 +264,7 @@ namespace argus {
                 _ARGUS_FATAL("Failed to create GLFW window");
             }
 
-            g_window_map.insert({pimpl->handle, this});
+            g_window_handle_map.insert({pimpl->handle, this});
 
             _register_callbacks(pimpl->handle);
 
@@ -523,8 +539,8 @@ namespace argus {
     }
 
     Window *get_window_from_handle(const void *handle) {
-        auto it = g_window_map.find(static_cast<GLFWwindow*>(const_cast<void*>(handle)));
-        if (it == g_window_map.end()) {
+        auto it = g_window_handle_map.find(static_cast<GLFWwindow*>(const_cast<void*>(handle)));
+        if (it == g_window_handle_map.end()) {
             return nullptr;
         }
 

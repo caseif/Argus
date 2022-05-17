@@ -50,6 +50,13 @@ namespace argus {
     typedef std::function<void(Canvas&)> CanvasDtor;
 
     /**
+     * \brief Returns the Window with the specified ID.
+     *
+     * \return The Window with the specified ID.
+     */
+    Window &get_window(const std::string &id);
+
+    /**
      * \brief Represents an individual window on the screen.
      *
      * \attention Not all platforms may support multiple windows.
@@ -83,10 +90,14 @@ namespace argus {
             /**
              * \brief Creates a new Window.
              *
+             * \param id The unique identifier of the Window.
              * \param parent The Window which is parent to the new one, or
              *        `nullptr` if the window does not have a parent.
              * 
              * \return The created Window.
+             *
+             * \throw std::invalid_argument If the identifier is invalid or is
+             *        already in use.
              *
              * \warning Not all platforms may support multiple
              *          \link Window Windows \endlink.
@@ -94,13 +105,20 @@ namespace argus {
              * \remark A Canvas will be implicitly created upon construction
              *         of a Window.
              */
-            Window(Window *parent = nullptr);
+            Window(const std::string &id, Window *parent = nullptr);
 
             Window(const Window&) = delete;
 
             Window(Window&&) = delete;
 
             ~Window(void);
+
+            /**
+             * \brief Gets the unique identifier of the Window.
+             *
+             * \return The unique identifier of the Window.
+             */
+            const std::string &get_id(void) const;
 
             /**
              * \brief Gets the Canvas associated with the Window.
@@ -145,7 +163,7 @@ namespace argus {
              *
              * \note The child window will not be modal to the parent.
              */
-            Window &create_child_window(void);
+            Window &create_child_window(const std::string &id);
 
             /**
              * \brief Removes the given Window from this Window's child list.
