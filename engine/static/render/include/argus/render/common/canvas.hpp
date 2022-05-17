@@ -25,6 +25,7 @@
 namespace argus {
     // forward declarations
     class Scene;
+    class Scene2D;
     class TextureData;
 
     class Window;
@@ -63,15 +64,12 @@ namespace argus {
             /**
              * \brief Creates a new Scene with the given priority.
              *
-             * Scenes with higher priority will be rendered after (ergo in front
-             * of) those with lower priority.
-             *
              * \param index The index of the new Scene. Higher-indexed
              *        Scenes are rendered atop lower-indexed ones.
              *
-             * \return The created Scene.
+             * \return The created Scene2D.
              */
-            Scene &create_scene(const SceneType type, const int index);
+            Scene2D &create_scene_2d(const int index);
 
             /**
              * \brief Removes a Scene from this Canvas, destroying it in the

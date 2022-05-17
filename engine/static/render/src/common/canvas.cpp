@@ -42,6 +42,13 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
+    static void _register_scene(pimpl_Canvas &pimpl, Scene &scene) {
+        pimpl.scenes.push_back(&scene);
+
+        std::sort(pimpl.scenes.begin(), pimpl.scenes.end(),
+                  [](const auto a, const auto b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
+    }
+
     Canvas::Canvas(Window &window):
             pimpl(new pimpl_Canvas(window)) {
     }
@@ -54,18 +61,10 @@ namespace argus {
         delete pimpl;
     }
 
-    Scene &Canvas::create_scene(SceneType type, const int index) {
-        Scene *scene;
-        if (type == SceneType::TwoD) {
-            scene = new Scene2D(*this, Transform2D{}, index);
-        } else {
-            throw std::invalid_argument("Unsupported scene type");
-        }
+    Scene2D &Canvas::create_scene_2d(const int index) {
+        auto *scene = new Scene2D(*this, Transform2D{}, index);
 
-        pimpl->scenes.push_back(scene);
-
-        std::sort(pimpl->scenes.begin(), pimpl->scenes.end(),
-                  [](const auto a, const auto b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
+        _register_scene(*pimpl, *scene);
 
         return *scene;
     }
