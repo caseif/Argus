@@ -20,12 +20,14 @@
 #include "argus/lowlevel/time.hpp"
 #include "internal/lowlevel/logging.hpp"
 
+#include "argus/core/downstream_config.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
+#include "internal/wm/defines.hpp"
 #include "internal/wm/display.hpp"
 #include "internal/wm/module_wm.hpp"
 #include "internal/wm/window.hpp"
@@ -72,6 +74,55 @@ namespace argus {
         _ARGUS_WARN("GLFW Error: %s", desc);
     }
 
+    static void _create_initial_window(void) {
+        auto params = get_initial_window_parameters();
+        if (!params.has_value() || !params->id.has_value() || params->id->empty()) {
+            return;
+        }
+
+        auto &window = *new Window(params->id.value());
+
+        if (params->title.has_value()) {
+            window.set_title(*params->title);
+        }
+        
+        if (params->mode.has_value()) {
+            if (*params->mode == WINDOWING_MODE_WINDOWED) {
+                window.set_fullscreen(false);
+            } else if (*params->mode == WINDOWING_MODE_BORDERLESS) {
+                //TODO
+            } else if (*params->mode == WINDOWING_MODE_FULLSCREEN) {
+                window.set_fullscreen(true);
+            }
+        }
+
+        if (params->vsync.has_value()) {
+            window.set_vsync_enabled(*params->vsync);
+        }
+
+        if (params->mouse_visible.has_value()) {
+            window.set_mouse_visible(*params->mouse_visible);
+        }
+
+        if (params->mouse_captured.has_value()) {
+            window.set_mouse_captured(*params->mouse_captured);
+        }
+
+        if (params->mouse_raw_input.has_value()) {
+            window.set_mouse_raw_input(*params->mouse_raw_input);
+        }
+
+        if (params->position.has_value()) {
+            window.set_windowed_position(*params->position);
+        }
+
+        if (params->dimensions.has_value()) {
+            window.set_windowed_resolution(*params->dimensions);
+        }
+
+        window.commit();
+    }
+
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -93,7 +144,12 @@ namespace argus {
                 init_display();
 
                 g_wm_module_initialized = true;
-                
+
+                break;
+            }
+            case LifecycleStage::PostInit: {
+                _create_initial_window();
+
                 break;
             }
             case LifecycleStage::Deinit:

@@ -439,8 +439,13 @@ namespace argus {
         return pimpl->properties.windowed_resolution.peek();
     }
 
-    void Window::set_windowed_resolution(const unsigned int width, const unsigned int height) {
+    void Window::set_windowed_resolution(unsigned int width, unsigned int height) {
         pimpl->properties.windowed_resolution = {width, height};
+        return;
+    }
+
+    void Window::set_windowed_resolution(const Vector2u &resolution) {
+        pimpl->properties.windowed_resolution = {resolution.x, resolution.y};
         return;
     }
 
@@ -453,8 +458,13 @@ namespace argus {
         return;
     }
 
-    void Window::set_windowed_position(const int x, const int y) {
+    void Window::set_windowed_position(int x, int y) {
         pimpl->properties.position = {x, y};
+        return;
+    }
+
+    void Window::set_windowed_position(const Vector2i &position) {
+        pimpl->properties.position = {position.x, position.y};
         return;
     }
 

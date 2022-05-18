@@ -72,6 +72,7 @@
 #define KEY_WINDOW_MOUSE "mouse"
 #define KEY_WINDOW_MOUSE_VISIBLE "visible"
 #define KEY_WINDOW_MOUSE_CAPTURE "capture"
+#define KEY_WINDOW_MOUSE_RAW_INPUT "raw_input"
 #define KEY_WINDOW_POSITION "position"
 #define KEY_WINDOW_POSITION_X "x"
 #define KEY_WINDOW_POSITION_Y "y"
@@ -206,30 +207,42 @@ namespace argus {
             if (auto capture = _get_json_bool(mouse_obj, KEY_WINDOW_MOUSE_CAPTURE); capture.has_value()) {
                 win_params.mouse_captured = capture.value();
             }
+
+            if (auto raw_input = _get_json_bool(mouse_obj, KEY_WINDOW_MOUSE_RAW_INPUT); raw_input.has_value()) {
+                win_params.mouse_raw_input = raw_input.value();
+            }
         }
 
         if (window_obj.contains(KEY_WINDOW_POSITION) && window_obj[KEY_WINDOW_POSITION].is_object()) {
             auto pos_obj = window_obj[KEY_WINDOW_POSITION];
 
+            Vector2i pos;
+
             if (auto pos_x = _get_json_int(pos_obj, KEY_WINDOW_POSITION_X); pos_x.has_value()) {
-                win_params.position.x = pos_x.value();
+                pos.x = pos_x.value();
             }
 
             if (auto pos_y = _get_json_int(pos_obj, KEY_WINDOW_POSITION_Y); pos_y.has_value()) {
-                win_params.position.y = pos_y.value();
+                pos.y = pos_y.value();
             }
+
+            win_params.position = pos;
         }
 
         if (window_obj.contains(KEY_WINDOW_DIMENSIONS) && window_obj[KEY_WINDOW_DIMENSIONS].is_object()) {
             auto dim_obj = window_obj[KEY_WINDOW_DIMENSIONS];
 
+            Vector2u dims;
+
             if (auto dim_w = _get_json_uint(dim_obj, KEY_WINDOW_DIMENSIONS_W); dim_w.has_value()) {
-                win_params.dimensions.x = dim_w.value();
+                dims.x = dim_w.value();
             }
 
             if (auto dim_h = _get_json_uint(dim_obj, KEY_WINDOW_DIMENSIONS_H); dim_h.has_value()) {
-                win_params.dimensions.y = dim_h.value();
+                dims.y = dim_h.value();
             }
+
+            win_params.dimensions = dims;
         }
 
         set_initial_window_parameters(win_params);

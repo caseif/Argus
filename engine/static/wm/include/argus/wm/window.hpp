@@ -226,7 +226,14 @@ namespace argus {
              * \param width The horizontal resolution.
              * \param height The vertical resolution.
              */
-            void set_windowed_resolution(const unsigned int width, const unsigned int height);
+            void set_windowed_resolution(unsigned int width, unsigned int height);
+
+            /**
+             * \brief Sets the window's windowed resolution.
+             *
+             * \param resolution The new resolution of the window.
+             */
+            void set_windowed_resolution(const Vector2u &resolution);
 
             /**
              * \brief Gets whether the window has vertical synchronization
@@ -255,7 +262,17 @@ namespace argus {
              *
              * \warning This may not be supported on all platforms.
              */
-            void set_windowed_position(const int x, const int y);
+            void set_windowed_position(int x, int y);
+
+            /**
+             * \brief Sets the position of the window on the screen when in
+             *        windowed mode.
+             *
+             * \param position The new position of the window.
+             *
+             * \warning This may not be supported on all platforms.
+             */
+            void set_windowed_position(const Vector2i &position);
 
             /**
              * \brief Gets the Display this Window will attempt to show on in

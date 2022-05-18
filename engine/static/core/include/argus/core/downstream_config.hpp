@@ -20,21 +20,23 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <optional>
 #include <string>
 
 namespace argus {
     struct InitialWindowParameters {
-        std::string id;
-        std::string title;
-        std::string mode;
-        bool vsync;
-        bool mouse_visible;
-        bool mouse_captured;
-        Vector2i position;
-        Vector2u dimensions;
+        std::optional<std::string> id;
+        std::optional<std::string> title;
+        std::optional<std::string> mode;
+        std::optional<bool> vsync;
+        std::optional<bool> mouse_visible;
+        std::optional<bool> mouse_captured;
+        std::optional<bool> mouse_raw_input;
+        std::optional<Vector2i> position;
+        std::optional<Vector2u> dimensions;
     };
 
-    const InitialWindowParameters &get_initial_window_parameters(void);
+    const std::optional<InitialWindowParameters> &get_initial_window_parameters(void);
 
     void set_initial_window_parameters(const InitialWindowParameters &window_params);
 

@@ -1,13 +1,31 @@
+/*
+ * This file is a part of Argus.
+ * Copyright (c) 2019-2022, Max Roncace <mproncace@protonmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "argus/core/downstream_config.hpp"
 
 #include <string>
 
 namespace argus {
-    static InitialWindowParameters g_init_window_params;
+    static std::optional<InitialWindowParameters> g_init_window_params;
     static std::string g_def_bindings_res_id;
     static bool g_save_user_bindings;
 
-    const InitialWindowParameters &get_initial_window_parameters(void) {
+    const std::optional<InitialWindowParameters> &get_initial_window_parameters(void) {
         return g_init_window_params;
     }
 
