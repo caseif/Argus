@@ -24,10 +24,6 @@
 #include "argus/wm/window_event.hpp"
 
 namespace argus {
-    void *get_window_handle(const Window &window);
-
-    Window *get_window_from_handle(const void *handle);
-
     void set_window_construct_callback(WindowCallback callback);
 
     void window_window_event_callback(const WindowEvent &event, void *user_data);

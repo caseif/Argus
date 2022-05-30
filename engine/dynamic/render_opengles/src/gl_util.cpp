@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "internal/render_opengles/gl_util.hpp"
 #include "internal/render_opengles/glfw_include.hpp"

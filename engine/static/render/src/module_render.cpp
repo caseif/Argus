@@ -16,20 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/logging.hpp"
 
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
-#include "internal/core/dyn_invoke.hpp"
-#include "internal/core/engine_config.hpp"
-#include "internal/core/module.hpp"
 
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
-#include "internal/wm/window.hpp"
 
 #include "argus/render/common/canvas.hpp"
 #include "internal/render/defines.hpp"
@@ -76,7 +72,7 @@ namespace argus {
 
             _ARGUS_INFO("Successfully activated graphics backend \"%s\"", backend.c_str());
 
-            set_selected_render_backend(backend);
+            set_active_render_backend(backend);
 
             return true;
         }
@@ -85,7 +81,7 @@ namespace argus {
     }
 
     static void _activate_backend() {
-        auto backends = get_engine_config().render_backends;
+        auto &backends = get_preferred_render_backends();
 
         std::vector<std::string> attempted_backends;
 

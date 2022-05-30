@@ -16,12 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/module.hpp"
-#include "internal/core/dyn_invoke.hpp"
-#include "internal/core/engine_config.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
@@ -29,7 +27,6 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/backend.hpp"
-#include "internal/render/defines.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/glfw_include.hpp"
@@ -100,7 +97,7 @@ namespace argus {
 
     static void _window_event_callback(const WindowEvent &event, void *user_data) {
         UNUSED(user_data);
-        const Window &window = event.window;
+        auto &window = event.window;
 
         switch (event.subtype) {
             case WindowEventType::Create: {

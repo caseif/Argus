@@ -16,24 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/core/dyn_invoke.hpp"
+#pragma once
 
-#include <map>
-#include <string>
+#include <algorithm>
+#include <type_traits>
+#include <vector>
 
 namespace argus {
-    static std::map<std::string, const void*> dyn_fns;
-
-    void register_module_fn(const std::string &fn_name, const void *addr) {
-        dyn_fns.insert({ fn_name, addr });
+    template <typename T, typename CT = const typename std::vector<T>::value_type>
+    inline void remove_from_vector(std::vector<T> &vec, CT &item) {
+        vec.erase(std::remove(vec.begin(), vec.end(), item), vec.end());
     }
 
-    const void *lookup_module_fn(const std::string &fn_name) {
-        auto it = dyn_fns.find(fn_name);
-        if (it != dyn_fns.end()) {
-            return it->second;
-        } else {
-            return nullptr;
-        }
+    template <typename T, typename CT = const typename std::vector<T>::value_type>
+    inline void remove_from_vector(std::vector<T> &vec, CT &&item) {
+        vec.erase(std::remove(vec.begin(), vec.end(), item), vec.end());
     }
 }

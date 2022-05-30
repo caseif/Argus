@@ -20,7 +20,9 @@
 
 #include "argus/lowlevel/macros.hpp"
 
+#include <filesystem>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -222,4 +224,14 @@ namespace argus {
      *        currently registered.
      */
     void enable_dynamic_module(const std::string &module_id);
+
+    /**
+     * \brief Returns a map of dynamic modules discovered on the filesystem.
+     *
+     * The map keys are the IDs of the discovered modules, while the values are
+     * the respective paths at which they are located.
+     *
+     * \return A map from IDs to filesystem paths for present dynamic modules.
+     */
+    std::map<std::string, std::filesystem::path> get_present_dynamic_modules(void);
 }

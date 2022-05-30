@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/core/core_util.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/util/object_processor.hpp"
+#include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengl/renderer/2d/scene_compiler.hpp"

@@ -18,8 +18,7 @@
 
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
-
-#include "internal/core/core_util.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"

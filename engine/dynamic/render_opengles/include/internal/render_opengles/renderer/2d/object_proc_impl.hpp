@@ -20,7 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include "internal/render/util/object_processor.hpp"
+#include "argus/render/util/object_processor.hpp"
 
 namespace argus {
     // forward declarations

@@ -21,7 +21,6 @@
 #include "argus/lowlevel/types.hpp"
 
 #include "argus/wm/window.hpp"
-#include "internal/wm/window.hpp"
 
 #include "argus/input/input_manager.hpp"
 #include "argus/input/mouse.hpp"
@@ -38,7 +37,7 @@ namespace argus::input {
     static std::map<const argus::Window*, MouseState> g_mouse_states;
 
     argus::Vector2d mouse_position(const argus::Window &window) {
-        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
+        auto *glfw_window = get_window_handle<GLFWwindow>(window);
 
         double x;
         double y;
@@ -80,7 +79,7 @@ namespace argus::input {
             auto dx = x - state.last_mouse_pos.x;
             auto dy = y - state.last_mouse_pos.y;
 
-            const auto res = window->get_resolution();
+            const auto res = window->peek_resolution();
             const auto min_window_dim = std::min(res.x, res.y);
 
             state.mouse_delta.x = dx / min_window_dim;
@@ -100,7 +99,7 @@ namespace argus::input {
     }
 
     void init_mouse(const argus::Window &window) {
-        auto *glfw_window = static_cast<GLFWwindow*>(get_window_handle(window));
+        auto *glfw_window = get_window_handle<GLFWwindow>(window);
 
         glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
         glfwSetCursorPosCallback(glfw_window, _cursor_pos_callback);

@@ -16,19 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "internal/lowlevel/logging.hpp"
 
+#include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
-#include "internal/core/engine_config.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 
 #include "argus/wm/window.hpp"
-#include "internal/wm/pimpl/window.hpp"
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
@@ -36,7 +35,7 @@
 #include "internal/render/defines.hpp"
 #include "internal/render/pimpl/common/canvas.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
-#include "internal/render/util/object_processor.hpp"
+#include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
@@ -77,7 +76,7 @@ namespace argus {
         auto res_hor_f = static_cast<float>(res_hor);
         auto res_ver_f = static_cast<float>(res_ver);
 
-        switch (get_engine_config().screen_space_scale_mode) {
+        switch (get_screen_space_scale_mode()) {
             case ScreenSpaceScaleMode::NormalizeMinDimension:
                 if (res_hor > res_ver) {
                     hor_scale = res_hor_f / res_ver_f;
@@ -136,7 +135,7 @@ namespace argus {
 
             auto &scene_transform = scene->get_transform();
             if (scene_transform.pimpl->dirty) {
-                multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(window.get_resolution()),
+                multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(window.peek_resolution()),
                         scene_state.view_matrix);
                 scene_transform.pimpl->dirty = false;
             }
@@ -194,10 +193,10 @@ namespace argus {
         }
     }
 
-    GLESRenderer::GLESRenderer(const Window &window):
+    GLESRenderer::GLESRenderer(Window &window):
             window(window),
             state(*this) {
-        activate_gl_context(window.pimpl->handle);
+        activate_gl_context(get_window_handle<GLFWwindow>(window));
 
         int rc = 0;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
@@ -234,9 +233,9 @@ namespace argus {
     void GLESRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
 
-        activate_gl_context(window.pimpl->handle);
+        activate_gl_context(get_window_handle<GLFWwindow>(window));
 
-        auto vsync = window.pimpl->properties.vsync.read();
+        auto vsync = window.is_vsync_enabled();
         if (vsync.dirty) {
             glfwSwapInterval(vsync ? 1 : 0);
         }
@@ -254,7 +253,7 @@ namespace argus {
 
         auto &canvas = window.get_canvas();
 
-        auto resolution = window.pimpl->cur_resolution.read();
+        auto resolution = window.get_resolution();
 
         for (auto *scene : canvas.pimpl->scenes) {
             auto &scene_state = state.get_scene_state(*scene);
@@ -277,7 +276,7 @@ namespace argus {
             draw_framebuffer_to_screen(scene_state, resolution);
         }
 
-        glfwSwapBuffers(canvas.pimpl->window.pimpl->handle);
+        glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.pimpl->window));
     }
 
     void GLESRenderer::notify_window_resize(const Vector2u &resolution) {

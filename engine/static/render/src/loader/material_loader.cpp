@@ -16,9 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "internal/lowlevel/logging.hpp"
-#include "internal/core/engine_config.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
@@ -27,6 +26,7 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "internal/render/defines.hpp"
+#include "internal/render/common/backend.hpp"
 #include "internal/render/loader/material_loader.hpp"
 
 
@@ -81,7 +81,7 @@ namespace argus {
         UNUSED(size);
         _ARGUS_DEBUG("Loading material %s", proto.uid.c_str());
         try {
-            std::string expected_api = get_selected_render_backend();
+            std::string expected_api = get_active_render_backend();
 
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 

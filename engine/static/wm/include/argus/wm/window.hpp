@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
 
@@ -55,6 +56,34 @@ namespace argus {
      * \return The Window with the specified ID.
      */
     Window &get_window(const std::string &id);
+
+    /**
+     * \brief Returns an opaque pointer to the underlying handle of a Window.
+     *
+     * \return An opaque pointer to the window handle.
+     */
+    void *get_window_handle(const Window &window);
+
+    /**
+     * \brief Returns a pointer to the underlying handle of a Window cast as a
+     *        pointer to the given type.
+     * 
+     * \tparam T The pointer type to cast the window handle to.
+     * \param window The window to get the handle of.
+     * \return The underlying handle of the Window.
+     */
+    template <typename T>
+    T *get_window_handle(const Window &window) {
+        return static_cast<T*>(get_window_handle(window));
+    }
+
+    /**
+     * \brief Looks up a Window based on its underlying handle.
+     *
+     * \return The Window with the provided handle, or nullptr if the handle
+     *         pointer is not known to the engine.
+     */
+    Window *get_window_from_handle(const void *handle);
 
     /**
      * \brief Represents an individual window on the screen.
@@ -207,11 +236,32 @@ namespace argus {
             void set_fullscreen(const bool fullscreen);
 
             /**
-             * \brief Gets the window's current resolution.
+             * \brief Gets the window's current resolution and whether it has
+             *         changed since the last invocation of this function
              *
-             * \return The window's resolution.
+             * The internal dirty flag for the value will be copied to the
+             * return object and then cleared in the Window object.
+             *
+             * \return The window's current resolution and dirty flag.
+             *
+             * \sa peek_resolution
              */
-            Vector2u get_resolution(void) const;
+            ValueAndDirtyFlag<Vector2u> get_resolution(void);
+
+            /**
+             * \brief Gets the window's current resolution without affecting its
+             *        internal dirty bit.
+             *
+             * If another function reads the window's resolution after this
+             * function runs and the resolution has changed since the last time
+             * get_resolution was called, it will see the change as not yet
+             * having been acknowledged.
+             *
+             * \return The window's current resolution.
+             *
+             * \sa get_resolution
+             */
+            Vector2u peek_resolution(void) const;
 
             /**
              * \brief Gets the window's configured windowed resolution.
@@ -237,12 +287,15 @@ namespace argus {
 
             /**
              * \brief Gets whether the window has vertical synchronization
-             *        (vsync) enabled.
+             *        (vsync) enabled and the state of its dirty flag.
              *
-             * \return Whether the window has vertical synchronization (vsync)
-             *         enabled.
+             * If the returned dirty flag is set, the vsync flag has been
+             * changed since the last invocation of this function.
+             *
+             * \return Whether the window's vsync flag is set and its dirty
+             *         flag.
              */
-            bool is_vsync_enabled(void) const;
+            ValueAndDirtyFlag<bool> is_vsync_enabled(void) const;
             
             /**
              * \brief Enabled or disabled vertical synchronization (vsync) for

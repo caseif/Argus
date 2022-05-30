@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/core/core_util.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/wm/display.hpp"
 #include "internal/wm/display.hpp"

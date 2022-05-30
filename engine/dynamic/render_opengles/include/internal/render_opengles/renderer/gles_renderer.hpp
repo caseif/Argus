@@ -33,12 +33,12 @@ namespace argus {
 
     class GLESRenderer {
         private:
-            const Window &window;
+            Window &window;
             RendererState state;
             Index resource_event_handler;
 
         public:
-            GLESRenderer(const Window &window);
+            GLESRenderer(Window &window);
 
             ~GLESRenderer(void);
 

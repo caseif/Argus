@@ -24,19 +24,27 @@
 namespace argus {
     static ClientProperties g_client_properties;
 
+    const std::string &get_client_id(void) {
+        return g_client_properties.id;
+    }
+
     void set_client_id(const std::string &id) {
         g_client_properties.id = id;
+    }
+
+    const std::string &get_client_name(void) {
+        return g_client_properties.name;
     }
 
     void set_client_name(const std::string &name) {
         g_client_properties.name = name;
     }
 
-    void set_client_version(const std::string &version) {
-        g_client_properties.version = version;
+    const std::string &get_client_version(void) {
+        return g_client_properties.version;
     }
 
-    ClientProperties &get_client_properties(void) {
-        return g_client_properties;
+    void set_client_version(const std::string &version) {
+        g_client_properties.version = version;
     }
 }

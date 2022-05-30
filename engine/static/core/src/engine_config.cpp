@@ -33,12 +33,6 @@ namespace argus {
 
     EngineConfig g_engine_config;
 
-    std::string g_selected_render_backend;
-
-    EngineConfig get_engine_config() {
-        return g_engine_config;
-    }
-
     void set_target_tickrate(unsigned int target_tickrate) {
         g_engine_config.target_tickrate = target_tickrate;
     }
@@ -55,6 +49,10 @@ namespace argus {
         g_engine_config.load_modules = module_list;
     }
 
+    const std::vector<std::string> &get_preferred_render_backends(void) {
+        return g_engine_config.render_backends;
+    }
+
     void set_render_backends(const std::initializer_list<std::string> &backends) {
         g_engine_config.render_backends = std::vector<std::string>(backends);
     }
@@ -67,15 +65,11 @@ namespace argus {
         set_render_backends({ backend });
     }
 
+    ScreenSpaceScaleMode get_screen_space_scale_mode(void) {
+        return g_engine_config.screen_space_scale_mode;
+    }
+
     void set_screen_space_scale_mode(ScreenSpaceScaleMode scale_mode) {
         g_engine_config.screen_space_scale_mode = scale_mode;
-    }
-
-    const std::string &get_selected_render_backend(void) {
-        return g_selected_render_backend;
-    }
-
-    void set_selected_render_backend(const std::string &backend) {
-        g_selected_render_backend = backend;
     }
 }

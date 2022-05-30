@@ -17,17 +17,17 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/callback.hpp"
+#include "argus/core/client_properties.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
-#include "internal/core/client_properties.hpp"
 #include "internal/core/engine.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/event.hpp"
@@ -265,9 +265,9 @@ namespace argus {
         _ARGUS_ASSERT(g_core_initialized, "Cannot start engine before it is initialized.");
         _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
 
-        _ARGUS_ASSERT(!get_client_properties().id.empty(), "Client ID must be set prior to engine start");
-        _ARGUS_ASSERT(!get_client_properties().name.empty(), "Client ID must be set prior to engine start");
-        _ARGUS_ASSERT(!get_client_properties().version.empty(), "Client ID must be set prior to engine start");
+        _ARGUS_ASSERT(!get_client_id().empty(), "Client ID must be set prior to engine start");
+        _ARGUS_ASSERT(!get_client_name().empty(), "Client ID must be set prior to engine start");
+        _ARGUS_ASSERT(!get_client_version().empty(), "Client ID must be set prior to engine start");
 
         register_update_callback(game_loop);
 

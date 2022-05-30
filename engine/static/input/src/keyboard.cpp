@@ -16,14 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/core/event.hpp"
-#include "internal/core/core_util.hpp"
 
 #include "argus/wm/window.hpp"
-#include "internal/wm/window.hpp"
 
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"

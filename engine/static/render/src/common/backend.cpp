@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/logging.hpp"
 
 #include "argus/render/common/backend.hpp"
 #include "internal/render/common/backend.hpp"
@@ -28,6 +28,7 @@
 
 namespace argus {
     std::map<std::string, ActivateRenderBackendFn> g_render_backend_activate_fns;
+    std::string g_active_render_backend;
 
     void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn) {
         if (g_render_backend_activate_fns.find(id) != g_render_backend_activate_fns.end()) {
@@ -48,5 +49,13 @@ namespace argus {
 
     void unregister_backend_activate_fns(void) {
         g_render_backend_activate_fns.clear();
+    }
+
+    const std::string &get_active_render_backend(void) {
+        return g_active_render_backend;
+    }
+
+    void set_active_render_backend(const std::string &backend) {
+        g_active_render_backend = backend;
     }
 }

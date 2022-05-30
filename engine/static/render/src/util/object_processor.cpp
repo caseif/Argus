@@ -16,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "internal/lowlevel/logging.hpp"
-
-#include "internal/core/core_util.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/resman/resource.hpp"
 
@@ -27,10 +26,10 @@
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
+#include "argus/render/util/object_processor.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
-#include "internal/render/util/object_processor.hpp"
 
 
 #include <atomic>
@@ -42,9 +41,6 @@
 #include <cstring>
 
 namespace argus {
-    // forward declarations
-    struct RendererState;
-
     static void _compute_abs_group_transform(const RenderGroup2D &group, Matrix4 &target) {
         group.get_transform().copy_matrix(target);
         const RenderGroup2D *cur = nullptr;

@@ -17,8 +17,8 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"

@@ -17,11 +17,11 @@
  */
 
 #include "argus/lowlevel/filesystem.hpp"
-#include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
-#include "internal/core/core_util.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 #include "internal/core/module_defs.hpp"

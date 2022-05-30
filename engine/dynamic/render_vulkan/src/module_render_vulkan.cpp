@@ -16,16 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
-#include "internal/core/dyn_invoke.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
-#include "internal/wm/window.hpp"
 
 #include "argus/resman/resource_manager.hpp"
 
@@ -72,7 +70,7 @@ namespace argus {
             case WindowEventType::Create: {
                 VkSurfaceKHR surface;
                 auto surface_err = glfwCreateWindowSurface(g_vk_instance,
-                        static_cast<GLFWwindow*>(get_window_handle(window)), nullptr, &surface);
+                        get_window_handle<GLFWwindow>(window), nullptr, &surface);
 
                 _ARGUS_ASSERT(!surface_err, "glfwCreateWindowSurface returned value %d", surface_err);
                 //TODO: store the surface

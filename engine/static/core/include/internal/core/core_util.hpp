@@ -27,13 +27,4 @@
 #include <cstdlib>
 
 namespace argus {
-    template <typename T, typename CT = const typename std::vector<T>::value_type>
-    inline void remove_from_vector(std::vector<T> &vec, CT &item) {
-        vec.erase(std::remove(vec.begin(), vec.end(), item), vec.end());
-    }
-
-    template <typename T, typename CT = const typename std::vector<T>::value_type>
-    inline void remove_from_vector(std::vector<T> &vec, CT &&item) {
-        vec.erase(std::remove(vec.begin(), vec.end(), item), vec.end());
-    }
 }

@@ -18,12 +18,4 @@
 
 #pragma once
 
-#include <string>
-
-namespace argus {
-    struct ClientProperties {
-        std::string id;
-        std::string name;
-        std::string version;
-    };
-}
+#define RESOURCE_TYPE_BINDINGS "application/x-argus-bindings+json"

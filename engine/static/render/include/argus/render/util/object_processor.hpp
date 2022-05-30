@@ -28,10 +28,6 @@ namespace argus {
     class RenderObject2D;
     class Scene2D;
 
-    struct ProcessedRenderObject;
-    struct RendererState;
-    struct Scene2DState;
-
     typedef void *ProcessedRenderObject2DPtr;
     typedef std::map<const RenderObject2D*, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
 

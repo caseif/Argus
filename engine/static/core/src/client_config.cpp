@@ -17,11 +17,12 @@
  */
 
 #include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/streams.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/client_config.hpp"
+#include "argus/core/client_properties.hpp"
 #include "argus/core/downstream_config.hpp"
 #include "internal/core/client_properties.hpp"
 #include "internal/core/engine_config.hpp"
@@ -131,15 +132,15 @@ namespace argus {
 
     static void _ingest_client_properties(nlohmann::json client_obj) {
         if (auto id = _get_json_string(client_obj, KEY_CLIENT_ID); id.has_value()) {
-            get_client_properties().id = id.value();
+            set_client_id(id.value());
         }
 
         if (auto name = _get_json_string(client_obj, KEY_CLIENT_NAME); name.has_value()) {
-            get_client_properties().name = name.value();
+            set_client_name(name.value());
         }
 
         if (auto version = _get_json_string(client_obj, KEY_CLIENT_VERSION); version.has_value()) {
-            get_client_properties().version = version.value();
+            set_client_version(version.value());
         }
     }
 

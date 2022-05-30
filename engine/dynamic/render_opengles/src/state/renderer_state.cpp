@@ -16,9 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/lowlevel/logging.hpp"
-#include "internal/render_opengles/state/renderer_state.hpp"
-#include "internal/render_opengles/state/scene_state.hpp"
+#include "argus/lowlevel/logging.hpp"
 
 #include "argus/resman/resource.hpp"
 
@@ -27,6 +25,8 @@
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/renderer/texture_mgmt.hpp"
+#include "internal/render_opengles/state/renderer_state.hpp"
+#include "internal/render_opengles/state/scene_state.hpp"
 
 #include <map>
 #include <string>

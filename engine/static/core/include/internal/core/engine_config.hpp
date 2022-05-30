@@ -35,10 +35,4 @@ namespace argus {
         std::vector<std::string> render_backends;
         ScreenSpaceScaleMode screen_space_scale_mode;
     };
-
-    EngineConfig get_engine_config();
-
-    const std::string &get_selected_render_backend(void);
-
-    void set_selected_render_backend(const std::string &backend);
 }

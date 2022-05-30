@@ -22,7 +22,7 @@
 
 #include "internal/render_opengles/types.hpp"
 
-#include "internal/render/util/object_processor.hpp"
+#include "argus/render/util/object_processor.hpp"
 
 #include <map>
 #include <string>

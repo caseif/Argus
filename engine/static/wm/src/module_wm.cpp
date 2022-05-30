@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/downstream_config.hpp"
 #include "argus/core/engine.hpp"

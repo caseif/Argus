@@ -16,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/error_util.hpp"
 #include "argus/lowlevel/memory.hpp"
-#include "internal/lowlevel/error_util.hpp"
-
-#include "internal/core/core_util.hpp"
+#include "argus/lowlevel/vector.hpp"
 
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"

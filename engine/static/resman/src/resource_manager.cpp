@@ -17,10 +17,10 @@
  */
 
 #include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading/future.hpp"
 #include "argus/lowlevel/threading/thread_pool.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/core/event.hpp"
 

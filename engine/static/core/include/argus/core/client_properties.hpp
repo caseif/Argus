@@ -21,9 +21,15 @@
 #include <string>
 
 namespace argus {
+    const std::string &get_client_id(void);
+
     void set_client_id(const std::string &id);
 
+    const std::string &get_client_name(void);
+
     void set_client_name(const std::string &id);
+
+    const std::string &get_client_version(void);
 
     void set_client_version(const std::string &id);
 }

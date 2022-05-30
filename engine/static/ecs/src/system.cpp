@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/lowlevel/error_util.hpp"
+#include "argus/lowlevel/error_util.hpp"
 
 #include "argus/ecs/system.hpp"
 #include "argus/ecs/system_builder.hpp"

@@ -26,6 +26,10 @@
 
 namespace argus {
     std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id);
-    
+
     void unregister_backend_activate_fns(void);
+
+    const std::string &get_active_render_backend(void);
+
+    void set_active_render_backend(const std::string &backend);
 }

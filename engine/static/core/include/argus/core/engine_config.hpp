@@ -80,6 +80,14 @@ namespace argus {
     const std::vector<std::string> &get_available_render_backends(void);
 
     /**
+     * \brief Returns an ordered list of IDs of preferred render backends as
+     *        specified by the client.
+     * 
+     * \return An ordered list of preferred render backend IDs.
+     */
+    const std::vector<std::string> &get_preferred_render_backends(void);
+
+    /**
      * \brief Sets the graphics backend to be used for rendering.
      *
      * \param backend A list of render backends to use in order of preference.
@@ -119,8 +127,22 @@ namespace argus {
     void set_render_backend(const std::string backend);
 
     /**
-     * \brief Sets the screen space scale mode used to compute the view matrix
-     *        passed to shader programs.
+     * \brief Returns the currently configured scale mode for the screen space.
+     *
+     * This controls how the view matrix passed to shader programs while
+     * rendering the screen is computed.
+     * 
+     * \return The current screen space scale mode.
+     *
+     * \sa ScreenSpaceScaleMode
+     */
+    ScreenSpaceScaleMode get_screen_space_scale_mode(void);
+
+    /**
+     * \brief Sets the screen space scale mode
+     *
+     * The scale mode used to compute the view matrix passed to shader programs
+     * while rendering objects to the screen.
      *
      * If this value is not provided, it will default
      * ScreenSpaceScaleMode::NormalizeMinDimension.

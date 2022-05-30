@@ -17,15 +17,15 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "internal/lowlevel/logging.hpp"
+#include "argus/lowlevel/vector.hpp"
 
+#include "argus/core/client_properties.hpp"
 #include "argus/core/event.hpp"
 #include "argus/core/engine.hpp"
-#include "internal/core/client_properties.hpp"
-#include "internal/core/core_util.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
@@ -258,7 +258,7 @@ namespace argus {
             glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
             glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);
 
-            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_properties().name.c_str(), nullptr, nullptr);
+            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_name().c_str(), nullptr, nullptr);
 
             if (pimpl->handle == nullptr) {
                 _ARGUS_FATAL("Failed to create GLFW window");
@@ -431,7 +431,11 @@ namespace argus {
         return;
     }
 
-    Vector2u Window::get_resolution(void) const {
+    ValueAndDirtyFlag<Vector2u> Window::get_resolution(void) {
+        return pimpl->cur_resolution.read();
+    }
+
+    Vector2u Window::peek_resolution(void) const {
         return pimpl->cur_resolution.peek();
     }
 
@@ -449,8 +453,8 @@ namespace argus {
         return;
     }
 
-    bool Window::is_vsync_enabled(void) const {
-        return pimpl->properties.vsync.peek();
+    ValueAndDirtyFlag<bool> Window::is_vsync_enabled(void) const {
+        return pimpl->properties.vsync.read();
     }
 
     void Window::set_vsync_enabled(bool enabled) {

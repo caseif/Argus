@@ -23,7 +23,6 @@
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
-#include "internal/wm/window.hpp"
 
 #include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"

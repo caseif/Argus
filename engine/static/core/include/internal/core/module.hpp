@@ -58,8 +58,6 @@ namespace argus {
 
     void unload_dynamic_modules(void);
 
-    std::map<std::string, std::filesystem::path> get_present_dynamic_modules(void);
-
     void init_modules(void);
 
     void deinit_modules(void);

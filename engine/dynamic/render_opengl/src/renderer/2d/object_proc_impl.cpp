@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "internal/lowlevel/logging.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
@@ -30,7 +30,7 @@
 #include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/2d/render_prim_2d.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
-#include "internal/render/util/object_processor.hpp"
+#include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"

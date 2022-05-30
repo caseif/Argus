@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
-#include "internal/lowlevel/logging.hpp"
 
+#include "argus/core/client_properties.hpp"
 #include "argus/core/macros.hpp"
-#include "internal/core/client_properties.hpp"
 
 #include "internal/render_vulkan/setup/instance.hpp"
 
@@ -97,7 +97,7 @@ namespace argus {
             const char *const *validation_layers, uint32_t validation_layers_count) {
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = get_client_properties().name.c_str();
+        app_info.pApplicationName = get_client_name().c_str();
         app_info.pEngineName = ENGINE_NAME;
         
         #pragma GCC diagnostic push

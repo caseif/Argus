@@ -33,12 +33,12 @@ namespace argus {
 
     class GLRenderer {
         private:
-            const Window &window;
+            Window &window;
             RendererState state;
             Index resource_event_handler;
 
         public:
-            GLRenderer(const Window &window);
+            GLRenderer(Window &window);
 
             ~GLRenderer(void);
 
