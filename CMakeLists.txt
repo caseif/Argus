@@ -701,6 +701,7 @@ function(configure_module MODULE_PROJECT_DIR)
 
   if(WIN32)
     target_compile_definitions("${PROJECT_NAME}" PUBLIC "GLFW_DLL")
+    target_compile_definitions("${PROJECT_NAME}" PUBLIC "NOMINMAX")
   endif()
 
   # recursively load this module's include dirs
