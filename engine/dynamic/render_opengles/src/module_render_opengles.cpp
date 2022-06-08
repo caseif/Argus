@@ -27,7 +27,6 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/backend.hpp"
-#include "internal/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/glfw_include.hpp"

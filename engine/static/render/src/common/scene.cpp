@@ -34,8 +34,12 @@ namespace argus {
         return get_pimpl()->canvas;
     }
 
-    Transform2D &Scene::get_transform(void) const {
-        return get_pimpl()->transform;
+    Transform2D Scene::peek_transform(void) const {
+        return get_pimpl()->transform.peek();
+    }
+
+    ValueAndDirtyFlag<Transform2D> Scene::get_transform(void) {
+        return get_pimpl()->transform.read();
     }
 
     void Scene::set_transform(const Transform2D &transform) {

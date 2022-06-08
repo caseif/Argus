@@ -19,7 +19,6 @@
 #include "argus/resman/resource.hpp"
 
 #include "argus/render/common/material.hpp"
-#include "internal/render/pimpl/common/material.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
@@ -84,7 +83,7 @@ namespace argus {
 
                 auto &material = bucket->material_res.get<Material>();
 
-                auto vertex_attrs = material.pimpl->attributes;
+                auto vertex_attrs = material.get_vertex_attributes();
 
                 uint32_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
                         + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)

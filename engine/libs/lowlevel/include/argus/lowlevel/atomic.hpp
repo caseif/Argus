@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include <atomic>
@@ -121,23 +122,6 @@ namespace argus {
     };
 
     /**
-     *
-     */
-    template <typename ValueType>
-    struct ValueAndDirtyFlag {
-        ValueType value;
-        bool dirty;
-
-        inline operator ValueType(void) const {
-            return value;
-        }
-
-        ValueType *operator ->(void) {
-            return &value;
-        }
-    };
-
-    /**
      * \brief Represents a value which is to be read and written atomically,
      *        and contains a "dirtiness" attribute.
      *
@@ -170,6 +154,30 @@ namespace argus {
             AtomicDirtiable(void):
                 value(),
                 dirty(false),
+                mutex() {
+            }
+
+            AtomicDirtiable(const ValueType &rhs):
+                value(rhs),
+                dirty(false),
+                mutex() {
+            }
+
+            AtomicDirtiable(ValueType &&rhs):
+                value(std::move(rhs)),
+                dirty(false),
+                mutex() {
+            }
+
+            AtomicDirtiable(const AtomicDirtiable &rhs):
+                value(rhs.value),
+                dirty(rhs.dirty),
+                mutex() {
+            }
+
+            AtomicDirtiable(AtomicDirtiable &&rhs):
+                value(std::move(rhs.value)),
+                dirty(rhs.dirty),
                 mutex() {
             }
 

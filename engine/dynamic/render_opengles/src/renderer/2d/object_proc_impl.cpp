@@ -25,12 +25,9 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/common/vertex.hpp"
+#include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
-#include "internal/render/pimpl/common/material.hpp"
-#include "internal/render/pimpl/2d/render_prim_2d.hpp"
-#include "internal/render/pimpl/common/transform_2d.hpp"
-#include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/types.hpp"
@@ -52,7 +49,7 @@
 
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {
-        return std::accumulate(obj.get_primitives().cbegin(), obj.get_primitives().cend(), 0,
+        return std::accumulate(obj.get_primitives().cbegin(), obj.get_primitives().cend(), std::size_t{ 0 },
                 [](const auto acc, const auto &prim) {
                     return acc + prim.get_vertex_count();
                 }
@@ -69,7 +66,7 @@ namespace argus {
         const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
         auto &mat = mat_res.get<Material>();
 
-        auto vertex_attrs = mat.pimpl->attributes;
+        auto vertex_attrs = mat.get_vertex_attributes();
 
         size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
                 + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
@@ -89,8 +86,7 @@ namespace argus {
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
-            for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
-                const Vertex2D &vertex = prim.pimpl->vertices.at(i);
+            for (auto &vertex : prim.get_vertices()) {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
@@ -143,7 +139,7 @@ namespace argus {
             return;
         }
 
-        auto vertex_attrs = proc_obj.material_res.get<Material>().pimpl->attributes;
+        auto vertex_attrs = proc_obj.material_res.get<Material>().get_vertex_attributes();
         // not sure whether this would actually ever be false in practice
         if (vertex_attrs & VertexAttributes::POSITION) {
             size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
@@ -169,8 +165,7 @@ namespace argus {
 
             size_t total_vertices = 0;
             for (const RenderPrim2D &prim : object.get_primitives()) {
-                for (size_t i = 0; i < prim.pimpl->vertices.size(); i++) {
-                    const Vertex2D &vertex = prim.pimpl->vertices.at(i);
+                for (auto &vertex : prim.get_vertices()) {
                     size_t major_off = total_vertices * vertex_len;
                     size_t minor_off = 0;
 

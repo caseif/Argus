@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/math.hpp"
 
 namespace argus {
@@ -46,6 +47,10 @@ namespace argus {
             Transform2D &operator =(const Transform2D &rhs) noexcept;
 
             ~Transform2D(void);
+
+            operator ValueAndDirtyFlag<Transform2D>(void);
+
+            operator ValueAndDirtyFlag<const Transform2D>(void) const;
 
             /**
              * \brief Constructs a new 2D transform with the given parameters.
@@ -161,7 +166,7 @@ namespace argus {
              *
              * \return The matrix representation.
              */
-            const Matrix4 &as_matrix(void);
+            const Matrix4 &as_matrix(void) const;
 
             /**
              * \brief Copys a 4x4 matrix representation of the transform into
@@ -169,7 +174,7 @@ namespace argus {
              *
              * \param target The array to copy the matrix representation into.
              */
-            void copy_matrix(Matrix4 &target);
+            void copy_matrix(Matrix4 &target) const;
     };
 
     /**

@@ -22,6 +22,9 @@
 
 #include "argus/render/common/scene.hpp"
 
+#include <functional>
+#include <vector>
+
 namespace argus {
     // forward declarations
     class Scene;
@@ -60,6 +63,20 @@ namespace argus {
             Canvas(Canvas &&rhs) = delete;
 
             ~Canvas(void);
+            
+            /**
+             * \brief Gets the Window which owns this Canvas.
+             *
+             * \return The Window which owns this Canvas.
+             */
+            Window &get_window(void) const;
+
+            /**
+             * \brief Gets a list of scenes contained by this Canvas.
+             *
+             * \return The list of scenes contained by this Canvas.
+             */
+            const std::vector<Scene*> &get_scenes(void) const;
 
             /**
              * \brief Creates a new Scene with the given priority.

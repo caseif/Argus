@@ -20,9 +20,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include "internal/render_opengles/types.hpp"
-
 #include "argus/render/util/object_processor.hpp"
+
+#include "internal/render_opengles/types.hpp"
 
 #include <map>
 #include <string>

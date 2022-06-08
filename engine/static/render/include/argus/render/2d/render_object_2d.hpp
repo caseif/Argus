@@ -76,6 +76,8 @@ namespace argus {
              */
             const std::vector<RenderPrim2D> &get_primitives(void) const;
 
+            const Transform2D &peek_transform(void) const;
+
             /**
              * \brief Gets the local Transform of this object.
              *
@@ -85,7 +87,9 @@ namespace argus {
              *         reflect the object's absolute transform with respect to
              *         the Scene containing the object.
              */
-            Transform2D &get_transform(void) const;
+            ValueAndDirtyFlag<Transform2D> get_transform(void);
+
+            ValueAndDirtyFlag<const Transform2D> get_transform(void) const;
             
             /**
              * \brief Sets the local Transform of this object.

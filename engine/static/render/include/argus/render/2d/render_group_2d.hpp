@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
+
 #include "argus/render/common/transform.hpp"
 
 #include <map>
@@ -123,7 +125,8 @@ namespace argus {
             void remove_child_object(RenderObject2D &object);
 
             /**
-             * \brief Gets the local Transform of this group.
+             * \brief Peeks the local Transform of this group without clearing
+             *        its dirty flag.
              *
              * \return The local Transform.
              *
@@ -132,7 +135,33 @@ namespace argus {
              *         group's absolute transform with respect to the
              *         Scene containing the group.
              */
-            Transform2D &get_transform(void) const;
+            const Transform2D &peek_transform(void) const;
+
+            /**
+             * \brief Gets the local Transform of this group and clears its
+             *        dirty flag.
+             *
+             * \return The local Transform and its dirty flag.
+             *
+             * \remark The returned Transform is local and, if this group is a
+             *         child of another, does not necessarily reflect the
+             *         group's absolute transform with respect to the
+             *         Scene containing the group.
+             */
+            ValueAndDirtyFlag<Transform2D> get_transform(void);
+
+            /**
+             * \brief Gets the local Transform of this group and clears its
+             *        dirty flag.
+             *
+             * \return The local Transform and its dirty flag.
+             *
+             * \remark The returned Transform is local and, if this group is a
+             *         child of another, does not necessarily reflect the
+             *         group's absolute transform with respect to the
+             *         Scene containing the group.
+             */
+            ValueAndDirtyFlag<const Transform2D> get_transform(void) const;
 
             /**
              * Sets the local Transform of this group.

@@ -45,7 +45,7 @@ namespace argus {
         pimpl.scenes.push_back(&scene);
 
         std::sort(pimpl.scenes.begin(), pimpl.scenes.end(),
-                  [](const auto a, const auto b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
+                  [](const auto *a, const auto *b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
     }
 
     Canvas::Canvas(Window &window):
@@ -58,6 +58,14 @@ namespace argus {
         }
 
         delete pimpl;
+    }
+
+    Window &Canvas::get_window(void) const {
+        return pimpl->window;
+    }
+
+    const std::vector<Scene*> &Canvas::get_scenes(void) const {
+        return pimpl->scenes;
     }
 
     Scene2D &Canvas::create_scene_2d(const int index) {

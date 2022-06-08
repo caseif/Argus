@@ -69,4 +69,8 @@ namespace argus {
     ShaderStage Shader::get_stage(void) const {
         return pimpl->stage;
     }
+
+    const std::string &Shader::get_source(void) const {
+        return pimpl->src;
+    }
 }

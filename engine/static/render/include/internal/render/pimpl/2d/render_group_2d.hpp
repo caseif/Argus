@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
+
 #include "argus/render/2d/render_group_2d.hpp"
 
 #include <map>

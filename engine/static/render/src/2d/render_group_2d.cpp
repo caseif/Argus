@@ -113,7 +113,15 @@ namespace argus {
         delete &object;
     }
 
-    Transform2D &RenderGroup2D::get_transform(void) const {
+    const Transform2D &RenderGroup2D::peek_transform(void) const {
+        return pimpl->transform;
+    }
+
+    ValueAndDirtyFlag<Transform2D> RenderGroup2D::get_transform(void) {
+        return pimpl->transform;
+    }
+
+    ValueAndDirtyFlag<const Transform2D> RenderGroup2D::get_transform(void) const {
         return pimpl->transform;
     }
 

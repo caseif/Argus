@@ -70,5 +70,7 @@ namespace argus {
              * \return The current vertex count of this RenderPrim2D.
              */
             size_t get_vertex_count(void) const;
+
+            const std::vector<Vertex2D> &get_vertices(void) const;
     };
 }

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/atomic.hpp"
+
 namespace argus {
     class Canvas;
     class Transform2D;
@@ -61,11 +63,23 @@ namespace argus {
             const Canvas &get_canvas(void) const;
 
             /**
-             * \brief Gets the Transform of this Scene.
+             * \brief Gets the Transform of this Scene without affecting its dirty flag.
              *
              * \return The Scene's Transform.
+             *
+             * \sa Transform2D::get_transform
              */
-            Transform2D &get_transform(void) const;
+            Transform2D peek_transform(void) const;
+
+            /**
+             * \brief Gets the Transform of this Scene and clears its dirty
+             *        flag.
+             *
+             * \return The Scene's Transform and previous dirty flag state.
+             *
+             * \sa Transform2D::peek_transform
+             */
+            ValueAndDirtyFlag<Transform2D> get_transform(void);
 
             /**
              * \brief Sets the Transform of this Scene.

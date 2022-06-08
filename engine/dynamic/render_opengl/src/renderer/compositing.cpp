@@ -27,7 +27,6 @@
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
-#include "internal/render/pimpl/common/material.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"
@@ -68,6 +67,7 @@ namespace argus {
             if (AGLET_GL_ARB_direct_state_access) {
                 glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.frame_texture);
 
+                printf("resolution: %dx%d\n", resolution->x, resolution->y);
                 glTextureStorage2D(scene_state.frame_texture, 1, GL_RGBA8, resolution->x, resolution->y);
 
                 glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -106,7 +106,7 @@ namespace argus {
         for (auto &bucket : scene_state.render_buckets) {
             auto &mat = bucket.second->material_res;
             auto &program_info = state.linked_programs.find(mat.uid)->second;
-            auto &texture_uid = mat.get<Material>().pimpl->texture;
+            auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
             if (program_info.handle != last_program) {

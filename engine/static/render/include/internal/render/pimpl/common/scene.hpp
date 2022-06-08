@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
+
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 
@@ -26,7 +28,7 @@
 namespace argus {
     struct pimpl_Scene {
         const Canvas &canvas;
-        Transform2D transform;
+        Dirtiable<Transform2D> transform;
         const int index;
         
         pimpl_Scene(const Canvas &canvas, const Transform2D &transform, const int index):

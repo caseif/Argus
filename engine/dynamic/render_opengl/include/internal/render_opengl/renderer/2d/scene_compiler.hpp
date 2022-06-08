@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/util/object_processor.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
 

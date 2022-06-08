@@ -35,7 +35,7 @@ namespace argus {
     /**
      * Represents attributes to be enabled 
      */
-    enum VertexAttributes : uint16_t {
+    enum VertexAttributes : uint64_t {
         NONE = 0x0,
         POSITION = 0x1,
         NORMAL = 0x2,
@@ -77,6 +77,13 @@ namespace argus {
             Material(Material&&) noexcept;
 
             ~Material(void);
+
+        public:
+            const std::string &get_texture_uid(void) const;
+
+            const std::vector<std::string> &get_shader_uids(void) const;
+        
+            VertexAttributes get_vertex_attributes(void) const;
     };
 
 }

@@ -23,7 +23,6 @@
 
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/texture_data.hpp"
-#include "internal/render/pimpl/common/material.hpp"
 #include "internal/render/pimpl/common/texture_data.hpp"
 
 #include "internal/render_opengles/types.hpp"
@@ -41,7 +40,7 @@
 
 namespace argus {
     void prepare_texture(RendererState &state, const Resource &material_res) {
-        auto &texture_uid = material_res.get<Material>().pimpl->texture;
+        auto &texture_uid = material_res.get<Material>().get_texture_uid();
 
         if (state.prepared_textures.find(texture_uid) != state.prepared_textures.end()) {
             return;

@@ -32,10 +32,8 @@
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
-#include "internal/render/defines.hpp"
-#include "internal/render/pimpl/common/canvas.hpp"
-#include "internal/render/pimpl/common/transform_2d.hpp"
 #include "argus/render/util/object_processor.hpp"
+#include "internal/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
@@ -119,9 +117,9 @@ namespace argus {
 
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.pimpl->scenes) {
-            SceneState &scene_state = state.get_scene_state(*scene, true);
-            auto &scene_transform = scene->get_transform();
+        for (auto *scene : canvas.get_scenes()) {
+            auto &scene_state = state.get_scene_state(*scene, true);
+            auto scene_transform = scene->peek_transform();
 
             multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(resolution),
                     scene_state.view_matrix);
@@ -130,14 +128,13 @@ namespace argus {
 
     static void _rebuild_scene(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.pimpl->scenes) {
-            SceneState &scene_state = state.get_scene_state(*scene, true);
+        for (auto *scene : canvas.get_scenes()) {
+            auto &scene_state = state.get_scene_state(*scene, true);
 
-            auto &scene_transform = scene->get_transform();
-            if (scene_transform.pimpl->dirty) {
-                multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(window.peek_resolution()),
+            auto scene_transform = scene->get_transform();
+            if (scene_transform.dirty) {
+                multiply_matrices(scene_transform->as_matrix(), _compute_view_matrix(window.peek_resolution()),
                         scene_state.view_matrix);
-                scene_transform.pimpl->dirty = false;
             }
 
             compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
@@ -255,7 +252,7 @@ namespace argus {
 
         auto resolution = window.get_resolution();
 
-        for (auto *scene : canvas.pimpl->scenes) {
+        for (auto *scene : canvas.get_scenes()) {
             auto &scene_state = state.get_scene_state(*scene);
             draw_scene_to_framebuffer(scene_state, resolution);
         }
@@ -270,13 +267,13 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        for (auto *scene : canvas.pimpl->scenes) {
+        for (auto *scene : canvas.get_scenes()) {
             auto &scene_state = state.get_scene_state(*scene);
 
             draw_framebuffer_to_screen(scene_state, resolution);
         }
 
-        glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.pimpl->window));
+        glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));
     }
 
     void GLESRenderer::notify_window_resize(const Vector2u &resolution) {

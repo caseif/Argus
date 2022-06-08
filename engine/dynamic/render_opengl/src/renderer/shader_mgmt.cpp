@@ -23,8 +23,6 @@
 
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
-#include "internal/render/pimpl/common/material.hpp"
-#include "internal/render/pimpl/common/shader.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"
@@ -41,8 +39,8 @@
 
 namespace argus {
     shader_handle_t compile_shader(const Shader &shader) {
-        auto &src = shader.pimpl->src;
-        auto stage = shader.pimpl->stage;
+        auto stage = shader.get_stage();
+        auto &src = shader.get_source();
 
         GLuint gl_shader_stage;
         switch (stage) {
@@ -137,7 +135,7 @@ namespace argus {
 
         auto &material = material_res.get<Material>();
 
-        for (auto &shader_uid : material.pimpl->shaders) {
+        for (auto &shader_uid : material.get_shader_uids()) {
             shader_handle_t shader_handle;
 
             auto &shader_res = ResourceManager::instance().get_resource_weak(shader_uid);
@@ -155,13 +153,13 @@ namespace argus {
             glAttachShader(program_handle, shader_handle);
         }
 
-        link_program(program_handle, material.pimpl->attributes);
+        link_program(program_handle, material.get_vertex_attributes());
 
         auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
 
         state.linked_programs[material_res.uid] = { program_handle, proj_mat_loc };
 
-        for (auto &shader_uid : material.pimpl->shaders) {
+        for (auto &shader_uid : material.get_shader_uids()) {
             glDetachShader(program_handle, state.compiled_shaders[shader_uid]);
         }
     }

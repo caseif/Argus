@@ -42,7 +42,7 @@
 
 namespace argus {
     static void _compute_abs_group_transform(const RenderGroup2D &group, Matrix4 &target) {
-        group.get_transform().copy_matrix(target);
+        group.get_transform()->copy_matrix(target);
         const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
 
@@ -52,7 +52,7 @@ namespace argus {
 
             Matrix4 new_transform;
 
-            multiply_matrices(cur->get_transform().as_matrix(), target, new_transform);
+            multiply_matrices(cur->peek_transform().as_matrix(), target, new_transform);
 
             target = new_transform;
         }
@@ -64,18 +64,17 @@ namespace argus {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
 
+        auto group_transform = group.get_transform();
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            multiply_matrices(running_transform, group.get_transform().as_matrix(), cur_transform);
+            multiply_matrices(running_transform, group_transform->as_matrix(), cur_transform);
 
             new_recompute_transform = true;
-        } else if (group.get_transform().pimpl->dirty) {
+        } else if (group_transform.dirty) {
             _compute_abs_group_transform(group, cur_transform);
 
             new_recompute_transform = true;
-
-            group.get_transform().pimpl->dirty = false;
         }
 
         for (const RenderObject2D *child_object : group.pimpl->child_objects) {
@@ -83,18 +82,20 @@ namespace argus {
 
             auto existing_it = processed_obj_map.find(child_object);
 
+            auto obj_transform = child_object->get_transform();
+
             if (new_recompute_transform) {
-                multiply_matrices(cur_transform, child_object->get_transform().as_matrix(), final_obj_transform);
-            } else if (child_object->get_transform().pimpl->dirty) {
+                multiply_matrices(cur_transform, obj_transform->as_matrix(), final_obj_transform);
+            } else if (obj_transform.dirty) {
                 // parent transform hasn't been computed so we need to do it here
                 Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(group_abs_transform, child_object->get_transform().as_matrix(), final_obj_transform);
+                multiply_matrices(group_abs_transform, obj_transform->as_matrix(), final_obj_transform);
             }
             // don't need to compute anything otherwise, update function will just mark the object as visited
 
-            bool dirty_transform = new_recompute_transform || child_object->get_transform().pimpl->dirty;
+            bool dirty_transform = new_recompute_transform || obj_transform.dirty;
 
             if (existing_it != processed_obj_map.end()) {
                 update_fn(*child_object, existing_it->second, final_obj_transform, dirty_transform);
@@ -102,10 +103,6 @@ namespace argus {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform);
 
                 processed_obj_map.insert({ child_object, processed_obj });
-            }
-
-            if (dirty_transform) {
-                child_object->get_transform().pimpl->dirty = false;
             }
         }
 

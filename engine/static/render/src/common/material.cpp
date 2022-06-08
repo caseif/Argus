@@ -46,4 +46,16 @@ namespace argus {
             g_pimpl_pool.destroy(pimpl);
         }
     }
+
+    const std::string &Material::get_texture_uid(void) const {
+        return pimpl->texture;
+    }
+
+    const std::vector<std::string> &Material::get_shader_uids(void) const {
+        return pimpl->shaders;
+    }
+
+    VertexAttributes Material::get_vertex_attributes(void) const {
+        return pimpl->attributes;
+    }
 }

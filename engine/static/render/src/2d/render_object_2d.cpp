@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/memory.hpp"
 
 #include "argus/render/common/transform.hpp"
@@ -67,8 +68,16 @@ namespace argus {
         return pimpl->primitives;
     }
 
-    Transform2D &RenderObject2D::get_transform(void) const {
+    const Transform2D &RenderObject2D::peek_transform(void) const {
         return pimpl->transform;
+    }
+
+    ValueAndDirtyFlag<Transform2D> RenderObject2D::get_transform(void) {
+        return pimpl->transform;
+    }
+
+    ValueAndDirtyFlag<const Transform2D> RenderObject2D::get_transform(void) const {
+        return const_cast<const Transform2D&>(pimpl->transform);
     }
 
     void RenderObject2D::set_transform(Transform2D &transform) const {

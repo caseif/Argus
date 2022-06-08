@@ -79,6 +79,18 @@ namespace argus {
         );
     }
 
+    Transform2D::operator ValueAndDirtyFlag<Transform2D>(void) {
+        auto vd = ValueAndDirtyFlag<Transform2D> { *this, this->pimpl->dirty };
+        this->pimpl->dirty = false;
+        return vd;
+    }
+
+    Transform2D::operator ValueAndDirtyFlag<const Transform2D>(void) const {
+        auto vd = ValueAndDirtyFlag<const Transform2D> { *this, this->pimpl->dirty };
+        this->pimpl->dirty = false;
+        return vd;
+    }
+
     Vector2f Transform2D::get_translation(void) const {
         pimpl->translation_mutex.lock();
         Vector2f translation_current = pimpl->translation;
@@ -148,7 +160,7 @@ namespace argus {
         this->set_scale({ x, y });
     }
 
-    static void _compute_matrix(Transform2D &transform) {
+    static void _compute_matrix(const Transform2D &transform) {
         if (!transform.pimpl->dirty_matrix) {
             return;
         }
@@ -174,13 +186,13 @@ namespace argus {
         transform.pimpl->dirty_matrix = false;
     }
 
-    const Matrix4 &Transform2D::as_matrix(void) {
+    const Matrix4 &Transform2D::as_matrix(void) const {
         _compute_matrix(*this);
 
         return pimpl->matrix_rep;
     }
 
-    void Transform2D::copy_matrix(Matrix4 &target) {
+    void Transform2D::copy_matrix(Matrix4 &target) const {
         _compute_matrix(*this);
 
         target = pimpl->matrix_rep;

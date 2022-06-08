@@ -67,5 +67,7 @@ namespace argus {
             ~Shader(void);
 
             ShaderStage get_stage(void) const;
+
+            const std::string &get_source(void) const;
     };
 }
