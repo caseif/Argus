@@ -58,4 +58,8 @@ namespace argus {
 
         g_pimpl_pool.destroy(pimpl);
     }
+
+    const unsigned char *const *&TextureData::get_pixel_data(void) const {
+        return const_cast<const unsigned char *const *&>(pimpl->image_data);
+    }
 }

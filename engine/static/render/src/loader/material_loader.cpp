@@ -23,9 +23,9 @@
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp" // IWYU pragma: keep
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
-#include "internal/render/defines.hpp"
 #include "internal/render/common/backend.hpp"
 #include "internal/render/loader/material_loader.hpp"
 

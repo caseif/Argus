@@ -29,11 +29,12 @@
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_opengles/defines.hpp"
-#include "internal/render_opengles/glfw_include.hpp"
 #include "internal/render_opengles/module_render_opengl.hpp"
 #include "internal/render_opengles/resources.h"
 #include "internal/render_opengles/loader/shader_loader.hpp"
 #include "internal/render_opengles/renderer/gles_renderer.hpp"
+
+#include "GLFW/glfw3.h"
 
 #include <string>
 

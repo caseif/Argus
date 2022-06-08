@@ -23,7 +23,6 @@
 
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/texture_data.hpp"
-#include "internal/render/pimpl/common/texture_data.hpp"
 
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
@@ -85,10 +84,10 @@ namespace argus {
         for (uint32_t y = 0; y < texture.height; y++) {
             if (AGLET_GL_ARB_direct_state_access) {
                 glTextureSubImage2D(handle, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
-                        GL_UNSIGNED_BYTE, texture.pimpl->image_data[y]);
+                        GL_UNSIGNED_BYTE, texture.get_pixel_data()[y]);
             } else {
                 glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
-                        GL_UNSIGNED_BYTE, texture.pimpl->image_data[y]);
+                        GL_UNSIGNED_BYTE, texture.get_pixel_data()[y]);
             }
         }
 

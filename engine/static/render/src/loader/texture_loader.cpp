@@ -21,8 +21,8 @@
 
 #include "argus/resman/resource_loader.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/texture_data.hpp"
-#include "internal/render/defines.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 
 #include "png.h"

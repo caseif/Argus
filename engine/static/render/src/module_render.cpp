@@ -27,8 +27,8 @@
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
-#include "internal/render/defines.hpp"
 #include "internal/render/module_render.hpp"
 #include "internal/render/common/backend.hpp"
 #include "internal/render/loader/material_loader.hpp"

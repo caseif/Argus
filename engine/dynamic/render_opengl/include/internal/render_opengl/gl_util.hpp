@@ -18,10 +18,12 @@
 
 #pragma once
 
-#include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/types.hpp"
 
 #include "aglet/aglet.h"
+
+// forward declarations
+struct GLFWwindow;
 
 namespace argus {
     void activate_gl_context(GLFWwindow *window);

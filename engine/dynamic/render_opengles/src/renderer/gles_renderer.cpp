@@ -29,15 +29,14 @@
 
 #include "argus/wm/window.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/util/object_processor.hpp"
-#include "internal/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
-#include "internal/render_opengles/glfw_include.hpp"
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/renderer/bucket_proc.hpp"
 #include "internal/render_opengles/renderer/compositing.hpp"
@@ -50,6 +49,7 @@
 #include "internal/render_opengles/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
+#include "GLFW/glfw3.h"
 
 #include <atomic>
 #include <map>

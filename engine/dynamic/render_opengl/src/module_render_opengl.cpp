@@ -29,13 +29,13 @@
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_opengl/defines.hpp"
-#include "internal/render_opengl/glfw_include.hpp"
 #include "internal/render_opengl/module_render_opengl.hpp"
 #include "internal/render_opengl/resources.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 
 #include "aglet/aglet.h"
+#include "GLFW/glfw3.h"
 
 #include <string>
 

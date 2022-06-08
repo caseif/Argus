@@ -71,5 +71,13 @@ namespace argus {
              *        memory currently in use.
              */
             ~TextureData(void);
+
+            /**
+             * \brief Returns a two-dimensional array of pixel data for the
+             *        texture.
+             *
+             * \return The pixel data of the texture;
+             */
+            const unsigned char *const *&get_pixel_data(void) const;
     };
 }
