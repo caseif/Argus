@@ -37,7 +37,7 @@ namespace argus {
         }
 
         template <typename V = ValueType>
-        inline operator typename std::enable_if<!std::is_integral<ValueType>::value, V&>::type (void) const {
+        inline operator typename std::enable_if<!std::is_integral<ValueType>::value, const V&>::type (void) const {
             return value;
         }
 
