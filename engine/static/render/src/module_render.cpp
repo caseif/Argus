@@ -58,7 +58,7 @@ namespace argus {
     static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
         for (auto backend : backends) {
             auto activate_fn = get_render_backend_activate_fn(backend);
-            if (!activate_fn.has_value()) {
+            if (activate_fn == nullptr) {
                 _ARGUS_INFO("Skipping unknown graphics backend \"%s\"", backend.c_str());
                 attempted_backends.push_back(backend);
                 continue;
