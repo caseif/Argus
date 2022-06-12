@@ -119,12 +119,9 @@ namespace argus {
         glfwSetWindowFocusCallback(handle, _on_window_focus);
     }
 
-    Window &get_window(const std::string &id) {
-        auto it = g_window_id_map.find(id);
-        if (it == g_window_id_map.end()) {
-            throw std::invalid_argument("Unknown window ID");
-        }
-        return *it->second;
+    Window *get_window(const std::string &id) {
+        auto window_it = g_window_id_map.find(id);
+        return window_it != g_window_id_map.end() ? g_window_id_map.find(id)->second : nullptr;
     }
 
     void Window::set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor) {
@@ -185,8 +182,6 @@ namespace argus {
 
         g_window_id_map.erase(pimpl->id);
         g_window_handle_map.erase(pimpl->handle);
-
-        glfwDestroyWindow(pimpl->handle);
 
         //TODO: make this behavior configurable
         if (--g_window_count == 0) {
@@ -280,7 +275,8 @@ namespace argus {
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
-            delete this;
+            glfwDestroyWindow(pimpl->handle);
+            run_on_game_thread([this] () { delete this; });
             return;
         } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;

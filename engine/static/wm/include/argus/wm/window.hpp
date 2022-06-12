@@ -25,6 +25,7 @@
 #include "argus/wm/display.hpp"
 
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace argus {
@@ -51,11 +52,13 @@ namespace argus {
     typedef std::function<void(Canvas&)> CanvasDtor;
 
     /**
-     * \brief Returns the Window with the specified ID.
+     * \brief Returns the Window with the specified ID. This will return nullptr
+     *        if a Window with the specified ID does not exist at the time that
+     *        the method is called.
      *
      * \return The Window with the specified ID.
      */
-    Window &get_window(const std::string &id);
+    Window *get_window(const std::string &id);
 
     /**
      * \brief Returns an opaque pointer to the underlying handle of a Window.

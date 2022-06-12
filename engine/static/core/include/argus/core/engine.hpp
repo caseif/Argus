@@ -35,6 +35,11 @@ namespace argus {
     typedef std::function<void(const TimeDelta)> DeltaCallback;
 
     /**
+     * \brief A callback accepts no parameters and returns void.
+     */
+    typedef std::function<void(void)> NullaryCallback;
+
+    /**
      * \brief Initializes the engine.
      *
      * argus::set_load_modules(const std::initializer_list) should be invoked
@@ -101,4 +106,11 @@ namespace argus {
      * \param id The ID of the callback to unregister.
      */
     void unregister_render_callback(Index id);
+
+    /**
+     * \brief Invokes a callback on the game thread during the next tick.
+     *
+     * \param callback The callback to invoke.
+     */
+    void run_on_game_thread(NullaryCallback callback);
 }

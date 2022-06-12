@@ -34,11 +34,6 @@ namespace argus {
     extern Index g_next_index;
     extern std::mutex g_next_index_mutex;
 
-    /**
-     * \brief A callback accepts no parameters.
-     */
-    typedef std::function<void()> NullaryCallback;
-
     template <typename ValueType>
     struct IndexedValue {
         Index id;

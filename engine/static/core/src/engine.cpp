@@ -56,6 +56,9 @@ namespace argus {
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
 
+    static std::mutex g_one_off_callbacks_mutex;
+    static std::vector<NullaryCallback> g_one_off_callbacks;
+
     Thread *g_game_thread;
 
     static bool g_engine_stopping = false;
@@ -98,6 +101,12 @@ namespace argus {
     static void _deinit_callbacks(void) {
         g_update_callbacks.list.clear();
         g_render_callbacks.list.clear();
+    }
+
+    void run_on_game_thread(NullaryCallback callback) {
+        g_one_off_callbacks_mutex.lock();
+        g_one_off_callbacks.push_back(callback);
+        g_one_off_callbacks_mutex.unlock();
     }
 
     static void _handle_idle(Timestamp start_timestamp, unsigned int target_rate) {
@@ -181,6 +190,14 @@ namespace argus {
 
             Timestamp update_start = argus::now();
             TimeDelta delta = _compute_delta(last_update);
+            
+            // prioritize one-off callbacks
+            g_one_off_callbacks_mutex.lock();
+            for (auto callback : g_one_off_callbacks) {
+                callback();
+            }
+            g_one_off_callbacks.clear();
+            g_one_off_callbacks_mutex.unlock();
 
             //TODO: do we need to flush the queues before the engine stops?
             flush_callback_list_queues(g_update_callbacks);
