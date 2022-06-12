@@ -351,6 +351,11 @@ namespace argus {
 
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
             std::initializer_list<std::string> dependencies) {
+        if (std::find_if(id.begin(), id.end(), [] (auto c) { return std::isupper(c); }) != id.end()) {
+            throw std::invalid_argument("Module identifier must contain only lowercase letters");
+        }
+
+
         if (std::count(g_static_module_ids.begin(), g_static_module_ids.end(), id)) {
             throw std::invalid_argument("Module identifier is already in use by static module: " + id);
         }
