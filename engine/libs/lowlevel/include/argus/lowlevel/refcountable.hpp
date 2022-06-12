@@ -18,18 +18,44 @@
 
 #pragma once
 
-#include "internal/render_opengl/types.hpp"
+#include <utility>
 
-#include <string>
+#include <cstddef>
 
 namespace argus {
-    // forward declarations
-    struct RendererState;
-    class Resource;
+    template <typename T>
+    struct RefCountable {
+        T value;
+        size_t refcount;
 
-    void get_or_load_texture(RendererState &state, const Resource &material_res);
+        RefCountable<T>(const T &value):
+                value(value),
+                refcount(1) {
+        }
 
-    void deinit_texture(texture_handle_t texture);
+        RefCountable<T>(T &&value):
+                value(std::move(value)),
+                refcount(1) {
+        }
 
-    void release_texture(RendererState &state, const std::string &texture_uid);
+        ~RefCountable(void) {
+            value.~T();
+        }
+
+        void acquire(void) {
+            refcount++;
+        }
+
+        size_t release(void) {
+            return --refcount;
+        }
+
+        inline operator T(void) {
+            return value;
+        }
+
+        T *operator ->(void) {
+            return &value;
+        }
+    };
 }

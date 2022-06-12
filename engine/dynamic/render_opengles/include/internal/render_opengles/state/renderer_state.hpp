@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/refcountable.hpp"
+
 #include "argus/resman/resource.hpp"
 
 #include "internal/render_opengles/types.hpp"
@@ -54,7 +56,8 @@ namespace argus {
 
         std::map<const Scene2D*, Scene2DState> scene_states_2d;
         std::vector<SceneState*> all_scene_states;
-        std::map<std::string, texture_handle_t> prepared_textures;
+        std::map<std::string, RefCountable<texture_handle_t>> prepared_textures;
+        std::map<std::string, std::string> material_textures;
         std::map<std::string, shader_handle_t> compiled_shaders;
         std::map<std::string, LinkedProgram> linked_programs;
 

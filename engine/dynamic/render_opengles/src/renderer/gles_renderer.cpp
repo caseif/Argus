@@ -146,7 +146,7 @@ namespace argus {
 
                 build_shaders(state, mat);
 
-                prepare_texture(state, mat);
+                get_or_load_texture(state, mat);
             }
         }
     }
@@ -171,6 +171,11 @@ namespace argus {
         }
 
         programs.erase(program_it);
+
+        if (auto texture_uid = state.material_textures.find(material);
+            texture_uid != state.material_textures.end()) {
+            release_texture(state, texture_uid->second);
+        }
     }
 
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
@@ -181,9 +186,7 @@ namespace argus {
         auto &state = *static_cast<RendererState*>(renderer_state);
 
         std::string mt = event.prototype.media_type;
-        if (mt == RESOURCE_TYPE_TEXTURE_PNG) {
-            remove_texture(state, event.prototype.uid);
-        } else if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+        if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
             remove_shader(state, event.prototype.uid);
         } else if (mt == RESOURCE_TYPE_MATERIAL) {
             _deinit_material(state, event.prototype.uid);

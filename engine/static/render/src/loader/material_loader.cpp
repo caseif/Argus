@@ -142,7 +142,6 @@ namespace argus {
             }
 
             std::vector<std::string> dep_uids;
-            dep_uids.push_back(tex_uid);
             dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
 
             std::map<std::string, const Resource*> deps;

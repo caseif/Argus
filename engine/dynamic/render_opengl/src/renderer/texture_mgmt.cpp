@@ -38,14 +38,17 @@
 #include <cstdint>
 
 namespace argus {
-    void prepare_texture(RendererState &state, const Resource &material_res) {
+    void get_or_load_texture(RendererState &state, const Resource &material_res) {
         auto &texture_uid = material_res.get<Material>().get_texture_uid();
 
-        if (state.prepared_textures.find(texture_uid) != state.prepared_textures.end()) {
+        auto existing_it = state.prepared_textures.find(texture_uid);
+        if (existing_it != state.prepared_textures.end()) {
+            existing_it->second.acquire();
+            state.material_textures.insert({ material_res.uid, texture_uid });
             return;
         }
 
-        auto &texture_res = ResourceManager::instance().get_resource_weak(texture_uid);
+        auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
         auto &texture = texture_res.get<TextureData>();
         
         _ARGUS_ASSERT(texture.width <= INT32_MAX, "Texture width is too big");
@@ -95,20 +98,25 @@ namespace argus {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
+        texture_res.release();
+
         state.prepared_textures.insert({ texture_uid, handle });
+        state.material_textures.insert({ material_res.uid, texture_uid });
     }
 
     void deinit_texture(texture_handle_t texture) {
         glDeleteTextures(1, &texture);
     }
 
-    void remove_texture(RendererState &state, const std::string &texture_uid) {
-        _ARGUS_DEBUG("De-initializing texture %s", texture_uid.c_str());
+    void release_texture(RendererState &state, const std::string &texture_uid) {
         auto &textures = state.prepared_textures;
-        auto existing_it = textures.find(texture_uid);
-        if (existing_it != textures.end()) {
-            deinit_texture(existing_it->second);
-            textures.erase(existing_it);
+        if (auto existing_it = textures.find(texture_uid); existing_it != textures.end()) {
+            auto new_rc = existing_it->second.release();
+            if (new_rc == 0) {
+                deinit_texture(existing_it->second);
+                textures.erase(existing_it);
+            }
+            _ARGUS_DEBUG("Released handle on texture %s (new refcount = %lu)", texture_uid.c_str(), new_rc);
         }
     }
 }
