@@ -24,5 +24,7 @@ namespace argus {
 
     struct WorldComponent {
         World2D &world;
+
+        WorldComponent(World2D &world): world(world) { }
     };
 }

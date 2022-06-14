@@ -23,5 +23,7 @@
 namespace argus {
     struct TextureComponent {
         std::string uid;
+
+        TextureComponent(const std::string &uid): uid(uid) { }
     };
 }

@@ -23,5 +23,7 @@
 namespace argus {
     struct IdentifierComponent {
         std::string id;
+
+        IdentifierComponent(const std::string &id): id(id) { }
     };
 }

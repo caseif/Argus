@@ -32,13 +32,8 @@ namespace argus {
     EntityBuilder::EntityBuilder(void) {
     }
 
-    EntityBuilder &EntityBuilder::with(std::type_index type) {
-        types[type] = nullptr;
-        return *this;
-    }
-
-    EntityBuilder &EntityBuilder::with(std::type_index type, std::function<void(void*)> deferred_assn) {
-        types[type] = deferred_assn;
+    EntityBuilder &EntityBuilder::with(std::type_index type, std::function<void(void*)> deferred_init) {
+        types[type] = deferred_init;
         return *this;
     }
 

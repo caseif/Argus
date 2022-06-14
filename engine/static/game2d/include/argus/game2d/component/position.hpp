@@ -23,5 +23,9 @@
 namespace argus {
     struct PositionComponent {
         Vector2d position;
+
+        PositionComponent(void): position() { }
+
+        PositionComponent(Vector2d position): position(position) { }
     };
 }

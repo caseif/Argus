@@ -79,7 +79,7 @@ namespace argus {
         size_t occupied_blocks;           // the number of occupied blocks in the chunk, used for bookkeeping
         BlockBitField occupied_block_map; // a bitfield of blocks which are currently occupied
         ChunkMetadata *next_chunk;
-        unsigned char data[]; //NOLINT(cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays)
+        unsigned char data[0]; //NOLINT(cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays)
     };
     #ifdef _MSC_VER
     #pragma warning(pop)
@@ -287,7 +287,7 @@ namespace argus {
                             chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk);
                         if (*canary != CANARY_MAGIC) {
                             _ARGUS_FATAL("Detected heap overrun in chunk @ %p (aligned: %p)",
-                                         reinterpret_cast<void *>(chunk->unaligned_addr), chunk);
+                                         reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void*>(chunk));
                         }
                         #endif
 

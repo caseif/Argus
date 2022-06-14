@@ -24,5 +24,10 @@ namespace argus {
     struct BackgroundComponent {
         Vector2f base_offset;
         Vector2f parallax_coeff;
+
+        BackgroundComponent(const Vector2f &base_offset, const Vector2f &parallax_coeff):
+                base_offset(base_offset),
+                parallax_coeff(parallax_coeff) {
+        }
     };
 }

@@ -32,12 +32,12 @@ namespace argus {
     Entity &World2D::create_textured_background_layer(const std::string &id, uint8_t index,
             const std::string &texture_uid, const Vector2f &base_offset, const Vector2f &parallax_coeff) {
         auto &entity = Entity::builder()
-            .with<BackgroundComponent>({ .base_offset = base_offset, .parallax_coeff = parallax_coeff })
-            .with<IdentifierComponent>({ .id = id })
-            .with<IndexComponent>({ .index = index })
+            .with<BackgroundComponent>(base_offset, parallax_coeff)
+            .with<IdentifierComponent>(id)
+            .with<IndexComponent>(index)
             .with<PositionComponent>()
-            .with<TextureComponent>({ .uid = texture_uid })
-            .with<WorldComponent>({ .world = *this })
+            .with<TextureComponent>(texture_uid)
+            .with<WorldComponent>(*this)
             .build();
         return entity;
     }

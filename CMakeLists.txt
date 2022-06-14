@@ -101,7 +101,9 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
-                       -Wconversion -Wno-error=conversion -Wno-error=sign-conversion" CACHE STRING "" FORCE)
+                       -Wconversion -Wno-error=conversion -Wno-error=sign-conversion -Wpedantic \
+                       -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-anonymous-struct -Wno-zero-length-array"
+      CACHE STRING "" FORCE)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
       OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=mismatched-tags" CACHE STRING "" FORCE)

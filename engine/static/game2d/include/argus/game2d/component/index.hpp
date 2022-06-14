@@ -23,5 +23,7 @@
 namespace argus {
     struct IndexComponent {
         uint8_t index;
+
+        IndexComponent(uint8_t index): index(index) { }
     };
 }
