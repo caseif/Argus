@@ -18,4 +18,10 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include "argus/lowlevel/math.hpp"
+
+namespace argus {
+    struct PositionComponent {
+        Vector2d position;
+    };
+}

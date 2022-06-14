@@ -18,4 +18,9 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include "argus/game2d/component/background.hpp"
+#include "argus/game2d/component/identifier.hpp"
+#include "argus/game2d/component/index.hpp"
+#include "argus/game2d/component/position.hpp"
+#include "argus/game2d/component/texture.hpp"
+#include "argus/game2d/component/world.hpp"

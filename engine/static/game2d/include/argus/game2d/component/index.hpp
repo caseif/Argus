@@ -18,4 +18,10 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include <cstdint>
+
+namespace argus {
+    struct IndexComponent {
+        uint8_t index;
+    };
+}

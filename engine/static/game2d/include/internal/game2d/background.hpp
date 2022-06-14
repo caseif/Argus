@@ -18,4 +18,8 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include "argus/ecs/system.hpp"
+
+namespace argus {
+    System &create_textured_background_system(void);
+}

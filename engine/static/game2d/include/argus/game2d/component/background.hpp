@@ -18,4 +18,11 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include "argus/lowlevel/math.hpp"
+
+namespace argus {
+    struct BackgroundComponent {
+        Vector2f base_offset;
+        Vector2f parallax_coeff;
+    };
+}

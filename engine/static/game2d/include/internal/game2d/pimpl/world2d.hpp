@@ -18,4 +18,8 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+namespace argus {
+    struct pimpl_World2d {
+        //TODO
+    };
+}

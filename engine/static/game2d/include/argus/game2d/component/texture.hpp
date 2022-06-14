@@ -18,4 +18,10 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include <string>
+
+namespace argus {
+    struct TextureComponent {
+        std::string uid;
+    };
+}

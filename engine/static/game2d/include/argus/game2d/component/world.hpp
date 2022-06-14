@@ -18,4 +18,11 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+namespace argus {
+    // forward declarations
+    class World2D;
+
+    struct WorldComponent {
+        World2D &world;
+    };
+}

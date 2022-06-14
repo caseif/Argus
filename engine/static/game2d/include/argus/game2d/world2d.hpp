@@ -18,4 +18,21 @@
 
 #pragma once
 
-#include "argus/game2d/world2d.hpp"
+#include "argus/lowlevel/math.hpp"
+
+#include "argus/ecs/entity.hpp"
+
+#include <cstdint>
+
+namespace argus {
+    // forward declarations
+    struct pimpl_World2D;
+
+    class World2D {
+        public:
+            pimpl_World2D *pimpl;
+
+            Entity &create_textured_background_layer(const std::string &id, uint8_t index,
+                    const std::string &texture_uid, const Vector2f &base_offset, const Vector2f &parallax_coeff);
+    };
+}

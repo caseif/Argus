@@ -19,11 +19,22 @@
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
+#include "internal/game2d/background.hpp"
+
 namespace argus {
+    static System *g_textured_background_system = nullptr;
+
     void update_lifecycle_game2d(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                //TODO
+                g_textured_background_system = &create_textured_background_system();
+
+                break;
+            }
+            case LifecycleStage::PreDeinit: {
+                if (g_textured_background_system != nullptr) {
+                    g_textured_background_system->set_active(false);
+                }
 
                 break;
             }
