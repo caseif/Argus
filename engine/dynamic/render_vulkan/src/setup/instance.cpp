@@ -66,7 +66,7 @@ namespace argus {
             auto ext_it = std::find_if(available_exts.begin(), available_exts.end(),
                     [ext_name](auto ext) { return strcmp(ext.extensionName, ext_name) == 0; });
             if (ext_it == available_exts.end()) {
-                _ARGUS_WARN("Extension '%s' is not available (required by GLFW)", ext_name);
+                Logger::default_logger().warn("Extension '%s' is not available (required by GLFW)", ext_name);
                 return false;
             }
         }
@@ -85,7 +85,7 @@ namespace argus {
             auto layer_name = layers[i];
             if (std::none_of(available_layers.begin(), available_layers.end(),
                     [layer_name](auto layer) { return strcmp(layer.layerName, layer_name) == 0; })) {
-                _ARGUS_WARN("Validation layer '%s' is not available", layer_name);
+                Logger::default_logger().warn("Validation layer '%s' is not available", layer_name);
                 return false;
             }
         }
@@ -135,7 +135,7 @@ namespace argus {
         auto glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_exts_count);
 
         if (!_check_required_extensions(glfw_exts, glfw_exts_count)) {
-            _ARGUS_FATAL("Required Vulkan extensions for GLFW are not available");
+            Logger::default_logger().fatal("Required Vulkan extensions for GLFW are not available");
         }
 
         const char *const *layers;
@@ -149,7 +149,7 @@ namespace argus {
         #endif
 
         if (!_check_required_layers(layers, layers_count)) {
-            _ARGUS_WARN("Required Vulkan extensions for GLFW are not available");
+            Logger::default_logger().warn("Required Vulkan extensions for GLFW are not available");
             layers = nullptr;
             layers_count = 0;
         }

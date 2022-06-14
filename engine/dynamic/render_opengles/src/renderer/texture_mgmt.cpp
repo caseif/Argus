@@ -99,7 +99,7 @@ namespace argus {
                 deinit_texture(existing_it->second);
                 textures.erase(existing_it);
             }
-            _ARGUS_DEBUG("Released handle on texture %s (new refcount = %lu)", texture_uid.c_str(), new_rc);
+            Logger::default_logger().debug("Released handle on texture %s (new refcount = %lu)", texture_uid.c_str(), new_rc);
         }
     }
 }

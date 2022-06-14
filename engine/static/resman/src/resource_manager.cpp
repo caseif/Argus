@@ -124,12 +124,12 @@ namespace argus {
             ArpPackage package = nullptr;
             int rc = 0;
             if ((rc = arp_load_from_file(child.path().string().c_str(), NULL, &package)) != 0) {
-                _ARGUS_WARN("Failed to load package at path %s (libarp returned error code %d)",
+                Logger::default_logger().warn("Failed to load package at path %s (libarp returned error code %d)",
                         child.path().c_str(), rc);
             }
 
             if ((rc = arp_add_to_set(set, package)) != 0) {
-                _ARGUS_WARN("Failed to add package at path %s to set (libarp returned error code %d)",
+                Logger::default_logger().warn("Failed to add package at path %s to set (libarp returned error code %d)",
                         child.path().c_str(), rc);
             }
         }
@@ -143,7 +143,7 @@ namespace argus {
             if (prefix.empty()) {
                 if (child.is_regular_file()) {
                     if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT) {
-                        _ARGUS_WARN("Ignoring non-namespaced filesystem resource %s", child.path().stem().c_str());
+                        Logger::default_logger().warn("Ignoring non-namespaced filesystem resource %s", child.path().stem().c_str());
                     }
                     continue;
                 }
@@ -161,12 +161,12 @@ namespace argus {
                 _discover_fs_resources_recursively(child, cur_uid, prototype_map, extension_map);
             } else if (child.is_regular_file()) {
                 if (!child.path().has_extension() || child.path().extension() == EXTENSION_SEPARATOR) {
-                    _ARGUS_WARN("Resource %s does not have an extension, ignoring", child.path().c_str());
+                    Logger::default_logger().warn("Resource %s does not have an extension, ignoring", child.path().c_str());
                     continue;
                 }
 
                 if (prototype_map.find(cur_uid) != prototype_map.cend()) {
-                    _ARGUS_WARN("Resource %s exists with multiple prefixes, ignoring further copies", cur_uid.c_str());
+                    Logger::default_logger().warn("Resource %s exists with multiple prefixes, ignoring further copies", cur_uid.c_str());
                     continue;
                 }
 
@@ -175,14 +175,14 @@ namespace argus {
 
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {
-                    _ARGUS_WARN("Discovered filesystem resource %s with unknown extension %s, ignoring",
+                    Logger::default_logger().warn("Discovered filesystem resource %s with unknown extension %s, ignoring",
                             cur_uid.c_str(), ext.c_str());
                     continue;
                 }
 
                 prototype_map.insert({cur_uid, {cur_uid, type_it->second, child}});
 
-                _ARGUS_DEBUG("Discovered filesystem resource %s at path %s", cur_uid.c_str(),
+                Logger::default_logger().debug("Discovered filesystem resource %s at path %s", cur_uid.c_str(),
                         child.path().c_str());
             }
         }
@@ -192,20 +192,20 @@ namespace argus {
         try {
             auto res_dir = std::filesystem::current_path() / RESOURCES_DIR;
 
-            _ARGUS_DEBUG("Discovering ARP packages");
+            Logger::default_logger().debug("Discovering ARP packages");
 
             _discover_arp_packages(pimpl->package_set, res_dir);
 
-            _ARGUS_DEBUG("Discovering loose resources from filesystem");
+            Logger::default_logger().debug("Discovering loose resources from filesystem");
 
             _discover_fs_resources_recursively(res_dir, "", pimpl->discovered_fs_protos,
                     pimpl->extension_mappings);
 
-            _ARGUS_DEBUG("Resource discovery completed");
+            Logger::default_logger().debug("Resource discovery completed");
 
             pimpl->discovery_done = true;
         } catch (std::exception &ex) {
-            _ARGUS_FATAL("Failed to get executable directory: %s", ex.what());
+            Logger::default_logger().fatal("Failed to get executable directory: %s", ex.what());
         }
     }
 
@@ -214,28 +214,28 @@ namespace argus {
 
         ArpPackage pack = nullptr;
         if ((rc = arp_load_from_memory(buf, len, NULL, &pack)) != 0) {
-            _ARGUS_FATAL("Failed to load in-memory package (return code %d)", rc);
+            Logger::default_logger().fatal("Failed to load in-memory package (return code %d)", rc);
         }
         arp_add_to_set(pimpl->package_set, pack);
 
-        _ARGUS_DEBUG("Successfully loaded ARP package from memory with length %lu", len);
+        Logger::default_logger().debug("Successfully loaded ARP package from memory with length %lu", len);
     }
 
     void ResourceManager::register_loader(ResourceLoader &loader) {
-        _ARGUS_DEBUG("Registering new resource loader");
+        Logger::default_logger().debug("Registering new resource loader");
 
         for (const std::string &media_type : loader.pimpl->media_types) {
             if (pimpl->registered_loaders.find(media_type) != pimpl->registered_loaders.cend()) {
                 throw std::invalid_argument("Cannot register loader for type more than once");
             }
             pimpl->registered_loaders.insert({media_type, &loader});
-            _ARGUS_DEBUG("Registered loader for media type %s", media_type.c_str());
+            Logger::default_logger().debug("Registered loader for media type %s", media_type.c_str());
         }
 
     }
 
     void ResourceManager::register_extension_mappings(const std::map<std::string, std::string> &mappings) {
-        _ARGUS_DEBUG("Registering resource extension mappings");
+        Logger::default_logger().debug("Registering resource extension mappings");
         pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
@@ -244,7 +244,7 @@ namespace argus {
         if (it != mgr.pimpl->loaded_resources.cend()) {
             if (inc_refcount) {
                 auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
-                _ARGUS_DEBUG("Acquired handle for resource %s (new refcount is %d)", uid.c_str(), new_ref_count);
+                Logger::default_logger().debug("Acquired handle for resource %s (new refcount is %d)", uid.c_str(), new_ref_count);
                 UNUSED(new_ref_count); // suppress unused warning in release configuration
             }
 
@@ -260,7 +260,7 @@ namespace argus {
             return *existing_res;
         }
 
-        _ARGUS_DEBUG("Initiating load for resource %s", uid.c_str());
+        Logger::default_logger().debug("Initiating load for resource %s", uid.c_str());
 
         Resource *res = nullptr;
 
@@ -293,7 +293,7 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            _ARGUS_DEBUG("Loaded filesystem resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
+            Logger::default_logger().debug("Loaded filesystem resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
         } else {
             arp_resource_meta_t res_meta = {};
             int rc = arp_find_resource_in_set(pimpl->package_set, uid.c_str(), &res_meta);
@@ -333,7 +333,7 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            _ARGUS_DEBUG("Loaded ARP resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
+            Logger::default_logger().debug("Loaded ARP resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
         }
 
         if (res == nullptr) {
@@ -344,7 +344,7 @@ namespace argus {
 
         dispatch_event<ResourceEvent>(ResourceEventType::Load, res->prototype, res);
 
-        _ARGUS_DEBUG("Loaded resource %s (initial refcount is %d)",
+        Logger::default_logger().debug("Loaded resource %s (initial refcount is %d)",
                 res->prototype.uid.c_str(), res->pimpl->ref_count.load());
 
         return *res;
@@ -383,7 +383,7 @@ namespace argus {
 
     Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, const void *data,
             size_t len) {
-        _ARGUS_DEBUG("Creating ad hoc resource %s (%zu bytes)", uid.c_str(), len);
+        Logger::default_logger().debug("Creating ad hoc resource %s (%zu bytes)", uid.c_str(), len);
 
         if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
             throw ResourceLoadedException(uid);
@@ -409,13 +409,13 @@ namespace argus {
         Resource *res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
         pimpl->loaded_resources.insert({uid, res});
 
-        _ARGUS_DEBUG("Created ad hoc resource %s", uid.c_str());
+        Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());
 
         return *res;
     }
 
     int ResourceManager::unload_resource(const std::string &uid) {
-        _ARGUS_DEBUG("Unloading resource %s", uid.c_str());
+        Logger::default_logger().debug("Unloading resource %s", uid.c_str());
 
         auto it = pimpl->loaded_resources.find(uid);
         if (it == pimpl->loaded_resources.cend()) {

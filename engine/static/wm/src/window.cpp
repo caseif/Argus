@@ -144,7 +144,7 @@ namespace argus {
         if (g_canvas_ctor != nullptr) {
             pimpl->canvas = &g_canvas_ctor(*this);
         } else {
-            _ARGUS_WARN("No canvas callbacks were set - new window will not have associated canvas!");
+            Logger::default_logger().warn("No canvas callbacks were set - new window will not have associated canvas!");
         }
 
         pimpl->state = WINDOW_STATE_NULL;
@@ -256,7 +256,7 @@ namespace argus {
             pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_name().c_str(), nullptr, nullptr);
 
             if (pimpl->handle == nullptr) {
-                _ARGUS_FATAL("Failed to create GLFW window");
+                Logger::default_logger().fatal("Failed to create GLFW window");
             }
 
             g_window_handle_map.insert({pimpl->handle, this});

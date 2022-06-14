@@ -114,7 +114,7 @@ namespace argus {
         } else if (mode & FILE_MODE_WRITE) {
             std_mode = "w";
         } else {
-            _ARGUS_FATAL("Unable to determine mode string");
+            Logger::default_logger().fatal("Unable to determine mode string");
         }
 
         FILE *file = NULL;

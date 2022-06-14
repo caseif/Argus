@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/logging.hpp"
+
 #include "internal/render_opengl/types.hpp"
 
 #include "aglet/aglet.h"
@@ -35,4 +37,6 @@ namespace argus {
             GLuint attr_index, GLuint *attr_offset);
 
     void try_delete_buffer(buffer_handle_t buffer);
+
+    Logger &get_gl_logger(void);
 }

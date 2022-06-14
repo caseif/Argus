@@ -28,6 +28,8 @@
 #include <cstdio>
 
 namespace argus {
+    static Logger g_gl_logger("GL");
+
     void activate_gl_context(GLFWwindow *window) {
         if (glfwGetCurrentContext() == window) {
             // already current
@@ -36,7 +38,7 @@ namespace argus {
 
         glfwMakeContextCurrent(window);
         if (glfwGetCurrentContext() != window) {
-            _ARGUS_FATAL("Failed to make GL context current");
+            Logger::default_logger().fatal("Failed to make GL context current");
         }
     }
 
@@ -53,15 +55,15 @@ namespace argus {
         }
         #endif
         char const *level;
-        auto stream = stdout;
+        bool is_error = false;
         switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH:
                 level = "SEVERE";
-                stream = stderr;
+                is_error = true;
                 break;
             case GL_DEBUG_SEVERITY_MEDIUM:
                 level = "WARN";
-                stream = stderr;
+                is_error = true;
                 break;
             case GL_DEBUG_SEVERITY_LOW:
                 level = "INFO";
@@ -71,10 +73,14 @@ namespace argus {
                 break;
             default: // shouldn't happen
                 level = "UNKNOWN";
-                stream = stderr;
+                is_error = true;
                 break;
         }
-        _GENERIC_PRINT(stream, level, "GL", "%s", message);
+        if (is_error) {
+            g_gl_logger.log_error(level, "%s", message);
+        } else {
+            g_gl_logger.log(level, "%s", message);
+        }
     }
 
     void set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
@@ -92,5 +98,9 @@ namespace argus {
         }
 
         glDeleteBuffers(1, &buffer);
+    }
+
+    Logger &get_gl_logger(void) {
+        return g_gl_logger;
     }
 }

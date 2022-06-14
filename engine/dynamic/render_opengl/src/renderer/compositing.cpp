@@ -90,7 +90,7 @@ namespace argus {
 
             auto fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
-                _ARGUS_FATAL("Framebuffer is incomplete (error %d)", fb_status);
+                Logger::default_logger().fatal("Framebuffer is incomplete (error %d)", fb_status);
             }
         }
 

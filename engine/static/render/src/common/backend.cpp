@@ -35,7 +35,7 @@ namespace argus {
             throw std::invalid_argument("Render backend is already registered for provided ID");
         }
         g_render_backend_activate_fns[id] = activate_fn;
-        _ARGUS_DEBUG("Successfully registered render backend with ID %s", id.c_str());
+        Logger::default_logger().debug("Successfully registered render backend with ID %s", id.c_str());
     }
 
     std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id) {

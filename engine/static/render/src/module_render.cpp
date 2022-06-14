@@ -59,18 +59,18 @@ namespace argus {
         for (auto backend : backends) {
             auto activate_fn = get_render_backend_activate_fn(backend);
             if (activate_fn == nullptr) {
-                _ARGUS_INFO("Skipping unknown graphics backend \"%s\"", backend.c_str());
+                Logger::default_logger().info("Skipping unknown graphics backend \"%s\"", backend.c_str());
                 attempted_backends.push_back(backend);
                 continue;
             }
 
             if (!(*activate_fn)()) {
-                _ARGUS_INFO("Unable to select graphics backend \"%s\"", backend.c_str());
+                Logger::default_logger().info("Unable to select graphics backend \"%s\"", backend.c_str());
                 attempted_backends.push_back(backend);
                 continue;
             }
 
-            _ARGUS_INFO("Successfully activated graphics backend \"%s\"", backend.c_str());
+            Logger::default_logger().info("Successfully activated graphics backend \"%s\"", backend.c_str());
 
             set_active_render_backend(backend);
 
@@ -89,19 +89,19 @@ namespace argus {
             return;
         }
 
-        _ARGUS_WARN("Failed to select graphics backend from preference list, falling back to platform default");
+        Logger::default_logger().warn("Failed to select graphics backend from preference list, falling back to platform default");
 
         if (_try_backends(g_default_backends, attempted_backends)) {
             return;
         }
 
-        _ARGUS_FATAL("Failed to select graphics backend");
+        Logger::default_logger().fatal("Failed to select graphics backend");
 
         return;
     }
 
     static void _load_backend_modules(void) {
-        _ARGUS_DEBUG("Loading graphics backend modules");
+        Logger::default_logger().debug("Loading graphics backend modules");
         size_t count = 0;
         for (auto &module : get_present_dynamic_modules()) {
             auto module_id = module.first;
@@ -112,7 +112,7 @@ namespace argus {
                 count++;
             }
         }
-        _ARGUS_DEBUG("Loaded %lu graphics backend modules", count);
+        Logger::default_logger().debug("Loaded %lu graphics backend modules", count);
     }
 
     static Canvas &_construct_canvas(Window &window) {
@@ -131,7 +131,7 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Init: {
-                _ARGUS_DEBUG("Activating render backend module");
+                Logger::default_logger().debug("Activating render backend module");
 
                 _activate_backend();
 

@@ -227,7 +227,7 @@ namespace argus::input {
         } else {
             auto res = g_keycode_glfw_to_argus.find(glfw_keycode);
             if (res == g_keycode_glfw_to_argus.end()) {
-                _ARGUS_DEBUG("Saw unknown GLFW scancode %d", glfw_keycode);
+                Logger::default_logger().debug("Saw unknown GLFW scancode %d", glfw_keycode);
                 return KeyboardScancode::Unknown;
             }
             return res->second;
@@ -241,7 +241,7 @@ namespace argus::input {
         } else {
             auto res = g_keycode_argus_to_glfw.find(argus_keycode);
             if (res == g_keycode_argus_to_glfw.end()) {
-                _ARGUS_WARN("Saw unknown Argus scancode %d", static_cast<int>(argus_keycode));
+                Logger::default_logger().warn("Saw unknown Argus scancode %d", static_cast<int>(argus_keycode));
                 return static_cast<uint32_t>(GLFW_KEY_UNKNOWN);
             }
             return res->second;

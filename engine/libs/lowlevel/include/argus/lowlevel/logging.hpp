@@ -18,52 +18,46 @@
 
 #pragma once
 
+#include <functional>
+#include <string>
+#include <utility>
+
 #include <cstdio>
 #include <cstdlib>
-
-#ifdef _ARGUS_DEBUG_MODE
-#ifdef _MSC_VER
-#include <intrin.h>
-#define DEBUG_BREAK() __debugbreak()
-#else
-#include <csignal>
-#define DEBUG_BREAK() raise(SIGTRAP)
-#endif
-#else
-#define DEBUG_BREAK()
-#endif
-
-#define STRINGIZE_DETAIL(x) #x
-#define STRINGIZE(x) STRINGIZE_DETAIL(x)
-
-#ifdef _ARGUS_DEBUG_MODE
-#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " __FILE__ ":" STRINGIZE(__LINE__) ": " fmt "\n", level, system, ##__VA_ARGS__)
-#else
-#define _GENERIC_PRINT(stream, level, system, fmt, ...) fprintf(stream, "[%s][%s] " fmt "\n", level, system, ##__VA_ARGS__)
-#endif
-
-#define _ARGUS_PRINT(stream, level, fmt, ...) _GENERIC_PRINT(stream, level, "Argus", fmt, ##__VA_ARGS__)
-
-#ifdef _ARGUS_DEBUG_MODE
-#define _ARGUS_DEBUG(fmt, ...) _ARGUS_PRINT(stdout, "DEBUG", fmt, ##__VA_ARGS__)
-#else
-#define _ARGUS_DEBUG(fmt, ...)
-#endif
-
-#define _ARGUS_INFO(fmt, ...) _ARGUS_PRINT(stdout, "INFO", fmt, ##__VA_ARGS__)
-#define _ARGUS_WARN(fmt, ...) _ARGUS_PRINT(stderr, "WARN", fmt, ##__VA_ARGS__)
-#define _ARGUS_FATAL_SOFT(fmt, ...) 
-
-#define _ARGUS_ABORT()          DEBUG_BREAK(); \
-                                exit(1)
-
-#define _ARGUS_FATAL(fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
-                                _ARGUS_ABORT();
-
-#define _ARGUS_FATAL_DEINIT(deinit_body, fmt, ...)  _ARGUS_PRINT(stderr, "FATAL", fmt, ##__VA_ARGS__); \
-                                                    deinit_body; \
-                                                    _ARGUS_ABORT();
+#include <cstdarg>
 
 #define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) { \
-                                        _ARGUS_FATAL("Assertion failed: " #c " (" fmt ")", ##__VA_ARGS__); \
+                                        Logger::default_logger().fatal("Assertion failed: " #c " (" fmt ")", ##__VA_ARGS__); \
                                     }
+
+namespace argus {
+    class Logger {
+        private:
+            FILE *target;
+            const std::string realm;
+
+            void log(const std::string &level, std::string format, va_list args) const;
+
+            void log_error(const std::string &level, std::string format, va_list args) const;
+        public:
+            static Logger &default_logger(void);
+
+            Logger(FILE *target, const std::string &realm);
+
+            Logger(const std::string &realm);
+
+            void log(const std::string &level, std::string format, ...) const;
+
+            void log_error(const std::string &level, std::string format, ...) const;
+
+            void debug(std::string format, ...) const;
+
+            void info(std::string format, ...) const;
+
+            void warn(std::string format, ...) const;
+
+            [[noreturn]] void fatal(std::function<void(void)> deinit, std::string format, ...) const;
+
+            [[noreturn]] void fatal(std::string format, ...) const;
+    };
+}

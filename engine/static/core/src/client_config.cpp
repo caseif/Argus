@@ -295,12 +295,12 @@ namespace argus {
         handle.to_istream(0, stream);
 
         if (!_ingest_config_content(stream)) {
-            _ARGUS_FATAL("Failed to parse config from file at %s", config_path.c_str());
+            Logger::default_logger().fatal("Failed to parse config from file at %s", config_path.c_str());
         }
 
         handle.release();
 
-        _ARGUS_INFO("Successfully loaded config from file at %s", config_path.c_str());
+        Logger::default_logger().info("Successfully loaded config from file at %s", config_path.c_str());
         return true;
     }
 
@@ -321,7 +321,7 @@ namespace argus {
             arp_package_meta_t meta;
             auto rc = arp_load_from_file(child.path().string().c_str(), &meta, nullptr);
             if (rc != 0) {
-                _ARGUS_WARN("Failed to load package %s while searching for config (libarp says: %s)",
+                Logger::default_logger().warn("Failed to load package %s while searching for config (libarp says: %s)",
                     child.path().filename().c_str(), arp_get_error());
                 continue;
             }
@@ -334,12 +334,12 @@ namespace argus {
         for (const auto &candidate : candidate_packages) {
             auto filename = candidate.filename().c_str();
 
-            _ARGUS_DEBUG("Searching for client config in package %s (namespace matches)", filename);
+            Logger::default_logger().debug("Searching for client config in package %s (namespace matches)", filename);
 
             ArpPackage pack;
             auto rc = arp_load_from_file(candidate.string().c_str(), nullptr, &pack);
             if (rc != 0) {
-                _ARGUS_WARN("Failed to load package at %s while searching for config (libarp says: %s)",
+                Logger::default_logger().warn("Failed to load package at %s while searching for config (libarp says: %s)",
                     filename, arp_get_error());
                 continue;
             }
@@ -347,15 +347,15 @@ namespace argus {
             arp_resource_meta_t res_meta;
             rc = arp_find_resource(pack, (ns + ARP_NS_SEPARATOR + CONFIG_BASE_NAME).c_str(), &res_meta);
             if (rc == E_ARP_RESOURCE_NOT_FOUND) {
-                _ARGUS_DEBUG("Did not find config in package %s", candidate.filename().c_str());
+                Logger::default_logger().debug("Did not find config in package %s", candidate.filename().c_str());
                 continue;
             } else if (rc != 0) {
-                _ARGUS_WARN("Failed to find config in package %s (libarp says: %s)", filename, arp_get_error());
+                Logger::default_logger().warn("Failed to find config in package %s (libarp says: %s)", filename, arp_get_error());
                 continue;
             }
 
             if (strcmp(res_meta.media_type, CONFIG_MEDIA_TYPE) != 0) {
-                _ARGUS_WARN("File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
+                Logger::default_logger().warn("File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
                     CONFIG_BASE_NAME, filename, res_meta.media_type);
                 continue;
             }
@@ -364,14 +364,14 @@ namespace argus {
 
             auto *res = arp_load_resource(&res_meta);
             if (res == nullptr) {
-                _ARGUS_WARN("Failed to load config from package %s (libarp says: %s)", filename, arp_get_error());
+                Logger::default_logger().warn("Failed to load config from package %s (libarp says: %s)", filename, arp_get_error());
                 continue;
             }
 
             IMemStream stream(res->data, res->meta.size);
             _ingest_config_content(stream);
 
-            _ARGUS_INFO("Successfully loaded config from package at %s", filename);
+            Logger::default_logger().info("Successfully loaded config from package at %s", filename);
             return true;
         }
 
@@ -382,7 +382,7 @@ namespace argus {
         std::string cur_path;
         if (!_ingest_config_from_file(config_namespace)
             && !_ingest_config_from_arp(config_namespace)) {
-            _ARGUS_FATAL("Failed to locate " CONFIG_FILE_NAME " in namespace %s", config_namespace.c_str());
+            Logger::default_logger().fatal("Failed to locate " CONFIG_FILE_NAME " in namespace %s", config_namespace.c_str());
         }
     }
 }

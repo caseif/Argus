@@ -76,22 +76,22 @@ namespace argus {
                 }
 
                 if (!create) {
-                    _ARGUS_FATAL("Failed to get scene state");
+                    Logger::default_logger().fatal("Failed to get scene state");
                 }
 
                 Scene2DState state = Scene2DState(*this, scene);
                 auto insert_res = this->scene_states_2d.insert({&scene_2d, state});
                 if (!insert_res.second) {
-                    _ARGUS_FATAL("Failed to create new scene state");
+                    Logger::default_logger().fatal("Failed to create new scene state");
                 }
 
                 return insert_res.first->second;
             }
             case SceneType::ThreeD: {
-                _ARGUS_FATAL("Unimplemented scene type");
+                Logger::default_logger().fatal("Unimplemented scene type");
             }
             default: {
-                _ARGUS_FATAL("Unrecognized scene type");
+                Logger::default_logger().fatal("Unrecognized scene type");
             }
         }
     }

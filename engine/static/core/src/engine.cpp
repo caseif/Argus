@@ -148,11 +148,11 @@ namespace argus {
 
         while (true) {
             if (g_engine_stopping) {
-                _ARGUS_DEBUG("Engine halt request is acknowledged game thread");
+                Logger::default_logger().debug("Engine halt request is acknowledged game thread");
 
                 // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
                 if (!g_render_thread_halted) {
-                    _ARGUS_DEBUG("Game thread observed render thread was not halted, waiting on monitor");
+                    Logger::default_logger().debug("Game thread observed render thread was not halted, waiting on monitor");
                     std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                     g_engine_stop_notifier.wait(lock);
                 }
@@ -160,13 +160,13 @@ namespace argus {
                 // at this point all event and callback execution should have
                 // stopped which allows us to start doing non-thread-safe things
 
-                _ARGUS_DEBUG("Game thread observed render thread is halted, proceeding with engine bring-down");
+                Logger::default_logger().debug("Game thread observed render thread is halted, proceeding with engine bring-down");
 
-                _ARGUS_DEBUG("Deinitializing engine modules");
+                Logger::default_logger().debug("Deinitializing engine modules");
 
                 deinit_modules();
 
-                _ARGUS_DEBUG("Deinitializing event callbacks");
+                Logger::default_logger().debug("Deinitializing event callbacks");
 
                 // if we don't do this explicitly, the callback lists (and thus
                 // the callback function objects) will be deinitialized
@@ -174,16 +174,16 @@ namespace argus {
                 // external libraries (which will have already been unloaded)
                 deinit_event_handlers();
 
-                _ARGUS_DEBUG("Deinitializing general callbacks");
+                Logger::default_logger().debug("Deinitializing general callbacks");
 
                 // same deal here
                 _deinit_callbacks();
 
-                _ARGUS_DEBUG("Unloading dynamic engine modules");
+                Logger::default_logger().debug("Unloading dynamic engine modules");
 
                 unload_dynamic_modules();
 
-                _ARGUS_INFO("Engine bring-down completed");
+                Logger::default_logger().info("Engine bring-down completed");
 
                 break;
             }
@@ -225,7 +225,7 @@ namespace argus {
 
         while (true) {
             if (g_engine_stopping) {
-                _ARGUS_DEBUG("Engine halt request is acknowledged by render thread");
+                Logger::default_logger().debug("Engine halt request is acknowledged by render thread");
                 std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                 g_render_thread_halted = true;
                 g_engine_stop_notifier.notify_one();
@@ -256,11 +256,11 @@ namespace argus {
     }
 
     void initialize_engine() {
-        _ARGUS_INFO("Engine initialization started");
+        Logger::default_logger().info("Engine initialization started");
 
         signal(SIGINT, _interrupt_handler);
 
-        _ARGUS_DEBUG("Enabling requested modules");
+        Logger::default_logger().debug("Enabling requested modules");
         if (!g_engine_config.load_modules.empty()) {
             enable_modules(g_engine_config.load_modules);
         } else {
@@ -269,15 +269,15 @@ namespace argus {
 
         //load_dynamic_modules();
 
-        _ARGUS_DEBUG("Initializing enabled modules");
+        Logger::default_logger().debug("Initializing enabled modules");
 
         init_modules();
 
-        _ARGUS_INFO("Engine initialized!");
+        Logger::default_logger().info("Engine initialized!");
     }
 
     void start_engine(const DeltaCallback &game_loop) {
-        _ARGUS_INFO("Bringing up engine");
+        Logger::default_logger().info("Bringing up engine");
 
         _ARGUS_ASSERT(g_core_initialized, "Cannot start engine before it is initialized.");
         _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
@@ -290,21 +290,21 @@ namespace argus {
 
         g_game_thread = &Thread::create(_render_loop, nullptr);
 
-        _ARGUS_INFO("Engine started! Passing control to game loop.");
+        Logger::default_logger().info("Engine started! Passing control to game loop.");
 
         // pass control over to the game loop
         _game_loop();
 
-        _ARGUS_INFO("Game loop has halted, exiting program");
+        Logger::default_logger().info("Game loop has halted, exiting program");
 
         exit(0);
     }
 
     void stop_engine(void) {
         if (g_engine_stopping) {
-            _ARGUS_WARN("Engine is already halting");
+            Logger::default_logger().warn("Engine is already halting");
         }
-        _ARGUS_INFO("Engine halt requested");
+        Logger::default_logger().info("Engine halt requested");
 
         _ARGUS_ASSERT(g_core_initialized, "Cannot stop engine before it is initialized.");
 

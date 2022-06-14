@@ -152,7 +152,7 @@ namespace argus {
     }
 
     static void _deinit_material(RendererState &state, const std::string &material) {
-        _ARGUS_DEBUG("De-initializing material %s", material.c_str());
+        Logger::default_logger().debug("De-initializing material %s", material.c_str());
         for (auto *scene_state : state.all_scene_states) {
             auto &buckets = scene_state->render_buckets;
             auto bucket_it = buckets.find(material);
@@ -200,7 +200,7 @@ namespace argus {
 
         int rc = 0;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
-            _ARGUS_FATAL("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
+            Logger::default_logger().fatal("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
         }
 
         int gl_major;
@@ -209,10 +209,10 @@ namespace argus {
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
         if (!AGLET_GL_VERSION_3_3) {
-            _ARGUS_FATAL("Argus requires support for OpenGL 3.3 or higher (got %d.%d)", gl_major, gl_minor);
+            Logger::default_logger().fatal("Argus requires support for OpenGL 3.3 or higher (got %d.%d)", gl_major, gl_minor);
         }
 
-        _ARGUS_INFO("Obtained OpenGL %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
+        Logger::default_logger().info("Obtained OpenGL %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
 
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);

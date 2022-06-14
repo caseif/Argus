@@ -29,7 +29,7 @@ namespace argus {
     void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit:
-                _ARGUS_DEBUG("Discovering resources");
+                Logger::default_logger().debug("Discovering resources");
                 ResourceManager::instance().discover_resources();
                 break;
             case LifecycleStage::PostDeinit:

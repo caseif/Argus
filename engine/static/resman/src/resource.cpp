@@ -49,7 +49,7 @@ namespace argus {
 
     void Resource::release(void) const {
         unsigned int new_ref_count = pimpl->ref_count.fetch_sub(1) - 1;
-        _ARGUS_DEBUG("Releasing handle on resource %s (new refcount is %d)",
+        Logger::default_logger().debug("Releasing handle on resource %s (new refcount is %d)",
                 this->prototype.uid.c_str(), new_ref_count);
         if (new_ref_count == 0) {
             pimpl->manager.unload_resource(prototype.uid);

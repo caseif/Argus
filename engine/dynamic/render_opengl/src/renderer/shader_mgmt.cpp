@@ -25,6 +25,7 @@
 #include "argus/render/common/shader.hpp"
 
 #include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
@@ -51,13 +52,13 @@ namespace argus {
                 gl_shader_stage = GL_FRAGMENT_SHADER;
                 break;
             default:
-                _ARGUS_FATAL("Unrecognized shader stage ordinal %d",
+                Logger::default_logger().fatal("Unrecognized shader stage ordinal %d",
                         static_cast<std::underlying_type<ShaderStage>::type>(stage));
         }
 
         auto shader_handle = glCreateShader(gl_shader_stage);
         if (!glIsShader(shader_handle)) {
-            _ARGUS_FATAL("Failed to create shader: %d", glGetError());
+            Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
         }
 
         const char *const src_c = src.c_str();
@@ -86,7 +87,7 @@ namespace argus {
                     stage_str = "unknown";
                     break;
             }
-            _ARGUS_FATAL_DEINIT(delete[] log, "Failed to compile %s shader: %s", stage_str.c_str(), log);
+            get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s", stage_str.c_str(), log);
         }
 
         return shader_handle;
@@ -118,7 +119,7 @@ namespace argus {
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
             glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, nullptr, log);
-            _ARGUS_FATAL_DEINIT(delete[] log, "Failed to link program: %s", log);
+            get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
         }
     }
 
@@ -130,7 +131,7 @@ namespace argus {
 
         auto program_handle = glCreateProgram();
         if (!glIsProgram(program_handle)) {
-            _ARGUS_FATAL("Failed to create program: %d", glGetError());
+            Logger::default_logger().fatal("Failed to create program: %d", glGetError());
         }
 
         auto &material = material_res.get<Material>();
@@ -169,7 +170,7 @@ namespace argus {
     }
 
     void remove_shader(RendererState &state, const std::string &shader_uid) {
-        _ARGUS_DEBUG("De-initializing shader %s", shader_uid.c_str());
+        Logger::default_logger().debug("De-initializing shader %s", shader_uid.c_str());
         auto &shaders = state.compiled_shaders;
         auto existing_it = shaders.find(shader_uid);
         if (existing_it != shaders.end()) {

@@ -53,7 +53,7 @@ namespace argus {
         auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
 
         if (window == nullptr) {
-            _ARGUS_WARN("Failed to detect OpenGL capabilities (GLFW failed to open window)");
+            Logger::default_logger().warn("Failed to detect OpenGL capabilities (GLFW failed to open window)");
             return false;
         }
 
@@ -65,19 +65,19 @@ namespace argus {
             case AGLET_ERROR_NONE:
                 break;
             case AGLET_ERROR_UNSPECIFIED:
-                _ARGUS_WARN("Aglet failed to load OpenGL bindings (unspecified error)");
+                Logger::default_logger().warn("Aglet failed to load OpenGL bindings (unspecified error)");
                 return false;
             case AGLET_ERROR_PROC_LOAD:
-                _ARGUS_WARN("Aglet failed to load prerequisite OpenGL procs");
+                Logger::default_logger().warn("Aglet failed to load prerequisite OpenGL procs");
                 return false;
             case AGLET_ERROR_GL_ERROR:
-                _ARGUS_WARN("Aglet failed to load OpenGL bindings (OpenGL error)");
+                Logger::default_logger().warn("Aglet failed to load OpenGL bindings (OpenGL error)");
                 return false;
             case AGLET_ERROR_MINIMUM_VERSION:
-                _ARGUS_WARN("Argus requires support for OpenGL 3.3 or higher");
+                Logger::default_logger().warn("Argus requires support for OpenGL 3.3 or higher");
                 return false;
             case AGLET_ERROR_MISSING_EXTENSION:
-                _ARGUS_WARN("Required OpenGL extensions are not available");
+                Logger::default_logger().warn("Required OpenGL extensions are not available");
                 return false;
         }
 

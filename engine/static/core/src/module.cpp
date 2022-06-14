@@ -61,13 +61,13 @@ namespace argus {
         auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
         if (!std::filesystem::is_directory(modules_dir_path)) {
-            _ARGUS_WARN("Dynamic module directory not found. (Searched at %s)", modules_dir_path.c_str());
+            Logger::default_logger().warn("Dynamic module directory not found. (Searched at %s)", modules_dir_path.c_str());
             return "";
         }
 
         auto module_path = modules_dir_path / (SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR SHARED_LIB_EXT);
         if (!std::filesystem::is_regular_file(module_path)) {
-            _ARGUS_WARN("Item referred to by %s does not exist, is not a regular file, or is inaccessible",
+            Logger::default_logger().warn("Item referred to by %s does not exist, is not a regular file, or is inaccessible",
                     module_path.c_str());
             return "";
         }
@@ -79,7 +79,7 @@ namespace argus {
         auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
         if (!std::filesystem::is_directory(modules_dir_path)) {
-            _ARGUS_INFO("No dynamic modules to load.");
+            Logger::default_logger().info("No dynamic modules to load.");
             return std::map<std::string, std::filesystem::path>();
         }
 
@@ -89,18 +89,18 @@ namespace argus {
             auto filename = entry.path().filename();
 
             if (!entry.is_regular_file()) {
-                _ARGUS_DEBUG("Ignoring non-regular module file %s", filename.c_str());
+                Logger::default_logger().debug("Ignoring non-regular module file %s", filename.c_str());
                 continue;
             }
 
             if (strlen(SHARED_LIB_PREFIX) > 0
                     && entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
-                _ARGUS_DEBUG("Ignoring module file %s with non-library prefix", filename.c_str());
+                Logger::default_logger().debug("Ignoring module file %s with non-library prefix", filename.c_str());
                 continue;
             }
 
             if (entry.path().extension() != EXTENSION_SEPARATOR SHARED_LIB_EXT) {
-                _ARGUS_WARN("Ignoring module file %s with non-library extension", filename.c_str());
+                Logger::default_logger().warn("Ignoring module file %s with non-library extension", filename.c_str());
                 continue;
             }
 
@@ -109,7 +109,7 @@ namespace argus {
         }
 
         if (modules.empty()) {
-            _ARGUS_INFO("No dynamic modules present");
+            Logger::default_logger().info("No dynamic modules present");
         }
 
         return modules;
@@ -191,7 +191,7 @@ namespace argus {
                 sorted_modules.push_back(module_map.find(id)->second);
             }
         } catch (std::invalid_argument const&) {
-            _ARGUS_FATAL("Circular dependency detected in dynamic modules, cannot proceed.");
+            Logger::default_logger().fatal("Circular dependency detected in dynamic modules, cannot proceed.");
         }
 
         return sorted_modules;
@@ -210,11 +210,11 @@ namespace argus {
             std::vector<std::string> dependent_chain = {}) {
         auto path = _locate_dynamic_module(id);
         if (path.empty()) {
-            _ARGUS_FATAL("%s", _format_load_error("Dynamic module " + id + " was requested but could not be located",
+            Logger::default_logger().fatal("%s", _format_load_error("Dynamic module " + id + " was requested but could not be located",
                     dependent_chain).c_str());
         }
 
-        _ARGUS_DEBUG("%s", _format_load_error("Attempting to load dynamic module " + id + " from file "
+        Logger::default_logger().debug("%s", _format_load_error("Attempting to load dynamic module " + id + " from file "
                 + path.string().c_str(), dependent_chain).c_str());
 
         void *handle = nullptr;
@@ -223,14 +223,14 @@ namespace argus {
         if (handle == nullptr) {
             auto err_msg = _format_load_error("Failed to load dynamic module " + id
                     + " (error " + std::to_string(GetLastError()) + ")", dependent_chain);
-            _ARGUS_FATAL("%s", err_msg.c_str());
+            Logger::default_logger().fatal("%s", err_msg.c_str());
         }
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle == nullptr) {
             auto err_msg = _format_load_error("Failed to load dynamic module " + id
                     + " (error: " + dlerror() + ")", dependent_chain);
-            _ARGUS_FATAL("%s", err_msg.c_str());
+            Logger::default_logger().fatal("%s", err_msg.c_str());
         }
         #endif
 
@@ -238,7 +238,7 @@ namespace argus {
             auto err_msg = _format_load_error("Module " + id
                     + " attempted to register itself by a different ID than indicated by its filename",
                     dependent_chain);
-            _ARGUS_FATAL("%s", err_msg.c_str());
+            Logger::default_logger().fatal("%s", err_msg.c_str());
         }
 
         auto &mod = g_dyn_module_registrations.find(id)->second;
@@ -256,7 +256,7 @@ namespace argus {
         for (const auto &enabled_module : g_enabled_dyn_modules_staging) {
             if (enabled_module.first == module_id) {
                 if (dependent_chain.empty()) {
-                    _ARGUS_WARN("Module \"%s\" requested more than once.", module_id.c_str());
+                    Logger::default_logger().warn("Module \"%s\" requested more than once.", module_id.c_str());
                 }
                 return;
             }
@@ -291,7 +291,7 @@ namespace argus {
 
         g_enabled_dyn_modules_staging.insert({module_id, it->second});
 
-        _ARGUS_INFO("Enabled dynamic module %s.", module_id.c_str());
+        Logger::default_logger().info("Enabled dynamic module %s.", module_id.c_str());
     }
 
     void enable_dynamic_module(const std::string &module_id) {
@@ -339,11 +339,11 @@ namespace argus {
 
             #ifdef _WIN32
             if (FreeLibrary(reinterpret_cast<HMODULE>(handle)) == 0) {
-                _ARGUS_WARN("Failed to unload dynamic module (errno: %d)", GetLastError());
+                Logger::default_logger().warn("Failed to unload dynamic module (errno: %d)", GetLastError());
             }
             #else
             if (dlclose(handle) != 0) {
-                _ARGUS_WARN("Failed to unload dynamic module %s (errno: %d)", "foobar", errno);
+                Logger::default_logger().warn("Failed to unload dynamic module %s (errno: %d)", "foobar", errno);
             }
             #endif
         }
@@ -374,23 +374,23 @@ namespace argus {
 
         g_dyn_module_registrations.insert({ id, std::move(mod) });
 
-        _ARGUS_DEBUG("Registered dynamic module %s", id.c_str());
+        Logger::default_logger().debug("Registered dynamic module %s", id.c_str());
     }
 
     static void _send_lifecycle_update(LifecycleStage stage) {
         for (const auto &mod : g_enabled_static_modules) {
-            _ARGUS_DEBUG("Sent %s lifecycle stage to module %s",
+            Logger::default_logger().debug("Sent %s lifecycle stage to module %s",
                     lifecycle_stage_to_str(stage), mod.id.c_str());
             mod.lifecycle_update_callback(stage);
-            _ARGUS_DEBUG("Lifecycle stage %s was completed by module %s",
+            Logger::default_logger().debug("Lifecycle stage %s was completed by module %s",
                     lifecycle_stage_to_str(stage), mod.id.c_str());
         }
 
         for (const auto &mod : g_enabled_dyn_modules) {
-            _ARGUS_DEBUG("Sent %s lifecycle stage to module %s",
+            Logger::default_logger().debug("Sent %s lifecycle stage to module %s",
                     lifecycle_stage_to_str(stage), mod.id.c_str());
             mod.lifecycle_update_callback(stage);
-            _ARGUS_DEBUG("Lifecycle stage %s was completed by module %s",
+            Logger::default_logger().debug("Lifecycle stage %s was completed by module %s",
                     lifecycle_stage_to_str(stage), mod.id.c_str());
         }
     }
@@ -399,18 +399,18 @@ namespace argus {
         auto dyn_mod_initial_count = g_enabled_dyn_modules_staging.size();
         g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
 
-        _ARGUS_DEBUG("Propagating Load lifecycle stage");
+        Logger::default_logger().debug("Propagating Load lifecycle stage");
         // give modules a chance to request additional dynamic modules
         _send_lifecycle_update(LifecycleStage::Load);
         // re-sort the dynamic module if it was augmented
         if (g_enabled_dyn_modules_staging.size() > dyn_mod_initial_count) {
-            _ARGUS_DEBUG("Dynamic module list changed, must re-sort");
+            Logger::default_logger().debug("Dynamic module list changed, must re-sort");
             g_enabled_dyn_modules = _topo_sort_modules(g_enabled_dyn_modules_staging);
         }
 
         g_enabled_dyn_modules_staging.clear();
 
-        _ARGUS_DEBUG("Propagating remaining bring-up lifecycle stages");
+        Logger::default_logger().debug("Propagating remaining bring-up lifecycle stages");
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
                 stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {

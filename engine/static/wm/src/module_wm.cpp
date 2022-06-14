@@ -71,7 +71,7 @@ namespace argus {
 
     static void _on_glfw_error(const int code, const char *desc) {
         UNUSED(code);
-        _ARGUS_WARN("GLFW Error: %s", desc);
+        Logger::default_logger().warn("GLFW Error: %s", desc);
     }
 
     static void _create_initial_window(void) {
@@ -128,14 +128,14 @@ namespace argus {
             case LifecycleStage::Init: {
                 int glfw_init_rc = glfwInit();
                 if (glfw_init_rc != GLFW_TRUE) {
-                    _ARGUS_FATAL("GLFW init failed (return code %d)", glfw_init_rc);
+                    Logger::default_logger().fatal("GLFW init failed (return code %d)", glfw_init_rc);
                 }
 
-                _ARGUS_INFO("GLFW initialized successfully");
+                Logger::default_logger().info("GLFW initialized successfully");
 
                 glfwSetErrorCallback(_on_glfw_error);
 
-                _ARGUS_DEBUG("Initialized GLFW");
+                Logger::default_logger().debug("Initialized GLFW");
 
                 register_render_callback(_poll_events);
                 
@@ -155,7 +155,7 @@ namespace argus {
             case LifecycleStage::Deinit:
                 _clean_up();
 
-                _ARGUS_DEBUG("Finished deinitializing wm");
+                Logger::default_logger().debug("Finished deinitializing wm");
 
                 break;
             default:

@@ -286,7 +286,7 @@ namespace argus {
                         CanaryValue *canary = reinterpret_cast<CanaryValue *>(
                             chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk);
                         if (*canary != CANARY_MAGIC) {
-                            _ARGUS_FATAL("Detected heap overrun in chunk @ %p (aligned: %p)",
+                            Logger::default_logger().fatal("Detected heap overrun in chunk @ %p (aligned: %p)",
                                          reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void*>(chunk));
                         }
                         #endif

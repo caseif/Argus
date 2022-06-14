@@ -83,7 +83,7 @@ namespace argus {
         uint32_t dev_count = 0;
         auto enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, nullptr);
         if (enum_res) {
-            _ARGUS_FATAL("vkEnumeratePhysicalDevices returned error code %d", enum_res);
+            Logger::default_logger().fatal("vkEnumeratePhysicalDevices returned error code %d", enum_res);
         }
 
         _ARGUS_ASSERT(dev_count > 0, "No physical video devices found");
@@ -99,12 +99,12 @@ namespace argus {
             VkPhysicalDeviceProperties dev_props;
             vkGetPhysicalDeviceProperties(dev, &dev_props);
 
-            _ARGUS_DEBUG("Considering physical device '%s'", dev_props.deviceName);
+            Logger::default_logger().debug("Considering physical device '%s'", dev_props.deviceName);
 
             uint32_t qf_props_count;
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &qf_props_count, nullptr);
             if (qf_props_count == 0) {
-                _ARGUS_DEBUG("Physical device '%s' has no queue families", dev_props.deviceName);
+                Logger::default_logger().debug("Physical device '%s' has no queue families", dev_props.deviceName);
                 continue;
             }
 
@@ -113,12 +113,12 @@ namespace argus {
 
             auto indices = _get_queue_family_indices(instance, dev, queue_families);
             if (!indices.has_value()) {
-                _ARGUS_DEBUG("Physical device '%s' is not suitable", dev_props.deviceName);
+                Logger::default_logger().debug("Physical device '%s' is not suitable", dev_props.deviceName);
                 continue;
             }
 
             auto rating = _rate_physical_device(instance, dev, queue_families);
-            _ARGUS_DEBUG("Physical device '%s' was assigned rating of %d", dev_props.deviceName, rating);
+            Logger::default_logger().debug("Physical device '%s' was assigned rating of %d", dev_props.deviceName, rating);
             if (rating > best_rating) {
                 best_dev = dev;
                 best_dev_indices = indices.value();
@@ -127,7 +127,7 @@ namespace argus {
         }
 
         if (best_rating == 0) {
-            _ARGUS_FATAL("Failed to find suitable video device");
+            Logger::default_logger().fatal("Failed to find suitable video device");
         }
 
         return std::make_pair(best_dev, best_dev_indices);
@@ -140,7 +140,7 @@ namespace argus {
         VkPhysicalDeviceProperties phys_dev_props;
         vkGetPhysicalDeviceProperties(phys_dev, &phys_dev_props);
 
-        _ARGUS_INFO("Selected video device %s", phys_dev_props.deviceName);
+        Logger::default_logger().info("Selected video device %s", phys_dev_props.deviceName);
 
         return {};
     }
