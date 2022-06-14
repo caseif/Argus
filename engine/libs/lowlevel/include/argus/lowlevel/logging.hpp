@@ -26,10 +26,6 @@
 #include <cstdlib>
 #include <cstdarg>
 
-#define _ARGUS_ASSERT(c, fmt, ...)  if (!(c)) { \
-                                        Logger::default_logger().fatal("Assertion failed: " #c " (" fmt ")", ##__VA_ARGS__); \
-                                    }
-
 namespace argus {
     class Logger {
         private:

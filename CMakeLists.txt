@@ -100,8 +100,8 @@ if(MSVC)
   endif()
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
-                       -Wconversion -Wno-error=conversion -Wno-error=sign-conversion -Wpedantic"
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
+                       -Wconversion -Wno-error=conversion -Wno-error=sign-conversion"
       CACHE STRING "" FORCE)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
       OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
@@ -109,8 +109,13 @@ else()
   endif()
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-anonymous-struct \
-                         -Wno-zero-length-array")
+  # enable pedantic errors, but with a few exceptions:
+  #   - pasting , and __va_args__ so we can have a nice assert macro
+  #   - anonymous structs, since there's no good standard alternative
+  #   - zero-length arrays, since again there's no good standard alternative
+  # we also only enable pedantic errors for Clang because GCC apparently lacks the ability to configure exceptions
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic -Wno-gnu-zero-variadic-macro-arguments \
+                         -Wno-gnu-anonymous-struct -Wno-zero-length-array")
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-variadic-macros")
   endif()

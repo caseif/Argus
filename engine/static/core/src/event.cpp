@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/core/callback.hpp"
@@ -51,7 +52,7 @@ namespace argus {
     static std::mutex g_render_event_queue_mutex;
 
     void process_event_queue(const TargetThread target_thread) {
-        _ARGUS_ASSERT(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
+        _ARGUS_ASSERT_F(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
             "Unrecognized target thread ordinal %u", static_cast<unsigned int>(target_thread));
 
         auto render_thread = target_thread == TargetThread::Render;

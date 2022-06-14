@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading.hpp"

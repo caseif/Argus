@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/core/engine.hpp"
@@ -71,7 +71,7 @@ namespace argus {
                 auto surface_err = glfwCreateWindowSurface(g_vk_instance,
                         get_window_handle<GLFWwindow>(window), nullptr, &surface);
 
-                _ARGUS_ASSERT(!surface_err, "glfwCreateWindowSurface returned value %d", surface_err);
+                _ARGUS_ASSERT_F(!surface_err, "glfwCreateWindowSurface returned value %d", surface_err);
                 //TODO: store the surface
 
                 //auto *renderer = new GLRenderer(window);
