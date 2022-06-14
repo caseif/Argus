@@ -18,8 +18,12 @@
 
 #pragma once
 
+#include <functional>
+#include <map>
 #include <typeindex>
-#include <vector>
+#include <utility>
+
+#include <cstddef>
 
 namespace argus {
     class Entity;
@@ -28,11 +32,13 @@ namespace argus {
         friend class Entity;
 
         private:
-            std::vector<std::type_index> types;
+            std::map<std::type_index, std::function<void(void*)>> types;
 
             EntityBuilder(void);
 
-            ~EntityBuilder(void);
+            EntityBuilder &with(std::type_index type);
+
+            EntityBuilder &with(std::type_index type, std::function<void(void*)> deferred_assn);
 
         public:
             template <typename T>
@@ -40,7 +46,12 @@ namespace argus {
                 return with(std::type_index(typeid(T)));
             }
 
-            EntityBuilder &with(std::type_index type);
+            template <typename T,
+                      typename = std::enable_if_t<std::is_copy_constructible<std::remove_reference_t<T>>::value>>
+            EntityBuilder &with(T &&initial) {
+                return with(std::type_index(typeid(T)),
+                    [initial] (void *dest) { new (static_cast<T*>(dest)) T(static_cast<const T&>(initial)); });
+            }
 
             Entity &build(void);
     };

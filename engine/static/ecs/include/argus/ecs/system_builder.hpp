@@ -39,8 +39,6 @@ namespace argus {
 
             SystemBuilder(void) = default;
 
-            ~SystemBuilder(void) = default;
-
         public:
             SystemBuilder &with_name(std::string name);
 
