@@ -67,7 +67,6 @@ namespace argus {
             if (AGLET_GL_ARB_direct_state_access) {
                 glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.frame_texture);
 
-                printf("resolution: %dx%d\n", resolution->x, resolution->y);
                 glTextureStorage2D(scene_state.frame_texture, 1, GL_RGBA8, resolution->x, resolution->y);
 
                 glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

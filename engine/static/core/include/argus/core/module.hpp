@@ -223,7 +223,7 @@ namespace argus {
      * \throw std::invalid_argument If no dynamic module with the given ID is
      *        currently registered.
      */
-    void enable_dynamic_module(const std::string &module_id);
+    bool enable_dynamic_module(const std::string &module_id);
 
     /**
      * \brief Returns a map of dynamic modules discovered on the filesystem.

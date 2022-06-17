@@ -105,10 +105,11 @@ namespace argus {
         size_t count = 0;
         for (auto &module : get_present_dynamic_modules()) {
             auto module_id = module.first;
-            printf("%s\n", module_id.c_str());
             if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
                 //TODO: fail gracefully
-                enable_dynamic_module(module_id);
+                if (!enable_dynamic_module(module_id)) {
+                    Logger::default_logger().warn("Failed to load render backend \"%s\"", module_id.c_str());
+                }
                 count++;
             }
         }
