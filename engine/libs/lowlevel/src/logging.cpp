@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/macros.hpp"
 
 #include <string>
 
@@ -99,6 +100,8 @@ namespace argus {
         va_start(args, format);
         log(LOG_LEVEL_DEBUG, format, args);
         va_end(args);
+        #else
+        UNUSED(format);
         #endif
     }
 
