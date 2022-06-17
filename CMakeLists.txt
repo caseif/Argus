@@ -602,6 +602,7 @@ function(configure_module MODULE_PROJECT_DIR)
     set(arp_out_dir "${CMAKE_BINARY_DIR}/res/arp")
     set(arp_out_name "resources_${PROJECT_NAME}")
     set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
+    set(supp_mappings_path "${ROOT_PROJECT_DIR}/res/arp_custom_mappings.csv")
 
     file(MAKE_DIRECTORY "${arp_out_dir}")
 
@@ -612,6 +613,7 @@ function(configure_module MODULE_PROJECT_DIR)
                                "-o" "${arp_out_dir}"
                                "-f" "${arp_out_name}"
                                "-c" "deflate"
+                               "-m" "${supp_mappings_path}"
                        DEPENDS "${res_files}")
 
     add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")

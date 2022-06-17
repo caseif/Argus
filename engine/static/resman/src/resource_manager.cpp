@@ -273,6 +273,8 @@ namespace argus {
 
             FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 
+            Logger::default_logger().debug("Trying to get loader for media type %s", proto.media_type.c_str());
+
             auto loader_it = pimpl->registered_loaders.find(proto.media_type);
             if (loader_it == pimpl->registered_loaders.end()) {
                 throw NoLoaderException(uid, proto.media_type);
