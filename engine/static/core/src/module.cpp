@@ -228,7 +228,8 @@ namespace argus {
         if (handle == nullptr) {
             Logger::default_logger().warn("Failed to load dynamic module %s (error %s)",
                 id.c_str(), std::to_string(GetLastError()).c_str());
-            _log_dependent_chain(Logger::default_logger(), dependent_chain, true)
+            _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
+            return;
         }
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
