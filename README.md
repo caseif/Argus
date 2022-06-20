@@ -1,6 +1,6 @@
 # Argus Game Engine ![Argus](https://github.com/caseif/Argus/workflows/Argus/badge.svg)
 
-Argus is a 2D game engine written in C++14 and built atop GLFW.
+Argus is a 2D game engine written in C++17 and built atop GLFW.
 
 ## Features
 
@@ -42,7 +42,9 @@ One of the main focuses for Argus has been the quality of the overall architectu
 project. This has lead to a large number of rewrites and refactors and generally has slowed the project down greatly,
 but because the primary goal is not necessarily to ship a game I consider this tradeoff justified.
 
-## Compiling
+## Building
+
+Building Argus requires CMake and a relatively recent version of GCC, Clang, or MSVC with support for C++17 features.
 
 The base Argus library depends on the following libraries:
 
