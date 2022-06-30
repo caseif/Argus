@@ -1,12 +1,9 @@
-csh,text/x-glsl-comp
-comp,text/x-glsl-comp
-fsh,text/x-glsl-frag
-frag,text/x-glsl-frag
-geom,text/x-glsl-geom
+comp,text/x-glsl-compute
+frag,text/x-glsl-fragment
+geom,text/x-glsl-geometry
 tesc,text/x-glsl-tess-control
-tese,text/x-glsl-tess-eval
-vsh,text/x-glsl-vert
-vert,text/x-glsl-vert
+tese,text/x-glsl-tess-evaluation
+vert,text/x-glsl-vertex
 lua,text/x-lua
 mat,application/x-argus-material+json
 bindings,application/x-argus-bindings+json

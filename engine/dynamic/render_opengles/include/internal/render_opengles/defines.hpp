@@ -47,8 +47,8 @@
 
 #define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
 
-#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vert"
-#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-frag"
+#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
+#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
 
 #define FB_SHADER_VERT_PATH "argus:shader/gles/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/gles/framebuffer_frag"
