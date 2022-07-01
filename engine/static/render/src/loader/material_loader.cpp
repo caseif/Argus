@@ -49,7 +49,6 @@
 
 #define KEY_TEXTURE "texture"
 #define KEY_SHADERS "shaders"
-#define KEY_ATTRS "attributes"
 
 #define KEY_SHADERS_API "api"
 #define KEY_SHADERS_STAGES "stages"
@@ -87,7 +86,6 @@ namespace argus {
 
             std::string tex_uid = json_root.at(KEY_TEXTURE);
             nlohmann::json::array_t shaders_arr = json_root.at(KEY_SHADERS);
-            std::vector<std::string> attrs_arr = json_root.at(KEY_ATTRS);
 
             std::map<ShaderStage, std::string> shader_map;
             std::vector<std::string> shader_uids;

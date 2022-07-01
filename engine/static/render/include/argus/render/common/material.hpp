@@ -46,7 +46,6 @@ namespace argus {
              * \param shaders The UIDs of the shaders used by the Material. Only
              *        one Shader may be specified per \link ShaderStage shader
              *        stage \endlink.
-             * \param attributes The vertex attributes used by this material.
              */
             Material(const std::string &texture, const std::vector<std::string> &shaders);
 
