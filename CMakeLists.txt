@@ -670,7 +670,15 @@ function(configure_module MODULE_PROJECT_DIR)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
 
-    set(STATIC_MODULE_LIBS "$<TARGET_OBJECTS:${id}>;${STATIC_MODULE_LIBS}" PARENT_SCOPE)
+    # only include libraries if they're explicitly requested from a static module
+    if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+      set(STATIC_MODULE_LIBS_LOCAL "$<TARGET_OBJECTS:${id}>;${STATIC_MODULE_LIBS}")
+      foreach(lib ${MODULE_ENGINE_LIB_DEPS})
+        set(STATIC_MODULE_LIBS_LOCAL "$<TARGET_OBJECTS:${lib}>;${STATIC_MODULE_LIBS_LOCAL}")
+      endforeach()
+      set(STATIC_MODULE_LIBS "${STATIC_MODULE_LIBS_LOCAL}" PARENT_SCOPE)
+    endif()
+
     # configure the copy headers task to include this project
     set(MODULE_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
     add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
@@ -683,7 +691,17 @@ function(configure_module MODULE_PROJECT_DIR)
   endif()
 
   if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES})
+  # compile in libraries if any are requested if they're not in the base library
+    set(DYN_LIBS "")
+    foreach(lib ${MODULE_ENGINE_LIB_DEPS})
+      set(gen_expr "$<TARGET_OBJECTS:${lib}>")
+      list(FIND STATIC_MODULE_LIBS "${gen_expr}" found_index)
+      if(found_index EQUAL -1)
+        set(DYN_LIBS "${gen_expr};${DYN_LIBS}")
+      endif()
+    endforeach()
+
+    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_LIBS})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -758,6 +776,8 @@ foreach(id ${STATIC_MODULE_IDS})
   configure_module("${STATIC_MODULES_SRC_DIR}/${id}")
 endforeach()
 
+# IMPORTANT: these should be configured last so that they can avoid compiling in
+# libraries already present in the base library
 foreach(id ${DYNAMIC_MODULE_IDS})
   configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}")
 endforeach()
@@ -788,6 +808,7 @@ list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 
 configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
+list(REMOVE_DUPLICATES STATIC_MODULE_LIBS)
 add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIBS})
 
 # set the linker language (since we're not directly including any sources)
