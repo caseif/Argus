@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "aglet/aglet.h"
-
 namespace argus {
     // forward declarations
     struct SceneState;

@@ -23,8 +23,6 @@
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/types.hpp"
 
-#include "aglet/aglet.h"
-
 #include <string>
 
 namespace argus {

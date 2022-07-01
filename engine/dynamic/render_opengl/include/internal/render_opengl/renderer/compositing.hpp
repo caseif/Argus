@@ -21,8 +21,6 @@
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/math.hpp"
 
-#include "aglet/aglet.h"
-
 namespace argus {
     // forward declarations
     struct RendererState;

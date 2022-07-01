@@ -23,8 +23,6 @@
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/state/renderer_state.hpp"
 
-#include "aglet/aglet.h"
-
 #include <string>
 
 namespace argus {

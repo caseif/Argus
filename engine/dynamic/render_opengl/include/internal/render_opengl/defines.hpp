@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "aglet/aglet.h"
-
 #define BACKEND_ID "opengl"
 
 #define _VERTEX_POSITION_LEN 2
