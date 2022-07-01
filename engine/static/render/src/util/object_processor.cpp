@@ -60,7 +60,7 @@ namespace argus {
 
     static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, const RenderGroup2D &group,
             const bool recompute_transform, const Matrix4 running_transform, ProcessRenderObj2DFn process_new_fn,
-            UpdateRenderObj2DFn update_fn) {
+            UpdateRenderObj2DFn update_fn, void *extra) {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
 
@@ -98,9 +98,9 @@ namespace argus {
             bool dirty_transform = new_recompute_transform || obj_transform.dirty;
 
             if (existing_it != processed_obj_map.end()) {
-                update_fn(*child_object, existing_it->second, final_obj_transform, dirty_transform);
+                update_fn(*child_object, existing_it->second, final_obj_transform, dirty_transform, extra);
             } else {
-                auto *processed_obj = process_new_fn(*child_object, final_obj_transform);
+                auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
                 processed_obj_map.insert({ child_object, processed_obj });
             }
@@ -108,12 +108,13 @@ namespace argus {
 
         for (auto *child_group : group.pimpl->child_groups) {
             _process_render_group_2d(processed_obj_map, *child_group,
-                new_recompute_transform, cur_transform, process_new_fn, update_fn);
+                new_recompute_transform, cur_transform, process_new_fn, update_fn, extra);
         }
     }
 
     void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
-            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn) {
-        _process_render_group_2d(processed_obj_map, scene.pimpl->root_group, false, {}, process_new_fn, update_fn);
+            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn, void *extra) {
+        _process_render_group_2d(processed_obj_map, scene.pimpl->root_group, false, {},
+                process_new_fn, update_fn, extra);
     }
 }

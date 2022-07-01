@@ -56,8 +56,10 @@ namespace argus {
         );
     }
 
-    ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object,
-            const Matrix4 &transform) {
+    ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object, const Matrix4 &transform,
+            void *scene_state_ptr) {
+        UNUSED(scene_state_ptr);
+
         size_t vertex_count = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
             vertex_count += prim.get_vertex_count();
@@ -126,8 +128,10 @@ namespace argus {
         return &processed_obj;
     }
 
-    void update_processed_object_2d(const RenderObject2D &object,
-            ProcessedRenderObject2DPtr proc_obj_ptr, const Matrix4 &transform, bool is_transform_dirty) {
+    void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
+            const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr) {
+        UNUSED(scene_state_ptr);
+
         auto &proc_obj = *reinterpret_cast<ProcessedRenderObject*>(proc_obj_ptr);
 
         // if a parent group or the object itself has had its transform updated

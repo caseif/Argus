@@ -25,6 +25,7 @@
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
+#include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
@@ -81,32 +82,35 @@ namespace argus {
                     glBufferData(GL_ARRAY_BUFFER, buffer_len, nullptr, GL_DYNAMIC_COPY);
                 }
 
-                auto &material = bucket->material_res.get<Material>();
+                // the program should have been linked during object processing
+                auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
 
-                auto vertex_attrs = material.get_vertex_attributes();
-
-                uint32_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                        + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                        + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                        + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+                uint32_t vertex_len = (program.attr_position_loc.has_value() ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                        + (program.attr_normal_loc.has_value() ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                        + (program.attr_color_loc.has_value() ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                        + (program.attr_texcoord_loc.has_value() ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
                 GLuint attr_offset = 0;
 
-                if (vertex_attrs & VertexAttributes::POSITION) {
+                if (program.attr_position_loc.has_value()) {
+                    Logger::default_logger().debug("Setting position attribute %d", program.attr_position_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
+                            SHADER_ATTRIB_IN_POSITION_LEN, program.attr_position_loc.value(), &attr_offset);
                 }
-                if (vertex_attrs & VertexAttributes::NORMAL) {
+                if (program.attr_normal_loc.has_value()) {
+                    Logger::default_logger().debug("Setting normal attribute %d", program.attr_normal_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_NORMAL_LEN, SHADER_ATTRIB_LOC_NORMAL, &attr_offset);
+                            SHADER_ATTRIB_IN_NORMAL_LEN, program.attr_normal_loc.value(), &attr_offset);
                 }
-                if (vertex_attrs & VertexAttributes::COLOR) {
+                if (program.attr_color_loc.has_value()) {
+                    Logger::default_logger().debug("Setting color attribute %d", program.attr_color_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_COLOR_LEN, SHADER_ATTRIB_LOC_COLOR, &attr_offset);
+                            SHADER_ATTRIB_IN_COLOR_LEN, program.attr_color_loc.value(), &attr_offset);
                 }
-                if (vertex_attrs & VertexAttributes::TEXCOORD) {
+                if (program.attr_texcoord_loc.has_value()) {
+                    Logger::default_logger().debug("Setting texcoord attribute %d", program.attr_texcoord_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
+                            SHADER_ATTRIB_IN_TEXCOORD_LEN, program.attr_texcoord_loc.value(), &attr_offset);
                 }
             } else {
                 if (!AGLET_GL_ARB_direct_state_access) {
@@ -142,7 +146,7 @@ namespace argus {
             if (!AGLET_GL_ARB_direct_state_access) {
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                glBindVertexArray(bucket->vertex_array);
+                glBindVertexArray(bucket->vertex_array); //TODO: fix parameter
             }
 
             bucket->needs_rebuild = false;

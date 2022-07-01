@@ -56,7 +56,8 @@ namespace argus {
     }
 
     void compile_scene_2d(const Scene2D &scene, Scene2DState &scene_state) {
-        process_objects_2d(scene, scene_state.processed_objs, create_processed_object_2d, update_processed_object_2d);
+        process_objects_2d(scene, scene_state.processed_objs, create_processed_object_2d, update_processed_object_2d,
+            &scene_state);
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
             auto &processed_obj = *reinterpret_cast<ProcessedRenderObject*>(it->second);

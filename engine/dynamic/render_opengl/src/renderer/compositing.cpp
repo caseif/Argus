@@ -169,7 +169,11 @@ namespace argus {
         glAttachShader(state.frame_program, state.frame_vert_shader);
         glAttachShader(state.frame_program, state.frame_frag_shader);
 
-        link_program(state.frame_program, VertexAttributes::POSITION | VertexAttributes::TEXCOORD);
+        auto frame_program = link_program(state.frame_program);
+
+        if (!frame_program.attr_position_loc.has_value() || !frame_program.attr_texcoord_loc.has_value()) {
+            Logger::default_logger().fatal("Frame program is missing required attributes");
+        }
 
         float frame_quad_vertex_data[] = {
             -1.0, -1.0,  0.0,  0.0,
@@ -197,8 +201,8 @@ namespace argus {
         }
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_POSITION_LEN, SHADER_ATTRIB_LOC_POSITION, &attr_offset);
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_TEXCOORD_LEN, SHADER_ATTRIB_LOC_TEXCOORD, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_POSITION_LEN, frame_program.attr_position_loc.value(), &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_TEXCOORD_LEN, frame_program.attr_texcoord_loc.value(), &attr_offset);
 
         if (!AGLET_GL_ARB_direct_state_access) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);

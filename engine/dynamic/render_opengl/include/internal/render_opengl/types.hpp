@@ -30,5 +30,6 @@ namespace argus {
     typedef GLuint texture_handle_t;
     typedef GLuint shader_handle_t;
     typedef GLuint program_handle_t;
+    typedef GLint attribute_location_t;
     typedef GLint uniform_location_t;
 }

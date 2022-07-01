@@ -20,6 +20,7 @@
 
 #include "argus/render/common/material.hpp"
 
+#include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/types.hpp"
 
 #include "aglet/aglet.h"
@@ -35,7 +36,7 @@ namespace argus {
     shader_handle_t compile_shader(const Shader &shader);
 
     // it is expected that the shaders will already be attached to the program when this function is called
-    void link_program(program_handle_t program, VertexAttributes attrs);
+    LinkedProgram link_program(program_handle_t program);
 
     void build_shaders(RendererState &state, const Resource &material_res);
 

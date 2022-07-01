@@ -94,20 +94,7 @@ namespace argus {
     }
 
     // it is expected that the shaders will already be attached to the program when this function is called
-    void link_program(program_handle_t program, VertexAttributes attrs) {
-        if (attrs & VertexAttributes::POSITION) {
-            glBindAttribLocation(program, SHADER_ATTRIB_LOC_POSITION, SHADER_ATTRIB_IN_POSITION);
-        }
-        if (attrs & VertexAttributes::NORMAL) {
-            glBindAttribLocation(program, SHADER_ATTRIB_LOC_NORMAL, SHADER_ATTRIB_IN_NORMAL);
-        }
-        if (attrs & VertexAttributes::COLOR) {
-            glBindAttribLocation(program, SHADER_ATTRIB_LOC_COLOR, SHADER_ATTRIB_IN_COLOR);
-        }
-        if (attrs & VertexAttributes::TEXCOORD) {
-            glBindAttribLocation(program, SHADER_ATTRIB_LOC_TEXCOORD, SHADER_ATTRIB_IN_TEXCOORD);
-        }
-
+    LinkedProgram link_program(program_handle_t program) {
         glBindFragDataLocation(program, 0, SHADER_ATTRIB_OUT_FRAGDATA);
 
         glLinkProgram(program);
@@ -121,6 +108,15 @@ namespace argus {
             glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, nullptr, log);
             get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
         }
+
+        auto proj_mat_loc = glGetUniformLocation(program, SHADER_UNIFORM_VIEW_MATRIX);
+
+        auto attr_pos = glGetAttribLocation(program, SHADER_ATTRIB_IN_POSITION);
+        auto attr_norm = glGetAttribLocation(program, SHADER_ATTRIB_IN_NORMAL);
+        auto attr_color = glGetAttribLocation(program, SHADER_ATTRIB_IN_COLOR);
+        auto attr_texcoord = glGetAttribLocation(program, SHADER_ATTRIB_IN_TEXCOORD);
+
+        return LinkedProgram(program, attr_pos, attr_norm, attr_color, attr_texcoord, proj_mat_loc);
     }
 
     void build_shaders(RendererState &state, const Resource &material_res) {
@@ -154,11 +150,9 @@ namespace argus {
             glAttachShader(program_handle, shader_handle);
         }
 
-        link_program(program_handle, material.get_vertex_attributes());
+        auto program = link_program(program_handle);
 
-        auto proj_mat_loc = glGetUniformLocation(program_handle, SHADER_UNIFORM_VIEW_MATRIX);
-
-        state.linked_programs[material_res.uid] = { program_handle, proj_mat_loc };
+        state.linked_programs.insert({ material_res.uid, program });
 
         for (auto &shader_uid : material.get_shader_uids()) {
             glDetachShader(program_handle, state.compiled_shaders[shader_uid]);
