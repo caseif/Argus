@@ -93,22 +93,18 @@ namespace argus {
                 GLuint attr_offset = 0;
 
                 if (program.attr_position_loc.has_value()) {
-                    Logger::default_logger().debug("Setting position attribute %d", program.attr_position_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
                             SHADER_ATTRIB_IN_POSITION_LEN, program.attr_position_loc.value(), &attr_offset);
                 }
                 if (program.attr_normal_loc.has_value()) {
-                    Logger::default_logger().debug("Setting normal attribute %d", program.attr_normal_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
                             SHADER_ATTRIB_IN_NORMAL_LEN, program.attr_normal_loc.value(), &attr_offset);
                 }
                 if (program.attr_color_loc.has_value()) {
-                    Logger::default_logger().debug("Setting color attribute %d", program.attr_color_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
                             SHADER_ATTRIB_IN_COLOR_LEN, program.attr_color_loc.value(), &attr_offset);
                 }
                 if (program.attr_texcoord_loc.has_value()) {
-                    Logger::default_logger().debug("Setting texcoord attribute %d", program.attr_texcoord_loc.value());
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
                             SHADER_ATTRIB_IN_TEXCOORD_LEN, program.attr_texcoord_loc.value(), &attr_offset);
                 }

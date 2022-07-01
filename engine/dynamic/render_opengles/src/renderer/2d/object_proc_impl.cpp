@@ -31,9 +31,11 @@
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/types.hpp"
+#include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengles/state/processed_render_object.hpp"
 #include "internal/render_opengles/state/render_bucket.hpp"
+#include "internal/render_opengles/state/renderer_state.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
@@ -58,7 +60,8 @@ namespace argus {
 
     ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object, const Matrix4 &transform,
             void *scene_state_ptr) {
-        UNUSED(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &state = scene_state.parent_state;
 
         size_t vertex_count = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -66,14 +69,16 @@ namespace argus {
         }
 
         const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
-        auto &mat = mat_res.get<Material>();
 
-        auto vertex_attrs = mat.get_vertex_attributes();
+        if (state.linked_programs.find(object.get_material()) == state.linked_programs.end()) {
+            build_shaders(state, mat_res);
+        }
+        auto &program = state.linked_programs.find(object.get_material())->second;
 
-        size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+        size_t vertex_len = (program.attr_position_loc.has_value() ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                + (program.attr_normal_loc.has_value() ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                + (program.attr_color_loc.has_value()? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                + (program.attr_texcoord_loc.has_value() ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
@@ -92,22 +97,22 @@ namespace argus {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
-                if (vertex_attrs & VertexAttributes::POSITION) {
+                if (program.attr_position_loc.has_value()) {
                     auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
                     mapped_buffer[major_off + minor_off++] = transformed_pos.x;
                     mapped_buffer[major_off + minor_off++] = transformed_pos.y;
                 }
-                if (vertex_attrs & VertexAttributes::NORMAL) {
+                if (program.attr_normal_loc.has_value()) {
                     mapped_buffer[major_off + minor_off++] = vertex.normal.x;
                     mapped_buffer[major_off + minor_off++] = vertex.normal.y;
                 }
-                if (vertex_attrs & VertexAttributes::COLOR) {
+                if (program.attr_color_loc.has_value()) {
                     mapped_buffer[major_off + minor_off++] = vertex.color.r;
                     mapped_buffer[major_off + minor_off++] = vertex.color.g;
                     mapped_buffer[major_off + minor_off++] = vertex.color.b;
                     mapped_buffer[major_off + minor_off++] = vertex.color.a;
                 }
-                if (vertex_attrs & VertexAttributes::TEXCOORD) {
+                if (program.attr_texcoord_loc.has_value()) {
                     mapped_buffer[major_off + minor_off++] = vertex.tex_coord.x;
                     mapped_buffer[major_off + minor_off++] = vertex.tex_coord.y;
                 }
@@ -130,7 +135,9 @@ namespace argus {
 
     void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
             const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr) {
-        UNUSED(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &state = scene_state.parent_state;
+        UNUSED(state);
 
         auto &proc_obj = *reinterpret_cast<ProcessedRenderObject*>(proc_obj_ptr);
 
