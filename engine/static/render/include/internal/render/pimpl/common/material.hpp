@@ -32,13 +32,10 @@ namespace argus {
     struct pimpl_Material {
         const std::string texture;
         const std::vector<std::string> shaders;
-        const VertexAttributes attributes;
 
-        pimpl_Material(const std::string &texture, const std::vector<std::string> &shaders,
-            const VertexAttributes attributes):
+        pimpl_Material(const std::string &texture, const std::vector<std::string> &shaders):
             texture(texture),
-            shaders(shaders),
-            attributes(attributes) {
+            shaders(shaders) {
         }
 
         pimpl_Material(const pimpl_Material&) = default;

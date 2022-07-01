@@ -27,9 +27,8 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Material));
 
-    Material::Material(const std::string &texture, const std::vector<std::string> &shaders,
-            const VertexAttributes &attribs):
-        pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders, attribs)) {
+    Material::Material(const std::string &texture, const std::vector<std::string> &shaders):
+        pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {
     }
 
     Material::Material(const Material &rhs) noexcept:
@@ -53,9 +52,5 @@ namespace argus {
 
     const std::vector<std::string> &Material::get_shader_uids(void) const {
         return pimpl->shaders;
-    }
-
-    VertexAttributes Material::get_vertex_attributes(void) const {
-        return pimpl->attributes;
     }
 }

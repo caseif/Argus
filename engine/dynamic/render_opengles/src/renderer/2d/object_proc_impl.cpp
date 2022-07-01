@@ -137,7 +137,9 @@ namespace argus {
             const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr) {
         auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
         auto &state = scene_state.parent_state;
-        UNUSED(state);
+
+        // program should be linked by now
+        auto &program = state.linked_programs.find(object.get_material())->second;
 
         auto &proc_obj = *reinterpret_cast<ProcessedRenderObject*>(proc_obj_ptr);
 
@@ -150,48 +152,45 @@ namespace argus {
             return;
         }
 
-        auto vertex_attrs = proc_obj.material_res.get<Material>().get_vertex_attributes();
-        // not sure whether this would actually ever be false in practice
-        if (vertex_attrs & VertexAttributes::POSITION) {
-            size_t vertex_len = ((vertex_attrs & VertexAttributes::POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                    + ((vertex_attrs & VertexAttributes::NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                    + ((vertex_attrs & VertexAttributes::COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                    + ((vertex_attrs & VertexAttributes::TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
-            GLfloat *mapped_buffer;
+        size_t vertex_len = (program.attr_position_loc.has_value() ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                + (program.attr_normal_loc.has_value() ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                + (program.attr_color_loc.has_value() ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                + (program.attr_texcoord_loc.has_value() ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
-            size_t vertex_count = 0;
-            for (const RenderPrim2D &prim : object.get_primitives()) {
-                vertex_count += prim.get_vertex_count();
+        GLfloat *mapped_buffer;
+
+        size_t vertex_count = 0;
+        for (const RenderPrim2D &prim : object.get_primitives()) {
+            vertex_count += prim.get_vertex_count();
+        }
+
+        size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
+
+        if (proc_obj.mapped_buffer != nullptr) {
+            mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
+        } else {
+            glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
+            mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT));
+        }
+
+        size_t total_vertices = 0;
+        for (const RenderPrim2D &prim : object.get_primitives()) {
+            for (auto &vertex : prim.get_vertices()) {
+                size_t major_off = total_vertices * vertex_len;
+                size_t minor_off = 0;
+
+                auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                mapped_buffer[major_off + minor_off++] = transformed_pos.x;
+                mapped_buffer[major_off + minor_off++] = transformed_pos.y;
+
+                total_vertices += 1;
             }
+        }
 
-            size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
-
-            if (proc_obj.mapped_buffer != nullptr) {
-                mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
-            } else {
-                glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
-                mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT));
-            }
-
-            size_t total_vertices = 0;
-            for (const RenderPrim2D &prim : object.get_primitives()) {
-                for (auto &vertex : prim.get_vertices()) {
-                    size_t major_off = total_vertices * vertex_len;
-                    size_t minor_off = 0;
-
-                    auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
-                    mapped_buffer[major_off + minor_off++] = transformed_pos.x;
-                    mapped_buffer[major_off + minor_off++] = transformed_pos.y;
-
-                    total_vertices += 1;
-                }
-            }
-
-            if (proc_obj.mapped_buffer == nullptr) {
-                glUnmapBuffer(GL_COPY_READ_BUFFER);
-                glBindBuffer(GL_COPY_READ_BUFFER, 0);
-            }
+        if (proc_obj.mapped_buffer == nullptr) {
+            glUnmapBuffer(GL_COPY_READ_BUFFER);
+            glBindBuffer(GL_COPY_READ_BUFFER, 0);
         }
 
         proc_obj.visited = true;

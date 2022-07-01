@@ -124,23 +124,6 @@ namespace argus {
                 }
             }
 
-            VertexAttributes attrs = VertexAttributes::NONE;
-            for (auto attr : attrs_arr) {
-                if (attr == ATTR_POS) {
-                    attrs |= VertexAttributes::POSITION;
-                } else if (attr == ATTR_NORM) {
-                    attrs |= VertexAttributes::NORMAL;
-                } else if (attr == ATTR_COLOR) {
-                    attrs |= VertexAttributes::COLOR;
-                } else if (attr == ATTR_TEXCOORD) {
-                    attrs |= VertexAttributes::TEXCOORD;
-                } else {
-                    // invalid attribute name
-                    Logger::default_logger().warn("Invalid vertex attribute name in material %s", proto.uid.c_str());
-                    return NULL;
-                }
-            }
-
             std::vector<std::string> dep_uids;
             dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
 
@@ -165,7 +148,7 @@ namespace argus {
             }
 
             Logger::default_logger().debug("Successfully loaded material %s", proto.uid.c_str());
-            return new Material(tex_uid, shader_uids, attrs);
+            return new Material(tex_uid, shader_uids);
         } catch (nlohmann::detail::parse_error&) {
             Logger::default_logger().warn("Failed to parse material %s", proto.uid.c_str());
             return NULL;

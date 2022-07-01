@@ -32,27 +32,6 @@ namespace argus {
 
     struct pimpl_Material;
 
-    /**
-     * Represents attributes to be enabled 
-     */
-    enum VertexAttributes : uint64_t {
-        NONE = 0x0,
-        POSITION = 0x1,
-        NORMAL = 0x2,
-        COLOR = 0x4,
-        TEXCOORD = 0x8
-    };
-
-    constexpr inline VertexAttributes operator|(const VertexAttributes lhs, const VertexAttributes rhs) {
-        return static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
-                                             static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
-    }
-
-    inline VertexAttributes operator|=(VertexAttributes &lhs, const VertexAttributes rhs) {
-        return lhs = static_cast<VertexAttributes>(static_cast<std::underlying_type<VertexAttributes>::type>(lhs) |
-                                             static_cast<std::underlying_type<VertexAttributes>::type>(rhs));
-    }
-
     class Material {
         friend class MaterialLoader;
 
@@ -69,8 +48,7 @@ namespace argus {
              *        stage \endlink.
              * \param attributes The vertex attributes used by this material.
              */
-            Material(const std::string &texture, const std::vector<std::string> &shaders,
-                    const VertexAttributes &attributes);
+            Material(const std::string &texture, const std::vector<std::string> &shaders);
 
             Material(const Material&) noexcept;
 
@@ -82,8 +60,6 @@ namespace argus {
             const std::string &get_texture_uid(void) const;
 
             const std::vector<std::string> &get_shader_uids(void) const;
-        
-            VertexAttributes get_vertex_attributes(void) const;
     };
 
 }
