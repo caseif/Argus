@@ -25,3 +25,9 @@
 [submodule "external/libs/Vulkan-Headers"]
 	path = external/libs/Vulkan-Headers
 	url = git@github.com:KhronosGroup/Vulkan-Headers.git
+[submodule "external/libs/SPIRV-Cross"]
+	path = external/libs/SPIRV-Cross
+	url = git@github.com:KhronosGroup/SPIRV-Cross.git
+[submodule "external/libs/glslang"]
+	path = external/libs/glslang
+	url = git@github.com:KhronosGroup/glslang.git
