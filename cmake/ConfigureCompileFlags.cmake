@@ -1,6 +1,6 @@
 function(_argus_set_compile_flags TARGET)
   if(MSVC)
-    target_compile_options("/W4" "/wd4996")
+    target_compile_options("${TARGET}" PUBLIC "/W4" "/wd4996")
   else()
     target_compile_options("${TARGET}" PUBLIC
       "-Werror"
