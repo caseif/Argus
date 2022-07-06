@@ -1,3 +1,4 @@
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureCompileFlags.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UtilityFunctions.cmake")
 
 function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EXTENSIONS ARPTOOL_EXE_PATH)
@@ -228,7 +229,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   endif()
 
   if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
-  # compile in libraries if any are requested if they're not in the base library
+    # compile in libraries if any are requested if they're not in the base library
     set(DYN_LIBS "")
     foreach(lib ${MODULE_ENGINE_LIB_DEPS})
       set(gen_expr "$<TARGET_OBJECTS:${lib}>")
@@ -239,6 +240,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endforeach()
 
     add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_LIBS})
+
+    _argus_set_compile_flags(${PROJECT_NAME})
 
     # enable PIC
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)

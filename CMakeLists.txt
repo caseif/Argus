@@ -85,6 +85,8 @@ set(CMAKE_MODULE_PROJECT_DIR ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # Compiler configuration
 ########################
 
+include("${ROOT_PROJECT_DIR}/cmake/ConfigureCompileFlags.cmake")
+
 set(CMAKE_C_OUTPUT_EXTENSION_REPLACE 1)
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
@@ -93,7 +95,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4996" CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od" CACHE STRING "" FORCE)
   if(MSVC_VERSION LESS 1911)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DEBUG:FULL /Od" CACHE STRING "" FORCE)
@@ -102,26 +103,6 @@ if(MSVC)
   endif()
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2" CACHE STRING "" FORCE)
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized \
-                       -Wconversion -Wno-error=conversion -Wno-error=sign-conversion"
-      CACHE STRING "" FORCE)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-      OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=mismatched-tags" CACHE STRING "" FORCE)
-  endif()
-
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  # enable pedantic errors, but with a few exceptions:
-  #   - pasting , and __va_args__ so we can have a nice assert macro
-  #   - anonymous structs, since there's no good standard alternative
-  #   - zero-length arrays, since again there's no good standard alternative
-  # we also only enable pedantic errors for Clang because GCC apparently lacks the ability to configure exceptions
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic -Wno-gnu-zero-variadic-macro-arguments \
-                         -Wno-gnu-anonymous-struct -Wno-zero-length-array")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-variadic-macros")
-  endif()
-
   if(USE_ASAN)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer"
         CACHE STRING "" FORCE)
@@ -278,6 +259,8 @@ configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
 list(REMOVE_DUPLICATES STATIC_MODULE_LIBS)
 add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIBS})
+
+_argus_set_compile_flags(${LIB_BASE_NAME})
 
 # set the linker language (since we're not directly including any sources)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)

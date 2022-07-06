@@ -74,4 +74,8 @@ namespace argus {
 
             const std::vector<uint8_t> &get_source(void) const;
     };
+
+    std::vector<uint8_t> compile_glsl_to_spirv(const std::vector<uint8_t> &glsl_src);
+
+    std::vector<uint8_t> compile_glsl_to_spirv(const std::string &glsl_src);
 }

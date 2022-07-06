@@ -6,6 +6,7 @@ set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
 set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
 set(JSON_SOURCE_DIR "${EXT_LIBS_DIR}/json")
 set(ARP_SOURCE_DIR "${EXT_LIBS_DIR}/libarp")
+set(GLSLANG_SOURCE_DIR "${EXT_LIBS_DIR}/glslang")
 
 # disable extra GLFW build steps
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -20,8 +21,12 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 set(PNG_STATIC OFF CACHE BOOL "" FORCE)
 set(PNG_TESTS OFF CACHE BOOL "" FORCE)
 
+# configure libarp
 set(LIBARP_FEATURE_PACK OFF CACHE BOOL "" FORCE)
 set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv" CACHE STRING "" FORCE)
+
+# configure glslang
+set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
 
 # include dir for generated headers which must be copied (configs)
 set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
@@ -52,11 +57,15 @@ set(ARP_LIBRARY_BASE "arp")
 set(ARP_LIBRARY "${ARP_LIBRARY_BASE};${ZLIB_LIBRARY}")
 set(ARP_INCLUDE_DIR "${ARP_SOURCE_DIR}/include")
 
+set(GLSLANG_LIBRARY "glslang")
+set(GLSLANG_INCLUDE_DIR "${GLSLANG_SOURCE_DIR}/glslang/Public;${GLSLANG_SOURCE_DIR}/glslang/CInterface")
+
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
+add_subdirectory("${GLSLANG_SOURCE_DIR}")
 
 set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)
