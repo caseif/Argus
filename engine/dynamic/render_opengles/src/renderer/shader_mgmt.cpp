@@ -61,7 +61,7 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
         }
 
-        auto src_c = reinterpret_cast<const char *const>(src.data());
+        const auto src_c = reinterpret_cast<const char *>(src.data());
         const int src_len = int(src.size());
 
         glShaderSource(shader_handle, 1, &src_c, &src_len);

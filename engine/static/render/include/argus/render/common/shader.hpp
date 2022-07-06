@@ -47,11 +47,6 @@ namespace argus {
 
     /**
      * \brief Represents a shader for use with a RenderObject.
-     *
-     * Because of limitations in the low-level graphics API, Argus requires that
-     * each shader specify an entry point other than main(). When shaders are
-     * built, a main() function is generated containing calls to each shader's
-     * respective entry point.
      */
     class Shader {
         public:
@@ -62,7 +57,7 @@ namespace argus {
              *
              * \param type The type of shader stored by this object.
              * \param stage The stage of the graphics pipeline this shader is to
-*                     be run at.
+             *        be run at.
              * \param src The source data of the Shader.
              */
             Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
