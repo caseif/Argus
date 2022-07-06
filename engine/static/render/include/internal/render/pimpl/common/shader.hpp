@@ -24,8 +24,14 @@
 #include <string>
 #include <vector>
 
+#include <cstdint>
+
 namespace argus {
     struct pimpl_Shader {
+        /**
+         * \brief The type of shader stored by this object as a magic ID.
+         */
+        const std::string type;
         /**
          * \brief The stage this shader is to be run at.
          */
@@ -33,9 +39,10 @@ namespace argus {
         /**
          * \brief The source code for this shader.
          */
-        const std::string src;
+        const std::vector<uint8_t> src;
 
-        pimpl_Shader(ShaderStage stage, const std::string src):
+        pimpl_Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src):
+                type(type),
                 stage(stage),
                 src(src) {
         }

@@ -20,11 +20,17 @@
 
 #include <initializer_list>
 #include <string>
+#include <vector>
+
+#include <cstdint>
 
 namespace argus {
     // forward declarations
     struct pimpl_Shader;
-    
+
+    constexpr const char *SHADER_TYPE_GLSL = "glsl";
+    constexpr const char *SHADER_TYPE_SPIR_V = "spirv";
+
     /**
      * \brief Represents a stage corresponding to a step in the render pipeline.
      */
@@ -54,11 +60,12 @@ namespace argus {
             /**
              * \brief Constructs a new Shader with the given parameters.
              *
+             * \param type The type of shader stored by this object.
              * \param stage The stage of the graphics pipeline this shader is to
 *                     be run at.
              * \param src The source data of the Shader.
              */
-            Shader(ShaderStage stage, const std::string &src);
+            Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
 
             Shader(const Shader&) noexcept;
 
@@ -66,8 +73,10 @@ namespace argus {
 
             ~Shader(void);
 
+            const std::string &get_type(void) const;
+
             ShaderStage get_stage(void) const;
 
-            const std::string &get_source(void) const;
+            const std::vector<uint8_t> &get_source(void) const;
     };
 }

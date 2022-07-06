@@ -30,7 +30,9 @@
 #include <istream>
 #include <iterator>
 #include <string>
+#include <vector>
 
+#include <cstdint>
 #include <cstdio>
 
 namespace argus {
@@ -45,18 +47,22 @@ namespace argus {
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(size);
+        std::string type;
         ShaderStage stage;
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {
+            type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Vertex;
         } else if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+            type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Fragment;
         } else {
             Logger::default_logger().fatal("Unrecognized shader media type %s", proto.media_type.c_str());
         }
 
-        std::string src(std::istreambuf_iterator<char>(stream), {});
+        std::vector<uint8_t> src(std::istreambuf_iterator<char>(stream), {});
+        src.push_back('\0');
 
-        return new Shader(stage, src);
+        return new Shader(type, stage, src);
     }
 
     void ShaderLoader::unload(void *const data_buf) const {

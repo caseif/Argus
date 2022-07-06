@@ -23,12 +23,16 @@
 
 #include <string>
 #include <type_traits>
+#include <vector>
+
+#include <cstdint>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
-    Shader::Shader(ShaderStage stage, const std::string &src):
+    Shader::Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src):
             pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
+                type,
                 stage,
                 src
             )) {
@@ -66,11 +70,15 @@ namespace argus {
                                         static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
+    const std::string &Shader::get_type(void) const {
+        return pimpl->type;
+    }
+
     ShaderStage Shader::get_stage(void) const {
         return pimpl->stage;
     }
 
-    const std::string &Shader::get_source(void) const {
+    const std::vector<uint8_t> &Shader::get_source(void) const {
         return pimpl->src;
     }
 }
