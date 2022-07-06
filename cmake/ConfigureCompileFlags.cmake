@@ -23,7 +23,7 @@ function(_argus_set_compile_flags TARGET)
       #   - anonymous structs, since there's no good standard alternative
       #   - zero-length arrays, since again there's no good standard alternative
       # we also only enable pedantic errors for Clang because GCC apparently lacks the ability to configure exceptions
-      target_compile_features("${TARGET}" PUBLIC
+      target_compile_options("${TARGET}" PUBLIC
         "-Wpedantic"
         "-Wno-gnu-zero-variadic-macro-arguments"
         "-Wno-gnu-anonymous-struct"
