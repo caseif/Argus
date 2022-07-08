@@ -3,12 +3,13 @@
     <api>
         <name>glcore</name>
         <minVersion>3.3</minVersion>
-        <targetVersion>3.3</targetVersion>
+        <targetVersion>4.1</targetVersion>
     </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>
         <extension required="false">GL_ARB_texture_storage</extension>
         <extension required="false">GL_ARB_buffer_storage</extension>
         <extension required="false">GL_ARB_direct_state_access</extension>
+        <extension required="false">GL_ARB_gl_spirv</extension>
     </extensions>
 </profile>

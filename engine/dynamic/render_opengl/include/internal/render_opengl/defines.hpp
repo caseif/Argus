@@ -40,7 +40,7 @@
 
 #define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
 
-#define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
+#define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
 
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"

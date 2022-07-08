@@ -34,7 +34,7 @@ namespace argus {
     shader_handle_t compile_shader(const Shader &shader);
 
     // it is expected that the shaders will already be attached to the program when this function is called
-    LinkedProgram link_program(program_handle_t program);
+    LinkedProgram link_program(program_handle_t program, const std::string &shader_type);
 
     void build_shaders(RendererState &state, const Resource &material_res);
 

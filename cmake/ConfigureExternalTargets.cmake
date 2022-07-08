@@ -57,8 +57,8 @@ set(ARP_LIBRARY_BASE "arp")
 set(ARP_LIBRARY "${ARP_LIBRARY_BASE};${ZLIB_LIBRARY}")
 set(ARP_INCLUDE_DIR "${ARP_SOURCE_DIR}/include")
 
-set(GLSLANG_LIBRARY "glslang")
-set(GLSLANG_INCLUDE_DIR "${GLSLANG_SOURCE_DIR}/glslang/Public;${GLSLANG_SOURCE_DIR}/glslang/CInterface")
+set(GLSLANG_LIBRARY "glslang;SPIRV")
+set(GLSLANG_INCLUDE_DIR "${GLSLANG_SOURCE_DIR}")
 
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")

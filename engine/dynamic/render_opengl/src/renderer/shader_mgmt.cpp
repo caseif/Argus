@@ -64,9 +64,15 @@ namespace argus {
         const auto src_c = reinterpret_cast<const char*>(src.data());
         const int src_len = int(src.size());
 
-        glShaderSource(shader_handle, 1, &src_c, &src_len);
-
-        glCompileShader(shader_handle);
+        if (shader.get_type() == SHADER_TYPE_SPIR_V) {
+            glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, src_c, src_len);
+            glSpecializeShaderARB(shader_handle, "main", 0, nullptr, nullptr);
+        } else if (shader.get_type() ==  SHADER_TYPE_GLSL) {
+            glShaderSource(shader_handle, 1, &src_c, &src_len);
+            glCompileShader(shader_handle);
+        } else {
+            Logger::default_logger().fatal("Unknown shader type %s", shader.get_type().c_str());
+        }
 
         int res;
         glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
@@ -94,7 +100,7 @@ namespace argus {
     }
 
     // it is expected that the shaders will already be attached to the program when this function is called
-    LinkedProgram link_program(program_handle_t program) {
+    LinkedProgram link_program(program_handle_t program, const std::string &shader_type) {
         glBindFragDataLocation(program, 0, SHADER_ATTRIB_OUT_FRAGDATA);
 
         glLinkProgram(program);
@@ -109,12 +115,32 @@ namespace argus {
             get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
         }
 
-        auto proj_mat_loc = glGetUniformLocation(program, SHADER_UNIFORM_VIEW_MATRIX);
+        //auto proj_mat_loc = glGetUniformLocation(program, SHADER_UNIFORM_VIEW_MATRIX);
+        auto proj_mat_loc = 0;
+        int uni_size = 0;
+        GLenum uni_type = 0;
+        glGetActiveUniform(program, proj_mat_loc, 0, nullptr, &uni_size, &uni_type, nullptr);
+        if (uni_type != GL_FLOAT_MAT4) {
+            proj_mat_loc = -1;
+        }
 
-        auto attr_pos = glGetAttribLocation(program, SHADER_ATTRIB_IN_POSITION);
-        auto attr_norm = glGetAttribLocation(program, SHADER_ATTRIB_IN_NORMAL);
-        auto attr_color = glGetAttribLocation(program, SHADER_ATTRIB_IN_COLOR);
-        auto attr_texcoord = glGetAttribLocation(program, SHADER_ATTRIB_IN_TEXCOORD);
+        attribute_location_t attr_pos;
+        attribute_location_t attr_norm;
+        attribute_location_t attr_color;
+        attribute_location_t attr_texcoord;
+        if (shader_type == SHADER_TYPE_GLSL) {
+            attr_pos = glGetAttribLocation(program, SHADER_ATTRIB_IN_POSITION);
+            attr_norm = glGetAttribLocation(program, SHADER_ATTRIB_IN_NORMAL);
+            attr_color = glGetAttribLocation(program, SHADER_ATTRIB_IN_COLOR);
+            attr_texcoord = glGetAttribLocation(program, SHADER_ATTRIB_IN_TEXCOORD);
+        } else if (shader_type == SHADER_TYPE_SPIR_V) {
+            attr_pos = 0;
+            attr_norm = 1;
+            attr_color = 2;
+            attr_texcoord = 3;
+        } else {
+            Logger::default_logger().fatal("Unrecognized shader type %s", shader_type.c_str());
+        }
 
         return LinkedProgram(program, attr_pos, attr_norm, attr_color, attr_texcoord, proj_mat_loc);
     }
@@ -132,11 +158,14 @@ namespace argus {
 
         auto &material = material_res.get<Material>();
 
+        std::string shader_type;
+
         for (auto &shader_uid : material.get_shader_uids()) {
             shader_handle_t shader_handle;
 
             auto &shader_res = ResourceManager::instance().get_resource_weak(shader_uid);
             auto &shader = shader_res.get<Shader>();
+            shader_type = shader.get_type();
 
             auto existing_shader_it = state.compiled_shaders.find(shader_uid);
             if (existing_shader_it != state.compiled_shaders.end()) {
@@ -150,7 +179,7 @@ namespace argus {
             glAttachShader(program_handle, shader_handle);
         }
 
-        auto program = link_program(program_handle);
+        auto program = link_program(program_handle, shader_type);
 
         state.linked_programs.insert({ material_res.uid, program });
 

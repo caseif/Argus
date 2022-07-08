@@ -27,6 +27,7 @@
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
+#include "argus/render/common/shader.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"
@@ -169,10 +170,13 @@ namespace argus {
         glAttachShader(state.frame_program, state.frame_vert_shader);
         glAttachShader(state.frame_program, state.frame_frag_shader);
 
-        auto frame_program = link_program(state.frame_program);
+        auto frame_program = link_program(state.frame_program, fb_vert_shader_res.get<Shader>().get_type());
 
-        if (!frame_program.attr_position_loc.has_value() || !frame_program.attr_texcoord_loc.has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required attributes");
+        if (!frame_program.attr_position_loc.has_value()) {
+            Logger::default_logger().fatal("Frame program is missing required position attribute");
+        }
+        if (!frame_program.attr_texcoord_loc.has_value()) {
+            Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
         }
 
         float frame_quad_vertex_data[] = {

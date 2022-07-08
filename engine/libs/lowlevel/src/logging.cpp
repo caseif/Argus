@@ -24,6 +24,7 @@
 #include <cstdio>
 
 #define LOG_LEVEL_FATAL "FATAL"
+#define LOG_LEVEL_SEVERE "SEVERE"
 #define LOG_LEVEL_WARN "WARN"
 #define LOG_LEVEL_INFO "INFO"
 #define LOG_LEVEL_DEBUG "DEBUG"
@@ -116,6 +117,13 @@ namespace argus {
         va_list args;
         va_start(args, format);
         log_error(LOG_LEVEL_WARN, format, args);
+        va_end(args);
+    }
+
+    void Logger::severe(std::string format, ...) const {
+        va_list args;
+        va_start(args, format);
+        log_error(LOG_LEVEL_SEVERE, format, args);
         va_end(args);
     }
 

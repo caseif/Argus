@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "glslang/Public/ShaderLang.h"
+
 #include <initializer_list>
 #include <string>
 #include <vector>
@@ -75,7 +77,11 @@ namespace argus {
             const std::vector<uint8_t> &get_source(void) const;
     };
 
-    std::vector<uint8_t> compile_glsl_to_spirv(const std::vector<uint8_t> &glsl_src);
+    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::vector<uint8_t> &glsl_src,
+            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
+            glslang::EShTargetLanguageVersion spirv_version);
 
-    std::vector<uint8_t> compile_glsl_to_spirv(const std::string &glsl_src);
+    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::string &glsl_src,
+            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
+            glslang::EShTargetLanguageVersion spirv_version);
 }

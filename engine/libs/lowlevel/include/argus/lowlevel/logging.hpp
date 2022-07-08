@@ -52,6 +52,8 @@ namespace argus {
 
             void warn(std::string format, ...) const;
 
+            void severe(std::string format, ...) const;
+
             [[noreturn]] void fatal(std::function<void(void)> deinit, std::string format, ...) const;
 
             [[noreturn]] void fatal(std::string format, ...) const;
