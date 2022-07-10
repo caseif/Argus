@@ -62,7 +62,7 @@ namespace argus {
         std::vector<uint8_t> src(std::istreambuf_iterator<char>(stream), {});
         src.push_back('\0');
 
-        return new Shader(type, stage, src);
+        return new Shader(proto.uid, type, stage, src);
     }
 
     void ShaderLoader::unload(void *const data_buf) const {

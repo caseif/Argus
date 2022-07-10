@@ -29,6 +29,10 @@
 namespace argus {
     struct pimpl_Shader {
         /**
+         * \brief The unique identifier of the shader.
+         */
+        const std::string uid;
+        /**
          * \brief The type of shader stored by this object as a magic ID.
          */
         const std::string type;
@@ -40,11 +44,18 @@ namespace argus {
          * \brief The source code for this shader.
          */
         const std::vector<uint8_t> src;
+        /**
+         * \brief The reflection information for this shader.
+         */
+        const ShaderReflectionInfo reflection;
 
-        pimpl_Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src):
+        pimpl_Shader(const std::string &uid, const std::string &type, ShaderStage stage,
+            const std::vector<uint8_t> &src, const ShaderReflectionInfo &reflection):
+                uid(uid),
                 type(type),
                 stage(stage),
-                src(src) {
+                src(src),
+                reflection(reflection) {
         }
 
         pimpl_Shader(const pimpl_Shader&) = default;

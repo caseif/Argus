@@ -39,79 +39,153 @@
 #include <vector>
 
 namespace argus {
-    shader_handle_t compile_shader(const Shader &shader) {
-        auto stage = shader.get_stage();
-        auto &src = shader.get_source();
+    std::vector<std::pair<Shader, shader_handle_t>> _compile_shaders(const std::vector<Shader> &shaders) {
+        std::vector<std::pair<Shader, shader_handle_t>> handles;
 
-        GLuint gl_shader_stage;
-        switch (stage) {
-            case ShaderStage::Vertex:
-                gl_shader_stage = GL_VERTEX_SHADER;
-                break;
-            case ShaderStage::Fragment:
-                gl_shader_stage = GL_FRAGMENT_SHADER;
-                break;
-            default:
-                Logger::default_logger().fatal("Unrecognized shader stage ordinal %d",
-                        static_cast<std::underlying_type<ShaderStage>::type>(stage));
+        if (shaders.size() == 0) {
+            return handles;
         }
 
-        auto shader_handle = glCreateShader(gl_shader_stage);
-        if (!glIsShader(shader_handle)) {
-            Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
+        auto to_compile = shaders;
+
+        auto type = shaders.at(0).get_type();
+        if (type == SHADER_TYPE_GLSL && AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv) {
+            to_compile = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
+                    glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
         }
 
-        const auto src_c = reinterpret_cast<const char*>(src.data());
-        const int src_len = int(src.size());
+        for (auto shader : to_compile) {
+            auto stage = shader.get_stage();
+            printf("stage: %d\n", stage);
+            auto &src = shader.get_source();
 
-        if (shader.get_type() == SHADER_TYPE_SPIR_V) {
-            glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, src_c, src_len);
-            glSpecializeShaderARB(shader_handle, "main", 0, nullptr, nullptr);
-        } else if (shader.get_type() ==  SHADER_TYPE_GLSL) {
-            glShaderSource(shader_handle, 1, &src_c, &src_len);
-            glCompileShader(shader_handle);
-        } else {
-            Logger::default_logger().fatal("Unknown shader type %s", shader.get_type().c_str());
-        }
-
-        int res;
-        glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
-        if (res == GL_FALSE) {
-            int log_len;
-            glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
-            char *log = new char[log_len + 1];
-            glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
-            std::string stage_str;
+            GLuint gl_shader_stage;
             switch (stage) {
                 case ShaderStage::Vertex:
-                    stage_str = "vertex";
+                    gl_shader_stage = GL_VERTEX_SHADER;
                     break;
                 case ShaderStage::Fragment:
-                    stage_str = "fragment";
+                    gl_shader_stage = GL_FRAGMENT_SHADER;
                     break;
                 default:
-                    stage_str = "unknown";
-                    break;
+                    Logger::default_logger().fatal("Unrecognized shader stage ordinal %d",
+                            static_cast<std::underlying_type<ShaderStage>::type>(stage));
             }
-            get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s", stage_str.c_str(), log);
+
+            auto shader_handle = glCreateShader(gl_shader_stage);
+            if (!glIsShader(shader_handle)) {
+                Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
+            }
+
+            const auto src_c = reinterpret_cast<const char*>(src.data());
+            const int src_len = int(src.size());
+
+            if (shader.get_type() == SHADER_TYPE_SPIR_V) {
+                glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, src_c, src_len);
+                glSpecializeShaderARB(shader_handle, "main", 0, nullptr, nullptr);
+            } else if (shader.get_type() == SHADER_TYPE_GLSL) {
+                glShaderSource(shader_handle, 1, &src_c, &src_len);
+                glCompileShader(shader_handle);
+            } else {
+                Logger::default_logger().fatal("Unknown shader type %s", shader.get_type().c_str());
+            }
+
+            int res;
+            glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
+            if (res == GL_FALSE) {
+                int log_len;
+                glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
+                char *log = new char[log_len + 1];
+                glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
+                std::string stage_str;
+                switch (stage) {
+                    case ShaderStage::Vertex:
+                        stage_str = "vertex";
+                        break;
+                    case ShaderStage::Fragment:
+                        stage_str = "fragment";
+                        break;
+                    default:
+                        stage_str = "unknown";
+                        break;
+                }
+                get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s", stage_str.c_str(), log);
+            }
+            handles.push_back(std::make_pair(shader, shader_handle));
         }
 
-        return shader_handle;
+        return handles;
     }
 
-    // it is expected that the shaders will already be attached to the program when this function is called
-    LinkedProgram link_program(program_handle_t program, const std::string &shader_type) {
-        glBindFragDataLocation(program, 0, SHADER_ATTRIB_OUT_FRAGDATA);
+    template <typename K, typename V, typename K2, typename V2>
+    static V find_or_default(std::map<K, V> haystack, K2 &needle, V2 def) {
+        auto it = haystack.find(needle);
+        return it != haystack.end() ? it->second : static_cast<V>(def);
+    }
 
-        glLinkProgram(program);
+    LinkedProgram link_program(std::initializer_list<std::string> shader_uids) {
+        return link_program(std::vector<std::string>(shader_uids));
+    }
+
+    LinkedProgram link_program(std::vector<std::string> shader_uids) {
+        auto program_handle = glCreateProgram();
+        if (!glIsProgram(program_handle)) {
+            Logger::default_logger().fatal("Failed to create program: %d", glGetError());
+        }
+
+        std::string shader_lang;
+
+        ShaderReflectionInfo vertex_reflection;
+        ShaderReflectionInfo fragment_reflection;
+
+        std::vector<Resource*> shader_resources;
+        std::vector<Shader> shaders;
+        for (auto &shader_uid : shader_uids) {
+            auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
+            auto &shader = shader_res.get<Shader>();
+
+            shader_resources.push_back(&shader_res);
+            shaders.push_back(shader);
+        }
+
+        auto compiled_shaders = _compile_shaders(shaders);
+
+        if (compiled_shaders.size() > 0) {
+            shader_lang = compiled_shaders.at(0).first.get_type();
+        }
+        
+        for (auto compiled_shader : compiled_shaders) {
+            switch (compiled_shader.first.get_stage()) {
+                case ShaderStage::Vertex:
+                    vertex_reflection = compiled_shader.first.get_reflection_info();
+                case ShaderStage::Fragment:
+                    fragment_reflection = compiled_shader.first.get_reflection_info();
+                    break;
+            }
+
+            glAttachShader(program_handle, compiled_shader.second);
+        }
+
+
+        glBindFragDataLocation(program_handle, 0, SHADER_ATTRIB_OUT_FRAGDATA);
+
+        glLinkProgram(program_handle);
+
+        for (auto &compiled_shader : compiled_shaders) {
+            glDetachShader(program_handle, compiled_shader.second);
+        }
+
+        for (auto &shader_res : shader_resources) {
+            shader_res->release();
+        }
 
         int res;
-        glGetProgramiv(program, GL_LINK_STATUS, &res);
+        glGetProgramiv(program_handle, GL_LINK_STATUS, &res);
         if (res == GL_FALSE) {
             int log_len;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
+            glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
             char *log = new char[log_len];
-            glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, nullptr, log);
+            glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
             get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
         }
 
@@ -119,7 +193,7 @@ namespace argus {
         auto proj_mat_loc = 0;
         int uni_size = 0;
         GLenum uni_type = 0;
-        glGetActiveUniform(program, proj_mat_loc, 0, nullptr, &uni_size, &uni_type, nullptr);
+        glGetActiveUniform(program_handle, proj_mat_loc, 0, nullptr, &uni_size, &uni_type, nullptr);
         if (uni_type != GL_FLOAT_MAT4) {
             proj_mat_loc = -1;
         }
@@ -128,21 +202,26 @@ namespace argus {
         attribute_location_t attr_norm;
         attribute_location_t attr_color;
         attribute_location_t attr_texcoord;
-        if (shader_type == SHADER_TYPE_GLSL) {
-            attr_pos = glGetAttribLocation(program, SHADER_ATTRIB_IN_POSITION);
-            attr_norm = glGetAttribLocation(program, SHADER_ATTRIB_IN_NORMAL);
-            attr_color = glGetAttribLocation(program, SHADER_ATTRIB_IN_COLOR);
-            attr_texcoord = glGetAttribLocation(program, SHADER_ATTRIB_IN_TEXCOORD);
-        } else if (shader_type == SHADER_TYPE_SPIR_V) {
+        if (shader_lang == SHADER_TYPE_GLSL) {
+            attr_pos = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_POSITION);
+            attr_norm = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_NORMAL);
+            attr_color = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_COLOR);
+            attr_texcoord = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_TEXCOORD);
+        } else if (shader_lang == SHADER_TYPE_SPIR_V) {
+            /*attr_pos = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_POSITION, -1);
+            attr_norm = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
+            attr_color = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
+            attr_texcoord = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);
+            printf("%d, %d, %d, %d\n", attr_pos, attr_norm, attr_color, attr_texcoord);*/
             attr_pos = 0;
             attr_norm = 1;
             attr_color = 2;
             attr_texcoord = 3;
         } else {
-            Logger::default_logger().fatal("Unrecognized shader type %s", shader_type.c_str());
+            Logger::default_logger().fatal("Unrecognized shader type %s", shader_lang.c_str());
         }
 
-        return LinkedProgram(program, attr_pos, attr_norm, attr_color, attr_texcoord, proj_mat_loc);
+        return LinkedProgram(program_handle, attr_pos, attr_norm, attr_color, attr_texcoord, proj_mat_loc);
     }
 
     void build_shaders(RendererState &state, const Resource &material_res) {
@@ -151,41 +230,13 @@ namespace argus {
             return;
         }
 
-        auto program_handle = glCreateProgram();
-        if (!glIsProgram(program_handle)) {
-            Logger::default_logger().fatal("Failed to create program: %d", glGetError());
-        }
-
         auto &material = material_res.get<Material>();
 
         std::string shader_type;
 
-        for (auto &shader_uid : material.get_shader_uids()) {
-            shader_handle_t shader_handle;
-
-            auto &shader_res = ResourceManager::instance().get_resource_weak(shader_uid);
-            auto &shader = shader_res.get<Shader>();
-            shader_type = shader.get_type();
-
-            auto existing_shader_it = state.compiled_shaders.find(shader_uid);
-            if (existing_shader_it != state.compiled_shaders.end()) {
-                shader_handle = existing_shader_it->second;
-            } else {
-                shader_handle = compile_shader(shader);
-
-                state.compiled_shaders.insert({ shader_uid, shader_handle });
-            }
-
-            glAttachShader(program_handle, shader_handle);
-        }
-
-        auto program = link_program(program_handle, shader_type);
+        auto program = link_program(material.get_shader_uids());
 
         state.linked_programs.insert({ material_res.uid, program });
-
-        for (auto &shader_uid : material.get_shader_uids()) {
-            glDetachShader(program_handle, state.compiled_shaders[shader_uid]);
-        }
     }
 
     void deinit_shader(shader_handle_t shader) {

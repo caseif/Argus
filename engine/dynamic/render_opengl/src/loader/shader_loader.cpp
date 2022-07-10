@@ -51,16 +51,13 @@ namespace argus {
         UNUSED(size);
         std::string type;
         ShaderStage stage;
-        bool is_glsl = false;
 
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {
             type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Vertex;
-            is_glsl = true;
         } else if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
             type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Fragment;
-            is_glsl = true;
         } else {
             Logger::default_logger().fatal("Unrecognized shader media type %s", proto.media_type.c_str());
         }
@@ -68,14 +65,7 @@ namespace argus {
         std::vector<uint8_t> src(std::istreambuf_iterator<char>(stream), {});
         src.push_back('\0');
 
-        if (is_glsl && AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv) {
-            Logger::default_logger().debug("Compiling shader %s to SPIR-V", proto.uid.c_str());
-            src = compile_glsl_to_spirv(stage, src, glslang::EShClientOpenGL, glslang::EShTargetOpenGL_450,
-                glslang::EShTargetSpv_1_0);
-            type = SHADER_TYPE_SPIR_V;
-        }
-
-        return new Shader(type, stage, src);
+        return new Shader(proto.uid, type, stage, src);
     }
 
     void ShaderLoader::unload(void *const data_buf) const {

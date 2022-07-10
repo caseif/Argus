@@ -21,6 +21,7 @@
 #include "glslang/Public/ShaderLang.h"
 
 #include <initializer_list>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -47,6 +48,12 @@ namespace argus {
 
     ShaderStage operator &(ShaderStage lhs, ShaderStage rhs);
 
+    struct ShaderReflectionInfo {
+        std::map<std::string, uint32_t> attribute_locations;
+        std::map<std::string, uint32_t> output_locations;
+        std::map<std::string, uint32_t> uniform_variable_locations;
+    };
+
     /**
      * \brief Represents a shader for use with a RenderObject.
      */
@@ -57,12 +64,14 @@ namespace argus {
             /**
              * \brief Constructs a new Shader with the given parameters.
              *
+             * \param uid The unique identifier of the shader.
              * \param type The type of shader stored by this object.
              * \param stage The stage of the graphics pipeline this shader is to
              *        be run at.
              * \param src The source data of the Shader.
              */
-            Shader(const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
+            Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src,
+                    const ShaderReflectionInfo *reflection = nullptr);
 
             Shader(const Shader&) noexcept;
 
@@ -70,18 +79,21 @@ namespace argus {
 
             ~Shader(void);
 
+            const std::string &get_uid(void) const;
+
             const std::string &get_type(void) const;
 
             ShaderStage get_stage(void) const;
 
             const std::vector<uint8_t> &get_source(void) const;
+
+            const ShaderReflectionInfo &get_reflection_info(void) const;
     };
 
-    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::vector<uint8_t> &glsl_src,
-            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
-            glslang::EShTargetLanguageVersion spirv_version);
-
-    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::string &glsl_src,
-            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
-            glslang::EShTargetLanguageVersion spirv_version);
+    std::vector<Shader> compile_glsl_to_spirv(
+            const std::vector<Shader> &glsl_sources,
+            glslang::EShClient client,
+            glslang::EShTargetClientVersion client_version,
+            glslang::EShTargetLanguageVersion spirv_version
+    );
 }

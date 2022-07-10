@@ -21,8 +21,8 @@
 
 #include "argus/render/common/shader.hpp"
 
-#include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
+#include "glslang/Public/ShaderLang.h"
 
 #include <stdexcept>
 
@@ -122,7 +122,8 @@ namespace argus {
         /* .maxMeshViewCountNV = */ 4,
         /* .maxDualSourceDrawBuffersEXT = */ 1,
 
-        /* .limits = */ {
+        /* .limits = */
+        {
             /* .nonInductiveForLoops = */ 1,
             /* .whileLoops = */ 1,
             /* .doWhileLoops = */ 1,
@@ -132,69 +133,124 @@ namespace argus {
             /* .generalSamplerIndexing = */ 1,
             /* .generalVariableIndexing = */ 1,
             /* .generalConstantMatrixVectorIndexing = */ 1,
-        }
-    };
+        }};
 
-    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::vector<uint8_t> &glsl_src,
-            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
-            glslang::EShTargetLanguageVersion spirv_version) {
-        return compile_glsl_to_spirv(stage, std::string(glsl_src.begin(), glsl_src.end()), client, client_version,
-            spirv_version);
-    }
-
-    std::vector<uint8_t> compile_glsl_to_spirv(ShaderStage stage, const std::string &glsl_src,
-            glslang::EShClient client, glslang::EShTargetClientVersion client_version,
-            glslang::EShTargetLanguageVersion spirv_version) {
-        std::string src_local = glsl_src;
-
+    std::vector<Shader> compile_glsl_to_spirv(
+        const std::vector<Shader> &glsl_shaders, glslang::EShClient client,
+        glslang::EShTargetClientVersion client_version, glslang::EShTargetLanguageVersion spirv_version) {
         glslang::InitializeProcess();
 
-        EShLanguage lang;
-        switch (stage) {
-            case ShaderStage::Vertex:
-                lang = EShLangVertex;
-                break;
-            case ShaderStage::Fragment:
-                lang = EShLangFragment;
-                break;
-            default:
-                throw std::invalid_argument("Unsupported shader stage");
-        }
-
-        auto shader = glslang::TShader(lang);
-        shader.setEnvInput(glslang::EShSourceGlsl, lang, glslang::EShClientOpenGL, 0);
-        shader.setEnvClient(client, client_version);
-        shader.setEnvTarget(glslang::EShTargetSpv, spirv_version);
-        shader.setAutoMapLocations(true);
-        shader.setAutoMapBindings(true);
-
-        auto src_c = src_local.c_str();
-        auto src_len = static_cast<int>(src_local.length());
-        shader.setStrings(&src_c, 1);
+        glslang::TProgram program;
 
         EShMessages messages;
-        if (!shader.parse(&DefaultTBuiltInResource, 0, false, messages)) {
-            Logger::default_logger().fatal(shader.getInfoLog());
+
+        std::map<std::string, const Shader*> glsl_shaders_map;
+
+        // we need to store these in the outer scope so they can be used during linking
+        std::vector<glslang::TShader*> tshaders;
+        std::vector<std::string*> src_strings;
+
+        for (const auto &glsl_shader : glsl_shaders) {
+            Logger::default_logger().debug("Compiling shader %s to SPIR-V", glsl_shader.get_uid().c_str());
+
+            glsl_shaders_map[glsl_shader.get_uid()] = &glsl_shader;
+
+            auto stage = glsl_shader.get_stage();
+            auto &src_str = *new std::string(glsl_shader.get_source().begin(), glsl_shader.get_source().end());
+            src_strings.push_back(&src_str);
+
+            EShLanguage lang;
+            switch (stage) {
+                case ShaderStage::Vertex:
+                    lang = EShLangVertex;
+                    break;
+                case ShaderStage::Fragment:
+                    lang = EShLangFragment;
+                    break;
+                default:
+                    throw std::invalid_argument("Unsupported shader stage");
+            }
+
+            auto &shader = *new glslang::TShader(lang);
+            tshaders.push_back(&shader);
+            shader.setEnvInput(glslang::EShSourceGlsl, lang, glslang::EShClientOpenGL, 0);
+            shader.setEnvClient(client, client_version);
+            shader.setEnvTarget(glslang::EShTargetSpv, spirv_version);
+            shader.setAutoMapLocations(true);
+            shader.setAutoMapBindings(true);
+
+            auto src_c = src_str.c_str();
+            auto src_len = static_cast<int>(src_str.length());
+            shader.setStrings(&src_c, 1);
+
+            if (!shader.parse(&DefaultTBuiltInResource, 0, false, messages)) {
+                Logger::default_logger().fatal(shader.getInfoLog());
+            }
+
+            program.addShader(&shader);
         }
 
-        glslang::TProgram program;
-        program.addShader(&shader);
-
-		if (!program.link(messages)) {
-            Logger::default_logger().fatal(shader.getInfoLog());
-		}
-
-        std::vector<unsigned int> spirv_u32;
-		glslang::GlslangToSpv(*program.getIntermediate(lang), spirv_u32);
-        std::vector<uint8_t> spirv_u8;
-        spirv_u8.reserve(spirv_u32.size() * 4);
-        for (auto i : spirv_u32) {
-            spirv_u8.push_back(i & 0xFF);
-            spirv_u8.push_back((i >> 8) & 0xFF);
-            spirv_u8.push_back((i >> 16) & 0xFF);
-            spirv_u8.push_back((i >> 24) & 0xFF);
+        if (!program.link(messages)) {
+            Logger::default_logger().fatal(program.getInfoLog());
         }
 
-        return spirv_u8; //TODO
+        program.buildReflection();
+
+        std::vector<Shader> spirv_shaders;
+
+        for (auto glsl_shader_kv : glsl_shaders_map) {
+            auto &uid = glsl_shader_kv.first;
+            auto &glsl_shader = *glsl_shaders_map[glsl_shader_kv.first];
+
+            auto stage = glsl_shader.get_stage();
+
+            EShLanguage lang;
+            switch (glsl_shader.get_stage()) {
+                case ShaderStage::Vertex:
+                    lang = EShLangVertex;
+                    break;
+                case ShaderStage::Fragment:
+                    lang = EShLangFragment;
+                    break;
+                default:
+                    throw std::invalid_argument("Unsupported shader stage");
+            }
+
+            auto *intermediate = program.getIntermediate(lang);
+            if (intermediate == nullptr) {
+                continue;
+            }
+
+            std::vector<unsigned int> spirv_u32;
+            glslang::GlslangToSpv(*intermediate, spirv_u32);
+            std::vector<uint8_t> spirv_u8;
+            spirv_u8.reserve(spirv_u32.size() * 4);
+            for (auto i : spirv_u32) {
+                spirv_u8.push_back(i & 0xFF);
+                spirv_u8.push_back((i >> 8) & 0xFF);
+                spirv_u8.push_back((i >> 16) & 0xFF);
+                spirv_u8.push_back((i >> 24) & 0xFF);
+            }
+
+            // this will probably need to be more nuanced if we want to support additional shader stages in the future
+            auto attr_count = stage == ShaderStage::Vertex ? program.getNumLiveAttributes() : 0;
+            auto output_count = stage == ShaderStage::Fragment ? program.getNumPipeOutputs() : 0;
+            auto uni_count = program.getNumLiveUniformVariables();
+
+            ShaderReflectionInfo reflection{};
+
+            for (int i = 0; i < attr_count; i++) {
+                auto attr_name = program.getAttributeName(i);
+                if (reflection.attribute_locations.find(attr_name) == reflection.attribute_locations.end()) {
+                    auto attr_info = program.getPipeInput(i);
+                    attr_info.dump();
+                    reflection.attribute_locations[attr_name] = i;
+                }
+            }
+
+            spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8, &reflection));
+        }
+
+        return spirv_shaders;
     }
 }

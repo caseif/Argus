@@ -159,18 +159,9 @@ namespace argus {
     }
 
     void setup_framebuffer(RendererState &state) {
-        auto &fb_vert_shader_res = ResourceManager::instance().get_resource(FB_SHADER_VERT_PATH);
-        auto &fb_frag_shader_res = ResourceManager::instance().get_resource(FB_SHADER_FRAG_PATH);
+        auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
 
-        state.frame_vert_shader = compile_shader(fb_vert_shader_res);
-        state.frame_frag_shader = compile_shader(fb_frag_shader_res);
-
-        state.frame_program = glCreateProgram();
-
-        glAttachShader(state.frame_program, state.frame_vert_shader);
-        glAttachShader(state.frame_program, state.frame_frag_shader);
-
-        auto frame_program = link_program(state.frame_program, fb_vert_shader_res.get<Shader>().get_type());
+        state.frame_program = frame_program.handle;
 
         if (!frame_program.attr_position_loc.has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
