@@ -271,15 +271,26 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
 
     # compile in libraries if any are requested if they're not in the base library
-    set(DYN_LIBS "")
+    set(DYN_MODULE_STATIC_LIBS "")
+    set(RUST_LIBS_FOR_LINKING "")
     foreach(lib ${MODULE_ENGINE_LIB_DEPS})
       list(FIND STATIC_MODULE_LIBS "${lib}" found_index)
       if(found_index EQUAL -1)
-        set(DYN_LIBS "${gen_expr};${DYN_LIBS}")
+        get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
+        if(${lib_is_external})
+          get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
+
+          if(${lib_is_rust})
+            list(APPEND RUST_LIBS_FOR_LINKING "${lib}")
+          endif()
+        else()
+          list(APPEND DYN_MODULE_STATIC_LIBS "$<TARGET_OBJECTS:${lib}>")
+        endif()
       endif()
     endforeach()
+    message("DYN_MODULE_STATIC_LIBS: ${DYN_MODULE_STATIC_LIBS}")
 
-    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_LIBS})
+    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_MODULE_STATIC_LIBS})
 
     _argus_set_compile_flags(${PROJECT_NAME})
 
@@ -296,6 +307,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
     list(APPEND PROJECT_LINKER_DEPS ${LIB_BASE_NAME})
     target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
+
+    foreach(lib ${RUST_LIBS_FOR_LINKING})
+      target_link_libraries(${PROJECT_NAME}
+                            debug "${RUST_TARGET_DIR}/${lib}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                            optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    endforeach()
 
     _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
   else()
