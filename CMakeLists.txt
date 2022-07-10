@@ -1,4 +1,4 @@
-set(ENGINE_LIBRARY_IDS "lowlevel")
+set(ENGINE_LIBRARY_IDS "lowlevel;shadercompiler")
 set(STATIC_MODULE_IDS "core;ecs;resman;wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 
@@ -7,7 +7,7 @@ set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
 set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
 set(ENGINE_LIBS_SRC_DIR "${ENGINE_SRC_PATH}/libs")
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
@@ -35,6 +35,8 @@ set(DYN_MODULE_DIR "modules")
 
 set(ROOT_PROJECT_DIR "${PROJECT_SOURCE_DIR}")
 
+set(RUST_TARGET_DIR "${CMAKE_BINARY_DIR}/rust-target")
+
 set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
 set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
 set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
@@ -59,6 +61,8 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 endif()
 
 set(CMAKE_MODULE_PROJECT_DIR ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
+include(ExternalProject)
 
 ######################
 # /CMake configuration
@@ -241,7 +245,20 @@ list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
 list(REMOVE_DUPLICATES STATIC_MODULE_LIBS)
-add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIBS})
+set(RUST_LIBS_FOR_LINKING "")
+foreach(lib ${STATIC_MODULE_LIBS})
+  get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
+  if(${lib_is_external})
+    get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
+
+    if(${lib_is_rust})
+      list(APPEND RUST_LIBS_FOR_LINKING "${lib}")
+    endif()
+  else()
+    list(APPEND STATIC_MODULE_LIB_OBJS "$<TARGET_OBJECTS:${lib}>")
+  endif()
+endforeach()
+add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIB_OBJS})
 
 _argus_set_compile_flags(${LIB_BASE_NAME})
 
@@ -259,7 +276,13 @@ set_target_properties(${LIB_BASE_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # add libraries for linking
 get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
 list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
-target_link_libraries(${LIB_BASE_NAME} ${COMBINED_TARGET_LINKER_DEPS})
+target_link_libraries(${LIB_BASE_NAME} "${COMBINED_TARGET_LINKER_DEPS}" "${STATIC_MODULE_STATIC_LIBS}")
+
+foreach(lib ${RUST_LIBS_FOR_LINKING})
+  target_link_libraries(${LIB_BASE_NAME}
+    debug "${RUST_TARGET_DIR}/${lib}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endforeach()
 
 # add global include list
 get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)

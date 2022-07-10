@@ -19,23 +19,26 @@ function(_argus_copy_dep_output DIST_DIR PARENT_TARGET DEP_TARGET PREFIX)
 endfunction()
 
 # recursively finds the include paths of dependency engine modules/libraries and saves them to the given variable
-function(_argus_find_dep_module_includes DEST)
+function(_argus_find_dep_module_includes DEST LIB_DEPS MOD_DEPS)
   set(MODULE_MASTER_DEPENDENCY_INCLUDES "")
-  foreach(id IN LISTS MODULE_ENGINE_LIB_DEPS MODULE_ENGINE_MOD_DEPS)
+  foreach(id IN LISTS LIB_DEPS MOD_DEPS)
     get_property(MODULE_INC_DIR GLOBAL PROPERTY ${id}_INCLUDE_DIRS)
     list(APPEND MODULE_MASTER_DEPENDENCY_INCLUDES "${MODULE_INC_DIR}")
   endforeach()
   set(${DEST} "${MODULE_MASTER_DEPENDENCY_INCLUDES}" PARENT_SCOPE)
 endfunction()
 
+function(_argus_set_module_includes MODULE_ID INCLUDES)
+  set_property(GLOBAL PROPERTY ${MODULE_ID}_INCLUDE_DIRS "${INCLUDES}")
+endfunction()
 
 # recursively finds the module's top-level include dirs and saves them to the given variable
-function(_argus_find_module_includes DEST)
+function(_argus_find_module_includes DEST PROJECT_DIR GENERATED_DIR LIB_DEPS MOD_DEPS)
   # load this module's include dirs
-  set(ALL_INCLUDES "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME};${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
+  set(ALL_INCLUDES "${PROJECT_DIR}/${INCLUDE_DIR_NAME};${GENERATED_DIR}/${INCLUDE_DIR_NAME}")
 
   # load include dirs defined by module dependencies
-  _argus_find_dep_module_includes(PARENT_INCLUDES)
+  _argus_find_dep_module_includes(PARENT_INCLUDES "${LIB_DEPS}" "${MOD_DEPS}")
   list(LENGTH PARENT_INCLUDES LEN)
   if(LEN GREATER 0)
     list(APPEND ALL_INCLUDES "${PARENT_INCLUDES}")
@@ -50,8 +53,7 @@ function(_argus_find_module_includes DEST)
   # remove any duplicates
   list(REMOVE_DUPLICATES ALL_INCLUDES)
 
-  set_property(GLOBAL PROPERTY ${PROJECT_NAME}_INCLUDE_DIRS "${ALL_INCLUDES}")
-  set_property(GLOBAL PROPERTY INCLUDE_DIRECTORIES "${ALL_INCLUDES}")
+  _argus_set_module_includes("${PROJECT_NAME}" "${ALL_INCLUDES}")
 
   set(${DEST} "${ALL_INCLUDES}" PARENT_SCOPE)
 endfunction()
