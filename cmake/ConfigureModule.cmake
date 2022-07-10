@@ -2,6 +2,23 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureCompileFlags.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UtilityFunctions.cmake")
 
 function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EXTENSIONS ARPTOOL_EXE_PATH)
+  ###########################
+  # Module property constants
+  ###########################
+
+  set(MODULE_PROP_NAME "name")
+  set(MODULE_PROP_TYPE "type")
+  set(MODULE_PROP_LANGS "languages")
+  set(MODULE_PROP_INCLUDE_DIRS "include_dirs")
+  set(MODULE_PROP_MOD_DEPS "engine_module_deps")
+  set(MODULE_PROP_LIB_DEPS "engine_library_deps")
+  set(MODULE_PROP_LINKER_DEPS "linker_deps")
+  set(MODULE_PROP_LINKER_DEPS_MSVC "linker_deps_msvc")
+  set(MODULE_PROP_LINKER_DEPS_GCC "linker_deps_gcc")
+  set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
+  set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
+  set(MODULE_PROP_DEFINITIONS "definitions")
+
   set(MODULE_PROPS_PATH "${MODULE_PROJECT_DIR}/module.properties")
   if((NOT EXISTS "${MODULE_PROPS_PATH}") OR (IS_DIRECTORY "${MODULE_PROPS_PATH}"))
     message(AUTHOR_WARNING "Failed to find module.properties in requested path ${MODULE_PROJECT_DIR} - skipping")

@@ -48,23 +48,6 @@ option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
 include("${ROOT_PROJECT_DIR}/cmake/UtilityFunctions.cmake")
 
-###########################
-# Module property constants
-###########################
-
-set(MODULE_PROP_NAME "name")
-set(MODULE_PROP_TYPE "type")
-set(MODULE_PROP_LANGS "languages")
-set(MODULE_PROP_INCLUDE_DIRS "include_dirs")
-set(MODULE_PROP_MOD_DEPS "engine_module_deps")
-set(MODULE_PROP_LIB_DEPS "engine_library_deps")
-set(MODULE_PROP_LINKER_DEPS "linker_deps")
-set(MODULE_PROP_LINKER_DEPS_MSVC "linker_deps_msvc")
-set(MODULE_PROP_LINKER_DEPS_GCC "linker_deps_gcc")
-set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
-set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
-set(MODULE_PROP_DEFINITIONS "definitions")
-
 #####################
 # CMake configuration
 #####################
