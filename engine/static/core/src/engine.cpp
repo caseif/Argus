@@ -63,6 +63,8 @@ namespace argus {
     Thread *g_game_thread;
 
     static bool g_engine_stopping = false;
+    static bool g_game_thread_acknowledged_halt = false;
+    static bool g_force_shutdown_on_next_interrupt = false;
     static std::mutex g_engine_stop_mutex;
     static std::condition_variable g_engine_stop_notifier;
     static std::atomic_bool g_render_thread_halted;
@@ -150,10 +152,11 @@ namespace argus {
         while (true) {
             if (g_engine_stopping) {
                 Logger::default_logger().debug("Engine halt request is acknowledged game thread");
+                g_game_thread_acknowledged_halt = true;
 
                 // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
                 if (!g_render_thread_halted) {
-                    Logger::default_logger().debug("Game thread observed render thread was not halted, waiting on monitor");
+                    Logger::default_logger().debug("Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
                     std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                     g_engine_stop_notifier.wait(lock);
                 }
@@ -302,9 +305,17 @@ namespace argus {
     }
 
     void stop_engine(void) {
-        if (g_engine_stopping) {
+        if (g_force_shutdown_on_next_interrupt) {
+            Logger::default_logger().info("Forcibly terminating process");
+            std::exit(0);
+        } else if (g_game_thread_acknowledged_halt) {
+            Logger::default_logger().info("Forcibly proceeding with engine bring-down");
+            g_force_shutdown_on_next_interrupt = true;
+            g_engine_stop_notifier.notify_one();
+        } else if (g_engine_stopping) {
             Logger::default_logger().warn("Engine is already halting");
         }
+
         Logger::default_logger().info("Engine halt requested");
 
         _ARGUS_ASSERT(g_core_initialized, "Cannot stop engine before it is initialized.");
