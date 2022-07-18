@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "glslang/Public/ShaderLang.h"
-
 #include <initializer_list>
 #include <map>
 #include <string>
@@ -89,11 +87,4 @@ namespace argus {
 
             const ShaderReflectionInfo &get_reflection_info(void) const;
     };
-
-    std::vector<Shader> compile_glsl_to_spirv(
-            const std::vector<Shader> &glsl_sources,
-            glslang::EShClient client,
-            glslang::EShTargetClientVersion client_version,
-            glslang::EShTargetLanguageVersion spirv_version
-    );
 }

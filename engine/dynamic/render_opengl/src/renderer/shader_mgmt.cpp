@@ -25,6 +25,7 @@
 
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
+#include "argus/render/common/shader_compilation.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"

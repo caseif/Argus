@@ -22,6 +22,7 @@
 #include "argus/shadertools.hpp"
 
 #include "argus/render/common/shader.hpp"
+#include "argus/render/common/shader_compilation.hpp"
 
 #include "SPIRV/GlslangToSpv.h"
 #include "glslang/Public/ShaderLang.h"
