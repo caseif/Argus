@@ -345,8 +345,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
         COMMAND ${CMAKE_COMMAND} -E
           rm "-r" "-f" "${dest_dir}")
       foreach(dep ${MODULE_LINKER_DEPS})
-        message("dep: ${dep}")
-        if("${dep}" STREQUAL "")  
+        if("${dep}" STREQUAL "")
           continue()
         endif()
         set(src_file "$<TARGET_FILE:${dep}>")
