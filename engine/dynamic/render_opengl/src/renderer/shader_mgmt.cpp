@@ -167,6 +167,7 @@ namespace argus {
             switch (compiled_shader.first.get_stage()) {
                 case ShaderStage::Vertex:
                     vertex_reflection = compiled_shader.first.get_reflection_info();
+                    break;
                 case ShaderStage::Fragment:
                     fragment_reflection = compiled_shader.first.get_reflection_info();
                     break;

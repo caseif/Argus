@@ -451,9 +451,11 @@ MigrationBackup/
 bin/
 build/
 docs/generated/
+target/
 
 !.vscode/c_cpp_properties.json
 
 .bundle/
 Gemfile.lock
 zconf.h.included
+
