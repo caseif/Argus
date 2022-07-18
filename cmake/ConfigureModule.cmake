@@ -351,7 +351,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
         set(src_file "$<TARGET_FILE:${dep}>")
         set(dest_file "${dest_dir}/$<TARGET_FILE_NAME:${dep}>")
         add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-          COMMENT "Copying static libs for module ${MODULE_NAME}"
+          COMMENT "Copying static library file $<TARGET_FILE_NAME:${dep}> for module ${MODULE_NAME}"
           COMMAND ${CMAKE_COMMAND} -E
             copy "${src_file}" "${dest_file}")
       endforeach()
