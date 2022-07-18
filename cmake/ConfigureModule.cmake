@@ -343,7 +343,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       add_custom_command(TARGET ${copy_libs_target} POST_BUILD
         COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
         COMMAND ${CMAKE_COMMAND} -E
-          rm "-r" "${dest_dir}")
+          rm "-r" "-f" "${dest_dir}")
       foreach(dep ${MODULE_LINKER_DEPS})
         message("dep: ${dep}")
         if("${dep}" STREQUAL "")  
