@@ -27,6 +27,7 @@ pub enum Stage {
 
 /* EShLanguageMask counterpart */
 bitmask! {
+    #[repr(C)]
     pub mask StageMask: i32 where flags StageMaskBit {
         Vertex = (1 << (Stage::Vertex as i32)),
         Tesscontrol = (1 << (Stage::Tesscontrol as i32)),
@@ -125,6 +126,7 @@ pub enum TextureSamplerTransformMode {
 
 /* EShMessages counterpart */
 bitmask! {
+    #[repr(C)]
     pub mask Messages: i32 where flags MessagesBit {
         RelaxedErrorsBit = (1 << 0),
         SuppressWarningsBit = (1 << 1),
@@ -147,6 +149,7 @@ bitmask! {
 
 /* EShReflectionOptions counterpart */
 bitmask! {
+    #[repr(C)]
     pub mask ReflectionOptions: i32 where flags ReflectionOptionBit {
         StrictArraySuffixBit = (1 << 0),
         BasicArraySuffixBit = (1 << 1),
@@ -162,6 +165,7 @@ bitmask! {
 
 /* EProfile counterpart (from Versions.h) */
 bitmask! {
+    #[repr(C)]
     pub mask Profile: i32 where flags ProfileBit {
         None = (1 << 0),
         Core = (1 << 1),
@@ -172,6 +176,7 @@ bitmask! {
 
 /* Shader options */
 bitmask! {
+    #[repr(C)]
     pub mask ShaderOptions: i32 where flags ShaderOptionBit {
         AutoMapBindings = (1 << 0),
         AutoMapLocations = (1 << 1),

@@ -7,7 +7,7 @@ set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
 set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
 set(ENGINE_LIBS_SRC_DIR "${ENGINE_SRC_PATH}/libs")
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.17)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()

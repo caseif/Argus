@@ -335,7 +335,29 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
 
     if(${IS_EXTERNAL})
+      set(copy_libs_target "${MODULE_NAME}_copy_static_libs")
+      add_custom_target(${copy_libs_target})
       add_dependencies(${PROJECT_NAME} ${MODULE_LINKER_DEPS})
+
+      set(dest_dir "${CMAKE_BINARY_DIR}/external_projects/${MODULE_NAME}/libs")
+      add_custom_command(TARGET ${copy_libs_target} POST_BUILD
+        COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
+        COMMAND ${CMAKE_COMMAND} -E
+          rm "-r" "${dest_dir}")
+      foreach(dep ${MODULE_LINKER_DEPS})
+        message("dep: ${dep}")
+        if("${dep}" STREQUAL "")  
+          continue()
+        endif()
+        set(src_file "$<TARGET_FILE:${dep}>")
+        set(dest_file "${dest_dir}/$<TARGET_FILE_NAME:${dep}>")
+        add_custom_command(TARGET ${copy_libs_target} POST_BUILD
+          COMMENT "Copying static libs for module ${MODULE_NAME}"
+          COMMAND ${CMAKE_COMMAND} -E
+            copy "${src_file}" "${dest_file}")
+      endforeach()
+
+      add_dependencies(${MODULE_NAME} ${copy_libs_target})
     else()
       get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
       list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
