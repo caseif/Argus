@@ -1,0 +1,13 @@
+[package]
+name = "shadertools"
+version = "0.0.1"
+links = "glslang"
+
+[lib]
+name = "shadertools"
+crate-type = ["staticlib"]
+
+[dependencies]
+bitmask = "0.5"
+glsl = "6.0"
+libc = "0.2"

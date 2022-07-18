@@ -1,4 +1,4 @@
-set(ENGINE_LIBRARY_IDS "lowlevel;shadercompiler")
+set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 

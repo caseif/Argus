@@ -288,7 +288,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
         endif()
       endif()
     endforeach()
-    message("DYN_MODULE_STATIC_LIBS: ${DYN_MODULE_STATIC_LIBS}")
 
     add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_MODULE_STATIC_LIBS})
 
@@ -322,7 +321,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
           "${MODULE_NAME}"
           DOWNLOAD_COMMAND ""
           CONFIGURE_COMMAND ""
-          BUILD_COMMAND "${CMAKE_COMMAND}" "-E" "env" "CARGO_TARGET_DIR=${RUST_TARGET_DIR}/${MODULE_NAME}" "cargo" "build" "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml"
+          BUILD_COMMAND "${CMAKE_COMMAND}" "-E" "env" "CARGO_TARGET_DIR=${RUST_TARGET_DIR}/${MODULE_NAME}" "cargo" "build" "-vv" "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml"
           INSTALL_COMMAND ""
           BUILD_ALWAYS ON
           LOG_BUILD ON
@@ -335,7 +334,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
 
-    if(NOT ${IS_EXTERNAL})
+    if(${IS_EXTERNAL})
+      add_dependencies(${PROJECT_NAME} ${MODULE_LINKER_DEPS})
+    else()
       get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
       list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
       set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")

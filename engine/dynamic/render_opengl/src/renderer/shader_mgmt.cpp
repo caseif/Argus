@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/shadertools.hpp"
+
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
@@ -50,13 +52,17 @@ namespace argus {
 
         auto type = shaders.at(0).get_type();
         if (type == SHADER_TYPE_GLSL && AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv) {
+            std::vector<std::string> shader_sources;
+            for (auto &shader : shaders) {
+                shader_sources.push_back(std::string(shader.get_source().begin(), shader.get_source().end()));
+            }
+
             to_compile = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
                     glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
         }
 
         for (auto shader : to_compile) {
             auto stage = shader.get_stage();
-            printf("stage: %d\n", stage);
             auto &src = shader.get_source();
 
             GLuint gl_shader_stage;
@@ -77,7 +83,9 @@ namespace argus {
                 Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
             }
 
-            const auto src_c = reinterpret_cast<const char*>(src.data());
+            char *src_c = new char[src.size()];
+            memcpy(src_c, src.data(), src.size());
+            //const char *src_c = reinterpret_cast<const char*>(src.data());
             const int src_len = int(src.size());
 
             if (shader.get_type() == SHADER_TYPE_SPIR_V) {
@@ -96,6 +104,7 @@ namespace argus {
                 int log_len;
                 glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
                 char *log = new char[log_len + 1];
+                log[0] = '\0';
                 glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
                 std::string stage_str;
                 switch (stage) {
@@ -211,8 +220,7 @@ namespace argus {
             /*attr_pos = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_POSITION, -1);
             attr_norm = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
             attr_color = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
-            attr_texcoord = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);
-            printf("%d, %d, %d, %d\n", attr_pos, attr_norm, attr_color, attr_texcoord);*/
+            attr_texcoord = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);*/
             attr_pos = 0;
             attr_norm = 1;
             attr_color = 2;

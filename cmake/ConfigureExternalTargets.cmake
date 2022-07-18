@@ -65,6 +65,9 @@ add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
+
+# we want to build this lib statically
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory("${GLSLANG_SOURCE_DIR}")
 
 set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
