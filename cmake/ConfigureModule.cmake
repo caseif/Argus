@@ -15,6 +15,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   set(MODULE_PROP_LINKER_DEPS "linker_deps")
   set(MODULE_PROP_LINKER_DEPS_MSVC "linker_deps_msvc")
   set(MODULE_PROP_LINKER_DEPS_GCC "linker_deps_gcc")
+  set(MODULE_PROP_EXTERNAL_LINKER_DEPS "external_linker_static_deps")
   set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
   set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
   set(MODULE_PROP_DEFINITIONS "definitions")
@@ -105,6 +106,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
           string(REPLACE "," ";" cur_value "${cur_value}")
           list(APPEND MODULE_LINKER_DEPS "${cur_value}")
         endif()
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_EXTERNAL_LINKER_DEPS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
+        list(APPEND MODULE_EXTERNAL_LINKER_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_REQUIRED_PACKAGES}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_REQUIRED_PACKAGES "${cur_value}")
@@ -157,6 +161,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   string(CONFIGURE "${MODULE_ENGINE_MOD_DEPS}" MODULE_ENGINE_MOD_DEPS)
   string(CONFIGURE "${MODULE_ENGINE_LIB_DEPS}" MODULE_ENGINE_LIB_DEPS)
   string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
+  string(CONFIGURE "${MODULE_EXTERNAL_LINKER_DEPS}" MODULE_EXTERNAL_LINKER_DEPS)
 
   if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
     _argus_compute_dep_edges()
@@ -337,31 +342,36 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     if(${IS_EXTERNAL})
       set(copy_libs_target "${MODULE_NAME}_copy_static_libs")
       add_custom_target(${copy_libs_target})
-      add_dependencies(${PROJECT_NAME} ${MODULE_LINKER_DEPS})
+      add_dependencies(${PROJECT_NAME} ${MODULE_EXTERNAL_LINKER_DEPS})
 
       set(dest_dir "${CMAKE_BINARY_DIR}/external_projects/${MODULE_NAME}/libs")
       add_custom_command(TARGET ${copy_libs_target} POST_BUILD
         COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
         COMMAND ${CMAKE_COMMAND} -E
           rm "-r" "-f" "${dest_dir}")
-      foreach(dep ${MODULE_LINKER_DEPS})
+      foreach(dep ${MODULE_EXTERNAL_LINKER_DEPS})
         if("${dep}" STREQUAL "")
           continue()
         endif()
         set(src_file "$<TARGET_FILE:${dep}>")
-        set(dest_file "${dest_dir}/$<TARGET_FILE_NAME:${dep}>")
+        if(MSVC)
+          # strip debug and version suffixes from file name so Rust doesn't complain
+          set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_PREFIX:${dep}>${dep}$<TARGET_LINKER_FILE_SUFFIX:${dep}>")
+        else()
+          set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_NAME:${dep}>")
+        endif()
         add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-          COMMENT "Copying static library file $<TARGET_FILE_NAME:${dep}> for module ${MODULE_NAME}"
+          COMMENT "Copying static library ${dep} for module ${MODULE_NAME}"
           COMMAND ${CMAKE_COMMAND} -E
             copy "${src_file}" "${dest_file}")
       endforeach()
 
       add_dependencies(${MODULE_NAME} ${copy_libs_target})
-    else()
-      get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
-      list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
-      set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
+    #else()
     endif()
+    get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
+    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
+    set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   endif()
 
   # todo: work out how to pass compile definitions to Rust projects
