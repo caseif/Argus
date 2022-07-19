@@ -307,6 +307,11 @@ namespace argus {
     static bool _ingest_config_from_arp(const std::string &ns) {
         auto res_dir = _get_resources_path();
 
+        if (!std::filesystem::is_directory(res_dir)) {
+            Logger::default_logger().warn("Failed to open resources directory (%s)", res_dir.c_str());
+            return false;
+        }
+
         std::vector<std::filesystem::path> candidate_packages;
 
         for (const auto &child : std::filesystem::directory_iterator(res_dir)) {
