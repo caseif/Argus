@@ -11,9 +11,9 @@ if(NOT RUBY_EXE)
 endif()
 
 if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
-  set(BUNDLER_EXE "bundler.bat")
+  set(BUNDLER_EXE "bundle.bat")
 else()
-  set(BUNDLER_EXE "bundler")
+  set(BUNDLER_EXE "bundle")
 endif()
 
 find_program(BUNDLER_PATH "${BUNDLER_EXE}")
