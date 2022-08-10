@@ -161,7 +161,7 @@ namespace argus {
             glsl_shaders_map[glsl_shader.get_uid()] = &glsl_shader;
 
             auto stage = glsl_shader.get_stage();
-            auto &src_str = *new std::string(glsl_shader.get_source().begin(), glsl_shader.get_source().end());
+            auto src_str = std::string(glsl_shader.get_source().begin(), glsl_shader.get_source().end());
 
             EShLanguage lang;
             switch (stage) {

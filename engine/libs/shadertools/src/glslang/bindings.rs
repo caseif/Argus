@@ -7,7 +7,7 @@ use bitmask::bitmask;
 /* glslang_c_shader_types.c */
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Stage {
     Vertex,
     Tesscontrol,
