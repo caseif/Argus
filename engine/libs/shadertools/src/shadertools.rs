@@ -1,5 +1,7 @@
 #[path = "./glslang/mod.rs"] mod glslang;
 
+use std::borrow::BorrowMut;
+use std::convert::TryInto;
 use std::fmt::Write;
 use std::{collections::HashMap, io::BufWriter};
 use std::ffi::CString;
@@ -158,34 +160,109 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
     return Result::Ok(res);
 }
 
+fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>)
+        -> (Vec<(u32, u32)>, u32) {
+    // handle pathological case specially
+    if existing_decls.is_empty() {
+        return (Vec::new(), 0);
+    }
+
+    let mut occupied_locs = Vec::<bool>::new();
+    
+    for decl in existing_decls {
+        assert!(decl.size.is_some());
+
+        if decl.location.is_none() {
+            continue;
+        }
+
+        let range_end = decl.location.unwrap() + decl.size.unwrap();
+        if range_end > occupied_locs.len().try_into().unwrap() {
+            occupied_locs.resize(range_end as usize, false);
+        }
+
+        for i in 0..decl.size.unwrap() {
+            occupied_locs[(decl.location.unwrap() + i) as usize] = true;
+        }
+    }
+
+    assert!(occupied_locs.len() <= u32::MAX as usize);
+
+    let mut free_ranges = Vec::<(u32, u32)>::new(); // (pos, size)
+    
+    let mut range_start = 0;
+    for i in 0..occupied_locs.len() {
+        let occupied = occupied_locs[i];
+        if occupied {
+            if range_start != i {
+                free_ranges.push((range_start.try_into().unwrap(), (i - range_start).try_into().unwrap()));
+            }
+            range_start = i + 1;
+        }
+    }
+
+    return (free_ranges, occupied_locs.len().try_into().unwrap());
+}
+    
+fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32)) -> u32 {
+    let free_ranges = &mut free_range_info.0;
+    let max_occupied_plus_one = &mut free_range_info.1;
+
+    for i in 0..free_ranges.len() {
+        let range = free_ranges[i];
+        if range.1 >= size {
+            let loc = range.0;
+            
+            let new_size = range.1 - size;
+            if new_size > 0 {
+                free_ranges[i] = (range.0 + size, new_size);
+            } else {
+                free_ranges.remove(i);
+            }
+
+            return loc;
+        }
+    }
+
+    let loc = *max_occupied_plus_one;
+    *max_occupied_plus_one += size;
+    return loc;
+}
+
 fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGlslShader>, GlslCompileError> {
     let mut processed_sources = Vec::<ProcessedGlslShader>::with_capacity(glsl_sources.len());
-
-    let mut attributes = HashMap::<String, u32>::new();
-    let mut uniforms = HashMap::<String, u32>::new();
-    let mut buffers = HashMap::<String, u32>::new();
 
     let mut sorted_sources: Vec<(Stage, String)> = glsl_sources.iter()
         .map(|kv| (kv.0.to_owned(), kv.1.to_owned()))
         .collect();
     sorted_sources.sort_by_key(|entry| entry.0 as u32);
 
-    let mut prev_outputs: Option::<HashMap<String, DeclarationInfo>> = None;
+    let mut struct_sizes = HashMap::<Stage, HashMap<String, Option<u32>>>::new();
+    
+    let mut pending_asts = HashMap::<Stage, TranslationUnit>::new();
 
-    // first pass: enumerate inputs/outputs/uniforms of all shaders
-    for kv in sorted_sources {
-        let stage = &kv.0;
+    let mut inputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut outputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut uniforms = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut buffers = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+
+    // first pass: enumerate declarations of all shaders
+    let mut i = 0;
+    for kv in &sorted_sources {
+        let stage = kv.0.clone();
         let source = &kv.1;
 
-        let mut ast = ShaderStage::parse(source);
-        if ast.is_err() {
+        let ast_res = ShaderStage::parse(source);
+        if ast_res.is_err() {
             return Err(GlslCompileError {
-                message: "Failed to parse GLSL: ".to_owned() + &ast.unwrap_err().info
+                message: "Failed to parse GLSL: ".to_owned() + &ast_res.unwrap_err().info
             });
         }
 
+        let ast = ast_res.unwrap();
+
         let mut struct_visitor = StructDefVisitor::new();
-        ast.as_ref().unwrap().visit(&mut struct_visitor);
+        ast.visit(&mut struct_visitor);
 
         if struct_visitor.fail_condition {
             return Err(GlslCompileError { message: struct_visitor.fail_message.unwrap() });
@@ -195,48 +272,146 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             println!("Struct {}: {:?}", ss.0, ss.1);
         }
 
-        let mut all_outs = HashMap::<String, DeclarationInfo>::new();
+        let mut scan_visitor = ScanningDeclarationVisitor::new(&struct_visitor.struct_sizes);
+        ast.visit(&mut scan_visitor);
 
-        // first pass
-
-        let mut first_visitor = ExplicitlyLocatedDeclarationVisitor::new(&prev_outputs, &struct_visitor.struct_sizes);
-        ast.as_mut().unwrap().visit_mut(&mut first_visitor);
-
-        if first_visitor.fail_condition {
-            return Err(GlslCompileError { message: first_visitor.fail_message.unwrap() });
+        if scan_visitor.fail_condition {
+            return Err(GlslCompileError { message: scan_visitor.fail_message.unwrap() });
         }
 
-        all_outs.reserve(first_visitor.outputs.len());
-        for out in first_visitor.outputs {
-            all_outs.insert(out.0, out.1);
+        inputs.insert(stage, scan_visitor.inputs);
+        outputs.insert(stage, scan_visitor.outputs);
+        uniforms.insert(stage, scan_visitor.uniforms);
+        buffers.insert(stage, scan_visitor.buffers);
+
+        pending_asts.insert(stage, ast);
+
+        struct_sizes.insert(stage, struct_visitor.struct_sizes);
+
+        i += 1;
+    }
+
+    let mut all_assigned_inputs = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
+    let mut all_assigned_outputs = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
+    let mut all_assigned_uniforms = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
+    let mut all_assigned_buffers = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
+
+    i = 0;
+    for stage in sorted_sources.iter().map(|kv| kv.0) {
+        let prev_stage_opt = if i > 0 { Some(sorted_sources[i - 1].0) } else { None };
+        let next_stage_opt = if i < sorted_sources.len() - 1 { Some(sorted_sources[i + 1].0) } else { None };
+
+        {
+            // handle inputs
+
+            let mut occupied_input_locs = Vec::<DeclarationInfo>::new();
+
+            for in_decl in inputs.get_mut(&stage).unwrap().values_mut() {
+                // skip inputs with explicit locations
+                if in_decl.location.is_some() {
+                    occupied_input_locs.push(in_decl.clone());
+                    continue;
+                }
+
+                if let Some(prev_stage) = prev_stage_opt {
+                    // assign locations for inputs with matching outputs from previous stage
+                    if let Some(matching_out) = outputs[&prev_stage].get(&in_decl.name) {
+                        in_decl.location = matching_out.location;
+                        occupied_input_locs.push(in_decl.clone());
+
+                        continue;
+                    }
+                }
+            }
+
+            if let Some(prev_stage) = prev_stage_opt {
+                for out_decl in outputs.get_mut(&prev_stage).unwrap().values() {
+                    if out_decl.location.is_some() {
+                        occupied_input_locs.push(out_decl.clone());
+                    }
+                }
+            }
+
+            let mut avail_input_locs = get_free_loc_ranges(occupied_input_locs);
+            for range in &avail_input_locs.0 {
+                println!("range: {}, {}", range.0, range.1);
+            }
+
+            for in_decl in inputs.get_mut(&stage).unwrap().values_mut() {
+                // skip inputs that already have assigned locations
+                if in_decl.location.is_some() {
+                    continue;
+                }
+
+                // otherwise, just pick the next available location
+                assert!(in_decl.size.is_some());
+                in_decl.location = Some(get_next_free_location(in_decl.size.unwrap(), &mut avail_input_locs));
+                println!("{}: {:?}", in_decl.name, in_decl.location);
+            }
         }
 
-        // second pass
+        {
+            // handle outputs
 
-        let mut second_visitor = MatchedInputDeclarationVisitor::new(&prev_outputs, &struct_visitor.struct_sizes);
-        ast.as_mut().unwrap().visit_mut(&mut second_visitor);
+            let mut occupied_output_locs = Vec::<DeclarationInfo>::new();
 
-        if second_visitor.fail_condition {
-            return Err(GlslCompileError { message: second_visitor.fail_message.unwrap() });
+            if let Some(next_stage) = next_stage_opt {
+                for in_decl in inputs.get_mut(&next_stage).unwrap().values() {
+                    if in_decl.location.is_some() {
+                        occupied_output_locs.push(in_decl.clone());
+                    }
+                }
+            }
+
+            let mut avail_output_locs = get_free_loc_ranges(occupied_output_locs);
+
+            for out_decl in outputs.get_mut(&stage).unwrap() {
+                // skip outputs that already have assigned locations
+                if out_decl.1.location.is_some() {
+                    continue;
+                }
+
+                // otherwise, just pick the next available location
+                assert!(out_decl.1.size.is_some());
+                out_decl.1.location = Some(get_next_free_location(out_decl.1.size.unwrap(), &mut avail_output_locs));
+            }
         }
 
-        all_outs.reserve(second_visitor.outputs.len());
-        for out in second_visitor.outputs {
-            all_outs.insert(out.0, out.1);
+        all_assigned_inputs.insert(stage, inputs[&stage].clone());
+        all_assigned_outputs.insert(stage, outputs[&stage].clone());
+        all_assigned_uniforms.insert(stage, uniforms[&stage].clone());
+        all_assigned_buffers.insert(stage, buffers[&stage].clone());
+
+        i += 1;
+    }
+
+    // second pass: apply assigned locations to the AST
+    for ast_kv in &mut pending_asts {
+        let stage = ast_kv.0;
+        let ast = ast_kv.1;
+
+        // second pass: set locations for all input declarations which match an
+        // output of the previous stage by name, and record all declarations
+        // which still need to be assigned locations
+
+        let mut mutate_visitor = MutatingDeclarationVisitor::new(&struct_sizes[&stage],
+            &all_assigned_inputs[stage], &all_assigned_outputs[stage],
+            &all_assigned_uniforms[stage], &all_assigned_buffers[stage]);
+        ast.visit_mut(&mut mutate_visitor);
+
+        if mutate_visitor.fail_condition {
+            return Err(GlslCompileError { message: mutate_visitor.fail_message.unwrap() });
         }
 
-        // third pass
-        //TODO
-
-        prev_outputs = Some(all_outs);
+        // finally, transpile the transformed shader back to GLSL
 
         let mut src_writer = StringWriter::new();
-        ::glsl::transpiler::glsl::show_translation_unit(&mut src_writer, ast.as_ref().unwrap());
+        ::glsl::transpiler::glsl::show_translation_unit(&mut src_writer, ast);
 
         let processed_src = src_writer.to_string();
 
         processed_sources.push(ProcessedGlslShader {
-            stage: kv.0.to_owned(),
+            stage: stage.to_owned(),
             source: processed_src,
             attributes: HashMap::new(),
             uniforms: HashMap::new()
@@ -297,7 +472,7 @@ fn get_type_size(type_spec: &TypeSpecifierNonArray) -> Result<u32, InvalidArgume
         TypeSpecifierNonArray::DMat3 | TypeSpecifierNonArray::DMat32 | TypeSpecifierNonArray::DMat34 => Ok(6),
         TypeSpecifierNonArray::DMat4 | TypeSpecifierNonArray::DMat42 | TypeSpecifierNonArray::DMat43 => Ok(8),
         TypeSpecifierNonArray::DVec3 | TypeSpecifierNonArray::DVec4 => Ok(2),
-        TypeSpecifierNonArray::TypeName(tn) =>
+        TypeSpecifierNonArray::TypeName(_) =>
             Err(InvalidArgumentError::new("type_spec", "Cannot get size of non-builtin type")),
         _ => Ok(0)
     }
@@ -496,12 +671,10 @@ fn set_decl_location(decl_type: &mut FullySpecifiedType, location: i32) {
 
             if let Some(target) = target_opt {
                 target.ids.push(new_qual);
-                println!("path 1");
             } else {
                 quals.qualifiers.push(TypeQualifierSpec::Layout(LayoutQualifier {
                     ids: NonEmpty(vec![new_qual])
                 }));
-                println!("path 2");
             }
         },
         None => {
@@ -512,220 +685,163 @@ fn set_decl_location(decl_type: &mut FullySpecifiedType, location: i32) {
                     }
                 )])
             });
-            println!("path 3");
         }
     };
 }
 
-#[macro_export]
-macro_rules! decl_visitor {
-    (
-        $name: ident
-        $closure: expr
-    ) => {
-        #[allow(dead_code)]
-        struct $name<'a> {
-            fail_condition: bool,
-            fail_message: Option<String>,
-        
-            struct_sizes: &'a HashMap<String, Option<u32>>,
-            prev_stage_outputs: &'a Option::<HashMap<String, DeclarationInfo>>,
-        
-            inputs: HashMap<String, DeclarationInfo>,
-            outputs: HashMap<String, DeclarationInfo>,
-            uniforms: HashMap<String, DeclarationInfo>,
-            buffers: HashMap<String, DeclarationInfo>
-        }
+// visits in/out/uniform/buffer declarations with explicit layout locations
+struct ScanningDeclarationVisitor<'a> {
+    fail_condition: bool,
+    fail_message: Option<String>,
 
-        impl<'a> $name<'a> {
-            #[allow(dead_code)]
-            fn new(prev_stage_outputs: &'a Option::<HashMap<String, DeclarationInfo>>,
-                    struct_sizes: &'a HashMap<String, Option<u32>>) -> Self {
-                $name {
-                    fail_condition: false,
-                    fail_message: None,
-        
-                    struct_sizes: struct_sizes,
-                    prev_stage_outputs: prev_stage_outputs,
-        
-                    inputs: HashMap::new(),
-                    outputs: HashMap::new(),
-                    uniforms: HashMap::new(),
-                    buffers: HashMap::new(),
-                }
-            }
+    struct_sizes: &'a HashMap<String, Option<u32>>,
 
-            #[allow(dead_code)]
-            fn set_failure(&mut self, message: String) {
-                self.fail_condition = true;
-                self.fail_message = Some(message);
-            }
-        }
+    inputs: HashMap<String, DeclarationInfo>,
+    outputs: HashMap<String, DeclarationInfo>,
+    uniforms: HashMap<String, DeclarationInfo>,
+    buffers: HashMap<String, DeclarationInfo>
+}
 
-        impl<'a> VisitorMut for $name<'a> {
-            fn visit_declaration(&mut self, decl: &mut ::glsl::syntax::Declaration) -> Visit {
-                let x: &dyn Fn(&mut Self, &mut ::glsl::syntax::Declaration) -> Visit = &$closure;
-                x(self, decl)
-            }
+impl<'a> ScanningDeclarationVisitor<'a> {
+    fn new(struct_sizes: &'a HashMap<String, Option<u32>>) -> Self {
+        ScanningDeclarationVisitor {
+            fail_condition: false,
+            fail_message: None,
+
+            struct_sizes: struct_sizes,
+
+            inputs: HashMap::new(),
+            outputs: HashMap::new(),
+            uniforms: HashMap::new(),
+            buffers: HashMap::new(),
         }
+    }
+
+    fn set_failure(&mut self, message: String) {
+        self.fail_condition = true;
+        self.fail_message = Some(message);
     }
 }
 
-// visits in/out/uniform/buffer declarations with explicit layout locations
-decl_visitor!(ExplicitlyLocatedDeclarationVisitor |this, decl| {
-    if this.fail_condition {
-        return Visit::Parent;
-    }
-
-    if let Declaration::InitDeclaratorList(idl) = decl {
-        let decl = match get_decl_info(&idl.head, &this.struct_sizes) {
-            Ok(opt) => match opt {
-                Some(val) => val,
-                None => {
-                    return Visit::Parent;
-                }
-            },
-            Err(e) => {
-                this.set_failure(e.message);
-                return Visit::Parent;
-            },
-        };
-
-        if decl.storage == StorageQualifier::In {
-            if decl.location.is_none() {
-                // only interested in explicitly-located inputs for this pass
-                return Visit::Parent;
-            }
-
-            if let Some(outs) = &this.prev_stage_outputs {
-                if outs.contains_key(&decl.name) && !outs[&decl.name].explicit_location {
-                    this.set_failure(format!("Input '{}' with explicit location matches implicitly-located \
-                        output of previous stage", decl.name).to_owned());
-                }
-            }
-
-            this.inputs.insert(decl.name.clone(), decl.clone());
-        } else if decl.storage == StorageQualifier::Out {
-            if decl.location.is_none() {
-                // only interested in explicitly-located outputs for this pass
-                return Visit::Parent;
-            }
-
-            this.outputs.insert(decl.name.clone(), decl.clone());
+impl<'a> Visitor for ScanningDeclarationVisitor<'a> {
+    fn visit_declaration(&mut self, decl: &::glsl::syntax::Declaration) -> Visit {
+        if self.fail_condition {
+            return Visit::Parent;
         }
-        //TODO: handle other storage types
-    } else if let Declaration::Block(block) = decl {
-        println!("Visiting block {:?}", block.name);
-    }
 
-    return Visit::Parent;
-});
+        if let Declaration::InitDeclaratorList(idl) = decl {
+            let decl = match get_decl_info(&idl.head, &self.struct_sizes) {
+                Ok(opt) => match opt {
+                    Some(val) => val,
+                    None => {
+                        return Visit::Parent;
+                    }
+                },
+                Err(e) => {
+                    self.set_failure(e.message);
+                    return Visit::Parent;
+                },
+            };
 
-// visits in declarations which match output declarations from previous stage
-decl_visitor!(MatchedInputDeclarationVisitor |this, decl| {
-    if this.fail_condition {
+            if decl.storage == StorageQualifier::In {
+                self.inputs.insert(decl.name.clone(), decl.clone());
+            } else if decl.storage == StorageQualifier::Out {
+                self.outputs.insert(decl.name.clone(), decl.clone());
+            } else if decl.storage == StorageQualifier::Uniform {
+                self.uniforms.insert(decl.name.clone(), decl.clone());
+            } else if decl.storage == StorageQualifier::Buffer {
+                self.buffers.insert(decl.name.clone(), decl.clone());
+            }
+        } else if let Declaration::Block(block) = decl {
+            println!("Visiting block {:?}", block.name);
+        }
+
         return Visit::Parent;
     }
+}
 
-    if let Declaration::InitDeclaratorList(idl) = decl {
-        let mut decl_info = match get_decl_info(&idl.head, &this.struct_sizes) {
-            Ok(opt) => match opt {
-                Some(val) => val,
-                None => {
+// visits declarations which match output declarations from previous stage
+struct MutatingDeclarationVisitor<'a> {
+    fail_condition: bool,
+    fail_message: Option<String>,
+
+    struct_sizes: &'a HashMap<String, Option<u32>>,
+
+    inputs: &'a HashMap<String, DeclarationInfo>,
+    outputs: &'a HashMap<String, DeclarationInfo>,
+    uniforms: &'a HashMap<String, DeclarationInfo>,
+    buffers: &'a HashMap<String, DeclarationInfo>
+}
+
+impl<'a> MutatingDeclarationVisitor<'a> {
+    fn new(struct_sizes: &'a HashMap<String, Option<u32>>, inputs: &'a HashMap<String, DeclarationInfo>,
+            outputs: &'a HashMap<String, DeclarationInfo>, uniforms: &'a HashMap<String, DeclarationInfo>,
+            buffers: &'a HashMap<String, DeclarationInfo>) -> Self {
+        MutatingDeclarationVisitor {
+            fail_condition: false,
+            fail_message: None,
+
+            struct_sizes,
+
+            inputs,
+            outputs,
+            uniforms,
+            buffers
+        }
+    }
+
+    fn set_failure(&mut self, message: String) {
+        self.fail_condition = true;
+        self.fail_message = Some(message);
+    }
+}
+
+impl<'a> VisitorMut for MutatingDeclarationVisitor<'a> {
+    fn visit_declaration(&mut self, decl: &mut ::glsl::syntax::Declaration) -> Visit {
+        if self.fail_condition {
+            return Visit::Parent;
+        }
+
+        if let Declaration::InitDeclaratorList(idl) = decl {
+            let decl_info = match get_decl_info(&idl.head, &self.struct_sizes) {
+                Ok(opt) => match opt {
+                    Some(val) => val,
+                    None => {
+                        return Visit::Parent;
+                    }
+                },
+                Err(e) => {
+                    self.set_failure(e.message);
                     return Visit::Parent;
-                }
-            },
-            Err(e) => {
-                this.set_failure(e.message);
-                return Visit::Parent;
-            },
-        };
+                },
+            };
 
-        if decl_info.storage == StorageQualifier::In {
             if decl_info.location.is_some() {
-                // only interested in implicitly-located inputs for this pass
+                // don't need to assign location if it's explicitly set
                 return Visit::Parent;
             }
 
-            println!("second pass: input");
+            let src_map = match decl_info.storage {
+                StorageQualifier::In => &self.inputs,
+                StorageQualifier::Out => &self.outputs,
+                StorageQualifier::Uniform => &self.uniforms,
+                StorageQualifier::Buffer => &self.buffers,
+                _ => { return Visit::Parent; }
+            };
 
-            if let Some(outs) = &this.prev_stage_outputs {
-                println!("we have outputs");
-                println!("checking {}", decl_info.name);
-                for out in outs {
-                    println!("candidate: {}", out.0);
-                }
-
-                if outs.contains_key(&decl_info.name) {
-                    let matching_out = &outs[&decl_info.name];
-                    println!("input matches output, location {:?}", matching_out.location);
-                    if matching_out.explicit_location {
-                        this.set_failure("Input with implicit location matches explicitly-located \
-                            output of previous stage".to_owned());
-                    }
-
-                    decl_info.location = matching_out.location;
-
-                    let decl_type = &mut idl.head.ty;
-                    
-                    set_decl_location(decl_type, matching_out.location.unwrap() as i32);
-                }
+            if !src_map.contains_key(&decl_info.name) {
+                return Visit::Parent;
             }
 
-            this.inputs.insert(decl_info.name.clone(), decl_info.clone());
+            let configured_decl_info = &src_map[&decl_info.name];
+
+            if let Some(assigned_loc) = configured_decl_info.location {
+                set_decl_location(&mut idl.head.ty, assigned_loc.try_into().unwrap());
+            }
+        } else if let Declaration::Block(block) = decl {
+            println!("Visiting block {:?}", block.name);
         }
-        //TODO: handle other storage types
-    } else if let Declaration::Block(block) = decl {
-        println!("Visiting block {:?}", block.name);
-    }
 
-    return Visit::Parent;
-});
-
-// visits all remaining in/out/uniform/buffer declarations
-decl_visitor!(ImplicitlyLocatedDeclarationVisitor |this, decl| {
-    if this.fail_condition {
         return Visit::Parent;
     }
-
-    if let Declaration::InitDeclaratorList(idl) = decl {
-        let mut decl = match get_decl_info(&idl.head, &this.struct_sizes) {
-            Ok(opt) => match opt {
-                Some(val) => val,
-                None => {
-                    return Visit::Parent;
-                }
-            },
-            Err(e) => {
-                this.set_failure(e.message);
-                return Visit::Parent;
-            },
-        };
-
-        if decl.storage == StorageQualifier::In {
-            if decl.location.is_some() {
-                // only interested in implicitly-located inputs for this pass
-                return Visit::Parent;
-            }
-
-            if let Some(outs) = &this.prev_stage_outputs {
-                if outs.contains_key(&decl.name) {
-                    let matching_out = &outs[&decl.name];
-                    if matching_out.explicit_location {
-                        this.set_failure("Input with implicit location matches explicitly-located \
-                            output of previous stage".to_owned());
-                    }
-
-                    decl.location = matching_out.location;
-                }
-            }
-
-            this.inputs.insert(decl.name.clone(), decl.clone());
-        }
-        //TODO: handle other storage types
-    } else if let Declaration::Block(block) = decl {
-        println!("Visiting block {:?}", block.name);
-    }
-
-    return Visit::Parent;
-});
+}
