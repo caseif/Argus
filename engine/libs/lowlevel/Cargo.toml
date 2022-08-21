@@ -1,0 +1,11 @@
+[package]
+name = "argus-lowlevel"
+version = "0.0.1"
+edition = "2021"
+license = "LGPLv3"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+num-traits = "0.2"
