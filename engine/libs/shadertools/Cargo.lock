@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "argus-shadertools"
+version = "0.0.1"
+dependencies = [
+ "bitmask",
+ "glsl",
+ "libc",
+]
+
+[[package]]
 name = "bitmask"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -64,15 +73,6 @@ name = "radium"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "941ba9d78d8e2f7ce474c015eea4d9c6d25b6a3327f9832ee29a4de27f91bbb8"
-
-[[package]]
-name = "shadertools"
-version = "0.0.1"
-dependencies = [
- "bitmask",
- "glsl",
- "libc",
-]
 
 [[package]]
 name = "tap"

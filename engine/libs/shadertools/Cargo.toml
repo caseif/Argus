@@ -1,11 +1,14 @@
 [package]
-name = "shadertools"
+name = "argus-shadertools"
 version = "0.0.1"
 links = "glslang"
 
 [lib]
 name = "shadertools"
-crate-type = ["staticlib"]
+crate-type = ["rlib"]
+
+[package.metadata]
+module-type = "lib"
 
 [dependencies]
 bitmask = "0.5"

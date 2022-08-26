@@ -1,0 +1,16 @@
+[package]
+name = "argus-wm"
+version = "0.0.1"
+edition = "2021"
+
+[package.metadata]
+module-type = "static"
+
+[lib]
+name = "wm"
+crate-type = ["rlib"]
+
+[dependencies]
+argus-lowlevel = { path = "../../libs/lowlevel" }
+argus-trunk = { path = "../../static/trunk" }
+static_init = "1.0"

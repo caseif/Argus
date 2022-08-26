@@ -1,0 +1,13 @@
+[package]
+name = "argus"
+version = "0.0.1"
+
+[lib]
+name = "argus"
+crate-type = ["dylib"]
+
+[dependencies]
+argus-lowlevel = { path = "engine/libs/lowlevel" }
+argus-shadertools = { path = "engine/libs/shadertools" }
+argus-trunk = { path = "engine/static/trunk" }
+argus-wm = { path = "engine/static/wm" }
