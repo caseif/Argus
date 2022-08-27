@@ -148,3 +148,10 @@ impl EngineConfig {
         self.scale_mode = scale_mode;
     }
 }
+
+#[derive(Default)]
+pub struct ClientInfo {
+    id: String,
+    name: String,
+    version: String,
+}

@@ -6,9 +6,10 @@ pub mod module;
 
 use std::sync::RwLock;
 
-use crate::engine::kill_game_thread;
+use crate::engine::EngineHandle;
 use crate::module::LifecycleStage;
 use crate::module::register_module;
+
 use lowlevel::logging::Logger;
 
 use lazy_static::lazy_static;
@@ -28,7 +29,7 @@ extern "C" fn init_trunk() {
     register_module(MODULE_CORE, update_lifecycle_core);
 }
 
-fn update_lifecycle_core(stage: LifecycleStage) {
+fn update_lifecycle_core(engine: Box<EngineHandle>, stage: LifecycleStage) {
     match stage {
         LifecycleStage::PreInit => {
             logger.fatal_if(!*(*g_trunk_initializing).read().unwrap() && !*(*g_trunk_initialized).read().unwrap(),
@@ -40,7 +41,7 @@ fn update_lifecycle_core(stage: LifecycleStage) {
             *(*g_trunk_initialized).write().unwrap() = true;
         }
         LifecycleStage::PostDeinit => {
-            kill_game_thread();
+            //kill_game_thread();
         }
         _ => ()
     }

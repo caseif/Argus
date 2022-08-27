@@ -1,10 +1,12 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use std::path::PathBuf;
 
 use lazy_static::lazy_static;
 
-type LifecycleFn = fn(LifecycleStage);
+use crate::engine::EngineHandle;
+
+pub type LifecycleFn = fn(Box<EngineHandle>, LifecycleStage);
 
 lazy_static! {
     static ref g_module_registrations: Mutex<HashMap<String, LifecycleFn>> = Mutex::new(HashMap::new());
@@ -65,11 +67,60 @@ pub enum LifecycleStage {
     PostDeinit
 }
 
+pub(crate) struct StaticModule {
+    id: String,
+    dependencies: HashSet<String>,
+    lifecycle_update_callback: LifecycleFn,
+}
+
+/**
+ * @brief Represents a module to be dynamically loaded by the Argus engine.
+ *
+ * This struct contains all information required to initialize and update
+ * the module appropriately.
+ */
+pub struct DynamicModule {
+    /**
+     * @brief The ID of the module.
+     *
+     * @attention This ID must contain only lowercase Latin letters
+     *            (`[a-z]`), numbers (`[0-9]`), and underscores (`[_]`).
+     */
+    id: String,
+
+    /**
+     * @brief The function which handles lifecycle updates for this module.
+     *
+     * This function will accept a single argument of type `const`
+     * LifecycleStage and will not return anything.
+     *
+     * This function should handle initialization of the module when the
+     * engine starts, as well as deinitialization when the engine stops.
+     *
+     * @sa LifecycleStage
+     */
+    lifecycle_update_callback: LifecycleFn,
+
+    /**
+     * @brief A list of IDs of modules this one is dependent on.
+     *
+     * If any dependency fails to load, the dependent module will also fail.
+     */
+    dependencies: HashSet<String>,
+
+    /**
+     * @brief An opaque handle to the shared library containing the module.
+     *
+     * @warning This is intended for internal use only.
+     */
+    handle: usize //TODO
+}
+
 pub fn register_module(mod_name: &str, lifecycle_fn: LifecycleFn) {
     g_module_registrations.lock().unwrap().insert(mod_name.to_string(), lifecycle_fn);
 }
 
-pub fn register_dynamic_module(id: String, lifecycle_callback: LifecycleFn, dependencies: Vec<String>) {
+pub fn register_dynamic_module(id: &str, lifecycle_callback: LifecycleFn, dependencies: Vec<String>) {
     //TODO
 }
 
@@ -77,22 +128,24 @@ pub(crate) fn get_present_dynamic_modules() -> HashMap<String, PathBuf> {
     return HashMap::new(); //TODO
 }
 
-pub(crate) fn enable_dynamic_module(module_id: String) -> bool{
-    return false; //TODO
-}
+impl EngineHandle {
+    pub(crate) fn enable_dynamic_module(&mut self, module_id: String) -> bool{
+        return false; //TODO
+    }
 
-pub(crate) fn enable_modules(modules: Vec<String>) {
-    //TODO
-}
+    pub(crate) fn enable_modules(&mut self, modules: Vec<String>) {
+        //TODO
+    }
 
-pub(crate) fn unload_dynamic_modules() {
-    //TODO
-}
+    pub(crate) fn unload_dynamic_modules(&mut self) {
+        //TODO
+    }
 
-pub(crate) fn init_modules() {
-    //TODO
-}
+    pub(crate) fn init_modules(&mut self) {
+        //TODO
+    }
 
-pub(crate) fn deinit_modules() {
-    //TODO
+    pub(crate) fn deinit_modules(&mut self) {
+        //TODO
+    }
 }
