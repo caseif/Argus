@@ -1,4 +1,4 @@
-mod callback;
+pub(crate) mod callback;
 pub mod config;
 
 use crate::*;
@@ -7,16 +7,15 @@ use crate::engine::callback::CallbackList;
 use crate::event::*;
 use crate::module::{DynamicModule, StaticModule};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::process::exit;
-use std::sync::RwLock;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-type Index = u64;
-type NullaryCallback = fn();
-type DeltaCallback = fn(Duration);
+pub type Index = u64;
+pub type NullaryCallback = fn();
+pub type DeltaCallback = fn(Duration);
 
 const NS_PER_US: u64 = 1_000;
 const US_PER_S: u64 = 1_000_000;
@@ -61,7 +60,25 @@ impl Default for EngineCallbacks {
         EngineCallbacks {
             update_callbacks: Arc::new(RwLock::new(CallbackList::new())),
             render_callbacks: Arc::new(RwLock::new(CallbackList::new())),
-            one_off_callbacks: Mutex::new(Vec::new()),
+            one_off_callbacks: Mutex::new(Vec::new())
+        }
+    }
+}
+
+pub(crate) struct EventState {
+    pub(crate) update_event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>,
+    pub(crate) render_event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>,
+    pub(crate) update_event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>,
+    pub(crate) render_event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>
+}
+
+impl Default for EventState {
+    fn default() -> Self {
+        EventState {
+            update_event_listeners: Arc::new(RwLock::new(CallbackList::new())),
+            render_event_listeners: Arc::new(RwLock::new(CallbackList::new())),
+            update_event_queue: Arc::new(Mutex::new(VecDeque::new())),
+            render_event_queue: Arc::new(Mutex::new(VecDeque::new()))
         }
     }
 }
@@ -72,6 +89,7 @@ pub struct EngineHandle {
 
     pub(crate) prev_stage: Option<LifecycleStage>,
     pub(crate) module_state: ModuleState,
+    pub(crate) event_state: EventState,
     running_state: RunningState,
     callbacks: EngineCallbacks,
 }
@@ -86,6 +104,7 @@ pub fn configure_engine_explicitly(client_info: ClientInfo, engine_config: Engin
         engine_config,
         prev_stage: None,
         module_state: Default::default(),
+        event_state: Default::default(),
         running_state: Default::default(),
         callbacks: Default::default(),
     })
@@ -128,9 +147,11 @@ impl EngineHandle {
         let target_fps = self.engine_config.target_framerate;
         let running_state_copy = self.running_state.clone();
         let render_callbacks = self.callbacks.render_callbacks.clone();
+        let render_event_queue = self.event_state.render_event_queue.clone();
+        let render_event_listeners = self.event_state.render_event_listeners.clone();
 
         let g_render_thread_jh = std::thread::spawn(move || render_loop(target_fps,
-            running_state_copy, render_callbacks));
+            running_state_copy, render_callbacks, render_event_queue, render_event_listeners));
 
         //ctrlc::set_handler(|| self.stop_engine());
 
@@ -138,6 +159,8 @@ impl EngineHandle {
 
         // pass control over to the game loop
         self.game_loop();
+
+        g_render_thread_jh.join();
 
         LOGGER.info("Game loop has halted, exiting program");
 
@@ -243,7 +266,7 @@ impl EngineHandle {
                 // the callback function objects) will be deinitialized
                 // statically and will segfault on handlers registered by
                 // external libraries (which will have already been unloaded)
-                deinit_event_handlers();
+                self.deinit_event_handlers();
 
                 LOGGER.debug("Deinitializing general callbacks");
 
@@ -273,14 +296,14 @@ impl EngineHandle {
 
             //TODO: do we need to flush the queues before the engine stops?
             self.callbacks.update_callbacks.write().unwrap().flush();
-            flush_event_listener_queues(TargetThread::Update);
+            self.event_state.update_event_listeners.write().unwrap().flush();
 
             // invoke update callbacks
             for callback in &self.callbacks.update_callbacks.read().unwrap().list {
                 (callback.value)(delta);
             }
 
-            process_event_queue(TargetThread::Update);
+            process_event_queue(&self.event_state.update_event_queue, &self.event_state.update_event_listeners);
 
             if let Some(tickrate) = self.engine_config.target_tickrate {
                 handle_idle(update_start, tickrate);
@@ -290,7 +313,9 @@ impl EngineHandle {
 }
 
 fn render_loop(target_framerate: Option<u32>, running_state: RunningState,
-    render_callbacks: Arc<RwLock<CallbackList<DeltaCallback>>>) {
+        render_callbacks: Arc<RwLock<CallbackList<DeltaCallback>>>,
+        event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>,
+        event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>) {
     let mut last_frame: Option<Instant> = None;
 
     loop {
@@ -307,14 +332,14 @@ fn render_loop(target_framerate: Option<u32>, running_state: RunningState,
         let delta = compute_delta(&mut last_frame);
 
         render_callbacks.write().unwrap().flush();
-        flush_event_listener_queues(TargetThread::Render);
+        event_listeners.write().unwrap().flush();
 
         // invoke render callbacks
         for callback in &render_callbacks.read().unwrap().list {
             (callback.value)(delta);
         }
 
-        process_event_queue(TargetThread::Render);
+        process_event_queue(&event_queue, &event_listeners);
 
         if let Some(framerate) = target_framerate {
             handle_idle(render_start, framerate);
