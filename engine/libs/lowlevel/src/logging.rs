@@ -6,12 +6,12 @@ const LEVEL_INFO: &str = "INFO";
 const LEVEL_DEBUG: &str = "DEBUG";
 
 pub struct Logger {
-    realm: String
+    realm: &'static str
 }
 
 impl Logger {
-    pub fn new(realm: &str) -> Self {
-        Logger { realm: realm.to_string() }
+    pub const fn new(realm: &'static str) -> Self {
+        Logger { realm: realm }
     }
     
     fn print<S: Display>(&self, level: &str, message: S) {
@@ -23,7 +23,7 @@ impl Logger {
     }
 
     pub fn fatal_if<S: Display>(&self, cond: bool, message: S) {
-        if !cond {
+        if cond {
             self.print(LEVEL_FATAL, message);
             std::process::exit(1);
         }

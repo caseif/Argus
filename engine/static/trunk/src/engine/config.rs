@@ -1,11 +1,11 @@
 use lowlevel::math::misc::ScreenSpaceScaleMode;
 
 pub struct EngineConfig {
-    pub(crate) target_tickrate: Option<u32>,
-    pub(crate) target_framerate: Option<u32>,
-    pub(crate) load_modules: Vec<String>,
-    pub(crate) render_backends: Vec<String>,
-    pub(crate) scale_mode: ScreenSpaceScaleMode
+    pub target_tickrate: Option<u32>,
+    pub target_framerate: Option<u32>,
+    pub load_modules: Vec<String>,
+    pub render_backends: Vec<String>,
+    pub scale_mode: ScreenSpaceScaleMode
 }
 
 impl Default for EngineConfig {
@@ -151,7 +151,7 @@ impl EngineConfig {
 
 #[derive(Default)]
 pub struct ClientInfo {
-    id: String,
-    name: String,
-    version: String,
+    pub id: String,
+    pub name: String,
+    pub version: String,
 }

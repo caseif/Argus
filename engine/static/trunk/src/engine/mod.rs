@@ -1,5 +1,5 @@
 mod callback;
-mod config;
+pub mod config;
 
 use crate::*;
 use crate::engine::config::*;
@@ -23,11 +23,12 @@ const US_PER_S: u64 = 1_000_000;
 const SLEEP_OVERHEAD_NS: Duration = Duration::from_nanos(120_000);
 
 #[derive(Default)]
-struct ModuleState {
-    dyn_module_registrations: HashMap<String, DynamicModule>,
-    enabled_static_modules: Vec<StaticModule>,
-    enabled_dyn_modules_staging: HashMap<String, DynamicModule>,
-    enabled_dyn_modules: Vec<DynamicModule>,
+pub(crate) struct ModuleState {
+    pub(crate) dyn_module_registrations: HashMap<String, DynamicModule>,
+    pub(crate) enabled_static_modules: Vec<StaticModule>,
+    pub(crate) enabled_dyn_modules_staging: HashMap<String, DynamicModule>,
+    pub(crate) enabled_dyn_modules: Vec<DynamicModule>,
+    pub(crate) dyn_library_handles: HashMap<String, libloading::Library>
 }
 
 #[derive(Clone)]
@@ -69,7 +70,8 @@ pub struct EngineHandle {
     client_info: ClientInfo,
     engine_config: EngineConfig,
 
-    module_state: ModuleState,
+    pub(crate) prev_stage: Option<LifecycleStage>,
+    pub(crate) module_state: ModuleState,
     running_state: RunningState,
     callbacks: EngineCallbacks,
 }
@@ -82,6 +84,7 @@ pub fn configure_engine_explicitly(client_info: ClientInfo, engine_config: Engin
     Box::new(EngineHandle {
         client_info,
         engine_config,
+        prev_stage: None,
         module_state: Default::default(),
         running_state: Default::default(),
         callbacks: Default::default(),
@@ -90,33 +93,35 @@ pub fn configure_engine_explicitly(client_info: ClientInfo, engine_config: Engin
 
 impl EngineHandle {
     pub fn initialize(&mut self) {
-        logger.info("Engine initialization started");
+        LOGGER.info("Engine initialization started");
 
-        logger.debug("Enabling requested modules");
+        LOGGER.fatal_if(self.prev_stage.is_some(), "Cannot initialize engine more than once.");
+
+        LOGGER.debug("Enabling requested modules");
 
         if !self.engine_config.load_modules.is_empty() {
             self.enable_modules(self.engine_config.load_modules.clone());
         } else {
-            self.enable_modules(vec![MODULE_CORE.to_string()]);
+            self.enable_modules(vec![MODULE_TRUNK.to_string()]);
         }
 
         //load_dynamic_modules();
 
-        logger.debug("Initializing enabled modules");
+        LOGGER.debug("Initializing enabled modules");
 
         self.init_modules();
 
-        logger.info("Engine initialized!");
+        LOGGER.info("Engine initialized!");
     }
 
     pub fn start(&mut self, game_loop: DeltaCallback) {
-        logger.info("Bringing up engine");
+        LOGGER.info("Bringing up engine");
 
-        logger.fatal_if(*g_trunk_initialized.read().unwrap(), "Cannot start engine before it is initialized.");
+        LOGGER.fatal_if(!self.is_init_done(), "Cannot start engine before it is initialized.");
 
-        /*logger.fatal_if(!get_client_id().empty(), "Client ID must be set prior to engine start");
-        logger.fatal_if(!get_client_name().empty(), "Client ID must be set prior to engine start");
-        logger.fatal_if(!get_client_version().empty(), "Client ID must be set prior to engine start");*/
+        /*LOGGER.fatal_if(!get_client_id().empty(), "Client ID must be set prior to engine start");
+        LOGGER.fatal_if(!get_client_name().empty(), "Client ID must be set prior to engine start");
+        LOGGER.fatal_if(!get_client_version().empty(), "Client ID must be set prior to engine start");*/
 
         self.register_update_callback(game_loop);
 
@@ -129,22 +134,22 @@ impl EngineHandle {
 
         //ctrlc::set_handler(|| self.stop_engine());
 
-        logger.info("Engine started! Passing control to game loop.");
+        LOGGER.info("Engine started! Passing control to game loop.");
 
         // pass control over to the game loop
         self.game_loop();
 
-        logger.info("Game loop has halted, exiting program");
+        LOGGER.info("Game loop has halted, exiting program");
 
         exit(0);
     }
 
     pub fn stop_engine(&mut self) {
         if *self.running_state.force_shutdown_on_next_interrupt.lock().unwrap() {
-            logger.info("Forcibly terminating process");
+            LOGGER.info("Forcibly terminating process");
             exit(0);
         } else if *self.running_state.game_thread_acknowledged_halt.lock().unwrap() {
-            logger.info("Forcibly proceeding with engine bring-down");
+            LOGGER.info("Forcibly proceeding with engine bring-down");
             *self.running_state.force_shutdown_on_next_interrupt.lock().unwrap() = true;
 
             // bit of a hack to trick the game thread into thinking the render thread halted
@@ -153,19 +158,27 @@ impl EngineHandle {
             *halted = true;
             cvar.notify_one();
         } else if *self.running_state.is_stopping.lock().unwrap() {
-            logger.warn("Engine is already halting");
+            LOGGER.warn("Engine is already halting");
         }
 
-        logger.info("Engine halt requested");
+        LOGGER.info("Engine halt requested");
 
-        logger.fatal_if(*g_trunk_initialized.read().unwrap(), "Cannot stop engine before it is initialized.");
+        LOGGER.fatal_if(!self.is_init_done(), "Cannot stop engine before it is initialized.");
 
         *self.running_state.is_stopping.lock().unwrap() = true;
     }
 
+    pub fn is_preinit_done(&self) -> bool {
+        self.prev_stage.map(|s| s >= LifecycleStage::PreInit).unwrap_or(false)
+    }
+
+    pub fn is_init_done(&self) -> bool {
+        println!("Stage: {:?}", self.prev_stage);
+        self.prev_stage.map(|s| s >= LifecycleStage::Init).unwrap_or(false)
+    }
+
     pub fn register_update_callback(&mut self, callback: DeltaCallback) -> Index {
-        logger.fatal_if(*g_trunk_initializing.read().unwrap() || *g_trunk_initialized.read().unwrap(),
-                "Cannot register update callback before engine initialization.");
+        LOGGER.fatal_if(!self.is_init_done(), "Cannot register update callback before engine initialization.");
         return self.callbacks.update_callbacks.write().unwrap().add(callback);
     }
 
@@ -174,8 +187,7 @@ impl EngineHandle {
     }
 
     pub fn register_render_callback(&mut self, callback: DeltaCallback) -> Index {
-        logger.fatal_if(*g_trunk_initializing.read().unwrap() || *g_trunk_initialized.read().unwrap(),
-                "Cannot register render callback before engine initialization.");
+        LOGGER.fatal_if(!self.is_init_done(), "Cannot register render callback before engine initialization.");
         return self.callbacks.render_callbacks.write().unwrap().add(callback);
     }
 
@@ -203,7 +215,7 @@ impl EngineHandle {
 
         loop {
             if *self.running_state.is_stopping.lock().unwrap() {
-                logger.debug("Engine halt request is acknowledged game thread");
+                LOGGER.debug("Engine halt request is acknowledged game thread");
                 *self.running_state.game_thread_acknowledged_halt.lock().unwrap() = true;
 
                 // wait for render thread to finish up what it's doing so we don't interrupt it ~~and cause a segfault~~
@@ -211,7 +223,7 @@ impl EngineHandle {
                 {
                     let (lock, cvar) = &*self.running_state.render_thread_halted;
                     if !(*lock.lock().unwrap()) {
-                        logger.debug("Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
+                        LOGGER.debug("Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
                         cvar.wait(lock.lock().unwrap());
                     }
                 }
@@ -219,13 +231,13 @@ impl EngineHandle {
                 // at this point all event and callback execution should have
                 // stopped which allows us to start doing non-thread-safe things
 
-                logger.debug("Game thread observed render thread is halted, proceeding with engine bring-down");
+                LOGGER.debug("Game thread observed render thread is halted, proceeding with engine bring-down");
 
-                logger.debug("Deinitializing engine modules");
+                LOGGER.debug("Deinitializing engine modules");
 
                 self.deinit_modules();
 
-                logger.debug("Deinitializing event callbacks");
+                LOGGER.debug("Deinitializing event callbacks");
 
                 // if we don't do this explicitly, the callback lists (and thus
                 // the callback function objects) will be deinitialized
@@ -233,16 +245,16 @@ impl EngineHandle {
                 // external libraries (which will have already been unloaded)
                 deinit_event_handlers();
 
-                logger.debug("Deinitializing general callbacks");
+                LOGGER.debug("Deinitializing general callbacks");
 
                 // same deal here
                 self.deinit_callbacks();
 
-                logger.debug("Unloading dynamic engine modules");
+                LOGGER.debug("Unloading dynamic engine modules");
 
                 self.unload_dynamic_modules();
 
-                logger.info("Engine bring-down completed");
+                LOGGER.info("Engine bring-down completed");
 
                 break;
             }
@@ -283,7 +295,7 @@ fn render_loop(target_framerate: Option<u32>, running_state: RunningState,
 
     loop {
         if *running_state.is_stopping.lock().unwrap() {
-            logger.debug("Engine halt request is acknowledged by render thread");
+            LOGGER.debug("Engine halt request is acknowledged by render thread");
             let (lock, cvar) = &*running_state.render_thread_halted;
             let mut halted = lock.lock().unwrap();
             *halted = true;

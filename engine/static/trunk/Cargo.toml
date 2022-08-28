@@ -17,6 +17,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 argus-lowlevel = { path = "../../libs/lowlevel" }
-lazy_static = "1.2"
 ctrlc = "3.2"
+lazy_static = "1.2"
 static_init = "1.0"
+libloading = "0.7"

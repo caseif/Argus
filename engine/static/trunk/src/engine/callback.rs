@@ -48,7 +48,7 @@ impl<T> CallbackList<T> {
         while !self.rm_queue.is_empty() {
             let id = self.rm_queue.pop_front().unwrap();
             if !remove_from_indexed_vector(&mut self.list, id) {
-                logger.warn(format!("Client attempted to unregister unknown callback {}", id).as_str());
+                LOGGER.warn(format!("Client attempted to unregister unknown callback {}", id).as_str());
             }
         }
 

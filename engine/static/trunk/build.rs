@@ -68,7 +68,7 @@ fn generate_module_defs() {
     let update_fns_src = "";
 
     let defs_src = "lazy_static::lazy_static! {\n    \
-        pub static ref STATIC_MODULE_DEFS: std::collections::HashMap<&'static str, Vec<&'static str>> \
+        pub(crate) static ref STATIC_MODULE_DEFS: std::collections::HashMap<&'static str, Vec<&'static str>> \
             = std::collections::HashMap::from([\n".to_string()
         + module_defs.iter()
             .map(|(mod_name, mod_deps)| format!("        (\"{}\", vec!({})),",
