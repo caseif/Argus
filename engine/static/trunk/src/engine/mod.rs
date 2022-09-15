@@ -1,19 +1,21 @@
-pub(crate) mod callback;
 pub mod config;
+
+use lowlevel::collections::indexed_list::Index;
+use lowlevel::collections::indexed_list::SyncBufferedIndexedList;
 
 use crate::*;
 use crate::engine::config::*;
-use crate::engine::callback::CallbackList;
 use crate::event::*;
 use crate::module::{DynamicModule, StaticModule};
 
 use std::collections::{HashMap, VecDeque};
 use std::process::exit;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-pub type Index = u64;
 pub type NullaryCallback = fn();
 pub type DeltaCallback = fn(Duration);
 
@@ -50,24 +52,24 @@ impl Default for RunningState {
 }
 
 struct EngineCallbacks {
-    update_callbacks: Arc<RwLock<CallbackList<DeltaCallback>>>,
-    render_callbacks: Arc<RwLock<CallbackList<DeltaCallback>>>,
+    update_callbacks: Arc<SyncBufferedIndexedList<DeltaCallback>>,
+    render_callbacks: Arc<SyncBufferedIndexedList<DeltaCallback>>,
     one_off_callbacks: Mutex<Vec<NullaryCallback>>,
 }
 
 impl Default for EngineCallbacks {
     fn default() -> Self {
         EngineCallbacks {
-            update_callbacks: Arc::new(RwLock::new(CallbackList::new())),
-            render_callbacks: Arc::new(RwLock::new(CallbackList::new())),
+            update_callbacks: Arc::new(SyncBufferedIndexedList::new(&LOGGER)),
+            render_callbacks: Arc::new(SyncBufferedIndexedList::new(&LOGGER)),
             one_off_callbacks: Mutex::new(Vec::new())
         }
     }
 }
 
 pub(crate) struct EventState {
-    pub(crate) update_event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>,
-    pub(crate) render_event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>,
+    pub(crate) update_event_listeners: Arc<SyncBufferedIndexedList<ArgusEventHandler>>,
+    pub(crate) render_event_listeners: Arc<SyncBufferedIndexedList<ArgusEventHandler>>,
     pub(crate) update_event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>,
     pub(crate) render_event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>
 }
@@ -75,8 +77,8 @@ pub(crate) struct EventState {
 impl Default for EventState {
     fn default() -> Self {
         EventState {
-            update_event_listeners: Arc::new(RwLock::new(CallbackList::new())),
-            render_event_listeners: Arc::new(RwLock::new(CallbackList::new())),
+            update_event_listeners: Arc::new(SyncBufferedIndexedList::new(&LOGGER)),
+            render_event_listeners: Arc::new(SyncBufferedIndexedList::new(&LOGGER)),
             update_event_queue: Arc::new(Mutex::new(VecDeque::new())),
             render_event_queue: Arc::new(Mutex::new(VecDeque::new()))
         }
@@ -92,6 +94,7 @@ pub struct EngineHandle {
     pub(crate) event_state: EventState,
     running_state: RunningState,
     callbacks: EngineCallbacks,
+    next_index: AtomicU64
 }
 
 pub fn configure_engine(config_namespace: &str) -> Box<EngineHandle> {
@@ -107,6 +110,7 @@ pub fn configure_engine_explicitly(client_info: ClientInfo, engine_config: Engin
         event_state: Default::default(),
         running_state: Default::default(),
         callbacks: Default::default(),
+        next_index: Default::default()
     })
 }
 
@@ -200,22 +204,26 @@ impl EngineHandle {
         self.prev_stage.map(|s| s >= LifecycleStage::Init).unwrap_or(false)
     }
 
+    pub(crate) fn get_next_callback_index(&self) -> Index {
+        self.next_index.fetch_add(1, Ordering::Relaxed)
+    }
+
     pub fn register_update_callback(&mut self, callback: DeltaCallback) -> Index {
         LOGGER.fatal_if(!self.is_init_done(), "Cannot register update callback before engine initialization.");
-        return self.callbacks.update_callbacks.write().unwrap().add(callback);
+        return self.callbacks.update_callbacks.add(self.get_next_callback_index(), callback);
     }
 
     pub fn unregister_update_callback(&mut self, id: Index) {
-        self.callbacks.update_callbacks.write().unwrap().remove(id);
+        self.callbacks.update_callbacks.remove(id);
     }
 
     pub fn register_render_callback(&mut self, callback: DeltaCallback) -> Index {
         LOGGER.fatal_if(!self.is_init_done(), "Cannot register render callback before engine initialization.");
-        return self.callbacks.render_callbacks.write().unwrap().add(callback);
+        return self.callbacks.render_callbacks.add(self.get_next_callback_index(), callback);
     }
 
     pub fn unregister_render_callback(&mut self, id: Index) {
-        (&*self.callbacks.render_callbacks).write().unwrap().remove(id);
+        (&*self.callbacks.render_callbacks).remove(id);
     }
 
     pub fn run_on_game_thread(&mut self, callback: NullaryCallback) {
@@ -223,8 +231,8 @@ impl EngineHandle {
     }
 
     fn deinit_callbacks(&mut self) {
-        self.callbacks.update_callbacks.write().unwrap().clear();
-        self.callbacks.render_callbacks.write().unwrap().clear();
+        self.callbacks.update_callbacks.clear();
+        self.callbacks.render_callbacks.clear();
     }
 
     pub(crate) fn kill_game_thread(&mut self, ) {
@@ -295,11 +303,11 @@ impl EngineHandle {
             }
 
             //TODO: do we need to flush the queues before the engine stops?
-            self.callbacks.update_callbacks.write().unwrap().flush();
-            self.event_state.update_event_listeners.write().unwrap().flush();
+            self.callbacks.update_callbacks.flush();
+            self.event_state.update_event_listeners.flush();
 
             // invoke update callbacks
-            for callback in &self.callbacks.update_callbacks.read().unwrap().list {
+            for callback in &*self.callbacks.update_callbacks.values() {
                 (callback.value)(delta);
             }
 
@@ -313,9 +321,9 @@ impl EngineHandle {
 }
 
 fn render_loop(target_framerate: Option<u32>, running_state: RunningState,
-        render_callbacks: Arc<RwLock<CallbackList<DeltaCallback>>>,
+        render_callbacks: Arc<SyncBufferedIndexedList<DeltaCallback>>,
         event_queue: Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>,
-        event_listeners: Arc<RwLock<CallbackList<ArgusEventHandler>>>) {
+        event_listeners: Arc<SyncBufferedIndexedList<ArgusEventHandler>>) {
     let mut last_frame: Option<Instant> = None;
 
     loop {
@@ -331,11 +339,11 @@ fn render_loop(target_framerate: Option<u32>, running_state: RunningState,
         let render_start = Instant::now();
         let delta = compute_delta(&mut last_frame);
 
-        render_callbacks.write().unwrap().flush();
-        event_listeners.write().unwrap().flush();
+        render_callbacks.flush();
+        event_listeners.flush();
 
         // invoke render callbacks
-        for callback in &render_callbacks.read().unwrap().list {
+        for callback in &*render_callbacks.values() {
             (callback.value)(delta);
         }
 

@@ -1,8 +1,9 @@
-use std::{any, sync::{Arc, Mutex, RwLock}, collections::VecDeque, rc::Rc};
+use std::{any, sync::{Arc, Mutex}, collections::VecDeque};
 
-use crate::{LOGGER, engine::Index};
+use lowlevel::collections::indexed_list::{SyncBufferedIndexedList, Index};
+
+use crate::LOGGER;
 use crate::engine::EngineHandle;
-use crate::engine::callback::CallbackList;
 
 pub enum TargetThread {
     Update,
@@ -21,7 +22,7 @@ pub(crate) struct ArgusEventHandler {
 }
 
 pub(crate) fn process_event_queue(event_queue: &Arc<Mutex<VecDeque<Arc<dyn ArgusEvent + Send + Sync>>>>,
-        listeners: &Arc<RwLock<CallbackList<ArgusEventHandler>>>) {
+        listeners: &Arc<SyncBufferedIndexedList<ArgusEventHandler>>) {
     // We copy the queue so that we're not holding onto the mutex while we
     // execute listener callbacks. Otherwise, dispatching an event from a
     // listener would result in deadlock since it wouldn't be able to
@@ -35,11 +36,9 @@ pub(crate) fn process_event_queue(event_queue: &Arc<Mutex<VecDeque<Arc<dyn Argus
         copy
     };
 
-    let listener_list = (*listeners).read().unwrap();
-
     while !queue_copy.is_empty() {
         let event = queue_copy.pop_front().unwrap();
-        for listener in &listener_list.list {
+        for listener in &*listeners.values() {
             if listener.value.event_type == event.type_id() {
                 (listener.value.callback)(event.as_ref());
             }
@@ -62,17 +61,17 @@ impl EngineHandle {
         };
 
         let listener = ArgusEventHandler { event_type: any::TypeId::of::<T>(), callback };
-        return listeners.write().unwrap().add(listener);
+        return listeners.add(self.get_next_callback_index(), listener);
     }
 
     pub fn unregister_event_handler(&mut self, id: Index) {
-        if !self.event_state.update_event_listeners.write().unwrap().try_remove(id) {
-            self.event_state.render_event_listeners.write().unwrap().remove(id);
+        if !self.event_state.update_event_listeners.try_remove(id) {
+            self.event_state.render_event_listeners.remove(id);
         }
     }
 
     pub(crate) fn deinit_event_handlers(&mut self) {
-        self.event_state.update_event_listeners.write().unwrap().list.clear();
-        self.event_state.render_event_listeners.write().unwrap().list.clear();
+        self.event_state.update_event_listeners.clear();
+        self.event_state.render_event_listeners.clear();
     }
 }
