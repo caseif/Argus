@@ -42,11 +42,14 @@
 #include <vector>
 
 namespace argus {
-    std::vector<std::pair<Shader, shader_handle_t>> _compile_shaders(const std::vector<Shader> &shaders) {
+    std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> _compile_shaders(
+            const std::vector<Shader> &shaders) {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 
+        ShaderReflectionInfo refl_info;
+
         if (shaders.size() == 0) {
-            return handles;
+            return std::make_pair(handles, refl_info);
         }
 
         auto to_compile = shaders;
@@ -58,8 +61,10 @@ namespace argus {
                 shader_sources.push_back(std::string(shader.get_source().begin(), shader.get_source().end()));
             }
 
-            to_compile = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
+            auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
                     glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
+            to_compile = std::move(comp_res.first);
+            refl_info = comp_res.second;
         }
 
         for (auto shader : to_compile) {
@@ -124,7 +129,7 @@ namespace argus {
             handles.push_back(std::make_pair(shader, shader_handle));
         }
 
-        return handles;
+        return std::make_pair(handles, refl_info);
     }
 
     template <typename K, typename V, typename K2, typename V2>
@@ -145,9 +150,6 @@ namespace argus {
 
         std::string shader_lang;
 
-        ShaderReflectionInfo vertex_reflection;
-        ShaderReflectionInfo fragment_reflection;
-
         std::vector<Resource*> shader_resources;
         std::vector<Shader> shaders;
         for (auto &shader_uid : shader_uids) {
@@ -158,25 +160,17 @@ namespace argus {
             shaders.push_back(shader);
         }
 
-        auto compiled_shaders = _compile_shaders(shaders);
+        auto comp_res = _compile_shaders(shaders);
+        auto compiled_shaders = comp_res.first;
+        auto refl_info = comp_res.second;
 
         if (compiled_shaders.size() > 0) {
             shader_lang = compiled_shaders.at(0).first.get_type();
         }
-        
-        for (auto compiled_shader : compiled_shaders) {
-            switch (compiled_shader.first.get_stage()) {
-                case ShaderStage::Vertex:
-                    vertex_reflection = compiled_shader.first.get_reflection_info();
-                    break;
-                case ShaderStage::Fragment:
-                    fragment_reflection = compiled_shader.first.get_reflection_info();
-                    break;
-            }
 
+        for (auto compiled_shader : compiled_shaders) {
             glAttachShader(program_handle, compiled_shader.second);
         }
-
 
         glBindFragDataLocation(program_handle, 0, SHADER_ATTRIB_OUT_FRAGDATA);
 
@@ -219,14 +213,14 @@ namespace argus {
             attr_color = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_COLOR);
             attr_texcoord = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_TEXCOORD);
         } else if (shader_lang == SHADER_TYPE_SPIR_V) {
-            /*attr_pos = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_POSITION, -1);
-            attr_norm = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
-            attr_color = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
-            attr_texcoord = find_or_default(vertex_reflection.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);*/
-            attr_pos = 0;
+            attr_pos = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_POSITION, -1);
+            attr_norm = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
+            attr_color = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
+            attr_texcoord = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);
+            /*attr_pos = 0;
             attr_norm = 1;
             attr_color = 2;
-            attr_texcoord = 3;
+            attr_texcoord = 3;*/
         } else {
             Logger::default_logger().fatal("Unrecognized shader type %s", shader_lang.c_str());
         }

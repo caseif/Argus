@@ -44,18 +44,13 @@ namespace argus {
          * \brief The source code for this shader.
          */
         const std::vector<uint8_t> src;
-        /**
-         * \brief The reflection information for this shader.
-         */
-        const ShaderReflectionInfo reflection;
 
         pimpl_Shader(const std::string &uid, const std::string &type, ShaderStage stage,
-            const std::vector<uint8_t> &src, const ShaderReflectionInfo &reflection):
+            const std::vector<uint8_t> &src):
                 uid(uid),
                 type(type),
                 stage(stage),
-                src(src),
-                reflection(reflection) {
+                src(src) {
         }
 
         pimpl_Shader(const pimpl_Shader&) = default;

@@ -141,7 +141,7 @@ namespace argus {
             /* .generalConstantMatrixVectorIndexing = */ 1,
         }};
 
-    std::vector<Shader> compile_glsl_to_spirv(
+    std::pair<std::vector<Shader>, ShaderReflectionInfo> compile_glsl_to_spirv(
         const std::vector<Shader> &glsl_shaders, glslang::EShClient client,
         glslang::EShTargetClientVersion client_version, glslang::EShTargetLanguageVersion spirv_version) {
         glslang::InitializeProcess();
@@ -200,9 +200,7 @@ namespace argus {
                     throw std::invalid_argument("Unsupported shader stage");
             }
 
-            ShaderReflectionInfo reflection{};
-
-            spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8, &reflection));
+            spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8));
         }
 
         for (auto shader_attr : comp_res.attributes) {
@@ -210,6 +208,27 @@ namespace argus {
                 shader_attr.first.c_str(), shader_attr.second);
         }
 
-        return spirv_shaders;
+        for (auto shader_output : comp_res.outputs) {
+            Logger::default_logger().debug("Found shader program output %s @ location %d",
+                shader_output.first.c_str(), shader_output.second);
+        }
+
+        for (auto shader_uniform : comp_res.uniforms) {
+            Logger::default_logger().debug("Found shader program uniform %s @ location %d",
+                shader_uniform.first.c_str(), shader_uniform.second);
+        }
+
+        for (auto shader_buffer : comp_res.buffers) {
+            Logger::default_logger().debug("Found shader program buffer %s @ location %d",
+                shader_buffer.first.c_str(), shader_buffer.second);
+        }
+
+        ShaderReflectionInfo refl;
+        refl.attribute_locations = comp_res.attributes;
+        refl.output_locations = comp_res.outputs;
+        refl.uniform_variable_locations = comp_res.uniforms;
+        refl.buffer_locations = comp_res.buffers;
+
+        return std::make_pair(spirv_shaders, refl);
     }
 }

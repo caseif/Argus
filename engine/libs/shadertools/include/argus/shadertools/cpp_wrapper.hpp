@@ -23,6 +23,11 @@ namespace argus {
 
     static void _copy_compat_map_to_cpp_map(std::map<std::string, uint32_t> &dest, unsigned char *source,
             size_t count) {
+        if (source == nullptr) {
+            // just leave the destination map empty
+            return;
+        }
+
         size_t off = sizeof(size_t); // first bytes are used to store total size of allocated block
         for (size_t i = 0; i < count; i++) {
             auto compat_struct = reinterpret_cast<SizedByteArrayWithIndex*>(source + off);
@@ -30,7 +35,7 @@ namespace argus {
             std::string name(reinterpret_cast<const char*>(compat_struct->data), compat_struct->size);
             dest.insert({ name, index });
 
-            off += sizeof(SizedByteArrayWithIndex) - 1 + compat_struct->size;
+            off += sizeof(SizedByteArrayWithIndex) + compat_struct->size;
         }
     }
 
@@ -76,6 +81,9 @@ namespace argus {
         }
 
         _copy_compat_map_to_cpp_map(final_set.attributes, res->attribs, res->attrib_count);
+        _copy_compat_map_to_cpp_map(final_set.outputs, res->outputs, res->output_count);
+        _copy_compat_map_to_cpp_map(final_set.uniforms, res->uniforms, res->uniform_count);
+        _copy_compat_map_to_cpp_map(final_set.buffers, res->buffers, res->buffer_count);
 
         free_compilation_result(res);
 

@@ -50,6 +50,7 @@ namespace argus {
         std::map<std::string, uint32_t> attribute_locations;
         std::map<std::string, uint32_t> output_locations;
         std::map<std::string, uint32_t> uniform_variable_locations;
+        std::map<std::string, uint32_t> buffer_locations;
     };
 
     /**
@@ -68,8 +69,7 @@ namespace argus {
              *        be run at.
              * \param src The source data of the Shader.
              */
-            Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src,
-                    const ShaderReflectionInfo *reflection = nullptr);
+            Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
 
             Shader(const Shader&) noexcept;
 
@@ -84,7 +84,5 @@ namespace argus {
             ShaderStage get_stage(void) const;
 
             const std::vector<uint8_t> &get_source(void) const;
-
-            const ShaderReflectionInfo &get_reflection_info(void) const;
     };
 }

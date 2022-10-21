@@ -30,14 +30,12 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
-    Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src,
-        const ShaderReflectionInfo *reflection):
+    Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src):
             pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
                 uid,
                 type,
                 stage,
-                src,
-                reflection != nullptr ? *reflection : ShaderReflectionInfo {}
+                src
             )) {
     }
 
@@ -87,9 +85,5 @@ namespace argus {
 
     const std::vector<uint8_t> &Shader::get_source(void) const {
         return pimpl->src;
-    }
-
-    const ShaderReflectionInfo &Shader::get_reflection_info(void) const {
-        return pimpl->reflection;
     }
 }

@@ -8,13 +8,13 @@
 extern "C" {
     struct SizedByteArray {
         size_t size;
-        const uint8_t data[1]; // must be >0 to ensure identical padding (and thus layout) as Rust struct
+        const uint8_t data[0];
     };
 
     struct SizedByteArrayWithIndex {
         size_t size;
         size_t index;
-        const uint8_t data[1]; // must be >0 to ensure identical padding as Rust struct
+        const uint8_t data[0];
     };
 
     struct InteropShaderCompilationResult {
@@ -24,8 +24,12 @@ extern "C" {
         const SizedByteArray *const *spirv_binaries;
         size_t attrib_count;
         unsigned char *attribs;
+        size_t output_count;
+        unsigned char *outputs;
         size_t uniform_count;
-        const SizedByteArrayWithIndex *const *uniform_names;
+        unsigned char *uniforms;
+        size_t buffer_count;
+        unsigned char *buffers;
     };
 
     InteropShaderCompilationResult *transpile_glsl(const glslang_stage_t *stages, const char *const *glsl_sources,

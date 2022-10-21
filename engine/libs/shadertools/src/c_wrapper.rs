@@ -14,14 +14,14 @@ use glslang::bindings::*;
 #[repr(C)]
 struct SizedByteArray {
     size: usize,
-    data: u8
+    data: [u8;0]
 }
 
 #[repr(C)]
 struct SizedByteArrayWithIndex {
     size: usize,
     index: usize,
-    data: u8
+    data: [u8;0]
 }
 
 #[repr(C)]
@@ -32,28 +32,32 @@ pub struct InteropShaderCompilationResult {
     spirv_binaries: *const *const SizedByteArray,
     attrib_count: usize,
     attribs: *const u8,
+    output_count: usize,
+    outputs: *const u8,
     uniform_count: usize,
-    uniforms: *const *const SizedByteArrayWithIndex,
+    uniforms: *const u8,
+    buffer_count: usize,
+    buffers: *const u8,
 }
 
 unsafe fn copy_rust_map_to_interop_map(map: &HashMap<String, u32>) -> *const u8 {
-    let attribs_buf_len = map.iter()
-        .map(|(name, _)| name.len() + size_of::<SizedByteArrayWithIndex>() - size_of::<u8>())
+    let buf_len = map.iter()
+        .map(|(name, _)| name.len() + size_of::<SizedByteArrayWithIndex>())
         .sum::<usize>() + size_of::<usize>();
 
-    let interop_map = alloc(match Layout::array::<*const u8>(attribs_buf_len) {
+    let interop_map = alloc(match Layout::array::<*const u8>(buf_len) {
         Ok(layout) => layout,
         Err(msg) => panic!("Failed to create interop map array layout: {}", msg)
     });
 
-    *(interop_map as *mut usize) = attribs_buf_len;
+    *(interop_map as *mut usize) = buf_len;
     let mut off = size_of::<usize>() as isize;
     for (el_name, el_index) in map {
         let el_struct = &mut *(interop_map.offset(off) as *mut SizedByteArrayWithIndex);
-        off += (el_name.len() + size_of::<SizedByteArrayWithIndex>() - size_of::<u8>()) as isize;
+        off += (el_name.len() + size_of::<SizedByteArrayWithIndex>()) as isize;
         el_struct.size = el_name.len();
         el_struct.index = (*el_index) as usize;
-        ptr::copy(el_name.as_ptr(), &mut el_struct.data, el_name.len());
+        ptr::copy(el_name.as_ptr(), el_struct.data.as_mut_ptr(), el_name.len());
     }
 
     return interop_map;
@@ -120,7 +124,7 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
         *out_stages.offset(i.try_into().unwrap()) = stage;
 
         (*bin_struct).size = bin_data_len;
-        ptr::copy(shader_code.as_ptr(), &mut (*bin_struct).data, bin_data_len);
+        ptr::copy(shader_code.as_ptr(), (*bin_struct).data.as_mut_ptr(), bin_data_len);
 
         *binaries.offset(i.try_into().unwrap()) = bin_struct;
     }
@@ -131,8 +135,14 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
     (*res).attrib_count = compile_res.inputs.len();
     (*res).attribs = copy_rust_map_to_interop_map(&compile_res.inputs);
 
-    (*res).uniform_count = 0;//compile_res.uniforms.len();
-    (*res).uniforms = null();
+    (*res).output_count = compile_res.outputs.len();
+    (*res).outputs = copy_rust_map_to_interop_map(&compile_res.outputs);
+
+    (*res).uniform_count = compile_res.uniforms.len();
+    (*res).uniforms = copy_rust_map_to_interop_map(&compile_res.uniforms);
+
+    (*res).buffer_count = compile_res.buffers.len();
+    (*res).buffers = copy_rust_map_to_interop_map(&compile_res.buffers);
 
     (*res).success = true;
 

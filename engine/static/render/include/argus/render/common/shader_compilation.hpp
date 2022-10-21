@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace argus {
-    std::vector<Shader> compile_glsl_to_spirv(
+    std::pair<std::vector<Shader>, ShaderReflectionInfo> compile_glsl_to_spirv(
             const std::vector<Shader> &glsl_sources,
             glslang::EShClient client,
             glslang::EShTargetClientVersion client_version,
