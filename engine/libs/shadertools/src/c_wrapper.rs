@@ -31,9 +31,43 @@ pub struct InteropShaderCompilationResult {
     stages: *const Stage,
     spirv_binaries: *const *const SizedByteArray,
     attrib_count: usize,
-    attribs: *const *const SizedByteArrayWithIndex,
+    attribs: *const u8,
     uniform_count: usize,
     uniforms: *const *const SizedByteArrayWithIndex,
+}
+
+unsafe fn copy_rust_map_to_interop_map(map: &HashMap<String, u32>) -> *const u8 {
+    let attribs_buf_len = map.iter()
+        .map(|(name, _)| name.len() + size_of::<SizedByteArrayWithIndex>() - size_of::<u8>())
+        .sum::<usize>() + size_of::<usize>();
+
+    let interop_map = alloc(match Layout::array::<*const u8>(attribs_buf_len) {
+        Ok(layout) => layout,
+        Err(msg) => panic!("Failed to create interop map array layout: {}", msg)
+    });
+
+    *(interop_map as *mut usize) = attribs_buf_len;
+    let mut off = size_of::<usize>() as isize;
+    for (el_name, el_index) in map {
+        let el_struct = &mut *(interop_map.offset(off) as *mut SizedByteArrayWithIndex);
+        off += (el_name.len() + size_of::<SizedByteArrayWithIndex>() - size_of::<u8>()) as isize;
+        el_struct.size = el_name.len();
+        el_struct.index = (*el_index) as usize;
+        ptr::copy(el_name.as_ptr(), &mut el_struct.data, el_name.len());
+    }
+
+    return interop_map;
+}
+
+unsafe fn dealloc_interop_map(map: *const u8) {
+    let block_ptr = map;
+    let alloc_size = *(block_ptr as *const usize);
+    dealloc(block_ptr as *mut u8,
+        match Layout::array::<*const u8>(alloc_size) {
+            Ok(layout) => layout,
+            Err(msg) => panic!("Failed to create SPIR-V attrib array layout: {}", msg)
+        }
+    );
 }
 
 #[no_mangle]
@@ -49,10 +83,11 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
         }
     }
 
-    let compile_res = super::shadertools::compile_glsl_to_spirv(&sources_map, client, client_version, spirv_version);
-    if compile_res.is_err() {
-        panic!("{}", compile_res.unwrap_err());
-    }
+    let compile_res = match super::shadertools::compile_glsl_to_spirv(&sources_map, client,
+            client_version, spirv_version) {
+        Ok(v) => v,
+        Err(e) => panic!("{}", e)
+    };
 
     let res = alloc(Layout::new::<InteropShaderCompilationResult>()) as *mut InteropShaderCompilationResult;
     (*res).shader_count = count;
@@ -70,8 +105,8 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
     for i in 0..count {
         let stage = *stages.offset(i.try_into().unwrap());
         let bin_ptr = binaries.offset(i.try_into().unwrap());
-        let shader_code = &compile_res.as_ref().unwrap()[&stage];
-        
+        let shader_code = &compile_res.bytecode[&stage];
+
         let bin_data_len = shader_code.len();
         let bin_struct_len = size_of::<usize>() + bin_data_len;
 
@@ -93,10 +128,10 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
     (*res).stages = out_stages;
     (*res).spirv_binaries = binaries as *const *const SizedByteArray;
 
-    //TODO: populate this later
-    (*res).attrib_count = 0;
-    (*res).attribs = null();
-    (*res).uniform_count = 0;
+    (*res).attrib_count = compile_res.inputs.len();
+    (*res).attribs = copy_rust_map_to_interop_map(&compile_res.inputs);
+
+    (*res).uniform_count = 0;//compile_res.uniforms.len();
     (*res).uniforms = null();
 
     (*res).success = true;
@@ -135,23 +170,8 @@ pub unsafe extern "C" fn free_compilation_result(result: *mut InteropShaderCompi
         });
     }
 
-    if (*result).attrib_count > 0 {
-        for i in 0..(*result).attrib_count {
-            let attrib_struct_ptr = *(*result).attribs.offset(i.try_into().unwrap()) as *mut SizedByteArrayWithIndex;
-            let attrib_name_len = (*attrib_struct_ptr).size;
-            dealloc(attrib_struct_ptr as *mut u8,
-                match Layout::array::<*const u8>(attrib_name_len + size_of_val(&(*attrib_struct_ptr).size)
-                        + size_of_val(&(*attrib_struct_ptr).index)) {
-                    Ok(layout) => layout,
-                    Err(msg) => panic!("Failed to create SPIR-V attrib array layout: {}", msg)
-                }
-            );
-        }
-
-        dealloc((*result).attribs as *mut u8, match Layout::array::<*const u8>((*result).attrib_count) {
-            Ok(layout) => layout,
-            Err(msg) => panic!("Failed to create SPIR-V attrib array layout: {}", msg)
-        });
+    if (*result).attribs != null() {
+        dealloc_interop_map((*result).attribs);
     }
 
     if (*result).uniform_count > 0 {

@@ -1,13 +1,12 @@
 #[path = "./glslang/mod.rs"] mod glslang;
 
-use std::borrow::BorrowMut;
 use std::convert::TryInto;
 use std::fmt::Write;
-use std::{collections::HashMap, io::BufWriter};
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::fmt;
 
-use glsl::{parser::*, syntax::*, transpiler::*, visitor::*};
+use glsl::{parser::*, syntax::*, visitor::*};
 use glslang::{*, bindings::*};
 
 const LAYOUT_ID_LOCATION: &'static str = "location";
@@ -15,8 +14,10 @@ const LAYOUT_ID_LOCATION: &'static str = "location";
 pub struct ProcessedGlslShader {
     stage: Stage,
     source: String,
-    attributes: HashMap<String, u32>,
-    uniforms: HashMap<String, u32>
+    inputs: HashMap<String, u32>,
+    outputs: HashMap<String, u32>,
+    uniforms: HashMap<String, u32>,
+    buffers: HashMap<String, u32>
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -79,16 +80,25 @@ impl Write for StringWriter {
     }
 }
 
+#[derive(Debug)]
+pub struct CompiledShaderSet {
+    pub bytecode: HashMap<Stage, Vec<u8>>,
+    pub inputs: HashMap<String, u32>,
+    pub outputs: HashMap<String, u32>,
+    pub uniforms: HashMap<String, u32>,
+    pub buffers: HashMap<String, u32>
+}
+
 pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Client, client_version: TargetClientVersion,
-        spirv_version: TargetLanguageVersion) -> Result<HashMap<Stage, Vec<u8>>, GlslCompileError> {
+        spirv_version: TargetLanguageVersion) -> Result<CompiledShaderSet, GlslCompileError> {
     let mut res = HashMap::<Stage, Vec<u8>>::with_capacity(glsl_sources.len());
 
-    let processed_glsl = process_glsl(glsl_sources);
-    if processed_glsl.is_err() {
-        return Err(processed_glsl.err().unwrap());
-    }
+    let processed_glsl = match process_glsl(glsl_sources) {
+        Ok(v) => v,
+        Err(e) => { return Err(e); }
+    };
 
-    for glsl in processed_glsl.unwrap() {
+    for glsl in &processed_glsl {
         let mut program = Program::create();
 
         let src_c_str = CString::new(glsl.source.as_bytes()).unwrap();
@@ -143,7 +153,7 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
                 message: "Failed to link shader program".to_owned()
             });
         }
-        
+
         let spirv_options = SpvOptions {
             generate_debug_info: false, // this absolutely must not be true or it'll cause glSpecializeShader to fail
             strip_debug_info: false,
@@ -157,7 +167,31 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
         res.insert(glsl.stage, program.spirv_get());
     }
 
-    return Result::Ok(res);
+    let program_attrs = processed_glsl.iter()
+        .find(|glsl| glsl.stage == Stage::Vertex)
+        .map(|glsl| glsl.inputs.clone())
+        .unwrap_or(HashMap::new());
+
+    let program_outputs = processed_glsl.iter()
+        .find(|glsl| glsl.stage == Stage::Fragment)
+        .map(|glsl| glsl.outputs.clone())
+        .unwrap_or(HashMap::new());
+
+    let program_uniforms = processed_glsl.iter()
+        .map(|glsl| &glsl.uniforms)
+        .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
+
+    let program_buffers = processed_glsl.iter()
+        .map(|glsl| &glsl.uniforms)
+        .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
+
+    return Result::Ok(CompiledShaderSet {
+        bytecode: res,
+        inputs: program_attrs,
+        outputs: program_outputs,
+        uniforms: program_uniforms,
+        buffers: program_buffers
+    });
 }
 
 fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>)
@@ -168,7 +202,7 @@ fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>)
     }
 
     let mut occupied_locs = Vec::<bool>::new();
-    
+
     for decl in existing_decls {
         assert!(decl.size.is_some());
 
@@ -189,7 +223,7 @@ fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>)
     assert!(occupied_locs.len() <= u32::MAX as usize);
 
     let mut free_ranges = Vec::<(u32, u32)>::new(); // (pos, size)
-    
+
     let mut range_start = 0;
     for i in 0..occupied_locs.len() {
         let occupied = occupied_locs[i];
@@ -203,7 +237,7 @@ fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>)
 
     return (free_ranges, occupied_locs.len().try_into().unwrap());
 }
-    
+
 fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32)) -> u32 {
     let free_ranges = &mut free_range_info.0;
     let max_occupied_plus_one = &mut free_range_info.1;
@@ -212,7 +246,7 @@ fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32
         let range = free_ranges[i];
         if range.1 >= size {
             let loc = range.0;
-            
+
             let new_size = range.1 - size;
             if new_size > 0 {
                 free_ranges[i] = (range.0 + size, new_size);
@@ -238,7 +272,7 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
     sorted_sources.sort_by_key(|entry| entry.0 as u32);
 
     let mut struct_sizes = HashMap::<Stage, HashMap<String, Option<u32>>>::new();
-    
+
     let mut pending_asts = HashMap::<Stage, TranslationUnit>::new();
 
     let mut inputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
@@ -333,9 +367,6 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             }
 
             let mut avail_input_locs = get_free_loc_ranges(occupied_input_locs);
-            for range in &avail_input_locs.0 {
-                println!("range: {}, {}", range.0, range.1);
-            }
 
             for in_decl in inputs.get_mut(&stage).unwrap().values_mut() {
                 // skip inputs that already have assigned locations
@@ -346,7 +377,6 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
                 // otherwise, just pick the next available location
                 assert!(in_decl.size.is_some());
                 in_decl.location = Some(get_next_free_location(in_decl.size.unwrap(), &mut avail_input_locs));
-                println!("{}: {:?}", in_decl.name, in_decl.location);
             }
         }
 
@@ -413,8 +443,22 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
         processed_sources.push(ProcessedGlslShader {
             stage: stage.to_owned(),
             source: processed_src,
-            attributes: HashMap::new(),
-            uniforms: HashMap::new()
+            inputs: all_assigned_inputs[stage].iter()
+                .filter(|(k, v)| v.location.is_some())
+                .map(|(k, v)| (k.clone(), v.location.unwrap()))
+                .collect(),
+            outputs: all_assigned_outputs[stage].iter()
+                .filter(|(k, v)| v.location.is_some())
+                .map(|(k, v)| (k.clone(), v.location.unwrap()))
+                .collect(),
+            uniforms: all_assigned_uniforms[stage].iter()
+                .filter(|(k, v)| v.location.is_some())
+                .map(|(k, v)| (k.clone(), v.location.unwrap()))
+                .collect(),
+            buffers: all_assigned_buffers[stage].iter()
+                .filter(|(k, v)| v.location.is_some())
+                .map(|(k, v)| (k.clone(), v.location.unwrap()))
+                .collect()
         });
     }
 
@@ -547,7 +591,7 @@ impl Visitor for StructDefVisitor {
 
             total_size += base_size * arr_mult;
         }
-        
+
         self.struct_sizes.insert(struct_spec.name.as_ref().unwrap().0.to_owned(), Some(total_size));
 
         return Visit::Parent;
@@ -581,7 +625,7 @@ fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String,
     let mut location: Option<u32> = None;
 
     let mut storage: Option::<StorageQualifier> = None;
-    
+
     for qualifier in &qualifiers.as_ref().unwrap().qualifiers {
         match qualifier {
             TypeQualifierSpec::Storage(StorageQualifier::Attribute) => {

@@ -13,7 +13,28 @@
 #include <cstring>
 
 namespace argus {
-    std::unordered_map<EShLanguage, std::vector<uint8_t>> process_glsl(
+    struct CompiledShaderSet {
+        std::unordered_map<EShLanguage, std::vector<uint8_t>> spirv_shaders;
+        std::map<std::string, uint32_t> attributes;
+        std::map<std::string, uint32_t> outputs;
+        std::map<std::string, uint32_t> uniforms;
+        std::map<std::string, uint32_t> buffers;
+    };
+
+    static void _copy_compat_map_to_cpp_map(std::map<std::string, uint32_t> &dest, unsigned char *source,
+            size_t count) {
+        size_t off = sizeof(size_t); // first bytes are used to store total size of allocated block
+        for (size_t i = 0; i < count; i++) {
+            auto compat_struct = reinterpret_cast<SizedByteArrayWithIndex*>(source + off);
+            auto index = compat_struct->index;
+            std::string name(reinterpret_cast<const char*>(compat_struct->data), compat_struct->size);
+            dest.insert({ name, index });
+
+            off += sizeof(SizedByteArrayWithIndex) - 1 + compat_struct->size;
+        }
+    }
+
+    CompiledShaderSet process_glsl(
             std::map<EShLanguage, std::string> glsl_sources,
             glslang::EShClient client, glslang::EShTargetClientVersion client_version,
             glslang::EShTargetLanguageVersion spirv_version) {
@@ -41,7 +62,7 @@ namespace argus {
 
         delete[] glsl_sources_c;
 
-        std::unordered_map<EShLanguage, std::vector<uint8_t>> spirv_shaders;
+        CompiledShaderSet final_set;
 
         for (size_t i = 0; i < res->shader_count; i++) {
             auto stage = res->stages[i];
@@ -51,11 +72,13 @@ namespace argus {
             shader_vec.resize(len);
             memcpy(shader_vec.data(), reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(data)), len);
 
-            spirv_shaders.insert({ static_cast<EShLanguage>(stage), shader_vec });
+            final_set.spirv_shaders.insert({ static_cast<EShLanguage>(stage), shader_vec });
         }
+
+        _copy_compat_map_to_cpp_map(final_set.attributes, res->attribs, res->attrib_count);
 
         free_compilation_result(res);
 
-        return spirv_shaders;
+        return final_set;
     }
 }

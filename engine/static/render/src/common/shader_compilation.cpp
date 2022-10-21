@@ -181,9 +181,9 @@ namespace argus {
 
         std::vector<Shader> spirv_shaders;
 
-        auto spirv_shaders_map = process_glsl(shaders_map, glslang::EShClientOpenGL, client_version, spirv_version);
+        auto comp_res = process_glsl(shaders_map, glslang::EShClientOpenGL, client_version, spirv_version);
 
-        for (auto spirv_shader_kv : spirv_shaders_map) {
+        for (auto spirv_shader_kv : comp_res.spirv_shaders) {
             auto lang = spirv_shader_kv.first;
             auto uid = shader_uids[lang];
             auto spirv_u8 = spirv_shader_kv.second;
@@ -203,6 +203,11 @@ namespace argus {
             ShaderReflectionInfo reflection{};
 
             spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8, &reflection));
+        }
+
+        for (auto shader_attr : comp_res.attributes) {
+            Logger::default_logger().debug("Found shader program attribute %s @ location %d",
+                shader_attr.first.c_str(), shader_attr.second);
         }
 
         return spirv_shaders;
