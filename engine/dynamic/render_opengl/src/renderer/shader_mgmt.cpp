@@ -67,7 +67,7 @@ namespace argus {
             refl_info = comp_res.second;
         }
 
-        for (auto shader : to_compile) {
+        for (auto &shader : to_compile) {
             auto stage = shader.get_stage();
             auto &src = shader.get_source();
 

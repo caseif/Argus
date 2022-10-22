@@ -79,8 +79,6 @@ namespace argus {
         buffer_handle_t frame_vbo;
         array_handle_t frame_vao;
         program_handle_t frame_program;
-        shader_handle_t frame_vert_shader;
-        shader_handle_t frame_frag_shader;
 
         RendererState(GLESRenderer &renderer);
 

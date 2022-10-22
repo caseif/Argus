@@ -1,8 +1,8 @@
-#version 420 core
+#version 410 core
 
-layout(location=0) in vec2 pass_TexCoord;
+in vec2 pass_TexCoord;
 
-layout(location=0) out vec4 out_Color;
+out vec4 out_Color;
 
 uniform sampler2D screenTex;
 

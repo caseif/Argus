@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/render/common/material.hpp"
+#include "argus/render/common/shader.hpp"
 
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/state/renderer_state.hpp"
@@ -31,10 +32,12 @@ namespace argus {
     class Resource;
     class Shader;
 
-    shader_handle_t compile_shader(const Shader &shader);
+    std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> compile_shaders(
+        const std::vector<Shader> &shaders);
 
-    // it is expected that the shaders will already be attached to the program when this function is called
-    LinkedProgram link_program(program_handle_t program);
+    LinkedProgram link_program(std::initializer_list<std::string> shader_uids);
+
+    LinkedProgram link_program(std::vector<std::string> shader_uids);
 
     void build_shaders(RendererState &state, const Resource &material_res);
 

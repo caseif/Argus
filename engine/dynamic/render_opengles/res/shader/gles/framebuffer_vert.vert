@@ -1,4 +1,4 @@
-#version 300 es
+#version 410 core
 
 in vec2 in_Position;
 in vec2 in_TexCoord;

@@ -142,22 +142,15 @@ namespace argus {
     }
 
     void setup_framebuffer(RendererState &state) {
-        auto &fb_vert_shader_res = ResourceManager::instance().get_resource(FB_SHADER_VERT_PATH);
-        auto &fb_frag_shader_res = ResourceManager::instance().get_resource(FB_SHADER_FRAG_PATH);
+        auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
 
-        state.frame_vert_shader = compile_shader(fb_vert_shader_res);
-        state.frame_frag_shader = compile_shader(fb_frag_shader_res);
+        state.frame_program = frame_program.handle;
 
-        state.frame_program = glCreateProgram();
-
-        glAttachShader(state.frame_program, state.frame_vert_shader);
-        glAttachShader(state.frame_program, state.frame_frag_shader);
-
-        link_program(state.frame_program);
-        auto frame_program = link_program(state.frame_program);
-
-        if (!frame_program.attr_position_loc.has_value() || !frame_program.attr_texcoord_loc.has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required attributes");
+        if (!frame_program.attr_position_loc.has_value()) {
+            Logger::default_logger().fatal("Frame program is missing required position attribute");
+        }
+        if (!frame_program.attr_texcoord_loc.has_value()) {
+            Logger::default_logger().fatal("Frame program is missing required texcoord attribute");
         }
 
         float frame_quad_vertex_data[] = {

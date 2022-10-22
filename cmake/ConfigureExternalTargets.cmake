@@ -7,6 +7,7 @@ set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
 set(JSON_SOURCE_DIR "${EXT_LIBS_DIR}/json")
 set(ARP_SOURCE_DIR "${EXT_LIBS_DIR}/libarp")
 set(GLSLANG_SOURCE_DIR "${EXT_LIBS_DIR}/glslang")
+set(SPIRV_CROSS_SOURCE_DIR "${EXT_LIBS_DIR}/SPIRV-Cross")
 
 # disable extra GLFW build steps
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -27,6 +28,10 @@ set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv" CAC
 
 # configure glslang
 set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+
+# configure SPIRV-Cross
+set(SPIRV_CROSS_FORCE_PIC ON CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
 
 # include dir for generated headers which must be copied (configs)
 set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")
@@ -60,11 +65,15 @@ set(ARP_INCLUDE_DIR "${ARP_SOURCE_DIR}/include")
 set(GLSLANG_LIBRARY "glslang;SPIRV")
 set(GLSLANG_INCLUDE_DIR "${GLSLANG_SOURCE_DIR}")
 
+set(SPIRV_CROSS_LIBRARY "spirv-cross-cpp")
+set(SPIRV_CROSS_INCLUDE_DIR "${SPIRV_CROSS_SOURCE_DIR}")
+
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
+add_subdirectory("${SPIRV_CROSS_SOURCE_DIR}")
 
 # we want to build this lib statically
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)

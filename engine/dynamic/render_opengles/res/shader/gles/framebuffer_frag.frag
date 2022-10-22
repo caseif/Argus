@@ -1,6 +1,4 @@
-#version 300 es
-
-precision mediump float;
+#version 410 core
 
 in vec2 pass_TexCoord;
 
