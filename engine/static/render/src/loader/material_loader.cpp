@@ -61,11 +61,6 @@
 #define SHADER_TESS_CTRL "tess_control"
 #define SHADER_TESS_EVAL "tess_evaluation"
 
-#define ATTR_POS "position"
-#define ATTR_NORM "normal"
-#define ATTR_COLOR "color"
-#define ATTR_TEXCOORD "texcoord"
-
 namespace argus {
     MaterialLoader::MaterialLoader():
             ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
