@@ -50,9 +50,6 @@
 #define KEY_TEXTURE "texture"
 #define KEY_SHADERS "shaders"
 
-#define KEY_SHADERS_API "api"
-#define KEY_SHADERS_STAGES "stages"
-
 #define KEY_SHADER_STAGE "stage"
 #define KEY_SHADER_UID "uid"
 
@@ -80,8 +77,6 @@ namespace argus {
         UNUSED(size);
         Logger::default_logger().debug("Loading material %s", proto.uid.c_str());
         try {
-            std::string expected_api = get_active_render_backend();
-
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 
             std::string tex_uid = json_root.at(KEY_TEXTURE);
@@ -89,37 +84,29 @@ namespace argus {
 
             std::map<ShaderStage, std::string> shader_map;
             std::vector<std::string> shader_uids;
-            for (auto shader_group_obj : shaders_arr) {
-                std::string shader_api = shader_group_obj.at(KEY_SHADERS_API);
-                if (shader_api != expected_api) {
-                    continue;
+            for (auto shader_obj : shaders_arr) {
+                std::string shader_type = shader_obj.at(KEY_SHADER_STAGE);
+                std::string shader_uid = shader_obj.at(KEY_SHADER_UID);
+
+                ShaderStage stage;
+                if (shader_type == SHADER_VERT) {
+                    stage = ShaderStage::Vertex;
+                } else if (shader_type == SHADER_FRAG) {
+                    stage = ShaderStage::Fragment;
+                } else {
+                    // we don't support any other shader stages right now
+                    Logger::default_logger().warn("Invalid shader stage in material %s", proto.uid.c_str());
+                    return NULL;
                 }
 
-                nlohmann::json::array_t stages = shader_group_obj.at(KEY_SHADERS_STAGES);
-                for (auto shader_obj : stages) {
-                    std::string shader_type = shader_obj.at(KEY_SHADER_STAGE);
-                    std::string shader_uid = shader_obj.at(KEY_SHADER_UID);
-
-                    ShaderStage stage;
-                    if (shader_type == SHADER_VERT) {
-                        stage = ShaderStage::Vertex;
-                    } else if (shader_type == SHADER_FRAG) {
-                        stage = ShaderStage::Fragment;
-                    } else {
-                        // we don't support any other shader stages right now
-                        Logger::default_logger().warn("Invalid shader stage in material %s", proto.uid.c_str());
-                        return NULL;
-                    }
-
-                    if (shader_map.find(stage) != shader_map.end()) {
-                        // only one shader can be specified per stage
-                        Logger::default_logger().warn("Duplicate shader stage in material %s", proto.uid.c_str());
-                        return NULL;
-                    }
-
-                    shader_map[stage] = shader_uid;
-                    shader_uids.push_back(shader_uid);
+                if (shader_map.find(stage) != shader_map.end()) {
+                    // only one shader can be specified per stage
+                    Logger::default_logger().warn("Duplicate shader stage in material %s", proto.uid.c_str());
+                    return NULL;
                 }
+
+                shader_map[stage] = shader_uid;
+                shader_uids.push_back(shader_uid);
             }
 
             std::vector<std::string> dep_uids;
