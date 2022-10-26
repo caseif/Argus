@@ -21,6 +21,7 @@
 #include "argus/lowlevel/refcountable.hpp"
 
 #include "argus/resman/resource.hpp"
+#include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
@@ -45,25 +46,6 @@ namespace argus {
     struct ProcessedRenderObject;
     struct RenderBucket;
 
-    struct LinkedProgram {
-        program_handle_t handle;
-        std::optional<attribute_location_t> attr_position_loc;
-        std::optional<attribute_location_t> attr_normal_loc;
-        std::optional<attribute_location_t> attr_color_loc;
-        std::optional<attribute_location_t> attr_texcoord_loc;
-        uniform_location_t view_matrix_uniform_loc;
-
-        LinkedProgram(program_handle_t handle, attribute_location_t attr_pos, attribute_location_t attr_norm,
-            attribute_location_t attr_color, attribute_location_t attr_tc, uniform_location_t unif_vm):
-            handle(handle),
-            attr_position_loc(attr_pos != -1 ? std::optional(attr_pos) : std::nullopt),
-            attr_normal_loc(attr_norm != -1 ? std::optional(attr_norm) : std::nullopt),
-            attr_color_loc(attr_color != -1 ? std::optional(attr_color) : std::nullopt),
-            attr_texcoord_loc(attr_tc != -1 ? std::optional(attr_tc) : std::nullopt),
-            view_matrix_uniform_loc(unif_vm) {
-        }
-    };
-
     struct RendererState {
         GLESRenderer &renderer;
 
@@ -83,7 +65,7 @@ namespace argus {
         RendererState(GLESRenderer &renderer);
 
         ~RendererState(void);
-        
+
         SceneState &get_scene_state(Scene &scene, bool create = false);
     };
 }

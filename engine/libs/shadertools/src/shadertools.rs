@@ -182,7 +182,7 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
         .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
 
     let program_buffers = processed_glsl.iter()
-        .map(|glsl| &glsl.uniforms)
+        .map(|glsl| &glsl.buffers)
         .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
 
     return Result::Ok(CompiledShaderSet {

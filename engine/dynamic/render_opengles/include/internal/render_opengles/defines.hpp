@@ -33,5 +33,8 @@
 #define SHADER_ATTRIB_IN_COLOR_LEN 4
 #define SHADER_ATTRIB_IN_TEXCOORD_LEN 2
 
+#define FB_SHADER_ATTRIB_IN_POSITION_LOC 0
+#define FB_SHADER_ATTRIB_IN_TEXCOORD_LOC 1
+
 #define FB_SHADER_VERT_PATH "argus:shader/gles/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/gles/framebuffer_frag"

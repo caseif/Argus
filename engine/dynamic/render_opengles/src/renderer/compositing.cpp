@@ -28,6 +28,7 @@
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/types.hpp"
@@ -98,10 +99,10 @@ namespace argus {
                 glUseProgram(program_info.handle);
                 last_program = program_info.handle;
 
-                auto view_mat_loc = program_info.view_matrix_uniform_loc;
-                if (view_mat_loc != -1) {
-                    glUniformMatrix4fv(view_mat_loc, 1, GL_TRUE, scene_state.view_matrix.data);
-                }
+                auto view_mat = scene_state.view_matrix;
+                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat] (auto vm_loc) {
+                    glUniformMatrix4fv(vm_loc, 1, GL_TRUE, view_mat.data);
+                });
             }
 
             if (tex_handle != last_texture) {
@@ -146,10 +147,13 @@ namespace argus {
 
         state.frame_program = frame_program.handle;
 
-        if (!frame_program.attr_position_loc.has_value()) {
+        auto attr_position_loc = frame_program.get_attr_loc(SHADER_ATTRIB_IN_POSITION);
+        auto attr_texcoord_loc = frame_program.get_attr_loc(SHADER_ATTRIB_IN_TEXCOORD);
+
+        if (!attr_position_loc.has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
         }
-        if (!frame_program.attr_texcoord_loc.has_value()) {
+        if (!attr_texcoord_loc.has_value()) {
             Logger::default_logger().fatal("Frame program is missing required texcoord attribute");
         }
 
@@ -171,8 +175,8 @@ namespace argus {
         glBufferData(GL_ARRAY_BUFFER, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(4, SHADER_ATTRIB_IN_POSITION_LEN, frame_program.attr_position_loc.value(), &attr_offset);
-        set_attrib_pointer(4, SHADER_ATTRIB_IN_TEXCOORD_LEN, frame_program.attr_texcoord_loc.value(), &attr_offset);
+        set_attrib_pointer(4, SHADER_ATTRIB_IN_POSITION_LEN, FB_SHADER_ATTRIB_IN_POSITION_LOC, &attr_offset);
+        set_attrib_pointer(4, SHADER_ATTRIB_IN_TEXCOORD_LEN, FB_SHADER_ATTRIB_IN_TEXCOORD_LOC, &attr_offset);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
