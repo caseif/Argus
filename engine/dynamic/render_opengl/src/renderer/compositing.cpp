@@ -141,6 +141,7 @@ namespace argus {
 
                 auto view_mat_loc = program_info.get_uniform_loc(SHADER_UNIFORM_VIEW_MATRIX);
                 if (view_mat_loc.has_value()) {
+                    Logger::default_logger().debug("view_mat_loc: %d", view_mat_loc.value());
                     glUniformMatrix4fv(view_mat_loc.value(), 1, GL_TRUE, scene_state.view_matrix.data);
                 }
             }

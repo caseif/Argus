@@ -36,6 +36,7 @@
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
+#include "spirv_glsl.hpp"
 
 #include <map>
 #include <string>
@@ -48,30 +49,23 @@ namespace argus {
             const std::vector<Shader> &shaders) {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 
-        ShaderReflectionInfo refl_info;
-
         if (shaders.size() == 0) {
-            return std::make_pair(handles, refl_info);
+            return std::make_pair(handles, ShaderReflectionInfo {});
         }
 
-        auto to_compile = shaders;
-
-        auto type = shaders.at(0).get_type();
-        if (type == SHADER_TYPE_GLSL && AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv) {
-            std::vector<std::string> shader_sources;
-            for (auto &shader : shaders) {
-                shader_sources.push_back(std::string(shader.get_source().begin(), shader.get_source().end()));
-            }
-
-            auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
-                    glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
-            to_compile = std::move(comp_res.first);
-            refl_info = comp_res.second;
+        std::vector<std::string> shader_sources;
+        for (auto &shader : shaders) {
+            shader_sources.push_back(std::string(shader.get_source().begin(), shader.get_source().end()));
         }
 
-        for (auto &shader : to_compile) {
+        auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
+                glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
+        auto spirv_shaders = std::move(comp_res.first);
+        auto refl_info = comp_res.second;
+
+        for (auto &shader : spirv_shaders) {
             auto stage = shader.get_stage();
-            auto &src = shader.get_source();
+            auto spirv_src = shader.get_source();
 
             GLuint gl_shader_stage;
             switch (stage) {
@@ -91,19 +85,31 @@ namespace argus {
                 Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
             }
 
-            char *src_c = new char[src.size()];
-            memcpy(src_c, src.data(), src.size());
-            //const char *src_c = reinterpret_cast<const char*>(src.data());
-            const int src_len = int(src.size());
+            if (AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv) {
+                char *spirv_src_c = new char[spirv_src.size()];
+                memcpy(spirv_src_c, spirv_src.data(), spirv_src.size());
+                const int spirv_src_len = int(spirv_src.size());
 
-            if (shader.get_type() == SHADER_TYPE_SPIR_V) {
-                glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, src_c, src_len);
+                glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, spirv_src_c, spirv_src_len);
                 glSpecializeShaderARB(shader_handle, "main", 0, nullptr, nullptr);
-            } else if (shader.get_type() == SHADER_TYPE_GLSL) {
-                glShaderSource(shader_handle, 1, &src_c, &src_len);
-                glCompileShader(shader_handle);
             } else {
-                Logger::default_logger().fatal("Unknown shader type %s", shader.get_type().c_str());
+                spirv_cross::CompilerGLSL glsl_compiler(reinterpret_cast<const uint32_t*>(spirv_src.data()),
+                    spirv_src.size() / 4);
+                spirv_cross::CompilerGLSL::Options options;
+                options.version = 430; //TODO: may want to reduce this requirement and just do runtime uniform reflection
+                options.es = false;
+                glsl_compiler.set_common_options(options);
+
+                auto glsl_src = glsl_compiler.compile();
+
+                char *glsl_src_c = new char[glsl_src.size()];
+                memcpy(glsl_src_c, glsl_src.data(), glsl_src.size());
+                const int glsl_src_len = int(glsl_src.size());
+
+                Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);
+
+                glShaderSource(shader_handle, 1, &glsl_src_c, &glsl_src_len);
+                glCompileShader(shader_handle);
             }
 
             int res;
