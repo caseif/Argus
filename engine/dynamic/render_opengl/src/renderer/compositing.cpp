@@ -61,8 +61,6 @@ namespace argus {
             }
         }
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
-
         if (scene_state.front_frame_tex == 0 || resolution.dirty) {
             if (scene_state.front_frame_tex != 0) {
                 glDeleteTextures(1, &scene_state.front_frame_tex);
@@ -87,19 +85,18 @@ namespace argus {
 
                 glNamedFramebufferTexture(scene_state.front_fb, GL_COLOR_ATTACHMENT0, scene_state.front_frame_tex, 0);
                 glNamedFramebufferTexture(scene_state.back_fb, GL_COLOR_ATTACHMENT0, scene_state.back_frame_tex, 0);
+
+                auto front_fb_status = glCheckNamedFramebufferStatus(scene_state.front_fb, GL_FRAMEBUFFER);
+                if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
+                }
+
+                auto back_fb_status = glCheckNamedFramebufferStatus(scene_state.back_fb, GL_FRAMEBUFFER);
+                if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
+                }
             } else {
-                glGenTextures(1, &scene_state.front_frame_tex);
-                glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
-
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.front_frame_tex, 0);
-
-                glBindTexture(GL_TEXTURE_2D, 0);
-
+                // back framebuffer texture
                 glGenTextures(1, &scene_state.back_frame_tex);
                 glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
 
@@ -108,16 +105,38 @@ namespace argus {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.back_fb);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.back_frame_tex, 0);
 
                 glBindTexture(GL_TEXTURE_2D, 0);
-            }
 
-            auto fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
-                Logger::default_logger().fatal("Framebuffer is incomplete (error %d)", fb_status);
+                auto back_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
+                }
+
+                // front framebuffer texture
+                glGenTextures(1, &scene_state.front_frame_tex);
+                glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.front_frame_tex, 0);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                auto front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
+                }
             }
         }
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
 
         // clear framebuffer
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -141,7 +160,6 @@ namespace argus {
 
                 auto view_mat_loc = program_info.get_uniform_loc(SHADER_UNIFORM_VIEW_MATRIX);
                 if (view_mat_loc.has_value()) {
-                    Logger::default_logger().debug("view_mat_loc: %d", view_mat_loc.value());
                     glUniformMatrix4fv(view_mat_loc.value(), 1, GL_TRUE, scene_state.view_matrix.data);
                 }
             }
@@ -185,7 +203,6 @@ namespace argus {
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
     }
 
     void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {

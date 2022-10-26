@@ -51,34 +51,56 @@ namespace argus {
         auto &state = scene_state.parent_state;
 
         // framebuffer setup
-        if (scene_state.framebuffer == 0) {
-            glGenFramebuffers(1, &scene_state.framebuffer);
+        if (scene_state.front_fb == 0) {
+            glGenFramebuffers(1, &scene_state.front_fb);
+            glGenFramebuffers(1, &scene_state.back_fb);
         }
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.framebuffer);
-
-        if (scene_state.frame_texture == 0 || resolution.dirty) {
-            if (scene_state.frame_texture != 0) {
-                glDeleteTextures(1, &scene_state.frame_texture);
+        if (scene_state.front_frame_tex == 0 || resolution.dirty) {
+            if (scene_state.front_frame_tex != 0) {
+                glDeleteTextures(1, &scene_state.front_frame_tex);
             }
 
-            glGenTextures(1, &scene_state.frame_texture);
-            glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
+            // back framebuffer texture
+            glGenTextures(1, &scene_state.back_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.frame_texture, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.back_fb);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.back_frame_tex, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            auto fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
-                Logger::default_logger().fatal("Framebuffer is incomplete (error %d)", fb_status);
+            auto back_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
+            }
+
+            // front framebuffer texture
+            glGenTextures(1, &scene_state.front_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.front_frame_tex, 0);
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            auto front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
             }
         }
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
 
         // clear framebuffer
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -117,10 +139,28 @@ namespace argus {
             glBindVertexArray(0);
         }
 
+        for (auto &postfx : scene_state.scene.get_postprocessing_shaders()) {
+            auto postfx_program = scene_state.postfx_programs.find(postfx)->second;
+
+            std::swap(scene_state.front_fb, scene_state.back_fb);
+            std::swap(scene_state.front_frame_tex, scene_state.back_frame_tex);
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+
+            glClearColor(0.0, 0.0, 0.0, 0.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(state.frame_vao);
+            glUseProgram(postfx_program.handle);
+            set_per_frame_global_uniforms(postfx_program);
+            glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
         glBindTexture(GL_TEXTURE_2D, 0);
-
         glUseProgram(0);
-
+        glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
@@ -133,7 +173,7 @@ namespace argus {
 
         glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program);
-        glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
+        glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

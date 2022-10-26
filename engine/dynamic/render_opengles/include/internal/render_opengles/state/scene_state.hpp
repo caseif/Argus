@@ -20,6 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/render/util/linked_program.hpp"
 #include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengles/types.hpp"
@@ -45,10 +46,15 @@ namespace argus {
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
         std::map<std::string, RenderBucket*> render_buckets;
 
+        std::map<std::string, LinkedProgram> postfx_programs;
+
         Matrix4 view_matrix;
 
-        buffer_handle_t framebuffer;
-        texture_handle_t frame_texture;
+        buffer_handle_t front_fb;
+        buffer_handle_t back_fb;
+
+        texture_handle_t front_frame_tex;
+        texture_handle_t back_frame_tex;
 
         SceneState(RendererState &parent_state, Scene &scene);
 

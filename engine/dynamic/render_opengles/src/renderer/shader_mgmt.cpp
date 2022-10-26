@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/time.hpp"
 
 #include "argus/shadertools.hpp"
 
@@ -238,5 +239,17 @@ namespace argus {
 
     void deinit_program(program_handle_t program) {
         glDeleteProgram(program);
+    }
+
+    void set_per_frame_global_uniforms(LinkedProgram &program) {
+        program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [] (auto time_loc) {
+            glUniform1f(time_loc,
+                static_cast<float>(
+                    static_cast<double>(
+                        std::chrono::time_point_cast<std::chrono::microseconds>(now()).time_since_epoch().count()
+                    ) / 1000.0
+                )
+            );
+        });
     }
 }
