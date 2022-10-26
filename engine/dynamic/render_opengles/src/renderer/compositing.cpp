@@ -147,8 +147,8 @@ namespace argus {
 
         state.frame_program = frame_program.handle;
 
-        auto attr_position_loc = frame_program.get_attr_loc(SHADER_ATTRIB_IN_POSITION);
-        auto attr_texcoord_loc = frame_program.get_attr_loc(SHADER_ATTRIB_IN_TEXCOORD);
+        auto attr_position_loc = frame_program.get_attr_loc(SHADER_ATTRIB_POSITION);
+        auto attr_texcoord_loc = frame_program.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
 
         if (!attr_position_loc.has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
@@ -175,8 +175,8 @@ namespace argus {
         glBufferData(GL_ARRAY_BUFFER, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(4, SHADER_ATTRIB_IN_POSITION_LEN, FB_SHADER_ATTRIB_IN_POSITION_LOC, &attr_offset);
-        set_attrib_pointer(4, SHADER_ATTRIB_IN_TEXCOORD_LEN, FB_SHADER_ATTRIB_IN_TEXCOORD_LOC, &attr_offset);
+        set_attrib_pointer(4, SHADER_ATTRIB_POSITION_LEN, FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
+        set_attrib_pointer(4, SHADER_ATTRIB_TEXCOORD_LEN, FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);

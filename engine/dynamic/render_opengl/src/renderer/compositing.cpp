@@ -211,10 +211,10 @@ namespace argus {
 
         state.frame_program = frame_program.handle;
 
-        if (!frame_program.get_attr_loc(SHADER_ATTRIB_IN_POSITION).has_value()) {
+        if (!frame_program.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
         }
-        if (!frame_program.get_attr_loc(SHADER_ATTRIB_IN_TEXCOORD).has_value()) {
+        if (!frame_program.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
         }
 
@@ -244,8 +244,8 @@ namespace argus {
         }
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_POSITION_LEN, FB_SHADER_ATTRIB_IN_POSITION_LOC, &attr_offset);
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_TEXCOORD_LEN, FB_SHADER_ATTRIB_IN_TEXCOORD_LOC, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_POSITION_LEN, FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_TEXCOORD_LEN, FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);
 
         if (!AGLET_GL_ARB_direct_state_access) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);

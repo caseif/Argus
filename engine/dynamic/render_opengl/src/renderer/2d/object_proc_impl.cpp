@@ -76,10 +76,10 @@ namespace argus {
         }
         auto &program = state.linked_programs.find(object.get_material())->second;
 
-        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_IN_POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
@@ -111,22 +111,22 @@ namespace argus {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
-                if (program.has_attr(SHADER_ATTRIB_IN_POSITION)) {
+                if (program.has_attr(SHADER_ATTRIB_POSITION)) {
                     auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
                     mapped_buffer[major_off + minor_off++] = transformed_pos.x;
                     mapped_buffer[major_off + minor_off++] = transformed_pos.y;
                 }
-                if (program.has_attr(SHADER_ATTRIB_IN_NORMAL)) {
+                if (program.has_attr(SHADER_ATTRIB_NORMAL)) {
                     mapped_buffer[major_off + minor_off++] = vertex.normal.x;
                     mapped_buffer[major_off + minor_off++] = vertex.normal.y;
                 }
-                if (program.has_attr(SHADER_ATTRIB_IN_COLOR)) {
+                if (program.has_attr(SHADER_ATTRIB_COLOR)) {
                     mapped_buffer[major_off + minor_off++] = vertex.color.r;
                     mapped_buffer[major_off + minor_off++] = vertex.color.g;
                     mapped_buffer[major_off + minor_off++] = vertex.color.b;
                     mapped_buffer[major_off + minor_off++] = vertex.color.a;
                 }
-                if (program.has_attr(SHADER_ATTRIB_IN_TEXCOORD)) {
+                if (program.has_attr(SHADER_ATTRIB_TEXCOORD)) {
                     mapped_buffer[major_off + minor_off++] = vertex.tex_coord.x;
                     mapped_buffer[major_off + minor_off++] = vertex.tex_coord.y;
                 }
@@ -168,10 +168,10 @@ namespace argus {
             return;
         }
 
-        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_IN_POSITION) ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_NORMAL) ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_COLOR) ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_IN_TEXCOORD) ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         GLfloat *mapped_buffer;
 
