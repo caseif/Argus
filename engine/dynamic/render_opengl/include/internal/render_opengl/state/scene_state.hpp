@@ -20,9 +20,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/render/util/linked_program.hpp"
 #include "argus/render/util/object_processor.hpp"
 
-#include "internal/render_opengl/state/linked_program.hpp"
 #include "internal/render_opengl/types.hpp"
 
 #include <map>

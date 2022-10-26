@@ -21,9 +21,9 @@
 #include "argus/lowlevel/refcountable.hpp"
 
 #include "argus/resman/resource.hpp"
+#include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengl/types.hpp"
-#include "internal/render_opengl/state/linked_program.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
 
 #include <map>

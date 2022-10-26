@@ -211,10 +211,10 @@ namespace argus {
 
         state.frame_program = frame_program.handle;
 
-        if (!frame_program.attr_position_loc.has_value()) {
+        if (!frame_program.get_attr_loc(SHADER_ATTRIB_IN_POSITION).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
         }
-        if (!frame_program.attr_texcoord_loc.has_value()) {
+        if (!frame_program.get_attr_loc(SHADER_ATTRIB_IN_TEXCOORD).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
         }
 

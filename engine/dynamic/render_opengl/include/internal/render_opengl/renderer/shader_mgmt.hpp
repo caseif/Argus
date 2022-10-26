@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/render/common/material.hpp"
+#include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/types.hpp"

@@ -28,6 +28,7 @@
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
 #include "argus/render/defines.hpp"
+#include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
@@ -211,29 +212,7 @@ namespace argus {
             proj_mat_loc = -1;
         }
 
-        attribute_location_t attr_pos;
-        attribute_location_t attr_norm;
-        attribute_location_t attr_color;
-        attribute_location_t attr_texcoord;
-        if (shader_lang == SHADER_TYPE_GLSL) {
-            attr_pos = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_POSITION);
-            attr_norm = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_NORMAL);
-            attr_color = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_COLOR);
-            attr_texcoord = glGetAttribLocation(program_handle, SHADER_ATTRIB_IN_TEXCOORD);
-        } else if (shader_lang == SHADER_TYPE_SPIR_V) {
-            attr_pos = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_POSITION, -1);
-            attr_norm = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
-            attr_color = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
-            attr_texcoord = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);
-            /*attr_pos = 0;
-            attr_norm = 1;
-            attr_color = 2;
-            attr_texcoord = 3;*/
-        } else {
-            Logger::default_logger().fatal("Unrecognized shader type %s", shader_lang.c_str());
-        }
-
-        return LinkedProgram(program_handle, attr_pos, attr_norm, attr_color, attr_texcoord, refl_info);
+        return LinkedProgram(program_handle, refl_info);
     }
 
     void build_shaders(RendererState &state, const Resource &material_res) {

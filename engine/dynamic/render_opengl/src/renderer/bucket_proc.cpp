@@ -19,6 +19,7 @@
 #include "argus/resman/resource.hpp"
 
 #include "argus/render/common/material.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
@@ -85,28 +86,33 @@ namespace argus {
                 // the program should have been linked during object processing
                 auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
 
-                uint32_t vertex_len = (program.attr_position_loc.has_value() ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
-                        + (program.attr_normal_loc.has_value() ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
-                        + (program.attr_color_loc.has_value() ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
-                        + (program.attr_texcoord_loc.has_value() ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
+                auto attr_position_loc = program.get_attr_loc(SHADER_ATTRIB_IN_POSITION);
+                auto attr_normal_loc = program.get_attr_loc(SHADER_ATTRIB_IN_NORMAL);
+                auto attr_color_loc = program.get_attr_loc(SHADER_ATTRIB_IN_COLOR);
+                auto attr_texcoord_loc = program.get_attr_loc(SHADER_ATTRIB_IN_TEXCOORD);
+
+                uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_IN_POSITION_LEN : 0)
+                        + (attr_normal_loc.has_value() ? SHADER_ATTRIB_IN_NORMAL_LEN : 0)
+                        + (attr_color_loc.has_value() ? SHADER_ATTRIB_IN_COLOR_LEN : 0)
+                        + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_IN_TEXCOORD_LEN : 0);
 
                 GLuint attr_offset = 0;
 
-                if (program.attr_position_loc.has_value()) {
+                if (attr_position_loc.has_value()) {
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_POSITION_LEN, program.attr_position_loc.value(), &attr_offset);
+                            SHADER_ATTRIB_IN_POSITION_LEN, attr_position_loc.value(), &attr_offset);
                 }
-                if (program.attr_normal_loc.has_value()) {
+                if (attr_normal_loc.has_value()) {
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_NORMAL_LEN, program.attr_normal_loc.value(), &attr_offset);
+                            SHADER_ATTRIB_IN_NORMAL_LEN, attr_normal_loc.value(), &attr_offset);
                 }
-                if (program.attr_color_loc.has_value()) {
+                if (attr_color_loc.has_value()) {
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_COLOR_LEN, program.attr_color_loc.value(), &attr_offset);
+                            SHADER_ATTRIB_IN_COLOR_LEN, attr_color_loc.value(), &attr_offset);
                 }
-                if (program.attr_texcoord_loc.has_value()) {
+                if (attr_texcoord_loc.has_value()) {
                     set_attrib_pointer(bucket->vertex_array, bucket->vertex_buffer, vertex_len,
-                            SHADER_ATTRIB_IN_TEXCOORD_LEN, program.attr_texcoord_loc.value(), &attr_offset);
+                            SHADER_ATTRIB_IN_TEXCOORD_LEN, attr_texcoord_loc.value(), &attr_offset);
                 }
             } else {
                 if (!AGLET_GL_ARB_direct_state_access) {
