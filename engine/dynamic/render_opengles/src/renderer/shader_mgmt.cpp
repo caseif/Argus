@@ -26,6 +26,7 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
@@ -217,10 +218,6 @@ namespace argus {
             attr_norm = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_NORMAL, -1);
             attr_color = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_COLOR, -1);
             attr_texcoord = find_or_default(refl_info.attribute_locations, SHADER_ATTRIB_IN_TEXCOORD, -1);
-            /*attr_pos = 0;
-            attr_norm = 1;
-            attr_color = 2;
-            attr_texcoord = 3;*/
         } else {
             Logger::default_logger().fatal("Unrecognized shader type %s", shader_lang.c_str());
         }

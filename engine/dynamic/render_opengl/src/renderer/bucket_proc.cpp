@@ -70,12 +70,12 @@ namespace argus {
                     glCreateVertexArrays(1, &bucket->vertex_array);
 
                     glCreateBuffers(1, &bucket->vertex_buffer);
-                
+
                     glNamedBufferData(bucket->vertex_buffer, buffer_len, nullptr, GL_DYNAMIC_COPY);
                 } else {
                     glGenVertexArrays(1, &bucket->vertex_array);
                     glBindVertexArray(bucket->vertex_array);
-                    
+
                     glGenBuffers(1, &bucket->vertex_buffer);
                     glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 

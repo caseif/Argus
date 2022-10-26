@@ -28,22 +28,13 @@
 
 #define _GL_LOG_MAX_LEN 255
 
-#define SHADER_ATTRIB_IN_POSITION "in_Position"
-#define SHADER_ATTRIB_IN_NORMAL "in_Normal"
-#define SHADER_ATTRIB_IN_COLOR "in_Color"
-#define SHADER_ATTRIB_IN_TEXCOORD "in_TexCoord"
-
 #define SHADER_ATTRIB_IN_POSITION_LEN 2
 #define SHADER_ATTRIB_IN_NORMAL_LEN 2
 #define SHADER_ATTRIB_IN_COLOR_LEN 4
 #define SHADER_ATTRIB_IN_TEXCOORD_LEN 2
 
-#define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
-
-#define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
-
-#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
-#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
+#define FB_SHADER_ATTRIB_IN_POSITION_LOC 0
+#define FB_SHADER_ATTRIB_IN_TEXCOORD_LOC 1
 
 #define FB_SHADER_VERT_PATH "argus:shader/gl/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/gl/framebuffer_frag"

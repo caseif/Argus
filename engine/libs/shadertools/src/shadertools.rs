@@ -277,7 +277,7 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
 
     let mut inputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
     let mut outputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
-    let mut uniforms = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut uniforms = HashMap::<String, DeclarationInfo>::new();
     let mut buffers = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
 
     // first pass: enumerate declarations of all shaders
@@ -313,9 +313,35 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             return Err(GlslCompileError { message: scan_visitor.fail_message.unwrap() });
         }
 
+        // validate uniforms to ensure we don't have conflicting definitions
+        for (uni_name, cur_decl) in scan_visitor.uniforms {
+            if uniforms.contains_key(&uni_name) {
+                let prev_decl = uniforms.get_mut(&uni_name).unwrap();
+
+                if cur_decl.explicit_location {
+                    if prev_decl.explicit_location
+                            && prev_decl.location != cur_decl.location {
+                        return Err(GlslCompileError {
+                            message: "Shader set contains conflicting location qualifiers for same uniform name".to_string()
+                        });
+                    }
+
+                    prev_decl.explicit_location = true;
+                    prev_decl.location = cur_decl.location;
+                }
+
+                if prev_decl.size != cur_decl.size {
+                    return Err(GlslCompileError {
+                        message: "Shader set contains conflicting sizes for same uniform name".to_string()
+                    })
+                }
+            } else {
+                uniforms.insert(uni_name, cur_decl);
+            }
+        }
+
         inputs.insert(stage, scan_visitor.inputs);
         outputs.insert(stage, scan_visitor.outputs);
-        uniforms.insert(stage, scan_visitor.uniforms);
         buffers.insert(stage, scan_visitor.buffers);
 
         pending_asts.insert(stage, ast);
@@ -327,7 +353,6 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
 
     let mut all_assigned_inputs = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
     let mut all_assigned_outputs = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
-    let mut all_assigned_uniforms = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
     let mut all_assigned_buffers = HashMap::<Stage, HashMap::<String, DeclarationInfo>>::new();
 
     i = 0;
@@ -409,10 +434,25 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
 
         all_assigned_inputs.insert(stage, inputs[&stage].clone());
         all_assigned_outputs.insert(stage, outputs[&stage].clone());
-        all_assigned_uniforms.insert(stage, uniforms[&stage].clone());
         all_assigned_buffers.insert(stage, buffers[&stage].clone());
 
         i += 1;
+    }
+
+    // handle uniforms
+
+    let occupied_uniform_locs = uniforms.values().filter(|decl| decl.location.is_some()).cloned().collect();
+    let mut avail_uniform_locs = get_free_loc_ranges(occupied_uniform_locs);
+
+    for (_, uni_decl) in &mut uniforms {
+        // skip uniforms that already have assigned locations or are opaque
+        if uni_decl.location.is_some() || uni_decl.size.unwrap_or(0) == 0 {
+            continue;
+        }
+
+        // otherwise, just pick the next available location
+        assert!(uni_decl.size.is_some());
+        uni_decl.location = Some(get_next_free_location(uni_decl.size.unwrap(), &mut avail_uniform_locs));
     }
 
     // second pass: apply assigned locations to the AST
@@ -426,7 +466,7 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
 
         let mut mutate_visitor = MutatingDeclarationVisitor::new(&struct_sizes[&stage],
             &all_assigned_inputs[stage], &all_assigned_outputs[stage],
-            &all_assigned_uniforms[stage], &all_assigned_buffers[stage]);
+            &uniforms, &all_assigned_buffers[stage]);
         ast.visit_mut(&mut mutate_visitor);
 
         if mutate_visitor.fail_condition {
@@ -444,19 +484,19 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             stage: stage.to_owned(),
             source: processed_src,
             inputs: all_assigned_inputs[stage].iter()
-                .filter(|(k, v)| v.location.is_some())
+                .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
                 .collect(),
             outputs: all_assigned_outputs[stage].iter()
-                .filter(|(k, v)| v.location.is_some())
+                .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
                 .collect(),
-            uniforms: all_assigned_uniforms[stage].iter()
-                .filter(|(k, v)| v.location.is_some())
+            uniforms: uniforms.iter()
+                .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
                 .collect(),
             buffers: all_assigned_buffers[stage].iter()
-                .filter(|(k, v)| v.location.is_some())
+                .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
                 .collect()
         });

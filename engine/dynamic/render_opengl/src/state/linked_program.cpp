@@ -16,21 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "internal/render_opengl/state/linked_program.hpp"
 
-#define RESOURCE_TYPE_TEXTURE_PNG "image/png"
-#define RESOURCE_TYPE_MATERIAL "application/x-argus-material+json"
+#include <optional>
 
-#define SHADER_ATTRIB_IN_POSITION "in_Position"
-#define SHADER_ATTRIB_IN_NORMAL "in_Normal"
-#define SHADER_ATTRIB_IN_COLOR "in_Color"
-#define SHADER_ATTRIB_IN_TEXCOORD "in_TexCoord"
+namespace argus {
+    std::optional<uniform_location_t> LinkedProgram::get_uniform_loc(const std::string &name) {
+        auto it = reflection_info.uniform_variable_locations.find(name);
+        return it != reflection_info.uniform_variable_locations.end()
+            ? std::make_optional(it->second)
+            : std::nullopt;
+    }
 
-#define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
-
-#define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
-
-#define SHADER_UNIFORM_TIME "u_Time"
-
-#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
-#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
+    void LinkedProgram::get_uniform_loc_and_then(const std::string &name, std::function<void(uniform_location_t)> fn) {
+        auto loc = get_uniform_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
+}

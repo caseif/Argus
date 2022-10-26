@@ -87,5 +87,11 @@ namespace argus {
              * \param transform The new Transform.
              */
             void set_transform(const Transform2D &transform);
+
+            std::vector<std::string> get_postprocessing_shaders(void) const;
+
+            void add_postprocessing_shader(const std::string &shader_uid);
+
+            void remove_postprocessing_shader(const std::string &shader_uid);
     };
 }

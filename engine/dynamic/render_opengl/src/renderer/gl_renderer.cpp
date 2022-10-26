@@ -139,7 +139,7 @@ namespace argus {
 
             compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
 
-            fill_buckets(reinterpret_cast<Scene2DState&>(scene_state));
+            fill_buckets(scene_state);
 
             for (auto bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
@@ -230,7 +230,7 @@ namespace argus {
 
     void GLRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
-        
+
         activate_gl_context(get_window_handle<GLFWwindow>(window));
 
         auto vsync = window.is_vsync_enabled();
@@ -267,7 +267,7 @@ namespace argus {
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
+
         for (auto *scene : canvas.get_scenes()) {
             auto &scene_state = state.get_scene_state(*scene);
 

@@ -21,6 +21,8 @@
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 
+#include "internal/render_opengl/defines.hpp"
+#include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/state/processed_render_object.hpp"
@@ -72,6 +74,12 @@ namespace argus {
 
             processed_obj.visited = false;
             ++it;
+        }
+
+        for (auto postfx : scene.get_postprocessing_shaders()) {
+            if (scene_state.postfx_programs.find(postfx) == scene_state.postfx_programs.end()) {
+                scene_state.postfx_programs.insert({ postfx, link_program({ FB_SHADER_VERT_PATH, postfx }) });
+            }
         }
     }
 }

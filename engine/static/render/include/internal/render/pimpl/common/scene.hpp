@@ -30,11 +30,13 @@ namespace argus {
         const Canvas &canvas;
         Dirtiable<Transform2D> transform;
         const int index;
-        
+        std::vector<std::string> postfx_shader_uids;
+
         pimpl_Scene(const Canvas &canvas, const Transform2D &transform, const int index):
                 canvas(canvas),
                 transform(transform),
-                index(index) {
+                index(index),
+                postfx_shader_uids() {
         }
 
         pimpl_Scene(const pimpl_Scene&) = default;

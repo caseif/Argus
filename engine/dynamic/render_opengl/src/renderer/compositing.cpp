@@ -28,6 +28,7 @@
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"
@@ -50,40 +51,64 @@ namespace argus {
         auto &state = scene_state.parent_state;
 
         // framebuffer setup
-        if (scene_state.framebuffer == 0) {
+        if (scene_state.front_fb == 0) {
             if (AGLET_GL_ARB_direct_state_access) {
-                glCreateFramebuffers(1, &scene_state.framebuffer);
+                glCreateFramebuffers(1, &scene_state.front_fb);
+                glCreateFramebuffers(1, &scene_state.back_fb);
             } else {
-                glGenFramebuffers(1, &scene_state.framebuffer);
+                glGenFramebuffers(1, &scene_state.front_fb);
+                glGenFramebuffers(1, &scene_state.back_fb);
             }
         }
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
 
-        if (scene_state.frame_texture == 0 || resolution.dirty) {
-            if (scene_state.frame_texture != 0) {
-                glDeleteTextures(1, &scene_state.frame_texture);
+        if (scene_state.front_frame_tex == 0 || resolution.dirty) {
+            if (scene_state.front_frame_tex != 0) {
+                glDeleteTextures(1, &scene_state.front_frame_tex);
+            }
+
+            if (scene_state.back_frame_tex != 0) {
+                glDeleteTextures(1, &scene_state.back_frame_tex);
             }
 
             if (AGLET_GL_ARB_direct_state_access) {
-                glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.frame_texture);
+                glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.front_frame_tex);
+                glCreateTextures(GL_TEXTURE_2D, 1, &scene_state.back_frame_tex);
 
-                glTextureStorage2D(scene_state.frame_texture, 1, GL_RGBA8, resolution->x, resolution->y);
+                glTextureStorage2D(scene_state.front_frame_tex, 1, GL_RGBA8, resolution->x, resolution->y);
+                glTextureStorage2D(scene_state.back_frame_tex, 1, GL_RGBA8, resolution->x, resolution->y);
 
-                glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTextureParameteri(scene_state.frame_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteri(scene_state.front_frame_tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(scene_state.front_frame_tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glNamedFramebufferTexture(scene_state.framebuffer, GL_COLOR_ATTACHMENT0, scene_state.frame_texture, 0);
+                glTextureParameteri(scene_state.back_frame_tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(scene_state.back_frame_tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                glNamedFramebufferTexture(scene_state.front_fb, GL_COLOR_ATTACHMENT0, scene_state.front_frame_tex, 0);
+                glNamedFramebufferTexture(scene_state.back_fb, GL_COLOR_ATTACHMENT0, scene_state.back_frame_tex, 0);
             } else {
-                glGenTextures(1, &scene_state.frame_texture);
-                glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
+                glGenTextures(1, &scene_state.front_frame_tex);
+                glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
 
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.frame_texture, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.front_frame_tex, 0);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                glGenTextures(1, &scene_state.back_frame_tex);
+                glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.back_frame_tex, 0);
 
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
@@ -111,11 +136,12 @@ namespace argus {
 
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
+                set_per_frame_global_uniforms(program_info);
                 last_program = program_info.handle;
 
-                auto view_mat_loc = program_info.view_matrix_uniform_loc;
-                if (view_mat_loc != -1) {
-                    glUniformMatrix4fv(view_mat_loc, 1, GL_TRUE, scene_state.view_matrix.data);
+                auto view_mat_loc = program_info.get_uniform_loc(SHADER_UNIFORM_VIEW_MATRIX);
+                if (view_mat_loc.has_value()) {
+                    glUniformMatrix4fv(view_mat_loc.value(), 1, GL_TRUE, scene_state.view_matrix.data);
                 }
             }
 
@@ -135,9 +161,30 @@ namespace argus {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        glUseProgram(0);
+        for (auto &postfx : scene_state.scene.get_postprocessing_shaders()) {
+            auto postfx_program = scene_state.postfx_programs.find(postfx)->second;
 
+            std::swap(scene_state.front_fb, scene_state.back_fb);
+            std::swap(scene_state.front_frame_tex, scene_state.back_frame_tex);
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+
+            glClearColor(0.0, 0.0, 0.0, 0.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(state.frame_vao);
+            glUseProgram(postfx_program.handle);
+            set_per_frame_global_uniforms(postfx_program);
+            glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUseProgram(0);
+        glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
     }
 
     void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {
@@ -149,7 +196,7 @@ namespace argus {
 
         glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program);
-        glBindTexture(GL_TEXTURE_2D, scene_state.frame_texture);
+        glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -183,7 +230,7 @@ namespace argus {
             glCreateVertexArrays(1, &state.frame_vao);
 
             glCreateBuffers(1, &state.frame_vbo);
-        
+
             glNamedBufferData(state.frame_vbo, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
         } else {
             glGenVertexArrays(1, &state.frame_vao);
@@ -196,8 +243,8 @@ namespace argus {
         }
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_POSITION_LEN, frame_program.attr_position_loc.value(), &attr_offset);
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_TEXCOORD_LEN, frame_program.attr_texcoord_loc.value(), &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_POSITION_LEN, FB_SHADER_ATTRIB_IN_POSITION_LOC, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_IN_TEXCOORD_LEN, FB_SHADER_ATTRIB_IN_TEXCOORD_LOC, &attr_offset);
 
         if (!AGLET_GL_ARB_direct_state_access) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);

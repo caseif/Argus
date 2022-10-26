@@ -20,6 +20,8 @@
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
+#include <algorithm>
+
 namespace argus {
     class Canvas;
 
@@ -44,5 +46,23 @@ namespace argus {
 
     void Scene::set_transform(const Transform2D &transform) {
         get_pimpl()->transform = transform;
+    }
+
+    std::vector<std::string> Scene::get_postprocessing_shaders(void) const {
+        return get_pimpl()->postfx_shader_uids;
+    }
+
+    void Scene::add_postprocessing_shader(const std::string &shader_uid) {
+        get_pimpl()->postfx_shader_uids.push_back(shader_uid);
+    }
+
+    void Scene::remove_postprocessing_shader(const std::string &shader_uid) {
+        auto uids = get_pimpl()->postfx_shader_uids;
+        auto it = std::find(uids.crbegin(), uids.crend(), shader_uid);
+        if (it != uids.crend()) {
+            // some voodoo because it's a reverse iterator
+            std::advance(it, 1);
+            uids.erase(it.base());
+        }
     }
 }

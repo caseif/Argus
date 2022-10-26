@@ -184,23 +184,16 @@ pub unsafe extern "C" fn free_compilation_result(result: *mut InteropShaderCompi
         dealloc_interop_map((*result).attribs);
     }
 
-    if (*result).uniform_count > 0 {
-        for i in 0..(*result).uniform_count {
-            let uniform_struct_ptr = *(*result).uniforms.offset(i.try_into().unwrap()) as *mut SizedByteArrayWithIndex;
-            let uniform_name_len = (*uniform_struct_ptr).size;
-            dealloc(uniform_struct_ptr as *mut u8,
-                match Layout::array::<*const u8>(uniform_name_len + size_of_val(&(*uniform_struct_ptr).size)
-                        + size_of_val(&(*uniform_struct_ptr).index)) {
-                    Ok(layout) => layout,
-                    Err(msg) => panic!("Failed to create SPIR-V uniform array layout: {}", msg)
-                }
-            );
-        }
+    if (*result).outputs != null() {
+        dealloc_interop_map((*result).outputs);
+    }
 
-        dealloc((*result).uniforms as *mut u8, match Layout::array::<*const u8>((*result).uniform_count) {
-            Ok(layout) => layout,
-            Err(msg) => panic!("Failed to create SPIR-V uniform array layout: {}", msg)
-        });
+    if (*result).uniforms != null() {
+        dealloc_interop_map((*result).uniforms);
+    }
+
+    if (*result).buffers != null() {
+        dealloc_interop_map((*result).buffers);
     }
 
     dealloc(result as *mut u8, Layout::new::<InteropShaderCompilationResult>());

@@ -28,17 +28,10 @@
 
 #define _GL_LOG_MAX_LEN 255
 
-#define SHADER_ATTRIB_IN_POSITION "in_Position"
-#define SHADER_ATTRIB_IN_NORMAL "in_Normal"
-#define SHADER_ATTRIB_IN_COLOR "in_Color"
-#define SHADER_ATTRIB_IN_TEXCOORD "in_TexCoord"
-
 #define SHADER_ATTRIB_IN_POSITION_LEN 2
 #define SHADER_ATTRIB_IN_NORMAL_LEN 2
 #define SHADER_ATTRIB_IN_COLOR_LEN 4
 #define SHADER_ATTRIB_IN_TEXCOORD_LEN 2
-
-#define SHADER_UNIFORM_VIEW_MATRIX "uniform_ViewMat"
 
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"

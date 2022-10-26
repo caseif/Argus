@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/time.hpp"
 
 #include "argus/shadertools.hpp"
 
@@ -26,6 +27,7 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
@@ -225,7 +227,7 @@ namespace argus {
             Logger::default_logger().fatal("Unrecognized shader type %s", shader_lang.c_str());
         }
 
-        return LinkedProgram(program_handle, attr_pos, attr_norm, attr_color, attr_texcoord, proj_mat_loc);
+        return LinkedProgram(program_handle, attr_pos, attr_norm, attr_color, attr_texcoord, refl_info);
     }
 
     void build_shaders(RendererState &state, const Resource &material_res) {
@@ -259,5 +261,17 @@ namespace argus {
 
     void deinit_program(program_handle_t program) {
         glDeleteProgram(program);
+    }
+
+    void set_per_frame_global_uniforms(LinkedProgram &program) {
+        program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [] (auto time_loc) {
+            glUniform1f(time_loc,
+                static_cast<float>(
+                    static_cast<double>(
+                        std::chrono::time_point_cast<std::chrono::microseconds>(now()).time_since_epoch().count()
+                    ) / 1000.0
+                )
+            );
+        });
     }
 }
