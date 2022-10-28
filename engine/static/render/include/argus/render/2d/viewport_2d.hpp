@@ -18,27 +18,19 @@
 
 #pragma once
 
-#include "argus/lowlevel/dirtiable.hpp"
-
-#include "argus/render/common/scene.hpp"
-#include "argus/render/common/transform.hpp"
-
-#include <vector>
+#include "argus/lowlevel/math.hpp"
 
 namespace argus {
-    struct pimpl_Scene {
-        Dirtiable<Transform2D> transform;
-        const int index;
-        std::vector<std::string> postfx_shader_uids;
+    // forward declarations
+    class Camera2D;
 
-        pimpl_Scene(const Transform2D &transform, const int index):
-                transform(transform),
-                index(index),
-                postfx_shader_uids() {
-        }
+    struct Viewport2D {
+        float top;
+        float bottom;
+        float left;
+        float right;
 
-        pimpl_Scene(const pimpl_Scene&) = default;
-
-        pimpl_Scene(pimpl_Scene&&) = delete;
+        Vector2f scaling;
+        bool auto_aspect;
     };
 }

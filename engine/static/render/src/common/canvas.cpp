@@ -41,22 +41,11 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
-    static void _register_scene(pimpl_Canvas &pimpl, Scene &scene) {
-        pimpl.scenes.push_back(&scene);
-
-        std::sort(pimpl.scenes.begin(), pimpl.scenes.end(),
-                  [](const auto *a, const auto *b) { return a->get_pimpl()->index < b->get_pimpl()->index; });
-    }
-
     Canvas::Canvas(Window &window):
             pimpl(new pimpl_Canvas(window)) {
     }
 
     Canvas::~Canvas() {
-        for (auto *scene : pimpl->scenes) {
-            delete scene;
-        }
-
         delete pimpl;
     }
 
@@ -64,23 +53,41 @@ namespace argus {
         return pimpl->window;
     }
 
-    const std::vector<Scene*> &Canvas::get_scenes(void) const {
-        return pimpl->scenes;
+    std::optional<Viewport2D> Canvas::find_viewport(const std::string &id) {
+        auto it = pimpl->viewports.find(id);
+        if (it == pimpl->viewports.end()) {
+            throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
+        }
+        return it->second.viewport;
     }
 
-    Scene2D &Canvas::create_scene_2d(const int index) {
-        auto *scene = new Scene2D(*this, Transform2D{}, index);
-
-        _register_scene(*pimpl, *scene);
-
-        return *scene;
-    }
-
-    void Canvas::remove_scene(Scene &scene) {
-        if (&scene.get_canvas() != this) {
-            throw std::invalid_argument("Supplied Scene does not belong to the Canvas");
+    void Canvas::attach_viewport_2d(const std::string &id, const Camera2D &camera, const Viewport2D &viewport) {
+        if (pimpl->viewports.find(id) != pimpl->viewports.end()) {
+            throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
 
-        remove_from_vector(pimpl->scenes, &scene);
+        pimpl->viewports.insert({ id, AttachedViewport(camera, viewport) });
+    }
+
+    void Canvas::attach_default_viewport_2d(const std::string &id, Camera2D &camera) {
+        if (pimpl->viewports.find(id) != pimpl->viewports.end()) {
+            throw std::runtime_error("Viewport with provided ID already exists on the current camera");
+        }
+
+        Viewport2D viewport;
+        viewport.top = 0;
+        viewport.left = 0;
+        viewport.bottom = 1;
+        viewport.right = 1;
+        viewport.scaling = Vector2f(1, 1);
+        viewport.auto_aspect = true;
+    }
+
+    void Canvas::detach_viewport_2d(const std::string &id) {
+        auto it = pimpl->viewports.find(id);
+        if (it == pimpl->viewports.end()) {
+            throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
+        }
+        pimpl->viewports.erase(it);
     }
 }

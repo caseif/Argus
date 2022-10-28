@@ -21,6 +21,7 @@
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,7 @@ namespace argus {
     class Material;
     class Canvas;
 
+    class Camera2D;
     class RenderGroup2D;
     class RenderObject2D;
     class RenderPrim2D;
@@ -43,21 +45,18 @@ namespace argus {
      * rendered.
      */
     class Scene2D : public Scene {
-        public:
-            pimpl_Scene2D *pimpl;
-
+        private:
             /**
              * \brief Constructs a new Scene2D.
              *
-             * \param parent The Canvas parent to the Scene.
              * \param transform The Transform of the Scene.
              * \param index The compositing index of the Scene. Higher-indexed
              *        Scenes are rendered on top of lower-indexed ones.
              */
-            Scene2D(const Canvas &canvas, const Transform2D &transform, int index);
+            Scene2D(const Transform2D &transform, int index);
 
-            Scene2D(const Canvas &canvas, Transform2D &&transform, int index):
-                Scene2D(canvas, transform, index) {
+            Scene2D(Transform2D &&transform, int index):
+                Scene2D(transform, index) {
             }
 
             Scene2D(const Scene2D&) noexcept;
@@ -65,6 +64,11 @@ namespace argus {
             Scene2D(Scene2D&&) noexcept;
 
             ~Scene2D(void);
+
+        public:
+            static Scene2D &create(const std::string &id);
+
+            pimpl_Scene2D *pimpl;
 
             pimpl_Scene *get_pimpl(void) const override;
 
@@ -108,5 +112,11 @@ namespace argus {
              *        a direct member of this Scene.
              */
             void remove_member_object(RenderObject2D &object);
+
+            std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
+
+            Camera2D &create_camera(const std::string &id);
+
+            void destroy_camera(const std::string &id);
     };
 }

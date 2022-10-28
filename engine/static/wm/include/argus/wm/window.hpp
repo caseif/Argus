@@ -162,7 +162,7 @@ namespace argus {
              *        not been requested or if the renderer module is buggy.
              */
             Canvas &get_canvas(void) const;
-            
+
             /**
              * \brief Gets whether the Window has been created by the windowing
              *        manager.
@@ -299,7 +299,7 @@ namespace argus {
              *         flag.
              */
             ValueAndDirtyFlag<bool> is_vsync_enabled(void) const;
-            
+
             /**
              * \brief Enabled or disabled vertical synchronization (vsync) for
              *        the window.

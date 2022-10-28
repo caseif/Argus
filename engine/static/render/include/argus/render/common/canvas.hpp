@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/render/2d/camera_2d.hpp"
+#include "argus/render/2d/viewport_2d.hpp"
 #include "argus/render/common/scene.hpp"
 
 #include <functional>
@@ -63,7 +65,7 @@ namespace argus {
             Canvas(Canvas &&rhs) = delete;
 
             ~Canvas(void);
-            
+
             /**
              * \brief Gets the Window which owns this Canvas.
              *
@@ -71,32 +73,12 @@ namespace argus {
              */
             Window &get_window(void) const;
 
-            /**
-             * \brief Gets a list of scenes contained by this Canvas.
-             *
-             * \return The list of scenes contained by this Canvas.
-             */
-            const std::vector<Scene*> &get_scenes(void) const;
+            std::optional<Viewport2D> find_viewport(const std::string &id);
 
-            /**
-             * \brief Creates a new Scene with the given priority.
-             *
-             * \param index The index of the new Scene. Higher-indexed
-             *        Scenes are rendered atop lower-indexed ones.
-             *
-             * \return The created Scene2D.
-             */
-            Scene2D &create_scene_2d(const int index);
+            void attach_viewport_2d(const std::string &id, const Camera2D &camera, const Viewport2D &viewport);
 
-            /**
-             * \brief Removes a Scene from this Canvas, destroying it in the
-             *        process.
-             *
-             * \param scene The child Scene to remove.
-             *
-             * \throw std::invalid_argument If the supplied Scene is not owned
-             *        by this Canvas.
-             */
-            void remove_scene(Scene &scene);
+            void attach_default_viewport_2d(const std::string &id, Camera2D &camera);
+
+            void detach_viewport_2d(const std::string &id);
     };
 }

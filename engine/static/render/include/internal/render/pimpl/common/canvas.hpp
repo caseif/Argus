@@ -21,18 +21,28 @@
 #include "argus/render/common/canvas.hpp"
 
 #include <atomic>
+#include <functional>
+#include <map>
 #include <vector>
 
 namespace argus {
+    struct AttachedViewport {
+        const Camera2D &camera;
+        const Viewport2D viewport;
+
+        AttachedViewport(const Camera2D &camera, const Viewport2D &viewport):
+                camera(camera),
+                viewport(viewport) {
+        }
+    };
+
     struct pimpl_Canvas {
         /**
          * \brief The Window which this Canvas is mapped to.
          */
         Window &window;
-        /**
-         * \brief The child \link Scene Scenes \endlink of the Canvas.
-         */
-        std::vector<Scene*> scenes;
+
+        std::map<std::string, AttachedViewport> viewports;
 
         pimpl_Canvas(Window &window):
                 window(window) {

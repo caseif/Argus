@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/atomic.hpp"
+#include <optional>
 
 namespace argus {
     class Canvas;
@@ -51,16 +52,19 @@ namespace argus {
             Scene(const Scene &&rhs) = delete;
 
         public:
+            static std::optional<std::reference_wrapper<Scene>> find(const std::string &id);
+
+            template <typename T>
+            static std::optional<std::reference_wrapper<T>> find(const std::string &id) {
+                //TODO: not sure if this is right
+                return dynamic_cast<std::optional<std::reference_wrapper<T>>>(Scene::find(id));
+            }
+
             virtual ~Scene(void) = 0;
 
             const SceneType type;
 
             virtual pimpl_Scene *get_pimpl(void) const = 0;
-
-            /**
-             * \brief Gets the Canvas which is parent to this Scene.
-             */
-            const Canvas &get_canvas(void) const;
 
             /**
              * \brief Gets the Transform of this Scene without affecting its dirty flag.

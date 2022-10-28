@@ -21,19 +21,22 @@
 #include "internal/render/pimpl/common/scene.hpp"
 
 #include <algorithm>
+#include <functional>
+#include <optional>
+#include <string>
 
 namespace argus {
     class Canvas;
+
+    std::optional<std::reference_wrapper<Scene>> Scene::find(const std::string &id) {
+        //TODO: implement
+    }
 
     Scene::Scene(SceneType type):
         type(type) {
     }
 
     Scene::~Scene(void) {
-    }
-
-    const Canvas &Scene::get_canvas(void) const {
-        return get_pimpl()->canvas;
     }
 
     Transform2D Scene::peek_transform(void) const {

@@ -18,27 +18,16 @@
 
 #pragma once
 
-#include "argus/lowlevel/dirtiable.hpp"
-
-#include "argus/render/common/scene.hpp"
-#include "argus/render/common/transform.hpp"
-
-#include <vector>
-
+#include "argus/render/2d/scene_2d.hpp"
 namespace argus {
-    struct pimpl_Scene {
-        Dirtiable<Transform2D> transform;
-        const int index;
-        std::vector<std::string> postfx_shader_uids;
+    struct pimpl_Camera2D {
+        std::string id;
+        Scene2D &scene;
+        Transform2D transform;
 
-        pimpl_Scene(const Transform2D &transform, const int index):
-                transform(transform),
-                index(index),
-                postfx_shader_uids() {
+        pimpl_Camera2D(const std::string &id, Scene2D &scene):
+                id(id),
+                scene(scene) {
         }
-
-        pimpl_Scene(const pimpl_Scene&) = default;
-
-        pimpl_Scene(pimpl_Scene&&) = delete;
     };
 }

@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/render/2d/camera_2d.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
@@ -40,9 +41,13 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_Scene2D));
 
-    Scene2D::Scene2D(const Canvas &canvas, const Transform2D &transform, const int index):
+    Scene2D &Scene2D::create(const std::string &id) {
+        //TODO: implement
+    }
+
+    Scene2D::Scene2D(const Transform2D &transform, const int index):
         Scene(SceneType::TwoD),
-        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(canvas, *this, transform, index)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(*this, transform, index)) {
     }
 
     Scene2D::Scene2D(const Scene2D &rhs) noexcept:
@@ -89,5 +94,27 @@ namespace argus {
         }
 
         pimpl->root_group.remove_child_object(object);
+    }
+
+    std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {
+        auto it = pimpl->cameras.find(id);
+        return it != pimpl->cameras.cend() ? std::make_optional(std::reference_wrapper(it->second)) : std::nullopt;
+    }
+
+    Camera2D &Scene2D::create_camera(const std::string &id) {
+        if (pimpl->cameras.find(id) != pimpl->cameras.end()) {
+            throw std::invalid_argument("Camera with provided ID already exists in scene");
+        }
+
+        pimpl->cameras.insert({id, Camera2D(id, *this) });
+    }
+
+    void Scene2D::destroy_camera(const std::string &id) {
+        auto it = pimpl->cameras.find(id);
+        if (it == pimpl->cameras.end()) {
+            throw std::invalid_argument("Camera with provided ID does not exist in scene");
+        }
+
+        pimpl->cameras.erase(it);
     }
 }

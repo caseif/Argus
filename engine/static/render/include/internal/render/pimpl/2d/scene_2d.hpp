@@ -22,15 +22,19 @@
 #include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
+#include <map>
+
 namespace argus {
     // forward declarations
     struct pimpl_Scene;
 
     struct pimpl_Scene2D : public pimpl_Scene {
         RenderGroup2D root_group;
-        
-        pimpl_Scene2D(const Canvas &canvas, Scene2D &scene, const Transform2D &transform, const int index):
-                pimpl_Scene(canvas, transform, index),
+
+        std::map<std::string, Camera2D> cameras;
+
+        pimpl_Scene2D(Scene2D &scene, const Transform2D &transform, const int index):
+                pimpl_Scene(transform, index),
                 root_group(scene, nullptr) {
         }
 
