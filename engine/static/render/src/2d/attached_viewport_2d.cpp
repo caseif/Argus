@@ -19,49 +19,38 @@
 #include "argus/lowlevel/memory.hpp"
 
 #include "argus/render/2d/attached_viewport_2d.hpp"
-#include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/common/transform.hpp"
-#include "internal/render/pimpl/2d/camera_2d.hpp"
+#include "argus/render/common/attached_viewport.hpp"
+#include "internal/render/pimpl/2d/attached_viewport_2d.hpp"
 
-#include <functional>
-#include <optional>
+#include <algorithm>
 #include <string>
+#include <vector>
 
 namespace argus {
-    static AllocPool g_alloc_pool(sizeof(pimpl_Camera2D));
+    static AllocPool g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));
 
-    Camera2D::Camera2D(const std::string &id, Scene2D &scene):
-            pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {
+    AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index):
+            AttachedViewport(SceneType::TwoD),
+            pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
     }
 
-    Camera2D::Camera2D(Camera2D &&rhs):
+    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs):
+            AttachedViewport(rhs.type),
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
-    Camera2D::~Camera2D(void) {
+    AttachedViewport2D::~AttachedViewport2D(void) {
         if (pimpl != nullptr) {
-            g_alloc_pool.free(pimpl);
+            g_pimpl_pool.destroy(pimpl);
         }
     }
 
-    const std::string &Camera2D::get_id(void) const {
-        return pimpl->id;
+    pimpl_AttachedViewport *AttachedViewport2D::get_pimpl(void) const {
+        return pimpl;
     }
 
-    Scene2D &Camera2D::get_scene(void) const {
-        return pimpl->scene;
-    }
-
-    Transform2D Camera2D::peek_transform(void) const {
-        return pimpl->transform.peek();
-    }
-
-    ValueAndDirtyFlag<Transform2D> Camera2D::get_transform(void) {
-        return pimpl->transform.read();
-    }
-
-    void Camera2D::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
+    Camera2D &AttachedViewport2D::get_camera(void) const {
+        return pimpl->camera;
     }
 }

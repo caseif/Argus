@@ -175,6 +175,12 @@ namespace argus {
              * \param target The array to copy the matrix representation into.
              */
             void copy_matrix(Matrix4 &target) const;
+
+            /**
+             * \brief Returns a transform comprised of the inverse position and
+             *        rotation of this one. The scale is unaffected.
+             */
+            Transform2D inverse(void) const;
     };
 
     /**

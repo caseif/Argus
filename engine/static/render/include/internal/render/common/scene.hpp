@@ -18,29 +18,12 @@
 
 #pragma once
 
-#include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/pimpl/common/scene.hpp"
-
 #include <map>
+#include <string>
 
 namespace argus {
     // forward declarations
-    struct pimpl_Scene;
+    class Scene;
 
-    struct pimpl_Scene2D : public pimpl_Scene {
-        RenderGroup2D root_group;
-
-        std::map<std::string, Camera2D> cameras;
-
-        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
-                pimpl_Scene(id, transform),
-                root_group(scene, nullptr) {
-        }
-
-        pimpl_Scene2D(const pimpl_Scene2D&) = default;
-
-        pimpl_Scene2D(pimpl_Scene2D&&) = delete;
-    };
+    extern std::map<std::string, Scene*> g_scenes;
 }

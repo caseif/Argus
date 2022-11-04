@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/math.hpp"
 #include <optional>
 #include <string>
@@ -45,8 +46,31 @@ namespace argus {
 
             Scene2D &get_scene(void) const;
 
-            Transform2D &get_transform(void) const;
+            /**
+             * \brief Gets the transform of the camera without affecting its
+             *        dirty flag.
+             *
+             * \return The camera's Transform.
+             *
+             * \sa Transform2D::get_transform
+             */
+            Transform2D peek_transform(void) const;
 
+            /**
+             * \brief Gets the transform of the camera and clears its dirty
+             *        flag.
+             *
+             * \return The camera's transform and previous dirty flag state.
+             *
+             * \sa Transform2D::peek_transform
+             */
+            ValueAndDirtyFlag<Transform2D> get_transform(void);
+
+            /**
+             * \brief Sets the transform of the camera.
+             *
+             * \param transform The new transform.
+             */
             void set_transform(const Transform2D &transform);
     };
 }

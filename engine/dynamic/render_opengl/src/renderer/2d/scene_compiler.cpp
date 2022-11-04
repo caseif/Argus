@@ -75,11 +75,5 @@ namespace argus {
             processed_obj.visited = false;
             ++it;
         }
-
-        for (auto postfx : scene.get_postprocessing_shaders()) {
-            if (scene_state.postfx_programs.find(postfx) == scene_state.postfx_programs.end()) {
-                scene_state.postfx_programs.insert({ postfx, link_program({ FB_SHADER_VERT_PATH, postfx }) });
-            }
-        }
     }
 }

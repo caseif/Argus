@@ -10,6 +10,7 @@ function(_argus_set_compile_flags TARGET)
       "$<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>"
       "-Wuninitialized"
       "-Wimplicit-fallthrough"
+      "-Wreturn-type"
       "-Wconversion"
       "-Wno-error=conversion"
       "-Wno-error=sign-conversion")

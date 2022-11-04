@@ -59,6 +59,7 @@ namespace argus {
 
             template <typename T>
             void destroy(T *obj) {
+                //TODO: add a safeguard to prevent destructor being invoked on invalid pointer
                 obj->~T();
                 this->free(obj);
             }

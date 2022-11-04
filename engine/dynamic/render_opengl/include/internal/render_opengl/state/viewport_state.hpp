@@ -18,29 +18,29 @@
 
 #pragma once
 
-#include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/pimpl/common/scene.hpp"
-
-#include <map>
+#include "argus/render/2d/attached_viewport_2d.hpp"
+#include "internal/render_opengl/types.hpp"
 
 namespace argus {
     // forward declarations
-    struct pimpl_Scene;
+    struct RendererState;
 
-    struct pimpl_Scene2D : public pimpl_Scene {
-        RenderGroup2D root_group;
+    struct ViewportState {
+        RendererState &parent_state;
+        AttachedViewport *viewport;
 
-        std::map<std::string, Camera2D> cameras;
+        Matrix4 view_matrix;
 
-        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
-                pimpl_Scene(id, transform),
-                root_group(scene, nullptr) {
-        }
+        buffer_handle_t front_fb;
+        buffer_handle_t back_fb;
 
-        pimpl_Scene2D(const pimpl_Scene2D&) = default;
+        texture_handle_t front_frame_tex;
+        texture_handle_t back_frame_tex;
 
-        pimpl_Scene2D(pimpl_Scene2D&&) = delete;
+        ViewportState(RendererState &parent_state, AttachedViewport *viewport);
+    };
+
+    struct Viewport2DState : ViewportState {
+        Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport);
     };
 }

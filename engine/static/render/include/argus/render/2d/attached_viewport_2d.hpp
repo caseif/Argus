@@ -18,29 +18,34 @@
 
 #pragma once
 
-#include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/pimpl/common/scene.hpp"
+#include "argus/lowlevel/math.hpp"
 
-#include <map>
+#include "argus/render/common/attached_viewport.hpp"
+#include "argus/render/common/viewport.hpp"
+
+#include <string>
+#include <vector>
+
+#include <cstdint>
 
 namespace argus {
     // forward declarations
-    struct pimpl_Scene;
+    class Camera2D;
+    struct pimpl_AttachedViewport2D;
 
-    struct pimpl_Scene2D : public pimpl_Scene {
-        RenderGroup2D root_group;
+    struct AttachedViewport2D : AttachedViewport {
+        pimpl_AttachedViewport2D *pimpl;
 
-        std::map<std::string, Camera2D> cameras;
+        AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index);
 
-        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
-                pimpl_Scene(id, transform),
-                root_group(scene, nullptr) {
-        }
+        AttachedViewport2D(const AttachedViewport2D&) = delete;
 
-        pimpl_Scene2D(const pimpl_Scene2D&) = default;
+        AttachedViewport2D(AttachedViewport2D&&);
 
-        pimpl_Scene2D(pimpl_Scene2D&&) = delete;
+        ~AttachedViewport2D(void);
+
+        pimpl_AttachedViewport *get_pimpl(void) const;
+
+        Camera2D &get_camera(void) const;
     };
 }

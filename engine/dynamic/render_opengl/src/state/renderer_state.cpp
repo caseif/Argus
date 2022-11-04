@@ -65,7 +65,7 @@ namespace argus {
             res->release();
         }
     }
-    
+
     SceneState &RendererState::get_scene_state(Scene &scene, bool create) {
         switch (scene.type) {
             case SceneType::TwoD: {
@@ -92,6 +92,36 @@ namespace argus {
             }
             default: {
                 Logger::default_logger().fatal("Unrecognized scene type");
+            }
+        }
+    }
+
+    ViewportState &RendererState::get_viewport_state(AttachedViewport &viewport, bool create) {
+        switch (viewport.type) {
+            case SceneType::TwoD: {
+                auto &viewport_2d = reinterpret_cast<AttachedViewport2D&>(viewport);
+                auto it = this->viewport_states_2d.find(&viewport_2d);
+                if (it != this->viewport_states_2d.cend()) {
+                    return it->second;
+                }
+
+                if (!create) {
+                    Logger::default_logger().fatal("Failed to get viewport state");
+                }
+
+                Viewport2DState state(*this, &viewport_2d);
+                auto insert_res = this->viewport_states_2d.insert({&viewport_2d, state});
+                if (!insert_res.second) {
+                    Logger::default_logger().fatal("Failed to create new viewport state");
+                }
+
+                return insert_res.first->second;
+            }
+            case SceneType::ThreeD: {
+                Logger::default_logger().fatal("Unimplemented viewport type");
+            }
+            default: {
+                Logger::default_logger().fatal("Unrecognized viewport type");
             }
         }
     }

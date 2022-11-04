@@ -133,16 +133,22 @@ set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INCLUDE_DIR_NAME
 if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
+  else()
+    message("OpenGL support will not be built")
 endif()
 
 if(${BUILD_OPENGLES_BACKEND})
   message("OpenGL ES support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengles")
+else()
+  message("OpenGL ES support will not be built")
 endif()
 
 if(${BUILD_VULKAN_BACKEND})
   message("Vulkan support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_vulkan")
+  else()
+    message("Vulkan support will not be built")
 endif()
 
 ########################

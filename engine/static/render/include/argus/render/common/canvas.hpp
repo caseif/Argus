@@ -21,10 +21,11 @@
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/2d/viewport_2d.hpp"
+#include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/common/scene.hpp"
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 namespace argus {
@@ -73,11 +74,14 @@ namespace argus {
              */
             Window &get_window(void) const;
 
-            std::optional<Viewport2D> find_viewport(const std::string &id);
+            std::vector<std::reference_wrapper<AttachedViewport2D>> get_viewports_2d(void) const;
 
-            void attach_viewport_2d(const std::string &id, const Camera2D &camera, const Viewport2D &viewport);
+            std::optional<std::reference_wrapper<AttachedViewport>> find_viewport(const std::string &id) const;
 
-            void attach_default_viewport_2d(const std::string &id, Camera2D &camera);
+            AttachedViewport2D &attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
+                    uint32_t z_index);
+
+            AttachedViewport2D &attach_default_viewport_2d(const std::string &id, Camera2D &camera);
 
             void detach_viewport_2d(const std::string &id);
     };

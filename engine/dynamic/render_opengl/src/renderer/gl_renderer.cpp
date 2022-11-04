@@ -53,6 +53,7 @@
 
 #include <atomic>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -115,27 +116,43 @@ namespace argus {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
+    static std::set<Scene*> _get_associated_scenes_for_canvas(Canvas &canvas) {
+        std::set<Scene*> scenes;
+        for (auto viewport : canvas.get_viewports_2d()) {
+            scenes.insert(&viewport.get().get_camera().get_scene());
+        }
+        return scenes;
+    }
+
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.get_scenes()) {
-            SceneState &scene_state = state.get_scene_state(*scene, true);
-            auto scene_transform = scene->peek_transform();
 
-            multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(resolution),
-                    scene_state.view_matrix);
+        for (auto viewport : canvas.get_viewports_2d()) {
+            Viewport2DState &viewport_state
+                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+            auto camera_transform = viewport.get().get_camera().peek_transform();
+
+            multiply_matrices(camera_transform.inverse().as_matrix(), _compute_view_matrix(resolution),
+                    viewport_state.view_matrix);
         }
     }
 
     static void _rebuild_scene(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.get_scenes()) {
-            SceneState &scene_state = state.get_scene_state(*scene, true);
 
-            auto scene_transform = scene->get_transform();
-            if (scene_transform.dirty) {
-                multiply_matrices(scene_transform->as_matrix(), _compute_view_matrix(window.peek_resolution()),
-                        scene_state.view_matrix);
+        for (auto viewport : canvas.get_viewports_2d()) {
+            Viewport2DState &viewport_state
+                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+            auto camera_transform = viewport.get().get_camera().get_transform();
+
+            if (camera_transform.dirty) {
+                multiply_matrices(camera_transform.value.inverse().as_matrix(),
+                        _compute_view_matrix(window.peek_resolution()), viewport_state.view_matrix);
             }
+        }
+
+        for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
+            SceneState &scene_state = state.get_scene_state(*scene, true);
 
             compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
 
@@ -253,9 +270,13 @@ namespace argus {
 
         auto resolution = window.get_resolution();
 
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene);
-            draw_scene_to_framebuffer(scene_state, resolution);
+        auto viewports = canvas.get_viewports_2d();
+
+        for (auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto &scene_state = state.get_scene_state(scene);
+            draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
 
         // set up state for drawing framebuffers to screen
@@ -268,10 +289,12 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene);
+        for (auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto &scene_state = state.get_scene_state(scene);
 
-            draw_framebuffer_to_screen(scene_state, resolution);
+            draw_framebuffer_to_screen(scene_state, viewport_state, resolution);
         }
 
         glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));

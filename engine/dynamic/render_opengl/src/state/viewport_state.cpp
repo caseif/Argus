@@ -16,31 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/render/2d/camera_2d.hpp"
-#include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/pimpl/common/scene.hpp"
-
-#include <map>
+#include "internal/render_opengl/state/viewport_state.hpp"
 
 namespace argus {
     // forward declarations
-    struct pimpl_Scene;
+    struct RendererState;
 
-    struct pimpl_Scene2D : public pimpl_Scene {
-        RenderGroup2D root_group;
+    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport):
+            parent_state(parent_state),
+            viewport(viewport),
+            front_fb(0),
+            back_fb(0),
+            front_frame_tex(0),
+            back_frame_tex(0) {
+    }
 
-        std::map<std::string, Camera2D> cameras;
-
-        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
-                pimpl_Scene(id, transform),
-                root_group(scene, nullptr) {
-        }
-
-        pimpl_Scene2D(const pimpl_Scene2D&) = default;
-
-        pimpl_Scene2D(pimpl_Scene2D&&) = delete;
-    };
+    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport):
+            ViewportState(parent_state, viewport) {
+    }
 }

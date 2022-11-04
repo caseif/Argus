@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/common/canvas.hpp"
 
 #include <atomic>
@@ -26,23 +27,13 @@
 #include <vector>
 
 namespace argus {
-    struct AttachedViewport {
-        const Camera2D &camera;
-        const Viewport2D viewport;
-
-        AttachedViewport(const Camera2D &camera, const Viewport2D &viewport):
-                camera(camera),
-                viewport(viewport) {
-        }
-    };
-
     struct pimpl_Canvas {
         /**
          * \brief The Window which this Canvas is mapped to.
          */
         Window &window;
 
-        std::map<std::string, AttachedViewport> viewports;
+        std::map<std::string, AttachedViewport2D> viewports_2d;
 
         pimpl_Canvas(Window &window):
                 window(window) {

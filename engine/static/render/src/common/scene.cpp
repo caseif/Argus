@@ -22,14 +22,18 @@
 
 #include <algorithm>
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
 
 namespace argus {
     class Canvas;
 
+    std::map<std::string, Scene*> g_scenes;
+
     std::optional<std::reference_wrapper<Scene>> Scene::find(const std::string &id) {
-        //TODO: implement
+        auto it = g_scenes.find(id);
+        return it != g_scenes.end() ? std::make_optional(std::reference_wrapper(*it->second)) : std::nullopt;
     }
 
     Scene::Scene(SceneType type):
@@ -37,35 +41,5 @@ namespace argus {
     }
 
     Scene::~Scene(void) {
-    }
-
-    Transform2D Scene::peek_transform(void) const {
-        return get_pimpl()->transform.peek();
-    }
-
-    ValueAndDirtyFlag<Transform2D> Scene::get_transform(void) {
-        return get_pimpl()->transform.read();
-    }
-
-    void Scene::set_transform(const Transform2D &transform) {
-        get_pimpl()->transform = transform;
-    }
-
-    std::vector<std::string> Scene::get_postprocessing_shaders(void) const {
-        return get_pimpl()->postfx_shader_uids;
-    }
-
-    void Scene::add_postprocessing_shader(const std::string &shader_uid) {
-        get_pimpl()->postfx_shader_uids.push_back(shader_uid);
-    }
-
-    void Scene::remove_postprocessing_shader(const std::string &shader_uid) {
-        auto uids = get_pimpl()->postfx_shader_uids;
-        auto it = std::find(uids.crbegin(), uids.crend(), shader_uid);
-        if (it != uids.crend()) {
-            // some voodoo because it's a reverse iterator
-            std::advance(it, 1);
-            uids.erase(it.base());
-        }
     }
 }

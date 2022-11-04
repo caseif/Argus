@@ -18,25 +18,44 @@
 
 #pragma once
 
-#include "argus/lowlevel/dirtiable.hpp"
+#include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/scene.hpp"
-#include "argus/render/common/transform.hpp"
+#include "argus/render/common/viewport.hpp"
 
+#include <string>
 #include <vector>
 
+#include <cstdint>
+
 namespace argus {
-    struct pimpl_Scene {
-        std::string id;
-        Dirtiable<Transform2D> transform;
+    // forward declarations
+    class Camera2D;
+    struct pimpl_AttachedViewport;
 
-        pimpl_Scene(const std::string &id, const Transform2D &transform):
-                id(id),
-                transform(transform) {
-        }
+    struct AttachedViewport {
+        protected:
+        AttachedViewport(SceneType type);
 
-        pimpl_Scene(const pimpl_Scene&) = default;
+        AttachedViewport(const AttachedViewport&) = delete;
 
-        pimpl_Scene(pimpl_Scene&&) = delete;
+        AttachedViewport(AttachedViewport&&) = delete;
+
+        virtual pimpl_AttachedViewport *get_pimpl(void) const = 0;
+
+        public:
+        SceneType type;
+
+        virtual ~AttachedViewport(void) = 0;
+
+        Viewport get_viewport(void) const;
+
+        uint32_t get_z_index(void) const;
+
+        std::vector<std::string> get_postprocessing_shaders(void) const;
+
+        void add_postprocessing_shader(const std::string &shader_uid);
+
+        void remove_postprocessing_shader(const std::string &shader_uid);
     };
 }

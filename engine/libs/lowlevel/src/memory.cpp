@@ -239,6 +239,10 @@ namespace argus {
     }
 
     void AllocPool::free(void *const addr) {
+        if (addr == nullptr) {
+            throw std::invalid_argument("Program attempted to free null pointer");
+        }
+
         const size_t chunk_len = pimpl->real_block_size * pimpl->blocks_per_chunk;
 
         // keep track of the last chunk in case we have to remove one
@@ -253,7 +257,7 @@ namespace argus {
                 }
 
                 size_t block_index = offset_in_chunk / pimpl->real_block_size;
-                
+
                 // clear appropriate bit in block map
                 // we convert the index to a bit position by taking the one's-complement and masking
                 // it to exclude bits not relevant when addressing the bitfield

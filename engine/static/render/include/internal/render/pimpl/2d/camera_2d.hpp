@@ -23,7 +23,7 @@ namespace argus {
     struct pimpl_Camera2D {
         std::string id;
         Scene2D &scene;
-        Transform2D transform;
+        AtomicDirtiable<Transform2D> transform;
 
         pimpl_Camera2D(const std::string &id, Scene2D &scene):
                 id(id),

@@ -18,6 +18,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <sstream>
+#include <string>
+
 namespace argus {
     void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res) {
         // naive implementation
@@ -53,5 +56,26 @@ namespace argus {
         _swap_f(&(mat[1][2]), &(mat[2][1]));
         _swap_f(&(mat[1][3]), &(mat[3][1]));
         _swap_f(&(mat[2][3]), &(mat[3][2]));
+    }
+
+    std::string mat4_to_str(Matrix4 matrix) {
+        return mat4_to_str(matrix.data);
+    }
+
+    std::string mat4_to_str(mat4_flat_t matrix) {
+        std::string text;
+        text += "-----------------------------------\n";
+        for (unsigned int r = 0; r < 4; r++) {
+            text += "| ";
+            for (unsigned int c = 0; c < 4; c++) {
+                std::string el_str(9, '\0');
+                snprintf(el_str.data(), el_str.size(), "%7.2f ", matrix[r * 4 + c]);
+                text += el_str.substr(0, 8);
+            }
+            text += "|\n";
+        }
+        text += "-----------------------------------";
+
+        return text;
     }
 }

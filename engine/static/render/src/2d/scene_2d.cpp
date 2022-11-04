@@ -23,6 +23,7 @@
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
+#include "internal/render/common/scene.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
@@ -42,17 +43,19 @@ namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Scene2D));
 
     Scene2D &Scene2D::create(const std::string &id) {
-        //TODO: implement
+        if (g_scenes.find(id) != g_scenes.end()) {
+            throw std::invalid_argument("Scene with given ID already exists");
+        }
+
+        auto scene = new Scene2D(id, Transform2D());
+        g_scenes.insert({ id, scene });
+
+        return *scene;
     }
 
-    Scene2D::Scene2D(const Transform2D &transform, const int index):
+    Scene2D::Scene2D(const std::string &id, const Transform2D &transform):
         Scene(SceneType::TwoD),
-        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(*this, transform, index)) {
-    }
-
-    Scene2D::Scene2D(const Scene2D &rhs) noexcept:
-        Scene(SceneType::TwoD),
-        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(*rhs.pimpl)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(id, *this, transform)) {
     }
 
     Scene2D::Scene2D(Scene2D &&rhs) noexcept:
@@ -62,6 +65,8 @@ namespace argus {
     }
 
     Scene2D::~Scene2D(void) {
+        g_scenes.erase(g_scenes.find(pimpl->id), g_scenes.end());
+
         if (pimpl != nullptr) {
             g_pimpl_pool.destroy(pimpl);
         }
@@ -106,7 +111,9 @@ namespace argus {
             throw std::invalid_argument("Camera with provided ID already exists in scene");
         }
 
-        pimpl->cameras.insert({id, Camera2D(id, *this) });
+        auto it = pimpl->cameras.insert({id, Camera2D(id, *this) });
+
+        return it.first->second;
     }
 
     void Scene2D::destroy_camera(const std::string &id) {

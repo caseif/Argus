@@ -65,37 +65,5 @@ namespace argus {
             const SceneType type;
 
             virtual pimpl_Scene *get_pimpl(void) const = 0;
-
-            /**
-             * \brief Gets the Transform of this Scene without affecting its dirty flag.
-             *
-             * \return The Scene's Transform.
-             *
-             * \sa Transform2D::get_transform
-             */
-            Transform2D peek_transform(void) const;
-
-            /**
-             * \brief Gets the Transform of this Scene and clears its dirty
-             *        flag.
-             *
-             * \return The Scene's Transform and previous dirty flag state.
-             *
-             * \sa Transform2D::peek_transform
-             */
-            ValueAndDirtyFlag<Transform2D> get_transform(void);
-
-            /**
-             * \brief Sets the Transform of this Scene.
-             *
-             * \param transform The new Transform.
-             */
-            void set_transform(const Transform2D &transform);
-
-            std::vector<std::string> get_postprocessing_shaders(void) const;
-
-            void add_postprocessing_shader(const std::string &shader_uid);
-
-            void remove_postprocessing_shader(const std::string &shader_uid);
     };
 }

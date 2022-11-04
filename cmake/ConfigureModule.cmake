@@ -334,6 +334,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       endif()
     else()
       add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
+
+      _argus_set_compile_flags(${PROJECT_NAME})
     endif()
 
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})

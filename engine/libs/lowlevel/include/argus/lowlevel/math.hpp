@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <string>
 #include <type_traits>
 
 namespace argus {
@@ -77,6 +78,10 @@ namespace argus {
     #pragma pack(pop)
 
     typedef float mat4_flat_t[16];
+
+    std::string mat4_to_str(Matrix4 matrix);
+
+    std::string mat4_to_str(mat4_flat_t matrix);
 
     /**
      * \brief Represents a vector with four elements.
@@ -244,6 +249,10 @@ namespace argus {
 
         Vector4(void): Vector4<T>(0, 0, 0, 0) {
         }
+
+        Vector4<T> inverse(void) const {
+            return { -x, -y, -z, -w };
+        }
     };
 
     /**
@@ -399,6 +408,10 @@ namespace argus {
 
         Vector3(void): Vector3<T>(0, 0, 0) {
         }
+
+        Vector3<T> inverse(void) const {
+            return { -x, -y, -z };
+        }
     };
 
     /**
@@ -520,6 +533,10 @@ namespace argus {
         }
 
         Vector2(void): Vector2<T>(0, 0) {
+        }
+
+        Vector2<T> inverse(void) const {
+            return { -x, -y };
         }
     };
 

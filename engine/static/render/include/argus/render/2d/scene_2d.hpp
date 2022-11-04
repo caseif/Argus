@@ -53,13 +53,13 @@ namespace argus {
              * \param index The compositing index of the Scene. Higher-indexed
              *        Scenes are rendered on top of lower-indexed ones.
              */
-            Scene2D(const Transform2D &transform, int index);
+            Scene2D(const std::string &id, const Transform2D &transform);
 
-            Scene2D(Transform2D &&transform, int index):
-                Scene2D(transform, index) {
+            Scene2D(const std::string &id, Transform2D &&transform):
+                Scene2D(id, transform) {
             }
 
-            Scene2D(const Scene2D&) noexcept;
+            Scene2D(const Scene2D&) noexcept = delete;
 
             Scene2D(Scene2D&&) noexcept;
 

@@ -18,19 +18,25 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
+#include "argus/render/common/viewport.hpp"
+
+#include <string>
+#include <vector>
+
+#include <cstdint>
 
 namespace argus {
-    // forward declarations
-    class Camera2D;
+    struct pimpl_AttachedViewport {
+        protected:
+        pimpl_AttachedViewport(const Viewport &viewport, uint32_t z_index):
+            viewport(viewport),
+            z_index(z_index) {
+        }
 
-    struct Viewport2D {
-        float top;
-        float bottom;
-        float left;
-        float right;
+        public:
+        const Viewport viewport;
+        const uint32_t z_index;
 
-        Vector2f scaling;
-        bool auto_aspect;
+        std::vector<std::string> postfx_shader_uids;
     };
 }

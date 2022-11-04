@@ -198,4 +198,7 @@ namespace argus {
         target = pimpl->matrix_rep;
     }
 
+    Transform2D Transform2D::inverse(void) const {
+        return { this->pimpl->translation.inverse(), -this->pimpl->rotation, this->pimpl->scale };
+    }
 }

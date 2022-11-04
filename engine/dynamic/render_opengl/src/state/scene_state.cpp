@@ -32,11 +32,7 @@ namespace argus {
 
     SceneState::SceneState(RendererState &parent_state, Scene &scene):
             parent_state(parent_state),
-            scene(scene),
-            front_fb(0),
-            back_fb(0),
-            front_frame_tex(0),
-            back_frame_tex(0) {
+            scene(scene) {
     }
 
     SceneState::~SceneState(void) {
