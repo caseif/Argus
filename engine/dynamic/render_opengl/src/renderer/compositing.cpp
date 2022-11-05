@@ -47,58 +47,72 @@
 #include <utility>
 
 namespace argus {
-    void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
-            ValueAndDirtyFlag<Vector2u> resolution) {
-        auto &state = scene_state.parent_state;
+    struct TransformedViewport {
+        int32_t top;
+        int32_t bottom;
+        int32_t left;
+        int32_t right;
+    };
 
-        auto viewport = viewport_state.viewport->get_viewport();
+    TransformedViewport _transform_viewport_to_pixels(const Viewport &viewport, const Vector2u &resolution) {
         float vp_h_scale;
         float vp_v_scale;
         float vp_h_off;
         float vp_v_off;
 
-        auto min_dim = std::min(resolution->x, resolution->y);
-        auto max_dim = std::max(resolution->x, resolution->y);
+        auto min_dim = std::min(resolution.x, resolution.y);
+        auto max_dim = std::max(resolution.x, resolution.y);
         switch (viewport.mode) {
             case ViewportCoordinateSpaceMode::Individual:
-                vp_h_scale = resolution->x;
-                vp_v_scale = resolution->y;
+                vp_h_scale = resolution.x;
+                vp_v_scale = resolution.y;
                 vp_h_off = 0;
                 vp_v_off = 0;
                 break;
             case ViewportCoordinateSpaceMode::MinAxis:
                 vp_h_scale = min_dim;
                 vp_v_scale = min_dim;
-                vp_h_off = resolution->x > resolution->y ? (resolution->x - resolution->y) / 2.0f : 0;
-                vp_v_off = resolution->y > resolution->x ? (resolution->y - resolution->x) / 2.0f : 0;
+                vp_h_off = resolution.x > resolution.y ? (resolution.x - resolution.y) / 2.0f : 0;
+                vp_v_off = resolution.y > resolution.x ? (resolution.y - resolution.x) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::MaxAxis:
                 vp_h_scale = max_dim;
                 vp_v_scale = max_dim;
-                vp_h_off = resolution->x < resolution->y ? -(resolution->x - resolution->y) / 2.0f : 0;
-                vp_v_off = resolution->y < resolution->x ? -(resolution->y - resolution->x) / 2.0f : 0;
+                vp_h_off = resolution.x < resolution.y ? -(resolution.x - resolution.y) / 2.0f : 0;
+                vp_v_off = resolution.y < resolution.x ? -(resolution.y - resolution.x) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::HorizontalAxis:
-                vp_h_scale = resolution->x;
-                vp_v_scale = resolution->x;
+                vp_h_scale = resolution.x;
+                vp_v_scale = resolution.x;
                 vp_h_off = 0;
-                vp_v_off = (resolution->x - resolution->y) / 2.0f;
+                vp_v_off = (resolution.x - resolution.y) / 2.0f;
                 break;
             case ViewportCoordinateSpaceMode::VerticalAxis:
-                vp_h_scale = resolution->y;
-                vp_v_scale = resolution->y;
-                vp_h_off = (resolution->y - resolution->x) / 2.0f;
+                vp_h_scale = resolution.y;
+                vp_v_scale = resolution.y;
+                vp_h_off = (resolution.y - resolution.x) / 2.0f;
                 vp_v_off = 0;
                 break;
         }
 
-        auto left_pix = static_cast<int32_t>(viewport.left * vp_h_scale + vp_h_off);
-        auto right_pix = static_cast<int32_t>(viewport.right * vp_h_scale + vp_h_off);
-        auto top_pix = static_cast<int32_t>(viewport.top * vp_v_scale + vp_v_off);
-        auto bottom_pix = static_cast<int32_t>(viewport.bottom * vp_v_scale + vp_v_off);
+        TransformedViewport transformed;
+        transformed.left = static_cast<int32_t>(viewport.left * vp_h_scale + vp_h_off);
+        transformed.right = static_cast<int32_t>(viewport.right * vp_h_scale + vp_h_off);
+        transformed.top = static_cast<int32_t>(viewport.top * vp_v_scale + vp_v_off);
+        transformed.bottom = static_cast<int32_t>(viewport.bottom * vp_v_scale + vp_v_off);
 
-        auto fb_width = std::abs(right_pix - left_pix);
-        auto fb_height = std::abs(bottom_pix - top_pix);
+        return transformed;
+    }
+
+    void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution) {
+        auto &state = scene_state.parent_state;
+
+        auto viewport = viewport_state.viewport->get_viewport();
+        auto viewport_px = _transform_viewport_to_pixels(viewport, resolution.value);
+
+        auto fb_width = std::abs(viewport_px.right - viewport_px.left);
+        auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
 
         // framebuffer setup
         if (viewport_state.front_fb == 0) {
@@ -152,7 +166,7 @@ namespace argus {
                 glGenTextures(1, &viewport_state.back_frame_tex);
                 glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -172,7 +186,7 @@ namespace argus {
                 glGenTextures(1, &viewport_state.front_frame_tex);
                 glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0,
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0,
                         GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -194,15 +208,14 @@ namespace argus {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
 
         // clear framebuffer
-        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClearColor(0.5, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //glViewport(0, 0, resolution->x, resolution->y);
         glViewport(
-                0,
-                0,
-                fb_width,
-                fb_height
+                -viewport_px.left,
+                -viewport_px.top,
+                resolution->x,
+                resolution->y
         );
 
         program_handle_t last_program = 0;
@@ -280,18 +293,19 @@ namespace argus {
             ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
 
-        if (resolution.dirty) {
-            /*glViewport(
-                viewport_state.viewport->get_viewport().left * resolution->x,
-                viewport_state.viewport->get_viewport().top * resolution->y,
-                viewport_state.viewport->get_viewport().right * resolution->x,
-                viewport_state.viewport->get_viewport().bottom * resolution->y
-            );*/
-            //glViewport(0, 0, resolution->x, resolution->y);
-        }
+        auto viewport_px = _transform_viewport_to_pixels(viewport_state.viewport->get_viewport(), resolution.value);
+        auto viewport_width_px = std::abs(viewport_px.right - viewport_px.left);
+        auto viewport_height_px = std::abs(viewport_px.bottom - viewport_px.top);
+
+        glViewport(
+            viewport_px.left,
+            resolution->y - viewport_px.bottom,
+            viewport_width_px,
+            viewport_height_px
+        );
 
         glBindVertexArray(state.frame_vao);
-        glUseProgram(state.frame_program);
+        glUseProgram(state.frame_program.value().handle);
         glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -304,7 +318,7 @@ namespace argus {
     void setup_framebuffer(RendererState &state) {
         auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
 
-        state.frame_program = frame_program.handle;
+        state.frame_program = frame_program;
 
         if (!frame_program.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
