@@ -78,19 +78,19 @@ namespace argus {
             case ViewportCoordinateSpaceMode::MaxAxis:
                 vp_h_scale = max_dim;
                 vp_v_scale = max_dim;
-                vp_h_off = resolution.x < resolution.y ? -(resolution.x - resolution.y) / 2.0f : 0;
-                vp_v_off = resolution.y < resolution.x ? -(resolution.y - resolution.x) / 2.0f : 0;
+                vp_h_off = resolution.x < resolution.y ? -static_cast<float>(resolution.y - resolution.x) / 2.0f : 0;
+                vp_v_off = resolution.y < resolution.x ? -static_cast<float>(resolution.x - resolution.y) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::HorizontalAxis:
                 vp_h_scale = resolution.x;
                 vp_v_scale = resolution.x;
                 vp_h_off = 0;
-                vp_v_off = (resolution.x - resolution.y) / 2.0f;
+                vp_v_off = (static_cast<float>(resolution.y) - static_cast<float>(resolution.x)) / 2.0f;
                 break;
             case ViewportCoordinateSpaceMode::VerticalAxis:
                 vp_h_scale = resolution.y;
                 vp_v_scale = resolution.y;
-                vp_h_off = (resolution.y - resolution.x) / 2.0f;
+                vp_h_off = (static_cast<float>(resolution.x) - static_cast<float>(resolution.y)) / 2.0f;
                 vp_v_off = 0;
                 break;
         }
