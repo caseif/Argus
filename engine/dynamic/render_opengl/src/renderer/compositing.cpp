@@ -275,6 +275,13 @@ namespace argus {
             glClearColor(0.0, 0.0, 0.0, 0.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            glViewport(
+                0,
+                0,
+                fb_width,
+                fb_height
+            );
+
             glBindVertexArray(state.frame_vao);
             glUseProgram(postfx_program->handle);
             set_per_frame_global_uniforms(*postfx_program);
