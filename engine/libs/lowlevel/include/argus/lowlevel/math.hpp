@@ -74,6 +74,15 @@ namespace argus {
         const Matrix4Row &operator[](int i) const {
             return rows[i];
         }
+
+        static Matrix4 identity() {
+            return {
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            };
+        }
     };
     #pragma pack(pop)
 
@@ -684,6 +693,8 @@ namespace argus {
     };
 
     void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res);
+
+    void multiply_matrices(Matrix4 &a, const Matrix4 &b);
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat);
 

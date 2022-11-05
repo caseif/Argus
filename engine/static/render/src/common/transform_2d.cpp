@@ -176,6 +176,27 @@ namespace argus {
         Vector2f scale_current = transform.pimpl->scale;
         transform.pimpl->scale_mutex.unlock();
 
+        transform.pimpl->translation_matrix = {
+            {1, 0, 0, translation_current.x},
+            {0, 1, 0, translation_current.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+        };
+
+        transform.pimpl->rotation_matrix = {
+            {cos_rot, -sin_rot, 0, 0},
+            {sin_rot, cos_rot, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+        };
+
+        transform.pimpl->scale_matrix = {
+            {scale_current.x, 0, 0, 0},
+            {0, scale_current.y, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+        };
+
         transform.pimpl->matrix_rep = {
             {cos_rot * scale_current.x, -sin_rot, 0, translation_current.x},
             {sin_rot, cos_rot * scale_current.y, 0, translation_current.y},
@@ -190,6 +211,24 @@ namespace argus {
         _compute_matrix(*this);
 
         return pimpl->matrix_rep;
+    }
+
+    const Matrix4 &Transform2D::get_translation_matrix(void) const {
+        _compute_matrix(*this);
+
+        return pimpl->translation_matrix;
+    }
+
+    const Matrix4 &Transform2D::get_rotation_matrix(void) const {
+        _compute_matrix(*this);
+
+        return pimpl->rotation_matrix;
+    }
+
+    const Matrix4 &Transform2D::get_scale_matrix(void) const {
+        _compute_matrix(*this);
+
+        return pimpl->scale_matrix;
     }
 
     void Transform2D::copy_matrix(Matrix4 &target) const {

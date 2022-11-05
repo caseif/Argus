@@ -111,7 +111,7 @@ namespace argus {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
-    static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
+    [[maybe_unused]] static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 

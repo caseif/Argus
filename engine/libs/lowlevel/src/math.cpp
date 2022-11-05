@@ -21,6 +21,8 @@
 #include <sstream>
 #include <string>
 
+#include <cstring>
+
 namespace argus {
     void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res) {
         // naive implementation
@@ -32,6 +34,11 @@ namespace argus {
                 }
             }
         }
+    }
+    void multiply_matrices(Matrix4 &a, const Matrix4 &b) {
+        Matrix4 res;
+        multiply_matrices(a, b, res);
+        std::memcpy(a.data, res.data, sizeof(a.data));
     }
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat) {

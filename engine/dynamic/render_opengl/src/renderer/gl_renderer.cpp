@@ -112,7 +112,7 @@ namespace argus {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
-    static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
+    [[maybe_unused]] static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
@@ -124,6 +124,36 @@ namespace argus {
         return scenes;
     }
 
+    static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
+           const Vector2u &resolution, Matrix4 &dest) {
+        UNUSED(transform);
+
+        auto center_x = (viewport.left + viewport.right) / 2.0f;
+        auto center_y = (viewport.top + viewport.bottom) / 2.0f;
+
+        auto cur_translation = transform.get_translation();
+
+        Matrix4 anchor_mat_1 = {
+            {1, 0, 0, -center_x + cur_translation.x},
+            {0, 1, 0, -center_y + cur_translation.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1},
+        };
+        Matrix4 anchor_mat_2 = {
+            {1, 0, 0, center_x - cur_translation.x},
+            {0, 1, 0, center_y - cur_translation.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1},
+        };
+        dest = Matrix4::identity();
+        multiply_matrices(dest, anchor_mat_1);
+        multiply_matrices(dest, transform.get_scale_matrix());
+        multiply_matrices(dest, transform.get_rotation_matrix());
+        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, transform.get_translation_matrix());
+        multiply_matrices(dest, _compute_view_matrix(resolution));
+    }
+
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
 
@@ -131,9 +161,8 @@ namespace argus {
             Viewport2DState &viewport_state
                 = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
             auto camera_transform = viewport.get().get_camera().peek_transform();
-
-            multiply_matrices(camera_transform.inverse().as_matrix(), _compute_view_matrix(resolution),
-                    viewport_state.view_matrix);
+            _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(), resolution,
+                   viewport_state.view_matrix);
         }
     }
 
@@ -146,8 +175,8 @@ namespace argus {
             auto camera_transform = viewport.get().get_camera().get_transform();
 
             if (camera_transform.dirty) {
-                multiply_matrices(camera_transform.value.inverse().as_matrix(),
-                        _compute_view_matrix(window.peek_resolution()), viewport_state.view_matrix);
+                _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform->inverse(),
+                       window.peek_resolution(), viewport_state.view_matrix);
             }
         }
 

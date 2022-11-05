@@ -168,6 +168,12 @@ namespace argus {
              */
             const Matrix4 &as_matrix(void) const;
 
+            const Matrix4 &get_translation_matrix(void) const;
+
+            const Matrix4 &get_rotation_matrix(void) const;
+
+            const Matrix4 &get_scale_matrix(void) const;
+
             /**
              * \brief Copys a 4x4 matrix representation of the transform into
              *        the given array.
