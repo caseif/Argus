@@ -69,33 +69,33 @@ namespace argus {
             case ViewportCoordinateSpaceMode::MinAxis:
                 vp_h_scale = min_dim;
                 vp_v_scale = min_dim;
-                vp_h_off = resolution->x > resolution->y ? (resolution->x - resolution->y) / 2.0 : 0;
-                vp_v_off = resolution->y > resolution->x ? (resolution->y - resolution->x) / 2.0 : 0;
+                vp_h_off = resolution->x > resolution->y ? (resolution->x - resolution->y) / 2.0f : 0;
+                vp_v_off = resolution->y > resolution->x ? (resolution->y - resolution->x) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::MaxAxis:
                 vp_h_scale = max_dim;
                 vp_v_scale = max_dim;
-                vp_h_off = resolution->x < resolution->y ? -(resolution->x - resolution->y) / 2.0 : 0;
-                vp_v_off = resolution->y < resolution->x ? -(resolution->y - resolution->x) / 2.0 : 0;
+                vp_h_off = resolution->x < resolution->y ? -(resolution->x - resolution->y) / 2.0f : 0;
+                vp_v_off = resolution->y < resolution->x ? -(resolution->y - resolution->x) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::HorizontalAxis:
                 vp_h_scale = resolution->x;
                 vp_v_scale = resolution->x;
                 vp_h_off = 0;
-                vp_v_off = (resolution->x - resolution->y) / 2.0;
+                vp_v_off = (resolution->x - resolution->y) / 2.0f;
                 break;
             case ViewportCoordinateSpaceMode::VerticalAxis:
                 vp_h_scale = resolution->y;
                 vp_v_scale = resolution->y;
-                vp_h_off = (resolution->y - resolution->x) / 2.0;
+                vp_h_off = (resolution->y - resolution->x) / 2.0f;
                 vp_v_off = 0;
                 break;
         }
 
-        auto left_pix = viewport.left * vp_h_scale + vp_h_off;
-        auto right_pix = viewport.right * vp_h_scale + vp_h_off;
-        auto top_pix = viewport.top * vp_v_scale + vp_v_off;
-        auto bottom_pix = viewport.bottom * vp_v_scale + vp_v_off;
+        auto left_pix = static_cast<int32_t>(viewport.left * vp_h_scale + vp_h_off);
+        auto right_pix = static_cast<int32_t>(viewport.right * vp_h_scale + vp_h_off);
+        auto top_pix = static_cast<int32_t>(viewport.top * vp_v_scale + vp_v_off);
+        auto bottom_pix = static_cast<int32_t>(viewport.bottom * vp_v_scale + vp_v_off);
 
         auto fb_width = std::abs(right_pix - left_pix);
         auto fb_height = std::abs(bottom_pix - top_pix);
@@ -201,10 +201,8 @@ namespace argus {
         glViewport(
                 0,
                 0,
-                (viewport_state.viewport->get_viewport().right - viewport_state.viewport->get_viewport().left)
-                    * resolution->x,
-                (viewport_state.viewport->get_viewport().bottom - viewport_state.viewport->get_viewport().top)
-                    * resolution->y
+                fb_width,
+                fb_height
         );
 
         program_handle_t last_program = 0;
