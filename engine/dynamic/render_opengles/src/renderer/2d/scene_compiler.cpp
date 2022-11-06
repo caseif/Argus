@@ -59,7 +59,7 @@ namespace argus {
 
     void compile_scene_2d(const Scene2D &scene, Scene2DState &scene_state) {
         process_objects_2d(scene, scene_state.processed_objs, create_processed_object_2d, update_processed_object_2d,
-            &scene_state);
+                &scene_state);
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
             auto &processed_obj = *reinterpret_cast<ProcessedRenderObject*>(it->second);
@@ -74,12 +74,6 @@ namespace argus {
 
             processed_obj.visited = false;
             ++it;
-        }
-
-        for (auto postfx : scene.get_postprocessing_shaders()) {
-            if (scene_state.postfx_programs.find(postfx) == scene_state.postfx_programs.end()) {
-                scene_state.postfx_programs.insert({ postfx, link_program({ FB_SHADER_VERT_PATH, postfx }) });
-            }
         }
     }
 }

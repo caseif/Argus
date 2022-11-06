@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/render_opengles/renderer/gles_renderer.hpp"
+
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
@@ -27,32 +29,32 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 
-#include "argus/wm/window.hpp"
-
-#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
+#include "argus/render/defines.hpp"
 #include "argus/render/util/object_processor.hpp"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
-#include "internal/render_opengles/types.hpp"
+#include "internal/render_opengles/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengles/renderer/bucket_proc.hpp"
 #include "internal/render_opengles/renderer/compositing.hpp"
-#include "internal/render_opengles/renderer/gles_renderer.hpp"
 #include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/renderer/texture_mgmt.hpp"
-#include "internal/render_opengles/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengles/state/render_bucket.hpp"
 #include "internal/render_opengles/state/renderer_state.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
+#include "internal/render_opengles/state/viewport_state.hpp"
+#include "internal/render_opengles/types.hpp"
 
-#include "aglet/aglet.h"
 #include "GLFW/glfw3.h"
+#include "aglet/aglet.h"
+#include "argus/wm/window.hpp"
 
 #include <atomic>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -115,31 +117,76 @@ namespace argus {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
+    static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
+                                                   const Vector2u &resolution, Matrix4 &dest) {
+        UNUSED(transform);
+
+        auto center_x = (viewport.left + viewport.right) / 2.0f;
+        auto center_y = (viewport.top + viewport.bottom) / 2.0f;
+
+        auto cur_translation = transform.get_translation();
+
+        Matrix4 anchor_mat_1 = {
+            {1, 0, 0, -center_x + cur_translation.x},
+            {0, 1, 0, -center_y + cur_translation.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1},
+        };
+        Matrix4 anchor_mat_2 = {
+            {1, 0, 0, center_x - cur_translation.x},
+            {0, 1, 0, center_y - cur_translation.y},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1},
+        };
+        dest = Matrix4::identity();
+        multiply_matrices(dest, anchor_mat_1);
+        multiply_matrices(dest, transform.get_scale_matrix());
+        multiply_matrices(dest, transform.get_rotation_matrix());
+        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, transform.get_translation_matrix());
+        multiply_matrices(dest, _compute_view_matrix(resolution));
+    }
+
+    static std::set<Scene*> _get_associated_scenes_for_canvas(Canvas &canvas) {
+        std::set<Scene*> scenes;
+        for (auto viewport : canvas.get_viewports_2d()) {
+            scenes.insert(&viewport.get().get_camera().get_scene());
+        }
+        return scenes;
+    }
+
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene, true);
-            auto scene_transform = scene->peek_transform();
 
-            multiply_matrices(scene_transform.as_matrix(), _compute_view_matrix(resolution),
-                    scene_state.view_matrix);
+        for (auto viewport : canvas.get_viewports_2d()) {
+            auto &viewport_state
+                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+            auto camera_transform = viewport.get().get_camera().peek_transform();
+            _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(), resolution,
+                                               viewport_state.view_matrix);
         }
     }
 
     static void _rebuild_scene(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene, true);
 
-            auto scene_transform = scene->get_transform();
-            if (scene_transform.dirty) {
-                multiply_matrices(scene_transform->as_matrix(), _compute_view_matrix(window.peek_resolution()),
-                        scene_state.view_matrix);
+        for (auto viewport : canvas.get_viewports_2d()) {
+            Viewport2DState &viewport_state
+                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+            auto camera_transform = viewport.get().get_camera().get_transform();
+
+            if (camera_transform.dirty) {
+                _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform->inverse(),
+                                                   window.peek_resolution(), viewport_state.view_matrix);
             }
+        }
+
+        for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
+            SceneState &scene_state = state.get_scene_state(*scene, true);
 
             compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
 
-            fill_buckets(reinterpret_cast<Scene2DState&>(scene_state));
+            fill_buckets(scene_state);
 
             for (auto bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
@@ -255,9 +302,13 @@ namespace argus {
 
         auto resolution = window.get_resolution();
 
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene);
-            draw_scene_to_framebuffer(scene_state, resolution);
+        auto viewports = canvas.get_viewports_2d();
+
+        for (auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto &scene_state = state.get_scene_state(scene);
+            draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
 
         // set up state for drawing framebuffers to screen
@@ -270,10 +321,12 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        for (auto *scene : canvas.get_scenes()) {
-            auto &scene_state = state.get_scene_state(*scene);
+        for (auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto &scene_state = state.get_scene_state(scene);
 
-            draw_framebuffer_to_screen(scene_state, resolution);
+            draw_framebuffer_to_screen(scene_state, viewport_state, resolution);
         }
 
         glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));

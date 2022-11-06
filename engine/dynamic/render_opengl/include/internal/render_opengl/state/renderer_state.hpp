@@ -26,7 +26,6 @@
 
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
-#include "internal/render_opengl/state/viewport_state.hpp"
 
 #include <map>
 #include <optional>
@@ -36,6 +35,8 @@
 
 namespace argus {
     // forward declarations
+    struct AttachedViewport;
+    struct AttachedViewport2D;
     class Canvas;
     class Scene;
     class Shader;
@@ -47,6 +48,8 @@ namespace argus {
     class GLRenderer;
     struct ProcessedRenderObject;
     struct RenderBucket;
+
+    struct ViewportState;
 
     struct RendererState {
         GLRenderer &renderer;

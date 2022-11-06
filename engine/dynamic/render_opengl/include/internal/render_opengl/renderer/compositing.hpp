@@ -20,12 +20,12 @@
 
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "internal/render_opengl/state/viewport_state.hpp"
 
 namespace argus {
     // forward declarations
     struct RendererState;
     struct SceneState;
+    struct ViewportState;
 
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution);

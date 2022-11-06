@@ -21,6 +21,7 @@
 #include "argus/lowlevel/refcountable.hpp"
 
 #include "argus/resman/resource.hpp"
+
 #include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengles/types.hpp"
@@ -34,6 +35,8 @@
 
 namespace argus {
     // forward declarations
+    struct AttachedViewport;
+    struct AttachedViewport2D;
     class Canvas;
     class Scene;
     class Shader;
@@ -46,6 +49,8 @@ namespace argus {
     struct ProcessedRenderObject;
     struct RenderBucket;
 
+    struct ViewportState;
+
     struct RendererState {
         GLESRenderer &renderer;
 
@@ -53,19 +58,24 @@ namespace argus {
 
         std::map<const Scene2D*, Scene2DState> scene_states_2d;
         std::vector<SceneState*> all_scene_states;
+        std::map<const AttachedViewport2D*, ViewportState> viewport_states_2d;
         std::map<std::string, RefCountable<texture_handle_t>> prepared_textures;
         std::map<std::string, std::string> material_textures;
         std::map<std::string, shader_handle_t> compiled_shaders;
         std::map<std::string, LinkedProgram> linked_programs;
 
+        std::map<std::string, LinkedProgram> postfx_programs;
+
         buffer_handle_t frame_vbo;
         array_handle_t frame_vao;
-        program_handle_t frame_program;
+        std::optional<LinkedProgram> frame_program;
 
         RendererState(GLESRenderer &renderer);
 
         ~RendererState(void);
 
         SceneState &get_scene_state(Scene &scene, bool create = false);
+
+        ViewportState &get_viewport_state(AttachedViewport &viewport, bool create = false);
     };
 }

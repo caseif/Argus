@@ -33,11 +33,8 @@
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
-#include "argus/render/util/object_processor.hpp"
 
-#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/gl_util.hpp"
-#include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
@@ -47,6 +44,7 @@
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
+#include "internal/render_opengl/state/viewport_state.hpp"
 
 #include "aglet/aglet.h"
 #include "GLFW/glfw3.h"
@@ -116,14 +114,6 @@ namespace argus {
         return _compute_view_matrix(resolution.x, resolution.y);
     }
 
-    static std::set<Scene*> _get_associated_scenes_for_canvas(Canvas &canvas) {
-        std::set<Scene*> scenes;
-        for (auto viewport : canvas.get_viewports_2d()) {
-            scenes.insert(&viewport.get().get_camera().get_scene());
-        }
-        return scenes;
-    }
-
     static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
            const Vector2u &resolution, Matrix4 &dest) {
         UNUSED(transform);
@@ -154,11 +144,19 @@ namespace argus {
         multiply_matrices(dest, _compute_view_matrix(resolution));
     }
 
+    static std::set<Scene*> _get_associated_scenes_for_canvas(Canvas &canvas) {
+        std::set<Scene*> scenes;
+        for (auto viewport : canvas.get_viewports_2d()) {
+            scenes.insert(&viewport.get().get_camera().get_scene());
+        }
+        return scenes;
+    }
+
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
 
         for (auto viewport : canvas.get_viewports_2d()) {
-            Viewport2DState &viewport_state
+            auto &viewport_state
                 = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
             auto camera_transform = viewport.get().get_camera().peek_transform();
             _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(), resolution,

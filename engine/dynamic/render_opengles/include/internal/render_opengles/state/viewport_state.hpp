@@ -18,44 +18,30 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
-
-#include "argus/render/util/linked_program.hpp"
-#include "argus/render/util/object_processor.hpp"
+#include "argus/render/2d/attached_viewport_2d.hpp"
 
 #include "internal/render_opengles/types.hpp"
 
-#include <map>
-#include <string>
-
 namespace argus {
     // forward declarations
-    class Material;
-    class RenderObject2D;
-    class Scene;
-
-    struct ProcessedRenderObject;
-    struct RenderBucket;
     struct RendererState;
 
-    struct SceneState {
+    struct ViewportState {
         RendererState &parent_state;
+        AttachedViewport *viewport;
 
-        Scene &scene;
+        Matrix4 view_matrix;
 
-        //TODO: this map should be sorted or otherwise bucketed by shader and texture
-        std::map<std::string, RenderBucket*> render_buckets;
+        buffer_handle_t front_fb;
+        buffer_handle_t back_fb;
 
-        SceneState(RendererState &parent_state, Scene &scene);
+        texture_handle_t front_frame_tex;
+        texture_handle_t back_frame_tex;
 
-        ~SceneState(void);
+        ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };
 
-    struct Scene2DState : public SceneState {
-        std::map<const RenderObject2D*, ProcessedRenderObject2DPtr> processed_objs;
-
-        Scene2DState(RendererState &parent_state, Scene &scene);
-
-        ~Scene2DState(void);
+    struct Viewport2DState : ViewportState {
+        Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport);
     };
 }

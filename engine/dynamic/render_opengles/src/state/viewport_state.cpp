@@ -16,38 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/render_opengles/state/processed_render_object.hpp"
-#include "internal/render_opengles/state/render_bucket.hpp"
-#include "internal/render_opengles/state/scene_state.hpp"
-
-#include <map>
-#include <string>
-#include <utility>
+#include "internal/render_opengles/state/viewport_state.hpp"
 
 namespace argus {
     // forward declarations
-    class Scene;
-
     struct RendererState;
 
-    SceneState::SceneState(RendererState &parent_state, Scene &scene):
+    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport):
             parent_state(parent_state),
-            scene(scene) {
+            viewport(viewport),
+            front_fb(0),
+            back_fb(0),
+            front_frame_tex(0),
+            back_frame_tex(0) {
     }
 
-    SceneState::~SceneState(void) {
-        for (auto &bucket : render_buckets) {
-            bucket.second->~RenderBucket();
-        }
-    }
-
-    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
-            SceneState(parent_state, scene) {
-    }
-
-    Scene2DState::~Scene2DState(void) {
-        for (auto &obj : this->processed_objs) {
-            reinterpret_cast<ProcessedRenderObject*>(obj.second)->~ProcessedRenderObject();
-        }
+    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport):
+            ViewportState(parent_state, viewport) {
     }
 }

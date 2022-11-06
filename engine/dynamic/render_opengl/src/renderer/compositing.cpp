@@ -38,6 +38,7 @@
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
+#include "internal/render_opengl/state/viewport_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -257,7 +258,7 @@ namespace argus {
         for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
             LinkedProgram *postfx_program;
 
-            auto &postfx_programs = scene_state.parent_state.postfx_programs;
+            auto &postfx_programs = state.postfx_programs;
             auto it = postfx_programs.find(postfx);
             if (it != postfx_programs.end()) {
                 postfx_program = &it->second;

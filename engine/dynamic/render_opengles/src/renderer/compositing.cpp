@@ -38,6 +38,7 @@
 #include "internal/render_opengles/state/render_bucket.hpp"
 #include "internal/render_opengles/state/renderer_state.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
+#include "internal/render_opengles/state/viewport_state.hpp"
 
 #include "aglet/aglet.h"
 
@@ -47,31 +48,95 @@
 #include <utility>
 
 namespace argus {
-    void draw_scene_to_framebuffer(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {
-        auto &state = scene_state.parent_state;
+    struct TransformedViewport {
+        int32_t top;
+        int32_t bottom;
+        int32_t left;
+        int32_t right;
+    };
 
-        // framebuffer setup
-        if (scene_state.front_fb == 0) {
-            glGenFramebuffers(1, &scene_state.front_fb);
-            glGenFramebuffers(1, &scene_state.back_fb);
+    TransformedViewport _transform_viewport_to_pixels(const Viewport &viewport, const Vector2u &resolution) {
+        float vp_h_scale;
+        float vp_v_scale;
+        float vp_h_off;
+        float vp_v_off;
+
+        auto min_dim = std::min(resolution.x, resolution.y);
+        auto max_dim = std::max(resolution.x, resolution.y);
+        switch (viewport.mode) {
+            case ViewportCoordinateSpaceMode::Individual:
+                vp_h_scale = resolution.x;
+                vp_v_scale = resolution.y;
+                vp_h_off = 0;
+                vp_v_off = 0;
+                break;
+            case ViewportCoordinateSpaceMode::MinAxis:
+                vp_h_scale = min_dim;
+                vp_v_scale = min_dim;
+                vp_h_off = resolution.x > resolution.y ? (resolution.x - resolution.y) / 2.0f : 0;
+                vp_v_off = resolution.y > resolution.x ? (resolution.y - resolution.x) / 2.0f : 0;
+                break;
+            case ViewportCoordinateSpaceMode::MaxAxis:
+                vp_h_scale = max_dim;
+                vp_v_scale = max_dim;
+                vp_h_off = resolution.x < resolution.y ? -static_cast<float>(resolution.y - resolution.x) / 2.0f : 0;
+                vp_v_off = resolution.y < resolution.x ? -static_cast<float>(resolution.x - resolution.y) / 2.0f : 0;
+                break;
+            case ViewportCoordinateSpaceMode::HorizontalAxis:
+                vp_h_scale = resolution.x;
+                vp_v_scale = resolution.x;
+                vp_h_off = 0;
+                vp_v_off = (static_cast<float>(resolution.y) - static_cast<float>(resolution.x)) / 2.0f;
+                break;
+            case ViewportCoordinateSpaceMode::VerticalAxis:
+                vp_h_scale = resolution.y;
+                vp_v_scale = resolution.y;
+                vp_h_off = (static_cast<float>(resolution.x) - static_cast<float>(resolution.y)) / 2.0f;
+                vp_v_off = 0;
+                break;
         }
 
-        if (scene_state.front_frame_tex == 0 || resolution.dirty) {
-            if (scene_state.front_frame_tex != 0) {
-                glDeleteTextures(1, &scene_state.front_frame_tex);
+        TransformedViewport transformed;
+        transformed.left = static_cast<int32_t>(viewport.left * vp_h_scale + vp_h_off);
+        transformed.right = static_cast<int32_t>(viewport.right * vp_h_scale + vp_h_off);
+        transformed.top = static_cast<int32_t>(viewport.top * vp_v_scale + vp_v_off);
+        transformed.bottom = static_cast<int32_t>(viewport.bottom * vp_v_scale + vp_v_off);
+
+        return transformed;
+    }
+
+    void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution) {
+        auto &state = scene_state.parent_state;
+
+        auto viewport = viewport_state.viewport->get_viewport();
+        auto viewport_px = _transform_viewport_to_pixels(viewport, resolution.value);
+
+        auto fb_width = std::abs(viewport_px.right - viewport_px.left);
+        auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
+
+        // framebuffer setup
+        if (viewport_state.front_fb == 0) {
+            glGenFramebuffers(1, &viewport_state.front_fb);
+            glGenFramebuffers(1, &viewport_state.back_fb);
+        }
+
+        if (viewport_state.front_frame_tex == 0 || resolution.dirty) {
+            if (viewport_state.front_frame_tex != 0) {
+                glDeleteTextures(1, &viewport_state.front_frame_tex);
             }
 
             // back framebuffer texture
-            glGenTextures(1, &scene_state.back_frame_tex);
-            glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
+            glGenTextures(1, &viewport_state.back_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.back_fb);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.back_frame_tex, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.back_fb);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewport_state.back_frame_tex, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -81,16 +146,16 @@ namespace argus {
             }
 
             // front framebuffer texture
-            glGenTextures(1, &scene_state.front_frame_tex);
-            glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
+            glGenTextures(1, &viewport_state.front_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_state.front_frame_tex, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewport_state.front_frame_tex, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -100,7 +165,7 @@ namespace argus {
             }
         }
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
 
         // clear framebuffer
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -121,7 +186,7 @@ namespace argus {
                 glUseProgram(program_info.handle);
                 last_program = program_info.handle;
 
-                auto view_mat = scene_state.view_matrix;
+                auto view_mat = viewport_state.view_matrix;
                 program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat] (auto vm_loc) {
                     glUniformMatrix4fv(vm_loc, 1, GL_TRUE, view_mat.data);
                 });
@@ -139,21 +204,38 @@ namespace argus {
             glBindVertexArray(0);
         }
 
-        for (auto &postfx : scene_state.scene.get_postprocessing_shaders()) {
-            auto postfx_program = scene_state.postfx_programs.find(postfx)->second;
+        for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
+            LinkedProgram *postfx_program;
 
-            std::swap(scene_state.front_fb, scene_state.back_fb);
-            std::swap(scene_state.front_frame_tex, scene_state.back_frame_tex);
+            auto &postfx_programs = state.postfx_programs;
+            auto it = postfx_programs.find(postfx);
+            if (it != postfx_programs.end()) {
+                postfx_program = &it->second;
+            } else {
+                auto linked_program = link_program({ FB_SHADER_VERT_PATH, postfx });
+                auto inserted = postfx_programs.insert({ postfx, linked_program });
+                postfx_program = &inserted.first->second;
+            }
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene_state.front_fb);
+            std::swap(viewport_state.front_fb, viewport_state.back_fb);
+            std::swap(viewport_state.front_frame_tex, viewport_state.back_frame_tex);
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
 
             glClearColor(0.0, 0.0, 0.0, 0.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            glViewport(
+                0,
+                0,
+                fb_width,
+                fb_height
+            );
+
             glBindVertexArray(state.frame_vao);
-            glUseProgram(postfx_program.handle);
-            set_per_frame_global_uniforms(postfx_program);
-            glBindTexture(GL_TEXTURE_2D, scene_state.back_frame_tex);
+            glUseProgram(postfx_program->handle);
+            set_per_frame_global_uniforms(*postfx_program);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
@@ -164,16 +246,24 @@ namespace argus {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
-    void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution) {
+    void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
 
-        if (resolution.dirty) {
-            glViewport(0, 0, resolution->x, resolution->y);
-        }
+        auto viewport_px = _transform_viewport_to_pixels(viewport_state.viewport->get_viewport(), resolution.value);
+        auto viewport_width_px = std::abs(viewport_px.right - viewport_px.left);
+        auto viewport_height_px = std::abs(viewport_px.bottom - viewport_px.top);
+
+        glViewport(
+            viewport_px.left,
+            resolution->y - viewport_px.bottom,
+            viewport_width_px,
+            viewport_height_px
+        );
 
         glBindVertexArray(state.frame_vao);
-        glUseProgram(state.frame_program);
-        glBindTexture(GL_TEXTURE_2D, scene_state.front_frame_tex);
+        glUseProgram(state.frame_program->handle);
+        glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -185,7 +275,7 @@ namespace argus {
     void setup_framebuffer(RendererState &state) {
         auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
 
-        state.frame_program = frame_program.handle;
+        state.frame_program = frame_program;
 
         auto attr_position_loc = frame_program.get_attr_loc(SHADER_ATTRIB_POSITION);
         auto attr_texcoord_loc = frame_program.get_attr_loc(SHADER_ATTRIB_TEXCOORD);

@@ -27,6 +27,7 @@
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
+#include "internal/render_opengl/state/viewport_state.hpp"
 
 #include <map>
 #include <string>

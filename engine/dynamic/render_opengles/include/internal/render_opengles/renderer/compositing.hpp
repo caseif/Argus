@@ -25,10 +25,13 @@ namespace argus {
     // forward declarations
     struct RendererState;
     struct SceneState;
+    struct ViewportState;
 
-    void draw_scene_to_framebuffer(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution);
+    void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
+                                   ValueAndDirtyFlag<Vector2u> resolution);
 
-    void draw_framebuffer_to_screen(SceneState &scene_state, ValueAndDirtyFlag<Vector2u> resolution);
+    void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
+                                    ValueAndDirtyFlag<Vector2u> resolution);
 
     void setup_framebuffer(RendererState &state);
 }
