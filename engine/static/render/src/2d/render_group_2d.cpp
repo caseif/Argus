@@ -121,10 +121,6 @@ namespace argus {
         return pimpl->transform;
     }
 
-    ValueAndDirtyFlag<const Transform2D> RenderGroup2D::get_transform(void) const {
-        return pimpl->transform;
-    }
-
     //NOLINTNEXTLINE(readability-make-member-function-const)
     void RenderGroup2D::set_transform(const Transform2D &transform) {
         pimpl->transform = transform;

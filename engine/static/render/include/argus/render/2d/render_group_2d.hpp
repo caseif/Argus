@@ -151,19 +151,6 @@ namespace argus {
             ValueAndDirtyFlag<Transform2D> get_transform(void);
 
             /**
-             * \brief Gets the local Transform of this group and clears its
-             *        dirty flag.
-             *
-             * \return The local Transform and its dirty flag.
-             *
-             * \remark The returned Transform is local and, if this group is a
-             *         child of another, does not necessarily reflect the
-             *         group's absolute transform with respect to the
-             *         Scene containing the group.
-             */
-            ValueAndDirtyFlag<const Transform2D> get_transform(void) const;
-
-            /**
              * Sets the local Transform of this group.
              *
              * \param transform The new local Transform for this group.

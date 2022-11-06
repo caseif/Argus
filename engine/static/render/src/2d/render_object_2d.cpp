@@ -76,11 +76,7 @@ namespace argus {
         return pimpl->transform;
     }
 
-    ValueAndDirtyFlag<const Transform2D> RenderObject2D::get_transform(void) const {
-        return const_cast<const Transform2D&>(pimpl->transform);
-    }
-
-    void RenderObject2D::set_transform(Transform2D &transform) const {
+    void RenderObject2D::set_transform(const Transform2D &transform) const {
         pimpl->transform = transform;
         pimpl->transform.pimpl->dirty = true;
     }

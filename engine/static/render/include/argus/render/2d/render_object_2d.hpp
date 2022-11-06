@@ -88,14 +88,12 @@ namespace argus {
              *         the Scene containing the object.
              */
             ValueAndDirtyFlag<Transform2D> get_transform(void);
-
-            ValueAndDirtyFlag<const Transform2D> get_transform(void) const;
             
             /**
              * \brief Sets the local Transform of this object.
              *
              * \param transform The new local Transform of the object.
              */
-            void set_transform(Transform2D &transform) const;
+            void set_transform(const Transform2D &transform) const;
     };
 }

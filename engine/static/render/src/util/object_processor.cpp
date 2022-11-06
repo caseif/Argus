@@ -41,7 +41,7 @@
 #include <cstring>
 
 namespace argus {
-    static void _compute_abs_group_transform(const RenderGroup2D &group, Matrix4 &target) {
+    static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {
         group.get_transform()->copy_matrix(target);
         const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
@@ -58,7 +58,7 @@ namespace argus {
         }
     }
 
-    static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, const RenderGroup2D &group,
+    static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, RenderGroup2D &group,
             const bool recompute_transform, const Matrix4 running_transform, ProcessRenderObj2DFn process_new_fn,
             UpdateRenderObj2DFn update_fn, void *extra) {
         bool new_recompute_transform = recompute_transform;
@@ -77,7 +77,7 @@ namespace argus {
             new_recompute_transform = true;
         }
 
-        for (const RenderObject2D *child_object : group.pimpl->child_objects) {
+        for (RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
             auto existing_it = processed_obj_map.find(child_object);
