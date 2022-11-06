@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/render/common/attached_viewport.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/scene.hpp"
@@ -25,3 +26,4 @@
 #include "argus/render/common/texture_data.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/common/vertex.hpp"
+#include "argus/render/common/viewport.hpp"
