@@ -74,10 +74,13 @@ namespace argus {
 
         while (!queue_copy.empty()) {
             auto &event = *queue_copy.front();
+
             auto listeners_copy = listeners;
-            for (const IndexedValue<ArgusEventHandler> &listener : listeners.list) {
-                if (static_cast<int>(listener.value.type == event.ptr->type)) {
-                    listener.value.callback(*event.ptr, listener.value.data);
+            for (auto ordering : ORDERINGS) {
+                for (auto &listener : listeners.lists[ordering]) {
+                    if (static_cast<int>(listener.value.type == event.ptr->type)) {
+                        listener.value.callback(*event.ptr, listener.value.data);
+                    }
                 }
             }
 
@@ -113,7 +116,7 @@ namespace argus {
     }
 
     Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
-            const TargetThread target_thread, void *const data) {
+            const TargetThread target_thread, void *const data, Ordering ordering) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
         _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
 
@@ -133,7 +136,7 @@ namespace argus {
         }
 
         ArgusEventHandler listener = {type, callback, data};
-        return add_callback(*listeners, listener);
+        return add_callback(*listeners, listener, ordering);
     }
 
     void unregister_event_handler(const Index id) {
@@ -143,8 +146,8 @@ namespace argus {
     }
 
     void deinit_event_handlers(void) {
-        g_update_event_listeners.list.clear();
-        g_render_event_listeners.list.clear();
+        g_update_event_listeners.lists.clear();
+        g_render_event_listeners.lists.clear();
     }
 
     void _dispatch_event_ptr(ArgusEvent &event) {

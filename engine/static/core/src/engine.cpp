@@ -81,20 +81,20 @@ namespace argus {
         g_game_thread->destroy();
     }
 
-    Index register_update_callback(const DeltaCallback &callback) {
+    Index register_update_callback(const DeltaCallback &callback, Ordering ordering) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
                 "Cannot register update callback before engine initialization.");
-        return add_callback(g_update_callbacks, callback);
+        return add_callback(g_update_callbacks, callback, ordering);
     }
 
     void unregister_update_callback(const Index id) {
         remove_callback(g_update_callbacks, id);
     }
 
-    Index register_render_callback(const DeltaCallback &callback) {
+    Index register_render_callback(const DeltaCallback &callback, Ordering ordering) {
         _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
                 "Cannot register render callback before engine initialization.");
-        return add_callback(g_render_callbacks, callback);
+        return add_callback(g_render_callbacks, callback, ordering);
     }
 
     void unregister_render_callback(const Index id) {
@@ -102,8 +102,8 @@ namespace argus {
     }
 
     static void _deinit_callbacks(void) {
-        g_update_callbacks.list.clear();
-        g_render_callbacks.list.clear();
+        g_update_callbacks.lists.clear();
+        g_render_callbacks.lists.clear();
     }
 
     void run_on_game_thread(NullaryCallback callback) {
@@ -209,8 +209,10 @@ namespace argus {
 
             // invoke update callbacks
             g_update_callbacks.list_mutex.lock_shared();
-            for (const auto &callback : g_update_callbacks.list) {
-                callback.value(delta);
+            for (auto ordering : ORDERINGS) {
+                for (const auto &callback : g_update_callbacks.lists[ordering]) {
+                    callback.value(delta);
+                }
             }
             g_update_callbacks.list_mutex.unlock_shared();
 
@@ -244,8 +246,10 @@ namespace argus {
 
             // invoke render callbacks
             g_render_callbacks.list_mutex.lock_shared();
-            for (const auto &callback : g_render_callbacks.list) {
-                callback.value(delta);
+            for (auto ordering : ORDERINGS) {
+                for (const auto &callback : g_render_callbacks.lists[ordering]) {
+                    callback.value(delta);
+                }
             }
             g_render_callbacks.list_mutex.unlock_shared();
 

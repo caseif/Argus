@@ -19,11 +19,12 @@
 #pragma once
 
 #include "argus/core/callback.hpp"
+#include "argus/core/engine.hpp"
 
 #include <functional>
+#include <type_traits>
 #include <typeindex>
 #include <typeinfo>
-#include <type_traits>
 
 #include <cassert>
 #include <cstddef>
@@ -71,7 +72,7 @@ namespace argus {
      * \sa argus::register_event_handler
      */
     Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
-            TargetThread target_thread, void *data);
+            TargetThread target_thread, void *data, Ordering ordering = Ordering::Standard);
 
     /**
      * \brief Registers a handler for particular events.
@@ -93,13 +94,14 @@ namespace argus {
      */
     template<typename EventType>
     Index register_event_handler(const std::function<void(const EventType&, void*)> &callback,
-            const TargetThread target_thread, void *const data = nullptr) {
+            const TargetThread target_thread, void *const data = nullptr,
+            Ordering ordering = Ordering::Standard) {
         return register_event_handler_with_type(std::type_index(typeid(EventType)),
                 [callback](const ArgusEvent &e, void *d) {
                     assert(e.type == std::type_index(typeid(EventType)));
                     callback(reinterpret_cast<const EventType&>(e), d);
                 },
-                target_thread, data);
+                target_thread, data, ordering);
     }
 
     /**

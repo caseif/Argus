@@ -22,9 +22,11 @@
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/core/callback.hpp"
+#include "argus/core/engine.hpp"
 
 #include <algorithm>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <queue>
 #include <shared_mutex>
@@ -51,17 +53,16 @@ namespace argus {
     // being iterated.
     template <typename T>
     struct CallbackList {
-        std::vector<IndexedValue<T>> list;
-        std::queue<IndexedValue<T>> addition_queue;
+        std::map<Ordering, std::vector<IndexedValue<T>>> lists;
+        std::queue<std::pair<Ordering, IndexedValue<T>>> addition_queue;
         std::queue<Index> removal_queue;
         std::shared_mutex list_mutex;
         std::shared_mutex queue_mutex;
 
-        CallbackList(void) {
-        }
+        CallbackList(void) = default;
 
         CallbackList(const CallbackList &rhs):
-                list(rhs.list),
+                lists(rhs.lists),
                 addition_queue(rhs.addition_queue),
                 removal_queue(rhs.removal_queue) {
         }
@@ -95,7 +96,13 @@ namespace argus {
             while (!list.removal_queue.empty()) {
                 Index id = list.removal_queue.front();
                 list.removal_queue.pop();
-                if (!remove_from_indexed_vector(list.list, id)) {
+                bool removed = false;
+                for (auto list_pair : list.lists) {
+                    if ((removed = remove_from_indexed_vector(list_pair.second, id))) {
+                        break;
+                    }
+                }
+                if (!removed) {
                     Logger::default_logger().warn("Game attempted to unregister unknown callback %zu", id);
                 }
             }
@@ -113,7 +120,9 @@ namespace argus {
             list.list_mutex.lock();
             list.queue_mutex.lock();
             while (!list.addition_queue.empty()) {
-                list.list.insert(list.list.cend(), list.addition_queue.front());
+                auto &front = list.addition_queue.front();
+                auto ordering = front.first;
+                list.lists[ordering].push_back(front.second);
                 list.addition_queue.pop();
             }
             list.queue_mutex.unlock();
@@ -124,13 +133,13 @@ namespace argus {
     }
 
     template <typename T>
-    Index add_callback(CallbackList<T> &list, T callback) {
+    Index add_callback(CallbackList<T> &list, T callback, Ordering ordering) {
         g_next_index_mutex.lock();
         Index index = g_next_index++;
         g_next_index_mutex.unlock();
 
         list.queue_mutex.lock();
-        list.addition_queue.push({index, callback});
+        list.addition_queue.push(std::make_pair(ordering, IndexedValue<T> { index, callback }));
         list.queue_mutex.unlock();
 
         return index;
@@ -146,9 +155,14 @@ namespace argus {
     template <typename T>
     bool try_remove_callback(CallbackList<T> &list, const Index index) {
         list.list_mutex.lock_shared();
-        auto it = std::find_if(list.list.cbegin(), list.list.cend(),
-            [index](auto callback) { return callback.id == index; });
-        bool present = it != list.list.cend();
+        bool present;
+        for (auto &list_pair : list.lists) {
+            auto it = std::find_if(list_pair.second.cbegin(), list_pair.second.cend(),
+                                   [index](auto callback) { return callback.id == index; });
+            if ((present = it != list_pair.second.cend())) {
+                break;
+            }
+        }
         list.list_mutex.unlock_shared();
 
         if (present) {

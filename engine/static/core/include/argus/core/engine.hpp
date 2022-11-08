@@ -39,6 +39,22 @@ namespace argus {
      */
     typedef std::function<void(void)> NullaryCallback;
 
+    enum class Ordering {
+        First,
+        Early,
+        Standard,
+        Late,
+        Last
+    };
+
+    constexpr Ordering ORDERINGS[] = {
+        Ordering::First,
+        Ordering::Early,
+        Ordering::Standard,
+        Ordering::Late,
+        Ordering::Last
+    };
+
     /**
      * \brief Initializes the engine.
      *
@@ -78,7 +94,7 @@ namespace argus {
      *
      * \sa DeltaCallback
      */
-    Index register_update_callback(const DeltaCallback &update_callback);
+    Index register_update_callback(const DeltaCallback &update_callback, Ordering ordering = Ordering::Standard);
 
     /**
      * \brief Unregisters an update callback.
@@ -98,7 +114,7 @@ namespace argus {
      *
      * \sa DeltaCallback
      */
-    Index register_render_callback(const DeltaCallback &render_callback);
+    Index register_render_callback(const DeltaCallback &render_callback, Ordering ordering = Ordering::Standard);
 
     /**
      * \brief Unregisters a render callback.
