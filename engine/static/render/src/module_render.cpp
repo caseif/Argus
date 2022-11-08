@@ -56,7 +56,12 @@ namespace argus {
     bool g_render_module_initialized = false;
 
     static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
-        for (auto backend : backends) {
+        for (const auto &backend : backends) {
+            if (std::find(attempted_backends.cbegin(), attempted_backends.cend(), backend)
+                    != attempted_backends.cend()) {
+                continue;
+            }
+
             auto activate_fn = get_render_backend_activate_fn(backend);
             if (activate_fn == nullptr) {
                 Logger::default_logger().info("Skipping unknown graphics backend \"%s\"", backend.c_str());
