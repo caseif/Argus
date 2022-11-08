@@ -212,9 +212,8 @@ namespace argus {
         auto program_it = programs.find(material);
         if (program_it != programs.end()) {
             deinit_program(program_it->second.handle);
+            programs.erase(program_it);
         }
-
-        programs.erase(program_it);
 
         if (auto texture_uid = state.material_textures.find(material);
             texture_uid != state.material_textures.end()) {
