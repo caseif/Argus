@@ -80,7 +80,7 @@ namespace argus {
         for (RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
-            auto existing_it = processed_obj_map.find(child_object);
+            auto existing_it = processed_obj_map.find(child_object->get_uuid());
 
             auto obj_transform = child_object->get_transform();
 
@@ -102,7 +102,7 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({ child_object, processed_obj });
+                processed_obj_map.insert({ child_object->get_uuid(), processed_obj });
             }
         }
 
@@ -114,7 +114,10 @@ namespace argus {
 
     void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
             ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn, void *extra) {
-        _process_render_group_2d(processed_obj_map, scene.pimpl->root_group, false, {},
+        // need to acquire a lock to prevent buffer swapping while compiling scene
+        scene.pimpl->read_lock.lock();
+        _process_render_group_2d(processed_obj_map, *scene.pimpl->root_group_read, false, {},
                 process_new_fn, update_fn, extra);
+        scene.pimpl->read_lock.unlock();
     }
 }

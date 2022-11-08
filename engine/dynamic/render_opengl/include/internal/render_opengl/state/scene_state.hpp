@@ -52,7 +52,7 @@ namespace argus {
     };
 
     struct Scene2DState : public SceneState {
-        std::map<const RenderObject2D*, ProcessedRenderObject2DPtr> processed_objs;
+        std::map<uint64_t, ProcessedRenderObject2DPtr> processed_objs;
 
         Scene2DState(RendererState &parent_state, Scene &scene);
 

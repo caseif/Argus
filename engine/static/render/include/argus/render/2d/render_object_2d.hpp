@@ -47,11 +47,13 @@ namespace argus {
             RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
 
-            RenderObject2D(const RenderObject2D&) noexcept;
+            RenderObject2D(const RenderObject2D&) = delete;
 
             RenderObject2D(RenderObject2D&&) noexcept;
 
             ~RenderObject2D();
+
+            uint64_t get_uuid(void) const;
 
             /**
              * \brief Gets the parent Scene of this object.
@@ -95,5 +97,7 @@ namespace argus {
              * \param transform The new local Transform of the object.
              */
             void set_transform(const Transform2D &transform) const;
+
+            RenderObject2D &copy(RenderGroup2D &parent);
     };
 }

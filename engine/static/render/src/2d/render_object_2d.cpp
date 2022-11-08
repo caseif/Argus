@@ -16,18 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/render/2d/render_object_2d.hpp"
+
 #include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/memory.hpp"
 
-#include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
-#include "argus/render/2d/render_object_2d.hpp"
-#include "internal/render/pimpl/common/transform_2d.hpp"
+#include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
+#include "internal/render/pimpl/common/transform_2d.hpp"
 
+#include <algorithm>
 #include <atomic>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace argus {
     // forward declarations
@@ -41,10 +43,6 @@ namespace argus {
         pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(parent_group, material, primitives, transform)) {
     }
 
-    RenderObject2D::RenderObject2D(const RenderObject2D &rhs) noexcept:
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(*rhs.pimpl)) {
-    }
-
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
         pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
@@ -54,6 +52,10 @@ namespace argus {
         if (pimpl != nullptr) {
             g_pimpl_pool.destroy(pimpl);
         }
+    }
+
+    uint64_t RenderObject2D::get_uuid(void) const {
+        return pimpl->uuid;
     }
 
     const Scene2D &RenderObject2D::get_scene(void) const {
@@ -79,5 +81,14 @@ namespace argus {
     void RenderObject2D::set_transform(const Transform2D &transform) const {
         pimpl->transform = transform;
         pimpl->transform.pimpl->dirty = true;
+    }
+
+    RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) {
+        std::vector<RenderPrim2D> prims_copy;
+        std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
+               [] (auto &v) { return RenderPrim2D(v); });
+        auto &copy = *new RenderObject2D(parent, pimpl->material, prims_copy, pimpl->transform);
+        copy.pimpl->uuid = pimpl->uuid;
+        return copy;
     }
 }

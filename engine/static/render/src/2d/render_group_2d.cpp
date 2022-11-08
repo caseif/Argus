@@ -51,10 +51,6 @@ namespace argus {
         pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group)) {
     }
 
-    RenderGroup2D::RenderGroup2D(const RenderGroup2D &rhs) noexcept:
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(*rhs.pimpl)) {
-    }
-
     RenderGroup2D::RenderGroup2D(RenderGroup2D &&rhs) noexcept:
         pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
@@ -124,5 +120,28 @@ namespace argus {
     //NOLINTNEXTLINE(readability-make-member-function-const)
     void RenderGroup2D::set_transform(const Transform2D &transform) {
         pimpl->transform = transform;
+    }
+
+    RenderGroup2D &RenderGroup2D::copy() {
+        return copy(nullptr);
+    }
+
+    RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
+        auto &copy = *new RenderGroup2D(pimpl->scene, parent, pimpl->transform);
+
+        copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
+        for (auto &child_group : pimpl->child_groups) {
+            auto &child_copy = child_group->copy(this);
+            child_copy.pimpl->parent_group = this;
+            copy.pimpl->child_groups.push_back(&child_copy);
+        }
+
+        copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
+        for (auto &child_obj : pimpl->child_objects) {
+            auto &child_copy = child_obj->copy(*this);
+            copy.pimpl->child_objects.push_back(&child_copy);
+        }
+
+        return copy;
     }
 }

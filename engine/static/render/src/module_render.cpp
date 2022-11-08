@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/render/module_render.hpp"
+
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/core/engine_config.hpp"
@@ -24,15 +26,16 @@
 
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/wm/window.hpp"
-#include "argus/wm/window_event.hpp"
-
-#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
-#include "internal/render/module_render.hpp"
+#include "argus/render/defines.hpp"
 #include "internal/render/common/backend.hpp"
+#include "internal/render/common/scene.hpp"
 #include "internal/render/loader/material_loader.hpp"
 #include "internal/render/loader/texture_loader.hpp"
+#include "internal/render/pimpl/2d/scene_2d.hpp"
+
+#include "argus/wm/window.hpp"
+#include "argus/wm/window_event.hpp"
 
 #include <map>
 #include <stdexcept>
@@ -129,6 +132,51 @@ namespace argus {
         delete &canvas;
     }
 
+    static void _swap_scene_buffers(TimeDelta delta) {
+        UNUSED(delta);
+
+        for (auto &scene_pair : g_scenes) {
+            auto &scene = *scene_pair.second;
+            switch (scene.type) {
+                case SceneType::TwoD: {
+                    auto *scene_pimpl = reinterpret_cast<pimpl_Scene2D*>(scene.get_pimpl());
+
+                    scene_pimpl->read_lock.lock();
+                    std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);
+                    // we don't actually need to hold the lock beyond this point, since we
+                    // can copy from the read buffer while the renderer is traversing it
+
+                    scene_pimpl->root_group_write = &scene_pimpl->root_group_read->copy();
+                    scene_pimpl->read_lock.unlock();
+
+                    break;
+                }
+                case SceneType::ThreeD: {
+                    Logger::default_logger().fatal("Unimplemented scene type");
+                }
+                default: {
+                    Logger::default_logger().fatal("Unrecognized scene type");
+                }
+            }
+        }
+    }
+
+    static void _lock_scene_read_buffers(TimeDelta delta) {
+        UNUSED(delta);
+
+        for (auto &scene_pair : g_scenes) {
+            scene_pair.second->get_pimpl()->read_lock.lock();
+        }
+    }
+
+    static void _unlock_scene_read_buffers(TimeDelta delta) {
+        UNUSED(delta);
+
+        for (auto &scene_pair : g_scenes) {
+            scene_pair.second->get_pimpl()->read_lock.unlock();
+        }
+    }
+
     void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Load: {
@@ -142,6 +190,11 @@ namespace argus {
                 _activate_backend();
 
                 Window::set_canvas_ctor_and_dtor(_construct_canvas, _destroy_canvas);
+
+                register_update_callback(&_swap_scene_buffers, Ordering::Last);
+
+                register_render_callback(&_lock_scene_read_buffers, Ordering::Early);
+                register_render_callback(&_unlock_scene_read_buffers, Ordering::Late);
 
                 ResourceManager::instance().register_loader(*new MaterialLoader());
                 ResourceManager::instance().register_loader(*new PngTextureLoader());

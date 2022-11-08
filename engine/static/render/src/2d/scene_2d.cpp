@@ -77,28 +77,28 @@ namespace argus {
     }
 
     RenderGroup2D &Scene2D::create_child_group(const Transform2D &transform) {
-        return pimpl->root_group.create_child_group(transform);
+        return pimpl->root_group_write->create_child_group(transform);
     }
 
     RenderObject2D &Scene2D::create_child_object(const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
-        return pimpl->root_group.create_child_object(material, primitives, transform);
+        return pimpl->root_group_write->create_child_object(material, primitives, transform);
     }
 
     void Scene2D::remove_member_group(RenderGroup2D &group) {
-        if (group.get_parent_group() != &pimpl->root_group) {
+        if (group.get_parent_group() != pimpl->root_group_write) {
             throw std::invalid_argument("Supplied RenderGroup2D is not a direct child of the Scene2D");
         }
 
-        pimpl->root_group.remove_member_group(group);
+        pimpl->root_group_write->remove_member_group(group);
     }
 
     void Scene2D::remove_member_object(RenderObject2D &object) {
-        if (&object.pimpl->parent_group != &pimpl->root_group) {
+        if (&object.pimpl->parent_group != pimpl->root_group_write) {
             throw std::invalid_argument("Supplied RenderObject2D is not a direct child of the Scene2D");
         }
 
-        pimpl->root_group.remove_child_object(object);
+        pimpl->root_group_write->remove_child_object(object);
     }
 
     std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {

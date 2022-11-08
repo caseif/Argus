@@ -47,6 +47,9 @@ namespace argus {
      * child groups/objects in addition to their own local Transform.
      */
     class RenderGroup2D {
+        private:
+            RenderGroup2D &copy(RenderGroup2D *parent);
+
         public:
             pimpl_RenderGroup2D *pimpl;
 
@@ -63,7 +66,7 @@ namespace argus {
 
             RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group);
 
-            RenderGroup2D(const RenderGroup2D&) noexcept;
+            RenderGroup2D(const RenderGroup2D&) = delete;
 
             RenderGroup2D(RenderGroup2D&&) noexcept;
 
@@ -156,5 +159,7 @@ namespace argus {
              * \param transform The new local Transform for this group.
              */
             void set_transform(const Transform2D &transform);
+
+            RenderGroup2D &copy(void);
     };
 }

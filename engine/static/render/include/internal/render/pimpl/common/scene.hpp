@@ -30,6 +30,8 @@ namespace argus {
         std::string id;
         Dirtiable<Transform2D> transform;
 
+        std::mutex read_lock;
+
         pimpl_Scene(const std::string &id, const Transform2D &transform):
                 id(id),
                 transform(transform) {

@@ -30,16 +30,18 @@ namespace argus {
     struct pimpl_Scene;
 
     struct pimpl_Scene2D : public pimpl_Scene {
-        RenderGroup2D root_group;
+        RenderGroup2D *root_group_read;
+        RenderGroup2D *root_group_write;
 
         std::map<std::string, Camera2D> cameras;
 
         pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
                 pimpl_Scene(id, transform),
-                root_group(scene, nullptr) {
+                root_group_read(new RenderGroup2D(scene, nullptr)),
+                root_group_write(new RenderGroup2D(scene, nullptr)) {
         }
 
-        pimpl_Scene2D(const pimpl_Scene2D&) = default;
+        pimpl_Scene2D(const pimpl_Scene2D&) = delete;
 
         pimpl_Scene2D(pimpl_Scene2D&&) = delete;
     };
