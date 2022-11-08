@@ -184,6 +184,9 @@ namespace argus {
 
     void *AllocPool::alloc(void) {
         // return malloc(pimpl->real_block_size); // for benchmarking purposes
+
+        //TODO: allow synchronization to be enabled/disabled per pool
+        this->alloc_mutex.lock();
         ChunkMetadata *cur_chunk = pimpl->first_chunk;
         ChunkMetadata *selected_chunk = nullptr;
         size_t max_block_count = 0;
@@ -234,6 +237,8 @@ namespace argus {
             = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * pimpl->real_block_size);
 
         selected_chunk->occupied_blocks += 1;
+
+        this->alloc_mutex.unlock();
 
         return reinterpret_cast<void *>(block_addr);
     }

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <new>
 
 #include <cstddef>
@@ -36,6 +37,8 @@ namespace argus {
             void validate_block_size(size_t size) const;
 
         public:
+            std::mutex alloc_mutex;
+
             explicit AllocPool(size_t block_size, uint8_t alignment_exp = 3);
 
             AllocPool(AllocPool&) = delete;
