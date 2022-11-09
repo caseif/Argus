@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/uuid.hpp"
+
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 
@@ -71,6 +73,8 @@ namespace argus {
             pimpl_Scene2D *pimpl;
 
             pimpl_Scene *get_pimpl(void) const override;
+
+            std::optional<std::reference_wrapper<RenderObject2D>> get_object(const Uuid &uuid);
 
             /**
              * \brief Creates a new RenderGroup2D as a direct child of this

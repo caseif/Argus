@@ -33,6 +33,12 @@ namespace argus {
         RenderGroup2D *root_group_read;
         RenderGroup2D *root_group_write;
 
+        std::map<Uuid, RenderObject2D*> object_map_a;
+        std::map<Uuid, RenderObject2D*> object_map_b;
+
+        std::map<Uuid, RenderObject2D*> *object_map_read = &object_map_a;
+        std::map<Uuid, RenderObject2D*> *object_map_write = &object_map_b;
+
         std::map<std::string, Camera2D> cameras;
 
         pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):

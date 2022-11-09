@@ -22,8 +22,10 @@
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
+#include "internal/render/pimpl/2d/scene_2d.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -88,6 +90,9 @@ namespace argus {
             const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
         auto *obj = new RenderObject2D(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
+
+        pimpl->scene.pimpl->object_map_write->insert({ obj->get_uuid(), obj });
+
         return *obj;
     }
 
@@ -105,6 +110,8 @@ namespace argus {
         }
 
         remove_from_vector(pimpl->child_objects, &object);
+
+        pimpl->scene.pimpl->object_map_write->erase(object.get_uuid());
 
         delete &object;
     }
@@ -137,9 +144,10 @@ namespace argus {
         }
 
         copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
-        for (auto &child_obj : pimpl->child_objects) {
+        for (auto *child_obj : pimpl->child_objects) {
             auto &child_copy = child_obj->copy(*this);
             copy.pimpl->child_objects.push_back(&child_copy);
+            pimpl->scene.pimpl->object_map_write->insert({ child_copy.get_uuid(), &child_copy });
         }
 
         return copy;
