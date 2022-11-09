@@ -55,7 +55,7 @@ namespace argus {
         }
     }
 
-    Uuid RenderObject2D::get_uuid(void) const {
+    const Uuid &RenderObject2D::get_uuid(void) const {
         return pimpl->uuid;
     }
 

@@ -33,11 +33,8 @@ namespace argus {
         RenderGroup2D *root_group_read;
         RenderGroup2D *root_group_write;
 
-        std::map<Uuid, RenderObject2D*> object_map_a;
-        std::map<Uuid, RenderObject2D*> object_map_b;
-
-        std::map<Uuid, RenderObject2D*> *object_map_read = &object_map_a;
-        std::map<Uuid, RenderObject2D*> *object_map_write = &object_map_b;
+        std::map<Uuid, RenderGroup2D*> group_map;
+        std::map<Uuid, RenderObject2D*> object_map;
 
         std::map<std::string, Camera2D> cameras;
 

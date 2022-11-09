@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/dirtiable.hpp"
+#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/common/transform.hpp"
 
@@ -71,6 +72,8 @@ namespace argus {
             RenderGroup2D(RenderGroup2D&&) noexcept;
 
             ~RenderGroup2D(void);
+
+            const Uuid &get_uuid(void);
 
             /**
              * \brief Gets the parent Scene.

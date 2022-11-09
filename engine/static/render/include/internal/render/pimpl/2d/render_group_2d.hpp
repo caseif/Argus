@@ -27,6 +27,7 @@
 
 namespace argus {
     struct pimpl_RenderGroup2D {
+        Uuid uuid;
         Scene2D &scene;
         RenderGroup2D *parent_group;
         Transform2D transform;

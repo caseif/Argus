@@ -74,6 +74,8 @@ namespace argus {
 
             pimpl_Scene *get_pimpl(void) const override;
 
+            std::optional<std::reference_wrapper<RenderGroup2D>> get_group(const Uuid &uuid);
+
             std::optional<std::reference_wrapper<RenderObject2D>> get_object(const Uuid &uuid);
 
             /**

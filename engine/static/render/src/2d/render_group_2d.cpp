@@ -72,6 +72,10 @@ namespace argus {
         }
     }
 
+    const Uuid &RenderGroup2D::get_uuid(void) {
+        return pimpl->uuid;
+    }
+
     Scene2D &RenderGroup2D::get_scene(void) const {
         return pimpl->scene;
     }
@@ -83,6 +87,9 @@ namespace argus {
     RenderGroup2D &RenderGroup2D::create_child_group(const Transform2D &transform) {
         auto *group = new RenderGroup2D(pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
+
+        pimpl->scene.pimpl->group_map.insert({ group->get_uuid(), group });
+
         return *group;
     }
 
@@ -91,7 +98,7 @@ namespace argus {
         auto *obj = new RenderObject2D(*this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
 
-        pimpl->scene.pimpl->object_map_write->insert({ obj->get_uuid(), obj });
+        pimpl->scene.pimpl->object_map.insert({ obj->get_uuid(), obj });
 
         return *obj;
     }
@@ -102,6 +109,10 @@ namespace argus {
         }
 
         remove_from_vector(pimpl->child_groups, &group);
+
+        pimpl->scene.pimpl->group_map.erase(group.get_uuid());
+
+        delete &group;
     }
 
     void RenderGroup2D::remove_child_object(RenderObject2D &object) {
@@ -111,7 +122,7 @@ namespace argus {
 
         remove_from_vector(pimpl->child_objects, &object);
 
-        pimpl->scene.pimpl->object_map_write->erase(object.get_uuid());
+        pimpl->scene.pimpl->object_map.erase(object.get_uuid());
 
         delete &object;
     }
@@ -135,19 +146,21 @@ namespace argus {
 
     RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
         auto &copy = *new RenderGroup2D(pimpl->scene, parent, pimpl->transform);
+        copy.pimpl->uuid = pimpl->uuid;
 
         copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
         for (auto &child_group : pimpl->child_groups) {
             auto &child_copy = child_group->copy(this);
             child_copy.pimpl->parent_group = this;
             copy.pimpl->child_groups.push_back(&child_copy);
+            pimpl->scene.pimpl->group_map.insert({ child_copy.get_uuid(), &child_copy });
         }
 
         copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
         for (auto *child_obj : pimpl->child_objects) {
             auto &child_copy = child_obj->copy(*this);
             copy.pimpl->child_objects.push_back(&child_copy);
-            pimpl->scene.pimpl->object_map_write->insert({ child_copy.get_uuid(), &child_copy });
+            pimpl->scene.pimpl->object_map.insert({ child_copy.get_uuid(), &child_copy });
         }
 
         return copy;

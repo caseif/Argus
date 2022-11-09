@@ -76,9 +76,16 @@ namespace argus {
         return dynamic_cast<pimpl_Scene*>(pimpl);
     }
 
+    std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(const Uuid &uuid) {
+        auto it = pimpl->group_map.find(uuid);
+        return it != pimpl->group_map.end()
+            ? std::make_optional(std::reference_wrapper(*it->second))
+            : std::nullopt;
+    }
+
     std::optional<std::reference_wrapper<RenderObject2D>> Scene2D::get_object(const Uuid &uuid) {
-        auto it = pimpl->object_map_write->find(uuid);
-        return it != pimpl->object_map_write->end()
+        auto it = pimpl->object_map.find(uuid);
+        return it != pimpl->object_map.end()
             ? std::make_optional(std::reference_wrapper(*it->second))
             : std::nullopt;
     }

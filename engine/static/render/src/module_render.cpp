@@ -143,12 +143,12 @@ namespace argus {
 
                     scene_pimpl->read_lock.lock();
                     std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);
-                    std::swap(scene_pimpl->object_map_read, scene_pimpl->object_map_write);
                     // we don't actually need to hold the lock beyond this point, since we
                     // can copy from the read buffer while the renderer is traversing it
                     scene_pimpl->read_lock.unlock();
 
-                    scene_pimpl->object_map_write->clear();
+                    scene_pimpl->group_map.clear();
+                    scene_pimpl->object_map.clear();
                     scene_pimpl->root_group_write = &scene_pimpl->root_group_read->copy();
 
                     break;

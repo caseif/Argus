@@ -56,7 +56,7 @@ namespace argus {
 
             ~RenderObject2D();
 
-            Uuid get_uuid(void) const;
+            const Uuid &get_uuid(void) const;
 
             /**
              * \brief Gets the parent Scene of this object.
