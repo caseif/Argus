@@ -22,6 +22,7 @@
 
 #include "argus/render/common/transform.hpp"
 
+#include <optional>
 #include <string>
 #include <vector>
 

@@ -37,7 +37,7 @@ namespace argus {
                 transform(transform) {
         }
 
-        pimpl_Scene(const pimpl_Scene&) = default;
+        pimpl_Scene(const pimpl_Scene&) = delete;
 
         pimpl_Scene(pimpl_Scene&&) = delete;
     };
