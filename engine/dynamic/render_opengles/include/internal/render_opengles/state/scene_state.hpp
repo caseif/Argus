@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/util/linked_program.hpp"
 #include "argus/render/util/object_processor.hpp"
@@ -52,7 +53,7 @@ namespace argus {
     };
 
     struct Scene2DState : public SceneState {
-        std::map<uint64_t, ProcessedRenderObject2DPtr> processed_objs;
+        std::map<Uuid, ProcessedRenderObject2DPtr> processed_objs;
 
         Scene2DState(RendererState &parent_state, Scene &scene);
 

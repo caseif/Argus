@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/resman/resource.hpp"
 
@@ -31,7 +32,7 @@ namespace argus {
     class Scene2D;
 
     typedef void *ProcessedRenderObject2DPtr;
-    typedef std::map<uint64_t, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
+    typedef std::map<Uuid, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
 
     typedef std::function<ProcessedRenderObject2DPtr(const RenderObject2D &obj,
         const Matrix4 &transform, void *extra)> ProcessRenderObj2DFn;

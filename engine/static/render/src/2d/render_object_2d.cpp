@@ -20,6 +20,7 @@
 
 #include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/common/transform.hpp"
@@ -54,7 +55,7 @@ namespace argus {
         }
     }
 
-    uint64_t RenderObject2D::get_uuid(void) const {
+    Uuid RenderObject2D::get_uuid(void) const {
         return pimpl->uuid;
     }
 

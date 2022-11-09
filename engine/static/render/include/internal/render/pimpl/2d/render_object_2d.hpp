@@ -27,10 +27,8 @@
 #include <vector>
 
 namespace argus {
-    static uint64_t g_next_uuid = 0;
-
     struct pimpl_RenderObject2D {
-        uint64_t uuid; //TODO: make this a proper UUID at some point
+        Uuid uuid;
         const RenderGroup2D &parent_group;
         const std::string material;
         std::vector<RenderPrim2D> primitives;
@@ -38,7 +36,7 @@ namespace argus {
 
         pimpl_RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
-            uuid(g_next_uuid++),
+            uuid(Uuid::random()),
             parent_group(parent_group),
             material(material),
             primitives(primitives),

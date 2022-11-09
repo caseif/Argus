@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/uuid.hpp"
+
 #include "argus/render/common/transform.hpp"
 
 #include <string>
@@ -53,7 +55,7 @@ namespace argus {
 
             ~RenderObject2D();
 
-            uint64_t get_uuid(void) const;
+            Uuid get_uuid(void) const;
 
             /**
              * \brief Gets the parent Scene of this object.
