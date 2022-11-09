@@ -248,6 +248,8 @@ namespace argus {
             throw std::invalid_argument("Program attempted to free null pointer");
         }
 
+        this->alloc_mutex.lock();
+
         const size_t chunk_len = pimpl->real_block_size * pimpl->blocks_per_chunk;
 
         // keep track of the last chunk in case we have to remove one
@@ -258,6 +260,8 @@ namespace argus {
             if (addr >= chunk->data && addr < chunk->data + chunk_len) {
                 size_t offset_in_chunk = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(chunk->data);
                 if ((offset_in_chunk % pimpl->real_block_size) != 0) {
+                    this->alloc_mutex.unlock();
+
                     throw std::invalid_argument("Pointer does not point to a valid block");
                 }
 
@@ -269,6 +273,8 @@ namespace argus {
                 uint64_t block_flag_mask = uint64_t(1) << ((~block_index) & BF_INDEX_MASK);
 
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
+                    this->alloc_mutex.unlock();
+
                     throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)");
                 }
 
@@ -305,12 +311,15 @@ namespace argus {
                     }
                 }
 
+                this->alloc_mutex.unlock();
                 return;
             }
 
             last_chunk = chunk;
             chunk = chunk->next_chunk;
         }
+
+        this->alloc_mutex.unlock();
         throw std::invalid_argument("Pointer is not contained by a chunk");
     }
 }
