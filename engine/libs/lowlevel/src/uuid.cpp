@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/uuid.hpp"
 
 #include <cstring>
@@ -41,10 +42,10 @@ namespace argus {
         }
 
         argus::Uuid final;
-        std::memcpy(final.data + 0, uuid.Data1, sizeof(uuid.Data1));
-        std::memcpy(final.data + 4, uuid.Data2, sizeof(uuid.Data2));
-        std::memcpy(final.data + 6, uuid.Data3, sizeof(uuid.Data3));
-        std::memcpy(final.data + 8, uuid.Data4, sizeof(uuid.Data4));
+        std::memcpy(&final.data[0], uuid.Data1, sizeof(uuid.Data1));
+        std::memcpy(&final.data[4], uuid.Data2, sizeof(uuid.Data2));
+        std::memcpy(&final.data[6], uuid.Data3, sizeof(uuid.Data3));
+        std::memcpy(&final.data[8], uuid.Data4, sizeof(uuid.Data4));
 
         return final;
     }
