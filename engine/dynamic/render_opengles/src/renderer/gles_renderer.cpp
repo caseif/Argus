@@ -25,6 +25,7 @@
 
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
+#include "argus/core/screen_space.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"

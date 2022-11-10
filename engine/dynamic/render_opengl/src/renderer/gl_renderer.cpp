@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "internal/render_opengl/renderer/gl_renderer.hpp"
+
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
@@ -23,31 +25,30 @@
 
 #include "argus/core/engine_config.hpp"
 #include "argus/core/event.hpp"
+#include "argus/core/screen_space.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 
-#include "argus/wm/window.hpp"
-
-#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
+#include "argus/render/defines.hpp"
 
 #include "internal/render_opengl/gl_util.hpp"
+#include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/renderer/bucket_proc.hpp"
 #include "internal/render_opengl/renderer/compositing.hpp"
-#include "internal/render_opengl/renderer/gl_renderer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
-#include "internal/render_opengl/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
 #include "internal/render_opengl/state/viewport_state.hpp"
 
-#include "aglet/aglet.h"
 #include "GLFW/glfw3.h"
+#include "aglet/aglet.h"
+#include "argus/wm/window.hpp"
 
 #include <atomic>
 #include <map>

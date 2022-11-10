@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/core/screen_space.hpp"
+
 #include <initializer_list>
 #include <string>
 #include <vector>

@@ -16,16 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/math.hpp"
-
 #include "argus/core/engine_config.hpp"
+#include "argus/core/screen_space.hpp"
 #include "internal/core/engine_config.hpp"
-#include "internal/core/module.hpp"
 
-#include <algorithm>
 #include <initializer_list>
-#include <map>
-#include <stdexcept>
 #include <string>
 #include <vector>
 

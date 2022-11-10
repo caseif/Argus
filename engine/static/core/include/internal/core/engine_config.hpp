@@ -21,6 +21,7 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/core/engine_config.hpp"
+#include "argus/core/screen_space.hpp"
 
 #include <functional>
 #include <map>
