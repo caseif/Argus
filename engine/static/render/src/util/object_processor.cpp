@@ -85,13 +85,13 @@ namespace argus {
             auto obj_transform = child_object->get_transform();
 
             if (new_recompute_transform) {
-                multiply_matrices(cur_transform, obj_transform->as_matrix(), final_obj_transform);
+                multiply_matrices(obj_transform->as_matrix(), cur_transform, final_obj_transform);
             } else if (obj_transform.dirty) {
                 // parent transform hasn't been computed so we need to do it here
                 Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(group_abs_transform, obj_transform->as_matrix(), final_obj_transform);
+                multiply_matrices(obj_transform->as_matrix(), group_abs_transform, final_obj_transform);
             }
             // don't need to compute anything otherwise, update function will just mark the object as visited
 
