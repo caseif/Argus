@@ -18,4 +18,5 @@
 
 #pragma once
 
+#include "argus/game2d/sprite.hpp"
 #include "argus/game2d/world2d.hpp"

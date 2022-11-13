@@ -16,29 +16,5 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/math.hpp"
-
-#include "argus/ecs/entity.hpp"
-#include "argus/ecs/entity_builder.hpp"
-
-#include "argus/game2d/components.hpp"
-#include "argus/game2d/world2d.hpp"
-
-#include <string>
-
-#include <cstdint>
-
 namespace argus {
-    Entity &World2D::create_textured_background_layer(const std::string &id, uint8_t index,
-            const std::string &texture_uid, const Vector2f &base_offset, const Vector2f &parallax_coeff) {
-        auto &entity = Entity::builder()
-            .with<BackgroundComponent>(base_offset, parallax_coeff)
-            .with<IdentifierComponent>(id)
-            .with<IndexComponent>(index)
-            .with<PositionComponent>()
-            .with<TextureComponent>(texture_uid)
-            .with<WorldComponent>(*this)
-            .build();
-        return entity;
-    }
 }

@@ -16,20 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core/module.hpp"
+#pragma once
+
+#include "argus/lowlevel/math.hpp"
+
+#include <string>
+#include <utility>
 
 namespace argus {
-    void update_lifecycle_game2d(LifecycleStage stage) {
-        switch (stage) {
-            case LifecycleStage::Init: {
-                break;
-            }
-            case LifecycleStage::PreDeinit: {
-                break;
-            }
-            default: {
-                break;
-            }
+    struct pimpl_Sprite {
+        Vector2f base_size;
+        std::string texture_uid;
+        std::pair<Vector2f, Vector2f> tex_coords;
+
+        Transform2D transform;
+
+        pimpl_Sprite(const Vector2f &base_size, const std::string &texture_uid,
+                const std::pair<Vector2f, Vector2f> &tex_coords):
+                base_size(base_size),
+                texture_uid(texture_uid),
+                tex_coords(tex_coords) {
         }
-    }
+    };
 }
