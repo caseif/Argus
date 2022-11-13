@@ -16,15 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
-
 #pragma once
 
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+#include "argus/lowlevel/math.hpp"
+
+
+namespace argus {
+    enum OffsetType {
+        Tile,
+        Absolute
+    };
+
+    struct SpriteAnimation {
+        std::string id;
+
+        std::string atlas;
+        OffsetType offset_type;
+        size_t frame_count;
+        Vector2f tile_size;
+        bool loop;
+        Padding padding;
+        float def_duration;
+        float speed;
+    };
+
+    struct AnimationFrame {
+        Vector2f offset;
+        float duration;
+    };
+}

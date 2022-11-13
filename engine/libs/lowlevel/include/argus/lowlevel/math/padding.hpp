@@ -16,15 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
-
 #pragma once
 
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+namespace argus {
+    struct Padding {
+        float top;
+        float bottom;
+        float left;
+        float right;
+    };
+}

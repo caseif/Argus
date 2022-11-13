@@ -16,15 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
+#include "internal/game2d/loader/animated_sprite_loader.hpp"
 
-#pragma once
-
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+namespace argus {
+    //TODO
+}

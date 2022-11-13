@@ -16,15 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
-
 #pragma once
 
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+#include <cmath>
+
+namespace argus {
+    struct AABB {
+        float top;
+        float bottom;
+        float left;
+        float right;
+
+        float get_width(void) const {
+            return std::abs(right - left);
+        }
+
+        float get_height(void) const {
+            return std::abs(right - left);
+        }
+    };
+}

@@ -16,15 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
-
 #pragma once
 
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+#include "argus/resman/resource_loader.hpp"
+
+namespace argus {
+    class AnimatedSpriteLoader : ResourceLoader {
+        //TODO
+    };
+}

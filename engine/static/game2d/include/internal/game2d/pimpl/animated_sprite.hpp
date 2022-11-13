@@ -16,15 +16,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file argus/lowlevel/math.hpp
- *
- * Various mathematics utility functions and classes.
- */
-
 #pragma once
 
-#include "argus/lowlevel/math/aabb.hpp"
-#include "argus/lowlevel/math/matrix.hpp"
-#include "argus/lowlevel/math/padding.hpp"
-#include "argus/lowlevel/math/vector.hpp"
+#include "argus/lowlevel/math.hpp"
+
+#include "internal/game2d/animated_sprite.hpp"
+
+#include <map>
+#include <string>
+#include <vector>
+
+namespace argus {
+    struct pimpl_AnimatedSprite {
+        const Vector2f base_size;
+        std::string def_anim;
+        float speed;
+        std::string def_atlas;
+        const Vector2f tile_size;
+
+        std::map<std::string, SpriteAnimation> animations;
+
+        std::string cur_anim;
+
+        bool paused;
+        bool pending_reset;
+
+        pimpl_AnimatedSprite(const Vector2f &base_size, float speed):
+                base_size(base_size),
+                speed(speed) {
+        }
+    };
+}
