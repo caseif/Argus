@@ -24,6 +24,7 @@
 #include <istream>
 #include <map>
 #include <string>
+#include <typeindex>
 #include <vector>
 
 #include <cstddef>
@@ -51,6 +52,9 @@ namespace argus {
              */
             virtual void *load(ResourceManager &manager, const ResourcePrototype &proto,
                     std::istream &stream, size_t size) const;
+
+            virtual void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+                    void *src, std::type_index type) const;
 
             /**
              * \brief Performs necessary deinitialization for loaded resource

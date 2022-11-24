@@ -417,6 +417,37 @@ namespace argus {
         return *res;
     }
 
+    Resource &ResourceManager::create_resource(const std::string &uid, const std::string &media_type, void *obj,
+            std::type_index type) {
+        Logger::default_logger().debug("Creating ad hoc resource %s", uid.c_str());
+
+        if (pimpl->loaded_resources.find(uid) != pimpl->loaded_resources.cend()) {
+            throw ResourceLoadedException(uid);
+        }
+
+        auto loader_it = pimpl->registered_loaders.find(media_type);
+        if (loader_it == pimpl->registered_loaders.end()) {
+            throw NoLoaderException(uid, media_type);
+        }
+
+        ResourcePrototype proto = { uid, media_type, "" };
+
+        auto &loader = *loader_it->second;
+        loader.pimpl->last_dependencies = {};
+        void *const data_ptr = loader.copy(*this, proto, obj, type);
+
+        if (!data_ptr) {
+            throw LoadFailedException(uid);
+        }
+
+        Resource *res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
+        pimpl->loaded_resources.insert({uid, res});
+
+        Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());
+
+        return *res;
+    }
+
     int ResourceManager::unload_resource(const std::string &uid) {
         Logger::default_logger().debug("Unloading resource %s", uid.c_str());
 

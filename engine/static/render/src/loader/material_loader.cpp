@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
@@ -91,13 +92,13 @@ namespace argus {
                 } else {
                     // we don't support any other shader stages right now
                     Logger::default_logger().warn("Invalid shader stage in material %s", proto.uid.c_str());
-                    return NULL;
+                    return nullptr;
                 }
 
                 if (shader_map.find(stage) != shader_map.end()) {
                     // only one shader can be specified per stage
                     Logger::default_logger().warn("Duplicate shader stage in material %s", proto.uid.c_str());
-                    return NULL;
+                    return nullptr;
                 }
 
                 shader_map[stage] = shader_uid;
@@ -112,7 +113,7 @@ namespace argus {
                 deps = load_dependencies(manager, dep_uids);
             } catch (...) {
                 Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
-                return NULL;
+                return nullptr;
             }
 
             std::vector<const Shader*> shaders;
@@ -121,7 +122,7 @@ namespace argus {
                 if (shader.get_stage() != shader_info.first) {
                     // stage of loaded shader does not match stage specified by material
                     Logger::default_logger().warn("Mismatched shader stage in material %s", proto.uid.c_str());
-                    return NULL;
+                    return nullptr;
                 }
 
                 shaders.push_back(&shader);
@@ -131,15 +132,38 @@ namespace argus {
             return new Material(tex_uid, shader_uids);
         } catch (nlohmann::detail::parse_error&) {
             Logger::default_logger().warn("Failed to parse material %s", proto.uid.c_str());
-            return NULL;
+            return nullptr;
         } catch (std::out_of_range&) {
             Logger::default_logger().debug("Material %s is incomplete or malformed", proto.uid.c_str());
-            return NULL;
+            return nullptr;
         } catch (std::exception &ex) {
             UNUSED(ex); // only gets used in debug mode
             Logger::default_logger().debug("Unspecified exception while parsing material %s (what: %s)", proto.uid.c_str(), ex.what());
-            return NULL;
+            return nullptr;
         }
+    }
+
+    void *MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+            void *src, std::type_index type) const {
+        _ARGUS_ASSERT(type == std::type_index(typeid(Material)),
+                "Incorrect pointer type passed to MaterialLoader::copy");
+
+        auto &src_mat = *reinterpret_cast<Material*>(src);
+
+        // need to load shaders as dependencies before doing a copy
+
+        std::vector<std::string> dep_uids;
+        dep_uids.insert(dep_uids.end(), src_mat.get_shader_uids().begin(), src_mat.get_shader_uids().end());
+
+        std::map<std::string, const Resource*> deps;
+        try {
+            deps = load_dependencies(manager, dep_uids);
+        } catch (...) {
+            Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
+            return nullptr;
+        }
+
+        return new Material(src_mat);
     }
 
     void MaterialLoader::unload(void *const data_buf) const {

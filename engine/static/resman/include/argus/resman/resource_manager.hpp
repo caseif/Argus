@@ -22,6 +22,7 @@
 #include <future>
 #include <map>
 #include <string>
+#include <typeindex>
 
 namespace argus {
     // forward declarations
@@ -58,6 +59,10 @@ namespace argus {
              * \brief Destroys the ResourceManager.
              */
             ~ResourceManager(void);
+
+            Resource &create_resource(const std::string &uid, const std::string &media_type, void *obj,
+                    std::type_index type);
+
         public:
             pimpl_ResourceManager *pimpl;
 
@@ -192,5 +197,10 @@ namespace argus {
              */
             Resource &create_resource(const std::string &uid, const std::string &media_type, const void *data,
                     size_t len);
+
+            template <typename T>
+            Resource &create_resource(const std::string &uid, const std::string &media_type, T &&res_obj) {
+                return create_resource(uid, media_type, &res_obj, std::type_index(typeid(res_obj)));
+            }
     };
 }

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
@@ -154,6 +155,19 @@ namespace argus {
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
         return new TextureData{width, height, std::move(row_pointers)};
+    }
+
+    void *PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+            void *src, std::type_index type) const {
+        UNUSED(manager);
+        UNUSED(proto);
+
+        _ARGUS_ASSERT(type == std::type_index(typeid(TextureData)),
+                "Incorrect pointer type passed to PngTextureLoader::copy");
+
+        // no dependencies to load so we can just do a blind copy
+
+        return new TextureData(*reinterpret_cast<TextureData*>(src));
     }
 
     void PngTextureLoader::unload(void *const data_buf) const {

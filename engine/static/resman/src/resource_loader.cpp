@@ -83,6 +83,15 @@ namespace argus {
         return nullptr;
     }
 
+    void *ResourceLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+            void *src, std::type_index type) const {
+        UNUSED(manager);
+        UNUSED(proto);
+        UNUSED(src);
+        UNUSED(type);
+        return nullptr;
+    }
+
     void ResourceLoader::unload(void *const data_ptr) const {
         UNUSED(data_ptr);
         // This function is intentionally left blank.

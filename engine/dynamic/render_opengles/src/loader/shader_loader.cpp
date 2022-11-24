@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
@@ -64,6 +65,19 @@ namespace argus {
         src.push_back('\0');
 
         return new Shader(proto.uid, type, stage, src);
+    }
+
+    void *ShaderLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+            void *src, std::type_index type) const {
+        UNUSED(manager);
+        UNUSED(proto);
+
+        _ARGUS_ASSERT(type == std::type_index(typeid(Shader)),
+                "Incorrect pointer type passed to ShaderLoader::copy");
+
+        // no dependencies to load so we can just do a blind copy
+
+        return new Shader(*reinterpret_cast<Shader*>(src));
     }
 
     void ShaderLoader::unload(void *const data_buf) const {
