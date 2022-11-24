@@ -76,43 +76,35 @@ namespace argus {
         return dynamic_cast<pimpl_Scene*>(pimpl);
     }
 
-    std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(const Uuid &uuid) {
-        auto it = pimpl->group_map.find(uuid);
+    std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(const std::string &id) {
+        auto it = pimpl->group_map.find(id);
         return it != pimpl->group_map.end()
             ? std::make_optional(std::reference_wrapper(*it->second))
             : std::nullopt;
     }
 
-    std::optional<std::reference_wrapper<RenderObject2D>> Scene2D::get_object(const Uuid &uuid) {
-        auto it = pimpl->object_map.find(uuid);
+    std::optional<std::reference_wrapper<RenderObject2D>> Scene2D::get_object(const std::string &id) {
+        auto it = pimpl->object_map.find(id);
         return it != pimpl->object_map.end()
             ? std::make_optional(std::reference_wrapper(*it->second))
             : std::nullopt;
     }
 
-    RenderGroup2D &Scene2D::create_child_group(const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_group(transform);
+    RenderGroup2D &Scene2D::create_child_group(const std::string &id, const Transform2D &transform) {
+        return pimpl->root_group_write->create_child_group(id, transform);
     }
 
-    RenderObject2D &Scene2D::create_child_object(const std::string &material,
+    RenderObject2D &Scene2D::create_child_object(const std::string &id, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_object(material, primitives, transform);
+        return pimpl->root_group_write->create_child_object(id, material, primitives, transform);
     }
 
-    void Scene2D::remove_member_group(RenderGroup2D &group) {
-        if (group.get_parent_group() != pimpl->root_group_write) {
-            throw std::invalid_argument("Supplied RenderGroup2D is not a direct child of the Scene2D");
-        }
-
-        pimpl->root_group_write->remove_member_group(group);
+    void Scene2D::remove_member_group(const std::string &id) {
+        pimpl->root_group_write->remove_member_group(id);
     }
 
-    void Scene2D::remove_member_object(RenderObject2D &object) {
-        if (&object.pimpl->parent_group != pimpl->root_group_write) {
-            throw std::invalid_argument("Supplied RenderObject2D is not a direct child of the Scene2D");
-        }
-
-        pimpl->root_group_write->remove_child_object(object);
+    void Scene2D::remove_member_object(const std::string &id) {
+        pimpl->root_group_write->remove_child_object(id);
     }
 
     std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {

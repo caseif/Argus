@@ -28,15 +28,15 @@
 
 namespace argus {
     struct pimpl_RenderObject2D {
-        Uuid uuid;
+        std::string id;
         const RenderGroup2D &parent_group;
         const std::string material;
         std::vector<RenderPrim2D> primitives;
         Transform2D transform;
 
-        pimpl_RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
+        pimpl_RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
-            uuid(Uuid::random()),
+            id(id),
             parent_group(parent_group),
             material(material),
             primitives(primitives),

@@ -34,7 +34,7 @@ namespace argus {
     }
 
     AnimatedSprite::AnimatedSprite(AnimatedSprite &&rhs):
-            pimpl(rhs.pimpl){
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -50,7 +50,7 @@ namespace argus {
         return pimpl->speed;
     }
 
-    float AnimatedSprite::set_animation_speed(float speed) const {
+    void AnimatedSprite::set_animation_speed(float speed) const {
         pimpl->speed = speed;
     }
 
@@ -58,13 +58,15 @@ namespace argus {
         std::vector<std::string> anim_ids(pimpl->animations.size());
         std::transform(pimpl->animations.cbegin(), pimpl->animations.cend(), std::back_inserter(anim_ids),
                 [] (auto &kv) { return kv.first; });
+
+        return anim_ids;
     }
 
     const std::string &AnimatedSprite::get_current_animation(void) const {
         return pimpl->cur_anim;
     }
 
-    const std::string &AnimatedSprite::set_current_animation(const std::string &animation_id) {
+    void AnimatedSprite::set_current_animation(const std::string &animation_id) {
         if (pimpl->animations.find(animation_id) == pimpl->animations.end()) {
             throw std::invalid_argument("Animation not found by ID");
         }

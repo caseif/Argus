@@ -19,7 +19,6 @@
 #pragma once
 
 #include "argus/lowlevel/dirtiable.hpp"
-#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/common/transform.hpp"
 
@@ -61,11 +60,13 @@ namespace argus {
              * \param parent_group The parent group this group belongs to, if
              *        applicable. This may be nullptr.
              */
-            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group, const Transform2D &transform);
+            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group,
+                    const Transform2D &transform);
 
-            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group, Transform2D &&transform);
+            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group,
+                    Transform2D &&transform);
 
-            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group);
+            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group);
 
             RenderGroup2D(const RenderGroup2D&) = delete;
 
@@ -73,7 +74,7 @@ namespace argus {
 
             ~RenderGroup2D(void);
 
-            const Uuid &get_uuid(void);
+            const std::string &get_id(void) const;
 
             /**
              * \brief Gets the parent Scene.
@@ -95,7 +96,7 @@ namespace argus {
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup2D &create_child_group(const Transform2D &transform);
+            RenderGroup2D &create_child_group(const std::string &id, const Transform2D &transform);
 
             /**
              * \brief Creates a new RenderObject as a child of this group.
@@ -105,30 +106,32 @@ namespace argus {
              *        comprising the new object.
              * \param transform The relative transform of the new object.
              */
-            RenderObject2D &create_child_object(const std::string &material,
+            RenderObject2D &create_child_object(const std::string &id, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
 
             /**
-             * \brief Removes the supplied RenderGroup from this group,
+             * \brief Removes the specified child group from this group,
              *        destroying it in the process.
              *
-             * \param group The group to remove and destroy.
+             * \param group The ID of the group to remove and destroy.
              *
-             * \throw std::invalid_argument If the supplied RenderGroup is not a
-             *        child of this group.
+             * \throw std::invalid_argument If the given ID does not match a
+             *        group in the scene or if the matching group is not a child
+             *        of this group.
              */
-            void remove_member_group(RenderGroup2D &group);
+            void remove_member_group(const std::string &id);
 
             /**
-             * \brief Removes the specified RenderObject from this group,
+             * \brief Removes the specified object from this group,
              *        destroying it in the process.
              *
-             * \param object The RenderObject to remove and destroy.
+             * \param object The ID of the object to remove and destroy.
              *
-             * \throw std::invalid_argument If the supplied RenderObject is not
-             *        a child of this group.
+             * \throw std::invalid_argument If the given ID does not match an
+             *        object in the scene or if the matching object is not a
+             *        child of this group.
              */
-            void remove_child_object(RenderObject2D &object);
+            void remove_child_object(const std::string &id);
 
             /**
              * \brief Peeks the local Transform of this group without clearing

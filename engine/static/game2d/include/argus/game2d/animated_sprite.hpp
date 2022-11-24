@@ -43,13 +43,13 @@ namespace argus {
 
         float get_animation_speed(void) const;
 
-        float set_animation_speed(float speed) const;
+        void set_animation_speed(float speed) const;
 
         std::vector<std::string> get_available_animations(void) const;
 
         const std::string &get_current_animation(void) const;
 
-        const std::string &set_current_animation(const std::string &animation_id);
+        void set_current_animation(const std::string &animation_id);
 
         bool does_current_animation_loop(void) const;
 

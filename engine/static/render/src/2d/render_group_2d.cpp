@@ -39,18 +39,18 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 
-    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group,
             const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group,
             Transform2D &&transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(scene, parent_group)) {
+    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group)) {
     }
 
     RenderGroup2D::RenderGroup2D(RenderGroup2D &&rhs) noexcept:
@@ -72,8 +72,8 @@ namespace argus {
         }
     }
 
-    const Uuid &RenderGroup2D::get_uuid(void) {
-        return pimpl->uuid;
+    const std::string &RenderGroup2D::get_id(void) const {
+        return pimpl->id;
     }
 
     Scene2D &RenderGroup2D::get_scene(void) const {
@@ -84,45 +84,69 @@ namespace argus {
         return pimpl->parent_group;
     }
 
-    RenderGroup2D &RenderGroup2D::create_child_group(const Transform2D &transform) {
-        auto *group = new RenderGroup2D(pimpl->scene, this, transform);
+    RenderGroup2D &RenderGroup2D::create_child_group(const std::string &id, const Transform2D &transform) {
+        if (pimpl->scene.get_group(id).has_value()) {
+            throw std::invalid_argument("Render group ID must be unique within scene");
+        }
+
+        auto *group = new RenderGroup2D(id, pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
 
-        pimpl->scene.pimpl->group_map.insert({ group->get_uuid(), group });
+        pimpl->scene.pimpl->group_map.insert({ group->get_id(), group });
 
         return *group;
     }
 
-    RenderObject2D &RenderGroup2D::create_child_object(const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
-        auto *obj = new RenderObject2D(*this, material, primitives, transform);
+    RenderObject2D &RenderGroup2D::create_child_object(const std::string &id,
+            const std::string &material, const std::vector<RenderPrim2D> &primitives,
+            const Transform2D &transform) {
+        if (pimpl->scene.get_group(id).has_value()) {
+            throw std::invalid_argument("Render group ID must be unique within scene");
+        }
+
+        auto *obj = new RenderObject2D(id, *this, material, primitives, transform);
         pimpl->child_objects.push_back(obj);
 
-        pimpl->scene.pimpl->object_map.insert({ obj->get_uuid(), obj });
+        pimpl->scene.pimpl->object_map.insert({ obj->get_id(), obj });
 
         return *obj;
     }
 
-    void RenderGroup2D::remove_member_group(RenderGroup2D &group) {
+    void RenderGroup2D::remove_member_group(const std::string &id) {
+        auto group_opt = pimpl->scene.get_group(id);
+
+        if (!group_opt.has_value()) {
+            throw std::invalid_argument("No group with the given ID exists in the scene");
+        }
+
+        auto &group = group_opt.value().get();
+
         if (group.pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderGroup2D is not a child of RenderGroup2D");
         }
 
         remove_from_vector(pimpl->child_groups, &group);
 
-        pimpl->scene.pimpl->group_map.erase(group.get_uuid());
+        pimpl->scene.pimpl->group_map.erase(group.get_id());
 
         delete &group;
     }
 
-    void RenderGroup2D::remove_child_object(RenderObject2D &object) {
+    void RenderGroup2D::remove_child_object(const std::string &id) {
+        auto object_opt = pimpl->scene.get_object(id);
+        if (!object_opt.has_value()) {
+            throw std::invalid_argument("No object with the given ID exists in the scene");
+        }
+
+        auto &object = object_opt.value().get();
+
         if (&object.pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderObject2D is not a child of RenderGroup2D");
         }
 
         remove_from_vector(pimpl->child_objects, &object);
 
-        pimpl->scene.pimpl->object_map.erase(object.get_uuid());
+        pimpl->scene.pimpl->object_map.erase(object.get_id());
 
         delete &object;
     }
@@ -145,22 +169,21 @@ namespace argus {
     }
 
     RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
-        auto &copy = *new RenderGroup2D(pimpl->scene, parent, pimpl->transform);
-        copy.pimpl->uuid = pimpl->uuid;
+        auto &copy = *new RenderGroup2D(pimpl->id, pimpl->scene, parent, pimpl->transform);
 
         copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
         for (auto &child_group : pimpl->child_groups) {
             auto &child_copy = child_group->copy(this);
             child_copy.pimpl->parent_group = this;
             copy.pimpl->child_groups.push_back(&child_copy);
-            pimpl->scene.pimpl->group_map.insert({ child_copy.get_uuid(), &child_copy });
+            pimpl->scene.pimpl->group_map.insert({ child_copy.get_id(), &child_copy });
         }
 
         copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
         for (auto *child_obj : pimpl->child_objects) {
             auto &child_copy = child_obj->copy(*this);
             copy.pimpl->child_objects.push_back(&child_copy);
-            pimpl->scene.pimpl->object_map.insert({ child_copy.get_uuid(), &child_copy });
+            pimpl->scene.pimpl->object_map.insert({ child_copy.get_id(), &child_copy });
         }
 
         return copy;

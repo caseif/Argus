@@ -38,7 +38,6 @@ namespace argus {
         public:
             pimpl_Material *pimpl;
 
-        private:
             /**
              * \brief Constructs a new Material.
              *
@@ -55,7 +54,6 @@ namespace argus {
 
             ~Material(void);
 
-        public:
             const std::string &get_texture_uid(void) const;
 
             const std::vector<std::string> &get_shader_uids(void) const;

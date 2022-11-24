@@ -18,12 +18,49 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
+
+#include <optional>
+#include <string>
+#include <utility>
+
 namespace argus {
     // forward declarations
+    class Canvas;
+    class AnimatedSprite;
+    class Sprite;
+
     struct pimpl_World2D;
 
     class World2D {
         public:
+            static World2D &create_world_2d(const std::string &id, Canvas &canvas);
+
             pimpl_World2D *pimpl;
+
+            World2D(const std::string &id, Canvas &canvas);
+
+            World2D(World2D&) = delete;
+
+            World2D(World2D&&) = delete;
+
+            ~World2D(void);
+
+            const std::string &get_id(void) const;
+
+            Camera2D &get_camera(void) const;
+
+            std::optional<std::reference_wrapper<Sprite>> get_sprite(const std::string &id) const;
+
+            Sprite &add_sprite(const std::string &uid, const Vector2f &base_size, const std::string &texture_uid,
+                    const std::pair<Vector2f, Vector2f> tex_coords);
+
+            void remove_sprite(const std::string &id);
+
+            std::optional<std::reference_wrapper<Sprite>> get_animated_sprite(const std::string &id) const;
+
+            AnimatedSprite &add_animated_sprite(const std::string &id, const std::string &sprite_uid);
+
+            void remove_animated_sprite(const std::string &id);
     };
 }

@@ -31,7 +31,7 @@ namespace argus {
        public:
         pimpl_Sprite *pimpl;
 
-        Sprite(const Vector2f &base_size, const std::string &texture_uid,
+        Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
                 const std::pair<Vector2f, Vector2f> tex_coords);
 
         Sprite(Sprite&) = delete;
@@ -39,6 +39,8 @@ namespace argus {
         Sprite(Sprite&&);
 
         ~Sprite(void);
+
+        const std::string &get_id(void) const;
 
         const Vector2f &get_base_size(void) const;
 

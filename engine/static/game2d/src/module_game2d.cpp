@@ -16,12 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
+
+#include "argus/resman/resource_manager.hpp"
+
+#include "internal/game2d/resources.h"
+#include "internal/game2d/world2d.hpp"
 
 namespace argus {
     void update_lifecycle_game2d(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
+                register_update_callback(render_worlds);
+
+                break;
+            }
+            case LifecycleStage::PostInit: {
+                ResourceManager::instance().add_memory_package(RESOURCES_GAME2D_ARP_SRC,
+                        RESOURCES_GAME2D_ARP_LEN);
                 break;
             }
             case LifecycleStage::PreDeinit: {

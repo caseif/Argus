@@ -39,9 +39,9 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
-    RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(parent_group, material, primitives, transform)) {
+    RenderObject2D::RenderObject2D(const std::string &id, const RenderGroup2D &parent_group,
+            const std::string &material, const std::vector<RenderPrim2D> &primitives, const Transform2D &transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(id, parent_group, material, primitives, transform)) {
     }
 
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
@@ -55,15 +55,15 @@ namespace argus {
         }
     }
 
-    const Uuid &RenderObject2D::get_uuid(void) const {
-        return pimpl->uuid;
+    const std::string &RenderObject2D::get_id(void) const {
+        return pimpl->id;
     }
 
     const Scene2D &RenderObject2D::get_scene(void) const {
         return pimpl->parent_group.get_scene();
     }
 
-    std::string RenderObject2D::get_material(void) const {
+    const std::string &RenderObject2D::get_material(void) const {
         return pimpl->material;
     }
 
@@ -88,8 +88,6 @@ namespace argus {
         std::vector<RenderPrim2D> prims_copy;
         std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
                [] (auto &v) { return RenderPrim2D(v); });
-        auto &copy = *new RenderObject2D(parent, pimpl->material, prims_copy, pimpl->transform);
-        copy.pimpl->uuid = pimpl->uuid;
-        return copy;
+        return *new RenderObject2D(pimpl->id, parent, pimpl->material, prims_copy, pimpl->transform);
     }
 }

@@ -18,8 +18,30 @@
 
 #pragma once
 
+#include <map>
+#include <string>
+
 namespace argus {
-    struct pimpl_World2d {
-        //TODO
+    // forward declarations
+    class Canvas;
+    class Scene2D;
+
+    class AnimatedSprite;
+    class Sprite;
+
+    struct pimpl_World2D {
+        std::string id;
+        Canvas &canvas;
+
+        Scene2D *scene;
+        Camera2D *camera;
+
+        std::map<std::string, Sprite*> sprites;
+        std::map<std::string, AnimatedSprite*> anim_sprites;
+
+        pimpl_World2D(const std::string &id, Canvas &canvas):
+            id(id),
+            canvas(canvas) {
+        }
     };
 }

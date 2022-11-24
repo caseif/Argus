@@ -157,8 +157,6 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create program: %d", glGetError());
         }
 
-        std::string shader_lang;
-
         std::vector<Resource*> shader_resources;
         std::vector<Shader> shaders;
         for (auto &shader_uid : shader_uids) {
@@ -173,11 +171,7 @@ namespace argus {
         auto compiled_shaders = comp_res.first;
         auto refl_info = comp_res.second;
 
-        if (compiled_shaders.size() > 0) {
-            shader_lang = compiled_shaders.at(0).first.get_type();
-        }
-
-        for (auto compiled_shader : compiled_shaders) {
+        for (auto &compiled_shader : compiled_shaders) {
             glAttachShader(program_handle, compiled_shader.second);
         }
 

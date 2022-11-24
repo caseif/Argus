@@ -24,18 +24,22 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Sprite));
 
-    Sprite::Sprite(const Vector2f &base_size, const std::string &texture_uid,
+    Sprite::Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
             const std::pair<Vector2f, Vector2f> tex_coords):
-            pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(base_size, texture_uid, tex_coords)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(id, base_size, texture_uid, tex_coords)) {
     }
 
-    Sprite::Sprite(Sprite &&rhs) :
+    Sprite::Sprite(Sprite &&rhs):
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
     Sprite::~Sprite(void) {
         g_pimpl_pool.destroy(pimpl);
+    }
+
+    const std::string &Sprite::get_id(void) const {
+        return pimpl->id;
     }
 
     const Vector2f &Sprite::get_base_size(void) const {

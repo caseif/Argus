@@ -80,7 +80,7 @@ namespace argus {
         for (RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
-            auto existing_it = processed_obj_map.find(child_object->get_uuid());
+            auto existing_it = processed_obj_map.find(child_object->get_id());
 
             auto obj_transform = child_object->get_transform();
 
@@ -102,7 +102,7 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({ child_object->get_uuid(), processed_obj });
+                processed_obj_map.insert({ child_object->get_id(), processed_obj });
             }
         }
 

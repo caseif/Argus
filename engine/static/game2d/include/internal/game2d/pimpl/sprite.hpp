@@ -25,17 +25,19 @@
 
 namespace argus {
     struct pimpl_Sprite {
+        std::string id;
         Vector2f base_size;
         std::string texture_uid;
         std::pair<Vector2f, Vector2f> tex_coords;
 
         Transform2D transform;
 
-        pimpl_Sprite(const Vector2f &base_size, const std::string &texture_uid,
+        pimpl_Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
                 const std::pair<Vector2f, Vector2f> &tex_coords):
-                base_size(base_size),
-                texture_uid(texture_uid),
-                tex_coords(tex_coords) {
+            id(id),
+            base_size(base_size),
+            texture_uid(texture_uid),
+            tex_coords(tex_coords) {
         }
     };
 }

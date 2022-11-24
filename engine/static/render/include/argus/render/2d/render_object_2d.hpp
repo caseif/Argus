@@ -47,7 +47,7 @@ namespace argus {
         public:
             pimpl_RenderObject2D *pimpl;
 
-            RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
+            RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
 
             RenderObject2D(const RenderObject2D&) = delete;
@@ -56,7 +56,7 @@ namespace argus {
 
             ~RenderObject2D();
 
-            const Uuid &get_uuid(void) const;
+            const std::string &get_id(void) const;
 
             /**
              * \brief Gets the parent Scene of this object.
@@ -70,7 +70,7 @@ namespace argus {
              *
              * \return The UID of the Material used by the object.
              */
-            std::string get_material(void) const;
+            const std::string &get_material(void) const;
 
             /**
              * \brief Gets the \link RenderPrim RenderPrims \endlink comprising this

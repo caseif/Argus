@@ -32,7 +32,7 @@ namespace argus {
     class Scene2D;
 
     typedef void *ProcessedRenderObject2DPtr;
-    typedef std::map<Uuid, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
+    typedef std::map<std::string, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
 
     typedef std::function<ProcessedRenderObject2DPtr(const RenderObject2D &obj,
         const Matrix4 &transform, void *extra)> ProcessRenderObj2DFn;

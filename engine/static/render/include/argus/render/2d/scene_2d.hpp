@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "argus/lowlevel/uuid.hpp"
-
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 
@@ -74,9 +72,9 @@ namespace argus {
 
             pimpl_Scene *get_pimpl(void) const override;
 
-            std::optional<std::reference_wrapper<RenderGroup2D>> get_group(const Uuid &uuid);
+            std::optional<std::reference_wrapper<RenderGroup2D>> get_group(const std::string &id);
 
-            std::optional<std::reference_wrapper<RenderObject2D>> get_object(const Uuid &uuid);
+            std::optional<std::reference_wrapper<RenderObject2D>> get_object(const std::string &id);
 
             /**
              * \brief Creates a new RenderGroup2D as a direct child of this
@@ -84,7 +82,7 @@ namespace argus {
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup2D &create_child_group(const Transform2D &transform);
+            RenderGroup2D &create_child_group(const std::string &id, const Transform2D &transform);
 
             /**
              * \brief Creates a new RenderObject2D as a direct child of this
@@ -98,7 +96,7 @@ namespace argus {
              *         implicit root RenderGroup contained by this Scene. Thus,
              *         no RenderObject is truly without a parent group.
              */
-            RenderObject2D &create_child_object(const std::string &material,
+            RenderObject2D &create_child_object(const std::string &id, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
 
             /**
@@ -108,7 +106,7 @@ namespace argus {
              * \throw std::invalid_argument If the supplied RenderGroup is not a
              *        direct member of this Scene.
              */
-            void remove_member_group(RenderGroup2D &group);
+            void remove_member_group(const std::string &id);
 
             /**
              * \brief Removes the specified RenderObject2D from this Scene,
@@ -117,7 +115,7 @@ namespace argus {
              * \throw std::invalid_argument If the supplied RenderObject is not
              *        a direct member of this Scene.
              */
-            void remove_member_object(RenderObject2D &object);
+            void remove_member_object(const std::string &id);
 
             std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
 
