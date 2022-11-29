@@ -73,28 +73,4 @@ namespace argus {
     ResourceLoader::~ResourceLoader(void) {
         delete pimpl;
     }
-
-    void *ResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, const size_t size) const {
-        UNUSED(manager);
-        UNUSED(proto);
-        UNUSED(stream);
-        UNUSED(size);
-        return nullptr;
-    }
-
-    void *ResourceLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) const {
-        UNUSED(manager);
-        UNUSED(proto);
-        UNUSED(src);
-        UNUSED(type);
-        return nullptr;
-    }
-
-    void ResourceLoader::unload(void *const data_ptr) const {
-        UNUSED(data_ptr);
-        // This function is intentionally left blank.
-    }
-
 }
