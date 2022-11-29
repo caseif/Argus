@@ -77,7 +77,7 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return new Shader(*reinterpret_cast<Shader*>(src));
+        return new Shader(std::move(*reinterpret_cast<Shader*>(src)));
     }
 
     void ShaderLoader::unload(void *const data_buf) const {

@@ -163,7 +163,7 @@ namespace argus {
             return nullptr;
         }
 
-        return new Material(src_mat);
+        return new Material(std::move(src_mat));
     }
 
     void MaterialLoader::unload(void *const data_buf) const {

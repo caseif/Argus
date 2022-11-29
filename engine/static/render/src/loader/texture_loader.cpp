@@ -167,7 +167,7 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return new TextureData(*reinterpret_cast<TextureData*>(src));
+        return new TextureData(std::move(*reinterpret_cast<TextureData*>(src)));
     }
 
     void PngTextureLoader::unload(void *const data_buf) const {
