@@ -23,6 +23,7 @@
 #include "internal/game2d/animated_sprite.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
