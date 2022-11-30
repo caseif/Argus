@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/resman/resource.hpp"
+
 #include <string>
 #include <vector>
 
@@ -31,7 +33,7 @@ namespace argus {
        public:
         pimpl_AnimatedSprite *pimpl;
 
-        AnimatedSprite(const Vector2f &base_size, float speed);
+        AnimatedSprite(const Resource &definition);
 
         AnimatedSprite(const AnimatedSprite&) = delete;
 
@@ -43,7 +45,7 @@ namespace argus {
 
         float get_animation_speed(void) const;
 
-        void set_animation_speed(float speed) const;
+        void set_animation_speed(float speed);
 
         std::vector<std::string> get_available_animations(void) const;
 

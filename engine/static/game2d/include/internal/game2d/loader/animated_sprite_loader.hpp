@@ -21,7 +21,16 @@
 #include "argus/resman/resource_loader.hpp"
 
 namespace argus {
-    class AnimatedSpriteLoader : ResourceLoader {
-        //TODO
+    class AnimatedSpriteLoader : public ResourceLoader {
+       public:
+        AnimatedSpriteLoader(void);
+
+        void *load(ResourceManager &manager, const ResourcePrototype &proto,
+                std::istream &stream, size_t size) const;
+
+        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+                void *src, std::type_index type) const;
+
+        void unload(void *data_ptr) const;
     };
 }

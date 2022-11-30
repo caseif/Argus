@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/resman/resource.hpp"
+
 #include "internal/game2d/animated_sprite.hpp"
 
 #include <map>
@@ -28,22 +30,22 @@
 
 namespace argus {
     struct pimpl_AnimatedSprite {
-        const Vector2f base_size;
-        std::string def_anim;
+        const Resource &def;
+
         float speed;
-        std::string def_atlas;
-        const Vector2f tile_size;
-
-        std::map<std::string, SpriteAnimation> animations;
-
-        std::string cur_anim;
+        std::string cur_anim_id;
+        SpriteAnimation *cur_anim;
 
         bool paused;
         bool pending_reset;
 
-        pimpl_AnimatedSprite(const Vector2f &base_size, float speed):
-                base_size(base_size),
-                speed(speed) {
+        pimpl_AnimatedSprite(const Resource &def):
+                def(def),
+                speed(def.get<AnimatedSpriteDef>().def_speed) {
+        }
+
+        const AnimatedSpriteDef &get_def(void) const {
+            return def.get<AnimatedSpriteDef>();
         }
     };
 }

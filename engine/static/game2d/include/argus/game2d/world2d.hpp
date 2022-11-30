@@ -57,7 +57,7 @@ namespace argus {
 
             void remove_sprite(const std::string &id);
 
-            std::optional<std::reference_wrapper<Sprite>> get_animated_sprite(const std::string &id) const;
+            std::optional<std::reference_wrapper<AnimatedSprite>> get_animated_sprite(const std::string &id) const;
 
             AnimatedSprite &add_animated_sprite(const std::string &id, const std::string &sprite_uid);
 

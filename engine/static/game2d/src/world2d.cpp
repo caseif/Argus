@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
@@ -87,6 +88,36 @@ namespace argus {
 
     void World2D::remove_sprite(const std::string &id) {
         pimpl->sprites.erase(id);
+    }
+
+    std::optional<std::reference_wrapper<AnimatedSprite>> World2D::get_animated_sprite(const std::string &id) const {
+        auto it = pimpl->anim_sprites.find(id);
+        return it != pimpl->anim_sprites.cend()
+                ? std::make_optional(std::reference_wrapper(*it->second))
+                : std::nullopt;
+    }
+
+    AnimatedSprite &World2D::add_animated_sprite(const std::string &id, const std::string &sprite_uid) {
+        if (pimpl->anim_sprites.find(id) != pimpl->anim_sprites.cend()) {
+            throw std::invalid_argument("Animated sprite with given ID already exists in the world");
+        }
+
+        auto &def_res = ResourceManager::instance().get_resource(sprite_uid);
+
+        auto *sprite = new AnimatedSprite(def_res);
+
+        pimpl->anim_sprites.insert({ id, sprite });
+
+        return *sprite;
+    }
+
+    void World2D::remove_animated_sprite(const std::string &id) {
+        if (pimpl->anim_sprites.find(id) == pimpl->anim_sprites.cend()) {
+            Logger::default_logger().warn("Client attempted to remove non-existent sprite ID %s", id.c_str());
+            return;
+        }
+
+        pimpl->anim_sprites.erase(id);
     }
 
     static void _render_sprite(World2D &world, Sprite &sprite) {

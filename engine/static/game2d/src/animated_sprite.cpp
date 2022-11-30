@@ -30,8 +30,8 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_AnimatedSprite));
 
-    AnimatedSprite::AnimatedSprite(const Vector2f &base_size, float speed):
-            pimpl(&g_pimpl_pool.construct<pimpl_AnimatedSprite>(base_size, speed)) {
+    AnimatedSprite::AnimatedSprite(const Resource &definition):
+            pimpl(&g_pimpl_pool.construct<pimpl_AnimatedSprite>(definition)) {
     }
 
     AnimatedSprite::AnimatedSprite(AnimatedSprite &&rhs):
@@ -44,43 +44,46 @@ namespace argus {
     }
 
     const Vector2f &AnimatedSprite::get_base_size(void) const {
-        return pimpl->base_size;
+        return pimpl->get_def().base_size;
     }
 
     float AnimatedSprite::get_animation_speed(void) const {
         return pimpl->speed;
     }
 
-    void AnimatedSprite::set_animation_speed(float speed) const {
+    void AnimatedSprite::set_animation_speed(float speed) {
         pimpl->speed = speed;
     }
 
     std::vector<std::string> AnimatedSprite::get_available_animations(void) const {
-        std::vector<std::string> anim_ids(pimpl->animations.size());
-        std::transform(pimpl->animations.cbegin(), pimpl->animations.cend(), std::back_inserter(anim_ids),
-                [] (auto &kv) { return kv.first; });
+        std::vector<std::string> anim_ids(pimpl->get_def().animations.size());
+        std::transform(pimpl->get_def().animations.cbegin(), pimpl->get_def().animations.cend(),
+                std::back_inserter(anim_ids), [] (auto &kv) { return kv.first; });
 
         return anim_ids;
     }
 
     const std::string &AnimatedSprite::get_current_animation(void) const {
-        return pimpl->cur_anim;
+        return pimpl->cur_anim_id;
     }
 
     void AnimatedSprite::set_current_animation(const std::string &animation_id) {
-        if (pimpl->animations.find(animation_id) == pimpl->animations.end()) {
+        auto it = pimpl->get_def().animations.find(animation_id);
+        if (it == pimpl->get_def().animations.end()) {
             throw std::invalid_argument("Animation not found by ID");
         }
 
-        pimpl->cur_anim = animation_id;
+        pimpl->cur_anim_id = animation_id;
+        //TODO: revisit this
+        pimpl->cur_anim = const_cast<SpriteAnimation*>(&it->second);
     }
 
     bool AnimatedSprite::does_current_animation_loop(void) const {
-        return pimpl->animations[pimpl->cur_anim].loop;
+        return pimpl->cur_anim->loop;
     }
 
     const Padding &AnimatedSprite::get_current_animation_padding(void) const {
-        return pimpl->animations[pimpl->cur_anim].padding;
+        return pimpl->cur_anim->padding;
     }
 
     void AnimatedSprite::pause_animation(void) {

@@ -20,8 +20,14 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <map>
 
 namespace argus {
+    struct AnimationFrame {
+        Vector2f offset;
+        float duration;
+    };
+
     enum OffsetType {
         Tile,
         Absolute
@@ -32,16 +38,22 @@ namespace argus {
 
         std::string atlas;
         OffsetType offset_type;
-        size_t frame_count;
         Vector2f tile_size;
         bool loop;
         Padding padding;
         float def_duration;
         float speed;
+
+        std::vector<AnimationFrame> frames;
     };
 
-    struct AnimationFrame {
-        Vector2f offset;
-        float duration;
+    struct AnimatedSpriteDef {
+        Vector2f base_size;
+        std::string def_anim;
+        float def_speed;
+        std::string def_atlas;
+        Vector2f tile_size;
+
+        std::map<std::string, SpriteAnimation> animations;
     };
 }
