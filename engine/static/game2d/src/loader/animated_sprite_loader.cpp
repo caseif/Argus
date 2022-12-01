@@ -38,6 +38,8 @@ const char *KEY_ANIMS = "animations";
 
 const char *KEY_ANIM_LOOP = "loop";
 const char *KEY_ANIM_ATLAS = "atlas";
+const char *KEY_ANIM_WIDTH = "frame_width";
+const char *KEY_ANIM_HEIGHT = "frame_height";
 const char *KEY_ANIM_OFF_TYPE = "offset_type";
 const char *KEY_ANIM_DEF_FRAME_DUR = "frame_duration";
 const char *KEY_ANIM_PADDING = "padding";
@@ -129,8 +131,8 @@ namespace argus {
                 }
             }
 
-            sprite.tile_size.x = static_cast<unsigned int>(tile_width);
-            sprite.tile_size.y = static_cast<unsigned int>(tile_height);
+            sprite.tile_size.x = static_cast<uint32_t>(tile_width);
+            sprite.tile_size.y = static_cast<uint32_t>(tile_height);
 
             for (auto &anim_pair : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
                 auto &anim_id = anim_pair.first;
@@ -156,7 +158,67 @@ namespace argus {
                         Logger::default_logger().severe("Animated sprite offset type is invalid");
                         return nullptr;
                     }
+                } else {
+                    if (sprite.tile_size.x > 0) {
+                        anim.offset_type = OffsetType::Tile;
+                    } else {
+                        anim.offset_type = OffsetType::Absolute;
+                    }
                 }
+
+                int64_t frame_width = anim.offset_type == OffsetType::Tile ? sprite.tile_size.x : 0;
+                int64_t frame_height = anim.offset_type == OffsetType::Tile ? sprite.tile_size.y : 0;
+                if (anim_json.contains(KEY_ANIM_WIDTH)) {
+                    if (!anim_json.contains(KEY_ANIM_HEIGHT)) {
+                        Logger::default_logger().severe("Sprite animation specifies frame width but not height");
+                        return nullptr;
+                    }
+
+                    frame_width = anim_json.at(KEY_ANIM_WIDTH);
+
+                    if (frame_width <= 0) {
+                        Logger::default_logger().severe("Sprite animation frame width must be >= 0");
+                        return nullptr;
+                    }
+
+                    if (frame_width > UINT32_MAX) {
+                        Logger::default_logger().severe("Sprite animation frame width must be <= UINT32_MAX");
+                        return nullptr;
+                    }
+                }
+
+                if (anim_json.contains(KEY_ANIM_HEIGHT)) {
+                    if (!anim_json.contains(KEY_ANIM_WIDTH)) {
+                        Logger::default_logger().severe("Sprite animation specifies frame height but not width");
+                    }
+
+                    frame_height = anim_json.at(KEY_ANIM_HEIGHT);
+
+                    if (frame_height <= 0) {
+                        Logger::default_logger().severe("Sprite animation frame height must be >= 0");
+                        return nullptr;
+                    }
+
+                    if (frame_height > UINT32_MAX) {
+                        Logger::default_logger().severe("Sprite animation frame height must be >= 0");
+                        return nullptr;
+                    }
+                }
+
+                if (frame_width == 0) {
+                    if (anim.offset_type == OffsetType::Absolute) {
+                        Logger::default_logger().severe("Animated sprite frame dimensions must be explicitly "
+                                                        "provided when offset type is absolute");
+                    } else {
+                        Logger::default_logger().severe("Either sprite tile dimensions or animation frame dimensions "
+                                                        "must be provided");
+                    }
+
+                    return nullptr;
+                }
+
+                anim.frame_size.x = static_cast<uint32_t>(frame_width);
+                anim.frame_size.y = static_cast<uint32_t>(frame_height);
 
                 if (anim_json.contains(KEY_ANIM_DEF_FRAME_DUR)) {
                     anim.def_duration = anim_json.at(KEY_ANIM_DEF_FRAME_DUR);
@@ -210,8 +272,8 @@ namespace argus {
                         return nullptr;
                     }
 
-                    frame.offset.x = static_cast<unsigned int>(offset_x);
-                    frame.offset.y = static_cast<unsigned int>(offset_y);
+                    frame.offset.x = static_cast<uint32_t>(offset_x);
+                    frame.offset.y = static_cast<uint32_t>(offset_y);
 
                     if (frame_json.contains(KEY_ANIM_FRAME_DUR)) {
                         frame.duration = frame_json.at(KEY_ANIM_FRAME_DUR);

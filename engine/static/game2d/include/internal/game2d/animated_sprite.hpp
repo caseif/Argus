@@ -39,7 +39,7 @@ namespace argus {
 
         std::string atlas;
         OffsetType offset_type;
-        Vector2u tile_size;
+        Vector2u frame_size;
         bool loop;
         Padding padding;
         float def_duration;
