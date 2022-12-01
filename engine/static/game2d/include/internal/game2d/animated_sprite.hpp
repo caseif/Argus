@@ -24,7 +24,8 @@
 
 namespace argus {
     struct AnimationFrame {
-        Vector2f offset;
+        Vector2u offset;
+        Vector2u size;
         float duration;
     };
 
@@ -38,7 +39,7 @@ namespace argus {
 
         std::string atlas;
         OffsetType offset_type;
-        Vector2f tile_size;
+        Vector2u tile_size;
         bool loop;
         Padding padding;
         float def_duration;
@@ -52,7 +53,7 @@ namespace argus {
         std::string def_anim;
         float def_speed;
         std::string def_atlas;
-        Vector2f tile_size;
+        Vector2u tile_size;
 
         std::map<std::string, SpriteAnimation> animations;
     };

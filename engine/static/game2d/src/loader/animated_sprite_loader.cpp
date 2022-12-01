@@ -73,8 +73,18 @@ namespace argus {
             // required attribute
             sprite.base_size.y = json_root.at(KEY_HEIGHT);
 
+            if (sprite.base_size.x <= 0 || sprite.base_size.y <= 0) {
+                Logger::default_logger().severe("Animated sprite dimensions must be > 0");
+                return nullptr;
+            }
+
             if (json_root.contains(KEY_SPEED)) {
                 sprite.def_speed = json_root.at(KEY_SPEED);
+
+                if (sprite.def_speed <= 0) {
+                    Logger::default_logger().severe("Sprite animation speed must be > 0");
+                    return nullptr;
+                }
             } else {
                 sprite.def_speed = 1.0f;
             }
@@ -86,31 +96,47 @@ namespace argus {
                 sprite.def_atlas = json_root.at(KEY_ATLAS);
             }
 
+            // use oversized intermediate variables to be able to store UINT32_MAX in a signed value
+            int64_t tile_width = 0;
+            int64_t tile_height = 0;
+
             if (json_root.contains(KEY_TILE_WIDTH)) {
                 if (!json_root.contains(KEY_TILE_HEIGHT)) {
-                    Logger::default_logger().debug("Animated sprite specifies tile width but not height");
+                    Logger::default_logger().severe("Animated sprite specifies tile width but not height");
                     return nullptr;
                 }
 
-                sprite.tile_size.x = json_root.at(KEY_TILE_WIDTH);
+                tile_width = json_root.at(KEY_TILE_WIDTH);
             }
 
             if (json_root.contains(KEY_TILE_HEIGHT)) {
                 if (!json_root.contains(KEY_TILE_WIDTH)) {
-                    Logger::default_logger().debug("Animated sprite specifies tile height but not width");
+                    Logger::default_logger().severe("Animated sprite specifies tile height but not width");
                     return nullptr;
                 }
 
-                sprite.tile_size.y = json_root.at(KEY_TILE_HEIGHT);
+                tile_height = json_root.at(KEY_TILE_HEIGHT);
+
+                // these values default to zero, so we only want to validate them if they're provided
+                if (tile_width <= 0 || tile_height <= 0) {
+                    Logger::default_logger().severe("Animated sprite tile dimensions must be >= 0");
+                    return nullptr;
+                }
+
+                if (tile_width > UINT32_MAX || tile_height > UINT32_MAX) {
+                    Logger::default_logger().severe("Animated sprite tile dimensions must be <= UINT32_MAX");
+                    return nullptr;
+                }
             }
+
+            sprite.tile_size.x = static_cast<unsigned int>(tile_width);
+            sprite.tile_size.y = static_cast<unsigned int>(tile_height);
 
             for (auto &anim_pair : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
                 auto &anim_id = anim_pair.first;
                 auto &anim_json = anim_pair.second;
 
                 SpriteAnimation anim;
-
-                //TODO: verify all values are within acceptable range
 
                 if (anim_json.contains(KEY_ANIM_LOOP)) {
                     anim.loop = anim_json.at(KEY_ANIM_LOOP);
@@ -127,42 +153,72 @@ namespace argus {
                     } else if (anim_type_str == ENUM_OFF_TYPE_TILE) {
                         anim.offset_type = OffsetType::Tile;
                     } else {
-                        Logger::default_logger().debug("Animated sprite offset type is invalid");
+                        Logger::default_logger().severe("Animated sprite offset type is invalid");
                         return nullptr;
                     }
                 }
 
                 if (anim_json.contains(KEY_ANIM_DEF_FRAME_DUR)) {
                     anim.def_duration = anim_json.at(KEY_ANIM_DEF_FRAME_DUR);
+                    if (anim.def_duration <= 0) {
+                        Logger::default_logger().severe("Animated sprite frame duration must be >= 0");
+                        return nullptr;
+                    }
                 }
 
                 if (anim_json.contains(KEY_ANIM_PADDING)) {
-                    auto padding_json = anim_json.at(KEY_ANIM_PADDING).get<nlohmann::json::object_t>();
+                    auto padding_json = anim_json.at(KEY_ANIM_PADDING);
 
-                    if (anim_json.contains(KEY_ANIM_PAD_TOP)) {
+                    if (padding_json.contains(KEY_ANIM_PAD_TOP)) {
                         anim.padding.top = padding_json.at(KEY_ANIM_PAD_TOP);
                     }
 
-                    if (anim_json.contains(KEY_ANIM_PAD_BOTTOM)) {
+                    if (padding_json.contains(KEY_ANIM_PAD_BOTTOM)) {
                         anim.padding.bottom = padding_json.at(KEY_ANIM_PAD_BOTTOM);
                     }
 
-                    if (anim_json.contains(KEY_ANIM_PAD_LEFT)) {
+                    if (padding_json.contains(KEY_ANIM_PAD_LEFT)) {
                         anim.padding.left = padding_json.at(KEY_ANIM_PAD_LEFT);
                     }
 
-                    if (anim_json.contains(KEY_ANIM_PAD_RIGHT)) {
+                    if (padding_json.contains(KEY_ANIM_PAD_RIGHT)) {
                         anim.padding.right = padding_json.at(KEY_ANIM_PAD_RIGHT);
+                    }
+
+                    if (anim.padding.top < 0 || anim.padding.bottom < 0
+                            || anim.padding.left < 0 || anim.padding.right < 0) {
+                        printf("%f, %f, %f, %f\n", anim.padding.top, anim.padding.bottom, anim.padding.left, anim.padding.right);
+                        Logger::default_logger().severe("Animated sprite padding values must be >= 0");
+                        return nullptr;
                     }
                 }
 
                 for (auto &frame_json : anim_json.at(KEY_ANIM_FRAMES).get<nlohmann::json::array_t>()) {
                     AnimationFrame frame;
-                    frame.offset.x = frame_json.at(KEY_ANIM_FRAME_X);
-                    frame.offset.y = frame_json.at(KEY_ANIM_FRAME_Y);
+
+                    // oversized intermediate variables again
+                    int64_t offset_x = frame_json.at(KEY_ANIM_FRAME_X);
+                    int64_t offset_y = frame_json.at(KEY_ANIM_FRAME_Y);
+
+                    if (offset_x < 0 || offset_y < 0) {
+                        Logger::default_logger().severe("Animated sprite frame offset values must be >= 0");
+                        return nullptr;
+                    }
+
+                    if (offset_x > UINT32_MAX || offset_y > UINT32_MAX) {
+                        Logger::default_logger().severe("Animated sprite frame offset values must be <= UINT32_MAX");
+                        return nullptr;
+                    }
+
+                    frame.offset.x = static_cast<unsigned int>(offset_x);
+                    frame.offset.y = static_cast<unsigned int>(offset_y);
 
                     if (frame_json.contains(KEY_ANIM_FRAME_DUR)) {
                         frame.duration = frame_json.at(KEY_ANIM_FRAME_DUR);
+                        if (frame.duration <= 0) {
+                            Logger::default_logger().severe("Animated sprite frame duration must be > 0");
+                            return nullptr;
+                        }
                     }
 
                     anim.frames.push_back(frame);
@@ -175,13 +231,13 @@ namespace argus {
 
             return new AnimatedSpriteDef(std::move(sprite));
         } catch (nlohmann::detail::parse_error&) {
-            Logger::default_logger().warn("Failed to parse animated sprite %s", proto.uid.c_str());
+            Logger::default_logger().severe("Failed to parse animated sprite %s", proto.uid.c_str());
             return nullptr;
         } catch (std::out_of_range&) {
-            Logger::default_logger().debug("Animated sprite %s is incomplete or malformed", proto.uid.c_str());
+            Logger::default_logger().severe("Animated sprite %s is incomplete or malformed", proto.uid.c_str());
             return nullptr;
         } catch (std::exception &ex) {
-            Logger::default_logger().debug("Unspecified exception while parsing animated sprite %s (what: %s)",
+            Logger::default_logger().severe("Unspecified exception while parsing animated sprite %s (what: %s)",
                     proto.uid.c_str(), ex.what());
             return nullptr;
         }

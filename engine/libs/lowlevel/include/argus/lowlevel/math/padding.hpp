@@ -24,5 +24,12 @@ namespace argus {
         float bottom;
         float left;
         float right;
+
+        Padding(void):
+            top(0.0f),
+            bottom(0.0f),
+            left(0.0f),
+            right(0.0f) {
+        }
     };
 }
