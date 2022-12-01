@@ -331,8 +331,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
                 "CARGO_TARGET_DIR=${RUST_TARGET_DIR}/${MODULE_NAME}"
                 "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}"
                 "cargo" "build" "-vv"
-                "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml"
-          BUILD_BYPRODUCTS "${RUST_TARGET_DIR}/${MODULE_NAME}/$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:optimized>/${CMAKE_STATIC_LIBRARY_PREFIX}${MODULE_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml" "$<$<CONFIG:Release>:--release>"
+          BUILD_BYPRODUCTS "${RUST_TARGET_DIR}/${MODULE_NAME}/$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:release>/${CMAKE_STATIC_LIBRARY_PREFIX}${MODULE_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
           INSTALL_COMMAND ""
           BUILD_ALWAYS ON
           LOG_BUILD ON
