@@ -96,6 +96,10 @@ namespace argus {
         return rhs < *this;
     }
 
+    Uuid::operator const std::string() const {
+        return this->to_string();
+    }
+
     std::string Uuid::to_string(void) const {
         std::string rendered(37, '\0');
         snprintf(rendered.data(), rendered.size(), "%08x-%04x-%04x-%04x-%08x%04x",

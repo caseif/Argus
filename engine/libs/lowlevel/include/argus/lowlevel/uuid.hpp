@@ -34,6 +34,8 @@ namespace argus {
 
         bool operator>(const Uuid &rhs) const;
 
+        operator const std::string(void) const;
+
         std::string to_string(void) const;
     };
 }
