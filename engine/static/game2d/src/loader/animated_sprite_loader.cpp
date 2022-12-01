@@ -232,10 +232,10 @@ namespace argus {
                     auto padding_json = anim_json.at(KEY_ANIM_PADDING);
 
                     // oversized intermediate variables again
-                    int64_t pad_left;
-                    int64_t pad_right;
-                    int64_t pad_top;
-                    int64_t pad_bottom;
+                    int64_t pad_left = 0;
+                    int64_t pad_right = 0;
+                    int64_t pad_top = 0;
+                    int64_t pad_bottom = 0;
 
                     if (padding_json.contains(KEY_ANIM_PAD_LEFT)) {
                         pad_left = padding_json.at(KEY_ANIM_PAD_LEFT);
