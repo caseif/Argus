@@ -231,28 +231,56 @@ namespace argus {
                 if (anim_json.contains(KEY_ANIM_PADDING)) {
                     auto padding_json = anim_json.at(KEY_ANIM_PADDING);
 
-                    if (padding_json.contains(KEY_ANIM_PAD_TOP)) {
-                        anim.padding.top = padding_json.at(KEY_ANIM_PAD_TOP);
-                    }
-
-                    if (padding_json.contains(KEY_ANIM_PAD_BOTTOM)) {
-                        anim.padding.bottom = padding_json.at(KEY_ANIM_PAD_BOTTOM);
-                    }
+                    // oversized intermediate variables again
+                    int64_t pad_left;
+                    int64_t pad_right;
+                    int64_t pad_top;
+                    int64_t pad_bottom;
 
                     if (padding_json.contains(KEY_ANIM_PAD_LEFT)) {
-                        anim.padding.left = padding_json.at(KEY_ANIM_PAD_LEFT);
+                        pad_left = padding_json.at(KEY_ANIM_PAD_LEFT);
                     }
 
                     if (padding_json.contains(KEY_ANIM_PAD_RIGHT)) {
-                        anim.padding.right = padding_json.at(KEY_ANIM_PAD_RIGHT);
+                        pad_right = padding_json.at(KEY_ANIM_PAD_RIGHT);
                     }
 
-                    if (anim.padding.top < 0 || anim.padding.bottom < 0
-                            || anim.padding.left < 0 || anim.padding.right < 0) {
-                        printf("%f, %f, %f, %f\n", anim.padding.top, anim.padding.bottom, anim.padding.left, anim.padding.right);
+                    if (padding_json.contains(KEY_ANIM_PAD_TOP)) {
+                        pad_top = padding_json.at(KEY_ANIM_PAD_TOP);
+                    }
+
+                    if (padding_json.contains(KEY_ANIM_PAD_BOTTOM)) {
+                        pad_bottom = padding_json.at(KEY_ANIM_PAD_BOTTOM);
+                    }
+
+                    if (pad_left < 0 || pad_right < 0
+                            || pad_top < 0 || pad_bottom < 0) {
                         Logger::default_logger().severe("Animated sprite padding values must be >= 0");
                         return nullptr;
                     }
+
+                    if (pad_left > UINT32_MAX || pad_right > UINT32_MAX
+                        || pad_top > UINT32_MAX || pad_bottom > UINT32_MAX) {
+                        Logger::default_logger().severe("Animated sprite padding values must be < UINT32_MAX");
+                        return nullptr;
+                    }
+
+                    if (pad_left + pad_right >= anim.frame_size.x) {
+                        Logger::default_logger().severe("Animated sprite animation horizontal padding must not "
+                                                        "exceed frame width");
+                        return nullptr;
+                    }
+
+                    if (pad_top + pad_bottom >= anim.frame_size.y) {
+                        Logger::default_logger().severe("Animated sprite animation vertical padding must not "
+                                                        "exceed frame height");
+                        return nullptr;
+                    }
+
+                    anim.padding.left = static_cast<uint32_t>(pad_left);
+                    anim.padding.right = static_cast<uint32_t>(pad_right);
+                    anim.padding.top = static_cast<uint32_t>(pad_top);
+                    anim.padding.bottom = static_cast<uint32_t>(pad_bottom);
                 }
 
                 for (auto &frame_json : anim_json.at(KEY_ANIM_FRAMES).get<nlohmann::json::array_t>()) {

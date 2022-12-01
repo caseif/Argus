@@ -20,16 +20,16 @@
 
 namespace argus {
     struct Padding {
-        float top;
-        float bottom;
-        float left;
-        float right;
+        uint32_t top;
+        uint32_t bottom;
+        uint32_t left;
+        uint32_t right;
 
         Padding(void):
-            top(0.0f),
-            bottom(0.0f),
-            left(0.0f),
-            right(0.0f) {
+            top(0),
+            bottom(0),
+            left(0),
+            right(0) {
         }
     };
 }
