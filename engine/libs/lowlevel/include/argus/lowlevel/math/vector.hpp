@@ -20,6 +20,8 @@
 
 #include <type_traits>
 
+#include <cstdint>
+
 namespace argus {
     /**
      * \brief Represents a vector with four elements.
@@ -479,14 +481,14 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a vector of two `int`s.
+     * \brief Represents a vector of two `int32_t`s.
      */
-    typedef Vector2<int> Vector2i;
+    typedef Vector2<int32_t> Vector2i;
 
     /**
-     * \brief Represents a vector of two `unsigned int`s.
+     * \brief Represents a vector of two `uint32_t`s.
      */
-    typedef Vector2<unsigned int> Vector2u;
+    typedef Vector2<uint32_t> Vector2u;
 
     /**
      * \brief Represents a vector of two `float`s.
@@ -499,14 +501,14 @@ namespace argus {
     typedef Vector2<double> Vector2d;
 
     /**
-     * \brief Represents a vector of three `int`s.
+     * \brief Represents a vector of three `int32_t`s.
      */
-    typedef Vector3<int> Vector3i;
+    typedef Vector3<int32_t> Vector3i;
 
     /**
-     * \brief Represents a vector of three `unsigned int`s.
+     * \brief Represents a vector of three `uint32_t`s.
      */
-    typedef Vector3<unsigned int> Vector3u;
+    typedef Vector3<uint32_t> Vector3u;
 
     /**
      * \brief Represents a vector of three `float`s.
@@ -519,14 +521,14 @@ namespace argus {
     typedef Vector3<double> Vector3d;
 
     /**
-     * \brief Represents a vector of four `int`s.
+     * \brief Represents a vector of four `int32_t`s.
      */
-    typedef Vector4<int> Vector4i;
+    typedef Vector4<int32_t> Vector4i;
 
     /**
-     * \brief Represents a vector of four `unsigned int`s.
+     * \brief Represents a vector of four `uint32_t`s.
      */
-    typedef Vector4<unsigned int> Vector4u;
+    typedef Vector4<uint32_t> Vector4u;
 
     /**
      * \brief Represents a vector of four `float`s.
