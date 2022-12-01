@@ -60,5 +60,6 @@ namespace argus {
 
     void Sprite::set_transform(const Transform2D &transform) {
         pimpl->transform = transform;
+        pimpl->transform_dirty = true;
     }
 }

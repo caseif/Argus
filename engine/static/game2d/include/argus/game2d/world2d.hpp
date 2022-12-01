@@ -34,7 +34,9 @@ namespace argus {
 
     class World2D {
         public:
-            static World2D &create_world_2d(const std::string &id, Canvas &canvas);
+            static World2D &create(const std::string &id, Canvas &canvas);
+
+            static World2D &get(const std::string &id);
 
             pimpl_World2D *pimpl;
 

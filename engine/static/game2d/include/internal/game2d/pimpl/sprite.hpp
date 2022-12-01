@@ -31,13 +31,15 @@ namespace argus {
         std::pair<Vector2f, Vector2f> tex_coords;
 
         Transform2D transform;
+        bool transform_dirty;
 
         pimpl_Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
                 const std::pair<Vector2f, Vector2f> &tex_coords):
             id(id),
             base_size(base_size),
             texture_uid(texture_uid),
-            tex_coords(tex_coords) {
+            tex_coords(tex_coords),
+            transform_dirty(true) {
         }
     };
 }

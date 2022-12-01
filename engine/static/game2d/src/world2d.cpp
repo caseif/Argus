@@ -23,17 +23,20 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/2d/scene_2d.hpp"
+#include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 
 #include "argus/game2d/animated_sprite.hpp"
 #include "argus/game2d/sprite.hpp"
 #include "argus/game2d/world2d.hpp"
 #include "internal/game2d/world2d.hpp"
+#include "internal/game2d/pimpl/animated_sprite.hpp"
+#include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
-#include "argus/render/defines.hpp"
 #include "internal/game2d/defines.hpp"
 
 #include <map>
@@ -42,16 +45,26 @@
 
 #define WORLD_PREFIX "_world_"
 #define SPRITE_PREFIX "_sprite_"
+#define ANIM_SPRITE_PREFIX "_asprite_"
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_World2D));
 
     static std::map<std::string, World2D*> g_worlds;
 
-    World2D &World2D::create_world_2d(const std::string &id, Canvas &canvas) {
+    World2D &World2D::create(const std::string &id, Canvas &canvas) {
         auto *world = new World2D(id, canvas);
         g_worlds.insert({ id, world });
         return *world;
+    }
+
+    World2D &World2D::get(const std::string &id) {
+        auto it = g_worlds.find(id);
+        if (it == g_worlds.cend()) {
+            throw std::invalid_argument("Unknown world ID");
+        }
+
+        return *it->second;
     }
 
     World2D::World2D(const std::string &id, Canvas &canvas):
@@ -121,9 +134,12 @@ namespace argus {
     }
 
     static void _render_sprite(World2D &world, Sprite &sprite) {
-        UNUSED(sprite);
+        RenderObject2D *obj;
+
         auto obj_opt = world.pimpl->scene->get_object(SPRITE_PREFIX + sprite.get_id());
-        if (!obj_opt.has_value()) {
+        if (obj_opt.has_value()) {
+            obj = &obj_opt->get();
+        } else {
             std::vector<RenderPrim2D> prims;
 
             Vertex2D v1, v2, v3, v4;
@@ -145,14 +161,28 @@ namespace argus {
             ResourceManager::instance().create_resource(mat_uid,
                     RESOURCE_TYPE_MATERIAL, Material(sprite.get_texture(), { SHADER_COPY_VERT, SHADER_COPY_FRAG }));
 
-            world.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
+            obj = &world.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
                     prims, {});
         }
+
+        if (sprite.pimpl->transform_dirty) {
+            obj->set_transform(sprite.pimpl->transform);
+        }
+    }
+
+    static void _render_animated_sprite(World2D &world, AnimatedSprite &sprite) {
+        UNUSED(world);
+        UNUSED(sprite);
+        //TODO
     }
 
     static void _render_world(World2D &world) {
         for (auto &kv : world.pimpl->sprites) {
             _render_sprite(world, *kv.second);
+        }
+
+        for (auto &kv : world.pimpl->anim_sprites) {
+            _render_animated_sprite(world, *kv.second);
         }
     }
 
