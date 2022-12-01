@@ -143,6 +143,7 @@ namespace argus {
 
                     scene_pimpl->read_lock.lock();
                     std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);
+                    delete scene_pimpl->root_group_write;
                     // we don't actually need to hold the lock beyond this point, since we
                     // can copy from the read buffer while the renderer is traversing it
                     scene_pimpl->read_lock.unlock();
