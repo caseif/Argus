@@ -37,10 +37,6 @@ const char *KEY_TILE_HEIGHT = "tile_height";
 const char *KEY_ANIMS = "animations";
 
 const char *KEY_ANIM_LOOP = "loop";
-const char *KEY_ANIM_ATLAS = "atlas";
-const char *KEY_ANIM_WIDTH = "frame_width";
-const char *KEY_ANIM_HEIGHT = "frame_height";
-const char *KEY_ANIM_OFF_TYPE = "offset_type";
 const char *KEY_ANIM_DEF_FRAME_DUR = "frame_duration";
 const char *KEY_ANIM_PADDING = "padding";
 const char *KEY_ANIM_PAD_TOP = "top";
@@ -51,9 +47,6 @@ const char *KEY_ANIM_FRAMES = "frames";
 const char *KEY_ANIM_FRAME_X = "x";
 const char *KEY_ANIM_FRAME_Y = "y";
 const char *KEY_ANIM_FRAME_DUR = "duration";
-
-const char *ENUM_OFF_TYPE_TILE = "tile";
-const char *ENUM_OFF_TYPE_ABS = "absolute";
 
 namespace argus {
     AnimatedSpriteLoader::AnimatedSpriteLoader(void): ResourceLoader({ RESOURCE_TYPE_ASPRITE }) {
@@ -144,82 +137,6 @@ namespace argus {
                     anim.loop = anim_json.at(KEY_ANIM_LOOP);
                 }
 
-                if (anim_json.contains(KEY_ANIM_ATLAS)) {
-                    anim.atlas = anim_json.at(KEY_ANIM_ATLAS);
-                }
-
-                if (anim_json.contains(KEY_ANIM_OFF_TYPE)) {
-                    auto anim_type_str = anim_json.at(KEY_ANIM_OFF_TYPE);
-                    if (anim_type_str == ENUM_OFF_TYPE_ABS) {
-                        anim.offset_type = OffsetType::Absolute;
-                    } else if (anim_type_str == ENUM_OFF_TYPE_TILE) {
-                        anim.offset_type = OffsetType::Tile;
-                    } else {
-                        Logger::default_logger().severe("Animated sprite offset type is invalid");
-                        return nullptr;
-                    }
-                } else {
-                    if (sprite.tile_size.x > 0) {
-                        anim.offset_type = OffsetType::Tile;
-                    } else {
-                        anim.offset_type = OffsetType::Absolute;
-                    }
-                }
-
-                int64_t frame_width = anim.offset_type == OffsetType::Tile ? sprite.tile_size.x : 0;
-                int64_t frame_height = anim.offset_type == OffsetType::Tile ? sprite.tile_size.y : 0;
-                if (anim_json.contains(KEY_ANIM_WIDTH)) {
-                    if (!anim_json.contains(KEY_ANIM_HEIGHT)) {
-                        Logger::default_logger().severe("Sprite animation specifies frame width but not height");
-                        return nullptr;
-                    }
-
-                    frame_width = anim_json.at(KEY_ANIM_WIDTH);
-
-                    if (frame_width <= 0) {
-                        Logger::default_logger().severe("Sprite animation frame width must be >= 0");
-                        return nullptr;
-                    }
-
-                    if (frame_width > UINT32_MAX) {
-                        Logger::default_logger().severe("Sprite animation frame width must be <= UINT32_MAX");
-                        return nullptr;
-                    }
-                }
-
-                if (anim_json.contains(KEY_ANIM_HEIGHT)) {
-                    if (!anim_json.contains(KEY_ANIM_WIDTH)) {
-                        Logger::default_logger().severe("Sprite animation specifies frame height but not width");
-                    }
-
-                    frame_height = anim_json.at(KEY_ANIM_HEIGHT);
-
-                    if (frame_height <= 0) {
-                        Logger::default_logger().severe("Sprite animation frame height must be >= 0");
-                        return nullptr;
-                    }
-
-                    if (frame_height > UINT32_MAX) {
-                        Logger::default_logger().severe("Sprite animation frame height must be >= 0");
-                        return nullptr;
-                    }
-                }
-
-                if (frame_width == 0) {
-                    if (anim.offset_type == OffsetType::Absolute) {
-                        Logger::default_logger().severe("Animated sprite frame dimensions must be explicitly "
-                                                        "provided when offset type is absolute");
-                    } else {
-                        Logger::default_logger().severe("Either sprite tile dimensions or animation frame dimensions "
-                                                        "must be provided");
-                    }
-
-                    return nullptr;
-                }
-
-                anim.frame_size.x = static_cast<uint32_t>(frame_width);
-                anim.frame_size.y = static_cast<uint32_t>(frame_height);
-
                 if (anim_json.contains(KEY_ANIM_DEF_FRAME_DUR)) {
                     anim.def_duration = anim_json.at(KEY_ANIM_DEF_FRAME_DUR);
                     if (anim.def_duration <= 0) {
@@ -265,15 +182,15 @@ namespace argus {
                         return nullptr;
                     }
 
-                    if (pad_left + pad_right >= anim.frame_size.x) {
+                    if (pad_left + pad_right >= sprite.tile_size.x) {
                         Logger::default_logger().severe("Animated sprite animation horizontal padding must not "
-                                                        "exceed frame width");
+                                                        "exceed atlas tile width");
                         return nullptr;
                     }
 
-                    if (pad_top + pad_bottom >= anim.frame_size.y) {
+                    if (pad_top + pad_bottom >= sprite.tile_size.y) {
                         Logger::default_logger().severe("Animated sprite animation vertical padding must not "
-                                                        "exceed frame height");
+                                                        "exceed atlas tile height");
                         return nullptr;
                     }
 
