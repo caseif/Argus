@@ -72,5 +72,13 @@ namespace argus {
             size_t get_vertex_count(void) const;
 
             const std::vector<Vertex2D> &get_vertices(void) const;
+
+            /**
+             * \brief Gets the number of unique animation frames of this
+             *        RenderPrim2D.
+             *
+             * \return The number of unique animation frames.
+             */
+            size_t get_frame_count(void) const;
     };
 }

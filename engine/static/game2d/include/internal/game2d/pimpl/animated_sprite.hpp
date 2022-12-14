@@ -30,7 +30,10 @@
 
 namespace argus {
     struct pimpl_AnimatedSprite {
+        const std::string id;
         const Resource &def;
+
+        std::map<std::string, size_t> anim_start_offsets;
 
         float speed;
         std::string cur_anim_id;
@@ -39,7 +42,11 @@ namespace argus {
         bool paused;
         bool pending_reset;
 
-        pimpl_AnimatedSprite(const Resource &def):
+        Transform2D transform;
+        bool transform_dirty;
+
+        pimpl_AnimatedSprite(const std::string &id, const Resource &def):
+                id(id),
                 def(def),
                 speed(def.get<AnimatedSpriteDef>().def_speed) {
         }

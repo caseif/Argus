@@ -99,12 +99,12 @@ namespace argus {
 
     RenderObject2D &RenderGroup2D::create_child_object(const std::string &id,
             const std::string &material, const std::vector<RenderPrim2D> &primitives,
-            const Transform2D &transform) {
+            const Vector2f &atlas_stride, const Transform2D &transform) {
         if (pimpl->scene.get_group(id).has_value()) {
             throw std::invalid_argument("Render group ID must be unique within scene");
         }
 
-        auto *obj = new RenderObject2D(id, *this, material, primitives, transform);
+        auto *obj = new RenderObject2D(id, *this, material, primitives, atlas_stride, transform);
         pimpl->child_objects.push_back(obj);
 
         pimpl->scene.pimpl->object_map.insert({ obj->get_id(), obj });

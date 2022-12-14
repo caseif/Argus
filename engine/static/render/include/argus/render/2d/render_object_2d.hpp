@@ -48,7 +48,8 @@ namespace argus {
             pimpl_RenderObject2D *pimpl;
 
             RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
-                    const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
+                    const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+                    const Transform2D &transform);
 
             RenderObject2D(const RenderObject2D&) = delete;
 
@@ -80,6 +81,23 @@ namespace argus {
              *         object.
              */
             const std::vector<RenderPrim2D> &get_primitives(void) const;
+
+            /**
+             * \brief Gets the stride on each axis between atlas tiles, if the
+             *        object has an animated texture.
+             *
+             * \return The stride between atlas tiles.
+             */
+            const Vector2f &get_atlas_stride(void) const;
+
+            /**
+             * \brief Sets the active animation frame.
+             *
+             * \param index The x- and y-index of the animation frame to
+             *        activate. Neither index should exceed the number of tiles
+             *        in each dimension in the atlas texture.
+             */
+            void set_active_frame(const Vector2u &frame) const;
 
             const Transform2D &peek_transform(void) const;
 

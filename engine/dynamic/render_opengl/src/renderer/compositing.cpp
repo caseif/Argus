@@ -47,6 +47,8 @@
 #include <string>
 #include <utility>
 
+#define BINDING_INDEX_VBO 0
+
 namespace argus {
     struct TransformedViewport {
         int32_t top;
@@ -228,6 +230,8 @@ namespace argus {
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
+            bool animated = program_info.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
                 set_per_frame_global_uniforms(program_info);
@@ -239,12 +243,22 @@ namespace argus {
                 }
             }
 
+            if (animated) {
+                auto &stride = bucket.second->atlas_stride;
+                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride] (auto loc) {
+                    glUniform2f(loc, stride.x, stride.y);
+                });
+            }
+
             if (tex_handle != last_texture) {
                 glBindTexture(GL_TEXTURE_2D, tex_handle);
                 last_texture = tex_handle;
             }
 
             glBindVertexArray(bucket.second->vertex_array);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
             glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(bucket.second->vertex_count));
 
@@ -350,6 +364,9 @@ namespace argus {
             glCreateBuffers(1, &state.frame_vbo);
 
             glNamedBufferData(state.frame_vbo, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
+
+            glVertexArrayVertexBuffer(state.frame_vao, BINDING_INDEX_VBO, state.frame_vbo, 0,
+                    4 * static_cast<uint32_t>(sizeof(GLfloat)));
         } else {
             glGenVertexArrays(1, &state.frame_vao);
             glBindVertexArray(state.frame_vao);
@@ -361,8 +378,10 @@ namespace argus {
         }
 
         unsigned int attr_offset = 0;
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_POSITION_LEN, FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
-        set_attrib_pointer(state.frame_vao, state.frame_vbo, 4, SHADER_ATTRIB_TEXCOORD_LEN, FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, BINDING_INDEX_VBO, 4, SHADER_ATTRIB_POSITION_LEN,
+                FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
+        set_attrib_pointer(state.frame_vao, state.frame_vbo, BINDING_INDEX_VBO, 4, SHADER_ATTRIB_TEXCOORD_LEN,
+                FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);
 
         if (!AGLET_GL_ARB_direct_state_access) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);

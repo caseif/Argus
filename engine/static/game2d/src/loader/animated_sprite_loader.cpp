@@ -88,7 +88,7 @@ namespace argus {
             sprite.def_anim = json_root.at(KEY_DEF_ANIM);
 
             if (json_root.contains(KEY_ATLAS)) {
-                sprite.def_atlas = json_root.at(KEY_ATLAS);
+                sprite.atlas = json_root.at(KEY_ATLAS);
             }
 
             // use oversized intermediate variables to be able to store UINT32_MAX in a signed value

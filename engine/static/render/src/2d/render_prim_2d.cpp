@@ -32,12 +32,12 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderPrim2D));
 
-    RenderPrim2D::RenderPrim2D(const std::vector<Vertex2D> &vertices):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices)) {
+    RenderPrim2D::RenderPrim2D(const std::vector<Vertex2D> &vertices) {
+        pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);
     }
 
-    RenderPrim2D::RenderPrim2D(const std::initializer_list<Vertex2D> vertices):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices)) {
+    RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices):
+        RenderPrim2D(std::vector<Vertex2D>(vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(const RenderPrim2D &rhs) noexcept:

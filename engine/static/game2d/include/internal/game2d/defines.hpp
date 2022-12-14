@@ -22,3 +22,7 @@
 
 #define SHADER_COPY_VERT "argus:game2d/shader/copy_vert"
 #define SHADER_COPY_FRAG "argus:game2d/shader/copy_frag"
+#define SHADER_STATIC_SPRITE_VERT "argus:game2d/shader/static_sprite_vert"
+#define SHADER_STATIC_SPRITE_FRAG "argus:game2d/shader/static_sprite_frag"
+#define SHADER_ANIM_SPRITE_VERT "argus:game2d/shader/anim_sprite_vert"
+#define SHADER_ANIM_SPRITE_FRAG "argus:game2d/shader/anim_sprite_frag"

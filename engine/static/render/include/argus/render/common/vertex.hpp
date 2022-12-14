@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <vector>
+
 namespace argus {
     /**
      * \brief Represents a vertex in 2D space containing a 2-dimensional spatial
@@ -40,7 +42,8 @@ namespace argus {
          */
         Vector4f color;
         /**
-         * \brief The texture coordinates of this vertex in UV-space.
+         * \brief The texture coordinates in UV-space associated with this
+         *        vertex, one per animation frame (if applicable).
          */
         Vector2f tex_coord;
     };

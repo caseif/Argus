@@ -26,6 +26,7 @@
 #include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
+#include "argus/render/common/texture_data.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
@@ -117,7 +118,7 @@ namespace argus {
 
         auto &def_res = ResourceManager::instance().get_resource(sprite_uid);
 
-        auto *sprite = new AnimatedSprite(def_res);
+        auto *sprite = new AnimatedSprite(id, def_res);
 
         pimpl->anim_sprites.insert({ id, sprite });
 
@@ -149,20 +150,23 @@ namespace argus {
             v3.position = { sprite.get_base_size().x, sprite.get_base_size().y };
             v4.position = { sprite.get_base_size().x, 0 };
 
-            v1.tex_coord = { sprite.get_texture_coords().first.x, sprite.get_texture_coords().first.y };
-            v2.tex_coord = { sprite.get_texture_coords().first.x, sprite.get_texture_coords().second.y };
-            v3.tex_coord = { sprite.get_texture_coords().second.x, sprite.get_texture_coords().second.y };
-            v4.tex_coord = { sprite.get_texture_coords().second.x, sprite.get_texture_coords().first.y };
+            auto &tc1 = sprite.get_texture_coords().first;
+            auto &tc2 = sprite.get_texture_coords().second;
+
+            v1.tex_coord = { tc1.x, tc1.y };
+            v2.tex_coord = { tc1.x, tc2.y };
+            v3.tex_coord = { tc2.x, tc2.y };
+            v4.tex_coord = { tc2.x, tc1.y };
 
             prims.push_back(RenderPrim2D({ v1, v2, v3 }));
             prims.push_back(RenderPrim2D({ v1, v3, v4 }));
 
             auto mat_uid = "internal:game2d/material/sprite_mat_" + sprite.get_id();
-            ResourceManager::instance().create_resource(mat_uid,
-                    RESOURCE_TYPE_MATERIAL, Material(sprite.get_texture(), { SHADER_COPY_VERT, SHADER_COPY_FRAG }));
+            ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
+                    Material(sprite.get_texture(), { SHADER_STATIC_SPRITE_VERT, SHADER_STATIC_SPRITE_FRAG }));
 
             obj = &world.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
-                    prims, {});
+                    prims, {}, {});
         }
 
         if (sprite.pimpl->transform_dirty) {
@@ -171,9 +175,62 @@ namespace argus {
     }
 
     static void _render_animated_sprite(World2D &world, AnimatedSprite &sprite) {
-        UNUSED(world);
-        UNUSED(sprite);
-        //TODO
+        RenderObject2D *obj;
+
+        auto obj_opt = world.pimpl->scene->get_object(ANIM_SPRITE_PREFIX + sprite.get_id());
+        if (obj_opt.has_value()) {
+            obj = &obj_opt->get();
+        } else {
+            auto &sprite_def = sprite.pimpl->get_def();
+
+            std::vector<RenderPrim2D> prims;
+
+            Vertex2D v1, v2, v3, v4;
+
+            v1.position = { 0, 0 };
+            v2.position = { 0, sprite.get_base_size().y };
+            v3.position = { sprite.get_base_size().x, sprite.get_base_size().y };
+            v4.position = { sprite.get_base_size().x, 0 };
+
+            v1.tex_coord = { 0, 0 };
+            v2.tex_coord = { 0, 1 };
+            v3.tex_coord = { 1, 1 };
+            v4.tex_coord = { 1, 0 };
+
+            auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
+            auto atlas_w = anim_tex.get<TextureData>().width;
+            auto atlas_h = anim_tex.get<TextureData>().height;
+            anim_tex.release();
+
+            size_t frame_off = 0;
+            for (auto &kv : sprite.pimpl->get_def().animations) {
+                auto &anim = kv.second;
+
+                frame_off += anim.frames.size();
+                sprite.pimpl->anim_start_offsets.insert({ anim.id, frame_off });
+            }
+
+            prims.push_back(RenderPrim2D({ v1, v2, v3 }));
+            prims.push_back(RenderPrim2D({ v1, v3, v4 }));
+
+            auto mat_uid = "internal:game2d/material/anim_sprite_mat_" + sprite.get_id();
+            ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
+                    Material(sprite_def.atlas, { SHADER_ANIM_SPRITE_VERT, SHADER_ANIM_SPRITE_FRAG }));
+
+            float atlas_stride_x = static_cast<float>(sprite.pimpl->get_def().tile_size.x)
+                    / static_cast<float>(atlas_w);
+            float atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
+                    / static_cast<float>(atlas_h);
+            printf("stride: (%d, %d) -> (%f, %f)\n", sprite.pimpl->get_def().tile_size.x,
+                    sprite.pimpl->get_def().tile_size.y, atlas_stride_x, atlas_stride_y);
+
+            obj = &world.pimpl->scene->create_child_object(ANIM_SPRITE_PREFIX + sprite.get_id(), mat_uid,
+                    prims, { atlas_stride_x, atlas_stride_y }, {});
+        }
+
+        if (sprite.pimpl->transform_dirty) {
+            obj->set_transform(sprite.pimpl->transform);
+        }
     }
 
     static void _render_world(World2D &world) {

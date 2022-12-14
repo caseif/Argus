@@ -33,6 +33,8 @@ namespace argus {
          */
         const std::vector<Vertex2D> vertices;
 
+        size_t frame_count;
+
         pimpl_RenderPrim2D(const std::vector<Vertex2D> &vertices):
                 vertices(vertices) {
         }

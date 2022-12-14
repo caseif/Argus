@@ -95,8 +95,8 @@ namespace argus {
     }
 
     RenderObject2D &Scene2D::create_child_object(const std::string &id, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_object(id, material, primitives, transform);
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) {
+        return pimpl->root_group_write->create_child_object(id, material, primitives, atlas_stride, transform);
     }
 
     void Scene2D::remove_member_group(const std::string &id) {

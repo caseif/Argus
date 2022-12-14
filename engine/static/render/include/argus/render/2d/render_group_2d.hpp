@@ -107,7 +107,8 @@ namespace argus {
              * \param transform The relative transform of the new object.
              */
             RenderObject2D &create_child_object(const std::string &id, const std::string &material,
-                    const std::vector<RenderPrim2D> &primitives, const Transform2D &transform);
+                    const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+                    const Transform2D &transform);
 
             /**
              * \brief Removes the specified child group from this group,

@@ -34,20 +34,24 @@ namespace argus {
         friend class AllocPool;
 
         const Resource &material_res;
+        const Vector2f atlas_stride;
+
         std::vector<ProcessedRenderObject*> objects;
         buffer_handle_t vertex_buffer;
-        buffer_handle_t vertex_array;
+        buffer_handle_t anim_frame_buffer;
+        array_handle_t vertex_array;
         size_t vertex_count;
 
         bool needs_rebuild;
 
-        static RenderBucket &create(const Resource &material_res);
+        static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride);
 
         ~RenderBucket(void);
 
         private:
-            RenderBucket(const Resource &material_res):
+            RenderBucket(const Resource &material_res, const Vector2f &atlas_stride):
                 material_res(material_res),
+                atlas_stride(atlas_stride),
                 objects(),
                 vertex_buffer(0),
                 vertex_array(0),

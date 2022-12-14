@@ -25,12 +25,13 @@
 #define SHADER_ATTRIB_NORMAL "in_Normal"
 #define SHADER_ATTRIB_COLOR "in_Color"
 #define SHADER_ATTRIB_TEXCOORD "in_TexCoord"
+#define SHADER_ATTRIB_ANIM_FRAME "in_AnimFrame"
 
 #define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
 
 #define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
-
 #define SHADER_UNIFORM_TIME "u_Time"
+#define SHADER_UNIFORM_UV_STRIDE "u_UvStride"
 
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"

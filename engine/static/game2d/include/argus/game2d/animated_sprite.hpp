@@ -21,6 +21,7 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/resman/resource.hpp"
+#include "argus/render/common/transform.hpp"
 
 #include <string>
 #include <vector>
@@ -33,7 +34,7 @@ namespace argus {
        public:
         pimpl_AnimatedSprite *pimpl;
 
-        AnimatedSprite(const Resource &definition);
+        AnimatedSprite(const std::string &id, const Resource &definition);
 
         AnimatedSprite(const AnimatedSprite&) = delete;
 
@@ -41,7 +42,13 @@ namespace argus {
 
         ~AnimatedSprite(void);
 
+        const std::string &get_id(void) const;
+
         const Vector2f &get_base_size(void) const;
+
+        const Transform2D &get_transform(void) const;
+
+        void set_transform(const Transform2D &transform);
 
         float get_animation_speed(void) const;
 

@@ -27,6 +27,7 @@ namespace argus {
 
     typedef GLuint buffer_handle_t;
     typedef GLuint array_handle_t;
+    typedef GLuint binding_index_t;
     typedef GLuint texture_handle_t;
     typedef GLuint shader_handle_t;
     typedef GLuint program_handle_t;

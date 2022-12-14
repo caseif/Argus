@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/render/common/transform.hpp"
+
 #include "argus/game2d/animated_sprite.hpp"
 #include "internal/game2d/pimpl/animated_sprite.hpp"
 #include "internal/game2d/animated_sprite.hpp"
@@ -30,8 +32,8 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_AnimatedSprite));
 
-    AnimatedSprite::AnimatedSprite(const Resource &definition):
-            pimpl(&g_pimpl_pool.construct<pimpl_AnimatedSprite>(definition)) {
+    AnimatedSprite::AnimatedSprite(const std::string &id, const Resource &definition):
+            pimpl(&g_pimpl_pool.construct<pimpl_AnimatedSprite>(id, definition)) {
     }
 
     AnimatedSprite::AnimatedSprite(AnimatedSprite &&rhs):
@@ -43,8 +45,21 @@ namespace argus {
         g_pimpl_pool.destroy(pimpl);
     }
 
+    const std::string &AnimatedSprite::get_id(void) const {
+        return pimpl->id;
+    }
+
     const Vector2f &AnimatedSprite::get_base_size(void) const {
         return pimpl->get_def().base_size;
+    }
+
+    const Transform2D &AnimatedSprite::get_transform(void) const {
+        return pimpl->transform;
+    }
+
+    void AnimatedSprite::set_transform(const Transform2D &transform) {
+        pimpl->transform = transform;
+        pimpl->transform_dirty = true;
     }
 
     float AnimatedSprite::get_animation_speed(void) const {
