@@ -39,6 +39,7 @@ namespace argus {
         std::vector<ProcessedRenderObject*> objects;
         buffer_handle_t vertex_buffer;
         buffer_handle_t anim_frame_buffer;
+        void *anim_frame_buffer_staging;
         array_handle_t vertex_array;
         size_t vertex_count;
 
@@ -54,6 +55,7 @@ namespace argus {
                 atlas_stride(atlas_stride),
                 objects(),
                 vertex_buffer(0),
+                anim_frame_buffer_staging(nullptr),
                 vertex_array(0),
                 vertex_count(0),
                 needs_rebuild(true) {

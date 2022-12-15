@@ -31,6 +31,9 @@ namespace argus {
     }
 
     RenderBucket::~RenderBucket(void) {
+        if (this->anim_frame_buffer_staging != nullptr) {
+            free(this->anim_frame_buffer_staging);
+        }
         g_bucket_pool.free(this);
     }
 }

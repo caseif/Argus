@@ -110,7 +110,7 @@ namespace argus {
 
                     if (animated) {
                         glCreateBuffers(1, &bucket->anim_frame_buffer);
-                        glNamedBufferData(bucket->anim_frame_buffer, anim_frame_buf_len, nullptr, GL_DYNAMIC_COPY);
+                        glNamedBufferData(bucket->anim_frame_buffer, anim_frame_buf_len, nullptr, GL_DYNAMIC_DRAW);
 
                         glVertexArrayVertexBuffer(bucket->vertex_array, BINDING_INDEX_ANIM_FRAME_BUF,
                                 bucket->anim_frame_buffer, 0,
@@ -123,12 +123,20 @@ namespace argus {
                     if (animated) {
                         glGenBuffers(1, &bucket->anim_frame_buffer);
                         glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                        glBufferData(GL_ARRAY_BUFFER, anim_frame_buf_len, nullptr, GL_DYNAMIC_COPY);
+                        glBufferData(GL_ARRAY_BUFFER, anim_frame_buf_len, nullptr, GL_DYNAMIC_DRAW);
                     }
 
                     glGenBuffers(1, &bucket->vertex_buffer);
                     glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
                     glBufferData(GL_ARRAY_BUFFER, buffer_len, nullptr, GL_DYNAMIC_COPY);
+                }
+
+                if (animated) {
+                    if (bucket->anim_frame_buffer_staging != nullptr) {
+                        free(bucket->anim_frame_buffer_staging);
+                    }
+
+                    bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
                 }
 
                 GLuint attr_offset = 0;
@@ -159,19 +167,11 @@ namespace argus {
 
             bucket->vertex_count = 0;
 
-            void *anim_frame_buf;
-            if (animated) {
-                if (AGLET_GL_ARB_direct_state_access) {
-                    anim_frame_buf = glMapNamedBuffer(bucket->anim_frame_buffer, GL_WRITE_ONLY);
-                } else {
-                    glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                    anim_frame_buf = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-                }
-            }
-
             if (!AGLET_GL_ARB_direct_state_access) {
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
             }
+
+            bool anim_buf_updated = false;
 
             size_t offset = 0;
             size_t anim_frame_off = 0;
@@ -194,12 +194,13 @@ namespace argus {
 
                 if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
-                        reinterpret_cast<GLfloat*>(anim_frame_buf)[anim_frame_off++]
+                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = static_cast<float>(processed->anim_frame.x);
-                        reinterpret_cast<GLfloat*>(anim_frame_buf)[anim_frame_off++]
+                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = static_cast<float>(processed->anim_frame.y);
                     }
                     processed->anim_frame_updated = false;
+                    anim_buf_updated = true;
                 } else {
                     anim_frame_off += processed->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN;
                 }
@@ -209,16 +210,18 @@ namespace argus {
                 bucket->vertex_count += processed->vertex_count;
             }
 
-            if (AGLET_GL_ARB_direct_state_access) {
-                if (animated) {
-                    glUnmapNamedBuffer(bucket->anim_frame_buffer);
-                }
-            } else {
-                if (animated) {
+            if (anim_buf_updated) {
+                if (AGLET_GL_ARB_direct_state_access) {
+                    glNamedBufferSubData(bucket->anim_frame_buffer, 0,
+                            bucket->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat),
+                            bucket->anim_frame_buffer_staging);
+                } else {
                     glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                    glUnmapBuffer(bucket->anim_frame_buffer);
+                    glBufferSubData(GL_ARRAY_BUFFER, 0, anim_frame_buf_len, bucket->anim_frame_buffer_staging);
                 }
+            }
 
+            if (!AGLET_GL_ARB_direct_state_access) {
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glBindVertexArray(0);
