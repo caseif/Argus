@@ -77,9 +77,12 @@ namespace argus {
         return pimpl->atlas_stride;
     }
 
-    void RenderObject2D::set_active_frame(const Vector2u &index) const {
+    Dirtiable<Vector2u> RenderObject2D::get_active_frame(void) const {
+        return pimpl->active_frame;
+    }
+
+    void RenderObject2D::set_active_frame(const Vector2u &index) {
         pimpl->active_frame = index;
-        pimpl->active_frame_dirty = true;
     }
 
     const Transform2D &RenderObject2D::peek_transform(void) const {
@@ -102,7 +105,6 @@ namespace argus {
         auto *copy = new RenderObject2D(pimpl->id, parent, pimpl->material, prims_copy, pimpl->atlas_stride,
                 pimpl->transform);
         copy->pimpl->active_frame = pimpl->active_frame;
-        copy->pimpl->active_frame_dirty = pimpl->active_frame_dirty;
         return *copy;
     }
 }

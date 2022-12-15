@@ -111,6 +111,12 @@ namespace argus {
                 : std::nullopt;
     }
 
+    static TimeDelta _get_current_frame_duration(const AnimatedSprite &sprite) {
+        auto &cur_frame = sprite.pimpl->cur_anim->frames[sprite.pimpl->cur_frame.peek()];
+        uint64_t dur_ns = static_cast<uint64_t>(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
+        return std::chrono::nanoseconds(dur_ns);
+    }
+
     AnimatedSprite &World2D::add_animated_sprite(const std::string &id, const std::string &sprite_uid) {
         if (pimpl->anim_sprites.find(id) != pimpl->anim_sprites.cend()) {
             throw std::invalid_argument("Animated sprite with given ID already exists in the world");
@@ -119,6 +125,8 @@ namespace argus {
         auto &def_res = ResourceManager::instance().get_resource(sprite_uid);
 
         auto *sprite = new AnimatedSprite(id, def_res);
+
+        sprite->pimpl->next_frame_update = now() + _get_current_frame_duration(*sprite);
 
         pimpl->anim_sprites.insert({ id, sprite });
 
@@ -174,6 +182,35 @@ namespace argus {
         }
     }
 
+    static void _advance_sprite_animation(AnimatedSprite &sprite) {
+        if (sprite.pimpl->pending_reset) {
+            sprite.pimpl->cur_frame = 0;
+            sprite.pimpl->next_frame_update = now() + _get_current_frame_duration(sprite);
+            return;
+        }
+
+        if (sprite.pimpl->paused) {
+            //TODO: we don't update next_frame_update so the next frame would
+            //      likely be displayed immediately after unpausing - we should
+            //      store the remaining time instead
+            return;
+        }
+
+        auto &anim = sprite.pimpl->cur_anim;
+        // you could theoretically force an infinite loop if now() was evaluated every iteration
+        auto cur_time = now();
+        while (cur_time >= sprite.pimpl->next_frame_update) {
+            if (sprite.pimpl->cur_frame.peek() == anim->frames.size() - 1) {
+                sprite.pimpl->cur_frame = 0;
+            } else {
+                sprite.pimpl->cur_frame += 1;
+            }
+
+            auto frame_dur = _get_current_frame_duration(sprite);
+            sprite.pimpl->next_frame_update += frame_dur;
+        }
+    }
+
     static void _render_animated_sprite(World2D &world, AnimatedSprite &sprite) {
         RenderObject2D *obj;
 
@@ -206,8 +243,8 @@ namespace argus {
             for (auto &kv : sprite.pimpl->get_def().animations) {
                 auto &anim = kv.second;
 
-                frame_off += anim.frames.size();
                 sprite.pimpl->anim_start_offsets.insert({ anim.id, frame_off });
+                frame_off += anim.frames.size();
             }
 
             prims.push_back(RenderPrim2D({ v1, v2, v3 }));
@@ -221,8 +258,6 @@ namespace argus {
                     / static_cast<float>(atlas_w);
             float atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
                     / static_cast<float>(atlas_h);
-            printf("stride: (%d, %d) -> (%f, %f)\n", sprite.pimpl->get_def().tile_size.x,
-                    sprite.pimpl->get_def().tile_size.y, atlas_stride_x, atlas_stride_y);
 
             obj = &world.pimpl->scene->create_child_object(ANIM_SPRITE_PREFIX + sprite.get_id(), mat_uid,
                     prims, { atlas_stride_x, atlas_stride_y }, {});
@@ -230,6 +265,11 @@ namespace argus {
 
         if (sprite.pimpl->transform_dirty) {
             obj->set_transform(sprite.pimpl->transform);
+        }
+
+        auto cur_frame = sprite.pimpl->cur_frame.read();
+        if (cur_frame.dirty) {
+            obj->set_active_frame(sprite.pimpl->cur_anim->frames[cur_frame].offset);
         }
     }
 
@@ -239,6 +279,7 @@ namespace argus {
         }
 
         for (auto &kv : world.pimpl->anim_sprites) {
+            _advance_sprite_animation(*kv.second);
             _render_animated_sprite(world, *kv.second);
         }
     }

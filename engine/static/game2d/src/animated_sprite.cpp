@@ -34,6 +34,7 @@ namespace argus {
 
     AnimatedSprite::AnimatedSprite(const std::string &id, const Resource &definition):
             pimpl(&g_pimpl_pool.construct<pimpl_AnimatedSprite>(id, definition)) {
+        set_current_animation(pimpl->get_def().def_anim);
     }
 
     AnimatedSprite::AnimatedSprite(AnimatedSprite &&rhs):
@@ -91,6 +92,7 @@ namespace argus {
         pimpl->cur_anim_id = animation_id;
         //TODO: revisit this
         pimpl->cur_anim = const_cast<SpriteAnimation*>(&it->second);
+        pimpl->cur_frame = 0;
     }
 
     bool AnimatedSprite::does_current_animation_loop(void) const {

@@ -21,6 +21,7 @@
 #include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/common/transform.hpp"
+#include "argus/lowlevel/atomic.hpp"
 
 #include <optional>
 #include <string>
@@ -91,13 +92,21 @@ namespace argus {
             const Vector2f &get_atlas_stride(void) const;
 
             /**
+             * \brief Gets the active animation frame.
+             *
+             * \return The x- and y-index of the currently active animation
+             *        frame.
+             */
+            Dirtiable<Vector2u> get_active_frame() const;
+
+            /**
              * \brief Sets the active animation frame.
              *
              * \param index The x- and y-index of the animation frame to
              *        activate. Neither index should exceed the number of tiles
              *        in each dimension in the atlas texture.
              */
-            void set_active_frame(const Vector2u &frame) const;
+            void set_active_frame(const Vector2u &frame);
 
             const Transform2D &peek_transform(void) const;
 

@@ -143,6 +143,8 @@ namespace argus {
                         Logger::default_logger().severe("Animated sprite frame duration must be >= 0");
                         return nullptr;
                     }
+                } else {
+                    anim.def_duration = 0;
                 }
 
                 if (anim_json.contains(KEY_ANIM_PADDING)) {
@@ -226,6 +228,12 @@ namespace argus {
                             Logger::default_logger().severe("Animated sprite frame duration must be > 0");
                             return nullptr;
                         }
+                    } else if (anim.def_duration > 0) {
+                        frame.duration = anim.def_duration;
+                    } else {
+                        Logger::default_logger().severe("Animated sprite frame duration must be provided if no "
+                                                        "default exists for the containing animation");
+                        return nullptr;
                     }
 
                     anim.frames.push_back(frame);

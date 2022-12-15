@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/time.hpp"
 
 #include "argus/resman/resource.hpp"
 
@@ -39,6 +40,8 @@ namespace argus {
         std::string cur_anim_id;
         SpriteAnimation *cur_anim;
 
+        Dirtiable<size_t> cur_frame;
+        Timestamp next_frame_update;
         bool paused;
         bool pending_reset;
 

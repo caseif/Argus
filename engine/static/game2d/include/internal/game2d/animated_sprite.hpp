@@ -34,7 +34,6 @@ namespace argus {
         bool loop;
         Padding padding;
         float def_duration;
-        float speed;
 
         std::vector<AnimationFrame> frames;
     };

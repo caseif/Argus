@@ -83,8 +83,9 @@ namespace argus {
                 size_t buffer_len = 0;
                 for (auto &obj : bucket->objects) {
                     buffer_len += obj->staging_buffer_size;
-                    anim_frame_buf_len += obj->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN;
+                    anim_frame_buf_len += obj->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat);
                 }
+                Logger::default_logger().debug("anim_frame_buf_len: %d", anim_frame_buf_len);
 
                 if (bucket->vertex_array != 0) {
                     glDeleteVertexArrays(1, &bucket->vertex_array);
@@ -193,12 +194,14 @@ namespace argus {
 
                 if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
-                        reinterpret_cast<float*>(anim_frame_buf)[anim_frame_off++]
+                        reinterpret_cast<GLfloat*>(anim_frame_buf)[anim_frame_off++]
                                 = static_cast<float>(processed->anim_frame.x);
-                        reinterpret_cast<float*>(anim_frame_buf)[anim_frame_off++]
+                        reinterpret_cast<GLfloat*>(anim_frame_buf)[anim_frame_off++]
                                 = static_cast<float>(processed->anim_frame.y);
-                        Logger::default_logger().debug("frame: %d, %d", processed->anim_frame.x, processed->anim_frame.y);
                     }
+                    processed->anim_frame_updated = false;
+                } else {
+                    anim_frame_off += processed->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN;
                 }
 
                 offset += processed->staging_buffer_size;

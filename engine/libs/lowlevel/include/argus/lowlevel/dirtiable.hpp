@@ -81,12 +81,12 @@ namespace argus {
                 dirty(false) {
             }
 
-            Dirtiable(const Dirtiable &rhs):
+            Dirtiable(const Dirtiable<ValueType> &rhs):
                 value(rhs.value),
                 dirty(rhs.dirty) {
             }
 
-            Dirtiable(Dirtiable &&rhs):
+            Dirtiable(Dirtiable<ValueType> &&rhs):
                 value(std::move(rhs.value)),
                 dirty(rhs.dirty) {
             }
@@ -125,6 +125,20 @@ namespace argus {
             };
 
             /**
+             * \brief Performs a copy assignment to an lvalue, carrying over the
+             *        current value and dirty flag.
+             *
+             * \param rhs The Dirtiable to assign.
+             *
+             * \return This Dirtiable.
+             */
+            inline Dirtiable &operator =(const Dirtiable<ValueType> &rhs) {
+                this->value = rhs.value;
+                this->dirty = rhs.dirty;
+                return *this;
+            };
+
+            /**
              * \brief Performs an assignment to an lvalue, setting the dirty
              *        flag.
              *
@@ -155,6 +169,30 @@ namespace argus {
                 }
                 return *this;
             };
+
+            inline Dirtiable &operator +=(const ValueType &rhs) {
+                value += rhs;
+                dirty = true;
+                return *this;
+            }
+
+            inline Dirtiable &operator -=(const ValueType &rhs) {
+                value -= rhs;
+                dirty = true;
+                return *this;
+            }
+
+            inline Dirtiable &operator *=(const ValueType &rhs) {
+                value *= rhs;
+                dirty = true;
+                return *this;
+            }
+
+            inline Dirtiable &operator /=(const ValueType &rhs) {
+                value /= rhs;
+                dirty = true;
+                return *this;
+            }
 
             /**
              * Performs an assignment to an lvalue without setting the dirty

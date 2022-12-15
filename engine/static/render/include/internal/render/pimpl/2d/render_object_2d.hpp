@@ -35,8 +35,7 @@ namespace argus {
         Vector2f atlas_stride;
 
         Transform2D transform;
-        Vector2u active_frame;
-        bool active_frame_dirty;
+        Dirtiable<Vector2u> active_frame;
 
         pimpl_RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
