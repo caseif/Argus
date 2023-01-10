@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/resman/resource.hpp"
 
 #include "argus/render/common/material.hpp"
@@ -38,6 +40,9 @@
 
 #include <cstddef>
 
+#define BINDING_INDEX_VBO 0
+#define BINDING_INDEX_ANIM_FRAME_BUF 1
+
 namespace argus {
     void fill_buckets(SceneState &scene_state) {
         for (auto it = scene_state.render_buckets.begin(); it != scene_state.render_buckets.end();) {
@@ -46,6 +51,7 @@ namespace argus {
             if (bucket->objects.empty()) {
                 try_delete_buffer(it->second->vertex_array);
                 try_delete_buffer(it->second->vertex_buffer);
+                try_delete_buffer(it->second->anim_frame_buffer);
                 it->second->~RenderBucket();
 
                 it = scene_state.render_buckets.erase(it);
@@ -53,10 +59,31 @@ namespace argus {
                 continue;
             }
 
+            auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
+            _ARGUS_ASSERT(program_it != scene_state.parent_state.linked_programs.cend(),
+                    "Cannot find material program");
+            bool animated = program_it->second.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+
+            // the program should have been linked during object processing
+            auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
+
+            auto attr_position_loc = program.get_attr_loc(SHADER_ATTRIB_POSITION);
+            auto attr_normal_loc = program.get_attr_loc(SHADER_ATTRIB_NORMAL);
+            auto attr_color_loc = program.get_attr_loc(SHADER_ATTRIB_COLOR);
+            auto attr_texcoord_loc = program.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
+            auto attr_anim_frame_loc = program.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
+
+            uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
+                                  + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                                  + (attr_color_loc.has_value() ? SHADER_ATTRIB_COLOR_LEN : 0)
+                                  + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+
+            size_t anim_frame_buf_len = 0;
             if (bucket->needs_rebuild) {
                 size_t buffer_len = 0;
                 for (auto &obj : bucket->objects) {
                     buffer_len += obj->staging_buffer_size;
+                    anim_frame_buf_len += obj->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat);
                 }
 
                 if (bucket->vertex_array != 0) {
@@ -67,54 +94,71 @@ namespace argus {
                     glDeleteBuffers(1, &bucket->vertex_buffer);
                 }
 
+                if (bucket->anim_frame_buffer != 0) {
+                    glDeleteBuffers(1, &bucket->anim_frame_buffer);
+                }
+
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
+
+                if (animated) {
+                    glGenBuffers(1, &bucket->anim_frame_buffer);
+                    glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
+                    glBufferData(GL_ARRAY_BUFFER, anim_frame_buf_len, nullptr, GL_DYNAMIC_DRAW);
+                }
 
                 glGenBuffers(1, &bucket->vertex_buffer);
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
                 glBufferData(GL_ARRAY_BUFFER, buffer_len, nullptr, GL_DYNAMIC_COPY);
 
-                // the program should have been linked during object processing
-                auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
+                if (animated) {
+                    if (bucket->anim_frame_buffer_staging != nullptr) {
+                        free(bucket->anim_frame_buffer_staging);
+                    }
 
-                auto attr_position_loc = program.get_attr_loc(SHADER_ATTRIB_POSITION);
-                auto attr_normal_loc = program.get_attr_loc(SHADER_ATTRIB_NORMAL);
-                auto attr_color_loc = program.get_attr_loc(SHADER_ATTRIB_COLOR);
-                auto attr_texcoord_loc = program.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
-
-                uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
-                        + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                        + (attr_color_loc.has_value() ? SHADER_ATTRIB_COLOR_LEN : 0)
-                        + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                    bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
+                }
 
                 GLuint attr_offset = 0;
 
                 if (attr_position_loc.has_value()) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_POSITION_LEN, attr_position_loc.value(),
-                        &attr_offset);
+                    set_attrib_pointer(bucket->vertex_buffer, BINDING_INDEX_VBO, vertex_len,
+                            SHADER_ATTRIB_POSITION_LEN, attr_position_loc.value(), &attr_offset);
                 }
                 if (attr_normal_loc.has_value()) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_NORMAL_LEN, attr_normal_loc.value(),
-                        &attr_offset);
+                    set_attrib_pointer(bucket->vertex_buffer, BINDING_INDEX_VBO, vertex_len,
+                            SHADER_ATTRIB_NORMAL_LEN, attr_normal_loc.value(), &attr_offset);
                 }
                 if (attr_color_loc.has_value()) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_COLOR_LEN, attr_color_loc.value(),
-                        &attr_offset);
+                    set_attrib_pointer(bucket->vertex_buffer, BINDING_INDEX_VBO, vertex_len,
+                            SHADER_ATTRIB_COLOR_LEN, attr_color_loc.value(), &attr_offset);
                 }
                 if (attr_texcoord_loc.has_value()) {
-                    set_attrib_pointer(vertex_len, SHADER_ATTRIB_TEXCOORD_LEN, attr_texcoord_loc.value(),
-                        &attr_offset);
+                    set_attrib_pointer(bucket->vertex_buffer, BINDING_INDEX_VBO, vertex_len,
+                            SHADER_ATTRIB_TEXCOORD_LEN, attr_texcoord_loc.value(), &attr_offset);
+                }
+
+                if (attr_anim_frame_loc.has_value()) {
+                    GLuint offset = 0;
+                    set_attrib_pointer(bucket->anim_frame_buffer, BINDING_INDEX_ANIM_FRAME_BUF,
+                            SHADER_ATTRIB_ANIM_FRAME_LEN, SHADER_ATTRIB_ANIM_FRAME_LEN, attr_anim_frame_loc.value(),
+                            &offset);
                 }
             } else {
-                glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
+                anim_frame_buf_len = bucket->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat);
             }
 
             bucket->vertex_count = 0;
 
+            glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
+
+            bool anim_buf_updated = false;
+
             size_t offset = 0;
+            size_t anim_frame_off = 0;
             for (auto *processed : bucket->objects) {
-                if (processed == NULL) {
+                if (processed == nullptr) {
                     continue;
                 }
 
@@ -125,14 +169,32 @@ namespace argus {
                     glBindBuffer(GL_COPY_READ_BUFFER, 0);
                 }
 
+                if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
+                    for (size_t i = 0; i < processed->vertex_count; i++) {
+                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                                = static_cast<float>(processed->anim_frame.x);
+                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                                = static_cast<float>(processed->anim_frame.y);
+                    }
+                    processed->anim_frame_updated = false;
+                    anim_buf_updated = true;
+                } else {
+                    anim_frame_off += processed->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN;
+                }
+
                 offset += processed->staging_buffer_size;
 
                 bucket->vertex_count += processed->vertex_count;
             }
 
+            if (anim_buf_updated) {
+                glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, anim_frame_buf_len, bucket->anim_frame_buffer_staging);
+            }
+
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindVertexArray(bucket->vertex_array); //TODO: fix parameter
+            glBindVertexArray(0);
 
             bucket->needs_rebuild = false;
 

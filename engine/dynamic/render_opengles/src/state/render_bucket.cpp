@@ -26,11 +26,14 @@ namespace argus {
 
     static AllocPool g_bucket_pool(sizeof(RenderBucket));
 
-    RenderBucket &RenderBucket::create(const Resource &material_res) {
-        return g_bucket_pool.construct<RenderBucket>(material_res);
+    RenderBucket &RenderBucket::create(const Resource &material_res, const Vector2f &atlas_stride) {
+        return g_bucket_pool.construct<RenderBucket>(material_res, atlas_stride);
     }
 
     RenderBucket::~RenderBucket(void) {
+        if (this->anim_frame_buffer_staging != nullptr) {
+            free(this->anim_frame_buffer_staging);
+        }
         g_bucket_pool.free(this);
     }
 }

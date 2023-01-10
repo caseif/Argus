@@ -125,9 +125,11 @@ namespace argus {
         glUnmapBuffer(GL_COPY_READ_BUFFER);
         glBindBuffer(GL_COPY_READ_BUFFER, 0);
 
-        auto &processed_obj = ProcessedRenderObject::create(
-                mat_res, vertex_buffer, buffer_size, _count_vertices(object),
-                persistent_buffer ? mapped_buffer : nullptr);
+        auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(), vertex_buffer,
+                buffer_size, _count_vertices(object), persistent_buffer ? mapped_buffer : nullptr);
+
+        processed_obj.anim_frame = object.get_active_frame().read().value;
+
         processed_obj.visited = true;
         processed_obj.newly_created = true;
 
@@ -186,6 +188,12 @@ namespace argus {
 
                 total_vertices += 1;
             }
+        }
+
+        auto cur_frame = object.get_active_frame().read();
+        if (cur_frame.dirty) {
+            proc_obj.anim_frame = cur_frame;
+            proc_obj.anim_frame_updated = true;
         }
 
         if (proc_obj.mapped_buffer == nullptr) {

@@ -83,7 +83,10 @@ namespace argus {
         }
     }
 
-    void set_attrib_pointer(GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
+    void set_attrib_pointer(buffer_handle_t buffer_obj, binding_index_t binding_index, GLuint vertex_len,
+            GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
+        UNUSED(binding_index);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
         glEnableVertexAttribArray(attr_index);
         glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE,
                 vertex_len * static_cast<uint32_t>(sizeof(GLfloat)),

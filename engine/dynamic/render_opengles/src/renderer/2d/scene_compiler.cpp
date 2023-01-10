@@ -36,7 +36,7 @@ namespace argus {
         if (existing_bucket_it != scene_state.render_buckets.end()) {
             bucket = existing_bucket_it->second;
         } else {
-            bucket = &RenderBucket::create(processed_obj.material_res);
+            bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride);
             scene_state.render_buckets[processed_obj.material_res.uid] = bucket;
         }
 
