@@ -18,8 +18,18 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
+
+#include "argus/game2d/world2d.hpp"
 
 namespace argus {
     void render_worlds(TimeDelta delta);
+
+    template<typename T>
+    Vector2<T> get_render_coord(const World2D &world, const Vector2<T> &world_coord) {
+        return world_coord / world.get_scale_factor();
+    }
+
+    Transform2D get_render_transform(const World2D &world, const Transform2D &world_transform);
 }

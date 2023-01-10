@@ -53,8 +53,8 @@ namespace argus {
 
     static std::map<std::string, World2D*> g_worlds;
 
-    World2D &World2D::create(const std::string &id, Canvas &canvas) {
-        auto *world = new World2D(id, canvas);
+    World2D &World2D::create(const std::string &id, Canvas &canvas, float scale_factor) {
+        auto *world = new World2D(id, canvas, scale_factor);
         g_worlds.insert({ id, world });
         return *world;
     }
@@ -68,19 +68,30 @@ namespace argus {
         return *it->second;
     }
 
-    World2D::World2D(const std::string &id, Canvas &canvas):
-            pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas)) {
+    World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):
+            pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
         pimpl->scene = &Scene2D::create(WORLD_PREFIX + id);
-        pimpl->camera = &pimpl->scene->create_camera(WORLD_PREFIX + id);
-        canvas.attach_default_viewport_2d(WORLD_PREFIX + id, *pimpl->camera);
+        pimpl->render_camera = &pimpl->scene->create_camera(WORLD_PREFIX + id);
+        canvas.attach_default_viewport_2d(WORLD_PREFIX + id, *pimpl->render_camera);
+        //canvas.attach_viewport_2d(WORLD_PREFIX + id,
+        //        { 0, 1, 0, 1, { 1.0f / scale_factor, 1.0f / scale_factor }, ViewportCoordinateSpaceMode::Individual },
+        //        *pimpl->camera, 0);
     }
 
     World2D::~World2D(void) {
         g_pimpl_pool.destroy(pimpl);
     }
 
-    Camera2D &World2D::get_camera(void) const {
-        return *pimpl->camera;
+    float World2D::get_scale_factor(void) const {
+        return pimpl->scale_factor;
+    }
+
+    const Transform2D &World2D::get_camera_transform(void) const {
+        return pimpl->abstract_camera.peek();
+    }
+
+    void World2D::set_camera_transform(const Transform2D &transform) {
+        pimpl->abstract_camera = transform;
     }
 
     std::optional<std::reference_wrapper<Sprite>> World2D::get_sprite(const std::string &id) const {
@@ -142,6 +153,14 @@ namespace argus {
         pimpl->anim_sprites.erase(id);
     }
 
+    Transform2D get_render_transform(const World2D &world, const Transform2D &world_transform) {
+        auto transform = Transform2D();
+        transform.set_translation(world_transform.get_translation() / world.get_scale_factor());
+        transform.set_rotation(world_transform.get_rotation());
+        transform.set_scale(world_transform.get_scale());
+        return transform;
+    }
+
     static void _render_sprite(World2D &world, Sprite &sprite) {
         RenderObject2D *obj;
 
@@ -151,12 +170,14 @@ namespace argus {
         } else {
             std::vector<RenderPrim2D> prims;
 
+            auto scaled_size = sprite.get_base_size() / world.get_scale_factor();
+
             Vertex2D v1, v2, v3, v4;
 
             v1.position = { 0, 0 };
-            v2.position = { 0, sprite.get_base_size().y };
-            v3.position = { sprite.get_base_size().x, sprite.get_base_size().y };
-            v4.position = { sprite.get_base_size().x, 0 };
+            v2.position = { 0, scaled_size.y };
+            v3.position = { scaled_size.x, scaled_size.y };
+            v4.position = { scaled_size.x, 0 };
 
             auto &tc1 = sprite.get_texture_coords().first;
             auto &tc2 = sprite.get_texture_coords().second;
@@ -178,7 +199,7 @@ namespace argus {
         }
 
         if (sprite.pimpl->transform_dirty) {
-            obj->set_transform(sprite.pimpl->transform);
+            obj->set_transform(get_render_transform(world, sprite.pimpl->transform));
         }
     }
 
@@ -222,12 +243,14 @@ namespace argus {
 
             std::vector<RenderPrim2D> prims;
 
+            auto scaled_size = sprite.get_base_size() / world.get_scale_factor();
+
             Vertex2D v1, v2, v3, v4;
 
             v1.position = { 0, 0 };
-            v2.position = { 0, sprite.get_base_size().y };
-            v3.position = { sprite.get_base_size().x, sprite.get_base_size().y };
-            v4.position = { sprite.get_base_size().x, 0 };
+            v2.position = { 0, scaled_size.y };
+            v3.position = { scaled_size.x, scaled_size.y };
+            v4.position = { scaled_size.x, 0 };
 
             v1.tex_coord = { 0, 0 };
             v2.tex_coord = { 0, 1 };
@@ -264,7 +287,7 @@ namespace argus {
         }
 
         if (sprite.pimpl->transform_dirty) {
-            obj->set_transform(sprite.pimpl->transform);
+            obj->set_transform(get_render_transform(world, sprite.pimpl->transform));
         }
 
         auto cur_frame = sprite.pimpl->cur_frame.read();
@@ -274,6 +297,11 @@ namespace argus {
     }
 
     static void _render_world(World2D &world) {
+        auto camera_transform = world.pimpl->abstract_camera.read();
+        if (camera_transform.dirty) {
+            world.pimpl->render_camera->set_transform(get_render_transform(world, camera_transform));
+        }
+
         for (auto &kv : world.pimpl->sprites) {
             _render_sprite(world, *kv.second);
         }

@@ -32,16 +32,19 @@ namespace argus {
     struct pimpl_World2D {
         std::string id;
         Canvas &canvas;
+        const float scale_factor;
 
         Scene2D *scene;
-        Camera2D *camera;
+        Camera2D *render_camera;
+        Dirtiable<Transform2D> abstract_camera;
 
         std::map<std::string, Sprite*> sprites;
         std::map<std::string, AnimatedSprite*> anim_sprites;
 
-        pimpl_World2D(const std::string &id, Canvas &canvas):
+        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor):
             id(id),
-            canvas(canvas) {
+            canvas(canvas),
+            scale_factor(scale_factor) {
         }
     };
 }

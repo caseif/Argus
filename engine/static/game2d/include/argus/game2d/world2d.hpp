@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/render/2d/camera_2d.hpp"
+
 #include <optional>
 #include <string>
 #include <utility>
@@ -34,13 +36,13 @@ namespace argus {
 
     class World2D {
         public:
-            static World2D &create(const std::string &id, Canvas &canvas);
+            static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
 
             static World2D &get(const std::string &id);
 
             pimpl_World2D *pimpl;
 
-            World2D(const std::string &id, Canvas &canvas);
+            World2D(const std::string &id, Canvas &canvas, float scale_factor);
 
             World2D(World2D&) = delete;
 
@@ -50,7 +52,11 @@ namespace argus {
 
             const std::string &get_id(void) const;
 
-            Camera2D &get_camera(void) const;
+            float get_scale_factor(void) const;
+
+            const Transform2D &get_camera_transform(void) const;
+
+            void set_camera_transform(const Transform2D &transform);
 
             std::optional<std::reference_wrapper<Sprite>> get_sprite(const std::string &id) const;
 
