@@ -96,7 +96,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector4.
          */
-        Vector4<T> operator +(const Vector4<T> &rhs) {
+        Vector4<T> operator +(const Vector4<T> &rhs) const {
             return Vector4<T>(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
         }
 
@@ -112,7 +112,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector4.
          */
-        Vector4<T> operator -(const Vector4<T> &rhs) {
+        Vector4<T> operator -(const Vector4<T> &rhs) const {
             return Vector4<T>(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
         }
 
@@ -124,8 +124,32 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector4.
          */
-        Vector4<T> operator *(const Vector4<T> &rhs) {
+        Vector4<T> operator *(const Vector4<T> &rhs) const {
             return Vector4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
+        }
+
+        /**
+         * Multiples each element of the vector by a constant value, returning
+         * the result as a new Vector2.
+         *
+         * @param rhs The constant value to multiply the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector4<T> operator*(T rhs) const {
+            return Vector4<T>(x * rhs, y * rhs, z * rhs, w * rhs);
+        }
+
+        /**
+         * Divides each element of the vector by a constant value, returning
+         * the result as a new Vector2.
+         *
+         * @param rhs The constant value to divide the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector4<T> operator/(T rhs) const {
+            return Vector4<T>(x / rhs, y / rhs, z * rhs, w * rhs);
         }
 
         /**
@@ -177,6 +201,40 @@ namespace argus {
             y *= rhs.y;
             z *= rhs.z;
             w *= rhs.w;
+            return *this;
+        }
+
+        /**
+         * \brief Performs in-place multiplication against a constant value.
+         *
+         * @param rhs The constant value to multiply each vector element by.
+         *
+         * @return This Vector4 after being updated.
+         *
+         * \sa Vector4::operator*
+         */
+        Vector4<T> &operator *=(T rhs) {
+            x *= rhs;
+            y *= rhs;
+            z *= rhs;
+            w *= rhs;
+            return *this;
+        }
+
+        /**
+         * \brief Performs in-place division against a constant value.
+         *
+         * @param rhs The constant value to divide each vector element by.
+         *
+         * @return This Vector4 after being updated.
+         *
+         * \sa Vector4::operator/
+         */
+        Vector4<T> &operator /=(T rhs) {
+            x /= rhs;
+            y /= rhs;
+            z /= rhs;
+            w /= rhs;
             return *this;
         }
 
@@ -254,7 +312,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector3.
          */
-        Vector3<T> operator +(const Vector3<T> &rhs) {
+        Vector3<T> operator +(const Vector3<T> &rhs) const {
             return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
 
@@ -270,7 +328,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector3.
          */
-        Vector3<T> operator -(const Vector3<T> &rhs) {
+        Vector3<T> operator -(const Vector3<T> &rhs) const {
             return Vector3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
         }
 
@@ -282,8 +340,32 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector3.
          */
-        Vector3<T> operator *(const Vector3<T> &rhs) {
+        Vector3<T> operator *(const Vector3<T> &rhs) const {
             return Vector3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
+        }
+
+        /**
+         * Multiples each element of the vector by a constant value, returning
+         * the result as a new Vector3.
+         *
+         * @param rhs The constant value to multiply the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector3<T> operator*(T rhs) const {
+            return Vector3<T>(x * rhs, y * rhs, z * rhs);
+        }
+
+        /**
+         * Divides each element of the vector by a constant value, returning
+         * the result as a new Vector3.
+         *
+         * @param rhs The constant value to divide the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector3<T> operator/(T rhs) const {
+            return Vector3<T>(x / rhs, y / rhs, z / rhs);
         }
 
         /**
@@ -335,6 +417,38 @@ namespace argus {
             return *this;
         }
 
+        /**
+         * \brief Performs in-place multiplication against a constant value.
+         *
+         * @param rhs The constant value to multiply each vector element by.
+         *
+         * @return This Vector3 after being updated.
+         *
+         * \sa Vector3::operator*
+         */
+        Vector3<T> &operator *=(T rhs) {
+            x *= rhs;
+            y *= rhs;
+            z *= rhs;
+            return *this;
+        }
+
+        /**
+         * \brief Performs in-place division against a constant value.
+         *
+         * @param rhs The constant value to divide each vector element by.
+         *
+         * @return This Vector3 after being updated.
+         *
+         * \sa Vector3::operator/
+         */
+        Vector3<T> &operator /=(T rhs) {
+            x /= rhs;
+            y /= rhs;
+            z /= rhs;
+            return *this;
+        }
+
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
             return Vector4<T>(this->x, this->y, this->z, 1);
@@ -379,7 +493,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector2.
          */
-        Vector2<T> operator +(const Vector2<T> &rhs) {
+        Vector2<T> operator +(const Vector2<T> &rhs) const {
             return Vector2<T>(x + rhs.x, y + rhs.y);
         }
 
@@ -395,7 +509,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector2.
          */
-        Vector2<T> operator -(const Vector2<T> &rhs) {
+        Vector2<T> operator -(const Vector2<T> &rhs) const {
             return Vector2<T>(x - rhs.x, y - rhs.y);
         }
 
@@ -407,8 +521,32 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector2.
          */
-        Vector2<T> operator *(const Vector2<T> &rhs) {
+        Vector2<T> operator *(const Vector2<T> &rhs) const {
             return Vector2<T>(x * rhs.x, y * rhs.y);
+        }
+
+        /**
+         * Multiples each element of the vector by a constant value, returning
+         * the result as a new Vector2.
+         *
+         * @param rhs The constant value to multiply the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector2<T> operator*(T rhs) const {
+            return Vector2<T>(x * rhs, y * rhs);
+        }
+
+        /**
+         * Divides each element of the vector by a constant value, returning
+         * the result as a new Vector2.
+         *
+         * @param rhs The constant value to divide the vector by.
+         *
+         * @return The resultant scaled vector.
+         */
+        Vector2<T> operator/(T rhs) const {
+            return Vector2<T>(x / rhs, y / rhs);
         }
 
         /**
@@ -454,6 +592,36 @@ namespace argus {
         Vector2<T> &operator *=(const Vector2<T> &rhs) {
             x *= rhs.x;
             y *= rhs.y;
+            return *this;
+        }
+
+        /**
+         * \brief Performs in-place multiplication against a constant value.
+         *
+         * @param rhs The constant value to multiply each vector element by.
+         *
+         * @return This Vector2 after being updated.
+         *
+         * \sa Vector2::operator*
+         */
+        Vector2<T> &operator *=(T rhs) {
+            x *= rhs;
+            y *= rhs;
+            return *this;
+        }
+
+        /**
+         * \brief Performs in-place division against a constant value.
+         *
+         * @param rhs The constant value to divide each vector element by.
+         *
+         * @return This Vector2 after being updated.
+         *
+         * \sa Vector2::operator/
+         */
+        Vector2<T> &operator /=(T rhs) {
+            x /= rhs;
+            y /= rhs;
             return *this;
         }
 
