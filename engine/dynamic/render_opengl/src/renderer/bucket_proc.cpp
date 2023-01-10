@@ -85,7 +85,6 @@ namespace argus {
                     buffer_len += obj->staging_buffer_size;
                     anim_frame_buf_len += obj->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat);
                 }
-                Logger::default_logger().debug("anim_frame_buf_len: %d", anim_frame_buf_len);
 
                 if (bucket->vertex_array != 0) {
                     glDeleteVertexArrays(1, &bucket->vertex_array);
@@ -163,6 +162,8 @@ namespace argus {
                             SHADER_ATTRIB_ANIM_FRAME_LEN, SHADER_ATTRIB_ANIM_FRAME_LEN, attr_anim_frame_loc.value(),
                             &offset);
                 }
+            } else {
+                anim_frame_buf_len = bucket->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat);
             }
 
             bucket->vertex_count = 0;
@@ -212,8 +213,7 @@ namespace argus {
 
             if (anim_buf_updated) {
                 if (AGLET_GL_ARB_direct_state_access) {
-                    glNamedBufferSubData(bucket->anim_frame_buffer, 0,
-                            bucket->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(GLfloat),
+                    glNamedBufferSubData(bucket->anim_frame_buffer, 0, anim_frame_buf_len,
                             bucket->anim_frame_buffer_staging);
                 } else {
                     glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);

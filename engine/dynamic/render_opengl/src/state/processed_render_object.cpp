@@ -30,7 +30,7 @@ namespace argus {
     static AllocPool g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Vector2f &atlas_stride,
-            const buffer_handle_t staging_buffer, const size_t staging_buffer_size, const size_t vertex_count,
+            buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
             void *mapped_buffer) {
         return g_obj_pool.construct<ProcessedRenderObject>(material_res, atlas_stride, staging_buffer,
                 staging_buffer_size, vertex_count, mapped_buffer);
