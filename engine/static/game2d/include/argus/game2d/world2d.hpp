@@ -22,6 +22,8 @@
 
 #include "argus/render/2d/camera_2d.hpp"
 
+#include "argus/game2d/world2d_layer.hpp"
+
 #include <optional>
 #include <string>
 #include <utility>
@@ -58,17 +60,10 @@ namespace argus {
 
             void set_camera_transform(const Transform2D &transform);
 
-            std::optional<std::reference_wrapper<Sprite>> get_sprite(const std::string &id) const;
+            // for testing purposes only, needs to be removed once we have an abstraction in place
+            World2DLayer &add_layer(const std::string &id);
 
-            Sprite &add_sprite(const std::string &uid, const Vector2f &base_size, const std::string &texture_uid,
-                    const std::pair<Vector2f, Vector2f> tex_coords);
-
-            void remove_sprite(const std::string &id);
-
-            std::optional<std::reference_wrapper<AnimatedSprite>> get_animated_sprite(const std::string &id) const;
-
-            AnimatedSprite &add_animated_sprite(const std::string &id, const std::string &sprite_uid);
-
-            void remove_animated_sprite(const std::string &id);
+            // also for testing purposes only
+            const std::vector<World2DLayer*> &get_layers(void) const;
     };
 }

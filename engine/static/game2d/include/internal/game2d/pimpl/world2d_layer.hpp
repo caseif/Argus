@@ -18,31 +18,34 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
+
+#include "argus/render/2d/camera_2d.hpp"
+#include "argus/render/2d/scene_2d.hpp"
+
+#include <optional>
 #include <map>
-#include <string>
-#include "argus/game2d/world2d_layer.hpp"
 
 namespace argus {
-    // forward declarations
-    class Canvas;
-    class Scene2D;
-
-    class AnimatedSprite;
-    class Sprite;
-
-    struct pimpl_World2D {
+    struct pimpl_World2DLayer {
+        World2D &world;
         std::string id;
-        Canvas &canvas;
-        const float scale_factor;
 
-        std::vector<World2DLayer*> layers;
+        float parallax_coeff;
+        std::optional<Vector2f> repeat_interval;
 
-        Dirtiable<Transform2D> abstract_camera;
+        Scene2D *scene;
+        Camera2D *render_camera;
 
-        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor):
+        std::map<std::string, Sprite*> sprites;
+        std::map<std::string, AnimatedSprite*> anim_sprites;
+
+        pimpl_World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
+                std::optional<Vector2f> repeat_interval):
+            world(world),
             id(id),
-            canvas(canvas),
-            scale_factor(scale_factor) {
+            parallax_coeff(parallax_coeff),
+            repeat_interval(repeat_interval) {
         }
     };
 }
