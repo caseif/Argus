@@ -34,7 +34,6 @@
 #include "internal/game2d/defines.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/world2d_layer.hpp"
-#include "internal/game2d/pimpl/animated_sprite.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
 #include "internal/game2d/pimpl/world2d_layer.hpp"
@@ -43,7 +42,6 @@
 
 #define LAYER_PREFIX "_worldlayer_"
 #define SPRITE_PREFIX "_sprite_"
-#define ANIM_SPRITE_PREFIX "_asprite_"
 
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
@@ -66,61 +64,40 @@ namespace argus {
 
     std::optional<std::reference_wrapper<Sprite>> World2DLayer::get_sprite(const std::string &id) const {
         auto it = pimpl->sprites.find(id);
-        return it != pimpl->sprites.end() ? std::make_optional(std::reference_wrapper(*it->second)) : std::nullopt;
+        return it != pimpl->sprites.cend()
+               ? std::make_optional(std::reference_wrapper(*it->second))
+               : std::nullopt;
     }
 
-    Sprite &World2DLayer::add_sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
-            const std::pair<Vector2f, Vector2f> tex_coords) {
+    static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
+        auto &cur_frame = sprite.pimpl->cur_anim->frames[sprite.pimpl->cur_frame.peek()];
+        uint64_t dur_ns = static_cast<uint64_t>(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
+        return std::chrono::nanoseconds(dur_ns);
+    }
+
+    Sprite &World2DLayer::add_sprite(const std::string &id, const std::string &sprite_uid) {
         if (pimpl->sprites.find(id) != pimpl->sprites.cend()) {
-            throw std::invalid_argument("Sprite with ID already exists in world");
+            throw std::invalid_argument("Animated sprite with given ID already exists in the world");
         }
 
-        auto *sprite = new Sprite(id, base_size, texture_uid, tex_coords);
+        auto &def_res = ResourceManager::instance().get_resource(sprite_uid);
+
+        auto *sprite = new Sprite(id, def_res);
+
+        sprite->pimpl->next_frame_update = now() + _get_current_frame_duration(*sprite);
+
         pimpl->sprites.insert({ id, sprite });
 
         return *sprite;
     }
 
     void World2DLayer::remove_sprite(const std::string &id) {
-        pimpl->sprites.erase(id);
-    }
-
-    std::optional<std::reference_wrapper<AnimatedSprite>> World2DLayer::get_animated_sprite(const std::string &id) const {
-        auto it = pimpl->anim_sprites.find(id);
-        return it != pimpl->anim_sprites.cend()
-               ? std::make_optional(std::reference_wrapper(*it->second))
-               : std::nullopt;
-    }
-
-    static TimeDelta _get_current_frame_duration(const AnimatedSprite &sprite) {
-        auto &cur_frame = sprite.pimpl->cur_anim->frames[sprite.pimpl->cur_frame.peek()];
-        uint64_t dur_ns = static_cast<uint64_t>(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
-        return std::chrono::nanoseconds(dur_ns);
-    }
-
-    AnimatedSprite &World2DLayer::add_animated_sprite(const std::string &id, const std::string &sprite_uid) {
-        if (pimpl->anim_sprites.find(id) != pimpl->anim_sprites.cend()) {
-            throw std::invalid_argument("Animated sprite with given ID already exists in the world");
-        }
-
-        auto &def_res = ResourceManager::instance().get_resource(sprite_uid);
-
-        auto *sprite = new AnimatedSprite(id, def_res);
-
-        sprite->pimpl->next_frame_update = now() + _get_current_frame_duration(*sprite);
-
-        pimpl->anim_sprites.insert({ id, sprite });
-
-        return *sprite;
-    }
-
-    void World2DLayer::remove_animated_sprite(const std::string &id) {
-        if (pimpl->anim_sprites.find(id) == pimpl->anim_sprites.cend()) {
+        if (pimpl->sprites.find(id) == pimpl->sprites.cend()) {
             Logger::default_logger().warn("Client attempted to remove non-existent sprite ID %s", id.c_str());
             return;
         }
 
-        pimpl->anim_sprites.erase(id);
+        pimpl->sprites.erase(id);
     }
 
     Transform2D get_render_transform(const World2D &world, const Transform2D &world_transform) {
@@ -131,49 +108,7 @@ namespace argus {
         return transform;
     }
 
-    static void _render_sprite(World2DLayer &layer, Sprite &sprite) {
-        RenderObject2D *obj;
-
-        auto obj_opt = layer.pimpl->scene->get_object(SPRITE_PREFIX + sprite.get_id());
-        if (obj_opt.has_value()) {
-            obj = &obj_opt->get();
-        } else {
-            std::vector<RenderPrim2D> prims;
-
-            auto scaled_size = sprite.get_base_size() / layer.get_world().get_scale_factor();
-
-            Vertex2D v1, v2, v3, v4;
-
-            v1.position = { 0, 0 };
-            v2.position = { 0, scaled_size.y };
-            v3.position = { scaled_size.x, scaled_size.y };
-            v4.position = { scaled_size.x, 0 };
-
-            auto &tc1 = sprite.get_texture_coords().first;
-            auto &tc2 = sprite.get_texture_coords().second;
-
-            v1.tex_coord = { tc1.x, tc1.y };
-            v2.tex_coord = { tc1.x, tc2.y };
-            v3.tex_coord = { tc2.x, tc2.y };
-            v4.tex_coord = { tc2.x, tc1.y };
-
-            prims.push_back(RenderPrim2D({ v1, v2, v3 }));
-            prims.push_back(RenderPrim2D({ v1, v3, v4 }));
-
-            auto mat_uid = "internal:game2d/material/sprite_mat_" + sprite.get_id();
-            ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
-                    Material(sprite.get_texture(), { SHADER_STATIC_SPRITE_VERT, SHADER_STATIC_SPRITE_FRAG }));
-
-            obj = &layer.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
-                    prims, {}, {});
-        }
-
-        if (sprite.pimpl->transform_dirty) {
-            obj->set_transform(get_render_transform(layer.get_world(), sprite.pimpl->transform));
-        }
-    }
-
-    static void _advance_sprite_animation(AnimatedSprite &sprite) {
+    static void _advance_sprite_animation(Sprite &sprite) {
         if (sprite.pimpl->pending_reset) {
             sprite.pimpl->cur_frame = 0;
             sprite.pimpl->next_frame_update = now() + _get_current_frame_duration(sprite);
@@ -202,10 +137,10 @@ namespace argus {
         }
     }
 
-    static void _render_animated_sprite(World2DLayer &layer, AnimatedSprite &sprite) {
+    static void _render_sprite(World2DLayer &layer, Sprite &sprite) {
         RenderObject2D *obj;
 
-        auto obj_opt = layer.pimpl->scene->get_object(ANIM_SPRITE_PREFIX + sprite.get_id());
+        auto obj_opt = layer.pimpl->scene->get_object(SPRITE_PREFIX + sprite.get_id());
         if (obj_opt.has_value()) {
             obj = &obj_opt->get();
         } else {
@@ -245,14 +180,14 @@ namespace argus {
 
             auto mat_uid = "internal:game2d/material/anim_sprite_mat_" + sprite.get_id();
             ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
-                    Material(sprite_def.atlas, { SHADER_ANIM_SPRITE_VERT, SHADER_ANIM_SPRITE_FRAG }));
+                    Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
 
             float atlas_stride_x = static_cast<float>(sprite.pimpl->get_def().tile_size.x)
                                    / static_cast<float>(atlas_w);
             float atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
                                    / static_cast<float>(atlas_h);
 
-            obj = &layer.pimpl->scene->create_child_object(ANIM_SPRITE_PREFIX + sprite.get_id(), mat_uid,
+            obj = &layer.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
                     prims, { atlas_stride_x, atlas_stride_y }, {});
         }
 
@@ -276,9 +211,9 @@ namespace argus {
             _render_sprite(layer, *kv.second);
         }
 
-        for (auto &kv : layer.pimpl->anim_sprites) {
+        for (auto &kv : layer.pimpl->sprites) {
             _advance_sprite_animation(*kv.second);
-            _render_animated_sprite(layer, *kv.second);
+            _render_sprite(layer, *kv.second);
         }
     }
 }

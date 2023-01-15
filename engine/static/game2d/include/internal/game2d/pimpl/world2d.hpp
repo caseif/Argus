@@ -27,7 +27,6 @@ namespace argus {
     class Canvas;
     class Scene2D;
 
-    class AnimatedSprite;
     class Sprite;
 
     struct pimpl_World2D {

@@ -7,4 +7,4 @@ vert,text/x-glsl-vertex
 lua,text/x-lua
 mat,application/x-argus-material+json
 bindings,application/x-argus-bindings+json
-asprite,application/x-argus-animated-sprite+json
+sprite,application/x-argus-sprite+json

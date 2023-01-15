@@ -19,27 +19,43 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/time.hpp"
 
+#include "argus/resman/resource.hpp"
+
+#include "internal/game2d/sprite.hpp"
+
+#include <map>
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace argus {
     struct pimpl_Sprite {
-        std::string id;
-        Vector2f base_size;
-        std::string texture_uid;
-        std::pair<Vector2f, Vector2f> tex_coords;
+        const std::string id;
+        const Resource &def;
+
+        std::map<std::string, size_t> anim_start_offsets;
+
+        float speed;
+        std::string cur_anim_id;
+        SpriteAnimation *cur_anim;
+
+        Dirtiable<size_t> cur_frame;
+        Timestamp next_frame_update;
+        bool paused;
+        bool pending_reset;
 
         Transform2D transform;
         bool transform_dirty;
 
-        pimpl_Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
-                const std::pair<Vector2f, Vector2f> &tex_coords):
-            id(id),
-            base_size(base_size),
-            texture_uid(texture_uid),
-            tex_coords(tex_coords),
-            transform_dirty(true) {
+        pimpl_Sprite(const std::string &id, const Resource &def):
+                id(id),
+                def(def),
+                speed(def.get<SpriteDef>().def_speed) {
+        }
+
+        const SpriteDef &get_def(void) const {
+            return def.get<SpriteDef>();
         }
     };
 }

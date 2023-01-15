@@ -18,33 +18,19 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
-
-#include <map>
+#include "argus/resman/resource_loader.hpp"
 
 namespace argus {
-    struct AnimationFrame {
-        Vector2u offset;
-        float duration;
-    };
+    class SpriteLoader : public ResourceLoader {
+       public:
+        SpriteLoader(void);
 
-    struct SpriteAnimation {
-        std::string id;
+        void *load(ResourceManager &manager, const ResourcePrototype &proto,
+                std::istream &stream, size_t size) const;
 
-        bool loop;
-        Padding padding;
-        float def_duration;
+        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+                void *src, std::type_index type) const;
 
-        std::vector<AnimationFrame> frames;
-    };
-
-    struct AnimatedSpriteDef {
-        Vector2f base_size;
-        std::string def_anim;
-        float def_speed;
-        std::string atlas;
-        Vector2u tile_size;
-
-        std::map<std::string, SpriteAnimation> animations;
+        void unload(void *data_ptr) const;
     };
 }

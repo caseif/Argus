@@ -38,7 +38,6 @@ namespace argus {
         Camera2D *render_camera;
 
         std::map<std::string, Sprite*> sprites;
-        std::map<std::string, AnimatedSprite*> anim_sprites;
 
         pimpl_World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval):

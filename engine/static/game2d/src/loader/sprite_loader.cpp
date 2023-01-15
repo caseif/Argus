@@ -20,10 +20,10 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
-#include "argus/game2d/animated_sprite.hpp"
+#include "argus/game2d/sprite.hpp"
 #include "internal/game2d/defines.hpp"
-#include "internal/game2d/pimpl/animated_sprite.hpp"
-#include "internal/game2d/loader/animated_sprite_loader.hpp"
+#include "internal/game2d/pimpl/sprite.hpp"
+#include "internal/game2d/loader/sprite_loader.hpp"
 
 #include "nlohmann/json.hpp"
 
@@ -49,10 +49,10 @@ const char *KEY_ANIM_FRAME_Y = "y";
 const char *KEY_ANIM_FRAME_DUR = "duration";
 
 namespace argus {
-    AnimatedSpriteLoader::AnimatedSpriteLoader(void): ResourceLoader({ RESOURCE_TYPE_ASPRITE }) {
+    SpriteLoader::SpriteLoader(void): ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
     }
 
-    void *AnimatedSpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    void *SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(proto);
@@ -61,7 +61,7 @@ namespace argus {
         try {
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 
-            AnimatedSpriteDef sprite;
+            SpriteDef sprite;
 
             // required attribute
             sprite.base_size.x = json_root.at(KEY_WIDTH);
@@ -69,7 +69,7 @@ namespace argus {
             sprite.base_size.y = json_root.at(KEY_HEIGHT);
 
             if (sprite.base_size.x <= 0 || sprite.base_size.y <= 0) {
-                Logger::default_logger().severe("Animated sprite dimensions must be > 0");
+                Logger::default_logger().severe("Sprite dimensions must be > 0");
                 return nullptr;
             }
 
@@ -97,7 +97,7 @@ namespace argus {
 
             if (json_root.contains(KEY_TILE_WIDTH)) {
                 if (!json_root.contains(KEY_TILE_HEIGHT)) {
-                    Logger::default_logger().severe("Animated sprite specifies tile width but not height");
+                    Logger::default_logger().severe("Sprite specifies tile width but not height");
                     return nullptr;
                 }
 
@@ -106,7 +106,7 @@ namespace argus {
 
             if (json_root.contains(KEY_TILE_HEIGHT)) {
                 if (!json_root.contains(KEY_TILE_WIDTH)) {
-                    Logger::default_logger().severe("Animated sprite specifies tile height but not width");
+                    Logger::default_logger().severe("Sprite specifies tile height but not width");
                     return nullptr;
                 }
 
@@ -114,12 +114,12 @@ namespace argus {
 
                 // these values default to zero, so we only want to validate them if they're provided
                 if (tile_width <= 0 || tile_height <= 0) {
-                    Logger::default_logger().severe("Animated sprite tile dimensions must be >= 0");
+                    Logger::default_logger().severe("Sprite tile dimensions must be >= 0");
                     return nullptr;
                 }
 
                 if (tile_width > UINT32_MAX || tile_height > UINT32_MAX) {
-                    Logger::default_logger().severe("Animated sprite tile dimensions must be <= UINT32_MAX");
+                    Logger::default_logger().severe("Sprite tile dimensions must be <= UINT32_MAX");
                     return nullptr;
                 }
             }
@@ -140,7 +140,7 @@ namespace argus {
                 if (anim_json.contains(KEY_ANIM_DEF_FRAME_DUR)) {
                     anim.def_duration = anim_json.at(KEY_ANIM_DEF_FRAME_DUR);
                     if (anim.def_duration <= 0) {
-                        Logger::default_logger().severe("Animated sprite frame duration must be >= 0");
+                        Logger::default_logger().severe("Sprite frame duration must be >= 0");
                         return nullptr;
                     }
                 } else {
@@ -174,24 +174,24 @@ namespace argus {
 
                     if (pad_left < 0 || pad_right < 0
                             || pad_top < 0 || pad_bottom < 0) {
-                        Logger::default_logger().severe("Animated sprite padding values must be >= 0");
+                        Logger::default_logger().severe("Sprite padding values must be >= 0");
                         return nullptr;
                     }
 
                     if (pad_left > UINT32_MAX || pad_right > UINT32_MAX
                         || pad_top > UINT32_MAX || pad_bottom > UINT32_MAX) {
-                        Logger::default_logger().severe("Animated sprite padding values must be < UINT32_MAX");
+                        Logger::default_logger().severe("Sprite padding values must be < UINT32_MAX");
                         return nullptr;
                     }
 
                     if (pad_left + pad_right >= sprite.tile_size.x) {
-                        Logger::default_logger().severe("Animated sprite animation horizontal padding must not "
+                        Logger::default_logger().severe("Sprite animation horizontal padding must not "
                                                         "exceed atlas tile width");
                         return nullptr;
                     }
 
                     if (pad_top + pad_bottom >= sprite.tile_size.y) {
-                        Logger::default_logger().severe("Animated sprite animation vertical padding must not "
+                        Logger::default_logger().severe("Sprite animation vertical padding must not "
                                                         "exceed atlas tile height");
                         return nullptr;
                     }
@@ -210,12 +210,12 @@ namespace argus {
                     int64_t offset_y = frame_json.at(KEY_ANIM_FRAME_Y);
 
                     if (offset_x < 0 || offset_y < 0) {
-                        Logger::default_logger().severe("Animated sprite frame offset values must be >= 0");
+                        Logger::default_logger().severe("Sprite animation frame offset values must be >= 0");
                         return nullptr;
                     }
 
                     if (offset_x > UINT32_MAX || offset_y > UINT32_MAX) {
-                        Logger::default_logger().severe("Animated sprite frame offset values must be <= UINT32_MAX");
+                        Logger::default_logger().severe("Sprite animation frame offset values must be <= UINT32_MAX");
                         return nullptr;
                     }
 
@@ -225,13 +225,13 @@ namespace argus {
                     if (frame_json.contains(KEY_ANIM_FRAME_DUR)) {
                         frame.duration = frame_json.at(KEY_ANIM_FRAME_DUR);
                         if (frame.duration <= 0) {
-                            Logger::default_logger().severe("Animated sprite frame duration must be > 0");
+                            Logger::default_logger().severe("Sprite animation frame duration must be > 0");
                             return nullptr;
                         }
                     } else if (anim.def_duration > 0) {
                         frame.duration = anim.def_duration;
                     } else {
-                        Logger::default_logger().severe("Animated sprite frame duration must be provided if no "
+                        Logger::default_logger().severe("Sprite animation frame duration must be provided if no "
                                                         "default exists for the containing animation");
                         return nullptr;
                     }
@@ -242,28 +242,28 @@ namespace argus {
                 sprite.animations.insert({ anim_id, anim });
             }
 
-            Logger::default_logger().debug("Successfully loaded animated sprite %s", proto.uid.c_str());
+            Logger::default_logger().debug("Successfully loaded sprite definition %s", proto.uid.c_str());
 
-            return new AnimatedSpriteDef(std::move(sprite));
+            return new SpriteDef(std::move(sprite));
         } catch (nlohmann::detail::parse_error&) {
-            Logger::default_logger().severe("Failed to parse animated sprite %s", proto.uid.c_str());
+            Logger::default_logger().severe("Failed to parse sprite definition %s", proto.uid.c_str());
             return nullptr;
         } catch (std::out_of_range&) {
-            Logger::default_logger().severe("Animated sprite %s is incomplete or malformed", proto.uid.c_str());
+            Logger::default_logger().severe("Sprite definition %s is incomplete or malformed", proto.uid.c_str());
             return nullptr;
         } catch (std::exception &ex) {
-            Logger::default_logger().severe("Unspecified exception while parsing animated sprite %s (what: %s)",
+            Logger::default_logger().severe("Unspecified exception while parsing sprite definition %s (what: %s)",
                     proto.uid.c_str(), ex.what());
             return nullptr;
         }
     }
 
-    void *AnimatedSpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    void *SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
-        _ARGUS_ASSERT(type == std::type_index(typeid(AnimatedSprite)),
-                "Incorrect pointer type passed to AnimatedSpriteLoader::copy");
+        _ARGUS_ASSERT(type == std::type_index(typeid(SpriteDef)),
+                "Incorrect pointer type passed to SpriteLoader::copy");
 
-        auto &src_sprite = *reinterpret_cast<AnimatedSprite*>(src);
+        auto &src_sprite = *reinterpret_cast<SpriteDef*>(src);
 
         std::vector<std::string> dep_uids;
 
@@ -271,14 +271,14 @@ namespace argus {
         try {
             deps = load_dependencies(manager, dep_uids);
         } catch (...) {
-            Logger::default_logger().warn("Failed to load dependencies for animated sprite %s", proto.uid.c_str());
+            Logger::default_logger().warn("Failed to load dependencies for sprite %s", proto.uid.c_str());
             return nullptr;
         }
 
-        return new AnimatedSprite(std::move(src_sprite));
+        return new SpriteDef(std::move(src_sprite));
     }
 
-    void AnimatedSpriteLoader::unload(void *data_ptr) const {
-        delete static_cast<AnimatedSprite*>(data_ptr);
+    void SpriteLoader::unload(void *data_ptr) const {
+        delete static_cast<Sprite*>(data_ptr);
     }
 }

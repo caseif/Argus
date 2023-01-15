@@ -18,10 +18,13 @@
 
 #pragma once
 
+#include "argus/lowlevel/math.hpp"
+
+#include "argus/resman/resource.hpp"
 #include "argus/render/common/transform.hpp"
 
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace argus {
     // forward declarations
@@ -31,10 +34,9 @@ namespace argus {
        public:
         pimpl_Sprite *pimpl;
 
-        Sprite(const std::string &id, const Vector2f &base_size, const std::string &texture_uid,
-                const std::pair<Vector2f, Vector2f> tex_coords);
+        Sprite(const std::string &id, const Resource &definition);
 
-        Sprite(Sprite&) = delete;
+        Sprite(const Sprite&) = delete;
 
         Sprite(Sprite&&);
 
@@ -44,12 +46,28 @@ namespace argus {
 
         const Vector2f &get_base_size(void) const;
 
-        const std::string &get_texture(void) const;
-
-        const std::pair<Vector2f, Vector2f> &get_texture_coords(void) const;
-
         const Transform2D &get_transform(void) const;
 
         void set_transform(const Transform2D &transform);
+
+        float get_animation_speed(void) const;
+
+        void set_animation_speed(float speed);
+
+        std::vector<std::string> get_available_animations(void) const;
+
+        const std::string &get_current_animation(void) const;
+
+        void set_current_animation(const std::string &animation_id);
+
+        bool does_current_animation_loop(void) const;
+
+        const Padding &get_current_animation_padding(void) const;
+
+        void pause_animation(void);
+
+        void resume_animation(void);
+
+        void reset_animation(void);
     };
 }

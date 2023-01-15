@@ -20,7 +20,7 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include "argus/game2d/animated_sprite.hpp"
+#include "argus/game2d/sprite.hpp"
 #include "argus/game2d/sprite.hpp"
 #include "argus/game2d/world2d.hpp"
 
@@ -50,15 +50,8 @@ namespace argus {
 
         std::optional<std::reference_wrapper<Sprite>> get_sprite(const std::string &id) const;
 
-        Sprite &add_sprite(const std::string &uid, const Vector2f &base_size, const std::string &texture_uid,
-                const std::pair<Vector2f, Vector2f> tex_coords);
+        Sprite &add_sprite(const std::string &id, const std::string &sprite_uid);
 
         void remove_sprite(const std::string &id);
-
-        std::optional<std::reference_wrapper<AnimatedSprite>> get_animated_sprite(const std::string &id) const;
-
-        AnimatedSprite &add_animated_sprite(const std::string &id, const std::string &sprite_uid);
-
-        void remove_animated_sprite(const std::string &id);
     };
 }

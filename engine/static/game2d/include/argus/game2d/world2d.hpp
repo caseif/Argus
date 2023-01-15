@@ -31,7 +31,6 @@
 namespace argus {
     // forward declarations
     class Canvas;
-    class AnimatedSprite;
     class Sprite;
 
     struct pimpl_World2D;

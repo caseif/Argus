@@ -23,13 +23,13 @@
 
 #include "internal/game2d/resources.h"
 #include "internal/game2d/world2d.hpp"
-#include "internal/game2d/loader/animated_sprite_loader.hpp"
+#include "internal/game2d/loader/sprite_loader.hpp"
 
 namespace argus {
     void update_lifecycle_game2d(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                ResourceManager::instance().register_loader(*new AnimatedSpriteLoader());
+                ResourceManager::instance().register_loader(*new SpriteLoader());
 
                 register_update_callback(render_worlds);
 
