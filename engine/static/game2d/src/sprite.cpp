@@ -92,7 +92,7 @@ namespace argus {
         pimpl->cur_anim_id = animation_id;
         //TODO: revisit this
         pimpl->cur_anim = const_cast<SpriteAnimation*>(&it->second);
-        pimpl->cur_frame = 0;
+        pimpl->cur_frame = pimpl->anim_start_offsets[pimpl->cur_anim_id];
     }
 
     bool Sprite::does_current_animation_loop(void) const {

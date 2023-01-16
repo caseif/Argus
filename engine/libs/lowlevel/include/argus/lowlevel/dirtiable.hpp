@@ -53,19 +53,6 @@ namespace argus {
             ValueType value;
             mutable bool dirty;
 
-            template <typename V = ValueType>
-            typename std::enable_if<std::is_integral<V>::value, bool>::type
-            is_same_value(V &new_val) {
-                return new_val == this->value;
-            }
-
-            template <typename V = ValueType>
-            typename std::enable_if<!std::is_integral<V>::value, bool>::type
-            is_same_value(V &new_val) {
-                UNUSED(new_val);
-                return false;
-            }
-
         public:
             Dirtiable(void):
                 value(),
@@ -148,10 +135,8 @@ namespace argus {
              * \return This Dirtiable.
              */
             inline Dirtiable &operator =(const ValueType &rhs) {
-                if (!is_same_value(rhs)) {
-                    value = rhs;
-                    dirty = true;
-                }
+                value = rhs;
+                dirty = true;
                 return *this;
             };
 
@@ -164,10 +149,8 @@ namespace argus {
              * \return This Dirtiable.
              */
             inline Dirtiable &operator =(const ValueType &&rhs) {
-                if (!is_same_value(rhs)) {
-                    value = std::move(rhs);
-                    dirty = true;
-                }
+                value = std::move(rhs);
+                dirty = true;
                 return *this;
             };
 
