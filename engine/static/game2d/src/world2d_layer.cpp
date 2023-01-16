@@ -182,10 +182,17 @@ namespace argus {
             ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
                     Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
 
-            float atlas_stride_x = static_cast<float>(sprite.pimpl->get_def().tile_size.x)
-                                   / static_cast<float>(atlas_w);
-            float atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
-                                   / static_cast<float>(atlas_h);
+            float atlas_stride_x;
+            float atlas_stride_y;
+            if (sprite.pimpl->get_def().tile_size.x > 0) {
+                atlas_stride_x = static_cast<float>(sprite.pimpl->get_def().tile_size.x)
+                                       / static_cast<float>(atlas_w);
+                atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
+                                       / static_cast<float>(atlas_h);
+            } else {
+                atlas_stride_x = 1.0;
+                atlas_stride_y = 1.0;
+            }
 
             obj = &layer.pimpl->scene->create_child_object(SPRITE_PREFIX + sprite.get_id(), mat_uid,
                     prims, { atlas_stride_x, atlas_stride_y }, {});

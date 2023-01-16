@@ -166,7 +166,6 @@ namespace argus {
                 static_anim.loop = false;
 
                 AnimationFrame static_frame;
-                printf("%ld, %ld\n", frame_x, frame_y);
                 static_frame.offset = { static_cast<uint32_t>(frame_x), static_cast<uint32_t>(frame_y) };
                 static_frame.duration = 1;
                 static_anim.frames.push_back(static_frame);
