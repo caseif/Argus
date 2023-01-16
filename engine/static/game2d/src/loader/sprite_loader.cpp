@@ -89,16 +89,6 @@ namespace argus {
                 sprite.def_speed = 1.0f;
             }
 
-            if (json_root.contains(KEY_DEF_ANIM)) {
-                sprite.def_anim = json_root.at(KEY_DEF_ANIM);
-            } else if (json_root.contains(KEY_STATIC_FRAME)) {
-                sprite.def_anim = MAGIC_ANIM_STATIC;
-            } else {
-                Logger::default_logger().severe("Sprite definition must specify at least one of "
-                                                KEY_DEF_ANIM " or " KEY_STATIC_FRAME);
-                return nullptr;
-            }
-
             if (json_root.contains(KEY_ATLAS)) {
                 sprite.atlas = json_root.at(KEY_ATLAS);
             }
@@ -139,34 +129,71 @@ namespace argus {
             sprite.tile_size.x = static_cast<uint32_t>(tile_width);
             sprite.tile_size.y = static_cast<uint32_t>(tile_height);
 
-            if (!json_root.contains(KEY_ANIMS) && !json_root.contains(KEY_STATIC_FRAME)) {
-                Logger::default_logger().severe("Sprite must contain at least one of "
-                                                KEY_ANIMS " or " KEY_STATIC_FRAME);
-                return nullptr;
-            }
-
-            if (json_root.contains(KEY_STATIC_FRAME)) {
-                auto frame_json = json_root.at(KEY_STATIC_FRAME);
-                // oversized intermediate variables again
-                int64_t frame_x = frame_json.at(KEY_STATIC_FRAME_X);
-                int64_t frame_y = frame_json.at(KEY_STATIC_FRAME_Y);
-
-                if (frame_x < 0 || frame_y < 0) {
-                    Logger::default_logger().severe("Static frame offset values must be >= 0");
+            if (sprite.tile_size.x > 0) {
+                if (json_root.contains(KEY_DEF_ANIM)) {
+                    sprite.def_anim = json_root.at(KEY_DEF_ANIM);
+                } else if (json_root.contains(KEY_STATIC_FRAME)) {
+                    sprite.def_anim = MAGIC_ANIM_STATIC;
+                } else {
+                    Logger::default_logger().severe("Sprite definition must specify at least one of '"
+                                                    KEY_DEF_ANIM "' or '" KEY_STATIC_FRAME
+                                                    "' when tile size is provided explicitly");
                     return nullptr;
                 }
 
-                if (frame_x > UINT32_MAX || frame_y > UINT32_MAX) {
-                    Logger::default_logger().severe("Static frame offset values must be < UINT32_MAX");
+                if (!json_root.contains(KEY_ANIMS) && !json_root.contains(KEY_STATIC_FRAME)) {
+                    Logger::default_logger().severe("Sprite must contain at least one of '"
+                                                    KEY_ANIMS "' or '" KEY_STATIC_FRAME
+                                                    "' when tile size is provided explicitly");
                     return nullptr;
                 }
+
+                if (json_root.contains(KEY_STATIC_FRAME)) {
+                    auto frame_json = json_root.at(KEY_STATIC_FRAME);
+                    // oversized intermediate variables again
+                    int64_t frame_x = frame_json.at(KEY_STATIC_FRAME_X);
+                    int64_t frame_y = frame_json.at(KEY_STATIC_FRAME_Y);
+
+                    if (frame_x < 0 || frame_y < 0) {
+                        Logger::default_logger().severe("Static frame offset values must be >= 0");
+                        return nullptr;
+                    }
+
+                    if (frame_x > UINT32_MAX || frame_y > UINT32_MAX) {
+                        Logger::default_logger().severe("Static frame offset values must be < UINT32_MAX");
+                        return nullptr;
+                    }
+
+                    SpriteAnimation static_anim;
+                    static_anim.id = KEY_STATIC_FRAME;
+                    static_anim.loop = false;
+
+                    AnimationFrame static_frame;
+                    static_frame.offset = { static_cast<uint32_t>(frame_x), static_cast<uint32_t>(frame_y) };
+                    static_frame.duration = 1;
+                    static_anim.frames.push_back(static_frame);
+
+                    sprite.animations.insert({ MAGIC_ANIM_STATIC, static_anim });
+                }
+            } else {
+                if (json_root.contains(KEY_STATIC_FRAME)) {
+                    Logger::default_logger().severe("Sprite definition must not include '"
+                                                    KEY_STATIC_FRAME "' when tile size is implicit");
+                }
+
+                if (json_root.contains(KEY_ANIMS)) {
+                    Logger::default_logger().severe("Sprite definition must not include '"
+                                                    KEY_ANIMS "' when tile size is implicit");
+                }
+
+                sprite.def_anim = MAGIC_ANIM_STATIC;
 
                 SpriteAnimation static_anim;
                 static_anim.id = KEY_STATIC_FRAME;
                 static_anim.loop = false;
 
                 AnimationFrame static_frame;
-                static_frame.offset = { static_cast<uint32_t>(frame_x), static_cast<uint32_t>(frame_y) };
+                static_frame.offset = { 0, 0 };
                 static_frame.duration = 1;
                 static_anim.frames.push_back(static_frame);
 
