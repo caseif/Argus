@@ -45,6 +45,8 @@
 #include <string>
 #include <utility>
 
+#define PRIMARY_LAYER_ID "_primary"
+
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_World2D));
 
@@ -67,6 +69,7 @@ namespace argus {
 
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):
             pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
+        pimpl->layers.insert({ PRIMARY_LAYER_ID, new World2DLayer(*this, PRIMARY_LAYER_ID, 1.0, std::nullopt) });
     }
 
     World2D::~World2D(void) {
@@ -90,8 +93,8 @@ namespace argus {
     }
 
     static void _render_world(World2D &world) {
-        for (auto &layer : world.pimpl->layers) {
-            render_world_layer(*layer);
+        for (auto &pair : world.pimpl->layers) {
+            render_world_layer(*pair.second);
         }
     }
 
@@ -103,13 +106,20 @@ namespace argus {
         }
     }
 
-    World2DLayer &World2D::add_layer(const std::string &id) {
-        auto *layer = new World2DLayer(*this, id, 1, std::nullopt);
-        pimpl->layers.push_back(layer);
-        return *layer;
+    static World2DLayer &_get_primary_layer(const World2D &world) {
+        return *world.pimpl->layers[PRIMARY_LAYER_ID];
     }
 
-    const std::vector<World2DLayer*> &World2D::get_layers(void) const {
-        return pimpl->layers;
+    GameObject2D &World2D::get_object(const Uuid &uuid) const {
+        return _get_primary_layer(*this).get_object(uuid);
+    }
+
+    GameObject2D &World2D::create_object(const std::string &sprite, const Vector2f &size,
+            const Transform2D &transform) {
+        return _get_primary_layer(*this).create_object(sprite, size, transform);
+    }
+
+    void World2D::delete_object(const Uuid &uuid) {
+        return _get_primary_layer(*this).delete_object(uuid);
     }
 }

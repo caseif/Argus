@@ -22,6 +22,7 @@
 
 #include "argus/render/2d/camera_2d.hpp"
 
+#include "argus/game2d/game_object_2d.hpp"
 #include "argus/game2d/world2d_layer.hpp"
 
 #include <optional>
@@ -59,10 +60,10 @@ namespace argus {
 
             void set_camera_transform(const Transform2D &transform);
 
-            // for testing purposes only, needs to be removed once we have an abstraction in place
-            World2DLayer &add_layer(const std::string &id);
+            GameObject2D &get_object(const Uuid &uuid) const;
 
-            // also for testing purposes only
-            const std::vector<World2DLayer*> &get_layers(void) const;
+            GameObject2D &create_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+
+            void delete_object(const Uuid &uuid);
     };
 }

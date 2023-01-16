@@ -34,7 +34,7 @@ namespace argus {
        public:
         pimpl_Sprite *pimpl;
 
-        Sprite(const std::string &id, const Resource &definition);
+        Sprite(const Resource &definition);
 
         Sprite(const Sprite&) = delete;
 
@@ -42,13 +42,7 @@ namespace argus {
 
         ~Sprite(void);
 
-        const std::string &get_id(void) const;
-
         const Vector2f &get_base_size(void) const;
-
-        const Transform2D &get_transform(void) const;
-
-        void set_transform(const Transform2D &transform);
 
         float get_animation_speed(void) const;
 

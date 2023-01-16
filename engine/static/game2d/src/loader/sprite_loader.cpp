@@ -369,6 +369,6 @@ namespace argus {
     }
 
     void SpriteLoader::unload(void *data_ptr) const {
-        delete static_cast<Sprite*>(data_ptr);
+        delete static_cast<SpriteDef*>(data_ptr);
     }
 }

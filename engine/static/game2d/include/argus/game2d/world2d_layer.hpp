@@ -48,10 +48,10 @@ namespace argus {
 
         World2D &get_world(void) const;
 
-        std::optional<std::reference_wrapper<Sprite>> get_sprite(const std::string &id) const;
+        GameObject2D &get_object(const Uuid &uuid) const;
 
-        Sprite &add_sprite(const std::string &id, const std::string &sprite_uid);
+        GameObject2D &create_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
 
-        void remove_sprite(const std::string &id);
+        void delete_object(const Uuid &uuid);
     };
 }

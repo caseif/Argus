@@ -18,31 +18,30 @@
 
 #pragma once
 
-#include "argus/game2d/world2d_layer.hpp"
+#include "argus/lowlevel/math.hpp"
 
-#include <map>
-#include <string>
+#include "argus/render/common/transform.hpp"
+#include "argus/game2d/sprite.hpp"
 
 namespace argus {
-    // forward declarations
-    class Canvas;
-    class Scene2D;
+    struct pimpl_GameObject2D {
+        const Uuid uuid;
+        const Vector2f size;
+        Dirtiable<Transform2D> transform;
 
-    class Sprite;
+        Resource &sprite_def_res;
+        Sprite &sprite;
 
-    struct pimpl_World2D {
-        std::string id;
-        Canvas &canvas;
-        const float scale_factor;
+        pimpl_GameObject2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
+                Resource &sprite_def_res, Sprite &sprite):
+            uuid(uuid),
+            size(size),
+            transform(transform),
+            sprite_def_res(sprite_def_res),
+            sprite(sprite) {
+        }
 
-        std::map<std::string, World2DLayer*> layers;
-
-        Dirtiable<Transform2D> abstract_camera;
-
-        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor):
-            id(id),
-            canvas(canvas),
-            scale_factor(scale_factor) {
+        ~pimpl_GameObject2D(void) {
         }
     };
 }

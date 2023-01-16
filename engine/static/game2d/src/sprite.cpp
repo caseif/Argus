@@ -32,8 +32,8 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Sprite));
 
-    Sprite::Sprite(const std::string &id, const Resource &definition):
-            pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(id, definition)) {
+    Sprite::Sprite(const Resource &definition):
+            pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(definition)) {
         set_current_animation(pimpl->get_def().def_anim);
     }
 
@@ -44,23 +44,6 @@ namespace argus {
 
     Sprite::~Sprite(void) {
         g_pimpl_pool.destroy(pimpl);
-    }
-
-    const std::string &Sprite::get_id(void) const {
-        return pimpl->id;
-    }
-
-    const Vector2f &Sprite::get_base_size(void) const {
-        return pimpl->get_def().base_size;
-    }
-
-    const Transform2D &Sprite::get_transform(void) const {
-        return pimpl->transform;
-    }
-
-    void Sprite::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
-        pimpl->transform_dirty = true;
     }
 
     float Sprite::get_animation_speed(void) const {
