@@ -212,7 +212,9 @@ namespace argus {
         }
 
         for (auto &kv : layer.pimpl->sprites) {
-            _advance_sprite_animation(*kv.second);
+            if (!kv.second->is_current_animation_static()) {
+                _advance_sprite_animation(*kv.second);
+            }
             _render_sprite(layer, *kv.second);
         }
     }

@@ -99,6 +99,10 @@ namespace argus {
         return pimpl->cur_anim->loop;
     }
 
+    bool Sprite::is_current_animation_static(void) const {
+        return pimpl->cur_anim->frames.size() == 1;
+    }
+
     const Padding &Sprite::get_current_animation_padding(void) const {
         return pimpl->cur_anim->padding;
     }

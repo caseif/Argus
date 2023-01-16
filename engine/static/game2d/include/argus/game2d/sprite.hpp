@@ -62,6 +62,8 @@ namespace argus {
 
         bool does_current_animation_loop(void) const;
 
+        bool is_current_animation_static(void) const;
+
         const Padding &get_current_animation_padding(void) const;
 
         void pause_animation(void);
