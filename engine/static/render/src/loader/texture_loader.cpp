@@ -44,7 +44,8 @@ namespace argus {
     struct ResourcePrototype;
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
-        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), size);
+        _ARGUS_ASSERT(size <= LONG_MAX, "PNG size is too large");
+        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), std::streamsize(size));
     }
 
     PngTextureLoader::PngTextureLoader():

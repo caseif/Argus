@@ -21,9 +21,7 @@ function(_argus_set_compile_flags TARGET)
       "-Wreturn-type"
       "-Weffc++"
       "-Wdeprecated"
-      "-Wconversion"
-      "-Wno-error=conversion"
-      "-Wno-error=sign-conversion")
+      "-Wconversion")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
        OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
       target_compile_options("${TARGET}" PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:-Werror=mismatched-tags>")

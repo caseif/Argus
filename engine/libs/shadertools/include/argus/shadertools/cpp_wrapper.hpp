@@ -69,14 +69,14 @@ namespace argus {
         const char **glsl_sources_c = new const char*[shaders_count];
         unsigned int i = 0;
         for (auto &source_tuple : glsl_sources) {
-            stages[i] = static_cast<glslang_stage_t>(source_tuple.first);
+            stages[i] = glslang_stage_t(source_tuple.first);
             glsl_sources_c[i] = source_tuple.second.c_str();
             i++;
         }
         
         auto *res = ::transpile_glsl(stages.data(), glsl_sources_c, shaders_count,
-            static_cast<glslang_client_t>(client), static_cast<glslang_target_client_version_t>(client_version),
-            static_cast<glslang_target_language_version_t>(spirv_version));
+            glslang_client_t(client), glslang_target_client_version_t(client_version),
+            glslang_target_language_version_t(spirv_version));
         if (!res->success) {
             free_compilation_result(res);
 

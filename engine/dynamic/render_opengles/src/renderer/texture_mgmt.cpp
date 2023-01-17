@@ -33,10 +33,8 @@
 
 #include <map>
 #include <string>
-#include <utility>
 
-#include <cstddef>
-#include <cstdint>
+#include <climits>
 
 namespace argus {
     void get_or_load_texture(RendererState &state, const Resource &material_res) {
@@ -52,8 +50,8 @@ namespace argus {
         auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
         auto &texture = texture_res.get<TextureData>();
         
-        _ARGUS_ASSERT(texture.width <= INT32_MAX, "Texture width is too big");
-        _ARGUS_ASSERT(texture.height <= INT32_MAX, "Texture height is too big");
+        _ARGUS_ASSERT(texture.width <= INT_MAX, "Texture width is too big");
+        _ARGUS_ASSERT(texture.height <= INT_MAX, "Texture height is too big");
 
         texture_handle_t handle;
 
@@ -69,14 +67,14 @@ namespace argus {
         //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
         if (AGLET_GL_ES_VERSION_3_0) {
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, texture.width, texture.height);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, GLsizei(texture.width), GLsizei(texture.height));
         } else {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GLsizei(texture.width), GLsizei(texture.height), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                     nullptr);
         }
 
         for (uint32_t y = 0; y < texture.height; y++) {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<int32_t>(y), texture.width, 1, GL_RGBA,
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, int32_t(y), GLsizei(texture.width), 1, GL_RGBA,
                     GL_UNSIGNED_BYTE, texture.get_pixel_data()[y]);
         }
 

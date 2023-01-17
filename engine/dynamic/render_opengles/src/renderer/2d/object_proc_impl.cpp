@@ -16,15 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/math.hpp"
 
-#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/common/material.hpp"
-#include "argus/render/common/transform.hpp"
-#include "argus/render/common/vertex.hpp"
 #include "argus/render/defines.hpp"
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
@@ -36,19 +32,15 @@
 #include "internal/render_opengles/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengles/state/processed_render_object.hpp"
 #include "internal/render_opengles/state/render_bucket.hpp"
-#include "internal/render_opengles/state/renderer_state.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
 
-#include <algorithm>
-#include <cstddef>
-#include <atomic>
 #include <map>
 #include <numeric>
-#include <string>
-#include <utility>
-#include <vector>
+
+#include <climits>
+#include <cstddef>
 
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {
@@ -87,10 +79,13 @@ namespace argus {
         GLfloat *mapped_buffer;
         bool persistent_buffer = false;
 
+        _ARGUS_ASSERT(buffer_size <= INT_MAX, "Buffer size is too big");
+
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-        glBufferData(GL_COPY_READ_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-        mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT));
+        glBufferData(GL_COPY_READ_BUFFER, GLsizeiptr(buffer_size), nullptr, GL_DYNAMIC_DRAW);
+        mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, GLsizeiptr(buffer_size),
+                GL_MAP_WRITE_BIT));
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -169,11 +164,14 @@ namespace argus {
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
+        _ARGUS_ASSERT(buffer_size <= INT_MAX, "Vertex buffer length is too big");
+
         if (proc_obj.mapped_buffer != nullptr) {
             mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
         } else {
             glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
-            mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT));
+            mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0,
+                    GLsizeiptr(buffer_size), GL_MAP_WRITE_BIT));
         }
 
         size_t total_vertices = 0;

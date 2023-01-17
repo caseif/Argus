@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/vector.hpp"
@@ -33,10 +34,6 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
-#include <utility>
-#include <vector>
-
-#include <cstdint>
 
 namespace argus::input {
     static const std::unordered_map<int, KeyboardScancode> g_keycode_glfw_to_argus({
@@ -220,7 +217,12 @@ namespace argus::input {
         return mod;
     }*/
 
-    static KeyboardScancode _translate_glfw_keycode(uint32_t glfw_keycode) {
+    static KeyboardScancode _translate_glfw_keycode(int glfw_keycode) {
+        if (glfw_keycode < 0) {
+            Logger::default_logger().warn("Encountered negative keycode %d", glfw_keycode);
+            return KeyboardScancode::Unknown;
+        }
+
         if (glfw_keycode >= GLFW_KEY_A && glfw_keycode <= GLFW_KEY_Z) {
             // GLFW shifts letter scancodes up by 61 to match ASCII
             return static_cast<KeyboardScancode>(glfw_keycode - 61);
@@ -234,15 +236,15 @@ namespace argus::input {
         }
     }
 
-    static uint32_t _translate_argus_keycode(KeyboardScancode argus_keycode) {
+    static int _translate_argus_keycode(KeyboardScancode argus_keycode) {
         if (argus_keycode >= KeyboardScancode::A && argus_keycode <= KeyboardScancode::Z) {
             // GLFW shifts letter scancodes up by 61 to match ASCII
-            return static_cast<uint32_t>(argus_keycode) + 61;
+            return int(argus_keycode) + 61;
         } else {
             auto res = g_keycode_argus_to_glfw.find(argus_keycode);
             if (res == g_keycode_argus_to_glfw.end()) {
-                Logger::default_logger().warn("Saw unknown Argus scancode %d", static_cast<int>(argus_keycode));
-                return static_cast<uint32_t>(GLFW_KEY_UNKNOWN);
+                Logger::default_logger().warn("Saw unknown Argus scancode %d", int(argus_keycode));
+                return GLFW_KEY_UNKNOWN;
             }
             return res->second;
         }

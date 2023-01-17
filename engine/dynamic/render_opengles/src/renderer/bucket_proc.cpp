@@ -18,9 +18,6 @@
 
 #include "argus/lowlevel/debug.hpp"
 
-#include "argus/resman/resource.hpp"
-
-#include "argus/render/common/material.hpp"
 #include "argus/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"
@@ -35,9 +32,8 @@
 
 #include <map>
 #include <string>
-#include <utility>
-#include <vector>
 
+#include <climits>
 #include <cstddef>
 
 #define BINDING_INDEX_VBO 0
@@ -98,19 +94,21 @@ namespace argus {
                     glDeleteBuffers(1, &bucket->anim_frame_buffer);
                 }
 
+                _ARGUS_ASSERT(buffer_len <= INT_MAX, "Buffer length is too big");
+
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
 
                 if (animated) {
                     glGenBuffers(1, &bucket->anim_frame_buffer);
                     glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                    glBufferData(GL_ARRAY_BUFFER, anim_frame_buf_len, nullptr, GL_DYNAMIC_DRAW);
+                    glBufferData(GL_ARRAY_BUFFER, GLsizei(anim_frame_buf_len), nullptr, GL_DYNAMIC_DRAW);
                 }
 
                 glGenBuffers(1, &bucket->vertex_buffer);
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
-                glBufferData(GL_ARRAY_BUFFER, buffer_len, nullptr, GL_DYNAMIC_COPY);
+                glBufferData(GL_ARRAY_BUFFER, GLsizei(buffer_len), nullptr, GL_DYNAMIC_COPY);
 
                 if (animated) {
                     if (bucket->anim_frame_buffer_staging != nullptr) {
@@ -163,18 +161,21 @@ namespace argus {
                 }
 
                 if (bucket->needs_rebuild || processed->updated) {
+                    _ARGUS_ASSERT(offset <= INT_MAX, "Buffer offset is too big");
+                    _ARGUS_ASSERT(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
+
                     glBindBuffer(GL_COPY_READ_BUFFER, processed->staging_buffer);
-                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, offset,
-                            processed->staging_buffer_size);
+                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, GLintptr(offset) ,
+                            GLsizeiptr(processed->staging_buffer_size));
                     glBindBuffer(GL_COPY_READ_BUFFER, 0);
                 }
 
                 if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
                         reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
-                                = static_cast<float>(processed->anim_frame.x);
+                                = float(processed->anim_frame.x);
                         reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
-                                = static_cast<float>(processed->anim_frame.y);
+                                = float(processed->anim_frame.y);
                     }
                     processed->anim_frame_updated = false;
                     anim_buf_updated = true;
@@ -188,8 +189,10 @@ namespace argus {
             }
 
             if (anim_buf_updated) {
+                _ARGUS_ASSERT(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
+
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, anim_frame_buf_len, bucket->anim_frame_buffer_staging);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, GLsizeiptr(anim_frame_buf_len), bucket->anim_frame_buffer_staging);
             }
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);

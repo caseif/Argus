@@ -53,7 +53,7 @@ namespace argus {
 
     void process_event_queue(const TargetThread target_thread) {
         _ARGUS_ASSERT_F(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
-            "Unrecognized target thread ordinal %u", static_cast<unsigned int>(target_thread));
+            "Unrecognized target thread ordinal %u", uint(target_thread));
 
         auto render_thread = target_thread == TargetThread::Render;
 
@@ -78,7 +78,7 @@ namespace argus {
             auto listeners_copy = listeners;
             for (auto ordering : ORDERINGS) {
                 for (auto &listener : listeners.lists[ordering]) {
-                    if (static_cast<int>(listener.value.type == event.ptr->type)) {
+                    if (int(listener.value.type == event.ptr->type)) {
                         listener.value.callback(*event.ptr, listener.value.data);
                     }
                 }
@@ -108,7 +108,7 @@ namespace argus {
                 break;
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", static_cast<unsigned int>(target_thread));
+                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", uint(target_thread));
             }
         }
 
@@ -131,7 +131,7 @@ namespace argus {
                 break;
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", static_cast<unsigned int>(target_thread));
+                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", uint(target_thread));
             }
         }
 

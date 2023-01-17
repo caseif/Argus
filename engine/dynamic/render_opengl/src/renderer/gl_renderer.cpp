@@ -71,8 +71,8 @@ namespace argus {
         float hor_scale = 1;
         float ver_scale = 1;
 
-        auto res_hor_f = static_cast<float>(res_hor);
-        auto res_ver_f = static_cast<float>(res_ver);
+        auto res_hor_f = float(res_hor);
+        auto res_ver_f = float(res_ver);
 
         switch (get_screen_space_scale_mode()) {
             case ScreenSpaceScaleMode::NormalizeMinDimension:
@@ -100,8 +100,8 @@ namespace argus {
         }
 
         return {
-            {2 / ((r - l) * hor_scale), 0, 0, -(r + l) / ((r - l) * hor_scale)},
-            {0, 2 / ((t - b) * ver_scale), 0, -(t + b) / ((t - b) * ver_scale)},
+            {2 / (float(r - l) * hor_scale), 0, 0, -float(r + l) / (float(r - l) * hor_scale)},
+            {0, 2 / (float(t - b) * ver_scale), 0, -float(t + b) / (float(t - b) * ver_scale)},
             {0, 0, 1, 0},
             {0, 0, 0, 1}
         };
@@ -186,7 +186,7 @@ namespace argus {
 
             fill_buckets(scene_state);
 
-            for (auto bucket_it : scene_state.render_buckets) {
+            for (const auto &bucket_it : scene_state.render_buckets) {
                 auto &mat = bucket_it.second->material_res;
 
                 build_shaders(state, mat);
@@ -242,7 +242,7 @@ namespace argus {
             state(*this) {
         activate_gl_context(get_window_handle<GLFWwindow>(window));
 
-        int rc = 0;
+        int rc;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
             Logger::default_logger().fatal("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
         }

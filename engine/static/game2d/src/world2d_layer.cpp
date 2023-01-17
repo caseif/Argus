@@ -86,7 +86,7 @@ namespace argus {
 
     static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
         auto &cur_frame = sprite.pimpl->cur_anim->frames[sprite.pimpl->cur_frame.peek()];
-        uint64_t dur_ns = static_cast<uint64_t>(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
+        uint64_t dur_ns = uint64_t(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
         return std::chrono::nanoseconds(dur_ns);
     }
 
@@ -178,10 +178,10 @@ namespace argus {
             float atlas_stride_x;
             float atlas_stride_y;
             if (sprite.pimpl->get_def().tile_size.x > 0) {
-                atlas_stride_x = static_cast<float>(sprite.pimpl->get_def().tile_size.x)
-                                       / static_cast<float>(atlas_w);
-                atlas_stride_y = static_cast<float>(sprite.pimpl->get_def().tile_size.y)
-                                       / static_cast<float>(atlas_h);
+                atlas_stride_x = float(sprite.pimpl->get_def().tile_size.x)
+                                       / float(atlas_w);
+                atlas_stride_y = float(sprite.pimpl->get_def().tile_size.y)
+                                       / float(atlas_h);
             } else {
                 atlas_stride_x = 1.0;
                 atlas_stride_y = 1.0;

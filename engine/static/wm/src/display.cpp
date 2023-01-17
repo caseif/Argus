@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/vector.hpp"
 
 #include "argus/wm/display.hpp"
@@ -45,16 +46,32 @@ namespace argus {
         int width;
         int height;
         glfwGetMonitorPhysicalSize(monitor, &width, &height);
-        display.pimpl->size = Vector2u(width, height);
+        _ARGUS_ASSERT(width > 0 && height > 0, "Reported monitor dimensions are zero or negative");
+        display.pimpl->size = Vector2u(uint32_t(width), uint32_t(height));
 
         int mode_count;
         auto *glfw_modes = glfwGetVideoModes(display.pimpl->handle, &mode_count);
 
         for (int i = 0; i < mode_count; i++) {
             auto glfw_mode = glfw_modes[i];
-            display.pimpl->modes.push_back(DisplayMode{ Vector2u(glfw_mode.width, glfw_mode.height),
-                    static_cast<uint16_t>(glfw_mode.refreshRate),
-                    Vector3u(glfw_mode.redBits, glfw_mode.greenBits, glfw_mode.blueBits) });
+
+            if (glfw_mode.width <= 0 || glfw_mode.height <= 0) {
+                Logger::default_logger().debug("Skipping video mode with non-positive dimensions (%d, %d)",
+                        glfw_mode.width, glfw_mode.height);
+                continue;
+            }
+
+            if (glfw_mode.redBits < 0 || glfw_mode.greenBits < 0 || glfw_mode.blueBits < 0) {
+                Logger::default_logger().debug("Skipping video mode with negative color width (r=%d, g=%d, b=%d)",
+                        glfw_mode.redBits, glfw_mode.greenBits, glfw_mode.blueBits);
+                continue;
+            }
+
+            display.pimpl->modes.push_back(DisplayMode {
+                Vector2u(uint32_t(glfw_mode.width), uint32_t(glfw_mode.height)),
+                uint16_t(glfw_mode.refreshRate),
+                Vector3u(uint32_t(glfw_mode.redBits), uint32_t(glfw_mode.greenBits), uint32_t(glfw_mode.blueBits))
+            });
         }
 
         g_displays.push_back(&display);

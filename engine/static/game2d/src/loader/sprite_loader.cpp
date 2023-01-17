@@ -114,8 +114,8 @@ namespace argus {
                 }
             }
 
-            sprite.tile_size.x = static_cast<uint32_t>(tile_width);
-            sprite.tile_size.y = static_cast<uint32_t>(tile_height);
+            sprite.tile_size.x = uint32_t(tile_width);
+            sprite.tile_size.y = uint32_t(tile_height);
 
             if (sprite.tile_size.x > 0) {
                 if (json_root.contains(KEY_DEF_ANIM)) {
@@ -157,7 +157,7 @@ namespace argus {
                     static_anim.loop = false;
 
                     AnimationFrame static_frame;
-                    static_frame.offset = { static_cast<uint32_t>(frame_x), static_cast<uint32_t>(frame_y) };
+                    static_frame.offset = { uint32_t(frame_x), uint32_t(frame_y) };
                     static_frame.duration = 1;
                     static_anim.frames.push_back(static_frame);
 
@@ -273,10 +273,10 @@ namespace argus {
                             return nullptr;
                         }
 
-                        anim.padding.left = static_cast<uint32_t>(pad_left);
-                        anim.padding.right = static_cast<uint32_t>(pad_right);
-                        anim.padding.top = static_cast<uint32_t>(pad_top);
-                        anim.padding.bottom = static_cast<uint32_t>(pad_bottom);
+                        anim.padding.left = uint32_t(pad_left);
+                        anim.padding.right = uint32_t(pad_right);
+                        anim.padding.top = uint32_t(pad_top);
+                        anim.padding.bottom = uint32_t(pad_bottom);
                     }
 
                     for (auto &frame_json : anim_json.at(KEY_ANIM_FRAMES).get<nlohmann::json::array_t>()) {
@@ -296,8 +296,8 @@ namespace argus {
                             return nullptr;
                         }
 
-                        frame.offset.x = static_cast<uint32_t>(offset_x);
-                        frame.offset.y = static_cast<uint32_t>(offset_y);
+                        frame.offset.x = uint32_t(offset_x);
+                        frame.offset.y = uint32_t(offset_y);
 
                         if (frame_json.contains(KEY_ANIM_FRAME_DUR)) {
                             frame.duration = frame_json.at(KEY_ANIM_FRAME_DUR);

@@ -432,14 +432,14 @@ namespace argus {
         Logger::default_logger().debug("Propagating remaining bring-up lifecycle stages");
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
-                stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+                stage = LifecycleStage(uint32_t(stage) + 1)) {
             _send_lifecycle_update(stage);
         }
     }
 
     void deinit_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
-             stage = static_cast<LifecycleStage>(static_cast<uint32_t>(stage) + 1)) {
+             stage = LifecycleStage(uint32_t(stage) + 1)) {
             for (auto it = g_enabled_static_modules.rbegin(); it != g_enabled_static_modules.rend(); ++it) {
                 it->lifecycle_update_callback(stage);
             }

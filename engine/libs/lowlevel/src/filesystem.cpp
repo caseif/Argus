@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/error_util.hpp"
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/logging.hpp"
@@ -98,7 +99,7 @@ namespace argus {
 
     //TODO: use the native Windows file API, if available
     FileHandle FileHandle::create(const std::filesystem::path &path, const int mode) {
-        const char *std_mode = "";
+        const char *std_mode;
         // we check for the following invalid cases:
         // - no modes set at all
         // - create set without any other modes
@@ -117,9 +118,9 @@ namespace argus {
             Logger::default_logger().fatal("Unable to determine mode string");
         }
 
-        FILE *file = NULL;
+        FILE *file;
         if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {
-            stat_t stat_buf;
+            stat_t stat_buf{};
             int stat_rc = stat(path.string().c_str(), &stat_buf);
 
             if (stat_rc) {
@@ -147,10 +148,12 @@ namespace argus {
 
         validate_syscall(file != nullptr, "fopen");
 
-        stat_t stat_buf;
+        stat_t stat_buf{};
         validate_syscall(fstat(fileno(file), &stat_buf), "fstat");
 
-        return FileHandle(path, mode, stat_buf.st_size, static_cast<void*>(file));
+        _ARGUS_ASSERT(stat_buf.st_size >= 0, "File size returned by stat was negative");
+
+        return FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void*>(file));
     }
 
     const std::filesystem::path &FileHandle::get_path(void) const {
@@ -195,14 +198,16 @@ namespace argus {
         //stream->seekg(offset);
     }
 
-    void FileHandle::read(const off_t offset, const size_t read_size, unsigned char *const buf) const {
+    void FileHandle::read(off_t offset, size_t read_size, unsigned char *buf) const {
         validate_state(valid, "Non-valid FileHandle");
 
         validate_arg(read_size > 0, "Invalid size parameter");
 
-        validate_arg(offset + read_size <= this->size, "Invalid offset/size combination");
+        validate_arg(offset >= 0, "Read offset must be non-negative");
 
-        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+        validate_arg(size_t(offset) + read_size <= this->size, "Invalid offset/size combination");
+
+        fseek(static_cast<FILE*>(handle), off_t(offset), SEEK_SET);
 
         size_t read_chunks = fread(buf, read_size, 1, static_cast<FILE*>(handle));
 
@@ -225,10 +230,12 @@ namespace argus {
         size_t write_chunks = fwrite(buf, write_size, 1, static_cast<FILE*>(handle));
         validate_syscall(write_chunks == 1, "fwrite");
 
-        stat_t file_stat;
+        stat_t file_stat{};
         validate_syscall(fstat(fileno(static_cast<FILE*>(handle)), &file_stat), "fstat");
 
-        this->size = file_stat.st_size;
+        _ARGUS_ASSERT(file_stat.st_size >= 0, "File size returned by stat was negative");
+
+        this->size = size_t(file_stat.st_size);
     }
 
     const std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
@@ -237,7 +244,9 @@ namespace argus {
 
         validate_arg(read_size > 0, "Invalid size parameter");
 
-        validate_arg(offset + read_size <= this->size, "Invalid offset/size combintation");
+        validate_arg(offset >= 0, "Read offset must be non-negative");
+
+        validate_arg(size_t(offset) + read_size <= this->size, "Invalid offset/size combintation");
 
         return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
     }

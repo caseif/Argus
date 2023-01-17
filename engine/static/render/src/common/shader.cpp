@@ -57,17 +57,17 @@ namespace argus {
     }
 
     ShaderStage operator |(ShaderStage lhs, ShaderStage rhs) {
-        return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
+        return ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
                                         static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
     ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs) {
-        return lhs = static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
+        return lhs = ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
                                               static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
     ShaderStage operator &(ShaderStage lhs, ShaderStage rhs) {
-        return static_cast<ShaderStage>(static_cast<std::underlying_type<ShaderStage>::type>(lhs) &
+        return ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) &
                                         static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 

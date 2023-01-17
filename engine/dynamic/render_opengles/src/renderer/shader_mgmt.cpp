@@ -16,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/time.hpp"
-
-#include "argus/shadertools.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
@@ -29,20 +28,26 @@
 #include "argus/render/common/shader_compilation.hpp"
 #include "argus/render/defines.hpp"
 
-#include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 #include "spirv_glsl.hpp"
+
+#pragma GCC diagnostic pop
 
 #include <map>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#include <climits>
 
 namespace argus {
     std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> _compile_shaders(
@@ -51,7 +56,7 @@ namespace argus {
 
         ShaderReflectionInfo refl_info;
 
-        if (shaders.size() == 0) {
+        if (shaders.empty()) {
             return std::make_pair(handles, refl_info);
         }
 
@@ -59,7 +64,7 @@ namespace argus {
 
         std::vector<std::string> shader_sources;
         for (auto &shader : shaders) {
-            shader_sources.push_back(std::string(shader.get_source().begin(), shader.get_source().end()));
+            shader_sources.emplace_back(shader.get_source().begin(), shader.get_source().end());
         }
 
         auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
@@ -100,7 +105,7 @@ namespace argus {
             }
 
             const auto src_c = reinterpret_cast<const char *>(essl_src.data());
-            const int src_len = int(essl_src.size());
+            const int src_len = GLint(essl_src.size());
 
             glShaderSource(shader_handle, 1, &src_c, &src_len);
 
@@ -109,9 +114,10 @@ namespace argus {
             int res;
             glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
             if (res == GL_FALSE) {
-                int log_len;
+                GLint log_len;
                 glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
-                char *log = new char[log_len + 1];
+                _ARGUS_ASSERT(log_len >= 0, "GL shader log length is negative");
+                char *log = new char[size_t(log_len + 1)];
                 glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
                 std::string stage_str;
                 switch (stage) {
@@ -125,10 +131,11 @@ namespace argus {
                         stage_str = "unknown";
                         break;
                 }
-                get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s", stage_str.c_str(), log);
+                get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s",
+                        stage_str.c_str(), log);
             }
 
-            handles.push_back(std::make_pair(shader, shader_handle));
+            handles.emplace_back(shader, shader_handle);
         }
 
         return std::make_pair(handles, refl_info);
@@ -144,7 +151,7 @@ namespace argus {
         return link_program(std::vector<std::string>(shader_uids));
     }
 
-    LinkedProgram link_program(std::vector<std::string> shader_uids) {
+    LinkedProgram link_program(const std::vector<std::string> &shader_uids) {
         auto program_handle = glCreateProgram();
         if (!glIsProgram(program_handle)) {
             Logger::default_logger().fatal("Failed to create program: %d", glGetError());
@@ -185,18 +192,10 @@ namespace argus {
         if (res == GL_FALSE) {
             int log_len;
             glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
-            char *log = new char[log_len];
+            _ARGUS_ASSERT(log_len >= 0, "GL shader log length is negative");
+            char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
             get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
-        }
-
-        //auto proj_mat_loc = glGetUniformLocation(program, SHADER_UNIFORM_VIEW_MATRIX);
-        auto proj_mat_loc = 0;
-        int uni_size = 0;
-        GLenum uni_type = 0;
-        glGetActiveUniform(program_handle, proj_mat_loc, 0, nullptr, &uni_size, &uni_type, nullptr);
-        if (uni_type != GL_FLOAT_MAT4) {
-            proj_mat_loc = -1;
         }
 
         return LinkedProgram(program_handle, refl_info);
@@ -237,9 +236,10 @@ namespace argus {
 
     void set_per_frame_global_uniforms(LinkedProgram &program) {
         program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [] (auto time_loc) {
-            glUniform1f(time_loc,
-                static_cast<float>(
-                    static_cast<double>(
+            _ARGUS_ASSERT(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
+            glUniform1f(GLint(time_loc),
+                float(
+                    double(
                         std::chrono::time_point_cast<std::chrono::microseconds>(now()).time_since_epoch().count()
                     ) / 1000.0
                 )

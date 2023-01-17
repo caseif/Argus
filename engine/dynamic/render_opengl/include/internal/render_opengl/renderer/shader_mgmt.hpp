@@ -34,7 +34,7 @@ namespace argus {
 
     LinkedProgram link_program(std::initializer_list<std::string> shader_uids);
 
-    LinkedProgram link_program(std::vector<std::string> shader_uids);
+    LinkedProgram link_program(const std::vector<std::string> &shader_uids);
 
     void build_shaders(RendererState &state, const Resource &material_res);
 

@@ -116,7 +116,7 @@ namespace argus {
         // because this function does a lot of pointer math, it mostly works with uintptr_t
         // to reduce the likelihood of mistakes related to type conversion
 
-        size_t alignment_bytes = int(exp2(pool->alignment_exp));
+        size_t alignment_bytes = size_t(exp2(pool->alignment_exp));
 
         // the actual allocated size is the chunk size in bytes,
         // plus the maximum possible alignment padding (the alignment multiple minus 1),
@@ -225,7 +225,7 @@ namespace argus {
         // returns the number of leading clear bits (leading set bits in this case, since we invert the bitfield)
         // if the MSB is clear in the original bitfield, this returns 0
         // if all except the LSB are clear in the original bitfield, this returns 63 on x64
-        first_free_block_index = __clz(~selected_chunk->occupied_block_map);
+        first_free_block_index = size_t(__clz(~selected_chunk->occupied_block_map));
         #endif
 
         // set the relevant bit in the block map

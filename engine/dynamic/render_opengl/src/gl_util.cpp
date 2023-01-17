@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
@@ -25,7 +26,7 @@
 #include "aglet/aglet.h"
 #include "GLFW/glfw3.h"
 
-#include <cstdio>
+#include <climits>
 
 namespace argus {
     static Logger g_gl_logger("GL");
@@ -84,19 +85,23 @@ namespace argus {
 
     void set_attrib_pointer(array_handle_t array_obj, buffer_handle_t buffer_obj, binding_index_t binding_index,
             GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
+        _ARGUS_ASSERT(attr_len <= INT_MAX, "Attribute length is too big");
+
         if (AGLET_GL_ARB_direct_state_access) {
             glEnableVertexArrayAttrib(array_obj, attr_index);
-            glVertexArrayAttribFormat(array_obj, attr_index, attr_len, GL_FLOAT, GL_FALSE, *attr_offset);
+            glVertexArrayAttribFormat(array_obj, attr_index, GLint(attr_len), GL_FLOAT, GL_FALSE, *attr_offset);
             glVertexArrayAttribBinding(array_obj, attr_index, binding_index);
         } else {
+            auto stride = vertex_len * uint32_t(sizeof(GLfloat));
+            _ARGUS_ASSERT(stride <= INT_MAX, "Attribute stride is too big");
+
             glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
             glEnableVertexAttribArray(attr_index);
-            glVertexAttribPointer(attr_index, attr_len, GL_FLOAT, GL_FALSE,
-                    vertex_len * static_cast<uint32_t>(sizeof(GLfloat)),
-                    reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(*attr_offset)));
+            glVertexAttribPointer(attr_index, GLint(attr_len), GL_FLOAT, GL_FALSE,
+                    GLsizei(stride), reinterpret_cast<GLvoid*>(*attr_offset));
         }
 
-        *attr_offset += attr_len * static_cast<uint32_t>(sizeof(GLfloat));
+        *attr_offset += attr_len * GLuint(sizeof(GLfloat));
     }
 
     void try_delete_buffer(buffer_handle_t buffer) {

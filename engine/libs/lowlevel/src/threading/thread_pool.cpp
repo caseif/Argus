@@ -50,7 +50,7 @@ namespace argus {
             return UINT16_MAX;
         } else {
             // leave 2 cores, one for the OS/background processes and one for the other engine thread
-            return static_cast<uint16_t>(cores - 2);
+            return uint16_t(cores - 2);
         }
     }
 

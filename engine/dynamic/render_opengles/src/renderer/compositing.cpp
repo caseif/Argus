@@ -17,13 +17,10 @@
  */
 
 #include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
-#include "argus/wm/window.hpp"
-#include "internal/wm/pimpl/window.hpp"
-
-#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/canvas.hpp"
@@ -42,10 +39,11 @@
 
 #include "aglet/aglet.h"
 
-#include <atomic>
 #include <map>
 #include <string>
 #include <utility>
+
+#include <climits>
 
 #define BINDING_INDEX_VBO 0
 
@@ -63,46 +61,46 @@ namespace argus {
         float vp_h_off;
         float vp_v_off;
 
-        auto min_dim = std::min(resolution.x, resolution.y);
-        auto max_dim = std::max(resolution.x, resolution.y);
+        auto min_dim = float(std::min(resolution.x, resolution.y));
+        auto max_dim = float(std::max(resolution.x, resolution.y));
         switch (viewport.mode) {
             case ViewportCoordinateSpaceMode::Individual:
-                vp_h_scale = resolution.x;
-                vp_v_scale = resolution.y;
+                vp_h_scale = float(resolution.x);
+                vp_v_scale = float(resolution.y);
                 vp_h_off = 0;
                 vp_v_off = 0;
                 break;
             case ViewportCoordinateSpaceMode::MinAxis:
                 vp_h_scale = min_dim;
                 vp_v_scale = min_dim;
-                vp_h_off = resolution.x > resolution.y ? (resolution.x - resolution.y) / 2.0f : 0;
-                vp_v_off = resolution.y > resolution.x ? (resolution.y - resolution.x) / 2.0f : 0;
+                vp_h_off = resolution.x > resolution.y ? float(resolution.x - resolution.y) / 2.0f : 0;
+                vp_v_off = resolution.y > resolution.x ? float(resolution.y - resolution.x) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::MaxAxis:
                 vp_h_scale = max_dim;
                 vp_v_scale = max_dim;
-                vp_h_off = resolution.x < resolution.y ? -static_cast<float>(resolution.y - resolution.x) / 2.0f : 0;
-                vp_v_off = resolution.y < resolution.x ? -static_cast<float>(resolution.x - resolution.y) / 2.0f : 0;
+                vp_h_off = resolution.x < resolution.y ? -float(resolution.y - resolution.x) / 2.0f : 0;
+                vp_v_off = resolution.y < resolution.x ? -float(resolution.x - resolution.y) / 2.0f : 0;
                 break;
             case ViewportCoordinateSpaceMode::HorizontalAxis:
-                vp_h_scale = resolution.x;
-                vp_v_scale = resolution.x;
+                vp_h_scale = float(resolution.x);
+                vp_v_scale = float(resolution.x);
                 vp_h_off = 0;
-                vp_v_off = (static_cast<float>(resolution.y) - static_cast<float>(resolution.x)) / 2.0f;
+                vp_v_off = (float(resolution.y) - float(resolution.x)) / 2.0f;
                 break;
             case ViewportCoordinateSpaceMode::VerticalAxis:
-                vp_h_scale = resolution.y;
-                vp_v_scale = resolution.y;
-                vp_h_off = (static_cast<float>(resolution.x) - static_cast<float>(resolution.y)) / 2.0f;
+                vp_h_scale = float(resolution.y);
+                vp_v_scale = float(resolution.y);
+                vp_h_off = (float(resolution.x) - float(resolution.y)) / 2.0f;
                 vp_v_off = 0;
                 break;
         }
 
-        TransformedViewport transformed;
-        transformed.left = static_cast<int32_t>(viewport.left * vp_h_scale + vp_h_off);
-        transformed.right = static_cast<int32_t>(viewport.right * vp_h_scale + vp_h_off);
-        transformed.top = static_cast<int32_t>(viewport.top * vp_v_scale + vp_v_off);
-        transformed.bottom = static_cast<int32_t>(viewport.bottom * vp_v_scale + vp_v_off);
+        TransformedViewport transformed{};
+        transformed.left = int32_t(viewport.left * vp_h_scale + vp_h_off);
+        transformed.right = int32_t(viewport.right * vp_h_scale + vp_h_off);
+        transformed.top = int32_t(viewport.top * vp_v_scale + vp_v_off);
+        transformed.bottom = int32_t(viewport.bottom * vp_v_scale + vp_v_off);
 
         return transformed;
     }
@@ -132,13 +130,14 @@ namespace argus {
             glGenTextures(1, &viewport_state.back_frame_tex);
             glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.back_fb);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewport_state.back_frame_tex, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                    viewport_state.back_frame_tex, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -151,13 +150,15 @@ namespace argus {
             glGenTextures(1, &viewport_state.front_frame_tex);
             glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resolution->x, resolution->y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height,
+                    0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewport_state.front_frame_tex, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                    viewport_state.front_frame_tex, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -173,7 +174,9 @@ namespace argus {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, resolution->x, resolution->y);
+        _ARGUS_ASSERT(resolution->x <= INT_MAX && resolution->y <= INT_MAX, "Resolution is too big for glViewport");
+
+        glViewport(0, 0, GLsizei(resolution->x), GLsizei(resolution->y));
 
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
@@ -192,14 +195,16 @@ namespace argus {
 
                 auto view_mat = viewport_state.view_matrix;
                 program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat] (auto vm_loc) {
-                    glUniformMatrix4fv(vm_loc, 1, GL_TRUE, view_mat.data);
+                    _ARGUS_ASSERT(vm_loc <= INT_MAX, "View matrix uniform location is too big");
+                    glUniformMatrix4fv(GLint(vm_loc), 1, GL_TRUE, view_mat.data);
                 });
             }
 
             if (animated) {
                 auto &stride = bucket.second->atlas_stride;
                 program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride] (auto loc) {
-                    glUniform2f(loc, stride.x, stride.y);
+                    _ARGUS_ASSERT(loc <= INT_MAX, "UV stride uniform location is too big");
+                    glUniform2f(GLint(loc), stride.x, stride.y);
                 });
             }
 
@@ -213,7 +218,7 @@ namespace argus {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(bucket.second->vertex_count));
+            glDrawArrays(GL_TRIANGLES, 0, GLsizei(bucket.second->vertex_count));
 
             glBindVertexArray(0);
         }
@@ -268,9 +273,12 @@ namespace argus {
         auto viewport_width_px = std::abs(viewport_px.right - viewport_px.left);
         auto viewport_height_px = std::abs(viewport_px.bottom - viewport_px.top);
 
+        auto viewport_y = GLsizei(resolution->y) - viewport_px.bottom;
+        _ARGUS_ASSERT(resolution->y <= INT_MAX && viewport_y <= INT_MAX, "Viewport Y is too big for glViewport");
+
         glViewport(
             viewport_px.left,
-            resolution->y - viewport_px.bottom,
+            GLsizei(viewport_y),
             viewport_width_px,
             viewport_height_px
         );

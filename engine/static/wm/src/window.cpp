@@ -38,36 +38,34 @@
 
 #include "GLFW/glfw3.h"
 
-#include <atomic>
 #include <functional>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
+#include <climits>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 
 #define DEF_WINDOW_DIM 300
 
 // The window has no associated state yet.
-#define WINDOW_STATE_NULL                   0x00
+#define WINDOW_STATE_NULL                   0x00U
 // The window has been created in memory and a Create event has been posted.
-#define WINDOW_STATE_CREATED                0x01
+#define WINDOW_STATE_CREATED                0x01U
 // The window has been configured for use (Window::commit has been invoked).
-#define WINDOW_STATE_COMMITTED              0x02
+#define WINDOW_STATE_COMMITTED              0x02U
 // The window and its renderer have been fully initialized and the window is
 // completely ready for use.
-#define WINDOW_STATE_READY                  0x04
+#define WINDOW_STATE_READY                  0x04U
 // The window has been made visible.
-#define WINDOW_STATE_VISIBLE                0x08
+#define WINDOW_STATE_VISIBLE                0x08U
 // Someone has requested that the window be closed.
-#define WINDOW_STATE_CLOSE_REQUESTED        0x10
+#define WINDOW_STATE_CLOSE_REQUESTED        0x10U
 // The Window has acknowledged the close request and will honor it on its next
 // update. This delay allows clients a chance to observe and react to the closed
 // status before the Window object is deinitialized.
-#define WINDOW_STATE_CLOSE_REQUEST_ACKED    0x20
+#define WINDOW_STATE_CLOSE_REQUEST_ACKED    0x20U
 
 namespace argus {
     static WindowCallback g_window_construct_callback = nullptr;
@@ -310,24 +308,30 @@ namespace argus {
                     cur_display_mode = get_display_mode();
                 }
 
+                _ARGUS_ASSERT(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
+                        "Current display mode fullscreen resolution is too large");
+
                 glfwSetWindowMonitor(pimpl->handle,
                     get_display_affinity().pimpl->handle,
                     0,
                     0,
-                    cur_display_mode.resolution.x,
-                    cur_display_mode.resolution.y,
+                    int(cur_display_mode.resolution.x),
+                    int(cur_display_mode.resolution.y),
                     cur_display_mode.refresh_rate);
 
                 pimpl->cur_resolution = cur_display_mode.resolution;
                 pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
             } else {
+                _ARGUS_ASSERT(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
+                        "Current windowed resolution is too large");
+
                 // switch to windowed mode
                 glfwSetWindowMonitor(pimpl->handle,
-                    NULL,
+                    nullptr,
                     position->x,
                     position->y,
-                    windowed_res->x,
-                    windowed_res->y,
+                    int32_t(windowed_res->x),
+                    int32_t(windowed_res->y),
                     GLFW_DONT_CARE);
                 pimpl->cur_resolution = windowed_res;
             }
@@ -341,21 +345,24 @@ namespace argus {
                 cur_display_mode = get_display_mode();
             }
 
-            if (true || cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
+            _ARGUS_ASSERT(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
+                    "Current display mode fullscreen resolution is too large");
+
+            if (cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
                 glfwSetWindowMonitor(pimpl->handle,
                     get_display_affinity().pimpl->handle,
                     0,
                     0,
-                    cur_display_mode.resolution.x,
-                    cur_display_mode.resolution.y,
+                    int32_t(cur_display_mode.resolution.x),
+                    int32_t(cur_display_mode.resolution.y),
                     cur_display_mode.refresh_rate);
                 
                 pimpl->cur_resolution = cur_display_mode.resolution;
                 pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
             } else {
                 glfwSetWindowSize(pimpl->handle,
-                    cur_display_mode.resolution.x,
-                    cur_display_mode.resolution.y);
+                    int32_t(cur_display_mode.resolution.x),
+                    int32_t(cur_display_mode.resolution.y));
 
                 pimpl->cur_resolution = cur_display_mode.resolution;
             }
@@ -363,9 +370,12 @@ namespace argus {
             // update windowed positon and/or resolution
 
             if (windowed_res.dirty) {
+                _ARGUS_ASSERT(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
+                        "Current windowed resolution is too large");
+
                 glfwSetWindowSize(pimpl->handle,
-                    windowed_res->x,
-                    windowed_res->y);
+                    int32_t(windowed_res->x),
+                    int32_t(windowed_res->y));
 
                 pimpl->cur_resolution = windowed_res;
             }

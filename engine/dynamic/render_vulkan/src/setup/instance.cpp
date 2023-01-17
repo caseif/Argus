@@ -143,7 +143,7 @@ namespace argus {
         uint32_t layers_count;
         #ifdef _ARGUS_DEBUG_MODE
             layers = validation_layers.data();
-            layers_count = static_cast<uint32_t>(validation_layers.size());
+            layers_count = uint32_t(validation_layers.size());
         #else
             layers = nullptr;
             layers_count = 0;
