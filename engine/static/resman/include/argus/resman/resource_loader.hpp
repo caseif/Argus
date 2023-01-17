@@ -74,7 +74,7 @@ namespace argus {
             /**
              * \brief Destroys the ResourceLoader.
              */
-            ~ResourceLoader(void);
+            virtual ~ResourceLoader(void);
 
             /**
              * \brief Loads \link Resource Resources \endlink this one is
