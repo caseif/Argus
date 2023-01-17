@@ -19,7 +19,6 @@ function(_argus_set_compile_flags TARGET)
       "-Wuninitialized"
       "-Wimplicit-fallthrough"
       "-Wreturn-type"
-      "-Weffc++"
       "-Wdeprecated"
       "-Wconversion")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
@@ -43,6 +42,9 @@ function(_argus_set_compile_flags TARGET)
         "-Wno-gnu-zero-variadic-macro-arguments"
         "-Wno-gnu-anonymous-struct"
         "-Wno-zero-length-array")
+      # enable -Weffc++ for clang only
+      target_compile_options("${TARGET}" PUBLIC
+        "-Weffc++")
       if("${USE_ASAN}")
         target_compile_options("${TARGET}" PUBLIC
           "-fsanitize=address"

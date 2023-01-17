@@ -25,7 +25,10 @@
 #include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/loader/sprite_loader.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #include "nlohmann/json.hpp"
+#pragma GCC diagnostic pop
 
 #define KEY_STATIC_FRAME "static_frame"
 #define KEY_STATIC_FRAME_X "x"

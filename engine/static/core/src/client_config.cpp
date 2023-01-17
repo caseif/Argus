@@ -18,21 +18,21 @@
 
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/streams.hpp"
 
 #include "argus/core/client_config.hpp"
 #include "argus/core/client_properties.hpp"
 #include "argus/core/downstream_config.hpp"
-#include "internal/core/client_properties.hpp"
 #include "internal/core/engine_config.hpp"
 
 #include "arp/arp.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #include "nlohmann/json.hpp"
+#pragma GCC diagnostic pop
 
 #include <filesystem>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -98,39 +98,39 @@ namespace argus {
         return std::filesystem::current_path() / RESOURCES_DIR;
     }
 
-    static std::optional<std::string> _get_json_string(nlohmann::json root, std::string key) {
+    static std::optional<std::string> _get_json_string(nlohmann::json root, const std::string &key) {
         if (root.contains(key) && root[key].is_string()) {
-            return root[key];
+            return std::make_optional(root[key]);
         } else {
-            return nullptr;
+            return std::nullopt;
         }
     }
 
-    static std::optional<unsigned int> _get_json_uint(nlohmann::json root, std::string key) {
+    static std::optional<unsigned int> _get_json_uint(nlohmann::json root, const std::string &key) {
         if (root.contains(key) && root[key].is_number_integer()) {
-            return root[key];
+            return std::make_optional(root[key]);
         } else {
-            return std::make_optional<unsigned int>();
+            return std::nullopt;
         }
     }
 
-    static std::optional<int> _get_json_int(nlohmann::json root, std::string key) {
+    static std::optional<int> _get_json_int(nlohmann::json root, const std::string &key) {
         if (root.contains(key) && root[key].is_number_integer()) {
-            return root[key];
+            return std::make_optional(root[key]);
         } else {
-            return std::make_optional<int>();
+            return std::nullopt;
         }
     }
 
-    static std::optional<bool> _get_json_bool(nlohmann::json root, std::string key) {
+    static std::optional<bool> _get_json_bool(nlohmann::json root, const std::string &key) {
         if (root.contains(key) && root[key].is_boolean()) {
             return root[key];
         } else {
-            return std::make_optional<bool>();
+            return std::nullopt;
         }
     }
 
-    static void _ingest_client_properties(nlohmann::json client_obj) {
+    static void _ingest_client_properties(const nlohmann::json &client_obj) {
         if (auto id = _get_json_string(client_obj, KEY_CLIENT_ID); id.has_value()) {
             set_client_id(id.value());
         }
@@ -147,26 +147,26 @@ namespace argus {
     static void _ingest_engine_config(nlohmann::json engine_obj) {
         if (engine_obj.contains(KEY_ENGINE_MODULES) && engine_obj[KEY_ENGINE_MODULES].is_array()) {
             std::vector<std::string> modules;
-            for (auto module_obj : engine_obj[KEY_ENGINE_MODULES]) {
+            for (const auto &module_obj : engine_obj[KEY_ENGINE_MODULES]) {
                 if (module_obj.is_string()) {
                     modules.push_back(module_obj);
                 }
             }
 
-            if (modules.size() > 0) {
+            if (!modules.empty()) {
                 set_load_modules(modules);
             }
         }
 
         if (engine_obj.contains(KEY_ENGINE_RENDER_BACKENDS) && engine_obj[KEY_ENGINE_RENDER_BACKENDS].is_array()) {
             std::vector<std::string> backends;
-            for (auto rb_obj : engine_obj[KEY_ENGINE_RENDER_BACKENDS]) {
+            for (const auto &rb_obj : engine_obj[KEY_ENGINE_RENDER_BACKENDS]) {
                 if (rb_obj.is_string()) {
                     backends.push_back(rb_obj);
                 }
             }
 
-            if (backends.size() > 0) {
+            if (!backends.empty()) {
                 set_render_backends(backends);
             }
         }
@@ -249,7 +249,7 @@ namespace argus {
         set_initial_window_parameters(win_params);
     }
 
-    static void _ingest_bindings_config(nlohmann::json bindings_obj) {
+    static void _ingest_bindings_config(const nlohmann::json &bindings_obj) {
         if (auto res_id = _get_json_string(bindings_obj, KEY_BINDINGS_DEFAULT_BINDINGS_RESOURCE); res_id.has_value()) {
             set_default_bindings_resource_id(res_id.value());
         }

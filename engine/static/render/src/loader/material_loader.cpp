@@ -30,10 +30,12 @@
 #include "internal/render/common/backend.hpp"
 #include "internal/render/loader/material_loader.hpp"
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "nlohmann/detail/exceptions.hpp"
+#pragma GCC diagnostic pop
 
 #include <algorithm>
 #include <exception>
