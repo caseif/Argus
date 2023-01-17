@@ -27,8 +27,6 @@
 
 #include "nlohmann/json.hpp"
 
-#define KEY_WIDTH "width"
-#define KEY_HEIGHT "height"
 #define KEY_STATIC_FRAME "static_frame"
 #define KEY_STATIC_FRAME_X "x"
 #define KEY_STATIC_FRAME_Y "y"
@@ -67,16 +65,6 @@ namespace argus {
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 
             SpriteDef sprite;
-
-            // required attribute
-            sprite.base_size.x = json_root.at(KEY_WIDTH);
-            // required attribute
-            sprite.base_size.y = json_root.at(KEY_HEIGHT);
-
-            if (sprite.base_size.x <= 0 || sprite.base_size.y <= 0) {
-                Logger::default_logger().severe("Sprite dimensions must be > 0");
-                return nullptr;
-            }
 
             if (json_root.contains(KEY_SPEED)) {
                 sprite.def_speed = json_root.at(KEY_SPEED);

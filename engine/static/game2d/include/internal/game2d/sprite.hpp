@@ -39,7 +39,6 @@ namespace argus {
     };
 
     struct SpriteDef {
-        Vector2f base_size;
         std::string def_anim;
         float def_speed;
         std::string atlas;
