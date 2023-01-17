@@ -60,7 +60,7 @@ namespace argus {
         UNUSED(manager);
         UNUSED(proto);
         UNUSED(size);
-        Logger::default_logger().debug("Loading material %s", proto.uid.c_str());
+        Logger::default_logger().debug("Loading sprite %s", proto.uid.c_str());
         try {
             nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
 
