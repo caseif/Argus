@@ -38,10 +38,6 @@ namespace argus {
                 refcount(1) {
         }
 
-        ~RefCountable(void) {
-            value.~T();
-        }
-
         void acquire(void) {
             refcount++;
         }

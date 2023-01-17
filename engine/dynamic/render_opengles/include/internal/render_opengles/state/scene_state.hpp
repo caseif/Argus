@@ -57,6 +57,8 @@ namespace argus {
 
         Scene2DState(RendererState &parent_state, Scene &scene);
 
+        Scene2DState(const Scene2DState &rhs) = delete;
+
         ~Scene2DState(void);
     };
 }

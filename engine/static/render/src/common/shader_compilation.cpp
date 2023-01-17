@@ -26,6 +26,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
 #pragma GCC diagnostic pop

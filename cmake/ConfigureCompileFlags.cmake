@@ -20,6 +20,7 @@ function(_argus_set_compile_flags TARGET)
       "-Wimplicit-fallthrough"
       "-Wreturn-type"
       "-Weffc++"
+      "-Wdeprecated"
       "-Wconversion"
       "-Wno-error=conversion"
       "-Wno-error=sign-conversion")

@@ -80,8 +80,7 @@ namespace argus {
                     Logger::default_logger().fatal("Failed to get scene state");
                 }
 
-                Scene2DState state = Scene2DState(*this, scene);
-                auto insert_res = this->scene_states_2d.insert({&scene_2d, state});
+                auto insert_res = this->scene_states_2d.try_emplace(&scene_2d, *this, scene);
                 if (!insert_res.second) {
                     Logger::default_logger().fatal("Failed to create new scene state");
                 }
