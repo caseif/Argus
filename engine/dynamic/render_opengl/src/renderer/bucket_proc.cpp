@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
+#include "argus/lowlevel/types.hpp"
 
 #include "argus/resman/resource.hpp"
 

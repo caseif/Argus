@@ -79,7 +79,7 @@ namespace argus::input {
                 }
             } else {
                 if (pair.first != last_index + 1) {
-                    free_index = last_index + 1;
+                    free_index = ControllerIndex(last_index + 1);
                     break;
                 }
 

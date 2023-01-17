@@ -19,6 +19,7 @@
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/types.hpp"
 
 #include "argus/core/callback.hpp"
 #include "argus/core/event.hpp"
