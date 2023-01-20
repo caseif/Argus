@@ -119,8 +119,8 @@ namespace argus {
         return _get_primary_layer(*this).create_static_object(id, sprite, size, transform);
     }
 
-    void World2D::delete_static_object(const Uuid &uuid) {
-        return _get_primary_layer(*this).delete_static_object(uuid);
+    void World2D::delete_static_object(const std::string &id) {
+        return _get_primary_layer(*this).delete_static_object(id);
     }
 
     GameObject2D &World2D::get_game_object(const Uuid &uuid) const {

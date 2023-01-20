@@ -36,6 +36,7 @@
 #include "internal/game2d/world2d_layer.hpp"
 #include "internal/game2d/pimpl/game_object_2d.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
+#include "internal/game2d/pimpl/static_object_2d.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
 #include "internal/game2d/pimpl/world2d_layer.hpp"
 #include "argus/lowlevel/debug.hpp"
@@ -83,7 +84,16 @@ namespace argus {
         _ARGUS_ASSERT(it != pimpl->static_objects.cend(),
                 "No object with ID exists for world layer (in delete_static_object)");
 
+        auto &static_obj = it->second;
+
+        auto render_obj = static_obj->pimpl->render_obj;
+        if (!render_obj.empty()) {
+            pimpl->scene->remove_member_object(render_obj);
+        }
+
         pimpl->static_objects.erase(it);
+
+        delete static_obj;
     }
 
     GameObject2D &World2DLayer::get_game_object(const Uuid &uuid) const {
@@ -105,7 +115,16 @@ namespace argus {
         _ARGUS_ASSERT(it != pimpl->game_objects.cend(),
                 "No object with UUID exists for world layer (in delete_game_object)");
 
+        auto &game_obj = it->second;
+
+        auto render_obj = game_obj->pimpl->render_obj;
+        if (!render_obj.empty()) {
+            pimpl->scene->remove_member_object(render_obj);
+        }
+
         pimpl->game_objects.erase(it);
+
+        delete game_obj;
     }
 
     static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
@@ -225,6 +244,8 @@ namespace argus {
             render_obj = &_create_render_object(static_obj.get_id(), layer, static_obj.get_sprite(),
                     static_obj.get_size());
             render_obj->set_transform(get_render_transform(layer.get_world(), static_obj.get_transform()));
+
+            static_obj.pimpl->render_obj = render_obj->get_id();
         }
 
         _update_sprite_frame(static_obj.get_sprite(), *render_obj);
@@ -239,6 +260,8 @@ namespace argus {
         } else {
             render_obj = &_create_render_object(game_obj.get_uuid().to_string(), layer, game_obj.get_sprite(),
                     game_obj.get_size());
+
+            game_obj.pimpl->render_obj = render_obj->get_id();
         }
 
         auto read_transform = game_obj.pimpl->transform.read();

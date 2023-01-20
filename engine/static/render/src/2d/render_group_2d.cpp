@@ -140,9 +140,9 @@ namespace argus {
 
         auto &object = object_opt.value().get();
 
-        if (&object.pimpl->parent_group != this) {
+        /*if (&object.pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderObject2D is not a child of RenderGroup2D");
-        }
+        }*/
 
         remove_from_vector(pimpl->child_objects, &object);
 

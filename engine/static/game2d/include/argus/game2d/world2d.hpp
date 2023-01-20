@@ -65,7 +65,7 @@ namespace argus {
         StaticObject2D &create_static_object(const std::string &id, const std::string &sprite, const Vector2f &size,
                 const Transform2D &transform);
 
-        void delete_static_object(const Uuid &uuid);
+        void delete_static_object(const std::string &id);
 
         GameObject2D &get_game_object(const Uuid &uuid) const;
 

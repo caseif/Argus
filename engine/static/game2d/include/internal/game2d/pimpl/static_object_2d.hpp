@@ -33,7 +33,7 @@ namespace argus {
         const Vector2f size;
         const Transform2D transform;
 
-        RenderObject2D *render_obj;
+        std::string render_obj;
 
         pimpl_StaticObject2D(const std::string &id, Resource &sprite_def_res, Sprite &sprite,
                 const Vector2f &size, const Transform2D &transform):
@@ -41,7 +41,8 @@ namespace argus {
             sprite_def_res(sprite_def_res),
             sprite(sprite),
             size(size),
-            transform(transform) {
+            transform(transform),
+            render_obj("") {
         }
     };
 }
