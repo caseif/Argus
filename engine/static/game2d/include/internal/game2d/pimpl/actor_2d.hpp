@@ -18,37 +18,32 @@
 
 #pragma once
 
-#include "argus/lowlevel/uuid.hpp"
+#include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/transform.hpp"
+#include "argus/render/2d/render_object_2d.hpp"
 
 #include "argus/game2d/sprite.hpp"
 
-#include <string>
-
 namespace argus {
-    // forward declarations
-    struct pimpl_GameObject2D;
+    struct pimpl_Actor2D {
+        const Uuid uuid;
+        const Vector2f size;
+        Dirtiable<Transform2D> transform;
 
-    class GameObject2D {
-       public:
-        pimpl_GameObject2D *pimpl;
+        Resource &sprite_def_res;
+        Sprite &sprite;
 
-        GameObject2D(const std::string &sprite_uid, const Vector2f &size, const Transform2D &transform);
+        std::string render_obj;
 
-        GameObject2D(const GameObject2D &rhs) = delete;
-        GameObject2D(GameObject2D &&rhs) = delete;
-
-        ~GameObject2D(void);
-
-        const Uuid &get_uuid(void) const;
-
-        const Vector2f &get_size(void) const;
-
-        const Transform2D &get_transform(void) const;
-
-        void set_transform(const Transform2D &transform);
-
-        Sprite &get_sprite(void) const;
+        pimpl_Actor2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
+                Resource &sprite_def_res, Sprite &sprite):
+            uuid(uuid),
+            size(size),
+            transform(transform),
+            sprite_def_res(sprite_def_res),
+            sprite(sprite),
+            render_obj("") {
+        }
     };
 }

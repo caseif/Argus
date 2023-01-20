@@ -34,7 +34,7 @@
 #include "internal/game2d/defines.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/world2d_layer.hpp"
-#include "internal/game2d/pimpl/game_object_2d.hpp"
+#include "internal/game2d/pimpl/actor_2d.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/pimpl/static_object_2d.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
@@ -96,35 +96,35 @@ namespace argus {
         delete static_obj;
     }
 
-    GameObject2D &World2DLayer::get_game_object(const Uuid &uuid) const {
-        auto it = pimpl->game_objects.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->game_objects.cend(),
+    Actor2D &World2DLayer::get_actor(const Uuid &uuid) const {
+        auto it = pimpl->actors.find(uuid);
+        _ARGUS_ASSERT(it != pimpl->actors.cend(),
                 "No object with UUID exists for world layer (in get_game_object)");
         return *it->second;
     }
 
-    GameObject2D &World2DLayer::create_game_object(const std::string &sprite, const Vector2f &size,
+    Actor2D &World2DLayer::create_actor(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
-        auto *obj = new GameObject2D(sprite, size, transform);
-        pimpl->game_objects.insert({ obj->get_uuid(), obj });
+        auto *obj = new Actor2D(sprite, size, transform);
+        pimpl->actors.insert({ obj->get_uuid(), obj });
         return *obj;
     }
 
-    void World2DLayer::delete_game_object(const Uuid &uuid) {
-        auto it = pimpl->game_objects.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->game_objects.cend(),
-                "No object with UUID exists for world layer (in delete_game_object)");
+    void World2DLayer::delete_actor(const Uuid &uuid) {
+        auto it = pimpl->actors.find(uuid);
+        _ARGUS_ASSERT(it != pimpl->actors.cend(),
+                "No actor with UUID exists for world layer (in delete_game_object)");
 
-        auto &game_obj = it->second;
+        auto &actor = it->second;
 
-        auto render_obj = game_obj->pimpl->render_obj;
+        auto render_obj = actor->pimpl->render_obj;
         if (!render_obj.empty()) {
             pimpl->scene->remove_member_object(render_obj);
         }
 
-        pimpl->game_objects.erase(it);
+        pimpl->actors.erase(it);
 
-        delete game_obj;
+        delete actor;
     }
 
     static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
@@ -251,25 +251,25 @@ namespace argus {
         _update_sprite_frame(static_obj.get_sprite(), *render_obj);
     }
 
-    static void _render_game_object(World2DLayer &layer, GameObject2D &game_obj) {
+    static void _render_actor(World2DLayer &layer, Actor2D &actor) {
         RenderObject2D *render_obj;
 
-        auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + game_obj.get_uuid().to_string());
+        auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + actor.get_uuid().to_string());
         if (render_obj_opt.has_value()) {
             render_obj = &render_obj_opt->get();
         } else {
-            render_obj = &_create_render_object(game_obj.get_uuid().to_string(), layer, game_obj.get_sprite(),
-                    game_obj.get_size());
+            render_obj = &_create_render_object(actor.get_uuid().to_string(), layer, actor.get_sprite(),
+                    actor.get_size());
 
-            game_obj.pimpl->render_obj = render_obj->get_id();
+            actor.pimpl->render_obj = render_obj->get_id();
         }
 
-        auto read_transform = game_obj.pimpl->transform.read();
+        auto read_transform = actor.pimpl->transform.read();
         if (read_transform.dirty) {
             render_obj->set_transform(get_render_transform(layer.get_world(), read_transform));
         }
 
-        _update_sprite_frame(game_obj.get_sprite(), *render_obj);
+        _update_sprite_frame(actor.get_sprite(), *render_obj);
     }
 
     void render_world_layer(World2DLayer &layer) {
@@ -285,11 +285,11 @@ namespace argus {
             _render_static_object(layer, *kv.second);
         }
 
-        for (auto &kv : layer.pimpl->game_objects) {
+        for (auto &kv : layer.pimpl->actors) {
             if (!kv.second->get_sprite().is_current_animation_static()) {
                 _advance_sprite_animation(kv.second->get_sprite());
             }
-            _render_game_object(layer, *kv.second);
+            _render_actor(layer, *kv.second);
         }
     }
 }

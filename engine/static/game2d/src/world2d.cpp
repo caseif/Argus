@@ -123,16 +123,16 @@ namespace argus {
         return _get_primary_layer(*this).delete_static_object(id);
     }
 
-    GameObject2D &World2D::get_game_object(const Uuid &uuid) const {
-        return _get_primary_layer(*this).get_game_object(uuid);
+    Actor2D &World2D::get_actor(const Uuid &uuid) const {
+        return _get_primary_layer(*this).get_actor(uuid);
     }
 
-    GameObject2D &World2D::create_game_object(const std::string &sprite, const Vector2f &size,
+    Actor2D &World2D::create_actor(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
-        return _get_primary_layer(*this).create_game_object(sprite, size, transform);
+        return _get_primary_layer(*this).create_actor(sprite, size, transform);
     }
 
-    void World2D::delete_game_object(const Uuid &uuid) {
-        return _get_primary_layer(*this).delete_game_object(uuid);
+    void World2D::delete_actor(const Uuid &uuid) {
+        return _get_primary_layer(*this).delete_actor(uuid);
     }
 }
