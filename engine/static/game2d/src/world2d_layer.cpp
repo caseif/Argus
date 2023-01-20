@@ -64,24 +64,48 @@ namespace argus {
         return pimpl->world;
     }
 
-    GameObject2D &World2DLayer::get_object(const Uuid &uuid) const {
-        auto it = pimpl->objects.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->objects.cend(), "No object with UUID exists for world layer (in get_object)");
+    StaticObject2D &World2DLayer::get_static_object(const std::string &id) const {
+        auto it = pimpl->static_objects.find(id);
+        _ARGUS_ASSERT(it != pimpl->static_objects.cend(),
+                "No object with ID exists for world layer (in get_static_object)");
         return *it->second;
     }
 
-    GameObject2D &World2DLayer::create_object(const std::string &sprite, const Vector2f &size,
-            const Transform2D &transform) {
-        auto *obj = new GameObject2D(sprite, size, transform);
-        pimpl->objects.insert({ obj->get_uuid(), obj });
+    StaticObject2D &World2DLayer::create_static_object(const std::string &id, const std::string &sprite,
+            const Vector2f &size, const Transform2D &transform) {
+        auto *obj = new StaticObject2D(id, sprite, size, transform);
+        pimpl->static_objects.insert({ id, obj });
         return *obj;
     }
 
-    void World2DLayer::delete_object(const Uuid &uuid) {
-        auto it = pimpl->objects.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->objects.cend(), "No object with UUID exists for world layer (in delete_object)");
+    void World2DLayer::delete_static_object(const std::string &id) {
+        auto it = pimpl->static_objects.find(id);
+        _ARGUS_ASSERT(it != pimpl->static_objects.cend(),
+                "No object with ID exists for world layer (in delete_static_object)");
 
-        pimpl->objects.erase(it);
+        pimpl->static_objects.erase(it);
+    }
+
+    GameObject2D &World2DLayer::get_game_object(const Uuid &uuid) const {
+        auto it = pimpl->game_objects.find(uuid);
+        _ARGUS_ASSERT(it != pimpl->game_objects.cend(),
+                "No object with UUID exists for world layer (in get_game_object)");
+        return *it->second;
+    }
+
+    GameObject2D &World2DLayer::create_game_object(const std::string &sprite, const Vector2f &size,
+            const Transform2D &transform) {
+        auto *obj = new GameObject2D(sprite, size, transform);
+        pimpl->game_objects.insert({ obj->get_uuid(), obj });
+        return *obj;
+    }
+
+    void World2DLayer::delete_game_object(const Uuid &uuid) {
+        auto it = pimpl->game_objects.find(uuid);
+        _ARGUS_ASSERT(it != pimpl->game_objects.cend(),
+                "No object with UUID exists for world layer (in delete_game_object)");
+
+        pimpl->game_objects.erase(it);
     }
 
     static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
@@ -127,68 +151,94 @@ namespace argus {
         }
     }
 
-    static void _render_object(World2DLayer &layer, GameObject2D &game_obj) {
+    static RenderObject2D &_create_render_object(const std::string &id, World2DLayer &layer, Sprite &sprite,
+            const Vector2f &size) {
+        auto &sprite_def = sprite.pimpl->get_def();
+
+        std::vector<RenderPrim2D> prims;
+
+        auto scaled_size = size / layer.get_world().get_scale_factor();
+
+        Vertex2D v1, v2, v3, v4;
+
+        v1.position = { 0, 0 };
+        v2.position = { 0, scaled_size.y };
+        v3.position = { scaled_size.x, scaled_size.y };
+        v4.position = { scaled_size.x, 0 };
+
+        v1.tex_coord = { 0, 0 };
+        v2.tex_coord = { 0, 1 };
+        v3.tex_coord = { 1, 1 };
+        v4.tex_coord = { 1, 0 };
+
+        auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
+        auto atlas_w = anim_tex.get<TextureData>().width;
+        auto atlas_h = anim_tex.get<TextureData>().height;
+        anim_tex.release();
+
+        size_t frame_off = 0;
+        for (auto &kv : sprite.pimpl->get_def().animations) {
+            auto &anim = kv.second;
+
+            sprite.pimpl->anim_start_offsets.insert({ anim.id, frame_off });
+            frame_off += anim.frames.size();
+        }
+
+        prims.push_back(RenderPrim2D({ v1, v2, v3 }));
+        prims.push_back(RenderPrim2D({ v1, v3, v4 }));
+
+        //TODO: make this reusable
+        auto mat_uid = "internal:game2d/material/sprite_mat_" + id;
+        ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
+                Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
+
+        float atlas_stride_x;
+        float atlas_stride_y;
+        if (sprite.pimpl->get_def().tile_size.x > 0) {
+            atlas_stride_x = float(sprite.pimpl->get_def().tile_size.x)
+                             / float(atlas_w);
+            atlas_stride_y = float(sprite.pimpl->get_def().tile_size.y)
+                             / float(atlas_h);
+        } else {
+            atlas_stride_x = 1.0;
+            atlas_stride_y = 1.0;
+        }
+
+        return layer.pimpl->scene->create_child_object(GAME_OBJ_PREFIX + id,
+                mat_uid, prims, { atlas_stride_x, atlas_stride_y }, {});
+    }
+
+    static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {
+        auto cur_frame = sprite.pimpl->cur_frame.read();
+        if (cur_frame.dirty) {
+            render_obj.set_active_frame(sprite.pimpl->cur_anim->frames[cur_frame].offset);
+        }
+    }
+
+    static void _render_static_object(World2DLayer &layer, StaticObject2D &static_obj) {
         RenderObject2D *render_obj;
 
-        auto &sprite = game_obj.get_sprite();
+        auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + static_obj.get_id());
+        if (render_obj_opt.has_value()) {
+            render_obj = &render_obj_opt->get();
+        } else {
+            render_obj = &_create_render_object(static_obj.get_id(), layer, static_obj.get_sprite(),
+                    static_obj.get_size());
+            render_obj->set_transform(get_render_transform(layer.get_world(), static_obj.get_transform()));
+        }
+
+        _update_sprite_frame(static_obj.get_sprite(), *render_obj);
+    }
+
+    static void _render_game_object(World2DLayer &layer, GameObject2D &game_obj) {
+        RenderObject2D *render_obj;
 
         auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + game_obj.get_uuid().to_string());
         if (render_obj_opt.has_value()) {
             render_obj = &render_obj_opt->get();
         } else {
-            auto &sprite_def = sprite.pimpl->get_def();
-
-            std::vector<RenderPrim2D> prims;
-
-            auto scaled_size = game_obj.get_size() / layer.get_world().get_scale_factor();
-
-            Vertex2D v1, v2, v3, v4;
-
-            v1.position = { 0, 0 };
-            v2.position = { 0, scaled_size.y };
-            v3.position = { scaled_size.x, scaled_size.y };
-            v4.position = { scaled_size.x, 0 };
-
-            v1.tex_coord = { 0, 0 };
-            v2.tex_coord = { 0, 1 };
-            v3.tex_coord = { 1, 1 };
-            v4.tex_coord = { 1, 0 };
-
-            auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
-            auto atlas_w = anim_tex.get<TextureData>().width;
-            auto atlas_h = anim_tex.get<TextureData>().height;
-            anim_tex.release();
-
-            size_t frame_off = 0;
-            for (auto &kv : sprite.pimpl->get_def().animations) {
-                auto &anim = kv.second;
-
-                sprite.pimpl->anim_start_offsets.insert({ anim.id, frame_off });
-                frame_off += anim.frames.size();
-            }
-
-            prims.push_back(RenderPrim2D({ v1, v2, v3 }));
-            prims.push_back(RenderPrim2D({ v1, v3, v4 }));
-
-            //TODO: make this reusable
-            auto mat_uid = "internal:game2d/material/sprite_mat_" + game_obj.get_uuid().to_string();
-            ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
-                    Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
-
-            float atlas_stride_x;
-            float atlas_stride_y;
-            if (sprite.pimpl->get_def().tile_size.x > 0) {
-                atlas_stride_x = float(sprite.pimpl->get_def().tile_size.x)
-                                       / float(atlas_w);
-                atlas_stride_y = float(sprite.pimpl->get_def().tile_size.y)
-                                       / float(atlas_h);
-            } else {
-                atlas_stride_x = 1.0;
-                atlas_stride_y = 1.0;
-            }
-
-            render_obj = &layer.pimpl->scene->create_child_object(GAME_OBJ_PREFIX + game_obj.get_uuid().to_string(),
-                    mat_uid, prims, { atlas_stride_x, atlas_stride_y }, {});
+            render_obj = &_create_render_object(game_obj.get_uuid().to_string(), layer, game_obj.get_sprite(),
+                    game_obj.get_size());
         }
 
         auto read_transform = game_obj.pimpl->transform.read();
@@ -196,10 +246,7 @@ namespace argus {
             render_obj->set_transform(get_render_transform(layer.get_world(), read_transform));
         }
 
-        auto cur_frame = sprite.pimpl->cur_frame.read();
-        if (cur_frame.dirty) {
-            render_obj->set_active_frame(sprite.pimpl->cur_anim->frames[cur_frame].offset);
-        }
+        _update_sprite_frame(game_obj.get_sprite(), *render_obj);
     }
 
     void render_world_layer(World2DLayer &layer) {
@@ -208,11 +255,18 @@ namespace argus {
             layer.pimpl->render_camera->set_transform(get_render_transform(layer.get_world(), camera_transform));
         }
 
-        for (auto &kv : layer.pimpl->objects) {
+        for (auto &kv : layer.pimpl->static_objects) {
             if (!kv.second->get_sprite().is_current_animation_static()) {
                 _advance_sprite_animation(kv.second->get_sprite());
             }
-            _render_object(layer, *kv.second);
+            _render_static_object(layer, *kv.second);
+        }
+
+        for (auto &kv : layer.pimpl->game_objects) {
+            if (!kv.second->get_sprite().is_current_animation_static()) {
+                _advance_sprite_animation(kv.second->get_sprite());
+            }
+            _render_game_object(layer, *kv.second);
         }
     }
 }

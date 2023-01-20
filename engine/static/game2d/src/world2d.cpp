@@ -110,16 +110,29 @@ namespace argus {
         return *world.pimpl->layers[PRIMARY_LAYER_ID];
     }
 
-    GameObject2D &World2D::get_object(const Uuid &uuid) const {
-        return _get_primary_layer(*this).get_object(uuid);
+    StaticObject2D &World2D::get_static_object(const std::string &id) const {
+        return _get_primary_layer(*this).get_static_object(id);
     }
 
-    GameObject2D &World2D::create_object(const std::string &sprite, const Vector2f &size,
+    StaticObject2D &World2D::create_static_object(const std::string &id, const std::string &sprite,
+            const Vector2f &size, const Transform2D &transform) {
+        return _get_primary_layer(*this).create_static_object(id, sprite, size, transform);
+    }
+
+    void World2D::delete_static_object(const Uuid &uuid) {
+        return _get_primary_layer(*this).delete_static_object(uuid);
+    }
+
+    GameObject2D &World2D::get_game_object(const Uuid &uuid) const {
+        return _get_primary_layer(*this).get_game_object(uuid);
+    }
+
+    GameObject2D &World2D::create_game_object(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
-        return _get_primary_layer(*this).create_object(sprite, size, transform);
+        return _get_primary_layer(*this).create_game_object(sprite, size, transform);
     }
 
-    void World2D::delete_object(const Uuid &uuid) {
-        return _get_primary_layer(*this).delete_object(uuid);
+    void World2D::delete_game_object(const Uuid &uuid) {
+        return _get_primary_layer(*this).delete_game_object(uuid);
     }
 }

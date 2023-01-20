@@ -21,24 +21,27 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/transform.hpp"
-#include "argus/game2d/sprite.hpp"
+#include "argus/render/2d/render_object_2d.hpp"
+
+#include <string>
 
 namespace argus {
-    struct pimpl_GameObject2D {
-        const Uuid uuid;
-        const Vector2f size;
-        Dirtiable<Transform2D> transform;
-
+    struct pimpl_StaticObject2D {
+        const std::string id;
         Resource &sprite_def_res;
         Sprite &sprite;
+        const Vector2f size;
+        const Transform2D transform;
 
-        pimpl_GameObject2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
-                Resource &sprite_def_res, Sprite &sprite):
-            uuid(uuid),
-            size(size),
-            transform(transform),
+        RenderObject2D *render_obj;
+
+        pimpl_StaticObject2D(const std::string &id, Resource &sprite_def_res, Sprite &sprite,
+                const Vector2f &size, const Transform2D &transform):
+            id(id),
             sprite_def_res(sprite_def_res),
-            sprite(sprite) {
+            sprite(sprite),
+            size(size),
+            transform(transform) {
         }
     };
 }

@@ -37,33 +37,40 @@ namespace argus {
     struct pimpl_World2D;
 
     class World2D {
-        public:
-            static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
+       public:
+        static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
 
-            static World2D &get(const std::string &id);
+        static World2D &get(const std::string &id);
 
-            pimpl_World2D *pimpl;
+        pimpl_World2D *pimpl;
 
-            World2D(const std::string &id, Canvas &canvas, float scale_factor);
+        World2D(const std::string &id, Canvas &canvas, float scale_factor);
 
-            World2D(World2D&) = delete;
+        World2D(World2D&) = delete;
 
-            World2D(World2D&&) = delete;
+        World2D(World2D&&) = delete;
 
-            ~World2D(void);
+        ~World2D(void);
 
-            const std::string &get_id(void) const;
+        const std::string &get_id(void) const;
 
-            float get_scale_factor(void) const;
+        float get_scale_factor(void) const;
 
-            const Transform2D &get_camera_transform(void) const;
+        const Transform2D &get_camera_transform(void) const;
 
-            void set_camera_transform(const Transform2D &transform);
+        void set_camera_transform(const Transform2D &transform);
 
-            GameObject2D &get_object(const Uuid &uuid) const;
+        StaticObject2D &get_static_object(const std::string &id) const;
 
-            GameObject2D &create_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+        StaticObject2D &create_static_object(const std::string &id, const std::string &sprite, const Vector2f &size,
+                const Transform2D &transform);
 
-            void delete_object(const Uuid &uuid);
+        void delete_static_object(const Uuid &uuid);
+
+        GameObject2D &get_game_object(const Uuid &uuid) const;
+
+        GameObject2D &create_game_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+
+        void delete_game_object(const Uuid &uuid);
     };
 }

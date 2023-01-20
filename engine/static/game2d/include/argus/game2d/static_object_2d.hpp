@@ -21,24 +21,34 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/transform.hpp"
+
 #include "argus/game2d/sprite.hpp"
 
+#include <string>
+
 namespace argus {
-    struct pimpl_GameObject2D {
-        const Uuid uuid;
-        const Vector2f size;
-        Dirtiable<Transform2D> transform;
+    // forward declarations
+    struct pimpl_StaticObject2D;
 
-        Resource &sprite_def_res;
-        Sprite &sprite;
+    class StaticObject2D {
+       public:
+        pimpl_StaticObject2D *pimpl;
 
-        pimpl_GameObject2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
-                Resource &sprite_def_res, Sprite &sprite):
-            uuid(uuid),
-            size(size),
-            transform(transform),
-            sprite_def_res(sprite_def_res),
-            sprite(sprite) {
-        }
+        StaticObject2D(const std::string &id, const std::string &sprite_uid,
+                const Vector2f &size, const Transform2D &transform);
+
+        StaticObject2D(StaticObject2D&) = delete;
+
+        StaticObject2D(StaticObject2D &&rhs) noexcept;
+
+        ~StaticObject2D(void);
+
+        const std::string &get_id(void) const;
+
+        const Vector2f &get_size(void) const;
+
+        const Transform2D &get_transform(void) const;
+
+        Sprite &get_sprite(void) const;
     };
 }

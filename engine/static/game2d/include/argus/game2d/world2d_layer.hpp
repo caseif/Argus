@@ -20,8 +20,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/game2d/game_object_2d.hpp"
 #include "argus/game2d/sprite.hpp"
-#include "argus/game2d/sprite.hpp"
+#include "argus/game2d/static_object_2d.hpp"
 #include "argus/game2d/world2d.hpp"
 
 #include <functional>
@@ -48,10 +49,17 @@ namespace argus {
 
         World2D &get_world(void) const;
 
-        GameObject2D &get_object(const Uuid &uuid) const;
+        StaticObject2D &get_static_object(const std::string &id) const;
 
-        GameObject2D &create_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+        StaticObject2D &create_static_object(const std::string &id, const std::string &sprite, const Vector2f &size,
+                const Transform2D &transform);
 
-        void delete_object(const Uuid &uuid);
+        void delete_static_object(const std::string &id);
+
+        GameObject2D &get_game_object(const Uuid &uuid) const;
+
+        GameObject2D &create_game_object(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+
+        void delete_game_object(const Uuid &uuid);
     };
 }

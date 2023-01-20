@@ -23,6 +23,9 @@
 #include "argus/render/2d/camera_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 
+#include "argus/game2d/game_object_2d.hpp"
+#include "argus/game2d/static_object_2d.hpp"
+
 #include <map>
 #include <optional>
 #include <string>
@@ -38,7 +41,8 @@ namespace argus {
         Scene2D *scene;
         Camera2D *render_camera;
 
-        std::map<std::string, GameObject2D*> objects;
+        std::map<std::string, StaticObject2D*> static_objects;
+        std::map<std::string, GameObject2D*> game_objects;
 
         pimpl_World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval):
