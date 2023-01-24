@@ -28,7 +28,7 @@
 
 namespace argus {
     struct pimpl_RenderObject2D {
-        std::string id;
+        Handle handle;
         const RenderGroup2D &parent_group;
         const std::string material;
         std::vector<RenderPrim2D> primitives;
@@ -37,10 +37,10 @@ namespace argus {
         Transform2D transform;
         Dirtiable<Vector2u> active_frame;
 
-        pimpl_RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
-                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+        pimpl_RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
+                const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
                 const Transform2D &transform):
-            id(id),
+            handle(handle),
             parent_group(parent_group),
             material(material),
             primitives(primitives),

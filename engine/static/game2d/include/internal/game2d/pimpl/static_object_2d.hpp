@@ -23,6 +23,7 @@
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 
+#include <optional>
 #include <string>
 
 namespace argus {
@@ -33,7 +34,7 @@ namespace argus {
         const Vector2f size;
         const Transform2D transform;
 
-        std::string render_obj;
+        std::optional<Handle> render_obj;
 
         pimpl_StaticObject2D(const std::string &id, Resource &sprite_def_res, Sprite &sprite,
                 const Vector2f &size, const Transform2D &transform):
@@ -42,7 +43,7 @@ namespace argus {
             sprite(sprite),
             size(size),
             transform(transform),
-            render_obj("") {
+            render_obj() {
         }
     };
 }

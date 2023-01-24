@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/handle.hpp"
 #include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/common/transform.hpp"
-#include "argus/lowlevel/atomic.hpp"
 
 #include <optional>
 #include <string>
@@ -45,10 +46,15 @@ namespace argus {
      * rendering properties.
      */
     class RenderObject2D {
+        private:
+            RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
+                    const std::string &material, const std::vector<RenderPrim2D> &primitives,
+                    const Vector2f &atlas_stride, const Transform2D &transform);
+
         public:
             pimpl_RenderObject2D *pimpl;
 
-            RenderObject2D(const std::string &id, const RenderGroup2D &parent_group, const std::string &material,
+            RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
                     const Transform2D &transform);
 
@@ -57,8 +63,6 @@ namespace argus {
             RenderObject2D(RenderObject2D&&) noexcept;
 
             ~RenderObject2D();
-
-            const std::string &get_id(void) const;
 
             /**
              * \brief Gets the parent Scene of this object.

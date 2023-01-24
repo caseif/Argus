@@ -20,15 +20,14 @@
 
 #include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/uuid.hpp"
 
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/common/transform.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 
 #include <algorithm>
-#include <atomic>
 #include <string>
 #include <vector>
 
@@ -39,11 +38,17 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
-    RenderObject2D::RenderObject2D(const std::string &id, const RenderGroup2D &parent_group,
-            const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-            const Transform2D &transform) {
-        pimpl = &g_pimpl_pool.construct<pimpl_RenderObject2D>(id, parent_group, material, primitives, atlas_stride,
-                transform);
+    RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
+                material, primitives, atlas_stride, transform)) {
+    }
+
+    RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
+                    material, primitives, atlas_stride, transform)) {
+        g_render_handle_table.update_handle(handle, this);
     }
 
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
@@ -53,12 +58,9 @@ namespace argus {
 
     RenderObject2D::~RenderObject2D() {
         if (pimpl != nullptr) {
+            g_render_handle_table.release_handle(pimpl->handle);
             g_pimpl_pool.destroy(pimpl);
         }
-    }
-
-    const std::string &RenderObject2D::get_id(void) const {
-        return pimpl->id;
     }
 
     const Scene2D &RenderObject2D::get_scene(void) const {
@@ -102,9 +104,13 @@ namespace argus {
         std::vector<RenderPrim2D> prims_copy;
         std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
                [] (auto &v) { return RenderPrim2D(v); });
-        auto *copy = new RenderObject2D(pimpl->id, parent, pimpl->material, prims_copy, pimpl->atlas_stride,
+        auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
+        auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->atlas_stride,
                 pimpl->transform);
-        copy->pimpl->active_frame = pimpl->active_frame;
-        return *copy;
+        copy.pimpl->active_frame = pimpl->active_frame;
+
+        g_render_handle_table.update_handle(pimpl->handle, copy);
+
+        return copy;
     }
 }

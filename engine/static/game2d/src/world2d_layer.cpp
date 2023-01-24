@@ -87,8 +87,8 @@ namespace argus {
         auto &static_obj = it->second;
 
         auto render_obj = static_obj->pimpl->render_obj;
-        if (!render_obj.empty()) {
-            pimpl->scene->remove_member_object(render_obj);
+        if (render_obj.has_value()) {
+            pimpl->scene->remove_member_object(render_obj.value());
         }
 
         pimpl->static_objects.erase(it);
@@ -99,7 +99,7 @@ namespace argus {
     Actor2D &World2DLayer::get_actor(const Uuid &uuid) const {
         auto it = pimpl->actors.find(uuid);
         _ARGUS_ASSERT(it != pimpl->actors.cend(),
-                "No object with UUID exists for world layer (in get_game_object)");
+                "No object with UUID exists for world layer (in get_actor)");
         return *it->second;
     }
 
@@ -113,13 +113,13 @@ namespace argus {
     void World2DLayer::delete_actor(const Uuid &uuid) {
         auto it = pimpl->actors.find(uuid);
         _ARGUS_ASSERT(it != pimpl->actors.cend(),
-                "No actor with UUID exists for world layer (in delete_game_object)");
+                "No actor with UUID exists for world layer (in delete_actor)");
 
         auto &actor = it->second;
 
         auto render_obj = actor->pimpl->render_obj;
-        if (!render_obj.empty()) {
-            pimpl->scene->remove_member_object(render_obj);
+        if (render_obj.has_value()) {
+            pimpl->scene->remove_member_object(render_obj.value());
         }
 
         pimpl->actors.erase(it);
@@ -170,7 +170,7 @@ namespace argus {
         }
     }
 
-    static RenderObject2D &_create_render_object(const std::string &id, World2DLayer &layer, Sprite &sprite,
+    static Handle _create_render_object(const std::string &id, World2DLayer &layer, Sprite &sprite,
             const Vector2f &size) {
         auto &sprite_def = sprite.pimpl->get_def();
 
@@ -223,8 +223,7 @@ namespace argus {
             atlas_stride_y = 1.0;
         }
 
-        return layer.pimpl->scene->create_child_object(GAME_OBJ_PREFIX + id,
-                mat_uid, prims, { atlas_stride_x, atlas_stride_y }, {});
+        return layer.pimpl->scene->create_child_object(mat_uid, prims, { atlas_stride_x, atlas_stride_y }, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {
@@ -237,15 +236,15 @@ namespace argus {
     static void _render_static_object(World2DLayer &layer, StaticObject2D &static_obj) {
         RenderObject2D *render_obj;
 
-        auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + static_obj.get_id());
-        if (render_obj_opt.has_value()) {
-            render_obj = &render_obj_opt->get();
+        if (static_obj.pimpl->render_obj.has_value()) {
+            render_obj = &layer.pimpl->scene->get_object(static_obj.pimpl->render_obj.value()).value().get();
         } else {
-            render_obj = &_create_render_object(static_obj.get_id(), layer, static_obj.get_sprite(),
+            auto handle = _create_render_object(static_obj.get_id(), layer, static_obj.get_sprite(),
                     static_obj.get_size());
+            render_obj = &layer.pimpl->scene->get_object(handle).value().get();
             render_obj->set_transform(get_render_transform(layer.get_world(), static_obj.get_transform()));
 
-            static_obj.pimpl->render_obj = render_obj->get_id();
+            static_obj.pimpl->render_obj = handle;
         }
 
         _update_sprite_frame(static_obj.get_sprite(), *render_obj);
@@ -254,14 +253,14 @@ namespace argus {
     static void _render_actor(World2DLayer &layer, Actor2D &actor) {
         RenderObject2D *render_obj;
 
-        auto render_obj_opt = layer.pimpl->scene->get_object(GAME_OBJ_PREFIX + actor.get_uuid().to_string());
-        if (render_obj_opt.has_value()) {
-            render_obj = &render_obj_opt->get();
+        if (actor.pimpl->render_obj.has_value()) {
+            render_obj = &layer.pimpl->scene->get_object(actor.pimpl->render_obj.value()).value().get();
         } else {
-            render_obj = &_create_render_object(actor.get_uuid().to_string(), layer, actor.get_sprite(),
+            auto handle = _create_render_object(actor.get_uuid().to_string(), layer, actor.get_sprite(),
                     actor.get_size());
+            actor.pimpl->render_obj = handle;
 
-            actor.pimpl->render_obj = render_obj->get_id();
+            render_obj = &layer.pimpl->scene->get_object(handle).value().get();
         }
 
         auto read_transform = actor.pimpl->transform.read();

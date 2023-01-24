@@ -27,7 +27,6 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/canvas.hpp"
-#include "argus/render/defines.hpp"
 #include "internal/render/common/backend.hpp"
 #include "internal/render/common/scene.hpp"
 #include "internal/render/loader/material_loader.hpp"
@@ -35,10 +34,7 @@
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
 #include "argus/wm/window.hpp"
-#include "argus/wm/window_event.hpp"
 
-#include <map>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -57,6 +53,8 @@ namespace argus {
     #endif
 
     bool g_render_module_initialized = false;
+
+    HandleTable g_render_handle_table;
 
     static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
         for (const auto &backend : backends) {
@@ -135,6 +133,11 @@ namespace argus {
     static void _swap_scene_buffers(TimeDelta delta) {
         UNUSED(delta);
 
+        // this runs at the end of each UPDATE loop
+        //
+        // as such, we can assume that root_group_write in scenes will not be
+        // modified concurrently
+
         for (auto &scene_pair : g_scenes) {
             auto &scene = *scene_pair.second;
             switch (scene.type) {
@@ -148,8 +151,6 @@ namespace argus {
                     // can copy from the read buffer while the renderer is traversing it
                     scene_pimpl->read_lock.unlock();
 
-                    scene_pimpl->group_map.clear();
-                    scene_pimpl->object_map.clear();
                     scene_pimpl->root_group_write = &scene_pimpl->root_group_read->copy();
 
                     break;

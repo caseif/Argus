@@ -20,20 +20,20 @@
 
 #include "argus/lowlevel/handle.hpp"
 
-#include "argus/core/module.hpp"
+#include <stack>
 
-#include <map>
-
-#include <cstddef>
+#define CHUNK_SIZE 512 // 512 handles == 4 KiB
+#define MAX_CHUNKS ((UINT32_MAX / CHUNK_SIZE) - 1)
 
 namespace argus {
-    // forward declarations
-    class Canvas;
-    class Window;
+    struct HandleTableEntry {
+        void *ptr;
+        uint32_t uid;
+        uint32_t rc;
+    };
 
-    extern bool g_render_module_initialized;
-
-    extern HandleTable g_render_handle_table;
-
-    void update_lifecycle_render(LifecycleStage stage);
+    struct HandleTableChunk {
+        std::stack<uint32_t> open_indices;
+        HandleTableEntry entries[CHUNK_SIZE];
+    };
 }

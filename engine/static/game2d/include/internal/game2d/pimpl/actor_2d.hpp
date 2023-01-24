@@ -25,6 +25,8 @@
 
 #include "argus/game2d/sprite.hpp"
 
+#include <optional>
+
 namespace argus {
     struct pimpl_Actor2D {
         const Uuid uuid;
@@ -34,7 +36,7 @@ namespace argus {
         Resource &sprite_def_res;
         Sprite &sprite;
 
-        std::string render_obj;
+        std::optional<Handle> render_obj;
 
         pimpl_Actor2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
                 Resource &sprite_def_res, Sprite &sprite):
@@ -43,7 +45,7 @@ namespace argus {
             transform(transform),
             sprite_def_res(sprite_def_res),
             sprite(sprite),
-            render_obj("") {
+            render_obj() {
         }
     };
 }

@@ -56,7 +56,7 @@ namespace argus {
             void free(void *addr);
 
             template <typename T, typename... Args>
-            T &construct(Args & ... args) {
+            T &construct(Args && ... args) {
                 return *new (this->alloc()) T(args...);
             }
 

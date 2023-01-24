@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/dirtiable.hpp"
+#include "argus/lowlevel/handle.hpp"
 
 #include "argus/render/common/transform.hpp"
 
@@ -48,6 +49,9 @@ namespace argus {
      */
     class RenderGroup2D {
         private:
+            RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *parent_group,
+                    const Transform2D &transform);
+
             RenderGroup2D &copy(RenderGroup2D *parent);
 
         public:
@@ -60,21 +64,19 @@ namespace argus {
              * \param parent_group The parent group this group belongs to, if
              *        applicable. This may be nullptr.
              */
-            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group,
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group,
                     const Transform2D &transform);
 
-            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group,
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group,
                     Transform2D &&transform);
 
-            RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *parent_group);
+            RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group);
 
             RenderGroup2D(const RenderGroup2D&) = delete;
 
             RenderGroup2D(RenderGroup2D&&) noexcept;
 
             ~RenderGroup2D(void);
-
-            const std::string &get_id(void) const;
 
             /**
              * \brief Gets the parent Scene.
@@ -96,7 +98,7 @@ namespace argus {
              *
              * \param transform The relative transform of the new group.
              */
-            RenderGroup2D &create_child_group(const std::string &id, const Transform2D &transform);
+            Handle create_child_group(const Transform2D &transform);
 
             /**
              * \brief Creates a new RenderObject as a child of this group.
@@ -106,7 +108,7 @@ namespace argus {
              *        comprising the new object.
              * \param transform The relative transform of the new object.
              */
-            RenderObject2D &create_child_object(const std::string &id, const std::string &material,
+            Handle create_child_object(const std::string &material,
                     const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
                     const Transform2D &transform);
 
@@ -114,25 +116,25 @@ namespace argus {
              * \brief Removes the specified child group from this group,
              *        destroying it in the process.
              *
-             * \param group The ID of the group to remove and destroy.
+             * \param handle The handle of the group to remove and destroy.
              *
              * \throw std::invalid_argument If the given ID does not match a
              *        group in the scene or if the matching group is not a child
              *        of this group.
              */
-            void remove_member_group(const std::string &id);
+            void remove_member_group(Handle handle);
 
             /**
              * \brief Removes the specified object from this group,
              *        destroying it in the process.
              *
-             * \param object The ID of the object to remove and destroy.
+             * \param handle The handle of the object remove and destroy.
              *
              * \throw std::invalid_argument If the given ID does not match an
              *        object in the scene or if the matching object is not a
              *        child of this group.
              */
-            void remove_child_object(const std::string &id);
+            void remove_child_object(Handle handle);
 
             /**
              * \brief Peeks the local Transform of this group without clearing

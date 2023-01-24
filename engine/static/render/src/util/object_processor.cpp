@@ -29,8 +29,8 @@
 #include "argus/render/util/object_processor.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
+#include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
-
 
 #include <atomic>
 #include <map>
@@ -80,7 +80,7 @@ namespace argus {
         for (RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
-            auto existing_it = processed_obj_map.find(child_object->get_id());
+            auto existing_it = processed_obj_map.find(child_object->pimpl->handle);
 
             auto obj_transform = child_object->get_transform();
 
@@ -102,7 +102,7 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({ child_object->get_id(), processed_obj });
+                processed_obj_map.insert({ child_object->pimpl->handle, processed_obj });
             }
         }
 

@@ -26,6 +26,7 @@
 #include "internal/render/common/scene.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
+#include "internal/render/module_render.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -76,35 +77,31 @@ namespace argus {
         return dynamic_cast<pimpl_Scene*>(pimpl);
     }
 
-    std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(const std::string &id) {
-        auto it = pimpl->group_map.find(id);
-        return it != pimpl->group_map.end()
-            ? std::make_optional(std::reference_wrapper(*it->second))
-            : std::nullopt;
+    std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(Handle handle) {
+        auto *ptr = g_render_handle_table.deref<RenderGroup2D>(handle);
+        return ptr != nullptr ? std::make_optional(std::reference_wrapper(*ptr)) : std::nullopt;
     }
 
-    std::optional<std::reference_wrapper<RenderObject2D>> Scene2D::get_object(const std::string &id) {
-        auto it = pimpl->object_map.find(id);
-        return it != pimpl->object_map.end()
-            ? std::make_optional(std::reference_wrapper(*it->second))
-            : std::nullopt;
+    std::optional<std::reference_wrapper<RenderObject2D>> Scene2D::get_object(Handle handle) {
+        auto *ptr = g_render_handle_table.deref<RenderObject2D>(handle);
+        return ptr != nullptr ? std::make_optional(std::reference_wrapper(*ptr)) : std::nullopt;
     }
 
-    RenderGroup2D &Scene2D::create_child_group(const std::string &id, const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_group(id, transform);
+    Handle Scene2D::create_child_group(const Transform2D &transform) {
+        return pimpl->root_group_write->create_child_group(transform);
     }
 
-    RenderObject2D &Scene2D::create_child_object(const std::string &id, const std::string &material,
+    Handle Scene2D::create_child_object(const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_object(id, material, primitives, atlas_stride, transform);
+        return pimpl->root_group_write->create_child_object(material, primitives, atlas_stride, transform);
     }
 
-    void Scene2D::remove_member_group(const std::string &id) {
-        pimpl->root_group_write->remove_member_group(id);
+    void Scene2D::remove_member_group(Handle handle) {
+        pimpl->root_group_write->remove_member_group(handle);
     }
 
-    void Scene2D::remove_member_object(const std::string &id) {
-        pimpl->root_group_write->remove_child_object(id);
+    void Scene2D::remove_member_object(Handle handle) {
+        pimpl->root_group_write->remove_child_object(handle);
     }
 
     std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {

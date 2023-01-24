@@ -23,6 +23,7 @@
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/2d/render_group_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
@@ -39,18 +40,28 @@ namespace argus {
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 
-    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group,
+    static Handle _make_handle(RenderGroup2D *group) {
+        return g_render_handle_table.create_handle(group);
+    }
+
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group,
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             Transform2D &&transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group, transform)) {
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(const std::string &id, Scene2D &scene, RenderGroup2D *const parent_group):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(id, scene, parent_group)) {
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
+    }
+
+    RenderGroup2D::RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *parent_group,
+            const Transform2D &transform):
+        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
+        g_render_handle_table.update_handle(handle, this);
     }
 
     RenderGroup2D::RenderGroup2D(RenderGroup2D &&rhs) noexcept:
@@ -60,6 +71,8 @@ namespace argus {
 
     RenderGroup2D::~RenderGroup2D(void) {
         if (pimpl != nullptr) {
+            g_render_handle_table.release_handle(pimpl->handle);
+
             for (auto *group : pimpl->child_groups) {
                 delete group;
             }
@@ -72,10 +85,6 @@ namespace argus {
         }
     }
 
-    const std::string &RenderGroup2D::get_id(void) const {
-        return pimpl->id;
-    }
-
     Scene2D &RenderGroup2D::get_scene(void) const {
         return pimpl->scene;
     }
@@ -84,36 +93,25 @@ namespace argus {
         return pimpl->parent_group;
     }
 
-    RenderGroup2D &RenderGroup2D::create_child_group(const std::string &id, const Transform2D &transform) {
-        if (pimpl->scene.get_group(id).has_value()) {
-            throw std::invalid_argument("Render group ID must be unique within scene");
-        }
-
-        auto *group = new RenderGroup2D(id, pimpl->scene, this, transform);
+    Handle RenderGroup2D::create_child_group(const Transform2D &transform) {
+        auto *group = new RenderGroup2D(pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
 
-        pimpl->scene.pimpl->group_map.insert({ group->get_id(), group });
-
-        return *group;
+        return group->pimpl->handle;
     }
 
-    RenderObject2D &RenderGroup2D::create_child_object(const std::string &id,
-            const std::string &material, const std::vector<RenderPrim2D> &primitives,
-            const Vector2f &atlas_stride, const Transform2D &transform) {
-        if (pimpl->scene.get_group(id).has_value()) {
-            throw std::invalid_argument("Render group ID must be unique within scene");
-        }
+    Handle RenderGroup2D::create_child_object(const std::string &material,
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+            const Transform2D &transform) {
 
-        auto *obj = new RenderObject2D(id, *this, material, primitives, atlas_stride, transform);
+        auto *obj = new RenderObject2D(*this, material, primitives, atlas_stride, transform);
         pimpl->child_objects.push_back(obj);
 
-        pimpl->scene.pimpl->object_map.insert({ obj->get_id(), obj });
-
-        return *obj;
+        return obj->pimpl->handle;
     }
 
-    void RenderGroup2D::remove_member_group(const std::string &id) {
-        auto group_opt = pimpl->scene.get_group(id);
+    void RenderGroup2D::remove_member_group(Handle handle) {
+        auto group_opt = pimpl->scene.get_group(handle);
 
         if (!group_opt.has_value()) {
             throw std::invalid_argument("No group with the given ID exists in the scene");
@@ -127,13 +125,11 @@ namespace argus {
 
         remove_from_vector(pimpl->child_groups, &group);
 
-        pimpl->scene.pimpl->group_map.erase(group.get_id());
-
         delete &group;
     }
 
-    void RenderGroup2D::remove_child_object(const std::string &id) {
-        auto object_opt = pimpl->scene.get_object(id);
+    void RenderGroup2D::remove_child_object(Handle handle) {
+        auto object_opt = pimpl->scene.get_object(handle);
         if (!object_opt.has_value()) {
             throw std::invalid_argument("No object with the given ID exists in the scene");
         }
@@ -145,8 +141,6 @@ namespace argus {
         }*/
 
         remove_from_vector(pimpl->child_objects, &object);
-
-        pimpl->scene.pimpl->object_map.erase(object.get_id());
 
         delete &object;
     }
@@ -169,21 +163,20 @@ namespace argus {
     }
 
     RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
-        auto &copy = *new RenderGroup2D(pimpl->id, pimpl->scene, parent, pimpl->transform);
+        auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
+        auto &copy = *new RenderGroup2D(new_handle, pimpl->scene, parent, pimpl->transform);
 
         copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
         for (auto &child_group : pimpl->child_groups) {
             auto &child_copy = child_group->copy(this);
             child_copy.pimpl->parent_group = this;
             copy.pimpl->child_groups.push_back(&child_copy);
-            pimpl->scene.pimpl->group_map.insert({ child_copy.get_id(), &child_copy });
         }
 
         copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
         for (auto *child_obj : pimpl->child_objects) {
             auto &child_copy = child_obj->copy(*this);
             copy.pimpl->child_objects.push_back(&child_copy);
-            pimpl->scene.pimpl->object_map.insert({ child_copy.get_id(), &child_copy });
         }
 
         return copy;
