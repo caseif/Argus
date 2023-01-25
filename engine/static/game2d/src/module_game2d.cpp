@@ -16,16 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/handle.hpp"
+
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
 #include "argus/resman/resource_manager.hpp"
 
+#include "internal/game2d/module_game2d.hpp"
 #include "internal/game2d/resources.h"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/loader/sprite_loader.hpp"
 
 namespace argus {
+    HandleTable g_static_obj_table;
+    HandleTable g_actor_table;
+
     void update_lifecycle_game2d(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {

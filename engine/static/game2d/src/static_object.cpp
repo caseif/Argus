@@ -25,18 +25,21 @@
 
 #include "argus/game2d/static_object_2d.hpp"
 #include "internal/game2d/pimpl/static_object_2d.hpp"
+#include "internal/game2d/module_game2d.hpp"
 
 #include <string>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_StaticObject2D));
 
-    StaticObject2D::StaticObject2D(const std::string &id, const std::string &sprite_uid,
+    StaticObject2D::StaticObject2D(const std::string &sprite_uid,
             const Vector2f &size, const Transform2D &transform) {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
-        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(id, res, *sprite, size, transform);
+        auto handle = g_static_obj_table.create_handle(this);
+
+        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, transform);
     }
 
     StaticObject2D::StaticObject2D(StaticObject2D &&rhs) noexcept:
@@ -45,11 +48,10 @@ namespace argus {
     }
 
     StaticObject2D::~StaticObject2D(void) {
-        g_pimpl_pool.free(pimpl);
-    }
-
-    const std::string &StaticObject2D::get_id(void) const {
-        return pimpl->id;
+        if (pimpl != nullptr) {
+            g_static_obj_table.release_handle(pimpl->handle);
+            g_pimpl_pool.free(pimpl);
+        }
     }
 
     const Vector2f &StaticObject2D::get_size(void) const {

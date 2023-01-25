@@ -60,17 +60,17 @@ namespace argus {
 
         void set_camera_transform(const Transform2D &transform);
 
-        StaticObject2D &get_static_object(const std::string &id) const;
+        StaticObject2D &get_static_object(Handle handle) const;
 
-        StaticObject2D &create_static_object(const std::string &id, const std::string &sprite, const Vector2f &size,
+        Handle create_static_object(const std::string &sprite, const Vector2f &size,
                 const Transform2D &transform);
 
-        void delete_static_object(const std::string &id);
+        void delete_static_object(Handle handle);
 
-        Actor2D &get_actor(const Uuid &uuid) const;
+        Actor2D &get_actor(Handle handle) const;
 
-        Actor2D &create_actor(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
+        Handle create_actor(const std::string &sprite, const Vector2f &size, const Transform2D &transform);
 
-        void delete_actor(const Uuid &uuid);
+        void delete_actor(Handle handle);
     };
 }

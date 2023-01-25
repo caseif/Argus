@@ -110,29 +110,29 @@ namespace argus {
         return *world.pimpl->layers[PRIMARY_LAYER_ID];
     }
 
-    StaticObject2D &World2D::get_static_object(const std::string &id) const {
-        return _get_primary_layer(*this).get_static_object(id);
+    StaticObject2D &World2D::get_static_object(Handle handle) const {
+        return _get_primary_layer(*this).get_static_object(handle);
     }
 
-    StaticObject2D &World2D::create_static_object(const std::string &id, const std::string &sprite,
+    Handle World2D::create_static_object(const std::string &sprite,
             const Vector2f &size, const Transform2D &transform) {
-        return _get_primary_layer(*this).create_static_object(id, sprite, size, transform);
+        return _get_primary_layer(*this).create_static_object(sprite, size, transform);
     }
 
-    void World2D::delete_static_object(const std::string &id) {
-        return _get_primary_layer(*this).delete_static_object(id);
+    void World2D::delete_static_object(Handle handle) {
+        return _get_primary_layer(*this).delete_static_object(handle);
     }
 
-    Actor2D &World2D::get_actor(const Uuid &uuid) const {
-        return _get_primary_layer(*this).get_actor(uuid);
+    Actor2D &World2D::get_actor(Handle handle) const {
+        return _get_primary_layer(*this).get_actor(handle);
     }
 
-    Actor2D &World2D::create_actor(const std::string &sprite, const Vector2f &size,
+    Handle World2D::create_actor(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
         return _get_primary_layer(*this).create_actor(sprite, size, transform);
     }
 
-    void World2D::delete_actor(const Uuid &uuid) {
-        return _get_primary_layer(*this).delete_actor(uuid);
+    void World2D::delete_actor(Handle handle) {
+        return _get_primary_layer(*this).delete_actor(handle);
     }
 }

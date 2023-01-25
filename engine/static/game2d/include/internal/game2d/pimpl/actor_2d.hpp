@@ -29,7 +29,7 @@
 
 namespace argus {
     struct pimpl_Actor2D {
-        const Uuid uuid;
+        const Handle handle;
         const Vector2f size;
         Dirtiable<Transform2D> transform;
 
@@ -38,9 +38,9 @@ namespace argus {
 
         std::optional<Handle> render_obj;
 
-        pimpl_Actor2D(Uuid uuid, const Vector2f &size, const Transform2D &transform,
+        pimpl_Actor2D(Handle handle, const Vector2f &size, const Transform2D &transform,
                 Resource &sprite_def_res, Sprite &sprite):
-            uuid(uuid),
+            handle(handle),
             size(size),
             transform(transform),
             sprite_def_res(sprite_def_res),

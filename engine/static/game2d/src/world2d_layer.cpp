@@ -32,6 +32,7 @@
 #include "argus/game2d/world2d.hpp"
 #include "argus/game2d/world2d_layer.hpp"
 #include "internal/game2d/defines.hpp"
+#include "internal/game2d/module_game2d.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/world2d_layer.hpp"
 #include "internal/game2d/pimpl/actor_2d.hpp"
@@ -65,64 +66,64 @@ namespace argus {
         return pimpl->world;
     }
 
-    StaticObject2D &World2DLayer::get_static_object(const std::string &id) const {
-        auto it = pimpl->static_objects.find(id);
-        _ARGUS_ASSERT(it != pimpl->static_objects.cend(),
-                "No object with ID exists for world layer (in get_static_object)");
-        return *it->second;
-    }
-
-    StaticObject2D &World2DLayer::create_static_object(const std::string &id, const std::string &sprite,
-            const Vector2f &size, const Transform2D &transform) {
-        auto *obj = new StaticObject2D(id, sprite, size, transform);
-        pimpl->static_objects.insert({ id, obj });
+    StaticObject2D &World2DLayer::get_static_object(Handle handle) const {
+        auto *obj = g_static_obj_table.deref<StaticObject2D>(handle);
+        _ARGUS_ASSERT(obj != nullptr,
+                "No such object exists for world layer (in get_static_object)");
         return *obj;
     }
 
-    void World2DLayer::delete_static_object(const std::string &id) {
-        auto it = pimpl->static_objects.find(id);
-        _ARGUS_ASSERT(it != pimpl->static_objects.cend(),
-                "No object with ID exists for world layer (in delete_static_object)");
+    Handle World2DLayer::create_static_object(const std::string &sprite,
+            const Vector2f &size, const Transform2D &transform) {
+        auto *obj = new StaticObject2D(sprite, size, transform);
+        pimpl->static_objects.insert(obj->pimpl->handle);
+        return obj->pimpl->handle;
+    }
 
-        auto &static_obj = it->second;
+    void World2DLayer::delete_static_object(Handle handle) {
+        auto *static_obj = g_static_obj_table.deref<StaticObject2D>(handle);
+        _ARGUS_ASSERT(static_obj != nullptr,
+                "No such object exists for world layer (in delete_static_object)");
+
+        g_static_obj_table.release_handle(handle);
+
+        pimpl->static_objects.erase(handle);
 
         auto render_obj = static_obj->pimpl->render_obj;
         if (render_obj.has_value()) {
             pimpl->scene->remove_member_object(render_obj.value());
         }
 
-        pimpl->static_objects.erase(it);
-
         delete static_obj;
     }
 
-    Actor2D &World2DLayer::get_actor(const Uuid &uuid) const {
-        auto it = pimpl->actors.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->actors.cend(),
-                "No object with UUID exists for world layer (in get_actor)");
-        return *it->second;
+    Actor2D &World2DLayer::get_actor(Handle handle) const {
+        auto *actor = g_actor_table.deref<Actor2D>(handle);
+        _ARGUS_ASSERT(actor != nullptr,
+                "No such actor exists for world layer (in get_actor)");
+        return *actor;
     }
 
-    Actor2D &World2DLayer::create_actor(const std::string &sprite, const Vector2f &size,
+    Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
-        auto *obj = new Actor2D(sprite, size, transform);
-        pimpl->actors.insert({ obj->get_uuid(), obj });
-        return *obj;
+        auto *actor = new Actor2D(sprite, size, transform);
+        pimpl->actors.insert(actor->pimpl->handle);
+        return actor->pimpl->handle;
     }
 
-    void World2DLayer::delete_actor(const Uuid &uuid) {
-        auto it = pimpl->actors.find(uuid);
-        _ARGUS_ASSERT(it != pimpl->actors.cend(),
-                "No actor with UUID exists for world layer (in delete_actor)");
+    void World2DLayer::delete_actor(Handle handle) {
+        auto *actor = g_actor_table.deref<Actor2D>(handle);
+        _ARGUS_ASSERT(actor != nullptr,
+                "No such actor exists for world layer (in get_actor)");
 
-        auto &actor = it->second;
+        g_actor_table.release_handle(handle);
+
+        pimpl->actors.erase(handle);
 
         auto render_obj = actor->pimpl->render_obj;
         if (render_obj.has_value()) {
             pimpl->scene->remove_member_object(render_obj.value());
         }
-
-        pimpl->actors.erase(it);
 
         delete actor;
     }
@@ -170,7 +171,7 @@ namespace argus {
         }
     }
 
-    static Handle _create_render_object(const std::string &id, World2DLayer &layer, Sprite &sprite,
+    static Handle _create_render_object(World2DLayer &layer, Sprite &sprite,
             const Vector2f &size) {
         auto &sprite_def = sprite.pimpl->get_def();
 
@@ -207,7 +208,7 @@ namespace argus {
         prims.push_back(RenderPrim2D({ v1, v3, v4 }));
 
         //TODO: make this reusable
-        auto mat_uid = "internal:game2d/material/sprite_mat_" + id;
+        auto mat_uid = "internal:game2d/material/sprite_mat_" + Uuid::random().to_string();
         ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
                 Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
 
@@ -239,7 +240,7 @@ namespace argus {
         if (static_obj.pimpl->render_obj.has_value()) {
             render_obj = &layer.pimpl->scene->get_object(static_obj.pimpl->render_obj.value()).value().get();
         } else {
-            auto handle = _create_render_object(static_obj.get_id(), layer, static_obj.get_sprite(),
+            auto handle = _create_render_object(layer, static_obj.get_sprite(),
                     static_obj.get_size());
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
             render_obj->set_transform(get_render_transform(layer.get_world(), static_obj.get_transform()));
@@ -256,7 +257,7 @@ namespace argus {
         if (actor.pimpl->render_obj.has_value()) {
             render_obj = &layer.pimpl->scene->get_object(actor.pimpl->render_obj.value()).value().get();
         } else {
-            auto handle = _create_render_object(actor.get_uuid().to_string(), layer, actor.get_sprite(),
+            auto handle = _create_render_object(layer, actor.get_sprite(),
                     actor.get_size());
             actor.pimpl->render_obj = handle;
 
@@ -277,18 +278,24 @@ namespace argus {
             layer.pimpl->render_camera->set_transform(get_render_transform(layer.get_world(), camera_transform));
         }
 
-        for (auto &kv : layer.pimpl->static_objects) {
-            if (!kv.second->get_sprite().is_current_animation_static()) {
-                _advance_sprite_animation(kv.second->get_sprite());
+        for (const auto &obj_handle : layer.pimpl->static_objects) {
+            auto *obj = g_static_obj_table.deref<StaticObject2D>(obj_handle);
+            if (obj == nullptr) {
+                continue;
             }
-            _render_static_object(layer, *kv.second);
+
+            if (!obj->get_sprite().is_current_animation_static()) {
+                _advance_sprite_animation(obj->get_sprite());
+            }
+            _render_static_object(layer, *obj);
         }
 
-        for (auto &kv : layer.pimpl->actors) {
-            if (!kv.second->get_sprite().is_current_animation_static()) {
-                _advance_sprite_animation(kv.second->get_sprite());
+        for (const auto &actor_handle : layer.pimpl->actors) {
+            auto *actor = g_actor_table.deref<Actor2D>(actor_handle);
+            if (!actor->get_sprite().is_current_animation_static()) {
+                _advance_sprite_animation(actor->get_sprite());
             }
-            _render_actor(layer, *kv.second);
+            _render_actor(layer, *actor);
         }
     }
 }

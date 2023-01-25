@@ -41,8 +41,6 @@ namespace argus {
 
         ~Actor2D(void);
 
-        const Uuid &get_uuid(void) const;
-
         const Vector2f &get_size(void) const;
 
         const Transform2D &get_transform(void) const;

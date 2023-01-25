@@ -18,32 +18,9 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
-
-#include "argus/render/common/transform.hpp"
-#include "argus/render/2d/render_object_2d.hpp"
-
-#include <optional>
-#include <string>
+#include "argus/lowlevel/handle.hpp"
 
 namespace argus {
-    struct pimpl_StaticObject2D {
-        const Handle handle;
-        Resource &sprite_def_res;
-        Sprite &sprite;
-        const Vector2f size;
-        const Transform2D transform;
-
-        std::optional<Handle> render_obj;
-
-        pimpl_StaticObject2D(Handle handle, Resource &sprite_def_res, Sprite &sprite,
-                const Vector2f &size, const Transform2D &transform):
-            handle(handle),
-            sprite_def_res(sprite_def_res),
-            sprite(sprite),
-            size(size),
-            transform(transform),
-            render_obj() {
-        }
-    };
+    extern HandleTable g_static_obj_table;
+    extern HandleTable g_actor_table;
 }

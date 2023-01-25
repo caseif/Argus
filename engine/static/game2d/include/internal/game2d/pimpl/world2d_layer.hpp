@@ -28,6 +28,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 
 namespace argus {
@@ -41,8 +42,8 @@ namespace argus {
         Scene2D *scene;
         Camera2D *render_camera;
 
-        std::map<std::string, StaticObject2D*> static_objects;
-        std::map<std::string, Actor2D*> actors;
+        std::set<Handle> static_objects;
+        std::set<Handle> actors;
 
         pimpl_World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval):

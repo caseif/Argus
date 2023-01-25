@@ -24,6 +24,7 @@
 #include "argus/render/common/transform.hpp"
 
 #include "argus/game2d/actor_2d.hpp"
+#include "internal/game2d/module_game2d.hpp"
 #include "internal/game2d/pimpl/actor_2d.hpp"
 
 namespace argus {
@@ -33,19 +34,17 @@ namespace argus {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
-        auto uuid = Uuid::random();
-        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(uuid, size, transform, res, *sprite);
+        auto handle = g_actor_table.create_handle(this);
+        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, transform, res, *sprite);
     }
 
     Actor2D::~Actor2D(void) {
+        g_actor_table.release_handle(pimpl->handle);
+
         pimpl->sprite_def_res.release();
         delete &pimpl->sprite;
 
         g_pimpl_pool.destroy<pimpl_Actor2D>(pimpl);
-    }
-
-    const Uuid &Actor2D::get_uuid(void) const {
-        return pimpl->uuid;
     }
 
     const Vector2f &Actor2D::get_size(void) const {

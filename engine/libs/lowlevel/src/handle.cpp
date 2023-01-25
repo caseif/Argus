@@ -29,8 +29,16 @@
 namespace argus {
     // Handle implementation
 
+    bool Handle::operator==(const Handle &rhs) const {
+        return this->index == rhs.index && this->uid == rhs.uid;
+    }
+
     bool Handle::operator<(const Handle &rhs) const {
         return this->index < rhs.index || (this->index == rhs.index && this->uid < rhs.uid);
+    }
+
+    Handle::operator uint64_t(void) const {
+        return (uint64_t(this->index) << 32) | uint64_t(this->uid);
     }
 
     // HandleTable implementation
@@ -160,6 +168,11 @@ namespace argus {
         auto chunk_index = chunk_pair.first;
         auto *chunk = chunk_pair.second;
 
+        if (chunk == nullptr) {
+            Logger::default_logger().warn("Attempt to free invalid handle");
+            return;
+        }
+
         auto entry = &chunk->entries[handle.index % CHUNK_SIZE];
         if (entry->ptr == nullptr) {
             return;
@@ -171,11 +184,7 @@ namespace argus {
             return;
         }
 
-        if (chunk == nullptr) {
-            return;
-        }
-
-        if (chunk->open_indices.size() == CHUNK_SIZE - 1 && !pimpl->chunks.empty()) {
+        if (chunk->open_indices.size() == CHUNK_SIZE - 1 && pimpl->chunks.size() > 1) {
             // just deallocate the chunk
             delete chunk;
             pimpl->chunks.erase(chunk_index);

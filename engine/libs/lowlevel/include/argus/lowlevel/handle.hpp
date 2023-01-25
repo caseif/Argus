@@ -29,7 +29,11 @@ namespace argus {
         uint32_t index;
         uint32_t uid;
 
+        bool operator==(const Handle &rhs) const;
+
         bool operator<(const Handle &rhs) const;
+
+        operator uint64_t(void) const;
     };
 
     class HandleTable {
