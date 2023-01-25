@@ -43,7 +43,7 @@ namespace argus {
         /**
          * \brief The unique identifier of the window.
          */
-         std::string id;
+        std::string id;
 
         /**
          * \brief The Canvas associated with this Window.
@@ -65,12 +65,12 @@ namespace argus {
         /**
          * \brief This Window's child \link Window Windows \endlink, if any.
          */
-        std::vector<Window*> children;
+        std::vector<Window *> children;
 
         struct {
             AtomicDirtiable<std::string> title;
             AtomicDirtiable<bool> fullscreen;
-            AtomicDirtiable<const Display*> display;
+            AtomicDirtiable<const Display *> display;
             AtomicDirtiable<bool> custom_display_mode;
             AtomicDirtiable<DisplayMode> display_mode;
             AtomicDirtiable<Vector2u> windowed_resolution;
@@ -97,13 +97,13 @@ namespace argus {
 
         uint16_t cur_refresh_rate;
 
-        pimpl_Window(const std::string &id, Window *parent):
+        pimpl_Window(const std::string &id, Window *parent) :
                 id(id),
                 parent(parent) {
         }
 
-        pimpl_Window(const pimpl_Window&) = delete;
+        pimpl_Window(const pimpl_Window &) = delete;
 
-        pimpl_Window(pimpl_Window&&) = delete;
+        pimpl_Window(pimpl_Window &&) = delete;
     };
 }

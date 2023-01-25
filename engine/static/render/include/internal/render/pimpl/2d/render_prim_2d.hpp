@@ -35,12 +35,12 @@ namespace argus {
 
         size_t frame_count;
 
-        pimpl_RenderPrim2D(const std::vector<Vertex2D> &vertices):
+        pimpl_RenderPrim2D(const std::vector<Vertex2D> &vertices) :
                 vertices(vertices) {
         }
 
-        pimpl_RenderPrim2D(const pimpl_RenderPrim2D&) = default;
+        pimpl_RenderPrim2D(const pimpl_RenderPrim2D &) = default;
 
-        pimpl_RenderPrim2D(pimpl_RenderPrim2D&&) = delete;
+        pimpl_RenderPrim2D(pimpl_RenderPrim2D &&) = delete;
     };
 }

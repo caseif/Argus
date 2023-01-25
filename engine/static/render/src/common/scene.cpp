@@ -29,15 +29,15 @@
 namespace argus {
     class Canvas;
 
-    std::map<std::string, Scene*> g_scenes;
+    std::map<std::string, Scene *> g_scenes;
 
     std::optional<std::reference_wrapper<Scene>> Scene::find(const std::string &id) {
         auto it = g_scenes.find(id);
         return it != g_scenes.end() ? std::make_optional(std::reference_wrapper(*it->second)) : std::nullopt;
     }
 
-    Scene::Scene(SceneType type):
-        type(type) {
+    Scene::Scene(SceneType type) :
+            type(type) {
     }
 
     Scene::~Scene(void) {

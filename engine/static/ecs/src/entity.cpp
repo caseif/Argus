@@ -32,7 +32,7 @@
 #include <cstddef>
 
 namespace argus {
-    std::vector<const Entity*> g_created_entities;
+    std::vector<const Entity *> g_created_entities;
     std::vector<EntityId> g_destroyed_entities;
 
     std::mutex g_entity_changes_mutex;
@@ -49,11 +49,11 @@ namespace argus {
     Entity &Entity::create(std::vector<std::type_index> component_types) {
         if (g_entity_pool == nullptr) {
             size_t entity_size = sizeof(Entity)
-                + (sizeof(void*) * ComponentTypeRegistry::instance().get_type_count());
+                                 + (sizeof(void *) * ComponentTypeRegistry::instance().get_type_count());
             g_entity_pool = new AllocPool(entity_size);
         }
 
-        Entity &entity = *static_cast<Entity*>(g_entity_pool->alloc());
+        Entity &entity = *static_cast<Entity *>(g_entity_pool->alloc());
 
         for (auto cmp_type : component_types) {
             auto cmp_id = ComponentTypeRegistry::instance().get_id(cmp_type);
@@ -71,8 +71,8 @@ namespace argus {
         return entity;
     }
 
-    Entity::Entity(void):
-        id(g_next_id++) {
+    Entity::Entity(void) :
+            id(g_next_id++) {
     }
 
     void Entity::destroy(void) {

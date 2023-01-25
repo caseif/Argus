@@ -31,32 +31,32 @@ namespace argus {
         Scene2D &scene;
         RenderGroup2D *parent_group;
         Transform2D transform;
-        std::vector<RenderGroup2D*> child_groups;
-        std::vector<RenderObject2D*> child_objects;
+        std::vector<RenderGroup2D *> child_groups;
+        std::vector<RenderObject2D *> child_objects;
 
         pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group,
-                const Transform2D &transform):
-            handle(handle),
-            scene(scene),
-            parent_group(parent_group),
-            transform(transform) {
+                const Transform2D &transform) :
+                handle(handle),
+                scene(scene),
+                parent_group(parent_group),
+                transform(transform) {
         }
 
-        pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group, Transform2D &&transform):
-            handle(handle),
-            scene(scene),
-            parent_group(parent_group),
-            transform(transform) {
+        pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group, Transform2D &&transform) :
+                handle(handle),
+                scene(scene),
+                parent_group(parent_group),
+                transform(transform) {
         }
 
-        pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group):
-            handle(handle),
-            scene(scene),
-            parent_group(parent_group) {
+        pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group) :
+                handle(handle),
+                scene(scene),
+                parent_group(parent_group) {
         }
 
-        pimpl_RenderGroup2D(pimpl_RenderGroup2D&) = default;
+        pimpl_RenderGroup2D(pimpl_RenderGroup2D &) = default;
 
-        pimpl_RenderGroup2D(pimpl_RenderGroup2D&&) = delete;
+        pimpl_RenderGroup2D(pimpl_RenderGroup2D &&) = delete;
     };
 }

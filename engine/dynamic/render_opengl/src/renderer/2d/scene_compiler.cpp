@@ -62,7 +62,7 @@ namespace argus {
                 &scene_state);
 
         for (auto it = scene_state.processed_objs.begin(); it != scene_state.processed_objs.end();) {
-            auto &processed_obj = *reinterpret_cast<ProcessedRenderObject*>(it->second);
+            auto &processed_obj = *reinterpret_cast<ProcessedRenderObject *>(it->second);
             if (processed_obj.newly_created) {
                 _handle_new_obj(scene_state, processed_obj);
             } else if (!processed_obj.visited) {

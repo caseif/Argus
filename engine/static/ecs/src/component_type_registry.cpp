@@ -36,7 +36,7 @@ namespace argus {
 
     static ComponentTypeRegistry *g_comp_reg_singleton;
 
-    ComponentTypeRegistry::ComponentTypeRegistry(void):
+    ComponentTypeRegistry::ComponentTypeRegistry(void) :
             pimpl(new pimpl_ComponentTypeRegistry()) {
         //TODO
     }
@@ -51,7 +51,7 @@ namespace argus {
     void *ComponentTypeRegistry::alloc(std::type_index type) {
         auto info_it = pimpl->component_types.find(type);
         validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
-        
+
         return pimpl->component_pools[info_it->second.id].alloc();
     }
 
@@ -83,7 +83,7 @@ namespace argus {
         validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
         ComponentTypeId new_id = pimpl->next_id++;
-        pimpl->component_types.insert({ type, ComponentTypeInfo(new_id, size) });
+        pimpl->component_types.insert({type, ComponentTypeInfo(new_id, size)});
     }
 
     void ComponentTypeRegistry::_seal(void) {
@@ -96,11 +96,11 @@ namespace argus {
             return;
         }
 
-        pimpl->component_pools = static_cast<AllocPool*>(malloc(sizeof(AllocPool) * pimpl->next_id));
+        pimpl->component_pools = static_cast<AllocPool *>(malloc(sizeof(AllocPool) * pimpl->next_id));
         for (auto cmpt : pimpl->component_types) {
             auto index = cmpt.second.id;
             AllocPool &target = pimpl->component_pools[index];
-            new (&target) AllocPool(cmpt.second.size);
+            new(&target) AllocPool(cmpt.second.size);
         }
     }
 

@@ -31,14 +31,14 @@ namespace argus {
     struct pimpl_Sprite;
 
     class Sprite {
-       public:
+      public:
         pimpl_Sprite *pimpl;
 
         Sprite(const Resource &definition);
 
-        Sprite(const Sprite&) = delete;
+        Sprite(const Sprite &) = delete;
 
-        Sprite(Sprite&&);
+        Sprite(Sprite &&);
 
         ~Sprite(void);
 

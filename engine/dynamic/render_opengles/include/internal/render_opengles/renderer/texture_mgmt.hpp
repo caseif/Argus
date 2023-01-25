@@ -25,6 +25,7 @@
 namespace argus {
     // forward declarations
     struct RendererState;
+
     class Resource;
 
     void get_or_load_texture(RendererState &state, const Resource &material_res);

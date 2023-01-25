@@ -24,6 +24,7 @@
 
 namespace argus {
     #pragma pack(push, 1)
+
     struct Matrix4Row {
         float data[4];
 
@@ -42,7 +43,7 @@ namespace argus {
             data[3] = d;
         }
 
-        Matrix4Row(void): Matrix4Row(0, 0, 0, 0) {
+        Matrix4Row(void) : Matrix4Row(0, 0, 0, 0) {
         }
     };
 
@@ -59,7 +60,7 @@ namespace argus {
             rows[3] = d;
         }
 
-        Matrix4(void): Matrix4({}, {}, {}, {}) {
+        Matrix4(void) : Matrix4({}, {}, {}, {}) {
         }
 
         Matrix4Row &operator[](int i) {
@@ -72,13 +73,14 @@ namespace argus {
 
         static Matrix4 identity() {
             return {
-                {1, 0, 0, 0},
-                {0, 1, 0, 0},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1}
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 0},
+                    {0, 0, 0, 1}
             };
         }
     };
+
     #pragma pack(pop)
 
     typedef float mat4_flat_t[16];

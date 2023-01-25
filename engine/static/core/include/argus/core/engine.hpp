@@ -48,11 +48,11 @@ namespace argus {
     };
 
     constexpr Ordering ORDERINGS[] = {
-        Ordering::First,
-        Ordering::Early,
-        Ordering::Standard,
-        Ordering::Late,
-        Ordering::Last
+            Ordering::First,
+            Ordering::Early,
+            Ordering::Standard,
+            Ordering::Late,
+            Ordering::Last
     };
 
     /**

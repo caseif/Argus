@@ -29,12 +29,12 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));
 
-    AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index):
+    AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index) :
             AttachedViewport(SceneType::TwoD),
             pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
     }
 
-    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs):
+    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) :
             AttachedViewport(rhs.type),
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;

@@ -92,7 +92,7 @@ namespace argus {
          *        WindowEvent.
          * \param window The Window associated with the event.
          */
-        WindowEvent(WindowEventType subtype, Window &window):
+        WindowEvent(WindowEventType subtype, Window &window) :
                 ArgusEvent{std::type_index(typeid(WindowEvent))},
                 subtype(subtype),
                 window(window),
@@ -111,17 +111,17 @@ namespace argus {
          *        the event.
          */
         WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
-                TimeDelta delta):
-            ArgusEvent{std::type_index(typeid(WindowEvent))},
-            subtype(subtype),
-            window(window),
-            resolution(resolution),
-            position(position),
-            delta(delta) {
+                TimeDelta delta) :
+                ArgusEvent{std::type_index(typeid(WindowEvent))},
+                subtype(subtype),
+                window(window),
+                resolution(resolution),
+                position(position),
+                delta(delta) {
         }
 
-        WindowEvent(WindowEvent &rhs):
-            WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
+        WindowEvent(WindowEvent &rhs) :
+                WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
         }
     };
 }

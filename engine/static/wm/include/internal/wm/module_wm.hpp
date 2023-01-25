@@ -32,8 +32,8 @@ namespace argus {
 
     extern bool g_wm_module_initialized;
 
-    extern std::map<std::string, Window*> g_window_id_map;
-    extern std::map<GLFWwindow*, Window*> g_window_handle_map;
+    extern std::map<std::string, Window *> g_window_id_map;
+    extern std::map<GLFWwindow *, Window *> g_window_handle_map;
     extern size_t g_window_count;
 
     void update_lifecycle_wm(LifecycleStage stage);

@@ -96,14 +96,14 @@ namespace argus {
         using namespace std::chrono_literals;
 
         dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_handle_map.find(handle)->second,
-                Vector2u { uint32_t(width), uint32_t(height) }, Vector2i(), 0s);
+                Vector2u{uint32_t(width), uint32_t(height)}, Vector2i(), 0s);
     }
 
     static void _on_window_move(GLFWwindow *handle, int x, int y) {
         using namespace std::chrono_literals;
 
         dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_handle_map.find(handle)->second,
-                Vector2u(), Vector2i { x, y }, 0s);
+                Vector2u(), Vector2i{x, y}, 0s);
     }
 
     static void _on_window_focus(GLFWwindow *handle, int focused) {
@@ -136,7 +136,7 @@ namespace argus {
         g_canvas_dtor = dtor;
     }
 
-    Window::Window(const std::string &id, Window *parent):
+    Window::Window(const std::string &id, Window *parent) :
             pimpl(new pimpl_Window(id, parent)) {
         affirm_precond(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
@@ -252,7 +252,8 @@ namespace argus {
             glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
             glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);
 
-            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_name().c_str(), nullptr, nullptr);
+            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_name().c_str(), nullptr,
+                    nullptr);
 
             if (pimpl->handle == nullptr) {
                 Logger::default_logger().fatal("Failed to create GLFW window");
@@ -275,7 +276,7 @@ namespace argus {
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
             glfwDestroyWindow(pimpl->handle);
-            run_on_game_thread([this] () { delete this; });
+            run_on_game_thread([this]() { delete this; });
             return;
         } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
@@ -312,12 +313,12 @@ namespace argus {
                         "Current display mode fullscreen resolution is too large");
 
                 glfwSetWindowMonitor(pimpl->handle,
-                    get_display_affinity().pimpl->handle,
-                    0,
-                    0,
-                    int(cur_display_mode.resolution.x),
-                    int(cur_display_mode.resolution.y),
-                    cur_display_mode.refresh_rate);
+                        get_display_affinity().pimpl->handle,
+                        0,
+                        0,
+                        int(cur_display_mode.resolution.x),
+                        int(cur_display_mode.resolution.y),
+                        cur_display_mode.refresh_rate);
 
                 pimpl->cur_resolution = cur_display_mode.resolution;
                 pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
@@ -327,12 +328,12 @@ namespace argus {
 
                 // switch to windowed mode
                 glfwSetWindowMonitor(pimpl->handle,
-                    nullptr,
-                    position->x,
-                    position->y,
-                    int32_t(windowed_res->x),
-                    int32_t(windowed_res->y),
-                    GLFW_DONT_CARE);
+                        nullptr,
+                        position->x,
+                        position->y,
+                        int32_t(windowed_res->x),
+                        int32_t(windowed_res->y),
+                        GLFW_DONT_CARE);
                 pimpl->cur_resolution = windowed_res;
             }
         } else if (fullscreen && (custom_display_mode.dirty || display_mode.dirty)) {
@@ -350,19 +351,19 @@ namespace argus {
 
             if (cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
                 glfwSetWindowMonitor(pimpl->handle,
-                    get_display_affinity().pimpl->handle,
-                    0,
-                    0,
-                    int32_t(cur_display_mode.resolution.x),
-                    int32_t(cur_display_mode.resolution.y),
-                    cur_display_mode.refresh_rate);
-                
+                        get_display_affinity().pimpl->handle,
+                        0,
+                        0,
+                        int32_t(cur_display_mode.resolution.x),
+                        int32_t(cur_display_mode.resolution.y),
+                        cur_display_mode.refresh_rate);
+
                 pimpl->cur_resolution = cur_display_mode.resolution;
                 pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
             } else {
                 glfwSetWindowSize(pimpl->handle,
-                    int32_t(cur_display_mode.resolution.x),
-                    int32_t(cur_display_mode.resolution.y));
+                        int32_t(cur_display_mode.resolution.x),
+                        int32_t(cur_display_mode.resolution.y));
 
                 pimpl->cur_resolution = cur_display_mode.resolution;
             }
@@ -374,25 +375,25 @@ namespace argus {
                         "Current windowed resolution is too large");
 
                 glfwSetWindowSize(pimpl->handle,
-                    int32_t(windowed_res->x),
-                    int32_t(windowed_res->y));
+                        int32_t(windowed_res->x),
+                        int32_t(windowed_res->y));
 
                 pimpl->cur_resolution = windowed_res;
             }
 
             if (position.dirty) {
                 glfwSetWindowPos(pimpl->handle,
-                    position->x,
-                    position->y);
+                        position->x,
+                        position->y);
             }
         }
 
         if (mouse_capture.dirty || mouse_visible.dirty) {
             glfwSetInputMode(pimpl->handle, GLFW_CURSOR, mouse_capture
-                ? GLFW_CURSOR_DISABLED
-                : mouse_visible
-                    ? GLFW_CURSOR_NORMAL
-                    : GLFW_CURSOR_HIDDEN);
+                                                         ? GLFW_CURSOR_DISABLED
+                                                         : mouse_visible
+                                                           ? GLFW_CURSOR_NORMAL
+                                                           : GLFW_CURSOR_HIDDEN);
         }
 
         if (mouse_raw_input.dirty) {
@@ -530,18 +531,23 @@ namespace argus {
     bool Window::is_mouse_captured(void) {
         return pimpl->properties.mouse_capture.peek();
     }
+
     void Window::set_mouse_captured(bool captured) {
         pimpl->properties.mouse_capture = captured;
     }
+
     bool Window::is_mouse_visible(void) {
         return pimpl->properties.mouse_visible.peek();
     }
+
     void Window::set_mouse_visible(bool visible) {
         pimpl->properties.mouse_visible = visible;
     }
+
     bool Window::is_mouse_raw_input(void) {
         return pimpl->properties.mouse_raw_input.peek();
     }
+
     void Window::set_mouse_raw_input(bool raw_input) {
         pimpl->properties.mouse_raw_input = raw_input;
     }
@@ -556,11 +562,11 @@ namespace argus {
     }
 
     void *get_window_handle(const Window &window) {
-        return static_cast<void*>(window.pimpl->handle);
+        return static_cast<void *>(window.pimpl->handle);
     }
 
     Window *get_window_from_handle(const void *handle) {
-        auto it = g_window_handle_map.find(static_cast<GLFWwindow*>(const_cast<void*>(handle)));
+        auto it = g_window_handle_map.find(static_cast<GLFWwindow *>(const_cast<void *>(handle)));
         if (it == g_window_handle_map.end()) {
             return nullptr;
         }

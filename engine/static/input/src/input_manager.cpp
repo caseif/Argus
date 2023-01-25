@@ -37,7 +37,7 @@ namespace argus::input {
         return instance;
     }
 
-    InputManager::InputManager(void):
+    InputManager::InputManager(void) :
             pimpl(&g_pimpl_pool.construct<pimpl_InputManager>()) {
     }
 
@@ -95,7 +95,7 @@ namespace argus::input {
 
         auto controller = new Controller(free_index);
 
-        pimpl->controllers.insert({ free_index, controller });
+        pimpl->controllers.insert({free_index, controller});
 
         return *controller;
     }
@@ -132,7 +132,7 @@ namespace argus::input {
         for (auto &pair : pimpl->controllers) {
             auto controller_index = pair.first;
             auto &controller = *pair.second;
-            
+
             auto it = controller.pimpl->key_to_action_bindings.find(key);
             if (it == controller.pimpl->key_to_action_bindings.end()) {
                 continue;
@@ -165,7 +165,7 @@ namespace argus::input {
         for (auto &pair : pimpl->controllers) {
             auto controller_index = pair.first;
             auto &controller = *pair.second;
-            
+
             auto it = controller.pimpl->mouse_axis_to_action_bindings.find(axis);
             if (it == controller.pimpl->mouse_axis_to_action_bindings.end()) {
                 continue;

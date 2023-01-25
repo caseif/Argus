@@ -30,19 +30,20 @@
 namespace argus {
     // forward declarations
     class RenderObject2D;
+
     class Scene2D;
 
     typedef void *ProcessedRenderObject2DPtr;
     typedef std::map<Handle, ProcessedRenderObject2DPtr> ProcessedRenderObject2DMap;
 
     typedef std::function<ProcessedRenderObject2DPtr(const RenderObject2D &obj,
-        const Matrix4 &transform, void *extra)> ProcessRenderObj2DFn;
+            const Matrix4 &transform, void *extra)> ProcessRenderObj2DFn;
 
     typedef std::function<void(const RenderObject2D &obj, ProcessedRenderObject2DPtr proc_obj,
-        const Matrix4 &transform, bool is_transform_dirty, void *extra)> UpdateRenderObj2DFn;
+            const Matrix4 &transform, bool is_transform_dirty, void *extra)> UpdateRenderObj2DFn;
 
     void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
             ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn, void *extra);
 
-    std::vector<Resource*> get_all_materials_in_scene_2d(const Scene2D &scene);
+    std::vector<Resource *> get_all_materials_in_scene_2d(const Scene2D &scene);
 }

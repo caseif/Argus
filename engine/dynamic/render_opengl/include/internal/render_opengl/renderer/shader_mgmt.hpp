@@ -29,7 +29,9 @@
 namespace argus {
     // forward declarations
     struct RendererState;
+
     class Resource;
+
     class Shader;
 
     LinkedProgram link_program(std::initializer_list<std::string> shader_uids);

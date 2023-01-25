@@ -24,7 +24,7 @@
 
 namespace argus::input {
     struct pimpl_InputManager {
-        std::map<ControllerIndex, Controller*> controllers;
+        std::map<ControllerIndex, Controller *> controllers;
 
         pimpl_InputManager(void) {
         }

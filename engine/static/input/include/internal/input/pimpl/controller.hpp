@@ -36,7 +36,7 @@ namespace argus::input {
         std::map<MouseAxis, std::vector<std::string>> mouse_axis_to_action_bindings;
         std::map<std::string, std::vector<MouseAxis>> action_to_mouse_axis_bindings;
 
-        pimpl_Controller(ControllerIndex index):
+        pimpl_Controller(ControllerIndex index) :
                 index(index) {
         }
     };

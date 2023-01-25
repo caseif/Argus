@@ -30,14 +30,14 @@
 
 #define MODULES_DIR_NAME "modules"
 #ifdef _WIN32
-    #define SHARED_LIB_PREFIX ""
-    #define SHARED_LIB_EXT "dll"
+#define SHARED_LIB_PREFIX ""
+#define SHARED_LIB_EXT "dll"
 #elif defined(__APPLE__)
-    #define SHARED_LIB_PREFIX ""
-    #define SHARED_LIB_EXT "dylib"
+#define SHARED_LIB_PREFIX ""
+#define SHARED_LIB_EXT "dylib"
 #else
-    #define SHARED_LIB_PREFIX "lib"
-    #define SHARED_LIB_EXT "so"
+#define SHARED_LIB_PREFIX "lib"
+#define SHARED_LIB_EXT "so"
 #endif
 
 #define US_PER_S 1'000'000ULL
@@ -53,7 +53,7 @@ namespace argus {
     void do_early_init();
 
     void enable_modules(const std::vector<std::string> &modules);
-    
+
     //void load_dynamic_modules(void);
 
     void unload_dynamic_modules(void);

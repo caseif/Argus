@@ -30,14 +30,14 @@
 #include <vector>
 
 namespace argus {
-    static std::map<const System*, std::map<EntityId, const Entity*>> g_entity_cache;
+    static std::map<const System *, std::map<EntityId, const Entity *>> g_entity_cache;
 
-    static void execute_system(const System &system, TimeDelta delta, std::vector<const Entity*> &created_entities,
+    static void execute_system(const System &system, TimeDelta delta, std::vector<const Entity *> &created_entities,
             std::vector<EntityId> &destroyed_entities) {
         auto &entities = g_entity_cache[&system];
 
         for (auto *entity : created_entities) {
-        bool components_match = true;
+            bool components_match = true;
             for (auto comp_type : system.pimpl->component_types) {
                 if (!entity->has(comp_type)) {
                     components_match = false;

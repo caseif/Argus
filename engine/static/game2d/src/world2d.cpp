@@ -50,11 +50,11 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_World2D));
 
-    static std::map<std::string, World2D*> g_worlds;
+    static std::map<std::string, World2D *> g_worlds;
 
     World2D &World2D::create(const std::string &id, Canvas &canvas, float scale_factor) {
         auto *world = new World2D(id, canvas, scale_factor);
-        g_worlds.insert({ id, world });
+        g_worlds.insert({id, world});
         return *world;
     }
 
@@ -67,9 +67,9 @@ namespace argus {
         return *it->second;
     }
 
-    World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):
+    World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor) :
             pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
-        pimpl->layers.insert({ PRIMARY_LAYER_ID, new World2DLayer(*this, PRIMARY_LAYER_ID, 1.0, std::nullopt) });
+        pimpl->layers.insert({PRIMARY_LAYER_ID, new World2DLayer(*this, PRIMARY_LAYER_ID, 1.0, std::nullopt)});
     }
 
     World2D::~World2D(void) {

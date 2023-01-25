@@ -36,16 +36,16 @@ namespace argus {
         pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);
     }
 
-    RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices):
-        RenderPrim2D(std::vector<Vertex2D>(vertices)) {
+    RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices) :
+            RenderPrim2D(std::vector<Vertex2D>(vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(const RenderPrim2D &rhs) noexcept:
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.pimpl->vertices)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.pimpl->vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(RenderPrim2D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -58,7 +58,7 @@ namespace argus {
     size_t RenderPrim2D::get_vertex_count(void) const {
         return pimpl->vertices.size();
     }
-    
+
     const std::vector<Vertex2D> &RenderPrim2D::get_vertices(void) const {
         return pimpl->vertices;
     }

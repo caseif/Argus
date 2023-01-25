@@ -30,12 +30,13 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
 
-    Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src):
+    Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src)
+            :
             pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
-                uid,
-                type,
-                stage,
-                src
+                    uid,
+                    type,
+                    stage,
+                    src
             )) {
     }
 
@@ -56,19 +57,19 @@ namespace argus {
         g_pimpl_pool.destroy(pimpl);
     }
 
-    ShaderStage operator |(ShaderStage lhs, ShaderStage rhs) {
+    ShaderStage operator|(ShaderStage lhs, ShaderStage rhs) {
         return ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
-                                        static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+                           static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
-    ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs) {
+    ShaderStage &operator|=(ShaderStage &lhs, ShaderStage rhs) {
         return lhs = ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) |
-                                              static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+                                 static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
-    ShaderStage operator &(ShaderStage lhs, ShaderStage rhs) {
+    ShaderStage operator&(ShaderStage lhs, ShaderStage rhs) {
         return ShaderStage(static_cast<std::underlying_type<ShaderStage>::type>(lhs) &
-                                        static_cast<std::underlying_type<ShaderStage>::type>(rhs));
+                           static_cast<std::underlying_type<ShaderStage>::type>(rhs));
     }
 
     const std::string &Shader::get_uid(void) const {

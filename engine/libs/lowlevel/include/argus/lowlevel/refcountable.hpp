@@ -23,17 +23,17 @@
 #include <cstddef>
 
 namespace argus {
-    template <typename T>
+    template<typename T>
     struct RefCountable {
         T value;
         size_t refcount;
 
-        RefCountable<T>(const T &value):
+        RefCountable<T>(const T &value) :
                 value(value),
                 refcount(1) {
         }
 
-        RefCountable<T>(T &&value):
+        RefCountable<T>(T &&value) :
                 value(std::move(value)),
                 refcount(1) {
         }
@@ -50,7 +50,7 @@ namespace argus {
             return value;
         }
 
-        T *operator ->(void) {
+        T *operator->(void) {
             return &value;
         }
     };

@@ -37,24 +37,25 @@ namespace argus {
     };
 
     class HandleTable {
-       public:
+      public:
         pimpl_HandleTable *pimpl;
 
         explicit HandleTable(void);
 
-        HandleTable(const HandleTable&) = delete;
-        HandleTable(HandleTable&&) = delete;
+        HandleTable(const HandleTable &) = delete;
+
+        HandleTable(HandleTable &&) = delete;
 
         ~HandleTable(void);
 
         Handle create_handle(void *ptr);
 
-        template <typename T>
+        template<typename T>
         Handle create_handle(T *ref) {
             return create_handle(static_cast<void *>(ref));
         }
 
-        template <typename T, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
+        template<typename T, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
         Handle create_handle(T &ref) {
             return create_handle(static_cast<void *>(&ref));
         }
@@ -63,12 +64,12 @@ namespace argus {
 
         bool update_handle(Handle handle, void *ptr);
 
-        template <typename T>
+        template<typename T>
         bool update_handle(Handle handle, T *ref) {
             return update_handle(handle, static_cast<void *>(ref));
         }
 
-        template <typename T, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
+        template<typename T, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
         bool update_handle(Handle handle, T &ref) {
             return update_handle(handle, static_cast<void *>(&ref));
         }
@@ -77,9 +78,9 @@ namespace argus {
 
         void *deref(Handle handle) const;
 
-        template <typename T>
+        template<typename T>
         T *deref(Handle handle) const {
-            return reinterpret_cast<T*>(deref(handle));
+            return reinterpret_cast<T *>(deref(handle));
         }
     };
 }

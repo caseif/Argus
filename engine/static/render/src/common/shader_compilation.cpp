@@ -29,8 +29,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated"
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
+
 #pragma GCC diagnostic pop
 
 #include <map>
@@ -48,7 +50,7 @@ namespace argus {
 
         glslang::TProgram program;
 
-        std::map<std::string, const Shader*> glsl_shaders_map;
+        std::map<std::string, const Shader *> glsl_shaders_map;
 
         std::map<EShLanguage, std::string> shaders_map;
         std::map<EShLanguage, std::string> shader_uids;
@@ -103,22 +105,22 @@ namespace argus {
 
         for (auto shader_attr : comp_res.attributes) {
             Logger::default_logger().debug("Found shader program attribute %s @ location %d",
-                shader_attr.first.c_str(), shader_attr.second);
+                    shader_attr.first.c_str(), shader_attr.second);
         }
 
         for (auto shader_output : comp_res.outputs) {
             Logger::default_logger().debug("Found shader program output %s @ location %d",
-                shader_output.first.c_str(), shader_output.second);
+                    shader_output.first.c_str(), shader_output.second);
         }
 
         for (auto shader_uniform : comp_res.uniforms) {
             Logger::default_logger().debug("Found shader program uniform %s @ location %d",
-                shader_uniform.first.c_str(), shader_uniform.second);
+                    shader_uniform.first.c_str(), shader_uniform.second);
         }
 
         for (auto shader_buffer : comp_res.buffers) {
             Logger::default_logger().debug("Found shader program buffer %s @ location %d",
-                shader_buffer.first.c_str(), shader_buffer.second);
+                    shader_buffer.first.c_str(), shader_buffer.second);
         }
 
         ShaderReflectionInfo refl;

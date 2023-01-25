@@ -27,7 +27,9 @@
 namespace argus {
     // forward declarations
     class Resource;
+
     class ResourceLoader;
+
     class ResourceManager;
 
     struct pimpl_Resource {
@@ -69,16 +71,16 @@ namespace argus {
         arp_resource_t *arp_resource{nullptr};
 
         pimpl_Resource(ResourceManager &manager, const ResourceLoader &loader, void *const data_ptr,
-                const std::vector<std::string> &dependencies, unsigned int ref_count = 1):
-            manager(manager),
-            loader(loader),
-            ref_count(ref_count),
-            dependencies(dependencies),
-            data_ptr(data_ptr) {
+                const std::vector<std::string> &dependencies, unsigned int ref_count = 1) :
+                manager(manager),
+                loader(loader),
+                ref_count(ref_count),
+                dependencies(dependencies),
+                data_ptr(data_ptr) {
         }
 
-        pimpl_Resource(pimpl_Resource&) = delete;
+        pimpl_Resource(pimpl_Resource &) = delete;
 
-        pimpl_Resource(pimpl_Resource&&) = delete;
+        pimpl_Resource(pimpl_Resource &&) = delete;
     };
 }

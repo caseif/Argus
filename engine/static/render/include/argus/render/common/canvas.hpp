@@ -31,7 +31,9 @@
 namespace argus {
     // forward declarations
     class Scene;
+
     class Scene2D;
+
     class TextureData;
 
     class Window;
@@ -51,38 +53,38 @@ namespace argus {
      * \sa Window
      */
     class Canvas {
-        public:
-            pimpl_Canvas *const pimpl;
+      public:
+        pimpl_Canvas *const pimpl;
 
-            /**
-             * \brief Constructs a new Canvas attached to the given Window.
-             *
-             * \param window The Window to attach the new Canvas to.
-             */
-            Canvas(Window &window);
+        /**
+         * \brief Constructs a new Canvas attached to the given Window.
+         *
+         * \param window The Window to attach the new Canvas to.
+         */
+        Canvas(Window &window);
 
-            Canvas(Canvas &rhs) = delete;
+        Canvas(Canvas &rhs) = delete;
 
-            Canvas(Canvas &&rhs) = delete;
+        Canvas(Canvas &&rhs) = delete;
 
-            ~Canvas(void);
+        ~Canvas(void);
 
-            /**
-             * \brief Gets the Window which owns this Canvas.
-             *
-             * \return The Window which owns this Canvas.
-             */
-            Window &get_window(void) const;
+        /**
+         * \brief Gets the Window which owns this Canvas.
+         *
+         * \return The Window which owns this Canvas.
+         */
+        Window &get_window(void) const;
 
-            std::vector<std::reference_wrapper<AttachedViewport2D>> get_viewports_2d(void) const;
+        std::vector<std::reference_wrapper<AttachedViewport2D>> get_viewports_2d(void) const;
 
-            std::optional<std::reference_wrapper<AttachedViewport>> find_viewport(const std::string &id) const;
+        std::optional<std::reference_wrapper<AttachedViewport>> find_viewport(const std::string &id) const;
 
-            AttachedViewport2D &attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
-                    uint32_t z_index);
+        AttachedViewport2D &attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
+                uint32_t z_index);
 
-            AttachedViewport2D &attach_default_viewport_2d(const std::string &id, Camera2D &camera);
+        AttachedViewport2D &attach_default_viewport_2d(const std::string &id, Camera2D &camera);
 
-            void detach_viewport_2d(const std::string &id);
+        void detach_viewport_2d(const std::string &id);
     };
 }

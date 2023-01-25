@@ -29,7 +29,9 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
+
 #include <pthread.h> // need it for rwlock
+
 #endif
 
 namespace argus {
@@ -44,81 +46,81 @@ namespace argus {
      *
      * \tparam ValueType The type of value to be wrapped for atomic use.
      */
-    template <typename ValueType>
+    template<typename ValueType>
     class ComplexAtomic {
-        private:
-            ValueType value;
-            std::mutex mutex;
+      private:
+        ValueType value;
+        std::mutex mutex;
 
-        public:
-            /**
-             * \brief The default constructor; creates a `ComplexAtomic` with an
-             *        empty value.
-             */
-            ComplexAtomic(void):
-                    value() {
-            }
+      public:
+        /**
+         * \brief The default constructor; creates a `ComplexAtomic` with an
+         *        empty value.
+         */
+        ComplexAtomic(void) :
+                value() {
+        }
 
-            /**
-             * \brief The copy constructor.
-             *
-             * \param val The value to copy into this `ComplexAtomic`'s state.
-             */
-            explicit ComplexAtomic(ValueType &val):
-                    value(val) {
-            }
+        /**
+         * \brief The copy constructor.
+         *
+         * \param val The value to copy into this `ComplexAtomic`'s state.
+         */
+        explicit ComplexAtomic(ValueType &val) :
+                value(val) {
+        }
 
-            /**
-             * \brief The move constructor.
-             *
-             * \param val The value to move into this `ComplexAtomic`'s state.
-             */
-            explicit ComplexAtomic(ValueType &&val):
-                    value(val) {
-            }
+        /**
+         * \brief The move constructor.
+         *
+         * \param val The value to move into this `ComplexAtomic`'s state.
+         */
+        explicit ComplexAtomic(ValueType &&val) :
+                value(val) {
+        }
 
-            /**
-             * \brief Converts the ComplexAtomic to its base type, effectively
-             * "unwrapping" it.
-             *
-             * \return The base value.
-             */
-            inline operator ValueType(void) {
-                mutex.lock();
-                ValueType val_copy = value;
-                mutex.unlock();
-                return val_copy;
-            }
+        /**
+         * \brief Converts the ComplexAtomic to its base type, effectively
+         * "unwrapping" it.
+         *
+         * \return The base value.
+         */
+        inline operator ValueType(void) {
+            mutex.lock();
+            ValueType val_copy = value;
+            mutex.unlock();
+            return val_copy;
+        }
 
-            /**
-             * \brief Performs an atomic assignment to an lvalue.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This ComplexAtomic.
-             */
-            inline ComplexAtomic &operator =(const ValueType &rhs) {
-                mutex.lock();
-                value = rhs;
-                mutex.unlock();
-                return *this;
-            }
+        /**
+         * \brief Performs an atomic assignment to an lvalue.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This ComplexAtomic.
+         */
+        inline ComplexAtomic &operator=(const ValueType &rhs) {
+            mutex.lock();
+            value = rhs;
+            mutex.unlock();
+            return *this;
+        }
 
-            /**
-             * \brief Performs an atomic assignment to an rvalue.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This ComplexAtomic.
-             */
-            inline ComplexAtomic &operator =(const ValueType &&rhs) {
-                mutex.lock();
-                value = std::move(rhs);
-                mutex.unlock();
-                return *this;
-            }
+        /**
+         * \brief Performs an atomic assignment to an rvalue.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This ComplexAtomic.
+         */
+        inline ComplexAtomic &operator=(const ValueType &&rhs) {
+            mutex.lock();
+            value = std::move(rhs);
+            mutex.unlock();
+            return *this;
+        }
 
-            ValueType &operator *(void) = delete;
+        ValueType &operator*(void) = delete;
     };
 
     /**
@@ -130,150 +132,150 @@ namespace argus {
      *
      * \tparam ValueType The type of value to be wrapped for use.
      */
-    template <typename ValueType>
+    template<typename ValueType>
     class AtomicDirtiable {
-        private:
-            ValueType value;
-            bool dirty;
-            std::mutex mutex;
+      private:
+        ValueType value;
+        bool dirty;
+        std::mutex mutex;
 
-            template <typename V = ValueType>
-            typename std::enable_if<std::is_integral<V>::value, bool>::type
-            is_same_value(V &new_val) {
-                return new_val == this->value;
-            }
+        template<typename V = ValueType>
+        typename std::enable_if<std::is_integral<V>::value, bool>::type
+        is_same_value(V &new_val) {
+            return new_val == this->value;
+        }
 
-            template <typename V = ValueType>
-            typename std::enable_if<!std::is_integral<V>::value, bool>::type
-            is_same_value(V &new_val) {
-                UNUSED(new_val);
-                return false;
-            }
+        template<typename V = ValueType>
+        typename std::enable_if<!std::is_integral<V>::value, bool>::type
+        is_same_value(V &new_val) {
+            UNUSED(new_val);
+            return false;
+        }
 
-        public:
-            AtomicDirtiable(void):
+      public:
+        AtomicDirtiable(void) :
                 value(),
                 dirty(false),
                 mutex() {
-            }
+        }
 
-            AtomicDirtiable(const ValueType &rhs):
+        AtomicDirtiable(const ValueType &rhs) :
                 value(rhs),
                 dirty(false),
                 mutex() {
-            }
+        }
 
-            AtomicDirtiable(ValueType &&rhs):
+        AtomicDirtiable(ValueType &&rhs) :
                 value(std::move(rhs)),
                 dirty(false),
                 mutex() {
-            }
+        }
 
-            AtomicDirtiable(const AtomicDirtiable &rhs):
+        AtomicDirtiable(const AtomicDirtiable &rhs) :
                 value(rhs.value),
                 dirty(rhs.dirty),
                 mutex() {
-            }
+        }
 
-            AtomicDirtiable(AtomicDirtiable &&rhs):
+        AtomicDirtiable(AtomicDirtiable &&rhs) :
                 value(std::move(rhs.value)),
                 dirty(rhs.dirty),
                 mutex() {
-            }
+        }
 
-            /**
-             * \brief Atomically fetches the current value and clears the dirty
-             *        flag, returning both the copied value and the previous
-             *        dirty state.
-             *
-             * \return A `struct` containing the copied value and the previous
-             *         state of the dirty flag.
-             */
-            const ValueAndDirtyFlag<ValueType> read(void) {
-                mutex.lock();
+        /**
+         * \brief Atomically fetches the current value and clears the dirty
+         *        flag, returning both the copied value and the previous
+         *        dirty state.
+         *
+         * \return A `struct` containing the copied value and the previous
+         *         state of the dirty flag.
+         */
+        const ValueAndDirtyFlag<ValueType> read(void) {
+            mutex.lock();
 
-                auto val_copy = value;
-                bool old_dirty = dirty;
-                
-                dirty = false;
+            auto val_copy = value;
+            bool old_dirty = dirty;
 
-                mutex.unlock();
+            dirty = false;
 
-                return ValueAndDirtyFlag<ValueType> { val_copy, old_dirty };
-            };
+            mutex.unlock();
 
-            /**
-             * \brief Atomically fetches the current value without affecting the
-                      dirty flag.
-             *
-             * \return A copy of the current value.
-             */
-            ValueType peek(void) {
-                mutex.lock();
-                auto val_copy = value;
-                mutex.unlock();
+            return ValueAndDirtyFlag<ValueType>{val_copy, old_dirty};
+        };
 
-                return val_copy;
-            };
+        /**
+         * \brief Atomically fetches the current value without affecting the
+                  dirty flag.
+         *
+         * \return A copy of the current value.
+         */
+        ValueType peek(void) {
+            mutex.lock();
+            auto val_copy = value;
+            mutex.unlock();
 
-            /**
-             * \brief Performs an atomic assignment to an lvalue, setting the
-             *        dirty flag.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This AtomicDirtiable.
-             */
-            inline AtomicDirtiable &operator =(const ValueType &rhs) {
-                mutex.lock();
-                if (!is_same_value(rhs)) {
-                    value = rhs;
-                    dirty = true;
-                }
-                mutex.unlock();
-                return *this;
-            };
+            return val_copy;
+        };
 
-            /**
-             * \brief Performs an atomic assignment to an rvalue, setting the
-             *        dirty flag.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This AtomicDirtiable.
-             */
-            inline AtomicDirtiable &operator =(const ValueType &&rhs) {
-                mutex.lock();
-                if (!is_same_value(rhs)) {
-                    value = std::move(rhs);
-                    dirty = true;
-                }
-                mutex.unlock();
-                return *this;
-            };
-
-            /**
-             * Performs an atomic assignment to an lvalue without setting the
-             * dirty flag.
-             *
-             * \param rhs The value to assign.
-             */
-            void set_quietly(const ValueType &rhs) {
-                mutex.lock();
+        /**
+         * \brief Performs an atomic assignment to an lvalue, setting the
+         *        dirty flag.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This AtomicDirtiable.
+         */
+        inline AtomicDirtiable &operator=(const ValueType &rhs) {
+            mutex.lock();
+            if (!is_same_value(rhs)) {
                 value = rhs;
-                mutex.unlock();
+                dirty = true;
             }
+            mutex.unlock();
+            return *this;
+        };
 
-            /**
-             * Performs an atomic assignment to an rvalue without setting the
-             * dirty flag.
-             *
-             * \param rhs The value to assign.
-             */
-            void set_quietly(const ValueType &&rhs) {
-                mutex.lock();
+        /**
+         * \brief Performs an atomic assignment to an rvalue, setting the
+         *        dirty flag.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This AtomicDirtiable.
+         */
+        inline AtomicDirtiable &operator=(const ValueType &&rhs) {
+            mutex.lock();
+            if (!is_same_value(rhs)) {
                 value = std::move(rhs);
-                mutex.unlock();
+                dirty = true;
             }
+            mutex.unlock();
+            return *this;
+        };
+
+        /**
+         * Performs an atomic assignment to an lvalue without setting the
+         * dirty flag.
+         *
+         * \param rhs The value to assign.
+         */
+        void set_quietly(const ValueType &rhs) {
+            mutex.lock();
+            value = rhs;
+            mutex.unlock();
+        }
+
+        /**
+         * Performs an atomic assignment to an rvalue without setting the
+         * dirty flag.
+         *
+         * \param rhs The value to assign.
+         */
+        void set_quietly(const ValueType &&rhs) {
+            mutex.lock();
+            value = std::move(rhs);
+            mutex.unlock();
+        }
     };
 }

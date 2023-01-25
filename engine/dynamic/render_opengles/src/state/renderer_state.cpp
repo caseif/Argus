@@ -38,10 +38,11 @@
 namespace argus {
     // forward declarations
     class Canvas;
+
     class Scene2D;
 
-    RendererState::RendererState(GLESRenderer &renderer):
-        renderer(renderer) {
+    RendererState::RendererState(GLESRenderer &renderer) :
+            renderer(renderer) {
     }
 
     RendererState::~RendererState(void) {
@@ -67,11 +68,11 @@ namespace argus {
             res->release();
         }
     }
-    
+
     SceneState &RendererState::get_scene_state(Scene &scene, bool create) {
         switch (scene.type) {
             case SceneType::TwoD: {
-                auto &scene_2d = reinterpret_cast<const Scene2D&>(scene);
+                auto &scene_2d = reinterpret_cast<const Scene2D &>(scene);
                 auto it = this->scene_states_2d.find(&scene_2d);
                 if (it != this->scene_states_2d.cend()) {
                     return it->second;
@@ -100,7 +101,7 @@ namespace argus {
     ViewportState &RendererState::get_viewport_state(AttachedViewport &viewport, bool create) {
         switch (viewport.type) {
             case SceneType::TwoD: {
-                auto &viewport_2d = reinterpret_cast<AttachedViewport2D&>(viewport);
+                auto &viewport_2d = reinterpret_cast<AttachedViewport2D &>(viewport);
                 auto it = this->viewport_states_2d.find(&viewport_2d);
                 if (it != this->viewport_states_2d.cend()) {
                     return it->second;

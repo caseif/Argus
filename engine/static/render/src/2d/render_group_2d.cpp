@@ -36,6 +36,7 @@
 namespace argus {
     // forward declarations
     class RenderPrim2D;
+
     class Scene2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
@@ -45,27 +46,27 @@ namespace argus {
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
-            const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+            const Transform2D &transform) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
-            Transform2D &&transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+            Transform2D &&transform) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
     }
 
-    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
+    RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
     }
 
     RenderGroup2D::RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *parent_group,
-            const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
+            const Transform2D &transform) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
         g_render_handle_table.update_handle(handle, this);
     }
 
     RenderGroup2D::RenderGroup2D(RenderGroup2D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 

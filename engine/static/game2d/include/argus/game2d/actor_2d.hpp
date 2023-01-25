@@ -31,13 +31,14 @@ namespace argus {
     struct pimpl_Actor2D;
 
     class Actor2D {
-       public:
+      public:
         pimpl_Actor2D *pimpl;
 
         Actor2D(const std::string &sprite_uid, const Vector2f &size, const Transform2D &transform);
 
-        Actor2D(const Actor2D&) = delete;
-        Actor2D(Actor2D&&) = delete;
+        Actor2D(const Actor2D &) = delete;
+
+        Actor2D(Actor2D &&) = delete;
 
         ~Actor2D(void);
 

@@ -37,7 +37,9 @@
 #ifdef _WIN32
 #define ssize_t signed __int64
 #else
+
 #include <sys/types.h>
+
 #endif
 
 /**
@@ -69,191 +71,191 @@ namespace argus {
      * interface for asynchronous file I/O.
      */
     class FileHandle {
-        private:
-            std::filesystem::path path;
-            int mode;
-            size_t size;
-            void *handle;
+      private:
+        std::filesystem::path path;
+        int mode;
+        size_t size;
+        void *handle;
 
-            bool valid;
+        bool valid;
 
-            FileHandle(const std::filesystem::path &path, int mode, size_t size, void *handle);
+        FileHandle(const std::filesystem::path &path, int mode, size_t size, void *handle);
 
-        public:
-            /**
-             * \brief Creates a handle to the file at the given path.
-             *
-             * If the file does not yet exist, it will be created as an empty
-             * file.
-             *
-             * \param path The path of the file to obtain a handle to.
-             * \param mode The mode to open the file with.
-             *
-             * \return The created FileHandle.
-             *
-             * \throw std::invalid_argument If the given mode is invalid. This
-             *        occurs if no mode is set, or if CREATE is set without
-             *        WRITE.
-             * \throw std::system_error If an error occurs while opening or
-             *        creating the file.
-             */
-            static FileHandle create(const std::filesystem::path &path, int mode);
+      public:
+        /**
+         * \brief Creates a handle to the file at the given path.
+         *
+         * If the file does not yet exist, it will be created as an empty
+         * file.
+         *
+         * \param path The path of the file to obtain a handle to.
+         * \param mode The mode to open the file with.
+         *
+         * \return The created FileHandle.
+         *
+         * \throw std::invalid_argument If the given mode is invalid. This
+         *        occurs if no mode is set, or if CREATE is set without
+         *        WRITE.
+         * \throw std::system_error If an error occurs while opening or
+         *        creating the file.
+         */
+        static FileHandle create(const std::filesystem::path &path, int mode);
 
-            /**
-             * \brief Gets the path of the file referenced by this handle.
-             *
-             * \return The path of the file referenced by this handle.
-             */
-            const std::filesystem::path &get_path(void) const;
+        /**
+         * \brief Gets the path of the file referenced by this handle.
+         *
+         * \return The path of the file referenced by this handle.
+         */
+        const std::filesystem::path &get_path(void) const;
 
-            /**
-             * \brief Gets the size of the file referenced by this handle.
-             *
-             * If the file did not exist prior to the handle being opened, this
-             * function will return `0`.
-             *
-             * \return The size of the file referenced by this handle.
-             */
-            size_t get_size(void) const;
+        /**
+         * \brief Gets the size of the file referenced by this handle.
+         *
+         * If the file did not exist prior to the handle being opened, this
+         * function will return `0`.
+         *
+         * \return The size of the file referenced by this handle.
+         */
+        size_t get_size(void) const;
 
-            /**
-             * \brief Releases the file handle.
-             *
-             * \attention The handle will thereafter be invalidated and thus
-             *            ineligible for further use.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             * \throw std::system_error If an error occurs while closing the
-             *        file.
-             */
-            void release(void);
+        /**
+         * \brief Releases the file handle.
+         *
+         * \attention The handle will thereafter be invalidated and thus
+         *            ineligible for further use.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         * \throw std::system_error If an error occurs while closing the
+         *        file.
+         */
+        void release(void);
 
-            /**
-             * \brief Removes the file referenced by the handle.
-             *
-             * \attention This operation implicitly releases the handle,
-             *            invalidating it.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             * \throw std::system_error If an error occurs while removing the
-             *        file or closing its handle.
-             *
-             * \sa FileHandle::release
-             */
-            void remove(void);
+        /**
+         * \brief Removes the file referenced by the handle.
+         *
+         * \attention This operation implicitly releases the handle,
+         *            invalidating it.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         * \throw std::system_error If an error occurs while removing the
+         *        file or closing its handle.
+         *
+         * \sa FileHandle::release
+         */
+        void remove(void);
 
-            /**
-             * \brief Creates an std::istream from the file handle.
-             *
-             * \param offset The offset in bytes at which to open the
-             *        std::istream.
-             * \param target The object to use when opening the stream.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             */
-            void to_istream(off_t offset, std::ifstream &target) const;
+        /**
+         * \brief Creates an std::istream from the file handle.
+         *
+         * \param offset The offset in bytes at which to open the
+         *        std::istream.
+         * \param target The object to use when opening the stream.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         */
+        void to_istream(off_t offset, std::ifstream &target) const;
 
-            /**
-             * \brief Reads data from the file referenced by the handle.
-             *
-             * \param offset The offset in bytes from which to begin reading.
-             * \param read_size The number of bytes to read.
-             * \param buf The buffer to store data into. This buffer _must_ be
-             *            at least `size` bytes in length to avoid a buffer
-             *            overflow.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             * \throw std::invalid_argument If the current mode does not support
-             *        reading, or if `size` or `offset` are nonsensical
-             *        (individiually or in conjunction).
-             * \throw std::system_error If an error occurs while reading from
-             *        the file.
-             */
-            void read(off_t offset, size_t read_size, unsigned char *buf) const;
+        /**
+         * \brief Reads data from the file referenced by the handle.
+         *
+         * \param offset The offset in bytes from which to begin reading.
+         * \param read_size The number of bytes to read.
+         * \param buf The buffer to store data into. This buffer _must_ be
+         *            at least `size` bytes in length to avoid a buffer
+         *            overflow.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         * \throw std::invalid_argument If the current mode does not support
+         *        reading, or if `size` or `offset` are nonsensical
+         *        (individiually or in conjunction).
+         * \throw std::system_error If an error occurs while reading from
+         *        the file.
+         */
+        void read(off_t offset, size_t read_size, unsigned char *buf) const;
 
-            /**
-             * \brief Writes data into the file referenced by the handle.
-             *
-             * \param offset The offset in bytes at which to begin writing, or
-             *        `-1` to append to the end of the file.
-             * \param write_size The number of bytes to write.
-             * \param buf A buffer containing the data to be written. This
-             *            buffer _must_ be at least `size` bytes in length to
-             *            avoid a buffer over-read.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             * \throw std::invalid_argument If the current mode does not support
-             *        writing, or if `size` or `offset` are nonsensical
-             *        (individiually or in conjunction).
-             * \throw std::system_error If an error occurs while writing to the
-             *        file.
-             */
-            void write(off_t offset, size_t write_size, unsigned char *buf);
+        /**
+         * \brief Writes data into the file referenced by the handle.
+         *
+         * \param offset The offset in bytes at which to begin writing, or
+         *        `-1` to append to the end of the file.
+         * \param write_size The number of bytes to write.
+         * \param buf A buffer containing the data to be written. This
+         *            buffer _must_ be at least `size` bytes in length to
+         *            avoid a buffer over-read.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         * \throw std::invalid_argument If the current mode does not support
+         *        writing, or if `size` or `offset` are nonsensical
+         *        (individiually or in conjunction).
+         * \throw std::system_error If an error occurs while writing to the
+         *        file.
+         */
+        void write(off_t offset, size_t write_size, unsigned char *buf);
 
-            /**
-             * \brief Reads data from the file referenced by this handle
-             *        asynchronously.
-             *
-             * \param offset The offset in bytes from which to begin reading.
-             * \param read_size The number of bytes to read.
-             * \param buf The buffer to store data into. This buffer _must_ be
-             *        at least `size` bytes in length to avoid a buffer
-             *        overflow.
-             * \param callback The callback to execute upon completion of the
-             *        read operation. The function handle may be empty. Note
-             *        that this callback is not guaranteed to run (e.g. if the
-             *        read operation generates an exception), so it should not
-             *        contain any critical code.
-             *
-             * \return A std::future which will be completed after the data has
-             *         been fully read, or after the read operation generates an
-             *         exception.
-             *
-             * \throw std::invalid_argument If the current mode does not support
-             *        reading, or if `size` or `offset` are nonsensical
-             *        (individiually or in conjunction).
-             *
-             * \attention Any exceptions thrown by the read operation itself (not
-             *            including parameter validation) are exposed through the
-             *            returned std::future.
-             *
-             * \sa FileHandle::read
-             */
-            const std::future<void> read_async(off_t offset, size_t read_size,
-                    unsigned char *buf, std::function<void(FileHandle&)> callback);
+        /**
+         * \brief Reads data from the file referenced by this handle
+         *        asynchronously.
+         *
+         * \param offset The offset in bytes from which to begin reading.
+         * \param read_size The number of bytes to read.
+         * \param buf The buffer to store data into. This buffer _must_ be
+         *        at least `size` bytes in length to avoid a buffer
+         *        overflow.
+         * \param callback The callback to execute upon completion of the
+         *        read operation. The function handle may be empty. Note
+         *        that this callback is not guaranteed to run (e.g. if the
+         *        read operation generates an exception), so it should not
+         *        contain any critical code.
+         *
+         * \return A std::future which will be completed after the data has
+         *         been fully read, or after the read operation generates an
+         *         exception.
+         *
+         * \throw std::invalid_argument If the current mode does not support
+         *        reading, or if `size` or `offset` are nonsensical
+         *        (individiually or in conjunction).
+         *
+         * \attention Any exceptions thrown by the read operation itself (not
+         *            including parameter validation) are exposed through the
+         *            returned std::future.
+         *
+         * \sa FileHandle::read
+         */
+        const std::future<void> read_async(off_t offset, size_t read_size,
+                unsigned char *buf, std::function<void(FileHandle &)> callback);
 
-            /**
-             * \brief Writes data into the file referenced by the handle
-             *        asynchronously.
-             *
-             * \param offset The offset in bytes at which to begin writing, or
-             *        `-1` to append to the end of the file.
-             * \param write_size The number of bytes to write.
-             * \param buf A buffer containing the data to be written. This
-             *            buffer _must_ be at least `size` bytes in length to
-             *            avoid a buffer overflow.
-             * \param callback The callback to execute upon completion of the
-             *        write operation. The function handle may be empty. Note
-             *        that this callback is not guaranteed to run (e.g. if the
-             *        write operation generates an exception), so it should not
-             *        contain any critical code.
-             *
-             * \return A std::future which will be completed after the data has
-             *         been fully written, or after the write operation
-             *         generates an exception.
-             *
-             * \throw std::runtime_error If the handle is not valid.
-             * \throw std::invalid_argument If the current mode does not support
-             *        writing, or if `size` or `offset` are nonsensical
-             *        (individiually or in conjunction).
-             *
-             * \attention Any exceptions thrown by the read operation itself (not
-             *            including parameter validation) are exposed through the
-             *            returned std::future.
-             *
-             * \sa FileHandle::write
-             */
-            const std::future<void> write_async(off_t offset, size_t write_size,
-                    unsigned char *buf, std::function<void(FileHandle&)> callback);
+        /**
+         * \brief Writes data into the file referenced by the handle
+         *        asynchronously.
+         *
+         * \param offset The offset in bytes at which to begin writing, or
+         *        `-1` to append to the end of the file.
+         * \param write_size The number of bytes to write.
+         * \param buf A buffer containing the data to be written. This
+         *            buffer _must_ be at least `size` bytes in length to
+         *            avoid a buffer overflow.
+         * \param callback The callback to execute upon completion of the
+         *        write operation. The function handle may be empty. Note
+         *        that this callback is not guaranteed to run (e.g. if the
+         *        write operation generates an exception), so it should not
+         *        contain any critical code.
+         *
+         * \return A std::future which will be completed after the data has
+         *         been fully written, or after the write operation
+         *         generates an exception.
+         *
+         * \throw std::runtime_error If the handle is not valid.
+         * \throw std::invalid_argument If the current mode does not support
+         *        writing, or if `size` or `offset` are nonsensical
+         *        (individiually or in conjunction).
+         *
+         * \attention Any exceptions thrown by the read operation itself (not
+         *            including parameter validation) are exposed through the
+         *            returned std::future.
+         *
+         * \sa FileHandle::write
+         */
+        const std::future<void> write_async(off_t offset, size_t write_size,
+                unsigned char *buf, std::function<void(FileHandle &)> callback);
     };
 }

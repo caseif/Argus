@@ -42,12 +42,12 @@ namespace argus {
         Matrix4 scale_matrix;
         Matrix4 matrix_rep;
 
-        pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale):
-            translation(translation),
-            rotation(rotation),
-            scale(scale),
-            dirty(true),
-            dirty_matrix(true) {
+        pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
+                translation(translation),
+                rotation(rotation),
+                scale(scale),
+                dirty(true),
+                dirty_matrix(true) {
         }
 
         void set_dirty(void) {

@@ -41,7 +41,7 @@ namespace argus {
         /**
          * \brief All currently loaded resources.
          */
-        std::map<std::string, Resource*> loaded_resources;
+        std::map<std::string, Resource *> loaded_resources;
 
         /**
          * \brief Whether discovery of resources from the filesystem has taken
@@ -52,7 +52,7 @@ namespace argus {
         /**
          * \brief All currently registered resource loaders.
          */
-        std::map<const std::string, ResourceLoader*> registered_loaders;
+        std::map<const std::string, ResourceLoader *> registered_loaders;
 
         /**
          * \brief All current extension registrations, with extensions being
@@ -62,8 +62,8 @@ namespace argus {
 
         pimpl_ResourceManager(void) = default;
 
-        pimpl_ResourceManager(const pimpl_ResourceManager&) = delete;
+        pimpl_ResourceManager(const pimpl_ResourceManager &) = delete;
 
-        pimpl_ResourceManager(pimpl_ResourceManager&&) = delete;
+        pimpl_ResourceManager(pimpl_ResourceManager &&) = delete;
     };
 }

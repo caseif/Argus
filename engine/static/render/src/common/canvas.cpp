@@ -42,7 +42,7 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
-    Canvas::Canvas(Window &window):
+    Canvas::Canvas(Window &window) :
             pimpl(new pimpl_Canvas(window)) {
     }
 
@@ -57,7 +57,7 @@ namespace argus {
     std::vector<std::reference_wrapper<AttachedViewport2D>> Canvas::get_viewports_2d(void) const {
         std::vector<std::reference_wrapper<AttachedViewport2D>> viewports;
         std::transform(pimpl->viewports_2d.begin(), pimpl->viewports_2d.end(),
-                std::back_inserter(viewports), [] (auto &kv) { return std::reference_wrapper(kv.second); });
+                std::back_inserter(viewports), [](auto &kv) { return std::reference_wrapper(kv.second); });
         return viewports;
     }
 
@@ -75,7 +75,7 @@ namespace argus {
             throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
 
-        auto it = pimpl->viewports_2d.insert({ id, AttachedViewport2D(viewport, camera, z_index) });
+        auto it = pimpl->viewports_2d.insert({id, AttachedViewport2D(viewport, camera, z_index)});
 
         return it.first->second;
     }

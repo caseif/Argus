@@ -26,41 +26,41 @@
 #include <cstdlib>
 
 #ifdef _MSC_VER
-    #include <intrin.h>
+#include <intrin.h>
 #endif
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #if defined(__LP64__) || defined(_WIN64)
-    #define BLOCKS_PER_CHUNK 64
-    #define BlockBitField uint64_t
-    // 6 bits set, enough to represent any index in a 64-bit bitfield
-    #define BF_INDEX_MASK 0x3F
-    #ifdef _MSC_VER
-        #define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long *>(i), m)
-        #pragma intrinsic(_BitScanReverse64)
-    #else
-        #define __clz(x) __builtin_clzl(x)
-    #endif
+#define BLOCKS_PER_CHUNK 64
+#define BlockBitField uint64_t
+// 6 bits set, enough to represent any index in a 64-bit bitfield
+#define BF_INDEX_MASK 0x3F
+#ifdef _MSC_VER
+#define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long *>(i), m)
+#pragma intrinsic(_BitScanReverse64)
 #else
-    #define BLOCKS_PER_CHUNK 32
-    #define BlockBitField uint32_t
-    // 5 bits set, enough to represent any index in a 32-bit bitfield
-    #define BF_INDEX_MASK 0x1F
-    #ifdef _MSC_VER
-        #define __bsr(i, m) _BitScanReverse(reinterpret_cast<unsigned long *>(i), m)
-        #pragma intrinsic(_BitScanReverse)
-    #else
-        #define __clz(x) __builtin_clz(x)
-    #endif
+#define __clz(x) __builtin_clzl(x)
+#endif
+#else
+#define BLOCKS_PER_CHUNK 32
+#define BlockBitField uint32_t
+// 5 bits set, enough to represent any index in a 32-bit bitfield
+#define BF_INDEX_MASK 0x1F
+#ifdef _MSC_VER
+#define __bsr(i, m) _BitScanReverse(reinterpret_cast<unsigned long *>(i), m)
+#pragma intrinsic(_BitScanReverse)
+#else
+#define __clz(x) __builtin_clz(x)
+#endif
 #endif
 
 #ifdef _ARGUS_DEBUG_MODE
-    #define CANARY_LEN 4
-    #define CANARY_MAGIC 0xDEADD00D
+#define CANARY_LEN 4
+#define CANARY_MAGIC 0xDEADD00D
 typedef uint32_t CanaryValue;
 #else
-    #define CANARY_LEN 0
+#define CANARY_LEN 0
 #endif
 
 namespace argus {
@@ -124,9 +124,9 @@ namespace argus {
         // plus the canary length if we're in debug mode
         uintptr_t malloc_addr = reinterpret_cast<uintptr_t>(
                 malloc(pool->real_block_size * pool->blocks_per_chunk
-                + alignment_bytes - 1
-                + sizeof(ChunkMetadata)
-                + CANARY_LEN)
+                       + alignment_bytes - 1
+                       + sizeof(ChunkMetadata)
+                       + CANARY_LEN)
         );
         if (malloc_addr == reinterpret_cast<uintptr_t>(nullptr)) {
             throw std::runtime_error("Failed to allocate chunk (is block size or alignment too large?)");
@@ -151,18 +151,18 @@ namespace argus {
 
         #ifdef _ARGUS_DEBUG_MODE
         CanaryValue *canary = reinterpret_cast<CanaryValue *>(new_chunk->data
-                + pool->real_block_size * pool->blocks_per_chunk);
+                                                              + pool->real_block_size * pool->blocks_per_chunk);
         *canary = CANARY_MAGIC;
         #endif
 
         return new_chunk;
     }
 
-    AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp):
-        pimpl(new pimpl_AllocPool(
-            // we pass both the real block size and the size in the pool so objects can be aligned in the pool
-            {block_size, _next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
-             alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
+    AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp) :
+            pimpl(new pimpl_AllocPool(
+                    // we pass both the real block size and the size in the pool so objects can be aligned in the pool
+                    {block_size, _next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
+                     alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
 
         ChunkMetadata *first_chunk = _create_chunk(pimpl);
         pimpl->first_chunk = first_chunk;
@@ -173,7 +173,7 @@ namespace argus {
         while (chunk != nullptr) {
             uintptr_t addr = chunk->unaligned_addr;
             const ChunkMetadata *next_chunk = chunk->next_chunk;
-            ::free(reinterpret_cast<void*>(addr));
+            ::free(reinterpret_cast<void *>(addr));
             chunk = next_chunk;
         }
     }
@@ -230,7 +230,7 @@ namespace argus {
         selected_chunk->occupied_block_map |= (BlockBitField(1) << (~first_free_block_index & BF_INDEX_MASK));
 
         uintptr_t block_addr
-            = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * pimpl->real_block_size);
+                = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * pimpl->real_block_size);
 
         selected_chunk->occupied_blocks += 1;
 
@@ -296,10 +296,10 @@ namespace argus {
                     if (should_delete) {
                         #ifdef _ARGUS_DEBUG_MODE
                         CanaryValue *canary = reinterpret_cast<CanaryValue *>(
-                            chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk);
+                                chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk);
                         if (*canary != CANARY_MAGIC) {
                             Logger::default_logger().fatal("Detected heap overrun in chunk @ %p (aligned: %p)",
-                                         reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void*>(chunk));
+                                    reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void *>(chunk));
                         }
                         #endif
 

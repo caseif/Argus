@@ -32,6 +32,7 @@
 namespace argus {
     // forward definitions
     class Material;
+
     class RenderObject2D;
 
     struct ProcessedRenderObject {
@@ -55,20 +56,20 @@ namespace argus {
                 buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
                 void *mapped_buffer);
 
-        ProcessedRenderObject(ProcessedRenderObject&) = delete;
+        ProcessedRenderObject(ProcessedRenderObject &) = delete;
 
         ~ProcessedRenderObject();
 
-        private:
-            ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride,
-                    buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
-                    void *mapped_buffer):
+      private:
+        ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride,
+                buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
+                void *mapped_buffer) :
                 material_res(material_res),
                 atlas_stride(atlas_stride),
                 staging_buffer(staging_buffer),
                 staging_buffer_size(staging_buffer_size),
                 vertex_count(vertex_count),
                 mapped_buffer(mapped_buffer) {
-            }
+        }
     };
 }

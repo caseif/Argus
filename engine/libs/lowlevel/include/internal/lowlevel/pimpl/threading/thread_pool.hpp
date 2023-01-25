@@ -32,7 +32,7 @@ namespace argus {
         std::vector<std::unique_ptr<ThreadPoolWorker>> workers;
         uint16_t next_worker;
 
-        pimpl_ThreadPool(ThreadPool &pool, uint16_t thread_count):
+        pimpl_ThreadPool(ThreadPool &pool, uint16_t thread_count) :
                 thread_count(thread_count),
                 next_worker(0) {
             for (uint16_t i = 0; i < thread_count; i++) {

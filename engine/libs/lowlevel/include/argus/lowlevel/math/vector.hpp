@@ -96,7 +96,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector4.
          */
-        Vector4<T> operator +(const Vector4<T> &rhs) const {
+        Vector4<T> operator+(const Vector4<T> &rhs) const {
             return Vector4<T>(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
         }
 
@@ -112,7 +112,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector4.
          */
-        Vector4<T> operator -(const Vector4<T> &rhs) const {
+        Vector4<T> operator-(const Vector4<T> &rhs) const {
             return Vector4<T>(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
         }
 
@@ -124,7 +124,7 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector4.
          */
-        Vector4<T> operator *(const Vector4<T> &rhs) const {
+        Vector4<T> operator*(const Vector4<T> &rhs) const {
             return Vector4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
         }
 
@@ -161,7 +161,7 @@ namespace argus {
          *
          * \sa Vector4::operator+
          */
-        Vector4<T> &operator +=(const Vector4<T> &rhs) {
+        Vector4<T> &operator+=(const Vector4<T> &rhs) {
             x += rhs.x;
             y += rhs.y;
             z += rhs.z;
@@ -178,7 +178,7 @@ namespace argus {
          *
          * \sa Vector4::operator-
          */
-        Vector4<T> &operator -=(const Vector4<T> &rhs) {
+        Vector4<T> &operator-=(const Vector4<T> &rhs) {
             x -= rhs.x;
             y -= rhs.y;
             z -= rhs.z;
@@ -196,7 +196,7 @@ namespace argus {
          *
          * \sa Vector4::operator*
          */
-        Vector4<T> &operator *=(const Vector4<T> &rhs) {
+        Vector4<T> &operator*=(const Vector4<T> &rhs) {
             x *= rhs.x;
             y *= rhs.y;
             z *= rhs.z;
@@ -213,7 +213,7 @@ namespace argus {
          *
          * \sa Vector4::operator*
          */
-        Vector4<T> &operator *=(T rhs) {
+        Vector4<T> &operator*=(T rhs) {
             x *= rhs;
             y *= rhs;
             z *= rhs;
@@ -230,7 +230,7 @@ namespace argus {
          *
          * \sa Vector4::operator/
          */
-        Vector4<T> &operator /=(T rhs) {
+        Vector4<T> &operator/=(T rhs) {
             x /= rhs;
             y /= rhs;
             z /= rhs;
@@ -238,18 +238,18 @@ namespace argus {
             return *this;
         }
 
-        Vector4(T x, T y, T z, T w):
-            x(x),
-            y(y),
-            z(z),
-            w(w) {
+        Vector4(T x, T y, T z, T w) :
+                x(x),
+                y(y),
+                z(z),
+                w(w) {
         }
 
-        Vector4(void): Vector4<T>(0, 0, 0, 0) {
+        Vector4(void) : Vector4<T>(0, 0, 0, 0) {
         }
 
         Vector4<T> inverse(void) const {
-            return { -x, -y, -z, -w };
+            return {-x, -y, -z, -w};
         }
     };
 
@@ -312,7 +312,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector3.
          */
-        Vector3<T> operator +(const Vector3<T> &rhs) const {
+        Vector3<T> operator+(const Vector3<T> &rhs) const {
             return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
 
@@ -328,7 +328,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector3.
          */
-        Vector3<T> operator -(const Vector3<T> &rhs) const {
+        Vector3<T> operator-(const Vector3<T> &rhs) const {
             return Vector3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
         }
 
@@ -340,7 +340,7 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector3.
          */
-        Vector3<T> operator *(const Vector3<T> &rhs) const {
+        Vector3<T> operator*(const Vector3<T> &rhs) const {
             return Vector3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
         }
 
@@ -377,7 +377,7 @@ namespace argus {
          *
          * \sa Vector3::operator+
          */
-        Vector3<T> &operator +=(const Vector3<T> &rhs) {
+        Vector3<T> &operator+=(const Vector3<T> &rhs) {
             x += rhs.x;
             y += rhs.y;
             z += rhs.z;
@@ -393,7 +393,7 @@ namespace argus {
          *
          * \sa Vector3::operator-
          */
-        Vector3<T> &operator -=(const Vector3<T> &rhs) {
+        Vector3<T> &operator-=(const Vector3<T> &rhs) {
             x -= rhs.x;
             y -= rhs.y;
             z -= rhs.z;
@@ -410,7 +410,7 @@ namespace argus {
          *
          * \sa Vector3::operator*
          */
-        Vector3<T> &operator *=(const Vector3<T> &rhs) {
+        Vector3<T> &operator*=(const Vector3<T> &rhs) {
             x *= rhs.x;
             y *= rhs.y;
             z *= rhs.z;
@@ -426,7 +426,7 @@ namespace argus {
          *
          * \sa Vector3::operator*
          */
-        Vector3<T> &operator *=(T rhs) {
+        Vector3<T> &operator*=(T rhs) {
             x *= rhs;
             y *= rhs;
             z *= rhs;
@@ -442,7 +442,7 @@ namespace argus {
          *
          * \sa Vector3::operator/
          */
-        Vector3<T> &operator /=(T rhs) {
+        Vector3<T> &operator/=(T rhs) {
             x /= rhs;
             y /= rhs;
             z /= rhs;
@@ -454,17 +454,17 @@ namespace argus {
             return Vector4<T>(this->x, this->y, this->z, 1);
         }
 
-        Vector3(T x, T y, T z):
-            x(x),
-            y(y),
-            z(z) {
+        Vector3(T x, T y, T z) :
+                x(x),
+                y(y),
+                z(z) {
         }
 
-        Vector3(void): Vector3<T>(0, 0, 0) {
+        Vector3(void) : Vector3<T>(0, 0, 0) {
         }
 
         Vector3<T> inverse(void) const {
-            return { -x, -y, -z };
+            return {-x, -y, -z};
         }
     };
 
@@ -493,7 +493,7 @@ namespace argus {
          *
          * \return The element-wise sum of the two vectors as a new Vector2.
          */
-        Vector2<T> operator +(const Vector2<T> &rhs) const {
+        Vector2<T> operator+(const Vector2<T> &rhs) const {
             return Vector2<T>(x + rhs.x, y + rhs.y);
         }
 
@@ -509,7 +509,7 @@ namespace argus {
          * \return The element-wise difference between the two vectors as a new
          *         Vector2.
          */
-        Vector2<T> operator -(const Vector2<T> &rhs) const {
+        Vector2<T> operator-(const Vector2<T> &rhs) const {
             return Vector2<T>(x - rhs.x, y - rhs.y);
         }
 
@@ -521,7 +521,7 @@ namespace argus {
          *
          * \return The element-wise product of the two vectors as a new Vector2.
          */
-        Vector2<T> operator *(const Vector2<T> &rhs) const {
+        Vector2<T> operator*(const Vector2<T> &rhs) const {
             return Vector2<T>(x * rhs.x, y * rhs.y);
         }
 
@@ -558,7 +558,7 @@ namespace argus {
          *
          * \sa Vector2::operator+
          */
-        Vector2<T> &operator +=(const Vector2<T> &rhs) {
+        Vector2<T> &operator+=(const Vector2<T> &rhs) {
             x += rhs.x;
             y += rhs.y;
             return *this;
@@ -573,7 +573,7 @@ namespace argus {
          *
          * \sa Vector2::operator-
          */
-        Vector2<T> &operator -=(const Vector2<T> &rhs) {
+        Vector2<T> &operator-=(const Vector2<T> &rhs) {
             x -= rhs.x;
             y -= rhs.y;
             return *this;
@@ -589,7 +589,7 @@ namespace argus {
          *
          * \sa Vector2::operator*
          */
-        Vector2<T> &operator *=(const Vector2<T> &rhs) {
+        Vector2<T> &operator*=(const Vector2<T> &rhs) {
             x *= rhs.x;
             y *= rhs.y;
             return *this;
@@ -604,7 +604,7 @@ namespace argus {
          *
          * \sa Vector2::operator*
          */
-        Vector2<T> &operator *=(T rhs) {
+        Vector2<T> &operator*=(T rhs) {
             x *= rhs;
             y *= rhs;
             return *this;
@@ -619,7 +619,7 @@ namespace argus {
          *
          * \sa Vector2::operator/
          */
-        Vector2<T> &operator /=(T rhs) {
+        Vector2<T> &operator/=(T rhs) {
             x /= rhs;
             y /= rhs;
             return *this;
@@ -635,16 +635,16 @@ namespace argus {
             return Vector4<T>(this->x, this->y, 0, 1);
         }
 
-        Vector2(T x, T y):
-            x(x),
-            y(y) {
+        Vector2(T x, T y) :
+                x(x),
+                y(y) {
         }
 
-        Vector2(void): Vector2<T>(0, 0) {
+        Vector2(void) : Vector2<T>(0, 0) {
         }
 
         Vector2<T> inverse(void) const {
-            return { -x, -y };
+            return {-x, -y};
         }
     };
 

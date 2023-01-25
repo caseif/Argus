@@ -40,11 +40,11 @@ namespace argus {
         Fragment = 0x02
     };
 
-    ShaderStage operator |(ShaderStage lhs, ShaderStage rhs);
+    ShaderStage operator|(ShaderStage lhs, ShaderStage rhs);
 
-    ShaderStage &operator |=(ShaderStage &lhs, ShaderStage rhs);
+    ShaderStage &operator|=(ShaderStage &lhs, ShaderStage rhs);
 
-    ShaderStage operator &(ShaderStage lhs, ShaderStage rhs);
+    ShaderStage operator&(ShaderStage lhs, ShaderStage rhs);
 
     struct ShaderReflectionInfo {
         std::map<std::string, uint32_t> attribute_locations;
@@ -57,32 +57,32 @@ namespace argus {
      * \brief Represents a shader for use with a RenderObject.
      */
     class Shader {
-        public:
-            pimpl_Shader *pimpl;
+      public:
+        pimpl_Shader *pimpl;
 
-            /**
-             * \brief Constructs a new Shader with the given parameters.
-             *
-             * \param uid The unique identifier of the shader.
-             * \param type The type of shader stored by this object.
-             * \param stage The stage of the graphics pipeline this shader is to
-             *        be run at.
-             * \param src The source data of the Shader.
-             */
-            Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
+        /**
+         * \brief Constructs a new Shader with the given parameters.
+         *
+         * \param uid The unique identifier of the shader.
+         * \param type The type of shader stored by this object.
+         * \param stage The stage of the graphics pipeline this shader is to
+         *        be run at.
+         * \param src The source data of the Shader.
+         */
+        Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
 
-            Shader(const Shader&) noexcept;
+        Shader(const Shader &) noexcept;
 
-            Shader(Shader&&) noexcept;
+        Shader(Shader &&) noexcept;
 
-            ~Shader(void);
+        ~Shader(void);
 
-            const std::string &get_uid(void) const;
+        const std::string &get_uid(void) const;
 
-            const std::string &get_type(void) const;
+        const std::string &get_type(void) const;
 
-            ShaderStage get_stage(void) const;
+        ShaderStage get_stage(void) const;
 
-            const std::vector<uint8_t> &get_source(void) const;
+        const std::vector<uint8_t> &get_source(void) const;
     };
 }

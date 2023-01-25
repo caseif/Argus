@@ -22,11 +22,13 @@
 #include <thread>
 
 #ifdef _WIN32
-    #include <Windows.h>
+#include <Windows.h>
 #else
-    #include <sys/time.h>
 
-    #include <ctime>
+#include <sys/time.h>
+
+#include <ctime>
+
 #endif
 
 #include <cstdint>

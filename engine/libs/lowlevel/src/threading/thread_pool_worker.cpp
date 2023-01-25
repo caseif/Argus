@@ -30,20 +30,20 @@
 namespace argus {
     static AllocPool g_task_pool(sizeof(ThreadPoolTask));
 
-    ThreadPoolTask::ThreadPoolTask(void):
+    ThreadPoolTask::ThreadPoolTask(void) :
             ThreadPoolTask(nullptr) {
     }
 
-    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs):
+    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) :
             func(rhs.func) {
         promise.swap(rhs.promise);
     }
 
-    ThreadPoolTask::ThreadPoolTask(WorkerFunction func):
+    ThreadPoolTask::ThreadPoolTask(WorkerFunction func) :
             func(func) {
     }
 
-    ThreadPoolWorker::ThreadPoolWorker(ThreadPool &pool):
+    ThreadPoolWorker::ThreadPoolWorker(ThreadPool &pool) :
             busy(false),
             pool(pool),
             current_task(nullptr),
@@ -54,7 +54,7 @@ namespace argus {
             thread(std::bind(&ThreadPoolWorker::worker_impl, this)) {
     }
 
-    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs):
+    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs) :
             pool(rhs.pool) {
     }
 
@@ -64,13 +64,13 @@ namespace argus {
         thread.join();
     }
 
-    std::future<void*> ThreadPoolWorker::add_task(WorkerFunction func) {
+    std::future<void *> ThreadPoolWorker::add_task(WorkerFunction func) {
         task_queue_mutex.lock();
         auto &task = g_task_pool.construct<ThreadPoolTask>(func);
-        
-        std::promise<void*> &promise = task.promise;
+
+        std::promise<void *> &promise = task.promise;
         // this is required so that the thread assigning tasks gains ownership of the future before execution begins
-        std::future<void*> future = promise.get_future();
+        std::future<void *> future = promise.get_future();
 
         task_queue.push_back(&task);
 

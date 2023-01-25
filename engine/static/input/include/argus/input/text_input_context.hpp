@@ -29,7 +29,7 @@ namespace argus::input {
      * as well as to deactivate and release the input context.
      */
     class TextInputContext {
-       private:
+      private:
         bool valid;
         bool active;
         std::string text;
@@ -40,7 +40,7 @@ namespace argus::input {
 
         TextInputContext(TextInputContext &&context) = delete;
 
-       public:
+      public:
         /**
          * \brief Creates a new TextInputContext.
          *

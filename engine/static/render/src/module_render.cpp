@@ -45,7 +45,7 @@ namespace argus {
     class Window;
 
     #if defined(__linux__) || defined(__ANDROID__)
-    static const std::vector<std::string> g_default_backends = { "opengl", "opengl_es" };
+    static const std::vector<std::string> g_default_backends = {"opengl", "opengl_es"};
     #elif defined(_WIN32) || defined(__MINGW__)
     static const std::vector<std::string> g_default_backends = { "opengl", "opengl_es" };
     #else
@@ -59,7 +59,7 @@ namespace argus {
     static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
         for (const auto &backend : backends) {
             if (std::find(attempted_backends.cbegin(), attempted_backends.cend(), backend)
-                    != attempted_backends.cend()) {
+                != attempted_backends.cend()) {
                 continue;
             }
 
@@ -95,7 +95,8 @@ namespace argus {
             return;
         }
 
-        Logger::default_logger().warn("Failed to select graphics backend from preference list, falling back to platform default");
+        Logger::default_logger().warn(
+                "Failed to select graphics backend from preference list, falling back to platform default");
 
         if (_try_backends(g_default_backends, attempted_backends)) {
             return;
@@ -142,7 +143,7 @@ namespace argus {
             auto &scene = *scene_pair.second;
             switch (scene.type) {
                 case SceneType::TwoD: {
-                    auto *scene_pimpl = reinterpret_cast<pimpl_Scene2D*>(scene.get_pimpl());
+                    auto *scene_pimpl = reinterpret_cast<pimpl_Scene2D *>(scene.get_pimpl());
 
                     scene_pimpl->read_lock.lock();
                     std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);

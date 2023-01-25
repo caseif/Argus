@@ -26,6 +26,7 @@
 namespace argus {
     // forward declarations
     class Canvas;
+
     class Scene2D;
 
     class Sprite;
@@ -35,14 +36,14 @@ namespace argus {
         Canvas &canvas;
         const float scale_factor;
 
-        std::map<std::string, World2DLayer*> layers;
+        std::map<std::string, World2DLayer *> layers;
 
         Dirtiable<Transform2D> abstract_camera;
 
-        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor):
-            id(id),
-            canvas(canvas),
-            scale_factor(scale_factor) {
+        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor) :
+                id(id),
+                canvas(canvas),
+                scale_factor(scale_factor) {
         }
     };
 }

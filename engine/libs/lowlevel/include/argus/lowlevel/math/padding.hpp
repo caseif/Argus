@@ -25,11 +25,11 @@ namespace argus {
         uint32_t left;
         uint32_t right;
 
-        Padding(void):
-            top(0),
-            bottom(0),
-            left(0),
-            right(0) {
+        Padding(void) :
+                top(0),
+                bottom(0),
+                left(0),
+                right(0) {
         }
     };
 }

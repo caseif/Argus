@@ -34,16 +34,16 @@
 #include <cstddef>
 
 namespace argus {
-    std::map<std::string, const Resource*> ResourceLoader::load_dependencies(ResourceManager &manager,
+    std::map<std::string, const Resource *> ResourceLoader::load_dependencies(ResourceManager &manager,
             const std::vector<std::string> &dependencies) const {
-        std::map<std::string, const Resource*> acquired;
+        std::map<std::string, const Resource *> acquired;
 
         bool failed = false;
         std::exception *thrown_exception = nullptr;
         for (auto it = dependencies.begin(); it < dependencies.end(); it++) {
             try {
                 auto &res = manager.get_resource(*it);
-                acquired.insert({ res.uid, &res });
+                acquired.insert({res.uid, &res});
             } catch (std::exception &ex) {
                 failed = true;
                 thrown_exception = &ex;
@@ -65,8 +65,8 @@ namespace argus {
 
         return acquired;
     }
-    
-    ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types):
+
+    ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types) :
             pimpl(new pimpl_ResourceLoader(media_types)) {
     }
 

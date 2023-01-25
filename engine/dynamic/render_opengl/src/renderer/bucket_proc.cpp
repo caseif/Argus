@@ -208,9 +208,9 @@ namespace argus {
 
                 if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
-                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                        reinterpret_cast<GLfloat *>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = float(processed->anim_frame.x);
-                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                        reinterpret_cast<GLfloat *>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = float(processed->anim_frame.y);
                     }
                     processed->anim_frame_updated = false;

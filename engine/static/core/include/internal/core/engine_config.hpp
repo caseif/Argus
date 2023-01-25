@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-namespace argus {    
+namespace argus {
     struct EngineConfig {
         unsigned int target_tickrate{0};
         unsigned int target_framerate{0};

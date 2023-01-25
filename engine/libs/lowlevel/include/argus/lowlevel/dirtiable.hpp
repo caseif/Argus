@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- 
+
 #pragma once
 
 #include "argus/lowlevel/macros.hpp"
@@ -28,7 +28,7 @@ namespace argus {
     /**
      *
      */
-    template <typename ValueType>
+    template<typename ValueType>
     struct ValueAndDirtyFlag {
         ValueType value;
         bool dirty;
@@ -37,165 +37,165 @@ namespace argus {
             return value;
         }
 
-        template <typename V = ValueType>
-        inline operator typename std::enable_if<!std::is_integral<ValueType>::value, const V&>::type (void) const {
+        template<typename V = ValueType>
+        inline operator typename std::enable_if<!std::is_integral<ValueType>::value, const V &>::type(void) const {
             return value;
         }
 
-        ValueType *operator ->(void) {
+        ValueType *operator->(void) {
             return &value;
         }
     };
 
-    template <typename ValueType>
+    template<typename ValueType>
     class Dirtiable {
-        private:
-            ValueType value;
-            mutable bool dirty;
+      private:
+        ValueType value;
+        mutable bool dirty;
 
-        public:
-            Dirtiable(void):
+      public:
+        Dirtiable(void) :
                 value(),
                 dirty(false) {
-            }
+        }
 
-            Dirtiable(const ValueType &rhs):
+        Dirtiable(const ValueType &rhs) :
                 value(rhs),
                 dirty(false) {
-            }
+        }
 
-            Dirtiable(ValueType &&rhs):
+        Dirtiable(ValueType &&rhs) :
                 value(std::move(rhs)),
                 dirty(false) {
-            }
+        }
 
-            Dirtiable(const Dirtiable<ValueType> &rhs):
+        Dirtiable(const Dirtiable<ValueType> &rhs) :
                 value(rhs.value),
                 dirty(rhs.dirty) {
-            }
+        }
 
-            Dirtiable(Dirtiable<ValueType> &&rhs):
+        Dirtiable(Dirtiable<ValueType> &&rhs) :
                 value(std::move(rhs.value)),
                 dirty(rhs.dirty) {
-            }
+        }
 
-            /**
-             * \brief Fetches the current value and clears the dirty flag,
-                      returning both the value and the previous dirty state.
-             *
-             * \return A `struct` containing the copied value and the previous
-             *         state of the dirty flag.
-             */
-            ValueAndDirtyFlag<ValueType> read(void) {
-                bool old_dirty = dirty;
-                
-                dirty = false;
+        /**
+         * \brief Fetches the current value and clears the dirty flag,
+                  returning both the value and the previous dirty state.
+         *
+         * \return A `struct` containing the copied value and the previous
+         *         state of the dirty flag.
+         */
+        ValueAndDirtyFlag<ValueType> read(void) {
+            bool old_dirty = dirty;
 
-                return ValueAndDirtyFlag<ValueType> { value, old_dirty };
-            };
+            dirty = false;
 
-            const ValueAndDirtyFlag<const ValueType> read(void) const {
-                bool old_dirty = dirty;
-                
-                dirty = false;
+            return ValueAndDirtyFlag<ValueType>{value, old_dirty};
+        };
 
-                return ValueAndDirtyFlag<const ValueType> { value, old_dirty };
-            };
+        const ValueAndDirtyFlag<const ValueType> read(void) const {
+            bool old_dirty = dirty;
 
-            /**
-             * \brief Fetches the current value without affecting the dirty
-             *        flag.
-             *
-             * \return A copy of the current value.
-             */
-            const ValueType &peek(void) const {
-                return value;
-            };
+            dirty = false;
 
-            /**
-             * \brief Performs a copy assignment to an lvalue, carrying over the
-             *        current value and dirty flag.
-             *
-             * \param rhs The Dirtiable to assign.
-             *
-             * \return This Dirtiable.
-             */
-            inline Dirtiable &operator =(const Dirtiable<ValueType> &rhs) {
-                this->value = rhs.value;
-                this->dirty = rhs.dirty;
-                return *this;
-            };
+            return ValueAndDirtyFlag<const ValueType>{value, old_dirty};
+        };
 
-            /**
-             * \brief Performs an assignment to an lvalue, setting the dirty
-             *        flag.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This Dirtiable.
-             */
-            inline Dirtiable &operator =(const ValueType &rhs) {
-                value = rhs;
-                dirty = true;
-                return *this;
-            };
+        /**
+         * \brief Fetches the current value without affecting the dirty
+         *        flag.
+         *
+         * \return A copy of the current value.
+         */
+        const ValueType &peek(void) const {
+            return value;
+        };
 
-            /**
-             * \brief Performs an assignment to an rvalue, setting the dirty
-             *        flag.
-             *
-             * \param rhs The value to assign.
-             *
-             * \return This Dirtiable.
-             */
-            inline Dirtiable &operator =(const ValueType &&rhs) {
-                value = std::move(rhs);
-                dirty = true;
-                return *this;
-            };
+        /**
+         * \brief Performs a copy assignment to an lvalue, carrying over the
+         *        current value and dirty flag.
+         *
+         * \param rhs The Dirtiable to assign.
+         *
+         * \return This Dirtiable.
+         */
+        inline Dirtiable &operator=(const Dirtiable<ValueType> &rhs) {
+            this->value = rhs.value;
+            this->dirty = rhs.dirty;
+            return *this;
+        };
 
-            inline Dirtiable &operator +=(const ValueType &rhs) {
-                value += rhs;
-                dirty = true;
-                return *this;
-            }
+        /**
+         * \brief Performs an assignment to an lvalue, setting the dirty
+         *        flag.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This Dirtiable.
+         */
+        inline Dirtiable &operator=(const ValueType &rhs) {
+            value = rhs;
+            dirty = true;
+            return *this;
+        };
 
-            inline Dirtiable &operator -=(const ValueType &rhs) {
-                value -= rhs;
-                dirty = true;
-                return *this;
-            }
+        /**
+         * \brief Performs an assignment to an rvalue, setting the dirty
+         *        flag.
+         *
+         * \param rhs The value to assign.
+         *
+         * \return This Dirtiable.
+         */
+        inline Dirtiable &operator=(const ValueType &&rhs) {
+            value = std::move(rhs);
+            dirty = true;
+            return *this;
+        };
 
-            inline Dirtiable &operator *=(const ValueType &rhs) {
-                value *= rhs;
-                dirty = true;
-                return *this;
-            }
+        inline Dirtiable &operator+=(const ValueType &rhs) {
+            value += rhs;
+            dirty = true;
+            return *this;
+        }
 
-            inline Dirtiable &operator /=(const ValueType &rhs) {
-                value /= rhs;
-                dirty = true;
-                return *this;
-            }
+        inline Dirtiable &operator-=(const ValueType &rhs) {
+            value -= rhs;
+            dirty = true;
+            return *this;
+        }
 
-            /**
-             * Performs an assignment to an lvalue without setting the dirty
-             * flag.
-             *
-             * \param rhs The value to assign.
-             */
-            void set_quietly(const ValueType &rhs) {
-                value = rhs;
-            }
+        inline Dirtiable &operator*=(const ValueType &rhs) {
+            value *= rhs;
+            dirty = true;
+            return *this;
+        }
 
-            /**
-             * Performs an assignment to an rvalue without setting the dirty
-             * flag.
-             *
-             * \param rhs The value to assign.
-             */
-            void set_quietly(const ValueType &&rhs) {
-                value = std::move(rhs);
-            }
+        inline Dirtiable &operator/=(const ValueType &rhs) {
+            value /= rhs;
+            dirty = true;
+            return *this;
+        }
+
+        /**
+         * Performs an assignment to an lvalue without setting the dirty
+         * flag.
+         *
+         * \param rhs The value to assign.
+         */
+        void set_quietly(const ValueType &rhs) {
+            value = rhs;
+        }
+
+        /**
+         * Performs an assignment to an rvalue without setting the dirty
+         * flag.
+         *
+         * \param rhs The value to assign.
+         */
+        void set_quietly(const ValueType &&rhs) {
+            value = std::move(rhs);
+        }
     };
 }

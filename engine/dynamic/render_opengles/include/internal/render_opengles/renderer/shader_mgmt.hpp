@@ -29,11 +29,13 @@
 namespace argus {
     // forward declarations
     struct RendererState;
+
     class Resource;
+
     class Shader;
 
     std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> compile_shaders(
-        const std::vector<Shader> &shaders);
+            const std::vector<Shader> &shaders);
 
     LinkedProgram link_program(std::initializer_list<std::string> shader_uids);
 

@@ -46,10 +46,10 @@ namespace argus {
     static CallbackList<ArgusEventHandler> g_update_event_listeners;
     static CallbackList<ArgusEventHandler> g_render_event_listeners;
 
-    static std::queue<RefCountable<ArgusEvent>*> g_update_event_queue;
+    static std::queue<RefCountable<ArgusEvent> *> g_update_event_queue;
     static std::mutex g_update_event_queue_mutex;
-    
-    static std::queue<RefCountable<ArgusEvent>*> g_render_event_queue;
+
+    static std::queue<RefCountable<ArgusEvent> *> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
 
     void process_event_queue(const TargetThread target_thread) {
@@ -67,7 +67,7 @@ namespace argus {
         // re-lock the queue.
         mutex.lock();
         auto queue_copy = queue;
-        std::queue<RefCountable<ArgusEvent>*>().swap(queue); // clear queue
+        std::queue<RefCountable<ArgusEvent> *>().swap(queue); // clear queue
         mutex.unlock();
 
         listeners.list_mutex.lock_shared();
@@ -117,7 +117,8 @@ namespace argus {
 
     Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
             const TargetThread target_thread, void *const data, Ordering ordering) {
-        affirm_precond(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
+        affirm_precond(g_core_initializing || g_core_initialized,
+                "Cannot register event listener before engine initialization.");
         affirm_precond(callback != nullptr, "Event listener cannot have null callback.");
 
         CallbackList<ArgusEventHandler> *listeners = nullptr;
@@ -167,7 +168,7 @@ namespace argus {
         g_render_event_queue_mutex.unlock();
     }
 
-    ArgusEvent::ArgusEvent(std::type_index type):
-        type(type) {
+    ArgusEvent::ArgusEvent(std::type_index type) :
+            type(type) {
     }
 }

@@ -26,35 +26,35 @@ namespace argus {
      * \brief Represents an exception related to a Resource.
      */
     class ResourceException : public std::exception {
-        private:
-            const std::string msg;
+      private:
+        const std::string msg;
 
-        public:
-            /**
-             * \brief The UID of the Resource asssociated with this exception.
-             */
-            const std::string res_uid;
+      public:
+        /**
+         * \brief The UID of the Resource asssociated with this exception.
+         */
+        const std::string res_uid;
 
-            /**
-             * \brief Constructs a ResourceException.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             * \param msg The message associated with the exception.
-             */
-            ResourceException(std::string res_uid, std::string msg):
-                    msg(std::move(msg)),
-                    res_uid(std::move(res_uid)) {
-            }
+        /**
+         * \brief Constructs a ResourceException.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         * \param msg The message associated with the exception.
+         */
+        ResourceException(std::string res_uid, std::string msg) :
+                msg(std::move(msg)),
+                res_uid(std::move(res_uid)) {
+        }
 
-            /**
-             * \copydoc std::exception::what()
-             *
-             * \return The exception message.
-             */
-            const char *what(void) const noexcept override {
-                return msg.c_str();
-            }
+        /**
+         * \copydoc std::exception::what()
+         *
+         * \return The exception message.
+         */
+        const char *what(void) const noexcept override {
+            return msg.c_str();
+        }
     };
 
     /**
@@ -62,32 +62,32 @@ namespace argus {
      *        loaded first.
      */
     class ResourceNotLoadedException : public ResourceException {
-        public:
-            /**
-             * \brief Constructs a new exception.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             */
-            explicit ResourceNotLoadedException(const std::string &res_uid):
-                    ResourceException(res_uid, "Resource is not loaded") {
-            }
+      public:
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         */
+        explicit ResourceNotLoadedException(const std::string &res_uid) :
+                ResourceException(res_uid, "Resource is not loaded") {
+        }
     };
 
     /**
      * \brief Thrown when a load is requested for an already-loaded Resource.
      */
     class ResourceLoadedException : public ResourceException {
-        public:
-            /**
-             * \brief Constructs a new exception.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             */
-            explicit ResourceLoadedException(const std::string &res_uid):
-                    ResourceException(res_uid, "Resource is already loaded") {
-            }
+      public:
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         */
+        explicit ResourceLoadedException(const std::string &res_uid) :
+                ResourceException(res_uid, "Resource is already loaded") {
+        }
     };
 
     /**
@@ -95,16 +95,16 @@ namespace argus {
      *        loaded first.
      */
     class ResourceNotPresentException : public ResourceException {
-        public:
-            /**
-             * \brief Constructs a new exception.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             */
-            explicit ResourceNotPresentException(const std::string &res_uid):
-                    ResourceException(res_uid, "Resource does not exist") {
-            }
+      public:
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         */
+        explicit ResourceNotPresentException(const std::string &res_uid) :
+                ResourceException(res_uid, "Resource does not exist") {
+        }
     };
 
     /**
@@ -112,24 +112,24 @@ namespace argus {
      *        is missing a registered loader.
      */
     class NoLoaderException : public ResourceException {
-        public:
-            /**
-             * \brief The type of Resource for which a load failed.
-             */
-            const std::string resource_type;
+      public:
+        /**
+         * \brief The type of Resource for which a load failed.
+         */
+        const std::string resource_type;
 
-            /**
-             * \brief Constructs a new exception.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             * \param media_type The media type of the Resource for which a load
-             *        failed.
-             */
-            NoLoaderException(const std::string &res_uid, const std::string &media_type):
-                    ResourceException(res_uid, "No registered loader for type " + media_type),
-                    resource_type(media_type) {
-            }
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         * \param media_type The media type of the Resource for which a load
+         *        failed.
+         */
+        NoLoaderException(const std::string &res_uid, const std::string &media_type) :
+                ResourceException(res_uid, "No registered loader for type " + media_type),
+                resource_type(media_type) {
+        }
     };
 
     /**
@@ -137,15 +137,15 @@ namespace argus {
      *        but said load fails for any reason.
      */
     class LoadFailedException : public ResourceException {
-        public:
-            /**
-             * \brief Constructs a new exception.
-             *
-             * \param res_uid The UID of the Resource associated with the
-             *        exception.
-             */
-            explicit LoadFailedException(const std::string &res_uid):
-                    ResourceException(res_uid, "Resource loading failed") {
-            }
+      public:
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
+         */
+        explicit LoadFailedException(const std::string &res_uid) :
+                ResourceException(res_uid, "Resource loading failed") {
+        }
     };
 }

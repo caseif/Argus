@@ -27,19 +27,20 @@
 namespace argus {
     // forward declarations
     class Shader;
+
     class TextureData;
 
     struct pimpl_Material {
         const std::string texture;
         const std::vector<std::string> shaders;
 
-        pimpl_Material(const std::string &texture, const std::vector<std::string> &shaders):
-            texture(texture),
-            shaders(shaders) {
+        pimpl_Material(const std::string &texture, const std::vector<std::string> &shaders) :
+                texture(texture),
+                shaders(shaders) {
         }
 
-        pimpl_Material(const pimpl_Material&) = default;
+        pimpl_Material(const pimpl_Material &) = default;
 
-        pimpl_Material(pimpl_Material&&) = delete;
+        pimpl_Material(pimpl_Material &&) = delete;
     };
 }

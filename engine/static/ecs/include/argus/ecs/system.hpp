@@ -28,31 +28,35 @@
 namespace argus {
     // forward declarations
     class Entity;
+
     class SystemBuilder;
+
     struct pimpl_System;
 
-    typedef std::function<void(const Entity&, TimeDelta delta)> EntityCallback;
+    typedef std::function<void(const Entity &, TimeDelta delta)> EntityCallback;
 
     class System {
-        private:
-            System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback);
+      private:
+        System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback);
 
-            System(System&) = delete;
-            System(System&&) = delete;
-        public:
-            pimpl_System *pimpl;
+        System(System &) = delete;
 
-            static SystemBuilder builder(void);
+        System(System &&) = delete;
 
-            static System &create(std::string name, std::vector<std::type_index> component_types,
-                    EntityCallback callback);
+      public:
+        pimpl_System *pimpl;
 
-            ~System(void);
+        static SystemBuilder builder(void);
 
-            const std::string get_name(void);
+        static System &create(std::string name, std::vector<std::type_index> component_types,
+                EntityCallback callback);
 
-            bool is_active(void);
+        ~System(void);
 
-            void set_active(bool active);
+        const std::string get_name(void);
+
+        bool is_active(void);
+
+        void set_active(bool active);
     };
 }

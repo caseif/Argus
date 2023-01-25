@@ -36,7 +36,7 @@ namespace argus {
      *        typically triggered by user interaction.
      */
     struct ArgusEvent {
-       protected:
+      protected:
         /**
          * \brief Aggregate constructor for ArgusEvent.
          *
@@ -44,7 +44,7 @@ namespace argus {
          */
         explicit ArgusEvent(std::type_index type);
 
-       public:
+      public:
         /**
          * \brief The type of event.
          */
@@ -93,13 +93,13 @@ namespace argus {
      * \return The ID of the new registration.
      */
     template<typename EventType>
-    Index register_event_handler(const std::function<void(const EventType&, void*)> &callback,
+    Index register_event_handler(const std::function<void(const EventType &, void *)> &callback,
             const TargetThread target_thread, void *const data = nullptr,
             Ordering ordering = Ordering::Standard) {
         return register_event_handler_with_type(std::type_index(typeid(EventType)),
                 [callback](const ArgusEvent &e, void *d) {
                     assert(e.type == std::type_index(typeid(EventType)));
-                    callback(reinterpret_cast<const EventType&>(e), d);
+                    callback(reinterpret_cast<const EventType &>(e), d);
                 },
                 target_thread, data, ordering);
     }
@@ -126,8 +126,8 @@ namespace argus {
      *
      * \param event An lreference to the event to be dispatched.
      */
-    template <typename T, typename... Args>
-    void dispatch_event(Args && ... args) {
+    template<typename T, typename... Args>
+    void dispatch_event(Args &&... args) {
         _dispatch_event_ptr(*new T(std::forward<Args>(args)...));
     }
 

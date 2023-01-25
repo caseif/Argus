@@ -48,10 +48,10 @@ namespace argus {
 
         size_t off = sizeof(size_t); // first bytes are used to store total size of allocated block
         for (size_t i = 0; i < count; i++) {
-            auto compat_struct = reinterpret_cast<SizedByteArrayWithIndex*>(source + off);
+            auto compat_struct = reinterpret_cast<SizedByteArrayWithIndex *>(source + off);
             auto index = compat_struct->index;
-            std::string name(reinterpret_cast<const char*>(compat_struct->data), compat_struct->size);
-            dest.insert({ name, index });
+            std::string name(reinterpret_cast<const char *>(compat_struct->data), compat_struct->size);
+            dest.insert({name, index});
 
             off += sizeof(SizedByteArrayWithIndex) + compat_struct->size;
         }
@@ -66,17 +66,17 @@ namespace argus {
         std::vector<glslang_stage_t> stages;
         stages.resize(glsl_sources.size());
 
-        const char **glsl_sources_c = new const char*[shaders_count];
+        const char **glsl_sources_c = new const char *[shaders_count];
         unsigned int i = 0;
         for (auto &source_tuple : glsl_sources) {
             stages[i] = glslang_stage_t(source_tuple.first);
             glsl_sources_c[i] = source_tuple.second.c_str();
             i++;
         }
-        
+
         auto *res = ::transpile_glsl(stages.data(), glsl_sources_c, shaders_count,
-            glslang_client_t(client), glslang_target_client_version_t(client_version),
-            glslang_target_language_version_t(spirv_version));
+                glslang_client_t(client), glslang_target_client_version_t(client_version),
+                glslang_target_language_version_t(spirv_version));
         if (!res->success) {
             free_compilation_result(res);
 
@@ -93,9 +93,9 @@ namespace argus {
             auto data = res->spirv_binaries[i]->data;
             std::vector<uint8_t> shader_vec;
             shader_vec.resize(len);
-            memcpy(shader_vec.data(), reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(data)), len);
+            memcpy(shader_vec.data(), reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data)), len);
 
-            final_set.spirv_shaders.insert({ static_cast<EShLanguage>(stage), shader_vec });
+            final_set.spirv_shaders.insert({static_cast<EShLanguage>(stage), shader_vec});
         }
 
         _copy_compat_map_to_cpp_map(final_set.attributes, res->attribs, res->attrib_count);

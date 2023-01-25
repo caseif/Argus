@@ -26,7 +26,7 @@ namespace argus {
         return *new Thread(new std::thread(routine, arg));
     }
 
-    Thread::Thread(std::thread *handle): handle(handle) {
+    Thread::Thread(std::thread *handle) : handle(handle) {
     }
 
     void Thread::join() {

@@ -32,9 +32,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
+
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "nlohmann/detail/exceptions.hpp"
+
 #pragma GCC diagnostic pop
 
 #include <algorithm>
@@ -65,8 +67,8 @@
 #define SHADER_TESS_EVAL "tess_evaluation"
 
 namespace argus {
-    MaterialLoader::MaterialLoader():
-            ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
+    MaterialLoader::MaterialLoader() :
+            ResourceLoader({RESOURCE_TYPE_MATERIAL}) {
     }
 
     void *MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -110,7 +112,7 @@ namespace argus {
             std::vector<std::string> dep_uids;
             dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
 
-            std::map<std::string, const Resource*> deps;
+            std::map<std::string, const Resource *> deps;
             try {
                 deps = load_dependencies(manager, dep_uids);
             } catch (...) {
@@ -118,7 +120,7 @@ namespace argus {
                 return nullptr;
             }
 
-            std::vector<const Shader*> shaders;
+            std::vector<const Shader *> shaders;
             for (auto shader_info : shader_map) {
                 const Shader &shader = deps[shader_info.second]->get<const Shader>();
                 if (shader.get_stage() != shader_info.first) {
@@ -132,15 +134,16 @@ namespace argus {
 
             Logger::default_logger().debug("Successfully loaded material %s", proto.uid.c_str());
             return new Material(tex_uid, shader_uids);
-        } catch (nlohmann::detail::parse_error&) {
+        } catch (nlohmann::detail::parse_error &) {
             Logger::default_logger().warn("Failed to parse material %s", proto.uid.c_str());
             return nullptr;
-        } catch (std::out_of_range&) {
+        } catch (std::out_of_range &) {
             Logger::default_logger().debug("Material %s is incomplete or malformed", proto.uid.c_str());
             return nullptr;
         } catch (std::exception &ex) {
             UNUSED(ex); // only gets used in debug mode
-            Logger::default_logger().debug("Unspecified exception while parsing material %s (what: %s)", proto.uid.c_str(), ex.what());
+            Logger::default_logger().debug("Unspecified exception while parsing material %s (what: %s)",
+                    proto.uid.c_str(), ex.what());
             return nullptr;
         }
     }
@@ -150,14 +153,14 @@ namespace argus {
         affirm_precond(type == std::type_index(typeid(Material)),
                 "Incorrect pointer type passed to MaterialLoader::copy");
 
-        auto &src_mat = *reinterpret_cast<Material*>(src);
+        auto &src_mat = *reinterpret_cast<Material *>(src);
 
         // need to load shaders as dependencies before doing a copy
 
         std::vector<std::string> dep_uids;
         dep_uids.insert(dep_uids.end(), src_mat.get_shader_uids().begin(), src_mat.get_shader_uids().end());
 
-        std::map<std::string, const Resource*> deps;
+        std::map<std::string, const Resource *> deps;
         try {
             deps = load_dependencies(manager, dep_uids);
         } catch (...) {
@@ -169,7 +172,7 @@ namespace argus {
     }
 
     void MaterialLoader::unload(void *const data_buf) const {
-        delete static_cast<Material*>(data_buf);
+        delete static_cast<Material *>(data_buf);
     }
 
 }

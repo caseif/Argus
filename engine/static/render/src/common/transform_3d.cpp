@@ -35,10 +35,10 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform3D));
 
-    Transform3D::Transform3D(void): Transform3D({0, 0, 0}, {0, 0, 0}, {1, 1, 1}) {
+    Transform3D::Transform3D(void) : Transform3D({0, 0, 0}, {0, 0, 0}, {1, 1, 1}) {
     }
 
-    Transform3D::Transform3D(const Vector3f &translation, const Vector3f &rotation, const Vector3f &scale):
+    Transform3D::Transform3D(const Vector3f &translation, const Vector3f &rotation, const Vector3f &scale) :
             pimpl(&g_pimpl_pool.construct<pimpl_Transform3D>(translation, rotation, scale)) {
     }
 
@@ -51,7 +51,7 @@ namespace argus {
 
     // for the move ctor, we just steal the pimpl
     Transform3D::Transform3D(Transform3D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -61,7 +61,7 @@ namespace argus {
         }
     }
 
-    Transform3D &Transform3D::operator =(const Transform3D &rhs) noexcept {
+    Transform3D &Transform3D::operator=(const Transform3D &rhs) noexcept {
         pimpl->translation_mutex.lock();
         pimpl->rotation_mutex.lock();
         pimpl->scale_mutex.lock();
@@ -71,7 +71,7 @@ namespace argus {
         pimpl->scale = rhs.pimpl->scale;
         pimpl->dirty = (&rhs != this) || this->pimpl->dirty;
         pimpl->dirty_matrix = (&rhs != this) || this->pimpl->dirty_matrix;
-        
+
         pimpl->scale_mutex.unlock();
         pimpl->rotation_mutex.unlock();
         pimpl->translation_mutex.unlock();
@@ -79,7 +79,7 @@ namespace argus {
         return *this;
     }
 
-    Transform3D Transform3D::operator +(const Transform3D &rhs) const {
+    Transform3D Transform3D::operator+(const Transform3D &rhs) const {
         return Transform3D(
                 pimpl->translation + rhs.pimpl->translation,
                 pimpl->rotation + rhs.pimpl->rotation,
@@ -104,7 +104,7 @@ namespace argus {
     }
 
     void Transform3D::set_translation(const float x, const float y, const float z) {
-        this->set_translation({ x, y, z });
+        this->set_translation({x, y, z});
     }
 
     void Transform3D::add_translation(const Vector3f &translation_delta) {
@@ -116,7 +116,7 @@ namespace argus {
     }
 
     void Transform3D::add_translation(const float x, const float y, const float z) {
-        this->add_translation({ x, y, z });
+        this->add_translation({x, y, z});
     }
 
     Vector3f Transform3D::get_rotation(void) const {
@@ -132,7 +132,7 @@ namespace argus {
     }
 
     void Transform3D::set_rotation(const float pitch, const float yaw, const float roll) {
-        this->set_rotation({ pitch, yaw, roll });
+        this->set_rotation({pitch, yaw, roll});
     }
 
     void Transform3D::add_rotation(const Vector3f &rotation_delta) {
@@ -144,7 +144,7 @@ namespace argus {
     }
 
     void Transform3D::add_rotation(const float pitch_delta, const float yaw_delta, const float roll_delta) {
-        this->add_rotation(Vector3f { pitch_delta, yaw_delta, roll_delta });
+        this->add_rotation(Vector3f{pitch_delta, yaw_delta, roll_delta});
     }
 
     Vector3f Transform3D::get_scale(void) const {
@@ -164,7 +164,7 @@ namespace argus {
     }
 
     void Transform3D::set_scale(const float x, const float y, const float z) {
-        this->set_scale({ x, y, z });
+        this->set_scale({x, y, z});
     }
 
     static void _compute_matrix(Transform3D &transform) {

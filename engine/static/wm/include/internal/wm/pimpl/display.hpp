@@ -35,7 +35,7 @@ namespace argus {
         Vector2i position;
         Vector2f scale;
         Vector2u size;
-        
+
         std::vector<DisplayMode> modes;
 
         pimpl_Display(void) {

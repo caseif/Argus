@@ -37,15 +37,21 @@ namespace argus {
     // forward declarations
     struct AttachedViewport;
     struct AttachedViewport2D;
+
     class Canvas;
+
     class Scene;
+
     class Shader;
+
     class TextureData;
 
     class RenderObject2D;
+
     class Scene2D;
 
     class GLRenderer;
+
     struct ProcessedRenderObject;
     struct RenderBucket;
 
@@ -54,11 +60,11 @@ namespace argus {
     struct RendererState {
         GLRenderer &renderer;
 
-        std::vector<Resource*> intrinsic_resources;
+        std::vector<Resource *> intrinsic_resources;
 
-        std::map<const Scene2D*, Scene2DState> scene_states_2d;
-        std::vector<SceneState*> all_scene_states;
-        std::map<const AttachedViewport2D*, ViewportState> viewport_states_2d;
+        std::map<const Scene2D *, Scene2DState> scene_states_2d;
+        std::vector<SceneState *> all_scene_states;
+        std::map<const AttachedViewport2D *, ViewportState> viewport_states_2d;
         std::map<std::string, RefCountable<texture_handle_t>> prepared_textures;
         std::map<std::string, std::string> material_textures;
         std::map<std::string, shader_handle_t> compiled_shaders;

@@ -65,7 +65,7 @@ namespace argus {
 
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(device, &props);
-        
+
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceFeatures(device, &features);
 
@@ -119,7 +119,8 @@ namespace argus {
             }
 
             auto rating = _rate_physical_device(instance, dev, queue_families);
-            Logger::default_logger().debug("Physical device '%s' was assigned rating of %d", dev_props.deviceName, rating);
+            Logger::default_logger().debug("Physical device '%s' was assigned rating of %d", dev_props.deviceName,
+                    rating);
             if (rating > best_rating) {
                 best_dev = dev;
                 best_dev_indices = indices.value();

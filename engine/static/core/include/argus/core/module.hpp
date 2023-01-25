@@ -77,7 +77,7 @@ constexpr const char *ModuleCore = "core";
 
 namespace argus {
     static constexpr const char *g_lifecycle_stage_names[] = {
-        "Load", "PreInit", "Init", "PostInit", "PreDeinit", "Deinit", "PostDeinit"
+            "Load", "PreInit", "Init", "PostInit", "PreDeinit", "Deinit", "PostDeinit"
     };
 
     /**
@@ -192,7 +192,7 @@ namespace argus {
          */
         void *handle;
 
-        bool operator ==(const DynamicModule &rhs) const {
+        bool operator==(const DynamicModule &rhs) const {
             return rhs.id == this->id;
         }
     };

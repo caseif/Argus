@@ -30,7 +30,7 @@ namespace argus {
 
     struct RendererState;
 
-    SceneState::SceneState(RendererState &parent_state, Scene &scene):
+    SceneState::SceneState(RendererState &parent_state, Scene &scene) :
             parent_state(parent_state),
             scene(scene) {
     }
@@ -41,13 +41,13 @@ namespace argus {
         }
     }
 
-    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
+    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene) :
             SceneState(parent_state, scene) {
     }
 
     Scene2DState::~Scene2DState(void) {
         for (auto &obj : this->processed_objs) {
-            reinterpret_cast<ProcessedRenderObject*>(obj.second)->~ProcessedRenderObject();
+            reinterpret_cast<ProcessedRenderObject *>(obj.second)->~ProcessedRenderObject();
         }
     }
 }

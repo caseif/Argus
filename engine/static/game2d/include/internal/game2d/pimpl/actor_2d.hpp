@@ -39,13 +39,13 @@ namespace argus {
         std::optional<Handle> render_obj;
 
         pimpl_Actor2D(Handle handle, const Vector2f &size, const Transform2D &transform,
-                Resource &sprite_def_res, Sprite &sprite):
-            handle(handle),
-            size(size),
-            transform(transform),
-            sprite_def_res(sprite_def_res),
-            sprite(sprite),
-            render_obj() {
+                Resource &sprite_def_res, Sprite &sprite) :
+                handle(handle),
+                size(size),
+                transform(transform),
+                sprite_def_res(sprite_def_res),
+                sprite(sprite),
+                render_obj() {
         }
     };
 }

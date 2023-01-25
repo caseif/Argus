@@ -32,18 +32,18 @@ namespace argus {
     class Canvas;
 
     class GLRenderer {
-        private:
-            Window &window;
-            RendererState state;
-            Index resource_event_handler;
+      private:
+        Window &window;
+        RendererState state;
+        Index resource_event_handler;
 
-        public:
-            GLRenderer(Window &window);
+      public:
+        GLRenderer(Window &window);
 
-            ~GLRenderer(void);
+        ~GLRenderer(void);
 
-            void render(TimeDelta delta);
+        void render(TimeDelta delta);
 
-            void notify_window_resize(const Vector2u &resolution);
+        void notify_window_resize(const Vector2u &resolution);
     };
 }

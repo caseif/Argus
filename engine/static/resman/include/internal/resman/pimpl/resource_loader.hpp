@@ -34,12 +34,12 @@ namespace argus {
         //TODO: this is super non-threadsafe and needs to be reworked
         std::vector<std::string> last_dependencies;
 
-        pimpl_ResourceLoader(std::initializer_list<std::string> &media_types):
-            media_types(media_types) {
+        pimpl_ResourceLoader(std::initializer_list<std::string> &media_types) :
+                media_types(media_types) {
         }
 
-        pimpl_ResourceLoader(const pimpl_ResourceLoader&) = delete;
+        pimpl_ResourceLoader(const pimpl_ResourceLoader &) = delete;
 
-        pimpl_ResourceLoader(pimpl_ResourceLoader&&) = delete;
+        pimpl_ResourceLoader(pimpl_ResourceLoader &&) = delete;
     };
 }

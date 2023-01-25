@@ -26,6 +26,6 @@
 
 namespace argus {
     struct pimpl_HandleTable {
-        std::map<uint32_t, HandleTableChunk*> chunks;
+        std::map<uint32_t, HandleTableChunk *> chunks;
     };
 }

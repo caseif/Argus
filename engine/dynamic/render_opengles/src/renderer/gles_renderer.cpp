@@ -103,10 +103,13 @@ namespace argus {
         }
 
         return {
-            {2 / (float(r - l) * hor_scale), 0, 0, -float(r + l) / (float(r - l) * hor_scale)},
-            {0, 2 / (float(t - b) * ver_scale), 0, -float(t + b) / (float(t - b) * ver_scale)},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+                {2 / (float(r - l) * hor_scale), 0,                              0,
+                                                                                    -float(r + l) /
+                                                                                    (float(r - l) * hor_scale)},
+                {0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
+                                                                                    (float(t - b) * ver_scale)},
+                {0,                              0,                              1, 0},
+                {0,                              0,                              0, 1}
         };
     }
 
@@ -119,7 +122,7 @@ namespace argus {
     }
 
     static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
-                                                   const Vector2u &resolution, Matrix4 &dest) {
+            const Vector2u &resolution, Matrix4 &dest) {
         UNUSED(transform);
 
         auto center_x = (viewport.left + viewport.right) / 2.0f;
@@ -128,16 +131,16 @@ namespace argus {
         auto cur_translation = transform.get_translation();
 
         Matrix4 anchor_mat_1 = {
-            {1, 0, 0, -center_x + cur_translation.x},
-            {0, 1, 0, -center_y + cur_translation.y},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1},
+                {1, 0, 0, -center_x + cur_translation.x},
+                {0, 1, 0, -center_y + cur_translation.y},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1},
         };
         Matrix4 anchor_mat_2 = {
-            {1, 0, 0, center_x - cur_translation.x},
-            {0, 1, 0, center_y - cur_translation.y},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1},
+                {1, 0, 0, center_x - cur_translation.x},
+                {0, 1, 0, center_y - cur_translation.y},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1},
         };
         dest = Matrix4::identity();
         multiply_matrices(dest, anchor_mat_1);
@@ -148,8 +151,8 @@ namespace argus {
         multiply_matrices(dest, _compute_view_matrix(resolution));
     }
 
-    static std::set<Scene*> _get_associated_scenes_for_canvas(Canvas &canvas) {
-        std::set<Scene*> scenes;
+    static std::set<Scene *> _get_associated_scenes_for_canvas(Canvas &canvas) {
+        std::set<Scene *> scenes;
         for (auto viewport : canvas.get_viewports_2d()) {
             scenes.insert(&viewport.get().get_camera().get_scene());
         }
@@ -161,10 +164,11 @@ namespace argus {
 
         for (auto viewport : canvas.get_viewports_2d()) {
             auto &viewport_state
-                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport, true));
             auto camera_transform = viewport.get().get_camera().peek_transform();
-            _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(), resolution,
-                                               viewport_state.view_matrix);
+            _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(),
+                    resolution,
+                    viewport_state.view_matrix);
         }
     }
 
@@ -173,19 +177,19 @@ namespace argus {
 
         for (auto viewport : canvas.get_viewports_2d()) {
             Viewport2DState &viewport_state
-                = reinterpret_cast<Viewport2DState&>(state.get_viewport_state(viewport, true));
+                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport, true));
             auto camera_transform = viewport.get().get_camera().get_transform();
 
             if (camera_transform.dirty) {
                 _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform->inverse(),
-                                                   window.peek_resolution(), viewport_state.view_matrix);
+                        window.peek_resolution(), viewport_state.view_matrix);
             }
         }
 
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
             SceneState &scene_state = state.get_scene_state(*scene, true);
 
-            compile_scene_2d(reinterpret_cast<Scene2D&>(*scene), reinterpret_cast<Scene2DState&>(scene_state));
+            compile_scene_2d(reinterpret_cast<Scene2D &>(*scene), reinterpret_cast<Scene2DState &>(scene_state));
 
             fill_buckets(scene_state);
 
@@ -220,7 +224,7 @@ namespace argus {
         }
 
         if (auto texture_uid = state.material_textures.find(material);
-            texture_uid != state.material_textures.end()) {
+                texture_uid != state.material_textures.end()) {
             release_texture(state, texture_uid->second);
         }
     }
@@ -230,7 +234,7 @@ namespace argus {
             return;
         }
 
-        auto &state = *static_cast<RendererState*>(renderer_state);
+        auto &state = *static_cast<RendererState *>(renderer_state);
 
         std::string mt = event.prototype.media_type;
         if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
@@ -240,7 +244,7 @@ namespace argus {
         }
     }
 
-    GLESRenderer::GLESRenderer(Window &window):
+    GLESRenderer::GLESRenderer(Window &window) :
             window(window),
             state(*this) {
         activate_gl_context(get_window_handle<GLFWwindow>(window));
@@ -258,7 +262,8 @@ namespace argus {
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
         if (!AGLET_GL_ES_VERSION_3_0) {
-            Logger::default_logger().fatal("Argus requires support for OpenGL ES 3.0 or higher (got %d.%d)", gl_major, gl_minor);
+            Logger::default_logger().fatal("Argus requires support for OpenGL ES 3.0 or higher (got %d.%d)", gl_major,
+                    gl_minor);
         }
 
         Logger::default_logger().info("Obtained OpenGL ES %d.%d context (%s)", gl_major, gl_minor, gl_version_str);

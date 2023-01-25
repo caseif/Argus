@@ -33,64 +33,65 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
-    #include <Windows.h>
+#include <Windows.h>
 
-    #define fileno _fileno
-    #define fseek _fseeki64
-    #define fstat _fstat64
-    #define stat _stat64
-    #define stat_t struct _stat64
+#define fileno _fileno
+#define fseek _fseeki64
+#define fstat _fstat64
+#define stat _stat64
+#define stat_t struct _stat64
 
-    #define S_ISDIR(mode) (mode & S_IFDIR)
-    #define S_ISREG(mode) (mode & S_IFREG)
+#define S_ISDIR(mode) (mode & S_IFDIR)
+#define S_ISREG(mode) (mode & S_IFREG)
 #elif defined __APPLE__
-    #include <dirent.h>
-    #include <mach-o/dyld.h>
+#include <dirent.h>
+#include <mach-o/dyld.h>
 
-    #define stat_t struct stat
+#define stat_t struct stat
 #elif defined __linux__
-    #include <dirent.h>
-    #include <features.h>
-    #include <unistd.h>
 
-    #ifndef __USE_FILE_OFFSET64
-        #define __USE_FILE_OFFSET64
-    #endif
-    #ifndef __USE_LARGEFILE64
-        #define __USE_LARGEFILE64
-    #endif
-    #ifndef _LARGEFILE64_SOURCE
-        #define _LARGEFILE64_SOURCE
-    #endif
-    #ifndef _FILE_OFFSET_BIT
-        #define _FILE_OFFSET_BIT 64
-    #endif
+#include <dirent.h>
+#include <features.h>
+#include <unistd.h>
 
-    #define fopen fopen64
-    #define fseek fseeko64
-    #define fstat fstat64
-    #define stat stat64
-    #define stat_t struct stat64
+#ifndef __USE_FILE_OFFSET64
+#define __USE_FILE_OFFSET64
+#endif
+#ifndef __USE_LARGEFILE64
+#define __USE_LARGEFILE64
+#endif
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+#ifndef _FILE_OFFSET_BIT
+#define _FILE_OFFSET_BIT 64
+#endif
+
+#define fopen fopen64
+#define fseek fseeko64
+#define fstat fstat64
+#define stat stat64
+#define stat_t struct stat64
 #elif defined __NetBSD__ || defined __DragonFly__
-    #include <dirent.h>
-    #include <unistd.h>
+#include <dirent.h>
+#include <unistd.h>
 
-    #define stat_t struct stat
+#define stat_t struct stat
 #elif defined __FreeBSD__
-    #include <dirent.h>
-    #include <sys/sysctl.h>
-    #include <sys/types.h>
+#include <dirent.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 
-    #define stat_t struct stat
+#define stat_t struct stat
 #else
-    #error "This OS is not supported at this time."
+#error "This OS is not supported at this time."
 #endif
 
 #define CHUNK_SIZE 4096LU
 
 namespace argus {
 
-    FileHandle::FileHandle(const std::filesystem::path &path, const int mode, const size_t size, void *const handle):
+    FileHandle::FileHandle(const std::filesystem::path &path, const int mode, const size_t size, void *const handle) :
             path(path),
             mode(mode),
             size(size),
@@ -154,7 +155,7 @@ namespace argus {
 
         assert(stat_buf.st_size >= 0);
 
-        return FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void*>(file));
+        return FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void *>(file));
     }
 
     const std::filesystem::path &FileHandle::get_path(void) const {
@@ -169,7 +170,7 @@ namespace argus {
         validate_state(this->valid, "Non-valid FileHandle");
 
         this->valid = false;
-        validate_syscall(fclose(static_cast<FILE*>(this->handle)), "fclose");
+        validate_syscall(fclose(static_cast<FILE *>(this->handle)), "fclose");
     }
 
     void FileHandle::remove(void) {
@@ -180,7 +181,7 @@ namespace argus {
     void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
         validate_state(valid, "Non-valid FileHandle");
 
-        fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+        fseek(static_cast<FILE *>(handle), offset, SEEK_SET);
 
         std::ios::openmode omode = std::ios::binary;
         if (this->mode & FILE_MODE_READ) {
@@ -206,11 +207,11 @@ namespace argus {
 
         validate_arg(offset >= 0, "Read offset must be non-negative");
 
-        validate_arg(size_t(offset) + read_size <= this->size, "Invalid offset/size combination");
+        validate_arg(size_t(offset) +read_size <= this->size, "Invalid offset/size combination");
 
-        fseek(static_cast<FILE*>(handle), off_t(offset), SEEK_SET);
+        fseek(static_cast<FILE *>(handle), off_t(offset), SEEK_SET);
 
-        size_t read_chunks = fread(buf, read_size, 1, static_cast<FILE*>(handle));
+        size_t read_chunks = fread(buf, read_size, 1, static_cast<FILE *>(handle));
 
         validate_syscall(read_chunks == 1, "fread");
     }
@@ -223,16 +224,16 @@ namespace argus {
         validate_arg(offset >= -1, "Invalid offset parameter");
 
         if (offset == -1) {
-            fseek(static_cast<FILE*>(handle), 0, SEEK_END);
+            fseek(static_cast<FILE *>(handle), 0, SEEK_END);
         } else {
-            fseek(static_cast<FILE*>(handle), offset, SEEK_SET);
+            fseek(static_cast<FILE *>(handle), offset, SEEK_SET);
         }
 
-        size_t write_chunks = fwrite(buf, write_size, 1, static_cast<FILE*>(handle));
+        size_t write_chunks = fwrite(buf, write_size, 1, static_cast<FILE *>(handle));
         validate_syscall(write_chunks == 1, "fwrite");
 
         stat_t file_stat{};
-        validate_syscall(fstat(fileno(static_cast<FILE*>(handle)), &file_stat), "fstat");
+        validate_syscall(fstat(fileno(static_cast<FILE *>(handle)), &file_stat), "fstat");
 
         assert(file_stat.st_size >= 0);
 
@@ -240,20 +241,20 @@ namespace argus {
     }
 
     const std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
-            const std::function<void(FileHandle&)> callback) {
+            const std::function<void(FileHandle &)> callback) {
         validate_state(valid, "Non-valid FileHandle");
 
         validate_arg(read_size > 0, "Invalid size parameter");
 
         validate_arg(offset >= 0, "Read offset must be non-negative");
 
-        validate_arg(size_t(offset) + read_size <= this->size, "Invalid offset/size combintation");
+        validate_arg(size_t(offset) +read_size <= this->size, "Invalid offset/size combintation");
 
         return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
     }
 
     const std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
-            unsigned char *const buf, std::function<void(FileHandle&)> callback) {
+            unsigned char *const buf, std::function<void(FileHandle &)> callback) {
         validate_state(valid, "Non-valid FileHandle");
 
         validate_arg(write_size > 0, "Invalid size parameter");

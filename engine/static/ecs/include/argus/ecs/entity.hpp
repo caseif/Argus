@@ -35,43 +35,46 @@ namespace argus {
 
 // disable non-standard extension warning for flexible array member
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable : 4200)
+#pragma warning(push)
+#pragma warning(disable : 4200)
 #endif
+
     class Entity {
-        private:
-            const EntityId id;
-            void *component_pointers[0];
+      private:
+        const EntityId id;
+        void *component_pointers[0];
 
-            Entity(void);
+        Entity(void);
 
-            Entity(Entity&) = delete;
-            Entity(Entity&&) = delete;
+        Entity(Entity &) = delete;
 
-        public:
-            static EntityBuilder builder(void);
+        Entity(Entity &&) = delete;
 
-            static Entity &create(std::vector<std::type_index> components);
+      public:
+        static EntityBuilder builder(void);
 
-            void destroy(void);
+        static Entity &create(std::vector<std::type_index> components);
 
-            EntityId get_id(void) const;
+        void destroy(void);
 
-            void *get(std::type_index type) const;
+        EntityId get_id(void) const;
 
-            template <typename T>
-            T &get() const {
-                return *static_cast<T*>(get(std::type_index(typeid(T))));
-            }
+        void *get(std::type_index type) const;
 
-            bool has(std::type_index type) const;
+        template<typename T>
+        T &get() const {
+            return *static_cast<T *>(get(std::type_index(typeid(T))));
+        }
 
-            template <typename T>
-            bool has(void) const {
-                return has(std::type_index(typeid(T)));
-            }
+        bool has(std::type_index type) const;
+
+        template<typename T>
+        bool has(void) const {
+            return has(std::type_index(typeid(T)));
+        }
     };
+
 #ifdef _MSC_VER
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 }

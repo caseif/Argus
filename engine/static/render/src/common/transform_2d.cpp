@@ -35,10 +35,10 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform2D));
 
-    Transform2D::Transform2D(void): Transform2D({0, 0}, 0, {1, 1}) {
+    Transform2D::Transform2D(void) : Transform2D({0, 0}, 0, {1, 1}) {
     }
 
-    Transform2D::Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale):
+    Transform2D::Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
             pimpl(&g_pimpl_pool.construct<pimpl_Transform2D>(translation, rotation, scale)) {
     }
 
@@ -51,7 +51,7 @@ namespace argus {
 
     // for the move ctor, we just steal the pimpl
     Transform2D::Transform2D(Transform2D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -71,7 +71,7 @@ namespace argus {
         return *this;
     }
 
-    Transform2D Transform2D::operator +(const Transform2D &rhs) const {
+    Transform2D Transform2D::operator+(const Transform2D &rhs) const {
         return Transform2D(
                 pimpl->translation + rhs.pimpl->translation,
                 pimpl->rotation.load() + rhs.pimpl->rotation,
@@ -80,13 +80,13 @@ namespace argus {
     }
 
     Transform2D::operator ValueAndDirtyFlag<Transform2D>(void) {
-        auto vd = ValueAndDirtyFlag<Transform2D> { *this, this->pimpl->dirty };
+        auto vd = ValueAndDirtyFlag<Transform2D>{*this, this->pimpl->dirty};
         this->pimpl->dirty = false;
         return vd;
     }
 
     Transform2D::operator ValueAndDirtyFlag<const Transform2D>(void) const {
-        auto vd = ValueAndDirtyFlag<const Transform2D> { *this, this->pimpl->dirty };
+        auto vd = ValueAndDirtyFlag<const Transform2D>{*this, this->pimpl->dirty};
         this->pimpl->dirty = false;
         return vd;
     }
@@ -108,7 +108,7 @@ namespace argus {
     }
 
     void Transform2D::set_translation(const float x, const float y) {
-        this->set_translation({ x, y });
+        this->set_translation({x, y});
     }
 
     void Transform2D::add_translation(const Vector2f &translation_delta) {
@@ -120,7 +120,7 @@ namespace argus {
     }
 
     void Transform2D::add_translation(const float x, const float y) {
-        this->add_translation({ x, y });
+        this->add_translation({x, y});
     }
 
     float Transform2D::get_rotation(void) const {
@@ -157,7 +157,7 @@ namespace argus {
     }
 
     void Transform2D::set_scale(const float x, const float y) {
-        this->set_scale({ x, y });
+        this->set_scale({x, y});
     }
 
     static void _compute_matrix(const Transform2D &transform) {
@@ -177,31 +177,31 @@ namespace argus {
         transform.pimpl->scale_mutex.unlock();
 
         transform.pimpl->translation_matrix = {
-            {1, 0, 0, translation_current.x},
-            {0, 1, 0, translation_current.y},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+                {1, 0, 0, translation_current.x},
+                {0, 1, 0, translation_current.y},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
         };
 
         transform.pimpl->rotation_matrix = {
-            {cos_rot, -sin_rot, 0, 0},
-            {sin_rot, cos_rot, 0, 0},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+                {cos_rot, -sin_rot, 0, 0},
+                {sin_rot, cos_rot,  0, 0},
+                {0,       0,        1, 0},
+                {0,       0,        0, 1}
         };
 
         transform.pimpl->scale_matrix = {
-            {scale_current.x, 0, 0, 0},
-            {0, scale_current.y, 0, 0},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+                {scale_current.x, 0,               0, 0},
+                {0,               scale_current.y, 0, 0},
+                {0,               0,               1, 0},
+                {0,               0,               0, 1}
         };
 
         transform.pimpl->matrix_rep = {
-            {cos_rot * scale_current.x, -sin_rot, 0, translation_current.x},
-            {sin_rot, cos_rot * scale_current.y, 0, translation_current.y},
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+                {cos_rot * scale_current.x, -sin_rot,                  0, translation_current.x},
+                {sin_rot,                   cos_rot * scale_current.y, 0, translation_current.y},
+                {0,                         0,                         1, 0},
+                {0,                         0,                         0, 1}
         };
 
         transform.pimpl->dirty_matrix = false;
@@ -238,6 +238,6 @@ namespace argus {
     }
 
     Transform2D Transform2D::inverse(void) const {
-        return { this->pimpl->translation.inverse(), -this->pimpl->rotation, this->pimpl->scale };
+        return {this->pimpl->translation.inverse(), -this->pimpl->rotation, this->pimpl->scale};
     }
 }

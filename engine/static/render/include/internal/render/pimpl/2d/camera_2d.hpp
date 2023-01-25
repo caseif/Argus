@@ -19,13 +19,14 @@
 #pragma once
 
 #include "argus/render/2d/scene_2d.hpp"
+
 namespace argus {
     struct pimpl_Camera2D {
         std::string id;
         Scene2D &scene;
         AtomicDirtiable<Transform2D> transform;
 
-        pimpl_Camera2D(const std::string &id, Scene2D &scene):
+        pimpl_Camera2D(const std::string &id, Scene2D &scene) :
                 id(id),
                 scene(scene) {
         }

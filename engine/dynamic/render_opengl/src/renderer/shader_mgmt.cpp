@@ -35,10 +35,13 @@
 #include "internal/render_opengl/state/renderer_state.hpp"
 
 #include "aglet/aglet.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+
 #include "spirv_glsl.hpp"
+
 #pragma GCC diagnostic pop
 
 #include <map>
@@ -56,7 +59,7 @@ namespace argus {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 
         if (shaders.empty()) {
-            return std::make_pair(handles, ShaderReflectionInfo {});
+            return std::make_pair(handles, ShaderReflectionInfo{});
         }
 
         std::vector<std::string> shader_sources;
@@ -99,8 +102,8 @@ namespace argus {
                 glShaderBinary(1, &shader_handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, spirv_src_c, spirv_src_len);
                 glSpecializeShaderARB(shader_handle, "main", 0, nullptr, nullptr);
             } else {
-                spirv_cross::CompilerGLSL glsl_compiler(reinterpret_cast<const uint32_t*>(spirv_src.data()),
-                    spirv_src.size() / 4);
+                spirv_cross::CompilerGLSL glsl_compiler(reinterpret_cast<const uint32_t *>(spirv_src.data()),
+                        spirv_src.size() / 4);
                 spirv_cross::CompilerGLSL::Options options;
                 options.version = 430; //TODO: may want to reduce this requirement and just do runtime uniform reflection
                 options.es = false;
@@ -139,7 +142,7 @@ namespace argus {
                         stage_str = "unknown";
                         break;
                 }
-                get_gl_logger().fatal([log] () { delete[] log; }, "Failed to compile %s shader: %s",
+                get_gl_logger().fatal([log]() { delete[] log; }, "Failed to compile %s shader: %s",
                         stage_str.c_str(), log);
             }
             handles.emplace_back(shader, shader_handle);
@@ -148,7 +151,7 @@ namespace argus {
         return std::make_pair(handles, refl_info);
     }
 
-    template <typename K, typename V, typename K2, typename V2>
+    template<typename K, typename V, typename K2, typename V2>
     static V find_or_default(std::map<K, V> haystack, K2 &needle, V2 def) {
         auto it = haystack.find(needle);
         return it != haystack.end() ? it->second : static_cast<V>(def);
@@ -164,7 +167,7 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create program: %d", glGetError());
         }
 
-        std::vector<Resource*> shader_resources;
+        std::vector<Resource *> shader_resources;
         std::vector<Shader> shaders;
         for (auto &shader_uid : shader_uids) {
             auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
@@ -202,7 +205,7 @@ namespace argus {
             assert(log_len >= 0);
             char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
-            get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
+            get_gl_logger().fatal([log]() { delete[] log; }, "Failed to link program: %s", log);
         }
 
         return LinkedProgram(program_handle, refl_info);
@@ -220,7 +223,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        state.linked_programs.insert({ material_res.uid, program });
+        state.linked_programs.insert({material_res.uid, program});
     }
 
     void deinit_shader(shader_handle_t shader) {
@@ -242,14 +245,15 @@ namespace argus {
     }
 
     void set_per_frame_global_uniforms(LinkedProgram &program) {
-        program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [] (auto time_loc) {
+        program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
             affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
             glUniform1f(GLint(time_loc),
-                float(
-                    double(
-                        std::chrono::time_point_cast<std::chrono::microseconds>(now()).time_since_epoch().count()
-                    ) / 1000.0
-                )
+                    float(
+                            double(
+                                    std::chrono::time_point_cast<std::chrono::microseconds>(
+                                            now()).time_since_epoch().count()
+                            ) / 1000.0
+                    )
             );
         });
     }

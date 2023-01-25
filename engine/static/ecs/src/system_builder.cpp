@@ -54,7 +54,7 @@ namespace argus {
         validate_state(!this->name.empty(), "Name must be supplied before building system");
         validate_state(!this->types.empty(), "At least one component type must be supplied before building system");
         validate_state(this->callback != nullptr, "Callback must be supplied before building system");
-        
+
         return System::create(this->name, this->types, this->callback);
     }
 }

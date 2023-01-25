@@ -36,14 +36,15 @@ namespace argus {
     struct pimpl_World2DLayer;
 
     class World2DLayer {
-       public:
+      public:
         pimpl_World2DLayer *pimpl;
 
         World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval);
 
-        World2DLayer(const World2DLayer&) = delete;
-        World2DLayer(World2DLayer&&) = delete;
+        World2DLayer(const World2DLayer &) = delete;
+
+        World2DLayer(World2DLayer &&) = delete;
 
         ~World2DLayer();
 

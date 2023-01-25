@@ -26,9 +26,12 @@
 #include "internal/core/engine_config.hpp"
 
 #include "arp/arp.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
+
 #include "nlohmann/json.hpp"
+
 #pragma GCC diagnostic pop
 
 #include <filesystem>
@@ -38,9 +41,11 @@
 #include <vector>
 
 #ifdef _WIN32
-    #include <direct.h>
+#include <direct.h>
 #else
-    #include <unistd.h>
+
+#include <unistd.h>
+
 #endif
 
 #define EXT_SEPARATOR "."
@@ -186,7 +191,7 @@ namespace argus {
         if (auto id = _get_json_string(window_obj, KEY_WINDOW_ID); id.has_value()) {
             win_params.id = id.value();
         }
-        
+
         if (auto title = _get_json_string(window_obj, KEY_WINDOW_TITLE); title.has_value()) {
             win_params.title = title.value();
         }
@@ -328,7 +333,7 @@ namespace argus {
             auto rc = arp_load_from_file(child.path().string().c_str(), &meta, nullptr);
             if (rc != 0) {
                 Logger::default_logger().warn("Failed to load package %s while searching for config (libarp says: %s)",
-                    child.path().filename().c_str(), arp_get_error());
+                        child.path().filename().c_str(), arp_get_error());
                 continue;
             }
 
@@ -345,8 +350,9 @@ namespace argus {
             ArpPackage pack;
             auto rc = arp_load_from_file(candidate.string().c_str(), nullptr, &pack);
             if (rc != 0) {
-                Logger::default_logger().warn("Failed to load package at %s while searching for config (libarp says: %s)",
-                    filename, arp_get_error());
+                Logger::default_logger().warn(
+                        "Failed to load package at %s while searching for config (libarp says: %s)",
+                        filename, arp_get_error());
                 continue;
             }
 
@@ -356,13 +362,15 @@ namespace argus {
                 Logger::default_logger().debug("Did not find config in package %s", candidate.filename().c_str());
                 continue;
             } else if (rc != 0) {
-                Logger::default_logger().warn("Failed to find config in package %s (libarp says: %s)", filename, arp_get_error());
+                Logger::default_logger().warn("Failed to find config in package %s (libarp says: %s)", filename,
+                        arp_get_error());
                 continue;
             }
 
             if (strcmp(res_meta.media_type, CONFIG_MEDIA_TYPE) != 0) {
-                Logger::default_logger().warn("File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
-                    CONFIG_BASE_NAME, filename, res_meta.media_type);
+                Logger::default_logger().warn(
+                        "File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
+                        CONFIG_BASE_NAME, filename, res_meta.media_type);
                 continue;
             }
 
@@ -370,7 +378,8 @@ namespace argus {
 
             auto *res = arp_load_resource(&res_meta);
             if (res == nullptr) {
-                Logger::default_logger().warn("Failed to load config from package %s (libarp says: %s)", filename, arp_get_error());
+                Logger::default_logger().warn("Failed to load config from package %s (libarp says: %s)", filename,
+                        arp_get_error());
                 continue;
             }
 
@@ -388,7 +397,8 @@ namespace argus {
         std::string cur_path;
         if (!_ingest_config_from_file(config_namespace)
             && !_ingest_config_from_arp(config_namespace)) {
-            Logger::default_logger().fatal("Failed to locate " CONFIG_FILE_NAME " in namespace %s", config_namespace.c_str());
+            Logger::default_logger().fatal("Failed to locate " CONFIG_FILE_NAME " in namespace %s",
+                    config_namespace.c_str());
         }
     }
 }

@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+
 namespace argus {
     /**
      * \brief Specifies the conversion from viewport coordinate space to

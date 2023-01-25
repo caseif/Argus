@@ -36,28 +36,28 @@ namespace argus {
     };
 
     class Display {
-        private:
-            Display(Display&) = delete;
+      private:
+        Display(Display &) = delete;
 
-            Display(Display&&) = delete;
+        Display(Display &&) = delete;
 
-        public:
-            pimpl_Display *pimpl;
+      public:
+        pimpl_Display *pimpl;
 
-            Display(void);
+        Display(void);
 
-            ~Display(void);
+        ~Display(void);
 
-            static const std::vector<const Display*> &get_available_displays(void);
+        static const std::vector<const Display *> &get_available_displays(void);
 
-            const std::string &get_name(void) const;
+        const std::string &get_name(void) const;
 
-            const Vector2i &get_position(void) const;
+        const Vector2i &get_position(void) const;
 
-            const Vector2u &get_physical_size(void) const;
+        const Vector2u &get_physical_size(void) const;
 
-            const Vector2f &get_scale(void) const;
+        const Vector2f &get_scale(void) const;
 
-            const std::vector<DisplayMode> &get_display_modes(void) const;
+        const std::vector<DisplayMode> &get_display_modes(void) const;
     };
 }

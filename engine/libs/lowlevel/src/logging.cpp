@@ -36,7 +36,9 @@
 #include <intrin.h>
 #define DEBUG_BREAK() __debugbreak()
 #else
+
 #include <csignal>
+
 #define DEBUG_BREAK() raise(SIGTRAP)
 #endif
 #else
@@ -49,7 +51,8 @@
 namespace argus {
     static Logger g_default_logger(DEFAULT_REALM);
 
-    static void _log_generic(FILE *stream, const std::string &realm, const std::string &level, std::string format, va_list args) {
+    static void
+    _log_generic(FILE *stream, const std::string &realm, const std::string &level, std::string format, va_list args) {
         fprintf(stream, "[%s][%s] ", realm.c_str(), level.c_str());
         vfprintf(stream, format.c_str(), args);
         fprintf(stream, "\n");
@@ -60,12 +63,12 @@ namespace argus {
         return g_default_logger;
     }
 
-    Logger::Logger(FILE *target, const std::string &realm):
+    Logger::Logger(FILE *target, const std::string &realm) :
             target(target),
             realm(realm) {
     }
 
-    Logger::Logger(const std::string &realm):
+    Logger::Logger(const std::string &realm) :
             target(nullptr),
             realm(realm) {
     }
@@ -139,7 +142,7 @@ namespace argus {
 
         _ABORT();
     }
-    
+
     [[noreturn]] void Logger::fatal(std::string format, ...) const {
         fatal(std::function<void(void)>(), format);
     }

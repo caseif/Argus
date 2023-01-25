@@ -29,8 +29,8 @@ namespace argus {
     std::optional<uint32_t> LinkedProgram::get_attr_loc(const std::string &name) {
         auto it = reflection_info.attribute_locations.find(name);
         return it != reflection_info.attribute_locations.end()
-            ? std::make_optional(it->second)
-            : std::nullopt;
+               ? std::make_optional(it->second)
+               : std::nullopt;
     }
 
     void LinkedProgram::get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
@@ -42,14 +42,14 @@ namespace argus {
 
     bool LinkedProgram::has_uniform(const std::string &name) {
         return reflection_info.uniform_variable_locations.find(name)
-                != reflection_info.uniform_variable_locations.end();
+               != reflection_info.uniform_variable_locations.end();
     }
 
     std::optional<uint32_t> LinkedProgram::get_uniform_loc(const std::string &name) {
         auto it = reflection_info.uniform_variable_locations.find(name);
         return it != reflection_info.uniform_variable_locations.end()
-            ? std::make_optional(it->second)
-            : std::nullopt;
+               ? std::make_optional(it->second)
+               : std::nullopt;
     }
 
     void LinkedProgram::get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {

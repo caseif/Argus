@@ -32,12 +32,12 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Sprite));
 
-    Sprite::Sprite(const Resource &definition):
+    Sprite::Sprite(const Resource &definition) :
             pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(definition)) {
         set_current_animation(pimpl->get_def().def_anim);
     }
 
-    Sprite::Sprite(Sprite &&rhs):
+    Sprite::Sprite(Sprite &&rhs) :
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
@@ -57,7 +57,7 @@ namespace argus {
     std::vector<std::string> Sprite::get_available_animations(void) const {
         std::vector<std::string> anim_ids(pimpl->get_def().animations.size());
         std::transform(pimpl->get_def().animations.cbegin(), pimpl->get_def().animations.cend(),
-                std::back_inserter(anim_ids), [] (auto &kv) { return kv.first; });
+                std::back_inserter(anim_ids), [](auto &kv) { return kv.first; });
 
         return anim_ids;
     }
@@ -74,7 +74,7 @@ namespace argus {
 
         pimpl->cur_anim_id = animation_id;
         //TODO: revisit this
-        pimpl->cur_anim = const_cast<SpriteAnimation*>(&it->second);
+        pimpl->cur_anim = const_cast<SpriteAnimation *>(&it->second);
         pimpl->cur_frame = pimpl->anim_start_offsets[pimpl->cur_anim_id];
     }
 

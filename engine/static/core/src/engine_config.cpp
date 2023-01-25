@@ -57,7 +57,7 @@ namespace argus {
     }
 
     void set_render_backend(const std::string backend) {
-        set_render_backends({ backend });
+        set_render_backends({backend});
     }
 
     ScreenSpaceScaleMode get_screen_space_scale_mode(void) {

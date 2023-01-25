@@ -41,8 +41,8 @@ namespace argus {
     // forward declarations
     class ResourceManager;
 
-    ShaderLoader::ShaderLoader():
-            ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
+    ShaderLoader::ShaderLoader() :
+            ResourceLoader({RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG}) {
     }
 
     void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -77,11 +77,11 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return new Shader(std::move(*reinterpret_cast<Shader*>(src)));
+        return new Shader(std::move(*reinterpret_cast<Shader *>(src)));
     }
 
     void ShaderLoader::unload(void *const data_buf) const {
-        delete static_cast<Shader*>(data_buf);
+        delete static_cast<Shader *>(data_buf);
     }
 
 }

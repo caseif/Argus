@@ -165,16 +165,16 @@ namespace argus {
                     affirm_precond(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
 
                     glBindBuffer(GL_COPY_READ_BUFFER, processed->staging_buffer);
-                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, GLintptr(offset) ,
+                    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, GLintptr(offset),
                             GLsizeiptr(processed->staging_buffer_size));
                     glBindBuffer(GL_COPY_READ_BUFFER, 0);
                 }
 
                 if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
-                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                        reinterpret_cast<GLfloat *>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = float(processed->anim_frame.x);
-                        reinterpret_cast<GLfloat*>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
+                        reinterpret_cast<GLfloat *>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = float(processed->anim_frame.y);
                     }
                     processed->anim_frame_updated = false;

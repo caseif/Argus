@@ -49,8 +49,8 @@
 
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
-            std::optional<Vector2f> repeat_interval):
-        pimpl(new pimpl_World2DLayer(world, id, parallax_coeff, repeat_interval)) {
+            std::optional<Vector2f> repeat_interval) :
+            pimpl(new pimpl_World2DLayer(world, id, parallax_coeff, repeat_interval)) {
         auto layer_uuid = Uuid::random().to_string();
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
         pimpl->scene = &Scene2D::create(layer_id_str);
@@ -181,15 +181,15 @@ namespace argus {
 
         Vertex2D v1, v2, v3, v4;
 
-        v1.position = { 0, 0 };
-        v2.position = { 0, scaled_size.y };
-        v3.position = { scaled_size.x, scaled_size.y };
-        v4.position = { scaled_size.x, 0 };
+        v1.position = {0, 0};
+        v2.position = {0, scaled_size.y};
+        v3.position = {scaled_size.x, scaled_size.y};
+        v4.position = {scaled_size.x, 0};
 
-        v1.tex_coord = { 0, 0 };
-        v2.tex_coord = { 0, 1 };
-        v3.tex_coord = { 1, 1 };
-        v4.tex_coord = { 1, 0 };
+        v1.tex_coord = {0, 0};
+        v2.tex_coord = {0, 1};
+        v3.tex_coord = {1, 1};
+        v4.tex_coord = {1, 0};
 
         auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
         auto atlas_w = anim_tex.get<TextureData>().width;
@@ -200,17 +200,17 @@ namespace argus {
         for (auto &kv : sprite.pimpl->get_def().animations) {
             auto &anim = kv.second;
 
-            sprite.pimpl->anim_start_offsets.insert({ anim.id, frame_off });
+            sprite.pimpl->anim_start_offsets.insert({anim.id, frame_off});
             frame_off += anim.frames.size();
         }
 
-        prims.push_back(RenderPrim2D({ v1, v2, v3 }));
-        prims.push_back(RenderPrim2D({ v1, v3, v4 }));
+        prims.push_back(RenderPrim2D({v1, v2, v3}));
+        prims.push_back(RenderPrim2D({v1, v3, v4}));
 
         //TODO: make this reusable
         auto mat_uid = "internal:game2d/material/sprite_mat_" + Uuid::random().to_string();
         ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
-                Material(sprite_def.atlas, { SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG }));
+                Material(sprite_def.atlas, {SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG}));
 
         float atlas_stride_x;
         float atlas_stride_y;
@@ -224,7 +224,7 @@ namespace argus {
             atlas_stride_y = 1.0;
         }
 
-        return layer.pimpl->scene->create_child_object(mat_uid, prims, { atlas_stride_x, atlas_stride_y }, {});
+        return layer.pimpl->scene->create_child_object(mat_uid, prims, {atlas_stride_x, atlas_stride_y}, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {

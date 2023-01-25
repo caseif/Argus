@@ -71,8 +71,8 @@ namespace argus {
          *        ResourceEvent.
          * \param resource The Resource associated with the event.
          */
-        ResourceEvent(const ResourceEventType subtype, ResourcePrototype prototype, Resource *resource):
-                ArgusEvent { std::type_index(typeid(ResourceEvent)) },
+        ResourceEvent(const ResourceEventType subtype, ResourcePrototype prototype, Resource *resource) :
+                ArgusEvent{std::type_index(typeid(ResourceEvent))},
                 subtype(subtype),
                 prototype(std::move(prototype)),
                 resource(resource) {

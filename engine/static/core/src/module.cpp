@@ -44,11 +44,13 @@
 #include <cstring>
 
 #ifdef _WIN32
-    #include <direct.h>
-    #include <Windows.h>
+#include <direct.h>
+#include <Windows.h>
 #else
-    #include <dlfcn.h>
-    #include <unistd.h>
+
+#include <dlfcn.h>
+#include <unistd.h>
+
 #endif
 
 namespace argus {
@@ -62,13 +64,15 @@ namespace argus {
         auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
         if (!std::filesystem::is_directory(modules_dir_path)) {
-            Logger::default_logger().warn("Dynamic module directory not found. (Searched at %s)", modules_dir_path.c_str());
+            Logger::default_logger().warn("Dynamic module directory not found. (Searched at %s)",
+                    modules_dir_path.c_str());
             return "";
         }
 
         auto module_path = modules_dir_path / (SHARED_LIB_PREFIX + id + EXTENSION_SEPARATOR SHARED_LIB_EXT);
         if (!std::filesystem::is_regular_file(module_path)) {
-            Logger::default_logger().warn("Item referred to by %s does not exist, is not a regular file, or is inaccessible",
+            Logger::default_logger().warn(
+                    "Item referred to by %s does not exist, is not a regular file, or is inaccessible",
                     module_path.c_str());
             return "";
         }
@@ -95,7 +99,7 @@ namespace argus {
             }
 
             if (strlen(SHARED_LIB_PREFIX) > 0
-                    && entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
+                && entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
                 Logger::default_logger().debug("Ignoring module file %s with non-library prefix", filename.c_str());
                 continue;
             }
@@ -116,7 +120,7 @@ namespace argus {
         return modules;
     }
 
-    template <typename T>
+    template<typename T>
     static std::vector<std::string> _topo_sort(const std::vector<T> nodes,
             const std::vector<std::pair<T, T>> edges) {
         std::vector<T> sorted_nodes;
@@ -191,7 +195,7 @@ namespace argus {
             for (auto &id : sorted_ids) {
                 sorted_modules.push_back(module_map.find(id)->second);
             }
-        } catch (std::invalid_argument const&) {
+        } catch (std::invalid_argument const &) {
             Logger::default_logger().fatal("Circular dependency detected in dynamic modules, cannot proceed.");
         }
 
@@ -219,7 +223,7 @@ namespace argus {
         }
 
         Logger::default_logger().debug("Attempting to load dynamic module %s from file %s",
-            id.c_str(), path.string().c_str());
+                id.c_str(), path.string().c_str());
         _log_dependent_chain(Logger::default_logger(), dependent_chain, false);
 
         void *handle = nullptr;
@@ -242,8 +246,8 @@ namespace argus {
 
         if (g_dyn_module_registrations.find(id) == g_dyn_module_registrations.end()) {
             Logger::default_logger().warn(
-                "Module %s attempted to register itself by a different ID than indicated by its filename",
-                id.c_str());
+                    "Module %s attempted to register itself by a different ID than indicated by its filename",
+                    id.c_str());
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;
         }
@@ -257,7 +261,7 @@ namespace argus {
             const std::vector<std::string> &dependent_chain = {}) {
         if (g_enabled_dyn_modules_staging.find(module_id) != g_enabled_dyn_modules_staging.end()) {
             Logger::default_logger().info("Dynamic module \"%s\" was requested while already enabled",
-                module_id.c_str());
+                    module_id.c_str());
             return true;
         }
 
@@ -283,8 +287,8 @@ namespace argus {
             if (it == g_dyn_module_registrations.cend()) {
                 std::stringstream err_msg;
                 Logger::default_logger().warn(
-                    "Module \"%s\" was loaded but a matching registration was not found (name mismatch?)",
-                    module_id.c_str());
+                        "Module \"%s\" was loaded but a matching registration was not found (name mismatch?)",
+                        module_id.c_str());
                 for (const auto &dependent : dependent_chain) {
                     Logger::default_logger().warn("    Required by module \"%s\"", dependent.c_str());
                 }
@@ -326,7 +330,7 @@ namespace argus {
             // here is actually different per-platform. For instance, forcing it
             // to be a pointer breaks MSVC compilation.
             auto found_static = std::find_if(g_static_modules.cbegin(), g_static_modules.cend(),
-                [module_id](auto &sm) { return sm.id == module_id; });
+                    [module_id](auto &sm) { return sm.id == module_id; });
             if (found_static != g_static_modules.cend()) {
                 all_modules.insert({found_static->id});
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
@@ -370,7 +374,7 @@ namespace argus {
 
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
             std::initializer_list<std::string> dependencies) {
-        if (std::find_if(id.begin(), id.end(), [] (auto c) { return std::isupper(c); }) != id.end()) {
+        if (std::find_if(id.begin(), id.end(), [](auto c) { return std::isupper(c); }) != id.end()) {
             throw std::invalid_argument("Module identifier must contain only lowercase letters");
         }
 
@@ -389,9 +393,9 @@ namespace argus {
             }
         }
 
-        auto mod = DynamicModule { id, lifecycle_callback, dependencies, nullptr };
+        auto mod = DynamicModule{id, lifecycle_callback, dependencies, nullptr};
 
-        g_dyn_module_registrations.insert({ id, std::move(mod) });
+        g_dyn_module_registrations.insert({id, std::move(mod)});
 
         Logger::default_logger().debug("Registered dynamic module %s", id.c_str());
     }
@@ -432,7 +436,7 @@ namespace argus {
         Logger::default_logger().debug("Propagating remaining bring-up lifecycle stages");
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
-                stage = LifecycleStage(uint32_t(stage) + 1)) {
+             stage = LifecycleStage(uint32_t(stage) + 1)) {
             _send_lifecycle_update(stage);
         }
     }

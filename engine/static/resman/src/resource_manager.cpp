@@ -59,9 +59,11 @@
 #include <cstddef>
 
 #ifdef _WIN32
-    #include <direct.h>
+#include <direct.h>
 #else
-    #include <unistd.h>
+
+#include <unistd.h>
+
 #endif
 
 #define UID_NS_SEPARATOR ':'
@@ -82,7 +84,7 @@ namespace argus {
 
         for (size_t i = 0; i < count; i++) {
             const extension_mapping_t *mapping = &mappings[i];
-            target.insert({std::string(mapping->extension), std::string(mapping->media_type) });
+            target.insert({std::string(mapping->extension), std::string(mapping->media_type)});
         }
 
         arp_free_extension_mappings(mappings);
@@ -93,7 +95,7 @@ namespace argus {
         return instance;
     }
 
-    ResourceManager::ResourceManager(void):
+    ResourceManager::ResourceManager(void) :
             pimpl(new pimpl_ResourceManager()) {
         pimpl->package_set = arp_create_set();
         pimpl->discovery_done = false;
@@ -144,7 +146,8 @@ namespace argus {
             if (prefix.empty()) {
                 if (child.is_regular_file()) {
                     if (child.path().extension() != EXTENSION_SEPARATOR ARP_EXT) {
-                        Logger::default_logger().warn("Ignoring non-namespaced filesystem resource %s", child.path().stem().c_str());
+                        Logger::default_logger().warn("Ignoring non-namespaced filesystem resource %s",
+                                child.path().stem().c_str());
                     }
                     continue;
                 }
@@ -162,21 +165,24 @@ namespace argus {
                 _discover_fs_resources_recursively(child, cur_uid, prototype_map, extension_map);
             } else if (child.is_regular_file()) {
                 if (!child.path().has_extension() || child.path().extension() == EXTENSION_SEPARATOR) {
-                    Logger::default_logger().warn("Resource %s does not have an extension, ignoring", child.path().c_str());
+                    Logger::default_logger().warn("Resource %s does not have an extension, ignoring",
+                            child.path().c_str());
                     continue;
                 }
 
                 if (prototype_map.find(cur_uid) != prototype_map.cend()) {
-                    Logger::default_logger().warn("Resource %s exists with multiple prefixes, ignoring further copies", cur_uid.c_str());
+                    Logger::default_logger().warn("Resource %s exists with multiple prefixes, ignoring further copies",
+                            cur_uid.c_str());
                     continue;
                 }
 
                 auto ext = child.path().extension().string().substr(1);
-                std::transform(ext.begin(), ext.end(), ext.begin(), [](auto c){ return std::tolower(c); });
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](auto c) { return std::tolower(c); });
 
                 auto type_it = extension_map.find(ext);
                 if (type_it == extension_map.cend()) {
-                    Logger::default_logger().warn("Discovered filesystem resource %s with unknown extension %s, ignoring",
+                    Logger::default_logger().warn(
+                            "Discovered filesystem resource %s with unknown extension %s, ignoring",
                             cur_uid.c_str(), ext.c_str());
                     continue;
                 }
@@ -245,7 +251,8 @@ namespace argus {
         if (it != mgr.pimpl->loaded_resources.cend()) {
             if (inc_refcount) {
                 auto new_ref_count = it->second->pimpl->ref_count.fetch_add(1) + 1;
-                Logger::default_logger().debug("Acquired handle for resource %s (new refcount is %d)", uid.c_str(), new_ref_count);
+                Logger::default_logger().debug("Acquired handle for resource %s (new refcount is %d)", uid.c_str(),
+                        new_ref_count);
                 UNUSED(new_ref_count); // suppress unused warning in release configuration
             }
 
@@ -296,7 +303,8 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            Logger::default_logger().debug("Loaded filesystem resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
+            Logger::default_logger().debug("Loaded filesystem resource %s of type %s", proto.uid.c_str(),
+                    proto.media_type.c_str());
         } else {
             arp_resource_meta_t res_meta = {};
             int rc = arp_find_resource_in_set(pimpl->package_set, uid.c_str(), &res_meta);
@@ -336,7 +344,8 @@ namespace argus {
 
             res = new Resource(*this, loader, proto, data_ptr, loader.pimpl->last_dependencies);
 
-            Logger::default_logger().debug("Loaded ARP resource %s of type %s", proto.uid.c_str(), proto.media_type.c_str());
+            Logger::default_logger().debug("Loaded ARP resource %s of type %s", proto.uid.c_str(),
+                    proto.media_type.c_str());
         }
 
         if (res == nullptr) {
@@ -371,16 +380,16 @@ namespace argus {
         }
     }
 
-    std::future<Resource&> ResourceManager::get_resource_async(const std::string &uid,
-            const std::function<void(Resource&)> &callback) {
+    std::future<Resource &> ResourceManager::get_resource_async(const std::string &uid,
+            const std::function<void(Resource &)> &callback) {
         auto *res = _acquire_resource(*this, uid);
         if (res != nullptr) {
-            auto promise_ptr = std::make_shared<std::promise<Resource&>>();
-            std::future<Resource&> future = promise_ptr->get_future();
+            auto promise_ptr = std::make_shared<std::promise<Resource &>>();
+            std::future<Resource &> future = promise_ptr->get_future();
             promise_ptr->set_value(*res);
             return future;
         } else {
-            return make_future<Resource&>(std::bind(&ResourceManager::get_resource, this, uid), callback);
+            return make_future<Resource &>(std::bind(&ResourceManager::get_resource, this, uid), callback);
         }
     }
 
@@ -399,7 +408,7 @@ namespace argus {
 
         IMemStream stream(data, len);
 
-        ResourcePrototype proto = { uid, media_type, "" };
+        ResourcePrototype proto = {uid, media_type, ""};
 
         auto &loader = *loader_it->second;
         loader.pimpl->last_dependencies = {};
@@ -430,7 +439,7 @@ namespace argus {
             throw NoLoaderException(uid, media_type);
         }
 
-        ResourcePrototype proto = { uid, media_type, "" };
+        ResourcePrototype proto = {uid, media_type, ""};
 
         auto &loader = *loader_it->second;
         loader.pimpl->last_dependencies = {};

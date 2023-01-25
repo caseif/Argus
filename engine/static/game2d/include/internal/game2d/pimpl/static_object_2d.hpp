@@ -37,13 +37,13 @@ namespace argus {
         std::optional<Handle> render_obj;
 
         pimpl_StaticObject2D(Handle handle, Resource &sprite_def_res, Sprite &sprite,
-                const Vector2f &size, const Transform2D &transform):
-            handle(handle),
-            sprite_def_res(sprite_def_res),
-            sprite(sprite),
-            size(size),
-            transform(transform),
-            render_obj() {
+                const Vector2f &size, const Transform2D &transform) :
+                handle(handle),
+                sprite_def_res(sprite_def_res),
+                sprite(sprite),
+                size(size),
+                transform(transform),
+                render_obj() {
         }
     };
 }

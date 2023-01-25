@@ -31,13 +31,13 @@ namespace argus {
     struct pimpl_StaticObject2D;
 
     class StaticObject2D {
-       public:
+      public:
         pimpl_StaticObject2D *pimpl;
 
         StaticObject2D(const std::string &sprite_uid,
                 const Vector2f &size, const Transform2D &transform);
 
-        StaticObject2D(StaticObject2D&) = delete;
+        StaticObject2D(StaticObject2D &) = delete;
 
         StaticObject2D(StaticObject2D &&rhs) noexcept;
 

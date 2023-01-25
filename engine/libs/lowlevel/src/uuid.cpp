@@ -28,7 +28,9 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreFoundation/CFUUID.h>
 #elif defined(__linux__)
+
 #include <uuid/uuid.h>
+
 #else
 #error "This OS is not supported at this time."
 #endif
@@ -61,6 +63,7 @@ namespace argus {
         return final;
     }
     #elif defined(__linux__)
+
     Uuid Uuid::random(void) {
         uuid_t uuid;
         uuid_generate(uuid);
@@ -70,6 +73,7 @@ namespace argus {
 
         return final;
     }
+
     #else
     #error "This OS is not supported at this time."
     #endif
@@ -79,15 +83,15 @@ namespace argus {
     }
 
     bool Uuid::operator<(const Uuid &rhs) const {
-        auto *lhs_hi = reinterpret_cast<const uint64_t*>(this->data);
-        auto *rhs_hi = reinterpret_cast<const uint64_t*>(rhs.data);
+        auto *lhs_hi = reinterpret_cast<const uint64_t *>(this->data);
+        auto *rhs_hi = reinterpret_cast<const uint64_t *>(rhs.data);
         if (*lhs_hi < *rhs_hi) {
             return true;
         } else if (*lhs_hi > *rhs_hi) {
             return false;
         } else { // lhs_hi == rhs_hi
-            auto *lhs_lo = reinterpret_cast<const uint64_t*>(this->data + 8);
-            auto *rhs_lo = reinterpret_cast<const uint64_t*>(rhs.data + 8);
+            auto *lhs_lo = reinterpret_cast<const uint64_t *>(this->data + 8);
+            auto *rhs_lo = reinterpret_cast<const uint64_t *>(rhs.data + 8);
             return *lhs_lo < *rhs_lo;
         }
     }
@@ -103,12 +107,12 @@ namespace argus {
     std::string Uuid::to_string(void) const {
         std::string rendered(37, '\0');
         snprintf(rendered.data(), rendered.size(), "%08x-%04x-%04x-%04x-%08x%04x",
-                *reinterpret_cast<const uint32_t*>(&data[0]),
-                *reinterpret_cast<const uint16_t*>(&data[4]),
-                *reinterpret_cast<const uint16_t*>(&data[6]),
-                *reinterpret_cast<const uint16_t*>(&data[8]),
-                *reinterpret_cast<const uint32_t*>(&data[10]),
-                *reinterpret_cast<const uint16_t*>(&data[14]));
+                *reinterpret_cast<const uint32_t *>(&data[0]),
+                *reinterpret_cast<const uint16_t *>(&data[4]),
+                *reinterpret_cast<const uint16_t *>(&data[6]),
+                *reinterpret_cast<const uint16_t *>(&data[8]),
+                *reinterpret_cast<const uint32_t *>(&data[10]),
+                *reinterpret_cast<const uint16_t *>(&data[14]));
         return rendered;
     }
 }

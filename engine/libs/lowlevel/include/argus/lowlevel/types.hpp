@@ -28,11 +28,11 @@ namespace argus {
 
         enum enum_type value;
 
-        TriState(void): TriState(Unset) {
+        TriState(void) : TriState(Unset) {
         }
 
-        TriState(enum enum_type value):
-            value(value) {
+        TriState(enum enum_type value) :
+                value(value) {
         }
 
 
@@ -40,7 +40,7 @@ namespace argus {
             return value == True;
         }
 
-        TriState &operator =(bool rhs) {
+        TriState &operator=(bool rhs) {
             value = rhs ? True : False;
             return *this;
         }

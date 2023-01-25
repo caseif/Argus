@@ -27,7 +27,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
+
 #include "nlohmann/json.hpp"
+
 #pragma GCC diagnostic pop
 
 #define KEY_STATIC_FRAME "static_frame"
@@ -55,7 +57,7 @@ const char *KEY_ANIM_FRAME_DUR = "duration";
 const char *MAGIC_ANIM_STATIC = "_static";
 
 namespace argus {
-    SpriteLoader::SpriteLoader(void): ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
+    SpriteLoader::SpriteLoader(void) : ResourceLoader({RESOURCE_TYPE_SPRITE}) {
     }
 
     void *SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -160,11 +162,11 @@ namespace argus {
                     static_anim.loop = false;
 
                     AnimationFrame static_frame;
-                    static_frame.offset = { uint32_t(frame_x), uint32_t(frame_y) };
+                    static_frame.offset = {uint32_t(frame_x), uint32_t(frame_y)};
                     static_frame.duration = 1;
                     static_anim.frames.push_back(static_frame);
 
-                    sprite.animations.insert({ MAGIC_ANIM_STATIC, static_anim });
+                    sprite.animations.insert({MAGIC_ANIM_STATIC, static_anim});
                 }
             } else {
                 if (json_root.contains(KEY_STATIC_FRAME)) {
@@ -184,11 +186,11 @@ namespace argus {
                 static_anim.loop = false;
 
                 AnimationFrame static_frame;
-                static_frame.offset = { 0, 0 };
+                static_frame.offset = {0, 0};
                 static_frame.duration = 1;
                 static_anim.frames.push_back(static_frame);
 
-                sprite.animations.insert({ MAGIC_ANIM_STATIC, static_anim });
+                sprite.animations.insert({MAGIC_ANIM_STATIC, static_anim});
             }
 
             if (json_root.contains(KEY_ANIMS)) {
@@ -253,7 +255,7 @@ namespace argus {
                         }
 
                         if (pad_left < 0 || pad_right < 0
-                                || pad_top < 0 || pad_bottom < 0) {
+                            || pad_top < 0 || pad_bottom < 0) {
                             Logger::default_logger().severe("Sprite padding values must be >= 0");
                             return nullptr;
                         }
@@ -295,7 +297,8 @@ namespace argus {
                         }
 
                         if (offset_x > UINT32_MAX || offset_y > UINT32_MAX) {
-                            Logger::default_logger().severe("Sprite animation frame offset values must be <= UINT32_MAX");
+                            Logger::default_logger().severe(
+                                    "Sprite animation frame offset values must be <= UINT32_MAX");
                             return nullptr;
                         }
 
@@ -319,17 +322,17 @@ namespace argus {
                         anim.frames.push_back(frame);
                     }
 
-                    sprite.animations.insert({ anim_id, anim });
+                    sprite.animations.insert({anim_id, anim});
                 }
             }
 
             Logger::default_logger().debug("Successfully loaded sprite definition %s", proto.uid.c_str());
 
             return new SpriteDef(std::move(sprite));
-        } catch (nlohmann::detail::parse_error&) {
+        } catch (nlohmann::detail::parse_error &) {
             Logger::default_logger().severe("Failed to parse sprite definition %s", proto.uid.c_str());
             return nullptr;
-        } catch (std::out_of_range&) {
+        } catch (std::out_of_range &) {
             Logger::default_logger().severe("Sprite definition %s is incomplete or malformed", proto.uid.c_str());
             return nullptr;
         } catch (std::exception &ex) {
@@ -344,11 +347,11 @@ namespace argus {
         affirm_precond(type == std::type_index(typeid(SpriteDef)),
                 "Incorrect pointer type passed to SpriteLoader::copy");
 
-        auto &src_sprite = *reinterpret_cast<SpriteDef*>(src);
+        auto &src_sprite = *reinterpret_cast<SpriteDef *>(src);
 
         std::vector<std::string> dep_uids;
 
-        std::map<std::string, const Resource*> deps;
+        std::map<std::string, const Resource *> deps;
         try {
             deps = load_dependencies(manager, dep_uids);
         } catch (...) {
@@ -360,6 +363,6 @@ namespace argus {
     }
 
     void SpriteLoader::unload(void *data_ptr) const {
-        delete static_cast<SpriteDef*>(data_ptr);
+        delete static_cast<SpriteDef *>(data_ptr);
     }
 }

@@ -43,7 +43,7 @@
 
 namespace argus {
     static bool g_backend_active = false;
-    static std::map<const Window*, GLESRenderer*> g_renderer_map;
+    static std::map<const Window *, GLESRenderer *> g_renderer_map;
 
     static bool _activate_opengles_backend() {
         g_backend_active = true;
@@ -57,14 +57,14 @@ namespace argus {
         switch (event.subtype) {
             case WindowEventType::Create: {
                 auto *renderer = new GLESRenderer(window);
-                g_renderer_map.insert({ &window, renderer });
+                g_renderer_map.insert({&window, renderer});
                 break;
             }
             case WindowEventType::Update: {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 auto it = g_renderer_map.find(&window);
                 assert(it != g_renderer_map.end());
 
@@ -75,7 +75,7 @@ namespace argus {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 auto it = g_renderer_map.find(&window);
                 assert(it != g_renderer_map.end());
 

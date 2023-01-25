@@ -156,7 +156,8 @@ namespace argus {
 
                 // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
                 if (!g_render_thread_halted) {
-                    Logger::default_logger().debug("Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
+                    Logger::default_logger().debug(
+                            "Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
                     std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
                     g_engine_stop_notifier.wait(lock);
                 }
@@ -164,7 +165,8 @@ namespace argus {
                 // at this point all event and callback execution should have
                 // stopped which allows us to start doing non-thread-safe things
 
-                Logger::default_logger().debug("Game thread observed render thread is halted, proceeding with engine bring-down");
+                Logger::default_logger().debug(
+                        "Game thread observed render thread is halted, proceeding with engine bring-down");
 
                 Logger::default_logger().debug("Deinitializing engine modules");
 
@@ -194,7 +196,7 @@ namespace argus {
 
             Timestamp update_start = argus::now();
             TimeDelta delta = _compute_delta(last_update);
-            
+
             // prioritize one-off callbacks
             g_one_off_callbacks_mutex.lock();
             for (auto callback : g_one_off_callbacks) {
@@ -272,7 +274,7 @@ namespace argus {
         if (!g_engine_config.load_modules.empty()) {
             enable_modules(g_engine_config.load_modules);
         } else {
-            enable_modules({ ModuleCore });
+            enable_modules({ModuleCore});
         }
 
         //load_dynamic_modules();

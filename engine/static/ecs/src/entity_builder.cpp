@@ -33,7 +33,7 @@ namespace argus {
     EntityBuilder::EntityBuilder(void) {
     }
 
-    EntityBuilder &EntityBuilder::with(std::type_index type, std::function<void(void*)> deferred_init) {
+    EntityBuilder &EntityBuilder::with(std::type_index type, std::function<void(void *)> deferred_init) {
         types[type] = deferred_init;
         return *this;
     }
@@ -41,8 +41,8 @@ namespace argus {
     Entity &EntityBuilder::build(void) {
         std::vector<std::type_index> types_list;
         std::transform(types.begin(), types.end(), std::back_inserter(types_list),
-            [](auto &pair){ return pair.first; });
-        
+                [](auto &pair) { return pair.first; });
+
         auto &entity = Entity::create(types_list);
 
         for (auto &pair : types) {

@@ -27,16 +27,16 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Material));
 
-    Material::Material(const std::string &texture, const std::vector<std::string> &shaders):
-        pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {
+    Material::Material(const std::string &texture, const std::vector<std::string> &shaders) :
+            pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {
     }
 
     Material::Material(const Material &rhs) noexcept:
-        pimpl(&g_pimpl_pool.construct<pimpl_Material>(*rhs.pimpl)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_Material>(*rhs.pimpl)) {
     }
 
     Material::Material(Material &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 

@@ -28,34 +28,35 @@
 
 namespace argus {
     class Logger {
-        private:
-            FILE *target;
-            const std::string realm;
+      private:
+        FILE *target;
+        const std::string realm;
 
-            void log(const std::string &level, std::string format, va_list args) const;
+        void log(const std::string &level, std::string format, va_list args) const;
 
-            void log_error(const std::string &level, std::string format, va_list args) const;
-        public:
-            static Logger &default_logger(void);
+        void log_error(const std::string &level, std::string format, va_list args) const;
 
-            Logger(FILE *target, const std::string &realm);
+      public:
+        static Logger &default_logger(void);
 
-            Logger(const std::string &realm);
+        Logger(FILE *target, const std::string &realm);
 
-            void log(const std::string &level, std::string format, ...) const;
+        Logger(const std::string &realm);
 
-            void log_error(const std::string &level, std::string format, ...) const;
+        void log(const std::string &level, std::string format, ...) const;
 
-            void debug(std::string format, ...) const;
+        void log_error(const std::string &level, std::string format, ...) const;
 
-            void info(std::string format, ...) const;
+        void debug(std::string format, ...) const;
 
-            void warn(std::string format, ...) const;
+        void info(std::string format, ...) const;
 
-            void severe(std::string format, ...) const;
+        void warn(std::string format, ...) const;
 
-            [[noreturn]] void fatal(std::function<void(void)> deinit, std::string format, ...) const;
+        void severe(std::string format, ...) const;
 
-            [[noreturn]] void fatal(std::string format, ...) const;
+        [[noreturn]] void fatal(std::function<void(void)> deinit, std::string format, ...) const;
+
+        [[noreturn]] void fatal(std::string format, ...) const;
     };
 }

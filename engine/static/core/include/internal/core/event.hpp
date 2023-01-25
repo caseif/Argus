@@ -25,9 +25,9 @@
 #include <cstdint>
 
 namespace argus {
-    template <typename T>
+    template<typename T>
     class RefCountable {
-        public:
+      public:
 
         std::atomic_uint32_t refcount{0};
         T *ptr;

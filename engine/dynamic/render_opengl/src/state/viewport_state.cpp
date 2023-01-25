@@ -22,7 +22,7 @@ namespace argus {
     // forward declarations
     struct RendererState;
 
-    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport):
+    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
             parent_state(parent_state),
             viewport(viewport),
             front_fb(0),
@@ -31,7 +31,7 @@ namespace argus {
             back_frame_tex(0) {
     }
 
-    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport):
+    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :
             ViewportState(parent_state, viewport) {
     }
 }

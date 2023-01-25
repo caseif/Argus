@@ -25,7 +25,7 @@
 
 namespace argus::input {
     InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
-            const std::string &action, double axis_value, double axis_delta):
+            const std::string &action, double axis_value, double axis_delta) :
             ArgusEvent(type_index_of<InputEvent>()),
             input_type(type),
             window(window),

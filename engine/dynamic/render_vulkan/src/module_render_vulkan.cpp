@@ -46,7 +46,7 @@ namespace argus {
     static bool g_backend_active = false;
 
     static VkInstance g_vk_instance = nullptr;
-    static std::map<const Window*, VkSurfaceKHR> g_surface_map;
+    static std::map<const Window *, VkSurfaceKHR> g_surface_map;
 
     static bool _test_vulkan_support() {
         //TODO: eventually we'll check the available extensions and verify we can actually use Vulkan to render
@@ -57,7 +57,7 @@ namespace argus {
         if (!_test_vulkan_support()) {
             return false;
         }
-        
+
         g_backend_active = true;
         return true;
     }
@@ -85,7 +85,7 @@ namespace argus {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 //auto it = g_renderer_map.find(&window);
                 //assert(it != g_renderer_map.end());
 
@@ -96,7 +96,7 @@ namespace argus {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 //auto it = g_renderer_map.find(&window);
                 //assert(it != g_renderer_map.end());
 

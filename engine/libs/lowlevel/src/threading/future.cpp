@@ -32,24 +32,24 @@ namespace argus {
         std::future<void> future = promise_ptr->get_future();
         Thread *thread = nullptr;
         thread = &Thread::create(
-            [thread, function, callback, promise_ptr](const auto user_data) mutable -> void * {
-                UNUSED(user_data);
-                try {
-                    function();
-                    promise_ptr->set_value_at_thread_exit();
+                [thread, function, callback, promise_ptr](const auto user_data) mutable -> void * {
+                    UNUSED(user_data);
+                    try {
+                        function();
+                        promise_ptr->set_value_at_thread_exit();
 
-                    if (callback != nullptr) {
-                        callback();
+                        if (callback != nullptr) {
+                            callback();
+                        }
+                    } catch (...) {
+                        promise_ptr->set_exception_at_thread_exit(std::current_exception());
                     }
-                } catch (...) {
-                    promise_ptr->set_exception_at_thread_exit(std::current_exception());
-                }
 
-                thread->destroy();
+                    thread->destroy();
 
-                return nullptr;
-            },
-        nullptr);
+                    return nullptr;
+                },
+                nullptr);
 
         return future;
     }

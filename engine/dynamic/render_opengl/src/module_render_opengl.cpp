@@ -44,7 +44,7 @@
 
 namespace argus {
     static bool g_backend_active = false;
-    static std::map<const Window*, GLRenderer*> g_renderer_map;
+    static std::map<const Window *, GLRenderer *> g_renderer_map;
 
     static bool _test_opengl_support() {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -91,7 +91,7 @@ namespace argus {
         if (!_test_opengl_support()) {
             return false;
         }
-        
+
         g_backend_active = true;
         return true;
     }
@@ -103,14 +103,14 @@ namespace argus {
         switch (event.subtype) {
             case WindowEventType::Create: {
                 auto *renderer = new GLRenderer(window);
-                g_renderer_map.insert({ &window, renderer });
+                g_renderer_map.insert({&window, renderer});
                 break;
             }
             case WindowEventType::Update: {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 auto it = g_renderer_map.find(&window);
                 assert(it != g_renderer_map.end());
 
@@ -121,7 +121,7 @@ namespace argus {
                 if (!window.is_ready()) {
                     return;
                 }
-                
+
                 auto it = g_renderer_map.find(&window);
                 assert(it != g_renderer_map.end());
 

@@ -44,7 +44,7 @@
 
 namespace argus {
     static size_t _count_vertices(const RenderObject2D &obj) {
-        return std::accumulate(obj.get_primitives().cbegin(), obj.get_primitives().cend(), std::size_t{ 0 },
+        return std::accumulate(obj.get_primitives().cbegin(), obj.get_primitives().cend(), std::size_t{0},
                 [](const auto acc, const auto &prim) {
                     return acc + prim.get_vertex_count();
                 }
@@ -53,7 +53,7 @@ namespace argus {
 
     ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object, const Matrix4 &transform,
             void *scene_state_ptr) {
-        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState *>(scene_state_ptr);
         auto &state = scene_state.parent_state;
 
         size_t vertex_count = 0;
@@ -69,9 +69,9 @@ namespace argus {
         auto &program = state.linked_programs.find(object.get_material())->second;
 
         size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
@@ -84,7 +84,7 @@ namespace argus {
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
         glBufferData(GL_COPY_READ_BUFFER, GLsizeiptr(buffer_size), nullptr, GL_DYNAMIC_DRAW);
-        mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, GLsizeiptr(buffer_size),
+        mapped_buffer = static_cast<GLfloat *>(glMapBufferRange(GL_COPY_READ_BUFFER, 0, GLsizeiptr(buffer_size),
                 GL_MAP_WRITE_BIT));
 
         size_t total_vertices = 0;
@@ -133,13 +133,13 @@ namespace argus {
 
     void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
             const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr) {
-        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState *>(scene_state_ptr);
         auto &state = scene_state.parent_state;
 
         // program should be linked by now
         auto &program = state.linked_programs.find(object.get_material())->second;
 
-        auto &proc_obj = *reinterpret_cast<ProcessedRenderObject*>(proc_obj_ptr);
+        auto &proc_obj = *reinterpret_cast<ProcessedRenderObject *>(proc_obj_ptr);
 
         // if a parent group or the object itself has had its transform updated
         proc_obj.updated = is_transform_dirty;
@@ -151,9 +151,9 @@ namespace argus {
         }
 
         size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         GLfloat *mapped_buffer;
 
@@ -167,10 +167,10 @@ namespace argus {
         affirm_precond(buffer_size <= INT_MAX, "Vertex buffer length is too big");
 
         if (proc_obj.mapped_buffer != nullptr) {
-            mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
+            mapped_buffer = static_cast<GLfloat *>(proc_obj.mapped_buffer);
         } else {
             glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
-            mapped_buffer = static_cast<GLfloat*>(glMapBufferRange(GL_COPY_READ_BUFFER, 0,
+            mapped_buffer = static_cast<GLfloat *>(glMapBufferRange(GL_COPY_READ_BUFFER, 0,
                     GLsizeiptr(buffer_size), GL_MAP_WRITE_BIT));
         }
 

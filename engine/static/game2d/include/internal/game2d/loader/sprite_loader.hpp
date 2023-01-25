@@ -22,7 +22,7 @@
 
 namespace argus {
     class SpriteLoader : public ResourceLoader {
-       public:
+      public:
         SpriteLoader(void);
 
         void *load(ResourceManager &manager, const ResourcePrototype &proto,

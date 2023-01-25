@@ -41,15 +41,17 @@
 namespace argus {
     // forward declarations
     class ResourceManager;
+
     struct ResourcePrototype;
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
         affirm_precond(size <= LONG_MAX, "PNG size is too large");
-        static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), std::streamsize(size));
+        static_cast<std::ifstream *>(png_get_io_ptr(stream))->read(reinterpret_cast<char *>(buf),
+                std::streamsize(size));
     }
 
-    PngTextureLoader::PngTextureLoader():
-            ResourceLoader({ RESOURCE_TYPE_TEXTURE_PNG }) {
+    PngTextureLoader::PngTextureLoader() :
+            ResourceLoader({RESOURCE_TYPE_TEXTURE_PNG}) {
     }
 
     void *PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -58,7 +60,7 @@ namespace argus {
         UNUSED(proto);
         UNUSED(size);
         unsigned char sig[8];
-        stream.read(reinterpret_cast<char*>(sig), 8);
+        stream.read(reinterpret_cast<char *>(sig), 8);
 
         if (png_sig_cmp(sig, 0, 8) != 0) {
             throw std::invalid_argument("Invalid PNG file");
@@ -94,7 +96,7 @@ namespace argus {
         #pragma warning(pop)
         #endif
 
-        png_set_read_fn(png_ptr, static_cast<void*>(&stream), _read_stream);
+        png_set_read_fn(png_ptr, static_cast<void *>(&stream), _read_stream);
 
         png_set_sig_bytes(png_ptr, 8);
 
@@ -132,19 +134,19 @@ namespace argus {
         }
 
         if (color_type == PNG_COLOR_TYPE_RGB
-                || color_type == PNG_COLOR_TYPE_GRAY
-                || color_type == PNG_COLOR_TYPE_PALETTE) {
+            || color_type == PNG_COLOR_TYPE_GRAY
+            || color_type == PNG_COLOR_TYPE_PALETTE) {
             png_set_filler(png_ptr, 0xFF, PNG_FILLER_AFTER);
         }
 
         if (color_type == PNG_COLOR_TYPE_GRAY
-                || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
+            || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
             png_set_gray_to_rgb(png_ptr);
         }
 
         png_read_update_info(png_ptr, info_ptr);
 
-        unsigned char **row_pointers = new unsigned char*[sizeof(png_bytep) * height];
+        unsigned char **row_pointers = new unsigned char *[sizeof(png_bytep) * height];
         for (uint32_t y = 0; y < height; y++) {
             row_pointers[y] = new unsigned char[png_get_rowbytes(png_ptr, info_ptr)];
         }
@@ -168,11 +170,11 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return new TextureData(std::move(*reinterpret_cast<TextureData*>(src)));
+        return new TextureData(std::move(*reinterpret_cast<TextureData *>(src)));
     }
 
     void PngTextureLoader::unload(void *const data_buf) const {
-        delete static_cast<TextureData*>(data_buf);
+        delete static_cast<TextureData *>(data_buf);
     }
 
 }

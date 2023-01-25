@@ -24,36 +24,36 @@
 #include <cstdint>
 
 extern "C" {
-    struct SizedByteArray {
-        size_t size;
-        const uint8_t data[0];
-    };
+struct SizedByteArray {
+    size_t size;
+    const uint8_t data[0];
+};
 
-    struct SizedByteArrayWithIndex {
-        size_t size;
-        size_t index;
-        const uint8_t data[0];
-    };
+struct SizedByteArrayWithIndex {
+    size_t size;
+    size_t index;
+    const uint8_t data[0];
+};
 
-    struct InteropShaderCompilationResult {
-        bool success;
-        size_t shader_count;
-        const glslang_stage_t *stages;
-        const SizedByteArray *const *spirv_binaries;
-        size_t attrib_count;
-        unsigned char *attribs;
-        size_t output_count;
-        unsigned char *outputs;
-        size_t uniform_count;
-        unsigned char *uniforms;
-        size_t buffer_count;
-        unsigned char *buffers;
-    };
+struct InteropShaderCompilationResult {
+    bool success;
+    size_t shader_count;
+    const glslang_stage_t *stages;
+    const SizedByteArray *const *spirv_binaries;
+    size_t attrib_count;
+    unsigned char *attribs;
+    size_t output_count;
+    unsigned char *outputs;
+    size_t uniform_count;
+    unsigned char *uniforms;
+    size_t buffer_count;
+    unsigned char *buffers;
+};
 
-    InteropShaderCompilationResult *transpile_glsl(const glslang_stage_t *stages, const char *const *glsl_sources,
+InteropShaderCompilationResult *transpile_glsl(const glslang_stage_t *stages, const char *const *glsl_sources,
         size_t count, glslang_client_t client, glslang_target_client_version_t client_version,
         glslang_target_language_version_t spirv_version);
 
 
-    void free_compilation_result(InteropShaderCompilationResult *result);
+void free_compilation_result(InteropShaderCompilationResult *result);
 }

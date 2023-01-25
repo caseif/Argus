@@ -27,30 +27,31 @@
 
 namespace argus {
     class Entity;
+
     class System;
 
     class SystemBuilder {
         friend class System;
 
-        private:
-            std::string name;
-            std::vector<std::type_index> types;
-            EntityCallback callback;
+      private:
+        std::string name;
+        std::vector<std::type_index> types;
+        EntityCallback callback;
 
-            SystemBuilder(void) = default;
+        SystemBuilder(void) = default;
 
-        public:
-            SystemBuilder &with_name(std::string name);
+      public:
+        SystemBuilder &with_name(std::string name);
 
-            template <typename T>
-            SystemBuilder &targets(void) {
-                return targets(std::type_index(typeid(T)));
-            }
+        template<typename T>
+        SystemBuilder &targets(void) {
+            return targets(std::type_index(typeid(T)));
+        }
 
-            SystemBuilder &targets(std::type_index type);
+        SystemBuilder &targets(std::type_index type);
 
-            SystemBuilder &with_callback(EntityCallback callback);
+        SystemBuilder &with_callback(EntityCallback callback);
 
-            System &build(void);
+        System &build(void);
     };
 }

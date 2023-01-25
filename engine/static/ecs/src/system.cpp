@@ -28,7 +28,7 @@
 #include <vector>
 
 namespace argus {
-    std::vector<System*> g_systems;
+    std::vector<System *> g_systems;
 
     SystemBuilder System::builder(void) {
         validate_state(!g_ecs_initialized, "Systems may not be registered beyond the init lifecycle stage");
@@ -47,8 +47,8 @@ namespace argus {
         return *system;
     }
 
-    System::System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback):
-        pimpl(new pimpl_System(name, component_types, callback, true)) {
+    System::System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback) :
+            pimpl(new pimpl_System(name, component_types, callback, true)) {
     }
 
     System::~System(void) {

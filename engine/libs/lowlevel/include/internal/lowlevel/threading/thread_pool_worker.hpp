@@ -30,45 +30,45 @@
 #include <utility>
 
 namespace argus {
-    typedef std::function<void*(void)> WorkerFunction;
+    typedef std::function<void *(void)> WorkerFunction;
 
     struct ThreadPoolTask {
         WorkerFunction func;
-        std::promise<void*> promise;
+        std::promise<void *> promise;
 
         ThreadPoolTask(void);
 
         ThreadPoolTask(WorkerFunction func);
 
-        ThreadPoolTask(ThreadPoolTask&&);
+        ThreadPoolTask(ThreadPoolTask &&);
     };
 
     class ThreadPoolWorker {
-        public:
-            std::atomic_bool busy;
+      public:
+        std::atomic_bool busy;
 
-        private:
-            ThreadPool &pool;
-            ThreadPoolTask *current_task;
-            std::deque<ThreadPoolTask*> task_queue;
-            std::recursive_mutex task_queue_mutex;
-            std::condition_variable_any cond;
-            std::atomic_bool terminate;
-            std::thread thread;
+      private:
+        ThreadPool &pool;
+        ThreadPoolTask *current_task;
+        std::deque<ThreadPoolTask *> task_queue;
+        std::recursive_mutex task_queue_mutex;
+        std::condition_variable_any cond;
+        std::atomic_bool terminate;
+        std::thread thread;
 
-            void worker_impl(void);
+        void worker_impl(void);
 
-        public:
-            ThreadPoolWorker(ThreadPool &pool);
+      public:
+        ThreadPoolWorker(ThreadPool &pool);
 
-            ThreadPoolWorker(ThreadPoolWorker&&);
+        ThreadPoolWorker(ThreadPoolWorker &&);
 
-            ~ThreadPoolWorker(void);
+        ~ThreadPoolWorker(void);
 
-            std::future<void*> add_task(WorkerFunction func);
+        std::future<void *> add_task(WorkerFunction func);
 
-            void notify(void);
+        void notify(void);
 
-            void halt(void);
+        void halt(void);
     };
 }

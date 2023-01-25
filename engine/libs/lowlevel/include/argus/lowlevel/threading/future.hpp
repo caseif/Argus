@@ -45,7 +45,7 @@ namespace argus {
      * \attention The provided functions \em must be thread-safe, as they will
      *            be performed on a new thread.
      */
-    template <typename Out>
+    template<typename Out>
     std::future<Out> make_future(const std::function<Out(void)> &function, const std::function<void(Out)> &callback) {
         if (!function) {
             throw std::invalid_argument("make_future: Function must be present");
@@ -55,24 +55,24 @@ namespace argus {
         std::future<Out> future = promise_ptr->get_future();
         Thread *thread = nullptr;
         thread = &Thread::create(
-            [thread, function, callback, promise_ptr](const auto user_data) mutable -> void* {
-                UNUSED(user_data);
-                try {
-                    Out res = function();
-                    promise_ptr->set_value_at_thread_exit(res);
+                [thread, function, callback, promise_ptr](const auto user_data) mutable -> void * {
+                    UNUSED(user_data);
+                    try {
+                        Out res = function();
+                        promise_ptr->set_value_at_thread_exit(res);
 
-                    if (callback != nullptr) {
-                        callback(res);
+                        if (callback != nullptr) {
+                            callback(res);
+                        }
+                    } catch (...) {
+                        promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
                     }
-                } catch (...) {
-                    promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
-                }
-                
-                thread->destroy();
 
-                return nullptr;
-            },
-        nullptr);
+                    thread->destroy();
+
+                    return nullptr;
+                },
+                nullptr);
 
         return future;
     }

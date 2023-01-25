@@ -23,6 +23,7 @@
 
 namespace argus {
     class Canvas;
+
     class Transform2D;
 
     struct pimpl_Scene;
@@ -39,31 +40,31 @@ namespace argus {
      * rendered.
      */
     class Scene {
-        protected:
-            /**
-             * \brief Constructs a new Scene.
-             *
-             * \param type The type of Scene.
-             */
-            Scene(const SceneType type);
+      protected:
+        /**
+         * \brief Constructs a new Scene.
+         *
+         * \param type The type of Scene.
+         */
+        Scene(const SceneType type);
 
-            Scene(const Scene &rhs) = delete;
+        Scene(const Scene &rhs) = delete;
 
-            Scene(const Scene &&rhs) = delete;
+        Scene(const Scene &&rhs) = delete;
 
-        public:
-            static std::optional<std::reference_wrapper<Scene>> find(const std::string &id);
+      public:
+        static std::optional<std::reference_wrapper<Scene>> find(const std::string &id);
 
-            template <typename T>
-            static std::optional<std::reference_wrapper<T>> find(const std::string &id) {
-                //TODO: not sure if this is right
-                return dynamic_cast<std::optional<std::reference_wrapper<T>>>(Scene::find(id));
-            }
+        template<typename T>
+        static std::optional<std::reference_wrapper<T>> find(const std::string &id) {
+            //TODO: not sure if this is right
+            return dynamic_cast<std::optional<std::reference_wrapper<T>>>(Scene::find(id));
+        }
 
-            virtual ~Scene(void) = 0;
+        virtual ~Scene(void) = 0;
 
-            const SceneType type;
+        const SceneType type;
 
-            virtual pimpl_Scene *get_pimpl(void) const = 0;
+        virtual pimpl_Scene *get_pimpl(void) const = 0;
     };
 }

@@ -10,11 +10,12 @@
 namespace argus {
     @MODULE_LIFECYCLE_FNS@
 
-    const std::set<std::string> g_static_module_ids = {
-        @STATIC_MODULE_ID_SET@
+    const std::set <std::string> g_static_module_ids = {
+            @STATIC_MODULE_ID_SET@
     };
 
-    const std::array<StaticModule, @MODULE_COUNT@> g_static_modules = {{
-        @STATIC_MODULE_DEFS@
-    }};
+    const std::array<StaticModule, @MODULE_COUNT@>
+    g_static_modules = {{
+                                @STATIC_MODULE_DEFS@
+                        }};
 }

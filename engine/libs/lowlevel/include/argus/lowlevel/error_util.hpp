@@ -22,11 +22,11 @@
 #include <system_error>
 
 #ifdef _WIN32
-    #include <Windows.h>
+#include <Windows.h>
 
-    #ifndef errno
-    #define errno WSAGetLastError()
-    #endif
+#ifndef errno
+#define errno WSAGetLastError()
+#endif
 #endif
 
 #define validate_arg(cond, what) _validate_arg(cond, __func__, what)

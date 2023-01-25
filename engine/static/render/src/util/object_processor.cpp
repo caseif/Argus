@@ -102,13 +102,13 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({ child_object->pimpl->handle, processed_obj });
+                processed_obj_map.insert({child_object->pimpl->handle, processed_obj});
             }
         }
 
         for (auto *child_group : group.pimpl->child_groups) {
             _process_render_group_2d(processed_obj_map, *child_group,
-                new_recompute_transform, cur_transform, process_new_fn, update_fn, extra);
+                    new_recompute_transform, cur_transform, process_new_fn, update_fn, extra);
         }
     }
 

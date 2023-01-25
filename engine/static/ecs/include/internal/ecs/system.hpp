@@ -24,5 +24,5 @@ namespace argus {
     // forward declarations
     class System;
 
-    extern std::vector<System*> g_systems;
+    extern std::vector<System *> g_systems;
 }

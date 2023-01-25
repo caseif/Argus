@@ -35,42 +35,42 @@ namespace argus::input {
     class Controller {
         friend class InputManager;
 
-        private:
-            pimpl_Controller *pimpl;
+      private:
+        pimpl_Controller *pimpl;
 
-            Controller(ControllerIndex index);
+        Controller(ControllerIndex index);
 
-            Controller(Controller&) = delete;
+        Controller(Controller &) = delete;
 
-            Controller(Controller&&) = delete;
+        Controller(Controller &&) = delete;
 
-            ~Controller(void);
+        ~Controller(void);
 
-        public:
-            ControllerIndex get_index(void) const;
+      public:
+        ControllerIndex get_index(void) const;
 
-            void unbind_action(const std::string &action);
+        void unbind_action(const std::string &action);
 
-            const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
+        const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
 
-            const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
+        const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
 
-            void bind_keyboard_key(KeyboardScancode key, const std::string &action);
+        void bind_keyboard_key(KeyboardScancode key, const std::string &action);
 
-            void unbind_keyboard_key(KeyboardScancode key);
+        void unbind_keyboard_key(KeyboardScancode key);
 
-            void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
+        void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
 
-            void bind_mouse_button(MouseButtonIndex button, const std::string &action);
+        void bind_mouse_button(MouseButtonIndex button, const std::string &action);
 
-            void unbind_mouse_button(MouseButtonIndex button);
+        void unbind_mouse_button(MouseButtonIndex button);
 
-            void unbind_mouse_button(MouseButtonIndex button, const std::string &action);
+        void unbind_mouse_button(MouseButtonIndex button, const std::string &action);
 
-            void bind_mouse_axis(MouseAxis axis, const std::string &action);
+        void bind_mouse_axis(MouseAxis axis, const std::string &action);
 
-            void unbind_mouse_axis(MouseAxis axis);
+        void unbind_mouse_axis(MouseAxis axis);
 
-            void unbind_mouse_axis(MouseAxis axis, const std::string &action);
+        void unbind_mouse_axis(MouseAxis axis, const std::string &action);
     };
 }

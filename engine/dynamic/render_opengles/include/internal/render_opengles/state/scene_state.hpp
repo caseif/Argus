@@ -33,7 +33,9 @@
 namespace argus {
     // forward declarations
     class Material;
+
     class RenderObject2D;
+
     class Scene;
 
     struct ProcessedRenderObject;
@@ -46,7 +48,7 @@ namespace argus {
         Scene &scene;
 
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
-        std::map<std::string, RenderBucket*> render_buckets;
+        std::map<std::string, RenderBucket *> render_buckets;
 
         SceneState(RendererState &parent_state, Scene &scene);
 

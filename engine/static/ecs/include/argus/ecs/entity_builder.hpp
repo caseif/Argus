@@ -31,38 +31,38 @@ namespace argus {
     class EntityBuilder {
         friend class Entity;
 
-        private:
-            std::map<std::type_index, std::function<void(void*)>> types;
+      private:
+        std::map<std::type_index, std::function<void(void *)>> types;
 
-            EntityBuilder(void);
+        EntityBuilder(void);
 
-            EntityBuilder &with(std::type_index type, std::function<void(void*)> deferred_init);
+        EntityBuilder &with(std::type_index type, std::function<void(void *)> deferred_init);
 
-        public:
-            template <typename T,
-                    typename = std::enable_if_t<std::is_default_constructible<std::remove_reference_t<T>>::value>>
-            EntityBuilder &with(void) {
-                return with(std::type_index(typeid(T)), [] (void *dest) { new (static_cast<T*>(dest)) T(); });
-            }
+      public:
+        template<typename T,
+                typename = std::enable_if_t<std::is_default_constructible<std::remove_reference_t<T>>::value>>
+        EntityBuilder &with(void) {
+            return with(std::type_index(typeid(T)), [](void *dest) { new(static_cast<T *>(dest)) T(); });
+        }
 
-            template <typename T,
-                      typename = std::enable_if_t<std::is_copy_constructible<std::remove_reference_t<T>>::value>>
-            EntityBuilder &with(T &&initial) {
-                return with(std::type_index(typeid(T)),
-                    [initial] (void *dest) { new (static_cast<T*>(dest)) T(static_cast<const T&>(initial)); });
-            }
+        template<typename T,
+                typename = std::enable_if_t<std::is_copy_constructible<std::remove_reference_t<T>>::value>>
+        EntityBuilder &with(T &&initial) {
+            return with(std::type_index(typeid(T)),
+                    [initial](void *dest) { new(static_cast<T *>(dest)) T(static_cast<const T &>(initial)); });
+        }
 
-            template <typename T, typename... Args,
-                      typename = std::enable_if_t<std::is_constructible_v<std::remove_reference_t<T>, Args...>>>
-            EntityBuilder &with(Args && ... args) {
-                return with(std::type_index(typeid(T)),
-                    [args = std::make_tuple(std::forward<Args>(args)...)] (void *dest) mutable {
-                        std::apply([dest] (auto && ... args) {
-                            new (static_cast<T*>(dest)) T(args...);
+        template<typename T, typename... Args,
+                typename = std::enable_if_t<std::is_constructible_v<std::remove_reference_t<T>, Args...>>>
+        EntityBuilder &with(Args &&... args) {
+            return with(std::type_index(typeid(T)),
+                    [args = std::make_tuple(std::forward<Args>(args)...)](void *dest) mutable {
+                        std::apply([dest](auto &&... args) {
+                            new(static_cast<T *>(dest)) T(args...);
                         }, args);
                     });
-            }
+        }
 
-            Entity &build(void);
+        Entity &build(void);
     };
 }

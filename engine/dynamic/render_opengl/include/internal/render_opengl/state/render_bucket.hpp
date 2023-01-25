@@ -28,6 +28,7 @@
 namespace argus {
     // forward declarations
     class Material;
+
     struct ProcessedRenderObject;
 
     struct RenderBucket {
@@ -36,7 +37,7 @@ namespace argus {
         const Resource &material_res;
         const Vector2f atlas_stride;
 
-        std::vector<ProcessedRenderObject*> objects;
+        std::vector<ProcessedRenderObject *> objects;
         buffer_handle_t vertex_buffer;
         buffer_handle_t anim_frame_buffer;
         void *anim_frame_buffer_staging;
@@ -49,8 +50,8 @@ namespace argus {
 
         ~RenderBucket(void);
 
-        private:
-            RenderBucket(const Resource &material_res, const Vector2f &atlas_stride):
+      private:
+        RenderBucket(const Resource &material_res, const Vector2f &atlas_stride) :
                 material_res(material_res),
                 atlas_stride(atlas_stride),
                 objects(),
@@ -59,6 +60,6 @@ namespace argus {
                 vertex_array(0),
                 vertex_count(0),
                 needs_rebuild(true) {
-            }
+        }
     };
 }

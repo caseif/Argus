@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace argus {
-    static std::vector<const Display*> g_displays;
+    static std::vector<const Display *> g_displays;
 
     static void _add_display(GLFWmonitor *monitor) {
         auto &display = *new Display();
@@ -38,7 +38,7 @@ namespace argus {
         display.pimpl->handle = monitor;
 
         display.pimpl->name = glfwGetMonitorName(monitor);
-        
+
         glfwGetMonitorPos(monitor, &display.pimpl->position.x, &display.pimpl->position.y);
 
         glfwGetMonitorContentScale(monitor, &display.pimpl->scale.x, &display.pimpl->scale.y);
@@ -67,10 +67,10 @@ namespace argus {
                 continue;
             }
 
-            display.pimpl->modes.push_back(DisplayMode {
-                Vector2u(uint32_t(glfw_mode.width), uint32_t(glfw_mode.height)),
-                uint16_t(glfw_mode.refreshRate),
-                Vector3u(uint32_t(glfw_mode.redBits), uint32_t(glfw_mode.greenBits), uint32_t(glfw_mode.blueBits))
+            display.pimpl->modes.push_back(DisplayMode{
+                    Vector2u(uint32_t(glfw_mode.width), uint32_t(glfw_mode.height)),
+                    uint16_t(glfw_mode.refreshRate),
+                    Vector3u(uint32_t(glfw_mode.redBits), uint32_t(glfw_mode.greenBits), uint32_t(glfw_mode.blueBits))
             });
         }
 
@@ -125,11 +125,11 @@ namespace argus {
         return *it;
     }
 
-    const std::vector<const Display*> &Display::get_available_displays(void) {
+    const std::vector<const Display *> &Display::get_available_displays(void) {
         return g_displays;
     }
 
-    Display::Display(void):
+    Display::Display(void) :
             pimpl(new pimpl_Display()) {
     }
 

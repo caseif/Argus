@@ -45,9 +45,9 @@ namespace argus {
     bool g_wm_module_initialized = false;
 
     // maps window IDs to Window instance pointers
-    std::map<std::string, Window*> g_window_id_map;
+    std::map<std::string, Window *> g_window_id_map;
     // maps GLFW window pointers to Window instance pointers
-    std::map<GLFWwindow*, Window*> g_window_handle_map;
+    std::map<GLFWwindow *, Window *> g_window_handle_map;
     size_t g_window_count = 0;
 
     static void _clean_up(void) {
@@ -55,7 +55,7 @@ namespace argus {
         auto windows_copy = g_window_id_map;
         // doing this in reverse ensures that child windows are destroyed before their parents
         for (auto it = windows_copy.rbegin();
-                it != windows_copy.rend(); it++) {
+             it != windows_copy.rend(); it++) {
             delete it->second;
         }
 
@@ -85,7 +85,7 @@ namespace argus {
         if (params->title.has_value()) {
             window.set_title(*params->title);
         }
-        
+
         if (params->mode.has_value()) {
             if (*params->mode == WINDOWING_MODE_WINDOWED) {
                 window.set_fullscreen(false);
@@ -138,7 +138,7 @@ namespace argus {
                 Logger::default_logger().debug("Initialized GLFW");
 
                 register_render_callback(_poll_events);
-                
+
                 register_event_handler<WindowEvent>(window_window_event_callback, TargetThread::Render);
 
                 init_display();

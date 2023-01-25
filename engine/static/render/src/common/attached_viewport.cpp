@@ -23,7 +23,7 @@
 #include <vector>
 
 namespace argus {
-    AttachedViewport::AttachedViewport(SceneType type):
+    AttachedViewport::AttachedViewport(SceneType type) :
             type(type) {
     }
 

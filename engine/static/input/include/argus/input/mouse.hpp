@@ -34,12 +34,12 @@ namespace argus::input {
 
         MouseButtonIndex value;
 
-        MouseButton(enum enum_value value):
-            value(static_cast<MouseButtonIndex>(value)) {
+        MouseButton(enum enum_value value) :
+                value(static_cast<MouseButtonIndex>(value)) {
         }
 
-        MouseButton(MouseButtonIndex index):
-            value(index) {
+        MouseButton(MouseButtonIndex index) :
+                value(index) {
         }
 
         operator MouseButtonIndex(void) {

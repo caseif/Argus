@@ -34,25 +34,26 @@
 namespace argus {
     // forward declarations
     class RenderPrim2D;
+
     class Scene2D;
 
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
-                material, primitives, atlas_stride, transform)) {
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
+                    material, primitives, atlas_stride, transform)) {
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform):
-        pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) :
+            pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
                     material, primitives, atlas_stride, transform)) {
         g_render_handle_table.update_handle(handle, this);
     }
 
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -103,7 +104,7 @@ namespace argus {
     RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) {
         std::vector<RenderPrim2D> prims_copy;
         std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
-               [] (auto &v) { return RenderPrim2D(v); });
+                [](auto &v) { return RenderPrim2D(v); });
         auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
         auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->atlas_stride,
                 pimpl->transform);

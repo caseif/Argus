@@ -29,6 +29,7 @@
 namespace argus {
     // forward declarations
     class Canvas;
+
     class Window;
 
     extern bool g_render_module_initialized;

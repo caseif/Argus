@@ -24,10 +24,10 @@
 #include <vector>
 
 namespace argus::input {
-    static std::vector<TextInputContext*> g_input_contexts;
+    static std::vector<TextInputContext *> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
-    TextInputContext::TextInputContext(void):
+    TextInputContext::TextInputContext(void) :
             valid(true),
             active(false),
             text() {

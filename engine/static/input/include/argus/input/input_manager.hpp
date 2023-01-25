@@ -24,31 +24,32 @@ namespace argus::input {
     struct pimpl_InputManager;
 
     class InputManager {
-        private:
-            pimpl_InputManager *pimpl;
+      private:
+        pimpl_InputManager *pimpl;
 
-            InputManager(void);
+        InputManager(void);
 
-            InputManager(InputManager&) = delete;
-            
-            InputManager(InputManager&&) = delete;
+        InputManager(InputManager &) = delete;
 
-            ~InputManager(void);
-        public:
-            static InputManager &instance(void);
+        InputManager(InputManager &&) = delete;
 
-            Controller &get_controller(ControllerIndex controller_index);
+        ~InputManager(void);
 
-            Controller &add_controller(void);
+      public:
+        static InputManager &instance(void);
 
-            void remove_controller(Controller &controller);
+        Controller &get_controller(ControllerIndex controller_index);
 
-            void remove_controller(ControllerIndex controller_index);
+        Controller &add_controller(void);
 
-            void handle_key_press(const Window &window, KeyboardScancode key, bool release) const;
+        void remove_controller(Controller &controller);
 
-            void handle_mouse_button_press(const Window &window, MouseButton button, bool release) const;
+        void remove_controller(ControllerIndex controller_index);
 
-            void handle_mouse_axis_change(const Window &window, MouseAxis axis, double value, double delta) const;
+        void handle_key_press(const Window &window, KeyboardScancode key, bool release) const;
+
+        void handle_mouse_button_press(const Window &window, MouseButton button, bool release) const;
+
+        void handle_mouse_axis_change(const Window &window, MouseAxis axis, double value, double delta) const;
     };
 }

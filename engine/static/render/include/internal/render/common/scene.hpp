@@ -25,5 +25,5 @@ namespace argus {
     // forward declarations
     class Scene;
 
-    extern std::map<std::string, Scene*> g_scenes;
+    extern std::map<std::string, Scene *> g_scenes;
 }

@@ -31,10 +31,13 @@
 namespace argus {
     // forward declarations
     class Material;
+
     class Scene;
 
     class RenderGroup2D;
+
     class RenderPrim2D;
+
     class Scene2D;
 
     struct pimpl_RenderObject2D;
@@ -46,92 +49,92 @@ namespace argus {
      * rendering properties.
      */
     class RenderObject2D {
-        private:
-            RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
-                    const std::string &material, const std::vector<RenderPrim2D> &primitives,
-                    const Vector2f &atlas_stride, const Transform2D &transform);
+      private:
+        RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
+                const std::string &material, const std::vector<RenderPrim2D> &primitives,
+                const Vector2f &atlas_stride, const Transform2D &transform);
 
-        public:
-            pimpl_RenderObject2D *pimpl;
+      public:
+        pimpl_RenderObject2D *pimpl;
 
-            RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
-                    const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-                    const Transform2D &transform);
+        RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
+                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+                const Transform2D &transform);
 
-            RenderObject2D(const RenderObject2D&) = delete;
+        RenderObject2D(const RenderObject2D &) = delete;
 
-            RenderObject2D(RenderObject2D&&) noexcept;
+        RenderObject2D(RenderObject2D &&) noexcept;
 
-            ~RenderObject2D();
+        ~RenderObject2D();
 
-            /**
-             * \brief Gets the parent Scene of this object.
-             *
-             * \return The parent Scene.
-             */
-            const Scene2D &get_scene(void) const;
+        /**
+         * \brief Gets the parent Scene of this object.
+         *
+         * \return The parent Scene.
+         */
+        const Scene2D &get_scene(void) const;
 
-            /**
-             * \brief Gets the UID of the Material used by the object.
-             *
-             * \return The UID of the Material used by the object.
-             */
-            const std::string &get_material(void) const;
+        /**
+         * \brief Gets the UID of the Material used by the object.
+         *
+         * \return The UID of the Material used by the object.
+         */
+        const std::string &get_material(void) const;
 
-            /**
-             * \brief Gets the \link RenderPrim RenderPrims \endlink comprising this
-             *        object.
-             *
-             * \return The \link RenderPrim RenderPrims \endlink comprising this
-             *         object.
-             */
-            const std::vector<RenderPrim2D> &get_primitives(void) const;
+        /**
+         * \brief Gets the \link RenderPrim RenderPrims \endlink comprising this
+         *        object.
+         *
+         * \return The \link RenderPrim RenderPrims \endlink comprising this
+         *         object.
+         */
+        const std::vector<RenderPrim2D> &get_primitives(void) const;
 
-            /**
-             * \brief Gets the stride on each axis between atlas tiles, if the
-             *        object has an animated texture.
-             *
-             * \return The stride between atlas tiles.
-             */
-            const Vector2f &get_atlas_stride(void) const;
+        /**
+         * \brief Gets the stride on each axis between atlas tiles, if the
+         *        object has an animated texture.
+         *
+         * \return The stride between atlas tiles.
+         */
+        const Vector2f &get_atlas_stride(void) const;
 
-            /**
-             * \brief Gets the active animation frame.
-             *
-             * \return The x- and y-index of the currently active animation
-             *        frame.
-             */
-            Dirtiable<Vector2u> get_active_frame() const;
+        /**
+         * \brief Gets the active animation frame.
+         *
+         * \return The x- and y-index of the currently active animation
+         *        frame.
+         */
+        Dirtiable<Vector2u> get_active_frame() const;
 
-            /**
-             * \brief Sets the active animation frame.
-             *
-             * \param index The x- and y-index of the animation frame to
-             *        activate. Neither index should exceed the number of tiles
-             *        in each dimension in the atlas texture.
-             */
-            void set_active_frame(const Vector2u &frame);
+        /**
+         * \brief Sets the active animation frame.
+         *
+         * \param index The x- and y-index of the animation frame to
+         *        activate. Neither index should exceed the number of tiles
+         *        in each dimension in the atlas texture.
+         */
+        void set_active_frame(const Vector2u &frame);
 
-            const Transform2D &peek_transform(void) const;
+        const Transform2D &peek_transform(void) const;
 
-            /**
-             * \brief Gets the local Transform of this object.
-             *
-             * \return The local transform of this object.
-             *
-             * \remark The returned Transform is local and does not necessarily
-             *         reflect the object's absolute transform with respect to
-             *         the Scene containing the object.
-             */
-            ValueAndDirtyFlag<Transform2D> get_transform(void);
-            
-            /**
-             * \brief Sets the local Transform of this object.
-             *
-             * \param transform The new local Transform of the object.
-             */
-            void set_transform(const Transform2D &transform) const;
+        /**
+         * \brief Gets the local Transform of this object.
+         *
+         * \return The local transform of this object.
+         *
+         * \remark The returned Transform is local and does not necessarily
+         *         reflect the object's absolute transform with respect to
+         *         the Scene containing the object.
+         */
+        ValueAndDirtyFlag<Transform2D> get_transform(void);
 
-            RenderObject2D &copy(RenderGroup2D &parent);
+        /**
+         * \brief Sets the local Transform of this object.
+         *
+         * \param transform The new local Transform of the object.
+         */
+        void set_transform(const Transform2D &transform) const;
+
+        RenderObject2D &copy(RenderGroup2D &parent);
     };
 }

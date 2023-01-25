@@ -30,7 +30,7 @@
 namespace argus::input {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Controller));
 
-    Controller::Controller(ControllerIndex index):
+    Controller::Controller(ControllerIndex index) :
             pimpl(&g_pimpl_pool.construct<pimpl_Controller>(index)) {
     }
 
@@ -58,13 +58,13 @@ namespace argus::input {
         pimpl->action_to_key_bindings.erase(action);
     }
 
-    template <typename T>
+    template<typename T>
     static void _bind_thing(std::map<T, std::vector<std::string>> &to_map,
             std::map<std::string, std::vector<T>> &from_map, T thing, const std::string action) {
         // we maintain two binding maps because actions and "things" have a
         // many-to-many relationship; i.e. each key may be bound to multiple
         // actions and each action may have multiple keys bound to it
-        
+
         // insert into the thing-to-actions map
         auto &tta_vec = to_map[thing];
         if (std::find(tta_vec.begin(), tta_vec.end(), action) == tta_vec.end()) {
@@ -80,7 +80,7 @@ namespace argus::input {
         // nothing to do if the binding already exists
     }
 
-    template <typename T>
+    template<typename T>
     static void _unbind_thing(std::map<T, std::vector<std::string>> &to_map,
             std::map<std::string, std::vector<T>> &from_map, T thing) {
         if (to_map.find(thing) == to_map.end()) {
@@ -96,7 +96,7 @@ namespace argus::input {
         to_map.erase(thing);
     }
 
-    template <typename T>
+    template<typename T>
     static void _unbind_thing(std::map<T, std::vector<std::string>> &to_map,
             std::map<std::string, std::vector<T>> &from_map, T thing, const std::string &action) {
         auto actions_it = from_map.find(action);
@@ -151,7 +151,8 @@ namespace argus::input {
     }
 
     void Controller::unbind_mouse_button(MouseButtonIndex button, const std::string &action) {
-        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);//TODO
+        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button,
+                action);//TODO
     }
 
     void Controller::bind_mouse_axis(MouseAxis axis, const std::string &action) {

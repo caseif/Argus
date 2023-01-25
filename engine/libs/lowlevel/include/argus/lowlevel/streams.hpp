@@ -25,7 +25,7 @@
 namespace argus {
     struct MemBuf : std::streambuf {
         MemBuf(const char *buf, size_t len) {
-            this->setg(const_cast<char*>(buf), const_cast<char*>(buf), const_cast<char*>(buf) + len);
+            this->setg(const_cast<char *>(buf), const_cast<char *>(buf), const_cast<char *>(buf) + len);
         }
     };
 
@@ -33,8 +33,8 @@ namespace argus {
         MemBuf membuf;
 
         IMemStream(const void *buf, size_t len) :
-            std::istream(&membuf),
-            membuf(MemBuf(static_cast<const char*>(buf), len)) {
+                std::istream(&membuf),
+                membuf(MemBuf(static_cast<const char *>(buf), len)) {
         }
     };
 }

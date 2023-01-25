@@ -30,11 +30,15 @@
 namespace argus {
     // forward declarations
     class Material;
+
     class Canvas;
 
     class Camera2D;
+
     class RenderGroup2D;
+
     class RenderObject2D;
+
     class RenderPrim2D;
 
     struct pimpl_Scene2D;
@@ -47,83 +51,83 @@ namespace argus {
      * rendered.
      */
     class Scene2D : public Scene {
-        private:
-            /**
-             * \brief Constructs a new Scene2D.
-             *
-             * \param transform The Transform of the Scene.
-             * \param index The compositing index of the Scene. Higher-indexed
-             *        Scenes are rendered on top of lower-indexed ones.
-             */
-            Scene2D(const std::string &id, const Transform2D &transform);
+      private:
+        /**
+         * \brief Constructs a new Scene2D.
+         *
+         * \param transform The Transform of the Scene.
+         * \param index The compositing index of the Scene. Higher-indexed
+         *        Scenes are rendered on top of lower-indexed ones.
+         */
+        Scene2D(const std::string &id, const Transform2D &transform);
 
-            Scene2D(const std::string &id, Transform2D &&transform):
+        Scene2D(const std::string &id, Transform2D &&transform) :
                 Scene2D(id, transform) {
-            }
+        }
 
-            Scene2D(const Scene2D&) noexcept = delete;
+        Scene2D(const Scene2D &) noexcept = delete;
 
-            Scene2D(Scene2D&&) noexcept;
+        Scene2D(Scene2D &&) noexcept;
 
-            ~Scene2D(void);
+        ~Scene2D(void);
 
-        public:
-            static Scene2D &create(const std::string &id);
+      public:
+        static Scene2D &create(const std::string &id);
 
-            pimpl_Scene2D *pimpl;
+        pimpl_Scene2D *pimpl;
 
-            pimpl_Scene *get_pimpl(void) const override;
+        pimpl_Scene *get_pimpl(void) const override;
 
-            std::optional<std::reference_wrapper<RenderGroup2D>> get_group(Handle handle);
+        std::optional<std::reference_wrapper<RenderGroup2D>> get_group(Handle handle);
 
-            std::optional<std::reference_wrapper<RenderObject2D>> get_object(Handle handle);
+        std::optional<std::reference_wrapper<RenderObject2D>> get_object(Handle handle);
 
-            /**
-             * \brief Creates a new RenderGroup2D as a direct child of this
-             *        Scene.
-             *
-             * \param transform The relative transform of the new group.
-             */
-            Handle create_child_group(const Transform2D &transform);
+        /**
+         * \brief Creates a new RenderGroup2D as a direct child of this
+         *        Scene.
+         *
+         * \param transform The relative transform of the new group.
+         */
+        Handle create_child_group(const Transform2D &transform);
 
-            /**
-             * \brief Creates a new RenderObject2D as a direct child of this
-             *        Scene.
-             *
-             * \param material The Material to be used by the new object.
-             * \param primitives The primitives comprising the new object.
-             * \param transform The relative transform of the new object.
-             *
-             * \remark Internally, the object will be created as a child of the
-             *         implicit root RenderGroup contained by this Scene. Thus,
-             *         no RenderObject is truly without a parent group.
-             */
-            Handle create_child_object(const std::string &material,
-                    const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-                    const Transform2D &transform);
+        /**
+         * \brief Creates a new RenderObject2D as a direct child of this
+         *        Scene.
+         *
+         * \param material The Material to be used by the new object.
+         * \param primitives The primitives comprising the new object.
+         * \param transform The relative transform of the new object.
+         *
+         * \remark Internally, the object will be created as a child of the
+         *         implicit root RenderGroup contained by this Scene. Thus,
+         *         no RenderObject is truly without a parent group.
+         */
+        Handle create_child_object(const std::string &material,
+                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+                const Transform2D &transform);
 
-            /**
-             * \brief Removes the supplied RenderGroup2D from this Scene,
-             *        destroying it in the process.
-             * \param group The group to remove and destroy.
-             * \throw std::invalid_argument If the supplied RenderGroup is not a
-             *        direct member of this Scene.
-             */
-            void remove_member_group(Handle handle);
+        /**
+         * \brief Removes the supplied RenderGroup2D from this Scene,
+         *        destroying it in the process.
+         * \param group The group to remove and destroy.
+         * \throw std::invalid_argument If the supplied RenderGroup is not a
+         *        direct member of this Scene.
+         */
+        void remove_member_group(Handle handle);
 
-            /**
-             * \brief Removes the specified RenderObject2D from this Scene,
-             *        destroying it in the process.
-             * \param object The RenderObject2D to remove and destroy.
-             * \throw std::invalid_argument If the supplied RenderObject is not
-             *        a direct member of this Scene.
-             */
-            void remove_member_object(Handle handle);
+        /**
+         * \brief Removes the specified RenderObject2D from this Scene,
+         *        destroying it in the process.
+         * \param object The RenderObject2D to remove and destroy.
+         * \throw std::invalid_argument If the supplied RenderObject is not
+         *        a direct member of this Scene.
+         */
+        void remove_member_object(Handle handle);
 
-            std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
+        std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
 
-            Camera2D &create_camera(const std::string &id);
+        Camera2D &create_camera(const std::string &id);
 
-            void destroy_camera(const std::string &id);
+        void destroy_camera(const std::string &id);
     };
 }

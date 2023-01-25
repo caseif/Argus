@@ -30,10 +30,10 @@ namespace argus {
     struct Scene2DState;
 
     ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object, const Matrix4 &transform,
-                void *scene_state_ptr);
+            void *scene_state_ptr);
 
     void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
-                const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr);
+            const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr);
 
     void deinit_object_2d(ProcessedRenderObject &obj);
 }

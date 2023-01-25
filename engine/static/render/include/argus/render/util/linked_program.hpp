@@ -35,9 +35,9 @@ namespace argus {
         uint32_t handle;
         ShaderReflectionInfo reflection_info;
 
-        LinkedProgram(uint32_t handle, ShaderReflectionInfo reflection_info):
-            handle(handle),
-            reflection_info(reflection_info) {
+        LinkedProgram(uint32_t handle, ShaderReflectionInfo reflection_info) :
+                handle(handle),
+                reflection_info(reflection_info) {
         }
 
         bool has_attr(const std::string &name);

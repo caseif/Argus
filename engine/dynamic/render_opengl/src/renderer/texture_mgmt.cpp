@@ -43,7 +43,7 @@ namespace argus {
         auto existing_it = state.prepared_textures.find(texture_uid);
         if (existing_it != state.prepared_textures.end()) {
             existing_it->second.acquire();
-            state.material_textures.insert({ material_res.uid, texture_uid });
+            state.material_textures.insert({material_res.uid, texture_uid});
             return;
         }
 
@@ -99,8 +99,8 @@ namespace argus {
 
         texture_res.release();
 
-        state.prepared_textures.insert({ texture_uid, handle });
-        state.material_textures.insert({ material_res.uid, texture_uid });
+        state.prepared_textures.insert({texture_uid, handle});
+        state.material_textures.insert({material_res.uid, texture_uid});
     }
 
     void deinit_texture(texture_handle_t texture) {
@@ -115,7 +115,8 @@ namespace argus {
                 deinit_texture(existing_it->second);
                 textures.erase(existing_it);
             }
-            Logger::default_logger().debug("Released handle on texture %s (new refcount = %lu)", texture_uid.c_str(), new_rc);
+            Logger::default_logger().debug("Released handle on texture %s (new refcount = %lu)", texture_uid.c_str(),
+                    new_rc);
         }
     }
 }

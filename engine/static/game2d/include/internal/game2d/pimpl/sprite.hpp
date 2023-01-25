@@ -44,7 +44,7 @@ namespace argus {
         bool paused;
         bool pending_reset;
 
-        pimpl_Sprite(const Resource &def):
+        pimpl_Sprite(const Resource &def) :
                 def(def),
                 speed(def.get<SpriteDef>().def_speed) {
         }

@@ -31,6 +31,7 @@
 namespace argus {
     // forward declarations
     class Camera2D;
+
     struct pimpl_AttachedViewport2D;
 
     struct AttachedViewport2D : AttachedViewport {
@@ -38,9 +39,9 @@ namespace argus {
 
         AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index);
 
-        AttachedViewport2D(const AttachedViewport2D&) = delete;
+        AttachedViewport2D(const AttachedViewport2D &) = delete;
 
-        AttachedViewport2D(AttachedViewport2D&&);
+        AttachedViewport2D(AttachedViewport2D &&);
 
         ~AttachedViewport2D(void);
 

@@ -43,7 +43,7 @@ namespace argus {
     }
 
     StaticObject2D::StaticObject2D(StaticObject2D &&rhs) noexcept:
-        pimpl(rhs.pimpl) {
+            pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 

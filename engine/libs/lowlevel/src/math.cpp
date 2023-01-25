@@ -35,6 +35,7 @@ namespace argus {
             }
         }
     }
+
     void multiply_matrices(Matrix4 &a, const Matrix4 &b) {
         Matrix4 res;
         multiply_matrices(a, b, res);
@@ -42,11 +43,11 @@ namespace argus {
     }
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat) {
-        return Vector4f {
-            mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w,
-            mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w,
-            mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w,
-            mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w
+        return Vector4f{
+                mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w,
+                mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w,
+                mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w,
+                mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w
         };
     }
 

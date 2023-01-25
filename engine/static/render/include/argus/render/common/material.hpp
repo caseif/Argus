@@ -27,7 +27,9 @@
 namespace argus {
     // forward declarations
     class Canvas;
+
     class Shader;
+
     class TextureData;
 
     struct pimpl_Material;
@@ -35,28 +37,28 @@ namespace argus {
     class Material {
         friend class MaterialLoader;
 
-        public:
-            pimpl_Material *pimpl;
+      public:
+        pimpl_Material *pimpl;
 
-            /**
-             * \brief Constructs a new Material.
-             *
-             * \param texture The UID of the texture used by the Material.
-             * \param shaders The UIDs of the shaders used by the Material. Only
-             *        one Shader may be specified per \link ShaderStage shader
-             *        stage \endlink.
-             */
-            Material(const std::string &texture, const std::vector<std::string> &shaders);
+        /**
+         * \brief Constructs a new Material.
+         *
+         * \param texture The UID of the texture used by the Material.
+         * \param shaders The UIDs of the shaders used by the Material. Only
+         *        one Shader may be specified per \link ShaderStage shader
+         *        stage \endlink.
+         */
+        Material(const std::string &texture, const std::vector<std::string> &shaders);
 
-            Material(const Material&) noexcept;
+        Material(const Material &) noexcept;
 
-            Material(Material&&) noexcept;
+        Material(Material &&) noexcept;
 
-            ~Material(void);
+        ~Material(void);
 
-            const std::string &get_texture_uid(void) const;
+        const std::string &get_texture_uid(void) const;
 
-            const std::vector<std::string> &get_shader_uids(void) const;
+        const std::vector<std::string> &get_shader_uids(void) const;
     };
 
 }

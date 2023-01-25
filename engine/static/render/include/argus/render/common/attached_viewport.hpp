@@ -31,19 +31,20 @@
 namespace argus {
     // forward declarations
     class Camera2D;
+
     struct pimpl_AttachedViewport;
 
     struct AttachedViewport {
-        protected:
+      protected:
         AttachedViewport(SceneType type);
 
-        AttachedViewport(const AttachedViewport&) = delete;
+        AttachedViewport(const AttachedViewport &) = delete;
 
-        AttachedViewport(AttachedViewport&&) = delete;
+        AttachedViewport(AttachedViewport &&) = delete;
 
         virtual pimpl_AttachedViewport *get_pimpl(void) const = 0;
 
-        public:
+      public:
         SceneType type;
 
         virtual ~AttachedViewport(void) = 0;

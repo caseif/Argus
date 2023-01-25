@@ -29,12 +29,12 @@ namespace argus {
          */
         unsigned char **image_data;
 
-        pimpl_TextureData(unsigned char **image_data):
-            image_data(image_data) {
+        pimpl_TextureData(unsigned char **image_data) :
+                image_data(image_data) {
         }
 
-        pimpl_TextureData(const pimpl_TextureData&) = default;
+        pimpl_TextureData(const pimpl_TextureData &) = default;
 
-        pimpl_TextureData(pimpl_TextureData&&) = delete;
+        pimpl_TextureData(pimpl_TextureData &&) = delete;
     };
 }

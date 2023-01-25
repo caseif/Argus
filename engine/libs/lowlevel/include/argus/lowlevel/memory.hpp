@@ -31,41 +31,41 @@ namespace argus {
     struct pimpl_AllocPool;
 
     class AllocPool {
-        private:
-            pimpl_AllocPool *pimpl;
+      private:
+        pimpl_AllocPool *pimpl;
 
-            void validate_block_size(size_t size) const;
+        void validate_block_size(size_t size) const;
 
-        public:
-            std::mutex alloc_mutex;
+      public:
+        std::mutex alloc_mutex;
 
-            explicit AllocPool(size_t block_size, uint8_t alignment_exp = 3);
+        explicit AllocPool(size_t block_size, uint8_t alignment_exp = 3);
 
-            AllocPool(AllocPool&) = delete;
+        AllocPool(AllocPool &) = delete;
 
-            AllocPool(AllocPool&&) = delete;
+        AllocPool(AllocPool &&) = delete;
 
-            AllocPool &operator =(AllocPool&) = delete;
+        AllocPool &operator=(AllocPool &) = delete;
 
-            AllocPool &operator =(AllocPool&&) = delete;
+        AllocPool &operator=(AllocPool &&) = delete;
 
-            ~AllocPool(void);
+        ~AllocPool(void);
 
-            void *alloc(void);
+        void *alloc(void);
 
-            void free(void *addr);
+        void free(void *addr);
 
-            template <typename T, typename... Args>
-            T &construct(Args && ... args) {
-                return *new (this->alloc()) T(args...);
-            }
+        template<typename T, typename... Args>
+        T &construct(Args &&... args) {
+            return *new(this->alloc()) T(args...);
+        }
 
-            template <typename T>
-            void destroy(T *obj) {
-                //TODO: add a safeguard to prevent destructor being invoked on invalid pointer
-                obj->~T();
-                this->free(obj);
-            }
+        template<typename T>
+        void destroy(T *obj) {
+            //TODO: add a safeguard to prevent destructor being invoked on invalid pointer
+            obj->~T();
+            this->free(obj);
+        }
     };
 
 }

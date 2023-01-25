@@ -24,11 +24,11 @@ struct ScreenSpace {
     float top;
     float bottom;
 
-    ScreenSpace(float left, float right, float top, float bottom):
-        left(left),
-        right(right),
-        top(top),
-        bottom(bottom) {
+    ScreenSpace(float left, float right, float top, float bottom) :
+            left(left),
+            right(right),
+            top(top),
+            bottom(bottom) {
     }
 };
 

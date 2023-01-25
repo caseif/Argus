@@ -54,7 +54,7 @@ namespace argus {
 
     ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object,
             const Matrix4 &transform, void *scene_state_ptr) {
-        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState *>(scene_state_ptr);
         auto &state = scene_state.parent_state;
 
         size_t vertex_count = 0;
@@ -70,9 +70,9 @@ namespace argus {
         auto &program = state.linked_programs.find(object.get_material())->second;
 
         size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
@@ -88,17 +88,17 @@ namespace argus {
                 glNamedBufferStorage(vertex_buffer, GLsizeiptr(buffer_size), nullptr,
                         GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
                 persistent_buffer = true;
-                mapped_buffer = static_cast<GLfloat*>(glMapNamedBufferRange(vertex_buffer, 0, GLsizeiptr(buffer_size),
+                mapped_buffer = static_cast<GLfloat *>(glMapNamedBufferRange(vertex_buffer, 0, GLsizeiptr(buffer_size),
                         GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT));
             } else {
                 glNamedBufferData(vertex_buffer, GLsizeiptr(buffer_size), nullptr, GL_DYNAMIC_DRAW);
-                mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY));
+                mapped_buffer = static_cast<GLfloat *>(glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY));
             }
         } else {
             glGenBuffers(1, &vertex_buffer);
             glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
             glBufferData(GL_COPY_READ_BUFFER, GLsizeiptr(buffer_size), nullptr, GL_DYNAMIC_DRAW);
-            mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+            mapped_buffer = static_cast<GLfloat *>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
         }
 
         size_t total_vertices = 0;
@@ -149,13 +149,13 @@ namespace argus {
 
     void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
             const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr) {
-        auto &scene_state = *static_cast<SceneState*>(scene_state_ptr);
+        auto &scene_state = *static_cast<SceneState *>(scene_state_ptr);
         auto &state = scene_state.parent_state;
 
         // program should be linked by now
         auto &program = state.linked_programs.find(object.get_material())->second;
 
-        auto &proc_obj = *reinterpret_cast<ProcessedRenderObject*>(proc_obj_ptr);
+        auto &proc_obj = *reinterpret_cast<ProcessedRenderObject *>(proc_obj_ptr);
 
         // if a parent group or the object itself has had its transform updated
         proc_obj.updated = is_transform_dirty;
@@ -167,19 +167,19 @@ namespace argus {
         }
 
         size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         GLfloat *mapped_buffer;
 
         if (proc_obj.mapped_buffer != nullptr) {
-            mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);
+            mapped_buffer = static_cast<GLfloat *>(proc_obj.mapped_buffer);
         } else if (AGLET_GL_ARB_direct_state_access) {
-            mapped_buffer = static_cast<GLfloat*>(glMapNamedBuffer(proc_obj.staging_buffer, GL_WRITE_ONLY));
+            mapped_buffer = static_cast<GLfloat *>(glMapNamedBuffer(proc_obj.staging_buffer, GL_WRITE_ONLY));
         } else {
             glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
-            mapped_buffer = static_cast<GLfloat*>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
+            mapped_buffer = static_cast<GLfloat *>(glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY));
         }
 
         size_t total_vertices = 0;

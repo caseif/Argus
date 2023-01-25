@@ -32,12 +32,13 @@
 namespace argus {
     // forward declarations
     class Canvas;
+
     class Sprite;
 
     struct pimpl_World2D;
 
     class World2D {
-       public:
+      public:
         static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
 
         static World2D &get(const std::string &id);
@@ -46,9 +47,9 @@ namespace argus {
 
         World2D(const std::string &id, Canvas &canvas, float scale_factor);
 
-        World2D(World2D&) = delete;
+        World2D(World2D &) = delete;
 
-        World2D(World2D&&) = delete;
+        World2D(World2D &&) = delete;
 
         ~World2D(void);
 

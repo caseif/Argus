@@ -32,13 +32,13 @@ namespace argus {
 
         std::mutex read_lock;
 
-        pimpl_Scene(const std::string &id, const Transform2D &transform):
+        pimpl_Scene(const std::string &id, const Transform2D &transform) :
                 id(id),
                 transform(transform) {
         }
 
-        pimpl_Scene(const pimpl_Scene&) = delete;
+        pimpl_Scene(const pimpl_Scene &) = delete;
 
-        pimpl_Scene(pimpl_Scene&&) = delete;
+        pimpl_Scene(pimpl_Scene &&) = delete;
     };
 }

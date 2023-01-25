@@ -200,11 +200,11 @@ namespace argus::input {
      */
     // clang-format off
     enum class KeyboardModifiers : uint16_t {
-        None            = 0x00,
-        Shift           = 0x01,
-        Control         = 0x02,
-        Super           = 0x04,
-        Alt             = 0x08
+        None = 0x00,
+        Shift = 0x01,
+        Control = 0x02,
+        Super = 0x04,
+        Alt = 0x08
     };
     // clang-format on
 
@@ -217,6 +217,7 @@ namespace argus::input {
      * \return The bitwise OR of the operands.
      */
     constexpr inline KeyboardModifiers operator|(KeyboardModifiers lhs, KeyboardModifiers rhs);
+
     /**
      * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
      *        elements.
@@ -229,6 +230,7 @@ namespace argus::input {
      * \sa KeyboardModifiers::operator|
      */
     inline KeyboardModifiers operator|=(KeyboardModifiers &lhs, KeyboardModifiers rhs);
+
     /**
      * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
      *

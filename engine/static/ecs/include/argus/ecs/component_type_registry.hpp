@@ -31,48 +31,48 @@ namespace argus {
     struct pimpl_ComponentTypeRegistry;
 
     class ComponentTypeRegistry {
-        private:
-            pimpl_ComponentTypeRegistry *pimpl;
+      private:
+        pimpl_ComponentTypeRegistry *pimpl;
 
-            ComponentTypeRegistry(void);
+        ComponentTypeRegistry(void);
 
-        public:
-            static ComponentTypeRegistry &instance(void);
+      public:
+        static ComponentTypeRegistry &instance(void);
 
-            void *alloc(std::type_index type);
+        void *alloc(std::type_index type);
 
-            template <typename T>
-            T &alloc(void) {
-                return *static_cast<T*>(alloc(std::type_index(typeid(T))));
-            }
+        template<typename T>
+        T &alloc(void) {
+            return *static_cast<T *>(alloc(std::type_index(typeid(T))));
+        }
 
-            void free(std::type_index type, void *ptr);
+        void free(std::type_index type, void *ptr);
 
-            void free(ComponentTypeId id, void *ptr);
+        void free(ComponentTypeId id, void *ptr);
 
-            template <typename T>
-            void free(void *ptr) {
-                free(std::type_index(typeid(T)), ptr);
-            }
+        template<typename T>
+        void free(void *ptr) {
+            free(std::type_index(typeid(T)), ptr);
+        }
 
-            size_t get_type_count(void);
+        size_t get_type_count(void);
 
-            ComponentTypeId get_id(std::type_index type);
-            
-            template <typename T>
-            ComponentTypeId get_id(void) {
-                return get_id(std::type_index(typeid(T)));
-            }
+        ComponentTypeId get_id(std::type_index type);
 
-            void register_type(std::type_index type, size_t size);
+        template<typename T>
+        ComponentTypeId get_id(void) {
+            return get_id(std::type_index(typeid(T)));
+        }
 
-            template <typename T>
-            void register_type(void) {
-                register_type(std::type_index(typeid(T)), sizeof(T));
-            }
+        void register_type(std::type_index type, size_t size);
 
-            void _seal(void);
+        template<typename T>
+        void register_type(void) {
+            register_type(std::type_index(typeid(T)), sizeof(T));
+        }
 
-            bool _is_sealed(void);
+        void _seal(void);
+
+        bool _is_sealed(void);
     };
 }

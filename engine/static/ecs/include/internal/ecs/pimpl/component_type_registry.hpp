@@ -31,7 +31,7 @@ namespace argus {
         size_t size;
 
         // clang-format off
-        ComponentTypeInfo(ComponentTypeId id, size_t size):
+        ComponentTypeInfo(ComponentTypeId id, size_t size) :
                 id(id),
                 //name(name),
                 size(size) {

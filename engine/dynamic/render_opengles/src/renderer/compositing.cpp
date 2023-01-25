@@ -194,7 +194,7 @@ namespace argus {
                 last_program = program_info.handle;
 
                 auto view_mat = viewport_state.view_matrix;
-                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat] (auto vm_loc) {
+                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat](auto vm_loc) {
                     affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
                     glUniformMatrix4fv(GLint(vm_loc), 1, GL_TRUE, view_mat.data);
                 });
@@ -202,7 +202,7 @@ namespace argus {
 
             if (animated) {
                 auto &stride = bucket.second->atlas_stride;
-                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride] (auto loc) {
+                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride](auto loc) {
                     affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
                     glUniform2f(GLint(loc), stride.x, stride.y);
                 });
@@ -231,8 +231,8 @@ namespace argus {
             if (it != postfx_programs.end()) {
                 postfx_program = &it->second;
             } else {
-                auto linked_program = link_program({ FB_SHADER_VERT_PATH, postfx });
-                auto inserted = postfx_programs.insert({ postfx, linked_program });
+                auto linked_program = link_program({FB_SHADER_VERT_PATH, postfx});
+                auto inserted = postfx_programs.insert({postfx, linked_program});
                 postfx_program = &inserted.first->second;
             }
 
@@ -245,10 +245,10 @@ namespace argus {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glViewport(
-                0,
-                0,
-                fb_width,
-                fb_height
+                    0,
+                    0,
+                    fb_width,
+                    fb_height
             );
 
             glBindVertexArray(state.frame_vao);
@@ -277,10 +277,10 @@ namespace argus {
         affirm_precond(resolution->y <= INT_MAX && viewport_y <= INT_MAX, "Viewport Y is too big for glViewport");
 
         glViewport(
-            viewport_px.left,
-            GLsizei(viewport_y),
-            viewport_width_px,
-            viewport_height_px
+                viewport_px.left,
+                GLsizei(viewport_y),
+                viewport_width_px,
+                viewport_height_px
         );
 
         glBindVertexArray(state.frame_vao);
@@ -295,7 +295,7 @@ namespace argus {
     }
 
     void setup_framebuffer(RendererState &state) {
-        auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
+        auto frame_program = link_program({FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH});
 
         state.frame_program = frame_program;
 
@@ -310,12 +310,12 @@ namespace argus {
         }
 
         float frame_quad_vertex_data[] = {
-            -1.0, -1.0,  0.0,  0.0,
-            -1.0,  1.0,  0.0,  1.0,
-             1.0,  1.0,  1.0,  1.0,
-            -1.0, -1.0,  0.0,  0.0,
-             1.0,  1.0,  1.0,  1.0,
-             1.0, -1.0,  1.0,  0.0,
+                -1.0, -1.0, 0.0, 0.0,
+                -1.0, 1.0, 0.0, 1.0,
+                1.0, 1.0, 1.0, 1.0,
+                -1.0, -1.0, 0.0, 0.0,
+                1.0, 1.0, 1.0, 1.0,
+                1.0, -1.0, 1.0, 0.0,
         };
 
         glGenVertexArrays(1, &state.frame_vao);

@@ -32,11 +32,11 @@ namespace argus {
         bool active;
 
         pimpl_System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback,
-                bool active):
-            name(name),
-            component_types(component_types),
-            callback(callback),
-            active(active) {
+                bool active) :
+                name(name),
+                component_types(component_types),
+                callback(callback),
+                active(active) {
         }
     };
 }
