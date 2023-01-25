@@ -75,7 +75,7 @@ namespace argus {
         UNUSED(manager);
         UNUSED(proto);
 
-        _ARGUS_ASSERT(type == std::type_index(typeid(Shader)),
+        affirm_precond(type == std::type_index(typeid(Shader)),
                 "Incorrect pointer type passed to ShaderLoader::copy");
 
         // no dependencies to load so we can just do a blind copy

@@ -20,10 +20,4 @@
 
 #include "argus/lowlevel/logging.hpp"
 
-#define _ARGUS_ASSERT(c, fmt)  if (!(c)) { \
-                                        Logger::default_logger().fatal("Assertion failed: " #c " (" fmt ")"); \
-                                    }
-
-#define _ARGUS_ASSERT_F(c, fmt, ...)  if (!(c)) { \
-                                        Logger::default_logger().fatal("Assertion failed: " #c " (" fmt ")", ##__VA_ARGS__); \
-                                    }
+#define affirm_precond(c, fmt)  (c ? void(0) : Logger::default_logger().fatal("Precondition failed: " #c " (" fmt ")"))

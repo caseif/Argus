@@ -126,7 +126,9 @@ namespace argus {
         VkInstance instance;
 
         auto createRes = vkCreateInstance(&create_info, nullptr, &instance);
-        _ARGUS_ASSERT_F(createRes == VK_SUCCESS, "vkCreateInstance returned error code %d", createRes);
+        if (createRes != VK_SUCCESS) {
+            Logger::default_logger().fatal("vkCreateInstance returned error code %d", createRes);
+        }
 
         return instance;
     }

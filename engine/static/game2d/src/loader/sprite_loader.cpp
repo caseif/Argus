@@ -341,7 +341,7 @@ namespace argus {
 
     void *SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
-        _ARGUS_ASSERT(type == std::type_index(typeid(SpriteDef)),
+        affirm_precond(type == std::type_index(typeid(SpriteDef)),
                 "Incorrect pointer type passed to SpriteLoader::copy");
 
         auto &src_sprite = *reinterpret_cast<SpriteDef*>(src);

@@ -68,7 +68,7 @@ namespace argus {
 
     StaticObject2D &World2DLayer::get_static_object(Handle handle) const {
         auto *obj = g_static_obj_table.deref<StaticObject2D>(handle);
-        _ARGUS_ASSERT(obj != nullptr,
+        affirm_precond(obj != nullptr,
                 "No such object exists for world layer (in get_static_object)");
         return *obj;
     }
@@ -82,7 +82,7 @@ namespace argus {
 
     void World2DLayer::delete_static_object(Handle handle) {
         auto *static_obj = g_static_obj_table.deref<StaticObject2D>(handle);
-        _ARGUS_ASSERT(static_obj != nullptr,
+        affirm_precond(static_obj != nullptr,
                 "No such object exists for world layer (in delete_static_object)");
 
         g_static_obj_table.release_handle(handle);
@@ -99,7 +99,7 @@ namespace argus {
 
     Actor2D &World2DLayer::get_actor(Handle handle) const {
         auto *actor = g_actor_table.deref<Actor2D>(handle);
-        _ARGUS_ASSERT(actor != nullptr,
+        affirm_precond(actor != nullptr,
                 "No such actor exists for world layer (in get_actor)");
         return *actor;
     }
@@ -113,7 +113,7 @@ namespace argus {
 
     void World2DLayer::delete_actor(Handle handle) {
         auto *actor = g_actor_table.deref<Actor2D>(handle);
-        _ARGUS_ASSERT(actor != nullptr,
+        affirm_precond(actor != nullptr,
                 "No such actor exists for world layer (in get_actor)");
 
         g_actor_table.release_handle(handle);

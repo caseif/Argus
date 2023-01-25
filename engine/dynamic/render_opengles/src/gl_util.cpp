@@ -26,6 +26,7 @@
 #include "aglet/aglet.h"
 #include "GLFW/glfw3.h"
 
+#include <cassert>
 #include <climits>
 
 namespace argus {
@@ -88,10 +89,10 @@ namespace argus {
             GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
         UNUSED(binding_index);
 
-        _ARGUS_ASSERT(attr_len <= INT_MAX, "Attribute length is too big");
+        assert(attr_len <= INT_MAX);
 
         auto stride = vertex_len * uint32_t(sizeof(GLfloat));
-        _ARGUS_ASSERT(stride <= INT_MAX, "Attribute stride is too big");
+        assert(stride <= INT_MAX);
 
         glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
         glEnableVertexAttribArray(attr_index);

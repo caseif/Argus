@@ -174,7 +174,7 @@ namespace argus {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        _ARGUS_ASSERT(resolution->x <= INT_MAX && resolution->y <= INT_MAX, "Resolution is too big for glViewport");
+        affirm_precond(resolution->x <= INT_MAX && resolution->y <= INT_MAX, "Resolution is too big for glViewport");
 
         glViewport(0, 0, GLsizei(resolution->x), GLsizei(resolution->y));
 
@@ -195,7 +195,7 @@ namespace argus {
 
                 auto view_mat = viewport_state.view_matrix;
                 program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat] (auto vm_loc) {
-                    _ARGUS_ASSERT(vm_loc <= INT_MAX, "View matrix uniform location is too big");
+                    affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
                     glUniformMatrix4fv(GLint(vm_loc), 1, GL_TRUE, view_mat.data);
                 });
             }
@@ -203,7 +203,7 @@ namespace argus {
             if (animated) {
                 auto &stride = bucket.second->atlas_stride;
                 program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride] (auto loc) {
-                    _ARGUS_ASSERT(loc <= INT_MAX, "UV stride uniform location is too big");
+                    affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
                     glUniform2f(GLint(loc), stride.x, stride.y);
                 });
             }
@@ -274,7 +274,7 @@ namespace argus {
         auto viewport_height_px = std::abs(viewport_px.bottom - viewport_px.top);
 
         auto viewport_y = GLsizei(resolution->y) - viewport_px.bottom;
-        _ARGUS_ASSERT(resolution->y <= INT_MAX && viewport_y <= INT_MAX, "Viewport Y is too big for glViewport");
+        affirm_precond(resolution->y <= INT_MAX && viewport_y <= INT_MAX, "Viewport Y is too big for glViewport");
 
         glViewport(
             viewport_px.left,

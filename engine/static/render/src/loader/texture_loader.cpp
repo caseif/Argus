@@ -44,7 +44,7 @@ namespace argus {
     struct ResourcePrototype;
 
     static void _read_stream(png_structp stream, png_bytep buf, png_size_t size) {
-        _ARGUS_ASSERT(size <= LONG_MAX, "PNG size is too large");
+        affirm_precond(size <= LONG_MAX, "PNG size is too large");
         static_cast<std::ifstream*>(png_get_io_ptr(stream))->read(reinterpret_cast<char*>(buf), std::streamsize(size));
     }
 
@@ -163,7 +163,7 @@ namespace argus {
         UNUSED(manager);
         UNUSED(proto);
 
-        _ARGUS_ASSERT(type == std::type_index(typeid(TextureData)),
+        affirm_precond(type == std::type_index(typeid(TextureData)),
                 "Incorrect pointer type passed to PngTextureLoader::copy");
 
         // no dependencies to load so we can just do a blind copy

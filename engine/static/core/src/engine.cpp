@@ -82,7 +82,7 @@ namespace argus {
     }
 
     Index register_update_callback(const DeltaCallback &callback, Ordering ordering) {
-        _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
+        affirm_precond(g_core_initializing || g_core_initialized,
                 "Cannot register update callback before engine initialization.");
         return add_callback(g_update_callbacks, callback, ordering);
     }
@@ -92,7 +92,7 @@ namespace argus {
     }
 
     Index register_render_callback(const DeltaCallback &callback, Ordering ordering) {
-        _ARGUS_ASSERT(g_core_initializing || g_core_initialized,
+        affirm_precond(g_core_initializing || g_core_initialized,
                 "Cannot register render callback before engine initialization.");
         return add_callback(g_render_callbacks, callback, ordering);
     }
@@ -287,12 +287,12 @@ namespace argus {
     void start_engine(const DeltaCallback &game_loop) {
         Logger::default_logger().info("Bringing up engine");
 
-        _ARGUS_ASSERT(g_core_initialized, "Cannot start engine before it is initialized.");
-        _ARGUS_ASSERT(game_loop != NULL, "start_engine invoked with null callback");
+        affirm_precond(g_core_initialized, "Cannot start engine before it is initialized.");
+        affirm_precond(game_loop != nullptr, "start_engine invoked with null callback");
 
-        _ARGUS_ASSERT(!get_client_id().empty(), "Client ID must be set prior to engine start");
-        _ARGUS_ASSERT(!get_client_name().empty(), "Client ID must be set prior to engine start");
-        _ARGUS_ASSERT(!get_client_version().empty(), "Client ID must be set prior to engine start");
+        affirm_precond(!get_client_id().empty(), "Client ID must be set prior to engine start");
+        affirm_precond(!get_client_name().empty(), "Client ID must be set prior to engine start");
+        affirm_precond(!get_client_version().empty(), "Client ID must be set prior to engine start");
 
         register_update_callback(game_loop);
 
@@ -322,7 +322,7 @@ namespace argus {
 
         Logger::default_logger().info("Engine halt requested");
 
-        _ARGUS_ASSERT(g_core_initialized, "Cannot stop engine before it is initialized.");
+        affirm_precond(g_core_initialized, "Cannot stop engine before it is initialized.");
 
         g_engine_stopping = true;
     }

@@ -53,8 +53,7 @@ namespace argus {
     static std::mutex g_render_event_queue_mutex;
 
     void process_event_queue(const TargetThread target_thread) {
-        _ARGUS_ASSERT_F(target_thread == TargetThread::Update || target_thread == TargetThread::Render,
-            "Unrecognized target thread ordinal %u", uint(target_thread));
+        assert(target_thread == TargetThread::Update || target_thread == TargetThread::Render);
 
         auto render_thread = target_thread == TargetThread::Render;
 
@@ -118,8 +117,8 @@ namespace argus {
 
     Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
             const TargetThread target_thread, void *const data, Ordering ordering) {
-        _ARGUS_ASSERT(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
-        _ARGUS_ASSERT(callback != nullptr, "Event listener cannot have null callback.");
+        affirm_precond(g_core_initializing || g_core_initialized, "Cannot register event listener before engine initialization.");
+        affirm_precond(callback != nullptr, "Event listener cannot have null callback.");
 
         CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {

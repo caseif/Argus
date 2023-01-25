@@ -33,6 +33,7 @@
 #include <map>
 #include <string>
 
+#include <cassert>
 #include <climits>
 #include <cstddef>
 
@@ -56,8 +57,7 @@ namespace argus {
             }
 
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
-            _ARGUS_ASSERT(program_it != scene_state.parent_state.linked_programs.cend(),
-                    "Cannot find material program");
+            assert(program_it != scene_state.parent_state.linked_programs.cend());
             bool animated = program_it->second.has_uniform(SHADER_UNIFORM_UV_STRIDE);
 
             // the program should have been linked during object processing
@@ -94,7 +94,7 @@ namespace argus {
                     glDeleteBuffers(1, &bucket->anim_frame_buffer);
                 }
 
-                _ARGUS_ASSERT(buffer_len <= INT_MAX, "Buffer length is too big");
+                affirm_precond(buffer_len <= INT_MAX, "Buffer length is too big");
 
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
@@ -161,8 +161,8 @@ namespace argus {
                 }
 
                 if (bucket->needs_rebuild || processed->updated) {
-                    _ARGUS_ASSERT(offset <= INT_MAX, "Buffer offset is too big");
-                    _ARGUS_ASSERT(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
+                    affirm_precond(offset <= INT_MAX, "Buffer offset is too big");
+                    affirm_precond(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
 
                     glBindBuffer(GL_COPY_READ_BUFFER, processed->staging_buffer);
                     glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_ARRAY_BUFFER, 0, GLintptr(offset) ,
@@ -189,7 +189,7 @@ namespace argus {
             }
 
             if (anim_buf_updated) {
-                _ARGUS_ASSERT(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
+                affirm_precond(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
 
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, GLsizeiptr(anim_frame_buf_len), bucket->anim_frame_buffer_staging);

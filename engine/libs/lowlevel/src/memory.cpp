@@ -158,10 +158,6 @@ namespace argus {
         return new_chunk;
     }
 
-    void AllocPool::validate_block_size(size_t size) const {
-        _ARGUS_ASSERT(size == pimpl->real_block_size, "Size mismatch for AllocPool");
-    }
-
     AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp):
         pimpl(new pimpl_AllocPool(
             // we pass both the real block size and the size in the pool so objects can be aligned in the pool

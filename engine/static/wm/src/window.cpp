@@ -138,7 +138,7 @@ namespace argus {
 
     Window::Window(const std::string &id, Window *parent):
             pimpl(new pimpl_Window(id, parent)) {
-        _ARGUS_ASSERT(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
+        affirm_precond(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         if (g_canvas_ctor != nullptr) {
             pimpl->canvas = &g_canvas_ctor(*this);
@@ -308,7 +308,7 @@ namespace argus {
                     cur_display_mode = get_display_mode();
                 }
 
-                _ARGUS_ASSERT(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
+                affirm_precond(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
                         "Current display mode fullscreen resolution is too large");
 
                 glfwSetWindowMonitor(pimpl->handle,
@@ -322,7 +322,7 @@ namespace argus {
                 pimpl->cur_resolution = cur_display_mode.resolution;
                 pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
             } else {
-                _ARGUS_ASSERT(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
+                affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
                 // switch to windowed mode
@@ -345,7 +345,7 @@ namespace argus {
                 cur_display_mode = get_display_mode();
             }
 
-            _ARGUS_ASSERT(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
+            affirm_precond(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
                     "Current display mode fullscreen resolution is too large");
 
             if (cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
@@ -370,7 +370,7 @@ namespace argus {
             // update windowed positon and/or resolution
 
             if (windowed_res.dirty) {
-                _ARGUS_ASSERT(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
+                affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
                 glfwSetWindowSize(pimpl->handle,

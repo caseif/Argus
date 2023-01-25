@@ -80,7 +80,7 @@ namespace argus {
         GLfloat *mapped_buffer;
         bool persistent_buffer = false;
 
-        _ARGUS_ASSERT(buffer_size <= INT_MAX, "Buffer size is too big");
+        affirm_precond(buffer_size <= INT_MAX, "Buffer size is too big");
 
         if (AGLET_GL_ARB_direct_state_access) {
             glCreateBuffers(1, &vertex_buffer);

@@ -147,7 +147,7 @@ namespace argus {
 
     void *MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
-        _ARGUS_ASSERT(type == std::type_index(typeid(Material)),
+        affirm_precond(type == std::type_index(typeid(Material)),
                 "Incorrect pointer type passed to MaterialLoader::copy");
 
         auto &src_mat = *reinterpret_cast<Material*>(src);

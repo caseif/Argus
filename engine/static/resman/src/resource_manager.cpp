@@ -269,7 +269,7 @@ namespace argus {
         if (pt_it != pimpl->discovered_fs_protos.cend()) {
             ResourcePrototype proto = pt_it->second;
 
-            _ARGUS_ASSERT(!proto.fs_path.empty(), "FS resource path is empty");
+            affirm_precond(!proto.fs_path.empty(), "FS resource path is empty");
 
             FileHandle file_handle = FileHandle::create(proto.fs_path, FILE_MODE_READ);
 

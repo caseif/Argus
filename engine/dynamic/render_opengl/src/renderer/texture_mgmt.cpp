@@ -49,9 +49,9 @@ namespace argus {
 
         auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
         auto &texture = texture_res.get<TextureData>();
-        
-        _ARGUS_ASSERT(texture.width <= INT_MAX, "Texture width is too big");
-        _ARGUS_ASSERT(texture.height <= INT_MAX, "Texture height is too big");
+
+        affirm_precond(texture.width <= INT_MAX, "Texture width is too big");
+        affirm_precond(texture.height <= INT_MAX, "Texture height is too big");
 
         texture_handle_t handle;
 

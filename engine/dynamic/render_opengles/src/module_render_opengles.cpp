@@ -38,6 +38,7 @@
 
 #include <string>
 
+#include <cassert>
 #include <cstring>
 
 namespace argus {
@@ -65,7 +66,7 @@ namespace argus {
                 }
                 
                 auto it = g_renderer_map.find(&window);
-                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window update but no renderer was registered!");
+                assert(it != g_renderer_map.end());
 
                 it->second->render(event.delta);
                 break;
@@ -76,14 +77,14 @@ namespace argus {
                 }
                 
                 auto it = g_renderer_map.find(&window);
-                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window resize but no renderer was registered!");
+                assert(it != g_renderer_map.end());
 
                 it->second->notify_window_resize(event.resolution);
                 break;
             }
             case WindowEventType::RequestClose: {
                 auto it = g_renderer_map.find(&window);
-                _ARGUS_ASSERT(it != g_renderer_map.end(), "Received window close request but no renderer was registered!");
+                assert(it != g_renderer_map.end());
 
                 delete it->second;
                 break;

@@ -46,7 +46,7 @@ namespace argus {
         int width;
         int height;
         glfwGetMonitorPhysicalSize(monitor, &width, &height);
-        _ARGUS_ASSERT(width > 0 && height > 0, "Reported monitor dimensions are zero or negative");
+        affirm_precond(width > 0 && height > 0, "Reported monitor dimensions are zero or negative");
         display.pimpl->size = Vector2u(uint32_t(width), uint32_t(height));
 
         int mode_count;

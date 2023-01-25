@@ -31,7 +31,7 @@ namespace argus {
     void update_lifecycle_core(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit:
-                _ARGUS_ASSERT(!g_core_initializing && !g_core_initialized, "Cannot initialize engine more than once.");
+                affirm_precond(!g_core_initializing && !g_core_initialized, "Cannot initialize engine more than once.");
 
                 g_core_initializing = true;
                 break;

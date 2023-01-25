@@ -79,7 +79,7 @@ namespace argus {
         GLfloat *mapped_buffer;
         bool persistent_buffer = false;
 
-        _ARGUS_ASSERT(buffer_size <= INT_MAX, "Buffer size is too big");
+        affirm_precond(buffer_size <= INT_MAX, "Buffer size is too big");
 
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
@@ -164,7 +164,7 @@ namespace argus {
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
-        _ARGUS_ASSERT(buffer_size <= INT_MAX, "Vertex buffer length is too big");
+        affirm_precond(buffer_size <= INT_MAX, "Vertex buffer length is too big");
 
         if (proc_obj.mapped_buffer != nullptr) {
             mapped_buffer = static_cast<GLfloat*>(proc_obj.mapped_buffer);

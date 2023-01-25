@@ -47,6 +47,7 @@
 #include <utility>
 #include <vector>
 
+#include <cassert>
 #include <climits>
 
 namespace argus {
@@ -122,7 +123,7 @@ namespace argus {
             if (res == GL_FALSE) {
                 int log_len;
                 glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
-                _ARGUS_ASSERT(log_len >= 0, "GL shader log length is negative");
+                assert(log_len >= 0);
                 char *log = new char[size_t(log_len) + 1];
                 log[0] = '\0';
                 glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
@@ -198,7 +199,7 @@ namespace argus {
         if (res == GL_FALSE) {
             int log_len;
             glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
-            _ARGUS_ASSERT(log_len >= 0, "GL shader log length is negative");
+            assert(log_len >= 0);
             char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
             get_gl_logger().fatal([log] () { delete[] log; }, "Failed to link program: %s", log);
@@ -242,7 +243,7 @@ namespace argus {
 
     void set_per_frame_global_uniforms(LinkedProgram &program) {
         program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [] (auto time_loc) {
-            _ARGUS_ASSERT(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
+            affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
             glUniform1f(GLint(time_loc),
                 float(
                     double(

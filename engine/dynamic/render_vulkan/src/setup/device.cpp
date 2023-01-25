@@ -87,7 +87,7 @@ namespace argus {
             Logger::default_logger().fatal("vkEnumeratePhysicalDevices returned error code %d", enum_res);
         }
 
-        _ARGUS_ASSERT(dev_count > 0, "No physical video devices found");
+        affirm_precond(dev_count > 0, "No physical video devices found");
 
         std::vector<VkPhysicalDevice> devs(dev_count);
         enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, devs.data());

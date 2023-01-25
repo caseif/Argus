@@ -62,7 +62,7 @@ namespace argus {
             }
 
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
-            _ARGUS_ASSERT(program_it != scene_state.parent_state.linked_programs.cend(),
+            affirm_precond(program_it != scene_state.parent_state.linked_programs.cend(),
                     "Cannot find material program");
             bool animated = program_it->second.has_uniform(SHADER_UNIFORM_UV_STRIDE);
 
@@ -100,7 +100,7 @@ namespace argus {
                     glDeleteBuffers(1, &bucket->anim_frame_buffer);
                 }
 
-                _ARGUS_ASSERT(buffer_len <= INT_MAX, "Buffer length is too big");
+                affirm_precond(buffer_len <= INT_MAX, "Buffer length is too big");
 
                 if (AGLET_GL_ARB_direct_state_access) {
                     glCreateVertexArrays(1, &bucket->vertex_array);
@@ -109,14 +109,14 @@ namespace argus {
                     glNamedBufferData(bucket->vertex_buffer, GLsizei(buffer_len), nullptr, GL_DYNAMIC_COPY);
 
                     auto stride = vertex_len * uint(sizeof(GLfloat));
-                    _ARGUS_ASSERT(stride <= INT_MAX, "Vertex stride is too big");
+                    affirm_precond(stride <= INT_MAX, "Vertex stride is too big");
 
                     glVertexArrayVertexBuffer(bucket->vertex_array, BINDING_INDEX_VBO, bucket->vertex_buffer, 0,
                             GLsizei(stride));
 
                     if (animated) {
                         glCreateBuffers(1, &bucket->anim_frame_buffer);
-                        _ARGUS_ASSERT(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");
+                        affirm_precond(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");
                         glNamedBufferData(bucket->anim_frame_buffer, GLsizei(anim_frame_buf_len), nullptr,
                                 GL_DYNAMIC_DRAW);
 
@@ -131,7 +131,7 @@ namespace argus {
                     if (animated) {
                         glGenBuffers(1, &bucket->anim_frame_buffer);
                         glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                        _ARGUS_ASSERT(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");
+                        affirm_precond(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");
                         glBufferData(GL_ARRAY_BUFFER, GLsizei(anim_frame_buf_len), nullptr, GL_DYNAMIC_DRAW);
                     }
 
@@ -192,8 +192,8 @@ namespace argus {
                 }
 
                 if (bucket->needs_rebuild || processed->updated) {
-                    _ARGUS_ASSERT(offset <= INT_MAX, "Buffer offset is too big");
-                    _ARGUS_ASSERT(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
+                    affirm_precond(offset <= INT_MAX, "Buffer offset is too big");
+                    affirm_precond(processed->staging_buffer_size <= INT_MAX, "Buffer offset is too big");
 
                     if (AGLET_GL_ARB_direct_state_access) {
                         glCopyNamedBufferSubData(processed->staging_buffer, bucket->vertex_buffer, 0, GLintptr(offset),
@@ -225,7 +225,7 @@ namespace argus {
             }
 
             if (anim_buf_updated) {
-                _ARGUS_ASSERT(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
+                affirm_precond(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
 
                 if (AGLET_GL_ARB_direct_state_access) {
                     glNamedBufferSubData(bucket->anim_frame_buffer, 0, GLsizeiptr(anim_frame_buf_len),

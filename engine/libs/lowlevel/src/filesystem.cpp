@@ -26,6 +26,7 @@
 #include <future>
 #include <stdexcept>
 
+#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -151,7 +152,7 @@ namespace argus {
         stat_t stat_buf{};
         validate_syscall(fstat(fileno(file), &stat_buf), "fstat");
 
-        _ARGUS_ASSERT(stat_buf.st_size >= 0, "File size returned by stat was negative");
+        assert(stat_buf.st_size >= 0);
 
         return FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void*>(file));
     }
@@ -233,7 +234,7 @@ namespace argus {
         stat_t file_stat{};
         validate_syscall(fstat(fileno(static_cast<FILE*>(handle)), &file_stat), "fstat");
 
-        _ARGUS_ASSERT(file_stat.st_size >= 0, "File size returned by stat was negative");
+        assert(file_stat.st_size >= 0);
 
         this->size = size_t(file_stat.st_size);
     }
