@@ -34,8 +34,6 @@ namespace argus {
       private:
         pimpl_AllocPool *pimpl;
 
-        void validate_block_size(size_t size) const;
-
       public:
         std::mutex alloc_mutex;
 

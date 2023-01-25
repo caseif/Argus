@@ -62,4 +62,8 @@ namespace argus {
     const std::vector<Vertex2D> &RenderPrim2D::get_vertices(void) const {
         return pimpl->vertices;
     }
+
+    size_t RenderPrim2D::get_frame_count(void) const {
+        return pimpl->frame_count;
+    }
 }

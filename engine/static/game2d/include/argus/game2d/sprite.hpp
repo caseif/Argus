@@ -42,8 +42,6 @@ namespace argus {
 
         ~Sprite(void);
 
-        const Vector2f &get_base_size(void) const;
-
         float get_animation_speed(void) const;
 
         void set_animation_speed(float speed);
