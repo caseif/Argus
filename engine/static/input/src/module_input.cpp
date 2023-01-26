@@ -28,10 +28,6 @@
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"
 
-#include "GLFW/glfw3.h"
-
-#include <string>
-
 namespace argus {
     static void _init_window_input(const Window &window) {
         input::init_keyboard(window);

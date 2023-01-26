@@ -18,11 +18,8 @@
 
 #include "argus/lowlevel/logging.hpp"
 
-#include "argus/resman/resource.hpp"
-
 #include "argus/render/common/scene.hpp"
 
-#include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
@@ -30,9 +27,6 @@
 #include "internal/render_opengl/state/viewport_state.hpp"
 
 #include <map>
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace argus {
     // forward declarations

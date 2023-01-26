@@ -16,9 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "argus/lowlevel/vector.hpp"
 
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
@@ -35,7 +33,6 @@
 #include <algorithm>
 #include <map>
 #include <stdexcept>
-#include <utility>
 #include <vector>
 
 namespace argus {

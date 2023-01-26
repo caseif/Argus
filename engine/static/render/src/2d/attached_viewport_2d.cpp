@@ -22,9 +22,7 @@
 #include "argus/render/common/attached_viewport.hpp"
 #include "internal/render/pimpl/2d/attached_viewport_2d.hpp"
 
-#include <algorithm>
 #include <string>
-#include <vector>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));

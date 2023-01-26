@@ -17,11 +17,7 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/types.hpp"
 
-#include "argus/resman/resource.hpp"
-
-#include "argus/render/common/material.hpp"
 #include "argus/render/defines.hpp"
 
 #include "internal/render_opengl/defines.hpp"
@@ -36,8 +32,6 @@
 
 #include <map>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include <climits>
 #include <cstddef>

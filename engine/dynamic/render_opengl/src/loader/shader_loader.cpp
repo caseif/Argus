@@ -26,17 +26,14 @@
 #include "argus/render/common/shader.hpp"
 #include "argus/render/defines.hpp"
 
-#include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 
 #include "aglet/aglet.h"
 
-#include <istream>
 #include <iterator>
 #include <string>
 #include <vector>
 
-#include <cstdint>
 #include <cstdio>
 
 namespace argus {

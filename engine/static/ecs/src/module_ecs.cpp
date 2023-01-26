@@ -23,8 +23,6 @@
 #include "internal/ecs/module_ecs.hpp"
 #include "internal/ecs/system_executor.hpp"
 
-#include <string>
-
 namespace argus {
     bool g_ecs_initialized = false;
 

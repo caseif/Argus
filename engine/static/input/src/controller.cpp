@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/vector.hpp"
 
 #include "argus/input/controller.hpp"

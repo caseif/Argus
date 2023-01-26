@@ -18,8 +18,6 @@
 
 #include "argus/lowlevel/memory.hpp"
 
-#include "argus/render/common/transform.hpp"
-
 #include "argus/game2d/sprite.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/sprite.hpp"

@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
 namespace argus {

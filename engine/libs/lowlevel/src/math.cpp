@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include <sstream>
 #include <string>
 
 #include <cstring>

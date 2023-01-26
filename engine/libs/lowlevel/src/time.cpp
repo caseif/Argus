@@ -19,21 +19,6 @@
 #include "argus/lowlevel/time.hpp"
 
 #include <chrono>
-#include <thread>
-
-#ifdef _WIN32
-#include <Windows.h>
-#else
-
-#include <sys/time.h>
-
-#include <ctime>
-
-#endif
-
-#include <cstdint>
-
-#define NS_PER_S 1'000'000'000ULL
 
 namespace argus {
     Timestamp now(void) {

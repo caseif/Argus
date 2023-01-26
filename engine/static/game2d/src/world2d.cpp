@@ -16,34 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
-#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/defines.hpp"
 #include "argus/render/common/canvas.hpp"
-#include "argus/render/common/material.hpp"
-#include "argus/render/common/texture_data.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 
-#include "argus/game2d/sprite.hpp"
-#include "argus/game2d/sprite.hpp"
 #include "argus/game2d/world2d.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/world2d_layer.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
-#include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
-#include "internal/game2d/defines.hpp"
 
 #include <map>
 #include <string>
-#include <utility>
 
 #define PRIMARY_LAYER_ID "_primary"
 

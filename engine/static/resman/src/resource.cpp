@@ -24,7 +24,6 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource.hpp"
 
-#include <atomic>
 #include <string>
 #include <utility>
 #include <vector>

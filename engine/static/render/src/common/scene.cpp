@@ -20,7 +20,6 @@
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
-#include <algorithm>
 #include <functional>
 #include <map>
 #include <optional>

@@ -26,11 +26,7 @@
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/transform_3d.hpp"
 
-#include <atomic>
-#include <mutex>
-
 #include <cmath> // IWYU pragma: keep
-#include <cstring>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform3D));

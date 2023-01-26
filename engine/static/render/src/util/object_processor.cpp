@@ -16,13 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "argus/lowlevel/vector.hpp"
 
-#include "argus/resman/resource.hpp"
-
-#include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
@@ -32,13 +27,7 @@
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
-#include <atomic>
 #include <map>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include <cstring>
 
 namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {

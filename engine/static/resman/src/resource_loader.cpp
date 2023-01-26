@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/macros.hpp"
-
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
@@ -25,13 +23,9 @@
 
 #include <exception>
 #include <initializer_list>
-#include <istream>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
-
-#include <cstddef>
 
 namespace argus {
     std::map<std::string, const Resource *> ResourceLoader::load_dependencies(ResourceManager &manager,

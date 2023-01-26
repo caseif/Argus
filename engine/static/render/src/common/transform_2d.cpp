@@ -26,11 +26,7 @@
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/common/transform_2d.hpp"
 
-#include <atomic>
-#include <mutex>
-
 #include <cmath>
-#include <cstring>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Transform2D));

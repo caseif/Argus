@@ -27,16 +27,13 @@
 #include "argus/core/event.hpp"
 #include "argus/core/screen_space.hpp"
 
-#include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 #include "argus/render/defines.hpp"
-#include "argus/render/util/object_processor.hpp"
 
-#include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"
 #include "internal/render_opengles/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengles/renderer/bucket_proc.hpp"
@@ -47,18 +44,13 @@
 #include "internal/render_opengles/state/renderer_state.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
 #include "internal/render_opengles/state/viewport_state.hpp"
-#include "internal/render_opengles/types.hpp"
 
 #include "GLFW/glfw3.h"
 #include "aglet/aglet.h"
 #include "argus/wm/window.hpp"
 
-#include <atomic>
-#include <map>
 #include <set>
 #include <string>
-#include <utility>
-#include <vector>
 
 namespace argus {
     // forward declarations

@@ -45,7 +45,6 @@
 #include <chrono>
 
 #define LAYER_PREFIX "_worldlayer_"
-#define GAME_OBJ_PREFIX "_obj_"
 
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, float parallax_coeff,

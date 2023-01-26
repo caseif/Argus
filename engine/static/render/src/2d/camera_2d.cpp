@@ -18,13 +18,10 @@
 
 #include "argus/lowlevel/memory.hpp"
 
-#include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/2d/camera_2d.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/pimpl/2d/camera_2d.hpp"
 
-#include <functional>
-#include <optional>
 #include <string>
 
 namespace argus {

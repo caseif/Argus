@@ -28,7 +28,6 @@
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
-#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <vector>
