@@ -206,7 +206,7 @@ namespace argus {
         // this is ultimately set to the sequential memory index of the first free block
         // note that this index is the reverse of the position of the corresponding bit in the bitfield
         // e.g. the first block has index 0 and is flagged by the MSB at position 63 (on x64)
-        size_t first_free_block_index = 0;
+        size_t first_free_block_index;
         #ifdef _MSC_VER
         // returns the bit position of the first set bit (clear in this case, since we invert the bitfield)
         // if the MSB is clear in the original bitfield, this returns 63 on x64

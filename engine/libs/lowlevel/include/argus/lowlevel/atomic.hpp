@@ -177,7 +177,7 @@ namespace argus {
                 mutex() {
         }
 
-        AtomicDirtiable(AtomicDirtiable &&rhs) :
+        AtomicDirtiable(AtomicDirtiable &&rhs) noexcept :
                 value(std::move(rhs.value)),
                 dirty(rhs.dirty),
                 mutex() {
@@ -191,7 +191,7 @@ namespace argus {
          * \return A `struct` containing the copied value and the previous
          *         state of the dirty flag.
          */
-        const ValueAndDirtyFlag<ValueType> read(void) {
+        ValueAndDirtyFlag<ValueType> read(void) {
             mutex.lock();
 
             auto val_copy = value;

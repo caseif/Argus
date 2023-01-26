@@ -50,6 +50,7 @@ Checks: >
 
     -modernize-avoid-c-arrays,
     -modernize-redundant-void-arg,
+    -modernize-return-braced-init-list,
     -modernize-use-auto,
     -modernize-use-trailing-return-type,
     -modernize-use-using,

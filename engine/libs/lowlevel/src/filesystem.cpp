@@ -29,6 +29,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -49,9 +50,7 @@
 #define stat_t struct stat
 #elif defined __linux__
 
-#include <dirent.h>
 #include <features.h>
-#include <unistd.h>
 
 #ifndef __USE_FILE_OFFSET64
 #define __USE_FILE_OFFSET64
@@ -90,8 +89,8 @@
 
 namespace argus {
 
-    FileHandle::FileHandle(const std::filesystem::path &path, const int mode, const size_t size, void *const handle) :
-            path(path),
+    FileHandle::FileHandle(std::filesystem::path path, const int mode, const size_t size, void *const handle) :
+            path(std::move(path)),
             mode(mode),
             size(size),
             handle(handle),
@@ -239,7 +238,7 @@ namespace argus {
         this->size = size_t(file_stat.st_size);
     }
 
-    const std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
+    std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
             const std::function<void(FileHandle &)> callback) {
         validate_state(valid, "Non-valid FileHandle");
 
@@ -249,10 +248,10 @@ namespace argus {
 
         validate_arg(size_t(offset) +read_size <= this->size, "Invalid offset/size combintation");
 
-        return make_future(std::bind(&FileHandle::read, this, offset, size, buf), std::bind(callback, *this));
+        return make_future([this, offset, buf] { read(offset, size, buf); }, std::bind(callback, *this));
     }
 
-    const std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
+    std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
             unsigned char *const buf, std::function<void(FileHandle &)> callback) {
         validate_state(valid, "Non-valid FileHandle");
 
@@ -260,6 +259,7 @@ namespace argus {
 
         validate_arg(offset >= -1, "Invalid offset parameter");
 
-        return make_future(std::bind(&FileHandle::write, this, offset, write_size, buf), std::bind(callback, *this));
+        return make_future([this, offset, write_size, buf] { write(offset, write_size, buf); },
+                std::bind(callback, *this));
     }
 }

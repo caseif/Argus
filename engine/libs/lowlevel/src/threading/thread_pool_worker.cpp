@@ -17,15 +17,13 @@
  */
 
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/time.hpp"
-#include "argus/lowlevel/threading/future.hpp"
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/pimpl/threading/thread_pool.hpp"
 #include "internal/lowlevel/threading/thread_pool_worker.hpp"
 
-#include <functional>
 #include <future>
 #include <memory>
+#include <utility>
 
 namespace argus {
     static AllocPool g_task_pool(sizeof(ThreadPoolTask));
@@ -34,13 +32,13 @@ namespace argus {
             ThreadPoolTask(nullptr) {
     }
 
-    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) :
-            func(rhs.func) {
+    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) noexcept :
+            func(std::move(rhs.func)) {
         promise.swap(rhs.promise);
     }
 
     ThreadPoolTask::ThreadPoolTask(WorkerFunction func) :
-            func(func) {
+            func(std::move(func)) {
     }
 
     ThreadPoolWorker::ThreadPoolWorker(ThreadPool &pool) :
@@ -51,10 +49,10 @@ namespace argus {
             task_queue_mutex(),
             cond(),
             terminate(false),
-            thread(std::bind(&ThreadPoolWorker::worker_impl, this)) {
+            thread([this] { worker_impl(); }) {
     }
 
-    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs) :
+    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs) noexcept :
             pool(rhs.pool) {
     }
 
@@ -64,7 +62,7 @@ namespace argus {
         thread.join();
     }
 
-    std::future<void *> ThreadPoolWorker::add_task(WorkerFunction func) {
+    std::future<void *> ThreadPoolWorker::add_task(const WorkerFunction& func) {
         task_queue_mutex.lock();
         auto &task = g_task_pool.construct<ThreadPoolTask>(func);
 
@@ -114,11 +112,7 @@ namespace argus {
             {
                 std::unique_lock<std::recursive_mutex> task_queue_lock(task_queue_mutex);
 
-                if (task_queue.size() > 0) {
-                    current_task = std::move(task_queue.front());
-                    busy = true;
-                    task_queue.pop_front();
-                } else {
+                if (task_queue.empty()) {
                     // try to steal task from another worker
                     //TODO: this might actually be much slower in the case of a
                     //      thread pool that only has a few tasks at a time
@@ -127,13 +121,13 @@ namespace argus {
                             continue;
                         }
 
-                        if (worker->task_queue.size() > 0) {
-                            current_task = std::move(worker->task_queue.back());
+                        if (worker->task_queue.empty()) {
+                            worker->task_queue_mutex.unlock();
+                        } else {
+                            current_task = worker->task_queue.back();
                             worker->task_queue.pop_back();
                             worker->task_queue_mutex.unlock();
                             break;
-                        } else {
-                            worker->task_queue_mutex.unlock();
                         }
                     }
 
@@ -144,6 +138,10 @@ namespace argus {
                         cond.wait(task_queue_lock);
                         continue;
                     }
+                } else {
+                    current_task = task_queue.front();
+                    busy = true;
+                    task_queue.pop_front();
                 }
             }
 

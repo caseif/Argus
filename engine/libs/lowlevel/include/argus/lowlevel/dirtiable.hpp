@@ -74,7 +74,7 @@ namespace argus {
                 dirty(rhs.dirty) {
         }
 
-        Dirtiable(Dirtiable<ValueType> &&rhs) :
+        Dirtiable(Dirtiable<ValueType> &&rhs) noexcept :
                 value(std::move(rhs.value)),
                 dirty(rhs.dirty) {
         }
@@ -94,7 +94,7 @@ namespace argus {
             return ValueAndDirtyFlag<ValueType>{value, old_dirty};
         };
 
-        const ValueAndDirtyFlag<const ValueType> read(void) const {
+        ValueAndDirtyFlag<const ValueType> read(void) const {
             bool old_dirty = dirty;
 
             dirty = false;

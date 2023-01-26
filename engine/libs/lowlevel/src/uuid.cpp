@@ -68,7 +68,7 @@ namespace argus {
         uuid_t uuid;
         uuid_generate(uuid);
 
-        argus::Uuid final;
+        argus::Uuid final{};
         memcpy(final.data, uuid, sizeof(final.data));
 
         return final;
@@ -100,7 +100,7 @@ namespace argus {
         return rhs < *this;
     }
 
-    Uuid::operator const std::string() const {
+    Uuid::operator std::string() const {
         return this->to_string();
     }
 

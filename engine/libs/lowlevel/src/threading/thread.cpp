@@ -22,7 +22,7 @@
 #include <thread>
 
 namespace argus {
-    Thread &Thread::create(std::function<void *(void *)> routine, void *arg) {
+    Thread &Thread::create(const std::function<void *(void *)> &routine, void *arg) {
         return *new Thread(new std::thread(routine, arg));
     }
 

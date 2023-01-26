@@ -79,7 +79,7 @@ namespace argus {
 
         bool valid;
 
-        FileHandle(const std::filesystem::path &path, int mode, size_t size, void *handle);
+        FileHandle(std::filesystem::path path, int mode, size_t size, void *handle);
 
       public:
         /**
@@ -106,7 +106,7 @@ namespace argus {
          *
          * \return The path of the file referenced by this handle.
          */
-        const std::filesystem::path &get_path(void) const;
+        [[nodiscard]] const std::filesystem::path &get_path(void) const;
 
         /**
          * \brief Gets the size of the file referenced by this handle.
@@ -116,7 +116,7 @@ namespace argus {
          *
          * \return The size of the file referenced by this handle.
          */
-        size_t get_size(void) const;
+        [[nodiscard]] size_t get_size(void) const;
 
         /**
          * \brief Releases the file handle.
@@ -221,7 +221,7 @@ namespace argus {
          *
          * \sa FileHandle::read
          */
-        const std::future<void> read_async(off_t offset, size_t read_size,
+        std::future<void> read_async(off_t offset, size_t read_size,
                 unsigned char *buf, std::function<void(FileHandle &)> callback);
 
         /**
@@ -255,7 +255,7 @@ namespace argus {
          *
          * \sa FileHandle::write
          */
-        const std::future<void> write_async(off_t offset, size_t write_size,
+        std::future<void> write_async(off_t offset, size_t write_size,
                 unsigned char *buf, std::function<void(FileHandle &)> callback);
     };
 }

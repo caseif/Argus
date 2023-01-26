@@ -26,7 +26,7 @@ namespace argus {
     #pragma pack(push, 1)
 
     struct Matrix4Row {
-        float data[4];
+        float data[4]{};
 
         float &operator[](int i) {
             return data[i];
@@ -49,7 +49,7 @@ namespace argus {
 
     struct Matrix4 {
         union {
-            float data[16];
+            float data[16]{};
             Matrix4Row rows[4];
         };
 

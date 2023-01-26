@@ -91,8 +91,8 @@ namespace argus {
          * \return A std::future representing the result of the task
          *         execution.
          */
-        std::future<void *> submit(std::function<void *(void *)> task, void *param) {
-            return this->submit(std::bind(task, param));
+        std::future<void *> submit(const std::function<void *(void *)> &task, void *param) {
+            return this->submit([task, param] { return task(param); });
         }
 
         /**

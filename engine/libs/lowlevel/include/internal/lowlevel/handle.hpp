@@ -34,6 +34,6 @@ namespace argus {
 
     struct HandleTableChunk {
         std::stack<uint32_t> open_indices;
-        HandleTableEntry entries[CHUNK_SIZE];
+        HandleTableEntry entries[CHUNK_SIZE]{};
     };
 }

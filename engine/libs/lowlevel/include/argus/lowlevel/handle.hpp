@@ -76,7 +76,7 @@ namespace argus {
 
         void release_handle(Handle handle);
 
-        void *deref(Handle handle) const;
+        [[nodiscard]] void *deref(Handle handle) const;
 
         template<typename T>
         T *deref(Handle handle) const {

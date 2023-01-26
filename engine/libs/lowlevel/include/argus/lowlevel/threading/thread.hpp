@@ -31,8 +31,6 @@ namespace argus {
 
         explicit Thread(std::thread *handle);
 
-        Thread(Thread &) = delete;
-
       public:
         /**
          * \brief Creates a new thread.
@@ -44,7 +42,9 @@ namespace argus {
          * \param arg The argument to pass to the callback.
          * \return A handle to the new thread.
          */
-        static Thread &create(std::function<void *(void *)> routine, void *arg);
+        static Thread &create(const std::function<void *(void *)> &routine, void *arg);
+
+        Thread(Thread &) = delete;
 
         /**
          * \brief Pauses execution of the current thread until the target thread has

@@ -27,11 +27,11 @@ namespace argus {
         float left;
         float right;
 
-        float get_width(void) const {
+        [[nodiscard]] float get_width(void) const {
             return std::abs(right - left);
         }
 
-        float get_height(void) const {
+        [[nodiscard]] float get_height(void) const {
             return std::abs(right - left);
         }
     };

@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/threading/thread.hpp"
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/pimpl/threading/thread_pool.hpp"
 
@@ -26,6 +25,7 @@
 #include <thread>
 
 #include <cstdint>
+#include <utility>
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_ThreadPool));
@@ -72,6 +72,6 @@ namespace argus {
             pimpl->next_worker = 0;
         }
 
-        return worker->add_task(task);
+        return worker->add_task(std::move(task));
     }
 }
