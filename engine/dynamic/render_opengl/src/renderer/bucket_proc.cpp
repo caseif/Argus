@@ -139,7 +139,11 @@ namespace argus {
                         free(bucket->anim_frame_buffer_staging);
                     }
 
-                    bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
+                    if (anim_frame_buf_len > 0) {
+                        bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
+                    } else {
+                        bucket->anim_frame_buffer_staging = nullptr;
+                    }
                 }
 
                 GLuint attr_offset = 0;
