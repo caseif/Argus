@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
@@ -40,21 +41,22 @@
 #include "internal/game2d/pimpl/static_object_2d.hpp"
 #include "internal/game2d/pimpl/world2d.hpp"
 #include "internal/game2d/pimpl/world2d_layer.hpp"
-#include "argus/lowlevel/debug.hpp"
 
 #include <chrono>
+
+#include <cstdint>
 
 #define LAYER_PREFIX "_worldlayer_"
 
 namespace argus {
-    World2DLayer::World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
+    World2DLayer::World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
             std::optional<Vector2f> repeat_interval) :
-            pimpl(new pimpl_World2DLayer(world, id, parallax_coeff, repeat_interval)) {
+            pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
         auto layer_uuid = Uuid::random().to_string();
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
         pimpl->scene = &Scene2D::create(layer_id_str);
         pimpl->render_camera = &pimpl->scene->create_camera(layer_id_str);
-        world.pimpl->canvas.attach_default_viewport_2d(layer_id_str, *pimpl->render_camera);
+        world.pimpl->canvas.attach_default_viewport_2d(layer_id_str,  *pimpl->render_camera, z_index);
     }
 
     World2DLayer::~World2DLayer(void) {
@@ -133,9 +135,11 @@ namespace argus {
         return std::chrono::nanoseconds(dur_ns);
     }
 
-    Transform2D get_render_transform(const World2D &world, const Transform2D &world_transform) {
+    Transform2D get_render_transform(const World2DLayer &layer, const Transform2D &world_transform) {
         auto transform = Transform2D();
-        transform.set_translation(world_transform.get_translation() / world.get_scale_factor());
+        transform.set_translation(world_transform.get_translation()
+                * layer.pimpl->parallax_coeff
+                / layer.get_world().get_scale_factor());
         transform.set_rotation(world_transform.get_rotation());
         transform.set_scale(world_transform.get_scale());
         return transform;
@@ -242,7 +246,7 @@ namespace argus {
             auto handle = _create_render_object(layer, static_obj.get_sprite(),
                     static_obj.get_size());
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
-            render_obj->set_transform(get_render_transform(layer.get_world(), static_obj.get_transform()));
+            render_obj->set_transform(get_render_transform(layer, static_obj.get_transform()));
 
             static_obj.pimpl->render_obj = handle;
         }
@@ -265,16 +269,15 @@ namespace argus {
 
         auto read_transform = actor.pimpl->transform.read();
         if (read_transform.dirty) {
-            render_obj->set_transform(get_render_transform(layer.get_world(), read_transform));
+            render_obj->set_transform(get_render_transform(layer, read_transform));
         }
 
         _update_sprite_frame(actor.get_sprite(), *render_obj);
     }
 
-    void render_world_layer(World2DLayer &layer) {
-        auto camera_transform = layer.get_world().pimpl->abstract_camera.read();
+    void render_world_layer(World2DLayer &layer, ValueAndDirtyFlag<Transform2D> camera_transform) {
         if (camera_transform.dirty) {
-            layer.pimpl->render_camera->set_transform(get_render_transform(layer.get_world(), camera_transform));
+            layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value));
         }
 
         for (const auto &obj_handle : layer.pimpl->static_objects) {

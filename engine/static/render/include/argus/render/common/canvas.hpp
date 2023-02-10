@@ -83,7 +83,7 @@ namespace argus {
         AttachedViewport2D &attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
                 uint32_t z_index);
 
-        AttachedViewport2D &attach_default_viewport_2d(const std::string &id, Camera2D &camera);
+        AttachedViewport2D &attach_default_viewport_2d(const std::string &id, Camera2D &camera, uint32_t z_index);
 
         void detach_viewport_2d(const std::string &id);
     };

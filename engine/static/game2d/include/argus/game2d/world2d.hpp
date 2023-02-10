@@ -61,6 +61,10 @@ namespace argus {
 
         void set_camera_transform(const Transform2D &transform);
 
+        World2DLayer &get_background_layer(uint32_t index) const;
+
+        World2DLayer &add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval);
+
         StaticObject2D &get_static_object(Handle handle) const;
 
         Handle create_static_object(const std::string &sprite, const Vector2f &size,

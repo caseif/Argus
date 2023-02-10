@@ -77,7 +77,7 @@ namespace argus {
         return it.first->second;
     }
 
-    AttachedViewport2D &Canvas::attach_default_viewport_2d(const std::string &id, Camera2D &camera) {
+    AttachedViewport2D &Canvas::attach_default_viewport_2d(const std::string &id, Camera2D &camera, uint32_t z_index) {
         if (pimpl->viewports_2d.find(id) != pimpl->viewports_2d.end()) {
             throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
@@ -90,7 +90,7 @@ namespace argus {
         viewport.scaling = Vector2f(1, 1);
         viewport.mode = ViewportCoordinateSpaceMode::Individual;
 
-        return attach_viewport_2d(id, viewport, camera, 0);
+        return attach_viewport_2d(id, viewport, camera, z_index);
     }
 
     void Canvas::detach_viewport_2d(const std::string &id) {

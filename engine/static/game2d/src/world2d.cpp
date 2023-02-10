@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
 
@@ -35,7 +36,8 @@
 #include <map>
 #include <string>
 
-#define PRIMARY_LAYER_ID "_primary"
+#define FG_LAYER_ID "_foreground"
+#define BG_LAYER_ID_PREFIX "_background_"
 
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_World2D));
@@ -59,7 +61,7 @@ namespace argus {
 
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor) :
             pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
-        pimpl->layers.insert({PRIMARY_LAYER_ID, new World2DLayer(*this, PRIMARY_LAYER_ID, 1.0, std::nullopt)});
+        pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt);
     }
 
     World2D::~World2D(void) {
@@ -82,10 +84,35 @@ namespace argus {
         pimpl->abstract_camera = transform;
     }
 
+    World2DLayer &World2D::get_background_layer(uint32_t index) const {
+        affirm_precond(index < pimpl->num_bg_layers, "Invalid background index requested");
+        return *pimpl->bg_layers[index];
+    }
+
+    World2DLayer &World2D::add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval) {
+        affirm_precond(pimpl->num_bg_layers < MAX_BACKGROUND_LAYERS, "Too many background layers added");
+
+        auto bg_index = pimpl->num_bg_layers;
+
+        std::stringstream layer_id;
+        layer_id << BG_LAYER_ID_PREFIX;
+        layer_id << bg_index;
+
+        auto layer = new World2DLayer(*this, layer_id.str(), 100 + bg_index, parallax_coeff, repeat_interval);
+
+        pimpl->bg_layers[bg_index] = layer;
+        pimpl->num_bg_layers += 1;
+        return *layer;
+    }
+
     static void _render_world(World2D &world) {
-        for (auto &pair : world.pimpl->layers) {
-            render_world_layer(*pair.second);
+        auto camera_transform = world.pimpl->abstract_camera.read();
+
+        for (int64_t i = 0; i < world.pimpl->num_bg_layers; i++) {
+            render_world_layer(*world.pimpl->bg_layers[i], camera_transform);
         }
+
+        render_world_layer(*world.pimpl->fg_layer, camera_transform);
     }
 
     void render_worlds(TimeDelta delta) {
@@ -96,33 +123,33 @@ namespace argus {
         }
     }
 
-    static World2DLayer &_get_primary_layer(const World2D &world) {
-        return *world.pimpl->layers[PRIMARY_LAYER_ID];
+    static World2DLayer &_get_foreground_layer(const World2D &world) {
+        return *world.pimpl->fg_layer;
     }
 
     StaticObject2D &World2D::get_static_object(Handle handle) const {
-        return _get_primary_layer(*this).get_static_object(handle);
+        return _get_foreground_layer(*this).get_static_object(handle);
     }
 
     Handle World2D::create_static_object(const std::string &sprite,
             const Vector2f &size, const Transform2D &transform) {
-        return _get_primary_layer(*this).create_static_object(sprite, size, transform);
+        return _get_foreground_layer(*this).create_static_object(sprite, size, transform);
     }
 
     void World2D::delete_static_object(Handle handle) {
-        return _get_primary_layer(*this).delete_static_object(handle);
+        return _get_foreground_layer(*this).delete_static_object(handle);
     }
 
     Actor2D &World2D::get_actor(Handle handle) const {
-        return _get_primary_layer(*this).get_actor(handle);
+        return _get_foreground_layer(*this).get_actor(handle);
     }
 
     Handle World2D::create_actor(const std::string &sprite, const Vector2f &size,
             const Transform2D &transform) {
-        return _get_primary_layer(*this).create_actor(sprite, size, transform);
+        return _get_foreground_layer(*this).create_actor(sprite, size, transform);
     }
 
     void World2D::delete_actor(Handle handle) {
-        return _get_primary_layer(*this).delete_actor(handle);
+        return _get_foreground_layer(*this).delete_actor(handle);
     }
 }

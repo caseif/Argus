@@ -36,6 +36,7 @@ namespace argus {
         World2D &world;
         std::string id;
 
+        uint32_t z_index;
         float parallax_coeff;
         std::optional<Vector2f> repeat_interval;
 
@@ -45,10 +46,11 @@ namespace argus {
         std::set<Handle> static_objects;
         std::set<Handle> actors;
 
-        pimpl_World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
+        pimpl_World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval) :
                 world(world),
                 id(id),
+                z_index(z_index),
                 parallax_coeff(parallax_coeff),
                 repeat_interval(repeat_interval) {
         }

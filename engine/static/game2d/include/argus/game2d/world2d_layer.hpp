@@ -29,6 +29,8 @@
 #include <optional>
 #include <string>
 
+#include <cstdint>
+
 namespace argus {
     // forward declarations
     class World2D;
@@ -39,7 +41,7 @@ namespace argus {
       public:
         pimpl_World2DLayer *pimpl;
 
-        World2DLayer(World2D &world, const std::string &id, float parallax_coeff,
+        World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval);
 
         World2DLayer(const World2DLayer &) = delete;
