@@ -34,6 +34,7 @@
 #include "internal/game2d/pimpl/world2d.hpp"
 
 #include <map>
+#include <sstream>
 #include <string>
 
 #define FG_LAYER_ID "_foreground"
