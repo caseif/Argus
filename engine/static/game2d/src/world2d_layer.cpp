@@ -135,10 +135,11 @@ namespace argus {
         return std::chrono::nanoseconds(dur_ns);
     }
 
-    Transform2D get_render_transform(const World2DLayer &layer, const Transform2D &world_transform) {
+    Transform2D get_render_transform(const World2DLayer &layer, const Transform2D &world_transform,
+            bool include_parallax) {
         auto transform = Transform2D();
         transform.set_translation(world_transform.get_translation()
-                * layer.pimpl->parallax_coeff
+                * (include_parallax ? layer.pimpl->parallax_coeff : 1.0f)
                 / layer.get_world().get_scale_factor());
         transform.set_rotation(world_transform.get_rotation());
         transform.set_scale(world_transform.get_scale());
@@ -246,7 +247,7 @@ namespace argus {
             auto handle = _create_render_object(layer, static_obj.get_sprite(),
                     static_obj.get_size());
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
-            render_obj->set_transform(get_render_transform(layer, static_obj.get_transform()));
+            render_obj->set_transform(get_render_transform(layer, static_obj.get_transform(), false));
 
             static_obj.pimpl->render_obj = handle;
         }
@@ -269,7 +270,7 @@ namespace argus {
 
         auto read_transform = actor.pimpl->transform.read();
         if (read_transform.dirty) {
-            render_obj->set_transform(get_render_transform(layer, read_transform));
+            render_obj->set_transform(get_render_transform(layer, read_transform, false));
         }
 
         _update_sprite_frame(actor.get_sprite(), *render_obj);
@@ -277,7 +278,7 @@ namespace argus {
 
     void render_world_layer(World2DLayer &layer, ValueAndDirtyFlag<Transform2D> camera_transform) {
         if (camera_transform.dirty) {
-            layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value));
+            layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
         }
 
         for (const auto &obj_handle : layer.pimpl->static_objects) {

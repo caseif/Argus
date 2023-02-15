@@ -28,5 +28,6 @@
 namespace argus {
     void render_worlds(TimeDelta delta);
 
-    Transform2D get_render_transform(const World2DLayer &layer, const Transform2D &world_transform);
+    Transform2D get_render_transform(const World2DLayer &layer, const Transform2D &world_transform,
+            bool include_parallax);
 }
