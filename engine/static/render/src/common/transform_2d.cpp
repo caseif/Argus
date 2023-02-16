@@ -156,7 +156,7 @@ namespace argus {
         this->set_scale({x, y});
     }
 
-    static void _compute_matrix(const Transform2D &transform) {
+    static void _compute_aux_matrices(const Transform2D &transform) {
         if (!transform.pimpl->dirty_matrix) {
             return;
         }
@@ -193,42 +193,77 @@ namespace argus {
                 {0,               0,               0, 1}
         };
 
-        transform.pimpl->matrix_rep = {
-                {cos_rot * scale_current.x, -sin_rot,                  0, translation_current.x},
-                {sin_rot,                   cos_rot * scale_current.y, 0, translation_current.y},
-                {0,                         0,                         1, 0},
-                {0,                         0,                         0, 1}
+        transform.pimpl->dirty_matrix = false;
+    }
+
+    static void _compute_transform_matrix(const Transform2D &transform, const Vector2f &anchor_point) {
+        //auto cur_translation = transform.get_translation();
+
+        //UNUSED(anchor_point);
+        Matrix4 anchor_mat_1 = {
+                {1, 0, 0, -anchor_point.x},
+                {0, 1, 0, -anchor_point.y},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1},
         };
+        Matrix4 anchor_mat_2 = {
+                {1, 0, 0, anchor_point.x},
+                {0, 1, 0, anchor_point.y},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1},
+        };
+        UNUSED(anchor_mat_1);
+        UNUSED(anchor_mat_2);
+        transform.pimpl->matrix_rep = Matrix4::identity();
+        multiply_matrices(transform.pimpl->matrix_rep, anchor_mat_1);
+        multiply_matrices(transform.pimpl->matrix_rep, transform.get_scale_matrix());
+        multiply_matrices(transform.pimpl->matrix_rep, transform.get_rotation_matrix());
+        multiply_matrices(transform.pimpl->matrix_rep, anchor_mat_2);
+        multiply_matrices(transform.pimpl->matrix_rep, transform.get_translation_matrix());
+        printf("Computed matrix\n");
+    }
+
+    static void _compute_matrices(const Transform2D &transform, const Vector2f &anchor_point) {
+        bool dirty = transform.pimpl->dirty_matrix;
+
+        if (dirty) {
+            _compute_aux_matrices(transform);
+        }
+
+
+        if (dirty || anchor_point != transform.pimpl->last_anchor_point) {
+            _compute_transform_matrix(transform, anchor_point);
+        }
 
         transform.pimpl->dirty_matrix = false;
     }
 
-    const Matrix4 &Transform2D::as_matrix(void) const {
-        _compute_matrix(*this);
+    const Matrix4 &Transform2D::as_matrix(const Vector2f &anchor_point) const {
+        _compute_matrices(*this, anchor_point);
 
         return pimpl->matrix_rep;
     }
 
     const Matrix4 &Transform2D::get_translation_matrix(void) const {
-        _compute_matrix(*this);
+        _compute_aux_matrices(*this);
 
         return pimpl->translation_matrix;
     }
 
     const Matrix4 &Transform2D::get_rotation_matrix(void) const {
-        _compute_matrix(*this);
+        _compute_aux_matrices(*this);
 
         return pimpl->rotation_matrix;
     }
 
     const Matrix4 &Transform2D::get_scale_matrix(void) const {
-        _compute_matrix(*this);
+        _compute_aux_matrices(*this);
 
         return pimpl->scale_matrix;
     }
 
-    void Transform2D::copy_matrix(Matrix4 &target) const {
-        _compute_matrix(*this);
+    void Transform2D::copy_matrix(Matrix4 &target, const Vector2f &anchor_point) const {
+        _compute_matrices(*this, anchor_point);
 
         target = pimpl->matrix_rep;
     }

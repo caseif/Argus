@@ -42,6 +42,8 @@ namespace argus {
         Matrix4 scale_matrix;
         Matrix4 matrix_rep;
 
+        Vector2f last_anchor_point;
+
         pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
                 translation(translation),
                 rotation(rotation),

@@ -228,7 +228,8 @@ namespace argus {
             atlas_stride_y = 1.0;
         }
 
-        return layer.pimpl->scene->create_child_object(mat_uid, prims, {atlas_stride_x, atlas_stride_y}, {});
+        return layer.pimpl->scene->create_child_object(mat_uid, prims, scaled_size / 2,
+                {atlas_stride_x, atlas_stride_y}, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {

@@ -89,6 +89,25 @@ namespace argus {
         };
 
         /**
+         * \brief Performs an element-wise comparison between two vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+        bool operator==(const Vector4<T> &rhs) const {
+            return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z && this->w == rhs.w;
+        }
+
+        /**
+         * \brief Performs a negative element-wise comparison between two
+         *        vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+        bool operator!=(const Vector4<T> &rhs) const {
+            return !(*this == rhs);
+        }
+
+        /**
          * \brief Performs element-wise addition with another Vector4 with the same
          *        element type, returning the result as a new Vector4.
          *
@@ -305,6 +324,25 @@ namespace argus {
         };
 
         /**
+         * \brief Performs an element-wise comparison between two vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+        bool operator==(const Vector3<T> &rhs) const {
+            return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z;
+        }
+
+        /**
+         * \brief Performs a negative element-wise comparison between two
+         *        vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+        bool operator!=(const Vector3<T> &rhs) const {
+            return !(*this == rhs);
+        }
+
+        /**
          * \brief Performs element-wise addition with another Vector3 with the same
          *        element type, returning the result as a new Vector3.
          *
@@ -484,6 +522,25 @@ namespace argus {
          * \brief The second element of the vector.
          */
         T y;
+
+        /**
+         * \brief Performs an element-wise comparison between two vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+         bool operator==(const Vector2<T> &rhs) const {
+             return this->x == rhs.x && this->y == rhs.y;
+         }
+
+        /**
+         * \brief Performs a negative element-wise comparison between two
+         *        vectors.
+         *
+         * \param rhs The vector to compare against.
+         */
+        bool operator!=(const Vector2<T> &rhs) const {
+            return !(*this == rhs);
+        }
 
         /**
          * \brief Performs element-wise addition with another Vector2 with the same

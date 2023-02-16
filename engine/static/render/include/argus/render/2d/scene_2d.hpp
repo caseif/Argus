@@ -102,9 +102,8 @@ namespace argus {
          *         implicit root RenderGroup contained by this Scene. Thus,
          *         no RenderObject is truly without a parent group.
          */
-        Handle create_child_object(const std::string &material,
-                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-                const Transform2D &transform);
+        Handle create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
+                const Vector2f &anchor_point, const Vector2f &atlas_stride, const Transform2D &transform);
 
         /**
          * \brief Removes the supplied RenderGroup2D from this Scene,

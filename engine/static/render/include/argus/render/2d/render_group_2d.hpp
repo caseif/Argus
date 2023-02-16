@@ -114,7 +114,8 @@ namespace argus {
          * \param transform The relative transform of the new object.
          */
         Handle create_child_object(const std::string &material,
-                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+                const std::vector<RenderPrim2D> &primitives,
+                const Vector2f &anchor_point, const Vector2f &atlas_stride,
                 const Transform2D &transform);
 
         /**

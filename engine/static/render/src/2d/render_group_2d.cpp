@@ -101,10 +101,10 @@ namespace argus {
     }
 
     Handle RenderGroup2D::create_child_object(const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
             const Transform2D &transform) {
 
-        auto *obj = new RenderObject2D(*this, material, primitives, atlas_stride, transform);
+        auto *obj = new RenderObject2D(*this, material, primitives, anchor_point, atlas_stride, transform);
         pimpl->child_objects.push_back(obj);
 
         return obj->pimpl->handle;

@@ -164,9 +164,11 @@ namespace argus {
          * \brief Returns an unmodifiable 4x4 matrix representation of this
          *        transform.
          *
+         * \param anchor_point The point about which to apply rotation and
+         *        scaling transformation.
          * \return The matrix representation.
          */
-        const Matrix4 &as_matrix(void) const;
+        const Matrix4 &as_matrix(const Vector2f &anchor_point) const;
 
         const Matrix4 &get_translation_matrix(void) const;
 
@@ -179,8 +181,10 @@ namespace argus {
          *        the given array.
          *
          * \param target The array to copy the matrix representation into.
+         * \param anchor_point The point about which to apply rotation and
+         *        scaling transformation.
          */
-        void copy_matrix(Matrix4 &target) const;
+        void copy_matrix(Matrix4 &target, const Vector2f &anchor_point) const;
 
         /**
          * \brief Returns a transform comprised of the inverse position and

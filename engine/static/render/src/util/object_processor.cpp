@@ -31,7 +31,7 @@
 
 namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {
-        group.get_transform()->copy_matrix(target);
+        group.get_transform()->copy_matrix(target, {0, 0});
         const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
 
@@ -41,7 +41,7 @@ namespace argus {
 
             Matrix4 new_transform;
 
-            multiply_matrices(cur->peek_transform().as_matrix(), target, new_transform);
+            multiply_matrices(cur->peek_transform().as_matrix({0, 0}), target, new_transform);
 
             target = new_transform;
         }
@@ -57,7 +57,7 @@ namespace argus {
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            multiply_matrices(running_transform, group_transform->as_matrix(), cur_transform);
+            multiply_matrices(running_transform, group_transform->as_matrix({0, 0}), cur_transform);
 
             new_recompute_transform = true;
         } else if (group_transform.dirty) {
@@ -73,14 +73,16 @@ namespace argus {
 
             auto obj_transform = child_object->get_transform();
 
+            auto obj_anchor = child_object->get_anchor_point();
+
             if (new_recompute_transform) {
-                multiply_matrices(obj_transform->as_matrix(), cur_transform, final_obj_transform);
+                multiply_matrices(obj_transform->as_matrix(obj_anchor), cur_transform, final_obj_transform);
             } else if (obj_transform.dirty) {
                 // parent transform hasn't been computed so we need to do it here
                 Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(obj_transform->as_matrix(), group_abs_transform, final_obj_transform);
+                multiply_matrices(obj_transform->as_matrix(obj_anchor), group_abs_transform, final_obj_transform);
             }
             // don't need to compute anything otherwise, update function will just mark the object as visited
 

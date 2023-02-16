@@ -40,15 +40,17 @@ namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) :
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
+            const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
-                    material, primitives, atlas_stride, transform)) {
+                    material, primitives, anchor_point, atlas_stride, transform)) {
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
-            const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride, const Transform2D &transform) :
+            const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
+            const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
-                    material, primitives, atlas_stride, transform)) {
+                    material, primitives, anchor_point, atlas_stride, transform)) {
         g_render_handle_table.update_handle(handle, this);
     }
 
@@ -74,6 +76,10 @@ namespace argus {
 
     const std::vector<RenderPrim2D> &RenderObject2D::get_primitives(void) const {
         return pimpl->primitives;
+    }
+
+    const Vector2f &RenderObject2D::get_anchor_point(void) const {
+        return pimpl->anchor_point;
     }
 
     const Vector2f &RenderObject2D::get_atlas_stride(void) const {
@@ -106,8 +112,8 @@ namespace argus {
         std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
                 [](auto &v) { return RenderPrim2D(v); });
         auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
-        auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->atlas_stride,
-                pimpl->transform);
+        auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->anchor_point,
+                pimpl->atlas_stride, pimpl->transform);
         copy.pimpl->active_frame = pimpl->active_frame;
 
         g_render_handle_table.update_handle(pimpl->handle, copy);

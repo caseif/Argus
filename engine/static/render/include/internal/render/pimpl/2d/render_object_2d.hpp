@@ -32,18 +32,20 @@ namespace argus {
         const RenderGroup2D &parent_group;
         const std::string material;
         std::vector<RenderPrim2D> primitives;
+        Vector2f anchor_point;
         Vector2f atlas_stride;
 
         Transform2D transform;
         Dirtiable<Vector2u> active_frame;
 
         pimpl_RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
-                const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-                const Transform2D &transform) :
+                const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
+                const Vector2f &atlas_stride, const Transform2D &transform) :
                 handle(handle),
                 parent_group(parent_group),
                 material(material),
                 primitives(primitives),
+                anchor_point(anchor_point),
                 atlas_stride(atlas_stride),
                 transform(transform),
                 active_frame({0, 0}) {

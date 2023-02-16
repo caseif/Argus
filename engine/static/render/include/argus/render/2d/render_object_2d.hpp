@@ -52,14 +52,15 @@ namespace argus {
       private:
         RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
                 const std::string &material, const std::vector<RenderPrim2D> &primitives,
-                const Vector2f &atlas_stride, const Transform2D &transform);
+                const Vector2f &anchor_point, const Vector2f &atlas_stride,
+                const Transform2D &transform);
 
       public:
         pimpl_RenderObject2D *pimpl;
 
         RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
-                const std::vector<RenderPrim2D> &primitives, const Vector2f &atlas_stride,
-                const Transform2D &transform);
+                const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
+                const Vector2f &atlas_stride, const Transform2D &transform);
 
         RenderObject2D(const RenderObject2D &) = delete;
 
@@ -89,6 +90,13 @@ namespace argus {
          *         object.
          */
         const std::vector<RenderPrim2D> &get_primitives(void) const;
+
+        /**
+         * \brief Gets the anchor point of the object about which rotation and
+         *        scaling will be applied.
+         * \return The anchor point of the object.
+         */
+        const Vector2f &get_anchor_point(void) const;
 
         /**
          * \brief Gets the stride on each axis between atlas tiles, if the
