@@ -4,17 +4,38 @@ function(_argus_copy_dep_output DIST_DIR PARENT_TARGET DEP_TARGET PREFIX)
     set(PREFIX ".")
   endif()
 
-  add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD 
-    COMMAND "${CMAKE_COMMAND}" -E copy
-      "$<TARGET_FILE:${DEP_TARGET}>"
-      "${DIST_DIR}/lib/${PREFIX}/$<TARGET_FILE_NAME:${DEP_TARGET}>"
-    COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
-  if(WIN32)
+  set(LIB_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_FILE_NAME:${DEP_TARGET}>")
+
+  if("${PARENT_TARGET}" STREQUAL "${DEP_TARGET}")
     add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E copy
-        "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-        "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>"
-      COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
+        "$<TARGET_FILE:${DEP_TARGET}>"
+        "${LIB_FILE_DEST_PATH}"
+      COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
+  else()
+    add_custom_command(TARGET ${PARENT_TARGET} PRE_LINK
+        COMMAND "${CMAKE_COMMAND}" -E copy
+        "$<TARGET_FILE:${DEP_TARGET}>"
+        "${LIB_FILE_DEST_PATH}"
+        COMMENT "Copying '${DEP_TARGET}' dist output to output directory")
+  endif()
+
+  if(WIN32)
+    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>")
+
+    if("${PARENT_TARGET}" STREQUAL "${DEP_TARGET}")
+      add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy
+          "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
+          "${LINKER_FILE_DEST_PATH}"
+        COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
+    else()
+      add_custom_command(TARGET ${PARENT_TARGET} PRE_LINK
+          COMMAND "${CMAKE_COMMAND}" -E copy
+          "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
+          "${LINKER_FILE_DEST_PATH}"
+          COMMENT "Copying '${DEP_TARGET}' linker output to output directory")
+    endif()
   endif()
 endfunction()
 

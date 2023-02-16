@@ -31,3 +31,6 @@
 [submodule "external/libs/glslang"]
 	path = external/libs/glslang
 	url = git@github.com:KhronosGroup/glslang.git
+[submodule "external/libs/angelscript"]
+	path = external/libs/angelscript
+	url = git@github.com:codecat/angelscript-mirror.git
