@@ -220,7 +220,6 @@ namespace argus {
         multiply_matrices(transform.pimpl->matrix_rep, transform.get_rotation_matrix());
         multiply_matrices(transform.pimpl->matrix_rep, anchor_mat_2);
         multiply_matrices(transform.pimpl->matrix_rep, transform.get_translation_matrix());
-        printf("Computed matrix\n");
     }
 
     static void _compute_matrices(const Transform2D &transform, const Vector2f &anchor_point) {
