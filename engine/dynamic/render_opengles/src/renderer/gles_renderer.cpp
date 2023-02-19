@@ -300,8 +300,10 @@ namespace argus {
         auto resolution = window.get_resolution();
 
         auto viewports = canvas.get_viewports_2d();
+        std::sort(viewports.begin(), viewports.end(),
+                [](auto a, auto b) { return a.get().get_z_index() < b.get().get_z_index(); });
 
-        for (auto &viewport : viewports) {
+        for (auto viewport : viewports) {
             auto &viewport_state = state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
             auto &scene_state = state.get_scene_state(scene);
