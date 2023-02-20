@@ -40,6 +40,7 @@ namespace argus {
 
         const Resource &material_res;
         const Vector2f atlas_stride;
+        const uint32_t z_index;
 
         Vector2u anim_frame;
 
@@ -53,7 +54,7 @@ namespace argus {
         bool anim_frame_updated;
 
         static ProcessedRenderObject &create(const Resource &material_res, const Vector2f &atlas_stride,
-                buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
+                uint32_t z_index, buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
                 void *mapped_buffer);
 
         ProcessedRenderObject(ProcessedRenderObject &) = delete;
@@ -61,11 +62,12 @@ namespace argus {
         ~ProcessedRenderObject();
 
       private:
-        ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride,
+        ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
                 void *mapped_buffer) :
                 material_res(material_res),
                 atlas_stride(atlas_stride),
+                z_index(z_index),
                 staging_buffer(staging_buffer),
                 staging_buffer_size(staging_buffer_size),
                 vertex_count(vertex_count),

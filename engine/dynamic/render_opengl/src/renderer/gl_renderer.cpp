@@ -201,13 +201,21 @@ namespace argus {
     static void _deinit_material(RendererState &state, const std::string &material) {
         Logger::default_logger().debug("De-initializing material %s", material.c_str());
         for (auto *scene_state : state.all_scene_states) {
-            auto &buckets = scene_state->render_buckets;
-            auto bucket_it = buckets.find(material);
-            if (bucket_it != buckets.end()) {
-                try_delete_buffer(bucket_it->second->vertex_array);
-                try_delete_buffer(bucket_it->second->vertex_buffer);
-                bucket_it->second->~RenderBucket();
-                buckets.erase(bucket_it);
+            std::vector<BucketKey> to_remove;
+
+            for (auto &bucket_kv : scene_state->render_buckets) {
+                if (bucket_kv.first.material_uid == material) {
+                    to_remove.push_back(bucket_kv.first);
+                }
+            }
+
+            for (auto &key : to_remove) {
+                auto bucket = scene_state->render_buckets.find(key)->second;
+                try_delete_buffer(bucket->vertex_array);
+                try_delete_buffer(bucket->vertex_buffer);
+                bucket->~RenderBucket();
+
+                scene_state->render_buckets.erase(key);
             }
         }
 

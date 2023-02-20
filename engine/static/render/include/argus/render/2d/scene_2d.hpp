@@ -103,7 +103,8 @@ namespace argus {
          *         no RenderObject is truly without a parent group.
          */
         Handle create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
-                const Vector2f &anchor_point, const Vector2f &atlas_stride, const Transform2D &transform);
+                const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index,
+                const Transform2D &transform);
 
         /**
          * \brief Removes the supplied RenderGroup2D from this Scene,

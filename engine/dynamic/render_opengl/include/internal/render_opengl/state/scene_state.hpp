@@ -27,8 +27,10 @@
 
 #include "internal/render_opengl/types.hpp"
 
+#include <functional>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 namespace argus {
     // forward declarations
@@ -42,13 +44,25 @@ namespace argus {
     struct RenderBucket;
     struct RendererState;
 
+    struct BucketKey {
+        const std::string material_uid;
+        const Vector2f atlas_stride;
+        const uint32_t z_index;
+    };
+
+    struct BucketKeyCmp {
+        bool operator()(const BucketKey &lhs, const BucketKey &rhs) const {
+            return lhs.z_index < rhs.z_index;
+        }
+    };
+
     struct SceneState {
         RendererState &parent_state;
 
         Scene &scene;
 
         //TODO: this map should be sorted or otherwise bucketed by shader and texture
-        std::map<std::string, RenderBucket *> render_buckets;
+        std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
 
         SceneState(RendererState &parent_state, Scene &scene);
 

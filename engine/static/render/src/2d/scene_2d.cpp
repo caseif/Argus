@@ -93,9 +93,10 @@ namespace argus {
     }
 
     Handle Scene2D::create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
-            const Vector2f &anchor_point, const Vector2f &atlas_stride, const Transform2D &transform) {
+            const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index,
+            const Transform2D &transform) {
         return pimpl->root_group_write->create_child_object(material, primitives, anchor_point,
-                atlas_stride, transform);
+                atlas_stride, z_index, transform);
     }
 
     void Scene2D::remove_member_group(Handle handle) {

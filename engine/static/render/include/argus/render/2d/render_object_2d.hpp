@@ -52,7 +52,7 @@ namespace argus {
       private:
         RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
                 const std::string &material, const std::vector<RenderPrim2D> &primitives,
-                const Vector2f &anchor_point, const Vector2f &atlas_stride,
+                const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index,
                 const Transform2D &transform);
 
       public:
@@ -60,7 +60,7 @@ namespace argus {
 
         RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
-                const Vector2f &atlas_stride, const Transform2D &transform);
+                const Vector2f &atlas_stride, uint32_t z_index, const Transform2D &transform);
 
         RenderObject2D(const RenderObject2D &) = delete;
 
@@ -105,6 +105,14 @@ namespace argus {
          * \return The stride between atlas tiles.
          */
         const Vector2f &get_atlas_stride(void) const;
+
+        /**
+         * \brief Gets the z-index of the object. Objects with larger z-indices
+         *        will be rendered in front of lower-indexed ones.
+         *
+         * \return THe z-index of the object.
+         */
+        uint32_t get_z_index(void) const;
 
         /**
          * \brief Gets the active animation frame.

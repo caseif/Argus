@@ -20,10 +20,6 @@
 #include "internal/render_opengl/state/render_bucket.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
 
-#include <map>
-#include <string>
-#include <utility>
-
 namespace argus {
     // forward declarations
     class Scene;

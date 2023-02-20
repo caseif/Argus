@@ -32,14 +32,14 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_StaticObject2D));
 
-    StaticObject2D::StaticObject2D(const std::string &sprite_uid,
-            const Vector2f &size, const Transform2D &transform) {
+    StaticObject2D::StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
+            const Transform2D &transform) {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
         auto handle = g_static_obj_table.create_handle(this);
 
-        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, transform);
+        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, z_index, transform);
     }
 
     StaticObject2D::StaticObject2D(StaticObject2D &&rhs) noexcept:
@@ -56,6 +56,10 @@ namespace argus {
 
     const Vector2f &StaticObject2D::get_size(void) const {
         return pimpl->size;
+    }
+
+    uint32_t StaticObject2D::get_z_index(void) const {
+        return pimpl->z_index;
     }
 
     const Transform2D &StaticObject2D::get_transform(void) const {

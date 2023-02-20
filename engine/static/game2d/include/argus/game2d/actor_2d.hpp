@@ -34,7 +34,7 @@ namespace argus {
       public:
         pimpl_Actor2D *pimpl;
 
-        Actor2D(const std::string &sprite_uid, const Vector2f &size, const Transform2D &transform);
+        Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index, const Transform2D &transform);
 
         Actor2D(const Actor2D &) = delete;
 
@@ -43,6 +43,8 @@ namespace argus {
         ~Actor2D(void);
 
         const Vector2f &get_size(void) const;
+
+        uint32_t get_z_index(void) const;
 
         const Transform2D &get_transform(void) const;
 

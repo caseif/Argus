@@ -30,12 +30,13 @@
 namespace argus {
     static AllocPool g_pimpl_pool(sizeof(pimpl_Actor2D));
 
-    Actor2D::Actor2D(const std::string &sprite_uid, const Vector2f &size, const Transform2D &transform) {
+    Actor2D::Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
+            const Transform2D &transform) {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
         auto handle = g_actor_table.create_handle(this);
-        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, transform, res, *sprite);
+        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, z_index, transform, res, *sprite);
     }
 
     Actor2D::~Actor2D(void) {
@@ -49,6 +50,10 @@ namespace argus {
 
     const Vector2f &Actor2D::get_size(void) const {
         return pimpl->size;
+    }
+
+    uint32_t Actor2D::get_z_index(void) const {
+        return pimpl->z_index;
     }
 
     const Transform2D &Actor2D::get_transform(void) const {

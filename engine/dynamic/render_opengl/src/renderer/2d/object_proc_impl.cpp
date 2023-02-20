@@ -136,8 +136,8 @@ namespace argus {
             glBindBuffer(GL_COPY_READ_BUFFER, 0);
         }
 
-        auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(), vertex_buffer,
-                buffer_size, _count_vertices(object), persistent_buffer ? mapped_buffer : nullptr);
+        auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(), object.get_z_index(),
+                vertex_buffer, buffer_size, _count_vertices(object), persistent_buffer ? mapped_buffer : nullptr);
 
         processed_obj.anim_frame = object.get_active_frame().read().value;
 

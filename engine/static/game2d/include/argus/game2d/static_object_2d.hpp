@@ -34,8 +34,8 @@ namespace argus {
       public:
         pimpl_StaticObject2D *pimpl;
 
-        StaticObject2D(const std::string &sprite_uid,
-                const Vector2f &size, const Transform2D &transform);
+        StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
+                const Transform2D &transform);
 
         StaticObject2D(StaticObject2D &) = delete;
 
@@ -44,6 +44,8 @@ namespace argus {
         ~StaticObject2D(void);
 
         const Vector2f &get_size(void) const;
+
+        uint32_t get_z_index(void) const;
 
         const Transform2D &get_transform(void) const;
 

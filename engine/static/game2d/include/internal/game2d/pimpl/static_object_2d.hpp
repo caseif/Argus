@@ -32,16 +32,18 @@ namespace argus {
         Resource &sprite_def_res;
         Sprite &sprite;
         const Vector2f size;
+        const uint32_t z_index;
         const Transform2D transform;
 
         std::optional<Handle> render_obj;
 
         pimpl_StaticObject2D(Handle handle, Resource &sprite_def_res, Sprite &sprite,
-                const Vector2f &size, const Transform2D &transform) :
+                const Vector2f &size, uint32_t z_index, const Transform2D &transform) :
                 handle(handle),
                 sprite_def_res(sprite_def_res),
                 sprite(sprite),
                 size(size),
+                z_index(z_index),
                 transform(transform),
                 render_obj() {
         }

@@ -75,8 +75,8 @@ namespace argus {
     }
 
     Handle World2DLayer::create_static_object(const std::string &sprite,
-            const Vector2f &size, const Transform2D &transform) {
-        auto *obj = new StaticObject2D(sprite, size, transform);
+            const Vector2f &size, uint32_t z_index, const Transform2D &transform) {
+        auto *obj = new StaticObject2D(sprite, size, z_index, transform);
         pimpl->static_objects.insert(obj->pimpl->handle);
         return obj->pimpl->handle;
     }
@@ -105,9 +105,9 @@ namespace argus {
         return *actor;
     }
 
-    Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size,
+    Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
             const Transform2D &transform) {
-        auto *actor = new Actor2D(sprite, size, transform);
+        auto *actor = new Actor2D(sprite, size, z_index, transform);
         pimpl->actors.insert(actor->pimpl->handle);
         return actor->pimpl->handle;
     }
@@ -176,7 +176,7 @@ namespace argus {
     }
 
     static Handle _create_render_object(World2DLayer &layer, Sprite &sprite,
-            const Vector2f &size) {
+            const Vector2f &size, uint32_t z_index) {
         auto &sprite_def = sprite.pimpl->get_def();
 
         std::vector<RenderPrim2D> prims;
@@ -229,7 +229,7 @@ namespace argus {
         }
 
         return layer.pimpl->scene->create_child_object(mat_uid, prims, scaled_size / 2,
-                {atlas_stride_x, atlas_stride_y}, {});
+                {atlas_stride_x, atlas_stride_y}, z_index, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {
@@ -246,7 +246,7 @@ namespace argus {
             render_obj = &layer.pimpl->scene->get_object(static_obj.pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, static_obj.get_sprite(),
-                    static_obj.get_size());
+                    static_obj.get_size(), static_obj.get_z_index());
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
             render_obj->set_transform(get_render_transform(layer, static_obj.get_transform(), false));
 
@@ -263,7 +263,7 @@ namespace argus {
             render_obj = &layer.pimpl->scene->get_object(actor.pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, actor.get_sprite(),
-                    actor.get_size());
+                    actor.get_size(), actor.get_z_index());
             actor.pimpl->render_obj = handle;
 
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
@@ -277,7 +277,7 @@ namespace argus {
         _update_sprite_frame(actor.get_sprite(), *render_obj);
     }
 
-    void render_world_layer(World2DLayer &layer, ValueAndDirtyFlag<Transform2D> camera_transform) {
+    void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform) {
         if (camera_transform.dirty) {
             layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
         }

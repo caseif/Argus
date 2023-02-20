@@ -133,8 +133,8 @@ namespace argus {
     }
 
     Handle World2D::create_static_object(const std::string &sprite,
-            const Vector2f &size, const Transform2D &transform) {
-        return _get_foreground_layer(*this).create_static_object(sprite, size, transform);
+            const Vector2f &size, uint32_t z_index, const Transform2D &transform) {
+        return _get_foreground_layer(*this).create_static_object(sprite, size, z_index, transform);
     }
 
     void World2D::delete_static_object(Handle handle) {
@@ -145,9 +145,9 @@ namespace argus {
         return _get_foreground_layer(*this).get_actor(handle);
     }
 
-    Handle World2D::create_actor(const std::string &sprite, const Vector2f &size,
+    Handle World2D::create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
             const Transform2D &transform) {
-        return _get_foreground_layer(*this).create_actor(sprite, size, transform);
+        return _get_foreground_layer(*this).create_actor(sprite, size, z_index, transform);
     }
 
     void World2D::delete_actor(Handle handle) {
