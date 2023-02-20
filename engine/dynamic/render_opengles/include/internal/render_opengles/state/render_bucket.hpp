@@ -36,6 +36,7 @@ namespace argus {
 
         const Resource &material_res;
         const Vector2f atlas_stride;
+        uint32_t z_index;
 
         std::vector<ProcessedRenderObject *> objects;
         buffer_handle_t vertex_buffer;
@@ -46,14 +47,15 @@ namespace argus {
 
         bool needs_rebuild;
 
-        static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride);
+        static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index);
 
         ~RenderBucket(void);
 
       private:
-        RenderBucket(const Resource &material_res, const Vector2f &atlas_stride) :
+        RenderBucket(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index) :
                 material_res(material_res),
                 atlas_stride(atlas_stride),
+                z_index(z_index),
                 objects(),
                 vertex_buffer(0),
                 anim_frame_buffer_staging(nullptr),

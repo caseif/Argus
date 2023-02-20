@@ -27,10 +27,8 @@
 
 #include "internal/render_opengl/types.hpp"
 
-#include <functional>
 #include <map>
 #include <string>
-#include <unordered_map>
 
 namespace argus {
     // forward declarations
@@ -61,7 +59,6 @@ namespace argus {
 
         Scene &scene;
 
-        //TODO: this map should be sorted or otherwise bucketed by shader and texture
         std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
 
         SceneState(RendererState &parent_state, Scene &scene);

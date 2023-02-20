@@ -30,14 +30,20 @@
 #include "internal/render_opengles/state/scene_state.hpp"
 
 namespace argus {
+    static BucketKey _get_bucket_key(ProcessedRenderObject &processed_obj) {
+        return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index };
+    }
+
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {
         RenderBucket *bucket;
-        auto existing_bucket_it = scene_state.render_buckets.find(processed_obj.material_res.uid);
+        auto key = _get_bucket_key(processed_obj);
+        auto existing_bucket_it = scene_state.render_buckets.find(key);
         if (existing_bucket_it != scene_state.render_buckets.end()) {
             bucket = existing_bucket_it->second;
         } else {
-            bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride);
-            scene_state.render_buckets[processed_obj.material_res.uid] = bucket;
+            bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride,
+                    processed_obj.z_index);
+            scene_state.render_buckets[key] = bucket;
         }
 
         bucket->objects.push_back(&processed_obj);
@@ -50,7 +56,7 @@ namespace argus {
         deinit_object_2d(processed_obj);
 
         // we need to remove it from its containing bucket and flag the bucket for a rebuild
-        auto *bucket = scene_state.render_buckets[processed_obj.material_res.uid];
+        auto *bucket = scene_state.render_buckets[_get_bucket_key(processed_obj)];
         remove_from_vector(bucket->objects, &processed_obj);
         bucket->needs_rebuild = true;
 
