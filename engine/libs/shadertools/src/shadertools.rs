@@ -460,6 +460,10 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
         let stage = ast_kv.0;
         let ast = ast_kv.1;
 
+        // first, change the version to the latest GLSL revision
+        let mut pp_version_visitor = PreprocessorVersionVisitor::new();
+        ast.visit_mut(&mut pp_version_visitor);
+
         // second pass: set locations for all input declarations which match an
         // output of the previous stage by name, and record all declarations
         // which still need to be assigned locations
@@ -771,6 +775,35 @@ fn set_decl_location(decl_type: &mut FullySpecifiedType, location: i32) {
             });
         }
     };
+}
+
+// visits the version pragma and sets it to the latest GLSL version
+struct PreprocessorVersionVisitor {
+    fail_condition: bool,
+    fail_message: Option<String>
+}
+
+
+impl PreprocessorVersionVisitor {
+    fn new() -> Self {
+        PreprocessorVersionVisitor {
+            fail_condition: false,
+            fail_message: None,
+        }
+    }
+}
+
+impl VisitorMut for PreprocessorVersionVisitor {
+    fn visit_preprocessor_version(&mut self, decl: &mut ::glsl::syntax::PreprocessorVersion) -> Visit {
+        if self.fail_condition {
+            return Visit::Parent;
+        }
+
+        decl.version = 460;
+        decl.profile = Some(::glsl::syntax::PreprocessorVersionProfile::Core);
+
+        return Visit::Parent;
+    }
 }
 
 // visits in/out/uniform/buffer declarations with explicit layout locations
