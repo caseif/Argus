@@ -53,38 +53,73 @@
 #include <climits>
 
 namespace argus {
-    std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> _compile_shaders(
+    struct CompiledShader {
+        Shader shader;
+        shader_handle_t handle;
+    };
+
+    struct ShaderCompilationResult {
+        std::vector<CompiledShader> shaders;
+        ShaderReflectionInfo reflection_info;
+        bool explicit_attrib_locations;
+        bool explicit_uniform_locations;
+    };
+
+    ShaderCompilationResult _compile_shaders(
             const std::vector<Shader> &shaders) {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 
-        ShaderReflectionInfo refl_info;
+        ShaderCompilationResult res;
+        res.explicit_attrib_locations = true;
+        res.explicit_uniform_locations = true;
 
         if (shaders.empty()) {
-            return std::make_pair(handles, refl_info);
+            return res;
         }
 
         auto type = shaders.at(0).get_type();
 
+        std::vector<std::string> shader_uids;
         std::vector<std::string> shader_sources;
         for (auto &shader : shaders) {
+            shader_uids.emplace_back(shader.get_uid());
             shader_sources.emplace_back(shader.get_source().begin(), shader.get_source().end());
         }
+
+        std::ostringstream shader_uids_oss;
+        std::copy(shader_uids.begin(), shader_uids.end(),
+                std::ostream_iterator<std::string>(shader_uids_oss, ", "));
+        auto shader_uids_str = shader_uids_oss.str().substr(0, shader_uids_oss.str().size() - strlen(", "));
+        Logger::default_logger().debug("Transpiling shader set [%s]", shader_uids_str.c_str());
 
         auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
                 glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
 
         auto spirv_shaders = std::move(comp_res.first);
-        refl_info = comp_res.second;
+        res.reflection_info = comp_res.second;
+
+        spirv_cross::CompilerGLSL::Options options;
+
+        if (AGLET_GL_ES_VERSION_3_1) {
+            options.version = 310;
+        } else {
+            options.version = 300;
+            // need 310 support for uniform location decorations
+            res.explicit_uniform_locations = false;
+            // we get explicit attrib locations with our minimum profile (3.0)
+            // so no need to touch that flag
+        }
+
+        options.es = true;
 
         for (auto &shader : spirv_shaders) {
+            Logger::default_logger().debug("Creating shader %s", shader.get_uid().c_str());
+
             auto stage = shader.get_stage();
             auto &spirv_src = shader.get_source();
 
             spirv_cross::CompilerGLSL essl_compiler(reinterpret_cast<const uint32_t *>(spirv_src.data()),
                     spirv_src.size() / 4);
-            spirv_cross::CompilerGLSL::Options options;
-            options.version = 310; // look into reducing this requirement with runtime uniform reflection
-            options.es = true;
             essl_compiler.set_common_options(options);
 
             auto essl_src = essl_compiler.compile();
@@ -110,13 +145,14 @@ namespace argus {
             const auto src_c = reinterpret_cast<const char *>(essl_src.data());
             const int src_len = GLint(essl_src.size());
 
-            glShaderSource(shader_handle, 1, &src_c, &src_len);
+            Logger::default_logger().debug("ESSL source:\n%s", src_c);
 
+            glShaderSource(shader_handle, 1, &src_c, &src_len);
             glCompileShader(shader_handle);
 
-            int res;
-            glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
-            if (res == GL_FALSE) {
+            int gl_res;
+            glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &gl_res);
+            if (gl_res == GL_FALSE) {
                 GLint log_len;
                 glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
                 assert(log_len >= 0);
@@ -138,14 +174,11 @@ namespace argus {
                         stage_str.c_str(), log);
             }
 
-            handles.emplace_back(shader, shader_handle);
+            res.shaders.emplace_back(CompiledShader { shader, shader_handle });
         }
 
-        return std::make_pair(handles, refl_info);
+        return res;
     }
-
-    \
-
 
     template<typename K, typename V, typename K2, typename V2>
     static V find_or_default(std::map<K, V> haystack, K2 &needle, V2 def) {
@@ -174,11 +207,11 @@ namespace argus {
         }
 
         auto comp_res = _compile_shaders(shaders);
-        auto compiled_shaders = comp_res.first;
-        auto refl_info = comp_res.second;
+        auto compiled_shaders = comp_res.shaders;
+        auto refl_info = comp_res.reflection_info;
 
         for (auto &compiled_shader : compiled_shaders) {
-            glAttachShader(program_handle, compiled_shader.second);
+            glAttachShader(program_handle, compiled_shader.handle);
         }
 
         //glBindFragDataLocation(program_handle, 0, SHADER_ATTRIB_OUT_FRAGDATA);
@@ -186,7 +219,7 @@ namespace argus {
         glLinkProgram(program_handle);
 
         for (auto &compiled_shader : compiled_shaders) {
-            glDetachShader(program_handle, compiled_shader.second);
+            glDetachShader(program_handle, compiled_shader.handle);
         }
 
         for (auto &shader_res : shader_resources) {
@@ -202,6 +235,29 @@ namespace argus {
             char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
             get_gl_logger().fatal([log]() { delete[] log; }, "Failed to link program: %s", log);
+        }
+
+        if (!comp_res.explicit_uniform_locations) {
+            GLint uniform_max_len;
+            GLint uniform_count;
+
+            glGetProgramiv(program_handle, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniform_max_len);
+            assert(uniform_max_len >= 0);
+            glGetProgramiv(program_handle, GL_ACTIVE_UNIFORMS, &uniform_count);
+
+            GLsizei uniform_name_len;
+            GLsizei uniform_size;
+            GLenum uniform_type;
+            char *uniform_name = new char[uint32_t(uniform_max_len)];
+
+            for (int i = 0; i < uniform_count; i++) {
+                glGetActiveUniform(program_handle, uint32_t(i), uniform_max_len, &uniform_name_len,
+                        &uniform_size, &uniform_type, uniform_name);
+                assert(uniform_name_len <= uniform_max_len);
+                GLint uniform_loc = glGetUniformLocation(program_handle, uniform_name);
+                assert(uniform_loc >= 0);
+                refl_info.uniform_variable_locations[std::string(uniform_name)] = uint32_t(uniform_loc);
+            }
         }
 
         return LinkedProgram(program_handle, refl_info);
