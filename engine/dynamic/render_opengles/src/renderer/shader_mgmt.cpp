@@ -43,7 +43,9 @@
 
 #pragma GCC diagnostic pop
 
+#include <iterator>
 #include <map>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
