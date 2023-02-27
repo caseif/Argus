@@ -43,6 +43,7 @@ set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
 set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
+option(BUILD_OPENGL_LEGACY_BACKEND "Build the legacy OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" ON)
 
@@ -114,6 +115,13 @@ if(${BUILD_OPENGL_BACKEND})
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
   else()
     message("OpenGL support will not be built")
+endif()
+
+if(${BUILD_OPENGL_LEGACY_BACKEND})
+  message("OpenGL (legacy) support will be built")
+  list(APPEND DYNAMIC_MODULE_IDS "render_opengl_legacy")
+else()
+  message("OpenGL (legacy) support will not be built")
 endif()
 
 if(${BUILD_OPENGLES_BACKEND})

@@ -1,4 +1,4 @@
-#version 460
+#version 460 core
 
 uniform sampler2D u_Texture;
 uniform vec2 u_UvStride;

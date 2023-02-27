@@ -1,4 +1,4 @@
-#version 460
+#version 460 core
 
 uniform mat4 u_ViewMatrix;
 uniform vec2 u_UvStride;
