@@ -76,6 +76,7 @@ namespace argus {
             return std::make_pair(handles, ShaderReflectionInfo{});
         }
 
+        std::vector<std::string> shader_uids;
         std::vector<std::string> shader_sources;
         for (auto &shader : shaders) {
             shader_sources.emplace_back(shader.get_source().begin(), shader.get_source().end());
@@ -125,8 +126,7 @@ namespace argus {
 
             auto glsl_src = glsl_compiler.compile();
 
-            char *glsl_src_c = new char[glsl_src.size()];
-            memcpy(glsl_src_c, glsl_src.data(), glsl_src.size());
+            char *glsl_src_c = glsl_src.data();
             const auto glsl_src_len = GLsizei(glsl_src.size());
 
             Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);

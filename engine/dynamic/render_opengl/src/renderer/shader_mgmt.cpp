@@ -109,13 +109,13 @@ namespace argus {
             } else if (AGLET_GL_VERSION_4_3) {
                 options.version = 430;
             } else {
-                // need 430 support for explicit uniform locations/bindings
+                // need 430 support for uniform location/binding decorations
                 res.explicit_uniform_locations = false;
 
                 if (AGLET_GL_VERSION_4_1) {
                     options.version = 410;
                 } else {
-                    // need 410 support for explicit attribute locations
+                    // need 410 support for attribute location decorations
                     res.explicit_attrib_locations = false;
 
                     options.version = 330;
@@ -169,9 +169,7 @@ namespace argus {
 
                 auto glsl_src = glsl_compiler.compile();
 
-                char *glsl_src_c = new char[glsl_src.size() + 1];
-                memcpy(glsl_src_c, glsl_src.data(), glsl_src.size());
-                glsl_src_c[glsl_src.size()] = '\0';
+                char *glsl_src_c = glsl_src.data();
                 const auto glsl_src_len = GLsizei(glsl_src.size());
 
                 Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);
