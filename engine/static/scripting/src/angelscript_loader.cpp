@@ -47,7 +47,6 @@ namespace argus {
         const char *mod_name = proto.uid.c_str();
         const char *section_name = proto.uid.c_str();
 
-        CScriptBuilder builder;
         auto *mod = g_as_script_engine->GetModule(mod_name, asGM_ALWAYS_CREATE);
 
         mod->AddScriptSection(section_name, script_src.c_str());
