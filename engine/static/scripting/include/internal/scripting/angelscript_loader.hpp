@@ -18,5 +18,20 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#include "argus/resman.hpp"
+
+namespace argus {
+    class AngelscriptLoader : public ResourceLoader {
+      private:
+        void *load(ResourceManager &manager, const ResourcePrototype &proto,
+                std::istream &stream, size_t size) const override;
+
+        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+                void *src, std::type_index type) const override;
+
+        void unload(void *data_ptr) const override;
+
+      public:
+        AngelscriptLoader(void);
+    };
+}

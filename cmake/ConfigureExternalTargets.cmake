@@ -70,7 +70,7 @@ set(SPIRV_CROSS_LIBRARY "spirv-cross-cpp")
 set(SPIRV_CROSS_INCLUDE_DIR "${SPIRV_CROSS_SOURCE_DIR}")
 
 set(ANGELSCRIPT_LIBRARY "angelscript")
-set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_SOURCE_DIR}/include")
+set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_SOURCE_DIR}/include;${ANGELSCRIPT_SOURCE_DIR}/../add_on")
 
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
@@ -79,6 +79,10 @@ add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
 add_subdirectory("${SPIRV_CROSS_SOURCE_DIR}")
 add_subdirectory("${ANGELSCRIPT_SOURCE_DIR}/projects/cmake")
+
+_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptarray")
+_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptbuilder")
+_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptstdstring")
 
 # we want to build this lib statically
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)

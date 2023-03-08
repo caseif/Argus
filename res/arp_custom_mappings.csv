@@ -5,6 +5,7 @@ tesc,text/x-glsl-tess-control
 tese,text/x-glsl-tess-evaluation
 vert,text/x-glsl-vertex
 lua,text/x-lua
+as,text/x-angelscript
 mat,application/x-argus-material+json
 bindings,application/x-argus-bindings+json
 sprite,application/x-argus-sprite+json

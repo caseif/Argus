@@ -143,9 +143,20 @@ namespace argus {
          *
          * \param res_uid The UID of the Resource associated with the
          *        exception.
+         * \param msg The error message.
+         */
+        explicit LoadFailedException(const std::string &res_uid, const std::string &msg) :
+                ResourceException(res_uid, msg) {
+        }
+
+        /**
+         * \brief Constructs a new exception.
+         *
+         * \param res_uid The UID of the Resource associated with the
+         *        exception.
          */
         explicit LoadFailedException(const std::string &res_uid) :
-                ResourceException(res_uid, "Resource loading failed") {
+                LoadFailedException(res_uid, "Resource loading failed") {
         }
     };
 }

@@ -18,5 +18,4 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#define RESOURCE_TYPE_ANGELSCRIPT "text/x-angelscript"

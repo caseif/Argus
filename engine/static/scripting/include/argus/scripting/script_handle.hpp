@@ -18,5 +18,18 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#include <string>
+
+namespace argus {
+    // forward declarations
+    struct pimpl_ScriptHandle;
+
+    class ScriptHandle {
+      public:
+        pimpl_ScriptHandle *pimpl;
+
+        ScriptHandle(void) noexcept;
+
+        void ExecuteFunction(const std::string &name) const;
+    };
+}

@@ -18,5 +18,8 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#include "internal/scripting/angelscript_proxy.hpp"
+
+namespace argus {
+    extern asIScriptEngine *g_as_script_engine;
+}

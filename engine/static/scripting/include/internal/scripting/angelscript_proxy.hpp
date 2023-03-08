@@ -18,5 +18,9 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "angelscript.h"
+#include "scriptbuilder/scriptbuilder.h"
+#include "scriptstdstring/scriptstdstring.h"
+#pragma GCC diagnostic pop

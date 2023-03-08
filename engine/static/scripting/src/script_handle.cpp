@@ -16,7 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/scripting/registration.hpp"
 #include "argus/scripting/script_handle.hpp"
+#include "internal/scripting/pimpl/script_handle.hpp"
+#include "internal/scripting/module_scripting.hpp"
+
+namespace argus {
+    ScriptHandle::ScriptHandle(void) noexcept:
+        pimpl(new pimpl_ScriptHandle()) {
+    }
+
+    void ScriptHandle::ExecuteFunction(const std::string &name) const {
+        asIScriptFunction *fn;
+
+        auto it = pimpl->fn_ptrs.find(name);
+        if (it != pimpl->fn_ptrs.cend()) {
+            fn = it->second;
+        } else {
+            fn = pimpl->mod->GetFunctionByName(name.c_str());
+        }
+
+        auto *ctx = g_as_script_engine->CreateContext();
+        ctx->Prepare(fn);
+        ctx->Execute();
+    }
+}

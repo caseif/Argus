@@ -18,5 +18,18 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#include <functional>
+#include <string>
+
+namespace argus {
+    int register_global_function(const std::string &name, void *fn);
+
+    /*template <typename T>
+    int register_global_function(const std::string &name, std::function<T> fn) {
+        UNUSED(fn);
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wold-style-cast"
+        return register_global_function(name, asMETHOD(T, operator()));
+        #pragma GCC diagnostic pop
+    }*/
+}

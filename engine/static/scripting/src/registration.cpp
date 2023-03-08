@@ -16,7 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+
+#include "internal/scripting/angelscript_proxy.hpp"
+#include "internal/scripting/module_scripting.hpp"
+
+#include <string>
+
+namespace argus {
+    int register_global_function(const std::string &name, void *fn) {
+        return g_as_script_engine->RegisterGlobalFunction(name.c_str(), asFUNCTION(fn), asCALL_STDCALL);
+    }
+}

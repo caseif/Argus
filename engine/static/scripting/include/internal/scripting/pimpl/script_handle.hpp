@@ -18,5 +18,15 @@
 
 #pragma once
 
-#include "argus/scripting/registration.hpp"
-#include "argus/scripting/script_handle.hpp"
+#include "internal/scripting/angelscript_proxy.hpp"
+
+#include <map>
+#include <string>
+
+namespace argus {
+    struct pimpl_ScriptHandle {
+        asIScriptModule *mod;
+
+        std::map<std::string, asIScriptFunction*> fn_ptrs;
+    };
+}
