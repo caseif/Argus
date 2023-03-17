@@ -18,11 +18,29 @@
 
 #pragma once
 
+#include "argus/wm/window.hpp"
+
+#include "internal/render_vulkan/setup/device.hpp"
+
 #include "vulkan/vulkan.h"
 
+#include <vector>
+
 namespace argus {
-    struct QueueFamilyIndices {
-        uint32_t graphics_family;
-        uint32_t present_family;
+    struct SwapchainSupportInfo {
+        VkSurfaceCapabilitiesKHR caps;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> present_modes;
     };
+
+    struct SwapchainInfo {
+        VkSwapchainKHR swapchain;
+        std::vector<VkImage> images;
+        VkFormat image_format;
+        VkExtent2D extent;
+    };
+
+    SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR probe_surface);
+
+    SwapchainInfo create_vk_swapchain(const Window &window, LogicalDevice device, VkSurfaceKHR surface);
 }

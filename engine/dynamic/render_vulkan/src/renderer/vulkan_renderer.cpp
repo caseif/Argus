@@ -22,6 +22,7 @@
 
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
+#include "internal/render_vulkan/setup/swapchain.hpp"
 
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
@@ -37,9 +38,14 @@ namespace argus {
         }
 
         Logger::default_logger().debug("Created surface for new window");
+
+        this->swapchain = create_vk_swapchain(window, g_vk_device, this->surface);
+
+        Logger::default_logger().debug("Created swapchain for new window");
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
+        vkDestroySwapchainKHR(g_vk_device.logical_device, this->swapchain.swapchain, nullptr);
         vkDestroySurfaceKHR(g_vk_instance, this->surface, nullptr);
     }
 

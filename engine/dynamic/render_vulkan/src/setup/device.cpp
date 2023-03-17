@@ -23,6 +23,7 @@
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/queues.hpp"
+#include "internal/render_vulkan/setup/swapchain.hpp"
 
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
@@ -38,8 +39,12 @@
 namespace argus {
     static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
 
+    static const std::vector<const char *> g_req_dev_exts = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
-            std::vector<VkQueueFamilyProperties> queue_families) {
+            VkSurfaceKHR surface, std::vector<VkQueueFamilyProperties> queue_families) {
         QueueFamilyIndices indices = {};
 
         uint32_t i = 0;
@@ -49,12 +54,52 @@ namespace argus {
                 if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                     indices.graphics_family = i;
                 }
+
+                VkBool32 present_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+                if (present_support) {
+                    indices.present_family = i;
+                }
             }
 
             i++;
         }
 
         return indices;
+    }
+
+    static bool _is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR probe_surface) {
+        uint32_t ext_count;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &ext_count, nullptr);
+
+        std::vector<VkExtensionProperties> avail_exts(ext_count);
+        vkEnumerateDeviceExtensionProperties(device, nullptr,
+                &ext_count, avail_exts.data());
+
+        std::set<std::string> req_exts(g_req_dev_exts.cbegin(), g_req_dev_exts.cend());
+
+        for (const auto &ext : avail_exts) {
+            req_exts.erase(ext.extensionName);
+        }
+
+        if (!req_exts.empty()) {
+            Logger::default_logger().debug("Physical device '%s' is not suitable (missing required extensions)");
+            return false;
+        }
+
+        auto sc_support = query_swapchain_support(device, probe_surface);
+        if (sc_support.formats.empty()) {
+            Logger::default_logger().debug("Physical device '%s' is not suitable (no available swap chain formats)");
+            return false;
+        }
+
+        if (sc_support.present_modes.empty()) {
+            Logger::default_logger().debug("Physical device '%s' is not suitable "
+                                           "(no available swap chain present modes)");
+            return false;
+        }
+
+        return true;
     }
 
     static uint32_t _rate_physical_device(VkInstance instance, VkPhysicalDevice device,
@@ -81,7 +126,8 @@ namespace argus {
         return score;
     }
 
-    static std::pair<VkPhysicalDevice, QueueFamilyIndices> _select_physical_device(VkInstance instance) {
+    static std::pair<VkPhysicalDevice, QueueFamilyIndices> _select_physical_device(VkInstance instance,
+            VkSurfaceKHR probe_surface) {
         uint32_t dev_count = 0;
         auto enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, nullptr);
         if (enum_res) {
@@ -113,9 +159,13 @@ namespace argus {
             std::vector<VkQueueFamilyProperties> queue_families(qf_props_count);
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &qf_props_count, queue_families.data());
 
-            auto indices = _get_queue_family_indices(instance, dev, queue_families);
+            auto indices = _get_queue_family_indices(instance, dev, probe_surface, queue_families);
             if (!indices.has_value()) {
                 Logger::default_logger().debug("Physical device '%s' is not suitable", dev_props.deviceName);
+                continue;
+            }
+
+            if (!_is_device_suitable(dev, probe_surface)) {
                 continue;
             }
 
@@ -136,31 +186,37 @@ namespace argus {
         return std::make_pair(best_dev, best_dev_indices);
     }
 
-    LogicalDevice create_vk_device(VkInstance instance) {
+    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface) {
         VkPhysicalDevice phys_dev;
         QueueFamilyIndices qf_indices;
-        std::tie(phys_dev, qf_indices) = _select_physical_device(instance);
+        std::tie(phys_dev, qf_indices) = _select_physical_device(instance, probe_surface);
         VkPhysicalDeviceProperties phys_dev_props;
         vkGetPhysicalDeviceProperties(phys_dev, &phys_dev_props);
 
         Logger::default_logger().info("Selected video device %s", phys_dev_props.deviceName);
 
-        VkDeviceQueueCreateInfo queue_create_info{};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_create_info.queueFamilyIndex = qf_indices.graphics_family;
-        queue_create_info.queueCount = 1;
+        std::set<uint32_t> unique_queue_families = { qf_indices.graphics_family, qf_indices.present_family };
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+        for (auto queue_id : unique_queue_families) {
+            VkDeviceQueueCreateInfo queue_create_info{};
+            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_info.queueFamilyIndex = queue_id;
+            queue_create_info.queueCount = 1;
+            auto queue_priority = 1.0f;
+            queue_create_info.pQueuePriorities = &queue_priority;
 
-        auto queue_priority = 1.0f;
-        queue_create_info.pQueuePriorities = &queue_priority;
+            queue_create_infos.push_back(queue_create_info);
+        }
 
         VkPhysicalDeviceFeatures dev_features{};
 
         VkDeviceCreateInfo dev_create_info{};
         dev_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        dev_create_info.pQueueCreateInfos = &queue_create_info;
-        dev_create_info.queueCreateInfoCount = 1;
+        dev_create_info.pQueueCreateInfos = queue_create_infos.data();
+        dev_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
         dev_create_info.pEnabledFeatures = &dev_features;
-        dev_create_info.enabledExtensionCount = 0;
+        dev_create_info.enabledExtensionCount = static_cast<uint32_t>(g_req_dev_exts.size());
+        dev_create_info.ppEnabledExtensionNames = g_req_dev_exts.data();
 
         uint32_t layers_count;
         const char *const *layers;
@@ -182,15 +238,12 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create logical Vulkan device (rc: %d)", rc);
         }
 
-        VkQueue graphics_queue;
-        vkGetDeviceQueue(dev, qf_indices.graphics_family, 0, &graphics_queue);
-
         Logger::default_logger().debug("Successfully created logical Vulkan device");
 
-        return { dev, graphics_queue };
+        return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices });
     }
 
     void destroy_vk_device(LogicalDevice device) {
-        vkDestroyDevice(device.device, nullptr);
+        vkDestroyDevice(device.logical_device, nullptr);
     }
 }

@@ -52,15 +52,40 @@ namespace argus {
 
     static std::map<const Window *, VulkanRenderer *> g_renderer_map;
 
-    static bool _test_vulkan_support() {
-        //TODO: eventually we'll check the available extensions and verify we can actually use Vulkan to render
-        return glfwVulkanSupported() == GLFW_TRUE;
-    }
-
     static bool _activate_vulkan_backend() {
-        if (!_test_vulkan_support()) {
+        if (glfwVulkanSupported() != GLFW_TRUE) {
             return false;
         }
+
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+        auto vk_inst = create_vk_instance();
+        if (!vk_inst.has_value()) {
+            return false;
+        }
+        g_vk_instance = vk_inst.value();
+
+        // create hidden window so we can attach a surface and probe for capabilities
+        auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+
+        if (window == nullptr) {
+            Logger::default_logger().warn("Failed to probe Vulkan capabilities (glfwCreateWindow failed)");
+            return false;
+        }
+
+        VkSurfaceKHR probe_surface{};
+        glfwCreateWindowSurface(g_vk_instance, window, nullptr, &probe_surface);
+
+        auto vk_device = create_vk_device(g_vk_instance, probe_surface);
+
+        vkDestroySurfaceKHR(g_vk_instance, probe_surface, nullptr);
+        glfwDestroyWindow(window);
+
+        if (!vk_device.has_value()) {
+            destroy_vk_instance(g_vk_instance);
+            return false;
+        }
+        g_vk_device = vk_device.value();
 
         g_backend_active = true;
         return true;
@@ -126,12 +151,6 @@ namespace argus {
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
-
-                g_vk_instance = create_vk_instance();
-
-                g_vk_device = create_vk_device(g_vk_instance);
-
-                glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
                 break;
             }

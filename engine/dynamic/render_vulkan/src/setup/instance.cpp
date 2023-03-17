@@ -28,6 +28,7 @@
 #include "vulkan/vulkan.h"
 
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 #include <cstring>
@@ -122,18 +123,20 @@ namespace argus {
 
         auto createRes = vkCreateInstance(&create_info, nullptr, &instance);
         if (createRes != VK_SUCCESS) {
-            Logger::default_logger().fatal("vkCreateInstance returned error code %d", createRes);
+            Logger::default_logger().warn("vkCreateInstance returned error code %d", createRes);
+            return nullptr;
         }
 
         return instance;
     }
 
-    VkInstance create_vk_instance(void) {
+    std::optional<VkInstance> create_vk_instance(void) {
         uint32_t glfw_exts_count;
         auto glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_exts_count);
 
         if (!_check_required_extensions(glfw_exts, glfw_exts_count)) {
-            Logger::default_logger().fatal("Required Vulkan extensions for GLFW are not available");
+            Logger::default_logger().warn("Required Vulkan extensions for GLFW are not available");
+            return std::nullopt;
         }
 
         const char *const *layers;
@@ -147,14 +150,18 @@ namespace argus {
         #endif
 
         if (!_check_required_layers(layers, layers_count)) {
-            Logger::default_logger().warn("Required Vulkan extensions for GLFW are not available");
+            Logger::default_logger().warn("Required Vulkan extensions for engine are not available");
             layers = nullptr;
             layers_count = 0;
+            return std::nullopt;
         }
 
         auto instance = _create_instance(glfw_exts, glfw_exts_count, layers, layers_count);
+        if (instance == nullptr) {
+            return std::nullopt;
+        }
 
-        return instance;
+        return std::make_optional(instance);
     }
 
     void destroy_vk_instance(VkInstance instance) {

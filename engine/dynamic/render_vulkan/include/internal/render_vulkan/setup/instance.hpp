@@ -20,8 +20,10 @@
 
 #include "vulkan/vulkan.h"
 
+#include <optional>
+
 namespace argus {
-    VkInstance create_vk_instance(void);
+    std::optional<VkInstance> create_vk_instance(void);
 
     void destroy_vk_instance(VkInstance instance);
 }

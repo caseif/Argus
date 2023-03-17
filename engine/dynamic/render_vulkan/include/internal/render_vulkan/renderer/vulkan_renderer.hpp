@@ -25,6 +25,8 @@
 
 #include "argus/wm/window.hpp"
 
+#include "internal/render_vulkan/setup/swapchain.hpp"
+
 #include "vulkan/vulkan.h"
 
 namespace argus {
@@ -32,6 +34,8 @@ namespace argus {
        private:
         Window &window;
         VkSurfaceKHR surface;
+        SwapchainInfo swapchain;
+        std::vector<VkImage> swapchain_images;
         Index resource_event_handler;
 
        public:
