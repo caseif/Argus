@@ -30,6 +30,7 @@
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
+#include "internal/render_vulkan/loader/shader_loader.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
@@ -120,6 +121,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 register_render_backend(BACKEND_ID, _activate_vulkan_backend);
+
                 break;
             }
             case LifecycleStage::Init: {
@@ -127,7 +129,7 @@ namespace argus {
                     return;
                 }
 
-                //ResourceManager::instance().register_loader(*new ShaderLoader());
+                ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
 
