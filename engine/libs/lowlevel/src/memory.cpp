@@ -39,7 +39,7 @@
 #define __bsr(i, m) _BitScanReverse64(reinterpret_cast<unsigned long *>(i), m)
 #pragma intrinsic(_BitScanReverse64)
 #else
-#define __clz(x) __builtin_clzl(x)
+#define __clz(x) __builtin_clzll(x)
 #endif
 #else
 #define BLOCKS_PER_CHUNK 32
