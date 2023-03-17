@@ -16,30 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/macros.hpp"
 
 #include "argus/core/client_properties.hpp"
 #include "argus/core/macros.hpp"
 
+#include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
 
 #include <algorithm>
-#include <string>
 #include <vector>
 
-#include <cstdint>
 #include <cstring>
 
 namespace argus {
-    static const std::vector<const char *> validation_layers = {
-            "VK_LAYER_KHRONOS_validation"
-    };
-
     static std::vector<VkExtensionProperties> _get_available_extensions(void) {
         uint32_t ext_count;
         vkEnumerateInstanceExtensionProperties(nullptr, &ext_count, nullptr);
@@ -76,7 +69,7 @@ namespace argus {
     }
 
     static bool _check_required_layers(const char *const *layers, uint32_t layers_count) {
-        #ifdef _ARGUS_DEBUG_MODE
+        #ifndef _ARGUS_DEBUG_MODE
         return true;
         #endif
 
@@ -146,8 +139,8 @@ namespace argus {
         const char *const *layers;
         uint32_t layers_count;
         #ifdef _ARGUS_DEBUG_MODE
-        layers = validation_layers.data();
-        layers_count = uint32_t(validation_layers.size());
+        layers = g_validation_layers.data();
+        layers_count = uint32_t(g_validation_layers.size());
         #else
         layers = nullptr;
         layers_count = 0;

@@ -20,6 +20,10 @@
 
 #include "argus/core/module.hpp"
 
+#include <vector>
+
 namespace argus {
+    extern std::vector<const char *> g_validation_layers;
+
     void update_lifecycle_render_vulkan(LifecycleStage stage);
 }

@@ -20,6 +20,7 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
+#include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/queues.hpp"
 
@@ -135,7 +136,7 @@ namespace argus {
         return std::make_pair(best_dev, best_dev_indices);
     }
 
-    VkDevice create_vk_device(VkInstance instance) {
+    LogicalDevice create_vk_device(VkInstance instance) {
         VkPhysicalDevice phys_dev;
         QueueFamilyIndices qf_indices;
         std::tie(phys_dev, qf_indices) = _select_physical_device(instance);
@@ -144,6 +145,52 @@ namespace argus {
 
         Logger::default_logger().info("Selected video device %s", phys_dev_props.deviceName);
 
-        return {};
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = qf_indices.graphics_family;
+        queue_create_info.queueCount = 1;
+
+        auto queue_priority = 1.0f;
+        queue_create_info.pQueuePriorities = &queue_priority;
+
+        VkPhysicalDeviceFeatures dev_features{};
+
+        VkDeviceCreateInfo dev_create_info{};
+        dev_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        dev_create_info.pQueueCreateInfos = &queue_create_info;
+        dev_create_info.queueCreateInfoCount = 1;
+        dev_create_info.pEnabledFeatures = &dev_features;
+        dev_create_info.enabledExtensionCount = 0;
+
+        uint32_t layers_count;
+        const char *const *layers;
+
+        #ifdef _ARGUS_DEBUG_MODE
+        layers_count = uint32_t(g_validation_layers.size());
+        layers = g_validation_layers.data();
+        #else
+        layers_count = 0;
+        layers = nullptr;
+        #endif
+
+        dev_create_info.enabledLayerCount = layers_count;
+        dev_create_info.ppEnabledLayerNames = layers;
+
+        VkDevice dev;
+        auto rc = vkCreateDevice(phys_dev, &dev_create_info, nullptr, &dev);
+        if (rc != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create logical Vulkan device (rc: %d)", rc);
+        }
+
+        VkQueue graphics_queue;
+        vkGetDeviceQueue(dev, qf_indices.graphics_family, 0, &graphics_queue);
+
+        Logger::default_logger().debug("Successfully created logical Vulkan device");
+
+        return { dev, graphics_queue };
+    }
+
+    void destroy_vk_device(LogicalDevice device) {
+        vkDestroyDevice(device.device, nullptr);
     }
 }

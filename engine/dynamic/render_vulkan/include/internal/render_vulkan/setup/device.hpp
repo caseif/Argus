@@ -21,5 +21,12 @@
 #include "vulkan/vulkan.h"
 
 namespace argus {
-    VkDevice create_vk_device(VkInstance instance);
+    struct LogicalDevice {
+        VkDevice device;
+        VkQueue graphics_queue;
+    };
+
+    LogicalDevice create_vk_device(VkInstance instance);
+
+    void destroy_vk_device(LogicalDevice device);
 }

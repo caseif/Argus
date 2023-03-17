@@ -19,7 +19,6 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/macros.hpp"
 
-#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
 #include "argus/wm/window.hpp"
@@ -38,15 +37,17 @@
 #include "vulkan/vulkan.h"
 
 #include <map>
-#include <string>
-
-#include <cassert>
-#include <cstring>
+#include <vector>
 
 namespace argus {
     static bool g_backend_active = false;
 
+    std::vector<const char *> g_validation_layers = {
+            "VK_LAYER_KHRONOS_validation"
+    };
+
     static VkInstance g_vk_instance = nullptr;
+    static LogicalDevice g_vk_device;
     static std::map<const Window *, VkSurfaceKHR> g_surface_map;
 
     static bool _test_vulkan_support() {
@@ -135,8 +136,7 @@ namespace argus {
 
                 g_vk_instance = create_vk_instance();
 
-                auto vk_dev = create_vk_device(g_vk_instance);
-                UNUSED(vk_dev);
+                g_vk_device = create_vk_device(g_vk_instance);
 
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -149,6 +149,11 @@ namespace argus {
 
                 /*ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
                         RESOURCES_RENDER_OPENGL_ARP_LEN);*/
+                break;
+            }
+            case LifecycleStage::Deinit: {
+                destroy_vk_device(g_vk_device);
+
                 break;
             }
             default: {
