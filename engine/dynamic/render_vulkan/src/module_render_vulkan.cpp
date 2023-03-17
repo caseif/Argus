@@ -30,6 +30,7 @@
 
 #include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/loader/shader_loader.hpp"
+#include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
@@ -46,9 +47,10 @@ namespace argus {
             "VK_LAYER_KHRONOS_validation"
     };
 
-    static VkInstance g_vk_instance = nullptr;
-    static LogicalDevice g_vk_device;
-    static std::map<const Window *, VkSurfaceKHR> g_surface_map;
+    VkInstance g_vk_instance = nullptr;
+    LogicalDevice g_vk_device{};
+
+    static std::map<const Window *, VulkanRenderer *> g_renderer_map;
 
     static bool _test_vulkan_support() {
         //TODO: eventually we'll check the available extensions and verify we can actually use Vulkan to render
@@ -66,21 +68,12 @@ namespace argus {
 
     static void _window_event_callback(const WindowEvent &event, void *user_data) {
         UNUSED(user_data);
-        const Window &window = event.window;
+        Window &window = event.window;
 
         switch (event.subtype) {
             case WindowEventType::Create: {
-                VkSurfaceKHR surface;
-                auto surface_err = glfwCreateWindowSurface(g_vk_instance,
-                        get_window_handle<GLFWwindow>(window), nullptr, &surface);
-
-                if (surface_err) {
-                    Logger::default_logger().fatal("glfwCreateWindowSurface returned value %d", surface_err);
-                }
-                //TODO: store the surface
-
-                //auto *renderer = new GLRenderer(window);
-                //g_renderer_map.insert({ &window, renderer });
+                auto *renderer = new VulkanRenderer(window);
+                g_renderer_map.insert({&window, renderer});
                 break;
             }
             case WindowEventType::Update: {
@@ -88,10 +81,10 @@ namespace argus {
                     return;
                 }
 
-                //auto it = g_renderer_map.find(&window);
-                //assert(it != g_renderer_map.end());
+                auto it = g_renderer_map.find(&window);
+                assert(it != g_renderer_map.end());
 
-                //it->second->render(event.delta);
+                it->second->render(event.delta);
                 break;
             }
             case WindowEventType::Resize: {
@@ -99,17 +92,17 @@ namespace argus {
                     return;
                 }
 
-                //auto it = g_renderer_map.find(&window);
-                //assert(it != g_renderer_map.end());
+                auto it = g_renderer_map.find(&window);
+                assert(it != g_renderer_map.end());
 
-                //it->second->notify_window_resize(event.resolution);
+                it->second->notify_window_resize(event.resolution);
                 break;
             }
             case WindowEventType::RequestClose: {
-                //auto it = g_renderer_map.find(&window);
-                //assert(it != g_renderer_map.end());
+                auto it = g_renderer_map.find(&window);
+                assert(it != g_renderer_map.end());
 
-                //delete it->second;
+                delete it->second;
                 break;
             }
             default: {
@@ -153,6 +146,8 @@ namespace argus {
             }
             case LifecycleStage::Deinit: {
                 destroy_vk_device(g_vk_device);
+
+                destroy_vk_instance(g_vk_instance);
 
                 break;
             }

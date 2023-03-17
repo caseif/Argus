@@ -156,4 +156,8 @@ namespace argus {
 
         return instance;
     }
+
+    void destroy_vk_instance(VkInstance instance) {
+        vkDestroyInstance(instance, nullptr);
+    }
 }

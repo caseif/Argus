@@ -22,4 +22,6 @@
 
 namespace argus {
     VkInstance create_vk_instance(void);
+
+    void destroy_vk_instance(VkInstance instance);
 }

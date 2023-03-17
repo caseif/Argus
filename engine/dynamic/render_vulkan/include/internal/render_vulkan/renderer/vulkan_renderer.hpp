@@ -18,19 +18,33 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/time.hpp"
 
-#include "internal/render_vulkan/setup/device.hpp"
+#include "argus/core/engine.hpp"
+
+#include "argus/wm/window.hpp"
 
 #include "vulkan/vulkan.h"
 
-#include <vector>
-
 namespace argus {
-    extern std::vector<const char *> g_validation_layers;
+    class VulkanRenderer {
+       private:
+        Window &window;
+        VkSurfaceKHR surface;
+        Index resource_event_handler;
 
-    extern VkInstance g_vk_instance;
-    extern LogicalDevice g_vk_device;
+       public:
+        VulkanRenderer(Window &window);
 
-    void update_lifecycle_render_vulkan(LifecycleStage stage);
+        VulkanRenderer(const VulkanRenderer &) = delete;
+
+        VulkanRenderer(VulkanRenderer &&) = delete;
+
+        ~VulkanRenderer(void);
+
+        void render(TimeDelta delta);
+
+        void notify_window_resize(const Vector2u &resolution);
+    };
 }
