@@ -62,7 +62,7 @@ namespace argus {
 
     struct ShaderCompilationResult {
         std::vector<CompiledShader> shaders;
-        ShaderReflectionInfo reflection_info;
+        ShaderReflectionInfo reflection;
         bool explicit_attrib_locations;
         bool explicit_uniform_locations;
     };
@@ -98,7 +98,7 @@ namespace argus {
                 glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
 
         auto spirv_shaders = std::move(comp_res.first);
-        res.reflection_info = comp_res.second;
+        res.reflection = comp_res.second;
 
         spirv_cross::CompilerGLSL::Options options;
 
@@ -210,7 +210,7 @@ namespace argus {
 
         auto comp_res = _compile_shaders(shaders);
         auto compiled_shaders = comp_res.shaders;
-        auto refl_info = comp_res.reflection_info;
+        auto refl_info = comp_res.reflection;
 
         for (auto &compiled_shader : compiled_shaders) {
             glAttachShader(program_handle, compiled_shader.handle);
@@ -299,7 +299,7 @@ namespace argus {
     }
 
     void set_per_frame_global_uniforms(LinkedProgram &program) {
-        program.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
+        program.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
             affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
             glUniform1f(GLint(time_loc),
                     float(

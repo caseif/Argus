@@ -26,30 +26,4 @@
 #include <string>
 
 namespace argus {
-    struct GlobalUniformLocs {
-        std::optional<uint32_t> uni_view_matrix;
-        std::optional<uint32_t> uni_time;
-    };
-
-    struct LinkedProgram {
-        uint32_t handle;
-        ShaderReflectionInfo reflection_info;
-
-        LinkedProgram(uint32_t handle, ShaderReflectionInfo reflection_info) :
-                handle(handle),
-                reflection_info(reflection_info) {
-        }
-
-        bool has_attr(const std::string &name);
-
-        std::optional<uint32_t> get_attr_loc(const std::string &name);
-
-        void get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
-
-        bool has_uniform(const std::string &name);
-
-        std::optional<uint32_t> get_uniform_loc(const std::string &name);
-
-        void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
-    };
 }

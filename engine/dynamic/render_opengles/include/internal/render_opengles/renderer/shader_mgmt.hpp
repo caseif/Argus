@@ -22,7 +22,6 @@
 #include "argus/render/common/shader.hpp"
 
 #include "internal/render_opengles/types.hpp"
-#include "internal/render_opengles/state/renderer_state.hpp"
 
 #include <string>
 
@@ -33,6 +32,16 @@ namespace argus {
     class Resource;
 
     class Shader;
+
+    struct LinkedProgram {
+        shader_handle_t handle;
+        ShaderReflectionInfo reflection;
+
+        LinkedProgram(shader_handle_t handle, ShaderReflectionInfo reflection) :
+                handle(handle),
+                reflection(std::move(reflection)) {
+        }
+    };
 
     std::pair<std::vector<std::pair<Shader, shader_handle_t>>, ShaderReflectionInfo> compile_shaders(
             const std::vector<Shader> &shaders);

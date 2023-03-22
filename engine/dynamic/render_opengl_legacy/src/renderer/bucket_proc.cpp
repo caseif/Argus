@@ -49,11 +49,11 @@ namespace argus {
         // the program should have been linked during object processing
         auto &program = scene_state.parent_state.linked_programs.find(bucket.material_res.uid)->second;
 
-        auto attr_position_loc = program.get_attr_loc(SHADER_ATTRIB_POSITION);
-        auto attr_normal_loc = program.get_attr_loc(SHADER_ATTRIB_NORMAL);
-        auto attr_color_loc = program.get_attr_loc(SHADER_ATTRIB_COLOR);
-        auto attr_texcoord_loc = program.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
-        auto attr_anim_frame_loc = program.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
+        auto attr_position_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION);
+        auto attr_normal_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_NORMAL);
+        auto attr_color_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_COLOR);
+        auto attr_texcoord_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
+        auto attr_anim_frame_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
 
         uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
                               + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
@@ -104,7 +104,7 @@ namespace argus {
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
             affirm_precond(program_it != scene_state.parent_state.linked_programs.cend(),
                     "Cannot find material program");
-            bool animated = program_it->second.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+            bool animated = program_it->second.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
 
             size_t anim_frame_buf_len = 0;
             if (bucket->needs_rebuild) {

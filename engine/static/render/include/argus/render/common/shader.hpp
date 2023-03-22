@@ -18,8 +18,10 @@
 
 #pragma once
 
+#include <functional>
 #include <initializer_list>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -51,6 +53,18 @@ namespace argus {
         std::map<std::string, uint32_t> output_locations;
         std::map<std::string, uint32_t> uniform_variable_locations;
         std::map<std::string, uint32_t> buffer_locations;
+
+        bool has_attr(const std::string &name);
+
+        std::optional<uint32_t> get_attr_loc(const std::string &name);
+
+        void get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
+
+        bool has_uniform(const std::string &name);
+
+        std::optional<uint32_t> get_uniform_loc(const std::string &name);
+
+        void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
     };
 
     /**

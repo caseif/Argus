@@ -33,6 +33,7 @@
 #include "internal/render_opengl_legacy/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengl_legacy/state/processed_render_object.hpp"
 #include "internal/render_opengl_legacy/state/render_bucket.hpp"
+#include "internal/render_opengl_legacy/state/renderer_state.hpp"
 #include "internal/render_opengl_legacy/state/scene_state.hpp"
 
 #include "aglet/aglet.h"
@@ -69,10 +70,10 @@ namespace argus {
         }
         auto &program = state.linked_programs.find(object.get_material())->second;
 
-        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+        size_t vertex_len = (program.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
@@ -87,22 +88,22 @@ namespace argus {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
-                if (program.has_attr(SHADER_ATTRIB_POSITION)) {
+                if (program.reflection.has_attr(SHADER_ATTRIB_POSITION)) {
                     auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
                     staging_buffer_f[major_off + minor_off++] = transformed_pos.x;
                     staging_buffer_f[major_off + minor_off++] = transformed_pos.y;
                 }
-                if (program.has_attr(SHADER_ATTRIB_NORMAL)) {
+                if (program.reflection.has_attr(SHADER_ATTRIB_NORMAL)) {
                     staging_buffer_f[major_off + minor_off++] = vertex.normal.x;
                     staging_buffer_f[major_off + minor_off++] = vertex.normal.y;
                 }
-                if (program.has_attr(SHADER_ATTRIB_COLOR)) {
+                if (program.reflection.has_attr(SHADER_ATTRIB_COLOR)) {
                     staging_buffer_f[major_off + minor_off++] = vertex.color.r;
                     staging_buffer_f[major_off + minor_off++] = vertex.color.g;
                     staging_buffer_f[major_off + minor_off++] = vertex.color.b;
                     staging_buffer_f[major_off + minor_off++] = vertex.color.a;
                 }
-                if (program.has_attr(SHADER_ATTRIB_TEXCOORD)) {
+                if (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD)) {
                     staging_buffer_f[major_off + minor_off++] = vertex.tex_coord.x;
                     staging_buffer_f[major_off + minor_off++] = vertex.tex_coord.y;
                 }
@@ -141,10 +142,10 @@ namespace argus {
             return;
         }
 
-        size_t vertex_len = (program.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                            + (program.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+        size_t vertex_len = (program.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                            + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         float *staging_buffer = reinterpret_cast<float*>(proc_obj.staging_buffer);
 

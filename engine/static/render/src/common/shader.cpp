@@ -87,4 +87,41 @@ namespace argus {
     const std::vector<uint8_t> &Shader::get_source(void) const {
         return pimpl->src;
     }
+
+    bool ShaderReflectionInfo::has_attr(const std::string &name) {
+        return attribute_locations.find(name) != attribute_locations.end();
+    }
+
+    std::optional<uint32_t> ShaderReflectionInfo::get_attr_loc(const std::string &name) {
+        auto it = attribute_locations.find(name);
+        return it != attribute_locations.end()
+               ? std::make_optional(it->second)
+               : std::nullopt;
+    }
+
+    void ShaderReflectionInfo::get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+        auto loc = get_attr_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
+
+    bool ShaderReflectionInfo::has_uniform(const std::string &name) {
+        return uniform_variable_locations.find(name)
+               != uniform_variable_locations.end();
+    }
+
+    std::optional<uint32_t> ShaderReflectionInfo::get_uniform_loc(const std::string &name) {
+        auto it = uniform_variable_locations.find(name);
+        return it != uniform_variable_locations.end()
+               ? std::make_optional(it->second)
+               : std::nullopt;
+    }
+
+    void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+        auto loc = get_uniform_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
 }

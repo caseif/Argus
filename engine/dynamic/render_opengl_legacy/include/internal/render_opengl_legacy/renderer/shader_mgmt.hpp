@@ -21,7 +21,6 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/util/linked_program.hpp"
 
-#include "internal/render_opengl_legacy/state/renderer_state.hpp"
 #include "internal/render_opengl_legacy/types.hpp"
 
 #include <string>
@@ -33,6 +32,16 @@ namespace argus {
     class Resource;
 
     class Shader;
+
+    struct LinkedProgram {
+        shader_handle_t handle;
+        ShaderReflectionInfo reflection;
+
+        LinkedProgram(shader_handle_t handle, ShaderReflectionInfo reflection) :
+                handle(handle),
+                reflection(std::move(reflection)) {
+        }
+    };
 
     LinkedProgram link_program(std::initializer_list<std::string> shader_uids);
 

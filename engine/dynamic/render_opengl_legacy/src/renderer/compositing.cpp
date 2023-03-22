@@ -205,7 +205,7 @@ namespace argus {
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
-            bool animated = program_info.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+            bool animated = program_info.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
 
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
@@ -213,7 +213,7 @@ namespace argus {
                 last_program = program_info.handle;
 
                 auto view_mat = viewport_state.view_matrix;
-                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat](auto vm_loc) {
+                program_info.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat](auto vm_loc) {
                     affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
                     glUniformMatrix4fv(GLint(vm_loc), 1, GL_TRUE, view_mat.data);
                 });
@@ -221,7 +221,7 @@ namespace argus {
 
             if (animated) {
                 auto &stride = bucket.second->atlas_stride;
-                program_info.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride](auto loc) {
+                program_info.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride](auto loc) {
                     affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
                     glUniform2f(GLint(loc), stride.x, stride.y);
                 });
@@ -318,10 +318,10 @@ namespace argus {
 
         state.frame_program = frame_program;
 
-        if (!frame_program.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
+        if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required position attribute");
         }
-        if (!frame_program.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
+        if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
             Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
         }
 

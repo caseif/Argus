@@ -25,6 +25,7 @@
 #include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengles/types.hpp"
+#include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
 
 #include <map>
