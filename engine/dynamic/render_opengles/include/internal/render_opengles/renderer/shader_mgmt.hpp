@@ -34,10 +34,10 @@ namespace argus {
     class Shader;
 
     struct LinkedProgram {
-        shader_handle_t handle;
+        program_handle_t handle;
         ShaderReflectionInfo reflection;
 
-        LinkedProgram(shader_handle_t handle, ShaderReflectionInfo reflection) :
+        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection) :
                 handle(handle),
                 reflection(std::move(reflection)) {
         }
