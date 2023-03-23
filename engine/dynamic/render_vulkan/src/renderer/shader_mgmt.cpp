@@ -76,7 +76,7 @@ namespace argus {
 
     PreparedShaderSet prepare_shaders(VkDevice device,
             std::initializer_list<std::pair<std::string, ShaderStage>> shader_uids) {
-        return link_program(device, std::vector<std::pair<std::string, ShaderStage>>(shader_uids));
+        return prepare_shaders(device, std::vector<std::pair<std::string, ShaderStage>>(shader_uids));
     }
 
     PreparedShaderSet prepare_shaders(VkDevice device,
