@@ -23,6 +23,10 @@
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 
+#include <algorithm>
+
+#include <cstdint>
+
 namespace argus {
     SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface) {
         SwapchainSupportInfo support_info;

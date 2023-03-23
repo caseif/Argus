@@ -30,6 +30,8 @@
 namespace argus {
     VulkanRenderer::VulkanRenderer(Window &window):
         window(window) {
+        UNUSED(this->resource_event_handler);
+
         auto surface_err = glfwCreateWindowSurface(g_vk_instance,
                 get_window_handle<GLFWwindow>(window), nullptr, &this->surface);
 
@@ -39,7 +41,7 @@ namespace argus {
 
         Logger::default_logger().debug("Created surface for new window");
 
-        this->swapchain = create_vk_swapchain(window, g_vk_device, this->surface);
+        this->swapchain = create_vk_swapchain(this->window, g_vk_device, this->surface);
 
         Logger::default_logger().debug("Created swapchain for new window");
     }
