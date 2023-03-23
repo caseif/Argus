@@ -24,7 +24,6 @@
 
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 
-#include "spirv_glsl.hpp"
 #include "glslang/Public/ShaderLang.h"
 
 #include <iterator>
