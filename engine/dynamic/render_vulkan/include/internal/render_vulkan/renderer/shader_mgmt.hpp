@@ -32,10 +32,9 @@ namespace argus {
         ShaderReflectionInfo reflection;
     };
 
-    PreparedShaderSet prepare_shaders(VkDevice device,
-            std::initializer_list<std::pair<std::string, ShaderStage>> shader_uids);
+    PreparedShaderSet prepare_shaders(VkDevice device, std::initializer_list<std::string> shader_uids);
 
-    PreparedShaderSet prepare_shaders(VkDevice device, const std::vector<std::pair<std::string, ShaderStage>> &shader_uids);
+    PreparedShaderSet prepare_shaders(VkDevice device, const std::vector<std::string> &shader_uids);
 
     void destroy_shaders(VkDevice device, PreparedShaderSet shaders);
 }

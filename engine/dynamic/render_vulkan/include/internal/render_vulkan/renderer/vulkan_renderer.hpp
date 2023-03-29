@@ -32,13 +32,14 @@
 namespace argus {
     class VulkanRenderer {
        private:
+        Index resource_event_handler;
+
+       public:
         Window &window;
         VkSurfaceKHR surface;
         SwapchainInfo swapchain;
         std::vector<VkImage> swapchain_images;
-        Index resource_event_handler;
 
-       public:
         VulkanRenderer(Window &window);
 
         VulkanRenderer(const VulkanRenderer &) = delete;

@@ -74,19 +74,18 @@ namespace argus {
         return res;
     }
 
-    PreparedShaderSet prepare_shaders(VkDevice device,
-            std::initializer_list<std::pair<std::string, ShaderStage>> shader_uids) {
-        return prepare_shaders(device, std::vector<std::pair<std::string, ShaderStage>>(shader_uids));
+    PreparedShaderSet prepare_shaders(VkDevice device, std::initializer_list<std::string> shader_uids) {
+        auto vec = std::vector<std::string>(shader_uids);
+        return prepare_shaders(device, vec);
     }
 
-    PreparedShaderSet prepare_shaders(VkDevice device,
-            const std::vector<std::pair<std::string, ShaderStage>> &shader_uids) {
+    PreparedShaderSet prepare_shaders(VkDevice device, const std::vector<std::string> &shader_uids) {
         PreparedShaderSet res;
 
         std::vector<Resource *> shader_resources;
         std::vector<Shader> loaded_shaders;
         for (const auto &shader_uid : shader_uids) {
-            auto &shader_res = ResourceManager::instance().get_resource(shader_uid.first);
+            auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
             auto &shader = shader_res.get<Shader>();
 
             shader_resources.push_back(&shader_res);

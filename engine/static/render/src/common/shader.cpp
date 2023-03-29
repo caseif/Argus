@@ -106,6 +106,24 @@ namespace argus {
         }
     }
 
+    bool ShaderReflectionInfo::has_output(const std::string &name) {
+        return output_locations.find(name) != output_locations.end();
+    }
+
+    std::optional<uint32_t> ShaderReflectionInfo::get_output_loc(const std::string &name) {
+        auto it = output_locations.find(name);
+        return it != output_locations.end()
+               ? std::make_optional(it->second)
+               : std::nullopt;
+    }
+
+    void ShaderReflectionInfo::get_output_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+        auto loc = get_output_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
+
     bool ShaderReflectionInfo::has_uniform(const std::string &name) {
         return uniform_variable_locations.find(name)
                != uniform_variable_locations.end();

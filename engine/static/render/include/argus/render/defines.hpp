@@ -27,7 +27,7 @@
 #define SHADER_ATTRIB_TEXCOORD "in_TexCoord"
 #define SHADER_ATTRIB_ANIM_FRAME "in_AnimFrame"
 
-#define SHADER_ATTRIB_OUT_FRAGDATA "out_Color"
+#define SHADER_OUT_FRAGDATA "out_Color"
 
 #define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
 #define SHADER_UNIFORM_TIME "u_Time"
