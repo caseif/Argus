@@ -131,7 +131,32 @@ namespace argus {
 
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, nullptr);
         sc_info.images.resize(image_count);
+        sc_info.image_views.reserve(image_count);
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, sc_info.images.data());
+
+        for (auto sc_image : sc_info.images) {
+            VkImageViewCreateInfo image_view_info{};
+            image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            image_view_info.image = sc_image;
+            image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_info.format = format.format;
+            image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_view_info.subresourceRange.baseMipLevel = 0;
+            image_view_info.subresourceRange.levelCount = 1;
+            image_view_info.subresourceRange.baseArrayLayer = 0;
+            image_view_info.subresourceRange.layerCount = 1;
+
+            VkImageView image_view;
+            if (vkCreateImageView(device.logical_device, &image_view_info, nullptr, &image_view) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create Vulkan image view");
+            }
+
+            sc_info.image_views.push_back(image_view);
+        }
 
         sc_info.image_format = format.format;
         sc_info.extent = extent;

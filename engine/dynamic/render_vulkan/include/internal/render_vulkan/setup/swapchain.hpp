@@ -36,6 +36,7 @@ namespace argus {
     struct SwapchainInfo {
         VkSwapchainKHR swapchain;
         std::vector<VkImage> images;
+        std::vector<VkImageView> image_views;
         VkFormat image_format;
         VkExtent2D extent;
     };
