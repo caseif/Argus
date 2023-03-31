@@ -2,7 +2,7 @@
 
 #include "argus/resman.hpp"
 
-#include "internal/render_vulkan/renderer/pipelines.hpp"
+#include "internal/render_vulkan/renderer/pipeline.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 
 #include "vulkan/vulkan.h"

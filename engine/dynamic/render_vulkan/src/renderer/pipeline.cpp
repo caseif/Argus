@@ -2,7 +2,7 @@
 #include "argus/render/common/material.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
-#include "internal/render_vulkan/renderer/pipelines.hpp"
+#include "internal/render_vulkan/renderer/pipeline.hpp"
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 
