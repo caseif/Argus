@@ -52,7 +52,7 @@ namespace argus {
 
         std::vector<VkCommandBuffer> buffers;
         buffers.resize(count);
-        if (vkAllocateCommandBuffers(state.device, &cb_alloc_info, &buffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(state.device, &cb_alloc_info, buffers.data()) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to allocate command buffers");
         }
 
