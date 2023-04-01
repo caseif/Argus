@@ -18,31 +18,17 @@
 
 #pragma once
 
-#include "argus/resman.hpp"
-
-#include "internal/render_vulkan/renderer/pipeline.hpp"
-#include "internal/render_vulkan/setup/swapchain.hpp"
-
 #include "vulkan/vulkan.h"
 
-#include <map>
-#include <string>
-
 namespace argus {
-    struct RendererState {
-        VkDevice device;
+    // forward declarations
+    struct RendererState;
 
-        Vector2u viewport_size;
+    VkCommandPool create_command_pool(const LogicalDevice &device);
 
-        VkSurfaceKHR surface;
-        SwapchainInfo swapchain;
-        std::vector<VkImage> swapchain_images;
-        std::vector<VkImageView> swapchain_image_views;
-        VkRenderPass render_pass;
+    void destroy_command_pool(const LogicalDevice &device, VkCommandPool command_pool);
 
-        VkCommandPool command_pool;
+    std::vector<VkCommandBuffer> alloc_command_buffers(const RendererState &state, uint32_t count);
 
-        std::map<std::string, const Resource*> material_resources;
-        std::map<std::string, PipelineInfo> material_pipelines;
-    };
+    void free_command_buffers(const RendererState &state, std::vector<VkCommandBuffer> buffers);
 }
