@@ -21,8 +21,10 @@
 #include "argus/wm/window.hpp"
 
 #include "internal/render_vulkan/module_render_vulkan.hpp"
+#include "internal/render_vulkan/renderer/pipeline.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
+#include "internal/render_vulkan/state/renderer_state.hpp"
 
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
@@ -33,7 +35,7 @@ namespace argus {
         UNUSED(this->resource_event_handler);
 
         auto surface_err = glfwCreateWindowSurface(g_vk_instance,
-                get_window_handle<GLFWwindow>(window), nullptr, &this->surface);
+                get_window_handle<GLFWwindow>(window), nullptr, &state.surface);
 
         if (surface_err) {
             Logger::default_logger().fatal("glfwCreateWindowSurface returned error code %d", surface_err);
@@ -41,14 +43,16 @@ namespace argus {
 
         Logger::default_logger().debug("Created surface for new window");
 
-        this->swapchain = create_vk_swapchain(this->window, g_vk_device, this->surface);
+        state.swapchain = create_vk_swapchain(this->window, g_vk_device, state.surface);
 
         Logger::default_logger().debug("Created swapchain for new window");
+
+        state.render_pass = create_render_pass(this->state.device, this->state.swapchain.image_format);
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
-        vkDestroySwapchainKHR(g_vk_device.logical_device, this->swapchain.swapchain, nullptr);
-        vkDestroySurfaceKHR(g_vk_instance, this->surface, nullptr);
+        vkDestroySwapchainKHR(g_vk_device.logical_device, state.swapchain.swapchain, nullptr);
+        vkDestroySurfaceKHR(g_vk_instance, state.surface, nullptr);
     }
 
     void VulkanRenderer::render(TimeDelta delta) {

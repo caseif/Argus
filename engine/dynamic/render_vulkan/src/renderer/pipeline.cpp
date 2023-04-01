@@ -32,8 +32,8 @@
 #include <cstdint>
 
 namespace argus {
-    void _push_attr(std::vector<VkVertexInputAttributeDescription> &attr_descs, uint32_t binding, uint32_t location,
-            VkFormat format, uint32_t components, uint32_t &offset) {
+    static void _push_attr(std::vector<VkVertexInputAttributeDescription> &attr_descs, uint32_t binding,
+            uint32_t location, VkFormat format, uint32_t components, uint32_t &offset) {
         VkVertexInputAttributeDescription attr_desc{};
         attr_desc.binding = binding;
         attr_desc.location = location;
@@ -41,6 +41,41 @@ namespace argus {
         attr_desc.offset = offset;
         attr_descs.push_back(attr_desc);
         offset += static_cast<uint32_t>(components * sizeof(float));
+    }
+
+    VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
+        VkAttachmentDescription color_att;
+        color_att.format = format;
+        color_att.samples = VK_SAMPLE_COUNT_1_BIT;
+        color_att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        color_att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        color_att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        color_att.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference color_att_ref{};
+        color_att_ref.attachment = SHADER_OUT_COLOR_LOC;
+        color_att_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &color_att_ref;
+
+        VkRenderPassCreateInfo render_pass_info{};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = 1;
+        render_pass_info.pAttachments = &color_att;
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+
+        VkRenderPass render_pass;
+        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create render pass");
+        }
+
+        return render_pass;
     }
 
     PipelineInfo get_or_create_pipeline(RendererState &state, const std::string &material_uid) {
@@ -189,38 +224,10 @@ namespace argus {
         VkPipelineLayout pipeline_layout;
         vkCreatePipelineLayout(state.device, &pipeline_layout_info, nullptr, &pipeline_layout);
 
-        VkAttachmentDescription color_att;
-        color_att.format = state.renderer.swapchain.image_format;
-        color_att.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_att.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference color_att_ref{};
-        auto out_loc = prepared_shaders.reflection.get_output_loc(SHADER_OUT_FRAGDATA);
-        affirm_precond(out_loc.has_value(), "Required shader output " SHADER_OUT_FRAGDATA " is missing");
-        color_att_ref.attachment = out_loc.value();
-        color_att_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_att_ref;
-
-        VkRenderPassCreateInfo render_pass_info{};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount = 1;
-        render_pass_info.pAttachments = &color_att;
-        render_pass_info.subpassCount = 1;
-        render_pass_info.pSubpasses = &subpass;
-
-        VkRenderPass render_pass;
-        if (vkCreateRenderPass(state.device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create render pass");
-        }
+        auto out_loc = prepared_shaders.reflection.get_output_loc(SHADER_OUT_COLOR);
+        affirm_precond(out_loc.has_value(), "Required shader output " SHADER_OUT_COLOR " is missing");
+        affirm_precond(out_loc.value() == SHADER_OUT_COLOR_LOC,
+                "Required shader output " SHADER_OUT_COLOR " must have location 0");
 
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -235,7 +242,7 @@ namespace argus {
         pipeline_info.pColorBlendState = &color_blend_info;
         pipeline_info.pDynamicState = &dyn_state_info;
         pipeline_info.layout = pipeline_layout;
-        pipeline_info.renderPass = render_pass;
+        pipeline_info.renderPass = state.render_pass;
 
         VkPipeline pipeline;
         if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline)

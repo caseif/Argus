@@ -18,23 +18,11 @@
 
 #pragma once
 
+#include "internal/render_vulkan/renderer/pipeline.hpp"
+#include "internal/render_vulkan/state/renderer_state.hpp"
+
 #include "vulkan/vulkan.h"
 
-#define BACKEND_ID "vulkan"
-
-#define BINDING_INDEX_VBO 0
-#define BINDING_INDEX_ANIM_FRAME_BUF 1
-
-#define SHADER_ATTRIB_POSITION_LEN 2
-#define SHADER_ATTRIB_NORMAL_LEN 2
-#define SHADER_ATTRIB_COLOR_LEN 4
-#define SHADER_ATTRIB_TEXCOORD_LEN 2
-#define SHADER_ATTRIB_ANIM_FRAME_LEN 2
-
-#define SHADER_ATTRIB_POSITION_FORMAT VK_FORMAT_R32G32_SFLOAT
-#define SHADER_ATTRIB_NORMAL_FORMAT VK_FORMAT_R32G32_SFLOAT
-#define SHADER_ATTRIB_COLOR_FORMAT VK_FORMAT_R32G32B32A32_SFLOAT
-#define SHADER_ATTRIB_TEXCOORD_FORMAT VK_FORMAT_R32G32_SFLOAT
-#define SHADER_ATTRIB_ANIM_FRAME_FORMAT VK_FORMAT_R32G32_UINT
-
-#define SHADER_OUT_COLOR_LOC 0
+namespace argus {
+    VkFramebuffer create_framebuffer(RendererState &state, PipelineInfo pipeline);
+}

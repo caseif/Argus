@@ -242,7 +242,7 @@ namespace argus {
             glAttachShader(program_handle, compiled_shader.handle);
         }
 
-        glBindFragDataLocation(program_handle, 0, SHADER_OUT_FRAGDATA);
+        glBindFragDataLocation(program_handle, 0, SHADER_OUT_COLOR);
 
         glLinkProgram(program_handle);
 

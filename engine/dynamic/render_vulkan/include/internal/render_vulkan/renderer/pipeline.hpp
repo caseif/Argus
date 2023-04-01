@@ -22,6 +22,9 @@
 
 #include "vulkan/vulkan.h"
 
+#include <string>
+#include <vector>
+
 namespace argus {
     // forward declarations
     struct RendererState;
@@ -30,6 +33,8 @@ namespace argus {
         VkPipeline pipeline;
         VkPipelineLayout layout;
     };
+
+    VkRenderPass create_render_pass(VkDevice device, VkFormat format);
 
     PipelineInfo get_or_create_pipeline(RendererState &state, const std::string &material_uid);
 

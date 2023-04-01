@@ -21,7 +21,7 @@
 #include "argus/resman.hpp"
 
 #include "internal/render_vulkan/renderer/pipeline.hpp"
-#include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
+#include "internal/render_vulkan/setup/swapchain.hpp"
 
 #include "vulkan/vulkan.h"
 
@@ -30,15 +30,17 @@
 
 namespace argus {
     struct RendererState {
-        VulkanRenderer &renderer;
-
         VkDevice device;
 
         Vector2u viewport_size;
 
+        VkSurfaceKHR surface;
+        SwapchainInfo swapchain;
+        std::vector<VkImage> swapchain_images;
+        std::vector<VkImageView> swapchain_image_views;
+        VkRenderPass render_pass;
+
         std::map<std::string, const Resource*> material_resources;
         std::map<std::string, PipelineInfo> material_pipelines;
-
-        RendererState(VulkanRenderer &renderer);
     };
 }
