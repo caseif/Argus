@@ -1,7 +1,12 @@
 #version 460 core
 
-uniform mat4 u_ViewMatrix;
-uniform vec2 u_UvStride;
+layout(std140, binding = 3) uniform Global {
+    float Time;
+} global;
+
+layout(std140, binding = 1, row_major) uniform Viewport {
+    mat4 ViewMatrix;
+} viewport;
 
 layout(location = 0) in vec2 in_Position;
 // tex coord attr is local to the current atlas "tile" and is generally (but not
@@ -13,7 +18,7 @@ out vec2 pass_TexCoord;
 out vec2 pass_AnimFrame;
 
 void main() {
-    gl_Position = u_ViewMatrix * vec4(in_Position, 0.0, 1.0);
+    gl_Position = viewport.ViewMatrix * vec4(in_Position, 0.0, 1.0);
     pass_TexCoord = in_TexCoord;
     pass_AnimFrame = in_AnimFrame;
 }

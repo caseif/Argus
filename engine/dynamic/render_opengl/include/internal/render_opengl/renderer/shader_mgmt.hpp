@@ -54,6 +54,4 @@ namespace argus {
     void remove_shader(RendererState &state, const std::string &shader_uid);
 
     void deinit_program(program_handle_t program);
-
-    void set_per_frame_global_uniforms(LinkedProgram &program);
 }

@@ -103,24 +103,29 @@ namespace argus {
             spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8));
         }
 
-        for (auto shader_attr : comp_res.attributes) {
+        for (const auto &shader_attr : comp_res.attributes) {
             Logger::default_logger().debug("Found shader program attribute %s @ location %d",
                     shader_attr.first.c_str(), shader_attr.second);
         }
 
-        for (auto shader_output : comp_res.outputs) {
+        for (const auto &shader_output : comp_res.outputs) {
             Logger::default_logger().debug("Found shader program output %s @ location %d",
                     shader_output.first.c_str(), shader_output.second);
         }
 
-        for (auto shader_uniform : comp_res.uniforms) {
+        for (const auto &shader_uniform : comp_res.uniforms) {
             Logger::default_logger().debug("Found shader program uniform %s @ location %d",
                     shader_uniform.first.c_str(), shader_uniform.second);
         }
 
-        for (auto shader_buffer : comp_res.buffers) {
+        for (const auto &shader_buffer : comp_res.buffers) {
             Logger::default_logger().debug("Found shader program buffer %s @ location %d",
                     shader_buffer.first.c_str(), shader_buffer.second);
+        }
+
+        for (const auto &ubo : comp_res.ubos) {
+            Logger::default_logger().debug("Found shader program UBO %s with binding %d",
+                    ubo.first.c_str(), ubo.second);
         }
 
         ShaderReflectionInfo refl;
@@ -128,6 +133,7 @@ namespace argus {
         refl.output_locations = comp_res.outputs;
         refl.uniform_variable_locations = comp_res.uniforms;
         refl.buffer_locations = comp_res.buffers;
+        refl.ubo_bindings = comp_res.ubos;
 
         return std::make_pair(spirv_shaders, refl);
     }

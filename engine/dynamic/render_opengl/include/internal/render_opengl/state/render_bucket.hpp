@@ -21,6 +21,7 @@
 #include "argus/resman/resource.hpp"
 
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/buffer.hpp"
 
 #include <string>
 #include <vector>
@@ -44,6 +45,7 @@ namespace argus {
         void *anim_frame_buffer_staging;
         array_handle_t vertex_array;
         size_t vertex_count;
+        BufferInfo obj_ubo;
 
         bool needs_rebuild;
 

@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/vector.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 
@@ -33,6 +34,15 @@ namespace argus {
         return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index };
     }
 
+    static void _create_obj_ubo(RenderBucket &bucket) {
+        bucket.obj_ubo = create_buffer(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, false);
+
+        map_buffer_w(bucket.obj_ubo, GL_UNIFORM_BUFFER);
+        float stride[2] = { bucket.atlas_stride.x, bucket.atlas_stride.y };
+        write_buffer_data(bucket.obj_ubo, SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(stride), stride);
+        unmap_buffer(bucket.obj_ubo, GL_UNIFORM_BUFFER);
+    }
+
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {
         RenderBucket *bucket;
         auto key = _get_bucket_key(processed_obj);
@@ -43,6 +53,7 @@ namespace argus {
             bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride,
                     processed_obj.z_index);
             scene_state.render_buckets[key] = bucket;
+            _create_obj_ubo(*bucket);
         }
 
         bucket->objects.push_back(&processed_obj);

@@ -88,56 +88,77 @@ namespace argus {
         return pimpl->src;
     }
 
-    bool ShaderReflectionInfo::has_attr(const std::string &name) {
+    bool ShaderReflectionInfo::has_attr(const std::string &name) const {
         return attribute_locations.find(name) != attribute_locations.end();
     }
 
-    std::optional<uint32_t> ShaderReflectionInfo::get_attr_loc(const std::string &name) {
+    std::optional<uint32_t> ShaderReflectionInfo::get_attr_loc(const std::string &name) const {
         auto it = attribute_locations.find(name);
         return it != attribute_locations.end()
                ? std::make_optional(it->second)
                : std::nullopt;
     }
 
-    void ShaderReflectionInfo::get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+    void ShaderReflectionInfo::get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const {
         auto loc = get_attr_loc(name);
         if (loc.has_value()) {
             fn(loc.value());
         }
     }
 
-    bool ShaderReflectionInfo::has_output(const std::string &name) {
+    bool ShaderReflectionInfo::has_output(const std::string &name) const {
         return output_locations.find(name) != output_locations.end();
     }
 
-    std::optional<uint32_t> ShaderReflectionInfo::get_output_loc(const std::string &name) {
+    std::optional<uint32_t> ShaderReflectionInfo::get_output_loc(const std::string &name) const {
         auto it = output_locations.find(name);
         return it != output_locations.end()
                ? std::make_optional(it->second)
                : std::nullopt;
     }
 
-    void ShaderReflectionInfo::get_output_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+    void ShaderReflectionInfo::get_output_loc_and_then(const std::string &name,
+            std::function<void(uint32_t)> fn) const {
         auto loc = get_output_loc(name);
         if (loc.has_value()) {
             fn(loc.value());
         }
     }
 
-    bool ShaderReflectionInfo::has_uniform(const std::string &name) {
+    bool ShaderReflectionInfo::has_uniform(const std::string &name) const {
         return uniform_variable_locations.find(name)
                != uniform_variable_locations.end();
     }
 
-    std::optional<uint32_t> ShaderReflectionInfo::get_uniform_loc(const std::string &name) {
+    std::optional<uint32_t> ShaderReflectionInfo::get_uniform_loc(const std::string &name) const {
         auto it = uniform_variable_locations.find(name);
         return it != uniform_variable_locations.end()
                ? std::make_optional(it->second)
                : std::nullopt;
     }
 
-    void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) {
+    void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &name,
+            std::function<void(uint32_t)> fn) const {
         auto loc = get_uniform_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
+
+    bool ShaderReflectionInfo::has_ubo(const std::string &name) const {
+        return ubo_bindings.find(name) != ubo_bindings.cend();
+    }
+
+    std::optional<uint32_t> ShaderReflectionInfo::get_ubo_binding(const std::string &name) const {
+        auto it = ubo_bindings.find(name);
+        return it != ubo_bindings.end()
+               ? std::make_optional(it->second)
+               : std::nullopt;
+    }
+
+    void ShaderReflectionInfo::get_ubo_binding_and_then(const std::string &name,
+            std::function<void(uint32_t)> fn) const {
+        auto loc = get_ubo_binding(name);
         if (loc.has_value()) {
             fn(loc.value());
         }

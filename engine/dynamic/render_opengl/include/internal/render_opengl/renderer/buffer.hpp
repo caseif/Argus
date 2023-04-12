@@ -18,34 +18,28 @@
 
 #pragma once
 
-#include "argus/render/2d/attached_viewport_2d.hpp"
+#include "aglet/aglet.h"
 
-#include "internal/render_opengl/types.hpp"
-#include "internal/render_opengl/renderer/buffer.hpp"
+#include <cstddef>
 
 namespace argus {
-    // forward declarations
-    struct RendererState;
-
-    struct ViewportState {
-        RendererState &parent_state;
-        AttachedViewport *viewport;
-
-        Matrix4 view_matrix;
-        bool view_matrix_dirty;
-
-        BufferInfo ubo{};
-
-        buffer_handle_t front_fb;
-        buffer_handle_t back_fb;
-
-        texture_handle_t front_frame_tex;
-        texture_handle_t back_frame_tex;
-
-        ViewportState(RendererState &parent_state, AttachedViewport *viewport);
+    struct BufferInfo {
+        size_t len;
+        buffer_handle_t buffer;
+        void *mapped;
+        bool persistent;
     };
 
-    struct Viewport2DState : ViewportState {
-        Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport);
-    };
+    BufferInfo create_buffer(GLenum target, size_t len, GLenum usage, bool map_nonpersistent);
+
+    void map_buffer_w(BufferInfo &buffer, GLenum target);
+
+    void unmap_buffer(BufferInfo &buffer, GLenum target);
+
+    void write_buffer_data(BufferInfo &buffer, size_t offset, size_t size, void *src);
+
+    template <typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
+    void write_buffer_val(BufferInfo &buffer, size_t offset, T val) {
+        write_buffer_data(buffer, offset, sizeof(T), &val);
+    }
 }

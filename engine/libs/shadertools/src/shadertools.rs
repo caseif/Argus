@@ -10,6 +10,9 @@ use glsl::{parser::*, syntax::*, visitor::*};
 use glslang::{*, bindings::*};
 
 const LAYOUT_ID_LOCATION: &'static str = "location";
+const LAYOUT_ID_BINDING: &'static str = "binding";
+const LAYOUT_ID_STD140: &'static str = "std140";
+const LAYOUT_ID_STD430: &'static str = "std430";
 
 pub struct ProcessedGlslShader {
     stage: Stage,
@@ -17,7 +20,8 @@ pub struct ProcessedGlslShader {
     inputs: HashMap<String, u32>,
     outputs: HashMap<String, u32>,
     uniforms: HashMap<String, u32>,
-    buffers: HashMap<String, u32>
+    buffers: HashMap<String, u32>,
+    ubos: HashMap<String, u32>
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -86,7 +90,8 @@ pub struct CompiledShaderSet {
     pub inputs: HashMap<String, u32>,
     pub outputs: HashMap<String, u32>,
     pub uniforms: HashMap<String, u32>,
-    pub buffers: HashMap<String, u32>
+    pub buffers: HashMap<String, u32>,
+    pub ubos: HashMap<String, u32>
 }
 
 pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Client, client_version: TargetClientVersion,
@@ -185,12 +190,17 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
         .map(|glsl| &glsl.buffers)
         .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
 
+    let program_ubos = processed_glsl.iter()
+        .map(|glsl| &glsl.ubos)
+        .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
+
     return Result::Ok(CompiledShaderSet {
         bytecode: res,
         inputs: program_attrs,
         outputs: program_outputs,
         uniforms: program_uniforms,
-        buffers: program_buffers
+        buffers: program_buffers,
+        ubos: program_ubos
     });
 }
 
@@ -279,6 +289,7 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
     let mut outputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
     let mut uniforms = HashMap::<String, DeclarationInfo>::new();
     let mut buffers = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut ubos = HashMap::<String, BlockInfo>::new();
 
     // first pass: enumerate declarations of all shaders
     let mut i = 0;
@@ -337,6 +348,23 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
                 }
             } else {
                 uniforms.insert(uni_name, cur_decl);
+            }
+        }
+
+        // validate blocks to ensure we don't have conflicting definitions
+        for (block_name, cur_decl) in scan_visitor.ubos {
+            if ubos.contains_key(&block_name) {
+                let prev_decl = ubos.get_mut(&block_name).unwrap();
+
+                if prev_decl.storage != cur_decl.storage {
+                    return Err(GlslCompileError::new("Shader set contains conflicting storage qualifiers for same uniform name"));
+                }
+
+                /*if prev_decl.size != cur_decl.size {
+                    return Err(GlslCompileError::new("Shader set contains conflicting sizes for same uniform name"));
+                }*/
+            } else {
+                ubos.insert(block_name, cur_decl);
             }
         }
 
@@ -502,6 +530,10 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             buffers: all_assigned_buffers[stage].iter()
                 .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
+                .collect(),
+            ubos: ubos.iter()
+                .filter(|(_, v)| v.binding.is_some())
+                .map(|(k, v)| (k.clone(), v.binding.unwrap()))
                 .collect()
         });
     }
@@ -651,6 +683,15 @@ struct DeclarationInfo {
     explicit_location: bool
 }
 
+#[derive(Clone)]
+struct BlockInfo {
+    block_name: String,
+    instance_name: String,
+    array_dims: Option<u32>,
+    storage: StorageQualifier,
+    binding: Option<u32>
+}
+
 fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String, Option<u32>>)
         -> Result<Option<DeclarationInfo>, GlslCompileError> {
     let name = &single_decl.name;
@@ -668,7 +709,7 @@ fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String,
 
     let mut location: Option<u32> = None;
 
-    let mut storage: Option::<StorageQualifier> = None;
+    let mut storage: Option<StorageQualifier> = None;
 
     for qualifier in &qualifiers.as_ref().unwrap().qualifiers {
         match qualifier {
@@ -701,7 +742,7 @@ fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String,
                                         return Err(GlslCompileError::new("Location layout qualifier requires scalar integer expression"));
                                     },
                                     _ => {
-                                        return Err(GlslCompileError::new("Non-literal layout IDs are not supported at this time"));
+                                        return Err(GlslCompileError::new("Non-literal layout location values are not supported at this time"));
                                     }
                                 }
                             }
@@ -739,6 +780,120 @@ fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String,
         size: type_size,
         location: location,
         explicit_location: location.is_some()
+    }));
+}
+
+fn get_block_info(block: &Block) -> Result<Option<BlockInfo>, GlslCompileError> {
+    let block_name = &block.name;
+    let id = &block.identifier;
+
+    if id.is_none() {
+        return Ok(None);
+    }
+
+    let instance_name = &id.as_ref().unwrap().ident.0;
+
+    let array_dims = match &id.as_ref().unwrap().array_spec {
+        Some(arr_spec) => match arr_spec.dimensions.0.len() {
+            0 => None,
+            1 => Some(match arr_spec.dimensions.0.first().unwrap() {
+                ArraySpecifierDimension::Unsized => 0,
+                ArraySpecifierDimension::ExplicitlySized(expr) => match expr.as_ref() {
+                    Expr::IntConst(n) => *n as u32,
+                    _ => { return Err(GlslCompileError::new("Non-literal array dimension specifiers are not \
+                                    supported at this time")); }
+                }
+            }),
+            _ => { return Err(GlslCompileError::new("Multidimensional blocks are not allowed")); }
+        },
+        None => None
+    };
+
+    let mut binding: Option<u32> = None;
+    let mut storage: Option<StorageQualifier> = None;
+    let mut mem_layout: Option<String> = None;
+
+    for qualifier in &block.qualifier.qualifiers {
+        match qualifier {
+            TypeQualifierSpec::Storage(StorageQualifier::In) => {
+                return Err(GlslCompileError::new("Block storage qualifier 'in' is not supported at this time"));
+            },
+            TypeQualifierSpec::Storage(StorageQualifier::Out) => {
+                return Err(GlslCompileError::new("Block storage qualifier 'out' is not supported at this time"));
+            },
+            TypeQualifierSpec::Storage(StorageQualifier::Buffer) => {
+                return Err(GlslCompileError::new("Block storage qualifier 'buffer' is not supported at this time"));
+            },
+            TypeQualifierSpec::Storage(qual) => {
+                storage = Some(qual.to_owned());
+            },
+            TypeQualifierSpec::Layout(layout) => {
+                for id_enum in &layout.ids {
+                    match id_enum {
+                        LayoutQualifierSpec::Identifier(id, expr) => {
+                            if id.to_string() == LAYOUT_ID_BINDING {
+                                if expr.is_none() {
+                                    return Err(GlslCompileError::new("Binding layout qualifier requires assignment"));
+                                }
+                                match expr.as_ref().unwrap().as_ref() {
+                                    Expr::IntConst(loc) => {
+                                        if loc >= &0 {
+                                            binding = Some(loc.to_owned() as u32);
+                                        } else {
+                                            return Err(GlslCompileError::new("Binding layout qualifier must not be negative"))
+                                        }
+                                    },
+                                    Expr::UIntConst(_) | Expr::FloatConst(_) | Expr::DoubleConst(_) | Expr::BoolConst(_) => {
+                                        return Err(GlslCompileError::new("Binding layout qualifier requires scalar integer expression"));
+                                    },
+                                    _ => {
+                                        return Err(GlslCompileError::new("Non-literal binding indices are not supported at this time"));
+                                    }
+                                }
+                            } else if id.to_string() == LAYOUT_ID_STD140 {
+                                mem_layout = Some(LAYOUT_ID_STD140.to_string());
+                            } else if id.to_string() == LAYOUT_ID_STD430 {
+                                mem_layout = Some(LAYOUT_ID_STD430.to_string());
+                            }
+                        },
+                        LayoutQualifierSpec::Shared => ()
+                    };
+                }
+            }
+            _ => ()
+        }
+    }
+
+    if storage.is_none() {
+        return Ok(None);
+    }
+
+    if mem_layout.is_none() || mem_layout.unwrap() != LAYOUT_ID_STD140 {
+        return Err(GlslCompileError::new("Memory layout 'std140' is required for blocks"))
+    }
+
+    /*let type_size = if let TypeSpecifierNonArray::TypeName(tn) = &decl_type.ty.ty {
+        let size = struct_sizes.get(&tn.0);
+        if size.is_some() {
+            match size.unwrap().unwrap_or(0) {
+                0 => None,
+                v => Some(v)
+            }
+        } else {
+            return Err(GlslCompileError::new(std::format!("Unknown type name {} referenced in declaration '{}'",
+                                                          &tn.0, name.as_ref().unwrap().0).as_str()));
+        }
+    } else {
+        Some(get_type_size(&decl_type.ty.ty).unwrap())
+    };*/
+
+    return Ok(Some(BlockInfo {
+        block_name: block_name.to_owned().0,
+        instance_name: instance_name.to_owned(),
+        array_dims: array_dims,
+        storage: storage.unwrap(),
+        //size: type_size,
+        binding
     }));
 }
 
@@ -816,7 +971,8 @@ struct ScanningDeclarationVisitor<'a> {
     inputs: HashMap<String, DeclarationInfo>,
     outputs: HashMap<String, DeclarationInfo>,
     uniforms: HashMap<String, DeclarationInfo>,
-    buffers: HashMap<String, DeclarationInfo>
+    buffers: HashMap<String, DeclarationInfo>,
+    ubos: HashMap<String, BlockInfo>
 }
 
 impl<'a> ScanningDeclarationVisitor<'a> {
@@ -831,6 +987,7 @@ impl<'a> ScanningDeclarationVisitor<'a> {
             outputs: HashMap::new(),
             uniforms: HashMap::new(),
             buffers: HashMap::new(),
+            ubos: HashMap::new(),
         }
     }
 
@@ -870,7 +1027,25 @@ impl<'a> Visitor for ScanningDeclarationVisitor<'a> {
                 self.buffers.insert(decl.name.clone(), decl.clone());
             }
         } else if let Declaration::Block(block) = decl {
-            println!("Visiting block {:?}", block.name);
+            let block_info = match get_block_info(block) {
+                Ok(opt) => match opt {
+                    Some(val) => val,
+                    None => {
+                        return Visit::Parent;
+                    }
+                },
+                Err(e) => {
+                    self.set_failure(e.message);
+                    return Visit::Parent;
+                },
+            };
+
+            match block_info.storage {
+                StorageQualifier::Uniform => {
+                    self.ubos.insert(block_info.block_name.clone(), block_info.clone());
+                },
+                _ => {}
+            }
         }
 
         return Visit::Parent;
@@ -956,7 +1131,7 @@ impl<'a> VisitorMut for MutatingDeclarationVisitor<'a> {
                 set_decl_location(&mut idl.head.ty, assigned_loc.try_into().unwrap());
             }
         } else if let Declaration::Block(block) = decl {
-            println!("Visiting block {:?}", block.name);
+            // no-op
         }
 
         return Visit::Parent;

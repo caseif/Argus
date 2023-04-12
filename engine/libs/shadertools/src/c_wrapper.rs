@@ -38,6 +38,8 @@ pub struct InteropShaderCompilationResult {
     uniforms: *const u8,
     buffer_count: usize,
     buffers: *const u8,
+    ubo_count: usize,
+    ubos: *const u8,
 }
 
 unsafe fn copy_rust_map_to_interop_map(map: &HashMap<String, u32>) -> *const u8 {
@@ -144,6 +146,9 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
     (*res).buffer_count = compile_res.buffers.len();
     (*res).buffers = copy_rust_map_to_interop_map(&compile_res.buffers);
 
+    (*res).ubo_count = compile_res.ubos.len();
+    (*res).ubos = copy_rust_map_to_interop_map(&compile_res.ubos);
+
     (*res).success = true;
 
     return res;
@@ -194,6 +199,10 @@ pub unsafe extern "C" fn free_compilation_result(result: *mut InteropShaderCompi
 
     if (*result).buffers != null() {
         dealloc_interop_map((*result).buffers);
+    }
+
+    if (*result).ubos != null() {
+        dealloc_interop_map((*result).ubos);
     }
 
     dealloc(result as *mut u8, Layout::new::<InteropShaderCompilationResult>());

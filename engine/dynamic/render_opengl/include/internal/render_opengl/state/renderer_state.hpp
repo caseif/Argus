@@ -25,6 +25,7 @@
 #include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/buffer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/scene_state.hpp"
 
@@ -76,6 +77,8 @@ namespace argus {
         buffer_handle_t frame_vbo;
         array_handle_t frame_vao;
         std::optional<LinkedProgram> frame_program;
+
+        BufferInfo global_ubo;
 
         RendererState(GLRenderer &renderer);
 

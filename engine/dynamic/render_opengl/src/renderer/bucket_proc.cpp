@@ -59,7 +59,8 @@ namespace argus {
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
             affirm_precond(program_it != scene_state.parent_state.linked_programs.cend(),
                     "Cannot find material program");
-            bool animated = program_it->second.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+            //bool animated = program_it->second.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
+            bool animated = true;
 
             // the program should have been linked during object processing
             auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;

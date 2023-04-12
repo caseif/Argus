@@ -31,6 +31,7 @@
 
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/buffer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 
@@ -99,7 +100,7 @@ namespace argus {
         res.explicit_attrib_locations = true;
         res.explicit_uniform_locations = true;
 
-        bool have_gl_spirv = AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv;
+        bool have_gl_spirv = AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv && false;
 
         spirv_cross::CompilerGLSL::Options options;
 
@@ -343,19 +344,5 @@ namespace argus {
 
     void deinit_program(program_handle_t program) {
         glDeleteProgram(program);
-    }
-
-    void set_per_frame_global_uniforms(LinkedProgram &program) {
-        program.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
-            affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
-            glUniform1f(GLint(time_loc),
-                    float(
-                            double(
-                                    std::chrono::time_point_cast<std::chrono::microseconds>(
-                                            now()).time_since_epoch().count()
-                            ) / 1000.0
-                    )
-            );
-        });
     }
 }

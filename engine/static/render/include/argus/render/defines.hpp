@@ -29,9 +29,20 @@
 
 #define SHADER_OUT_COLOR "out_Color"
 
-#define SHADER_UNIFORM_VIEW_MATRIX "u_ViewMatrix"
-#define SHADER_UNIFORM_TIME "u_Time"
-#define SHADER_UNIFORM_UV_STRIDE "u_UvStride"
+#define SHADER_UBO_GLOBAL "Global"
+#define SHADER_UBO_GLOBAL_LEN 16
+#define SHADER_UNIFORM_GLOBAL_TIME "Time"
+#define SHADER_UNIFORM_GLOBAL_TIME_OFF 0
+
+#define SHADER_UBO_VIEWPORT "Viewport"
+#define SHADER_UBO_VIEWPORT_LEN 64
+#define SHADER_UNIFORM_VIEWPORT_VM "ViewMatrix"
+#define SHADER_UNIFORM_VIEWPORT_VM_OFF 0
+
+#define SHADER_UBO_OBJ "Object"
+#define SHADER_UBO_OBJ_LEN 16
+#define SHADER_UNIFORM_OBJ_UV_STRIDE "UvStride"
+#define SHADER_UNIFORM_OBJ_UV_STRIDE_OFF 0
 
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"

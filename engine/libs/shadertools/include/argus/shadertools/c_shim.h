@@ -48,6 +48,8 @@ struct InteropShaderCompilationResult {
     unsigned char *uniforms;
     size_t buffer_count;
     unsigned char *buffers;
+    size_t ubo_count;
+    unsigned char *ubos;
 };
 
 InteropShaderCompilationResult *transpile_glsl(const glslang_stage_t *stages, const char *const *glsl_sources,

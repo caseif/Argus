@@ -53,24 +53,31 @@ namespace argus {
         std::map<std::string, uint32_t> output_locations;
         std::map<std::string, uint32_t> uniform_variable_locations;
         std::map<std::string, uint32_t> buffer_locations;
+        std::map<std::string, uint32_t> ubo_bindings;
 
-        bool has_attr(const std::string &name);
+        [[nodiscard]] bool has_attr(const std::string &name) const;
 
-        std::optional<uint32_t> get_attr_loc(const std::string &name);
+        [[nodiscard]] std::optional<uint32_t> get_attr_loc(const std::string &name) const;
 
-        void get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
+        void get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
 
-        bool has_output(const std::string &name);
+        [[nodiscard]] bool has_output(const std::string &name) const;
 
-        std::optional<uint32_t> get_output_loc(const std::string &name);
+        [[nodiscard]] std::optional<uint32_t> get_output_loc(const std::string &name) const;
 
-        void get_output_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
+        void get_output_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
 
-        bool has_uniform(const std::string &name);
+        [[nodiscard]] bool has_uniform(const std::string &name) const;
 
-        std::optional<uint32_t> get_uniform_loc(const std::string &name);
+        [[nodiscard]] std::optional<uint32_t> get_uniform_loc(const std::string &name) const;
 
-        void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn);
+        void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+
+        [[nodiscard]] bool has_ubo(const std::string &name) const;
+
+        [[nodiscard]] std::optional<uint32_t> get_ubo_binding(const std::string &name) const;
+
+        void get_ubo_binding_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
     };
 
     /**
@@ -85,7 +92,7 @@ namespace argus {
          *
          * \param uid The unique identifier of the shader.
          * \param type The type of shader stored by this object.
-         * \param stage The stage of the graphics pipeline this shader is to
+         * \param stage The stage of the graphblock_locationsics pipeline this shader is to
          *        be run at.
          * \param src The source data of the Shader.
          */

@@ -37,6 +37,7 @@ namespace argus {
         std::map<std::string, uint32_t> outputs;
         std::map<std::string, uint32_t> uniforms;
         std::map<std::string, uint32_t> buffers;
+        std::map<std::string, uint32_t> ubos;
     };
 
     static void _copy_compat_map_to_cpp_map(std::map<std::string, uint32_t> &dest, unsigned char *source,
@@ -87,7 +88,7 @@ namespace argus {
 
         CompiledShaderSet final_set;
 
-        for (size_t i = 0; i < res->shader_count; i++) {
+        for (i = 0; i < res->shader_count; i++) {
             auto stage = res->stages[i];
             auto len = res->spirv_binaries[i]->size;
             auto data = res->spirv_binaries[i]->data;
@@ -102,6 +103,7 @@ namespace argus {
         _copy_compat_map_to_cpp_map(final_set.outputs, res->outputs, res->output_count);
         _copy_compat_map_to_cpp_map(final_set.uniforms, res->uniforms, res->uniform_count);
         _copy_compat_map_to_cpp_map(final_set.buffers, res->buffers, res->buffer_count);
+        _copy_compat_map_to_cpp_map(final_set.ubos, res->ubos, res->ubo_count);
 
         free_compilation_result(res);
 
