@@ -4,7 +4,7 @@ layout(std140, binding = 3) uniform Global {
     float Time;
 } global;
 
-layout(std140, binding = 1, row_major) uniform Viewport {
+layout(std140, binding = 1) uniform Viewport {
     mat4 ViewMatrix;
 } viewport;
 

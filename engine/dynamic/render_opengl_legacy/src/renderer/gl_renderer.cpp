@@ -97,15 +97,15 @@ namespace argus {
                 break;
         }
 
-        return {
-                {2 / (float(r - l) * hor_scale), 0,                              0,
+        return Matrix4::from_row_major({
+                2 / (float(r - l) * hor_scale), 0,                              0,
                                                                                     -float(r + l) /
-                                                                                    (float(r - l) * hor_scale)},
-                {0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
-                                                                                    (float(t - b) * ver_scale)},
-                {0,                              0,                              1, 0},
-                {0,                              0,                              0, 1}
-        };
+                                                                                    (float(r - l) * hor_scale),
+                0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
+                                                                                    (float(t - b) * ver_scale),
+                0,                              0,                              1, 0,
+                0,                              0,                              0, 1
+        });
     }
 
     static Matrix4 _compute_view_matrix(const Vector2u &resolution) {
@@ -125,18 +125,18 @@ namespace argus {
 
         auto cur_translation = transform.get_translation();
 
-        Matrix4 anchor_mat_1 = {
-                {1, 0, 0, -center_x + cur_translation.x},
-                {0, 1, 0, -center_y + cur_translation.y},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1},
-        };
-        Matrix4 anchor_mat_2 = {
-                {1, 0, 0, center_x - cur_translation.x},
-                {0, 1, 0, center_y - cur_translation.y},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1},
-        };
+        Matrix4 anchor_mat_1 = Matrix4::from_row_major({
+                1, 0, 0, -center_x + cur_translation.x,
+                0, 1, 0, -center_y + cur_translation.y,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+        });
+        Matrix4 anchor_mat_2 = Matrix4::from_row_major({
+                1, 0, 0, center_x - cur_translation.x,
+                0, 1, 0, center_y - cur_translation.y,
+                0, 0, 1, 0,
+                0, 0, 0, 1,
+        });
         dest = Matrix4::identity();
         multiply_matrices(dest, anchor_mat_1);
         multiply_matrices(dest, transform.get_scale_matrix());

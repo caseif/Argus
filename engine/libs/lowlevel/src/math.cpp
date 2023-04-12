@@ -18,18 +18,40 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include <array>
 #include <string>
 
 #include <cstring>
 
 namespace argus {
+    Matrix4 Matrix4::from_row_major(const float elements[16]) {
+        return { {
+            elements[0], elements[4], elements[8],  elements[12],
+            elements[1], elements[5], elements[9],  elements[13],
+            elements[2], elements[6], elements[10], elements[14],
+            elements[3], elements[7], elements[11], elements[15]
+        } };
+    }
+
+    Matrix4 Matrix4::from_row_major(const std::array<float, 16> &&elements) {
+        return from_row_major(elements.data());
+    }
+
+    float Matrix4::operator()(int r, int c) const {
+        return this->data[c * 4 + r];
+    }
+
+    float &Matrix4::operator()(int r, int c) {
+        return this->data[c * 4 + r];
+    }
+
     void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res) {
         // naive implementation
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                res[i][j] = 0;
+                res(i, j) = 0;
                 for (int k = 0; k < 4; k++) {
-                    res[i][j] += a[k][j] * b[i][k];
+                    res(i, j) += a(k, j) * b(i, k);
                 }
             }
         }
@@ -43,10 +65,10 @@ namespace argus {
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat) {
         return Vector4f{
-                mat[0][0] * vec.x + mat[0][1] * vec.y + mat[0][2] * vec.z + mat[0][3] * vec.w,
-                mat[1][0] * vec.x + mat[1][1] * vec.y + mat[1][2] * vec.z + mat[1][3] * vec.w,
-                mat[2][0] * vec.x + mat[2][1] * vec.y + mat[2][2] * vec.z + mat[2][3] * vec.w,
-                mat[3][0] * vec.x + mat[3][1] * vec.y + mat[3][2] * vec.z + mat[3][3] * vec.w
+                mat(0, 0) * vec.x + mat(0, 1) * vec.y + mat(0, 2) * vec.z + mat(0, 3) * vec.w,
+                mat(1, 0) * vec.x + mat(1, 1) * vec.y + mat(1, 2) * vec.z + mat(1, 3) * vec.w,
+                mat(2, 0) * vec.x + mat(2, 1) * vec.y + mat(2, 2) * vec.z + mat(2, 3) * vec.w,
+                mat(3, 0) * vec.x + mat(3, 1) * vec.y + mat(3, 2) * vec.z + mat(3, 3) * vec.w
         };
     }
 
@@ -57,12 +79,12 @@ namespace argus {
     }
 
     void transpose_matrix(Matrix4 &mat) {
-        _swap_f(&(mat[0][1]), &(mat[1][4]));
-        _swap_f(&(mat[0][2]), &(mat[2][0]));
-        _swap_f(&(mat[0][3]), &(mat[3][0]));
-        _swap_f(&(mat[1][2]), &(mat[2][1]));
-        _swap_f(&(mat[1][3]), &(mat[3][1]));
-        _swap_f(&(mat[2][3]), &(mat[3][2]));
+        _swap_f(&(mat(0, 1)), &(mat(1, 4)));
+        _swap_f(&(mat(0, 2)), &(mat(2, 0)));
+        _swap_f(&(mat(0, 3)), &(mat(3, 0)));
+        _swap_f(&(mat(1, 2)), &(mat(2, 1)));
+        _swap_f(&(mat(1, 3)), &(mat(3, 1)));
+        _swap_f(&(mat(2, 3)), &(mat(3, 2)));
     }
 
     std::string mat4_to_str(Matrix4 matrix) {

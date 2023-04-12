@@ -20,64 +20,44 @@
 
 #include "argus/lowlevel/math/vector.hpp"
 
+#include <array>
 #include <string>
+
+#include <cstring>
 
 namespace argus {
     #pragma pack(push, 1)
 
-    struct Matrix4Row {
-        float data[4]{};
-
-        float &operator[](int i) {
-            return data[i];
-        }
-
-        float operator[](int i) const {
-            return data[i];
-        }
-
-        Matrix4Row(float a, float b, float c, float d) {
-            data[0] = a;
-            data[1] = b;
-            data[2] = c;
-            data[3] = d;
-        }
-
-        Matrix4Row(void) : Matrix4Row(0, 0, 0, 0) {
-        }
+    static constexpr const float IDENTITY[16] = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
     };
 
     struct Matrix4 {
-        union {
-            float data[16]{};
-            Matrix4Row rows[4];
-        };
+        float data[16]{};
 
-        Matrix4(Matrix4Row a, Matrix4Row b, Matrix4Row c, Matrix4Row d) {
-            rows[0] = a;
-            rows[1] = b;
-            rows[2] = c;
-            rows[3] = d;
+        Matrix4(const float elements[16]) {
+            memcpy(data, elements, sizeof(data));
         }
 
-        Matrix4(void) : Matrix4({}, {}, {}, {}) {
+        Matrix4(const std::array<float, 16> elements) {
+            memcpy(data, elements.data(), sizeof(data));
         }
 
-        Matrix4Row &operator[](int i) {
-            return rows[i];
-        }
+        Matrix4(void) = default;
 
-        const Matrix4Row &operator[](int i) const {
-            return rows[i];
-        }
+        float operator()(int r, int c) const;
+
+        float &operator()(int r, int c);
+
+        static Matrix4 from_row_major(const float elements[16]);
+
+        static Matrix4 from_row_major(const std::array<float, 16> &&elements);
 
         static Matrix4 identity() {
-            return {
-                    {1, 0, 0, 0},
-                    {0, 1, 0, 0},
-                    {0, 0, 1, 0},
-                    {0, 0, 0, 1}
-            };
+            return { IDENTITY };
         }
     };
 
