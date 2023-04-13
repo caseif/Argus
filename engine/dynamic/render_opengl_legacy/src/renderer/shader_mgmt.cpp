@@ -23,12 +23,13 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
-#include "argus/render/defines.hpp"
 #include "argus/render/util/linked_program.hpp"
 
+#include "internal/render_opengl_legacy/defines.hpp"
 #include "internal/render_opengl_legacy/gl_util.hpp"
 #include "internal/render_opengl_legacy/types.hpp"
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"
@@ -78,6 +79,7 @@ namespace argus {
 
         std::vector<std::string> shader_uids;
         std::vector<std::string> shader_sources;
+        shader_sources.reserve(shaders.size());
         for (auto &shader : shaders) {
             shader_sources.emplace_back(shader.get_source().begin(), shader.get_source().end());
         }
@@ -296,8 +298,9 @@ namespace argus {
     }
 
     void set_per_frame_global_uniforms(LinkedProgram &program) {
-        program.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
-            affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
+        program.reflection.get_uniform_loc_and_then(SHADER_UBO_GLOBAL, SHADER_UNIFORM_GLOBAL_TIME, [](auto time_loc) {
+            affirm_precond(time_loc <= INT_MAX, "Global uniform '"
+                    SHADER_UBO_GLOBAL "->" SHADER_UNIFORM_GLOBAL_TIME "' location is too big");
             glUniform1f(GLint(time_loc),
                     float(
                             double(

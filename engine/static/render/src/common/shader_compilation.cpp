@@ -123,7 +123,7 @@ namespace argus {
                     shader_buffer.first.c_str(), shader_buffer.second);
         }
 
-        for (const auto &ubo : comp_res.ubos) {
+        for (const auto &ubo : comp_res.ubo_bindings) {
             Logger::default_logger().debug("Found shader program UBO %s with binding %d",
                     ubo.first.c_str(), ubo.second);
         }
@@ -133,7 +133,8 @@ namespace argus {
         refl.output_locations = comp_res.outputs;
         refl.uniform_variable_locations = comp_res.uniforms;
         refl.buffer_locations = comp_res.buffers;
-        refl.ubo_bindings = comp_res.ubos;
+        refl.ubo_bindings = comp_res.ubo_bindings;
+        refl.ubo_instance_names = comp_res.ubo_names;
 
         return std::make_pair(spirv_shaders, refl);
     }

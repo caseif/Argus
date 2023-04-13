@@ -172,26 +172,26 @@ namespace argus {
         Vector2f scale_current = transform.pimpl->scale;
         transform.pimpl->scale_mutex.unlock();
 
-        transform.pimpl->translation_matrix = {
-                {1, 0, 0, translation_current.x},
-                {0, 1, 0, translation_current.y},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1}
-        };
+        transform.pimpl->translation_matrix = Matrix4::from_row_major({
+                1, 0, 0, translation_current.x,
+                0, 1, 0, translation_current.y,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+        });
 
-        transform.pimpl->rotation_matrix = {
-                {cos_rot, -sin_rot, 0, 0},
-                {sin_rot, cos_rot,  0, 0},
-                {0,       0,        1, 0},
-                {0,       0,        0, 1}
-        };
+        transform.pimpl->rotation_matrix = Matrix4::from_row_major({
+                cos_rot, -sin_rot, 0, 0,
+                sin_rot, cos_rot,  0, 0,
+                0,       0,        1, 0,
+                0,       0,        0, 1
+        });
 
-        transform.pimpl->scale_matrix = {
-                {scale_current.x, 0,               0, 0},
-                {0,               scale_current.y, 0, 0},
-                {0,               0,               1, 0},
-                {0,               0,               0, 1}
-        };
+        transform.pimpl->scale_matrix = Matrix4::from_row_major({
+                scale_current.x, 0,               0, 0,
+                0,               scale_current.y, 0, 0,
+                0,               0,               1, 0,
+                0,               0,               0, 1
+        });
 
         transform.pimpl->dirty_matrix = false;
     }
@@ -200,18 +200,18 @@ namespace argus {
         //auto cur_translation = transform.get_translation();
 
         //UNUSED(anchor_point);
-        Matrix4 anchor_mat_1 = {
-                {1, 0, 0, -anchor_point.x},
-                {0, 1, 0, -anchor_point.y},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1},
-        };
-        Matrix4 anchor_mat_2 = {
-                {1, 0, 0, anchor_point.x},
-                {0, 1, 0, anchor_point.y},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1},
-        };
+        Matrix4 anchor_mat_1 = Matrix4::from_row_major({
+                1, 0, 0, -anchor_point.x,
+                0, 1, 0, -anchor_point.y,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+        });
+        Matrix4 anchor_mat_2 = Matrix4::from_row_major({
+                1, 0, 0, anchor_point.x,
+                0, 1, 0, anchor_point.y,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+        });
         UNUSED(anchor_mat_1);
         UNUSED(anchor_mat_2);
         transform.pimpl->matrix_rep = Matrix4::identity();

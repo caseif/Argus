@@ -39,10 +39,11 @@ pub struct InteropShaderCompilationResult {
     buffer_count: usize,
     buffers: *const u8,
     ubo_count: usize,
-    ubos: *const u8,
+    ubo_bindings: *const u8,
+    ubo_names: *const u8,
 }
 
-unsafe fn copy_rust_map_to_interop_map(map: &HashMap<String, u32>) -> *const u8 {
+unsafe fn copy_rust_map_to_interop_map_u32(map: &HashMap<String, u32>) -> *const u8 {
     let buf_len = map.iter()
         .map(|(name, _)| name.len() + size_of::<SizedByteArrayWithIndex>())
         .sum::<usize>() + size_of::<usize>();
@@ -53,13 +54,41 @@ unsafe fn copy_rust_map_to_interop_map(map: &HashMap<String, u32>) -> *const u8 
     });
 
     *(interop_map as *mut usize) = buf_len;
-    let mut off = size_of::<usize>() as isize;
+    let mut off = size_of::<usize>();
     for (el_name, el_index) in map {
-        let el_struct = &mut *(interop_map.offset(off) as *mut SizedByteArrayWithIndex);
-        off += (el_name.len() + size_of::<SizedByteArrayWithIndex>()) as isize;
+        let el_struct = &mut *(interop_map.offset(off as isize) as *mut SizedByteArrayWithIndex);
+        off += el_name.len() + size_of::<SizedByteArrayWithIndex>();
         el_struct.size = el_name.len();
         el_struct.index = (*el_index) as usize;
         ptr::copy(el_name.as_ptr(), el_struct.data.as_mut_ptr(), el_name.len());
+    }
+
+    return interop_map;
+}
+
+unsafe fn copy_rust_map_to_interop_map_str(map: &HashMap<String, String>) -> *const u8 {
+    let buf_len = map.iter()
+        .map(|(k, v)| k.len() + v.len())
+        .sum::<usize>() + size_of::<usize>() * 2;
+
+    let interop_map = alloc(match Layout::array::<*const u8>(buf_len) {
+        Ok(layout) => layout,
+        Err(msg) => panic!("Failed to create interop map array layout: {}", msg)
+    });
+
+    *(interop_map as *mut usize) = buf_len;
+    let mut off = size_of::<usize>();
+    for (el_key, el_val) in map {
+        let val_off = off + size_of::<usize>() * 2 + el_key.len();
+        let el_struct = &mut *(interop_map.offset(off as isize) as *mut SizedByteArray);
+        let el_k_struct = &mut *(el_struct.data.as_mut_ptr() as *mut SizedByteArray);
+        let el_v_struct = &mut *(interop_map.offset(val_off as isize) as *mut SizedByteArray);
+        el_struct.size = el_key.len() + el_val.len() + size_of::<SizedByteArray>() * 2;
+        off += el_struct.size + size_of::<SizedByteArray>();
+        el_k_struct.size = el_key.len();
+        ptr::copy(el_key.as_ptr(), el_k_struct.data.as_mut_ptr(), el_key.len());
+        el_v_struct.size = el_val.len();
+        ptr::copy(el_val.as_ptr(), el_v_struct.data.as_mut_ptr(), el_val.len());
     }
 
     return interop_map;
@@ -135,19 +164,20 @@ pub unsafe extern "C" fn transpile_glsl(stages: *const Stage, glsl_sources: *con
     (*res).spirv_binaries = binaries as *const *const SizedByteArray;
 
     (*res).attrib_count = compile_res.inputs.len();
-    (*res).attribs = copy_rust_map_to_interop_map(&compile_res.inputs);
+    (*res).attribs = copy_rust_map_to_interop_map_u32(&compile_res.inputs);
 
     (*res).output_count = compile_res.outputs.len();
-    (*res).outputs = copy_rust_map_to_interop_map(&compile_res.outputs);
+    (*res).outputs = copy_rust_map_to_interop_map_u32(&compile_res.outputs);
 
     (*res).uniform_count = compile_res.uniforms.len();
-    (*res).uniforms = copy_rust_map_to_interop_map(&compile_res.uniforms);
+    (*res).uniforms = copy_rust_map_to_interop_map_u32(&compile_res.uniforms);
 
     (*res).buffer_count = compile_res.buffers.len();
-    (*res).buffers = copy_rust_map_to_interop_map(&compile_res.buffers);
+    (*res).buffers = copy_rust_map_to_interop_map_u32(&compile_res.buffers);
 
-    (*res).ubo_count = compile_res.ubos.len();
-    (*res).ubos = copy_rust_map_to_interop_map(&compile_res.ubos);
+    (*res).ubo_count = compile_res.ubo_bindings.len();
+    (*res).ubo_bindings = copy_rust_map_to_interop_map_u32(&compile_res.ubo_bindings);
+    (*res).ubo_names = copy_rust_map_to_interop_map_str(&compile_res.ubo_names);
 
     (*res).success = true;
 
@@ -201,8 +231,12 @@ pub unsafe extern "C" fn free_compilation_result(result: *mut InteropShaderCompi
         dealloc_interop_map((*result).buffers);
     }
 
-    if (*result).ubos != null() {
-        dealloc_interop_map((*result).ubos);
+    if (*result).ubo_bindings != null() {
+        dealloc_interop_map((*result).ubo_bindings);
+    }
+
+    if (*result).ubo_names != null() {
+        dealloc_interop_map((*result).ubo_names);
     }
 
     dealloc(result as *mut u8, Layout::new::<InteropShaderCompilationResult>());

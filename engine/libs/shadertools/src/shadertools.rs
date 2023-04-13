@@ -21,7 +21,8 @@ pub struct ProcessedGlslShader {
     outputs: HashMap<String, u32>,
     uniforms: HashMap<String, u32>,
     buffers: HashMap<String, u32>,
-    ubos: HashMap<String, u32>
+    ubo_bindings: HashMap<String, u32>,
+    ubo_names: HashMap<String, String>
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -91,7 +92,8 @@ pub struct CompiledShaderSet {
     pub outputs: HashMap<String, u32>,
     pub uniforms: HashMap<String, u32>,
     pub buffers: HashMap<String, u32>,
-    pub ubos: HashMap<String, u32>
+    pub ubo_bindings: HashMap<String, u32>,
+    pub ubo_names: HashMap<String, String>
 }
 
 pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Client, client_version: TargetClientVersion,
@@ -190,8 +192,12 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
         .map(|glsl| &glsl.buffers)
         .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
 
-    let program_ubos = processed_glsl.iter()
-        .map(|glsl| &glsl.ubos)
+    let program_ubo_bindings = processed_glsl.iter()
+        .map(|glsl| &glsl.ubo_bindings)
+        .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
+
+    let program_ubo_names = processed_glsl.iter()
+        .map(|glsl| &glsl.ubo_names)
         .fold(HashMap::new(), |mut a, e| { a.extend(e.clone()); a });
 
     return Result::Ok(CompiledShaderSet {
@@ -200,7 +206,8 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
         outputs: program_outputs,
         uniforms: program_uniforms,
         buffers: program_buffers,
-        ubos: program_ubos
+        ubo_bindings: program_ubo_bindings,
+        ubo_names: program_ubo_names
     });
 }
 
@@ -360,9 +367,9 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
                     return Err(GlslCompileError::new("Shader set contains conflicting storage qualifiers for same uniform name"));
                 }
 
-                /*if prev_decl.size != cur_decl.size {
-                    return Err(GlslCompileError::new("Shader set contains conflicting sizes for same uniform name"));
-                }*/
+                if prev_decl.instance_name != cur_decl.instance_name {
+                    return Err(GlslCompileError::new("All shader stages must use same instance name per UBO"));
+                }
             } else {
                 ubos.insert(block_name, cur_decl);
             }
@@ -531,9 +538,13 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
                 .filter(|(_, v)| v.location.is_some())
                 .map(|(k, v)| (k.clone(), v.location.unwrap()))
                 .collect(),
-            ubos: ubos.iter()
+            ubo_bindings: ubos.iter()
                 .filter(|(_, v)| v.binding.is_some())
                 .map(|(k, v)| (k.clone(), v.binding.unwrap()))
+                .collect(),
+            ubo_names: ubos.iter()
+                .filter(|(_, v)| v.binding.is_some())
+                .map(|(k, v)| (k.clone(), v.instance_name.to_owned()))
                 .collect()
         });
     }

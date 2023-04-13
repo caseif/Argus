@@ -37,10 +37,11 @@ namespace argus {
         std::map<std::string, uint32_t> outputs;
         std::map<std::string, uint32_t> uniforms;
         std::map<std::string, uint32_t> buffers;
-        std::map<std::string, uint32_t> ubos;
+        std::map<std::string, uint32_t> ubo_bindings;
+        std::map<std::string, std::string> ubo_names;
     };
 
-    static void _copy_compat_map_to_cpp_map(std::map<std::string, uint32_t> &dest, unsigned char *source,
+    static void _copy_compat_map_to_cpp_map_u32(std::map<std::string, uint32_t> &dest, unsigned char *source,
             size_t count) {
         if (source == nullptr) {
             // just leave the destination map empty
@@ -55,6 +56,27 @@ namespace argus {
             dest.insert({name, index});
 
             off += sizeof(SizedByteArrayWithIndex) + compat_struct->size;
+        }
+    }
+
+    static void _copy_compat_map_to_cpp_map_str(std::map<std::string, std::string> &dest, unsigned char *source,
+            size_t count) {
+        if (source == nullptr) {
+            // just leave the destination map empty
+            return;
+        }
+
+        size_t off = sizeof(size_t); // first bytes are used to store total size of allocated block
+        for (size_t i = 0; i < count; i++) {
+            auto compat_struct = reinterpret_cast<SizedByteArray *>(source + off);
+            auto compat_k_struct = reinterpret_cast<const SizedByteArray *>(compat_struct->data);
+            auto val_off = off + compat_k_struct->size + sizeof(SizedByteArray) * 2;
+            auto compat_v_struct = reinterpret_cast<const SizedByteArray *>(source + val_off);
+            std::string key(reinterpret_cast<const char *>(compat_k_struct->data), compat_k_struct->size);
+            std::string val(reinterpret_cast<const char *>(compat_v_struct->data), compat_v_struct->size);
+            dest.insert({ key, val });
+
+            off += sizeof(SizedByteArray) + compat_struct->size;
         }
     }
 
@@ -99,11 +121,12 @@ namespace argus {
             final_set.spirv_shaders.insert({static_cast<EShLanguage>(stage), shader_vec});
         }
 
-        _copy_compat_map_to_cpp_map(final_set.attributes, res->attribs, res->attrib_count);
-        _copy_compat_map_to_cpp_map(final_set.outputs, res->outputs, res->output_count);
-        _copy_compat_map_to_cpp_map(final_set.uniforms, res->uniforms, res->uniform_count);
-        _copy_compat_map_to_cpp_map(final_set.buffers, res->buffers, res->buffer_count);
-        _copy_compat_map_to_cpp_map(final_set.ubos, res->ubos, res->ubo_count);
+        _copy_compat_map_to_cpp_map_u32(final_set.attributes, res->attribs, res->attrib_count);
+        _copy_compat_map_to_cpp_map_u32(final_set.outputs, res->outputs, res->output_count);
+        _copy_compat_map_to_cpp_map_u32(final_set.uniforms, res->uniforms, res->uniform_count);
+        _copy_compat_map_to_cpp_map_u32(final_set.buffers, res->buffers, res->buffer_count);
+        _copy_compat_map_to_cpp_map_u32(final_set.ubo_bindings, res->ubo_bindings, res->ubo_count);
+        _copy_compat_map_to_cpp_map_str(final_set.ubo_names, res->ubo_names, res->ubo_count);
 
         free_compilation_result(res);
 

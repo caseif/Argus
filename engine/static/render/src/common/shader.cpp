@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/memory.hpp"
 
 #include "argus/render/common/shader.hpp"
@@ -25,6 +26,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <cassert>
 #include <cstdint>
 
 namespace argus {
@@ -130,8 +132,33 @@ namespace argus {
                != uniform_variable_locations.end();
     }
 
+    bool ShaderReflectionInfo::has_uniform(const std::string &ubo, const std::string &name) const {
+        auto ubo_inst_name = get_ubo_instance_name(ubo);
+        if (!ubo_inst_name.has_value()) {
+            return false;
+        }
+
+        auto joined_name = ubo_inst_name.value() + "." + name;
+        auto it = uniform_variable_locations.find(joined_name);
+        return it != uniform_variable_locations.end();
+    }
+
     std::optional<uint32_t> ShaderReflectionInfo::get_uniform_loc(const std::string &name) const {
         auto it = uniform_variable_locations.find(name);
+        return it != uniform_variable_locations.end()
+               ? std::make_optional(it->second)
+               : std::nullopt;
+    }
+
+    std::optional<uint32_t> ShaderReflectionInfo::get_uniform_loc(const std::string &ubo,
+            const std::string &name) const {
+        auto ubo_inst_name = get_ubo_instance_name(ubo);
+        if (!ubo_inst_name.has_value()) {
+            return std::nullopt;
+        }
+
+        auto joined_name = ubo_inst_name.value() + "." + name;
+        auto it = uniform_variable_locations.find(joined_name);
         return it != uniform_variable_locations.end()
                ? std::make_optional(it->second)
                : std::nullopt;
@@ -140,6 +167,14 @@ namespace argus {
     void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &name,
             std::function<void(uint32_t)> fn) const {
         auto loc = get_uniform_loc(name);
+        if (loc.has_value()) {
+            fn(loc.value());
+        }
+    }
+
+    void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &ubo, const std::string &name,
+            std::function<void(uint32_t)> fn) const {
+        auto loc = get_uniform_loc(ubo, name);
         if (loc.has_value()) {
             fn(loc.value());
         }
@@ -162,5 +197,13 @@ namespace argus {
         if (loc.has_value()) {
             fn(loc.value());
         }
+    }
+
+    [[nodiscard]] std::optional<std::string> ShaderReflectionInfo::get_ubo_instance_name(
+            const std::string &name) const {
+        auto it = ubo_instance_names.find(name);
+        return it != ubo_instance_names.end()
+                ? std::make_optional(it->second)
+                : std::nullopt;
     }
 }

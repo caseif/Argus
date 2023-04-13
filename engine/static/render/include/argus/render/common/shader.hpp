@@ -54,6 +54,7 @@ namespace argus {
         std::map<std::string, uint32_t> uniform_variable_locations;
         std::map<std::string, uint32_t> buffer_locations;
         std::map<std::string, uint32_t> ubo_bindings;
+        std::map<std::string, std::string> ubo_instance_names;
 
         [[nodiscard]] bool has_attr(const std::string &name) const;
 
@@ -69,15 +70,24 @@ namespace argus {
 
         [[nodiscard]] bool has_uniform(const std::string &name) const;
 
+        [[nodiscard]] bool has_uniform(const std::string &ubo, const std::string &name) const;
+
         [[nodiscard]] std::optional<uint32_t> get_uniform_loc(const std::string &name) const;
 
+        [[nodiscard]] std::optional<uint32_t> get_uniform_loc(const std::string &ubo, const std::string &name) const;
+
         void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+
+        void get_uniform_loc_and_then(const std::string &ubo, const std::string &name,
+                std::function<void(uint32_t)> fn) const;
 
         [[nodiscard]] bool has_ubo(const std::string &name) const;
 
         [[nodiscard]] std::optional<uint32_t> get_ubo_binding(const std::string &name) const;
 
         void get_ubo_binding_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+
+        [[nodiscard]] std::optional<std::string> get_ubo_instance_name(const std::string &name) const;
     };
 
     /**
