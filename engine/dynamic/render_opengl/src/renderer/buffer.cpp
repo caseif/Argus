@@ -26,7 +26,7 @@
 #include <cstring>
 
 namespace argus {
-    BufferInfo BufferInfo::create(size_t size, GLenum target, GLenum usage, bool map_nonpersistent) {
+    BufferInfo BufferInfo::create(GLenum target, size_t size, GLenum usage, bool map_nonpersistent) {
         buffer_handle_t handle;
         void *mapped = nullptr;
         bool persistent = false;
@@ -107,11 +107,20 @@ namespace argus {
         mapped = nullptr;
     }
 
-    void BufferInfo::write_data(void *src, size_t len, size_t offset) {
+    void BufferInfo::write(void *src, size_t len, size_t offset) {
         assert(valid);
-        assert(mapped != nullptr);
         assert(offset + len <= len);
 
-        memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);
+        if (mapped != nullptr) {
+            memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);
+        } else {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glNamedBufferSubData(handle, GLintptr(offset), GLsizeiptr(len), src);
+            } else {
+                glBindBuffer(target, handle);
+                glBufferSubData(target, GLintptr(offset), GLsizeiptr(len), src);
+                glBindBuffer(target, 0);
+            }
+        }
     }
 }

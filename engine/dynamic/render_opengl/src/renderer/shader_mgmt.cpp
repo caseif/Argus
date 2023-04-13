@@ -100,7 +100,7 @@ namespace argus {
         res.explicit_attrib_locations = true;
         res.explicit_uniform_locations = true;
 
-        bool have_gl_spirv = AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv && false;
+        bool have_gl_spirv = AGLET_GL_VERSION_4_1 && AGLET_GL_ARB_gl_spirv;
 
         spirv_cross::CompilerGLSL::Options options;
 

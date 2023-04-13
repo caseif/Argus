@@ -37,10 +37,8 @@ namespace argus {
     static void _create_obj_ubo(RenderBucket &bucket) {
         bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, false);
 
-        bucket.obj_ubo.map_write();
         float stride[2] = { bucket.atlas_stride.x, bucket.atlas_stride.y };
-        bucket.obj_ubo.write_data(stride, sizeof(stride), SHADER_UNIFORM_OBJ_UV_STRIDE_OFF);
-        bucket.obj_ubo.unmap();
+        bucket.obj_ubo.write(stride, sizeof(stride), SHADER_UNIFORM_OBJ_UV_STRIDE_OFF);
     }
 
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {

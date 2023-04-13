@@ -114,22 +114,14 @@ namespace argus {
         }
 
         if (must_update) {
-            viewport_state.ubo.map_write();
-            viewport_state.ubo.write_data(viewport_state.view_matrix.data, sizeof(viewport_state.view_matrix.data),
+            viewport_state.ubo.write(viewport_state.view_matrix.data, sizeof(viewport_state.view_matrix.data),
                     SHADER_UNIFORM_VIEWPORT_VM_OFF);
-            viewport_state.ubo.unmap();
         }
     }
 
     static void _bind_ubo(const LinkedProgram &program, const std::string &name, const BufferInfo &buffer) {
-        //printf("Passed: %s\n", name.c_str());
-        //char buf[64];
-        //glGetActiveUniformBlockName(program.handle, 1, sizeof(buf), nullptr, buf);
-        //printf("From GL: %s\n", buf);
-        //auto index = glGetUniformBlockIndex(program.handle, name.c_str());
         program.reflection.get_ubo_binding_and_then(name, [&buffer](auto binding) {
             affirm_precond(binding <= INT_MAX, "UBO binding is too big");
-            //glUniformBlockBinding(program.handle, index, binding);
             glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.handle);
         });
     }

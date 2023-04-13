@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "internal/render_opengl/types.hpp"
+
 #include "aglet/aglet.h"
 
 #include <cstddef>
@@ -31,7 +33,7 @@ namespace argus {
         void *mapped;
         bool persistent;
 
-        static BufferInfo create(size_t size, GLenum target, GLenum usage, bool map_nonpersistent);
+        static BufferInfo create(GLenum target, size_t size, GLenum usage, bool map_nonpersistent);
 
         void destroy(void);
 
@@ -39,11 +41,11 @@ namespace argus {
 
         void unmap();
 
-        void write_data(void *src, size_t size, size_t offset);
+        void write(void *src, size_t size, size_t offset);
 
         template <typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
         void write_val(T val, size_t offset) {
-            write_data(&val, sizeof(T), offset);
+            write(&val, sizeof(T), offset);
         }
     };
 }

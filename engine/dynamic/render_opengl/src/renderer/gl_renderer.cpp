@@ -236,7 +236,7 @@ namespace argus {
     }
 
     static void _create_global_ubo(RendererState &state) {
-        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_STATIC_DRAW, false);
+        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_DYNAMIC_DRAW, false);
     }
 
     static void _update_global_ubo(RendererState &state) {
@@ -247,9 +247,7 @@ namespace argus {
                 ) / 1000.0
         );
 
-        state.global_ubo.map_write();
         state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
-        state.global_ubo.unmap();
     }
 
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
@@ -288,6 +286,8 @@ namespace argus {
         }
 
         Logger::default_logger().info("Obtained OpenGL %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
+
+        glfwSwapInterval(GLFW_FALSE);
 
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);

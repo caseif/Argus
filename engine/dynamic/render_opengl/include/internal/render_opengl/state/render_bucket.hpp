@@ -45,7 +45,7 @@ namespace argus {
         void *anim_frame_buffer_staging;
         array_handle_t vertex_array;
         size_t vertex_count;
-        BufferInfo obj_ubo;
+        BufferInfo obj_ubo{};
 
         bool needs_rebuild;
 
