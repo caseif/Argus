@@ -22,6 +22,7 @@
 
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
+#include "internal/render_opengl/renderer/buffer.hpp"
 
 #include "aglet/aglet.h"
 #include "GLFW/glfw3.h"

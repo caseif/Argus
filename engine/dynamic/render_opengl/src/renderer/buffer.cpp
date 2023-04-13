@@ -26,80 +26,92 @@
 #include <cstring>
 
 namespace argus {
-    BufferInfo create_buffer(GLenum target, size_t len, GLenum usage, bool map_nonpersistent) {
-        buffer_handle_t buffer;
+    BufferInfo BufferInfo::create(size_t size, GLenum target, GLenum usage, bool map_nonpersistent) {
+        buffer_handle_t handle;
         void *mapped = nullptr;
         bool persistent = false;
 
         if (AGLET_GL_ARB_direct_state_access) {
-            glCreateBuffers(1, &buffer);
+            glCreateBuffers(1, &handle);
             if (AGLET_GL_ARB_buffer_storage) {
-                glNamedBufferStorage(buffer, GLsizeiptr(len), nullptr,
+                glNamedBufferStorage(handle, GLsizeiptr(size), nullptr,
                         GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
-                mapped = glMapNamedBufferRange(buffer, 0, GLsizeiptr(len),
+                mapped = glMapNamedBufferRange(handle, 0, GLsizeiptr(size),
                         GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
                 persistent = true;
             } else {
-                glNamedBufferData(buffer, GLsizeiptr(len), nullptr, usage);
+                glNamedBufferData(handle, GLsizeiptr(size), nullptr, usage);
                 if (map_nonpersistent) {
-                    mapped = glMapNamedBuffer(buffer, GL_WRITE_ONLY);
+                    mapped = glMapNamedBuffer(handle, GL_WRITE_ONLY);
                 }
             }
         } else {
-            glGenBuffers(1, &buffer);
-            glBindBuffer(target, buffer);
-            glBufferData(target, GLsizeiptr(len), nullptr, usage);
+            glGenBuffers(1, &handle);
+            glBindBuffer(target, handle);
+            glBufferData(target, GLsizeiptr(size), nullptr, usage);
             if (map_nonpersistent) {
                 mapped = glMapBuffer(target, GL_WRITE_ONLY);
             }
         }
 
-        return BufferInfo { len, buffer, mapped, persistent };
+        return BufferInfo { true, size, target, handle, mapped, persistent };
     }
 
-    void map_buffer_w(BufferInfo &buffer, GLenum target) {
-        assert(buffer.buffer != 0);
-
-        if (buffer.persistent) {
+    void BufferInfo::destroy() {
+        if (!valid) {
             return;
         }
 
-        assert(buffer.mapped == nullptr);
+        unmap();
+        glDeleteBuffers(0, &handle);
+
+        handle = 0;
+        valid = false;
+    }
+
+    void BufferInfo::map_write() {
+        assert(valid);
+
+        if (persistent) {
+            return;
+        }
+
+        assert(mapped == nullptr);
 
         if (AGLET_GL_ARB_direct_state_access) {
-            buffer.mapped = glMapNamedBuffer(buffer.buffer, GL_WRITE_ONLY);
+            mapped = glMapNamedBuffer(handle, GL_WRITE_ONLY);
         } else {
-            glBindBuffer(target, buffer.buffer);
-            buffer.mapped = glMapBuffer(target, GL_WRITE_ONLY);
+            glBindBuffer(target, handle);
+            mapped = glMapBuffer(target, GL_WRITE_ONLY);
             glBindBuffer(target, 0);
         }
     }
 
-    void unmap_buffer(BufferInfo &buffer, GLenum target) {
-        assert(buffer.buffer != 0);
+    void BufferInfo::unmap() {
+        assert(valid);
 
-        if (buffer.persistent) {
+        if (persistent) {
             return;
         }
 
-        assert(buffer.mapped != nullptr);
+        assert(mapped != nullptr);
 
         if (AGLET_GL_ARB_direct_state_access) {
-            glUnmapNamedBuffer(buffer.buffer);
+            glUnmapNamedBuffer(handle);
         } else {
-            glBindBuffer(target, buffer.buffer);
+            glBindBuffer(target, handle);
             glUnmapBuffer(target);
             glBindBuffer(target, 0);
         }
 
-        buffer.mapped = nullptr;
+        mapped = nullptr;
     }
 
-    void write_buffer_data(BufferInfo &buffer, size_t offset, size_t len, void *src) {
-        assert(buffer.buffer != 0);
-        assert(buffer.mapped != nullptr);
-        assert(offset + len <= buffer.len);
+    void BufferInfo::write_data(void *src, size_t len, size_t offset) {
+        assert(valid);
+        assert(mapped != nullptr);
+        assert(offset + len <= len);
 
-        memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(buffer.mapped) + offset), src, len);
+        memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);
     }
 }

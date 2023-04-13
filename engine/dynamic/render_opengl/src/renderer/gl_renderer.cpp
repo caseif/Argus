@@ -214,6 +214,8 @@ namespace argus {
                 auto bucket = scene_state->render_buckets.find(key)->second;
                 try_delete_buffer(bucket->vertex_array);
                 try_delete_buffer(bucket->vertex_buffer);
+                try_delete_buffer(bucket->anim_frame_buffer);
+                bucket->obj_ubo.destroy();
                 bucket->~RenderBucket();
 
                 scene_state->render_buckets.erase(key);
@@ -234,7 +236,7 @@ namespace argus {
     }
 
     static void _create_global_ubo(RendererState &state) {
-        state.global_ubo = create_buffer(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_STATIC_DRAW, false);
+        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_STATIC_DRAW, false);
     }
 
     static void _update_global_ubo(RendererState &state) {
@@ -245,9 +247,9 @@ namespace argus {
                 ) / 1000.0
         );
 
-        map_buffer_w(state.global_ubo, GL_UNIFORM_BUFFER);
-        write_buffer_val(state.global_ubo, SHADER_UNIFORM_GLOBAL_TIME_OFF, time);
-        unmap_buffer(state.global_ubo, GL_UNIFORM_BUFFER);
+        state.global_ubo.map_write();
+        state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
+        state.global_ubo.unmap();
     }
 
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {

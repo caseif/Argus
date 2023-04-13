@@ -108,16 +108,16 @@ namespace argus {
     static void _update_viewport_ubo(ViewportState &viewport_state) {
         bool must_update = viewport_state.view_matrix_dirty;
 
-        if (viewport_state.ubo.buffer == 0) {
-            viewport_state.ubo = create_buffer(GL_UNIFORM_BUFFER, SHADER_UBO_VIEWPORT_LEN, GL_STATIC_DRAW, false);
+        if (!viewport_state.ubo.valid) {
+            viewport_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_VIEWPORT_LEN, GL_STATIC_DRAW, false);
             must_update = true;
         }
 
         if (must_update) {
-            map_buffer_w(viewport_state.ubo, GL_UNIFORM_BUFFER);
-            write_buffer_data(viewport_state.ubo, SHADER_UNIFORM_VIEWPORT_VM_OFF,
-                    sizeof(viewport_state.view_matrix.data), viewport_state.view_matrix.data);
-            unmap_buffer(viewport_state.ubo, GL_UNIFORM_BUFFER);
+            viewport_state.ubo.map_write();
+            viewport_state.ubo.write_data(viewport_state.view_matrix.data, sizeof(viewport_state.view_matrix.data),
+                    SHADER_UNIFORM_VIEWPORT_VM_OFF);
+            viewport_state.ubo.unmap();
         }
     }
 
@@ -130,7 +130,7 @@ namespace argus {
         program.reflection.get_ubo_binding_and_then(name, [&buffer](auto binding) {
             affirm_precond(binding <= INT_MAX, "UBO binding is too big");
             //glUniformBlockBinding(program.handle, index, binding);
-            glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.buffer);
+            glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.handle);
         });
     }
 

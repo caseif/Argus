@@ -24,22 +24,26 @@
 
 namespace argus {
     struct BufferInfo {
-        size_t len;
-        buffer_handle_t buffer;
+        bool valid;
+        size_t size;
+        GLenum target;
+        buffer_handle_t handle;
         void *mapped;
         bool persistent;
+
+        static BufferInfo create(size_t size, GLenum target, GLenum usage, bool map_nonpersistent);
+
+        void destroy(void);
+
+        void map_write();
+
+        void unmap();
+
+        void write_data(void *src, size_t size, size_t offset);
+
+        template <typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
+        void write_val(T val, size_t offset) {
+            write_data(&val, sizeof(T), offset);
+        }
     };
-
-    BufferInfo create_buffer(GLenum target, size_t len, GLenum usage, bool map_nonpersistent);
-
-    void map_buffer_w(BufferInfo &buffer, GLenum target);
-
-    void unmap_buffer(BufferInfo &buffer, GLenum target);
-
-    void write_buffer_data(BufferInfo &buffer, size_t offset, size_t size, void *src);
-
-    template <typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
-    void write_buffer_val(BufferInfo &buffer, size_t offset, T val) {
-        write_buffer_data(buffer, offset, sizeof(T), &val);
-    }
 }

@@ -49,6 +49,7 @@ namespace argus {
                 try_delete_buffer(it->second->vertex_array);
                 try_delete_buffer(it->second->vertex_buffer);
                 try_delete_buffer(it->second->anim_frame_buffer);
+                it->second->obj_ubo.destroy();
                 it->second->~RenderBucket();
 
                 it = scene_state.render_buckets.erase(it);
