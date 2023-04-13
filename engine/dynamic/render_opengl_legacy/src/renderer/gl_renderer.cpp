@@ -264,6 +264,8 @@ namespace argus {
 
         Logger::default_logger().info("Obtained OpenGL context %s", gl_version_str);
 
+        glfwSwapInterval(GLFW_FALSE);
+
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);
 
