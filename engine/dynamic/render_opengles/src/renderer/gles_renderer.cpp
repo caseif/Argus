@@ -161,6 +161,7 @@ namespace argus {
             _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(),
                     resolution,
                     viewport_state.view_matrix);
+            viewport_state.view_matrix_dirty = true;
         }
     }
 
@@ -229,6 +230,21 @@ namespace argus {
         }
     }
 
+    static void _create_global_ubo(RendererState &state) {
+        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_DYNAMIC_DRAW, false);
+    }
+
+    static void _update_global_ubo(RendererState &state) {
+        float time = float(
+                double(
+                        std::chrono::time_point_cast<std::chrono::microseconds>(
+                                now()).time_since_epoch().count()
+                ) / 1000.0
+        );
+
+        state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
+    }
+
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
         if (event.subtype != ResourceEventType::Unload) {
             return;
@@ -268,12 +284,16 @@ namespace argus {
 
         Logger::default_logger().info("Obtained OpenGL ES %d.%d context (%s)", gl_major, gl_minor, gl_version_str);
 
+        glfwSwapInterval(GLFW_FALSE);
+
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);
 
         if (AGLET_GL_KHR_debug) {
             glDebugMessageCallback(gl_debug_callback, nullptr);
         }
+
+        _create_global_ubo(state);
 
         setup_framebuffer(state);
     }
@@ -291,6 +311,8 @@ namespace argus {
         if (vsync.dirty) {
             glfwSwapInterval(vsync ? 1 : 0);
         }
+
+        _update_global_ubo(state);
 
         _rebuild_scene(window, state);
 

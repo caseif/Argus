@@ -58,5 +58,4 @@ namespace argus {
 
     void deinit_program(program_handle_t program);
 
-    void set_per_frame_global_uniforms(LinkedProgram &program);
 }

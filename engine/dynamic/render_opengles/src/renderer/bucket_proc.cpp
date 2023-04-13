@@ -58,7 +58,6 @@ namespace argus {
 
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
             assert(program_it != scene_state.parent_state.linked_programs.cend());
-            bool animated = program_it->second.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
 
             // the program should have been linked during object processing
             auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
@@ -99,27 +98,23 @@ namespace argus {
                 glGenVertexArrays(1, &bucket->vertex_array);
                 glBindVertexArray(bucket->vertex_array);
 
-                if (animated) {
-                    glGenBuffers(1, &bucket->anim_frame_buffer);
-                    glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
-                    glBufferData(GL_ARRAY_BUFFER, GLsizei(anim_frame_buf_len), nullptr, GL_DYNAMIC_DRAW);
-                }
+                glGenBuffers(1, &bucket->anim_frame_buffer);
+                glBindBuffer(GL_ARRAY_BUFFER, bucket->anim_frame_buffer);
+                glBufferData(GL_ARRAY_BUFFER, GLsizei(anim_frame_buf_len), nullptr, GL_DYNAMIC_DRAW);
 
                 glGenBuffers(1, &bucket->vertex_buffer);
                 glBindBuffer(GL_ARRAY_BUFFER, bucket->vertex_buffer);
 
                 glBufferData(GL_ARRAY_BUFFER, GLsizei(buffer_len), nullptr, GL_DYNAMIC_COPY);
 
-                if (animated) {
-                    if (bucket->anim_frame_buffer_staging != nullptr) {
-                        free(bucket->anim_frame_buffer_staging);
-                    }
+                if (bucket->anim_frame_buffer_staging != nullptr) {
+                    free(bucket->anim_frame_buffer_staging);
+                }
 
-                    if (anim_frame_buf_len > 0) {
-                        bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
-                    } else {
-                        bucket->anim_frame_buffer_staging = nullptr;
-                    }
+                if (anim_frame_buf_len > 0) {
+                    bucket->anim_frame_buffer_staging = std::calloc(1, anim_frame_buf_len);
+                } else {
+                    bucket->anim_frame_buffer_staging = nullptr;
                 }
 
                 GLuint attr_offset = 0;
@@ -174,7 +169,7 @@ namespace argus {
                     glBindBuffer(GL_COPY_READ_BUFFER, 0);
                 }
 
-                if (animated && (bucket->needs_rebuild || processed->anim_frame_updated)) {
+                if (bucket->needs_rebuild || processed->anim_frame_updated) {
                     for (size_t i = 0; i < processed->vertex_count; i++) {
                         reinterpret_cast<GLfloat *>(bucket->anim_frame_buffer_staging)[anim_frame_off++]
                                 = float(processed->anim_frame.x);

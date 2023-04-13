@@ -295,18 +295,4 @@ namespace argus {
     void deinit_program(program_handle_t program) {
         glDeleteProgram(program);
     }
-
-    void set_per_frame_global_uniforms(LinkedProgram &program) {
-        program.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_TIME, [](auto time_loc) {
-            affirm_precond(time_loc <= INT_MAX, "Global uniform '" SHADER_UNIFORM_TIME "' location is too big");
-            glUniform1f(GLint(time_loc),
-                    float(
-                            double(
-                                    std::chrono::time_point_cast<std::chrono::microseconds>(
-                                            now()).time_since_epoch().count()
-                            ) / 1000.0
-                    )
-            );
-        });
-    }
 }

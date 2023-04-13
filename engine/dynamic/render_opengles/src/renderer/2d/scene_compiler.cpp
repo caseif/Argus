@@ -28,10 +28,18 @@
 #include "internal/render_opengles/state/processed_render_object.hpp"
 #include "internal/render_opengles/state/render_bucket.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
+#include "argus/render/defines.hpp"
 
 namespace argus {
     static BucketKey _get_bucket_key(ProcessedRenderObject &processed_obj) {
         return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index };
+    }
+
+    static void _create_obj_ubo(RenderBucket &bucket) {
+        bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, false);
+
+        float stride[2] = { bucket.atlas_stride.x, bucket.atlas_stride.y };
+        bucket.obj_ubo.write(stride, sizeof(stride), SHADER_UNIFORM_OBJ_UV_STRIDE_OFF);
     }
 
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {
@@ -44,6 +52,7 @@ namespace argus {
             bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride,
                     processed_obj.z_index);
             scene_state.render_buckets[key] = bucket;
+            _create_obj_ubo(*bucket);
         }
 
         bucket->objects.push_back(&processed_obj);

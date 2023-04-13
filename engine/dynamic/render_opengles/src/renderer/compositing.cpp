@@ -105,6 +105,27 @@ namespace argus {
         return transformed;
     }
 
+    static void _update_viewport_ubo(ViewportState &viewport_state) {
+        bool must_update = viewport_state.view_matrix_dirty;
+
+        if (!viewport_state.ubo.valid) {
+            viewport_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_VIEWPORT_LEN, GL_DYNAMIC_DRAW, false);
+            must_update = true;
+        }
+
+        if (must_update) {
+            viewport_state.ubo.write(viewport_state.view_matrix.data,
+                    sizeof(viewport_state.view_matrix.data), SHADER_UNIFORM_VIEWPORT_VM_OFF);
+        }
+    }
+
+    static void _bind_ubo(const LinkedProgram &program, const std::string &name, const BufferInfo &buffer) {
+        program.reflection.get_ubo_binding_and_then(name, [&buffer](auto binding) {
+            affirm_precond(binding <= INT_MAX, "UBO binding is too big");
+            glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.handle);
+        });
+    }
+
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
@@ -114,6 +135,9 @@ namespace argus {
 
         auto fb_width = std::abs(viewport_px.right - viewport_px.left);
         auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
+
+        // set viewport uniforms
+        _update_viewport_ubo(viewport_state);
 
         // framebuffer setup
         if (viewport_state.front_fb == 0) {
@@ -187,26 +211,15 @@ namespace argus {
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
-            bool animated = program_info.reflection.has_uniform(SHADER_UNIFORM_UV_STRIDE);
-
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
                 last_program = program_info.handle;
 
-                auto view_mat = viewport_state.view_matrix;
-                program_info.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_VIEW_MATRIX, [view_mat](auto vm_loc) {
-                    affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
-                    glUniformMatrix4fv(GLint(vm_loc), 1, GL_TRUE, view_mat.data);
-                });
+                _bind_ubo(program_info, SHADER_UBO_GLOBAL, state.global_ubo);
+                _bind_ubo(program_info, SHADER_UBO_VIEWPORT, viewport_state.ubo);
             }
 
-            if (animated) {
-                auto &stride = bucket.second->atlas_stride;
-                program_info.reflection.get_uniform_loc_and_then(SHADER_UNIFORM_UV_STRIDE, [stride](auto loc) {
-                    affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
-                    glUniform2f(GLint(loc), stride.x, stride.y);
-                });
-            }
+            _bind_ubo(program_info, SHADER_UBO_OBJ, bucket.second->obj_ubo);
 
             if (tex_handle != last_texture) {
                 glBindTexture(GL_TEXTURE_2D, tex_handle);
@@ -253,7 +266,6 @@ namespace argus {
 
             glBindVertexArray(state.frame_vao);
             glUseProgram(postfx_program->handle);
-            set_per_frame_global_uniforms(*postfx_program);
             glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
