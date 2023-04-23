@@ -18,10 +18,18 @@
 
 #pragma once
 
+#include "argus/lowlevel/refcountable.hpp"
+
 #include "argus/resman.hpp"
 
-#include "internal/render_vulkan/renderer/pipeline.hpp"
+#include "argus/render/common/attached_viewport.hpp"
+
 #include "internal/render_vulkan/setup/swapchain.hpp"
+#include "internal/render_vulkan/state/scene_state.hpp"
+#include "internal/render_vulkan/state/viewport_state.hpp"
+#include "internal/render_vulkan/util/buffer.hpp"
+#include "internal/render_vulkan/util/pipeline.hpp"
+#include "internal/render_vulkan/util/texture.hpp"
 
 #include "vulkan/vulkan.h"
 
@@ -30,19 +38,30 @@
 
 namespace argus {
     struct RendererState {
-        VkDevice device;
+        LogicalDevice device;
 
         Vector2u viewport_size;
 
         VkSurfaceKHR surface;
         SwapchainInfo swapchain;
-        std::vector<VkImage> swapchain_images;
-        std::vector<VkImageView> swapchain_image_views;
         VkRenderPass render_pass;
 
         VkCommandPool command_pool;
+        VkDescriptorPool desc_pool;
+
+        BufferInfo global_ubo{};
+
+        std::map<const Scene2D *, Scene2DState> scene_states_2d;
+        std::vector<SceneState *> all_scene_states;
+        std::map<const AttachedViewport2D *, ViewportState> viewport_states_2d;
 
         std::map<std::string, const Resource*> material_resources;
         std::map<std::string, PipelineInfo> material_pipelines;
+        std::map<std::string, RefCountable<PreparedTexture>> prepared_textures;
+        std::map<std::string, std::string> material_textures;
+
+        SceneState &get_scene_state(Scene &scene, bool create = false);
+
+        ViewportState &get_viewport_state(AttachedViewport &viewport, bool create = false);
     };
 }

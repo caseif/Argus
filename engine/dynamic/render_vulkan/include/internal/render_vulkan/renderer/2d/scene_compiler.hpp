@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include "internal/render_vulkan/renderer/pipeline.hpp"
-#include "internal/render_vulkan/state/renderer_state.hpp"
+#include "argus/render/util/object_processor.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 
-#include "vulkan/vulkan.h"
+#include "internal/render_vulkan/renderer/2d/object_proc_impl.hpp"
 
 namespace argus {
-    VkFramebuffer create_framebuffer(RendererState &state, PipelineInfo pipeline);
+    void compile_scene_2d(const Scene2D &scene, Scene2DState &scene_state);
 }

@@ -18,21 +18,9 @@
 
 #pragma once
 
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
-
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    // forward declarations
+    struct SceneState;
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
-
-    void destroy_vk_device(LogicalDevice device);
+    void fill_buckets(SceneState &scene_state);
 }

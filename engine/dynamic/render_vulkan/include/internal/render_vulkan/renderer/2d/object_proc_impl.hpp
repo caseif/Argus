@@ -18,21 +18,23 @@
 
 #pragma once
 
-#include "internal/render_vulkan/setup/queues.hpp"
+#include "argus/lowlevel/math.hpp"
 
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "argus/render/util/object_processor.hpp"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    // forward declarations
+    class RenderObject2D;
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+    struct ProcessedRenderObject;
+    struct RendererState;
+    struct Scene2DState;
 
-    void destroy_vk_device(LogicalDevice device);
+    ProcessedRenderObject2DPtr create_processed_object_2d(const RenderObject2D &object, const Matrix4 &transform,
+            void *scene_state_ptr);
+
+    void update_processed_object_2d(const RenderObject2D &object, ProcessedRenderObject2DPtr proc_obj_ptr,
+            const Matrix4 &transform, bool is_transform_dirty, void *scene_state_ptr);
+
+    void deinit_object_2d(const RendererState &state, ProcessedRenderObject &obj);
 }

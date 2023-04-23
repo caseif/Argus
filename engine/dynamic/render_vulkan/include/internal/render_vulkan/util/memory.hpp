@@ -18,21 +18,12 @@
 
 #pragma once
 
-#include "internal/render_vulkan/setup/queues.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
 
 #include "vulkan/vulkan.h"
 
-#include <optional>
+#include <cstdint>
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
-
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
-
-    void destroy_vk_device(LogicalDevice device);
+    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, VkMemoryPropertyFlags props);
 }

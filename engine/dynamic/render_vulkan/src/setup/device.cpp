@@ -240,7 +240,11 @@ namespace argus {
 
         Logger::default_logger().debug("Successfully created logical Vulkan device");
 
-        return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices });
+        QueueFamilies queues{};
+        vkGetDeviceQueue(dev, qf_indices.graphics_family, 0, &queues.graphics_family);
+        vkGetDeviceQueue(dev, qf_indices.present_family, 0, &queues.present_family);
+
+        return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices, queues });
     }
 
     void destroy_vk_device(LogicalDevice device) {

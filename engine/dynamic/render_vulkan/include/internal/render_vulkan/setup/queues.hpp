@@ -25,4 +25,9 @@ namespace argus {
         uint32_t graphics_family;
         uint32_t present_family;
     };
+
+    struct QueueFamilies {
+        VkQueue graphics_family;
+        VkQueue present_family;
+    };
 }

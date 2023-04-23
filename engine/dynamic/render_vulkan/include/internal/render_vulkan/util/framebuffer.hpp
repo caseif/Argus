@@ -18,21 +18,15 @@
 
 #pragma once
 
-#include "internal/render_vulkan/setup/queues.hpp"
+#include "image.hpp"
+#include "pipeline.hpp"
+#include "../state/renderer_state.hpp"
 
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
+            const std::vector<ImageInfo> &images);
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
-
-    void destroy_vk_device(LogicalDevice device);
+    void destroy_framebuffer(const LogicalDevice &device, VkFramebuffer framebuffer);
 }

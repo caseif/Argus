@@ -16,16 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/render/defines.hpp"
 #include "argus/render/common/material.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
-#include "internal/render_vulkan/renderer/pipeline.hpp"
+#include "internal/render_vulkan/util/descriptor_set.hpp"
+#include "internal/render_vulkan/util/pipeline.hpp"
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 
 #include "vulkan/vulkan.h"
-#include "argus/lowlevel/debug.hpp"
 
 #include <vector>
 
@@ -43,8 +45,8 @@ namespace argus {
         offset += static_cast<uint32_t>(components * sizeof(float));
     }
 
-    VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
-        VkAttachmentDescription color_att;
+    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format) {
+        VkAttachmentDescription color_att{};
         color_att.format = format;
         color_att.samples = VK_SAMPLE_COUNT_1_BIT;
         color_att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -71,25 +73,21 @@ namespace argus {
         render_pass_info.pSubpasses = &subpass;
 
         VkRenderPass render_pass;
-        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(device.logical_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to create render pass");
         }
 
         return render_pass;
     }
 
-    PipelineInfo get_or_create_pipeline(RendererState &state, const std::string &material_uid) {
-        auto existing_it = state.material_pipelines.find(material_uid);
-        if (existing_it != state.material_pipelines.cend()) {
-            return existing_it->second;
-        }
+    PipelineInfo create_pipeline(RendererState &state, const Material &material) {
+        return create_pipeline(state, material.get_shader_uids());
+    }
 
-        const auto &res = ResourceManager::instance().get_resource(material_uid);
-        state.material_resources.insert({ material_uid, &res });
+    PipelineInfo create_pipeline(RendererState &state, const std::vector<std::string> &shader_uids) {
+        auto prepared_shaders = prepare_shaders(state.device.logical_device, shader_uids);
 
-        const auto &mat = res.get<Material>();
-        auto shader_uids = mat.get_shader_uids();
-        auto prepared_shaders = prepare_shaders(state.device, shader_uids);
+        auto shader_refl = prepared_shaders.reflection;
 
         std::vector<VkDynamicState> dyn_states = { VK_DYNAMIC_STATE_VIEWPORT };
 
@@ -101,19 +99,19 @@ namespace argus {
         std::vector<VkVertexInputAttributeDescription> attr_descs;
 
         uint32_t offset = 0;
-        prepared_shaders.reflection.get_attr_loc_and_then(SHADER_ATTRIB_POSITION, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_POSITION, [&attr_descs, &offset] (auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_POSITION_FORMAT,
                     SHADER_ATTRIB_POSITION_LEN, offset);
         });
-        prepared_shaders.reflection.get_attr_loc_and_then(SHADER_ATTRIB_NORMAL, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_NORMAL, [&attr_descs, &offset] (auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_NORMAL_FORMAT,
                     SHADER_ATTRIB_NORMAL_LEN, offset);
         });
-        prepared_shaders.reflection.get_attr_loc_and_then(SHADER_ATTRIB_COLOR, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_COLOR, [&attr_descs, &offset] (auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_COLOR_FORMAT,
                     SHADER_ATTRIB_COLOR_LEN, offset);
         });
-        prepared_shaders.reflection.get_attr_loc_and_then(SHADER_ATTRIB_TEXCOORD, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_TEXCOORD, [&attr_descs, &offset] (auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_TEXCOORD_FORMAT,
                     SHADER_ATTRIB_TEXCOORD_LEN, offset);
         });
@@ -125,7 +123,7 @@ namespace argus {
         vbo_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         binding_descs.push_back(vbo_desc);
 
-        auto anim_frame_loc = prepared_shaders.reflection.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
+        auto anim_frame_loc = shader_refl.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
         if (anim_frame_loc.has_value()) {
             uint32_t af_offset = 0;
             _push_attr(attr_descs, BINDING_INDEX_ANIM_FRAME_BUF, anim_frame_loc.value(),
@@ -133,7 +131,7 @@ namespace argus {
 
             VkVertexInputBindingDescription anim_buf_desc{};
             anim_buf_desc.binding = BINDING_INDEX_ANIM_FRAME_BUF;
-            anim_buf_desc.stride = SHADER_ATTRIB_ANIM_FRAME_LEN;
+            anim_buf_desc.stride = af_offset;
             anim_buf_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             binding_descs.push_back(anim_buf_desc);
@@ -214,17 +212,19 @@ namespace argus {
         color_blend_info.blendConstants[2] = 0.0f;
         color_blend_info.blendConstants[3] = 0.0f;
 
+        auto ds_layout = create_descriptor_set_layout(state.device, shader_refl);
+
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 0;
-        pipeline_layout_info.pSetLayouts = nullptr;
+        pipeline_layout_info.setLayoutCount = 1;
+        pipeline_layout_info.pSetLayouts = &ds_layout;
         pipeline_layout_info.pushConstantRangeCount = 0;
         pipeline_layout_info.pPushConstantRanges = nullptr;
 
         VkPipelineLayout pipeline_layout;
-        vkCreatePipelineLayout(state.device, &pipeline_layout_info, nullptr, &pipeline_layout);
+        vkCreatePipelineLayout(state.device.logical_device, &pipeline_layout_info, nullptr, &pipeline_layout);
 
-        auto out_loc = prepared_shaders.reflection.get_output_loc(SHADER_OUT_COLOR);
+        auto out_loc = shader_refl.get_output_loc(SHADER_OUT_COLOR);
         affirm_precond(out_loc.has_value(), "Required shader output " SHADER_OUT_COLOR " is missing");
         affirm_precond(out_loc.value() == SHADER_OUT_COLOR_LOC,
                 "Required shader output " SHADER_OUT_COLOR " must have location 0");
@@ -245,22 +245,25 @@ namespace argus {
         pipeline_info.renderPass = state.render_pass;
 
         VkPipeline pipeline;
-        if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline)
-                != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(state.device.logical_device, VK_NULL_HANDLE, 1,
+                &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to create graphics pipeline");
         }
 
         PipelineInfo ret{};
-        ret.pipeline = pipeline;
+        ret.handle = pipeline;
         ret.layout = pipeline_layout;
-
-        state.material_pipelines.insert({ material_uid, ret });
+        ret.ds_layout = ds_layout;
+        ret.reflection = shader_refl;
+        ret.vertex_len = offset;
 
         return ret;
     }
 
-    void destroy_pipeline(const RendererState &state, PipelineInfo pipeline) {
-        vkDestroyPipeline(state.device, pipeline.pipeline, nullptr);
-        vkDestroyPipelineLayout(state.device, pipeline.layout, nullptr);
+    void destroy_pipeline(const RendererState &state, const PipelineInfo &pipeline) {
+        destroy_descriptor_set_layout(state.device, pipeline.ds_layout);
+
+        vkDestroyPipeline(state.device.logical_device, pipeline.handle, nullptr);
+        vkDestroyPipelineLayout(state.device.logical_device, pipeline.layout, nullptr);
     }
 }

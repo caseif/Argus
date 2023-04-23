@@ -16,23 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "internal/render_vulkan/state/viewport_state.hpp"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    // forward declarations
+    struct RendererState;
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
+            parent_state(parent_state),
+            viewport(viewport),
+            view_matrix({}),
+            command_buf({}),
+            front_fb_tex({}),
+            back_fb_tex({}),
+            front_fb(VK_NULL_HANDLE),
+            back_fb(VK_NULL_HANDLE),
+            ubo({}) {
+    }
 
-    void destroy_vk_device(LogicalDevice device);
+    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :
+            ViewportState(parent_state, viewport) {
+    }
 }

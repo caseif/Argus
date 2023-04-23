@@ -16,23 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/lowlevel/logging.hpp"
 
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "internal/render_vulkan/setup/device.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, VkMemoryPropertyFlags props) {
+        VkPhysicalDeviceMemoryProperties mem_props;
+        vkGetPhysicalDeviceMemoryProperties(device.physical_device, &mem_props);
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+        for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+            if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
+                return i;
+            }
+        }
 
-    void destroy_vk_device(LogicalDevice device);
+        Logger::default_logger().fatal("Failed to find suitable memory type");
+    }
 }

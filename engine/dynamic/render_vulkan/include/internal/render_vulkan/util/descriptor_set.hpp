@@ -18,30 +18,33 @@
 
 #pragma once
 
-#include "argus/wm/window.hpp"
+#include "argus/render/common/shader.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
+#include "internal/render_vulkan/util/buffer.hpp"
 
 #include "vulkan/vulkan.h"
 
 #include <vector>
 
 namespace argus {
-    struct SwapchainSupportInfo {
-        VkSurfaceCapabilitiesKHR caps;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> present_modes;
+    struct DescriptorSetInfo {
+        VkDescriptorSet handle;
+        BufferInfo buffer;
     };
 
-    struct SwapchainInfo {
-        VkSwapchainKHR swapchain;
-        std::vector<VkImage> images;
-        std::vector<VkImageView> image_views;
-        VkFormat image_format;
-        VkExtent2D extent;
-    };
+    VkDescriptorPool create_descriptor_pool(const LogicalDevice &device);
 
-    SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR probe_surface);
+    void destroy_descriptor_pool(const LogicalDevice &device, VkDescriptorPool pool);
 
-    SwapchainInfo create_vk_swapchain(const Window &window, const LogicalDevice &device, VkSurfaceKHR surface);
+    VkDescriptorSetLayout create_descriptor_set_layout(const LogicalDevice &device,
+            const ShaderReflectionInfo &shader_refl);
+
+    void destroy_descriptor_set_layout(const LogicalDevice &device, VkDescriptorSetLayout layout);
+
+    std::vector<VkDescriptorSet> create_descriptor_sets(const LogicalDevice &device, VkDescriptorPool pool,
+            const ShaderReflectionInfo &shader_refl);
+
+    void destroy_descriptor_sets(const LogicalDevice &device, VkDescriptorPool pool,
+            const std::vector<VkDescriptorSet> &sets);
 }

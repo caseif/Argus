@@ -18,25 +18,26 @@
 
 #pragma once
 
-#include "argus/render/common/material.hpp"
+#include "argus/resman/resource.hpp"
+
+#include "argus/render/common/texture_data.hpp"
+
+#include "internal/render_vulkan/setup/device.hpp"
+#include "internal/render_vulkan/state/renderer_state.hpp"
+#include "internal/render_vulkan/util/image.hpp"
 
 #include "vulkan/vulkan.h"
 
 #include <string>
-#include <vector>
 
 namespace argus {
-    // forward declarations
-    struct RendererState;
-
-    struct PipelineInfo {
-        VkPipeline pipeline;
-        VkPipelineLayout layout;
+    struct PreparedTexture {
+        std::string uid;
+        ImageInfo image;
+        VkSampler sampler;
     };
 
-    VkRenderPass create_render_pass(VkDevice device, VkFormat format);
+    PreparedTexture prepare_texture(const LogicalDevice &device, VkCommandPool pool, const TextureData &texture);
 
-    PipelineInfo get_or_create_pipeline(RendererState &state, const std::string &material_uid);
-
-    void destroy_pipeline(PipelineInfo pipeline);
+    void get_or_load_texture(RendererState &state, const Resource &material_res);
 }

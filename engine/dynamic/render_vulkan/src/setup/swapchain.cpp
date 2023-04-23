@@ -80,7 +80,7 @@ namespace argus {
         };
     }
 
-    SwapchainInfo create_vk_swapchain(const Window &window, LogicalDevice device, VkSurfaceKHR surface) {
+    SwapchainInfo create_vk_swapchain(const Window &window, const LogicalDevice &device, VkSurfaceKHR surface) {
         auto support_info = query_swapchain_support(device.physical_device, surface);
         affirm_precond(!support_info.formats.empty(), "No available swapchain formats");
         affirm_precond(!support_info.present_modes.empty(), "No available swapchain present modes");
@@ -130,11 +130,11 @@ namespace argus {
         uint32_t real_image_count;
 
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, nullptr);
-        sc_info.images.resize(image_count);
-        sc_info.image_views.reserve(image_count);
+        sc_info.images.resize(real_image_count);
+        //sc_info.image_views.reserve(real_image_count);
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, sc_info.images.data());
 
-        for (auto sc_image : sc_info.images) {
+        /*for (auto sc_image : sc_info.images) {
             VkImageViewCreateInfo image_view_info{};
             image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             image_view_info.image = sc_image;
@@ -156,7 +156,7 @@ namespace argus {
             }
 
             sc_info.image_views.push_back(image_view);
-        }
+        }*/
 
         sc_info.image_format = format.format;
         sc_info.extent = extent;

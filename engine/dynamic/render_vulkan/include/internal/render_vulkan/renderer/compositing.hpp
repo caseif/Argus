@@ -18,17 +18,20 @@
 
 #pragma once
 
-#include "vulkan/vulkan.h"
+#include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/math.hpp"
 
 namespace argus {
     // forward declarations
     struct RendererState;
+    struct SceneState;
+    struct ViewportState;
 
-    VkCommandPool create_command_pool(const LogicalDevice &device);
+    void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution);
 
-    void destroy_command_pool(const LogicalDevice &device, VkCommandPool command_pool);
+    void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution);
 
-    std::vector<VkCommandBuffer> alloc_command_buffers(const RendererState &state, uint32_t count);
-
-    void free_command_buffers(const RendererState &state, std::vector<VkCommandBuffer> buffers);
+    void setup_framebuffer(RendererState &state);
 }

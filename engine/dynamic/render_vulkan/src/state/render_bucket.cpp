@@ -16,23 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/memory.hpp"
 
-#include "internal/render_vulkan/setup/queues.hpp"
+#include "argus/resman/resource.hpp"
 
-#include "vulkan/vulkan.h"
+#include "internal/render_vulkan/state/render_bucket.hpp"
 
-#include <optional>
+#include <cstdint>
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    static AllocPool g_alloc_pool(sizeof(RenderBucket));
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+    RenderBucket &RenderBucket::create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index) {
+        return *new(g_alloc_pool.alloc()) RenderBucket(material_res, atlas_stride, z_index);
+    }
 
-    void destroy_vk_device(LogicalDevice device);
+    RenderBucket::~RenderBucket(void) {
+        //TODO
+    }
+
+    void RenderBucket::destroy() {
+        this->~RenderBucket();
+        g_alloc_pool.free(this);
+    }
 }

@@ -58,8 +58,8 @@ namespace argus {
         auto shader_uids_str = shader_uids_oss.str().substr(0, shader_uids_oss.str().size() - strlen(", "));
         Logger::default_logger().debug("Compiling SPIR-V from shader set [%s]", shader_uids_str.c_str());
 
-        auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
-                glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
+        auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientVulkan,
+                glslang::EShTargetVulkan_1_2, glslang::EShTargetSpv_1_0);
         auto spirv_shaders = std::move(comp_res.first);
         auto refl_info = comp_res.second;
 
@@ -123,7 +123,7 @@ namespace argus {
                 Logger::default_logger().fatal("Failed to create shader");
             }
 
-            VkPipelineShaderStageCreateInfo pipeline_stage_create_info;
+            VkPipelineShaderStageCreateInfo pipeline_stage_create_info{};
             pipeline_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             pipeline_stage_create_info.stage = vk_shader_stage;
             pipeline_stage_create_info.module = shader_module;

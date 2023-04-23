@@ -16,23 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/render/common/scene.hpp"
 
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "internal/render_vulkan/state/renderer_state.hpp"
+#include "internal/render_vulkan/state/scene_state.hpp"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-    };
+    SceneState::SceneState(RendererState &parent_state, Scene &scene) :
+            parent_state(parent_state),
+            scene(scene) {
+    }
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+    SceneState::~SceneState(void) {
+    }
 
-    void destroy_vk_device(LogicalDevice device);
+    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene) :
+            SceneState(parent_state, scene) {
+    }
+
+    Scene2DState::~Scene2DState(void) {
+    }
 }
