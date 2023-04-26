@@ -430,8 +430,8 @@ namespace argus {
 
         auto vk_cmd_buf = state.draw_cmd_buf.handle;
 
-        auto fb_width = state.swapchain.resolution.x;
-        auto fb_height = state.swapchain.resolution.y;
+        auto fb_width = state.swapchain.extent.width;
+        auto fb_height = state.swapchain.extent.height;
 
         VkClearValue clear_val{};
         clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };

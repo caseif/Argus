@@ -217,8 +217,8 @@ namespace argus {
 
         //uint32_t fb_width = uint32_t(std::abs(viewport_px.right - viewport_px.left));
         //uint32_t fb_height = uint32_t(std::abs(viewport_px.bottom - viewport_px.top));
-        uint32_t fb_width = state.swapchain.resolution.x;
-        uint32_t fb_height = state.swapchain.resolution.y;
+        uint32_t fb_width = state.swapchain.extent.width;
+        uint32_t fb_height = state.swapchain.extent.height;
 
         if (viewport_state.command_buf.handle == nullptr) {
             viewport_state.command_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();

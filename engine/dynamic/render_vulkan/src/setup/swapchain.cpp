@@ -145,23 +145,16 @@ namespace argus {
 
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.handle, &real_image_count, nullptr);
         sc_info.images.resize(real_image_count);
-        //sc_info.image_views.reserve(real_image_count);
         vkGetSwapchainImagesKHR(device.logical_device, sc_info.handle, &real_image_count, sc_info.images.data());
 
-        //auto cmd_buf = alloc_command_buffers(device, state.command_pool, 1).front();
-        //begin_oneshot_commands(device, cmd_buf);
-
         for (auto sc_image : sc_info.images) {
-            //perform_image_transition(cmd_buf, sc_image);
-
             auto image_view = create_image_view(device, sc_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT);
             sc_info.image_views.push_back(image_view);
 
-            auto framebuffer = create_framebuffer(device, sc_info.composite_render_pass, { image_view }, resolution);
+            auto framebuffer = create_framebuffer(device, sc_info.composite_render_pass, { image_view },
+                    { extent.width, extent.height });
             sc_info.framebuffers.push_back(framebuffer);
         }
-
-        //end_oneshot_commands(device, cmd_buf);
 
         VkSemaphoreCreateInfo sem_info{};
         sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
