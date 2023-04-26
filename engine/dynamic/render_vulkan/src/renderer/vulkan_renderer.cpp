@@ -164,7 +164,7 @@ namespace argus {
         for (const auto &ds : viewport_state.material_desc_sets) {
             destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
         }
-        free_command_buffers(state.device, { viewport_state.command_buf });
+        free_command_buffer(state.device, viewport_state.command_buf);
     }
 
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
@@ -291,6 +291,8 @@ namespace argus {
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
+        vkQueueWaitIdle(state.device.queues.graphics_family);
+
         for (const auto &viewport_state : state.viewport_states_2d) {
             _destroy_viewport(state, viewport_state.second);
         }
@@ -323,16 +325,8 @@ namespace argus {
             destroy_render_pass(state.device, state.fb_render_pass);
         }
 
-        if (state.draw_cmd_buf.handle != VK_NULL_HANDLE) {
-            free_command_buffer(state.device, state.draw_cmd_buf);
-        }
-
         if (state.command_pool != VK_NULL_HANDLE) {
             destroy_command_pool(state.device, state.command_pool);
-        }
-
-        for (const auto &pipeline : state.material_pipelines) {
-            destroy_pipeline(state.device, pipeline.second);
         }
 
         for (const auto &texture : state.prepared_textures) {

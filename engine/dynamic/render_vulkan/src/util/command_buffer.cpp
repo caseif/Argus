@@ -69,8 +69,8 @@ namespace argus {
         return buffers;
     }
 
-    void free_command_buffers(const LogicalDevice &device, std::vector<CommandBufferInfo> buffers) {
-        if (buffers.size() == 0) {
+    void free_command_buffers(const LogicalDevice &device, const std::vector<CommandBufferInfo> &buffers) {
+        if (buffers.empty()) {
             return;
         }
 
@@ -82,7 +82,7 @@ namespace argus {
                 static_cast<uint32_t>(handles.size()), handles.data());
     }
 
-    void free_command_buffer(const LogicalDevice &device, CommandBufferInfo buffer) {
+    void free_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer) {
         vkFreeCommandBuffers(device.logical_device, buffer.pool, 1, &buffer.handle);
     }
 

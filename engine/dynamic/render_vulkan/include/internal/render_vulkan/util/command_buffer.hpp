@@ -40,9 +40,9 @@ namespace argus {
 
     std::vector<CommandBufferInfo> alloc_command_buffers(const LogicalDevice &device, VkCommandPool pool, uint32_t count);
 
-    void free_command_buffers(const LogicalDevice &device, std::vector<CommandBufferInfo> buffers);
+    void free_command_buffers(const LogicalDevice &device, const std::vector<CommandBufferInfo> &buffers);
 
-    void free_command_buffer(const LogicalDevice &device, CommandBufferInfo buffer);
+    void free_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer);
 
     void begin_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer);
 
