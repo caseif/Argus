@@ -260,6 +260,7 @@ namespace argus {
         pipeline_info.pDepthStencilState = nullptr;
         pipeline_info.pColorBlendState = &color_blend_info;
         pipeline_info.pDynamicState = &dyn_state_info;
+        pipeline_info.pDepthStencilState = &depth_info;
         pipeline_info.layout = pipeline_layout;
         pipeline_info.renderPass = render_pass;
 
