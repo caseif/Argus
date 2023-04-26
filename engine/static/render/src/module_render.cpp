@@ -103,8 +103,6 @@ namespace argus {
         }
 
         Logger::default_logger().fatal("Failed to select graphics backend");
-
-        return;
     }
 
     static void _load_backend_modules(void) {

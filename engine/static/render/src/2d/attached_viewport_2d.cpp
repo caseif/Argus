@@ -32,7 +32,7 @@ namespace argus {
             pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
     }
 
-    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) :
+    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) noexcept :
             AttachedViewport(rhs.type),
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;

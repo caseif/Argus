@@ -18,32 +18,8 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
-#include "argus/lowlevel/types.hpp"
-
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
-
-#include <mutex>
+#include "argus/core/module.hpp"
 
 namespace argus {
-    // forward declarations
-    class Window;
-
-    namespace input {
-        struct MouseState {
-            Vector2d last_mouse_pos;
-            Vector2d mouse_delta;
-            bool got_first_mouse_pos;
-
-            std::mutex window_mutex;
-        };
-
-        void init_mouse(const argus::Window &window);
-    }
+    void update_lifecycle_ui(LifecycleStage stage);
 }

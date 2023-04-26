@@ -20,7 +20,11 @@
 
 #include "argus/lowlevel/handle.hpp"
 
+#include "argus/core/module.hpp"
+
 namespace argus {
     extern HandleTable g_static_obj_table;
     extern HandleTable g_actor_table;
+
+    void update_lifecycle_game2d(LifecycleStage stage);
 }

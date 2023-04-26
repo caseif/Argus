@@ -18,6 +18,8 @@
 
 #include "argus/core/module.hpp"
 
+#include "internal/sound/module_sound.hpp"
+
 namespace argus {
     void update_lifecycle_sound(LifecycleStage stage) {
         switch (stage) {

@@ -92,7 +92,7 @@ namespace argus {
             dirty = false;
 
             return ValueAndDirtyFlag<ValueType>{value, old_dirty};
-        };
+        }
 
         ValueAndDirtyFlag<const ValueType> read(void) const {
             bool old_dirty = dirty;
@@ -100,7 +100,7 @@ namespace argus {
             dirty = false;
 
             return ValueAndDirtyFlag<const ValueType>{value, old_dirty};
-        };
+        }
 
         /**
          * \brief Fetches the current value without affecting the dirty
@@ -110,7 +110,7 @@ namespace argus {
          */
         const ValueType &peek(void) const {
             return value;
-        };
+        }
 
         /**
          * \brief Performs a copy assignment to an lvalue, carrying over the
@@ -124,7 +124,7 @@ namespace argus {
             this->value = rhs.value;
             this->dirty = rhs.dirty;
             return *this;
-        };
+        }
 
         /**
          * \brief Performs an assignment to an lvalue, setting the dirty
@@ -138,7 +138,7 @@ namespace argus {
             value = rhs;
             dirty = true;
             return *this;
-        };
+        }
 
         /**
          * \brief Performs an assignment to an rvalue, setting the dirty
@@ -152,7 +152,7 @@ namespace argus {
             value = std::move(rhs);
             dirty = true;
             return *this;
-        };
+        }
 
         inline Dirtiable &operator+=(const ValueType &rhs) {
             value += rhs;

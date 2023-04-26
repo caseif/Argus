@@ -66,7 +66,7 @@ namespace argus {
             throw std::invalid_argument("Invalid PNG file");
         }
 
-        png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
         if (png_ptr == nullptr) {
             throw std::runtime_error("Failed to create PNG read struct");
         }

@@ -34,7 +34,13 @@
 #include "internal/render_opengles/loader/shader_loader.hpp"
 #include "internal/render_opengles/renderer/gles_renderer.hpp"
 
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <string>
 
@@ -134,5 +140,5 @@ namespace argus {
         }
     }
 
-    REGISTER_ARGUS_MODULE("render_opengles", update_lifecycle_render_opengles, { "render" });
+    REGISTER_ARGUS_MODULE("render_opengles", update_lifecycle_render_opengles, { "render" })
 }

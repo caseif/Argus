@@ -80,10 +80,8 @@ namespace argus {
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
      *
-     * \tparam The type of event to handle.
+     * \tparam EventType The type of event to handle.
      *
-     * \param filter The \link ArgusEventFilter filter \endlink for the new
-     *        event handler.
      * \param callback The \link ArgusEventCallback callback \endlink
      *        responsible for handling passed events.
      * \param target_thread The thread to invoke the handler function on.
@@ -124,7 +122,7 @@ namespace argus {
     /**
      * \brief Dispatches an event to all respective registered listeners.
      *
-     * \param event An lreference to the event to be dispatched.
+     * \param args Arguments to be forwarded to the event constructor.
      */
     template<typename T, typename... Args>
     void dispatch_event(Args &&... args) {

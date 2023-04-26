@@ -48,7 +48,7 @@ inline void _validate_state(bool cond, const std::string &caller, const std::str
     }
 }
 
-inline void _throw_errno(const std::string &caller, const std::string &syscall) {
+[[noreturn]] inline void _throw_errno(const std::string &caller, const std::string &syscall) {
     throw std::system_error(errno, std::generic_category(), caller + ": " + syscall + " failed");
 }
 

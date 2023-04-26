@@ -13,6 +13,26 @@ function(_argus_set_compile_flags TARGET)
     target_compile_options("${TARGET}" PUBLIC
       "-Werror"
       "-Wall"
+      "-Wmissing-noreturn"
+      "-Wunreachable-code"
+      "$<$<CXX_COMPILER_ID:Clang>:-Wnewline-eof>"
+      "$<$<CXX_COMPILER_ID:Clang>:-Wsuggest-destructor-override>"
+      "$<$<CXX_COMPILER_ID:Clang>:-Winconsistent-missing-destructor-override>"
+      "$<$<CXX_COMPILER_ID:Clang>:-Wdocumentation>"
+      #"-Wshadow"
+      #"-Wshadow-field"
+      #"-Wshadow-field-in-constructor"
+      #"-Wshadow-uncaptured-local"
+      # -Wmissing-prototypes is only available for C code in GCC
+      "$<$<OR:$<COMPILE_LANGUAGE:C>,$<CXX_COMPILER_ID:Clang>>:-Wmissing-prototypes>"
+      # -Wzero-as-nullpointer-constant is only available for C++ code in GCC
+      "$<$<OR:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:-Wzero-as-null-pointer-constant>"
+      # -Wextra-semi is only available for C++ code in GCC
+      "$<$<OR:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:Clang>>:-Wextra-semi>"
+      # -Wsuggest-override is only available for C++ code in GCC
+      "$<$<OR:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:Clang>>:-Wsuggest-override>"
+      "$<$<CXX_COMPILER_ID:Clang>:-Wunreachable-code-return>"
+      "$<$<CXX_COMPILER_ID:Clang>:-Wconditional-uninitialized>"
       "-Wextra"
       "$<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast>"
       "$<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>"
@@ -21,9 +41,12 @@ function(_argus_set_compile_flags TARGET)
       "-Wreturn-type"
       "-Wdeprecated"
       "-Wconversion")
+
+    # -Wmismatched-tags is only available in Clang or GCC 10+
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
        OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
-      target_compile_options("${TARGET}" PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:-Werror=mismatched-tags>")
+      target_compile_options("${TARGET}" PUBLIC
+        "$<$<COMPILE_LANGUAGE:CXX>:-Werror=mismatched-tags>")
     endif()
 
     target_compile_options("${TARGET}" PUBLIC "$<$<CONFIG:Debug>:-gdwarf-4>")
@@ -56,7 +79,7 @@ function(_argus_set_compile_flags TARGET)
           "-fno-omit-frame-pointer")
       endif()
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      target_compile_options("${TARGET}" PUBLIC "-Wno-variadic-macros")
+      target_compile_options("${TARGET}" PUBLIC "-Wno-variadic-macros" "-Wno-error=unknown-pragmas")
     endif()
   endif()
 endfunction()

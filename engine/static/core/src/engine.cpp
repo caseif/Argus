@@ -60,7 +60,7 @@ namespace argus {
     static std::mutex g_one_off_callbacks_mutex;
     static std::vector<NullaryCallback> g_one_off_callbacks;
 
-    Thread *g_game_thread;
+    static Thread *g_game_thread;
 
     static bool g_engine_stopping = false;
     static bool g_game_thread_acknowledged_halt = false;
@@ -286,7 +286,7 @@ namespace argus {
         Logger::default_logger().info("Engine initialized!");
     }
 
-    void start_engine(const DeltaCallback &game_loop) {
+    [[noreturn]] void start_engine(const DeltaCallback &game_loop) {
         Logger::default_logger().info("Bringing up engine");
 
         affirm_precond(g_core_initialized, "Cannot start engine before it is initialized.");

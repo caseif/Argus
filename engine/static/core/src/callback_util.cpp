@@ -17,6 +17,7 @@
  */
 
 #include "argus/core/callback.hpp"
+#include "internal/core/callback_util.hpp"
 
 #include <mutex>
 

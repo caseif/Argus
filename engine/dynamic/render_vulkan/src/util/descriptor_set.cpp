@@ -35,7 +35,7 @@ namespace argus {
     static constexpr const uint32_t INITIAL_UBO_COUNT = INITIAL_DS_COUNT * UBOS_PER_BUCKET;
     static constexpr const uint32_t INITIAL_SAMPLER_COUNT = INITIAL_DS_COUNT * SAMPLERS_PER_BUCKET;
 
-    std::vector<VkDescriptorSetLayoutBinding> _create_ubo_bindings(const ShaderReflectionInfo &shader_refl) {
+    static std::vector<VkDescriptorSetLayoutBinding> _create_ubo_bindings(const ShaderReflectionInfo &shader_refl) {
         auto count = shader_refl.ubo_bindings.size();
         affirm_precond(count <= UINT32_MAX, "Too many UBOs");
 
@@ -56,7 +56,7 @@ namespace argus {
         return bindings;
     }
 
-    VkDescriptorSetLayoutBinding _create_sampler_binding(void) {
+    static VkDescriptorSetLayoutBinding _create_sampler_binding(void) {
         VkDescriptorSetLayoutBinding binding{};
         binding.binding = 0; //TODO: pass actual value through reflection info
         binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -67,7 +67,7 @@ namespace argus {
         return binding;
     }
 
-    VkDescriptorSetLayout _create_descriptor_set_layout(const LogicalDevice &device,
+    static VkDescriptorSetLayout _create_descriptor_set_layout(const LogicalDevice &device,
             const std::vector<VkDescriptorSetLayoutBinding> &bindings) {
         affirm_precond(bindings.size() <= UINT32_MAX, "Too many descriptor set layout bindings");
 

@@ -42,7 +42,13 @@
 #include "internal/render_vulkan/util/pipeline.hpp"
 #include "internal/render_vulkan/util/render_pass.hpp"
 
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 namespace argus {
@@ -211,7 +217,7 @@ namespace argus {
         }
     }
 
-    uint32_t _get_next_image(const RendererState &state) {
+    static uint32_t _get_next_image(const RendererState &state) {
         auto &device = state.device.logical_device;
 
         vkWaitForFences(device, 1, &state.swapchain.in_flight_fence, VK_TRUE, UINT64_MAX);
@@ -225,7 +231,7 @@ namespace argus {
         return image_index;
     }
 
-    void _submit_queues(const RendererState &state) {
+    static void _submit_queues(const RendererState &state) {
         VkSubmitInfo submit_info{};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -246,7 +252,7 @@ namespace argus {
         }
     }
 
-    void _present_image(const RendererState &state, uint32_t image_index) {
+    static void _present_image(const RendererState &state, uint32_t image_index) {
         VkSwapchainKHR swapchains[] = { state.swapchain.handle };
 
         VkSemaphore signal_sems[] = { state.swapchain.render_done_sem };

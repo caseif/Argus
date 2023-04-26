@@ -25,8 +25,7 @@
 #include <vector>
 
 namespace argus {
-
-    EngineConfig g_engine_config;
+    static EngineConfig g_engine_config;
 
     void set_target_tickrate(unsigned int target_tickrate) {
         g_engine_config.target_tickrate = target_tickrate;

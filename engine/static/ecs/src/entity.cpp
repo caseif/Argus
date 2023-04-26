@@ -23,6 +23,7 @@
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
 #include "argus/ecs/entity_builder.hpp"
+#include "internal/ecs/entity.hpp"
 
 #include <vector>
 

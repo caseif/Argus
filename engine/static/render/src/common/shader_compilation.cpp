@@ -28,6 +28,11 @@
 #pragma GCC diagnostic ignored "-Wdeprecated"
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-destructor-override"
+#endif
 
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"

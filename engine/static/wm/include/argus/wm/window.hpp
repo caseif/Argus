@@ -126,9 +126,7 @@ namespace argus {
          *
          * \param id The unique identifier of the Window.
          * \param parent The Window which is parent to the new one, or
-         *        `nullptr` if the window does not have a parent.
-         *
-         * \return The created Window.
+         *        `nullptr` if the window does not have a parent..
          *
          * \throw std::invalid_argument If the identifier is invalid or is
          *        already in use.

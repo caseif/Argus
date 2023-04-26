@@ -29,6 +29,8 @@
 
 #include "argus/resman/resource_event.hpp"
 
+#include "argus/wm/window.hpp"
+
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
@@ -45,9 +47,14 @@
 #include "internal/render_opengles/state/scene_state.hpp"
 #include "internal/render_opengles/state/viewport_state.hpp"
 
-#include "GLFW/glfw3.h"
 #include "aglet/aglet.h"
-#include "argus/wm/window.hpp"
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
+#include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <set>
 #include <string>

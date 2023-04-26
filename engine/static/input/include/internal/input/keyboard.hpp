@@ -18,7 +18,12 @@
 
 #pragma once
 
-#include <GLFW/glfw3.h>
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
+#include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 namespace argus {
     // forward declarations

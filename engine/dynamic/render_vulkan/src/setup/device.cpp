@@ -25,7 +25,13 @@
 #include "internal/render_vulkan/setup/queues.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 #include <algorithm>

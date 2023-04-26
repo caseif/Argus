@@ -57,7 +57,7 @@ namespace argus {
         int32_t right;
     };
 
-    TransformedViewport _transform_viewport_to_pixels(const Viewport &viewport, const Vector2u &resolution) {
+    static TransformedViewport _transform_viewport_to_pixels(const Viewport &viewport, const Vector2u &resolution) {
         float vp_h_scale;
         float vp_v_scale;
         float vp_h_off;
@@ -143,7 +143,7 @@ namespace argus {
         }
     }
 
-    void _create_framebuffers(const RendererState &state, ViewportState &viewport_state, const Vector2u &size) {
+    static void _create_framebuffers(const RendererState &state, ViewportState &viewport_state, const Vector2u &size) {
         auto format = state.swapchain.image_format;
 
         viewport_state.front_fb_image = create_image_and_image_view(state.device, format,

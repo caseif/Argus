@@ -257,7 +257,7 @@ namespace argus {
          *
          * \param x The new x-translation for the transform.
          * \param y The new y-translation for the transform.
-         * \param y The new z-translation for the transform.
+         * \param z The new z-translation for the transform.
          */
         void set_translation(float x, float y, float z);
 
@@ -294,7 +294,7 @@ namespace argus {
         /**
          * \brief Sets the rotation component of the transform.
          *
-         * \param rotation_radians The new rotation component for the
+         * \param rotation The new rotation component for the
          *        transform in the order (pitch, yaw, roll).
          */
         void set_rotation(const Vector3f &rotation);
@@ -312,7 +312,7 @@ namespace argus {
          * \brief Adds the given value to the transform's rotation
          *        component.
          *
-         * \param rotation_radians The values in radians to add to this
+         * \param rotation The values in radians to add to this
          *         transform's rotation component in the order (pitch, yaw,
          *         roll).
          */
@@ -350,7 +350,7 @@ namespace argus {
          *
          * \param x The new x-scale for the transform.
          * \param y The new y-scale for the transform.
-         * \param y The new z-scale for the transform.
+         * \param z The new z-scale for the transform.
          */
         void set_scale(float x, float y, float z);
 

@@ -18,6 +18,8 @@
 
 #include "argus/core/module.hpp"
 
+#include "internal/ui/module_ui.hpp"
+
 namespace argus {
     void update_lifecycle_ui(LifecycleStage stage) {
         switch (stage) {

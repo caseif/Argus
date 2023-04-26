@@ -36,7 +36,7 @@
 namespace argus::input {
     static std::map<const argus::Window *, MouseState> g_mouse_states;
 
-    argus::Vector2d mouse_position(const argus::Window &window) {
+    argus::Vector2d mouse_pos(const argus::Window &window) {
         auto *glfw_window = get_window_handle<GLFWwindow>(window);
 
         double x;

@@ -36,5 +36,5 @@ namespace argus {
 
     PreparedShaderSet prepare_shaders(VkDevice device, const std::vector<std::string> &shader_uids);
 
-    void destroy_shaders(VkDevice device, PreparedShaderSet shaders);
+    void destroy_shaders(VkDevice device, const PreparedShaderSet &shaders);
 }

@@ -36,7 +36,13 @@
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 
 #include "aglet/aglet.h"
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <string>
 
@@ -182,5 +188,5 @@ namespace argus {
         }
     }
 
-    REGISTER_ARGUS_MODULE("render_opengl", update_lifecycle_render_opengl, { "render" });
+    REGISTER_ARGUS_MODULE("render_opengl", update_lifecycle_render_opengl, { "render" })
 }

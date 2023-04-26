@@ -41,12 +41,12 @@ namespace argus {
 
         AttachedViewport2D(const AttachedViewport2D &) = delete;
 
-        AttachedViewport2D(AttachedViewport2D &&);
+        AttachedViewport2D(AttachedViewport2D &&) noexcept;
 
-        ~AttachedViewport2D(void);
+        ~AttachedViewport2D(void) override;
 
-        pimpl_AttachedViewport *get_pimpl(void) const;
+        [[nodiscard]] pimpl_AttachedViewport *get_pimpl(void) const override;
 
-        Camera2D &get_camera(void) const;
+        [[nodiscard]] Camera2D &get_camera(void) const;
     };
 }

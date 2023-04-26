@@ -33,7 +33,7 @@
 #include <cstdint>
 
 namespace argus {
-    void _try_free_buffer(const LogicalDevice &device, BufferInfo &buffer) {
+    static void _try_free_buffer(const LogicalDevice &device, BufferInfo &buffer) {
         if (buffer.handle != nullptr) {
             free_buffer(device, buffer);
             buffer.handle = nullptr;

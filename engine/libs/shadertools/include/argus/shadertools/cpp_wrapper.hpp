@@ -31,6 +31,11 @@
 #include <cstring>
 
 namespace argus {
+    #pragma GCC diagnostic push
+    #ifdef __clang__
+    #pragma GCC diagnostic ignored "-Wmissing-prototypes"
+    #endif
+
     struct CompiledShaderSet {
         std::unordered_map<EShLanguage, std::vector<uint8_t>> spirv_shaders;
         std::map<std::string, uint32_t> attributes;
@@ -132,4 +137,8 @@ namespace argus {
 
         return final_set;
     }
+
+    #ifdef __clang__
+    #pragma GCC diagnostic pop
+    #endif
 }

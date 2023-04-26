@@ -48,8 +48,14 @@
 #include "internal/render_opengl/state/scene_state.hpp"
 #include "internal/render_opengl/state/viewport_state.hpp"
 
-#include "GLFW/glfw3.h"
 #include "aglet/aglet.h"
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
+#include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <algorithm>
 #include <set>

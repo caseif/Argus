@@ -155,7 +155,7 @@ namespace argus {
     template<typename T>
     bool try_remove_callback(CallbackList<T> &list, const Index index) {
         list.list_mutex.lock_shared();
-        bool present;
+        bool present = false;
         for (auto &list_pair : list.lists) {
             auto it = std::find_if(list_pair.second.cbegin(), list_pair.second.cend(),
                     [index](auto callback) { return callback.id == index; });

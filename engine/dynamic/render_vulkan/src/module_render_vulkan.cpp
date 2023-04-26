@@ -29,13 +29,20 @@
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
+#include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/resources.h"
 #include "internal/render_vulkan/loader/shader_loader.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 #include <map>
@@ -69,7 +76,7 @@ namespace argus {
 
     static std::map<const Window *, VulkanRenderer *> g_renderer_map;
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VKAPI_ATTR static VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
             VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
             void* user_data) {
         UNUSED(type);
@@ -254,5 +261,5 @@ namespace argus {
         }
     }
 
-    REGISTER_ARGUS_MODULE("render_vulkan", update_lifecycle_render_vulkan, { "render" });
+    REGISTER_ARGUS_MODULE("render_vulkan", update_lifecycle_render_vulkan, { "render" })
 }

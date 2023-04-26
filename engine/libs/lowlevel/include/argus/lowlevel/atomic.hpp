@@ -202,7 +202,7 @@ namespace argus {
             mutex.unlock();
 
             return ValueAndDirtyFlag<ValueType>{val_copy, old_dirty};
-        };
+        }
 
         /**
          * \brief Atomically fetches the current value without affecting the
@@ -216,7 +216,7 @@ namespace argus {
             mutex.unlock();
 
             return val_copy;
-        };
+        }
 
         /**
          * \brief Performs an atomic assignment to an lvalue, setting the
@@ -234,7 +234,7 @@ namespace argus {
             }
             mutex.unlock();
             return *this;
-        };
+        }
 
         /**
          * \brief Performs an atomic assignment to an rvalue, setting the
@@ -252,7 +252,7 @@ namespace argus {
             }
             mutex.unlock();
             return *this;
-        };
+        }
 
         /**
          * Performs an atomic assignment to an lvalue without setting the

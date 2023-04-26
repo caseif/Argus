@@ -54,7 +54,7 @@ namespace argus {
         return support_info;
     }
 
-    VkSurfaceFormatKHR _select_swap_surface_format(const SwapchainSupportInfo &support_info) {
+    static VkSurfaceFormatKHR _select_swap_surface_format(const SwapchainSupportInfo &support_info) {
         for (const auto &format : support_info.formats) {
             if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return format;
@@ -63,7 +63,7 @@ namespace argus {
         return support_info.formats.at(0);
     }
 
-    VkPresentModeKHR _select_swap_present_mode(const SwapchainSupportInfo &support_info) {
+    static VkPresentModeKHR _select_swap_present_mode(const SwapchainSupportInfo &support_info) {
         for (const auto &present_mode : support_info.present_modes) {
             if (present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
                 return present_mode;
@@ -73,7 +73,7 @@ namespace argus {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D _select_swap_extent(const VkSurfaceCapabilitiesKHR &caps, const Vector2u &resolution) {
+    static VkExtent2D _select_swap_extent(const VkSurfaceCapabilitiesKHR &caps, const Vector2u &resolution) {
         if (caps.currentExtent.width != UINT32_MAX) {
             return caps.currentExtent;
         }

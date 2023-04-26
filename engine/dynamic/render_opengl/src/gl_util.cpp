@@ -25,7 +25,13 @@
 #include "internal/render_opengl/renderer/buffer.hpp"
 
 #include "aglet/aglet.h"
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <cassert>
 #include <climits>

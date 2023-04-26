@@ -125,7 +125,7 @@ namespace argus {
         /**
          * \brief Sets the active animation frame.
          *
-         * \param index The x- and y-index of the animation frame to
+         * \param frame The x- and y-index of the animation frame to
          *        activate. Neither index should exceed the number of tiles
          *        in each dimension in the atlas texture.
          */

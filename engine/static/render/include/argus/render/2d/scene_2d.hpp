@@ -55,9 +55,8 @@ namespace argus {
         /**
          * \brief Constructs a new Scene2D.
          *
+         * \param id The ID of the Scene.
          * \param transform The Transform of the Scene.
-         * \param index The compositing index of the Scene. Higher-indexed
-         *        Scenes are rendered on top of lower-indexed ones.
          */
         Scene2D(const std::string &id, const Transform2D &transform);
 
@@ -65,18 +64,18 @@ namespace argus {
                 Scene2D(id, transform) {
         }
 
-        Scene2D(const Scene2D &) noexcept = delete;
-
         Scene2D(Scene2D &&) noexcept;
 
-        ~Scene2D(void);
+        ~Scene2D(void) override;
 
       public:
         static Scene2D &create(const std::string &id);
 
         pimpl_Scene2D *pimpl;
 
-        pimpl_Scene *get_pimpl(void) const override;
+        Scene2D(const Scene2D &) noexcept = delete;
+
+        [[nodiscard]] pimpl_Scene *get_pimpl(void) const override;
 
         std::optional<std::reference_wrapper<RenderGroup2D>> get_group(Handle handle);
 
@@ -109,7 +108,7 @@ namespace argus {
         /**
          * \brief Removes the supplied RenderGroup2D from this Scene,
          *        destroying it in the process.
-         * \param group The group to remove and destroy.
+         * \param handle The handle to the group to remove and destroy.
          * \throw std::invalid_argument If the supplied RenderGroup is not a
          *        direct member of this Scene.
          */
@@ -118,13 +117,13 @@ namespace argus {
         /**
          * \brief Removes the specified RenderObject2D from this Scene,
          *        destroying it in the process.
-         * \param object The RenderObject2D to remove and destroy.
+         * \param handle The handle to the RenderObject2D to remove and destroy.
          * \throw std::invalid_argument If the supplied RenderObject is not
          *        a direct member of this Scene.
          */
         void remove_member_object(Handle handle);
 
-        std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
+        [[nodiscard]] std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
 
         Camera2D &create_camera(const std::string &id);
 

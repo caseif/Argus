@@ -27,8 +27,8 @@
 #include <string>
 
 namespace argus {
-    std::map<std::string, ActivateRenderBackendFn> g_render_backend_activate_fns;
-    std::string g_active_render_backend;
+    static std::map<std::string, ActivateRenderBackendFn> g_render_backend_activate_fns;
+    static std::string g_active_render_backend;
 
     void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn) {
         if (g_render_backend_activate_fns.find(id) != g_render_backend_activate_fns.end()) {

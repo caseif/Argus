@@ -94,7 +94,7 @@ namespace argus::input {
      * effect.
      *
      * \param window The window to configure the mouse input mode for.
-     * \param visible Whether raw mouse input should be used.
+     * \param raw_input Whether raw mouse input should be used.
      */
     void set_mouse_raw_input(const argus::Window &window, bool raw_input);
 }

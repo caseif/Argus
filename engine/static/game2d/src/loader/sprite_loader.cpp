@@ -42,19 +42,19 @@
 #define KEY_TILE_HEIGHT "tile_height"
 #define KEY_ANIMS "animations"
 
-const char *KEY_ANIM_LOOP = "loop";
-const char *KEY_ANIM_DEF_FRAME_DUR = "frame_duration";
-const char *KEY_ANIM_PADDING = "padding";
-const char *KEY_ANIM_PAD_TOP = "top";
-const char *KEY_ANIM_PAD_BOTTOM = "bottom";
-const char *KEY_ANIM_PAD_LEFT = "left";
-const char *KEY_ANIM_PAD_RIGHT = "right";
-const char *KEY_ANIM_FRAMES = "frames";
-const char *KEY_ANIM_FRAME_X = "x";
-const char *KEY_ANIM_FRAME_Y = "y";
-const char *KEY_ANIM_FRAME_DUR = "duration";
+static constexpr const char *KEY_ANIM_LOOP = "loop";
+static constexpr const char *KEY_ANIM_DEF_FRAME_DUR = "frame_duration";
+static constexpr const char *KEY_ANIM_PADDING = "padding";
+static constexpr const char *KEY_ANIM_PAD_TOP = "top";
+static constexpr const char *KEY_ANIM_PAD_BOTTOM = "bottom";
+static constexpr const char *KEY_ANIM_PAD_LEFT = "left";
+static constexpr const char *KEY_ANIM_PAD_RIGHT = "right";
+static constexpr const char *KEY_ANIM_FRAMES = "frames";
+static constexpr const char *KEY_ANIM_FRAME_X = "x";
+static constexpr const char *KEY_ANIM_FRAME_Y = "y";
+static constexpr const char *KEY_ANIM_FRAME_DUR = "duration";
 
-const char *MAGIC_ANIM_STATIC = "_static";
+static constexpr const char *MAGIC_ANIM_STATIC = "_static";
 
 namespace argus {
     SpriteLoader::SpriteLoader(void) : ResourceLoader({RESOURCE_TYPE_SPRITE}) {

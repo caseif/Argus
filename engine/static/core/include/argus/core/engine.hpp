@@ -75,7 +75,7 @@ namespace argus {
      *
      * \param game_loop The callback representing the main game loop.
      */
-    void start_engine(const DeltaCallback &game_loop);
+    [[noreturn]] void start_engine(const DeltaCallback &game_loop);
 
     /**
      * \brief Requests that the engine halt execution, performing cleanup as

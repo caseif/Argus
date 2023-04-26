@@ -67,7 +67,7 @@ namespace argus {
         bool explicit_uniform_locations;
     };
 
-    ShaderCompilationResult _compile_shaders(
+    static ShaderCompilationResult _compile_shaders(
             const std::vector<Shader> &shaders) {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 

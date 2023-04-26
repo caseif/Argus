@@ -24,7 +24,13 @@
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
 #include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 #include <algorithm>
