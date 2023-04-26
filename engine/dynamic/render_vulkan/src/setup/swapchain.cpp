@@ -23,8 +23,9 @@
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
-#include "internal/render_vulkan/util/image.hpp"
 #include "internal/render_vulkan/util/framebuffer.hpp"
+#include "internal/render_vulkan/util/image.hpp"
+#include "internal/render_vulkan/util/render_pass.hpp"
 
 #include <algorithm>
 

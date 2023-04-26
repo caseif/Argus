@@ -142,4 +142,9 @@ namespace argus {
         state.prepared_textures.insert({ texture_uid, prepared });
         state.material_textures.insert({ material_res.uid, texture_uid });
     }
+
+    void destroy_texture(const LogicalDevice &device, const PreparedTexture &texture) {
+        vkDestroySampler(device.logical_device, texture.sampler, nullptr);
+        destroy_image_and_image_view(device, texture.image);
+    }
 }

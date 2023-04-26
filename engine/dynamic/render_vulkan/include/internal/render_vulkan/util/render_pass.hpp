@@ -16,27 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/render_vulkan/state/viewport_state.hpp"
+#include "vulkan/vulkan.h"
 
 namespace argus {
     // forward declarations
-    struct RendererState;
+    struct LogicalDevice;
 
-    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
-            parent_state(parent_state),
-            viewport(viewport),
-            view_matrix({}),
-            view_matrix_dirty(false),
-            command_buf({}),
-            front_fb_image({}),
-            back_fb_image({}),
-            front_fb(VK_NULL_HANDLE),
-            back_fb(VK_NULL_HANDLE),
-            front_fb_sampler(VK_NULL_HANDLE),
-            ubo({}) {
-    }
+    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout);
 
-    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :
-            ViewportState(parent_state, viewport) {
-    }
+    void destroy_render_pass(const LogicalDevice &device, VkRenderPass render_pass);
 }

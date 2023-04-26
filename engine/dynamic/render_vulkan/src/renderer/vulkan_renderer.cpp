@@ -37,13 +37,16 @@
 #include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/util/command_buffer.hpp"
 #include "internal/render_vulkan/util/descriptor_set.hpp"
+#include "internal/render_vulkan/util/framebuffer.hpp"
 #include "internal/render_vulkan/util/image.hpp"
 #include "internal/render_vulkan/util/pipeline.hpp"
+#include "internal/render_vulkan/util/render_pass.hpp"
 
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan.h"
 
-namespace argus {// forward declarations
+namespace argus {
+    // forward declarations
     class Scene2D;
 
     static float g_frame_quad_vertex_data[] = {
@@ -148,6 +151,20 @@ namespace argus {// forward declarations
             scenes.insert(&viewport.get().get_camera().get_scene());
         }
         return scenes;
+    }
+
+    static void _destroy_viewport(const RendererState &state, const ViewportState &viewport_state) {
+        vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
+        destroy_framebuffer(state.device, viewport_state.front_fb);
+        destroy_framebuffer(state.device, viewport_state.back_fb);
+        destroy_image(state.device, viewport_state.front_fb_image.handle);
+        destroy_image(state.device, viewport_state.back_fb_image.handle);
+        free_buffer(state.device, viewport_state.ubo);
+        destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
+        for (const auto &ds : viewport_state.material_desc_sets) {
+            destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
+        }
+        free_command_buffers(state.device, { viewport_state.command_buf });
     }
 
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
@@ -274,7 +291,56 @@ namespace argus {// forward declarations
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
+        for (const auto &viewport_state : state.viewport_states_2d) {
+            _destroy_viewport(state, viewport_state.second);
+        }
+
+        if (state.draw_cmd_buf.handle != VK_NULL_HANDLE) {
+            free_command_buffer(state.device, state.draw_cmd_buf);
+        }
+
+        if (state.composite_vbo.handle != VK_NULL_HANDLE) {
+            free_buffer(state.device, state.composite_vbo);
+        }
+
+        if (state.global_ubo.handle != VK_NULL_HANDLE) {
+            free_buffer(state.device, state.global_ubo);
+        }
+
+        if (state.desc_pool != VK_NULL_HANDLE) {
+            destroy_descriptor_pool(state.device, state.desc_pool);
+        }
+
+        if (state.composite_pipeline.handle != VK_NULL_HANDLE) {
+            destroy_pipeline(state.device, state.composite_pipeline);
+        }
+
+        for (const auto &pipeline : state.material_pipelines) {
+            destroy_pipeline(state.device, pipeline.second);
+        }
+
+        if (state.fb_render_pass != VK_NULL_HANDLE) {
+            destroy_render_pass(state.device, state.fb_render_pass);
+        }
+
+        if (state.draw_cmd_buf.handle != VK_NULL_HANDLE) {
+            free_command_buffer(state.device, state.draw_cmd_buf);
+        }
+
+        if (state.command_pool != VK_NULL_HANDLE) {
+            destroy_command_pool(state.device, state.command_pool);
+        }
+
+        for (const auto &pipeline : state.material_pipelines) {
+            destroy_pipeline(state.device, pipeline.second);
+        }
+
+        for (const auto &texture : state.prepared_textures) {
+            destroy_texture(state.device, texture.second.value);
+        }
+
         destroy_swapchain(state, state.swapchain);
+
         vkDestroySurfaceKHR(g_vk_instance, state.surface, nullptr);
     }
 
@@ -314,6 +380,10 @@ namespace argus {// forward declarations
 
         auto resolution = window.get_resolution();
 
+        for (auto &viewport_state : state.viewport_states_2d) {
+            viewport_state.second.visited = false;
+        }
+
         auto viewports = canvas.get_viewports_2d();
         std::sort(viewports.begin(), viewports.end(),
                 [](auto a, auto b) { return a.get().get_z_index() < b.get().get_z_index(); });
@@ -322,7 +392,20 @@ namespace argus {// forward declarations
             auto &viewport_state = state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
             auto &scene_state = state.get_scene_state(scene);
+
+            viewport_state.visited = true;
+
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
+        }
+
+        std::vector<const AttachedViewport2D *> viewports_to_remove;
+        for (auto it = state.viewport_states_2d.begin(); it != state.viewport_states_2d.end();) {
+            if (!it->second.visited) {
+                _destroy_viewport(state, it->second);
+                it = state.viewport_states_2d.erase(it);
+            } else {
+                it++;
+            }
         }
 
         // set up state for drawing framebuffers to screen

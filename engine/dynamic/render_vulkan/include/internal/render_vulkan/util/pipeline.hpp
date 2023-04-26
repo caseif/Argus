@@ -42,12 +42,10 @@ namespace argus {
         std::vector<VkDescriptorSet> desc_sets;
     };
 
-    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout);
-
     PipelineInfo create_pipeline(RendererState &state, const Material &material, VkRenderPass render_pass);
 
     PipelineInfo create_pipeline(RendererState &state, const std::vector<std::string> &shader_uids,
             VkRenderPass render_pass);
 
-    void destroy_pipeline(const PipelineInfo &pipeline);
+    void destroy_pipeline(const LogicalDevice &device, const PipelineInfo &pipeline);
 }

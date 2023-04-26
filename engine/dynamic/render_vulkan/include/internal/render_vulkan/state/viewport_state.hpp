@@ -38,6 +38,8 @@ namespace argus {
         RendererState &parent_state;
         AttachedViewport *viewport;
 
+        bool visited;
+
         Matrix4 view_matrix;
         bool view_matrix_dirty;
 

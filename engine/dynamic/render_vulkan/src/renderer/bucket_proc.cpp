@@ -62,6 +62,7 @@ namespace argus {
                 _try_free_buffer(state.device, it->second->anim_frame_buffer);
                 _try_free_buffer(state.device, it->second->staging_vertex_buffer);
                 _try_free_buffer(state.device, it->second->staging_anim_frame_buffer);
+                _try_free_buffer(state.device, it->second->ubo_buffer);
                 it->second->destroy();
 
                 it = scene_state.render_buckets.erase(it);

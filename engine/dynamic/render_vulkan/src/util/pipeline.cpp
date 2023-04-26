@@ -45,51 +45,6 @@ namespace argus {
         offset += static_cast<uint32_t>(components * sizeof(float));
     }
 
-    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout) {
-        VkAttachmentDescription color_att{};
-        color_att.format = format;
-        color_att.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_att.finalLayout = final_layout;
-
-        VkAttachmentReference color_att_ref{};
-        color_att_ref.attachment = SHADER_OUT_COLOR_LOC;
-        color_att_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &color_att_ref;
-
-        VkSubpassDependency subpass_dep{};
-        subpass_dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-        subpass_dep.dstSubpass = 0;
-        subpass_dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpass_dep.srcAccessMask = 0;
-        subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpass_dep.dstAccessMask = 0;
-
-        VkRenderPassCreateInfo render_pass_info{};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount = 1;
-        render_pass_info.pAttachments = &color_att;
-        render_pass_info.subpassCount = 1;
-        render_pass_info.pSubpasses = &subpass;
-        render_pass_info.dependencyCount = 1;
-        render_pass_info.pDependencies = &subpass_dep;
-
-        VkRenderPass render_pass;
-        if (vkCreateRenderPass(device.logical_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create render pass");
-        }
-
-        return render_pass;
-    }
-
     PipelineInfo create_pipeline(RendererState &state, const Material &material, VkRenderPass render_pass) {
         return create_pipeline(state, material.get_shader_uids(), render_pass);
     }
@@ -280,10 +235,10 @@ namespace argus {
         return ret;
     }
 
-    void destroy_pipeline(const RendererState &state, const PipelineInfo &pipeline) {
-        destroy_descriptor_set_layout(state.device, pipeline.ds_layout);
+    void destroy_pipeline(const LogicalDevice &device, const PipelineInfo &pipeline) {
+        destroy_descriptor_set_layout(device, pipeline.ds_layout);
 
-        vkDestroyPipeline(state.device.logical_device, pipeline.handle, nullptr);
-        vkDestroyPipelineLayout(state.device.logical_device, pipeline.layout, nullptr);
+        vkDestroyPipeline(device.logical_device, pipeline.handle, nullptr);
+        vkDestroyPipelineLayout(device.logical_device, pipeline.layout, nullptr);
     }
 }

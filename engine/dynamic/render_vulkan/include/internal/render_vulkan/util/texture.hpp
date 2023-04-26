@@ -40,4 +40,6 @@ namespace argus {
     PreparedTexture prepare_texture(const LogicalDevice &device, VkCommandPool pool, const TextureData &texture);
 
     void get_or_load_texture(RendererState &state, const Resource &material_res);
+
+    void destroy_texture(const LogicalDevice &device, const PreparedTexture &texture);
 }
