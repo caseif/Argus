@@ -65,14 +65,14 @@ namespace argus {
         const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
 
         if (state.material_pipelines.find(object.get_material()) == state.material_pipelines.end()) {
-            auto pipeline = create_pipeline(state, mat_res.get<Material>());
+            auto pipeline = create_pipeline(state, mat_res.get<Material>(), state.fb_render_pass);
             state.material_pipelines.insert({ object.get_material(), pipeline });
         }
         auto &pipeline = state.material_pipelines.find(object.get_material())->second;
 
-        size_t vertex_len = pipeline.vertex_len;
+        size_t vertex_comps = pipeline.vertex_len / sizeof(float);
 
-        size_t buffer_size = vertex_count * vertex_len * sizeof(float);
+        size_t buffer_size = vertex_count * vertex_comps * sizeof(float);
 
         affirm_precond(buffer_size <= INT_MAX, "Buffer size is too big");
 
@@ -85,7 +85,7 @@ namespace argus {
         uint32_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
             for (auto &vertex : prim.get_vertices()) {
-                size_t major_off = total_vertices * vertex_len;
+                size_t major_off = total_vertices * vertex_comps;
                 size_t minor_off = 0;
 
                 if (pipeline.reflection.has_attr(SHADER_ATTRIB_POSITION)) {
@@ -147,7 +147,7 @@ namespace argus {
             return;
         }
 
-        size_t vertex_len = (pipeline.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
+        size_t vertex_comps = (pipeline.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
@@ -157,7 +157,7 @@ namespace argus {
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
             for (auto &vertex : prim.get_vertices()) {
-                size_t major_off = total_vertices * vertex_len;
+                size_t major_off = total_vertices * vertex_comps;
                 size_t minor_off = 0;
 
                 auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);

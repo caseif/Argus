@@ -29,6 +29,7 @@
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
+#include "internal/render_vulkan/resources.h"
 #include "internal/render_vulkan/loader/shader_loader.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
@@ -43,14 +44,66 @@
 namespace argus {
     static bool g_backend_active = false;
 
-    std::vector<const char *> g_validation_layers = {
+    std::vector<const char *> g_engine_device_extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE1_EXTENSION_NAME
+    };
+
+    std::vector<const char *> g_engine_instance_extensions = {
+            #ifdef _ARGUS_DEBUG_MODE
+            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+            #endif
+    };
+
+    std::vector<const char *> g_engine_layers = {
+            #ifdef _ARGUS_DEBUG_MODE
             "VK_LAYER_KHRONOS_validation"
+            #endif
     };
 
     VkInstance g_vk_instance = nullptr;
     LogicalDevice g_vk_device{};
+    VkDebugUtilsMessengerEXT g_vk_debug_messenger;
+
+    static Logger g_vk_logger("Vulkan");
 
     static std::map<const Window *, VulkanRenderer *> g_renderer_map;
+
+    VKAPI_ATTR VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+            VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+            void* user_data) {
+        UNUSED(type);
+        UNUSED(user_data);
+
+        char const *level;
+        bool is_error = false;
+        switch (severity) {
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                level = "SEVERE";
+                is_error = true;
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                level = "WARN";
+                is_error = true;
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+                level = "INFO";
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+                level = "TRACE";
+                break;
+            default: // shouldn't happen
+                level = "UNKNOWN";
+                is_error = true;
+                break;
+        }
+        if (is_error) {
+            g_vk_logger.log_error(level, "%s", callback_data->pMessage);
+        } else {
+            g_vk_logger.log(level, "%s", callback_data->pMessage);
+        }
+        return true;
+    }
 
     static bool _activate_vulkan_backend() {
         if (glfwVulkanSupported() != GLFW_TRUE) {
@@ -64,6 +117,26 @@ namespace argus {
             return false;
         }
         g_vk_instance = vk_inst.value();
+
+        #ifdef _ARGUS_DEBUG_MODE
+        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
+        debug_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+        debug_info.pfnUserCallback = _debug_callback;
+
+        PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT
+                = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(vk_inst.value(),
+                        "vkCreateDebugUtilsMessengerEXT"));
+
+        vkCreateDebugUtilsMessengerEXT(vk_inst.value(), &debug_info, nullptr, &g_vk_debug_messenger);
+        #else
+        UNUSED(_debug_callback);
+        #endif
 
         // create hidden window so we can attach a surface and probe for capabilities
         auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
@@ -108,8 +181,13 @@ namespace argus {
 
                 auto it = g_renderer_map.find(&window);
                 assert(it != g_renderer_map.end());
+                auto &renderer = it->second;
 
-                it->second->render(event.delta);
+                if (!renderer->is_initted) {
+                    renderer->init();
+                }
+
+                renderer->render(event.delta);
                 break;
             }
             case WindowEventType::Resize: {
@@ -159,8 +237,8 @@ namespace argus {
                     return;
                 }
 
-                /*ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
-                        RESOURCES_RENDER_OPENGL_ARP_LEN);*/
+                ResourceManager::instance().add_memory_package(RESOURCES_RENDER_VULKAN_ARP_SRC,
+                        RESOURCES_RENDER_VULKAN_ARP_LEN);
                 break;
             }
             case LifecycleStage::Deinit: {

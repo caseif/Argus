@@ -22,10 +22,11 @@
 
 #include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/renderer/bucket_proc.hpp"
-#include "internal/render_vulkan/util/command_buffer.hpp"
 #include "internal/render_vulkan/state/render_bucket.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/state/scene_state.hpp"
+#include "internal/render_vulkan/util/buffer.hpp"
+#include "internal/render_vulkan/util/command_buffer.hpp"
 
 #include <climits>
 #include <cstddef>
@@ -46,9 +47,14 @@ namespace argus {
             auto *bucket = it->second;
 
             if (bucket->ubo_buffer.handle == VK_NULL_HANDLE) {
-                bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_GLOBAL_LEN,
+                bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_OBJ_LEN,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                float uv_stride[] = { bucket->atlas_stride.x, bucket->atlas_stride.y };
+                auto *mapped = map_buffer(state.device, bucket->ubo_buffer,
+                        SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(uv_stride), 0);
+                memcpy(mapped, uv_stride, sizeof(uv_stride));
+                unmap_buffer(state.device, bucket->ubo_buffer);
             }
 
             if (bucket->objects.empty()) {
@@ -76,7 +82,7 @@ namespace argus {
             auto attr_texcoord_loc = pipeline.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD);
             //auto attr_anim_frame_loc = pipeline.reflection.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
 
-            uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
+            uint32_t vertex_comps = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
                                   + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
                                   + (attr_color_loc.has_value() ? SHADER_ATTRIB_COLOR_LEN : 0)
                                   + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
@@ -104,7 +110,7 @@ namespace argus {
                                 | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-                auto stride = vertex_len * uint(sizeof(float));
+                auto stride = vertex_comps * uint32_t(sizeof(float));
                 affirm_precond(stride <= INT_MAX, "Vertex stride is too big");
 
                 affirm_precond(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");

@@ -53,15 +53,14 @@ namespace argus {
         return available_layers;
     }
 
-    static bool _check_required_extensions(const char *const *extensions, uint32_t extensions_count) {
+    static bool _check_required_extensions(const std::vector<const char *> &exts) {
         auto available_exts = _get_available_extensions();
 
-        for (uint32_t i = 0; i < extensions_count; i++) {
-            auto ext_name = extensions[i];
+        for (const auto &ext_name : exts) {
             auto ext_it = std::find_if(available_exts.begin(), available_exts.end(),
                     [ext_name](auto ext) { return strcmp(ext.extensionName, ext_name) == 0; });
             if (ext_it == available_exts.end()) {
-                Logger::default_logger().warn("Extension '%s' is not available (required by GLFW)", ext_name);
+                Logger::default_logger().warn("Required Vulkan extension '%s' is not available", ext_name);
                 return false;
             }
         }
@@ -69,18 +68,17 @@ namespace argus {
         return true;
     }
 
-    static bool _check_required_layers(const char *const *layers, uint32_t layers_count) {
+    static bool _check_required_layers(const std::vector<const char *> &layers) {
         #ifndef _ARGUS_DEBUG_MODE
         return true;
         #endif
 
         auto available_layers = _get_available_layers();
 
-        for (uint32_t i = 0; i < layers_count; i++) {
-            auto layer_name = layers[i];
+        for (const auto &layer_name : layers) {
             if (std::none_of(available_layers.begin(), available_layers.end(),
                     [layer_name](auto layer) { return strcmp(layer.layerName, layer_name) == 0; })) {
-                Logger::default_logger().warn("Validation layer '%s' is not available", layer_name);
+                Logger::default_logger().warn("Required Vulkan layer '%s' is not available", layer_name);
                 return false;
             }
         }
@@ -88,8 +86,8 @@ namespace argus {
         return true;
     }
 
-    static VkInstance _create_instance(const char *const *extensions, uint32_t extensions_count,
-            const char *const *validation_layers, uint32_t validation_layers_count) {
+    static VkInstance _create_instance(const std::vector<const char *> &extensions,
+            const std::vector<const char *> &layers) {
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pApplicationName = get_client_name().c_str();
@@ -110,14 +108,11 @@ namespace argus {
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.pApplicationInfo = &app_info;
 
-        create_info.enabledLayerCount = validation_layers_count;
-        create_info.ppEnabledLayerNames = validation_layers;
+        create_info.enabledLayerCount = uint32_t(layers.size());
+        create_info.ppEnabledLayerNames = layers.data();
 
-        create_info.enabledExtensionCount = extensions_count;
-        create_info.ppEnabledExtensionNames = extensions;
-
-        create_info.enabledLayerCount = validation_layers_count;
-        create_info.ppEnabledLayerNames = validation_layers;
+        create_info.enabledExtensionCount = uint32_t(extensions.size());
+        create_info.ppEnabledExtensionNames = extensions.data();
 
         VkInstance instance;
 
@@ -133,30 +128,29 @@ namespace argus {
     std::optional<VkInstance> create_vk_instance(void) {
         uint32_t glfw_exts_count;
         auto glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_exts_count);
+        std::vector<const char *> all_exts;
+        for (size_t i = 0; i < glfw_exts_count; i++) {
+            all_exts.push_back(glfw_exts[i]);
+        }
 
-        if (!_check_required_extensions(glfw_exts, glfw_exts_count)) {
+        all_exts.insert(all_exts.end(), g_engine_instance_extensions.cbegin(), g_engine_instance_extensions.cend());
+
+        if (!_check_required_extensions(all_exts)) {
             Logger::default_logger().warn("Required Vulkan extensions for GLFW are not available");
             return std::nullopt;
         }
 
-        const char *const *layers;
-        uint32_t layers_count;
+        std::vector<const char *> all_layers;
         #ifdef _ARGUS_DEBUG_MODE
-        layers = g_validation_layers.data();
-        layers_count = uint32_t(g_validation_layers.size());
-        #else
-        layers = nullptr;
-        layers_count = 0;
+        all_layers.insert(all_layers.begin(), g_engine_layers.cbegin(), g_engine_layers.cend());
         #endif
 
-        if (!_check_required_layers(layers, layers_count)) {
+        if (!_check_required_layers(all_layers)) {
             Logger::default_logger().warn("Required Vulkan extensions for engine are not available");
-            layers = nullptr;
-            layers_count = 0;
             return std::nullopt;
         }
 
-        auto instance = _create_instance(glfw_exts, glfw_exts_count, layers, layers_count);
+        auto instance = _create_instance(all_exts, all_layers);
         if (instance == nullptr) {
             return std::nullopt;
         }

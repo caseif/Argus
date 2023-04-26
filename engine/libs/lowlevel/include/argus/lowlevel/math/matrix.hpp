@@ -39,7 +39,11 @@ namespace argus {
         float data[16]{};
 
         Matrix4(const float elements[16]) {
-            memcpy(data, elements, sizeof(data));
+            if (elements != nullptr) {
+                memcpy(data, elements, sizeof(data));
+            } else {
+                memset(data, 0, sizeof(data));
+            }
         }
 
         Matrix4(const std::array<float, 16> elements) {

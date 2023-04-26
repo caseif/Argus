@@ -40,6 +40,6 @@
 #define SHADER_OUT_COLOR_LOC 0
 
 #define FB_SHADER_VERT_PATH "argus:shader/vk/framebuffer_vert"
-#define FB_SHADER_FRAG_PATH "argus:shader/vk/frambuffer_frag"
+#define FB_SHADER_FRAG_PATH "argus:shader/vk/framebuffer_frag"
 
 #define MAX_FRAMES_IN_FLIGHT 2

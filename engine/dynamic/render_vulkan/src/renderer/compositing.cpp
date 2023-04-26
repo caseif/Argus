@@ -107,7 +107,7 @@ namespace argus {
         return transformed;
     }
 
-    static VkWriteDescriptorSet _create_uniform_ds_write(VkDescriptorSet ds, uint32_t binding,
+    [[maybe_unused]] static VkWriteDescriptorSet _create_uniform_ds_write(VkDescriptorSet ds, uint32_t binding,
             const BufferInfo &buffer, VkDescriptorBufferInfo &buf_info) {
         buf_info.buffer = buffer.handle;
         buf_info.offset = 0;
@@ -125,6 +125,89 @@ namespace argus {
         return ds_write;
     }
 
+    static void _update_viewport_ubo(const RendererState &state, ViewportState &viewport_state) {
+        bool must_update = viewport_state.view_matrix_dirty;
+
+        if (viewport_state.ubo.handle == VK_NULL_HANDLE) {
+            viewport_state.ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            must_update = true;
+        }
+
+        if (must_update) {
+            auto len = sizeof(viewport_state.view_matrix.data);
+            auto *mapped = map_buffer(state.device, viewport_state.ubo, SHADER_UNIFORM_VIEWPORT_VM_OFF,
+                    len, 0);
+            memcpy(mapped, viewport_state.view_matrix.data, len);
+            unmap_buffer(state.device, viewport_state.ubo);
+        }
+    }
+
+    void _create_framebuffers(const RendererState &state, ViewportState &viewport_state, const Vector2u &size) {
+        auto format = state.swapchain.image_format;
+
+        viewport_state.front_fb_image = create_image_and_image_view(state.device, format,
+                { size.x, size.y },
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                        | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT);
+        viewport_state.back_fb_image = create_image_and_image_view(state.device, format,
+                { size.x, size.y },
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT);
+        viewport_state.front_fb = create_framebuffer(state.device, state.fb_render_pass,
+                { viewport_state.front_fb_image });
+        viewport_state.back_fb = create_framebuffer(state.device, state.fb_render_pass,
+                { viewport_state.front_fb_image });
+
+        VkSamplerCreateInfo sampler_info{};
+        sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sampler_info.magFilter = VK_FILTER_NEAREST;
+        sampler_info.minFilter = VK_FILTER_NEAREST;
+        sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler_info.anisotropyEnable = VK_FALSE;
+        sampler_info.maxAnisotropy = 0;
+        sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        sampler_info.unnormalizedCoordinates = VK_FALSE;
+        sampler_info.compareEnable = VK_FALSE;
+        sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        sampler_info.mipLodBias = 0.0f;
+        sampler_info.minLod = 0.0f;
+        sampler_info.maxLod = 0.0f;
+
+        if (vkCreateSampler(state.device.logical_device, &sampler_info, nullptr,
+                &viewport_state.front_fb_sampler) != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create framebuffer sampler");
+        }
+
+        viewport_state.composite_desc_sets = create_descriptor_sets(state.device, state.desc_pool,
+                state.composite_pipeline.reflection);
+
+        std::vector<VkWriteDescriptorSet> ds_writes;
+        for (const auto &ds : viewport_state.composite_desc_sets) {
+            ds_writes.reserve(viewport_state.composite_desc_sets.size());
+            VkWriteDescriptorSet sampler_ds_write{};
+            sampler_ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            sampler_ds_write.dstSet = ds;
+            sampler_ds_write.dstBinding = 0;
+            sampler_ds_write.dstArrayElement = 0;
+            sampler_ds_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            sampler_ds_write.descriptorCount = 1;
+            sampler_ds_write.pImageInfo = nullptr;
+            VkDescriptorImageInfo desc_image_info{};
+            desc_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            desc_image_info.imageView = viewport_state.front_fb_image.view;
+            desc_image_info.sampler = viewport_state.front_fb_sampler;
+            sampler_ds_write.pImageInfo = &desc_image_info;
+            ds_writes.push_back(sampler_ds_write);
+        }
+        vkUpdateDescriptorSets(state.device.logical_device, uint32_t(ds_writes.size()), ds_writes.data(),
+                0, nullptr);
+    }
+
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution) {
         auto &state = scene_state.parent_state;
@@ -132,17 +215,16 @@ namespace argus {
         auto viewport = viewport_state.viewport->get_viewport();
         auto viewport_px = _transform_viewport_to_pixels(viewport, resolution.value);
 
-        uint32_t fb_width = uint32_t(std::abs(viewport_px.right - viewport_px.left));
-        uint32_t fb_height = uint32_t(std::abs(viewport_px.bottom - viewport_px.top));
+        //uint32_t fb_width = uint32_t(std::abs(viewport_px.right - viewport_px.left));
+        //uint32_t fb_height = uint32_t(std::abs(viewport_px.bottom - viewport_px.top));
+        uint32_t fb_width = state.swapchain.resolution.x;
+        uint32_t fb_height = state.swapchain.resolution.y;
 
         if (viewport_state.command_buf.handle == nullptr) {
             viewport_state.command_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
         }
 
-        if (viewport_state.ubo.handle == VK_NULL_HANDLE) {
-            viewport_state.ubo = alloc_buffer(state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        }
+        _update_viewport_ubo(state, viewport_state);
 
         // framebuffer setup
         if (viewport_state.front_fb == nullptr || resolution.dirty) {
@@ -150,22 +232,12 @@ namespace argus {
                 // delete framebuffers
                 destroy_framebuffer(state.device, viewport_state.front_fb);
                 destroy_framebuffer(state.device, viewport_state.back_fb);
-                destroy_image_and_image_view(state.device, viewport_state.front_fb_tex);
-                destroy_image_and_image_view(state.device, viewport_state.back_fb_tex);
+                destroy_image_and_image_view(state.device, viewport_state.front_fb_image);
+                destroy_image_and_image_view(state.device, viewport_state.back_fb_image);
+                destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
             }
 
-            auto format = state.swapchain.image_format;
-
-            viewport_state.front_fb_tex = create_image_and_image_view(state.device, format,
-                    { fb_width, fb_height }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT);
-            viewport_state.back_fb_tex = create_image_and_image_view(state.device, format,
-                    { fb_width, fb_height }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT);
-            viewport_state.front_fb = create_framebuffer(state.device, state.render_pass,
-                    { viewport_state.front_fb_tex });
-            viewport_state.back_fb = create_framebuffer(state.device, state.render_pass,
-                    { viewport_state.front_fb_tex });
+            _create_framebuffers(state, viewport_state, { fb_width, fb_height });
         }
 
         begin_oneshot_commands(state.device, viewport_state.command_buf);
@@ -173,34 +245,36 @@ namespace argus {
         auto vk_cmd_buf = viewport_state.command_buf.handle;
 
         VkClearValue clear_val{};
-        clear_val.color = { {0.0, 0.0, 0.0, 0.0} };
+        clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
 
         VkRenderPassBeginInfo rp_info{};
         rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rp_info.framebuffer = viewport_state.front_fb;
         rp_info.pClearValues = &clear_val;
         rp_info.clearValueCount = 1;
-        rp_info.renderPass = state.render_pass;
+        rp_info.renderPass = state.fb_render_pass;
         rp_info.renderArea.extent = { fb_width, fb_height };
         rp_info.renderArea.offset = { 0, 0 };
         vkCmdBeginRenderPass(vk_cmd_buf, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
-
-        VkViewport vk_vp{};
-        vk_vp.width = float(fb_width);
-        vk_vp.height = float(fb_height);
-        vk_vp.x = float(-viewport_px.left);
-        vk_vp.y = float(-viewport_px.top);
-        vkCmdSetViewport(vk_cmd_buf, 0, 1, &vk_vp);
-
-        VkRect2D scissor{};
-        scissor.extent = { fb_width, fb_height };
-        scissor.offset = { 0, 0 };
-        vkCmdSetScissor(vk_cmd_buf, 0, 1, &scissor);
 
         affirm_precond(resolution->x <= INT_MAX && resolution->y <= INT_MAX, "Resolution is too big for viewport");
 
         VkPipeline last_pipeline = nullptr;
         //texture_handle_t last_texture = 0;
+
+        /*VkImageSubresourceRange range{};
+        range.layerCount = 1;
+        range.baseArrayLayer = 0;
+        range.levelCount = 1;
+        range.baseMipLevel = 0;
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;*/
+
+        /*VkClearAttachment clear_att{};
+        clear_att.clearValue = clear_val;
+        //clear_att.colorAttachment =
+        VkClearRect clear_rect{};
+        clear_rect.rect.extent.width =
+        vkCmdClearAttachments(vk_cmd_buf, 1, &clear_att, 1, &clear_rect);*/
 
         for (auto &bucket : scene_state.render_buckets) {
             affirm_precond(bucket.second->vertex_count <= UINT32_MAX, "Too many vertices in bucket");
@@ -223,11 +297,6 @@ namespace argus {
                 desc_sets = ds_it->second;
             } else {
                 desc_sets = create_descriptor_sets(state.device, state.desc_pool, shader_refl);
-                // bind descriptor set buffers
-                VkDescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = state.global_ubo.handle;
-                bufferInfo.offset = 0;
-                bufferInfo.range = VK_WHOLE_SIZE;
 
                 std::vector<VkWriteDescriptorSet> ds_writes;
 
@@ -278,15 +347,27 @@ namespace argus {
             if (pipeline_info.handle != last_pipeline) {
                 vkCmdBindPipeline(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.handle);
                 last_pipeline = pipeline_info.handle;
+
+                VkViewport vk_vp{};
+                vk_vp.width = float(fb_width);
+                vk_vp.height = float(fb_height);
+                vk_vp.x = float(-viewport_px.left);
+                vk_vp.y = float(-viewport_px.top);
+                vkCmdSetViewport(vk_cmd_buf, 0, 1, &vk_vp);
+
+                VkRect2D scissor{};
+                scissor.extent = { fb_width, fb_height };
+                scissor.offset = { 0, 0 };
+                vkCmdSetScissor(vk_cmd_buf, 0, 1, &scissor);
             }
 
             vkCmdBindDescriptorSets(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     pipeline_info.layout, 0, 1, &current_ds, 0, nullptr);
 
-            /*if (tex_handle != last_texture) {
-                glBindTexture(GL_TEXTURE_2D, tex_handle);
-                last_texture = tex_handle;
-            }*/
+            //if (tex_handle != last_texture) {
+            //    glBindTexture(GL_TEXTURE_2D, tex_handle);
+            //    last_texture = tex_handle;
+            //}
 
             VkBuffer vertex_buffers[] = { bucket.second->vertex_buffer.handle,
                                           bucket.second->anim_frame_buffer.handle };
@@ -294,12 +375,10 @@ namespace argus {
             vkCmdBindVertexBuffers(vk_cmd_buf, 0, sizeof(vertex_buffers) / sizeof(VkBuffer),
                     vertex_buffers, offsets);
 
-            //glBindVertexArray(bucket.second->vertex_array);
-
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            vkCmdDraw(vk_cmd_buf, vertex_count, 0, 0, 0);
+            vkCmdDraw(vk_cmd_buf, vertex_count, 1, 0, 0);
         }
 
         /*for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
@@ -335,24 +414,49 @@ namespace argus {
 
         vkCmdEndRenderPass(vk_cmd_buf);
 
-        if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
+        /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to record command buffer");
-        }
+        }*/
+        end_oneshot_commands(state.device, viewport_state.command_buf);
     }
 
-    void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
-            ValueAndDirtyFlag<Vector2u> resolution) {
-        UNUSED(scene_state);
-        UNUSED(viewport_state);
-        UNUSED(resolution);
-        /*auto &state = scene_state.parent_state;
+    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state) {
+        auto &state = scene_state.parent_state;
 
-        auto viewport_px = _transform_viewport_to_pixels(viewport_state.viewport->get_viewport(), resolution.value);
-        auto viewport_width_px = std::abs(viewport_px.right - viewport_px.left);
-        auto viewport_height_px = std::abs(viewport_px.bottom - viewport_px.top);
+        auto resolution = state.swapchain.resolution;
 
-        auto viewport_y = resolution->y - viewport_px.bottom;
-        affirm_precond(resolution->y <= INT_MAX && viewport_y <= INT_MAX, "Viewport Y is too big for glViewport");
+        auto viewport_px = _transform_viewport_to_pixels(viewport_state.viewport->get_viewport(), resolution);
+
+        auto cur_ds = viewport_state.composite_desc_sets[0];
+
+        std::vector<VkWriteDescriptorSet> ds_writes;
+
+        auto vk_cmd_buf = state.draw_cmd_buf.handle;
+
+        auto fb_width = state.swapchain.resolution.x;
+        auto fb_height = state.swapchain.resolution.y;
+
+        VkViewport vk_vp{};
+        vk_vp.width = float(fb_width);
+        vk_vp.height = float(fb_height);
+        vk_vp.x = float(-viewport_px.left);
+        vk_vp.y = float(-viewport_px.top);
+        vkCmdSetViewport(vk_cmd_buf, 0, 1, &vk_vp);
+
+        VkRect2D scissor{};
+        scissor.extent = { fb_width, fb_height };
+        scissor.offset = { 0, 0 };
+        vkCmdSetScissor(vk_cmd_buf, 0, 1, &scissor);
+
+        vkCmdBindDescriptorSets(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                state.composite_pipeline.layout, 0, 1, &cur_ds, 0, nullptr);
+
+        vkCmdDraw(vk_cmd_buf, 6, 1, 0, 0);
+
+        /*perform_image_transition(state.draw_cmd_buf, viewport_state.front_fb_image,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_MEMORY_WRITE_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);*/
 
         //glViewport(
         //        viewport_px.left,
@@ -361,7 +465,7 @@ namespace argus {
         //        viewport_height_px
         //);
 
-        glBindVertexArray(state.frame_vao);
+        /*glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program.value().handle);
         glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
 

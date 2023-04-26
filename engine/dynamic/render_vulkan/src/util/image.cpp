@@ -119,4 +119,34 @@ namespace argus {
         destroy_image_view(device, image.view);
         destroy_image(device, image.handle);
     }
+
+    void perform_image_transition(const CommandBufferInfo &cmd_buf, VkImage image,
+            VkImageLayout old_layout, VkImageLayout new_layout,
+            VkAccessFlags src_access, VkAccessFlags dst_access,
+            VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.srcAccessMask = src_access;
+        barrier.dstAccessMask = dst_access;
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        vkCmdPipelineBarrier(cmd_buf.handle, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    void perform_image_transition(const CommandBufferInfo &cmd_buf, const ImageInfo &image,
+            VkImageLayout old_layout, VkImageLayout new_layout,
+            VkAccessFlags src_access, VkAccessFlags dst_access,
+            VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
+        perform_image_transition(cmd_buf, image.handle, old_layout, new_layout,
+                src_access, dst_access, src_stage, dst_stage);
+    }
 }

@@ -100,6 +100,7 @@ namespace argus {
         desc_pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(VkDescriptorPoolSize);
         desc_pool_info.pPoolSizes = pool_sizes;
         desc_pool_info.maxSets = INITIAL_DS_COUNT;
+        desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         VkDescriptorPool pool;
         if (vkCreateDescriptorPool(device.logical_device, &desc_pool_info, nullptr, &pool) != VK_SUCCESS) {
@@ -113,7 +114,8 @@ namespace argus {
         vkDestroyDescriptorPool(device.logical_device, pool, nullptr);
     }
 
-    VkDescriptorSetLayout create_descriptor_set_layout(const LogicalDevice &device, const ShaderReflectionInfo &shader_refl) {
+    VkDescriptorSetLayout create_descriptor_set_layout(const LogicalDevice &device,
+            const ShaderReflectionInfo &shader_refl) {
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         auto ubo_bindings = _create_ubo_bindings(shader_refl);
         auto sampler_binding = _create_sampler_binding();

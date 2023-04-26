@@ -29,17 +29,7 @@
 
 namespace argus {
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
-            const std::vector<ImageInfo> &images) {
-        assert(!images.empty());
-
-        auto size = images.front().size;
-
-        std::vector<VkImageView> image_views;
-        image_views.reserve(images.size());
-        for (const auto &image : images) {
-            image_views.push_back(image.view);
-        }
-
+            const std::vector<VkImageView> &image_views, Vector2u size) {
         VkFramebufferCreateInfo fb_info{};
         fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fb_info.renderPass = render_pass;
@@ -55,6 +45,17 @@ namespace argus {
         }
 
         return fb;
+    }
+
+    VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
+            const std::vector<ImageInfo> &images) {
+        assert(!images.empty());
+
+        std::vector<VkImageView> image_views;
+        image_views.resize(images.size());
+        std::transform(images.cbegin(), images.cend(), image_views.begin(), [] (const auto &img) { return img.view; });
+
+        return create_framebuffer(device, render_pass, image_views, images.front().size);
     }
 
     void destroy_framebuffer(const LogicalDevice &device, VkFramebuffer framebuffer) {

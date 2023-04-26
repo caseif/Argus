@@ -39,17 +39,20 @@ namespace argus {
         AttachedViewport *viewport;
 
         Matrix4 view_matrix;
+        bool view_matrix_dirty;
 
         CommandBufferInfo command_buf;
 
-        ImageInfo front_fb_tex;
-        ImageInfo back_fb_tex;
+        ImageInfo front_fb_image;
+        ImageInfo back_fb_image;
         VkFramebuffer front_fb;
         VkFramebuffer back_fb;
+        VkSampler front_fb_sampler;
 
         BufferInfo ubo;
 
         std::map<std::string, std::vector<VkDescriptorSet>> material_desc_sets;
+        std::vector<VkDescriptorSet> composite_desc_sets;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };

@@ -23,6 +23,7 @@
 #include "../setup/device.hpp"
 
 #include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
+#include "command_buffer.hpp"
 
 #include <vector>
 
@@ -33,8 +34,6 @@ namespace argus {
         VkImage handle;
         VkImageView view;
     };
-
-    std::vector<VkFormat> get_supported_image_formats(const LogicalDevice &device);
 
     VkImage create_image(const LogicalDevice &device, VkFormat format, const Vector2u &size,
             VkImageUsageFlags usage);
@@ -50,4 +49,14 @@ namespace argus {
     void destroy_image_view(const LogicalDevice &device, VkImageView view);
 
     void destroy_image_and_image_view(const LogicalDevice &device, const ImageInfo &image);
+
+    void perform_image_transition(const CommandBufferInfo &cmd_buf, VkImage image,
+            VkImageLayout old_layout, VkImageLayout new_layout,
+            VkAccessFlags src_access, VkAccessFlags dst_access,
+            VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
+
+    void perform_image_transition(const CommandBufferInfo &cmd_buf, const ImageInfo &image,
+            VkImageLayout old_layout, VkImageLayout new_layout,
+            VkAccessFlags src_access, VkAccessFlags dst_access,
+            VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
 }

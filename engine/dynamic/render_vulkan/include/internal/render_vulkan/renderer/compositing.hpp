@@ -21,6 +21,8 @@
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/math.hpp"
 
+#include "internal/render_vulkan/util/image.hpp"
+
 namespace argus {
     // forward declarations
     struct RendererState;
@@ -30,8 +32,7 @@ namespace argus {
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution);
 
-    void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
-            ValueAndDirtyFlag<Vector2u> resolution);
+    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state);
 
     void setup_framebuffer(RendererState &state);
 }

@@ -26,6 +26,9 @@
 
 namespace argus {
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
+            const std::vector<VkImageView> &image_views, Vector2u size);
+
+    VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
             const std::vector<ImageInfo> &images);
 
     void destroy_framebuffer(const LogicalDevice &device, VkFramebuffer framebuffer);

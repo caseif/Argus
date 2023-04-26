@@ -27,8 +27,8 @@ namespace argus {
             viewport(viewport),
             view_matrix({}),
             command_buf({}),
-            front_fb_tex({}),
-            back_fb_tex({}),
+            front_fb_image({}),
+            back_fb_image({}),
             front_fb(VK_NULL_HANDLE),
             back_fb(VK_NULL_HANDLE),
             ubo({}) {

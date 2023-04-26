@@ -30,42 +30,6 @@
 #include "internal/render_vulkan/util/texture.hpp"
 
 namespace argus {
-    static void _apply_image_barrier(const CommandBufferInfo &cmd_buf, const ImageInfo &image,
-            VkImageLayout old_layout, VkImageLayout new_layout) {
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image.handle;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags src_stage;
-        VkPipelineStageFlags dst_stage;
-        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else {
-            Logger::default_logger().fatal("Unsupported image layout transition");
-        }
-
-        vkCmdPipelineBarrier(cmd_buf.handle, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
     PreparedTexture prepare_texture(const LogicalDevice &device, VkCommandPool pool, const TextureData &texture) {
         uint32_t channels = 4;
         VkDeviceSize image_size = texture.width * texture.height * channels;
@@ -80,7 +44,12 @@ namespace argus {
 
         {
             auto buf_mapped = map_buffer(device, staging_buf, 0, image_size, 0);
-            memcpy(buf_mapped, texture.get_pixel_data(), image_size);
+            const size_t bytes_per_pixel = 4;
+            const size_t bytes_per_row = texture.width * bytes_per_pixel;
+            for (size_t y = 0; y < texture.height; y++) {
+                auto dst = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(buf_mapped) + (y * bytes_per_row));
+                memcpy(dst, texture.get_pixel_data()[y], bytes_per_row);
+            }
             unmap_buffer(device, staging_buf);
         }
 
@@ -106,10 +75,18 @@ namespace argus {
         region.imageOffset = {0, 0, 0};
         region.imageExtent = { texture.width, texture.height, 1 };
 
-        _apply_image_barrier(cmd_buf, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        perform_image_transition(cmd_buf, image,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         vkCmdCopyBufferToImage(cmd_buf.handle, staging_buf.handle, image.handle,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        perform_image_transition(cmd_buf, image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
         end_oneshot_commands(device, cmd_buf);
 

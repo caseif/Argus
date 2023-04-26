@@ -20,13 +20,14 @@
 
 #include "argus/wm/window.hpp"
 
-#include "internal/render_vulkan/setup/device.hpp"
-
 #include "vulkan/vulkan.h"
 
 #include <vector>
 
 namespace argus {
+    // forward declarations
+    struct RendererState;
+
     struct SwapchainSupportInfo {
         VkSurfaceCapabilitiesKHR caps;
         std::vector<VkSurfaceFormatKHR> formats;
@@ -34,14 +35,26 @@ namespace argus {
     };
 
     struct SwapchainInfo {
-        VkSwapchainKHR swapchain;
+        VkSwapchainKHR handle;
+        Vector2u resolution;
+        VkSurfaceKHR surface;
         std::vector<VkImage> images;
         std::vector<VkImageView> image_views;
+        std::vector<VkFramebuffer> framebuffers;
         VkFormat image_format;
         VkExtent2D extent;
+        VkRenderPass composite_render_pass;
+
+        VkSemaphore image_avail_sem;
+        VkSemaphore render_done_sem;
+        VkFence in_flight_fence;
     };
 
     SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR probe_surface);
 
-    SwapchainInfo create_vk_swapchain(const Window &window, const LogicalDevice &device, VkSurfaceKHR surface);
+    SwapchainInfo create_swapchain(const RendererState &state, VkSurfaceKHR surface, const Vector2u &resolution);
+
+    void recreate_swapchain(const RendererState &state, const Vector2u &new_resolution, SwapchainInfo &swapchain);
+
+    void destroy_swapchain(const RendererState &state, const SwapchainInfo &swapchain);
 }

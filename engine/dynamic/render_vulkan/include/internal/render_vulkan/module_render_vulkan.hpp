@@ -27,7 +27,9 @@
 #include <vector>
 
 namespace argus {
-    extern std::vector<const char *> g_validation_layers;
+    extern std::vector<const char *> g_engine_device_extensions;
+    extern std::vector<const char *> g_engine_instance_extensions;
+    extern std::vector<const char *> g_engine_layers;
 
     extern VkInstance g_vk_instance;
     extern LogicalDevice g_vk_device;

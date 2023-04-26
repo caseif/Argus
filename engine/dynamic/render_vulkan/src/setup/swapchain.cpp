@@ -22,6 +22,9 @@
 
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
+#include "internal/render_vulkan/state/renderer_state.hpp"
+#include "internal/render_vulkan/util/image.hpp"
+#include "internal/render_vulkan/util/framebuffer.hpp"
 
 #include <algorithm>
 
@@ -69,25 +72,26 @@ namespace argus {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D _select_swap_extent(const VkSurfaceCapabilitiesKHR &caps, const Window &window) {
+    VkExtent2D _select_swap_extent(const VkSurfaceCapabilitiesKHR &caps, const Vector2u &resolution) {
         if (caps.currentExtent.width != UINT32_MAX) {
             return caps.currentExtent;
         }
 
         return {
-                std::clamp(window.peek_resolution().x, caps.minImageExtent.width, caps.maxImageExtent.width),
-                std::clamp(window.peek_resolution().y, caps.minImageExtent.height, caps.maxImageExtent.height)
+                std::clamp(resolution.x, caps.minImageExtent.width, caps.maxImageExtent.width),
+                std::clamp(resolution.y, caps.minImageExtent.height, caps.maxImageExtent.height)
         };
     }
 
-    SwapchainInfo create_vk_swapchain(const Window &window, const LogicalDevice &device, VkSurfaceKHR surface) {
+    SwapchainInfo create_swapchain(const RendererState &state, VkSurfaceKHR surface, const Vector2u &resolution) {
+        auto &device = state.device;
         auto support_info = query_swapchain_support(device.physical_device, surface);
         affirm_precond(!support_info.formats.empty(), "No available swapchain formats");
         affirm_precond(!support_info.present_modes.empty(), "No available swapchain present modes");
 
         auto format = _select_swap_surface_format(support_info);
         auto present_mode = _select_swap_present_mode(support_info);
-        auto extent = _select_swap_extent(support_info.caps, window);
+        auto extent = _select_swap_extent(support_info.caps, resolution);
 
         auto image_count = support_info.caps.minImageCount + 1;
         if (support_info.caps.maxImageCount != 0 && image_count > support_info.caps.maxImageCount) {
@@ -102,7 +106,7 @@ namespace argus {
         sc_create_info.imageColorSpace = format.colorSpace;
         sc_create_info.imageExtent = extent;
         sc_create_info.imageArrayLayers = 1;
-        sc_create_info.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        sc_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         uint32_t queue_indices[] = { device.queue_indices.graphics_family, device.queue_indices.present_family };
 
@@ -123,44 +127,79 @@ namespace argus {
         sc_create_info.oldSwapchain = VK_NULL_HANDLE;
 
         SwapchainInfo sc_info;
-        if (vkCreateSwapchainKHR(device.logical_device, &sc_create_info, nullptr, &sc_info.swapchain) != VK_SUCCESS) {
+        if (vkCreateSwapchainKHR(device.logical_device, &sc_create_info, nullptr, &sc_info.handle) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to create Vulkan swapchain");
         }
 
-        uint32_t real_image_count;
-
-        vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, nullptr);
-        sc_info.images.resize(real_image_count);
-        //sc_info.image_views.reserve(real_image_count);
-        vkGetSwapchainImagesKHR(device.logical_device, sc_info.swapchain, &real_image_count, sc_info.images.data());
-
-        /*for (auto sc_image : sc_info.images) {
-            VkImageViewCreateInfo image_view_info{};
-            image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            image_view_info.image = sc_image;
-            image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            image_view_info.format = format.format;
-            image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            image_view_info.subresourceRange.baseMipLevel = 0;
-            image_view_info.subresourceRange.levelCount = 1;
-            image_view_info.subresourceRange.baseArrayLayer = 0;
-            image_view_info.subresourceRange.layerCount = 1;
-
-            VkImageView image_view;
-            if (vkCreateImageView(device.logical_device, &image_view_info, nullptr, &image_view) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create Vulkan image view");
-            }
-
-            sc_info.image_views.push_back(image_view);
-        }*/
-
+        sc_info.resolution = resolution;
+        sc_info.surface = surface;
         sc_info.image_format = format.format;
         sc_info.extent = extent;
 
+        // need to create the render pass before we create the framebuffers
+        sc_info.composite_render_pass = create_render_pass(state.device, format.format,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+        uint32_t real_image_count;
+
+        vkGetSwapchainImagesKHR(device.logical_device, sc_info.handle, &real_image_count, nullptr);
+        sc_info.images.resize(real_image_count);
+        //sc_info.image_views.reserve(real_image_count);
+        vkGetSwapchainImagesKHR(device.logical_device, sc_info.handle, &real_image_count, sc_info.images.data());
+
+        //auto cmd_buf = alloc_command_buffers(device, state.command_pool, 1).front();
+        //begin_oneshot_commands(device, cmd_buf);
+
+        for (auto sc_image : sc_info.images) {
+            //perform_image_transition(cmd_buf, sc_image);
+
+            auto image_view = create_image_view(device, sc_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT);
+            sc_info.image_views.push_back(image_view);
+
+            auto framebuffer = create_framebuffer(device, sc_info.composite_render_pass, { image_view }, resolution);
+            sc_info.framebuffers.push_back(framebuffer);
+        }
+
+        //end_oneshot_commands(device, cmd_buf);
+
+        VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.image_avail_sem) != VK_SUCCESS
+                || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem)
+                        != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create swapchain semaphores");
+        }
+
+        VkFenceCreateInfo fence_info{};
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        if (vkCreateFence(device.logical_device, &fence_info, nullptr, &sc_info.in_flight_fence) != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create swapchain fences");
+        }
+
         return sc_info;
+    }
+
+    void recreate_swapchain(const RendererState &state, const Vector2u &new_resolution, SwapchainInfo &swapchain) {
+        vkDeviceWaitIdle(state.device.logical_device);
+
+        destroy_swapchain(state, swapchain);
+
+        swapchain = create_swapchain(state, swapchain.surface, new_resolution);
+    }
+
+    void destroy_swapchain(const RendererState &state, const SwapchainInfo &swapchain) {
+        vkWaitForFences(state.device.logical_device, 1, &swapchain.in_flight_fence, VK_TRUE, UINT64_MAX);
+
+        vkDestroySemaphore(state.device.logical_device, swapchain.image_avail_sem, nullptr);
+        vkDestroySemaphore(state.device.logical_device, swapchain.render_done_sem, nullptr);
+
+        vkDestroyFence(state.device.logical_device, swapchain.in_flight_fence, nullptr);
+
+        for (const auto &image_view : swapchain.image_views) {
+            destroy_image_view(state.device, image_view);
+        }
+
+        vkDestroySwapchainKHR(state.device.logical_device, swapchain.handle, nullptr);
     }
 }

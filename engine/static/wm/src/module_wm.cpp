@@ -97,6 +97,7 @@ namespace argus {
         }
 
         if (params->vsync.has_value()) {
+            printf("found vsync value\n");
             window.set_vsync_enabled(*params->vsync);
         }
 

@@ -39,10 +39,6 @@
 namespace argus {
     static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
 
-    static const std::vector<const char *> g_req_dev_exts = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
     static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
             VkSurfaceKHR surface, std::vector<VkQueueFamilyProperties> queue_families) {
         QueueFamilyIndices indices = {};
@@ -76,7 +72,7 @@ namespace argus {
         vkEnumerateDeviceExtensionProperties(device, nullptr,
                 &ext_count, avail_exts.data());
 
-        std::set<std::string> req_exts(g_req_dev_exts.cbegin(), g_req_dev_exts.cend());
+        std::set<std::string> req_exts(g_engine_device_extensions.cbegin(), g_engine_device_extensions.cend());
 
         for (const auto &ext : avail_exts) {
             req_exts.erase(ext.extensionName);
@@ -215,15 +211,15 @@ namespace argus {
         dev_create_info.pQueueCreateInfos = queue_create_infos.data();
         dev_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
         dev_create_info.pEnabledFeatures = &dev_features;
-        dev_create_info.enabledExtensionCount = static_cast<uint32_t>(g_req_dev_exts.size());
-        dev_create_info.ppEnabledExtensionNames = g_req_dev_exts.data();
+        dev_create_info.enabledExtensionCount = static_cast<uint32_t>(g_engine_device_extensions.size());
+        dev_create_info.ppEnabledExtensionNames = g_engine_device_extensions.data();
 
         uint32_t layers_count;
         const char *const *layers;
 
         #ifdef _ARGUS_DEBUG_MODE
-        layers_count = uint32_t(g_validation_layers.size());
-        layers = g_validation_layers.data();
+        layers_count = uint32_t(g_engine_layers.size());
+        layers = g_engine_layers.data();
         #else
         layers_count = 0;
         layers = nullptr;

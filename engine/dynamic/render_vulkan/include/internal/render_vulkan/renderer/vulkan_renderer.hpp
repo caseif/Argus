@@ -38,6 +38,7 @@ namespace argus {
        public:
         Window &window;
         RendererState state;
+        bool is_initted;
 
         VulkanRenderer(Window &window);
 
@@ -46,6 +47,8 @@ namespace argus {
         VulkanRenderer(VulkanRenderer &&) = delete;
 
         ~VulkanRenderer(void);
+
+        void init(void);
 
         void render(TimeDelta delta);
 

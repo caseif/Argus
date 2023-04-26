@@ -44,10 +44,16 @@ namespace argus {
 
         VkSurfaceKHR surface;
         SwapchainInfo swapchain;
-        VkRenderPass render_pass;
+
+        PipelineInfo composite_pipeline{};
+        BufferInfo composite_vbo;
 
         VkCommandPool command_pool;
         VkDescriptorPool desc_pool;
+
+        VkRenderPass fb_render_pass;
+
+        CommandBufferInfo draw_cmd_buf{};
 
         BufferInfo global_ubo{};
 

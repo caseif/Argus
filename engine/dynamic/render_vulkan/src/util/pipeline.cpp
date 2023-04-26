@@ -45,7 +45,7 @@ namespace argus {
         offset += static_cast<uint32_t>(components * sizeof(float));
     }
 
-    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format) {
+    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout) {
         VkAttachmentDescription color_att{};
         color_att.format = format;
         color_att.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -54,7 +54,7 @@ namespace argus {
         color_att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         color_att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         color_att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_att.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        color_att.finalLayout = final_layout;
 
         VkAttachmentReference color_att_ref{};
         color_att_ref.attachment = SHADER_OUT_COLOR_LOC;
@@ -65,12 +65,22 @@ namespace argus {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_att_ref;
 
+        VkSubpassDependency subpass_dep{};
+        subpass_dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+        subpass_dep.dstSubpass = 0;
+        subpass_dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpass_dep.srcAccessMask = 0;
+        subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpass_dep.dstAccessMask = 0;
+
         VkRenderPassCreateInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         render_pass_info.attachmentCount = 1;
         render_pass_info.pAttachments = &color_att;
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
+        render_pass_info.dependencyCount = 1;
+        render_pass_info.pDependencies = &subpass_dep;
 
         VkRenderPass render_pass;
         if (vkCreateRenderPass(device.logical_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
@@ -80,16 +90,17 @@ namespace argus {
         return render_pass;
     }
 
-    PipelineInfo create_pipeline(RendererState &state, const Material &material) {
-        return create_pipeline(state, material.get_shader_uids());
+    PipelineInfo create_pipeline(RendererState &state, const Material &material, VkRenderPass render_pass) {
+        return create_pipeline(state, material.get_shader_uids(), render_pass);
     }
 
-    PipelineInfo create_pipeline(RendererState &state, const std::vector<std::string> &shader_uids) {
+    PipelineInfo create_pipeline(RendererState &state, const std::vector<std::string> &shader_uids,
+            VkRenderPass render_pass) {
         auto prepared_shaders = prepare_shaders(state.device.logical_device, shader_uids);
 
         auto shader_refl = prepared_shaders.reflection;
 
-        std::vector<VkDynamicState> dyn_states = { VK_DYNAMIC_STATE_VIEWPORT };
+        std::vector<VkDynamicState> dyn_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
         VkPipelineDynamicStateCreateInfo dyn_state_info{};
         dyn_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -152,8 +163,8 @@ namespace argus {
         VkViewport viewport{};
         viewport.x = 0;
         viewport.y = 0;
-        viewport.width = static_cast<float>(state.viewport_size.x);
-        viewport.height = static_cast<float>(state.viewport_size.y);
+        viewport.width = float(state.viewport_size.x);
+        viewport.height = float(state.viewport_size.y);
         viewport.minDepth = 0;
         viewport.maxDepth = 1;
 
@@ -174,8 +185,8 @@ namespace argus {
         raster_info.rasterizerDiscardEnable = VK_FALSE;
         raster_info.polygonMode = VK_POLYGON_MODE_FILL;
         raster_info.lineWidth = 1;
-        raster_info.cullMode = VK_CULL_MODE_BACK_BIT;
-        raster_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        raster_info.cullMode = VK_CULL_MODE_NONE;
+        raster_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster_info.depthBiasEnable = VK_FALSE;
         raster_info.depthBiasConstantFactor = 0;
         raster_info.depthBiasClamp = 0;
@@ -198,7 +209,7 @@ namespace argus {
         color_blend_att.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         color_blend_att.colorBlendOp = VK_BLEND_OP_ADD;
         color_blend_att.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        color_blend_att.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        color_blend_att.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         color_blend_att.alphaBlendOp = VK_BLEND_OP_ADD;
 
         VkPipelineColorBlendStateCreateInfo color_blend_info{};
@@ -229,6 +240,14 @@ namespace argus {
         affirm_precond(out_loc.value() == SHADER_OUT_COLOR_LOC,
                 "Required shader output " SHADER_OUT_COLOR " must have location 0");
 
+        VkPipelineDepthStencilStateCreateInfo depth_info{};
+        depth_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depth_info.depthTestEnable = VK_TRUE;
+        depth_info.depthWriteEnable = VK_FALSE;
+        depth_info.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+        depth_info.depthBoundsTestEnable = VK_FALSE;
+        depth_info.stencilTestEnable = VK_FALSE;
+
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline_info.stageCount = static_cast<uint32_t>(prepared_shaders.stages.size());
@@ -242,7 +261,7 @@ namespace argus {
         pipeline_info.pColorBlendState = &color_blend_info;
         pipeline_info.pDynamicState = &dyn_state_info;
         pipeline_info.layout = pipeline_layout;
-        pipeline_info.renderPass = state.render_pass;
+        pipeline_info.renderPass = render_pass;
 
         VkPipeline pipeline;
         if (vkCreateGraphicsPipelines(state.device.logical_device, VK_NULL_HANDLE, 1,

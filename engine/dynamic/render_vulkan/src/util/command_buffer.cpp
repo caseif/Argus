@@ -89,6 +89,8 @@ namespace argus {
     void begin_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer) {
         UNUSED(device);
 
+        vkResetCommandBuffer(buffer.handle, 0);
+
         VkCommandBufferBeginInfo begin_info{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -104,7 +106,5 @@ namespace argus {
         submit_info.pCommandBuffers = &buffer.handle;
         vkQueueSubmit(device.queues.graphics_family, 1, &submit_info, VK_NULL_HANDLE);
         vkQueueWaitIdle(device.queues.graphics_family);
-
-        vkResetCommandBuffer(buffer.handle, 0);
     }
 }

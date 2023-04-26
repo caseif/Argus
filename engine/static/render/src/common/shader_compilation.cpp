@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/macros.hpp"
 
 #include "argus/shadertools.hpp"
 
@@ -37,15 +36,12 @@
 
 #include <map>
 #include <stdexcept>
-#include <unordered_map>
 #include <vector>
 
 namespace argus {
     std::pair<std::vector<Shader>, ShaderReflectionInfo> compile_glsl_to_spirv(
             const std::vector<Shader> &glsl_shaders, glslang::EShClient client,
             glslang::EShTargetClientVersion client_version, glslang::EShTargetLanguageVersion spirv_version) {
-        UNUSED(client);
-
         glslang::InitializeProcess();
 
         glslang::TProgram program;
@@ -79,11 +75,12 @@ namespace argus {
             shader_uids[lang] = glsl_shader.get_uid();
         }
 
+        auto comp_res = process_glsl(shaders_map, client, client_version, spirv_version);
+
         std::vector<Shader> spirv_shaders;
+        spirv_shaders.reserve(comp_res.spirv_shaders.size());
 
-        auto comp_res = process_glsl(shaders_map, glslang::EShClientOpenGL, client_version, spirv_version);
-
-        for (auto spirv_shader_kv : comp_res.spirv_shaders) {
+        for (const auto &spirv_shader_kv : comp_res.spirv_shaders) {
             auto lang = spirv_shader_kv.first;
             auto uid = shader_uids[lang];
             auto spirv_u8 = spirv_shader_kv.second;
@@ -100,7 +97,7 @@ namespace argus {
                     throw std::invalid_argument("Unsupported shader stage");
             }
 
-            spirv_shaders.push_back(Shader(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8));
+            spirv_shaders.emplace_back(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8);
         }
 
         for (const auto &shader_attr : comp_res.attributes) {
