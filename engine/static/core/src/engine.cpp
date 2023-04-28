@@ -69,8 +69,6 @@ namespace argus {
     static std::condition_variable g_engine_stop_notifier;
     static std::atomic_bool g_render_thread_halted;
 
-    extern EngineConfig g_engine_config;
-
     static void _interrupt_handler(const int signal) {
         UNUSED(signal);
         stop_engine();
