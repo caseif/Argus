@@ -353,7 +353,8 @@ namespace argus {
         Logger::default_logger().debug("Created composite pipeline");
 
         state.composite_vbo = alloc_buffer(state.device, sizeof(g_frame_quad_vertex_data),
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                    | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         auto *mapped_comp_vbo = map_buffer(state.device, state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
         memcpy(mapped_comp_vbo, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
         unmap_buffer(state.device, state.composite_vbo);
