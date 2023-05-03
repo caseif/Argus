@@ -1,4 +1,3 @@
-
 /*
  * This file is a part of Argus.
  * Copyright (c) 2019-2023, Max Roncace <mproncace@protonmail.com>
