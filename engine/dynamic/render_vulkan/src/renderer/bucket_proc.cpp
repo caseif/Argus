@@ -132,8 +132,7 @@ namespace argus {
             size_t offset = 0;
             size_t anim_frame_off = 0;
 
-            float *anim_frame_buf = static_cast<float *>(map_buffer(state.device, bucket->staging_anim_frame_buffer,
-                    0, bucket->staging_anim_frame_buffer.size, 0));
+            float *anim_frame_buf = nullptr;
 
             for (auto *processed : bucket->objects) {
                 if (processed == nullptr) {
@@ -148,9 +147,16 @@ namespace argus {
                     copy_buffer(state.device, cmd_buf, processed->staging_buffer, 0, bucket->staging_vertex_buffer,
                             offset, processed->staging_buffer.size);
                     free_command_buffer(state.device, cmd_buf);
+
+                    processed->updated = false;
                 }
 
                 if (bucket->needs_rebuild || processed->anim_frame_updated) {
+                    if (anim_frame_buf == nullptr) {
+                        anim_frame_buf = static_cast<float *>(map_buffer(state.device,
+                                bucket->staging_anim_frame_buffer, 0, bucket->staging_anim_frame_buffer.size, 0));
+                    }
+
                     for (size_t i = 0; i < processed->vertex_count; i++) {
                         anim_frame_buf[anim_frame_off++] = float(processed->anim_frame.x);
                         anim_frame_buf[anim_frame_off++] = float(processed->anim_frame.y);
@@ -166,7 +172,9 @@ namespace argus {
                 bucket->vertex_count += processed->vertex_count;
             }
 
-            unmap_buffer(state.device, bucket->staging_anim_frame_buffer);
+            if (anim_frame_buf != nullptr) {
+                unmap_buffer(state.device, bucket->staging_anim_frame_buffer);
+            }
 
             auto cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
             copy_buffer(state.device, cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
