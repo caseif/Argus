@@ -33,7 +33,7 @@ namespace argus {
 
     static void _inc_version(Transform2D &transform) {
         if (transform.pimpl->version_ptr != nullptr) {
-            *transform.pimpl->version_ptr += 1;
+            (*transform.pimpl->version_ptr)++;
         }
     }
 
