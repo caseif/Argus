@@ -120,7 +120,7 @@ namespace argus {
          * \return The x- and y-index of the currently active animation
          *        frame.
          */
-        Dirtiable<Vector2u> get_active_frame() const;
+        ValueAndDirtyFlag<Vector2u> get_active_frame() const;
 
         /**
          * \brief Sets the active animation frame.

@@ -120,7 +120,7 @@ namespace argus {
         processed_obj.staging_buffer = staging_buffer;
         processed_obj.mapped_buffer = map_buffer(state.device, staging_buffer, 0, buffer_size, 0);
 
-        processed_obj.anim_frame = object.get_active_frame().read().value;
+        processed_obj.anim_frame = object.get_active_frame().value;
 
         processed_obj.visited = true;
         processed_obj.newly_created = true;
@@ -137,6 +137,12 @@ namespace argus {
 
         // if a parent group or the object itself has had its transform updated
         proc_obj.updated = is_transform_dirty;
+
+        auto cur_frame = object.get_active_frame();
+        if (cur_frame.dirty) {
+            proc_obj.anim_frame = cur_frame;
+            proc_obj.anim_frame_updated = true;
+        }
 
         if (!is_transform_dirty) {
             // nothing to do
@@ -166,12 +172,6 @@ namespace argus {
 
                 total_vertices += 1;
             }
-        }
-
-        auto cur_frame = object.get_active_frame().read();
-        if (cur_frame.dirty) {
-            proc_obj.anim_frame = cur_frame;
-            proc_obj.anim_frame_updated = true;
         }
 
         proc_obj.visited = true;

@@ -92,8 +92,8 @@ namespace argus {
         return pimpl->z_index;
     }
 
-    Dirtiable<Vector2u> RenderObject2D::get_active_frame(void) const {
-        return pimpl->active_frame;
+    ValueAndDirtyFlag<Vector2u> RenderObject2D::get_active_frame(void) const {
+        return pimpl->active_frame.read();
     }
 
     void RenderObject2D::set_active_frame(const Vector2u &index) {
