@@ -34,25 +34,31 @@ namespace argus {
         std::vector<RenderGroup2D *> child_groups;
         std::vector<RenderObject2D *> child_objects;
 
+        uint16_t version;
+
         pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group,
                 const Transform2D &transform) :
                 handle(handle),
                 scene(scene),
                 parent_group(parent_group),
-                transform(transform) {
+                transform(transform),
+                version(1) {
         }
 
         pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group, Transform2D &&transform) :
                 handle(handle),
                 scene(scene),
                 parent_group(parent_group),
-                transform(transform) {
+                transform(transform),
+                version(1) {
         }
 
         pimpl_RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *const parent_group) :
                 handle(handle),
                 scene(scene),
-                parent_group(parent_group) {
+                parent_group(parent_group),
+                transform({}),
+                version(1) {
         }
 
         pimpl_RenderGroup2D(pimpl_RenderGroup2D &) = default;

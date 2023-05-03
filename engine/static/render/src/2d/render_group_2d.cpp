@@ -47,20 +47,24 @@ namespace argus {
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+        pimpl->transform.set_version_ref(pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             Transform2D &&transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+        pimpl->transform.set_version_ref(pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
+        pimpl->transform.set_version_ref(pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *parent_group,
             const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
+        pimpl->transform.set_version_ref(pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
 
@@ -149,7 +153,7 @@ namespace argus {
         return pimpl->transform;
     }
 
-    ValueAndDirtyFlag<Transform2D> RenderGroup2D::get_transform(void) {
+    Transform2D &RenderGroup2D::get_transform(void) {
         return pimpl->transform;
     }
 
@@ -165,6 +169,7 @@ namespace argus {
     RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
         auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
         auto &copy = *new RenderGroup2D(new_handle, pimpl->scene, parent, pimpl->transform);
+        copy.pimpl->version = pimpl->version;
 
         copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
         for (auto &child_group : pimpl->child_groups) {

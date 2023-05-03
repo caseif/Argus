@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/dirtiable.hpp"
+#include "argus/lowlevel/handle.hpp"
 
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
@@ -29,6 +30,8 @@ namespace argus {
     struct pimpl_Scene {
         std::string id;
         Dirtiable<Transform2D> transform;
+
+        std::map<Handle, uint16_t> last_rendered_versions;
 
         std::mutex read_lock;
 

@@ -34,7 +34,6 @@ namespace argus {
         std::mutex translation_mutex;
         std::mutex scale_mutex;
 
-        std::atomic_bool dirty;
         std::atomic_bool dirty_matrix;
 
         Matrix4 translation_matrix;
@@ -44,16 +43,16 @@ namespace argus {
 
         Vector2f last_anchor_point;
 
+        uint16_t *version_ptr;
+
         pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
                 translation(translation),
                 rotation(rotation),
                 scale(scale),
-                dirty(true),
                 dirty_matrix(true) {
         }
 
         void set_dirty(void) {
-            this->dirty = true;
             this->dirty_matrix = true;
         }
     };

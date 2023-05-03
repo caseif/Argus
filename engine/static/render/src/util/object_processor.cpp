@@ -31,7 +31,7 @@
 
 namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {
-        group.get_transform()->copy_matrix(target, {0, 0});
+        group.get_transform().copy_matrix(target, {0, 0});
         const RenderGroup2D *cur = nullptr;
         const RenderGroup2D *parent = group.get_parent_group();
 
@@ -48,19 +48,24 @@ namespace argus {
     }
 
     static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, RenderGroup2D &group,
-            const bool recompute_transform, const Matrix4 running_transform, ProcessRenderObj2DFn process_new_fn,
-            UpdateRenderObj2DFn update_fn, void *extra) {
+            const bool recompute_transform, const Matrix4 running_transform, std::map<Handle, uint16_t> &new_version_map,
+            const ProcessRenderObj2DFn &process_new_fn, const UpdateRenderObj2DFn &update_fn, void *extra) {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
+
+        auto &scene = group.get_scene();
+        auto cur_version_map = scene.pimpl->last_rendered_versions;
+
+        new_version_map[group.pimpl->handle] = group.pimpl->version;
 
         auto group_transform = group.get_transform();
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            multiply_matrices(running_transform, group_transform->as_matrix({0, 0}), cur_transform);
+            multiply_matrices(running_transform, group_transform.as_matrix({0, 0}), cur_transform);
 
             new_recompute_transform = true;
-        } else if (group_transform.dirty) {
+        } else if (group.pimpl->version != cur_version_map[group.pimpl->handle]) {
             _compute_abs_group_transform(group, cur_transform);
 
             new_recompute_transform = true;
@@ -75,18 +80,22 @@ namespace argus {
 
             auto obj_anchor = child_object->get_anchor_point();
 
+            auto obj_dirty = child_object->pimpl->version != cur_version_map[child_object->pimpl->handle];
+
+            new_version_map[child_object->pimpl->handle] = child_object->pimpl->version;
+
             if (new_recompute_transform) {
-                multiply_matrices(obj_transform->as_matrix(obj_anchor), cur_transform, final_obj_transform);
-            } else if (obj_transform.dirty) {
+                multiply_matrices(obj_transform.as_matrix(obj_anchor), cur_transform, final_obj_transform);
+            } else if (obj_dirty) {
                 // parent transform hasn't been computed so we need to do it here
                 Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(obj_transform->as_matrix(obj_anchor), group_abs_transform, final_obj_transform);
+                multiply_matrices(obj_transform.as_matrix(obj_anchor), group_abs_transform, final_obj_transform);
             }
             // don't need to compute anything otherwise, update function will just mark the object as visited
 
-            bool dirty_transform = new_recompute_transform || obj_transform.dirty;
+            bool dirty_transform = new_recompute_transform || obj_dirty;
 
             if (existing_it != processed_obj_map.end()) {
                 update_fn(*child_object, existing_it->second, final_obj_transform, dirty_transform, extra);
@@ -99,16 +108,21 @@ namespace argus {
 
         for (auto *child_group : group.pimpl->child_groups) {
             _process_render_group_2d(processed_obj_map, *child_group,
-                    new_recompute_transform, cur_transform, process_new_fn, update_fn, extra);
+                    new_recompute_transform, cur_transform, new_version_map, process_new_fn, update_fn, extra);
         }
     }
 
     void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
-            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn, void *extra) {
+            const ProcessRenderObj2DFn &process_new_fn, const UpdateRenderObj2DFn &update_fn, void *extra) {
+        std::map<Handle, uint16_t> new_version_map;
+
         // need to acquire a lock to prevent buffer swapping while compiling scene
         scene.pimpl->read_lock.lock();
         _process_render_group_2d(processed_obj_map, *scene.pimpl->root_group_read, false, {},
-                process_new_fn, update_fn, extra);
+                new_version_map, process_new_fn, update_fn, extra);
         scene.pimpl->read_lock.unlock();
+
+        // this map is internal to the renderer and thus doesn't need to be synchronized
+        scene.pimpl->last_rendered_versions = new_version_map;
     }
 }

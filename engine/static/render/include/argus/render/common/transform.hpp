@@ -46,11 +46,9 @@ namespace argus {
 
         Transform2D &operator=(const Transform2D &rhs) noexcept;
 
+        Transform2D &operator=(Transform2D &&rhs) noexcept;
+
         ~Transform2D(void);
-
-        operator ValueAndDirtyFlag<Transform2D>(void);
-
-        operator ValueAndDirtyFlag<const Transform2D>(void) const;
 
         /**
          * \brief Constructs a new 2D transform with the given parameters.
@@ -191,6 +189,15 @@ namespace argus {
          *        rotation of this one. The scale is unaffected.
          */
         Transform2D inverse(void) const;
+
+        /**
+         * \brief Sets the reference used for object versioning. The value
+         *        pointed to by the given reference will be incremented by one
+         *        each time the transform is updated.
+         *
+         * \param version_ref A reference to the variable to increment.
+         */
+        void set_version_ref(uint16_t &version_ref);
     };
 
     /**

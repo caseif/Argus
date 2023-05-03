@@ -166,7 +166,7 @@ namespace argus {
          *         group's absolute transform with respect to the
          *         Scene containing the group.
          */
-        ValueAndDirtyFlag<Transform2D> get_transform(void);
+        Transform2D &get_transform(void);
 
         /**
          * Sets the local Transform of this group.

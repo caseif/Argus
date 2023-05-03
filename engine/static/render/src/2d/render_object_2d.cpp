@@ -44,6 +44,7 @@ namespace argus {
             uint32_t z_index, const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
                     material, primitives, anchor_point, atlas_stride, z_index, transform)) {
+        pimpl->transform.set_version_ref(pimpl->version);
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
@@ -51,6 +52,7 @@ namespace argus {
             uint32_t z_index, const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
                     material, primitives, anchor_point, atlas_stride, z_index, transform)) {
+        pimpl->transform.set_version_ref(pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
 
@@ -102,13 +104,12 @@ namespace argus {
         return pimpl->transform;
     }
 
-    ValueAndDirtyFlag<Transform2D> RenderObject2D::get_transform(void) {
+    Transform2D &RenderObject2D::get_transform(void) {
         return pimpl->transform;
     }
 
     void RenderObject2D::set_transform(const Transform2D &transform) const {
         pimpl->transform = transform;
-        pimpl->transform.pimpl->dirty = true;
     }
 
     RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) {
@@ -119,6 +120,7 @@ namespace argus {
         auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->anchor_point,
                 pimpl->atlas_stride, pimpl->z_index, pimpl->transform);
         copy.pimpl->active_frame = pimpl->active_frame;
+        copy.pimpl->version = pimpl->version;
 
         g_render_handle_table.update_handle(pimpl->handle, copy);
 

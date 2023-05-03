@@ -39,6 +39,8 @@ namespace argus {
         Transform2D transform;
         Dirtiable<Vector2u> active_frame;
 
+        uint16_t version;
+
         pimpl_RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
                 const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
                 const Vector2f &atlas_stride, uint32_t z_index, const Transform2D &transform) :
@@ -50,7 +52,8 @@ namespace argus {
                 atlas_stride(atlas_stride),
                 z_index(z_index),
                 transform(transform),
-                active_frame({0, 0}) {
+                active_frame({0, 0}),
+                version(1) {
         }
 
         pimpl_RenderObject2D(const pimpl_RenderObject2D &) = default;

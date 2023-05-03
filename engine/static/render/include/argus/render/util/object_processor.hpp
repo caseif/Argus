@@ -43,7 +43,7 @@ namespace argus {
             const Matrix4 &transform, bool is_transform_dirty, void *extra)> UpdateRenderObj2DFn;
 
     void process_objects_2d(const Scene2D &scene, ProcessedRenderObject2DMap &processed_obj_map,
-            ProcessRenderObj2DFn process_new_fn, UpdateRenderObj2DFn update_fn, void *extra);
+            const ProcessRenderObj2DFn &process_new_fn, const UpdateRenderObj2DFn &update_fn, void *extra);
 
     std::vector<Resource *> get_all_materials_in_scene_2d(const Scene2D &scene);
 }

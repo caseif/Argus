@@ -142,7 +142,7 @@ namespace argus {
          *         reflect the object's absolute transform with respect to
          *         the Scene containing the object.
          */
-        ValueAndDirtyFlag<Transform2D> get_transform(void);
+        Transform2D &get_transform(void);
 
         /**
          * \brief Sets the local Transform of this object.
