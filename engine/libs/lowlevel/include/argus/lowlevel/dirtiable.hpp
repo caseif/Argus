@@ -42,7 +42,13 @@ namespace argus {
             return value;
         }
 
-        ValueType *operator->(void) {
+        template<typename V = ValueType>
+        typename std::enable_if<std::is_pointer<ValueType>::value, V>::type operator->(void) {
+            return value;
+        }
+
+        template<typename V = ValueType>
+        typename std::enable_if<!std::is_pointer<ValueType>::value, V>::type *operator->(void) {
             return &value;
         }
     };
