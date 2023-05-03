@@ -133,9 +133,6 @@ namespace argus {
         auto &scene_state = *static_cast<SceneState *>(scene_state_ptr);
         auto &state = scene_state.parent_state;
 
-        // pipeline should be created by now
-        auto &pipeline = state.material_pipelines.find(object.get_material())->second;
-
         auto &proc_obj = *reinterpret_cast<ProcessedRenderObject *>(proc_obj_ptr);
 
         // if a parent group or the object itself has had its transform updated
@@ -146,6 +143,9 @@ namespace argus {
             proc_obj.visited = true;
             return;
         }
+
+        // pipeline should be created by now
+        auto &pipeline = state.material_pipelines.find(object.get_material())->second;
 
         size_t vertex_comps = (pipeline.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
