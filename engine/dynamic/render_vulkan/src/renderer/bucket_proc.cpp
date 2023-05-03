@@ -143,10 +143,8 @@ namespace argus {
                     affirm_precond(offset <= INT_MAX, "Buffer offset is too big");
                     affirm_precond(processed->staging_buffer.size <= INT_MAX, "Buffer offset is too big");
 
-                    auto cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
-                    copy_buffer(state.device, cmd_buf, processed->staging_buffer, 0, bucket->staging_vertex_buffer,
+                    copy_buffer(state.device, state.copy_cmd_buf, processed->staging_buffer, 0, bucket->staging_vertex_buffer,
                             offset, processed->staging_buffer.size);
-                    free_command_buffer(state.device, cmd_buf);
 
                     processed->updated = false;
                 }
@@ -176,15 +174,13 @@ namespace argus {
                 unmap_buffer(state.device, bucket->staging_anim_frame_buffer);
             }
 
-            auto cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
-            copy_buffer(state.device, cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
+            copy_buffer(state.device, state.copy_cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
                     bucket->staging_vertex_buffer.size);
             if (anim_buf_updated) {
                 affirm_precond(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
-                copy_buffer(state.device, cmd_buf, bucket->staging_anim_frame_buffer, 0, bucket->anim_frame_buffer, 0,
-                        anim_frame_buf_len);
+                copy_buffer(state.device, state.copy_cmd_buf, bucket->staging_anim_frame_buffer, 0,
+                        bucket->anim_frame_buffer, 0, anim_frame_buf_len);
             }
-            free_command_buffer(state.device, cmd_buf);
 
             bucket->needs_rebuild = false;
 

@@ -35,9 +35,11 @@ namespace argus {
         std::string uid;
         ImageInfo image;
         VkSampler sampler;
+        BufferInfo staging_buf;
     };
 
-    PreparedTexture prepare_texture(const LogicalDevice &device, VkCommandPool pool, const TextureData &texture);
+    PreparedTexture prepare_texture(const LogicalDevice &device, const CommandBufferInfo &cmd_buf,
+            const Resource &texture_res);
 
     void get_or_load_texture(RendererState &state, const Resource &material_res);
 

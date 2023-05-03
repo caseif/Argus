@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/macros.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/util/buffer.hpp"
@@ -83,14 +84,11 @@ namespace argus {
 
     void copy_buffer(const LogicalDevice &device, const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
             VkDeviceSize src_off, const BufferInfo &dst_buf, VkDeviceSize dst_off, size_t size) {
-        begin_oneshot_commands(device, cmd_buf);
-
+        UNUSED(device);
         VkBufferCopy copy_region{};
         copy_region.srcOffset = src_off;
         copy_region.dstOffset = dst_off;
         copy_region.size = size;
         vkCmdCopyBuffer(cmd_buf.handle, src_buf.handle, dst_buf.handle, 1, &copy_region);
-
-        end_oneshot_commands(device, cmd_buf);
     }
 }

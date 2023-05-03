@@ -53,6 +53,7 @@ namespace argus {
 
         VkRenderPass fb_render_pass;
 
+        CommandBufferInfo copy_cmd_buf{};
         CommandBufferInfo draw_cmd_buf{};
 
         BufferInfo global_ubo{};
@@ -65,6 +66,7 @@ namespace argus {
         std::map<std::string, PipelineInfo> material_pipelines;
         std::map<std::string, RefCountable<PreparedTexture>> prepared_textures;
         std::map<std::string, std::string> material_textures;
+        std::vector<BufferInfo> texture_bufs_to_free;
 
         SceneState &get_scene_state(Scene &scene, bool create = false);
 

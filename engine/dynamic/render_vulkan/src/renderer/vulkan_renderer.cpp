@@ -201,6 +201,8 @@ namespace argus {
             }
         }
 
+        begin_oneshot_commands(state.device, state.copy_cmd_buf);
+
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
             SceneState &scene_state = state.get_scene_state(*scene, true);
 
@@ -215,6 +217,13 @@ namespace argus {
                 get_or_load_texture(state, mat);
             }
         }
+
+        end_oneshot_commands(state.device, state.copy_cmd_buf);
+
+        for (const auto &buf : state.texture_bufs_to_free) {
+            free_buffer(state.device, buf);
+        }
+        state.texture_bufs_to_free.clear();
     }
 
     static uint32_t _get_next_image(const RendererState &state) {
@@ -290,7 +299,9 @@ namespace argus {
         state.desc_pool = create_descriptor_pool(this->state.device);
         Logger::default_logger().debug("Created descriptor pool for new window");
 
+        state.copy_cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
         state.draw_cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
+        Logger::default_logger().debug("Created command buffers for new window");
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -301,6 +312,10 @@ namespace argus {
 
         for (const auto &viewport_state : state.viewport_states_2d) {
             _destroy_viewport(state, viewport_state.second);
+        }
+
+        if (state.copy_cmd_buf.handle != VK_NULL_HANDLE) {
+            free_command_buffer(state.device, state.copy_cmd_buf);
         }
 
         if (state.draw_cmd_buf.handle != VK_NULL_HANDLE) {
@@ -354,7 +369,7 @@ namespace argus {
 
         state.composite_vbo = alloc_buffer(state.device, sizeof(g_frame_quad_vertex_data),
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-                    | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                     | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         auto *mapped_comp_vbo = map_buffer(state.device, state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
         memcpy(mapped_comp_vbo, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
         unmap_buffer(state.device, state.composite_vbo);
@@ -370,12 +385,18 @@ namespace argus {
     void VulkanRenderer::render(TimeDelta delta) {
         UNUSED(delta);
 
+        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_start;
+        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_end;
+
         auto vsync = window.is_vsync_enabled();
         if (vsync.dirty) {
             //glfwSwapInterval(vsync ? 1 : 0);
         }
 
+        timer_start = std::chrono::high_resolution_clock::now();
         _rebuild_scene(window, state);
+        timer_end = std::chrono::high_resolution_clock::now();
+        //printf("Rebuilding scenes took %ld ns\n", (timer_end - timer_start).count());
 
         auto &canvas = window.get_canvas();
 
@@ -389,6 +410,7 @@ namespace argus {
         std::sort(viewports.begin(), viewports.end(),
                 [](auto a, auto b) { return a.get().get_z_index() < b.get().get_z_index(); });
 
+        timer_start = std::chrono::high_resolution_clock::now();
         for (auto viewport : viewports) {
             auto &viewport_state = state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
@@ -398,6 +420,8 @@ namespace argus {
 
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
+        timer_end = std::chrono::high_resolution_clock::now();
+        //printf("Drawing scenes took %ld ns\n", (timer_end - timer_start).count());
 
         std::vector<const AttachedViewport2D *> viewports_to_remove;
         for (auto it = state.viewport_states_2d.begin(); it != state.viewport_states_2d.end();) {
@@ -413,6 +437,8 @@ namespace argus {
 
         //glClearColor(0.0, 0.0, 0.0, 1.0);
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        timer_start = std::chrono::high_resolution_clock::now();
 
         auto image_index = _get_next_image(state);
         auto sc_image = state.swapchain.images[image_index];
@@ -470,6 +496,8 @@ namespace argus {
         vkEndCommandBuffer(state.draw_cmd_buf.handle);
 
         _submit_queues(state);
+        timer_end = std::chrono::high_resolution_clock::now();
+        //printf("Compositing scenes took %ld ns\n", (timer_end - timer_start).count());
         _present_image(state, image_index);
 
         //glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));

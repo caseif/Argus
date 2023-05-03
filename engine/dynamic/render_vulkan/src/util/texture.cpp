@@ -30,7 +30,10 @@
 #include "internal/render_vulkan/util/texture.hpp"
 
 namespace argus {
-    PreparedTexture prepare_texture(const LogicalDevice &device, VkCommandPool pool, const TextureData &texture) {
+    PreparedTexture prepare_texture(const LogicalDevice &device, const CommandBufferInfo &cmd_buf,
+            const Resource &texture_res) {
+        const auto &texture = texture_res.get<TextureData>();
+
         uint32_t channels = 4;
         VkDeviceSize image_size = texture.width * texture.height * channels;
 
@@ -52,15 +55,6 @@ namespace argus {
             }
             unmap_buffer(device, staging_buf);
         }
-
-        auto must_free_pool = false;
-        if (pool == VK_NULL_HANDLE) {
-            pool = create_command_pool(device);
-            must_free_pool = true;
-        }
-
-        auto cmd_buf = alloc_command_buffers(device, pool, 1).front();
-        begin_oneshot_commands(device, cmd_buf);
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
@@ -88,16 +82,6 @@ namespace argus {
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-        end_oneshot_commands(device, cmd_buf);
-
-        free_command_buffer(device, cmd_buf);
-
-        if (must_free_pool) {
-            destroy_command_pool(device, pool);
-        }
-
-        free_buffer(device, staging_buf);
-
         VkSamplerCreateInfo sampler_info{};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         sampler_info.magFilter = VK_FILTER_NEAREST;
@@ -119,7 +103,7 @@ namespace argus {
         VkSampler sampler;
         vkCreateSampler(device.logical_device, &sampler_info, nullptr, &sampler);
 
-        return { "", image, sampler };
+        return { texture_res.uid, image, sampler, staging_buf };
     }
 
     void get_or_load_texture(RendererState &state, const Resource &material_res) {
@@ -133,14 +117,15 @@ namespace argus {
         }
 
         auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
-        auto &texture = texture_res.get<TextureData>();
 
-        auto prepared = prepare_texture(state.device, VK_NULL_HANDLE, texture);
+        auto prepared = prepare_texture(state.device, state.copy_cmd_buf, texture_res);
 
         texture_res.release();
 
         state.prepared_textures.insert({ texture_uid, prepared });
         state.material_textures.insert({ material_res.uid, texture_uid });
+
+        state.texture_bufs_to_free.push_back(prepared.staging_buf);
     }
 
     void destroy_texture(const LogicalDevice &device, const PreparedTexture &texture) {
