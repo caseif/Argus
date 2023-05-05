@@ -19,7 +19,9 @@
 #pragma once
 
 #include "argus/lowlevel/atomic.hpp"
+
 #include <optional>
+#include <string>
 
 namespace argus {
     class Canvas;
