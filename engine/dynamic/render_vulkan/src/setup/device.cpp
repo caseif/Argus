@@ -48,9 +48,14 @@ namespace argus {
     static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
             VkSurfaceKHR surface, std::vector<VkQueueFamilyProperties> queue_families) {
         QueueFamilyIndices indices = {};
+        std::optional<uint32_t> transfer_queue;
 
         uint32_t i = 0;
         for (auto queue_family : queue_families) {
+            if (queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+                transfer_queue = i;
+            }
+
             // check if queue family is suitable for graphics
             if (glfwGetPhysicalDevicePresentationSupport(instance, device, i) == GLFW_TRUE) {
                 if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -66,6 +71,8 @@ namespace argus {
 
             i++;
         }
+
+        indices.transfer_family = transfer_queue.value_or(indices.graphics_family);
 
         return indices;
     }
@@ -197,7 +204,8 @@ namespace argus {
 
         Logger::default_logger().info("Selected video device %s", phys_dev_props.deviceName);
 
-        std::set<uint32_t> unique_queue_families = { qf_indices.graphics_family, qf_indices.present_family };
+        std::set<uint32_t> unique_queue_families = { qf_indices.graphics_family, qf_indices.present_family,
+                                                     qf_indices.transfer_family };
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
         for (auto queue_id : unique_queue_families) {
             VkDeviceQueueCreateInfo queue_create_info{};
@@ -245,6 +253,7 @@ namespace argus {
         QueueFamilies queues{};
         vkGetDeviceQueue(dev, qf_indices.graphics_family, 0, &queues.graphics_family);
         vkGetDeviceQueue(dev, qf_indices.present_family, 0, &queues.present_family);
+        vkGetDeviceQueue(dev, qf_indices.transfer_family, 0, &queues.transfer_family);
 
         return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices, queues });
     }

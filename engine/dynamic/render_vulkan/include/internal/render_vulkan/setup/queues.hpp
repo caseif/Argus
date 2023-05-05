@@ -24,10 +24,12 @@ namespace argus {
     struct QueueFamilyIndices {
         uint32_t graphics_family;
         uint32_t present_family;
+        uint32_t transfer_family;
     };
 
     struct QueueFamilies {
         VkQueue graphics_family;
         VkQueue present_family;
+        VkQueue transfer_family;
     };
 }
