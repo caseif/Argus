@@ -221,7 +221,7 @@ namespace argus {
         uint32_t fb_height = state.swapchain.extent.height;
 
         if (viewport_state.command_buf.handle == nullptr) {
-            viewport_state.command_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
+            viewport_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         }
 
         _update_viewport_ubo(state, viewport_state);
@@ -417,7 +417,7 @@ namespace argus {
         /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to record command buffer");
         }*/
-        end_oneshot_commands(state.device, viewport_state.command_buf);
+        end_oneshot_commands(state.device, viewport_state.command_buf, state.device.queues.graphics_family);
     }
 
     void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state) {

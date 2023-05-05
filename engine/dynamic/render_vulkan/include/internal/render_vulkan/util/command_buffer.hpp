@@ -34,7 +34,7 @@ namespace argus {
         VkCommandPool pool;
     };
 
-    VkCommandPool create_command_pool(const LogicalDevice &device);
+    VkCommandPool create_command_pool(const LogicalDevice &device, uint32_t queue_index);
 
     void destroy_command_pool(const LogicalDevice &device, VkCommandPool command_pool);
 
@@ -46,5 +46,5 @@ namespace argus {
 
     void begin_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer);
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer);
+    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue);
 }

@@ -25,11 +25,11 @@
 #include "vulkan/vulkan.h"
 
 namespace argus {
-    VkCommandPool create_command_pool(const LogicalDevice &device) {
+    VkCommandPool create_command_pool(const LogicalDevice &device, uint32_t queue_index) {
         VkCommandPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        pool_info.queueFamilyIndex = g_vk_device.queue_indices.graphics_family;
+        pool_info.queueFamilyIndex = queue_index;
 
         VkCommandPool command_pool{};
         if (vkCreateCommandPool(device.logical_device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
@@ -97,14 +97,16 @@ namespace argus {
         vkBeginCommandBuffer(buffer.handle, &begin_info);
     }
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer) {
+    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue) {
+        UNUSED(device);
+
         vkEndCommandBuffer(buffer.handle);
 
         VkSubmitInfo submit_info{};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &buffer.handle;
-        vkQueueSubmit(device.queues.graphics_family, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(device.queues.graphics_family);
+        vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(queue);
     }
 }

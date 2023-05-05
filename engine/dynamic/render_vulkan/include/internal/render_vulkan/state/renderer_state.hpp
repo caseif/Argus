@@ -48,7 +48,7 @@ namespace argus {
         PipelineInfo composite_pipeline{};
         BufferInfo composite_vbo;
 
-        VkCommandPool command_pool;
+        VkCommandPool graphics_command_pool;
         VkDescriptorPool desc_pool;
 
         VkRenderPass fb_render_pass;

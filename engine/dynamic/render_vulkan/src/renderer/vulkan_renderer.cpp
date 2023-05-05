@@ -218,7 +218,7 @@ namespace argus {
             }
         }
 
-        end_oneshot_commands(state.device, state.copy_cmd_buf);
+        end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family);
 
         for (const auto &buf : state.texture_bufs_to_free) {
             free_buffer(state.device, buf);
@@ -293,14 +293,15 @@ namespace argus {
         }
         Logger::default_logger().debug("Created surface for new window");
 
-        state.command_pool = create_command_pool(this->state.device);
-        Logger::default_logger().debug("Created command pool for new window");
+        state.graphics_command_pool = create_command_pool(this->state.device,
+                this->state.device.queue_indices.graphics_family);
+        Logger::default_logger().debug("Created command pools for new window");
 
         state.desc_pool = create_descriptor_pool(this->state.device);
         Logger::default_logger().debug("Created descriptor pool for new window");
 
-        state.copy_cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
-        state.draw_cmd_buf = alloc_command_buffers(state.device, state.command_pool, 1).front();
+        state.copy_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+        state.draw_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         Logger::default_logger().debug("Created command buffers for new window");
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -346,8 +347,8 @@ namespace argus {
             destroy_render_pass(state.device, state.fb_render_pass);
         }
 
-        if (state.command_pool != VK_NULL_HANDLE) {
-            destroy_command_pool(state.device, state.command_pool);
+        if (state.graphics_command_pool != VK_NULL_HANDLE) {
+            destroy_command_pool(state.device, state.graphics_command_pool);
         }
 
         for (const auto &texture : state.prepared_textures) {
