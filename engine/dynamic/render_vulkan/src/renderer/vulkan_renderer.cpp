@@ -397,8 +397,8 @@ namespace argus {
         static std::chrono::nanoseconds draw_time;
         static std::chrono::nanoseconds composite_time;
 
-        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_start;
-        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_end;
+        std::chrono::system_clock::time_point timer_start;
+        std::chrono::system_clock::time_point timer_end;
 
         if (std::chrono::high_resolution_clock::now() - last_print >= 10s && time_samples > 0) {
             Logger::default_logger().debug("Rebuild + draw + composite took %ld + %ld + %ld ns\n",
