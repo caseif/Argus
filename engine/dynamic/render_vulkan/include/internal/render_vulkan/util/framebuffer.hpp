@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include "image.hpp"
-#include "pipeline.hpp"
-#include "../state/renderer_state.hpp"
+#include "internal/render_vulkan/state/renderer_state.hpp"
+#include "internal/render_vulkan/util/image.hpp"
+#include "internal/render_vulkan/util/pipeline.hpp"
 
-#include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 
 namespace argus {
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,

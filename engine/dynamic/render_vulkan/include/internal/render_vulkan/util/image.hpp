@@ -20,9 +20,9 @@
 
 #include "argus/lowlevel/math.hpp"
 
-#include "../setup/device.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
 
-#include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 #include "command_buffer.hpp"
 
 #include <vector>

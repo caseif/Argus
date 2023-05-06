@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 
 #include <vector>
 
