@@ -34,9 +34,9 @@
 #include <cstdint>
 
 namespace argus {
-    static void _try_free_buffer(const LogicalDevice &device, BufferInfo &buffer) {
+    static void _try_free_buffer(BufferInfo &buffer) {
         if (buffer.handle != nullptr) {
-            free_buffer(device, buffer);
+            free_buffer(buffer);
             buffer.handle = nullptr;
         }
     }
@@ -51,18 +51,18 @@ namespace argus {
                 bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_OBJ_LEN,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::DeviceRw);
                 float uv_stride[] = { bucket->atlas_stride.x, bucket->atlas_stride.y };
-                auto *mapped = map_buffer(state.device, bucket->ubo_buffer,
+                auto *mapped = map_buffer(bucket->ubo_buffer,
                         SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(uv_stride), 0);
                 memcpy(mapped, uv_stride, sizeof(uv_stride));
-                unmap_buffer(state.device, bucket->ubo_buffer);
+                unmap_buffer(bucket->ubo_buffer);
             }
 
             if (bucket->objects.empty()) {
-                _try_free_buffer(state.device, it->second->vertex_buffer);
-                _try_free_buffer(state.device, it->second->anim_frame_buffer);
-                _try_free_buffer(state.device, it->second->staging_vertex_buffer);
-                _try_free_buffer(state.device, it->second->staging_anim_frame_buffer);
-                _try_free_buffer(state.device, it->second->ubo_buffer);
+                _try_free_buffer(it->second->vertex_buffer);
+                _try_free_buffer(it->second->anim_frame_buffer);
+                _try_free_buffer(it->second->staging_vertex_buffer);
+                _try_free_buffer(it->second->staging_anim_frame_buffer);
+                _try_free_buffer(it->second->ubo_buffer);
                 it->second->destroy();
 
                 it = scene_state.render_buckets.erase(it);
@@ -96,10 +96,10 @@ namespace argus {
                     anim_frame_buf_len += obj->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(float);
                 }
 
-                _try_free_buffer(state.device, bucket->vertex_buffer);
-                _try_free_buffer(state.device, bucket->anim_frame_buffer);
-                _try_free_buffer(state.device, bucket->staging_vertex_buffer);
-                _try_free_buffer(state.device, bucket->staging_anim_frame_buffer);
+                _try_free_buffer(bucket->vertex_buffer);
+                _try_free_buffer(bucket->anim_frame_buffer);
+                _try_free_buffer(bucket->staging_vertex_buffer);
+                _try_free_buffer(bucket->staging_anim_frame_buffer);
 
                 affirm_precond(vertex_buf_len <= INT_MAX, "Buffer length is too big");
 
@@ -143,7 +143,7 @@ namespace argus {
                     affirm_precond(offset <= INT_MAX, "Buffer offset is too big");
                     affirm_precond(processed->staging_buffer.size <= INT_MAX, "Buffer offset is too big");
 
-                    copy_buffer(state.device, state.copy_cmd_buf, processed->staging_buffer, 0, bucket->staging_vertex_buffer,
+                    copy_buffer(state.copy_cmd_buf, processed->staging_buffer, 0, bucket->staging_vertex_buffer,
                             offset, processed->staging_buffer.size);
 
                     processed->updated = false;
@@ -151,8 +151,8 @@ namespace argus {
 
                 if (bucket->needs_rebuild || processed->anim_frame_updated) {
                     if (anim_frame_buf == nullptr) {
-                        anim_frame_buf = static_cast<float *>(map_buffer(state.device,
-                                bucket->staging_anim_frame_buffer, 0, bucket->staging_anim_frame_buffer.size, 0));
+                        anim_frame_buf = static_cast<float *>(map_buffer(bucket->staging_anim_frame_buffer, 0,
+                                bucket->staging_anim_frame_buffer.size, 0));
                     }
 
                     for (size_t i = 0; i < processed->vertex_count; i++) {
@@ -171,14 +171,14 @@ namespace argus {
             }
 
             if (anim_frame_buf != nullptr) {
-                unmap_buffer(state.device, bucket->staging_anim_frame_buffer);
+                unmap_buffer(bucket->staging_anim_frame_buffer);
             }
 
-            copy_buffer(state.device, state.copy_cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
+            copy_buffer(state.copy_cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
                     bucket->staging_vertex_buffer.size);
             if (anim_buf_updated) {
                 affirm_precond(anim_frame_buf_len <= INT_MAX, "Animated frame buffer length is too big");
-                copy_buffer(state.device, state.copy_cmd_buf, bucket->staging_anim_frame_buffer, 0,
+                copy_buffer(state.copy_cmd_buf, bucket->staging_anim_frame_buffer, 0,
                         bucket->anim_frame_buffer, 0, anim_frame_buf_len);
             }
 

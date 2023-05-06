@@ -168,7 +168,7 @@ namespace argus {
         destroy_framebuffer(state.device, viewport_state.back_fb);
         destroy_image(state.device, viewport_state.front_fb_image.handle);
         destroy_image(state.device, viewport_state.back_fb_image.handle);
-        free_buffer(state.device, viewport_state.ubo);
+        free_buffer(viewport_state.ubo);
         destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
         for (const auto &ds : viewport_state.material_desc_sets) {
             destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
@@ -224,7 +224,7 @@ namespace argus {
         end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family);
 
         for (const auto &buf : state.texture_bufs_to_free) {
-            free_buffer(state.device, buf);
+            free_buffer(buf);
         }
         state.texture_bufs_to_free.clear();
     }
@@ -327,11 +327,11 @@ namespace argus {
         }
 
         if (state.composite_vbo.handle != VK_NULL_HANDLE) {
-            free_buffer(state.device, state.composite_vbo);
+            free_buffer(state.composite_vbo);
         }
 
         if (state.global_ubo.handle != VK_NULL_HANDLE) {
-            free_buffer(state.device, state.global_ubo);
+            free_buffer(state.global_ubo);
         }
 
         if (state.desc_pool != VK_NULL_HANDLE) {
@@ -374,9 +374,9 @@ namespace argus {
         state.composite_vbo = alloc_buffer(state.device, sizeof(g_frame_quad_vertex_data),
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
-        auto *mapped_comp_vbo = map_buffer(state.device, state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
+        auto *mapped_comp_vbo = map_buffer(state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
         memcpy(mapped_comp_vbo, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
-        unmap_buffer(state.device, state.composite_vbo);
+        unmap_buffer(state.composite_vbo);
         Logger::default_logger().debug("Created composite VBO");
 
         state.fb_render_pass = create_render_pass(this->state.device, this->state.swapchain.image_format,

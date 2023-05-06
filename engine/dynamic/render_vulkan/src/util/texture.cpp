@@ -46,14 +46,14 @@ namespace argus {
                 GraphicsMemoryPropCombos::DeviceRw);
 
         {
-            auto buf_mapped = map_buffer(device, staging_buf, 0, image_size, 0);
+            auto buf_mapped = map_buffer(staging_buf, 0, image_size, 0);
             const size_t bytes_per_pixel = 4;
             const size_t bytes_per_row = texture.width * bytes_per_pixel;
             for (size_t y = 0; y < texture.height; y++) {
                 auto dst = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(buf_mapped) + (y * bytes_per_row));
                 memcpy(dst, texture.get_pixel_data()[y], bytes_per_row);
             }
-            unmap_buffer(device, staging_buf);
+            unmap_buffer(staging_buf);
         }
 
         VkBufferImageCopy region{};

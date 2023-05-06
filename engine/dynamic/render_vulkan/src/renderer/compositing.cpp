@@ -137,10 +137,10 @@ namespace argus {
 
         if (must_update) {
             auto len = sizeof(viewport_state.view_matrix.data);
-            auto *mapped = map_buffer(state.device, viewport_state.ubo, SHADER_UNIFORM_VIEWPORT_VM_OFF,
+            auto *mapped = map_buffer(viewport_state.ubo, SHADER_UNIFORM_VIEWPORT_VM_OFF,
                     len, 0);
             memcpy(mapped, viewport_state.view_matrix.data, len);
-            unmap_buffer(state.device, viewport_state.ubo);
+            unmap_buffer(viewport_state.ubo);
         }
     }
 

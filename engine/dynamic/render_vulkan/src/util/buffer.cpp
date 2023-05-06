@@ -60,31 +60,30 @@ namespace argus {
 
         vkBindBufferMemory(device.logical_device, buffer, buffer_mem, 0);
 
-        return { buffer, buffer_mem, size };
+        return { device.logical_device, buffer, buffer_mem, size };
     }
 
-    void free_buffer(const LogicalDevice &device, const BufferInfo &buffer) {
-        vkFreeMemory(device.logical_device, buffer.mem, nullptr);
-        vkDestroyBuffer(device.logical_device, buffer.handle, nullptr);
+    void free_buffer(const BufferInfo &buffer) {
+        vkFreeMemory(buffer.device, buffer.mem, nullptr);
+        vkDestroyBuffer(buffer.device, buffer.handle, nullptr);
     }
 
-    void *map_buffer(const LogicalDevice &device, const BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
+    void *map_buffer(const BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
             VkMemoryMapFlags flags) {
         assert(size <= buffer.size);
         void *ptr;
-        if (vkMapMemory(device.logical_device, buffer.mem, offset, size, flags, &ptr) != VK_SUCCESS) {
+        if (vkMapMemory(buffer.device, buffer.mem, offset, size, flags, &ptr) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to map buffer");
         }
         return ptr;
     }
 
-    void unmap_buffer(const LogicalDevice &device, const BufferInfo &buffer) {
-        vkUnmapMemory(device.logical_device, buffer.mem);
+    void unmap_buffer(const BufferInfo &buffer) {
+        vkUnmapMemory(buffer.device, buffer.mem);
     }
 
-    void copy_buffer(const LogicalDevice &device, const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
+    void copy_buffer(const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
             VkDeviceSize src_off, const BufferInfo &dst_buf, VkDeviceSize dst_off, size_t size) {
-        UNUSED(device);
         VkBufferCopy copy_region{};
         copy_region.srcOffset = src_off;
         copy_region.dstOffset = dst_off;

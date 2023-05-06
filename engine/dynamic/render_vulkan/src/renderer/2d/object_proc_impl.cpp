@@ -80,7 +80,7 @@ namespace argus {
         auto staging_buffer = alloc_buffer(state.device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
 
-        auto mapped_buffer = map_buffer(state.device, staging_buffer, 0, staging_buffer.size, 0);
+        auto mapped_buffer = map_buffer(staging_buffer, 0, staging_buffer.size, 0);
         auto float_buffer = reinterpret_cast<float*>(mapped_buffer);
 
         uint32_t total_vertices = 0;
@@ -113,13 +113,13 @@ namespace argus {
             }
         }
 
-        unmap_buffer(state.device, staging_buffer);
+        unmap_buffer(staging_buffer);
 
         auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(),
                 object.get_z_index(), total_vertices);
 
         processed_obj.staging_buffer = staging_buffer;
-        processed_obj.mapped_buffer = map_buffer(state.device, staging_buffer, 0, buffer_size, 0);
+        processed_obj.mapped_buffer = map_buffer(staging_buffer, 0, buffer_size, 0);
 
         processed_obj.anim_frame = object.get_active_frame().value;
 
@@ -180,7 +180,9 @@ namespace argus {
     }
 
     void deinit_object_2d(const RendererState &state, ProcessedRenderObject &obj) {
-        unmap_buffer(state.device, obj.staging_buffer);
-        free_buffer(state.device, obj.staging_buffer);
+        UNUSED(state);
+
+        unmap_buffer(obj.staging_buffer);
+        free_buffer(obj.staging_buffer);
     }
 }

@@ -26,6 +26,7 @@
 
 namespace argus {
     struct BufferInfo {
+        VkDevice device;
         VkBuffer handle;
         VkDeviceMemory mem;
         VkDeviceSize size;
@@ -34,13 +35,13 @@ namespace argus {
     BufferInfo alloc_buffer(const LogicalDevice &device, VkDeviceSize size, VkBufferUsageFlags usage,
             GraphicsMemoryPropCombos props);
 
-    void free_buffer(const LogicalDevice &device, const BufferInfo &buffer);
+    void free_buffer(const BufferInfo &buffer);
 
-    void *map_buffer(const LogicalDevice &device, const BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
+    void *map_buffer(const BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
             VkMemoryMapFlags flags);
 
-    void unmap_buffer(const LogicalDevice &device, const BufferInfo &buffer);
+    void unmap_buffer(const BufferInfo &buffer);
 
-    void copy_buffer(const LogicalDevice &device, const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
+    void copy_buffer(const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
             VkDeviceSize src_off, const BufferInfo &dst_buf, VkDeviceSize dst_off, size_t size);
 }
