@@ -59,9 +59,17 @@ namespace argus {
         std::vector<VkDescriptorSet> composite_desc_sets;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
+
+        ViewportState(const ViewportState &rhs) = delete;
+
+        ViewportState(ViewportState &&rhs) noexcept;
     };
 
     struct Viewport2DState : ViewportState {
         Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport);
+
+        Viewport2DState(const Viewport2DState &rhs) = delete;
+
+        Viewport2DState(Viewport2DState &&rhs) noexcept;
     };
 }

@@ -24,16 +24,19 @@
 namespace argus {
     SceneState::SceneState(RendererState &parent_state, Scene &scene) :
             parent_state(parent_state),
-            scene(scene) {
+            scene(scene),
+            visited(false) {
     }
 
-    SceneState::~SceneState(void) {
-    }
+    SceneState::SceneState(SceneState &&rhs) noexcept = default;
+
+    SceneState::~SceneState(void) = default;
 
     Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene) :
             SceneState(parent_state, scene) {
     }
 
-    Scene2DState::~Scene2DState(void) {
-    }
+    Scene2DState::Scene2DState(Scene2DState &&rhs) noexcept = default;
+
+    Scene2DState::~Scene2DState(void) = default;
 }

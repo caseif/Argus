@@ -59,7 +59,13 @@ namespace argus {
 
         std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
 
+        bool visited;
+
         SceneState(RendererState &parent_state, Scene &scene);
+
+        SceneState(const SceneState &rhs) = delete;
+
+        SceneState(SceneState &&rhs) noexcept;
 
         ~SceneState(void);
     };
@@ -70,6 +76,8 @@ namespace argus {
         Scene2DState(RendererState &parent_state, Scene &scene);
 
         Scene2DState(const Scene2DState &rhs) = delete;
+
+        Scene2DState(Scene2DState &&rhs) noexcept;
 
         ~Scene2DState(void);
     };

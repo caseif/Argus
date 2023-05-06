@@ -179,5 +179,6 @@ namespace argus {
         UNUSED(state);
         unmap_buffer(obj.staging_buffer);
         free_buffer(obj.staging_buffer);
+        obj.material_res.release();
     }
 }

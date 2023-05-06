@@ -28,7 +28,7 @@ namespace argus {
             view_matrix({}),
             view_matrix_dirty(false),
             command_buf({}),
-            composite_fence(VK_NULL_HANDLE),
+            composite_fence(VK_NULL_HANDLE ),
             front_fb_image({}),
             back_fb_image({}),
             front_fb(VK_NULL_HANDLE),
@@ -37,7 +37,11 @@ namespace argus {
             ubo({}) {
     }
 
+    ViewportState::ViewportState(ViewportState &&rhs) noexcept = default;
+
     Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :
             ViewportState(parent_state, viewport) {
     }
+
+    Viewport2DState::Viewport2DState(Viewport2DState &&rhs) noexcept = default;
 }

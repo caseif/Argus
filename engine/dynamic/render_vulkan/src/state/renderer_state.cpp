@@ -25,7 +25,7 @@
 #include "internal/render_vulkan/state/scene_state.hpp"
 
 namespace argus {
-    SceneState &RendererState::get_scene_state(Scene &scene, bool create) {
+    SceneState &RendererState::get_scene_state(Scene &scene) {
         switch (scene.type) {
             case SceneType::TwoD: {
                 auto &scene_2d = reinterpret_cast<const Scene2D &>(scene);
@@ -34,16 +34,7 @@ namespace argus {
                     return it->second;
                 }
 
-                if (!create) {
-                    Logger::default_logger().fatal("Failed to get scene state");
-                }
-
-                auto insert_res = this->scene_states_2d.try_emplace(&scene_2d, *this, scene);
-                if (!insert_res.second) {
-                    Logger::default_logger().fatal("Failed to create new scene state");
-                }
-
-                return insert_res.first->second;
+                Logger::default_logger().fatal("Failed to get scene state");
             }
             case SceneType::ThreeD: {
                 Logger::default_logger().fatal("Unimplemented scene type");
@@ -54,7 +45,7 @@ namespace argus {
         }
     }
 
-    ViewportState &RendererState::get_viewport_state(AttachedViewport &viewport, bool create) {
+    ViewportState &RendererState::get_viewport_state(AttachedViewport &viewport) {
         switch (viewport.type) {
             case SceneType::TwoD: {
                 auto &viewport_2d = reinterpret_cast<AttachedViewport2D &>(viewport);
@@ -63,17 +54,7 @@ namespace argus {
                     return it->second;
                 }
 
-                if (!create) {
-                    Logger::default_logger().fatal("Failed to get viewport state");
-                }
-
-                Viewport2DState state(*this, &viewport_2d);
-                auto insert_res = this->viewport_states_2d.insert({&viewport_2d, state});
-                if (!insert_res.second) {
-                    Logger::default_logger().fatal("Failed to create new viewport state");
-                }
-
-                return insert_res.first->second;
+                Logger::default_logger().fatal("Failed to get viewport state");
             }
             case SceneType::ThreeD: {
                 Logger::default_logger().fatal("Unimplemented viewport type");

@@ -440,7 +440,7 @@ namespace argus {
 
         std::vector<VkWriteDescriptorSet> ds_writes;
 
-        auto vk_cmd_buf = state.draw_cmd_buf.handle;
+        auto vk_cmd_buf = state.composite_cmd_buf.handle;
 
         auto fb_width = state.swapchain.resolution.x;
         auto fb_height = state.swapchain.resolution.y;

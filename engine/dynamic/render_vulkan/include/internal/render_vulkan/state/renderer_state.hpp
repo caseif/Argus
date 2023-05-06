@@ -54,13 +54,13 @@ namespace argus {
         VkRenderPass fb_render_pass;
 
         CommandBufferInfo copy_cmd_buf{};
-        CommandBufferInfo draw_cmd_buf{};
+        CommandBufferInfo composite_cmd_buf{};
 
         BufferInfo global_ubo{};
 
         std::map<const Scene2D *, Scene2DState> scene_states_2d;
         std::vector<SceneState *> all_scene_states;
-        std::map<const AttachedViewport2D *, ViewportState> viewport_states_2d;
+        std::map<const AttachedViewport2D *, Viewport2DState> viewport_states_2d;
 
         std::map<std::string, const Resource*> material_resources;
         std::map<std::string, PipelineInfo> material_pipelines;
@@ -68,8 +68,8 @@ namespace argus {
         std::map<std::string, std::string> material_textures;
         std::vector<BufferInfo> texture_bufs_to_free;
 
-        SceneState &get_scene_state(Scene &scene, bool create = false);
+        SceneState &get_scene_state(Scene &scene);
 
-        ViewportState &get_viewport_state(AttachedViewport &viewport, bool create = false);
+        ViewportState &get_viewport_state(AttachedViewport &viewport);
     };
 }

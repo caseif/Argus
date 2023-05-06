@@ -162,6 +162,31 @@ namespace argus {
         return scenes;
     }
 
+    static void _try_free_buffer(BufferInfo &buffer) {
+        if (buffer.handle != nullptr) {
+            free_buffer(buffer);
+            buffer.handle = nullptr;
+        }
+    }
+
+    static Viewport2DState &_create_viewport_2d_state(RendererState &state, AttachedViewport2D &viewport) {
+        auto insert_res = state.viewport_states_2d.try_emplace(&viewport, state, &viewport);
+        if (!insert_res.second) {
+            Logger::default_logger().fatal("Failed to create new viewport state");
+        }
+
+        return insert_res.first->second;
+    }
+
+    static Scene2DState &_create_scene_state(RendererState &state, Scene2D &scene) {
+        auto insert_res = state.scene_states_2d.try_emplace(&scene, state, scene);
+        if (!insert_res.second) {
+            Logger::default_logger().fatal("Failed to create new scene state");
+        }
+
+        return insert_res.first->second;
+    }
+
     static void _destroy_viewport(const RendererState &state, ViewportState &viewport_state) {
         vkDestroyFence(state.device.logical_device, viewport_state.composite_fence, nullptr);
         vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
@@ -177,12 +202,79 @@ namespace argus {
         free_command_buffer(state.device, viewport_state.command_buf);
     }
 
+    static void _destroy_scene(const RendererState &state, SceneState &scene_state) {
+        UNUSED(state);
+
+        for (const auto &bucket_it : scene_state.render_buckets) {
+            auto &bucket = *bucket_it.second;
+
+            for (auto *pro : bucket.objects) {
+                deinit_object_2d(state, *pro);
+            }
+
+            _try_free_buffer(bucket.vertex_buffer);
+            _try_free_buffer(bucket.anim_frame_buffer);
+            _try_free_buffer(bucket.staging_vertex_buffer);
+            _try_free_buffer(bucket.staging_anim_frame_buffer);
+            _try_free_buffer(bucket.ubo_buffer);
+
+            bucket.destroy();
+        }
+    }
+
+    static void _add_remove_state_objects(const Window &window, RendererState &state) {
+        auto &canvas = window.get_canvas();
+
+        for (auto &viewport : canvas.get_viewports_2d()) {
+            auto vp_it = state.viewport_states_2d.find(&viewport.get());
+            ViewportState *vp_state;
+            if (vp_it != state.viewport_states_2d.end()) {
+                vp_state = &vp_it->second;
+            } else {
+                vp_state = &_create_viewport_2d_state(state, viewport.get());
+            }
+
+            vp_state->visited = true;
+
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto scene_it = state.scene_states_2d.find(&scene);
+            SceneState *scene_state;
+            if (scene_it != state.scene_states_2d.end()) {
+                scene_state = &scene_it->second;
+            } else {
+                scene_state = &_create_scene_state(state, scene);
+            }
+
+            scene_state->visited = true;
+        }
+
+        for (auto it = state.scene_states_2d.begin(); it != state.scene_states_2d.end();) {
+            if (!it->second.visited) {
+                _destroy_scene(state, it->second);
+                it = state.scene_states_2d.erase(it);
+            } else {
+                it->second.visited = false;
+                it++;
+            }
+        }
+
+        for (auto it = state.viewport_states_2d.begin(); it != state.viewport_states_2d.end();) {
+            if (!it->second.visited) {
+                _destroy_viewport(state, it->second);
+                it = state.viewport_states_2d.erase(it);
+            } else {
+                it->second.visited = false;
+                it++;
+            }
+        }
+    }
+
     static void _update_view_matrix(const Window &window, RendererState &state, const Vector2u &resolution) {
         auto &canvas = window.get_canvas();
 
         for (auto viewport : canvas.get_viewports_2d()) {
             auto &viewport_state
-                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport, true));
+                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport));
             auto camera_transform = viewport.get().get_camera().peek_transform();
             _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(),
                     resolution,
@@ -196,7 +288,7 @@ namespace argus {
 
         for (auto viewport : canvas.get_viewports_2d()) {
             Viewport2DState &viewport_state
-                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport, true));
+                    = reinterpret_cast<Viewport2DState &>(state.get_viewport_state(viewport));
             auto camera_transform = viewport.get().get_camera().get_transform();
 
             if (camera_transform.dirty) {
@@ -208,7 +300,7 @@ namespace argus {
         begin_oneshot_commands(state.device, state.copy_cmd_buf);
 
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
-            SceneState &scene_state = state.get_scene_state(*scene, true);
+            SceneState &scene_state = state.get_scene_state(*scene);
 
             compile_scene_2d(reinterpret_cast<Scene2D &>(*scene), reinterpret_cast<Scene2DState &>(scene_state));
 
@@ -255,7 +347,7 @@ namespace argus {
         submit_info.pWaitSemaphores = wait_sems;
         submit_info.pWaitDstStageMask = wait_stages;
         submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &state.draw_cmd_buf.handle;
+        submit_info.pCommandBuffers = &state.composite_cmd_buf.handle;
         submit_info.signalSemaphoreCount = sizeof(signal_sems) / sizeof(VkSemaphore);
         submit_info.pSignalSemaphores = signal_sems;
 
@@ -305,7 +397,7 @@ namespace argus {
         Logger::default_logger().debug("Created descriptor pool for new window");
 
         state.copy_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
-        state.draw_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+        state.composite_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         Logger::default_logger().debug("Created command buffers for new window");
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -323,8 +415,8 @@ namespace argus {
             free_command_buffer(state.device, state.copy_cmd_buf);
         }
 
-        if (state.draw_cmd_buf.handle != VK_NULL_HANDLE) {
-            free_command_buffer(state.device, state.draw_cmd_buf);
+        if (state.composite_cmd_buf.handle != VK_NULL_HANDLE) {
+            free_command_buffer(state.device, state.composite_cmd_buf);
         }
 
         if (state.composite_vbo.handle != VK_NULL_HANDLE) {
@@ -414,6 +506,8 @@ namespace argus {
             //glfwSwapInterval(vsync ? 1 : 0);
         }
 
+        _add_remove_state_objects(window, state);
+
         timer_start = std::chrono::high_resolution_clock::now();
         _rebuild_scene(window, state);
         timer_end = std::chrono::high_resolution_clock::now();
@@ -422,10 +516,6 @@ namespace argus {
         auto &canvas = window.get_canvas();
 
         auto resolution = window.get_resolution();
-
-        for (auto &viewport_state : state.viewport_states_2d) {
-            viewport_state.second.visited = false;
-        }
 
         auto viewports = canvas.get_viewports_2d();
         std::sort(viewports.begin(), viewports.end(),
@@ -436,8 +526,6 @@ namespace argus {
             auto &viewport_state = state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
             auto &scene_state = state.get_scene_state(scene);
-
-            viewport_state.visited = true;
 
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
@@ -456,16 +544,6 @@ namespace argus {
         timer_end = std::chrono::high_resolution_clock::now();
         draw_time += (timer_end - timer_start);
 
-        std::vector<const AttachedViewport2D *> viewports_to_remove;
-        for (auto it = state.viewport_states_2d.begin(); it != state.viewport_states_2d.end();) {
-            if (!it->second.visited) {
-                _destroy_viewport(state, it->second);
-                it = state.viewport_states_2d.erase(it);
-            } else {
-                it++;
-            }
-        }
-
         // set up state for drawing framebuffers to screen
 
         //glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -476,19 +554,19 @@ namespace argus {
         auto image_index = _get_next_image(state);
         auto sc_image = state.swapchain.images[image_index];
 
-        vkResetCommandBuffer(state.draw_cmd_buf.handle, 0);
+        vkResetCommandBuffer(state.composite_cmd_buf.handle, 0);
 
         VkCommandBufferBeginInfo cmd_begin_info{};
         cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         cmd_begin_info.flags = 0;
-        vkBeginCommandBuffer(state.draw_cmd_buf.handle, &cmd_begin_info);
+        vkBeginCommandBuffer(state.composite_cmd_buf.handle, &cmd_begin_info);
 
-        perform_image_transition(state.draw_cmd_buf, sc_image,
+        perform_image_transition(state.composite_cmd_buf, sc_image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-        auto vk_cmd_buf = state.draw_cmd_buf.handle;
+        auto vk_cmd_buf = state.composite_cmd_buf.handle;
 
         auto fb_width = state.swapchain.extent.width;
         auto fb_height = state.swapchain.extent.height;
@@ -526,7 +604,7 @@ namespace argus {
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);*/
 
-        vkEndCommandBuffer(state.draw_cmd_buf.handle);
+        vkEndCommandBuffer(state.composite_cmd_buf.handle);
 
         _submit_queues(state);
         timer_end = std::chrono::high_resolution_clock::now();
