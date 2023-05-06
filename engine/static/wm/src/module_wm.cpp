@@ -55,6 +55,7 @@ namespace argus {
     // maps GLFW window pointers to Window instance pointers
     std::map<GLFWwindow *, Window *> g_window_handle_map;
     size_t g_window_count = 0;
+    bool g_requested_stop = false;
 
     static void _clean_up(void) {
         // use a copy since Window destructor modifies the global list
@@ -129,6 +130,16 @@ namespace argus {
         window.commit();
     }
 
+    static void _check_window_count(TimeDelta delta) {
+        UNUSED(delta);
+
+        //TODO: make this behavior configurable
+        if (!g_requested_stop && g_window_count == 0) {
+            g_requested_stop = true;
+            run_on_game_thread([]() { stop_engine(); });
+        }
+    }
+
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -136,15 +147,13 @@ namespace argus {
                 if (glfw_init_rc != GLFW_TRUE) {
                     Logger::default_logger().fatal("GLFW init failed (return code %d)", glfw_init_rc);
                 }
-
                 Logger::default_logger().info("GLFW initialized successfully");
 
                 glfwSetErrorCallback(_on_glfw_error);
-
                 Logger::default_logger().debug("Initialized GLFW");
 
+                register_update_callback(_check_window_count);
                 register_render_callback(_poll_events);
-
                 register_event_handler<WindowEvent>(window_window_event_callback, TargetThread::Render);
 
                 init_display();

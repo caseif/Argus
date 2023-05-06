@@ -168,8 +168,6 @@ namespace argus {
             pimpl->close_callback(*this);
         }
 
-        unregister_render_callback(pimpl->callback_id);
-
         for (Window *child : pimpl->children) {
             child->pimpl->parent = nullptr;
             _dispatch_window_event(*child, WindowEventType::RequestClose);
@@ -182,12 +180,9 @@ namespace argus {
         g_window_id_map.erase(pimpl->id);
         g_window_handle_map.erase(pimpl->handle);
 
-        //TODO: make this behavior configurable
-        if (--g_window_count == 0) {
-            stop_engine();
-        }
-
         delete pimpl;
+
+        g_window_count--;
     }
 
     const std::string &Window::get_id(void) const {
@@ -275,12 +270,13 @@ namespace argus {
         }
 
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
+            unregister_render_callback(pimpl->callback_id);
             glfwDestroyWindow(pimpl->handle);
-            run_on_game_thread([this]() { delete this; });
+            delete this;
             return;
         } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
-            return; // we forgo doing anything to the Window on its last update cycle
+            return; // we forego doing anything to the Window on its last update cycle
         }
 
         auto title = pimpl->properties.title.read();

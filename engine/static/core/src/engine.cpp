@@ -144,51 +144,54 @@ namespace argus {
         return delta;
     }
 
+    static void _deinit_engine() {
+        Logger::default_logger().debug("Engine halt request is acknowledged game thread");
+        g_game_thread_acknowledged_halt = true;
+
+        // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
+        if (!g_render_thread_halted) {
+            Logger::default_logger().debug(
+                    "Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
+            std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
+            g_engine_stop_notifier.wait(lock);
+        }
+
+        // at this point all event and callback execution should have
+        // stopped which allows us to start doing non-thread-safe things
+
+        Logger::default_logger().debug(
+                "Game thread observed render thread is halted, proceeding with engine bring-down");
+
+        Logger::default_logger().debug("Deinitializing engine modules");
+
+        deinit_modules();
+
+        Logger::default_logger().debug("Deinitializing event callbacks");
+
+        // if we don't do this explicitly, the callback lists (and thus
+        // the callback function objects) will be deinitialized
+        // statically and will segfault on handlers registered by
+        // external libraries (which will have already been unloaded)
+        deinit_event_handlers();
+
+        Logger::default_logger().debug("Deinitializing general callbacks");
+
+        // same deal here
+        _deinit_callbacks();
+
+        Logger::default_logger().debug("Unloading dynamic engine modules");
+
+        unload_dynamic_modules();
+
+        Logger::default_logger().info("Engine bring-down completed");
+    }
+
     static void _game_loop() {
         static Timestamp last_update;
 
         while (true) {
             if (g_engine_stopping) {
-                Logger::default_logger().debug("Engine halt request is acknowledged game thread");
-                g_game_thread_acknowledged_halt = true;
-
-                // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
-                if (!g_render_thread_halted) {
-                    Logger::default_logger().debug(
-                            "Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
-                    std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
-                    g_engine_stop_notifier.wait(lock);
-                }
-
-                // at this point all event and callback execution should have
-                // stopped which allows us to start doing non-thread-safe things
-
-                Logger::default_logger().debug(
-                        "Game thread observed render thread is halted, proceeding with engine bring-down");
-
-                Logger::default_logger().debug("Deinitializing engine modules");
-
-                deinit_modules();
-
-                Logger::default_logger().debug("Deinitializing event callbacks");
-
-                // if we don't do this explicitly, the callback lists (and thus
-                // the callback function objects) will be deinitialized
-                // statically and will segfault on handlers registered by
-                // external libraries (which will have already been unloaded)
-                deinit_event_handlers();
-
-                Logger::default_logger().debug("Deinitializing general callbacks");
-
-                // same deal here
-                _deinit_callbacks();
-
-                Logger::default_logger().debug("Unloading dynamic engine modules");
-
-                unload_dynamic_modules();
-
-                Logger::default_logger().info("Engine bring-down completed");
-
+                _deinit_engine();
                 break;
             }
 
