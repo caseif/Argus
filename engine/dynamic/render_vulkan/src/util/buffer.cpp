@@ -60,30 +60,62 @@ namespace argus {
 
         vkBindBufferMemory(device.logical_device, buffer, buffer_mem, 0);
 
-        return { device.logical_device, buffer, buffer_mem, size };
+        BufferInfo buf = { device.logical_device, buffer, buffer_mem, size, nullptr };
+        if ((static_cast<VkMemoryPropertyFlagBits>(props) & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+            // map buffer persistently
+            map_buffer(buf, 0, buf.size, 0);
+        }
+
+        return buf;
     }
 
-    void free_buffer(const BufferInfo &buffer) {
+    void free_buffer(BufferInfo &buffer) {
+        assert(buffer.device != VK_NULL_HANDLE);
+        assert(buffer.handle != VK_NULL_HANDLE);
+
+        if (buffer.mapped != nullptr) {
+            unmap_buffer(buffer);
+        }
+
         vkFreeMemory(buffer.device, buffer.mem, nullptr);
         vkDestroyBuffer(buffer.device, buffer.handle, nullptr);
+
+        buffer.device = {};
     }
 
-    void *map_buffer(const BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
+    void *map_buffer(BufferInfo &buffer, VkDeviceSize offset, VkDeviceSize size,
             VkMemoryMapFlags flags) {
+        assert(buffer.device != VK_NULL_HANDLE);
+        assert(buffer.handle != VK_NULL_HANDLE);
         assert(size <= buffer.size);
+        assert(buffer.mapped == nullptr);
+
         void *ptr;
         if (vkMapMemory(buffer.device, buffer.mem, offset, size, flags, &ptr) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to map buffer");
         }
+
+        buffer.mapped = ptr;
+
         return ptr;
     }
 
-    void unmap_buffer(const BufferInfo &buffer) {
+    void unmap_buffer(BufferInfo &buffer) {
+        assert(buffer.device != VK_NULL_HANDLE);
+        assert(buffer.handle != VK_NULL_HANDLE);
+        assert(buffer.mapped != nullptr);
+
         vkUnmapMemory(buffer.device, buffer.mem);
+        buffer.mapped = nullptr;
     }
 
     void copy_buffer(const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
             VkDeviceSize src_off, const BufferInfo &dst_buf, VkDeviceSize dst_off, size_t size) {
+        assert(src_buf.device != VK_NULL_HANDLE);
+        assert(src_buf.handle != VK_NULL_HANDLE);
+        assert(dst_buf.device != VK_NULL_HANDLE);
+        assert(dst_buf.handle != VK_NULL_HANDLE);
+
         VkBufferCopy copy_region{};
         copy_region.srcOffset = src_off;
         copy_region.dstOffset = dst_off;

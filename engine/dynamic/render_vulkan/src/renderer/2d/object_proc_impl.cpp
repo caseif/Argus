@@ -80,8 +80,7 @@ namespace argus {
         auto staging_buffer = alloc_buffer(state.device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
 
-        auto mapped_buffer = map_buffer(staging_buffer, 0, staging_buffer.size, 0);
-        auto float_buffer = reinterpret_cast<float*>(mapped_buffer);
+        auto float_buffer = reinterpret_cast<float*>(staging_buffer.mapped);
 
         uint32_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -113,13 +112,10 @@ namespace argus {
             }
         }
 
-        unmap_buffer(staging_buffer);
-
         auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(),
                 object.get_z_index(), total_vertices);
 
         processed_obj.staging_buffer = staging_buffer;
-        processed_obj.mapped_buffer = map_buffer(staging_buffer, 0, buffer_size, 0);
 
         processed_obj.anim_frame = object.get_active_frame().value;
 
@@ -159,7 +155,7 @@ namespace argus {
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
                             + (pipeline.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
-        auto float_buffer = reinterpret_cast<float *>(proc_obj.mapped_buffer);
+        auto float_buffer = reinterpret_cast<float *>(proc_obj.staging_buffer.mapped);
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -181,7 +177,6 @@ namespace argus {
 
     void deinit_object_2d(const RendererState &state, ProcessedRenderObject &obj) {
         UNUSED(state);
-
         unmap_buffer(obj.staging_buffer);
         free_buffer(obj.staging_buffer);
     }

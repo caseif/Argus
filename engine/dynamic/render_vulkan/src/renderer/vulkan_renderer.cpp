@@ -162,7 +162,7 @@ namespace argus {
         return scenes;
     }
 
-    static void _destroy_viewport(const RendererState &state, const ViewportState &viewport_state) {
+    static void _destroy_viewport(const RendererState &state, ViewportState &viewport_state) {
         vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
         destroy_framebuffer(state.device, viewport_state.front_fb);
         destroy_framebuffer(state.device, viewport_state.back_fb);
@@ -223,7 +223,7 @@ namespace argus {
 
         end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family);
 
-        for (const auto &buf : state.texture_bufs_to_free) {
+        for (auto &buf : state.texture_bufs_to_free) {
             free_buffer(buf);
         }
         state.texture_bufs_to_free.clear();
@@ -314,7 +314,7 @@ namespace argus {
     VulkanRenderer::~VulkanRenderer(void) {
         vkQueueWaitIdle(state.device.queues.graphics_family);
 
-        for (const auto &viewport_state : state.viewport_states_2d) {
+        for (auto &viewport_state : state.viewport_states_2d) {
             _destroy_viewport(state, viewport_state.second);
         }
 
@@ -374,9 +374,7 @@ namespace argus {
         state.composite_vbo = alloc_buffer(state.device, sizeof(g_frame_quad_vertex_data),
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
-        auto *mapped_comp_vbo = map_buffer(state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
-        memcpy(mapped_comp_vbo, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
-        unmap_buffer(state.composite_vbo);
+        memcpy(state.composite_vbo.mapped, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
         Logger::default_logger().debug("Created composite VBO");
 
         state.fb_render_pass = create_render_pass(this->state.device, this->state.swapchain.image_format,

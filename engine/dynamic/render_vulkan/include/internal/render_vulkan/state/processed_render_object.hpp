@@ -38,7 +38,6 @@ namespace argus {
         Vector2u anim_frame;
 
         BufferInfo staging_buffer{};
-        void *mapped_buffer{};
         bool newly_created{};
         bool visited{};
         bool updated{};

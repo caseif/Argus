@@ -51,10 +51,7 @@ namespace argus {
                 bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_OBJ_LEN,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::DeviceRw);
                 float uv_stride[] = { bucket->atlas_stride.x, bucket->atlas_stride.y };
-                auto *mapped = map_buffer(bucket->ubo_buffer,
-                        SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(uv_stride), 0);
-                memcpy(mapped, uv_stride, sizeof(uv_stride));
-                unmap_buffer(bucket->ubo_buffer);
+                memcpy(bucket->ubo_buffer.mapped, uv_stride, sizeof(uv_stride));
             }
 
             if (bucket->objects.empty()) {
@@ -151,8 +148,7 @@ namespace argus {
 
                 if (bucket->needs_rebuild || processed->anim_frame_updated) {
                     if (anim_frame_buf == nullptr) {
-                        anim_frame_buf = static_cast<float *>(map_buffer(bucket->staging_anim_frame_buffer, 0,
-                                bucket->staging_anim_frame_buffer.size, 0));
+                        anim_frame_buf = reinterpret_cast<float *>(bucket->staging_anim_frame_buffer.mapped);
                     }
 
                     for (size_t i = 0; i < processed->vertex_count; i++) {
@@ -168,10 +164,6 @@ namespace argus {
                 offset += processed->staging_buffer.size;
 
                 bucket->vertex_count += processed->vertex_count;
-            }
-
-            if (anim_frame_buf != nullptr) {
-                unmap_buffer(bucket->staging_anim_frame_buffer);
             }
 
             copy_buffer(state.copy_cmd_buf, bucket->staging_vertex_buffer, 0, bucket->vertex_buffer, 0,
