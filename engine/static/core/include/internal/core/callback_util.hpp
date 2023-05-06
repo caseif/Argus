@@ -97,8 +97,8 @@ namespace argus {
                 Index id = list.removal_queue.front();
                 list.removal_queue.pop();
                 bool removed = false;
-                for (auto list_pair : list.lists) {
-                    if ((removed = remove_from_indexed_vector(list_pair.second, id))) {
+                for (auto it = list.lists.begin(); it != list.lists.end(); it++) {
+                    if ((removed = remove_from_indexed_vector(it->second, id))) {
                         break;
                     }
                 }
