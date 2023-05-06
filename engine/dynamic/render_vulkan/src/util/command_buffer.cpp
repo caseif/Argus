@@ -97,7 +97,8 @@ namespace argus {
         vkBeginCommandBuffer(buffer.handle, &begin_info);
     }
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue) {
+    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
+            VkFence fence) {
         UNUSED(device);
 
         vkEndCommandBuffer(buffer.handle);
@@ -106,7 +107,10 @@ namespace argus {
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &buffer.handle;
-        vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue);
+        vkQueueSubmit(queue, 1, &submit_info, fence);
+
+        if (fence == VK_NULL_HANDLE) {
+            vkQueueWaitIdle(queue);
+        }
     }
 }

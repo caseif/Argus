@@ -28,6 +28,7 @@ namespace argus {
             view_matrix({}),
             view_matrix_dirty(false),
             command_buf({}),
+            composite_fence(VK_NULL_HANDLE),
             front_fb_image({}),
             back_fb_image({}),
             front_fb(VK_NULL_HANDLE),

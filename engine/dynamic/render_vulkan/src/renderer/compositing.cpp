@@ -218,8 +218,18 @@ namespace argus {
         uint32_t fb_width = state.swapchain.extent.width;
         uint32_t fb_height = state.swapchain.extent.height;
 
-        if (viewport_state.command_buf.handle == nullptr) {
+        if (viewport_state.command_buf.handle == VK_NULL_HANDLE) {
             viewport_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+        }
+
+        if (viewport_state.composite_fence == VK_NULL_HANDLE) {
+            VkFenceCreateInfo fence_info{};
+            fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fence_info.flags = 0;
+            if (vkCreateFence(state.device.logical_device, &fence_info, nullptr, &viewport_state.composite_fence)
+                    != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create Vulkan fence");
+            }
         }
 
         _update_viewport_ubo(state, viewport_state);
@@ -415,7 +425,8 @@ namespace argus {
         /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to record command buffer");
         }*/
-        end_oneshot_commands(state.device, viewport_state.command_buf, state.device.queues.graphics_family);
+        end_oneshot_commands(state.device, viewport_state.command_buf, state.device.queues.graphics_family,
+                viewport_state.composite_fence);
     }
 
     void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state) {

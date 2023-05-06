@@ -46,5 +46,6 @@ namespace argus {
 
     void begin_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer);
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue);
+    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
+            VkFence fence);
 }

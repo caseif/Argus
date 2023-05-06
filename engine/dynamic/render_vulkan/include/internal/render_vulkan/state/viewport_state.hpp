@@ -45,6 +45,8 @@ namespace argus {
 
         CommandBufferInfo command_buf;
 
+        VkFence composite_fence;
+
         ImageInfo front_fb_image;
         ImageInfo back_fb_image;
         VkFramebuffer front_fb;

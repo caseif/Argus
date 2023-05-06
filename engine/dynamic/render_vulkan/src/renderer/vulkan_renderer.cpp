@@ -163,6 +163,7 @@ namespace argus {
     }
 
     static void _destroy_viewport(const RendererState &state, ViewportState &viewport_state) {
+        vkDestroyFence(state.device.logical_device, viewport_state.composite_fence, nullptr);
         vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
         destroy_framebuffer(state.device, viewport_state.front_fb);
         destroy_framebuffer(state.device, viewport_state.back_fb);
@@ -221,7 +222,7 @@ namespace argus {
             }
         }
 
-        end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family);
+        end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE);
 
         for (auto &buf : state.texture_bufs_to_free) {
             free_buffer(buf);
@@ -395,7 +396,7 @@ namespace argus {
         static std::chrono::nanoseconds draw_time;
         static std::chrono::nanoseconds composite_time;
 
-        std::chrono::high_resolution_clock ::time_point timer_start;
+        std::chrono::high_resolution_clock::time_point timer_start;
         std::chrono::high_resolution_clock::time_point timer_end;
 
         if (std::chrono::high_resolution_clock::now() - last_print >= 10s && time_samples > 0) {
@@ -441,6 +442,18 @@ namespace argus {
 
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
+
+        std::vector<VkFence> composite_fences;
+        composite_fences.reserve(viewports.size());
+        for (const auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            composite_fences.push_back(viewport_state.composite_fence);
+        }
+
+        vkWaitForFences(state.device.logical_device, uint32_t(composite_fences.size()), composite_fences.data(),
+                VK_TRUE, UINT64_MAX);
+        vkResetFences(state.device.logical_device, uint32_t(composite_fences.size()), composite_fences.data());
+
         timer_end = std::chrono::high_resolution_clock::now();
         draw_time += (timer_end - timer_start);
 
