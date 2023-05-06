@@ -38,6 +38,7 @@
 #include "internal/render_vulkan/util/descriptor_set.hpp"
 #include "internal/render_vulkan/util/framebuffer.hpp"
 #include "internal/render_vulkan/util/image.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
 
 #include "vulkan/vulkan.h"
 
@@ -130,7 +131,7 @@ namespace argus {
 
         if (viewport_state.ubo.handle == VK_NULL_HANDLE) {
             viewport_state.ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    GraphicsMemoryPropCombos::DeviceRw);
             must_update = true;
         }
 

@@ -31,7 +31,7 @@
 namespace argus {
 
     BufferInfo alloc_buffer(const LogicalDevice &device, VkDeviceSize size, VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags props) {
+            GraphicsMemoryPropCombos props) {
         assert(size > 0);
 
         VkBufferCreateInfo buffer_info{};

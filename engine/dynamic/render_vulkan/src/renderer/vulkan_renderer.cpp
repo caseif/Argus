@@ -50,8 +50,11 @@
 #include "GLFW/glfw3.h"
 #pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
+#include "internal/render_vulkan/util/memory.hpp"
 
 namespace argus {
+    using namespace std::chrono_literals;
+
     // forward declarations
     class Scene2D;
 
@@ -305,7 +308,7 @@ namespace argus {
         Logger::default_logger().debug("Created command buffers for new window");
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                GraphicsMemoryPropCombos::DeviceRw);
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
@@ -369,8 +372,8 @@ namespace argus {
         Logger::default_logger().debug("Created composite pipeline");
 
         state.composite_vbo = alloc_buffer(state.device, sizeof(g_frame_quad_vertex_data),
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-                     | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                GraphicsMemoryPropCombos::DeviceRw);
         auto *mapped_comp_vbo = map_buffer(state.device, state.composite_vbo, 0, sizeof(g_frame_quad_vertex_data), 0);
         memcpy(mapped_comp_vbo, g_frame_quad_vertex_data, sizeof(g_frame_quad_vertex_data));
         unmap_buffer(state.device, state.composite_vbo);
@@ -386,8 +389,27 @@ namespace argus {
     void VulkanRenderer::render(TimeDelta delta) {
         UNUSED(delta);
 
+        static std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> last_print
+                = std::chrono::high_resolution_clock::now();
+        static int64_t time_samples = 0;
+
+        static std::chrono::nanoseconds rebuild_time;
+        static std::chrono::nanoseconds draw_time;
+        static std::chrono::nanoseconds composite_time;
+
         std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_start;
         std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timer_end;
+
+        if (std::chrono::high_resolution_clock::now() - last_print >= 10s && time_samples > 0) {
+            Logger::default_logger().debug("Rebuild + draw + composite took %ld + %ld + %ld ns\n",
+                    rebuild_time.count() / time_samples,
+                    draw_time.count() / time_samples,
+                    composite_time.count() / time_samples);
+
+            rebuild_time = draw_time = composite_time = 0ns;
+            time_samples = 0;
+            last_print = std::chrono::high_resolution_clock::now();
+        }
 
         auto vsync = window.is_vsync_enabled();
         if (vsync.dirty) {
@@ -397,7 +419,7 @@ namespace argus {
         timer_start = std::chrono::high_resolution_clock::now();
         _rebuild_scene(window, state);
         timer_end = std::chrono::high_resolution_clock::now();
-        //printf("Rebuilding scenes took %ld ns\n", (timer_end - timer_start).count());
+        rebuild_time += (timer_end - timer_start);
 
         auto &canvas = window.get_canvas();
 
@@ -422,7 +444,7 @@ namespace argus {
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
         timer_end = std::chrono::high_resolution_clock::now();
-        //printf("Drawing scenes took %ld ns\n", (timer_end - timer_start).count());
+        draw_time += (timer_end - timer_start);
 
         std::vector<const AttachedViewport2D *> viewports_to_remove;
         for (auto it = state.viewport_states_2d.begin(); it != state.viewport_states_2d.end();) {
@@ -498,8 +520,10 @@ namespace argus {
 
         _submit_queues(state);
         timer_end = std::chrono::high_resolution_clock::now();
-        //printf("Compositing scenes took %ld ns\n", (timer_end - timer_start).count());
+        composite_time += (timer_end - timer_start);
         _present_image(state, image_index);
+
+        time_samples++;
 
         //glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));
     }

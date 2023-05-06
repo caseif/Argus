@@ -22,14 +22,25 @@
 #include "internal/render_vulkan/util/memory.hpp"
 
 namespace argus {
-    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, VkMemoryPropertyFlags props) {
+    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, GraphicsMemoryPropCombos props) {
         VkPhysicalDeviceMemoryProperties mem_props;
         vkGetPhysicalDeviceMemoryProperties(device.physical_device, &mem_props);
 
-        for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
-            if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
-                return i;
+        auto search_props = props;
+
+        while (true) {
+            for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+                if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
+                    return i;
+                }
             }
+
+            if (search_props == GraphicsMemoryPropCombos::DeviceRw) {
+                search_props = GraphicsMemoryPropCombos::HostRw;
+                continue;
+            }
+
+            break;
         }
 
         Logger::default_logger().fatal("Failed to find suitable memory type");

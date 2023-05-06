@@ -27,6 +27,7 @@
 #include "internal/render_vulkan/state/scene_state.hpp"
 #include "internal/render_vulkan/util/buffer.hpp"
 #include "internal/render_vulkan/util/command_buffer.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
 
 #include <climits>
 #include <cstddef>
@@ -48,8 +49,7 @@ namespace argus {
 
             if (bucket->ubo_buffer.handle == VK_NULL_HANDLE) {
                 bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_OBJ_LEN,
-                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::DeviceRw);
                 float uv_stride[] = { bucket->atlas_stride.x, bucket->atlas_stride.y };
                 auto *mapped = map_buffer(state.device, bucket->ubo_buffer,
                         SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(uv_stride), 0);
@@ -105,11 +105,11 @@ namespace argus {
 
                 bucket->vertex_buffer = alloc_buffer(state.device, vertex_buf_len,
                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                        GraphicsMemoryPropCombos::DeviceRo);
                 bucket->staging_vertex_buffer = alloc_buffer(state.device, vertex_buf_len,
                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
                                 | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                        GraphicsMemoryPropCombos::DeviceRw);
 
                 auto stride = vertex_comps * uint32_t(sizeof(float));
                 affirm_precond(stride <= INT_MAX, "Vertex stride is too big");
@@ -117,10 +117,10 @@ namespace argus {
                 affirm_precond(anim_frame_buf_len <= INT_MAX, "Animation frame buffer length is too big");
                 bucket->anim_frame_buffer = alloc_buffer(state.device, anim_frame_buf_len,
                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                        GraphicsMemoryPropCombos::DeviceRo);
                 bucket->staging_anim_frame_buffer = alloc_buffer(state.device, anim_frame_buf_len,
                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                        GraphicsMemoryPropCombos::DeviceRw);
             } else {
                 anim_frame_buf_len = bucket->vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * sizeof(float);
             }

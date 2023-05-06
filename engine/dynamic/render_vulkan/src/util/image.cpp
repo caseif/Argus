@@ -63,7 +63,7 @@ namespace argus {
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = mem_reqs.size;
         allocInfo.memoryTypeIndex = find_memory_type(device, mem_reqs.memoryTypeBits,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                GraphicsMemoryPropCombos::DeviceRo);
 
         VkDeviceMemory imageMemory;
         if (vkAllocateMemory(device.logical_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {

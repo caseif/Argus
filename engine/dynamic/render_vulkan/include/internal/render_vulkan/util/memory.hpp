@@ -25,5 +25,12 @@
 #include <cstdint>
 
 namespace argus {
-    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, VkMemoryPropertyFlags props);
+    enum GraphicsMemoryPropCombos {
+        DeviceRo = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        DeviceRw = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+        DeviceLazy = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT,
+        HostRw = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    };
+
+    uint32_t find_memory_type(const LogicalDevice &device, uint32_t type_filter, GraphicsMemoryPropCombos props);
 }

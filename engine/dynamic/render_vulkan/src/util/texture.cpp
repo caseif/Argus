@@ -43,7 +43,7 @@ namespace argus {
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
         auto staging_buf = alloc_buffer(device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                GraphicsMemoryPropCombos::DeviceRw);
 
         {
             auto buf_mapped = map_buffer(device, staging_buf, 0, image_size, 0);

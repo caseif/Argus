@@ -18,9 +18,10 @@
 
 #pragma once
 
-#include "../setup/device.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
 
-#include "../../../../../../../external/libs/Vulkan-Headers/include/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 #include "command_buffer.hpp"
 
 namespace argus {
@@ -31,7 +32,7 @@ namespace argus {
     };
 
     BufferInfo alloc_buffer(const LogicalDevice &device, VkDeviceSize size, VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags props);
+            GraphicsMemoryPropCombos props);
 
     void free_buffer(const LogicalDevice &device, const BufferInfo &buffer);
 

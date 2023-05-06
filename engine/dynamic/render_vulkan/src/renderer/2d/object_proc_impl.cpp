@@ -28,14 +28,15 @@
 #include "argus/render/2d/render_prim_2d.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
-#include "internal/render_vulkan/util/buffer.hpp"
-#include "internal/render_vulkan/util/pipeline.hpp"
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 #include "internal/render_vulkan/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_vulkan/state/processed_render_object.hpp"
 #include "internal/render_vulkan/state/render_bucket.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/state/scene_state.hpp"
+#include "internal/render_vulkan/util/buffer.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
+#include "internal/render_vulkan/util/pipeline.hpp"
 
 #include <map>
 #include <numeric>
@@ -77,7 +78,7 @@ namespace argus {
         affirm_precond(buffer_size <= INT_MAX, "Buffer size is too big");
 
         auto staging_buffer = alloc_buffer(state.device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                GraphicsMemoryPropCombos::DeviceRw);
 
         auto mapped_buffer = map_buffer(state.device, staging_buffer, 0, staging_buffer.size, 0);
         auto float_buffer = reinterpret_cast<float*>(mapped_buffer);
