@@ -109,7 +109,7 @@ namespace argus {
                 bucket->staging_vertex_buffer = alloc_buffer(state.device, vertex_buf_len,
                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
                                 | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        GraphicsMemoryPropCombos::DeviceRw);
+                        GraphicsMemoryPropCombos::DeviceRo);
 
                 auto stride = vertex_comps * uint32_t(sizeof(float));
                 affirm_precond(stride <= INT_MAX, "Vertex stride is too big");
