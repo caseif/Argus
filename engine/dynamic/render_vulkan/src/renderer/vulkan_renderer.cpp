@@ -192,13 +192,14 @@ namespace argus {
         vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
         destroy_framebuffer(state.device, viewport_state.front_fb);
         destroy_framebuffer(state.device, viewport_state.back_fb);
-        destroy_image(state.device, viewport_state.front_fb_image.handle);
-        destroy_image(state.device, viewport_state.back_fb_image.handle);
+        destroy_image_and_image_view(state.device, viewport_state.front_fb_image);
+        destroy_image_and_image_view(state.device, viewport_state.back_fb_image);
         free_buffer(viewport_state.ubo);
         destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
         for (const auto &ds : viewport_state.material_desc_sets) {
             destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
         }
+
         free_command_buffer(state.device, viewport_state.command_buf);
     }
 
@@ -219,6 +220,22 @@ namespace argus {
             _try_free_buffer(bucket.ubo_buffer);
 
             bucket.destroy();
+        }
+    }
+
+    static void _deinit_material(RendererState &state, const std::string &material_uid) {
+        auto pipeline_it = state.material_pipelines.find(material_uid);
+        if (pipeline_it != state.material_pipelines.cend()) {
+            destroy_pipeline(state.device, pipeline_it->second);
+        }
+
+        auto texture_uid_it = state.material_textures.find(material_uid);
+        if (texture_uid_it != state.material_textures.cend()) {
+            auto texture_it = state.prepared_textures.find(texture_uid_it->second);
+            auto new_rc = texture_it->second.release();
+            if (new_rc == 0) {
+                destroy_texture(state.device, texture_it->second);
+            }
         }
     }
 
@@ -374,11 +391,27 @@ namespace argus {
         vkQueuePresentKHR(state.device.queues.present_family, &present_info);
     }
 
+    static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
+        if (event.subtype != ResourceEventType::Unload) {
+            return;
+        }
+
+        auto &state = *static_cast<RendererState *>(renderer_state);
+
+        std::string mt = event.prototype.media_type;
+        if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+            // no-op for now
+        } else if (mt == RESOURCE_TYPE_MATERIAL) {
+            _deinit_material(state, event.prototype.uid);
+        }
+    }
+
     VulkanRenderer::VulkanRenderer(Window &window):
         resource_event_handler(),
         window(window),
         is_initted(false) {
-        UNUSED(this->resource_event_handler);
+        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
+                TargetThread::Render, &state);
 
         state.device = g_vk_device;
 
@@ -409,6 +442,10 @@ namespace argus {
 
         for (auto &viewport_state : state.viewport_states_2d) {
             _destroy_viewport(state, viewport_state.second);
+        }
+
+        for (auto &scene_state : state.scene_states_2d) {
+            _destroy_scene(state, scene_state.second);
         }
 
         if (state.copy_cmd_buf.handle != VK_NULL_HANDLE) {

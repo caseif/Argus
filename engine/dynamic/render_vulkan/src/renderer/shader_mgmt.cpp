@@ -23,6 +23,7 @@
 #include "argus/render/common/shader_compilation.hpp"
 
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
+#include "internal/render_vulkan/setup/device.hpp"
 
 #include "glslang/Public/ShaderLang.h"
 
@@ -135,9 +136,9 @@ namespace argus {
         return res;
     }
 
-    void destroy_shaders(VkDevice device, const PreparedShaderSet &shaders) {
+    void destroy_shaders(const LogicalDevice &device, const PreparedShaderSet &shaders) {
         for (const auto &shader : shaders.stages) {
-            vkDestroyShaderModule(device, shader.module, nullptr);
+            vkDestroyShaderModule(device.logical_device, shader.module, nullptr);
         }
     }
 }

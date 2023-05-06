@@ -190,9 +190,15 @@ namespace argus {
 
         vkDestroyFence(state.device.logical_device, swapchain.in_flight_fence, nullptr);
 
+        for (const auto &fb : swapchain.framebuffers) {
+            destroy_framebuffer(state.device, fb);
+        }
+
         for (const auto &image_view : swapchain.image_views) {
             destroy_image_view(state.device, image_view);
         }
+
+        destroy_render_pass(state.device, swapchain.composite_render_pass);
 
         vkDestroySwapchainKHR(state.device.logical_device, swapchain.handle, nullptr);
     }

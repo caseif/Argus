@@ -225,6 +225,8 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create graphics pipeline");
         }
 
+        destroy_shaders(state.device, prepared_shaders);
+
         PipelineInfo ret{};
         ret.handle = pipeline;
         ret.layout = pipeline_layout;

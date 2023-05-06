@@ -27,6 +27,9 @@
 #include <vector>
 
 namespace argus {
+    // forward declarations
+    struct LogicalDevice;
+
     struct PreparedShaderSet {
         std::vector<VkPipelineShaderStageCreateInfo> stages;
         ShaderReflectionInfo reflection;
@@ -36,5 +39,5 @@ namespace argus {
 
     PreparedShaderSet prepare_shaders(VkDevice device, const std::vector<std::string> &shader_uids);
 
-    void destroy_shaders(VkDevice device, const PreparedShaderSet &shaders);
+    void destroy_shaders(const LogicalDevice &device, const PreparedShaderSet &shaders);
 }

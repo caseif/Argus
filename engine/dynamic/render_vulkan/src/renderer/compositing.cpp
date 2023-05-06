@@ -242,6 +242,7 @@ namespace argus {
                 destroy_framebuffer(state.device, viewport_state.back_fb);
                 destroy_image_and_image_view(state.device, viewport_state.front_fb_image);
                 destroy_image_and_image_view(state.device, viewport_state.back_fb_image);
+                vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
                 destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
             }
 

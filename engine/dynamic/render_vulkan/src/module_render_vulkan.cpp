@@ -112,6 +112,37 @@ namespace argus {
         return true;
     }
 
+    static void _init_vk_debug_utils(VkInstance inst) {
+        #ifdef _ARGUS_DEBUG_MODE
+        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
+        debug_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+                                 | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+        debug_info.pfnUserCallback = _debug_callback;
+
+        PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT
+                = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(inst,
+                        "vkCreateDebugUtilsMessengerEXT"));
+
+        vkCreateDebugUtilsMessengerEXT(inst, &debug_info, nullptr, &g_vk_debug_messenger);
+        #else
+        UNUSED(_debug_callback);
+        #endif
+    }
+
+    static void _deinit_vk_debug_utils(VkInstance inst) {
+        #ifdef _ARGUS_DEBUG_MODE
+        PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT
+                = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(inst,
+                        "vkDestroyDebugUtilsMessengerEXT"));
+        vkDestroyDebugUtilsMessengerEXT(inst, g_vk_debug_messenger, nullptr);
+        #endif
+    }
+
     static bool _activate_vulkan_backend() {
         if (glfwVulkanSupported() != GLFW_TRUE) {
             return false;
@@ -125,30 +156,13 @@ namespace argus {
         }
         g_vk_instance = vk_inst.value();
 
-        #ifdef _ARGUS_DEBUG_MODE
-        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
-        debug_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
-                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
-                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-                | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-        debug_info.pfnUserCallback = _debug_callback;
-
-        PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT
-                = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(vk_inst.value(),
-                        "vkCreateDebugUtilsMessengerEXT"));
-
-        vkCreateDebugUtilsMessengerEXT(vk_inst.value(), &debug_info, nullptr, &g_vk_debug_messenger);
-        #else
-        UNUSED(_debug_callback);
-        #endif
+        _init_vk_debug_utils(vk_inst.value());
 
         // create hidden window so we can attach a surface and probe for capabilities
         auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
 
         if (window == nullptr) {
+            _deinit_vk_debug_utils(vk_inst.value());
             Logger::default_logger().warn("Failed to probe Vulkan capabilities (glfwCreateWindow failed)");
             return false;
         }
@@ -162,6 +176,7 @@ namespace argus {
         glfwDestroyWindow(window);
 
         if (!vk_device.has_value()) {
+            _deinit_vk_debug_utils(vk_inst.value());
             destroy_vk_instance(g_vk_instance);
             return false;
         }
@@ -250,7 +265,7 @@ namespace argus {
             }
             case LifecycleStage::Deinit: {
                 destroy_vk_device(g_vk_device);
-
+                _deinit_vk_debug_utils(g_vk_instance);
                 destroy_vk_instance(g_vk_instance);
 
                 break;
