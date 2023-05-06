@@ -388,8 +388,7 @@ namespace argus {
     void VulkanRenderer::render(TimeDelta delta) {
         UNUSED(delta);
 
-        static std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> last_print
-                = std::chrono::high_resolution_clock::now();
+        static auto last_print = std::chrono::high_resolution_clock::now();
         static int64_t time_samples = 0;
 
         static std::chrono::nanoseconds rebuild_time;
