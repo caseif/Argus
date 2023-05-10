@@ -175,6 +175,31 @@ namespace argus {
             Logger::default_logger().fatal("Failed to create new viewport state");
         }
 
+        auto &viewport_state = insert_res.first->second;
+
+        VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &viewport_state.rebuild_semaphore)
+            != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create semaphores for viewport");
+        }
+
+        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &viewport_state.draw_semaphore)
+            != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create semaphores for viewport");
+        }
+
+        VkFenceCreateInfo fence_info{};
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = 0;
+        if (vkCreateFence(state.device.logical_device, &fence_info, nullptr, &viewport_state.composite_fence)
+                != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create fences for viewport");
+        }
+
+        viewport_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+
         return insert_res.first->second;
     }
 
@@ -300,7 +325,7 @@ namespace argus {
         }
     }
 
-    static void _rebuild_scene(const Window &window, RendererState &state) {
+    static void _record_scene_rebuild(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
 
         for (auto viewport : canvas.get_viewports_2d()) {
@@ -331,12 +356,21 @@ namespace argus {
             }
         }
 
-        end_oneshot_commands(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE);
+        end_command_buffer(state.device, state.copy_cmd_buf);
+    }
 
-        for (auto &buf : state.texture_bufs_to_free) {
+    static void _submit_scene_rebuild(RendererState &state) {
+        std::vector<VkSemaphore> rebuild_sems;
+        rebuild_sems.resize(state.viewport_states_2d.size());
+        std::transform(state.viewport_states_2d.begin(), state.viewport_states_2d.end(), rebuild_sems.begin(),
+                [] (const auto &kv) { return kv.second.rebuild_semaphore; });
+        submit_command_buffer(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE,
+                {}, {}, rebuild_sems);
+
+        /*for (auto &buf : state.texture_bufs_to_free) {
             free_buffer(buf);
         }
-        state.texture_bufs_to_free.clear();
+        state.texture_bufs_to_free.clear();*/
     }
 
     static uint32_t _get_next_image(const RendererState &state) {
@@ -353,36 +387,89 @@ namespace argus {
         return image_index;
     }
 
-    static void _submit_queues(const RendererState &state) {
-        VkSubmitInfo submit_info{};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    static void _composite_framebuffers(RendererState &state,
+            const std::vector<std::reference_wrapper<AttachedViewport2D>> &viewports, uint32_t sc_image_index) {
+        auto sc_image = state.swapchain.images[sc_image_index];
 
-        VkSemaphore wait_sems[] = { state.swapchain.image_avail_sem };
-        VkSemaphore signal_sems[] = { state.swapchain.render_done_sem };
-        VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        submit_info.waitSemaphoreCount = sizeof(wait_sems) / sizeof(VkSemaphore);
-        submit_info.pWaitSemaphores = wait_sems;
-        submit_info.pWaitDstStageMask = wait_stages;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &state.composite_cmd_buf.handle;
-        submit_info.signalSemaphoreCount = sizeof(signal_sems) / sizeof(VkSemaphore);
-        submit_info.pSignalSemaphores = signal_sems;
+        vkResetCommandBuffer(state.composite_cmd_buf.handle, 0);
 
-        if (vkQueueSubmit(state.device.queues.graphics_family, 1, &submit_info, state.swapchain.in_flight_fence)
-            != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to submit draw command buffer");
+        VkCommandBufferBeginInfo cmd_begin_info{};
+        cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_begin_info.flags = 0;
+        vkBeginCommandBuffer(state.composite_cmd_buf.handle, &cmd_begin_info);
+
+        perform_image_transition(state.composite_cmd_buf, sc_image,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+        auto vk_cmd_buf = state.composite_cmd_buf.handle;
+
+        auto fb_width = state.swapchain.extent.width;
+        auto fb_height = state.swapchain.extent.height;
+
+        VkClearValue clear_val{};
+        clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+
+        VkRenderPassBeginInfo rp_info{};
+        rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        rp_info.framebuffer = state.swapchain.framebuffers[sc_image_index];
+        rp_info.pClearValues = &clear_val;
+        rp_info.clearValueCount = 1;
+        rp_info.renderPass = state.swapchain.composite_render_pass;
+        rp_info.renderArea.extent = { fb_width, fb_height };
+        rp_info.renderArea.offset = { 0, 0 };
+        vkCmdBeginRenderPass(vk_cmd_buf, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, state.composite_pipeline.handle);
+
+        VkDeviceSize offsets[] = { 0, 0 };
+        vkCmdBindVertexBuffers(vk_cmd_buf, 0, 1, &state.composite_vbo.handle, offsets);
+
+        for (auto &viewport : viewports) {
+            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &scene = viewport.get().get_camera().get_scene();
+            auto &scene_state = state.get_scene_state(scene);
+
+            draw_framebuffer_to_swapchain(scene_state, viewport_state);
         }
+
+        vkCmdEndRenderPass(vk_cmd_buf);
+
+        /*perform_image_transition(state.draw_cmd_buf, sc_image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);*/
+
+        vkEndCommandBuffer(state.composite_cmd_buf.handle);
+    }
+
+    static void _submit_composite(const RendererState &state) {
+        std::vector<VkSemaphore> wait_sems;
+        std::vector<VkPipelineStageFlags> wait_stages;
+        wait_sems.reserve(state.viewport_states_2d.size());
+        wait_sems.push_back(state.swapchain.image_avail_sem);
+        wait_stages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        for (const auto &viewport_state : state.viewport_states_2d) {
+            wait_sems.push_back(viewport_state.second.draw_semaphore);
+            wait_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        }
+
+        std::vector<VkSemaphore> signal_sems = { state.swapchain.render_done_sem };
+
+        submit_command_buffer(state.device, state.composite_cmd_buf, state.device.queues.graphics_family,
+                state.swapchain.in_flight_fence, wait_sems, wait_stages, signal_sems);
     }
 
     static void _present_image(const RendererState &state, uint32_t image_index) {
         VkSwapchainKHR swapchains[] = { state.swapchain.handle };
 
-        VkSemaphore signal_sems[] = { state.swapchain.render_done_sem };
+        VkSemaphore wait_sems[] = { state.swapchain.render_done_sem };
 
         VkPresentInfoKHR present_info{};
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         present_info.waitSemaphoreCount = 1;
-        present_info.pWaitSemaphores = signal_sems;
+        present_info.pWaitSemaphores = wait_sems;
         present_info.swapchainCount = 1;
         present_info.pSwapchains = swapchains;
         present_info.pImageIndices = &image_index;
@@ -432,6 +519,14 @@ namespace argus {
         state.copy_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         state.composite_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         Logger::default_logger().debug("Created command buffers for new window");
+
+        /*VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &state.rebuild_semaphore)
+                != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create semaphores for new window");
+        }
+        Logger::default_logger().debug("Created semaphores for new window");*/
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
@@ -487,6 +582,8 @@ namespace argus {
         for (const auto &texture : state.prepared_textures) {
             destroy_texture(state.device, texture.second.value);
         }
+
+        //vkDestroySemaphore(state.device.logical_device, state.rebuild_semaphore, nullptr);
 
         destroy_swapchain(state, state.swapchain);
 
@@ -546,7 +643,8 @@ namespace argus {
         _add_remove_state_objects(window, state);
 
         timer_start = std::chrono::high_resolution_clock::now();
-        _rebuild_scene(window, state);
+        _record_scene_rebuild(window, state);
+        _submit_scene_rebuild(state);
         timer_end = std::chrono::high_resolution_clock::now();
         rebuild_time += (timer_end - timer_start);
 
@@ -567,17 +665,6 @@ namespace argus {
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
 
-        std::vector<VkFence> composite_fences;
-        composite_fences.reserve(viewports.size());
-        for (const auto &viewport : viewports) {
-            auto &viewport_state = state.get_viewport_state(viewport);
-            composite_fences.push_back(viewport_state.composite_fence);
-        }
-
-        vkWaitForFences(state.device.logical_device, uint32_t(composite_fences.size()), composite_fences.data(),
-                VK_TRUE, UINT64_MAX);
-        vkResetFences(state.device.logical_device, uint32_t(composite_fences.size()), composite_fences.data());
-
         timer_end = std::chrono::high_resolution_clock::now();
         draw_time += (timer_end - timer_start);
 
@@ -586,67 +673,19 @@ namespace argus {
         //glClearColor(0.0, 0.0, 0.0, 1.0);
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        auto sc_image_index = _get_next_image(state);
+
         timer_start = std::chrono::high_resolution_clock::now();
 
-        auto image_index = _get_next_image(state);
-        auto sc_image = state.swapchain.images[image_index];
+        _composite_framebuffers(state, viewports, sc_image_index);
 
-        vkResetCommandBuffer(state.composite_cmd_buf.handle, 0);
-
-        VkCommandBufferBeginInfo cmd_begin_info{};
-        cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        cmd_begin_info.flags = 0;
-        vkBeginCommandBuffer(state.composite_cmd_buf.handle, &cmd_begin_info);
-
-        perform_image_transition(state.composite_cmd_buf, sc_image,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-
-        auto vk_cmd_buf = state.composite_cmd_buf.handle;
-
-        auto fb_width = state.swapchain.extent.width;
-        auto fb_height = state.swapchain.extent.height;
-
-        VkClearValue clear_val{};
-        clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
-
-        VkRenderPassBeginInfo rp_info{};
-        rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        rp_info.framebuffer = state.swapchain.framebuffers[image_index];
-        rp_info.pClearValues = &clear_val;
-        rp_info.clearValueCount = 1;
-        rp_info.renderPass = state.swapchain.composite_render_pass;
-        rp_info.renderArea.extent = { fb_width, fb_height };
-        rp_info.renderArea.offset = { 0, 0 };
-        vkCmdBeginRenderPass(vk_cmd_buf, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, state.composite_pipeline.handle);
-
-        VkDeviceSize offsets[] = { 0, 0 };
-        vkCmdBindVertexBuffers(vk_cmd_buf, 0, 1, &state.composite_vbo.handle, offsets);
-
-        for (auto &viewport : viewports) {
-            auto &viewport_state = state.get_viewport_state(viewport);
-            auto &scene = viewport.get().get_camera().get_scene();
-            auto &scene_state = state.get_scene_state(scene);
-
-            draw_framebuffer_to_swapchain(scene_state, viewport_state);
-        }
-
-        vkCmdEndRenderPass(vk_cmd_buf);
-
-        /*perform_image_transition(state.draw_cmd_buf, sc_image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);*/
-
-        vkEndCommandBuffer(state.composite_cmd_buf.handle);
-
-        _submit_queues(state);
+        _submit_composite(state);
         timer_end = std::chrono::high_resolution_clock::now();
         composite_time += (timer_end - timer_start);
-        _present_image(state, image_index);
+
+        _present_image(state, sc_image_index);
+
+        vkQueueWaitIdle(state.device.queues.graphics_family);
 
         time_samples++;
 

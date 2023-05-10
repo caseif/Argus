@@ -68,6 +68,8 @@ namespace argus {
         std::map<std::string, std::string> material_textures;
         std::vector<BufferInfo> texture_bufs_to_free;
 
+        VkSemaphore composite_semaphore;
+
         SceneState &get_scene_state(Scene &scene);
 
         ViewportState &get_viewport_state(AttachedViewport &viewport);

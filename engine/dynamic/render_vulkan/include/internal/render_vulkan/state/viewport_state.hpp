@@ -55,6 +55,9 @@ namespace argus {
 
         BufferInfo ubo;
 
+        VkSemaphore rebuild_semaphore;
+        VkSemaphore draw_semaphore;
+
         std::map<std::string, std::vector<VkDescriptorSet>> material_desc_sets;
         std::vector<VkDescriptorSet> composite_desc_sets;
 

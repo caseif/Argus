@@ -97,20 +97,28 @@ namespace argus {
         vkBeginCommandBuffer(buffer.handle, &begin_info);
     }
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
-            VkFence fence) {
+    void end_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer) {
         UNUSED(device);
 
         vkEndCommandBuffer(buffer.handle);
+    }
+
+    void submit_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
+            VkFence fence, const std::vector<VkSemaphore> &wait_semaphores,
+            std::vector<VkPipelineStageFlags> wait_stages, const std::vector<VkSemaphore> &signal_semaphores) {
+        UNUSED(device);
+
+        assert(wait_semaphores.size() == wait_stages.size());
 
         VkSubmitInfo submit_info{};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &buffer.handle;
+        submit_info.waitSemaphoreCount = uint32_t(wait_semaphores.size());
+        submit_info.pWaitSemaphores = wait_semaphores.data();
+        submit_info.pWaitDstStageMask = wait_stages.data();
+        submit_info.signalSemaphoreCount = uint32_t(signal_semaphores.size());
+        submit_info.pSignalSemaphores = signal_semaphores.data();
         vkQueueSubmit(queue, 1, &submit_info, fence);
-
-        if (fence == VK_NULL_HANDLE) {
-            vkQueueWaitIdle(queue);
-        }
     }
 }

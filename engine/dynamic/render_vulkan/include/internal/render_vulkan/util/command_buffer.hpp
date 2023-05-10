@@ -46,6 +46,9 @@ namespace argus {
 
     void begin_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer);
 
-    void end_oneshot_commands(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
-            VkFence fence);
+    void end_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer);
+
+    void submit_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
+            VkFence fence, const std::vector<VkSemaphore> &wait_semaphores,
+            std::vector<VkPipelineStageFlags> wait_stages, const std::vector<VkSemaphore> &signal_semaphores);
 }
