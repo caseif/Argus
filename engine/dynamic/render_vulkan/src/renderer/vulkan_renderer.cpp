@@ -404,8 +404,6 @@ namespace argus {
 
     static void _composite_framebuffers(RendererState &state,
             const std::vector<std::reference_wrapper<AttachedViewport2D>> &viewports, uint32_t sc_image_index) {
-        auto sc_image = state.swapchain.images[sc_image_index];
-
         CommandBufferInfo *cmd_buf;
 
         auto cb_it = state.composite_cmd_bufs.find(sc_image_index);
@@ -429,11 +427,6 @@ namespace argus {
         cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         cmd_begin_info.flags = 0;
         vkBeginCommandBuffer(cmd_buf->handle, &cmd_begin_info);
-
-        perform_image_transition(*cmd_buf, sc_image,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
         auto vk_cmd_buf = cmd_buf->handle;
 
@@ -467,11 +460,6 @@ namespace argus {
         }
 
         vkCmdEndRenderPass(vk_cmd_buf);
-
-        /*perform_image_transition(state.draw_cmd_buf, sc_image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);*/
 
         vkEndCommandBuffer(cmd_buf->handle);
     }

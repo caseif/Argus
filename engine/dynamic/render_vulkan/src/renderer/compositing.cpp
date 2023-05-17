@@ -452,28 +452,6 @@ namespace argus {
                 state.composite_pipeline.layout, 0, 1, &cur_ds, 0, nullptr);
 
         vkCmdDraw(vk_cmd_buf, 6, 1, 0, 0);
-
-        /*perform_image_transition(state.draw_cmd_buf, viewport_state.front_fb_image,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_MEMORY_WRITE_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);*/
-
-        //glViewport(
-        //        viewport_px.left,
-        //        viewport_y,
-        //        viewport_width_px,
-        //        viewport_height_px
-        //);
-
-        /*glBindVertexArray(state.frame_vao);
-        glUseProgram(state.frame_program.value().handle);
-        glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glUseProgram(0);
-        glBindVertexArray(0);*/
     }
 
     void setup_framebuffer(RendererState &state) {
