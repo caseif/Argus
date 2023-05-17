@@ -325,7 +325,7 @@ namespace argus {
         }
     }
 
-    static void _record_scene_rebuild(const Window &window, RendererState &state) {
+    static void _recompute_viewports(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
 
         for (auto viewport : canvas.get_viewports_2d()) {
@@ -338,13 +338,25 @@ namespace argus {
                         window.peek_resolution(), viewport_state.view_matrix);
             }
         }
+    }
 
-        begin_oneshot_commands(state.device, state.copy_cmd_buf);
+    static void _compile_scenes(const Window &window, RendererState &state) {
+        auto &canvas = window.get_canvas();
 
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
             SceneState &scene_state = state.get_scene_state(*scene);
 
             compile_scene_2d(reinterpret_cast<Scene2D &>(*scene), reinterpret_cast<Scene2DState &>(scene_state));
+        }
+    }
+
+    static void _record_scene_rebuild(const Window &window, RendererState &state) {
+        auto &canvas = window.get_canvas();
+
+        begin_oneshot_commands(state.device, state.copy_cmd_buf);
+
+        for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
+            SceneState &scene_state = state.get_scene_state(*scene);
 
             fill_buckets(scene_state);
 
@@ -617,6 +629,7 @@ namespace argus {
         static auto last_print = std::chrono::high_resolution_clock::now();
         static int64_t time_samples = 0;
 
+        static std::chrono::nanoseconds compile_time;
         static std::chrono::nanoseconds rebuild_time;
         static std::chrono::nanoseconds draw_time;
         static std::chrono::nanoseconds composite_time;
@@ -625,12 +638,13 @@ namespace argus {
         std::chrono::high_resolution_clock::time_point timer_end;
 
         if (std::chrono::high_resolution_clock::now() - last_print >= 10s && time_samples > 0) {
-            Logger::default_logger().debug("Rebuild + draw + composite took %ld + %ld + %ld ns\n",
+            Logger::default_logger().debug("Compile + rebuild + draw + composite took %ld + %ld + %ld + %ld ns\n",
+                    compile_time.count() / time_samples,
                     rebuild_time.count() / time_samples,
                     draw_time.count() / time_samples,
                     composite_time.count() / time_samples);
 
-            rebuild_time = draw_time = composite_time = 0ns;
+            compile_time = rebuild_time = draw_time = composite_time = 0ns;
             time_samples = 0;
             last_print = std::chrono::high_resolution_clock::now();
         }
@@ -641,6 +655,14 @@ namespace argus {
         }
 
         _add_remove_state_objects(window, state);
+
+        timer_start = std::chrono::high_resolution_clock::now();
+        _recompute_viewports(window, state);
+        _compile_scenes(window, state);
+        timer_end = std::chrono::high_resolution_clock::now();
+        compile_time += (timer_end - timer_start);
+
+        vkQueueWaitIdle(state.device.queues.graphics_family);
 
         timer_start = std::chrono::high_resolution_clock::now();
         _record_scene_rebuild(window, state);
@@ -684,8 +706,6 @@ namespace argus {
         composite_time += (timer_end - timer_start);
 
         _present_image(state, sc_image_index);
-
-        vkQueueWaitIdle(state.device.queues.graphics_family);
 
         time_samples++;
 
