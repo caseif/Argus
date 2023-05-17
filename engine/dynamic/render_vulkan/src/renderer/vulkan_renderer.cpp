@@ -273,6 +273,7 @@ namespace argus {
             if (vp_it != state.viewport_states_2d.end()) {
                 vp_state = &vp_it->second;
             } else {
+                state.dirty_viewports = true;
                 vp_state = &_create_viewport_2d_state(state, viewport.get());
             }
 
@@ -304,6 +305,8 @@ namespace argus {
             if (!it->second.visited) {
                 _destroy_viewport(state, it->second);
                 it = state.viewport_states_2d.erase(it);
+
+                state.dirty_viewports = true;
             } else {
                 it->second.visited = false;
                 it++;
@@ -403,19 +406,36 @@ namespace argus {
             const std::vector<std::reference_wrapper<AttachedViewport2D>> &viewports, uint32_t sc_image_index) {
         auto sc_image = state.swapchain.images[sc_image_index];
 
-        vkResetCommandBuffer(state.composite_cmd_buf.handle, 0);
+        CommandBufferInfo *cmd_buf;
+
+        auto cb_it = state.composite_cmd_bufs.find(sc_image_index);
+        if (cb_it != state.composite_cmd_bufs.cend()) {
+            if (!cb_it->second.second) {
+                return;
+            }
+
+            cb_it->second.second = false;
+
+            cmd_buf = &cb_it->second.first;
+        } else {
+            auto new_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+            cmd_buf = &state.composite_cmd_bufs.insert({ sc_image_index, std::make_pair(new_cmd_buf, false) })
+                    .first->second.first;
+        }
+
+        vkResetCommandBuffer(cmd_buf->handle, 0);
 
         VkCommandBufferBeginInfo cmd_begin_info{};
         cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         cmd_begin_info.flags = 0;
-        vkBeginCommandBuffer(state.composite_cmd_buf.handle, &cmd_begin_info);
+        vkBeginCommandBuffer(cmd_buf->handle, &cmd_begin_info);
 
-        perform_image_transition(state.composite_cmd_buf, sc_image,
+        perform_image_transition(*cmd_buf, sc_image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-        auto vk_cmd_buf = state.composite_cmd_buf.handle;
+        auto vk_cmd_buf = cmd_buf->handle;
 
         auto fb_width = state.swapchain.extent.width;
         auto fb_height = state.swapchain.extent.height;
@@ -443,7 +463,7 @@ namespace argus {
             auto &scene = viewport.get().get_camera().get_scene();
             auto &scene_state = state.get_scene_state(scene);
 
-            draw_framebuffer_to_swapchain(scene_state, viewport_state);
+            draw_framebuffer_to_swapchain(scene_state, viewport_state, sc_image_index);
         }
 
         vkCmdEndRenderPass(vk_cmd_buf);
@@ -453,10 +473,10 @@ namespace argus {
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);*/
 
-        vkEndCommandBuffer(state.composite_cmd_buf.handle);
+        vkEndCommandBuffer(cmd_buf->handle);
     }
 
-    static void _submit_composite(const RendererState &state) {
+    static void _submit_composite(const RendererState &state, uint32_t sc_image_index) {
         std::vector<VkSemaphore> wait_sems;
         std::vector<VkPipelineStageFlags> wait_stages;
         wait_sems.reserve(state.viewport_states_2d.size());
@@ -469,8 +489,9 @@ namespace argus {
 
         std::vector<VkSemaphore> signal_sems = { state.swapchain.render_done_sem };
 
-        submit_command_buffer(state.device, state.composite_cmd_buf, state.device.queues.graphics_family,
-                state.swapchain.in_flight_fence, wait_sems, wait_stages, signal_sems);
+        submit_command_buffer(state.device, state.composite_cmd_bufs.find(sc_image_index)->second.first,
+                state.device.queues.graphics_family, state.swapchain.in_flight_fence,
+                wait_sems, wait_stages, signal_sems);
     }
 
     static void _present_image(const RendererState &state, uint32_t image_index) {
@@ -529,7 +550,6 @@ namespace argus {
         Logger::default_logger().debug("Created descriptor pool for new window");
 
         state.copy_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
-        state.composite_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         Logger::default_logger().debug("Created command buffers for new window");
 
         /*VkSemaphoreCreateInfo sem_info{};
@@ -559,9 +579,12 @@ namespace argus {
             free_command_buffer(state.device, state.copy_cmd_buf);
         }
 
-        if (state.composite_cmd_buf.handle != VK_NULL_HANDLE) {
-            free_command_buffer(state.device, state.composite_cmd_buf);
+        for (const auto &comp_cmd_buf : state.composite_cmd_bufs) {
+            if (comp_cmd_buf.second.first.handle != VK_NULL_HANDLE) {
+                free_command_buffer(state.device, comp_cmd_buf.second.first);
+            }
         }
+        state.composite_cmd_bufs.clear();
 
         if (state.composite_vbo.handle != VK_NULL_HANDLE) {
             free_buffer(state.composite_vbo);
@@ -699,9 +722,16 @@ namespace argus {
 
         timer_start = std::chrono::high_resolution_clock::now();
 
+        if (state.dirty_viewports || resolution.dirty) {
+            for (auto &cmd_buf : state.composite_cmd_bufs) {
+                cmd_buf.second.second = true;
+            }
+            state.dirty_viewports = false;
+        }
+
         _composite_framebuffers(state, viewports, sc_image_index);
 
-        _submit_composite(state);
+        _submit_composite(state, sc_image_index);
         timer_end = std::chrono::high_resolution_clock::now();
         composite_time += (timer_end - timer_start);
 

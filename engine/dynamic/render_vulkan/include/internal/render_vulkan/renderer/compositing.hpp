@@ -32,7 +32,8 @@ namespace argus {
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution);
 
-    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state);
+    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state,
+            uint32_t sc_image_index);
 
     void setup_framebuffer(RendererState &state);
 }

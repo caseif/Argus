@@ -419,7 +419,8 @@ namespace argus {
                 { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT }, { viewport_state.draw_semaphore });
     }
 
-    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state) {
+    void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state,
+            uint32_t sc_image_index) {
         auto &state = scene_state.parent_state;
 
         auto resolution = state.swapchain.resolution;
@@ -430,7 +431,7 @@ namespace argus {
 
         std::vector<VkWriteDescriptorSet> ds_writes;
 
-        auto vk_cmd_buf = state.composite_cmd_buf.handle;
+        auto vk_cmd_buf = state.composite_cmd_bufs.find(sc_image_index)->second.first.handle;
 
         auto fb_width = state.swapchain.resolution.x;
         auto fb_height = state.swapchain.resolution.y;
