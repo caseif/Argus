@@ -105,7 +105,8 @@ namespace argus {
 
     void submit_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
             VkFence fence, const std::vector<VkSemaphore> &wait_semaphores,
-            std::vector<VkPipelineStageFlags> wait_stages, const std::vector<VkSemaphore> &signal_semaphores) {
+            const std::vector<VkPipelineStageFlags> &wait_stages,
+            const std::vector<VkSemaphore> &signal_semaphores) {
         UNUSED(device);
 
         assert(wait_semaphores.size() == wait_stages.size());
@@ -119,6 +120,19 @@ namespace argus {
         submit_info.pWaitDstStageMask = wait_stages.data();
         submit_info.signalSemaphoreCount = uint32_t(signal_semaphores.size());
         submit_info.pSignalSemaphores = signal_semaphores.data();
-        vkQueueSubmit(queue, 1, &submit_info, fence);
+        if (vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to submit command queues");
+        }
+    }
+
+    void queue_command_buffer_submit(RendererState &state, const CommandBufferInfo &buffer, VkQueue queue,
+            VkFence fence, std::vector<VkSemaphore> wait_semaphores, std::vector<VkPipelineStageFlags> wait_stages,
+            std::vector<VkSemaphore> signal_semaphores) {
+        {
+            std::lock_guard<std::mutex> lock(state.submit_mutex);
+            state.submit_bufs.push_back(CommandBufferSubmitParams { false, 0, &buffer, queue, fence,
+                    std::move(wait_semaphores), std::move(wait_stages), std::move(signal_semaphores) });
+        }
+        state.submit_sem.notify();
     }
 }

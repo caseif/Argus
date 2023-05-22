@@ -197,7 +197,7 @@ namespace argus {
 
     std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface) {
         VkPhysicalDevice phys_dev;
-        QueueFamilyIndices qf_indices;
+        QueueFamilyIndices qf_indices{};
         std::tie(phys_dev, qf_indices) = _select_physical_device(instance, probe_surface);
         VkPhysicalDeviceProperties phys_dev_props;
         vkGetPhysicalDeviceProperties(phys_dev, &phys_dev_props);
@@ -255,10 +255,13 @@ namespace argus {
         vkGetDeviceQueue(dev, qf_indices.present_family, 0, &queues.present_family);
         vkGetDeviceQueue(dev, qf_indices.transfer_family, 0, &queues.transfer_family);
 
-        return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices, queues });
+        auto *queue_mutexes = new QueueMutexes();
+
+        return std::make_optional(LogicalDevice { phys_dev, dev, qf_indices, queues, queue_mutexes });
     }
 
     void destroy_vk_device(LogicalDevice device) {
+        delete device.queue_mutexes;
         vkDestroyDevice(device.logical_device, nullptr);
     }
 }

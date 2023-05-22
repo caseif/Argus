@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/refcountable.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 #include "argus/resman.hpp"
 
@@ -34,9 +35,13 @@
 #include "vulkan/vulkan.h"
 
 #include <map>
+#include <mutex>
+#include <queue>
 #include <string>
 
 namespace argus {
+    struct CommandBufferSubmitParams;
+
     struct RendererState {
         LogicalDevice device;
 
@@ -62,7 +67,7 @@ namespace argus {
         std::vector<SceneState *> all_scene_states;
         std::map<const AttachedViewport2D *, Viewport2DState> viewport_states_2d;
 
-         bool dirty_viewports;
+        bool dirty_viewports;
 
         std::map<std::string, const Resource*> material_resources;
         std::map<std::string, PipelineInfo> material_pipelines;
@@ -72,8 +77,30 @@ namespace argus {
 
         VkSemaphore composite_semaphore;
 
+        Thread *submit_thread;
+        std::deque<CommandBufferSubmitParams> submit_bufs;
+        std::mutex submit_mutex;
+        Semaphore submit_sem;
+        bool submit_halt;
+        Semaphore submit_halt_acked;
+
+        Semaphore present_sem;
+
         SceneState &get_scene_state(Scene &scene);
 
         ViewportState &get_viewport_state(AttachedViewport &viewport);
+    };
+
+    struct CommandBufferSubmitParams {
+        // ugly hack to synchronize present with command buffers
+        bool is_present;
+        uint32_t present_image_index;
+
+        const CommandBufferInfo *buffer;
+        VkQueue queue;
+        VkFence fence;
+        std::vector<VkSemaphore> wait_sems;
+        std::vector<VkPipelineStageFlags> wait_stages;
+        std::vector<VkSemaphore> signal_sems;
     };
 }

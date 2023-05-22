@@ -414,9 +414,10 @@ namespace argus {
         }*/
         end_command_buffer(state.device, viewport_state.command_buf);
         vkResetFences(state.device.logical_device, 1, &viewport_state.composite_fence);
-        submit_command_buffer(state.device, viewport_state.command_buf, state.device.queues.graphics_family,
-                viewport_state.composite_fence, { viewport_state.rebuild_semaphore },
-                { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT }, { viewport_state.draw_semaphore });
+        queue_command_buffer_submit(state, viewport_state.command_buf,
+                state.device.queues.graphics_family, viewport_state.composite_fence,
+                { viewport_state.rebuild_semaphore }, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT },
+                { viewport_state.draw_semaphore });
     }
 
     void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state,

@@ -50,5 +50,10 @@ namespace argus {
 
     void submit_command_buffer(const LogicalDevice &device, const CommandBufferInfo &buffer, VkQueue queue,
             VkFence fence, const std::vector<VkSemaphore> &wait_semaphores,
-            std::vector<VkPipelineStageFlags> wait_stages, const std::vector<VkSemaphore> &signal_semaphores);
+            const std::vector<VkPipelineStageFlags> &wait_stages,
+            const std::vector<VkSemaphore> &signal_semaphores);
+
+    void queue_command_buffer_submit(RendererState &state, const CommandBufferInfo &buffer,
+            VkQueue queue, VkFence fence, std::vector<VkSemaphore> wait_semaphores,
+            std::vector<VkPipelineStageFlags> wait_stages, std::vector<VkSemaphore> signal_semaphores);
 }

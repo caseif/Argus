@@ -16,24 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include "argus/lowlevel/threading/semaphore.hpp"
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-        QueueMutexes *queue_mutexes;
-    };
+    Semaphore::Semaphore(void) : signaled(false) {
+    }
 
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
+    void Semaphore::notify(void) {
+        std::unique_lock<std::mutex> lock(mtx);
+        signaled = true;
+        cv.notify_one();
+    }
 
-    void destroy_vk_device(LogicalDevice device);
+    void Semaphore::wait(void) {
+        std::unique_lock<std::mutex> lock(mtx);
+        while (!signaled) {
+            cv.wait(lock);
+        }
+        signaled = false;
+    }
 }

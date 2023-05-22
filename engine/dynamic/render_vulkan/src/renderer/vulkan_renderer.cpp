@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/threading.hpp"
 
 #include "argus/core/engine_config.hpp"
 #include "argus/core/screen_space.hpp"
@@ -51,6 +52,13 @@
 #pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 #include "internal/render_vulkan/util/memory.hpp"
+
+#include <algorithm>
+#include <mutex>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace argus {
     using namespace std::chrono_literals;
@@ -379,8 +387,10 @@ namespace argus {
         rebuild_sems.resize(state.viewport_states_2d.size());
         std::transform(state.viewport_states_2d.begin(), state.viewport_states_2d.end(), rebuild_sems.begin(),
                 [] (const auto &kv) { return kv.second.rebuild_semaphore; });
-        submit_command_buffer(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE,
-                {}, {}, rebuild_sems);
+        /*submit_command_buffer(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE,
+                {}, {}, rebuild_sems);*/
+        queue_command_buffer_submit(state, state.copy_cmd_buf, state.device.queues.graphics_family,
+                VK_NULL_HANDLE, {}, {}, rebuild_sems);
 
         /*for (auto &buf : state.texture_bufs_to_free) {
             free_buffer(buf);
@@ -464,7 +474,7 @@ namespace argus {
         vkEndCommandBuffer(cmd_buf->handle);
     }
 
-    static void _submit_composite(const RendererState &state, uint32_t sc_image_index) {
+    static void _submit_composite(RendererState &state, uint32_t sc_image_index) {
         std::vector<VkSemaphore> wait_sems;
         std::vector<VkPipelineStageFlags> wait_stages;
         wait_sems.reserve(state.viewport_states_2d.size());
@@ -477,26 +487,18 @@ namespace argus {
 
         std::vector<VkSemaphore> signal_sems = { state.swapchain.render_done_sem };
 
-        submit_command_buffer(state.device, state.composite_cmd_bufs.find(sc_image_index)->second.first,
+        queue_command_buffer_submit(state, state.composite_cmd_bufs.find(sc_image_index)->second.first,
                 state.device.queues.graphics_family, state.swapchain.in_flight_fence,
-                wait_sems, wait_stages, signal_sems);
+                wait_sems, wait_stages, { state.swapchain.render_done_sem });
+        /*submit_command_buffer(state.device, state.composite_cmd_bufs.find(sc_image_index)->second.first,
+                state.device.queues.graphics_family, state.swapchain.in_flight_fence,
+                wait_sems, wait_stages, signal_sems);*/
     }
 
-    static void _present_image(const RendererState &state, uint32_t image_index) {
-        VkSwapchainKHR swapchains[] = { state.swapchain.handle };
-
-        VkSemaphore wait_sems[] = { state.swapchain.render_done_sem };
-
-        VkPresentInfoKHR present_info{};
-        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        present_info.waitSemaphoreCount = 1;
-        present_info.pWaitSemaphores = wait_sems;
-        present_info.swapchainCount = 1;
-        present_info.pSwapchains = swapchains;
-        present_info.pImageIndices = &image_index;
-        present_info.pResults = nullptr;
-
-        vkQueuePresentKHR(state.device.queues.present_family, &present_info);
+    static void _present_image(RendererState &state, uint32_t image_index) {
+        state.submit_bufs.push_back(CommandBufferSubmitParams { true, image_index, nullptr, VK_NULL_HANDLE,
+                VK_NULL_HANDLE, {}, {}, {} });
+        state.submit_sem.notify();
     }
 
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
@@ -511,6 +513,46 @@ namespace argus {
             // no-op for now
         } else if (mt == RESOURCE_TYPE_MATERIAL) {
             _deinit_material(state, event.prototype.uid);
+        }
+    }
+
+    static void *_submit_queues_loop(void *state_ptr) {
+        auto &state = *reinterpret_cast<RendererState *>(state_ptr);
+
+        while (true) {
+            if (state.submit_halt) {
+                state.submit_halt_acked.notify();
+                return nullptr;
+            }
+
+            state.submit_sem.wait();
+
+            std::lock_guard<std::mutex> submit_lock(state.submit_mutex);
+            std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
+
+            while (!state.submit_bufs.empty()) {
+                const auto &buf = state.submit_bufs.front();
+
+                if (buf.is_present) {
+                    VkPresentInfoKHR present_info{};
+                    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+                    present_info.waitSemaphoreCount = 1;
+                    present_info.pWaitSemaphores = &state.swapchain.render_done_sem;
+                    present_info.swapchainCount = 1;
+                    present_info.pSwapchains = &state.swapchain.handle;
+                    present_info.pImageIndices = &buf.present_image_index;
+                    present_info.pResults = nullptr;
+
+                    vkQueuePresentKHR(state.device.queues.present_family, &present_info);
+
+                    state.present_sem.notify();
+                } else {
+                    submit_command_buffer(state.device, *buf.buffer, buf.queue, buf.fence,
+                            buf.wait_sems, buf.wait_stages, buf.signal_sems);
+                }
+
+                state.submit_bufs.pop_front();
+            }
         }
     }
 
@@ -550,10 +592,19 @@ namespace argus {
 
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
+
+        state.submit_thread = &Thread::create(_submit_queues_loop, &state);
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
-        vkQueueWaitIdle(state.device.queues.graphics_family);
+        state.submit_halt = true;
+        state.submit_sem.notify();
+        state.submit_halt_acked.wait();
+        {
+            state.present_sem.wait();
+            std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
+            vkQueueWaitIdle(state.device.queues.graphics_family);
+        }
 
         for (auto &viewport_state : state.viewport_states_2d) {
             _destroy_viewport(state, viewport_state.second);
@@ -606,8 +657,6 @@ namespace argus {
             destroy_texture(state.device, texture.second.value);
         }
 
-        //vkDestroySemaphore(state.device.logical_device, state.rebuild_semaphore, nullptr);
-
         destroy_swapchain(state, state.swapchain);
 
         vkDestroySurfaceKHR(g_vk_instance, state.surface, nullptr);
@@ -630,6 +679,8 @@ namespace argus {
         state.fb_render_pass = create_render_pass(this->state.device, this->state.swapchain.image_format,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         Logger::default_logger().debug("Created framebuffer render pass for new window");
+
+        state.present_sem.notify();
 
         is_initted = true;
     }
@@ -673,7 +724,11 @@ namespace argus {
         timer_end = std::chrono::high_resolution_clock::now();
         compile_time += (timer_end - timer_start);
 
-        vkQueueWaitIdle(state.device.queues.graphics_family);
+        {
+            state.present_sem.wait();
+            std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
+            vkQueueWaitIdle(state.device.queues.graphics_family);
+        }
 
         timer_start = std::chrono::high_resolution_clock::now();
         _record_scene_rebuild(window, state);

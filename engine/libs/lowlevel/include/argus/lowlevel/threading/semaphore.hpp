@@ -18,22 +18,21 @@
 
 #pragma once
 
-#include "internal/render_vulkan/setup/queues.hpp"
-
-#include "vulkan/vulkan.h"
-
-#include <optional>
+#include <condition_variable>
+#include <mutex>
 
 namespace argus {
-    struct LogicalDevice {
-        VkPhysicalDevice physical_device;
-        VkDevice logical_device;
-        QueueFamilyIndices queue_indices;
-        QueueFamilies queues;
-        QueueMutexes *queue_mutexes;
+    class Semaphore {
+      private:
+        std::mutex mtx;
+        std::condition_variable cv;
+
+      public:
+        bool signaled;
+        Semaphore(void);
+
+        void notify(void);
+
+        void wait(void);
     };
-
-    std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface);
-
-    void destroy_vk_device(LogicalDevice device);
 }

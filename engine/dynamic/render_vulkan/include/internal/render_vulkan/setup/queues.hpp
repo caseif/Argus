@@ -20,6 +20,10 @@
 
 #include "vulkan/vulkan.h"
 
+#include <mutex>
+
+#include <cstdint>
+
 namespace argus {
     struct QueueFamilyIndices {
         uint32_t graphics_family;
@@ -31,5 +35,11 @@ namespace argus {
         VkQueue graphics_family;
         VkQueue present_family;
         VkQueue transfer_family;
+    };
+
+    struct QueueMutexes {
+        std::mutex graphics_family;
+        std::mutex present_family;
+        std::mutex transfer_family;
     };
 }

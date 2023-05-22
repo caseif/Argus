@@ -54,7 +54,10 @@ namespace argus {
         image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         VkImage image;
-        vkCreateImage(device.logical_device, &image_info, nullptr, &image);
+        {
+            std::lock_guard<std::mutex> queue_lock(device.queue_mutexes->graphics_family);
+            vkCreateImage(device.logical_device, &image_info, nullptr, &image);
+        }
 
         VkMemoryRequirements mem_reqs;
         vkGetImageMemoryRequirements(device.logical_device, image, &mem_reqs);
