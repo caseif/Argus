@@ -25,6 +25,7 @@
 
 #include "argus/render/common/attached_viewport.hpp"
 
+#include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 #include "internal/render_vulkan/state/scene_state.hpp"
 #include "internal/render_vulkan/state/viewport_state.hpp"
@@ -34,6 +35,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include <deque>
 #include <map>
 #include <mutex>
 #include <queue>
