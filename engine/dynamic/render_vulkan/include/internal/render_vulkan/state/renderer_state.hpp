@@ -53,15 +53,17 @@ namespace argus {
         SwapchainInfo swapchain;
 
         PipelineInfo composite_pipeline{};
-        BufferInfo composite_vbo;
+        BufferInfo composite_vbo{};
 
         VkCommandPool graphics_command_pool;
         VkDescriptorPool desc_pool;
 
         VkRenderPass fb_render_pass;
 
-        CommandBufferInfo copy_cmd_buf{};
-        std::map<uint32_t, std::pair<CommandBufferInfo, bool>> composite_cmd_bufs{};
+        uint32_t cur_frame;
+
+        CommandBufferInfo copy_cmd_buf[MAX_FRAMES_IN_FLIGHT];
+        std::map<uint32_t, std::pair<CommandBufferInfo, bool>> composite_cmd_bufs;
 
         BufferInfo global_ubo{};
 
@@ -82,11 +84,12 @@ namespace argus {
         Thread *submit_thread;
         std::deque<CommandBufferSubmitParams> submit_bufs;
         std::mutex submit_mutex;
-        Semaphore submit_sem;
+        Semaphore queued_submit_sem;
         bool submit_halt;
         Semaphore submit_halt_acked;
 
-        Semaphore present_sem;
+        Semaphore present_sem[MAX_FRAMES_IN_FLIGHT];
+        Semaphore in_flight_sem[MAX_FRAMES_IN_FLIGHT];
 
         SceneState &get_scene_state(Scene &scene);
 
@@ -98,11 +101,13 @@ namespace argus {
         bool is_present;
         uint32_t present_image_index;
 
+        uint32_t cur_frame;
         const CommandBufferInfo *buffer;
         VkQueue queue;
         VkFence fence;
         std::vector<VkSemaphore> wait_sems;
         std::vector<VkPipelineStageFlags> wait_stages;
         std::vector<VkSemaphore> signal_sems;
+        Semaphore *submit_sem;
     };
 }

@@ -23,8 +23,10 @@
 #include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/common/attached_viewport.hpp"
 
+#include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/util/buffer.hpp"
 #include "internal/render_vulkan/util/command_buffer.hpp"
+#include "internal/render_vulkan/util/framebuffer.hpp"
 #include "internal/render_vulkan/util/image.hpp"
 #include "internal/render_vulkan/util/pipeline.hpp"
 
@@ -41,25 +43,25 @@ namespace argus {
         bool visited;
 
         Matrix4 view_matrix;
-        bool view_matrix_dirty;
 
-        CommandBufferInfo command_buf;
+        struct PerFrameData {
+            bool view_matrix_dirty;
 
-        VkFence composite_fence;
+            CommandBufferInfo command_buf;
 
-        ImageInfo front_fb_image;
-        ImageInfo back_fb_image;
-        VkFramebuffer front_fb;
-        VkFramebuffer back_fb;
-        VkSampler front_fb_sampler;
+            VkFence composite_fence;
 
-        BufferInfo ubo;
+            FramebufferInfo front_fb;
+            FramebufferInfo back_fb;
 
-        VkSemaphore rebuild_semaphore;
-        VkSemaphore draw_semaphore;
+            BufferInfo ubo;
 
-        std::map<std::string, std::vector<VkDescriptorSet>> material_desc_sets;
-        std::vector<VkDescriptorSet> composite_desc_sets;
+            VkSemaphore rebuild_semaphore;
+            VkSemaphore draw_semaphore;
+
+            std::map<std::string, std::vector<VkDescriptorSet>> material_desc_sets;
+            std::vector<VkDescriptorSet> composite_desc_sets;
+        } per_frame[MAX_FRAMES_IN_FLIGHT];
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
 

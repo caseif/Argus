@@ -18,7 +18,11 @@
 
 #pragma once
 
+#include "argus/lowlevel/threading.hpp"
+
 #include "argus/wm/window.hpp"
+
+#include "internal/render_vulkan/defines.hpp"
 
 #include "vulkan/vulkan.h"
 
@@ -45,9 +49,9 @@ namespace argus {
         VkExtent2D extent;
         VkRenderPass composite_render_pass;
 
-        VkSemaphore image_avail_sem;
-        VkSemaphore render_done_sem;
-        VkFence in_flight_fence;
+        VkSemaphore image_avail_sem[MAX_FRAMES_IN_FLIGHT];
+        VkSemaphore render_done_sem[MAX_FRAMES_IN_FLIGHT];
+        VkFence in_flight_fence[MAX_FRAMES_IN_FLIGHT];
     };
 
     SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR probe_surface);

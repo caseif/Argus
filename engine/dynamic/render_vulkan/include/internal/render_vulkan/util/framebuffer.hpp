@@ -18,13 +18,24 @@
 
 #pragma once
 
-#include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/util/image.hpp"
 #include "internal/render_vulkan/util/pipeline.hpp"
 
 #include "vulkan/vulkan.h"
 
 namespace argus {
+    struct FramebufferInfo {
+        VkFramebuffer handle;
+        ImageInfo image;
+        VkSampler sampler;
+
+        FramebufferInfo() :
+            handle(VK_NULL_HANDLE),
+            image({}),
+            sampler(VK_NULL_HANDLE) {
+        }
+    };
+
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
             const std::vector<VkImageView> &image_views, Vector2u size);
 

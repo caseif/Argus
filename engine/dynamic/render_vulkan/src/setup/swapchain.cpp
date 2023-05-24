@@ -28,6 +28,7 @@
 #include "internal/render_vulkan/util/render_pass.hpp"
 
 #include <algorithm>
+#include <mutex>
 
 #include <cstdint>
 
@@ -156,25 +157,29 @@ namespace argus {
             sc_info.framebuffers.push_back(framebuffer);
         }
 
-        VkSemaphoreCreateInfo sem_info{};
-        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        if (vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.image_avail_sem) != VK_SUCCESS
-                || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem)
-                        != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create swapchain semaphores");
-        }
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            VkSemaphoreCreateInfo sem_info{};
+            sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            if (vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.image_avail_sem[i]) != VK_SUCCESS
+                || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem[i])
+                   != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create swapchain semaphores");
+            }
 
-        VkFenceCreateInfo fence_info{};
-        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        if (vkCreateFence(device.logical_device, &fence_info, nullptr, &sc_info.in_flight_fence) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create swapchain fences");
+            VkFenceCreateInfo fence_info{};
+            fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+            if (vkCreateFence(device.logical_device, &fence_info, nullptr, &sc_info.in_flight_fence[i]) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create swapchain fences");
+            }
         }
 
         return sc_info;
     }
 
     void recreate_swapchain(const RendererState &state, const Vector2u &new_resolution, SwapchainInfo &swapchain) {
+        std::lock_guard<std::mutex> lock(state.device.queue_mutexes->graphics_family);
+
         vkDeviceWaitIdle(state.device.logical_device);
 
         destroy_swapchain(state, swapchain);
@@ -183,12 +188,14 @@ namespace argus {
     }
 
     void destroy_swapchain(const RendererState &state, const SwapchainInfo &swapchain) {
-        vkWaitForFences(state.device.logical_device, 1, &swapchain.in_flight_fence, VK_TRUE, UINT64_MAX);
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vkWaitForFences(state.device.logical_device, 1, &swapchain.in_flight_fence[i], VK_TRUE, UINT64_MAX);
 
-        vkDestroySemaphore(state.device.logical_device, swapchain.image_avail_sem, nullptr);
-        vkDestroySemaphore(state.device.logical_device, swapchain.render_done_sem, nullptr);
+            vkDestroySemaphore(state.device.logical_device, swapchain.image_avail_sem[i], nullptr);
+            vkDestroySemaphore(state.device.logical_device, swapchain.render_done_sem[i], nullptr);
 
-        vkDestroyFence(state.device.logical_device, swapchain.in_flight_fence, nullptr);
+            vkDestroyFence(state.device.logical_device, swapchain.in_flight_fence[i], nullptr);
+        }
 
         for (const auto &fb : swapchain.framebuffers) {
             destroy_framebuffer(state.device, fb);

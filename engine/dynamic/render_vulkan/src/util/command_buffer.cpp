@@ -127,12 +127,13 @@ namespace argus {
 
     void queue_command_buffer_submit(RendererState &state, const CommandBufferInfo &buffer, VkQueue queue,
             VkFence fence, std::vector<VkSemaphore> wait_semaphores, std::vector<VkPipelineStageFlags> wait_stages,
-            std::vector<VkSemaphore> signal_semaphores) {
+            std::vector<VkSemaphore> signal_semaphores, Semaphore *submit_semaphore) {
         {
             std::lock_guard<std::mutex> lock(state.submit_mutex);
-            state.submit_bufs.push_back(CommandBufferSubmitParams { false, 0, &buffer, queue, fence,
-                    std::move(wait_semaphores), std::move(wait_stages), std::move(signal_semaphores) });
+            state.submit_bufs.push_back(CommandBufferSubmitParams { false, 0, state.cur_frame, &buffer, queue, fence,
+                    std::move(wait_semaphores), std::move(wait_stages), std::move(signal_semaphores),
+                    submit_semaphore });
         }
-        state.submit_sem.notify();
+        state.queued_submit_sem.notify();
     }
 }

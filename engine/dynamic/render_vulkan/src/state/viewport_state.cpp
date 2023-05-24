@@ -25,16 +25,9 @@ namespace argus {
     ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
             parent_state(parent_state),
             viewport(viewport),
+            visited(false),
             view_matrix({}),
-            view_matrix_dirty(false),
-            command_buf({}),
-            composite_fence(VK_NULL_HANDLE ),
-            front_fb_image({}),
-            back_fb_image({}),
-            front_fb(VK_NULL_HANDLE),
-            back_fb(VK_NULL_HANDLE),
-            front_fb_sampler(VK_NULL_HANDLE),
-            ubo({}) {
+            per_frame() {
     }
 
     ViewportState::ViewportState(ViewportState &&rhs) noexcept = default;

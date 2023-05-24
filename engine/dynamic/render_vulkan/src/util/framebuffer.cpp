@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include <cassert>
+
 namespace argus {
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
             const std::vector<VkImageView> &image_views, Vector2u size) {

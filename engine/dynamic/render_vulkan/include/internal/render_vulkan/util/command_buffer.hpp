@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/threading/semaphore.hpp"
+
 #include "vulkan/vulkan.h"
 
 #include <vector>
@@ -38,7 +40,8 @@ namespace argus {
 
     void destroy_command_pool(const LogicalDevice &device, VkCommandPool command_pool);
 
-    std::vector<CommandBufferInfo> alloc_command_buffers(const LogicalDevice &device, VkCommandPool pool, uint32_t count);
+    std::vector<CommandBufferInfo> alloc_command_buffers(const LogicalDevice &device, VkCommandPool pool,
+            uint32_t count);
 
     void free_command_buffers(const LogicalDevice &device, const std::vector<CommandBufferInfo> &buffers);
 
@@ -55,5 +58,6 @@ namespace argus {
 
     void queue_command_buffer_submit(RendererState &state, const CommandBufferInfo &buffer,
             VkQueue queue, VkFence fence, std::vector<VkSemaphore> wait_semaphores,
-            std::vector<VkPipelineStageFlags> wait_stages, std::vector<VkSemaphore> signal_semaphores);
+            std::vector<VkPipelineStageFlags> wait_stages, std::vector<VkSemaphore> signal_semaphores,
+            Semaphore *submit_semaphore);
 }

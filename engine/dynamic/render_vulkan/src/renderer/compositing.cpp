@@ -127,83 +127,86 @@ namespace argus {
     }
 
     static void _update_viewport_ubo(const RendererState &state, ViewportState &viewport_state) {
-        bool must_update = viewport_state.view_matrix_dirty;
+        bool must_update = viewport_state.per_frame[state.cur_frame].view_matrix_dirty;
+        auto &ubo = viewport_state.per_frame[state.cur_frame].ubo;
 
-        if (viewport_state.ubo.handle == VK_NULL_HANDLE) {
-            viewport_state.ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        if (ubo.handle == VK_NULL_HANDLE) {
+            ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     GraphicsMemoryPropCombos::DeviceRw);
             must_update = true;
         }
 
         if (must_update) {
             auto len = sizeof(viewport_state.view_matrix.data);
-            memcpy(viewport_state.ubo.mapped, viewport_state.view_matrix.data, len);
+            memcpy(ubo.mapped, viewport_state.view_matrix.data, len);
         }
     }
 
     static void _create_framebuffers(const RendererState &state, ViewportState &viewport_state, const Vector2u &size) {
         auto format = state.swapchain.image_format;
 
-        viewport_state.front_fb_image = create_image_and_image_view(state.device, format,
-                { size.x, size.y },
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                        | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-        viewport_state.back_fb_image = create_image_and_image_view(state.device, format,
-                { size.x, size.y },
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-        viewport_state.front_fb = create_framebuffer(state.device, state.fb_render_pass,
-                { viewport_state.front_fb_image });
-        viewport_state.back_fb = create_framebuffer(state.device, state.fb_render_pass,
-                { viewport_state.front_fb_image });
+        for (auto &frame_state : viewport_state.per_frame) {
+            frame_state.front_fb.image = create_image_and_image_view(state.device, format,
+                    { size.x, size.y },
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                    | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+            frame_state.back_fb.image = create_image_and_image_view(state.device, format,
+                    { size.x, size.y },
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+            frame_state.front_fb.handle = create_framebuffer(state.device, state.fb_render_pass,
+                    { frame_state.front_fb.image });
+            frame_state.back_fb.handle = create_framebuffer(state.device, state.fb_render_pass,
+                    { frame_state.front_fb.image });
 
-        VkSamplerCreateInfo sampler_info{};
-        sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler_info.magFilter = VK_FILTER_NEAREST;
-        sampler_info.minFilter = VK_FILTER_NEAREST;
-        sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sampler_info.anisotropyEnable = VK_FALSE;
-        sampler_info.maxAnisotropy = 0;
-        sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        sampler_info.unnormalizedCoordinates = VK_FALSE;
-        sampler_info.compareEnable = VK_FALSE;
-        sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler_info.mipLodBias = 0.0f;
-        sampler_info.minLod = 0.0f;
-        sampler_info.maxLod = 0.0f;
+            VkSamplerCreateInfo sampler_info{};
+            sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            sampler_info.magFilter = VK_FILTER_NEAREST;
+            sampler_info.minFilter = VK_FILTER_NEAREST;
+            sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            sampler_info.anisotropyEnable = VK_FALSE;
+            sampler_info.maxAnisotropy = 0;
+            sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            sampler_info.unnormalizedCoordinates = VK_FALSE;
+            sampler_info.compareEnable = VK_FALSE;
+            sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+            sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            sampler_info.mipLodBias = 0.0f;
+            sampler_info.minLod = 0.0f;
+            sampler_info.maxLod = 0.0f;
 
-        if (vkCreateSampler(state.device.logical_device, &sampler_info, nullptr,
-                &viewport_state.front_fb_sampler) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create framebuffer sampler");
+            if (vkCreateSampler(state.device.logical_device, &sampler_info, nullptr,
+                    &frame_state.front_fb.sampler) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create framebuffer sampler");
+            }
+
+            frame_state.composite_desc_sets = create_descriptor_sets(state.device, state.desc_pool,
+                    state.composite_pipeline.reflection);
+
+            std::vector<VkWriteDescriptorSet> ds_writes;
+            for (const auto &ds : frame_state.composite_desc_sets) {
+                ds_writes.reserve(frame_state.composite_desc_sets.size());
+                VkWriteDescriptorSet sampler_ds_write{};
+                sampler_ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                sampler_ds_write.dstSet = ds;
+                sampler_ds_write.dstBinding = 0;
+                sampler_ds_write.dstArrayElement = 0;
+                sampler_ds_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                sampler_ds_write.descriptorCount = 1;
+                sampler_ds_write.pImageInfo = nullptr;
+                VkDescriptorImageInfo desc_image_info{};
+                desc_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                desc_image_info.imageView = frame_state.front_fb.image.view;
+                desc_image_info.sampler = frame_state.front_fb.sampler;
+                sampler_ds_write.pImageInfo = &desc_image_info;
+                ds_writes.push_back(sampler_ds_write);
+            }
+            vkUpdateDescriptorSets(state.device.logical_device, uint32_t(ds_writes.size()), ds_writes.data(),
+                    0, nullptr);
         }
-
-        viewport_state.composite_desc_sets = create_descriptor_sets(state.device, state.desc_pool,
-                state.composite_pipeline.reflection);
-
-        std::vector<VkWriteDescriptorSet> ds_writes;
-        for (const auto &ds : viewport_state.composite_desc_sets) {
-            ds_writes.reserve(viewport_state.composite_desc_sets.size());
-            VkWriteDescriptorSet sampler_ds_write{};
-            sampler_ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            sampler_ds_write.dstSet = ds;
-            sampler_ds_write.dstBinding = 0;
-            sampler_ds_write.dstArrayElement = 0;
-            sampler_ds_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            sampler_ds_write.descriptorCount = 1;
-            sampler_ds_write.pImageInfo = nullptr;
-            VkDescriptorImageInfo desc_image_info{};
-            desc_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            desc_image_info.imageView = viewport_state.front_fb_image.view;
-            desc_image_info.sampler = viewport_state.front_fb_sampler;
-            sampler_ds_write.pImageInfo = &desc_image_info;
-            ds_writes.push_back(sampler_ds_write);
-        }
-        vkUpdateDescriptorSets(state.device.logical_device, uint32_t(ds_writes.size()), ds_writes.data(),
-                0, nullptr);
     }
 
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
@@ -220,31 +223,33 @@ namespace argus {
 
         _update_viewport_ubo(state, viewport_state);
 
+        auto &frame_state = viewport_state.per_frame[state.cur_frame];
+
         // framebuffer setup
-        if (viewport_state.front_fb == nullptr || resolution.dirty) {
-            if (viewport_state.front_fb != nullptr) {
+        if (frame_state.front_fb.handle == nullptr || resolution.dirty) {
+            if (frame_state.front_fb.handle != nullptr) {
                 // delete framebuffers
-                destroy_framebuffer(state.device, viewport_state.front_fb);
-                destroy_framebuffer(state.device, viewport_state.back_fb);
-                destroy_image_and_image_view(state.device, viewport_state.front_fb_image);
-                destroy_image_and_image_view(state.device, viewport_state.back_fb_image);
-                vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
-                destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
+                destroy_framebuffer(state.device, frame_state.front_fb.handle);
+                destroy_framebuffer(state.device, frame_state.back_fb.handle);
+                destroy_image_and_image_view(state.device, frame_state.front_fb.image);
+                destroy_image_and_image_view(state.device, frame_state.back_fb.image);
+                vkDestroySampler(state.device.logical_device, frame_state.front_fb.sampler, nullptr);
+                destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
             }
 
             _create_framebuffers(state, viewport_state, { fb_width, fb_height });
         }
 
-        begin_oneshot_commands(state.device, viewport_state.command_buf);
+        begin_oneshot_commands(state.device, frame_state.command_buf);
 
-        auto vk_cmd_buf = viewport_state.command_buf.handle;
+        auto vk_cmd_buf = frame_state.command_buf.handle;
 
         VkClearValue clear_val{};
         clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
 
         VkRenderPassBeginInfo rp_info{};
         rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        rp_info.framebuffer = viewport_state.front_fb;
+        rp_info.framebuffer = frame_state.front_fb.handle;
         rp_info.pClearValues = &clear_val;
         rp_info.clearValueCount = 1;
         rp_info.renderPass = state.fb_render_pass;
@@ -286,9 +291,9 @@ namespace argus {
             //auto &texture_uid = mat.get<Material>().get_texture_uid();
             //auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
-            auto ds_it = viewport_state.material_desc_sets.find(mat.uid);
+            auto ds_it = frame_state.material_desc_sets.find(mat.uid);
             std::vector<VkDescriptorSet> desc_sets;
-            if (ds_it != viewport_state.material_desc_sets.cend()) {
+            if (ds_it != frame_state.material_desc_sets.cend()) {
                 desc_sets = ds_it->second;
             } else {
                 desc_sets = create_descriptor_sets(state.device, state.desc_pool, shader_refl);
@@ -320,7 +325,7 @@ namespace argus {
                         [&ds, &ds_writes, &global_ubo, &buf_info_global] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, global_ubo, buf_info_global));
                         });
-                auto vp_ubo = viewport_state.ubo;
+                auto vp_ubo = frame_state.ubo;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_VIEWPORT,
                         [&ds, &ds_writes, &vp_ubo, &buf_info_viewport] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, vp_ubo, buf_info_viewport));
@@ -334,7 +339,7 @@ namespace argus {
                 vkUpdateDescriptorSets(state.device.logical_device, uint32_t(ds_writes.size()), ds_writes.data(),
                         0, nullptr);
 
-                viewport_state.material_desc_sets.insert({ mat.uid, desc_sets });
+                frame_state.material_desc_sets.insert({ mat.uid, desc_sets });
             }
 
             auto current_ds = desc_sets[0];
@@ -412,12 +417,12 @@ namespace argus {
         /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to record command buffer");
         }*/
-        end_command_buffer(state.device, viewport_state.command_buf);
-        vkResetFences(state.device.logical_device, 1, &viewport_state.composite_fence);
-        queue_command_buffer_submit(state, viewport_state.command_buf,
-                state.device.queues.graphics_family, viewport_state.composite_fence,
-                { viewport_state.rebuild_semaphore }, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT },
-                { viewport_state.draw_semaphore });
+        end_command_buffer(state.device, frame_state.command_buf);
+        vkResetFences(state.device.logical_device, 1, &frame_state.composite_fence);
+        queue_command_buffer_submit(state, frame_state.command_buf,
+                state.device.queues.graphics_family, frame_state.composite_fence,
+                { frame_state.rebuild_semaphore }, { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT },
+                { frame_state.draw_semaphore }, nullptr);
     }
 
     void draw_framebuffer_to_swapchain(SceneState &scene_state, ViewportState &viewport_state,
@@ -428,7 +433,7 @@ namespace argus {
 
         auto viewport_px = _transform_viewport_to_pixels(viewport_state.viewport->get_viewport(), resolution);
 
-        auto cur_ds = viewport_state.composite_desc_sets[0];
+        auto cur_ds = viewport_state.per_frame[state.cur_frame].composite_desc_sets[0];
 
         std::vector<VkWriteDescriptorSet> ds_writes;
 

@@ -188,25 +188,28 @@ namespace argus {
         VkSemaphoreCreateInfo sem_info{};
         sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &viewport_state.rebuild_semaphore)
-            != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create semaphores for viewport");
-        }
 
-        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &viewport_state.draw_semaphore)
-            != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create semaphores for viewport");
-        }
+        for (auto &frame_state : viewport_state.per_frame) {
+            if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr,
+                    &frame_state.rebuild_semaphore) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create semaphores for viewport");
+            }
 
-        VkFenceCreateInfo fence_info{};
-        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fence_info.flags = 0;
-        if (vkCreateFence(state.device.logical_device, &fence_info, nullptr, &viewport_state.composite_fence)
-                != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create fences for viewport");
-        }
+            if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr,
+                    &frame_state.draw_semaphore) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create semaphores for viewport");
+            }
 
-        viewport_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+            VkFenceCreateInfo fence_info{};
+            fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fence_info.flags = 0;
+            if (vkCreateFence(state.device.logical_device, &fence_info, nullptr,
+                    &frame_state.composite_fence) != VK_SUCCESS) {
+                Logger::default_logger().fatal("Failed to create fences for viewport");
+            }
+
+            frame_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+        }
 
         return insert_res.first->second;
     }
@@ -221,19 +224,21 @@ namespace argus {
     }
 
     static void _destroy_viewport(const RendererState &state, ViewportState &viewport_state) {
-        vkDestroyFence(state.device.logical_device, viewport_state.composite_fence, nullptr);
-        vkDestroySampler(state.device.logical_device, viewport_state.front_fb_sampler, nullptr);
-        destroy_framebuffer(state.device, viewport_state.front_fb);
-        destroy_framebuffer(state.device, viewport_state.back_fb);
-        destroy_image_and_image_view(state.device, viewport_state.front_fb_image);
-        destroy_image_and_image_view(state.device, viewport_state.back_fb_image);
-        free_buffer(viewport_state.ubo);
-        destroy_descriptor_sets(state.device, state.desc_pool, viewport_state.composite_desc_sets);
-        for (const auto &ds : viewport_state.material_desc_sets) {
-            destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
-        }
+        for (auto &frame_state : viewport_state.per_frame) {
+            vkDestroyFence(state.device.logical_device, frame_state.composite_fence, nullptr);
+            vkDestroySampler(state.device.logical_device, frame_state.front_fb.sampler, nullptr);
+            destroy_framebuffer(state.device, frame_state.front_fb.handle);
+            destroy_framebuffer(state.device, frame_state.back_fb.handle);
+            destroy_image_and_image_view(state.device, frame_state.front_fb.image);
+            destroy_image_and_image_view(state.device, frame_state.back_fb.image);
+            free_buffer(frame_state.ubo);
+            destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
+            for (const auto &ds : frame_state.material_desc_sets) {
+                destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
+            }
 
-        free_command_buffer(state.device, viewport_state.command_buf);
+            free_command_buffer(state.device, frame_state.command_buf);
+        }
     }
 
     static void _destroy_scene(const RendererState &state, SceneState &scene_state) {
@@ -332,7 +337,9 @@ namespace argus {
             _recompute_2d_viewport_view_matrix(viewport_state.viewport->get_viewport(), camera_transform.inverse(),
                     resolution,
                     viewport_state.view_matrix);
-            viewport_state.view_matrix_dirty = true;
+            for (auto &frame_state : viewport_state.per_frame) {
+                frame_state.view_matrix_dirty = true;
+            }
         }
     }
 
@@ -364,7 +371,7 @@ namespace argus {
     static void _record_scene_rebuild(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
 
-        begin_oneshot_commands(state.device, state.copy_cmd_buf);
+        begin_oneshot_commands(state.device, state.copy_cmd_buf[state.cur_frame]);
 
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
             SceneState &scene_state = state.get_scene_state(*scene);
@@ -379,18 +386,17 @@ namespace argus {
             }
         }
 
-        end_command_buffer(state.device, state.copy_cmd_buf);
+        end_command_buffer(state.device, state.copy_cmd_buf[state.cur_frame]);
     }
 
     static void _submit_scene_rebuild(RendererState &state) {
         std::vector<VkSemaphore> rebuild_sems;
         rebuild_sems.resize(state.viewport_states_2d.size());
         std::transform(state.viewport_states_2d.begin(), state.viewport_states_2d.end(), rebuild_sems.begin(),
-                [] (const auto &kv) { return kv.second.rebuild_semaphore; });
-        /*submit_command_buffer(state.device, state.copy_cmd_buf, state.device.queues.graphics_family, VK_NULL_HANDLE,
-                {}, {}, rebuild_sems);*/
-        queue_command_buffer_submit(state, state.copy_cmd_buf, state.device.queues.graphics_family,
-                VK_NULL_HANDLE, {}, {}, rebuild_sems);
+                [] (const auto &kv) { return kv.second.per_frame[kv.second.parent_state.cur_frame]
+                        .rebuild_semaphore; });
+        queue_command_buffer_submit(state, state.copy_cmd_buf[state.cur_frame], state.device.queues.graphics_family,
+                VK_NULL_HANDLE, {}, {}, rebuild_sems, nullptr);
 
         /*for (auto &buf : state.texture_bufs_to_free) {
             free_buffer(buf);
@@ -398,16 +404,17 @@ namespace argus {
         state.texture_bufs_to_free.clear();*/
     }
 
-    static uint32_t _get_next_image(const RendererState &state) {
+    static uint32_t _get_next_image(RendererState &state) {
         auto &device = state.device.logical_device;
 
-        vkWaitForFences(device, 1, &state.swapchain.in_flight_fence, VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &state.swapchain.in_flight_fence);
+        state.in_flight_sem[state.cur_frame].wait();
+        vkWaitForFences(device, 1, &state.swapchain.in_flight_fence[state.cur_frame], VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &state.swapchain.in_flight_fence[state.cur_frame]);
 
         uint32_t image_index = 0;
 
-        vkAcquireNextImageKHR(device, state.swapchain.handle, UINT64_MAX, state.swapchain.image_avail_sem,
-                VK_NULL_HANDLE, &image_index);
+        vkAcquireNextImageKHR(device, state.swapchain.handle, UINT64_MAX,
+                state.swapchain.image_avail_sem[state.cur_frame], VK_NULL_HANDLE, &image_index);
 
         return image_index;
     }
@@ -478,27 +485,25 @@ namespace argus {
         std::vector<VkSemaphore> wait_sems;
         std::vector<VkPipelineStageFlags> wait_stages;
         wait_sems.reserve(state.viewport_states_2d.size());
-        wait_sems.push_back(state.swapchain.image_avail_sem);
+        wait_sems.push_back(state.swapchain.image_avail_sem[state.cur_frame]);
         wait_stages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
         for (const auto &viewport_state : state.viewport_states_2d) {
-            wait_sems.push_back(viewport_state.second.draw_semaphore);
+            wait_sems.push_back(viewport_state.second.per_frame[state.cur_frame].draw_semaphore);
             wait_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         }
 
-        std::vector<VkSemaphore> signal_sems = { state.swapchain.render_done_sem };
+        std::vector<VkSemaphore> signal_sems = { state.swapchain.render_done_sem[state.cur_frame] };
 
         queue_command_buffer_submit(state, state.composite_cmd_bufs.find(sc_image_index)->second.first,
-                state.device.queues.graphics_family, state.swapchain.in_flight_fence,
-                wait_sems, wait_stages, { state.swapchain.render_done_sem });
-        /*submit_command_buffer(state.device, state.composite_cmd_bufs.find(sc_image_index)->second.first,
-                state.device.queues.graphics_family, state.swapchain.in_flight_fence,
-                wait_sems, wait_stages, signal_sems);*/
+                state.device.queues.graphics_family, state.swapchain.in_flight_fence[state.cur_frame],
+                wait_sems, wait_stages, { state.swapchain.render_done_sem[state.cur_frame] },
+                &state.in_flight_sem[state.cur_frame]);
     }
 
     static void _present_image(RendererState &state, uint32_t image_index) {
-        state.submit_bufs.push_back(CommandBufferSubmitParams { true, image_index, nullptr, VK_NULL_HANDLE,
-                VK_NULL_HANDLE, {}, {}, {} });
-        state.submit_sem.notify();
+        state.submit_bufs.push_back(CommandBufferSubmitParams { true, image_index, state.cur_frame, nullptr,
+                VK_NULL_HANDLE, VK_NULL_HANDLE, {}, {}, {}, &state.present_sem[state.cur_frame] });
+        state.queued_submit_sem.notify();
     }
 
     static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
@@ -525,7 +530,7 @@ namespace argus {
                 return nullptr;
             }
 
-            state.submit_sem.wait();
+            state.queued_submit_sem.wait();
 
             std::lock_guard<std::mutex> submit_lock(state.submit_mutex);
             std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
@@ -537,18 +542,23 @@ namespace argus {
                     VkPresentInfoKHR present_info{};
                     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
                     present_info.waitSemaphoreCount = 1;
-                    present_info.pWaitSemaphores = &state.swapchain.render_done_sem;
+                    present_info.pWaitSemaphores = &state.swapchain.render_done_sem[buf.cur_frame];
                     present_info.swapchainCount = 1;
                     present_info.pSwapchains = &state.swapchain.handle;
                     present_info.pImageIndices = &buf.present_image_index;
                     present_info.pResults = nullptr;
 
-                    vkQueuePresentKHR(state.device.queues.present_family, &present_info);
-
-                    state.present_sem.notify();
+                    if (buf.submit_sem != nullptr) {
+                        buf.submit_sem->notify();
+                    }
+                    state.present_sem[state.cur_frame].notify();
                 } else {
                     submit_command_buffer(state.device, *buf.buffer, buf.queue, buf.fence,
                             buf.wait_sems, buf.wait_stages, buf.signal_sems);
+
+                    if (buf.submit_sem != nullptr) {
+                        buf.submit_sem->notify();
+                    }
                 }
 
                 state.submit_bufs.pop_front();
@@ -579,7 +589,10 @@ namespace argus {
         state.desc_pool = create_descriptor_pool(this->state.device);
         Logger::default_logger().debug("Created descriptor pool for new window");
 
-        state.copy_cmd_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+        auto copy_cmd_bufs = alloc_command_buffers(state.device, state.graphics_command_pool, MAX_FRAMES_IN_FLIGHT);
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            state.copy_cmd_buf[i] = copy_cmd_bufs[i];
+        }
         Logger::default_logger().debug("Created command buffers for new window");
 
         /*VkSemaphoreCreateInfo sem_info{};
@@ -598,10 +611,12 @@ namespace argus {
 
     VulkanRenderer::~VulkanRenderer(void) {
         state.submit_halt = true;
-        state.submit_sem.notify();
+        state.queued_submit_sem.notify();
         state.submit_halt_acked.wait();
         {
-            state.present_sem.wait();
+            for (auto &sem : state.present_sem) {
+                sem.wait();
+            }
             std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
             vkQueueWaitIdle(state.device.queues.graphics_family);
         }
@@ -614,8 +629,10 @@ namespace argus {
             _destroy_scene(state, scene_state.second);
         }
 
-        if (state.copy_cmd_buf.handle != VK_NULL_HANDLE) {
-            free_command_buffer(state.device, state.copy_cmd_buf);
+        for (auto &cb : state.copy_cmd_buf) {
+            if (cb.handle != VK_NULL_HANDLE) {
+                free_command_buffer(state.device, cb);
+            }
         }
 
         for (const auto &comp_cmd_buf : state.composite_cmd_bufs) {
@@ -680,7 +697,10 @@ namespace argus {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         Logger::default_logger().debug("Created framebuffer render pass for new window");
 
-        state.present_sem.notify();
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            state.present_sem[i].notify();
+            state.in_flight_sem[i].notify();
+        }
 
         is_initted = true;
     }
@@ -725,10 +745,10 @@ namespace argus {
         compile_time += (timer_end - timer_start);
 
         {
-            state.present_sem.wait();
-            std::lock_guard<std::mutex> queue_lock(state.device.queue_mutexes->graphics_family);
-            vkQueueWaitIdle(state.device.queues.graphics_family);
+            //state.present_sem[state.cur_frame].wait();
         }
+
+        auto sc_image_index = _get_next_image(state);
 
         timer_start = std::chrono::high_resolution_clock::now();
         _record_scene_rebuild(window, state);
@@ -761,8 +781,6 @@ namespace argus {
         //glClearColor(0.0, 0.0, 0.0, 1.0);
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto sc_image_index = _get_next_image(state);
-
         timer_start = std::chrono::high_resolution_clock::now();
 
         if (state.dirty_viewports || resolution.dirty) {
@@ -779,6 +797,10 @@ namespace argus {
         composite_time += (timer_end - timer_start);
 
         _present_image(state, sc_image_index);
+
+        if ((++state.cur_frame) >= MAX_FRAMES_IN_FLIGHT) {
+            state.cur_frame = 0;
+        }
 
         time_samples++;
 
