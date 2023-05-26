@@ -548,10 +548,11 @@ namespace argus {
                     present_info.pImageIndices = &buf.present_image_index;
                     present_info.pResults = nullptr;
 
+                    vkQueuePresentKHR(state.device.queues.graphics_family, &present_info);
+
                     if (buf.submit_sem != nullptr) {
                         buf.submit_sem->notify();
                     }
-                    state.present_sem[state.cur_frame].notify();
                 } else {
                     submit_command_buffer(state.device, *buf.buffer, buf.queue, buf.fence,
                             buf.wait_sems, buf.wait_stages, buf.signal_sems);

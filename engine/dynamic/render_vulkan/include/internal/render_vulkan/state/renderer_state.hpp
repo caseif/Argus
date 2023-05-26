@@ -42,7 +42,20 @@
 #include <string>
 
 namespace argus {
-    struct CommandBufferSubmitParams;
+    struct CommandBufferSubmitParams {
+        // ugly hack to synchronize present with command buffers
+        bool is_present;
+        uint32_t present_image_index;
+
+        uint32_t cur_frame;
+        const CommandBufferInfo *buffer;
+        VkQueue queue;
+        VkFence fence;
+        std::vector<VkSemaphore> wait_sems;
+        std::vector<VkPipelineStageFlags> wait_stages;
+        std::vector<VkSemaphore> signal_sems;
+        Semaphore *submit_sem;
+    };
 
     struct RendererState {
         LogicalDevice device;
@@ -94,20 +107,5 @@ namespace argus {
         SceneState &get_scene_state(Scene &scene);
 
         ViewportState &get_viewport_state(AttachedViewport &viewport);
-    };
-
-    struct CommandBufferSubmitParams {
-        // ugly hack to synchronize present with command buffers
-        bool is_present;
-        uint32_t present_image_index;
-
-        uint32_t cur_frame;
-        const CommandBufferInfo *buffer;
-        VkQueue queue;
-        VkFence fence;
-        std::vector<VkSemaphore> wait_sems;
-        std::vector<VkPipelineStageFlags> wait_stages;
-        std::vector<VkSemaphore> signal_sems;
-        Semaphore *submit_sem;
     };
 }
