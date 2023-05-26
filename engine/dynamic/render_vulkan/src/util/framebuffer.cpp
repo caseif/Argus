@@ -25,6 +25,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include <algorithm>
 #include <vector>
 
 #include <cassert>
