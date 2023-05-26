@@ -26,7 +26,7 @@ namespace argus {
         void *load(ResourceManager &manager, const ResourcePrototype &proto,
                 std::istream &stream, size_t size) const override;
 
-        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+        [[noreturn]] void *copy(ResourceManager &manager, const ResourcePrototype &proto,
                 void *src, std::type_index type) const override;
 
         void unload(void *data_ptr) const override;

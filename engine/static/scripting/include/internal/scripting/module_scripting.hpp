@@ -18,8 +18,12 @@
 
 #pragma once
 
+#include "argus/core/module.hpp"
+
 #include "internal/scripting/angelscript_proxy.hpp"
 
 namespace argus {
     extern asIScriptEngine *g_as_script_engine;
+
+    void update_lifecycle_scripting(LifecycleStage stage);
 }

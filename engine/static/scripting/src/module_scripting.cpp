@@ -28,6 +28,8 @@
 #include "internal/scripting/angelscript_proxy.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
+#include <cstdio>
+
 namespace argus {
     asIScriptEngine *g_as_script_engine;
 
@@ -48,7 +50,7 @@ namespace argus {
         }
     }
 
-    void print(const std::string &msg) {
+    static void print(const std::string &msg) {
         printf("%s\n", msg.c_str());
     }
 

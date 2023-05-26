@@ -20,6 +20,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wextra-semi"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wnewline-eof"
+#endif
 #include "angelscript.h"
 #include "scriptbuilder/scriptbuilder.h"
 #include "scriptstdstring/scriptstdstring.h"

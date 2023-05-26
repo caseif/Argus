@@ -63,7 +63,7 @@ namespace argus {
         return handle;
     }
 
-    void *AngelscriptLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    [[noreturn]] void *AngelscriptLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
         UNUSED(manager);
         UNUSED(proto);
