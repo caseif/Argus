@@ -16,26 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/scripting/bound_types.hpp"
-#include "argus/scripting/registration.hpp"
+#pragma once
 
-#include "internal/scripting/angelscript_proxy.hpp"
-#include "internal/scripting/module_scripting.hpp"
+#include "argus/scripting/bound_types.hpp"
+#include "argus/scripting/bridge.hpp"
+#include "argus/scripting/script_handle.hpp"
 
 #include <string>
+#include <vector>
 
 namespace argus {
-    /*int register_global_function(const std::string &signature, void *fn) {
-        return g_as_script_engine->RegisterGlobalFunction(signature.c_str(), asFUNCTION(fn), asCALL_STDCALL);
-    }*/
+    class LanguagePlugin {
+      public:
+        LanguagePlugin(void) = default;
 
-    void register_script_type(BoundTypeDef type_def) {
-        UNUSED(type_def);
-        //TODO
-    }
+        LanguagePlugin(const LanguagePlugin &) = delete;
+        LanguagePlugin(LanguagePlugin &&) = delete;
 
-    void register_script_global_function(BoundFunctionDef fn_def) {
-        UNUSED(fn_def);
-        //TODO
-    }
+        virtual ~LanguagePlugin(void) = 0;
+
+        virtual void register_type(BoundTypeDef type) = 0;
+
+        virtual void register_global_function(BoundFunctionDef fn) = 0;
+
+        virtual ObjectProxy invoke_function(const ScriptHandle &script, const std::string &name,
+                std::vector<ObjectProxy> params) = 0;
+    };
 }

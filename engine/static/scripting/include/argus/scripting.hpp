@@ -18,5 +18,7 @@
 
 #pragma once
 
+#include "argus/scripting/bound_types.hpp"
+#include "argus/scripting/language_plugin.hpp"
 #include "argus/scripting/registration.hpp"
 #include "argus/scripting/script_handle.hpp"

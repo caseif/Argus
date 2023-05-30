@@ -23,7 +23,7 @@
 
 #include "argus/resman.hpp"
 
-#include "argus/scripting/registration.hpp"
+#include "argus/scripting.hpp"
 #include "internal/scripting/angelscript_loader.hpp"
 #include "internal/scripting/angelscript_proxy.hpp"
 #include "internal/scripting/module_scripting.hpp"

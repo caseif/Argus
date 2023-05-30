@@ -22,7 +22,9 @@
 #include <string>
 
 namespace argus {
-    int register_global_function(const std::string &name, void *fn);
+    void register_script_type(BoundTypeDef type_def);
+
+    void register_script_global_function(BoundFunctionDef fn_def);
 
     /*template <typename T>
     int register_global_function(const std::string &name, std::function<T> fn) {
