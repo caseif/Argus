@@ -18,28 +18,23 @@
 
 #pragma once
 
-#include "argus/scripting/bound_types.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/script_handle.hpp"
-
-#include <string>
-#include <vector>
+#include <tuple>
 
 namespace argus {
-    class LanguagePlugin {
-      public:
-        LanguagePlugin(void) = default;
+    template<typename FuncType>
+    struct function_traits;
 
-        LanguagePlugin(const LanguagePlugin &) = delete;
-        LanguagePlugin(LanguagePlugin &&) = delete;
+    template<typename Ret, typename... Args>
+    struct function_traits<Ret(*)(Args...)> {
+        using class_type = void;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
+    };
 
-        virtual ~LanguagePlugin(void) = 0;
-
-        virtual void register_type(BoundTypeDef type) = 0;
-
-        virtual void register_global_function(BoundFunctionDef fn) = 0;
-
-        virtual ObjectProxy invoke_function(const ScriptHandle &script, const std::string &name,
-                std::vector<ObjectProxy> params) = 0;
+    template<typename Class, typename Ret, typename... Args>
+    struct function_traits<Ret(Class::*)(Args...)> {
+        using class_type = Class;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
     };
 }

@@ -18,7 +18,11 @@
 
 #pragma once
 
+#include "argus/lowlevel/functional.hpp"
+
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace argus {
@@ -26,8 +30,54 @@ namespace argus {
         void *ptr;
     };
 
-    ObjectProxy invoke_native_function_global(const std::string &name, std::vector<ObjectProxy> params);
+    class InvocationException : public std::exception {
+      private:
+        const std::string msg;
+
+      public:
+        InvocationException(std::string msg) : msg(std::move(msg)) {
+        }
+
+        /**
+         * \copydoc std::exception::what()
+         *
+         * \return The exception message.
+         */
+        [[nodiscard]] const char *what(void) const noexcept override {
+            return msg.c_str();
+        }
+    };
+
+    template <typename FuncType, typename... Args,
+            typename ReturnType = typename function_traits<FuncType>::return_type>
+    ReturnType invoke_function(FuncType fn, std::vector<ObjectProxy> params) {
+        using ClassType = typename function_traits<FuncType>::class_type;
+        using ArgsTuple = typename function_traits<FuncType>::argument_types;
+
+        if (params.size() != std::tuple_size<ArgsTuple>::value
+                + (std::is_member_function_pointer_v<FuncType> ? 1 : 0)) {
+            throw InvocationException("Wrong parameter count");
+        }
+
+        ArgsTuple args;
+        auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 0 : 1);
+        std::apply([&](auto&... tuple_element) {
+            ((tuple_element = *reinterpret_cast<typename std::remove_reference<decltype(tuple_element)>::type*>
+                    ((it++)->ptr)), ...);
+        }, args);
+
+        if constexpr (!std::is_void_v<ClassType>) {
+            ++it;
+            ClassType *instance = reinterpret_cast<ClassType*>(std::get<0>(args));
+            return std::apply([=](auto&&... args){ return (instance->*fn)(std::forward<decltype(args)>(args)...); },
+                    args);
+        } else {
+            return std::apply(fn, args);
+        }
+    }
+
+    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params);
 
     ObjectProxy invoke_native_function_instance(const std::string &name, const std::string &type_name,
-            ObjectProxy instance, std::vector<ObjectProxy> params);
+            ObjectProxy instance, const std::vector<ObjectProxy> &params);
 }

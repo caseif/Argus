@@ -31,6 +31,10 @@
 #include <cstdio>
 
 namespace argus {
+    std::vector<ScriptingLanguagePlugin> g_lang_plugins;
+    std::map<std::string, BoundTypeDef> g_registered_types;
+    std::map<std::string, BoundFunctionDef> g_registered_fns;
+
     asIScriptEngine *g_as_script_engine;
 
     static void _script_engine_message_callback(const asSMessageInfo *msg, void *param) {
@@ -50,13 +54,13 @@ namespace argus {
         }
     }
 
-    static void print(const std::string &msg) {
+    /*static void print(const std::string &msg) {
         printf("%s\n", msg.c_str());
-    }
+    }*/
 
     static void _register_builtin_functions() {
-        affirm_precond(register_global_function("void println(const string &in)", reinterpret_cast<void *>(&print)),
-                "Failed to register println function");
+        /*affirm_precond(register_global_function("void println(const string &in)", reinterpret_cast<void *>(&print)),
+                "Failed to register println function");*/
     }
 
     static void _setup_script_engine(void) {

@@ -20,9 +20,17 @@
 
 #include "argus/core/module.hpp"
 
+#include "argus/scripting/bridge.hpp"
+#include "argus/scripting/scripting_language_plugin.hpp"
 #include "internal/scripting/angelscript_proxy.hpp"
 
+#include <vector>
+
 namespace argus {
+    extern std::vector<ScriptingLanguagePlugin> g_lang_plugins;
+    extern std::map<std::string, BoundTypeDef> g_registered_types;
+    extern std::map<std::string, BoundFunctionDef> g_registered_fns;
+
     extern asIScriptEngine *g_as_script_engine;
 
     void update_lifecycle_scripting(LifecycleStage stage);

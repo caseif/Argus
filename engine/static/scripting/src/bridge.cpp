@@ -16,9 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/functional.hpp"
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/scripting/bridge.hpp"
+#include "internal/scripting/module_scripting.hpp"
 
 #include <functional>
 #include <type_traits>
@@ -27,69 +30,23 @@
 #include <cstring>
 
 namespace argus {
-    template <typename T>
-    static T &_unwrap_object_proxy(ObjectProxy proxy) {
-        if (std::is_reference_v<T>) {
-            return *reinterpret_cast<T *>(proxy.ptr);
-        } else if (std::is_pointer_v<T>) {
-            return reinterpret_cast<T *>(proxy.ptr);
-        } else {
-            T val;
-            memcpy(val, proxy.ptr, sizeof(T));
-            return val;
+    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params) {
+        auto it = g_registered_fns.find(name);
+        if (it == g_registered_fns.cend()) {
+            //TODO: throw exception that we can bubble up to the language plugin
+            return {};
         }
-    }
 
-    template <typename... Args>
-    static std::tuple<Args...> _convert_proxies_to_tuple(std::vector<ObjectProxy> &params) {
-        std::tuple<Args...> args_tuple;
-        std::apply([&](auto&&... args) {
-            size_t i = 0;
-            auto assign_param = [&](auto &arg) {
-                arg = _unwrap_object_proxy<decltype(arg)>(params[i++]);
-            };
-            (assign_param(args), ...);
-        }, args_tuple);
-        return args_tuple;
-    }
+        std::vector<ObjectProxy> args{ 1 };
+        //invoke_native_function(foo, args);
 
-    template <typename T>
-    static ObjectProxy _convert_native_to_proxy(T val) {
-        if (std::is_reference_v<T>) {
-            return { &val };
-        } else if (std::is_pointer_v<T>) {
-            return { val };
-        } else {
-            void *buf = malloc(sizeof(T));
-            memcpy(buf, val, sizeof(T));
-            return { buf };
-        }
-    }
-
-    template <typename ReturnType, typename... Args>
-    static ObjectProxy _invoke_fn_global(ReturnType(*fn)(Args...),
-            std::vector<ObjectProxy> params) {
-        std::tuple<Args...> native_args = _convert_proxies_to_tuple<Args...>(params);
-        return _convert_native_to_proxy(std::apply(fn, native_args));
-    }
-
-    template <typename ReturnType, typename InstanceType, typename... Args>
-    static ObjectProxy _invoke_fn_instance(ReturnType(InstanceType::*fn)(Args...),
-            ObjectProxy instance, std::vector<ObjectProxy> params) {
-        std::tuple<Args...> native_args = _convert_proxies_to_tuple<Args...>(params);
-        return _convert_native_to_proxy(std::apply([&](auto&&... args) { std::invoke(fn, instance, args...); },
-                native_args));
-    }
-
-    ObjectProxy invoke_native_function_global(const std::string &name, std::vector<ObjectProxy> params) {
-        UNUSED(name);
         UNUSED(params);
         //TODO
         return {};
     }
 
     ObjectProxy invoke_native_function_instance(const std::string &name, const std::string &type_name,
-            ObjectProxy instance, std::vector<ObjectProxy> params) {
+            ObjectProxy instance, const std::vector<ObjectProxy> &params) {
         UNUSED(name);
         UNUSED(type_name);
         UNUSED(instance);
