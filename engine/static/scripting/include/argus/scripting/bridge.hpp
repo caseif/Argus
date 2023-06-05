@@ -28,6 +28,7 @@
 namespace argus {
     struct ObjectProxy {
         void *ptr;
+        bool is_alloced;
     };
 
     class InvocationException : public std::exception {
@@ -62,7 +63,8 @@ namespace argus {
         ArgsTuple args;
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 0 : 1);
         std::apply([&](auto&... tuple_element) {
-            ((tuple_element = *reinterpret_cast<typename std::remove_reference<decltype(tuple_element)>::type*>
+            ((tuple_element = *reinterpret_cast<typename std::remove_pointer<
+                    typename std::remove_reference<decltype(tuple_element)>::type>::type*>
                     ((it++)->ptr)), ...);
         }, args);
 
@@ -75,6 +77,30 @@ namespace argus {
             return std::apply(fn, args);
         }
     }
+
+    template <typename FuncType, typename... Args>
+    std::function<ObjectProxy(std::vector<ObjectProxy>)> create_function_proxy(FuncType fn) {
+        using ReturnType = typename function_traits<FuncType>::return_type;
+        if constexpr (!std::is_void_v<ReturnType>) {
+            return [fn] (std::vector<ObjectProxy> params) {
+                ReturnType ret = invoke_function(fn, params);
+                if constexpr (std::is_reference_v<ReturnType>) {
+                    return ObjectProxy { &ret };
+                } else if constexpr (std::is_pointer_v<ReturnType>) {
+                    return ObjectProxy { ret };
+                } else {
+                    return ObjectProxy { copy_value(&ret, sizeof(ReturnType)) };
+                }
+            };
+        } else {
+            return invoke_function<FuncType, Args...>;
+        }
+
+    }
+
+    void *copy_value(void *src, size_t size);
+
+    void free_value(void *buf);
 
     ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params);
 

@@ -27,9 +27,20 @@
 #include <type_traits>
 #include <vector>
 
+#include <cstdlib>
 #include <cstring>
 
 namespace argus {
+    void *copy_value(void *src, size_t size) {
+        void *dst = malloc(size);
+        memcpy(dst, src, size);
+        return dst;
+    }
+
+    void free_value(void *buf) {
+        free(buf);
+    }
+
     ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params) {
         auto it = g_registered_fns.find(name);
         if (it == g_registered_fns.cend()) {
