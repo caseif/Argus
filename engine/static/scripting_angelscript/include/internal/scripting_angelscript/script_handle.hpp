@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "internal/scripting_angelscript/angelscript_proxy.hpp"
+
 #include <string>
 
 namespace argus {
@@ -26,7 +28,9 @@ namespace argus {
 
     class ScriptHandle {
       public:
-        pimpl_ScriptHandle *pimpl;
+        asIScriptModule *mod{};
+
+        std::map<std::string, asIScriptFunction*> fn_ptrs;
 
         ScriptHandle(void) noexcept;
 

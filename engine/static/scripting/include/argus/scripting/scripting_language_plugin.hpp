@@ -20,7 +20,6 @@
 
 #include "argus/scripting/bound_types.hpp"
 #include "argus/scripting/bridge.hpp"
-#include "argus/scripting/script_handle.hpp"
 
 #include <string>
 #include <vector>
@@ -46,7 +45,7 @@ namespace argus {
 
         virtual void register_global_function(BoundFunctionDef fn) = 0;
 
-        virtual ObjectProxy invoke_function(const ScriptHandle &script, const std::string &name,
+        virtual ObjectProxy invoke_function(const std::string &name,
                 std::vector<ObjectProxy> params) = 0;
     };
 

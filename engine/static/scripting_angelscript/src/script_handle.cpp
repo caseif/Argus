@@ -16,23 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/scripting/script_handle.hpp"
-#include "internal/scripting/pimpl/script_handle.hpp"
-#include "internal/scripting/module_scripting.hpp"
+#include "internal/scripting_angelscript/module_scripting_angelscript.hpp"
+#include "internal/scripting_angelscript/script_handle.hpp"
+
+#include <string>
 
 namespace argus {
-    ScriptHandle::ScriptHandle(void) noexcept:
-        pimpl(new pimpl_ScriptHandle()) {
-    }
+    ScriptHandle::ScriptHandle(void) noexcept = default;
 
     void ScriptHandle::ExecuteFunction(const std::string &name) const {
         asIScriptFunction *fn;
 
-        auto it = pimpl->fn_ptrs.find(name);
-        if (it != pimpl->fn_ptrs.cend()) {
+        auto it = fn_ptrs.find(name);
+        if (it != fn_ptrs.cend()) {
             fn = it->second;
         } else {
-            fn = pimpl->mod->GetFunctionByName(name.c_str());
+            fn = mod->GetFunctionByName(name.c_str());
         }
 
         auto *ctx = g_as_script_engine->CreateContext();

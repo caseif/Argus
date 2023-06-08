@@ -18,15 +18,12 @@
 
 #pragma once
 
-#include "internal/scripting/angelscript_proxy.hpp"
+#include "argus/core/module.hpp"
 
-#include <map>
-#include <string>
+#include "internal/scripting_angelscript/angelscript_proxy.hpp"
 
 namespace argus {
-    struct pimpl_ScriptHandle {
-        asIScriptModule *mod;
+    extern asIScriptEngine *g_as_script_engine;
 
-        std::map<std::string, asIScriptFunction*> fn_ptrs;
-    };
+    void update_lifecycle_scripting_angelscript(LifecycleStage stage);
 }

@@ -21,12 +21,11 @@
 
 #include "argus/resman.hpp"
 
-#include "argus/scripting/script_handle.hpp"
-#include "internal/scripting/angelscript_loader.hpp"
-#include "internal/scripting/angelscript_proxy.hpp"
-#include "internal/scripting/defines.hpp"
-#include "internal/scripting/module_scripting.hpp"
-#include "internal/scripting/pimpl/script_handle.hpp"
+#include "internal/scripting_angelscript/script_handle.hpp"
+#include "internal/scripting_angelscript/defines.hpp"
+#include "internal/scripting_angelscript/angelscript_loader.hpp"
+#include "internal/scripting_angelscript/angelscript_proxy.hpp"
+#include "internal/scripting_angelscript/module_scripting_angelscript.hpp"
 
 #include <istream>
 
@@ -58,7 +57,7 @@ namespace argus {
         }
 
         ScriptHandle *handle = new ScriptHandle();
-        handle->pimpl->mod = mod;
+        handle->mod = mod;
 
         return handle;
     }
@@ -75,7 +74,7 @@ namespace argus {
     void AngelscriptLoader::unload(void *data_ptr) const {
         auto *handle = static_cast<ScriptHandle*>(data_ptr);
 
-        handle->pimpl->mod->Discard();
+        handle->mod->Discard();
 
         delete handle;
     }

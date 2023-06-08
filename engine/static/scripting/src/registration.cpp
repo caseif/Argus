@@ -19,7 +19,6 @@
 #include "argus/scripting/bound_types.hpp"
 #include "argus/scripting/registration.hpp"
 
-#include "internal/scripting/angelscript_proxy.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
 #include <string>

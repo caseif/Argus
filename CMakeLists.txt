@@ -1,5 +1,5 @@
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
-set(STATIC_MODULE_IDS "core;ecs;resman;scripting;wm;input;render;ui;sound;game2d")
+set(STATIC_MODULE_IDS "core;ecs;resman;scripting;scripting_angelscript;wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
