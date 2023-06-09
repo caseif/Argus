@@ -261,10 +261,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
     # configure the copy headers task to include this project
     set(MODULE_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
-    add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
-      COMMENT "Copying headers for module ${id}"
-      COMMAND ${CMAKE_COMMAND} -E
-        copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
+    if(EXISTS "${MODULE_INCLUDE_DIR}")
+      add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
+        COMMENT "Copying headers for module ${id}"
+        COMMAND ${CMAKE_COMMAND} -E
+          copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
+    endif()
 
     # add this project as a dependency of the copy headers task
     add_dependencies(${HDR_TARGET} ${id})
