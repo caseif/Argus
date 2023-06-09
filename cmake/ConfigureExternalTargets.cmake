@@ -84,11 +84,11 @@ add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
 add_subdirectory("${SPIRV_CROSS_SOURCE_DIR}")
 add_subdirectory("${LUA_BUILDSCRIPT_DIR}")
-add_subdirectory("${ANGELSCRIPT_SOURCE_DIR}/projects/cmake")
+#add_subdirectory("${ANGELSCRIPT_SOURCE_DIR}/projects/cmake")
 
-_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptarray")
-_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptbuilder")
-_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptstdstring")
+#_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptarray")
+#_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptbuilder")
+#_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptstdstring")
 
 # we want to build this lib statically
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
