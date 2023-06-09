@@ -1,5 +1,7 @@
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
-set(STATIC_MODULE_IDS "core;ecs;resman;scripting;scripting_angelscript;wm;input;render;ui;sound;game2d")
+set(STATIC_MODULE_IDS "core;ecs;resman;"
+                      "scripting;scripting_lua;scripting_angelscript;"
+                      "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
@@ -293,5 +295,6 @@ _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LIB_BASE_NAME}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ZLIB_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${PNG_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${GLFW_LIBRARY_BASE}" ".")
+_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LUA_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ANGELSCRIPT_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ARP_LIBRARY_BASE}" ".")
