@@ -34,3 +34,6 @@
 [submodule "external/libs/angelscript"]
 	path = external/libs/angelscript
 	url = git@github.com:codecat/angelscript-mirror.git
+[submodule "external/libs/lua"]
+	path = external/libs/lua
+	url = git@github.com:lua/lua.git

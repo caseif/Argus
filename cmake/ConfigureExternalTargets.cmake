@@ -8,6 +8,8 @@ set(JSON_SOURCE_DIR "${EXT_LIBS_DIR}/json")
 set(ARP_SOURCE_DIR "${EXT_LIBS_DIR}/libarp")
 set(GLSLANG_SOURCE_DIR "${EXT_LIBS_DIR}/glslang")
 set(SPIRV_CROSS_SOURCE_DIR "${EXT_LIBS_DIR}/SPIRV-Cross")
+set(LUA_SOURCE_DIR "${EXT_LIBS_DIR}/lua")
+set(LUA_BUILDSCRIPT_DIR "${CMAKE_SOURCE_DIR}/cmake/dep/lua")
 set(ANGELSCRIPT_SOURCE_DIR "${EXT_LIBS_DIR}/angelscript/sdk/angelscript")
 
 # disable extra GLFW build steps
@@ -69,6 +71,9 @@ set(GLSLANG_INCLUDE_DIR "${GLSLANG_SOURCE_DIR}")
 set(SPIRV_CROSS_LIBRARY "spirv-cross-cpp")
 set(SPIRV_CROSS_INCLUDE_DIR "${SPIRV_CROSS_SOURCE_DIR}")
 
+set(LUA_LIBRARY "lua")
+set(LUA_INCLUDE_DIR "${LUA_SOURCE_DIR}")
+
 set(ANGELSCRIPT_LIBRARY "angelscript")
 set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_SOURCE_DIR}/include;${ANGELSCRIPT_SOURCE_DIR}/../add_on")
 
@@ -78,6 +83,7 @@ add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
 add_subdirectory("${SPIRV_CROSS_SOURCE_DIR}")
+add_subdirectory("${LUA_BUILDSCRIPT_DIR}")
 add_subdirectory("${ANGELSCRIPT_SOURCE_DIR}/projects/cmake")
 
 _argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptarray")
