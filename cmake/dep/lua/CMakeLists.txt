@@ -23,21 +23,31 @@ list(TRANSFORM C_FILES REPLACE "^(.+)$" "${SOURCES_DIR}/\\1.c")
 add_library("${PROJECT_NAME}" SHARED "${C_FILES}")
 set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD 99)
 target_include_directories("${PROJECT_NAME}" PRIVATE "${SOURCES_DIR}")
-target_compile_options("${PROJECT_NAME}" PRIVATE
-    "-Wall"
-    "-fno-stack-protector"
-    "-fno-common"
-    "-Wfatal-errors"
-    "-Wextra"
-    "-Wshadow"
-    "-Wundef"
-    "-Wwrite-strings"
-    "-Wredundant-decls"
-    "-Wdisabled-optimization"
-    "-Wdouble-promotion"
-    "-Wmissing-declarations"
-    "$<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>"
-    "$<$<CXX_COMPILER_ID:GNU>:-Wno-aggressive-loop-optimizations>")
+if(WIN32)
+  target_compile_options("${PROJECT_NAME}" PRIVATE
+      "/W4"     # -Wall
+      "/GS-"    # -fno-stack-protector
+      "/we4456" # -Wshadow
+      "/wd4668" # -Wundef
+      "/wd4505" # -Wredundant-decls
+      )
+else()
+  target_compile_options("${PROJECT_NAME}" PRIVATE
+      "-Wall"
+      "-fno-stack-protector"
+      "-fno-common"
+      "-Wfatal-errors"
+      "-Wextra"
+      "-Wshadow"
+      "-Wundef"
+      "-Wwrite-strings"
+      "-Wredundant-decls"
+      "-Wdisabled-optimization"
+      "-Wdouble-promotion"
+      "-Wmissing-declarations"
+      "$<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>"
+      "$<$<CXX_COMPILER_ID:GNU>:-Wno-aggressive-loop-optimizations>")
+endif()
 
 message("${PROJECT_NAME}")
 if(UNIX)
