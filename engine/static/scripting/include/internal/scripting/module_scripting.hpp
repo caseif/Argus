@@ -27,8 +27,9 @@
 
 namespace argus {
     extern std::vector<ScriptingLanguagePlugin> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_registered_types;
-    extern std::map<std::string, BoundFunctionDef> g_registered_fns;
+    extern std::map<std::string, BoundTypeDef> g_bound_types;
+    extern std::map<std::string, BoundFunctionDef> g_bound_fns;
+    extern std::map<std::string, ProxiedFunction> g_registered_fn_handles;
 
     void update_lifecycle_scripting(LifecycleStage stage);
 }

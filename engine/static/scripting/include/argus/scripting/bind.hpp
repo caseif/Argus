@@ -18,13 +18,33 @@
 
 #pragma once
 
+#include "argus/scripting/bridge.hpp"
+#include "argus/scripting/types.hpp"
+
 #include <functional>
 #include <string>
 
 namespace argus {
-    void register_script_type(BoundTypeDef type_def);
+    void bind_type(const BoundTypeDef &def);
 
-    void register_script_global_function(BoundFunctionDef fn_def);
+    void bind_global_function(const BoundFunctionDef &def);
+
+    template <typename T>
+    typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type bind_type(const std::string &name) {
+        auto def = create_type_def<T>(name);
+        bind_type(def);
+    }
+
+    template <typename FuncType>
+    typename std::enable_if<std::is_function_v<FuncType>, BoundFunctionDef>::type
+    bind_global_function(const std::string &name, FuncType fn) {
+        auto def = create_function_def<FuncType>(name, fn);
+        bind_global_function(def);
+    }
+
+    //void register_script_type(BoundTypeDef type_def);
+
+    //void register_script_global_function(BoundFunctionDef fn_def);
 
     /*template <typename T>
     int register_global_function(const std::string &name, std::function<T> fn) {

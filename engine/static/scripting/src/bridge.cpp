@@ -21,6 +21,7 @@
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/types.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
 #include <functional>
@@ -31,6 +32,8 @@
 #include <cstring>
 
 namespace argus {
+    static constexpr const char TYPE_NAME_SEPARATOR[] = "#";
+
     void *copy_value(void *src, size_t size) {
         void *dst = malloc(size);
         memcpy(dst, src, size);
@@ -41,28 +44,60 @@ namespace argus {
         free(buf);
     }
 
-    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params) {
-        auto it = g_registered_fns.find(name);
-        if (it == g_registered_fns.cend()) {
+    static ObjectProxy _invoke_native_function(const std::string &name, const std::vector<ObjectProxy> &params) {
+        auto it = g_registered_fn_handles.find(name);
+        if (it == g_registered_fn_handles.cend()) {
             //TODO: throw exception that we can bubble up to the language plugin
             return {};
         }
 
-        std::vector<ObjectProxy> args{ 1 };
-        //invoke_native_function(foo, args);
+        return it->second(params);
+    }
 
-        UNUSED(params);
-        //TODO
-        return {};
+    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params) {
+        return _invoke_native_function(name, params);
     }
 
     ObjectProxy invoke_native_function_instance(const std::string &name, const std::string &type_name,
             ObjectProxy instance, const std::vector<ObjectProxy> &params) {
-        UNUSED(name);
-        UNUSED(type_name);
-        UNUSED(instance);
-        UNUSED(params);
-        //TODO
-        return {};
+        auto qualified_name = type_name + TYPE_NAME_SEPARATOR + name;
+        std::vector<ObjectProxy> new_params(params.size() + 1);
+        new_params[0] = instance;
+        std::copy(params.cbegin(), params.cend(), new_params.begin());
+
+        return _invoke_native_function(qualified_name, new_params);
+    }
+
+    static ObjectProxy _create_object_proxy(const void *ptr, size_t size) {
+        ObjectProxy proxy{};
+        if (size <= sizeof(proxy.value)) {
+            // can store directly in ObjectProxy struct
+            memcpy(proxy.value, ptr, size);
+            proxy.is_on_heap = false;
+        } else {
+            // need to alloc on heap
+            proxy.heap_ptr = malloc(size);
+            memcpy(proxy.heap_ptr, ptr, size);
+            proxy.is_on_heap = true;
+        }
+
+        return proxy;
+    }
+
+    ObjectProxy create_object_proxy(const ObjectType &type, void *ptr) {
+        if (type.type == IntegralType::String) {
+            throw std::runtime_error("Cannot create object proxy for string-typed value - overload must be used");
+        }
+
+        return _create_object_proxy(ptr, type.size);
+    }
+
+    ObjectProxy create_object_proxy(const ObjectType &type, const std::string &str) {
+        if (type.type != IntegralType::String) {
+            throw std::runtime_error("Cannot create object proxy (string-specific overload called for"
+                                     " non-string-typed value");
+        }
+
+        return _create_object_proxy(str.c_str(), str.length() + 1);
     }
 }

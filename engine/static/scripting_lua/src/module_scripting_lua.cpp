@@ -21,8 +21,25 @@
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
 namespace argus {
+    std::vector<lua_State*> g_lua_states;
+
     void update_lifecycle_scripting_lua(LifecycleStage stage) {
-        //TODO
-        UNUSED(stage);
+        switch (stage) {
+            case LifecycleStage::Init: {
+                auto *global_state = create_lua_state();
+                g_lua_states.push_back(global_state);
+
+                break;
+            }
+            case LifecycleStage::Deinit: {
+                for (auto *state : g_lua_states) {
+                    destroy_lua_state(state);
+                }
+
+                break;
+            }
+            default:
+                break;
+        }
     }
 }

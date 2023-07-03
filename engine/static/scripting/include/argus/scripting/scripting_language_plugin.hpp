@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include "argus/scripting/bound_types.hpp"
 #include "argus/scripting/bridge.hpp"
 
 #include <string>

@@ -20,6 +20,14 @@
 
 #include "argus/core/module.hpp"
 
+#include "internal/scripting_lua/lua_util.hpp"
+
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
 namespace argus {
+    extern std::vector<lua_State*> g_lua_states;
+
     void update_lifecycle_scripting_lua(LifecycleStage stage);
 }

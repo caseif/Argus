@@ -18,31 +18,7 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 namespace argus {
-    struct BoundMemberDef;
-    struct BoundFunctionDef;
-
-    struct BoundTypeDef {
-        std::string name;
-        bool is_ref_type;
-        size_t size;
-        std::vector<BoundMemberDef> members;
-        std::vector<BoundFunctionDef> instance_functions;
-        std::vector<BoundFunctionDef> static_functions;
-    };
-
-    struct BoundMemberDef {
-        std::string name;
-        std::string type;
-    };
-
-    struct BoundFunctionDef {
-        std::string name;
-        std::vector<BoundTypeDef> params;
-        BoundTypeDef return_type;
-        void *callback;
-    };
+    constexpr const char *SEPARATOR_STATIC_FN = ":";
+    constexpr const char *SEPARATOR_INSTANCE_FN = "#";
 }

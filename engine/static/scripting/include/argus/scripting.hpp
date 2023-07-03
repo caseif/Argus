@@ -18,6 +18,7 @@
 
 #pragma once
 
-#include "argus/scripting/bound_types.hpp"
+#include "argus/scripting/bridge.hpp"
+#include "argus/scripting/bind.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/registration.hpp"
+#include "argus/scripting/types.hpp"
