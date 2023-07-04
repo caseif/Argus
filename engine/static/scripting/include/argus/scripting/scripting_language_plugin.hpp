@@ -18,7 +18,10 @@
 
 #pragma once
 
+#include "argus/resman/resource.hpp"
+
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/script_context.hpp"
 
 #include <string>
 #include <vector>
@@ -40,13 +43,19 @@ namespace argus {
             return this->name;
         }
 
+        virtual void *create_context_data(void) = 0;
+
+        virtual void destroy_context_data(void *data) = 0;
+
+        virtual void load_script(ScriptContext &context, const Resource &script) = 0;
+
         virtual void bind_type(const BoundTypeDef &type) = 0;
 
         virtual void bind_global_function(const BoundFunctionDef &fn) = 0;
 
-        virtual ObjectWrapper invoke_script_function(const std::string &name,
+        virtual ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
                 const std::vector<ObjectWrapper> &params) = 0;
     };
 
-    void register_scripting_language(ScriptingLanguagePlugin &plugin);
+    void register_scripting_language(ScriptingLanguagePlugin *plugin);
 }

@@ -18,31 +18,20 @@
 
 #pragma once
 
-#include "argus/scripting/script_context.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 
+#include <string>
+
 namespace argus {
-    class LuaLanguagePlugin : public ScriptingLanguagePlugin {
-      public:
-        LuaLanguagePlugin(void);
+    struct pimpl_ScriptContext {
+        const std::string language;
+        ScriptingLanguagePlugin *const plugin;
+        void *const plugin_data;
 
-        LuaLanguagePlugin(LuaLanguagePlugin &) = delete;
-
-        LuaLanguagePlugin(LuaLanguagePlugin &&) = delete;
-
-        ~LuaLanguagePlugin() override;
-
-        void *create_context_data(void) override;
-
-        void destroy_context_data(void *data) override;
-
-        void load_script(ScriptContext &context, const Resource &script) override;
-
-        void bind_type(const BoundTypeDef &type) override;
-
-        void bind_global_function(const BoundFunctionDef &fn) override;
-
-        ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
-                const std::vector<ObjectWrapper> &params) override;
+        pimpl_ScriptContext(std::string language, ScriptingLanguagePlugin *plugin, void *plugin_data) :
+            language(std::move(language)),
+            plugin(plugin),
+            plugin_data(plugin_data) {
+        }
     };
 }

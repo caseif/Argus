@@ -16,33 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/scripting/script_context.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
+#include "internal/scripting/module_scripting.hpp"
 
 namespace argus {
-    class LuaLanguagePlugin : public ScriptingLanguagePlugin {
-      public:
-        LuaLanguagePlugin(void);
-
-        LuaLanguagePlugin(LuaLanguagePlugin &) = delete;
-
-        LuaLanguagePlugin(LuaLanguagePlugin &&) = delete;
-
-        ~LuaLanguagePlugin() override;
-
-        void *create_context_data(void) override;
-
-        void destroy_context_data(void *data) override;
-
-        void load_script(ScriptContext &context, const Resource &script) override;
-
-        void bind_type(const BoundTypeDef &type) override;
-
-        void bind_global_function(const BoundFunctionDef &fn) override;
-
-        ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
-                const std::vector<ObjectWrapper> &params) override;
-    };
+    void register_scripting_language(ScriptingLanguagePlugin *plugin) {
+        g_lang_plugins.insert({ plugin->get_name(), plugin });
+    }
 }

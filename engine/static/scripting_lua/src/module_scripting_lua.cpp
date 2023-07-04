@@ -30,7 +30,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 plugin = new LuaLanguagePlugin();
-                register_scripting_language(*plugin);
+                register_scripting_language(plugin);
                 break;
             }
             case LifecycleStage::Init: {

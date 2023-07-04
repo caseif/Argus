@@ -22,7 +22,9 @@
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
+#include "internal/scripting/module_scripting.hpp"
 
+#include "internal/scripting_lua/lua_context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
@@ -258,6 +260,31 @@ namespace argus {
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;
 
+    void *LuaLanguagePlugin::create_context_data() {
+        auto *data = new LuaContextData();
+        data->state = create_lua_state();
+
+        return data;
+    }
+
+    void LuaLanguagePlugin::destroy_context_data(void *data) {
+        auto *lua_data = reinterpret_cast<LuaContextData *>(data);
+
+        destroy_lua_state(lua_data->state);
+
+        delete lua_data;
+    }
+
+    void LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &script) {
+        auto *plugin_data = context.get_plugin_data<LuaContextData>();
+
+        auto *state = plugin_data->state;
+        UNUSED(state);
+
+        //TODO
+        UNUSED(script);
+    }
+
     void LuaLanguagePlugin::bind_type(const BoundTypeDef &type) {
         for (auto *state : g_lua_states) {
             _bind_type(state, type);
@@ -270,8 +297,9 @@ namespace argus {
         }
     }
 
-    ObjectWrapper LuaLanguagePlugin::invoke_script_function(const std::string &name,
+    ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
             const std::vector<ObjectWrapper> &params) {
+        UNUSED(context);
         UNUSED(name);
         UNUSED(params);
         //TODO

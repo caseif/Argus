@@ -18,17 +18,12 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
-#include <vector>
+#include <string>
 
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    struct LoadedScript {
+        std::string source;
 
-    void update_lifecycle_scripting(LifecycleStage stage);
+        LoadedScript(std::string source);
+    };
 }

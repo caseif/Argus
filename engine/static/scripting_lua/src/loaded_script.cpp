@@ -16,19 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "internal/scripting_lua/loaded_script.hpp"
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
-#include <vector>
+#include <string>
 
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-
-    void update_lifecycle_scripting(LifecycleStage stage);
+    LoadedScript::LoadedScript(std::string source) : source(std::move(source)) {
+    }
 }

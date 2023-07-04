@@ -16,42 +16,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting.hpp"
+#include "argus/scripting/script_context.hpp"
 #include "internal/scripting/module_scripting.hpp"
+#include "internal/scripting/pimpl/script_context.hpp"
 
-#include <cstdio>
+#include <string>
+#include <vector>
 
 namespace argus {
-    std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    std::map<std::string, BoundTypeDef> g_bound_types;
-    std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-
-    static void _bind_to_plugins(void) {
-        for (auto &plugin : g_lang_plugins) {
-            for (const auto &type : g_bound_types) {
-                plugin.second->bind_type(type.second);
-            }
-
-            for (const auto &fn : g_bound_global_fns) {
-                plugin.second->bind_global_function(fn.second);
-            }
+    ScriptContext::ScriptContext(std::string language, void *plugin_data) {
+        auto it = g_lang_plugins.find(language);
+        if (it == g_lang_plugins.cend()) {
+            Logger::default_logger().fatal("Unknown scripting language '%s'", language.c_str());
         }
+
+        pimpl = new pimpl_ScriptContext(std::move(language), it->second, plugin_data);
     }
 
-    void update_lifecycle_scripting(LifecycleStage stage) {
-        switch (stage) {
-            case LifecycleStage::PostInit: {
-                _bind_to_plugins();
+    ScriptContext::~ScriptContext(void) = default;
 
-                break;
-            }
-            default:
-                break;
-        }
+    void *ScriptContext::get_plugin_data_ptr(void) {
+        return pimpl->plugin_data;
+    }
+
+    ObjectWrapper ScriptContext::invoke_script_function(const std::string &fn_name,
+            const std::vector<ObjectWrapper> &params) {
+        UNUSED(fn_name);
+        UNUSED(params);
+
+        //TODO
+        return {};
     }
 }

@@ -18,17 +18,18 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
-#include <vector>
+#include "argus/resman.hpp"
 
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    class LuaScriptLoader : public ResourceLoader {
+        ~LuaScriptLoader(void) override;
 
-    void update_lifecycle_scripting(LifecycleStage stage);
+        void *load(ResourceManager &manager, const ResourcePrototype &proto,
+                std::istream &stream, size_t size) const override;
+
+        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+                void *src, std::type_index type) const override;
+
+        void unload(void *data_ptr) const override;
+    };
 }

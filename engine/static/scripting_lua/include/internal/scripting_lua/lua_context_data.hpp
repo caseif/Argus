@@ -18,17 +18,10 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
-#include <vector>
+#include "lua.h"
 
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-
-    void update_lifecycle_scripting(LifecycleStage stage);
+    struct LuaContextData {
+        lua_State *state;
+    };
 }

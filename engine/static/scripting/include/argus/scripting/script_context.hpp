@@ -18,17 +18,38 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
+#include "argus/scripting/types.hpp"
 
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
+#include <string>
+#include <thread>
 #include <vector>
 
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    struct pimpl_ScriptContext;
 
-    void update_lifecycle_scripting(LifecycleStage stage);
+    class ScriptContext {
+      public:
+        pimpl_ScriptContext *pimpl;
+
+        ScriptContext(std::string language, void *data);
+
+        ScriptContext(ScriptContext &) = delete;
+
+        ScriptContext(ScriptContext &&) = delete;
+
+        ~ScriptContext(void);
+
+        ObjectWrapper invoke_script_function(const std::string &fn_name, const std::vector<ObjectWrapper> &params);
+
+        void *get_plugin_data_ptr(void);
+
+        template <typename T>
+        T *get_plugin_data(void) {
+            return reinterpret_cast<T *>(get_plugin_data_ptr());
+        }
+    };
+
+    ScriptContext &create_script_context(void);
+
+    void destroy_script_context(ScriptContext &context);
 }
