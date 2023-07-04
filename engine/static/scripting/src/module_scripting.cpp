@@ -29,11 +29,27 @@
 namespace argus {
     std::vector<ScriptingLanguagePlugin> g_lang_plugins;
     std::map<std::string, BoundTypeDef> g_bound_types;
-    std::map<std::string, BoundFunctionDef> g_bound_fns;
-    std::map<std::string, ProxiedFunction> g_registered_fn_handles;
+    std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    std::map<std::string, BoundFunctionDef> g_bound_member_fns;
+
+    static void _bind_to_plugins(void) {
+        for (auto &plugin : g_lang_plugins) {
+            for (const auto &type : g_bound_types) {
+                plugin.bind_type(type.second);
+            }
+
+            for (const auto &fn : g_bound_global_fns) {
+                plugin.bind_global_function(fn.second);
+            }
+        }
+    }
 
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
+            case LifecycleStage::PostInit: {
+                _bind_to_plugins();
+                break;
+            }
             default:
                 break;
         }

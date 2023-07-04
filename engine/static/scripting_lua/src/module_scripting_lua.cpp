@@ -18,13 +18,21 @@
 
 #include "argus/core/module.hpp"
 
+#include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
 namespace argus {
     std::vector<lua_State*> g_lua_states;
 
+    static LuaLanguagePlugin *plugin;
+
     void update_lifecycle_scripting_lua(LifecycleStage stage) {
         switch (stage) {
+            case LifecycleStage::PreInit: {
+                plugin = new LuaLanguagePlugin();
+                register_scripting_language(*plugin);
+                break;
+            }
             case LifecycleStage::Init: {
                 auto *global_state = create_lua_state();
                 g_lua_states.push_back(global_state);

@@ -56,7 +56,7 @@ namespace argus {
 
     template <typename FuncType, typename... Args,
             typename ReturnType = typename function_traits<FuncType>::return_type>
-    ReturnType invoke_function(FuncType fn, const std::vector<ObjectProxy> &params) {
+    ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
         using ArgsTuple = typename function_traits<FuncType>::argument_types;
 
@@ -88,17 +88,17 @@ namespace argus {
     }
 
     template <typename FuncType, typename... Args>
-    ProxiedFunction create_function_proxy(FuncType fn) {
+    ProxiedFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
-            return [fn] (std::vector<ObjectProxy> params) {
+            return [fn] (std::vector<ObjectWrapper> params) {
                 ReturnType ret = invoke_function(fn, params);
                 if constexpr (std::is_reference_v<ReturnType>) {
-                    return ObjectProxy { &ret };
+                    return ObjectWrapper { &ret };
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
-                    return ObjectProxy { ret };
+                    return ObjectWrapper { ret };
                 } else {
-                    return ObjectProxy { copy_value(&ret, sizeof(ReturnType)) };
+                    return ObjectWrapper { scripting_copy_value(&ret, sizeof(ReturnType)) };
                 }
             };
         } else {
@@ -107,18 +107,25 @@ namespace argus {
 
     }
 
-    void *copy_value(void *src, size_t size);
+    void *scripting_copy_value(void *src, size_t size);
 
-    void free_value(void *buf);
+    void scripting_free_value(void *buf);
 
-    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params);
+    const BoundFunctionDef &get_native_global_function(const std::string &name);
 
-    ObjectProxy invoke_native_function_instance(const std::string &name, const std::string &type_name,
-            ObjectProxy instance, const std::vector<ObjectProxy> &params);
+    const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name, const std::string &fn_name);
 
-    ObjectProxy create_object_proxy(const ObjectType &type, void *ptr);
+    const BoundFunctionDef &get_native_member_static_function(const std::string &type_name, const std::string &fn_name);
 
-    ObjectProxy create_object_proxy(const ObjectType &type, const std::string &str);
+    ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
+
+    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr);
+
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const std::string &str);
+
+    void cleanup_object_wrapper(ObjectWrapper &wrapper);
+
+    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
 
     template <typename T>
     static ObjectType _create_object_type(void) {
@@ -160,30 +167,40 @@ namespace argus {
     }
 
     template <typename FuncType, typename... Args>
-    BoundFunctionDef create_function_def(const std::string &name, FuncType fn) {
+    static BoundFunctionDef _create_function_def(const std::string &name, FuncType fn, FunctionType type) {
         using ArgsTuple = typename function_traits<FuncType>::argument_types;
         using ReturnType = typename function_traits<FuncType>::return_type;
 
         BoundFunctionDef def{};
         def.name = name;
-        def.handle = create_function_proxy(fn);
+        def.type = type;
+        def.handle = create_function_wrapper(fn);
         def.params = _tuple_to_vector<ArgsTuple>();
         def.return_type = _create_object_type<ReturnType>();
 
         return def;
     }
 
-    template <typename FuncType, typename... Args>
-    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
-    add_member_function(BoundTypeDef type_def, const std::string &name, FuncType fn) {
-        auto fn_def = create_function_def(name, fn);
-        type_def.instance_functions.push_back(fn_def);
+    template <typename FuncType>
+    BoundFunctionDef create_global_function_def(const std::string &name, FuncType fn) {
+        return _create_function_def(name, fn, FunctionType::Global);
     }
 
-    template <typename FuncType, typename... Args>
+    void add_member_instance_function(BoundTypeDef type_def, BoundFunctionDef fn_def);
+
+    void add_member_static_function(BoundTypeDef type_def, BoundFunctionDef fn_def);
+
+    template <typename FuncType>
+    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    add_member_instance_function(BoundTypeDef type_def, const std::string &fn_name, FuncType fn) {
+        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        add_member_instance_function(type_def, fn_def);
+    }
+
+    template <typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
-    add_static_function(BoundTypeDef type_def, const std::string &name, FuncType fn) {
-        auto fn_def = create_function_def(name, fn);
-        type_def.static_functions.push_back(fn_def);
+    add_member_static_function(BoundTypeDef type_def, const std::string &fn_name, FuncType fn) {
+        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
+        add_member_static_function(type_def, fn_def);
     }
 }

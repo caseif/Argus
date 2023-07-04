@@ -18,7 +18,11 @@
 
 #pragma once
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/types.hpp"
+
+#include <string>
+
+namespace argus {
+    std::string get_qualified_function_name(FunctionType fn_type, const std::string &type_name,
+            const std::string &fn_name);
+}

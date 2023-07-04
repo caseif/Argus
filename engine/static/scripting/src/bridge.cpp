@@ -16,88 +16,135 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/functional.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/macros.hpp"
 
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
 #include "internal/scripting/module_scripting.hpp"
+#include "argus/scripting/util.hpp"
 
-#include <functional>
-#include <type_traits>
+#include <string>
 #include <vector>
 
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
 
 namespace argus {
-    static constexpr const char TYPE_NAME_SEPARATOR[] = "#";
-
-    void *copy_value(void *src, size_t size) {
+    void *scripting_copy_value(void *src, size_t size) {
         void *dst = malloc(size);
         memcpy(dst, src, size);
         return dst;
     }
 
-    void free_value(void *buf) {
+    void scripting_free_value(void *buf) {
         free(buf);
     }
 
-    static ObjectProxy _invoke_native_function(const std::string &name, const std::vector<ObjectProxy> &params) {
-        auto it = g_registered_fn_handles.find(name);
-        if (it == g_registered_fn_handles.cend()) {
-            //TODO: throw exception that we can bubble up to the language plugin
-            return {};
+    static const BoundFunctionDef &_get_native_function(FunctionType fn_type, const std::string &fn_name,
+            const std::string &type_name) {
+        switch (fn_type) {
+            case FunctionType::MemberInstance:
+            case FunctionType::MemberStatic: {
+                auto type_it = g_bound_types.find(type_name);
+                if (type_it == g_bound_types.cend()) {
+                    throw TypeNotBoundException(type_name);
+                }
+
+                const auto &fn_map = fn_type == FunctionType::MemberInstance
+                        ? type_it->second.instance_functions
+                        : type_it->second.static_functions;
+
+                auto fn_it = fn_map.find(fn_name);
+                if (fn_it == fn_map.cend()) {
+                    throw FunctionNotBoundException(get_qualified_function_name(fn_type, type_name, fn_name));
+                }
+                return fn_it->second;
+            }
+            case FunctionType::Global: {
+                auto it = g_bound_global_fns.find(fn_name);
+                if (it == g_bound_global_fns.cend()) {
+                    throw FunctionNotBoundException(fn_name);
+                }
+                return it->second;
+            }
+            default:
+                Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
+        }
+    }
+
+    const BoundFunctionDef &get_native_global_function(const std::string &name) {
+        return _get_native_function(FunctionType::Global, name, "");
+    }
+
+    const BoundFunctionDef &get_native_member_instance_function(const std::string &fn_name, const std::string &type_name) {
+        return _get_native_function(FunctionType::MemberInstance, fn_name, type_name);
+    }
+
+    const BoundFunctionDef &get_native_member_static_function(const std::string &fn_name, const std::string &type_name) {
+        return _get_native_function(FunctionType::MemberStatic, fn_name, type_name);
+    }
+
+    ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params) {
+        auto expected_param_count = def.params.size();
+        if (def.type == FunctionType::MemberInstance) {
+            expected_param_count += 1;
         }
 
-        return it->second(params);
+        if (params.size() < expected_param_count) {
+            throw ReflectiveArgumentsException("Too few arguments provided");
+        } else if (params.size() >= expected_param_count) {
+            throw ReflectiveArgumentsException("Too many arguments provided");
+        }
+
+        assert(params.size() == expected_param_count);
+
+        return def.handle(params);
     }
 
-    ObjectProxy invoke_native_function_global(const std::string &name, const std::vector<ObjectProxy> &params) {
-        return _invoke_native_function(name, params);
-    }
-
-    ObjectProxy invoke_native_function_instance(const std::string &name, const std::string &type_name,
-            ObjectProxy instance, const std::vector<ObjectProxy> &params) {
-        auto qualified_name = type_name + TYPE_NAME_SEPARATOR + name;
-        std::vector<ObjectProxy> new_params(params.size() + 1);
-        new_params[0] = instance;
-        std::copy(params.cbegin(), params.cend(), new_params.begin());
-
-        return _invoke_native_function(qualified_name, new_params);
-    }
-
-    static ObjectProxy _create_object_proxy(const void *ptr, size_t size) {
-        ObjectProxy proxy{};
-        if (size <= sizeof(proxy.value)) {
-            // can store directly in ObjectProxy struct
-            memcpy(proxy.value, ptr, size);
-            proxy.is_on_heap = false;
+    static ObjectWrapper _create_object_wrapper(const void *ptr, size_t size) {
+        ObjectWrapper wrapper{};
+        if (size <= sizeof(wrapper.value)) {
+            // can store directly in ObjectWrapper struct
+            memcpy(wrapper.value, ptr, size);
+            wrapper.is_on_heap = false;
         } else {
             // need to alloc on heap
-            proxy.heap_ptr = malloc(size);
-            memcpy(proxy.heap_ptr, ptr, size);
-            proxy.is_on_heap = true;
+            wrapper.heap_ptr = malloc(size);
+            memcpy(wrapper.heap_ptr, ptr, size);
+            wrapper.is_on_heap = true;
         }
 
-        return proxy;
+        return wrapper;
     }
 
-    ObjectProxy create_object_proxy(const ObjectType &type, void *ptr) {
+    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr) {
         if (type.type == IntegralType::String) {
-            throw std::runtime_error("Cannot create object proxy for string-typed value - overload must be used");
+            throw std::runtime_error("Cannot create object wrapper for string-typed value - overload must be used");
         }
 
-        return _create_object_proxy(ptr, type.size);
+        return _create_object_wrapper(ptr, type.size);
     }
 
-    ObjectProxy create_object_proxy(const ObjectType &type, const std::string &str) {
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const std::string &str) {
         if (type.type != IntegralType::String) {
-            throw std::runtime_error("Cannot create object proxy (string-specific overload called for"
+            throw std::runtime_error("Cannot create object wrapper (string-specific overload called for"
                                      " non-string-typed value");
         }
 
-        return _create_object_proxy(str.c_str(), str.length() + 1);
+        return _create_object_wrapper(str.c_str(), str.length() + 1);
+    }
+
+    void cleanup_object_wrapper(ObjectWrapper &wrapper) {
+        if (wrapper.is_on_heap) {
+            free(wrapper.heap_ptr);
+        }
+    }
+
+    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrappers) {
+        for (auto &wrapper : wrappers) {
+            cleanup_object_wrapper(wrapper);
+        }
     }
 }

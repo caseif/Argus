@@ -16,9 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/scripting/util.hpp"
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
+namespace argus {
+    std::string get_qualified_function_name(FunctionType fn_type, const std::string &type_name,
+            const std::string &fn_name) {
+        switch (fn_type) {
+            case FunctionType::Global:
+            return fn_name;
+            case FunctionType::MemberInstance:
+            return type_name + "::" + fn_name;
+            case FunctionType::MemberStatic:
+            return type_name + "#" + fn_name;
+        }
+    }
+}

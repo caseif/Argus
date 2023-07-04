@@ -38,7 +38,7 @@ namespace argus {
     template <typename FuncType>
     typename std::enable_if<std::is_function_v<FuncType>, BoundFunctionDef>::type
     bind_global_function(const std::string &name, FuncType fn) {
-        auto def = create_function_def<FuncType>(name, fn);
+        auto def = create_global_function_def<FuncType>(name, fn);
         bind_global_function(def);
     }
 

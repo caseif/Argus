@@ -16,9 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/scripting/exception.hpp"
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
+#include <exception>
+
+namespace argus {
+    TypeNotBoundException::TypeNotBoundException(const std::string &fn_name) {
+    }
+
+    const char *TypeNotBoundException::what(void) const noexcept {
+        return fn_name.c_str();
+    }
+
+    FunctionNotBoundException::FunctionNotBoundException(const std::string &fn_name) {
+    }
+
+    const char *FunctionNotBoundException::what(void) const noexcept {
+        return fn_name.c_str();
+    }
+
+    ReflectiveArgumentsException::ReflectiveArgumentsException(const std::string &fn_name) {
+    }
+
+    const char *ReflectiveArgumentsException::what(void) const noexcept {
+        return fn_name.c_str();
+    }
+}

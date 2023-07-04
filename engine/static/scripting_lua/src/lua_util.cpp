@@ -16,9 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/lowlevel/logging.hpp"
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
+#include "internal/scripting_lua/lua_util.hpp"
+
+namespace argus {
+    lua_State *create_lua_state(void) {
+        auto *state = luaL_newstate();
+        if (state == nullptr) {
+            Logger::default_logger().fatal("Failed to create Lua state");
+        }
+
+        luaL_openlibs(state);
+
+        return state;
+    }
+
+    void destroy_lua_state(lua_State *state) {
+        lua_close(state);
+    }
+}

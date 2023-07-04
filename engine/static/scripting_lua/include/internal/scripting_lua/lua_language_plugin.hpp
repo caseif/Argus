@@ -18,7 +18,24 @@
 
 #pragma once
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
+
+namespace argus {
+    class LuaLanguagePlugin : public ScriptingLanguagePlugin {
+      public:
+        LuaLanguagePlugin(void);
+
+        LuaLanguagePlugin(LuaLanguagePlugin &) = delete;
+
+        LuaLanguagePlugin(LuaLanguagePlugin &&) = delete;
+
+        ~LuaLanguagePlugin() override;
+
+        void bind_type(const BoundTypeDef &type) override;
+
+        void bind_global_function(const BoundFunctionDef &fn) override;
+
+        ObjectWrapper invoke_script_function(const std::string &name, const std::vector<ObjectWrapper> &params)
+                override;
+    };
+}

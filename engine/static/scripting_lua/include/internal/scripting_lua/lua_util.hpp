@@ -18,7 +18,15 @@
 
 #pragma once
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+#pragma GCC diagnostic pop
+
+namespace argus {
+    lua_State *create_lua_state(void);
+
+    void destroy_lua_state(lua_State *state);
+}

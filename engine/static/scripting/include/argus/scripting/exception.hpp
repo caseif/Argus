@@ -18,35 +18,37 @@
 
 #pragma once
 
-#include "argus/scripting/bridge.hpp"
-
+#include <exception>
 #include <string>
-#include <vector>
 
 namespace argus {
-    class ScriptingLanguagePlugin {
+    class TypeNotBoundException : public std::exception {
       private:
-        std::string name;
+        std::string fn_name;
 
       public:
-        ScriptingLanguagePlugin(std::string name) : name(std::move(name)) {}
+        TypeNotBoundException(const std::string &fn_name);
 
-        ScriptingLanguagePlugin(const ScriptingLanguagePlugin &) = delete;
-        ScriptingLanguagePlugin(ScriptingLanguagePlugin &&) = delete;
-
-        virtual ~ScriptingLanguagePlugin(void) = 0;
-
-        const std::string &get_name(void) {
-            return this->name;
-        }
-
-        virtual void bind_type(const BoundTypeDef &type) = 0;
-
-        virtual void bind_global_function(const BoundFunctionDef &fn) = 0;
-
-        virtual ObjectWrapper invoke_script_function(const std::string &name,
-                const std::vector<ObjectWrapper> &params) = 0;
+        [[nodiscard]] const char *what(void) const noexcept override;
     };
 
-    void register_scripting_language(ScriptingLanguagePlugin &plugin);
+    class FunctionNotBoundException : public std::exception {
+      private:
+        std::string fn_name;
+
+      public:
+        FunctionNotBoundException(const std::string &fn_name);
+
+        [[nodiscard]] const char *what(void) const noexcept override;
+    };
+
+    class ReflectiveArgumentsException : public std::exception {
+      private:
+        std::string fn_name;
+
+      public:
+        ReflectiveArgumentsException(const std::string &fn_name);
+
+        [[nodiscard]] const char *what(void) const noexcept override;
+    };
 }

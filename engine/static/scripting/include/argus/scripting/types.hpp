@@ -19,15 +19,29 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
 namespace argus {
-    struct ObjectProxy {
+    enum IntegralType {
+        Integer,
+        Float,
+        String,
+        Opaque
+    };
+
+    enum FunctionType {
+        Global,
+        MemberStatic,
+        MemberInstance,
+    };
+
+    struct ObjectWrapper {
         union {
             // small values/structs can be stored directly in this struct
             unsigned char value[64];
-            // alias for proxies wrapping pointer or reference types
+            // alias for wrappers which wrap pointer or reference types
             void *stored_ptr;
             // larger structs must be allocated on the heap and accessed through this alias
             void *heap_ptr;
@@ -35,14 +49,7 @@ namespace argus {
         bool is_on_heap;
     };
 
-    typedef std::function<ObjectProxy(const std::vector<ObjectProxy> &)> ProxiedFunction;
-
-    enum IntegralType {
-        Integer,
-        Float,
-        String,
-        Opaque
-    };
+    typedef std::function<ObjectWrapper(const std::vector<ObjectWrapper> &)> ProxiedFunction;
 
     struct ObjectType {
         IntegralType type;
@@ -52,6 +59,7 @@ namespace argus {
 
     struct BoundFunctionDef {
         std::string name;
+        FunctionType type;
         std::vector<ObjectType> params;
         ObjectType return_type;
         ProxiedFunction handle;
@@ -61,8 +69,8 @@ namespace argus {
         std::string name;
         size_t size;
         //std::vector<BoundMemberDef> members;
-        std::vector<BoundFunctionDef> instance_functions;
-        std::vector<BoundFunctionDef> static_functions;
+        std::map<std::string, BoundFunctionDef> instance_functions;
+        std::map<std::string, BoundFunctionDef> static_functions;
     };
 
     /*struct BoundMemberDef {
