@@ -69,10 +69,13 @@ namespace argus {
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 0 : 1);
         std::apply([&](auto&... el) {
             (([&]() {
+                auto param = *(it++);
+                void *ptr = param.is_on_heap ? param.heap_ptr : &param.value;
+
                 if constexpr (std::is_same_v<std::decay_t<decltype(el)>, std::string>) {
-                    el = std::string(*reinterpret_cast<const char *>((it++)->ptr));
+                    el = std::string(reinterpret_cast<const char *>(ptr));
                 } else {
-                    el = *reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<decltype(el)>>*>((it++)->ptr);
+                    el = reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<decltype(el)>>*>(ptr);
                 }
             })(), ...);
         }, args);
@@ -91,7 +94,7 @@ namespace argus {
     ProxiedFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
-            return [fn] (std::vector<ObjectWrapper> params) {
+            return [fn] (const std::vector<ObjectWrapper> &params) {
                 ReturnType ret = invoke_function(fn, params);
                 if constexpr (std::is_reference_v<ReturnType>) {
                     return ObjectWrapper { &ret };
@@ -102,7 +105,10 @@ namespace argus {
                 }
             };
         } else {
-            return invoke_function<FuncType, Args...>;
+            return [fn] (const std::vector<ObjectWrapper> &params) {
+                invoke_function(fn, params);
+                return ObjectWrapper {};
+            };
         }
 
     }
@@ -129,13 +135,13 @@ namespace argus {
 
     template <typename T>
     static ObjectType _create_object_type(void) {
-        if constexpr (std::is_same_v<std::make_signed<T>, int8_t>()) {
+        if constexpr (std::is_same_v<std::make_signed<T>, int8_t>) {
             return { IntegralType::Integer, 1, "" };
-        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int16_t>()) {
+        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int16_t>) {
             return { IntegralType::Integer, 2, "" };
-        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int32_t>()) {
+        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int32_t>) {
             return { IntegralType::Integer, 4, "" };
-        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int64_t>()) {
+        } else if constexpr (std::is_same_v<std::make_signed<std::remove_const<T>>, int64_t>) {
             return { IntegralType::Integer, 8, "" };
         } else if constexpr (std::is_same_v<std::remove_const<T>, float>) {
             return { IntegralType::Float, 4, "" };
@@ -156,7 +162,7 @@ namespace argus {
 
     template <typename Tuple>
     auto _tuple_to_vector() {
-        return _tuple_to_vector_impl(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+        return _tuple_to_vector_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
     }
 
     template <typename T>

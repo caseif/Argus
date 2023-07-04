@@ -30,13 +30,13 @@ namespace argus {
     void bind_global_function(const BoundFunctionDef &def);
 
     template <typename T>
-    typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type bind_type(const std::string &name) {
+    typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
         auto def = create_type_def<T>(name);
         bind_type(def);
     }
 
     template <typename FuncType>
-    typename std::enable_if<std::is_function_v<FuncType>, BoundFunctionDef>::type
+    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_global_function(const std::string &name, FuncType fn) {
         auto def = create_global_function_def<FuncType>(name, fn);
         bind_global_function(def);

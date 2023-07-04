@@ -30,7 +30,6 @@ namespace argus {
     std::vector<ScriptingLanguagePlugin> g_lang_plugins;
     std::map<std::string, BoundTypeDef> g_bound_types;
     std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-    std::map<std::string, BoundFunctionDef> g_bound_member_fns;
 
     static void _bind_to_plugins(void) {
         for (auto &plugin : g_lang_plugins) {
@@ -48,6 +47,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::PostInit: {
                 _bind_to_plugins();
+
                 break;
             }
             default:

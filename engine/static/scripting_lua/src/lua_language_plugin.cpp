@@ -37,9 +37,6 @@
 namespace argus {
     static constexpr const char *k_lang_name = "lua";
 
-    static std::map<std::string, BoundFunctionDef> registered_types;
-    static std::map<std::string, BoundFunctionDef> registered_global_fns;
-
     static void _set_lua_error(lua_State *state, const std::string &msg) {
         luaL_error(state, msg.c_str());
     }
@@ -140,7 +137,7 @@ namespace argus {
         }
     }
 
-    [[maybe_unused]] static int _lua_fn_wrapper(lua_State *state) {
+    static int _lua_trampoline(lua_State *state) {
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
                 && fn_type != FunctionType::MemberStatic) {
@@ -194,7 +191,7 @@ namespace argus {
             }
 
             auto retval = fn.handle(args);
-            UNUSED(retval);
+            UNUSED(retval); //TODO
 
             return 1;
         } catch (const TypeNotBoundException &ex) {
@@ -218,22 +215,41 @@ namespace argus {
         }
         // push function name
         lua_pushstring(state, fn.name.c_str());
+
+        auto upvalue_count = fn.type == FunctionType::Global ? 2 : 3;
+
+        lua_pushcclosure(state, _lua_trampoline, upvalue_count);
+
+        if (fn.type == FunctionType::Global) {
+            lua_setglobal(state, fn.name.c_str());
+        } else {
+            lua_setfield(state, -2, fn.name.c_str());
+        }
     }
 
     static void _bind_type(lua_State *state, const BoundTypeDef &type) {
-        UNUSED(state);
-        UNUSED(type);
+        lua_newtable(state);
+
+        // register instance functions to metatable
+        lua_newtable(state);
 
         for (const auto &fn : type.instance_functions) {
+            assert(fn.second.type == FunctionType::MemberInstance);
             _bind_fn(state, fn.second, type.name);
         }
 
+        lua_setfield(state, -2, "__index");
+
+        // register static functions to outer table
+
         for (const auto &fn : type.static_functions) {
+            assert(fn.second.type == FunctionType::MemberStatic);
             _bind_fn(state, fn.second, type.name);
         }
     }
 
-    static void _register_global_fn(lua_State *state, const BoundFunctionDef &fn) {
+    static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
+        assert(fn.type == FunctionType::Global);
         _bind_fn(state, fn, "");
     }
 
@@ -250,7 +266,7 @@ namespace argus {
 
     void LuaLanguagePlugin::bind_global_function(const BoundFunctionDef &fn) {
         for (auto *state : g_lua_states) {
-            _register_global_fn(state, fn);
+            _bind_global_fn(state, fn);
         }
     }
 
