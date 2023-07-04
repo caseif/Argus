@@ -18,16 +18,20 @@
 
 #include "argus/scripting/util.hpp"
 
+#include <cassert>
+
 namespace argus {
     std::string get_qualified_function_name(FunctionType fn_type, const std::string &type_name,
             const std::string &fn_name) {
         switch (fn_type) {
             case FunctionType::Global:
-            return fn_name;
+                return fn_name;
             case FunctionType::MemberInstance:
-            return type_name + "::" + fn_name;
+                return type_name + "::" + fn_name;
             case FunctionType::MemberStatic:
-            return type_name + "#" + fn_name;
+                return type_name + "#" + fn_name;
+            default:
+                assert(false);
         }
     }
 }
