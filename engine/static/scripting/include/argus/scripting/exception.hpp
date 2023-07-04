@@ -27,7 +27,7 @@ namespace argus {
         std::string fn_name;
 
       public:
-        TypeNotBoundException(const std::string &fn_name);
+        TypeNotBoundException(std::string fn_name);
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };
@@ -37,7 +37,7 @@ namespace argus {
         std::string fn_name;
 
       public:
-        FunctionNotBoundException(const std::string &fn_name);
+        FunctionNotBoundException(std::string fn_name);
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };
@@ -47,7 +47,7 @@ namespace argus {
         std::string fn_name;
 
       public:
-        ReflectiveArgumentsException(const std::string &fn_name);
+        ReflectiveArgumentsException(std::string fn_name);
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };

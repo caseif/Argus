@@ -21,21 +21,21 @@
 #include <exception>
 
 namespace argus {
-    TypeNotBoundException::TypeNotBoundException(const std::string &fn_name) {
+    TypeNotBoundException::TypeNotBoundException(std::string fn_name) : fn_name(std::move(fn_name)) {
     }
 
     const char *TypeNotBoundException::what(void) const noexcept {
         return fn_name.c_str();
     }
 
-    FunctionNotBoundException::FunctionNotBoundException(const std::string &fn_name) {
+    FunctionNotBoundException::FunctionNotBoundException(std::string fn_name) : fn_name(std::move(fn_name)) {
     }
 
     const char *FunctionNotBoundException::what(void) const noexcept {
         return fn_name.c_str();
     }
 
-    ReflectiveArgumentsException::ReflectiveArgumentsException(const std::string &fn_name) {
+    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string fn_name) : fn_name(std::move(fn_name)) {
     }
 
     const char *ReflectiveArgumentsException::what(void) const noexcept {
