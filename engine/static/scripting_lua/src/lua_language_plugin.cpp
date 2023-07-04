@@ -30,6 +30,7 @@
 
 #include "lua.h"
 #include "lauxlib.h"
+#include "internal/scripting_lua/loaded_script.hpp"
 
 #include <functional>
 #include <string>
@@ -279,10 +280,18 @@ namespace argus {
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
 
         auto *state = plugin_data->state;
-        UNUSED(state);
 
-        //TODO
-        UNUSED(script);
+        auto &loaded_script = script.get<LoadedScript>();
+
+        if (luaL_loadstring(state, loaded_script.source.c_str()) != 0) {
+            throw ScriptLoadException(script.uid, "luaL_loadstring failed");
+        }
+
+        auto err = lua_pcall(state, 0, 0, 0);
+        if (err != 0) {
+            //TODO: print detailed trace info from VM
+            throw ScriptLoadException(script.uid, lua_tostring(state, -1));
+        }
     }
 
     void LuaLanguagePlugin::bind_type(const BoundTypeDef &type) {

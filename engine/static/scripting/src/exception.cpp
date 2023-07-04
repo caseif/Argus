@@ -41,4 +41,20 @@ namespace argus {
     const char *ReflectiveArgumentsException::what(void) const noexcept {
         return fn_name.c_str();
     }
+
+    ScriptLoadException::ScriptLoadException(const std::string &script_uid, const std::string &msg) :
+        msg("Load failed for " + script_uid + ": " + msg) {
+    }
+
+    const char *ScriptLoadException::what(void) const noexcept {
+        return msg.c_str();
+    }
+
+    ScriptInvocationException::ScriptInvocationException(const std::string &fn_name, const std::string &msg) :
+        msg("Invocation failed for script function " + fn_name + ": " + msg) {
+    }
+
+    const char *ScriptInvocationException::what(void) const noexcept {
+        return msg.c_str();
+    }
 }
