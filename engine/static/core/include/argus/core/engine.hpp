@@ -22,6 +22,7 @@
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/core/callback.hpp"
+#include "argus/core/module.hpp"
 
 #include <functional>
 #include <initializer_list>
@@ -82,6 +83,13 @@ namespace argus {
      *        necessary.
      */
     void stop_engine(void);
+
+    /**
+     * \brief Gets the current lifecycle stage of the engine.
+     *
+     * \return The current lifecycle stage of the engine.
+     */
+     LifecycleStage get_current_lifecycle_stage(void);
 
     /**
      * \brief Registers a callback for invocation on each game update.

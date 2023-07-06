@@ -37,7 +37,14 @@ namespace argus {
         MemberInstance,
     };
 
+    struct ObjectType {
+        IntegralType type;
+        size_t size;
+        std::string type_name;
+    };
+
     struct ObjectWrapper {
+        ObjectType type;
         union {
             // small values/structs can be stored directly in this struct
             unsigned char value[64];
@@ -47,15 +54,13 @@ namespace argus {
             void *heap_ptr;
         };
         bool is_on_heap;
+
+        void *get_ptr(void) {
+            return is_on_heap ? heap_ptr : value;
+        }
     };
 
     typedef std::function<ObjectWrapper(const std::vector<ObjectWrapper> &)> ProxiedFunction;
-
-    struct ObjectType {
-        IntegralType type;
-        size_t size;
-        std::string type_name;
-    };
 
     struct BoundFunctionDef {
         std::string name;

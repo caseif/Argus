@@ -18,7 +18,9 @@
 
 #pragma once
 
+extern "C" {
 #include "lua.h"
+}
 
 namespace argus {
     struct LuaContextData {

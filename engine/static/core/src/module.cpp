@@ -22,6 +22,7 @@
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/engine.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 #include "internal/core/module_defs.hpp"
@@ -332,7 +333,11 @@ namespace argus {
             auto found_static = std::find_if(g_static_modules.cbegin(), g_static_modules.cend(),
                     [module_id](auto &sm) { return sm.id == module_id; });
             if (found_static != g_static_modules.cend()) {
+                printf("module: %s\n", found_static->id.c_str());
                 all_modules.insert({found_static->id});
+                for (auto dep : found_static->dependencies) {
+                    printf("    dep: %s\n", dep.c_str());
+                }
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
             } else {
                 enable_dynamic_module(module_id);
@@ -437,13 +442,18 @@ namespace argus {
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
              stage = LifecycleStage(uint32_t(stage) + 1)) {
+            g_cur_lifecycle_stage = stage;
             _send_lifecycle_update(stage);
         }
+
+        g_cur_lifecycle_stage = LifecycleStage::Running;
     }
 
     void deinit_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
              stage = LifecycleStage(uint32_t(stage) + 1)) {
+            g_cur_lifecycle_stage = stage;
+
             for (auto it = g_enabled_static_modules.rbegin(); it != g_enabled_static_modules.rend(); ++it) {
                 it->lifecycle_update_callback(stage);
             }

@@ -20,9 +20,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+}
 #pragma GCC diagnostic pop
 
 namespace argus {

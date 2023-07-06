@@ -54,6 +54,8 @@
 #define NS_PER_US 1'000ULL
 
 namespace argus {
+    LifecycleStage g_cur_lifecycle_stage;
+
     static CallbackList<DeltaCallback> g_update_callbacks;
     static CallbackList<DeltaCallback> g_render_callbacks;
 
@@ -328,5 +330,9 @@ namespace argus {
         affirm_precond(g_core_initialized, "Cannot stop engine before it is initialized.");
 
         g_engine_stopping = true;
+    }
+
+    LifecycleStage get_current_lifecycle_stage(void) {
+        return g_cur_lifecycle_stage;
     }
 }

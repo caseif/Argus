@@ -19,5 +19,7 @@
 #pragma once
 
 namespace argus {
+    extern LifecycleStage g_cur_lifecycle_stage;
+
     void kill_game_thread(void);
 }

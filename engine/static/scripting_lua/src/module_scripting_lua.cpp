@@ -18,22 +18,29 @@
 
 #include "argus/core/module.hpp"
 
+#include "argus/resman.hpp"
+
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
+#include "internal/scripting_lua/loader/lua_script_loader.hpp"
 
 namespace argus {
     std::vector<lua_State*> g_lua_states;
 
-    static LuaLanguagePlugin *plugin;
+    static LuaScriptLoader *g_res_loader;
+    static LuaLanguagePlugin *g_plugin;
 
     void update_lifecycle_scripting_lua(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
-                plugin = new LuaLanguagePlugin();
-                register_scripting_language(plugin);
+                g_plugin = new LuaLanguagePlugin();
+                register_scripting_language(g_plugin);
                 break;
             }
             case LifecycleStage::Init: {
+                g_res_loader = new LuaScriptLoader();
+                ResourceManager::instance().register_loader(*g_res_loader);
+
                 auto *global_state = create_lua_state();
                 g_lua_states.push_back(global_state);
 
@@ -43,6 +50,8 @@ namespace argus {
                 for (auto *state : g_lua_states) {
                     destroy_lua_state(state);
                 }
+
+                delete g_res_loader;
 
                 break;
             }

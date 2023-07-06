@@ -25,6 +25,8 @@
 #include <vector>
 
 namespace argus {
+    // forward declarations
+    class Resource;
     struct pimpl_ScriptContext;
 
     class ScriptContext {
@@ -39,6 +41,8 @@ namespace argus {
 
         ~ScriptContext(void);
 
+        void load_script(const std::string &uid);
+
         ObjectWrapper invoke_script_function(const std::string &fn_name, const std::vector<ObjectWrapper> &params);
 
         void *get_plugin_data_ptr(void);
@@ -49,7 +53,9 @@ namespace argus {
         }
     };
 
-    ScriptContext &create_script_context(void);
+    extern ScriptContext *g_script_context;
+
+    ScriptContext &create_script_context(const std::string &language);
 
     void destroy_script_context(ScriptContext &context);
 }

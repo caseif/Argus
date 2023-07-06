@@ -54,7 +54,10 @@ namespace argus {
     static void
     _log_generic(FILE *stream, const std::string &realm, const std::string &level, std::string format, va_list args) {
         fprintf(stream, "[%s][%s] ", realm.c_str(), level.c_str());
-        vfprintf(stream, format.c_str(), args);
+        va_list args_copy;
+        va_copy(args_copy, args);
+        vfprintf(stream, format.c_str(), args_copy);
+        va_end(args_copy);
         fprintf(stream, "\n");
         fflush(stream);
     }

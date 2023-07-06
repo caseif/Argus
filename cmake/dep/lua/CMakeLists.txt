@@ -12,6 +12,8 @@ project(lua
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+set(CMAKE_DEBUG_POSTFIX "d")
+
 set(SOURCES_DIR "../../../external/libs/lua")
 
 set(C_FILES "lapi;lcode;lctype;ldebug;ldo;ldump;lfunc;"

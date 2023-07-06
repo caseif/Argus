@@ -32,16 +32,6 @@
 #include <cassert>
 
 namespace argus {
-    void *scripting_copy_value(void *src, size_t size) {
-        void *dst = malloc(size);
-        memcpy(dst, src, size);
-        return dst;
-    }
-
-    void scripting_free_value(void *buf) {
-        free(buf);
-    }
-
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type, const std::string &fn_name,
             const std::string &type_name) {
         switch (fn_type) {
@@ -103,8 +93,10 @@ namespace argus {
         return def.handle(params);
     }
 
-    static ObjectWrapper _create_object_wrapper(const void *ptr, size_t size) {
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
         ObjectWrapper wrapper{};
+        assert(type.type == IntegralType::String || type.size == size);
+        wrapper.type = type;
         if (size <= sizeof(wrapper.value)) {
             // can store directly in ObjectWrapper struct
             memcpy(wrapper.value, ptr, size);
@@ -124,7 +116,7 @@ namespace argus {
             throw std::runtime_error("Cannot create object wrapper for string-typed value - overload must be used");
         }
 
-        return _create_object_wrapper(ptr, type.size);
+        return create_object_wrapper(type, ptr, type.size);
     }
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const std::string &str) {
@@ -133,7 +125,7 @@ namespace argus {
                                      " non-string-typed value");
         }
 
-        return _create_object_wrapper(str.c_str(), str.length() + 1);
+        return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
 
     void cleanup_object_wrapper(ObjectWrapper &wrapper) {
@@ -146,5 +138,13 @@ namespace argus {
         for (auto &wrapper : wrappers) {
             cleanup_object_wrapper(wrapper);
         }
+    }
+
+    void add_member_instance_function(BoundTypeDef type_def, BoundFunctionDef fn_def) {
+        type_def.instance_functions.insert({ fn_def.name, fn_def });
+    }
+
+    void add_member_static_function(BoundTypeDef type_def, BoundFunctionDef fn_def) {
+        type_def.static_functions.insert({ fn_def.name, fn_def });
     }
 }

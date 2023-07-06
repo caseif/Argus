@@ -29,6 +29,9 @@ namespace argus {
     extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
     extern std::map<std::string, BoundTypeDef> g_bound_types;
     extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    extern std::vector<ScriptContext*> g_script_contexts;
+    // key = language name, value = resources loaded by the corresponding plugin
+    extern std::map<std::string, std::vector<Resource*>> g_loaded_resources;
 
     void update_lifecycle_scripting(LifecycleStage stage);
 }

@@ -18,24 +18,29 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/resman.hpp"
+
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
+#include "internal/scripting_lua/loaded_script.hpp"
 #include "internal/scripting_lua/lua_context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
+extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
-#include "internal/scripting_lua/loaded_script.hpp"
+}
 
 #include <functional>
 #include <string>
 
 #include <cassert>
+#include <cstdio>
 
 namespace argus {
     static constexpr const char *k_lang_name = "lua";
@@ -47,14 +52,14 @@ namespace argus {
     static bool _wrap_param(lua_State *state, const std::string &qual_fn_name,
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
         auto canonical_index = param_index + 1;
-        auto real_index = param_index + 2;
+        auto real_index = param_index + 1;
 
         switch (param_def.type) {
             case Integer: {
                 if (!lua_isinteger(state, real_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected integer)");
+                                          + " (expected integer, actual " + lua_typename(state, real_index) + ")");
                     return false;
                 }
 
@@ -90,7 +95,7 @@ namespace argus {
                 if (!lua_isnumber(state, real_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected number)");
+                                          + " (expected number, actual " + lua_typename(state, real_index) + ")");
                     return false;
                 }
 
@@ -111,7 +116,7 @@ namespace argus {
                 if (!lua_isstring(state, real_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected string)");
+                                          + " (expected string, actual " + lua_typename(state, real_index) + ")");
                     return false;
                 }
 
@@ -125,7 +130,8 @@ namespace argus {
                         || !luaL_testudata(state, real_index, param_def.type_name.c_str())) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected " + param_def.type_name + ")");
+                                          + " (expected " + param_def.type_name
+                                          + ", actual " + lua_typename(state, real_index) + ")");
                     return false;
                 }
 
@@ -174,7 +180,7 @@ namespace argus {
                     Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
             }
 
-            auto arg_count = lua_gettop(state) - 1;
+            auto arg_count = lua_gettop(state) - (fn_type == FunctionType::Global ? 0 : 1);
             if (size_t(arg_count) != fn.params.size()) {
                 _set_lua_error(state, "Wrong parameter count provided for function " + qual_fn_name);
                 return 0;
@@ -256,6 +262,40 @@ namespace argus {
         _bind_fn(state, fn, "");
     }
 
+    static int64_t _unwrap_int_param(ObjectWrapper param, const std::string &fn_name, int param_index) {
+        assert(param.type.type == IntegralType::Integer);
+
+        switch (param.type.size) {
+            case 1:
+                return int64_t(*reinterpret_cast<const int8_t *>(param.value));
+            case 2:
+                return int64_t(*reinterpret_cast<const int16_t *>(param.value));
+            case 4:
+                return int64_t(*reinterpret_cast<const int32_t *>(param.value));
+            case 8:
+                return *reinterpret_cast<const int64_t *>(param.value);
+            default:
+                throw ScriptInvocationException(fn_name,
+                        "Bad integer width " + std::to_string(param.type.size)
+                        + " for parameter " + std::to_string(param_index) + " (must be 1, 2, 4, or 8)");
+        }
+    }
+
+    static double _unwrap_float_param(ObjectWrapper param, const std::string &fn_name, int param_index) {
+        assert(param.type.type == IntegralType::Integer);
+
+        switch (param.type.size) {
+            case 4:
+                return double(*reinterpret_cast<const float *>(param.value));
+            case 8:
+                return *reinterpret_cast<const double *>(param.value);
+            default:
+                throw ScriptInvocationException(fn_name,
+                        "Bad floating-point width " + std::to_string(param.type.size)
+                        + " for parameter " + std::to_string(param_index) + " (must be 4, or 8)");
+        }
+    }
+
     LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name) {
     }
 
@@ -276,42 +316,78 @@ namespace argus {
         delete lua_data;
     }
 
-    void LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &script) {
+    void LuaLanguagePlugin::load_script(ScriptContext &context, const std::string &uid) {
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
 
         auto *state = plugin_data->state;
 
-        auto &loaded_script = script.get<LoadedScript>();
+        auto &res = load_resource(uid);
 
-        if (luaL_loadstring(state, loaded_script.source.c_str()) != 0) {
-            throw ScriptLoadException(script.uid, "luaL_loadstring failed");
+        auto &loaded_script = res.get<LoadedScript>();
+
+        if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
+            res.release();
+            throw ScriptLoadException(uid, "luaL_loadstring failed");
         }
 
         auto err = lua_pcall(state, 0, 0, 0);
-        if (err != 0) {
+        if (err != LUA_OK) {
             //TODO: print detailed trace info from VM
-            throw ScriptLoadException(script.uid, lua_tostring(state, -1));
+            res.release();
+            throw ScriptLoadException(uid, lua_tostring(state, -1));
         }
     }
 
-    void LuaLanguagePlugin::bind_type(const BoundTypeDef &type) {
-        for (auto *state : g_lua_states) {
-            _bind_type(state, type);
-        }
+    void LuaLanguagePlugin::bind_type(ScriptContext &context, const BoundTypeDef &type) {
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+        _bind_type(state, type);
     }
 
-    void LuaLanguagePlugin::bind_global_function(const BoundFunctionDef &fn) {
-        for (auto *state : g_lua_states) {
-            _bind_global_fn(state, fn);
-        }
+    void LuaLanguagePlugin::bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) {
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+        _bind_global_fn(state, fn);
     }
 
     ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
             const std::vector<ObjectWrapper> &params) {
-        UNUSED(context);
-        UNUSED(name);
-        UNUSED(params);
-        //TODO
-        return {};
+        if (params.size() > INT32_MAX) {
+            throw ScriptInvocationException(name, "Too many params");
+        }
+
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+
+        lua_getglobal(state, name.c_str());
+
+        int i = 1;
+        for (const auto &param : params) {
+            switch (param.type.type) {
+                case IntegralType::Integer:
+                    lua_pushinteger(state, _unwrap_int_param(param, name, i));
+                    break;
+                case IntegralType::Float:
+                    lua_pushnumber(state, _unwrap_float_param(param, name, i));
+                    break;
+                case IntegralType::String:
+                    lua_pushstring(state, reinterpret_cast<const char *>(
+                            param.is_on_heap ? param.heap_ptr : param.value));
+                    break;
+                case IntegralType::Opaque:
+                    lua_pushlightuserdata(state, const_cast<void *>(param.is_on_heap ? param.heap_ptr : param.value));
+                    break;
+            }
+
+            i++;
+        }
+
+        if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
+            auto err = lua_tostring(state, -1);
+            lua_pop(state, 1); // pop error message
+            throw ScriptInvocationException(name, err);
+        }
+
+        return {}; //TODO
     }
 }

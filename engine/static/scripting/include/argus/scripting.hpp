@@ -20,5 +20,8 @@
 
 #include "argus/scripting/bind.hpp"
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/exception.hpp"
+#include "argus/scripting/script_context.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/types.hpp"
+#include "argus/scripting/util.hpp"

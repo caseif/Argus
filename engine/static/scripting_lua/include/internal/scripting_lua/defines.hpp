@@ -18,22 +18,6 @@
 
 #pragma once
 
-#include "argus/resman.hpp"
-
 namespace argus {
-    class LuaScriptLoader : public ResourceLoader {
-      public:
-        LuaScriptLoader(void);
-
-        ~LuaScriptLoader(void) override;
-
-      private:
-        void *load(ResourceManager &manager, const ResourcePrototype &proto,
-                std::istream &stream, size_t size) const override;
-
-        void *copy(ResourceManager &manager, const ResourcePrototype &proto,
-                void *src, std::type_index type) const override;
-
-        void unload(void *data_ptr) const override;
-    };
+    constexpr const char *RESOURCE_TYPE_LUA = "text/x-lua";
 }

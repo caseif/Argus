@@ -22,12 +22,14 @@
 
 #include "internal/scripting_lua/lua_util.hpp"
 
+extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+}
 
 namespace argus {
-    extern std::vector<lua_State*> g_lua_states;
+    extern std::vector<lua_State *> g_lua_states;
 
     void update_lifecycle_scripting_lua(LifecycleStage stage);
 }

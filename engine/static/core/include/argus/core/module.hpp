@@ -110,6 +110,14 @@ namespace argus {
          */
         PostInit,
         /**
+         * \brief All initialization has completed and no de-initialization has
+         *        taken place yet.
+         *
+         * This stage is not propagated to module callbacks and is only intended
+         * to be used when checking the current engine state.
+         */
+        Running,
+        /**
          * \brief Early de-initialization. This occurs directly after the engine
          *        has committed to shutting down and has halted update callbacks
          *        on all primary threads.

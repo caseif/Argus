@@ -20,10 +20,14 @@
 
 #include "argus/resman.hpp"
 
+#include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"
 #include "internal/scripting_lua/loader/lua_script_loader.hpp"
 
 namespace argus {
+    LuaScriptLoader::LuaScriptLoader(void) : ResourceLoader({ RESOURCE_TYPE_LUA }) {
+    }
+
     LuaScriptLoader::~LuaScriptLoader(void) = default;
 
     void *LuaScriptLoader::load(ResourceManager &manager, const ResourcePrototype &proto,

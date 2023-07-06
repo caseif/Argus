@@ -29,29 +29,33 @@
 namespace argus {
     class ScriptingLanguagePlugin {
       private:
-        std::string name;
+        std::string lang_name;
 
       public:
-        ScriptingLanguagePlugin(std::string name) : name(std::move(name)) {}
+        ScriptingLanguagePlugin(std::string lang_name);
 
         ScriptingLanguagePlugin(const ScriptingLanguagePlugin &) = delete;
         ScriptingLanguagePlugin(ScriptingLanguagePlugin &&) = delete;
 
         virtual ~ScriptingLanguagePlugin(void) = 0;
 
-        const std::string &get_name(void) {
-            return this->name;
+        const std::string &get_language_name(void) {
+            return this->lang_name;
         }
+
+        Resource &load_resource(const std::string &uid);
+
+        void release_resource(Resource &resource);
 
         virtual void *create_context_data(void) = 0;
 
         virtual void destroy_context_data(void *data) = 0;
 
-        virtual void load_script(ScriptContext &context, const Resource &script) = 0;
+        virtual void load_script(ScriptContext &context, const std::string &uid) = 0;
 
-        virtual void bind_type(const BoundTypeDef &type) = 0;
+        virtual void bind_type(ScriptContext &context, const BoundTypeDef &type) = 0;
 
-        virtual void bind_global_function(const BoundFunctionDef &fn) = 0;
+        virtual void bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) = 0;
 
         virtual ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
                 const std::vector<ObjectWrapper> &params) = 0;

@@ -36,11 +36,11 @@ namespace argus {
 
         void destroy_context_data(void *data) override;
 
-        void load_script(ScriptContext &context, const Resource &script) override;
+        void load_script(ScriptContext &context, const std::string &uid) override;
 
-        void bind_type(const BoundTypeDef &type) override;
+        void bind_type(ScriptContext &context, const BoundTypeDef &type) override;
 
-        void bind_global_function(const BoundFunctionDef &fn) override;
+        void bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) override;
 
         ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
                 const std::vector<ObjectWrapper> &params) override;
