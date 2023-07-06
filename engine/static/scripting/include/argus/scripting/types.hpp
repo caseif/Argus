@@ -25,6 +25,7 @@
 
 namespace argus {
     enum IntegralType {
+        Void,
         Integer,
         Float,
         String,

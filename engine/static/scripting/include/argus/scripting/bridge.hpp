@@ -60,7 +60,9 @@ namespace argus {
 
     template <typename T>
     static ObjectType _create_object_type(void) {
-        if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
+        if constexpr (std::is_void_v<T>) {
+            return { IntegralType::Void, 0, "" };
+        } if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int8_t>) {
                 return { IntegralType::Integer, 1, "" };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int16_t>) {
@@ -107,11 +109,11 @@ namespace argus {
 
                 if constexpr (std::is_same_v<std::decay_t<decltype(el)>, std::string>) {
                     el = std::string(reinterpret_cast<const char *>(ptr));
-                } else if constexpr (!std::is_pointer_v<std::remove_reference_t<decltype(el)>>) {
-                    el = *reinterpret_cast<std::remove_reference_t<decltype(el)>*>(
+                } else if constexpr (std::is_pointer_v<std::remove_reference_t<decltype(el)>>) {
+                    el = reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<decltype(el)>> *>(
                             param.is_on_heap ? param.heap_ptr : param.stored_ptr);
                 } else {
-                    el = reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<decltype(el)>>*>(
+                    el = *reinterpret_cast<std::remove_reference_t<decltype(el)>*>(
                             param.is_on_heap ? param.heap_ptr : param.value);
                 }
             })(), ...);

@@ -146,6 +146,61 @@ namespace argus {
         }
     }
 
+    static int64_t _unwrap_int_wrapper(ObjectWrapper wrapper) {
+        assert(wrapper.type.type == IntegralType::Integer);
+
+        switch (wrapper.type.size) {
+            case 1:
+                return int64_t(*reinterpret_cast<const int8_t *>(wrapper.value));
+            case 2:
+                return int64_t(*reinterpret_cast<const int16_t *>(wrapper.value));
+            case 4:
+                return int64_t(*reinterpret_cast<const int32_t *>(wrapper.value));
+            case 8:
+                return *reinterpret_cast<const int64_t *>(wrapper.value);
+            default:
+                throw std::invalid_argument("Bad integer width " + std::to_string(wrapper.type.size)
+                                            + " (must be 1, 2, 4, or 8)");
+        }
+    }
+
+    static double _unwrap_float_wrapper(ObjectWrapper wrapper) {
+        assert(wrapper.type.type == IntegralType::Float);
+
+        switch (wrapper.type.size) {
+            case 4:
+                return double(*reinterpret_cast<const float *>(wrapper.value));
+            case 8:
+                return *reinterpret_cast<const double *>(wrapper.value);
+            default:
+                throw std::invalid_argument("Bad floating-point width " + std::to_string(wrapper.type.size)
+                                            + " (must be 4, or 8)");
+        }
+    }
+
+    static void _push_value(lua_State *state, const ObjectWrapper &wrapper) {
+        assert(wrapper.type.type != IntegralType::Void);
+
+        switch (wrapper.type.type) {
+            case IntegralType::Integer:
+                lua_pushinteger(state, _unwrap_int_wrapper(wrapper));
+                break;
+            case IntegralType::Float:
+                lua_pushnumber(state, _unwrap_float_wrapper(wrapper));
+                break;
+            case IntegralType::String:
+                lua_pushstring(state, reinterpret_cast<const char *>(
+                        wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
+                break;
+            case IntegralType::Opaque:
+                lua_pushlightuserdata(state,
+                        const_cast<void *>(wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
+                break;
+            default:
+                assert(false);
+        }
+    }
+
     static int _lua_trampoline(lua_State *state) {
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
@@ -200,9 +255,18 @@ namespace argus {
             }
 
             auto retval = fn.handle(args);
-            UNUSED(retval); //TODO
 
-            return 1;
+            if (retval.type.type != IntegralType::Void) {
+                try {
+                    _push_value(state, retval);
+                } catch (const std::exception &ex) {
+                    Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
+                }
+
+                return 1;
+            } else {
+                return 0;
+            }
         } catch (const TypeNotBoundException &ex) {
             _set_lua_error(state, "Type with name " + type_name + " is not bound");
             return 0;
@@ -260,40 +324,6 @@ namespace argus {
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
         assert(fn.type == FunctionType::Global);
         _bind_fn(state, fn, "");
-    }
-
-    static int64_t _unwrap_int_param(ObjectWrapper param, const std::string &fn_name, int param_index) {
-        assert(param.type.type == IntegralType::Integer);
-
-        switch (param.type.size) {
-            case 1:
-                return int64_t(*reinterpret_cast<const int8_t *>(param.value));
-            case 2:
-                return int64_t(*reinterpret_cast<const int16_t *>(param.value));
-            case 4:
-                return int64_t(*reinterpret_cast<const int32_t *>(param.value));
-            case 8:
-                return *reinterpret_cast<const int64_t *>(param.value);
-            default:
-                throw ScriptInvocationException(fn_name,
-                        "Bad integer width " + std::to_string(param.type.size)
-                        + " for parameter " + std::to_string(param_index) + " (must be 1, 2, 4, or 8)");
-        }
-    }
-
-    static double _unwrap_float_param(ObjectWrapper param, const std::string &fn_name, int param_index) {
-        assert(param.type.type == IntegralType::Integer);
-
-        switch (param.type.size) {
-            case 4:
-                return double(*reinterpret_cast<const float *>(param.value));
-            case 8:
-                return *reinterpret_cast<const double *>(param.value);
-            default:
-                throw ScriptInvocationException(fn_name,
-                        "Bad floating-point width " + std::to_string(param.type.size)
-                        + " for parameter " + std::to_string(param_index) + " (must be 4, or 8)");
-        }
     }
 
     LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name) {
@@ -362,24 +392,14 @@ namespace argus {
         lua_getglobal(state, name.c_str());
 
         int i = 1;
-        for (const auto &param : params) {
-            switch (param.type.type) {
-                case IntegralType::Integer:
-                    lua_pushinteger(state, _unwrap_int_param(param, name, i));
-                    break;
-                case IntegralType::Float:
-                    lua_pushnumber(state, _unwrap_float_param(param, name, i));
-                    break;
-                case IntegralType::String:
-                    lua_pushstring(state, reinterpret_cast<const char *>(
-                            param.is_on_heap ? param.heap_ptr : param.value));
-                    break;
-                case IntegralType::Opaque:
-                    lua_pushlightuserdata(state, const_cast<void *>(param.is_on_heap ? param.heap_ptr : param.value));
-                    break;
+        try {
+            for (const auto &param : params) {
+                _push_value(state, param);
+                i++;
             }
-
-            i++;
+        } catch (const std::exception &ex) {
+            throw ScriptInvocationException(name, "Bad value passed for parameter " + std::to_string(i)
+                                                  + ": " + ex.what());
         }
 
         if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
