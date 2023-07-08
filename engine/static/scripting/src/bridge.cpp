@@ -175,10 +175,20 @@ namespace argus {
     }
 
     void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
+        if (type_def.instance_functions.find(fn_def.name) != type_def.instance_functions.cend()) {
+            auto qual_name = get_qualified_function_name(FunctionType::MemberInstance, type_def.name, fn_def.name);
+            throw BindingException(qual_name, "Instance function with same name is already bound");
+        }
+
         type_def.instance_functions.insert({ fn_def.name, fn_def });
     }
 
     void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
+        if (type_def.static_functions.find(fn_def.name) != type_def.static_functions.cend()) {
+            auto qual_name = get_qualified_function_name(FunctionType::MemberStatic, type_def.name, fn_def.name);
+            throw BindingException(qual_name, "Static function with same name is already bound");
+        }
+
         type_def.static_functions.insert({ fn_def.name, fn_def });
     }
 }

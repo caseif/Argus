@@ -27,9 +27,9 @@ namespace argus {
             case FunctionType::Global:
                 return fn_name;
             case FunctionType::MemberInstance:
-                return type_name + "::" + fn_name;
-            case FunctionType::MemberStatic:
                 return type_name + "#" + fn_name;
+            case FunctionType::MemberStatic:
+                return type_name + "::" + fn_name;
             default:
                 assert(false);
         }

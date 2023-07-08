@@ -71,7 +71,7 @@ namespace argus {
 
     void bind_type(const BoundTypeDef &def) {
         if (g_bound_types.find(def.name) != g_bound_types.cend()) {
-            Logger::default_logger().fatal("Script type with name %s has already been bound");
+            throw BindingException(def.name, "Type with same name has already been bound");
         }
 
         std::vector<std::string> static_fn_names;
@@ -79,7 +79,7 @@ namespace argus {
                 std::back_inserter(static_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(static_fn_names.cbegin(), static_fn_names.cend()).size() != static_fn_names.size()) {
-            Logger::default_logger().fatal("Script type with name %s contains duplicate static function definitions");
+            throw BindingException(def.name, "Script type contains duplicate static function definitions");
         }
 
         std::vector<std::string> instance_fn_names;
@@ -87,7 +87,7 @@ namespace argus {
                 std::back_inserter(instance_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(instance_fn_names.cbegin(), instance_fn_names.cend()).size() != instance_fn_names.size()) {
-            Logger::default_logger().fatal("Script type with name %s contains duplicate instance function definitions");
+            throw BindingException(def.name, "Script type contains duplicate instance function definitions");
         }
 
         g_bound_types.insert({ def.name, def });
@@ -96,7 +96,7 @@ namespace argus {
 
     void bind_global_function(const BoundFunctionDef &def) {
         if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
-            Logger::default_logger().fatal("Global function with name %s has already been bound");
+            throw BindingException(def.name, "Global function with same name has already been bound");
         }
 
         g_bound_global_fns.insert({ def.name, def });
