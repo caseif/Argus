@@ -20,7 +20,9 @@
 
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
+#include <typeindex>
 #include <vector>
 
 namespace argus {
@@ -41,7 +43,8 @@ namespace argus {
     struct ObjectType {
         IntegralType type;
         size_t size;
-        std::string type_name;
+        std::optional<std::type_index> type_index = std::nullopt;
+        std::optional<std::string> type_name = std::nullopt;
     };
 
     struct ObjectWrapper {
@@ -74,6 +77,7 @@ namespace argus {
     struct BoundTypeDef {
         std::string name;
         size_t size;
+        std::type_index type_index;
         //std::vector<BoundMemberDef> members;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;

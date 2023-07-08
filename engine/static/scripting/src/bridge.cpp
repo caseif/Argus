@@ -32,8 +32,8 @@
 #include <cassert>
 
 namespace argus {
-    static const BoundFunctionDef &_get_native_function(FunctionType fn_type, const std::string &fn_name,
-            const std::string &type_name) {
+    static const BoundFunctionDef &_get_native_function(FunctionType fn_type,
+            const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
             case FunctionType::MemberInstance:
             case FunctionType::MemberStatic: {
@@ -64,16 +64,44 @@ namespace argus {
         }
     }
 
+    const BoundTypeDef &get_bound_type(const std::string &type_name) {
+        auto it = g_bound_types.find(type_name);
+        if (it == g_bound_types.cend()) {
+            throw std::invalid_argument("Type name" + std::string(type_name)
+                                        + " is not bound (check binding order and ensure bind_type"
+                                          " is called after creating type definition)");
+        }
+        return it->second;
+    }
+
+    const BoundTypeDef &get_bound_type(const std::type_info &type_info) {
+        return get_bound_type(std::type_index(type_info));
+    }
+
+    const BoundTypeDef &get_bound_type(const std::type_index &type_index) {
+        auto index_it = g_bound_type_indices.find(std::type_index(type_index));
+        if (index_it == g_bound_type_indices.cend()) {
+            throw std::invalid_argument("Type " + std::string(type_index.name())
+                    + " is not bound (check binding order and ensure bind_type"
+                      " is called after creating type definition)");
+        }
+        auto type_it = g_bound_types.find(index_it->second);
+        assert(type_it != g_bound_types.cend());
+        return type_it->second;
+    }
+
     const BoundFunctionDef &get_native_global_function(const std::string &name) {
-        return _get_native_function(FunctionType::Global, name, "");
+        return _get_native_function(FunctionType::Global, "", name);
     }
 
-    const BoundFunctionDef &get_native_member_instance_function(const std::string &fn_name, const std::string &type_name) {
-        return _get_native_function(FunctionType::MemberInstance, fn_name, type_name);
+    const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
+            const std::string &fn_name) {
+        return _get_native_function(FunctionType::MemberInstance, type_name, fn_name);
     }
 
-    const BoundFunctionDef &get_native_member_static_function(const std::string &fn_name, const std::string &type_name) {
-        return _get_native_function(FunctionType::MemberStatic, fn_name, type_name);
+    const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
+            const std::string &fn_name) {
+        return _get_native_function(FunctionType::MemberStatic, type_name, fn_name);
     }
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params) {
@@ -97,14 +125,20 @@ namespace argus {
         ObjectWrapper wrapper{};
         assert(type.type == IntegralType::String || type.size == size);
         wrapper.type = type;
-        if (size <= sizeof(wrapper.value)) {
+
+        // for opaque types we copy the pointer itself, and for everything else we copy the value
+        const void *copy_src = type.type == IntegralType::Opaque ? &ptr : ptr;
+        // override size for opaque type since we're only copying the pointer
+        size_t copy_size = type.type == IntegralType::Opaque ? sizeof(void *) : type.size;
+
+        if (copy_size <= sizeof(wrapper.value)) {
             // can store directly in ObjectWrapper struct
-            memcpy(wrapper.value, ptr, size);
+            memcpy(wrapper.value, copy_src, copy_size);
             wrapper.is_on_heap = false;
         } else {
             // need to alloc on heap
-            wrapper.heap_ptr = malloc(size);
-            memcpy(wrapper.heap_ptr, ptr, size);
+            wrapper.heap_ptr = malloc(copy_size);
+            memcpy(wrapper.heap_ptr, copy_src, copy_size);
             wrapper.is_on_heap = true;
         }
 
@@ -140,11 +174,11 @@ namespace argus {
         }
     }
 
-    void add_member_instance_function(BoundTypeDef type_def, BoundFunctionDef fn_def) {
+    void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         type_def.instance_functions.insert({ fn_def.name, fn_def });
     }
 
-    void add_member_static_function(BoundTypeDef type_def, BoundFunctionDef fn_def) {
+    void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         type_def.static_functions.insert({ fn_def.name, fn_def });
     }
 }

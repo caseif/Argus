@@ -21,12 +21,14 @@
 #include "argus/lowlevel/functional.hpp"
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
 
 #include <functional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -58,32 +60,43 @@ namespace argus {
         }
     };
 
+    const BoundTypeDef &get_bound_type(const std::string &type_name);
+
+    const BoundTypeDef &get_bound_type(const std::type_info &type_info);
+
+    const BoundTypeDef &get_bound_type(const std::type_index &type_index);
+
+    template <typename T>
+    const BoundTypeDef &get_bound_type(void) {
+        return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>));
+    }
+
     template <typename T>
     static ObjectType _create_object_type(void) {
         if constexpr (std::is_void_v<T>) {
-            return { IntegralType::Void, 0, "" };
+            return { IntegralType::Void, 0 };
         } if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int8_t>) {
-                return { IntegralType::Integer, 1, "" };
+                return { IntegralType::Integer, 1 };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int16_t>) {
-                return { IntegralType::Integer, 2, "" };
+                return { IntegralType::Integer, 2 };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int32_t>) {
-                return { IntegralType::Integer, 4, "" };
+                return { IntegralType::Integer, 4 };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int64_t>) {
-                return { IntegralType::Integer, 8, "" };
+                return { IntegralType::Integer, 8 };
             } else {
                 Logger::default_logger().fatal("Unknown integer type");
             }
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, float>) {
-            return { IntegralType::Float, 4, "" };
+            return { IntegralType::Float, 4 };
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, double>) {
-            return { IntegralType::Float, 8, "" };
+            return { IntegralType::Float, 8 };
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, char *>
                              || std::is_same_v<std::remove_const_t<T>, const char *>
                              || std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, std::string>) {
-            return { IntegralType::String, 0, "" };
+            return { IntegralType::String, 0 };
         } else {
-            return { IntegralType::Opaque, 0, "" };
+            return { IntegralType::Opaque, 0, typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };;
         }
     }
 
@@ -95,9 +108,11 @@ namespace argus {
         using ClassType = typename function_traits<FuncType>::class_type;
         using ArgsTuple = typename function_traits<FuncType>::argument_types;
 
-        if (params.size() != std::tuple_size<ArgsTuple>::value
-                + (std::is_member_function_pointer_v<FuncType> ? 1 : 0)) {
-            throw InvocationException("Wrong parameter count");
+        auto expected_param_count = std::tuple_size<ArgsTuple>::value
+                + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
+        if (params.size() != expected_param_count) {
+            throw InvocationException("Wrong parameter count (expected " + std::to_string(expected_param_count)
+                    + " , actual " + std::to_string(params.size()) + ")");
         }
 
         ArgsTuple args;
@@ -122,7 +137,7 @@ namespace argus {
         if constexpr (!std::is_void_v<ClassType>) {
             ++it;
             auto instance_param = params.front();
-            ClassType *instance = reinterpret_cast<ClassType*>(instance_param.is_on_heap
+            ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
             return std::apply([=](auto&&... args){ return (instance->*fn)(std::forward<decltype(args)>(args)...); },
@@ -141,6 +156,11 @@ namespace argus {
 
                 ObjectWrapper wrapper{};
                 auto ret_obj_type = _create_object_type<ReturnType>();
+                // _create_object_type is used to create function definitions so
+                // it doesn't attempt to resolve the type name
+                if (ret_obj_type.type == IntegralType::Opaque) {
+                    ret_obj_type.type_name = get_bound_type<ReturnType>().name;
+                }
 
                 if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.type = ret_obj_type;
@@ -149,7 +169,7 @@ namespace argus {
                     wrapper.type = ret_obj_type;
                     wrapper.stored_ptr = ret;
                 } else {
-                    wrapper = create_object_wrapper(wrapper.type, &ret, sizeof(ReturnType));
+                    wrapper = create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
 
                 return wrapper;
@@ -177,21 +197,27 @@ namespace argus {
         using ArgsTuple = typename function_traits<FuncType>::argument_types;
         using ReturnType = typename function_traits<FuncType>::return_type;
 
-        BoundFunctionDef def{};
-        def.name = name;
-        def.type = type;
-        def.handle = create_function_wrapper(fn);
-        def.params = _tuple_to_vector<ArgsTuple>();
-        def.return_type = _create_object_type<ReturnType>();
+        try {
+            BoundFunctionDef def{};
+            def.name = name;
+            def.type = type;
+            def.handle = create_function_wrapper(fn);
+            def.params = _tuple_to_vector<ArgsTuple>();
+            def.return_type = _create_object_type<ReturnType>();
 
-        return def;
+            return def;
+        } catch (const std::exception &ex) {
+            throw BindingException(name, ex.what());
+        }
     }
 
     const BoundFunctionDef &get_native_global_function(const std::string &name);
 
-    const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name, const std::string &fn_name);
+    const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
+            const std::string &fn_name);
 
-    const BoundFunctionDef &get_native_member_static_function(const std::string &type_name, const std::string &fn_name);
+    const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
+            const std::string &fn_name);
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
@@ -205,9 +231,13 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        BoundTypeDef def{};
-        def.name = name;
-        def.size = sizeof(T);
+        BoundTypeDef def {
+                name,
+                sizeof(T),
+                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>)),
+                {},
+                {}
+        };
         return def;
     }
 
@@ -216,20 +246,20 @@ namespace argus {
         return _create_function_def(name, fn, FunctionType::Global);
     }
 
-    void add_member_instance_function(BoundTypeDef type_def, BoundFunctionDef fn_def);
+    void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
-    void add_member_static_function(BoundTypeDef type_def, BoundFunctionDef fn_def);
+    void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
     template <typename FuncType>
     typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
-    add_member_instance_function(BoundTypeDef type_def, const std::string &fn_name, FuncType fn) {
+    add_member_instance_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
         add_member_instance_function(type_def, fn_def);
     }
 
     template <typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
-    add_member_static_function(BoundTypeDef type_def, const std::string &fn_name, FuncType fn) {
+    add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
         add_member_static_function(type_def, fn_def);
     }

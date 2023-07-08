@@ -55,6 +55,9 @@ namespace argus {
 
         virtual void bind_type(ScriptContext &context, const BoundTypeDef &type) = 0;
 
+        virtual void bind_type_function(ScriptContext &context, const BoundTypeDef &type,
+                const BoundFunctionDef &fn) = 0;
+
         virtual void bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) = 0;
 
         virtual ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,

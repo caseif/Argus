@@ -18,22 +18,9 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
-
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-
-#include <typeindex>
-#include <vector>
-
 namespace argus {
-    extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::type_index, std::string> g_bound_type_indices;
-    extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-    extern std::vector<ScriptContext*> g_script_contexts;
-    // key = language name, value = resources loaded by the corresponding plugin
-    extern std::map<std::string, std::vector<Resource*>> g_loaded_resources;
+    // forward declarations
+    struct BoundTypeDef;
 
-    void update_lifecycle_scripting(LifecycleStage stage);
+    void resolve_parameter_types(BoundTypeDef &type_def);
 }

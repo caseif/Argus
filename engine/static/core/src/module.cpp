@@ -333,11 +333,7 @@ namespace argus {
             auto found_static = std::find_if(g_static_modules.cbegin(), g_static_modules.cend(),
                     [module_id](auto &sm) { return sm.id == module_id; });
             if (found_static != g_static_modules.cend()) {
-                printf("module: %s\n", found_static->id.c_str());
                 all_modules.insert({found_static->id});
-                for (auto dep : found_static->dependencies) {
-                    printf("    dep: %s\n", dep.c_str());
-                }
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
             } else {
                 enable_dynamic_module(module_id);

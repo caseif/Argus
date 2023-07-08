@@ -49,21 +49,40 @@ namespace argus {
         luaL_error(state, msg.c_str());
     }
 
+    static bool _wrap_bound_type(lua_State *state, const std::string &qual_fn_name,
+            int param_index, const BoundTypeDef &type_def, ObjectWrapper *dest) {
+        if (!lua_isuserdata(state, param_index)
+            || !luaL_testudata(state, param_index, type_def.name.c_str())) {
+            _set_lua_error(state, "Incorrect type provided for parameter "
+                                  + std::to_string(param_index) + " of function " + qual_fn_name
+                                  + " (expected " + type_def.name
+                                  + ", actual " + lua_typename(state, lua_type(state, param_index)) + ")");
+            return false;
+        }
+
+        void *ptr = *static_cast<void **>(lua_touserdata(state, param_index));
+
+        ObjectType obj_type{};
+        obj_type.type = IntegralType::Opaque;
+        obj_type.type_name = type_def.name;
+        obj_type.size = type_def.size;
+        *dest = create_object_wrapper(obj_type, ptr);
+        return true;
+    }
+
     static bool _wrap_param(lua_State *state, const std::string &qual_fn_name,
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
-        auto canonical_index = param_index + 1;
-        auto real_index = param_index + 1;
-
         switch (param_def.type) {
             case Integer: {
-                if (!lua_isinteger(state, real_index)) {
+                if (!lua_isinteger(state, param_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected integer, actual " + lua_typename(state, real_index) + ")");
+                                          + std::to_string(param_index) + " of function " + qual_fn_name
+                                          + " (expected integer, actual "
+                                          + lua_typename(state, lua_type(state, param_index)) + ")");
                     return false;
                 }
 
-                int64_t val_i64 = lua_tointeger(state, real_index);
+                int64_t val_i64 = lua_tointeger(state, param_index);
 
                 switch (param_def.size) {
                     case 1: {
@@ -92,14 +111,15 @@ namespace argus {
                 return true;
             }
             case Float: {
-                if (!lua_isnumber(state, real_index)) {
+                if (!lua_isnumber(state, param_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected number, actual " + lua_typename(state, real_index) + ")");
+                                          + std::to_string(param_index) + " of function " + qual_fn_name
+                                          + " (expected number, actual "
+                                          + lua_typename(state, lua_type(state, param_index)) + ")");
                     return false;
                 }
 
-                double val_f64 = lua_tonumber(state, real_index);
+                double val_f64 = lua_tonumber(state, param_index);
                 if (param_def.size == 8) {
                     // can push double-precision float as-is
                     *dest = create_object_wrapper(param_def, &val_f64);
@@ -113,31 +133,50 @@ namespace argus {
                 return true;
             }
             case String: {
-                if (!lua_isstring(state, real_index)) {
+                if (!lua_isstring(state, param_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected string, actual " + lua_typename(state, real_index) + ")");
+                                          + std::to_string(param_index) + " of function " + qual_fn_name
+                                          + " (expected string, actual "
+                                          + lua_typename(state, lua_type(state, param_index)) + ")");
                     return false;
                 }
 
-                const char *str = lua_tostring(state, real_index);
+                const char *str = lua_tostring(state, param_index);
                 *dest = create_object_wrapper(param_def, std::string(str));
 
                 return true;
             }
             case Opaque: {
-                if (!lua_isuserdata(state, real_index)
-                        || !luaL_testudata(state, real_index, param_def.type_name.c_str())) {
+                assert(param_def.type_name.has_value());
+                if (!lua_isuserdata(state, param_index)) {
                     _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(canonical_index) + " of function " + qual_fn_name
-                                          + " (expected " + param_def.type_name
-                                          + ", actual " + lua_typename(state, real_index) + ")");
+                                          + std::to_string(param_index) + " of function " + qual_fn_name
+                                          + " (expected userdata, actual "
+                                          + lua_typename(state, lua_type(state, param_index)) + ")");
                     return false;
                 }
 
-                void *ptr = lua_touserdata(state, real_index);
+                // get metatable of userdata
+                lua_getmetatable(state, param_index);
 
-                *dest = create_object_wrapper(param_def, &ptr);
+                // get metatable name
+                lua_pushstring(state, "__name");
+                lua_gettable(state, -2);
+                const char *type_name = lua_tostring(state, -1);
+
+                lua_pop(state, 2); // remove field name and metatable from stack
+
+                if (param_def.type_name.value() != type_name) {
+                    _set_lua_error(state, "Incorrect userdata provided for parameter "
+                                          + std::to_string(param_index) + " of function " + qual_fn_name
+                                          + " (expected " + param_def.type_name.value()
+                                          + ", actual " + type_name + ")");
+                    return false;
+                }
+
+                void *ptr = *static_cast<void **>(lua_touserdata(state, param_index));
+
+                *dest = create_object_wrapper(param_def, ptr);
 
                 return true;
             }
@@ -192,16 +231,27 @@ namespace argus {
                 lua_pushstring(state, reinterpret_cast<const char *>(
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
                 break;
-            case IntegralType::Opaque:
-                lua_pushlightuserdata(state,
-                        const_cast<void *>(wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
+            case IntegralType::Opaque: {
+                assert(wrapper.type.type_name.has_value());
+
+                void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
+                void *udata = lua_newuserdata(state, sizeof(void *));
+                memcpy(udata, &ptr, sizeof(void *));
+                auto mt = luaL_getmetatable(state, wrapper.type.type_name.value().c_str());
+                assert(mt != 0); // binding should have failed if type wasn't bound
+
+                lua_setmetatable(state, -2);
+
                 break;
+            }
             default:
                 assert(false);
         }
     }
 
     static int _lua_trampoline(lua_State *state) {
+        auto initial_top = lua_gettop(state);
+
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
                 && fn_type != FunctionType::MemberStatic) {
@@ -235,21 +285,49 @@ namespace argus {
                     Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
             }
 
-            auto arg_count = lua_gettop(state) - (fn_type == FunctionType::Global ? 0 : 1);
-            if (size_t(arg_count) != fn.params.size()) {
-                _set_lua_error(state, "Wrong parameter count provided for function " + qual_fn_name);
+            // parameter count not including instance
+            auto arg_count = initial_top;
+            auto expected_arg_count = fn.params.size() + (fn.type == FunctionType::MemberInstance ? 1 : 0);
+            if (size_t(arg_count) != expected_arg_count) {
+                _set_lua_error(state, "Wrong parameter count provided for function " + qual_fn_name
+                        + " (expected " + std::to_string(expected_arg_count)
+                        + ", actual " + std::to_string(arg_count) + ")");
+                assert(lua_gettop(state) == initial_top);
                 return 0;
             }
 
+            // calls to instance member functions push the instance as the first "parameter"
+            auto first_param_index = fn_type == FunctionType::MemberInstance ? 1 : 0;
+
             std::vector<ObjectWrapper> args;
 
-            for (int i = 0; i < arg_count; i++) {
-                auto param_def = fn.params.at(size_t(i));
+            if (fn_type == FunctionType::MemberInstance) {
+                auto type_def = get_bound_type(type_name);
+                ObjectType instance_type{};
+                instance_type.type = Opaque;
+                instance_type.size = type_def.size;
+                instance_type.type_name = type_def.name;
+
                 ObjectWrapper wrapper{};
-                if (_wrap_param(state, qual_fn_name, i, param_def, &wrapper)) {
+                if (_wrap_bound_type(state, qual_fn_name, 1, type_def, &wrapper)) {
                     args.push_back(wrapper);
                 } else {
                     cleanup_object_wrappers(args);
+                    assert(lua_gettop(state) == initial_top);
+                    return 0;
+                }
+            }
+
+            for (int i = 0; i < (arg_count - first_param_index); i++) {
+                // Lua is 1-indexed, plus add offset to skip instance parameter if present
+                auto param_index = i + 1 + first_param_index;
+                auto param_def = fn.params.at(size_t(i));
+                ObjectWrapper wrapper{};
+                if (_wrap_param(state, qual_fn_name, param_index, param_def, &wrapper)) {
+                    args.push_back(wrapper);
+                } else {
+                    cleanup_object_wrappers(args);
+                    assert(lua_gettop(state) == initial_top);
                     return 0;
                 }
             }
@@ -259,22 +337,31 @@ namespace argus {
             if (retval.type.type != IntegralType::Void) {
                 try {
                     _push_value(state, retval);
+
+                    cleanup_object_wrapper(retval);
                 } catch (const std::exception &ex) {
                     Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
                 }
 
+                assert(lua_gettop(state) == initial_top + 1);
                 return 1;
             } else {
+                cleanup_object_wrapper(retval);
+
+                assert(lua_gettop(state) == initial_top);
                 return 0;
             }
         } catch (const TypeNotBoundException &ex) {
             _set_lua_error(state, "Type with name " + type_name + " is not bound");
+            assert(lua_gettop(state) == initial_top);
             return 0;
         } catch (const FunctionNotBoundException &ex) {
             _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
+            assert(lua_gettop(state) == initial_top);
             return 0;
         } catch (const ReflectiveArgumentsException &ex) {
             _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name + " (" + ex.what() + ")");
+            assert(lua_gettop(state) == initial_top);
             return 0;
         }
     }
@@ -301,23 +388,39 @@ namespace argus {
     }
 
     static void _bind_type(lua_State *state, const BoundTypeDef &type) {
+        // create metatable for type
+        luaL_newmetatable(state, type.name.c_str());
+
+        // create dispatch table
         lua_newtable(state);
 
-        // register instance functions to metatable
-        lua_newtable(state);
-
-        for (const auto &fn : type.instance_functions) {
-            assert(fn.second.type == FunctionType::MemberInstance);
-            _bind_fn(state, fn.second, type.name);
-        }
-
+        // set dispatch table
         lua_setfield(state, -2, "__index");
 
-        // register static functions to outer table
+        // add metatable to global state to provide access to static type functions
+        luaL_getmetatable(state, type.name.c_str());
+        lua_setglobal(state, type.name.c_str());
+        lua_pop(state, 1); // remove metatable from stack
+    }
 
-        for (const auto &fn : type.static_functions) {
-            assert(fn.second.type == FunctionType::MemberStatic);
-            _bind_fn(state, fn.second, type.name);
+    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
+        luaL_getmetatable(state, (type_name).c_str());
+
+        if (fn.type == FunctionType::MemberInstance) {
+            // get the dispatch table for the type
+            lua_getfield(state, -1, "__index");
+
+            _bind_fn(state, fn, type_name);
+
+            // pop the dispatch table and metatable
+            lua_pop(state, 2);
+
+            return;
+        } else {
+            _bind_fn(state, fn, type_name);
+
+            // pop the metatable
+            lua_pop(state, 1);
         }
     }
 
@@ -371,13 +474,32 @@ namespace argus {
     void LuaLanguagePlugin::bind_type(ScriptContext &context, const BoundTypeDef &type) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
+
         _bind_type(state, type);
+
+        assert(lua_gettop(state) == initial_top);
+    }
+
+    void LuaLanguagePlugin::bind_type_function(ScriptContext &context, const BoundTypeDef &type,
+            const BoundFunctionDef &fn) {
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
+
+        _bind_type_function(state, type.name, fn);
+
+        assert(lua_gettop(state) == initial_top);
     }
 
     void LuaLanguagePlugin::bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
+
         _bind_global_fn(state, fn);
+
+        assert(lua_gettop(state) == initial_top);
     }
 
     ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
@@ -388,6 +510,7 @@ namespace argus {
 
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
 
         lua_getglobal(state, name.c_str());
 
@@ -398,6 +521,7 @@ namespace argus {
                 i++;
             }
         } catch (const std::exception &ex) {
+            assert(lua_gettop(state) == initial_top);
             throw ScriptInvocationException(name, "Bad value passed for parameter " + std::to_string(i)
                                                   + ": " + ex.what());
         }
@@ -405,8 +529,11 @@ namespace argus {
         if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
             auto err = lua_tostring(state, -1);
             lua_pop(state, 1); // pop error message
+            assert(lua_gettop(state) == initial_top);
             throw ScriptInvocationException(name, err);
         }
+
+        assert(lua_gettop(state) == initial_top);
 
         return {}; //TODO
     }
