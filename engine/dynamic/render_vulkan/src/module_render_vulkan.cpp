@@ -264,6 +264,10 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Deinit: {
+                if (!g_backend_active) {
+                    return;
+                }
+
                 destroy_vk_device(g_vk_device);
                 _deinit_vk_debug_utils(g_vk_instance);
                 destroy_vk_instance(g_vk_instance);
