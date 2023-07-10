@@ -25,8 +25,6 @@
 #include "internal/scripting_lua/loader/lua_script_loader.hpp"
 
 namespace argus {
-    std::vector<lua_State*> g_lua_states;
-
     static LuaScriptLoader *g_res_loader;
     static LuaLanguagePlugin *g_plugin;
 
@@ -41,16 +39,12 @@ namespace argus {
                 g_res_loader = new LuaScriptLoader();
                 ResourceManager::instance().register_loader(*g_res_loader);
 
-                auto *global_state = create_lua_state();
-                g_lua_states.push_back(global_state);
-
                 break;
             }
-            case LifecycleStage::Deinit: {
-                for (auto *state : g_lua_states) {
-                    destroy_lua_state(state);
-                }
-
+            case LifecycleStage::PostDeinit: {
+                // the scripting module unloads script resources during the
+                // Deinit stage, so we have to wait to delete the loader until
+                // PostDeinit
                 delete g_res_loader;
 
                 break;

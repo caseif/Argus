@@ -20,4 +20,6 @@
 
 namespace argus {
     constexpr const char *RESOURCE_TYPE_LUA = "text/x-lua";
+
+    constexpr const char *REG_KEY_PLUGIN_PTR = "argus_plugin";
 }

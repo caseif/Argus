@@ -29,7 +29,5 @@ extern "C" {
 }
 
 namespace argus {
-    extern std::vector<lua_State *> g_lua_states;
-
     void update_lifecycle_scripting_lua(LifecycleStage stage);
 }

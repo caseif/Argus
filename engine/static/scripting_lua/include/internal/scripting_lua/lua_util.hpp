@@ -28,7 +28,12 @@ extern "C" {
 #pragma GCC diagnostic pop
 
 namespace argus {
-    lua_State *create_lua_state(void);
+    // forward declarations
+    class LuaLanguagePlugin;
+
+    lua_State *create_lua_state(LuaLanguagePlugin &plugin);
 
     void destroy_lua_state(lua_State *state);
+
+    LuaLanguagePlugin *get_plugin_from_state(lua_State *state);
 }

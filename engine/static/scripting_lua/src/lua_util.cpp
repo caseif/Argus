@@ -18,10 +18,13 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "internal/scripting_lua/defines.hpp"
+#include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/lua_util.hpp"
+#include "internal/scripting_lua/module_scripting_lua.hpp"
 
 namespace argus {
-    lua_State *create_lua_state(void) {
+    lua_State *create_lua_state(LuaLanguagePlugin &plugin) {
         auto *state = luaL_newstate();
         if (state == nullptr) {
             Logger::default_logger().fatal("Failed to create Lua state");
@@ -29,10 +32,18 @@ namespace argus {
 
         luaL_openlibs(state);
 
+        lua_pushlightuserdata(state, &plugin);
+        lua_setfield(state, LUA_REGISTRYINDEX, REG_KEY_PLUGIN_PTR);
+
         return state;
     }
 
     void destroy_lua_state(lua_State *state) {
         lua_close(state);
+    }
+
+    LuaLanguagePlugin *get_plugin_from_state(lua_State *state) {
+        lua_getfield(state, LUA_REGISTRYINDEX, REG_KEY_PLUGIN_PTR);
+        return reinterpret_cast<LuaLanguagePlugin *>(lua_touserdata(state, -1));
     }
 }

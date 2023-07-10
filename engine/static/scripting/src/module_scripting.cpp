@@ -123,14 +123,12 @@ namespace argus {
         }
 
         int add_2(Adder *adder) {
-            printf("add_2 called: %p, %p\n", static_cast<void *>(this), static_cast<void *>(adder));
             i += adder->i;
             return i;
         }
 
         static Adder *create(int i) {
             auto *adder = new Adder{ i };
-            printf("Created adder: %p\n", static_cast<void *>(adder));
             return adder;
         }
     };
@@ -162,6 +160,20 @@ namespace argus {
                 _bind_types_to_plugins();
                 _bind_functions_to_plugins();
 
+                break;
+            }
+            case LifecycleStage::Deinit: {
+                for (auto context : g_script_contexts) {
+                    auto &plugin = *context->pimpl->plugin;
+                    auto *data = context->pimpl->plugin_data;
+                    if (data != nullptr) {
+                        plugin.destroy_context_data(data);
+                    }
+                }
+
+                for (auto plugin : g_lang_plugins) {
+                    delete plugin.second;
+                }
                 break;
             }
             default:
