@@ -41,8 +41,12 @@
 #define stat _stat64
 #define stat_t struct _stat64
 
+#ifndef S_ISDIR
 #define S_ISDIR(mode) (mode & S_IFDIR)
+#endif
+#ifndef S_ISREG
 #define S_ISREG(mode) (mode & S_IFREG)
+#endif
 #elif defined __APPLE__
 #include <dirent.h>
 #include <mach-o/dyld.h>
