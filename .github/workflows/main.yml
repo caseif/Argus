@@ -2,7 +2,7 @@ name: Argus
 on: [push, pull_request]
 jobs:
   build-ubuntu-gcc:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
@@ -28,7 +28,7 @@ jobs:
         path: build/dist/
 
   build-ubuntu-clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
