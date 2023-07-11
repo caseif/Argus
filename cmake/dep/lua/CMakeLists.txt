@@ -60,3 +60,5 @@ endif()
 
 set_target_properties("${PROJECT_NAME}" PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties("${PROJECT_NAME}" PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+# export all symbols (required on Windows)
+set_target_properties("${PROJECT_NAME}" PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
