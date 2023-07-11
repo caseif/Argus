@@ -102,6 +102,20 @@ namespace argus {
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
 
+    template <typename T>
+    static T _unwrap_param(ObjectWrapper &param) {
+        if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
+            return std::string(reinterpret_cast<const char *>(
+                    param.is_on_heap ? param.heap_ptr : param.value));
+        } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>) {
+            return reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<T>> *>(
+                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
+        } else {
+            return *reinterpret_cast<std::remove_reference_t<T>*>(
+                    param.is_on_heap ? param.heap_ptr : param.value);
+        }
+    }
+
     template <typename FuncType, typename... Args,
             typename ReturnType = typename function_traits<FuncType>::return_type>
     ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
@@ -120,17 +134,7 @@ namespace argus {
         std::apply([&](auto&... el) {
             (([&]() {
                 auto param = *(it++);
-                void *ptr = param.is_on_heap ? param.heap_ptr : param.value;
-
-                if constexpr (std::is_same_v<std::decay_t<decltype(el)>, std::string>) {
-                    el = std::string(reinterpret_cast<const char *>(ptr));
-                } else if constexpr (std::is_pointer_v<std::remove_reference_t<decltype(el)>>) {
-                    el = reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<decltype(el)>> *>(
-                            param.is_on_heap ? param.heap_ptr : param.stored_ptr);
-                } else {
-                    el = *reinterpret_cast<std::remove_reference_t<decltype(el)>*>(
-                            param.is_on_heap ? param.heap_ptr : param.value);
-                }
+                el = _unwrap_param<std::remove_reference_t<decltype(el)>>(param);
             })(), ...);
         }, args);
 
