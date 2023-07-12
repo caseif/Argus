@@ -62,9 +62,7 @@ namespace argus {
 
         auto plugin_it = g_lang_plugins.find(language);
         if (plugin_it == g_lang_plugins.cend()) {
-            static char buf[1024];
-            strcpy(buf, language.c_str());
-            Logger::default_logger().fatal("No plugin is loaded for scripting language: %d", 5);
+            Logger::default_logger().fatal("No plugin is loaded for scripting language: %s", language.c_str());
         }
 
         void *plugin_data = plugin_it->second->create_context_data();

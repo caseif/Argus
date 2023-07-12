@@ -18,23 +18,39 @@
 
 #pragma once
 
+#include <optional>
 #include <tuple>
 
 namespace argus {
-    template<typename FuncType>
+    template <typename T>
+    struct reference_wrapped {
+        using type = T;
+    };
+
+    template <typename T>
+    struct reference_wrapped<T &> {
+        using type = std::reference_wrapper<T>;
+    };
+
+    template <typename T>
+    using reference_wrapped_t = typename reference_wrapped<T>::type;
+
+    template <typename FuncType>
     struct function_traits;
 
-    template<typename Ret, typename... Args>
+    template <typename Ret, typename... Args>
     struct function_traits<Ret(*)(Args...)> {
         using class_type = void;
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
     };
 
-    template<typename Class, typename Ret, typename... Args>
+    template <typename Class, typename Ret, typename... Args>
     struct function_traits<Ret(Class::*)(Args...)> {
         using class_type = Class;
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
     };
 }

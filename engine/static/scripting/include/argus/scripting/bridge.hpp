@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "argus/lowlevel/functional.hpp"
+#include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/scripting/exception.hpp"
@@ -96,7 +96,7 @@ namespace argus {
                              || std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, std::string>) {
             return { IntegralType::String, 0 };
         } else {
-            return { IntegralType::Opaque, 0, typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };;
+            return { IntegralType::Opaque, 0, typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
 
@@ -104,7 +104,11 @@ namespace argus {
 
     template <typename T>
     static T _unwrap_param(ObjectWrapper &param) {
-        if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
+        if constexpr (std::is_reference_v<T>) {
+            printf("is reference: %p\n", param.stored_ptr);
+            return *reinterpret_cast<std::remove_reference_t<T> *>(
+                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
+        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
             return std::string(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>) {
@@ -116,11 +120,17 @@ namespace argus {
         }
     }
 
-    template <typename FuncType, typename... Args,
+    template <typename ArgsTuple, size_t... Is>
+    auto _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
+            std::index_sequence<Is...>) {
+        return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(const_cast<ObjectWrapper &>(*(params_it + Is)))...);
+    }
+
+    template <typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
     ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
-        using ArgsTuple = typename function_traits<FuncType>::argument_types;
+        using ArgsTuple = typename function_traits<FuncType>::argument_types_wrapped;
 
         auto expected_param_count = std::tuple_size<ArgsTuple>::value
                 + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
@@ -129,14 +139,10 @@ namespace argus {
                     + " , actual " + std::to_string(params.size()) + ")");
         }
 
-        ArgsTuple args;
+        //ArgsTuple args;
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
-        std::apply([&](auto&... el) {
-            (([&]() {
-                auto param = *(it++);
-                el = _unwrap_param<std::remove_reference_t<decltype(el)>>(param);
-            })(), ...);
-        }, args);
+        std::vector<std::string> string_pool;
+        auto args = _make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
 
         if constexpr (!std::is_void_v<ClassType>) {
             ++it;
@@ -144,14 +150,14 @@ namespace argus {
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
-            return std::apply([=](auto&&... args){ return (instance->*fn)(std::forward<decltype(args)>(args)...); },
+            return std::apply([&](auto&&... args){ return (instance->*fn)(std::forward<decltype(args)>(args)...); },
                     args);
         } else {
             return std::apply(fn, args);
         }
     }
 
-    template <typename FuncType, typename... Args>
+    template <typename FuncType>
     ProxiedFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
@@ -187,13 +193,13 @@ namespace argus {
     }
 
     template <typename Tuple, size_t... Is>
-    static auto _tuple_to_vector_impl(std::index_sequence<Is...>) {
+    static auto _tuple_to_object_types_impl(std::index_sequence<Is...>) {
         return std::vector<ObjectType>{_create_object_type<std::tuple_element_t<Is, Tuple>>()...};
     }
 
     template <typename Tuple>
-    static auto _tuple_to_vector() {
-        return _tuple_to_vector_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+    static auto _tuple_to_object_types() {
+        return _tuple_to_object_types_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
     }
 
     template <typename FuncType, typename... Args>
@@ -206,7 +212,7 @@ namespace argus {
             def.name = name;
             def.type = type;
             def.handle = create_function_wrapper(fn);
-            def.params = _tuple_to_vector<ArgsTuple>();
+            def.params = _tuple_to_object_types<ArgsTuple>();
             def.return_type = _create_object_type<ReturnType>();
 
             return def;
