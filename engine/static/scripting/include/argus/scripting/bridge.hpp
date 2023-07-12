@@ -93,7 +93,9 @@ namespace argus {
             return { IntegralType::Float, 8 };
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, char *>
                              || std::is_same_v<std::remove_const_t<T>, const char *>
-                             || std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, std::string>) {
+                             || std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, std::string>
+                             || std::is_same_v<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>,
+                                     std::string>) {
             return { IntegralType::String, 0 };
         } else {
             return { IntegralType::Opaque, 0, typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
@@ -105,9 +107,11 @@ namespace argus {
     template <typename T>
     static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
         if constexpr (std::is_same_v<std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>, std::string>) {
-            std::string &ref = string_pool.emplace_back(reinterpret_cast<const char *>(
+            return string_pool.emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
-            return ref;
+        } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::decay_t<T>>>, std::string>) {
+            return &string_pool.emplace_back(reinterpret_cast<const char *>(
+                    param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (is_reference_wrapper_v<T>) {
             return *reinterpret_cast<std::remove_reference_t<remove_reference_wrapper_t<T>> *>(
                     param.is_on_heap ? param.heap_ptr : param.stored_ptr);

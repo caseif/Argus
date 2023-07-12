@@ -133,8 +133,8 @@ namespace argus {
         }
     };
 
-    static void _println(const std::string &str) {
-        printf("println: %s\n", str.c_str());
+    static void _println(const std::string *str) {
+        printf("println: %s\n", str->c_str());
     }
 
     void update_lifecycle_scripting(LifecycleStage stage) {
