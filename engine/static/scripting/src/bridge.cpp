@@ -129,7 +129,11 @@ namespace argus {
         // for opaque types we copy the pointer itself, and for everything else we copy the value
         const void *copy_src = type.type == IntegralType::Opaque ? &ptr : ptr;
         // override size for opaque type since we're only copying the pointer
-        size_t copy_size = type.type == IntegralType::Opaque ? sizeof(void *) : type.size;
+        size_t copy_size = type.type == IntegralType::Opaque
+            ? sizeof(void *)
+            : type.type == IntegralType::String
+                ? size
+                : type.size;
 
         if (copy_size <= sizeof(wrapper.value)) {
             // can store directly in ObjectWrapper struct
@@ -159,7 +163,8 @@ namespace argus {
                                      " non-string-typed value");
         }
 
-        return create_object_wrapper(type, str.c_str(), str.length() + 1);
+        auto wrapper = create_object_wrapper(type, str.c_str(), str.length() + 1);
+        return wrapper;
     }
 
     void cleanup_object_wrapper(ObjectWrapper &wrapper) {

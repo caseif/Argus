@@ -123,19 +123,17 @@ namespace argus {
         }
 
         int add_2(Adder &adder) {
-            printf("add_2: %p <- %p\n", static_cast<void*>(this), static_cast<void*>(&adder));
             i += adder.i;
             return i;
         }
 
         static Adder *create(int i) {
             auto *adder = new Adder{ i };
-            printf("created %p\n", static_cast<void*>(adder));
             return adder;
         }
     };
 
-    static void _println(std::string str) {
+    static void _println(const std::string &str) {
         printf("println: %s\n", str.c_str());
     }
 

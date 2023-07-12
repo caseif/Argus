@@ -103,17 +103,21 @@ namespace argus {
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
 
     template <typename T>
-    static T _unwrap_param(ObjectWrapper &param) {
-        if constexpr (std::is_reference_v<T>) {
-            printf("is reference: %p\n", param.stored_ptr);
-            return *reinterpret_cast<std::remove_reference_t<T> *>(
-                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
-        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
-            return std::string(reinterpret_cast<const char *>(
+    static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
+        if constexpr (std::is_same_v<std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>, std::string>) {
+            std::string &ref = string_pool.emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
+            return ref;
+        } else if constexpr (is_reference_wrapper_v<T>) {
+            return *reinterpret_cast<std::remove_reference_t<remove_reference_wrapper_t<T>> *>(
+                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
         } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>) {
             return reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<T>> *>(
-                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
+                    param.is_on_heap
+                        ? param.heap_ptr
+                        : param.type.type == IntegralType::String
+                            ? param.value
+                            : param.stored_ptr);
         } else {
             return *reinterpret_cast<std::remove_reference_t<T>*>(
                     param.is_on_heap ? param.heap_ptr : param.value);
@@ -122,8 +126,9 @@ namespace argus {
 
     template <typename ArgsTuple, size_t... Is>
     auto _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
-            std::index_sequence<Is...>) {
-        return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(const_cast<ObjectWrapper &>(*(params_it + Is)))...);
+            std::index_sequence<Is...>, std::vector<std::string> &string_pool) {
+        return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
+                const_cast<ObjectWrapper &>(*(params_it + Is)), string_pool)...);
     }
 
     template <typename FuncType,
@@ -142,7 +147,8 @@ namespace argus {
         //ArgsTuple args;
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
         std::vector<std::string> string_pool;
-        auto args = _make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
+        auto args = _make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{},
+                string_pool);
 
         if constexpr (!std::is_void_v<ClassType>) {
             ++it;

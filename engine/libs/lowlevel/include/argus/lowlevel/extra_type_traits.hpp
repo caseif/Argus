@@ -53,4 +53,26 @@ namespace argus {
         using argument_types = std::tuple<Args...>;
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
     };
+
+    template <typename T>
+    struct is_reference_wrapper : std::false_type {};
+
+    template <typename T>
+    struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
+
+    template <typename T>
+    constexpr bool is_reference_wrapper_v = is_reference_wrapper<T>::value;
+
+    template <typename T>
+    struct remove_reference_wrapper {
+        using type = T;
+    };
+
+    template <typename T>
+    struct remove_reference_wrapper<std::reference_wrapper<T>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using remove_reference_wrapper_t = typename remove_reference_wrapper<T>::type;
 }
