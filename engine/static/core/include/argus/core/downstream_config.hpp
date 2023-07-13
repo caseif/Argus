@@ -24,6 +24,10 @@
 #include <string>
 
 namespace argus {
+    struct ScriptingParameters {
+        std::string main;
+    };
+
     struct InitialWindowParameters {
         std::optional<std::string> id;
         std::optional<std::string> title;
@@ -35,6 +39,10 @@ namespace argus {
         std::optional<Vector2i> position;
         std::optional<Vector2u> dimensions;
     };
+
+    const std::optional<ScriptingParameters> &get_scripting_parameters(void);
+
+    void set_scripting_parameters(const ScriptingParameters &params);
 
     const std::optional<InitialWindowParameters> &get_initial_window_parameters(void);
 

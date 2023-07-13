@@ -21,9 +21,18 @@
 #include <string>
 
 namespace argus {
+    static std::optional<ScriptingParameters> g_scripting_params;
     static std::optional<InitialWindowParameters> g_init_window_params;
     static std::string g_def_bindings_res_id;
     static bool g_save_user_bindings;
+
+    const std::optional<ScriptingParameters> &get_scripting_parameters(void) {
+        return g_scripting_params;
+    }
+
+    void set_scripting_parameters(const ScriptingParameters &params) {
+        g_scripting_params = params;
+    }
 
     const std::optional<InitialWindowParameters> &get_initial_window_parameters(void) {
         return g_init_window_params;

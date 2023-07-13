@@ -71,6 +71,9 @@
 #define KEY_ENGINE_TICKRATE "target_tickrate"
 #define KEY_ENGINE_FRAMERATE "target_framerate"
 
+#define KEY_SCRIPTING "scripting"
+#define KEY_SCRIPTING_MAIN "main"
+
 #define KEY_WINDOW "window"
 #define KEY_WINDOW_ID "id"
 #define KEY_WINDOW_TITLE "title"
@@ -186,6 +189,16 @@ namespace argus {
         }
     }
 
+    static void _ingest_scripting_config(nlohmann::json window_obj) {
+        ScriptingParameters params;
+
+        if (auto main = _get_json_string(window_obj, KEY_SCRIPTING_MAIN); main.has_value()) {
+            params.main = main.value();
+        }
+
+        set_scripting_parameters(params);
+    }
+
     static void _ingest_window_config(nlohmann::json window_obj) {
         InitialWindowParameters win_params;
         if (auto id = _get_json_string(window_obj, KEY_WINDOW_ID); id.has_value()) {
@@ -274,6 +287,10 @@ namespace argus {
 
         if (json_root.contains(KEY_ENGINE)) {
             _ingest_engine_config(json_root.at(KEY_ENGINE));
+        }
+
+        if (json_root.contains(KEY_SCRIPTING)) {
+            _ingest_scripting_config(json_root.at(KEY_SCRIPTING));
         }
 
         if (json_root.contains(KEY_WINDOW)) {
