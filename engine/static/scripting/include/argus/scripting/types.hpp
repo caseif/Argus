@@ -31,7 +31,8 @@ namespace argus {
         Integer,
         Float,
         String,
-        Opaque
+        Struct,
+        Pointer
     };
 
     enum FunctionType {

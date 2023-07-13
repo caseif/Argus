@@ -112,6 +112,12 @@ namespace argus {
     struct Adder {
         int i = 0;
 
+        Adder(int i) : i(i) {}
+
+        Adder(const Adder &lhs) {
+            this->i = lhs.i;
+        }
+
         int increment() {
             i += 1;
             return i;
@@ -122,14 +128,13 @@ namespace argus {
             return i;
         }
 
-        int add_2(Adder &adder) {
+        int add_2(const Adder &adder) {
             i += adder.i;
             return i;
         }
 
-        static Adder *create(int i) {
-            auto *adder = new Adder{ i };
-            return adder;
+        static Adder create(int i) {
+            return Adder(i);
         }
     };
 
@@ -171,7 +176,7 @@ namespace argus {
                     }
                 }
 
-                for (auto plugin : g_lang_plugins) {
+                for (const auto &plugin : g_lang_plugins) {
                     delete plugin.second;
                 }
                 break;

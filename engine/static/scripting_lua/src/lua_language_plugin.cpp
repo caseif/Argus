@@ -50,11 +50,16 @@ namespace argus {
     static constexpr const char *k_lua_require = "require";
     static constexpr const char *k_lua_require_def = "default_require";
 
+    struct UserData {
+        bool is_pointer;
+        char data[0];
+    };
+
     static int _set_lua_error(lua_State *state, const std::string &msg) {
         return luaL_error(state, msg.c_str());
     }
 
-    static int _wrap_bound_type(lua_State *state, const std::string &qual_fn_name,
+    static int _wrap_instance_ref(lua_State *state, const std::string &qual_fn_name,
             int param_index, const BoundTypeDef &type_def, ObjectWrapper *dest) {
         if (!lua_isuserdata(state, param_index)
             || !luaL_testudata(state, param_index, type_def.name.c_str())) {
@@ -64,12 +69,18 @@ namespace argus {
                                   + ", actual " + lua_typename(state, lua_type(state, param_index)) + ")");
         }
 
-        void *ptr = *static_cast<void **>(lua_touserdata(state, param_index));
+        auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+        void *ptr;
+        if (udata->is_pointer) {
+            ptr = *reinterpret_cast<void **>(udata->data);
+        } else {
+            ptr = static_cast<void *>(udata->data);
+        }
 
         ObjectType obj_type{};
-        obj_type.type = IntegralType::Opaque;
+        obj_type.type = IntegralType::Pointer;
         obj_type.type_name = type_def.name;
-        obj_type.size = type_def.size;
+        obj_type.size = sizeof(void *);
         *dest = create_object_wrapper(obj_type, ptr);
         return 0;
     }
@@ -147,7 +158,8 @@ namespace argus {
 
                 return 0;
             }
-            case Opaque: {
+            case Struct:
+            case Pointer: {
                 assert(param_def.type_name.has_value());
                 if (!lua_isuserdata(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
@@ -173,7 +185,15 @@ namespace argus {
                                           + ", actual " + type_name + ")");
                 }
 
-                void *ptr = *static_cast<void **>(lua_touserdata(state, param_index));
+                auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+                void *ptr;
+                if (udata->is_pointer) {
+                    // userdata is storing pointer to struct data
+                    ptr = *reinterpret_cast<void **>(udata->data);
+                } else {
+                    // userdata is directly storing struct data
+                    ptr = static_cast<void *>(udata->data);
+                }
 
                 *dest = create_object_wrapper(param_def, ptr);
 
@@ -216,6 +236,13 @@ namespace argus {
         }
     }
 
+    static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
+        auto mt = luaL_getmetatable(state, wrapper.type.type_name.value().c_str());
+        assert(mt != 0); // binding should have failed if type wasn't bound
+
+        lua_setmetatable(state, -2);
+    }
+
     static void _push_value(lua_State *state, const ObjectWrapper &wrapper) {
         assert(wrapper.type.type != IntegralType::Void);
 
@@ -230,16 +257,27 @@ namespace argus {
                 lua_pushstring(state, reinterpret_cast<const char *>(
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
                 break;
-            case IntegralType::Opaque: {
+            case IntegralType::Struct: {
+                assert(wrapper.type.type_name.has_value());
+
+                const void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value;
+                auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
+                        sizeof(UserData) + wrapper.type.size));
+                udata->is_pointer = false;
+                memcpy(udata->data, ptr, wrapper.type.size);
+                _set_metatable(state, wrapper);
+
+                break;
+            }
+            case IntegralType::Pointer: {
                 assert(wrapper.type.type_name.has_value());
 
                 void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
-                void *udata = lua_newuserdata(state, sizeof(void *));
-                memcpy(udata, &ptr, sizeof(void *));
-                auto mt = luaL_getmetatable(state, wrapper.type.type_name.value().c_str());
-                assert(mt != 0); // binding should have failed if type wasn't bound
-
-                lua_setmetatable(state, -2);
+                auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
+                        sizeof(UserData) + sizeof(void *)));
+                udata->is_pointer = true;
+                memcpy(udata->data, &ptr, sizeof(void *));
+                _set_metatable(state, wrapper);
 
                 break;
             }
@@ -303,15 +341,18 @@ namespace argus {
             if (fn_type == FunctionType::MemberInstance) {
                 auto type_def = get_bound_type(type_name);
                 ObjectType instance_type{};
-                instance_type.type = Opaque;
+                instance_type.type = IntegralType::Pointer;
                 instance_type.size = type_def.size;
                 instance_type.type_name = type_def.name;
 
+                //TODO: add safeguard to prevent invocation of functions on non-references
                 ObjectWrapper wrapper{};
-                auto wrap_res = _wrap_bound_type(state, qual_fn_name, 1, type_def, &wrapper);
+                auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, &wrapper);
                 if (wrap_res == 0) {
                     args.push_back(wrapper);
                 } else {
+                    // some error occurred
+                    // _wrap_instance_ref already sent error to lua state, so just clean up here
                     cleanup_object_wrappers(args);
                     assert(lua_gettop(state) == initial_top);
                     return wrap_res;

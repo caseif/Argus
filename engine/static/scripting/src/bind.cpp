@@ -32,7 +32,7 @@
 
 namespace argus {
     static void _resolve_param(ObjectType &param_def) {
-        if (param_def.type != IntegralType::Opaque) {
+        if (param_def.type != IntegralType::Pointer && param_def.type != IntegralType::Struct) {
             return;
         }
 
@@ -50,7 +50,8 @@ namespace argus {
                     _resolve_param(param);
                 }
 
-                if (fn.second.return_type.type == IntegralType::Opaque) {
+                if (fn.second.return_type.type == IntegralType::Pointer
+                        || fn.second.return_type.type == IntegralType::Struct) {
                     _resolve_param(fn.second.return_type);
                 }
             }
@@ -60,7 +61,8 @@ namespace argus {
                     _resolve_param(param);
                 }
 
-                if (fn.second.return_type.type == IntegralType::Opaque) {
+                if (fn.second.return_type.type == IntegralType::Pointer
+                        || fn.second.return_type.type == IntegralType::Struct) {
                     _resolve_param(fn.second.return_type);
                 }
             }

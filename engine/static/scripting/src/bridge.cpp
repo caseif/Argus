@@ -126,10 +126,10 @@ namespace argus {
         assert(type.type == IntegralType::String || type.size == size);
         wrapper.type = type;
 
-        // for opaque types we copy the pointer itself, and for everything else we copy the value
-        const void *copy_src = type.type == IntegralType::Opaque ? &ptr : ptr;
-        // override size for opaque type since we're only copying the pointer
-        size_t copy_size = type.type == IntegralType::Opaque
+        // for pointer types we copy the pointer itself, and for everything else we copy the value
+        const void *copy_src = type.type == IntegralType::Pointer ? &ptr : ptr;
+        // override size for pointer type since we're only copying the pointer
+        size_t copy_size = type.type == IntegralType::Pointer
             ? sizeof(void *)
             : type.type == IntegralType::String
                 ? size

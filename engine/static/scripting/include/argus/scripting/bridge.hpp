@@ -75,7 +75,7 @@ namespace argus {
     static ObjectType _create_object_type(void) {
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
-        } if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
+        } else if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int8_t>) {
                 return { IntegralType::Integer, 1 };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int16_t>) {
@@ -97,8 +97,10 @@ namespace argus {
                              || std::is_same_v<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>,
                                      std::string>) {
             return { IntegralType::String, 0 };
+        } else if (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
+            return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
-            return { IntegralType::Opaque, 0, typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+            return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
 
@@ -178,7 +180,7 @@ namespace argus {
                 auto ret_obj_type = _create_object_type<ReturnType>();
                 // _create_object_type is used to create function definitions so
                 // it doesn't attempt to resolve the type name
-                if (ret_obj_type.type == IntegralType::Opaque) {
+                if (ret_obj_type.type == IntegralType::Pointer || ret_obj_type.type == IntegralType::Struct) {
                     ret_obj_type.type_name = get_bound_type<ReturnType>().name;
                 }
 
