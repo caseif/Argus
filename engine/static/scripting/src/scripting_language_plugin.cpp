@@ -25,8 +25,10 @@
 #include "internal/scripting/module_scripting.hpp"
 
 namespace argus {
-    ScriptingLanguagePlugin::ScriptingLanguagePlugin(std::string lang_name) : lang_name(std::move(lang_name)) {
-        g_loaded_resources.insert({ this->lang_name, {} });
+    ScriptingLanguagePlugin::ScriptingLanguagePlugin(std::string lang_name,
+            const std::initializer_list<std::string> &media_types) :
+        lang_name(std::move(lang_name)),
+        media_types(media_types) {
     }
 
     ScriptingLanguagePlugin::~ScriptingLanguagePlugin(void) {
@@ -48,12 +50,25 @@ namespace argus {
         return *res;
     }
 
-    void ScriptingLanguagePlugin::release_resource(Resource &resource) {
+    void ScriptingLanguagePlugin::move_resource(const Resource &resource) {
+        g_loaded_resources.find(get_language_name())->second.push_back(&resource);
+    }
+
+    void ScriptingLanguagePlugin::release_resource(const Resource &resource) {
         resource.release();
         remove_from_vector(g_loaded_resources.find(get_language_name())->second, &resource);
     }
 
-    void register_scripting_language(ScriptingLanguagePlugin *plugin) {
-        g_lang_plugins.insert({ plugin->get_language_name(), plugin });
+    void register_scripting_language(ScriptingLanguagePlugin &plugin) {
+        g_lang_plugins.insert({ plugin.get_language_name(), &plugin });
+        for (const auto &mt : plugin.get_media_types()) {
+            auto existing = g_media_type_langs.find(mt);
+            if (existing != g_media_type_langs.cend()) {
+                Logger::default_logger().fatal("Media type '%s' is already associated with language plugin '%s'",
+                        mt.c_str(), existing->second.c_str());
+            }
+            g_media_type_langs.insert({ mt, plugin.get_language_name() });
+        }
+        g_loaded_resources.insert({ plugin.get_language_name(), {} });
     }
 }

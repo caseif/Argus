@@ -36,7 +36,7 @@ namespace argus {
 
         void destroy_context_data(void *data) override;
 
-        void load_script(ScriptContext &context, const std::string &uid) override;
+        void load_script(ScriptContext &context, const Resource &resource) override;
 
         void bind_type(ScriptContext &context, const BoundTypeDef &type) override;
 

@@ -21,6 +21,8 @@
 
 #include "argus/core/engine.hpp"
 
+#include "argus/resman.hpp"
+
 #include "argus/scripting/script_context.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
@@ -47,7 +49,20 @@ namespace argus {
     }
 
     void ScriptContext::load_script(const std::string &uid) {
-        pimpl->plugin->load_script(*this, uid);
+        auto &res = pimpl->plugin->load_resource(uid);
+
+        this->load_script(res);
+    }
+
+    void ScriptContext::load_script(const Resource &resource) {
+        auto lang_it = g_media_type_langs.find(resource.media_type);
+        if (lang_it == g_media_type_langs.cend() || lang_it->second != pimpl->language) {
+            throw ScriptLoadException(resource.uid, "Resource with media type '" + resource.prototype.media_type
+                    + "' cannot be loaded by plugin '" + pimpl->language + "'");
+        }
+
+        pimpl->plugin->move_resource(resource);
+        pimpl->plugin->load_script(*this, resource);
     }
 
     ObjectWrapper ScriptContext::invoke_script_function(const std::string &fn_name,
@@ -81,5 +96,27 @@ namespace argus {
         plugin->destroy_context_data(context.pimpl->plugin_data);
 
         delete &context;
+    }
+
+    ScriptContext &load_script(const std::string &uid) {
+        try {
+            auto &res = ResourceManager::instance().get_resource(uid);
+
+            auto lang_it = g_media_type_langs.find(res.media_type);
+            if (lang_it == g_media_type_langs.cend()) {
+                throw ScriptLoadException(uid, "No plugin registered for media type '"
+                        + res.prototype.media_type + "'");
+            }
+
+            auto &context = create_script_context(lang_it->second);
+
+            context.load_script(res);
+
+            return context;
+        } catch (const ScriptLoadException &ex) {
+            throw ex;
+        } catch (const std::exception &ex) {
+            throw ScriptLoadException(uid, ex.what());
+        }
     }
 }

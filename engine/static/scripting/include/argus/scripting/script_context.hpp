@@ -43,6 +43,8 @@ namespace argus {
 
         void load_script(const std::string &uid);
 
+        void load_script(const Resource &resource);
+
         ObjectWrapper invoke_script_function(const std::string &fn_name, const std::vector<ObjectWrapper> &params);
 
         void *get_plugin_data_ptr(void);
@@ -58,4 +60,6 @@ namespace argus {
     ScriptContext &create_script_context(const std::string &language);
 
     void destroy_script_context(ScriptContext &context);
+
+    ScriptContext &load_script(const std::string &uid);
 }

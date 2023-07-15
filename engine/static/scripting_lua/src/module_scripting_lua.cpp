@@ -32,7 +32,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 g_plugin = new LuaLanguagePlugin();
-                register_scripting_language(g_plugin);
+                register_scripting_language(*g_plugin);
                 break;
             }
             case LifecycleStage::Init: {
@@ -46,6 +46,8 @@ namespace argus {
                 // Deinit stage, so we have to wait to delete the loader until
                 // PostDeinit
                 delete g_res_loader;
+
+                delete g_plugin;
 
                 break;
             }

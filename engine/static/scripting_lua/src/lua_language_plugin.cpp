@@ -36,6 +36,8 @@ extern "C" {
 #include "lauxlib.h"
 }
 
+#include "internal/scripting_lua/defines.hpp"
+
 #include <functional>
 #include <string>
 
@@ -433,29 +435,27 @@ namespace argus {
         return uid;
     }
 
-    static int _load_script(lua_State *state, const std::string &uid) {
-        auto &plugin = *get_plugin_from_state(state);
-
-        auto &res = plugin.load_resource(uid);
-
-        auto &loaded_script = res.get<LoadedScript>();
+    static int _load_script(lua_State *state, const Resource &resource) {
+        auto &loaded_script = resource.get<LoadedScript>();
 
         if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
-            res.release();
-            throw ScriptLoadException(uid, "luaL_loadstring failed");
+            resource.release();
+            throw ScriptLoadException(resource.uid, "luaL_loadstring failed");
         }
 
         auto err = lua_pcall(state, 0, 1, 0);
         if (err != LUA_OK) {
             //TODO: print detailed trace info from VM
-            res.release();
-            throw ScriptLoadException(uid, lua_tostring(state, -1));
+            resource.release();
+            throw ScriptLoadException(resource.uid, lua_tostring(state, -1));
         }
 
         return 1;
     }
 
     static int _require_override(lua_State *state) {
+        auto &plugin = *get_plugin_from_state(state);
+
         const char *path = lua_tostring(state, 1);
         if (path == nullptr) {
             return luaL_error(state, "Incorrect arguments to function 'require'");
@@ -463,7 +463,12 @@ namespace argus {
 
         auto uid = _convert_path_to_uid(path);
         if (uid != "") {
-            return _load_script(state, uid);
+            try {
+                auto &res = plugin.load_resource(uid);
+                return _load_script(state, res);
+            } catch (const std::exception &ex) {
+                // swallow
+            }
         }
 
         Logger::default_logger().warn("Unable to load Lua module '%s' as resource; "
@@ -542,7 +547,7 @@ namespace argus {
         _bind_fn(state, fn, "");
     }
 
-    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name) {
+    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, { RESOURCE_TYPE_LUA }) {
     }
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;
@@ -569,25 +574,23 @@ namespace argus {
         delete lua_data;
     }
 
-    void LuaLanguagePlugin::load_script(ScriptContext &context, const std::string &uid) {
+    void LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &resource) {
+        assert(resource.prototype.media_type == RESOURCE_TYPE_LUA);
+
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
 
         auto *state = plugin_data->state;
 
-        auto &res = load_resource(uid);
-
-        auto &loaded_script = res.get<LoadedScript>();
+        auto &loaded_script = resource.get<LoadedScript>();
 
         if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
-            res.release();
-            throw ScriptLoadException(uid, "luaL_loadstring failed");
+            throw ScriptLoadException(resource.uid, "luaL_loadstring failed");
         }
 
         auto err = lua_pcall(state, 0, 0, 0);
         if (err != LUA_OK) {
             //TODO: print detailed trace info from VM
-            res.release();
-            throw ScriptLoadException(uid, lua_tostring(state, -1));
+            throw ScriptLoadException(resource.uid, lua_tostring(state, -1));
         }
     }
 

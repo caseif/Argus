@@ -23,6 +23,7 @@
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/script_context.hpp"
 
+#include <initializer_list>
 #include <string>
 #include <vector>
 
@@ -30,9 +31,10 @@ namespace argus {
     class ScriptingLanguagePlugin {
       private:
         std::string lang_name;
+        std::vector<std::string> media_types;
 
       public:
-        ScriptingLanguagePlugin(std::string lang_name);
+        ScriptingLanguagePlugin(std::string lang_name, const std::initializer_list<std::string> &media_types);
 
         ScriptingLanguagePlugin(const ScriptingLanguagePlugin &) = delete;
         ScriptingLanguagePlugin(ScriptingLanguagePlugin &&) = delete;
@@ -43,15 +45,21 @@ namespace argus {
             return this->lang_name;
         }
 
+        const std::vector<std::string> &get_media_types(void) {
+            return this->media_types;
+        }
+
         Resource &load_resource(const std::string &uid);
 
-        void release_resource(Resource &resource);
+        void move_resource(const Resource &resource);
+
+        void release_resource(const Resource &resource);
 
         virtual void *create_context_data(void) = 0;
 
         virtual void destroy_context_data(void *data) = 0;
 
-        virtual void load_script(ScriptContext &context, const std::string &uid) = 0;
+        virtual void load_script(ScriptContext &context, const Resource &resource) = 0;
 
         virtual void bind_type(ScriptContext &context, const BoundTypeDef &type) = 0;
 
@@ -64,5 +72,5 @@ namespace argus {
                 const std::vector<ObjectWrapper> &params) = 0;
     };
 
-    void register_scripting_language(ScriptingLanguagePlugin *plugin);
+    void register_scripting_language(ScriptingLanguagePlugin &plugin);
 }

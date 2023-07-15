@@ -29,11 +29,12 @@
 
 namespace argus {
     std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
+    std::map<std::string, std::string> g_media_type_langs;
     std::map<std::string, BoundTypeDef> g_bound_types;
     std::map<std::type_index, std::string> g_bound_type_indices;
     std::map<std::string, BoundFunctionDef> g_bound_global_fns;
     std::vector<ScriptContext*> g_script_contexts;
-    std::map<std::string, std::vector<Resource*>> g_loaded_resources;
+    std::map<std::string, std::vector<const Resource*>> g_loaded_resources;
 
     static void _resolve_all_parameter_types(void) {
         for (auto &type : g_bound_types) {
