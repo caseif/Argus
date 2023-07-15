@@ -79,13 +79,7 @@ namespace argus {
         std::string name;
         size_t size;
         std::type_index type_index;
-        //std::vector<BoundMemberDef> members;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
     };
-
-    /*struct BoundMemberDef {
-        std::string name;
-        std::string type;
-    };*/
 }

@@ -41,17 +41,4 @@ namespace argus {
         auto def = create_global_function_def<FuncType>(name, fn);
         bind_global_function(def);
     }
-
-    //void register_script_type(BoundTypeDef type_def);
-
-    //void register_script_global_function(BoundFunctionDef fn_def);
-
-    /*template <typename T>
-    int register_global_function(const std::string &name, std::function<T> fn) {
-        UNUSED(fn);
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wold-style-cast"
-        return register_global_function(name, asMETHOD(T, operator()));
-        #pragma GCC diagnostic pop
-    }*/
 }
