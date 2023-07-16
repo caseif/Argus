@@ -85,6 +85,7 @@ namespace argus {
 
     template <typename T>
     static ObjectType _create_object_type(void) {
+        using B = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
         } else if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
@@ -104,12 +105,10 @@ namespace argus {
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, double>) {
             return { IntegralType::Float, 8 };
         } else if constexpr (std::is_same_v<std::remove_const_t<T>, char *>
-                             || std::is_same_v<std::remove_const_t<T>, const char *>
-                             || std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, std::string>
-                             || std::is_same_v<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>,
-                                     std::string>) {
+                             || std::is_same_v<B, std::string>) {
             return { IntegralType::String, 0 };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
+            static_assert(std::is_class_v<B>, "Non-class reference params are not permitted");
             return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else if constexpr (std::is_enum_v<T>) {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
