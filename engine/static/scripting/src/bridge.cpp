@@ -206,6 +206,17 @@ namespace argus {
         }
     }
 
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index) {
+        BoundTypeDef def {
+                name,
+                size,
+                type_index,
+                {},
+                {}
+        };
+        return def;
+    }
+
     void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         if (type_def.instance_functions.find(fn_def.name) != type_def.instance_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::MemberInstance, type_def.name, fn_def.name);

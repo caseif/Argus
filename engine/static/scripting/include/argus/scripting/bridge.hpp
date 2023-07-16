@@ -119,8 +119,6 @@ namespace argus {
         }
     }
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
-
     template <typename T>
     static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
         if constexpr (std::is_same_v<std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>, std::string>) {
@@ -145,8 +143,10 @@ namespace argus {
         }
     }
 
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
+
     template <typename ArgsTuple, size_t... Is>
-    auto _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
+    ArgsTuple _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
             std::index_sequence<Is...>, std::vector<std::string> &string_pool) {
         return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
                 const_cast<ObjectWrapper &>(*(params_it + Is)), string_pool)...);
@@ -165,7 +165,6 @@ namespace argus {
                     + " , actual " + std::to_string(params.size()) + ")");
         }
 
-        //ArgsTuple args;
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
         std::vector<std::string> string_pool;
         auto args = _make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{},
@@ -223,12 +222,12 @@ namespace argus {
     }
 
     template <typename Tuple, size_t... Is>
-    static auto _tuple_to_object_types_impl(std::index_sequence<Is...>) {
-        return std::vector<ObjectType>{_create_object_type<std::tuple_element_t<Is, Tuple>>()...};
+    static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
+        return std::vector<ObjectType> { _create_object_type<std::tuple_element_t<Is, Tuple>>()... };
     }
 
     template <typename Tuple>
-    static auto _tuple_to_object_types() {
+    static std::vector<ObjectType> _tuple_to_object_types() {
         return _tuple_to_object_types_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
     }
 
@@ -269,16 +268,12 @@ namespace argus {
 
     void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
 
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index);
+
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        BoundTypeDef def {
-                name,
-                sizeof(T),
-                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>)),
-                {},
-                {}
-        };
-        return def;
+        return create_type_def(name, sizeof(T),
+                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>)));
     }
 
     template <typename FuncType>
@@ -288,14 +283,14 @@ namespace argus {
 
     void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
-    void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
-
     template <typename FuncType>
     typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
     add_member_instance_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
         add_member_instance_function(type_def, fn_def);
     }
+
+    void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
     template <typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
