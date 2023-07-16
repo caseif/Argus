@@ -18,11 +18,8 @@
 
 #pragma once
 
+#include "argus/scripting/types.hpp"
+
 namespace argus {
-    // forward declarations
-    struct BoundTypeDef;
-
-    void resolve_parameter_types(BoundTypeDef &type_def);
-
-    void resolve_parameter_types(BoundFunctionDef &fn_def);
+    bool is_complex_type(IntegralType type);
 }

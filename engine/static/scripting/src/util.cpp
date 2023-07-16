@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/scripting/types.hpp"
 #include "argus/scripting/util.hpp"
+
+#include "internal/scripting/util.hpp"
 
 #include <cassert>
 
@@ -33,5 +36,11 @@ namespace argus {
             default:
                 assert(false);
         }
+    }
+
+    bool is_complex_type(IntegralType type) {
+        return type == IntegralType::Pointer
+               || type == IntegralType::Struct
+               || type == IntegralType::Enum;
     }
 }

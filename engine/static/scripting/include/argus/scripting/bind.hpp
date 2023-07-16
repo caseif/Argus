@@ -29,6 +29,8 @@ namespace argus {
 
     void bind_global_function(const BoundFunctionDef &def);
 
+    void bind_enum(const BoundEnumDef &def);
+
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
         auto def = create_type_def<T>(name);

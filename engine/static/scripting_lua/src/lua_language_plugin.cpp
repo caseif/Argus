@@ -90,15 +90,26 @@ namespace argus {
     static int _wrap_param(lua_State *state, const std::string &qual_fn_name,
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
         switch (param_def.type) {
-            case Integer: {
+            case Integer:
+            case Enum: {
                 if (!lua_isinteger(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected integer, actual "
-                                          + lua_typename(state, lua_type(state, param_index)) + ")");
+                                          + " (expected integer "
+                                          + (param_def.type == IntegralType::Enum ? "(enum) " : "")
+                                          + ", actual " + lua_typename(state, lua_type(state, param_index)) + ")");
                 }
 
                 int64_t val_i64 = lua_tointeger(state, param_index);
+
+                if (param_def.type == IntegralType::Enum) {
+                    assert(param_def.type_name.has_value());
+                    auto &enum_def = get_bound_enum(param_def.type_name.value());
+                    auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val_i64));
+                    if (enum_val_it == enum_def.all_ordinals.cend()) {
+
+                    }
+                }
 
                 switch (param_def.size) {
                     case 1: {
@@ -512,7 +523,7 @@ namespace argus {
         // create dispatch table
         lua_newtable(state);
 
-        // set dispatch table
+        // set dispatch table (which pops it from the stack)
         lua_setfield(state, -2, k_lua_index);
 
         // add metatable to global state to provide access to static type functions
@@ -545,6 +556,24 @@ namespace argus {
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
         assert(fn.type == FunctionType::Global);
         _bind_fn(state, fn, "");
+    }
+
+    static void _bind_enum(lua_State *state, const BoundEnumDef &def) {
+        // create metatable for enum
+        luaL_newmetatable(state, def.name.c_str());
+
+        // set values in metatable
+        for (const auto &enum_val : def.values) {
+            lua_pushinteger(state, *reinterpret_cast<const int64_t *>(&enum_val.second));
+            lua_setfield(state, -2, enum_val.first.c_str());
+        }
+
+        // add metatable to global state to make enum available
+        luaL_getmetatable(state, def.name.c_str());
+        lua_setglobal(state, def.name.c_str());
+
+        // pop the metatable
+        lua_pop(state, 1);
     }
 
     LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, { RESOURCE_TYPE_LUA }) {
@@ -621,6 +650,16 @@ namespace argus {
         auto initial_top = lua_gettop(state);
 
         _bind_global_fn(state, fn);
+
+        assert(lua_gettop(state) == initial_top);
+    }
+
+    void LuaLanguagePlugin::bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) {
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
+
+        _bind_enum(state, enum_def);
 
         assert(lua_gettop(state) == initial_top);
     }

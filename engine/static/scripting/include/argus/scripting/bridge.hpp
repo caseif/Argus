@@ -33,6 +33,7 @@
 #include <vector>
 
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 
@@ -71,6 +72,17 @@ namespace argus {
         return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>));
     }
 
+    const BoundEnumDef &get_bound_enum(const std::string &enum_name);
+
+    const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info);
+
+    const BoundEnumDef &get_bound_enum(const std::type_index &enum_type_index);
+
+    template <typename T>
+    const BoundEnumDef &get_bound_enum(void) {
+        return get_bound_enum(typeid(std::remove_const_t<T>));
+    }
+
     template <typename T>
     static ObjectType _create_object_type(void) {
         if constexpr (std::is_void_v<T>) {
@@ -97,8 +109,11 @@ namespace argus {
                              || std::is_same_v<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>,
                                      std::string>) {
             return { IntegralType::String, 0 };
-        } else if (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
+        } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
             return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+        } else if constexpr (std::is_enum_v<T>) {
+            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
+                    typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
             return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
@@ -180,8 +195,11 @@ namespace argus {
                 auto ret_obj_type = _create_object_type<ReturnType>();
                 // _create_object_type is used to create function definitions so
                 // it doesn't attempt to resolve the type name
-                if (ret_obj_type.type == IntegralType::Pointer || ret_obj_type.type == IntegralType::Struct) {
+                if (ret_obj_type.type == IntegralType::Pointer
+                        || ret_obj_type.type == IntegralType::Struct) {
                     ret_obj_type.type_name = get_bound_type<ReturnType>().name;
+                } else if (ret_obj_type.type == IntegralType::Enum) {
+                    ret_obj_type.type_name = get_bound_enum<ReturnType>().name;
                 }
 
                 if constexpr (std::is_reference_v<ReturnType>) {
@@ -284,5 +302,26 @@ namespace argus {
     add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
         add_member_static_function(type_def, fn_def);
+    }
+
+    BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);
+
+    template <typename E>
+    typename std::enable_if<std::is_enum_v<E>, BoundEnumDef>::type
+    create_enum_def(const std::string &name) {
+        return create_enum_def(name, sizeof(std::underlying_type_t<E>),
+                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>)));
+    }
+
+    void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
+
+    template <typename T>
+    typename std::enable_if<std::is_enum_v<T>>::type
+    add_enum_value(BoundEnumDef &def, const std::string &name, T value) {
+        if (std::is_signed_v<std::underlying_type_t<T>>) {
+            add_enum_value(def, name, *reinterpret_cast<uint64_t *>(int64_t(value)));
+        } else {
+            add_enum_value(def, name, uint64_t(value));
+        }
     }
 }

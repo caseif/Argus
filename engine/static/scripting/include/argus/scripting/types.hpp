@@ -23,7 +23,10 @@
 #include <optional>
 #include <string>
 #include <typeindex>
+#include <unordered_set>
 #include <vector>
+
+#include <cstdint>
 
 namespace argus {
     enum IntegralType {
@@ -32,7 +35,8 @@ namespace argus {
         Float,
         String,
         Struct,
-        Pointer
+        Pointer,
+        Enum
     };
 
     enum FunctionType {
@@ -81,5 +85,13 @@ namespace argus {
         std::type_index type_index;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
+    };
+
+    struct BoundEnumDef {
+        std::string name;
+        size_t width;
+        std::type_index type_index;
+        std::map<std::string, uint64_t> values;
+        std::unordered_set<uint64_t> all_ordinals;
     };
 }

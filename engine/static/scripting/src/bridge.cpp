@@ -16,13 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
-#include "internal/scripting/module_scripting.hpp"
 #include "argus/scripting/util.hpp"
+#include "internal/scripting/module_scripting.hpp"
 
 #include <string>
 #include <vector>
@@ -88,6 +89,32 @@ namespace argus {
         auto type_it = g_bound_types.find(index_it->second);
         assert(type_it != g_bound_types.cend());
         return type_it->second;
+    }
+
+    const BoundEnumDef &get_bound_enum(const std::string &enum_name) {
+        auto it = g_bound_enums.find(enum_name);
+        if (it == g_bound_enums.cend()) {
+            throw std::invalid_argument("Enum name" + std::string(enum_name)
+                                        + " is not bound (check binding order and ensure bind_type"
+                                          " is called after creating type definition)");
+        }
+        return it->second;
+    }
+
+    const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info) {
+        return get_bound_enum(std::type_index(enum_type_info));
+    }
+
+    const BoundEnumDef &get_bound_enum(const std::type_index &enum_type_index) {
+        auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
+        if (index_it == g_bound_enum_indices.cend()) {
+            throw std::invalid_argument("Enum " + std::string(enum_type_index.name())
+                                        + " is not bound (check binding order and ensure bind_type"
+                                          " is called after creating type definition)");
+        }
+        auto enum_it = g_bound_enums.find(index_it->second);
+        assert(enum_it != g_bound_enums.cend());
+        return enum_it->second;
     }
 
     const BoundFunctionDef &get_native_global_function(const std::string &name) {
@@ -195,5 +222,22 @@ namespace argus {
         }
 
         type_def.static_functions.insert({ fn_def.name, fn_def });
+    }
+
+    BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index) {
+        return { name, width, type_index, {}, {} };
+    }
+
+    void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value) {
+        if (def.values.find(name) != def.values.cend()) {
+            throw BindingException(def.name + "::" + name, "Enum value with same name is already bound");
+        }
+
+        if (def.all_ordinals.find(value) != def.all_ordinals.cend()) {
+            throw BindingException(def.name + "::" + name, "Enum value with same ordinal is already bound");
+        }
+
+        def.values.insert({ name, value });
+        def.all_ordinals.insert(value);
     }
 }

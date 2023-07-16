@@ -33,12 +33,18 @@ namespace argus {
     std::map<std::string, BoundTypeDef> g_bound_types;
     std::map<std::type_index, std::string> g_bound_type_indices;
     std::map<std::string, BoundFunctionDef> g_bound_global_fns;
+    std::map<std::string, BoundEnumDef> g_bound_enums;
+    std::map<std::type_index, std::string> g_bound_enum_indices;
     std::vector<ScriptContext*> g_script_contexts;
     std::map<std::string, std::vector<const Resource*>> g_loaded_resources;
 
     static void _resolve_all_parameter_types(void) {
         for (auto &type : g_bound_types) {
             resolve_parameter_types(type.second);
+        }
+
+        for (auto &fn : g_bound_global_fns) {
+            resolve_parameter_types(fn.second);
         }
     }
 
@@ -93,6 +99,20 @@ namespace argus {
                     g_script_contexts.size() != 1 ? "s" : "");
         }
 
+        for (const auto &enum_def : g_bound_enums) {
+            Logger::default_logger().debug("Binding enum %s in %zu context%s",
+                    enum_def.second.name.c_str(), g_script_contexts.size(),
+                    g_script_contexts.size() != 1 ? "s" : "");
+
+            for (auto *context : g_script_contexts) {
+                context->pimpl->plugin->bind_enum(*context, enum_def.second);
+            }
+
+            Logger::default_logger().debug("Bound enum %s in %zu context%s",
+                    enum_def.second.name.c_str(), g_script_contexts.size(),
+                    g_script_contexts.size() != 1 ? "s" : "");
+        }
+
         for (const auto &fn : g_bound_global_fns) {
             Logger::default_logger().debug("Binding global function %s in %zu context%s",
                     fn.second.name.c_str(), g_script_contexts.size(),
@@ -143,6 +163,29 @@ namespace argus {
         printf("println: %s\n", str->c_str());
     }
 
+    enum Animal {
+        Dog,
+        Cat,
+        Walrus
+    };
+
+    static void _animal_noise(Animal animal) {
+        switch (animal) {
+            case Dog:
+                printf("The dog says woof\n");
+                break;
+            case Cat:
+                printf("The cat says meow\n");
+                break;
+            case Walrus:
+                printf("The walrus says arf\n");
+                break;
+            default:
+                printf("I don't know this animal\n");
+                break;
+        }
+    }
+
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -154,6 +197,14 @@ namespace argus {
                 bind_type(adder_type);
 
                 bind_global_function("println", _println);
+
+                auto animal_enum = create_enum_def<Animal>("Animal");
+                add_enum_value(animal_enum, "Dog", Animal::Dog);
+                add_enum_value(animal_enum, "Cat", Animal::Cat);
+                add_enum_value(animal_enum, "Walrus", Animal::Walrus);
+                bind_enum(animal_enum);
+
+                bind_global_function("animal_noise", _animal_noise);
 
                 g_script_context = &create_script_context("lua");
 

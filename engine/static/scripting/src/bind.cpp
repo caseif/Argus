@@ -23,57 +23,79 @@
 
 #include "internal/scripting/bind.hpp"
 #include "internal/scripting/module_scripting.hpp"
+#include "internal/scripting/util.hpp"
 
 #include <algorithm>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include <cassert>
 
 namespace argus {
     static void _resolve_param(ObjectType &param_def) {
-        if (param_def.type != IntegralType::Pointer && param_def.type != IntegralType::Struct) {
+        if (!is_complex_type(param_def.type)) {
             return;
         }
 
         assert(param_def.type_index.has_value());
         assert(!param_def.type_name.has_value());
 
-        auto &bound_type = get_bound_type(param_def.type_index.value());
-        param_def.type_name = bound_type.name;
+        std::string type_name;
+        if (param_def.type == IntegralType::Enum) {
+            auto &bound_enum = get_bound_enum(param_def.type_index.value());
+            type_name = bound_enum.name;
+        } else {
+            auto &bound_type = get_bound_type(param_def.type_index.value());
+            type_name = bound_type.name;
+        }
+
+        param_def.type_name = type_name;
+    }
+
+    static void _resolve_param_types(BoundFunctionDef &fn_def) {
+        for (auto &param : fn_def.params) {
+            _resolve_param(param);
+        }
+
+        if (is_complex_type(fn_def.return_type.type)) {
+            _resolve_param(fn_def.return_type);
+        }
     }
 
     void resolve_parameter_types(BoundTypeDef &type_def) {
         try {
             for (auto &fn : type_def.instance_functions) {
-                for (auto &param : fn.second.params) {
-                    _resolve_param(param);
-                }
-
-                if (fn.second.return_type.type == IntegralType::Pointer
-                        || fn.second.return_type.type == IntegralType::Struct) {
-                    _resolve_param(fn.second.return_type);
-                }
+                _resolve_param_types(fn.second);
             }
 
             for (auto &fn : type_def.static_functions) {
-                for (auto &param : fn.second.params) {
-                    _resolve_param(param);
-                }
-
-                if (fn.second.return_type.type == IntegralType::Pointer
-                        || fn.second.return_type.type == IntegralType::Struct) {
-                    _resolve_param(fn.second.return_type);
-                }
+                _resolve_param_types(fn.second);
             }
         } catch (const std::exception &ex) {
             throw BindingException(type_def.name, ex.what());
         }
     }
 
+    void resolve_parameter_types(BoundFunctionDef &fn_def) {
+        try {
+            _resolve_param_types(fn_def);
+        } catch (const std::exception &ex) {
+            throw BindingException(fn_def.name, ex.what());
+        }
+    }
+
     void bind_type(const BoundTypeDef &def) {
         if (g_bound_types.find(def.name) != g_bound_types.cend()) {
             throw BindingException(def.name, "Type with same name has already been bound");
+        }
+
+        if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
+            throw BindingException(def.name, "Global function with same name as type has already been bound");
+        }
+
+        if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
+            throw BindingException(def.name, "Enum with same name as type has already been bound");
         }
 
         std::vector<std::string> static_fn_names;
@@ -101,6 +123,40 @@ namespace argus {
             throw BindingException(def.name, "Global function with same name has already been bound");
         }
 
+        if (g_bound_types.find(def.name) != g_bound_types.cend()) {
+            throw BindingException(def.name, "Type with same name as global function has already been bound");
+        }
+
+        if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
+            throw BindingException(def.name, "Enum with same name as global function has already been bound");
+        }
+
         g_bound_global_fns.insert({ def.name, def });
+    }
+
+    void bind_enum(const BoundEnumDef &def) {
+        // check for consistency
+        std::unordered_set<uint64_t> ordinals;
+        ordinals.reserve(def.values.size());
+        std::transform(def.values.cbegin(), def.values.cend(), std::inserter(ordinals, ordinals.end()),
+                [](const auto &kv) { return kv.second; });
+        if (ordinals != def.all_ordinals) {
+            throw BindingException(def.name, "Enum definition is corrupted");
+        }
+
+        if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
+            throw BindingException(def.name, "Enum with same name has already been bound");
+        }
+
+        if (g_bound_types.find(def.name) != g_bound_types.cend()) {
+            throw BindingException(def.name, "Type with same name as enum has already been bound");
+        }
+
+        if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
+            throw BindingException(def.name, "Global function with same name as enum has already been bound");
+        }
+
+        g_bound_enums.insert({ def.name, def });
+        g_bound_enum_indices.insert({ def.type_index, def.name });
     }
 }
