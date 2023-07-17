@@ -187,20 +187,17 @@ namespace argus {
     }
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr) {
-        if (type.type == IntegralType::String) {
-            throw std::runtime_error("Cannot create object wrapper for string-typed value - "
-                                     "string-specific overload must be used");
-        } else if (type.type == IntegralType::Callback) {
-            throw std::runtime_error("Cannot create object wrapper for string-typed value - "
-                                     "callback-specific overload must be used");
-        }
+        affirm_precond(type.type != IntegralType::String, "Cannot create object wrapper for string-typed value - "
+                "string-specific overload must be used");
+        affirm_precond(type.type != IntegralType::Callback, "Cannot create object wrapper for callback-typed "
+                "value - callback-specific overload must be used");
 
         return create_object_wrapper(type, ptr, type.size);
     }
 
     ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str) {
-        affirm_precond(IntegralType::String, "Cannot create object wrapper (string-specific overload called for"
-                " non-string-typed value");
+        affirm_precond(type.type == IntegralType::String, "Cannot create object wrapper (string-specific overload "
+                "called for non-string-typed value");
 
         return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
