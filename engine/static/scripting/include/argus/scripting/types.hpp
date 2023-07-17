@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <typeindex>
@@ -36,7 +37,8 @@ namespace argus {
         String,
         Struct,
         Pointer,
-        Enum
+        Enum,
+        Callback
     };
 
     enum FunctionType {
@@ -45,11 +47,19 @@ namespace argus {
         MemberInstance,
     };
 
+    struct ScriptCallbackType;
+
     struct ObjectType {
         IntegralType type;
         size_t size;
         std::optional<std::type_index> type_index = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
+        std::optional<std::shared_ptr<ScriptCallbackType>> callback_type = std::nullopt;
+    };
+
+    struct ScriptCallbackType {
+        std::vector<ObjectType> params;
+        ObjectType return_type;
     };
 
     struct ObjectWrapper {
@@ -63,6 +73,7 @@ namespace argus {
             void *heap_ptr;
         };
         bool is_on_heap;
+        size_t buffer_size;
 
         void *get_ptr(void) {
             return is_on_heap ? heap_ptr : value;

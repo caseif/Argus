@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/logging.hpp"
 
@@ -83,11 +84,86 @@ namespace argus {
         return get_bound_enum(typeid(std::remove_const_t<T>));
     }
 
+    template <typename FuncType>
+    ProxiedFunction create_function_wrapper(FuncType fn);
+
+    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr);
+
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
+
+    ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str);
+
+    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn);
+
+    template <typename T>
+    ObjectWrapper create_auto_object_wrapper(const ObjectType &type, T val) {
+        using B = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+        if constexpr (std::is_same_v<B, std::string>) {
+            return create_string_object_wrapper(type, val);
+        } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
+            return create_callback_object_wrapper(type, val);
+        } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>
+                || std::is_reference_v<T>) {
+            return create_object_wrapper(type, val);
+        } else {
+            return create_object_wrapper(type, &val);
+        }
+    }
+
+    template <typename T>
+    static ObjectType _create_object_type(void);
+
+    template <typename Tuple, size_t... Is>
+    static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
+        return std::vector<ObjectType> { _create_object_type<std::tuple_element_t<Is, Tuple>>()... };
+    }
+
+    template <typename Tuple>
+    static std::vector<ObjectType> _tuple_to_object_types() {
+        return _tuple_to_object_types_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+    }
+
+    // this is only enabled for std::functions, not for function pointers
+    template <typename F,
+            typename ReturnType = typename function_traits<F>::return_type,
+            typename Args = typename function_traits<F>::argument_types>
+    static std::enable_if_t<!std::is_function_v<F>, ScriptCallbackType> _create_callback_type() {
+        return ScriptCallbackType {
+                _tuple_to_object_types<Args>(),
+                _create_object_type<ReturnType>()
+        };
+    }
+
+    template <typename FuncType, typename... Args>
+    static BoundFunctionDef _create_function_def(const std::string &name, FuncType fn, FunctionType type) {
+        using ArgsTuple = typename function_traits<FuncType>::argument_types;
+        using ReturnType = typename function_traits<FuncType>::return_type;
+
+        try {
+            BoundFunctionDef def{};
+            def.name = name;
+            def.type = type;
+            def.handle = create_function_wrapper(fn);
+            def.params = _tuple_to_object_types<ArgsTuple>();
+            def.return_type = _create_object_type<ReturnType>();
+
+            return def;
+        } catch (const std::exception &ex) {
+            throw BindingException(name, ex.what());
+        }
+    }
+
     template <typename T>
     static ObjectType _create_object_type(void) {
         using B = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
+        } else if constexpr (is_std_function_v<B>) {
+            printf("saw function param\n");
+            static_assert(is_std_function_v<T>, "Callback reference/pointer params in bound function are not"
+                    "permitted (pass by value instead)");
+            return { IntegralType::Callback, sizeof(ProxiedFunction), {}, {},
+                     std::make_shared<ScriptCallbackType>(_create_callback_type<B>()) };
         } else if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int8_t>) {
                 return { IntegralType::Integer, 1 };
@@ -108,7 +184,7 @@ namespace argus {
                              || std::is_same_v<B, std::string>) {
             return { IntegralType::String, 0 };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
-            static_assert(std::is_class_v<B>, "Non-class reference params are not permitted");
+            static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
             return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else if constexpr (std::is_enum_v<T>) {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
@@ -118,9 +194,56 @@ namespace argus {
         }
     }
 
+    template <typename ArgsTuple, size_t... Is>
+    static std::vector<ObjectWrapper> _make_params_from_tuple_impl(ArgsTuple &tuple,
+            const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
+        return std::vector<ObjectWrapper> {
+            create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is), std::get<Is>(tuple))...
+        };
+    }
+
+    template <typename ArgsTuple>
+    static std::vector<ObjectWrapper> _make_params_from_tuple(ArgsTuple &tuple,
+            const std::vector<ObjectType>::const_iterator &types_it) {
+        return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
+    }
+
+    void cleanup_object_wrapper(ObjectWrapper &wrapper);
+
+    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
+
     template <typename T>
     static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
-        if constexpr (std::is_same_v<std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>, std::string>) {
+        using B = std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>;
+        if constexpr (is_std_function_v<B>) {
+            using ReturnType = typename function_traits<B>::return_type;
+            using ArgsTuple = typename function_traits<B>::argument_types;
+
+            auto proxied_fn = reinterpret_cast<ProxiedFunction *>(param.get_ptr());
+            auto fn_copy = std::make_shared<ProxiedFunction>(*proxied_fn);
+            auto obj_types = _tuple_to_object_types<ArgsTuple>();
+
+            return [fn_copy = std::move(fn_copy), obj_types](auto &&... args) {
+                std::vector<std::string> string_pool;
+
+                auto tuple = std::make_tuple(std::forward<decltype(args)>(args)...);
+                std::vector<ObjectWrapper> wrapped_params = _make_params_from_tuple<ArgsTuple>(tuple,
+                        obj_types.cbegin());
+
+                if constexpr (!std::is_void_v<ReturnType>) {
+                    auto retval = (*fn_copy)(wrapped_params);
+
+                    cleanup_object_wrappers(wrapped_params);
+                    return _unwrap_param<ReturnType>(retval, string_pool);
+                } else {
+                    UNUSED(string_pool);
+                    (*fn_copy)(wrapped_params);
+
+                    cleanup_object_wrappers(wrapped_params);
+                    return;
+                }
+            };
+        } else if constexpr (std::is_same_v<B, std::string>) {
             return string_pool.emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::decay_t<T>>>, std::string>) {
@@ -141,8 +264,6 @@ namespace argus {
                     param.is_on_heap ? param.heap_ptr : param.value);
         }
     }
-
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
 
     template <typename ArgsTuple, size_t... Is>
     ArgsTuple _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
@@ -171,7 +292,7 @@ namespace argus {
 
         if constexpr (!std::is_void_v<ClassType>) {
             ++it;
-            auto instance_param = params.front();
+            auto &instance_param = params.front();
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
@@ -191,8 +312,8 @@ namespace argus {
 
                 ObjectWrapper wrapper{};
                 auto ret_obj_type = _create_object_type<ReturnType>();
-                // _create_object_type is used to create function definitions so
-                // it doesn't attempt to resolve the type name
+                // _create_object_type is used to create function definitions
+                // too so it doesn't attempt to resolve the type name
                 if (ret_obj_type.type == IntegralType::Pointer
                         || ret_obj_type.type == IntegralType::Struct) {
                     ret_obj_type.type_name = get_bound_type<ReturnType>().name;
@@ -220,35 +341,6 @@ namespace argus {
         }
     }
 
-    template <typename Tuple, size_t... Is>
-    static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
-        return std::vector<ObjectType> { _create_object_type<std::tuple_element_t<Is, Tuple>>()... };
-    }
-
-    template <typename Tuple>
-    static std::vector<ObjectType> _tuple_to_object_types() {
-        return _tuple_to_object_types_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
-    }
-
-    template <typename FuncType, typename... Args>
-    static BoundFunctionDef _create_function_def(const std::string &name, FuncType fn, FunctionType type) {
-        using ArgsTuple = typename function_traits<FuncType>::argument_types;
-        using ReturnType = typename function_traits<FuncType>::return_type;
-
-        try {
-            BoundFunctionDef def{};
-            def.name = name;
-            def.type = type;
-            def.handle = create_function_wrapper(fn);
-            def.params = _tuple_to_object_types<ArgsTuple>();
-            def.return_type = _create_object_type<ReturnType>();
-
-            return def;
-        } catch (const std::exception &ex) {
-            throw BindingException(name, ex.what());
-        }
-    }
-
     const BoundFunctionDef &get_native_global_function(const std::string &name);
 
     const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
@@ -258,14 +350,6 @@ namespace argus {
             const std::string &fn_name);
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
-
-    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr);
-
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const std::string &str);
-
-    void cleanup_object_wrapper(ObjectWrapper &wrapper);
-
-    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index);
 

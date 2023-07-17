@@ -148,53 +148,83 @@ namespace argus {
         return def.handle(params);
     }
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
+    // Constructs a new ObjectWrapper but stops short of performing a bitwise
+    // copy. This is helpful specifically for std::function objects where the
+    // copy constructor must be invoked instead.
+    static ObjectWrapper _setup_object_wrapper(const ObjectType &type, size_t size) {
         ObjectWrapper wrapper{};
         assert(type.type == IntegralType::String || type.size == size);
         wrapper.type = type;
 
-        // for pointer types we copy the pointer itself, and for everything else we copy the value
-        const void *copy_src = type.type == IntegralType::Pointer ? &ptr : ptr;
         // override size for pointer type since we're only copying the pointer
         size_t copy_size = type.type == IntegralType::Pointer
-            ? sizeof(void *)
-            : type.type == IntegralType::String
-                ? size
-                : type.size;
+                           ? sizeof(void *)
+                           : type.type == IntegralType::String
+                             ? size
+                             : type.size;
+        wrapper.buffer_size = copy_size;
 
         if (copy_size <= sizeof(wrapper.value)) {
             // can store directly in ObjectWrapper struct
-            memcpy(wrapper.value, copy_src, copy_size);
             wrapper.is_on_heap = false;
         } else {
             // need to alloc on heap
             wrapper.heap_ptr = malloc(copy_size);
-            memcpy(wrapper.heap_ptr, copy_src, copy_size);
             wrapper.is_on_heap = true;
         }
 
         return wrapper;
     }
 
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
+        auto wrapper = _setup_object_wrapper(type, size);
+
+        // for pointer types we copy the pointer itself, and for everything else we copy the value
+        const void *copy_src = type.type == IntegralType::Pointer ? &ptr : ptr;
+        memcpy(wrapper.get_ptr(), copy_src, wrapper.buffer_size);
+
+        return wrapper;
+    }
+
     ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr) {
         if (type.type == IntegralType::String) {
-            throw std::runtime_error("Cannot create object wrapper for string-typed value - overload must be used");
+            throw std::runtime_error("Cannot create object wrapper for string-typed value - "
+                                     "string-specific overload must be used");
+        } else if (type.type == IntegralType::Callback) {
+            throw std::runtime_error("Cannot create object wrapper for string-typed value - "
+                                     "callback-specific overload must be used");
         }
 
         return create_object_wrapper(type, ptr, type.size);
     }
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const std::string &str) {
-        if (type.type != IntegralType::String) {
-            throw std::runtime_error("Cannot create object wrapper (string-specific overload called for"
-                                     " non-string-typed value");
-        }
+    ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str) {
+        affirm_precond(IntegralType::String, "Cannot create object wrapper (string-specific overload called for"
+                " non-string-typed value");
 
-        auto wrapper = create_object_wrapper(type, str.c_str(), str.length() + 1);
+        return create_object_wrapper(type, str.c_str(), str.length() + 1);
+    }
+
+    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn) {
+        affirm_precond(type.type == IntegralType::Callback, "Cannot create object wrapper for "
+                "non-callback-typed value");
+
+        auto wrapper = _setup_object_wrapper(type, sizeof(fn));
+
+        // we use the copy constructor instead of doing a bitwise copy because
+        // std::function isn't trivially copyable
+        new (wrapper.get_ptr()) auto(fn);
+
         return wrapper;
     }
 
     void cleanup_object_wrapper(ObjectWrapper &wrapper) {
+        if (wrapper.type.type == IntegralType::Callback) {
+            // callbacks are copied via copy constructor so we need to invoke
+            // the destructor to tear them down
+            reinterpret_cast<ProxiedFunction *>(wrapper.get_ptr())->~ProxiedFunction();
+        }
+
         if (wrapper.is_on_heap) {
             free(wrapper.heap_ptr);
         }

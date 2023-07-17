@@ -54,6 +54,23 @@ namespace argus {
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
     };
 
+    template <typename Ret, typename... Args>
+    struct function_traits<std::function<Ret(Args...)>> {
+        using class_type = void;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+    };
+
+    template <typename F>
+    struct is_std_function : std::false_type {};
+
+    template <typename F>
+    struct is_std_function<std::function<F>> : std::true_type {};
+
+    template <typename F>
+    constexpr bool is_std_function_v = is_std_function<F>::value;
+
     template <typename T>
     struct is_reference_wrapper : std::false_type {};
 
