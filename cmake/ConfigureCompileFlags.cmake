@@ -72,11 +72,13 @@ function(_argus_set_compile_flags TARGET)
       if("${USE_ASAN}")
         target_compile_options("${TARGET}" PUBLIC
           "-fsanitize=address"
+          "-fsanitize=leak"
           "-fno-omit-frame-pointer"
           "-mllvm"
           "-asan-use-private-alias=1")
         target_link_options("${TARGET}" PUBLIC
           "-fsanitize=address"
+          "-fsanitize=leak"
           "-fno-omit-frame-pointer")
       endif()
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
