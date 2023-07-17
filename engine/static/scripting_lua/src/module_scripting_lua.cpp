@@ -47,7 +47,7 @@ namespace argus {
                 // PostDeinit
                 delete g_res_loader;
 
-                delete g_plugin;
+                //delete g_plugin;
 
                 break;
             }

@@ -45,18 +45,18 @@ namespace argus {
             throw ScriptLoadException(uid, "Cannot load script (resource does not exist)");
         }
 
-        g_loaded_resources.find(get_language_name())->second.push_back(res);
+        g_loaded_resources.find(get_language_name())->second.insert(res);
 
         return *res;
     }
 
     void ScriptingLanguagePlugin::move_resource(const Resource &resource) {
-        g_loaded_resources.find(get_language_name())->second.push_back(&resource);
+        g_loaded_resources.find(get_language_name())->second.insert(&resource);
     }
 
     void ScriptingLanguagePlugin::release_resource(const Resource &resource) {
         resource.release();
-        remove_from_vector(g_loaded_resources.find(get_language_name())->second, &resource);
+        g_loaded_resources.find(get_language_name())->second.erase(&resource);
     }
 
     void register_scripting_language(ScriptingLanguagePlugin &plugin) {

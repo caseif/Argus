@@ -38,14 +38,14 @@
 
 #include "GLFW/glfw3.h"
 
+#include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
-#include <vector>
 
 #include <climits>
-#include <cstddef>
-#include <cstdint>
 
 #define DEF_WINDOW_DIM 300
 
@@ -272,7 +272,7 @@ namespace argus {
         if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
             unregister_render_callback(pimpl->callback_id);
             glfwDestroyWindow(pimpl->handle);
-            delete this;
+            run_on_game_thread([this] { delete this; });
             return;
         } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;

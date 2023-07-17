@@ -25,7 +25,10 @@
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
 
+#include <string>
 #include <typeindex>
+#include <unordered_set>
+#include <vector>
 
 namespace argus {
     std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
@@ -36,7 +39,7 @@ namespace argus {
     std::map<std::string, BoundEnumDef> g_bound_enums;
     std::map<std::type_index, std::string> g_bound_enum_indices;
     std::vector<ScriptContext*> g_script_contexts;
-    std::map<std::string, std::vector<const Resource*>> g_loaded_resources;
+    std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
 
     static void _resolve_all_parameter_types(void) {
         for (auto &type : g_bound_types) {

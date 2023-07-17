@@ -52,7 +52,7 @@ namespace argus {
     static std::queue<RefCountable<ArgusEvent> *> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
 
-    void process_event_queue(const TargetThread target_thread) {
+    void process_event_queue(TargetThread target_thread) {
         assert(target_thread == TargetThread::Update || target_thread == TargetThread::Render);
 
         auto render_thread = target_thread == TargetThread::Render;
@@ -96,7 +96,7 @@ namespace argus {
         listeners.list_mutex.unlock_shared();
     }
 
-    void flush_event_listener_queues(const TargetThread target_thread) {
+    void flush_event_listener_queues(TargetThread target_thread) {
         CallbackList<ArgusEventHandler> *listeners = nullptr;
         switch (target_thread) {
             case TargetThread::Update: {
