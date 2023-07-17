@@ -40,7 +40,8 @@ function(_argus_set_compile_flags TARGET)
       "-Wimplicit-fallthrough"
       "-Wreturn-type"
       "-Wdeprecated"
-      "-Wconversion")
+      "-Wconversion"
+      "-ftemplate-backtrace-limit=0")
 
     # -Wmismatched-tags is only available in Clang or GCC 10+
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
