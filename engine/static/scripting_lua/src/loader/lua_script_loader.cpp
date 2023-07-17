@@ -52,6 +52,6 @@ namespace argus {
     }
 
     void LuaScriptLoader::unload(void *data_ptr) const {
-        free(data_ptr);
+        delete reinterpret_cast<LoadedScript *>(data_ptr);
     }
 }
