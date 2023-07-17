@@ -467,6 +467,8 @@ namespace argus {
 
             auto retval = fn.handle(args);
 
+            cleanup_object_wrappers(args);
+
             if (retval.type.type != IntegralType::Void) {
                 try {
                     _push_value(state, retval);
