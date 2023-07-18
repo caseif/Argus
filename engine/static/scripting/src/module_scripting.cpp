@@ -18,10 +18,11 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
-#include "argus/scripting.hpp"
 #include "internal/scripting/bind.hpp"
+#include "internal/scripting/callback_bindings.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
 
@@ -51,23 +52,13 @@ namespace argus {
         }
     }
 
-    std::vector<std::function<void(int)>> callbacks;
-
-    static void _register_callback(std::function<void(int)> callback) {
-        callbacks.push_back(callback);
-    }
-
-    static void _invoke_callbacks(int i) {
-        for (const auto &callback : callbacks) {
-            callback(i);
-        }
-    }
-
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                bind_global_function("register_callback", _register_callback);
-                bind_global_function("invoke_callbacks", _invoke_callbacks);
+                register_default_bindings();
+
+                register_update_callback(invoke_update_callbacks);
+                register_render_callback(invoke_render_callbacks);
 
                 break;
             }

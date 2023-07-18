@@ -22,6 +22,7 @@
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
+#include "internal/scripting/callback_bindings.hpp"
 
 #include <typeindex>
 #include <unordered_set>
@@ -38,6 +39,8 @@ namespace argus {
     extern std::vector<ScriptContext*> g_script_contexts;
     // key = language name, value = resources loaded by the corresponding plugin
     extern std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
+    extern std::vector<ScriptDeltaCallback> g_update_callbacks;
+    extern std::vector<ScriptDeltaCallback> g_render_callbacks;
 
     void update_lifecycle_scripting(LifecycleStage stage);
 }
