@@ -24,6 +24,7 @@
 #include "argus/resman.hpp"
 
 #include "argus/scripting/script_context.hpp"
+#include "internal/scripting/bind.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
 
@@ -69,10 +70,6 @@ namespace argus {
     }
 
     ScriptContext &create_script_context(const std::string &language) {
-        if (get_current_lifecycle_stage() != LifecycleStage::Init) {
-            Logger::default_logger().fatal("Script contexts may only be created during Init stage");
-        }
-
         auto plugin_it = g_lang_plugins.find(language);
         if (plugin_it == g_lang_plugins.cend()) {
             Logger::default_logger().fatal("No plugin is loaded for scripting language: %s", language.c_str());
@@ -83,6 +80,10 @@ namespace argus {
         auto *context = new ScriptContext(language, plugin_data);
 
         g_script_contexts.push_back(context);
+
+        if (get_current_lifecycle_stage() >= LifecycleStage::PostInit) {
+            apply_bindings_to_context(*context);
+        }
 
         return *context;
     }

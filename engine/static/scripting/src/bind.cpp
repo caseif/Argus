@@ -24,6 +24,7 @@
 #include "internal/scripting/bind.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/util.hpp"
+#include "internal/scripting/pimpl/script_context.hpp"
 
 #include <algorithm>
 #include <set>
@@ -166,5 +167,58 @@ namespace argus {
 
         g_bound_enums.insert({ def.name, def });
         g_bound_enum_indices.insert({ def.type_index, def.name });
+    }
+
+    void apply_bindings_to_context(ScriptContext &context) {
+        for (const auto &type : g_bound_types) {
+            Logger::default_logger().debug("Binding type %s", type.second.name.c_str());
+
+            context.pimpl->plugin->bind_type(context, type.second);
+            Logger::default_logger().debug("Bound type %s", type.second.name.c_str());
+        }
+
+        for (const auto &type : g_bound_types) {
+            Logger::default_logger().debug("Binding functions for type %s", type.second.name.c_str());
+
+            for (const auto &type_fn : type.second.instance_functions) {
+                Logger::default_logger().debug("Binding instance function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+
+                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+
+                Logger::default_logger().debug("Bound instance function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+            }
+
+            for (const auto &type_fn : type.second.static_functions) {
+                Logger::default_logger().debug("Binding static function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+
+                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+
+                Logger::default_logger().debug("Bound static function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+            }
+
+            Logger::default_logger().debug("Bound %zu instance and %zu static functions for type %s",
+                    type.second.instance_functions.size(), type.second.static_functions.size(),
+                    type.second.name.c_str());
+        }
+
+        for (const auto &enum_def : g_bound_enums) {
+            Logger::default_logger().debug("Binding enum %s", enum_def.second.name.c_str());
+
+            context.pimpl->plugin->bind_enum(context, enum_def.second);
+
+            Logger::default_logger().debug("Bound enum %s", enum_def.second.name.c_str());
+        }
+
+        for (const auto &fn : g_bound_global_fns) {
+            Logger::default_logger().debug("Binding global function %s", fn.second.name.c_str());
+
+            context.pimpl->plugin->bind_global_function(context, fn.second);
+
+            Logger::default_logger().debug("Bound global function %s in %zu context%s", fn.second.name.c_str());
+        }
     }
 }

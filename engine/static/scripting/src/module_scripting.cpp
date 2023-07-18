@@ -51,97 +51,33 @@ namespace argus {
         }
     }
 
-    static void _bind_types_to_plugins(void) {
-        for (const auto &type : g_bound_types) {
-            Logger::default_logger().debug("Binding type %s in %zu context%s",
-                    type.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
+    std::vector<std::function<void(int)>> callbacks;
 
-            for (auto *context : g_script_contexts) {
-                context->pimpl->plugin->bind_type(*context, type.second);
-            }
-            Logger::default_logger().debug("Bound type %s in %zu context%s",
-                    type.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-        }
+    static void _register_callback(std::function<void(int)> callback) {
+        callbacks.push_back(callback);
     }
 
-    static void _bind_functions_to_plugins(void) {
-        for (const auto &type : g_bound_types) {
-            Logger::default_logger().debug("Binding functions for type %s in %zu context%s",
-                    type.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-
-            for (const auto &type_fn : type.second.instance_functions) {
-                Logger::default_logger().debug("Binding instance function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
-
-                for (auto *context : g_script_contexts) {
-                    context->pimpl->plugin->bind_type_function(*context, type.second, type_fn.second);
-                }
-
-                Logger::default_logger().debug("Bound instance function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
-            }
-
-            for (const auto &type_fn : type.second.static_functions) {
-                Logger::default_logger().debug("Binding static function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
-
-                for (auto *context : g_script_contexts) {
-                    context->pimpl->plugin->bind_type_function(*context, type.second, type_fn.second);
-                }
-
-                Logger::default_logger().debug("Bound static function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
-            }
-
-            Logger::default_logger().debug("Bound %zu instance and %zu static functions for type %s in %zu context%s",
-                    type.second.instance_functions.size(), type.second.static_functions.size(),
-                    type.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-        }
-
-        for (const auto &enum_def : g_bound_enums) {
-            Logger::default_logger().debug("Binding enum %s in %zu context%s",
-                    enum_def.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-
-            for (auto *context : g_script_contexts) {
-                context->pimpl->plugin->bind_enum(*context, enum_def.second);
-            }
-
-            Logger::default_logger().debug("Bound enum %s in %zu context%s",
-                    enum_def.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-        }
-
-        for (const auto &fn : g_bound_global_fns) {
-            Logger::default_logger().debug("Binding global function %s in %zu context%s",
-                    fn.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
-
-            for (auto *context : g_script_contexts) {
-                context->pimpl->plugin->bind_global_function(*context, fn.second);
-            }
-
-            Logger::default_logger().debug("Bound global function %s in %zu context%s",
-                    fn.second.name.c_str(), g_script_contexts.size(),
-                    g_script_contexts.size() != 1 ? "s" : "");
+    static void _invoke_callbacks(int i) {
+        for (const auto &callback : callbacks) {
+            callback(i);
         }
     }
 
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
+                bind_global_function("register_callback", _register_callback);
+                bind_global_function("invoke_callbacks", _invoke_callbacks);
+
                 break;
             }
             case LifecycleStage::PostInit: {
                 // parameter type resolution is deferred to ensure that all
                 // types have been registered first
                 _resolve_all_parameter_types();
-                _bind_types_to_plugins();
-                _bind_functions_to_plugins();
+                for (auto context : g_script_contexts) {
+                    apply_bindings_to_context(*context);
+                }
 
                 break;
             }

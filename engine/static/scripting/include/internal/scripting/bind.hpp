@@ -18,11 +18,13 @@
 
 #pragma once
 
-namespace argus {
-    // forward declarations
-    struct BoundTypeDef;
+#include "argus/scripting/script_context.hpp"
+#include "argus/scripting/types.hpp"
 
+namespace argus {
     void resolve_parameter_types(BoundTypeDef &type_def);
 
     void resolve_parameter_types(BoundFunctionDef &fn_def);
+
+    void apply_bindings_to_context(ScriptContext &context);
 }
