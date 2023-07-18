@@ -192,6 +192,8 @@ namespace argus {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
+            static_assert(std::is_trivially_copyable_v<T>, "Value types in bound function signature must be "
+                                                           "trivially copyable");
             return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
