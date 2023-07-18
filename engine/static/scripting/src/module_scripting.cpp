@@ -131,89 +131,9 @@ namespace argus {
         }
     }
 
-    // temporary testing stuff
-
-    struct Adder {
-        int i = 0;
-
-        Adder(int i) : i(i) {
-        }
-
-        Adder(const Adder &lhs) {
-            this->i = lhs.i;
-        }
-
-        ~Adder(void) = default;
-
-        int increment() {
-            i += 1;
-            return i;
-        }
-
-        int add(int j) {
-            i += j;
-            return i;
-        }
-
-        int add_2(const Adder &adder) {
-            i += adder.i;
-            return i;
-        }
-
-        static Adder &create(int i) {
-            return *new Adder(i);
-        }
-    };
-
-    static void _println(const std::string *str) {
-        printf("println: %s\n", str->c_str());
-    }
-
-    enum Animal {
-        Dog,
-        Cat,
-        Walrus
-    };
-
-    static void _animal_noise(Animal animal) {
-        switch (animal) {
-            case Dog:
-                printf("The dog says woof\n");
-                break;
-            case Cat:
-                printf("The cat says meow\n");
-                break;
-            case Walrus:
-                printf("The walrus says arf\n");
-                break;
-            default:
-                printf("I don't know this animal\n");
-                break;
-        }
-    }
-
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                auto adder_type = create_type_def<Adder>("Adder");
-                add_member_instance_function(adder_type, "increment", &Adder::increment);
-                add_member_instance_function(adder_type, "add", &Adder::add);
-                add_member_instance_function(adder_type, "add_2", &Adder::add_2);
-                add_member_static_function(adder_type, "create", &Adder::create);
-                bind_type(adder_type);
-
-                bind_global_function("println", _println);
-
-                auto animal_enum = create_enum_def<Animal>("Animal");
-                add_enum_value(animal_enum, "Dog", Animal::Dog);
-                add_enum_value(animal_enum, "Cat", Animal::Cat);
-                add_enum_value(animal_enum, "Walrus", Animal::Walrus);
-                bind_enum(animal_enum);
-
-                bind_global_function("animal_noise", _animal_noise);
-
-                g_script_context = &create_script_context("lua");
-
                 break;
             }
             case LifecycleStage::PostInit: {

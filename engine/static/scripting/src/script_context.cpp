@@ -31,8 +31,6 @@
 #include <vector>
 
 namespace argus {
-    ScriptContext *g_script_context;
-
     ScriptContext::ScriptContext(std::string language, void *plugin_data) {
         auto it = g_lang_plugins.find(language);
         if (it == g_lang_plugins.cend()) {

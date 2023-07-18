@@ -55,8 +55,6 @@ namespace argus {
         }
     };
 
-    extern ScriptContext *g_script_context;
-
     ScriptContext &create_script_context(const std::string &language);
 
     void destroy_script_context(ScriptContext &context);
