@@ -33,6 +33,7 @@
 #include <utility>
 #include <vector>
 
+#include <cassert>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
@@ -97,14 +98,16 @@ namespace argus {
 
     template <typename T>
     ObjectWrapper create_auto_object_wrapper(const ObjectType &type, T val) {
-        using B = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+        using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
         if constexpr (std::is_same_v<B, std::string>) {
             return create_string_object_wrapper(type, val);
         } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
             return create_callback_object_wrapper(type, val);
-        } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>
+        } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<T>>>
                 || std::is_reference_v<T>) {
-            return create_object_wrapper(type, val);
+            return create_object_wrapper(type, const_cast<B *>(val));
+        } else if constexpr (is_reference_wrapper_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
+            return create_object_wrapper(type, &const_cast<B &>(val.get()));
         } else {
             return create_object_wrapper(type, &val);
         }
@@ -159,7 +162,6 @@ namespace argus {
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
         } else if constexpr (is_std_function_v<B>) {
-            printf("saw function param\n");
             static_assert(is_std_function_v<T>, "Callback reference/pointer params in bound function are not"
                     "permitted (pass by value instead)");
             return { IntegralType::Callback, sizeof(ProxiedFunction), {}, {},
@@ -213,22 +215,48 @@ namespace argus {
     void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
 
     template <typename T>
+    reference_wrapped_t<T> _wrap_single_reference_type(T &&value) {
+        return std::forward<T>(value);
+    }
+
+    template <typename T>
     static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
         using B = std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>;
         if constexpr (is_std_function_v<B>) {
+            assert(param.type.callback_type.has_value());
+
             using ReturnType = typename function_traits<B>::return_type;
-            using ArgsTuple = typename function_traits<B>::argument_types;
+            using ArgsTuple = typename function_traits<B>::argument_types_wrapped;
 
             auto proxied_fn = reinterpret_cast<ProxiedFunction *>(param.get_ptr());
             auto fn_copy = std::make_shared<ProxiedFunction>(*proxied_fn);
-            auto obj_types = _tuple_to_object_types<ArgsTuple>();
 
-            return [fn_copy = std::move(fn_copy), obj_types](auto &&... args) {
+            auto param_types = param.type.callback_type.value()->params;
+            for (auto &subparam : param_types) {
+                if (subparam.type == IntegralType::Pointer
+                        || subparam.type == IntegralType::Struct) {
+                    assert(subparam.type_index.has_value());
+                    subparam.type_name = get_bound_type(subparam.type_index.value()).name;
+                } else if (subparam.type == IntegralType::Enum) {
+                    assert(subparam.type_index.has_value());
+                    subparam.type_name = get_bound_enum(subparam.type_index.value()).name;
+                }
+            }
+
+            auto ret_type = param.type.callback_type.value()->return_type;
+            if (ret_type.type == IntegralType::Pointer
+                || ret_type.type == IntegralType::Struct) {
+                ret_type.type_name = get_bound_type<ReturnType>().name;
+            } else if (ret_type.type == IntegralType::Enum) {
+                ret_type.type_name = get_bound_enum<ReturnType>().name;
+            }
+
+            return [fn_copy = std::move(fn_copy), param_types](auto &&... args) {
                 std::vector<std::string> string_pool;
 
-                auto tuple = std::make_tuple(std::forward<decltype(args)>(args)...);
+                ArgsTuple tuple = std::make_tuple(_wrap_single_reference_type(args)...);
                 std::vector<ObjectWrapper> wrapped_params = _make_params_from_tuple<ArgsTuple>(tuple,
-                        obj_types.cbegin());
+                        param_types.cbegin());
 
                 if constexpr (!std::is_void_v<ReturnType>) {
                     auto retval = (*fn_copy)(wrapped_params);

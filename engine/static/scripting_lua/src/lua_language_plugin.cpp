@@ -274,7 +274,8 @@ namespace argus {
     }
 
     static int64_t _unwrap_int_wrapper(ObjectWrapper wrapper) {
-        assert(wrapper.type.type == IntegralType::Integer);
+        assert(wrapper.type.type == IntegralType::Integer
+                || wrapper.type.type == IntegralType::Enum);
 
         switch (wrapper.type.size) {
             case 1:
@@ -317,6 +318,7 @@ namespace argus {
 
         switch (wrapper.type.type) {
             case IntegralType::Integer:
+            case IntegralType::Enum:
                 lua_pushinteger(state, _unwrap_int_wrapper(wrapper));
                 break;
             case IntegralType::Float:

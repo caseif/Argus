@@ -136,11 +136,14 @@ namespace argus {
     struct Adder {
         int i = 0;
 
-        Adder(int i) : i(i) {}
+        Adder(int i) : i(i) {
+        }
 
         Adder(const Adder &lhs) {
             this->i = lhs.i;
         }
+
+        ~Adder(void) = default;
 
         int increment() {
             i += 1;
@@ -157,8 +160,8 @@ namespace argus {
             return i;
         }
 
-        static Adder create(int i) {
-            return Adder(i);
+        static Adder &create(int i) {
+            return *new Adder(i);
         }
     };
 
@@ -189,18 +192,6 @@ namespace argus {
         }
     }
 
-    std::vector<std::function<void(long l)>> callbacks;
-
-    static void _register_callback(std::function<void(long l)> fn) {
-        callbacks.push_back(fn);
-    }
-
-    static void _invoke_callbacks(void) {
-        for (const auto &callback : callbacks) {
-            callback(42);
-        }
-    }
-
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -220,9 +211,6 @@ namespace argus {
                 bind_enum(animal_enum);
 
                 bind_global_function("animal_noise", _animal_noise);
-
-                bind_global_function("register_callback", _register_callback);
-                bind_global_function("invoke_callbacks", _invoke_callbacks);
 
                 g_script_context = &create_script_context("lua");
 

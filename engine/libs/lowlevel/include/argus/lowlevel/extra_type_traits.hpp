@@ -33,6 +33,11 @@ namespace argus {
     };
 
     template <typename T>
+    struct reference_wrapped<T &&> {
+        using type = std::reference_wrapper<T>;
+    };
+
+    template <typename T>
     using reference_wrapped_t = typename reference_wrapped<T>::type;
 
     template <typename FuncType>

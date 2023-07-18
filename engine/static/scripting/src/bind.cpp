@@ -34,7 +34,17 @@
 
 namespace argus {
     static void _resolve_param(ObjectType &param_def) {
-        if (!is_complex_type(param_def.type)) {
+        if (param_def.type == IntegralType::Callback) {
+            assert(param_def.callback_type.has_value());
+            auto callback_type = param_def.callback_type.value();
+            for (auto &subparam : callback_type->params) {
+                _resolve_param(subparam);
+            }
+
+            _resolve_param(callback_type->return_type);
+
+            return;
+        } else if (!is_complex_type(param_def.type)) {
             return;
         }
 
@@ -58,9 +68,7 @@ namespace argus {
             _resolve_param(param);
         }
 
-        if (is_complex_type(fn_def.return_type.type)) {
-            _resolve_param(fn_def.return_type);
-        }
+        _resolve_param(fn_def.return_type);
     }
 
     void resolve_parameter_types(BoundTypeDef &type_def) {
