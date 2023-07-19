@@ -49,6 +49,4 @@ namespace argus {
     void register_default_bindings(void);
 
     void invoke_update_callbacks(TimeDelta delta);
-
-    void invoke_render_callbacks(TimeDelta delta);
 }

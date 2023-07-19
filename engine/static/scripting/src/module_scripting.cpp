@@ -58,7 +58,6 @@ namespace argus {
                 register_default_bindings();
 
                 register_update_callback(invoke_update_callbacks);
-                register_render_callback(invoke_render_callbacks);
 
                 break;
             }
