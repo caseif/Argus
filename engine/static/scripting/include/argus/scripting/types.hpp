@@ -74,6 +74,23 @@ namespace argus {
         };
         bool is_on_heap;
         size_t buffer_size;
+        std::optional<std::function<void(void *, const void *)>> copy_ctor;
+        std::optional<std::function<void(void *, void *)>> move_ctor;
+        std::optional<std::function<void(void *)>> dtor;
+
+        ObjectWrapper(void);
+
+        ObjectWrapper(const ObjectType &type, size_t size);
+
+        ObjectWrapper(const ObjectWrapper &rhs);
+
+        ObjectWrapper(ObjectWrapper &&rhs) noexcept;
+
+        ~ObjectWrapper(void);
+
+        ObjectWrapper &operator= (const ObjectWrapper &rhs);
+
+        ObjectWrapper &operator= (ObjectWrapper &&rhs) noexcept;
 
         void *get_ptr(void) {
             return is_on_heap ? heap_ptr : value;
@@ -94,6 +111,9 @@ namespace argus {
         std::string name;
         size_t size;
         std::type_index type_index;
+        std::function<void(void *dst, const void *src)> copy_ctor;
+        std::function<void(void *dst, void *src)> move_ctor;
+        std::function<void(void *obj)> dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
     };
@@ -104,5 +124,16 @@ namespace argus {
         std::type_index type_index;
         std::map<std::string, uint64_t> values;
         std::unordered_set<uint64_t> all_ordinals;
+    };
+
+    class ScriptVisible {
+      public:
+        ScriptVisible(void);
+
+        ScriptVisible(const ScriptVisible &);
+
+        ScriptVisible(ScriptVisible &&) noexcept;
+
+        virtual ~ScriptVisible(void) = 0;
     };
 }

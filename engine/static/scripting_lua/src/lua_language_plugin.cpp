@@ -22,9 +22,11 @@
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
+#include "argus/scripting/handles.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
 
+#include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"
 #include "internal/scripting_lua/lua_context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
@@ -34,8 +36,6 @@ extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
 }
-
-#include "internal/scripting_lua/defines.hpp"
 
 #include <functional>
 #include <memory>
@@ -53,7 +53,7 @@ namespace argus {
     static constexpr const char *k_lua_require_def = "default_require";
 
     struct UserData {
-        bool is_pointer;
+        bool is_handle;
         char data[0];
     };
 
@@ -109,8 +109,13 @@ namespace argus {
 
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
         void *ptr;
-        if (udata->is_pointer) {
-            ptr = *reinterpret_cast<void **>(udata->data);
+        if (udata->is_handle) {
+            ptr = deref_sv_handle(*reinterpret_cast<ScriptVisibleHandle *>(udata->data), type_def.type_index);
+
+            if (ptr == nullptr) {
+                return _set_lua_error(state, "Invalid handle passed as parameter " + std::to_string(param_index)
+                        + " of function " + qual_fn_name);
+            }
         } else {
             ptr = static_cast<void *>(udata->data);
         }
@@ -212,6 +217,8 @@ namespace argus {
             case Struct:
             case Pointer: {
                 assert(param_def.type_name.has_value());
+                assert(param_def.type_index.has_value());
+
                 if (!lua_isuserdata(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
                                           + std::to_string(param_index) + " of function " + qual_fn_name
@@ -238,9 +245,15 @@ namespace argus {
 
                 auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
                 void *ptr;
-                if (udata->is_pointer) {
-                    // userdata is storing pointer to struct data
-                    ptr = *reinterpret_cast<void **>(udata->data);
+                if (udata->is_handle) {
+                    // userdata is storing handle of pointer to struct data
+                    ptr = deref_sv_handle(*reinterpret_cast<ScriptVisibleHandle *>(udata->data),
+                            param_def.type_index.value());
+
+                    if (ptr == nullptr) {
+                        return _set_lua_error(state, "Invalid handle passed as parameter " + std::to_string(param_index)
+                                                     + " of function " + qual_fn_name);
+                    }
                 } else {
                     // userdata is directly storing struct data
                     ptr = static_cast<void *>(udata->data);
@@ -334,7 +347,7 @@ namespace argus {
                 const void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value;
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                         sizeof(UserData) + wrapper.type.size));
-                udata->is_pointer = false;
+                udata->is_handle = false;
                 memcpy(udata->data, ptr, wrapper.type.size);
                 _set_metatable(state, wrapper);
 
@@ -342,12 +355,14 @@ namespace argus {
             }
             case IntegralType::Pointer: {
                 assert(wrapper.type.type_name.has_value());
+                assert(wrapper.type.type_index.has_value());
 
                 void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
+                auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
-                        sizeof(UserData) + sizeof(void *)));
-                udata->is_pointer = true;
-                memcpy(udata->data, &ptr, sizeof(void *));
+                        sizeof(UserData) + sizeof(ScriptVisibleHandle)));
+                udata->is_handle = true;
+                memcpy(udata->data, &handle, sizeof(ScriptVisibleHandle));
                 _set_metatable(state, wrapper);
 
                 break;
@@ -376,7 +391,10 @@ namespace argus {
             throw ScriptInvocationException(fn_name.value_or("callback"), err);
         }
 
-        return {}; //TODO
+        ObjectType type{};
+        type.type = IntegralType::Void;
+        type.size = 0;
+        return ObjectWrapper(type, 0); //TODO
     }
 
     static int _lua_trampoline(lua_State *state) {
@@ -446,7 +464,6 @@ namespace argus {
                 } else {
                     // some error occurred
                     // _wrap_instance_ref already sent error to lua state, so just clean up here
-                    cleanup_object_wrappers(args);
                     assert(lua_gettop(state) == initial_top);
                     return wrap_res;
                 }
@@ -461,7 +478,6 @@ namespace argus {
                 if (wrap_res == 0) {
                     args.push_back(wrapper);
                 } else {
-                    cleanup_object_wrappers(args);
                     assert(lua_gettop(state) == initial_top);
                     return wrap_res;
                 }
@@ -469,13 +485,9 @@ namespace argus {
 
             auto retval = fn.handle(args);
 
-            cleanup_object_wrappers(args);
-
             if (retval.type.type != IntegralType::Void) {
                 try {
                     _push_value(state, retval);
-
-                    cleanup_object_wrapper(retval);
                 } catch (const std::exception &ex) {
                     Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
                 }
@@ -483,8 +495,6 @@ namespace argus {
                 assert(lua_gettop(state) == initial_top + 1);
                 return 1;
             } else {
-                cleanup_object_wrapper(retval);
-
                 assert(lua_gettop(state) == initial_top);
                 return 0;
             }

@@ -98,4 +98,6 @@ namespace argus {
 
     template <typename T>
     using remove_reference_wrapper_t = typename remove_reference_wrapper<T>::type;
+
+    template<class> inline constexpr bool always_false_v = false;
 }

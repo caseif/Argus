@@ -33,6 +33,131 @@
 #include <cassert>
 
 namespace argus {
+    ObjectWrapper::ObjectWrapper(void) :
+        type(ObjectType { IntegralType::Void, 0 }),
+        value(),
+        is_on_heap(false),
+        buffer_size(0) {
+    }
+
+    ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) {
+        assert(type.type == IntegralType::String || type.size == size);
+        this->type = type;
+
+        // override size for pointer type since we're only copying the pointer
+        size_t copy_size = type.type == IntegralType::Pointer
+                           ? sizeof(void *)
+                           : type.type == IntegralType::String
+                             ? size
+                             : type.size;
+        this->buffer_size = copy_size;
+
+        if (copy_size <= sizeof(this->value)) {
+            // can store directly in ObjectWrapper struct
+            this->is_on_heap = false;
+        } else {
+            // need to alloc on heap
+            this->heap_ptr = malloc(copy_size);
+            this->is_on_heap = true;
+        }
+    }
+
+    ObjectWrapper::ObjectWrapper(const ObjectWrapper &rhs) :
+        type(rhs.type),
+        is_on_heap(rhs.is_on_heap),
+        buffer_size(rhs.buffer_size),
+        copy_ctor(rhs.copy_ctor),
+        move_ctor(rhs.move_ctor),
+        dtor(rhs.dtor) {
+
+        if (rhs.type.type == IntegralType::Struct || rhs.type.type == IntegralType::Callback) {
+            assert(rhs.copy_ctor.has_value());
+
+            const void *src_ptr;
+            void *dst_ptr;
+            if (rhs.is_on_heap) {
+                this->heap_ptr = malloc(rhs.buffer_size);
+
+                src_ptr = rhs.heap_ptr;
+                dst_ptr = this->heap_ptr;
+            } else {
+                src_ptr = rhs.value;
+                dst_ptr = this->value;
+            }
+
+            rhs.copy_ctor.value()(dst_ptr, src_ptr);
+        } else if (rhs.is_on_heap) {
+            assert(!rhs.copy_ctor.has_value());
+
+            this->is_on_heap = true;
+            this->heap_ptr = rhs.heap_ptr;
+        } else {
+            assert(!rhs.copy_ctor.has_value());
+            assert(rhs.buffer_size < sizeof(this->value));
+
+            memcpy(this->value, rhs.value, this->buffer_size);
+        }
+    }
+
+    ObjectWrapper::ObjectWrapper(ObjectWrapper &&rhs) noexcept :
+        type(std::move(rhs.type)),
+        is_on_heap(rhs.is_on_heap),
+        buffer_size(rhs.buffer_size),
+        copy_ctor(std::move(rhs.copy_ctor)),
+        move_ctor(std::move(rhs.move_ctor)),
+        dtor(std::move(rhs.dtor)) {
+
+        if (rhs.type.type == IntegralType::Struct || rhs.type.type == IntegralType::Callback) {
+            assert(rhs.move_ctor.has_value());
+
+            void *src_ptr;
+            void *dst_ptr;
+            if (rhs.is_on_heap) {
+                this->heap_ptr = malloc(rhs.buffer_size);
+
+                src_ptr = rhs.heap_ptr;
+                dst_ptr = this->heap_ptr;
+            } else {
+                src_ptr = rhs.value;
+                dst_ptr = this->value;
+            }
+
+            rhs.move_ctor.value()(dst_ptr, src_ptr);
+        } else if (rhs.is_on_heap) {
+            assert(!rhs.move_ctor.has_value());
+
+            this->is_on_heap = true;
+            this->heap_ptr = rhs.heap_ptr;
+        } else {
+            assert(!rhs.move_ctor.has_value());
+            assert(rhs.buffer_size < sizeof(this->value));
+
+            memcpy(this->value, rhs.value, this->buffer_size);
+        }
+    }
+
+    ObjectWrapper::~ObjectWrapper(void) {
+        if (this->dtor.has_value()) {
+            this->dtor.value()(this->get_ptr());
+        }
+
+        if (this->is_on_heap) {
+            free(this->heap_ptr);
+        }
+    }
+
+    ObjectWrapper &ObjectWrapper::operator= (const ObjectWrapper &rhs) {
+        this->~ObjectWrapper();
+        new (this) ObjectWrapper(rhs);
+        return *this;
+    }
+
+    ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
+        this->~ObjectWrapper();
+        new (this) ObjectWrapper(rhs);
+        return *this;
+    }
+
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
@@ -148,40 +273,33 @@ namespace argus {
         return def.handle(params);
     }
 
-    // Constructs a new ObjectWrapper but stops short of performing a bitwise
-    // copy. This is helpful specifically for std::function objects where the
-    // copy constructor must be invoked instead.
-    static ObjectWrapper _setup_object_wrapper(const ObjectType &type, size_t size) {
-        ObjectWrapper wrapper{};
-        assert(type.type == IntegralType::String || type.size == size);
-        wrapper.type = type;
-
-        // override size for pointer type since we're only copying the pointer
-        size_t copy_size = type.type == IntegralType::Pointer
-                           ? sizeof(void *)
-                           : type.type == IntegralType::String
-                             ? size
-                             : type.size;
-        wrapper.buffer_size = copy_size;
-
-        if (copy_size <= sizeof(wrapper.value)) {
-            // can store directly in ObjectWrapper struct
-            wrapper.is_on_heap = false;
-        } else {
-            // need to alloc on heap
-            wrapper.heap_ptr = malloc(copy_size);
-            wrapper.is_on_heap = true;
-        }
-
-        return wrapper;
-    }
-
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
-        auto wrapper = _setup_object_wrapper(type, size);
+        ObjectWrapper wrapper(type, size);
 
-        // for pointer types we copy the pointer itself, and for everything else we copy the value
-        const void *copy_src = type.type == IntegralType::Pointer ? &ptr : ptr;
-        memcpy(wrapper.get_ptr(), copy_src, wrapper.buffer_size);
+        if (type.type == IntegralType::Pointer) {
+            // for pointer types we copy the pointer itself
+            memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
+        } else if (type.type == IntegralType::Struct) {
+            // for complex value types we indirectly use the copy constructor
+            assert(type.type_index.has_value());
+            auto bound_type = get_bound_type(type.type_index.value());
+            bound_type.copy_ctor(wrapper.get_ptr(), ptr);
+            wrapper.copy_ctor = bound_type.copy_ctor;
+            wrapper.move_ctor = bound_type.move_ctor;
+            wrapper.dtor = bound_type.dtor;
+        } else if (type.type == IntegralType::Callback) {
+            new (wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
+            wrapper.copy_ctor = [](void *dst, const void *src) {
+                return new (dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
+            };
+            wrapper.move_ctor = [](void *dst, void *src) {
+                return new (dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
+            };
+            wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
+        } else {
+            // for everything else we bitwise-copy the value
+            memcpy(wrapper.get_ptr(), ptr, wrapper.buffer_size);
+        }
 
         return wrapper;
     }
@@ -206,38 +324,26 @@ namespace argus {
         affirm_precond(type.type == IntegralType::Callback, "Cannot create object wrapper for "
                 "non-callback-typed value");
 
-        auto wrapper = _setup_object_wrapper(type, sizeof(fn));
+        ObjectWrapper wrapper(type, sizeof(fn));
 
         // we use the copy constructor instead of doing a bitwise copy because
         // std::function isn't trivially copyable
-        new (wrapper.get_ptr()) auto(fn);
+        new (wrapper.get_ptr()) ProxiedFunction(fn);
 
-        return wrapper;
+        return create_object_wrapper(type, &fn, sizeof(fn));
     }
 
-    void cleanup_object_wrapper(ObjectWrapper &wrapper) {
-        if (wrapper.type.type == IntegralType::Callback) {
-            // callbacks are copied via copy constructor so we need to invoke
-            // the destructor to tear them down
-            reinterpret_cast<ProxiedFunction *>(wrapper.get_ptr())->~ProxiedFunction();
-        }
-
-        if (wrapper.is_on_heap) {
-            free(wrapper.heap_ptr);
-        }
-    }
-
-    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrappers) {
-        for (auto &wrapper : wrappers) {
-            cleanup_object_wrapper(wrapper);
-        }
-    }
-
-    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index) {
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
+            std::function<void(void *dst, const void *src)> copy_ctor,
+            std::function<void(void *dst, void *src)> move_ctor,
+            std::function<void(void *obj)> dtor) {
         BoundTypeDef def {
                 name,
                 size,
                 type_index,
+                std::move(copy_ctor),
+                std::move(move_ctor),
+                std::move(dtor),
                 {},
                 {}
         };

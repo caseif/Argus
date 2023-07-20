@@ -31,18 +31,22 @@ namespace argus {
 
     typedef std::function<void(BindableTimeDelta)> ScriptDeltaCallback;
 
-    struct BindableTimeDelta {
-        std::chrono::nanoseconds m_nanos;
+    struct BindableTimeDelta : ScriptVisible {
+        uint64_t m_nanos;
 
         BindableTimeDelta(TimeDelta delta);
 
-        int64_t nanos(void);
+        BindableTimeDelta(const BindableTimeDelta &rhs);
 
-        int64_t micros(void);
+        ~BindableTimeDelta(void) override;
 
-        int64_t millis(void);
+        uint64_t nanos(void);
 
-        int64_t seconds(void);
+        uint64_t micros(void);
+
+        uint64_t millis(void);
+
+        uint64_t seconds(void);
     };
 
 

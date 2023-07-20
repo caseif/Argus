@@ -218,7 +218,7 @@ namespace argus {
 
             context.pimpl->plugin->bind_global_function(context, fn.second);
 
-            Logger::default_logger().debug("Bound global function %s in %zu context%s", fn.second.name.c_str());
+            Logger::default_logger().debug("Bound global function %s", fn.second.name.c_str());
         }
     }
 }

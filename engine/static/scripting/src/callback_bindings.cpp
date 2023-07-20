@@ -22,25 +22,35 @@
 #include <cstdint>
 
 namespace argus {
+    constexpr const uint64_t k_ns_per_us = 1'000;
+    constexpr const uint64_t k_ns_per_ms = 1'000'000;
+    constexpr const uint64_t k_ns_per_s = 1'000'000'000;
+
     std::vector<ScriptDeltaCallback> g_update_callbacks;
 
-    BindableTimeDelta::BindableTimeDelta(TimeDelta delta) : m_nanos(delta) {
+    BindableTimeDelta::BindableTimeDelta(TimeDelta delta)
+        : m_nanos(uint64_t(std::min(0L, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
     }
 
-    int64_t BindableTimeDelta::nanos(void) {
-        return m_nanos.count();
+    BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) : m_nanos(rhs.m_nanos) {
     }
 
-    int64_t BindableTimeDelta::micros(void) {
-        return std::chrono::duration_cast<std::chrono::microseconds>(m_nanos).count();
+    BindableTimeDelta::~BindableTimeDelta(void) = default;
+
+    uint64_t BindableTimeDelta::nanos(void) {
+        return m_nanos;
     }
 
-    int64_t BindableTimeDelta::millis(void) {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(m_nanos).count();
+    uint64_t BindableTimeDelta::micros(void) {
+        return m_nanos / k_ns_per_us;
     }
 
-    int64_t BindableTimeDelta::seconds(void) {
-        return std::chrono::duration_cast<std::chrono::seconds>(m_nanos).count();
+    uint64_t BindableTimeDelta::millis(void) {
+        return m_nanos / k_ns_per_ms;
+    }
+
+    uint64_t BindableTimeDelta::seconds(void) {
+        return m_nanos / k_ns_per_s;
     }
 
     static void _script_register_update_callback(ScriptDeltaCallback callback) {

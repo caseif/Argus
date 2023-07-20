@@ -18,11 +18,29 @@
 
 #pragma once
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
-#include "argus/scripting/exception.hpp"
-#include "argus/scripting/handles.hpp"
-#include "argus/scripting/script_context.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
-#include "argus/scripting/types.hpp"
-#include "argus/scripting/util.hpp"
+#include <typeindex>
+
+#include <cstdint>
+
+namespace argus {
+    typedef uint64_t ScriptVisibleHandle;
+
+    constexpr const ScriptVisibleHandle k_null_handle = 0;
+    constexpr const ScriptVisibleHandle k_handle_max = UINT64_MAX;
+
+    ScriptVisibleHandle get_or_create_sv_handle(void *ptr, const std::type_index &type);
+
+    template <typename T>
+    ScriptVisibleHandle get_or_create_sv_handle(T &obj) {
+        return get_or_create_handle(&obj, typeid(obj));
+    }
+
+    void *deref_sv_handle(ScriptVisibleHandle handle, const std::type_index &expected_type);
+
+    template <typename T>
+    T *deref_handle(ScriptVisibleHandle handle) {
+        return deref_sv_handle(handle, typeid(T));
+    }
+
+    void invalidate_sv_handle(void *ptr);
+}

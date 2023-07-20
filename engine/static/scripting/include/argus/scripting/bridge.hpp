@@ -166,34 +166,37 @@ namespace argus {
                     "permitted (pass by value instead)");
             return { IntegralType::Callback, sizeof(ProxiedFunction), {}, {},
                      std::make_shared<ScriptCallbackType>(_create_callback_type<B>()) };
-        } else if constexpr (std::is_integral_v<std::remove_const_t<T>>) {
-            if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int8_t>) {
+        } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
+            if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int8_t>) {
                 return { IntegralType::Integer, 1 };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int16_t>) {
+            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int16_t>) {
                 return { IntegralType::Integer, 2 };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int32_t>) {
+            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int32_t>) {
                 return { IntegralType::Integer, 4 };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_const_t<T>>, int64_t>) {
+            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int64_t>) {
                 return { IntegralType::Integer, 8 };
             } else {
                 Logger::default_logger().fatal("Unknown integer type");
             }
-        } else if constexpr (std::is_same_v<std::remove_const_t<T>, float>) {
+        } else if constexpr (std::is_same_v<std::remove_cv_t<T>, float>) {
             return { IntegralType::Float, 4 };
-        } else if constexpr (std::is_same_v<std::remove_const_t<T>, double>) {
+        } else if constexpr (std::is_same_v<std::remove_cv_t<T>, double>) {
             return { IntegralType::Float, 8 };
-        } else if constexpr (std::is_same_v<std::remove_const_t<T>, char *>
-                             || std::is_same_v<B, std::string>) {
+        } else if constexpr ((std::is_pointer_v<T>
+                    && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>)
+                || std::is_same_v<B, std::string>) {
             return { IntegralType::String, 0 };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
+            static_assert(std::is_base_of_v<ScriptVisible, B>,
+                    "Types in bound functions must derive from ScriptVisible");
             return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else if constexpr (std::is_enum_v<T>) {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
-            static_assert(std::is_trivially_copyable_v<T>, "Value types in bound function signature must be "
-                                                           "trivially copyable");
+            static_assert(std::is_base_of_v<ScriptVisible, B>,
+                    "Types in bound functions must derive from ScriptVisible");
             return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
@@ -211,10 +214,6 @@ namespace argus {
             const std::vector<ObjectType>::const_iterator &types_it) {
         return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
     }
-
-    void cleanup_object_wrapper(ObjectWrapper &wrapper);
-
-    void cleanup_object_wrappers(std::vector<ObjectWrapper> &wrapper);
 
     template <typename T>
     reference_wrapped_t<T> _wrap_single_reference_type(T &&value) {
@@ -262,14 +261,10 @@ namespace argus {
 
                 if constexpr (!std::is_void_v<ReturnType>) {
                     auto retval = (*fn_copy)(wrapped_params);
-
-                    cleanup_object_wrappers(wrapped_params);
                     return _unwrap_param<ReturnType>(retval, string_pool);
                 } else {
                     UNUSED(string_pool);
                     (*fn_copy)(wrapped_params);
-
-                    cleanup_object_wrappers(wrapped_params);
                     return;
                 }
             };
@@ -340,8 +335,39 @@ namespace argus {
             return [fn] (const std::vector<ObjectWrapper> &params) {
                 ReturnType ret = invoke_function(fn, params);
 
-                ObjectWrapper wrapper{};
                 auto ret_obj_type = _create_object_type<ReturnType>();
+                size_t ret_obj_size;
+                if (ret_obj_type.type == IntegralType::String) {
+                    if constexpr (std::is_reference_v<ReturnType>) {
+                        static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>,
+                                std::string>,
+                                "Returned string reference from bound function must be direct reference");
+
+                        ret_obj_size = ret.length();
+                    } else if constexpr (std::is_pointer_v<ReturnType>) {
+                        using B = std::remove_cv_t<std::remove_pointer_t<ReturnType>>;
+                        static_assert(std::is_same_v<B, std::string> || std::is_same_v<B, char>,
+                                "Returned string pointer from bound function must be direct pointer to "
+                                "std::string or char array");
+
+                        if constexpr (std::is_same_v<B, std::string>) {
+                            ret_obj_size = ret->length();
+                        } else if constexpr (std::is_same_v<B, char>) {
+                            ret_obj_size = strlen(ret);
+                        } else {
+                            // can't use static_assert because the enclosing block is checking runtime info
+                            assert(false);
+                        }
+                    } else if constexpr (std::is_same_v<std::remove_cv_t<ReturnType>, std::string>) {
+                        ret_obj_size = ret.length();
+                    } else {
+                        // can't use static_assert because the enclosing block is checking runtime info
+                        assert(false);
+                    }
+                } else {
+                    ret_obj_size = sizeof(ReturnType);
+                }
+
                 // _create_object_type is used to create function definitions
                 // too so it doesn't attempt to resolve the type name
                 if (ret_obj_type.type == IntegralType::Pointer
@@ -351,14 +377,13 @@ namespace argus {
                     ret_obj_type.type_name = get_bound_enum<ReturnType>().name;
                 }
 
+                ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
                 if constexpr (std::is_reference_v<ReturnType>) {
-                    wrapper.type = ret_obj_type;
                     wrapper.stored_ptr = &ret;
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
-                    wrapper.type = ret_obj_type;
-                    wrapper.stored_ptr = ret;
+                    wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
                 } else {
-                    wrapper = create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
+                    return create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
 
                 return wrapper;
@@ -366,7 +391,8 @@ namespace argus {
         } else {
             return [fn] (const std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
-                return ObjectWrapper {};
+                auto type = _create_object_type<void>();
+                return ObjectWrapper(type, 0);
             };
         }
     }
@@ -381,12 +407,17 @@ namespace argus {
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
-    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index);
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
+            std::function<void(void *dst, const void *src)> copy_ctor,
+            std::function<void(void *dst, void *src)> move_ctor, std::function<void(void *)> dtor);
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        return create_type_def(name, sizeof(T),
-                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>)));
+        static_assert(std::is_base_of_v<ScriptVisible, T>, "Bound types must derive from ScriptVisible");
+        return create_type_def(name, sizeof(T), typeid(T),
+                [](void *dst, const void *src) { return new (dst) T(*reinterpret_cast<const T *>(src)); },
+                [](void *dst, const void *src) { return new (dst) T(std::move(*reinterpret_cast<const T *>(src))); },
+                [](void *obj) { reinterpret_cast<T *>(obj)->~T(); });
     }
 
     template <typename FuncType>
@@ -418,7 +449,7 @@ namespace argus {
     typename std::enable_if<std::is_enum_v<E>, BoundEnumDef>::type
     create_enum_def(const std::string &name) {
         return create_enum_def(name, sizeof(std::underlying_type_t<E>),
-                std::type_index(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>)));
+                typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>));
     }
 
     void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
