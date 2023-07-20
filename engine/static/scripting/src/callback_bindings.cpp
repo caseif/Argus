@@ -19,6 +19,9 @@
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/callback_bindings.hpp"
 
+#include <algorithm>
+#include <chrono>
+
 #include <cstdint>
 
 namespace argus {
@@ -32,8 +35,7 @@ namespace argus {
         : m_nanos(uint64_t(std::min(0L, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
     }
 
-    BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) : m_nanos(rhs.m_nanos) {
-    }
+    BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) = default;
 
     BindableTimeDelta::~BindableTimeDelta(void) = default;
 
