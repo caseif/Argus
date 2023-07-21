@@ -32,7 +32,7 @@ namespace argus {
     std::vector<ScriptDeltaCallback> g_update_callbacks;
 
     BindableTimeDelta::BindableTimeDelta(TimeDelta delta)
-        : m_nanos(uint64_t(std::min(0L, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
+        : m_nanos(uint64_t(std::min<long>(0L, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
     }
 
     BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) = default;
