@@ -44,7 +44,6 @@
 
 #include <string>
 
-#include <cassert>
 #include <cstring>
 
 namespace argus {

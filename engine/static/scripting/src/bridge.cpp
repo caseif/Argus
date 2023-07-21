@@ -30,7 +30,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
 
 namespace argus {
     ObjectWrapper::ObjectWrapper(void) :
@@ -264,7 +263,7 @@ namespace argus {
 
         if (params.size() < expected_param_count) {
             throw ReflectiveArgumentsException("Too few arguments provided");
-        } else if (params.size() >= expected_param_count) {
+        } else if (params.size() > expected_param_count) {
             throw ReflectiveArgumentsException("Too many arguments provided");
         }
 

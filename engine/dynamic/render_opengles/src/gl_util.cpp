@@ -32,7 +32,6 @@
 #include "GLFW/glfw3.h"
 #pragma GCC diagnostic pop
 
-#include <cassert>
 #include <climits>
 
 namespace argus {

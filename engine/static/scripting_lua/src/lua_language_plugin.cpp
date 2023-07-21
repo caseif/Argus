@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
 #include "argus/resman.hpp"
@@ -41,7 +42,6 @@ extern "C" {
 #include <memory>
 #include <string>
 
-#include <cassert>
 #include <cstdio>
 
 namespace argus {

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/memory.hpp"
 
@@ -26,7 +27,6 @@
 #include <type_traits>
 #include <vector>
 
-#include <cassert>
 #include <cstdint>
 
 namespace argus {

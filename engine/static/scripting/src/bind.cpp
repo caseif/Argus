@@ -31,8 +31,6 @@
 #include <string>
 #include <unordered_set>
 
-#include <cassert>
-
 namespace argus {
     static void _resolve_param(ObjectType &param_def) {
         if (param_def.type == IntegralType::Callback) {

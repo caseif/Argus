@@ -95,6 +95,8 @@ namespace argus {
                 vp_h_off = (float(resolution.x) - float(resolution.y)) / 2.0f;
                 vp_v_off = 0;
                 break;
+            default:
+                assert(false);
         }
 
         TransformedViewport transformed{};

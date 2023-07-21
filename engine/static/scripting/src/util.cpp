@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/util.hpp"
 
 #include "internal/scripting/util.hpp"
-
-#include <cassert>
 
 namespace argus {
     std::string get_qualified_function_name(FunctionType fn_type, const std::string &type_name,

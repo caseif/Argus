@@ -53,7 +53,6 @@
 #include <utility>
 #include <vector>
 
-#include <cassert>
 #include <climits>
 
 namespace argus {

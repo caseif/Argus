@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/core/callback.hpp"
 #include "argus/core/engine.hpp"
 
@@ -26,7 +28,6 @@
 #include <typeindex>
 #include <typeinfo>
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 

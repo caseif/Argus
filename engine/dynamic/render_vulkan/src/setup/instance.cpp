@@ -75,10 +75,7 @@ namespace argus {
     }
 
     static bool _check_required_layers(const std::vector<const char *> &layers) {
-        #ifndef _ARGUS_DEBUG_MODE
-        return true;
-        #endif
-
+        #ifdef _ARGUS_DEBUG_MODE
         auto available_layers = _get_available_layers();
 
         for (const auto &layer_name : layers) {
@@ -88,6 +85,10 @@ namespace argus {
                 return false;
             }
         }
+        #else
+        UNUSED(layers);
+        UNUSED(_get_available_layers);
+        #endif
 
         return true;
     }

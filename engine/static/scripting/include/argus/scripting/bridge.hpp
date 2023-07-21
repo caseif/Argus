@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/logging.hpp"
@@ -33,7 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include <cassert>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/handles.hpp"
 #include "argus/lowlevel/logging.hpp"
@@ -23,8 +25,6 @@
 #include <typeindex>
 #include <unordered_map>
 #include <utility>
-
-#include <cassert>
 
 namespace argus {
     static std::unordered_map<ScriptVisibleHandle, std::pair<std::type_index, void *>> g_handle_to_ptr_map;

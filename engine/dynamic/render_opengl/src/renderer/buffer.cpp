@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/buffer.hpp"
 
 #include "aglet/aglet.h"
 
-#include <cassert>
 #include <cstddef>
 #include <cstring>
 

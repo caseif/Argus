@@ -130,6 +130,7 @@ namespace argus {
 
         vkCreateDebugUtilsMessengerEXT(inst, &debug_info, nullptr, &g_vk_debug_messenger);
         #else
+        UNUSED(inst);
         UNUSED(_debug_callback);
         #endif
     }
@@ -140,6 +141,8 @@ namespace argus {
                 = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(inst,
                         "vkDestroyDebugUtilsMessengerEXT"));
         vkDestroyDebugUtilsMessengerEXT(inst, g_vk_debug_messenger, nullptr);
+        #else
+        UNUSED(inst);
         #endif
     }
 

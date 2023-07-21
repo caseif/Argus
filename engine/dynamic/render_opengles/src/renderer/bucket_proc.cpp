@@ -33,7 +33,6 @@
 #include <map>
 #include <string>
 
-#include <cassert>
 #include <climits>
 #include <cstddef>
 
