@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/core/downstream_config.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
@@ -32,6 +33,8 @@
 #include <vector>
 
 namespace argus {
+    static constexpr const char *k_init_fn_name = "init";
+
     std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
     std::map<std::string, std::string> g_media_type_langs;
     std::map<std::string, BoundTypeDef> g_bound_types;
@@ -52,6 +55,15 @@ namespace argus {
         }
     }
 
+    static void _run_init_script(const std::string &uid) {
+        try {
+            auto &context = load_script(uid);
+            context.invoke_script_function(k_init_fn_name, {});
+        } catch (const std::exception &ex) {
+            Logger::default_logger().fatal("Failed to run init script: " + std::string(ex.what()));
+        }
+    }
+
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -67,6 +79,13 @@ namespace argus {
                 _resolve_all_parameter_types();
                 for (auto context : g_script_contexts) {
                     apply_bindings_to_context(*context);
+                }
+
+                auto &scripting_params = get_scripting_parameters();
+                if (scripting_params.has_value() && scripting_params->main.has_value()) {
+                    auto &uid = scripting_params->main.value();
+                    // run it during the first iteration of the update loop
+                    run_on_game_thread([&uid]() { _run_init_script(uid); });
                 }
 
                 break;

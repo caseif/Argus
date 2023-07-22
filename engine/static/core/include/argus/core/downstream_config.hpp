@@ -25,7 +25,7 @@
 
 namespace argus {
     struct ScriptingParameters {
-        std::string main;
+        std::optional<std::string> main;
     };
 
     struct InitialWindowParameters {
