@@ -22,6 +22,8 @@
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/scripting.hpp"
+
 #include "argus/wm/display.hpp"
 
 #include <functional>
@@ -96,9 +98,9 @@ namespace argus {
      *
      * \sa Canvas
      */
-    class Window {
+    class Window : ScriptBindable {
       public:
-        pimpl_Window *const pimpl;
+        pimpl_Window *pimpl;
 
         /**
          * \brief Sets the callbacks used to construct and destroy a Canvas
@@ -141,9 +143,9 @@ namespace argus {
 
         Window(const Window &) = delete;
 
-        Window(Window &&) = delete;
+        Window(Window &&);
 
-        ~Window(void);
+        ~Window(void) override;
 
         /**
          * \brief Gets the unique identifier of the Window.

@@ -163,7 +163,15 @@ namespace argus {
         return;
     }
 
+    Window::Window(Window &&rhs) : pimpl(rhs.pimpl) {
+        rhs.pimpl = nullptr;
+    }
+
     Window::~Window(void) {
+        if (pimpl == nullptr) {
+            return;
+        }
+
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
         }

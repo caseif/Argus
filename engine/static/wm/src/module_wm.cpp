@@ -30,6 +30,7 @@
 #include "internal/wm/defines.hpp"
 #include "internal/wm/display.hpp"
 #include "internal/wm/module_wm.hpp"
+#include "internal/wm/script_bindings.hpp"
 #include "internal/wm/window.hpp"
 
 #pragma GCC diagnostic push
@@ -163,6 +164,8 @@ namespace argus {
                 break;
             }
             case LifecycleStage::PostInit: {
+                register_wm_bindings();
+
                 _create_initial_window();
 
                 break;
