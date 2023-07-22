@@ -38,7 +38,7 @@ namespace argus {
         }
     }
 
-    bool is_complex_type(IntegralType type) {
+    bool is_bound_type(IntegralType type) {
         return type == IntegralType::Pointer
                || type == IntegralType::Struct
                || type == IntegralType::Enum;

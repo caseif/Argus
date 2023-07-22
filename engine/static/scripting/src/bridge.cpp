@@ -69,7 +69,8 @@ namespace argus {
         move_ctor(rhs.move_ctor),
         dtor(rhs.dtor) {
 
-        if (rhs.type.type == IntegralType::Struct || rhs.type.type == IntegralType::Callback) {
+        if (rhs.type.type == IntegralType::Struct
+                || rhs.type.type == IntegralType::Callback) {
             assert(rhs.copy_ctor.has_value());
 
             const void *src_ptr;
@@ -106,7 +107,8 @@ namespace argus {
         move_ctor(std::move(rhs.move_ctor)),
         dtor(std::move(rhs.dtor)) {
 
-        if (rhs.type.type == IntegralType::Struct || rhs.type.type == IntegralType::Callback) {
+        if (rhs.type.type == IntegralType::Struct
+                || rhs.type.type == IntegralType::Callback) {
             assert(rhs.move_ctor.has_value());
 
             void *src_ptr;
@@ -147,27 +149,27 @@ namespace argus {
 
     ObjectWrapper &ObjectWrapper::operator= (const ObjectWrapper &rhs) {
         this->~ObjectWrapper();
-        new (this) ObjectWrapper(rhs);
+        new(this) ObjectWrapper(rhs);
         return *this;
     }
 
     ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
         this->~ObjectWrapper();
-        new (this) ObjectWrapper(rhs);
+        new(this) ObjectWrapper(rhs);
         return *this;
     }
 
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
-            case FunctionType::MemberInstance:
-            case FunctionType::MemberStatic: {
+            case MemberInstance:
+            case MemberStatic: {
                 auto type_it = g_bound_types.find(type_name);
                 if (type_it == g_bound_types.cend()) {
                     throw TypeNotBoundException(type_name);
                 }
 
-                const auto &fn_map = fn_type == FunctionType::MemberInstance
+                const auto &fn_map = fn_type == MemberInstance
                         ? type_it->second.instance_functions
                         : type_it->second.static_functions;
 
@@ -177,7 +179,7 @@ namespace argus {
                 }
                 return fn_it->second;
             }
-            case FunctionType::Global: {
+            case Global: {
                 auto it = g_bound_global_fns.find(fn_name);
                 if (it == g_bound_global_fns.cend()) {
                     throw FunctionNotBoundException(fn_name);
@@ -275,35 +277,48 @@ namespace argus {
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
         ObjectWrapper wrapper(type, size);
 
-        if (type.type == IntegralType::Pointer) {
-            // for pointer types we copy the pointer itself
-            memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
-        } else if (type.type == IntegralType::Struct) {
-            // for complex value types we indirectly use the copy constructor
-            assert(type.type_index.has_value());
-            auto bound_type = get_bound_type(type.type_index.value());
-            bound_type.copy_ctor(wrapper.get_ptr(), ptr);
-            wrapper.copy_ctor = bound_type.copy_ctor;
-            wrapper.move_ctor = bound_type.move_ctor;
-            wrapper.dtor = bound_type.dtor;
-        } else if (type.type == IntegralType::Callback) {
-            new (wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
-            wrapper.copy_ctor = [](void *dst, const void *src) {
-                return new (dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
-            };
-            wrapper.move_ctor = [](void *dst, void *src) {
-                return new (dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
-            };
-            wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
-        } else {
-            // for everything else we bitwise-copy the value
-            memcpy(wrapper.get_ptr(), ptr, wrapper.buffer_size);
+        switch (type.type) {
+            case Pointer: {
+                // for pointer types we copy the pointer itself
+                memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
+                break;
+            }
+            case Struct: {
+                // for complex value types we indirectly use the copy constructor
+                assert(type.type_index.has_value());
+                auto bound_type = get_bound_type(type.type_index.value());
+                bound_type.copy_ctor(wrapper.get_ptr(), ptr);
+                wrapper.copy_ctor = bound_type.copy_ctor;
+                wrapper.move_ctor = bound_type.move_ctor;
+                wrapper.dtor = bound_type.dtor;
+
+                break;
+            }
+            case Callback: {
+                new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
+                wrapper.copy_ctor = [](void *dst, const void *src) {
+                    return new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
+                };
+                wrapper.move_ctor = [](void *dst, void *src) {
+                    return new(dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
+                };
+                wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
+
+                break;
+            }
+            default: {
+                // for everything else we bitwise-copy the value
+                // note that std::type_index is trivially copyable
+                memcpy(wrapper.get_ptr(), ptr, wrapper.buffer_size);
+
+                break;
+            }
         }
 
         return wrapper;
     }
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr) {
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr) {
         affirm_precond(type.type != IntegralType::String, "Cannot create object wrapper for string-typed value - "
                 "string-specific overload must be used");
         affirm_precond(type.type != IntegralType::Callback, "Cannot create object wrapper for callback-typed "
@@ -327,7 +342,7 @@ namespace argus {
 
         // we use the copy constructor instead of doing a bitwise copy because
         // std::function isn't trivially copyable
-        new (wrapper.get_ptr()) ProxiedFunction(fn);
+        new(wrapper.get_ptr()) ProxiedFunction(fn);
 
         return create_object_wrapper(type, &fn, sizeof(fn));
     }

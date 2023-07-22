@@ -19,3 +19,6 @@
 #pragma once
 
 #define UNUSED(x) (void)(x)
+
+#define STRINGIZE(x) STRINGIZE2(x)
+#define STRINGIZE2(x) #x

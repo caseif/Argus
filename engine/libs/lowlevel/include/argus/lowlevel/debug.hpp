@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/macros.hpp"
 
 #define affirm_precond(cond, fmt)  (cond ? void(0) : Logger::default_logger().fatal("Precondition failed: " #cond " (" fmt ")"))
 
@@ -26,7 +27,7 @@
 #undef assert
 #endif
 #ifdef _ARGUS_DEBUG_MODE
-#define _assert(cond, file, line) ((cond) ? void(0) : Logger::default_logger().fatal("Assertion failed: " #cond " (" file ":" #line ")"))
+#define _assert(cond, file, line) ((cond) ? void(0) : Logger::default_logger().fatal("Assertion failed: " #cond " (" file ":" STRINGIZE(line) ")"))
 #define assert(cond) _assert(cond, __FILE__, __LINE__)
 #else
 #define assert(cond) ((cond) ? (void(0)) : (Logger::default_logger().fatal("Assertion failed: " #cond)))

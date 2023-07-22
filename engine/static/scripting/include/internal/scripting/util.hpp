@@ -21,5 +21,5 @@
 #include "argus/scripting/types.hpp"
 
 namespace argus {
-    bool is_complex_type(IntegralType type);
+    bool is_bound_type(IntegralType type);
 }

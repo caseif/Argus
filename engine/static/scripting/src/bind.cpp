@@ -43,7 +43,7 @@ namespace argus {
             _resolve_param(callback_type->return_type);
 
             return;
-        } else if (!is_complex_type(param_def.type)) {
+        } else if (!is_bound_type(param_def.type)) {
             return;
         }
 

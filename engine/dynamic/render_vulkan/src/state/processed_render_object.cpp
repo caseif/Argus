@@ -30,7 +30,7 @@ namespace argus {
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Vector2f &atlas_stride,
             uint32_t z_index, uint32_t vertex_count) {
-        return *new (g_obj_pool.alloc()) ProcessedRenderObject(material_res, atlas_stride, z_index, vertex_count);
+        return *new(g_obj_pool.alloc()) ProcessedRenderObject(material_res, atlas_stride, z_index, vertex_count);
     }
 
     ProcessedRenderObject::ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride,

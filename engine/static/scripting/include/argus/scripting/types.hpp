@@ -38,7 +38,8 @@ namespace argus {
         Struct,
         Pointer,
         Enum,
-        Callback
+        Callback,
+        Type
     };
 
     enum FunctionType {
@@ -126,7 +127,7 @@ namespace argus {
         std::unordered_set<uint64_t> all_ordinals;
     };
 
-    class ScriptVisible {
+    class   ScriptVisible {
       public:
         ScriptVisible(void);
 

@@ -100,11 +100,11 @@ namespace argus {
     static int _wrap_instance_ref(lua_State *state, const std::string &qual_fn_name,
             int param_index, const BoundTypeDef &type_def, ObjectWrapper *dest) {
         if (!lua_isuserdata(state, param_index)
-            || !luaL_testudata(state, param_index, type_def.name.c_str())) {
+                || !luaL_testudata(state, param_index, type_def.name.c_str())) {
             return _set_lua_error(state, "Incorrect type provided for parameter "
-                                  + std::to_string(param_index) + " of function " + qual_fn_name
-                                  + " (expected " + type_def.name
-                                  + ", actual " + luaL_typename(state, param_index) + ")");
+                    + std::to_string(param_index) + " of function " + qual_fn_name
+                    + " (expected " + type_def.name
+                    + ", actual " + luaL_typename(state, param_index) + ")");
         }
 
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -135,10 +135,9 @@ namespace argus {
             case Enum: {
                 if (!lua_isinteger(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected integer "
-                                          + (param_def.type == IntegralType::Enum ? "(enum) " : "")
-                                          + ", actual " + luaL_typename(state, param_index) + ")");
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
+                            + ", actual " + luaL_typename(state, param_index) + ")");
                 }
 
                 int64_t val_i64 = lua_tointeger(state, param_index);
@@ -148,9 +147,11 @@ namespace argus {
                     auto &enum_def = get_bound_enum(param_def.type_name.value());
                     auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val_i64));
                     if (enum_val_it == enum_def.all_ordinals.cend()) {
-                        return _set_lua_error(state, "Unknown ordinal " + std::to_string(val_i64) + " provided for enum "
-                                + enum_def.name + " at parameter " + std::to_string(param_index) + " of function "
-                                + qual_fn_name);
+                        return _set_lua_error(state,
+                                "Unknown ordinal " + std::to_string(val_i64) + " provided for enum "
+                                        + enum_def.name + " at parameter " + std::to_string(param_index)
+                                        + " of function "
+                                        + qual_fn_name);
                     }
                 }
 
@@ -183,9 +184,8 @@ namespace argus {
             case Float: {
                 if (!lua_isnumber(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected number, actual "
-                                          + luaL_typename(state, param_index) + ")");
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected number, actual " + luaL_typename(state, param_index) + ")");
                 }
 
                 double val_f64 = lua_tonumber(state, param_index);
@@ -204,9 +204,8 @@ namespace argus {
             case String: {
                 if (!lua_isstring(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected string, actual "
-                                          + luaL_typename(state, param_index) + ")");
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected string, actual " + luaL_typename(state, param_index) + ")");
                 }
 
                 const char *str = lua_tostring(state, param_index);
@@ -221,9 +220,8 @@ namespace argus {
 
                 if (!lua_isuserdata(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
-                                          + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected userdata, actual "
-                                          + luaL_typename(state, param_index) + ")");
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
 
                 // get metatable of userdata
@@ -238,9 +236,8 @@ namespace argus {
 
                 if (param_def.type_name.value() != type_name) {
                     return _set_lua_error(state, "Incorrect userdata provided for parameter "
-                                          + std::to_string(param_index) + " of function " + qual_fn_name
-                                          + " (expected " + param_def.type_name.value()
-                                          + ", actual " + type_name + ")");
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected " + param_def.type_name.value() + ", actual " + type_name + ")");
                 }
 
                 auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -251,8 +248,8 @@ namespace argus {
                             param_def.type_index.value());
 
                     if (ptr == nullptr) {
-                        return _set_lua_error(state, "Invalid handle passed as parameter " + std::to_string(param_index)
-                                                     + " of function " + qual_fn_name);
+                        return _set_lua_error(state, "Invalid handle passed as parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name);
                     }
                 } else {
                     // userdata is directly storing struct data
@@ -281,6 +278,37 @@ namespace argus {
 
                 return 0;
             }
+            case Type: {
+                if (!lua_istable(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected table, actual " + luaL_typename(state, param_index));
+                }
+
+                lua_pushvalue(state, param_index);
+
+                lua_getfield(state, param_index, k_lua_name);
+
+                if (!lua_isstring(state, -1)) {
+                    lua_pop(state, 2); // pop type name and table
+                    return _set_lua_error(state, "Parameter " + std::to_string(param_index)
+                            + " does not represent type (missing field '" + k_lua_name + "')");
+                }
+
+                const char *type_name = lua_tostring(state, -1);
+
+                lua_pop(state, 2); // pop type name and table
+
+                try {
+                    auto type_index = get_bound_type(type_name).type_index;
+                    *dest = create_object_wrapper(param_def, static_cast<const void *>(&type_index));
+
+                    return 0;
+                } catch (const std::invalid_argument &) {
+                    return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name);
+                }
+            }
             default:
                 Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
         }
@@ -301,7 +329,7 @@ namespace argus {
                 return *reinterpret_cast<const int64_t *>(wrapper.value);
             default:
                 throw std::invalid_argument("Bad integer width " + std::to_string(wrapper.type.size)
-                                            + " (must be 1, 2, 4, or 8)");
+                        + " (must be 1, 2, 4, or 8)");
         }
     }
 
@@ -315,7 +343,7 @@ namespace argus {
                 return *reinterpret_cast<const double *>(wrapper.value);
             default:
                 throw std::invalid_argument("Bad floating-point width " + std::to_string(wrapper.type.size)
-                                            + " (must be 4, or 8)");
+                        + " (must be 4, or 8)");
         }
     }
 
@@ -668,7 +696,7 @@ namespace argus {
         lua_pop(state, 1);
     }
 
-    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, { RESOURCE_TYPE_LUA }) {
+    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, {RESOURCE_TYPE_LUA}) {
     }
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;

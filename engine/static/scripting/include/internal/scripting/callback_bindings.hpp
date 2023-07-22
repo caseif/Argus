@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/time.hpp"
+#include "argus/core/event.hpp"
 
 #include <chrono>
 #include <functional>
@@ -30,6 +31,7 @@ namespace argus {
     struct BindableTimeDelta;
 
     typedef std::function<void(BindableTimeDelta)> ScriptDeltaCallback;
+    typedef std::function<void(ArgusEvent &)> ScriptEventHandler;
 
     struct BindableTimeDelta : ScriptVisible {
         uint64_t m_nanos;

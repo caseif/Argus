@@ -18,6 +18,7 @@
 
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/callback_bindings.hpp"
+#include "argus/core/event.hpp"
 
 #include <algorithm>
 #include <chrono>

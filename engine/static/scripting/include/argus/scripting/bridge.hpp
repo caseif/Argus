@@ -88,7 +88,7 @@ namespace argus {
     template <typename FuncType>
     ProxiedFunction create_function_wrapper(FuncType fn);
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, void *ptr);
+    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr);
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
 
@@ -166,22 +166,24 @@ namespace argus {
                     "permitted (pass by value instead)");
             return { IntegralType::Callback, sizeof(ProxiedFunction), {}, {},
                      std::make_shared<ScriptCallbackType>(_create_callback_type<B>()) };
+        } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
+            return { IntegralType::Type, sizeof(std::type_index) };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int8_t>) {
-                return { IntegralType::Integer, 1 };
+                return { IntegralType::Integer, sizeof(int8_t) };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int16_t>) {
-                return { IntegralType::Integer, 2 };
+                return { IntegralType::Integer, sizeof(int16_t) };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int32_t>) {
-                return { IntegralType::Integer, 4 };
+                return { IntegralType::Integer, sizeof(int32_t) };
             } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int64_t>) {
-                return { IntegralType::Integer, 8 };
+                return { IntegralType::Integer, sizeof(int64_t) };
             } else {
                 Logger::default_logger().fatal("Unknown integer type");
             }
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, float>) {
-            return { IntegralType::Float, 4 };
+            return { IntegralType::Float, sizeof(float) };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, double>) {
-            return { IntegralType::Float, 8 };
+            return { IntegralType::Float, sizeof(double) };
         } else if constexpr ((std::is_pointer_v<T>
                     && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>)
                 || std::is_same_v<B, std::string>) {
@@ -415,8 +417,8 @@ namespace argus {
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         static_assert(std::is_base_of_v<ScriptVisible, T>, "Bound types must derive from ScriptVisible");
         return create_type_def(name, sizeof(T), typeid(T),
-                [](void *dst, const void *src) { return new (dst) T(*reinterpret_cast<const T *>(src)); },
-                [](void *dst, const void *src) { return new (dst) T(std::move(*reinterpret_cast<const T *>(src))); },
+                [](void *dst, const void *src) { return new(dst) T(*reinterpret_cast<const T *>(src)); },
+                [](void *dst, const void *src) { return new(dst) T(std::move(*reinterpret_cast<const T *>(src))); },
                 [](void *obj) { reinterpret_cast<T *>(obj)->~T(); });
     }
 
