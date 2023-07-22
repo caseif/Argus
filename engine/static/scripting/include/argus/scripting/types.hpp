@@ -83,7 +83,8 @@ namespace argus {
 
         ObjectWrapper(const ObjectType &type, size_t size);
 
-        ObjectWrapper(const ObjectWrapper &rhs);
+        // copying must be explicit, generally this type should only be moved
+        ObjectWrapper(const ObjectWrapper &rhs) = delete;
 
         ObjectWrapper(ObjectWrapper &&rhs) noexcept;
 
@@ -92,6 +93,8 @@ namespace argus {
         ObjectWrapper &operator= (const ObjectWrapper &rhs);
 
         ObjectWrapper &operator= (ObjectWrapper &&rhs) noexcept;
+
+        void copy_value(void *dest, size_t size) const;
 
         void *get_ptr(void) {
             return is_on_heap ? heap_ptr : value;

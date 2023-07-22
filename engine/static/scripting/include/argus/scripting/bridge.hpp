@@ -206,9 +206,9 @@ namespace argus {
     template <typename ArgsTuple, size_t... Is>
     static std::vector<ObjectWrapper> _make_params_from_tuple_impl(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
-        return std::vector<ObjectWrapper> {
-            create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is), std::get<Is>(tuple))...
-        };
+        std::vector<ObjectWrapper> result;
+        (result.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is), std::get<Is>(tuple))), ...);
+        return result;
     }
 
     template <typename ArgsTuple>

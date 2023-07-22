@@ -61,60 +61,23 @@ namespace argus {
         }
     }
 
-    ObjectWrapper::ObjectWrapper(const ObjectWrapper &rhs) :
-        type(rhs.type),
-        is_on_heap(rhs.is_on_heap),
-        buffer_size(rhs.buffer_size),
-        copy_ctor(rhs.copy_ctor),
-        move_ctor(rhs.move_ctor),
-        dtor(rhs.dtor) {
-
-        if (rhs.type.type == IntegralType::Struct
-                || rhs.type.type == IntegralType::Callback) {
-            assert(rhs.copy_ctor.has_value());
-
-            const void *src_ptr;
-            void *dst_ptr;
-            if (rhs.is_on_heap) {
-                this->heap_ptr = malloc(rhs.buffer_size);
-
-                src_ptr = rhs.heap_ptr;
-                dst_ptr = this->heap_ptr;
-            } else {
-                src_ptr = rhs.value;
-                dst_ptr = this->value;
-            }
-
-            rhs.copy_ctor.value()(dst_ptr, src_ptr);
-        } else if (rhs.is_on_heap) {
-            assert(!rhs.copy_ctor.has_value());
-
-            this->is_on_heap = true;
-            this->heap_ptr = rhs.heap_ptr;
-        } else {
-            assert(!rhs.copy_ctor.has_value());
-            assert(rhs.buffer_size < sizeof(this->value));
-
-            memcpy(this->value, rhs.value, this->buffer_size);
-        }
-    }
-
     ObjectWrapper::ObjectWrapper(ObjectWrapper &&rhs) noexcept :
         type(std::move(rhs.type)),
         is_on_heap(rhs.is_on_heap),
         buffer_size(rhs.buffer_size),
         copy_ctor(std::move(rhs.copy_ctor)),
         move_ctor(std::move(rhs.move_ctor)),
-        dtor(std::move(rhs.dtor)) {
+        // dtor still needs to be able to run on the old object
+        dtor(rhs.dtor) {
 
-        if (rhs.type.type == IntegralType::Struct
-                || rhs.type.type == IntegralType::Callback) {
-            assert(rhs.move_ctor.has_value());
+        if (this->type.type == IntegralType::Struct
+                || this->type.type == IntegralType::Callback) {
+            assert(this->move_ctor.has_value());
 
             void *src_ptr;
             void *dst_ptr;
-            if (rhs.is_on_heap) {
-                this->heap_ptr = malloc(rhs.buffer_size);
+            if (this->is_on_heap) {
+                this->heap_ptr = malloc(this->buffer_size);
 
                 src_ptr = rhs.heap_ptr;
                 dst_ptr = this->heap_ptr;
@@ -123,15 +86,15 @@ namespace argus {
                 dst_ptr = this->value;
             }
 
-            rhs.move_ctor.value()(dst_ptr, src_ptr);
-        } else if (rhs.is_on_heap) {
-            assert(!rhs.move_ctor.has_value());
+            this->move_ctor.value()(dst_ptr, src_ptr);
+        } else if (this->is_on_heap) {
+            assert(!this->move_ctor.has_value());
 
             this->is_on_heap = true;
             this->heap_ptr = rhs.heap_ptr;
         } else {
-            assert(!rhs.move_ctor.has_value());
-            assert(rhs.buffer_size < sizeof(this->value));
+            assert(!this->move_ctor.has_value());
+            assert(this->buffer_size < sizeof(this->value));
 
             memcpy(this->value, rhs.value, this->buffer_size);
         }
@@ -147,16 +110,30 @@ namespace argus {
         }
     }
 
-    ObjectWrapper &ObjectWrapper::operator= (const ObjectWrapper &rhs) {
+    ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
         this->~ObjectWrapper();
-        new(this) ObjectWrapper(rhs);
+        new(this) ObjectWrapper(std::move(rhs));
         return *this;
     }
 
-    ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
-        this->~ObjectWrapper();
-        new(this) ObjectWrapper(rhs);
-        return *this;
+    void ObjectWrapper::copy_value(void *dest, size_t size) const {
+        assert(size == this->buffer_size);
+
+        const void *src_ptr;
+
+        if (this->is_on_heap) {
+            src_ptr = this->heap_ptr;
+        } else {
+            assert(this->buffer_size < sizeof(this->value));
+
+            src_ptr = this->value;
+        }
+
+        if (this->copy_ctor.has_value()) {
+            this->copy_ctor.value()(dest, src_ptr);
+        } else {
+            memcpy(dest, src_ptr, size);
+        }
     }
 
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,

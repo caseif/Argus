@@ -314,7 +314,7 @@ namespace argus {
         }
     }
 
-    static int64_t _unwrap_int_wrapper(ObjectWrapper wrapper) {
+    static int64_t _unwrap_int_wrapper(const ObjectWrapper &wrapper) {
         assert(wrapper.type.type == IntegralType::Integer
                 || wrapper.type.type == IntegralType::Enum);
 
@@ -333,7 +333,7 @@ namespace argus {
         }
     }
 
-    static double _unwrap_float_wrapper(ObjectWrapper wrapper) {
+    static double _unwrap_float_wrapper(const ObjectWrapper &wrapper) {
         assert(wrapper.type.type == IntegralType::Float);
 
         switch (wrapper.type.size) {
@@ -372,11 +372,10 @@ namespace argus {
             case IntegralType::Struct: {
                 assert(wrapper.type.type_name.has_value());
 
-                const void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value;
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                         sizeof(UserData) + wrapper.type.size));
                 udata->is_handle = false;
-                memcpy(udata->data, ptr, wrapper.type.size);
+                wrapper.copy_value(udata->data, wrapper.type.size);
                 _set_metatable(state, wrapper);
 
                 break;
@@ -488,7 +487,7 @@ namespace argus {
                 ObjectWrapper wrapper{};
                 auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, &wrapper);
                 if (wrap_res == 0) {
-                    args.push_back(wrapper);
+                    args.push_back(std::move(wrapper));
                 } else {
                     // some error occurred
                     // _wrap_instance_ref already sent error to lua state, so just clean up here
@@ -504,7 +503,7 @@ namespace argus {
                 ObjectWrapper wrapper{};
                 auto wrap_res = _wrap_param(state, qual_fn_name, param_index, param_def, &wrapper);
                 if (wrap_res == 0) {
-                    args.push_back(wrapper);
+                    args.push_back(std::move(wrapper));
                 } else {
                     assert(lua_gettop(state) == initial_top);
                     return wrap_res;
