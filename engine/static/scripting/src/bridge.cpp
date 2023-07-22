@@ -263,8 +263,10 @@ namespace argus {
             case Struct: {
                 // for complex value types we indirectly use the copy constructor
                 assert(type.type_index.has_value());
+
                 auto bound_type = get_bound_type(type.type_index.value());
-                bound_type.copy_ctor(wrapper.get_ptr(), ptr);
+                assert(bound_type.copy_ctor.has_value());
+                bound_type.copy_ctor.value()(wrapper.get_ptr(), ptr);
                 wrapper.copy_ctor = bound_type.copy_ctor;
                 wrapper.move_ctor = bound_type.move_ctor;
                 wrapper.dtor = bound_type.dtor;
@@ -325,7 +327,7 @@ namespace argus {
     }
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
-            std::function<void(void *dst, const void *src)> copy_ctor,
+            std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
             std::function<void(void *dst, void *src)> move_ctor,
             std::function<void(void *obj)> dtor) {
         BoundTypeDef def {

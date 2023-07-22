@@ -105,6 +105,8 @@ namespace argus {
             throw BindingException(def.name, "Enum with same name as type has already been bound");
         }
 
+        //TODO: perform validation on member functions
+
         std::vector<std::string> static_fn_names;
         std::transform(def.static_functions.cbegin(), def.static_functions.cend(),
                 std::back_inserter(static_fn_names),
@@ -137,6 +139,11 @@ namespace argus {
         if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
             throw BindingException(def.name, "Enum with same name as global function has already been bound");
         }
+
+        //TODO: perform validation including:
+        //  - check that params types aren't garbage
+        //  - check that param sizes match types where applicable
+        //  - ensure params passed by value are copy-constructible
 
         g_bound_global_fns.insert({ def.name, def });
     }

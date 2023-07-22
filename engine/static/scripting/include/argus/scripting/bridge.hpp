@@ -199,6 +199,8 @@ namespace argus {
         } else {
             static_assert(std::is_base_of_v<ScriptBindable, B>,
                     "Types in bound functions must derive from ScriptBindable");
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must be copy-constructible if not passed by reference or pointer");
             return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
@@ -410,15 +412,27 @@ namespace argus {
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
-            std::function<void(void *dst, const void *src)> copy_ctor,
+            std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
             std::function<void(void *dst, void *src)> move_ctor, std::function<void(void *)> dtor);
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
+        static_assert(std::is_move_constructible_v<T>, "Bound types must be move-constructible");
+
+        std::optional<std::function<void(void *, const void *)>> copy_ctor;
+        if constexpr (std::is_copy_constructible_v<T>) {
+            copy_ctor = [](void *dst, const void *src) {
+                new(dst) T(*reinterpret_cast<const T *>(src));
+            };
+        }
+
         return create_type_def(name, sizeof(T), typeid(T),
-                [](void *dst, const void *src) { return new(dst) T(*reinterpret_cast<const T *>(src)); },
-                [](void *dst, const void *src) { return new(dst) T(std::move(*reinterpret_cast<const T *>(src))); },
+                copy_ctor,
+                [](void *dst, void *src) {
+                    T &rhs = *reinterpret_cast<T *>(src);
+                    new(dst) T(std::move(rhs));
+                },
                 [](void *obj) { reinterpret_cast<T *>(obj)->~T(); });
     }
 

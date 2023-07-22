@@ -115,7 +115,7 @@ namespace argus {
         std::string name;
         size_t size;
         std::type_index type_index;
-        std::function<void(void *dst, const void *src)> copy_ctor;
+        std::optional<std::function<void(void *dst, const void *src)>> copy_ctor;
         std::function<void(void *dst, void *src)> move_ctor;
         std::function<void(void *obj)> dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
