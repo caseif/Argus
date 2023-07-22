@@ -45,6 +45,8 @@ namespace argus {
     std::vector<ScriptContext*> g_script_contexts;
     std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
 
+    Index g_invoke_script_callbacks_callback;
+
     static void _resolve_all_parameter_types(void) {
         for (auto &type : g_bound_types) {
             resolve_parameter_types(type.second);
@@ -69,7 +71,7 @@ namespace argus {
             case LifecycleStage::Init: {
                 register_default_bindings();
 
-                register_update_callback(invoke_update_callbacks);
+                g_invoke_script_callbacks_callback = register_update_callback(invoke_update_callbacks);
 
                 break;
             }
@@ -87,6 +89,11 @@ namespace argus {
                     // run it during the first iteration of the update loop
                     run_on_game_thread([&uid]() { _run_init_script(uid); });
                 }
+
+                break;
+            }
+            case LifecycleStage::PreDeinit: {
+                unregister_update_callback(g_invoke_script_callbacks_callback);
 
                 break;
             }

@@ -201,6 +201,18 @@ namespace argus {
 
                 return 0;
             }
+            case Boolean: {
+                if (!lua_isboolean(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
+                }
+
+                bool val = lua_toboolean(state, param_index);
+                *dest = create_object_wrapper(param_def, &val);
+
+                return 0;
+            }
             case String: {
                 if (!lua_isstring(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
@@ -347,6 +359,12 @@ namespace argus {
         }
     }
 
+    static bool _unwrap_boolean_wrapper(const ObjectWrapper &wrapper) {
+        assert(wrapper.type.type == IntegralType::Boolean);
+
+        return *reinterpret_cast<const bool *>(wrapper.value);
+    }
+
     static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
         auto mt = luaL_getmetatable(state, wrapper.type.type_name.value().c_str());
         assert(mt != 0); // binding should have failed if type wasn't bound
@@ -358,18 +376,21 @@ namespace argus {
         assert(wrapper.type.type != IntegralType::Void);
 
         switch (wrapper.type.type) {
-            case IntegralType::Integer:
-            case IntegralType::Enum:
+            case Integer:
+            case Enum:
                 lua_pushinteger(state, _unwrap_int_wrapper(wrapper));
                 break;
-            case IntegralType::Float:
+            case Float:
                 lua_pushnumber(state, _unwrap_float_wrapper(wrapper));
                 break;
-            case IntegralType::String:
+            case Boolean:
+                lua_pushboolean(state, _unwrap_boolean_wrapper(wrapper));
+                break;
+            case String:
                 lua_pushstring(state, reinterpret_cast<const char *>(
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
                 break;
-            case IntegralType::Struct: {
+            case Struct: {
                 assert(wrapper.type.type_name.has_value());
 
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
@@ -380,17 +401,22 @@ namespace argus {
 
                 break;
             }
-            case IntegralType::Pointer: {
+            case Pointer: {
                 assert(wrapper.type.type_name.has_value());
                 assert(wrapper.type.type_index.has_value());
 
                 void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
-                auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
-                auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
-                        sizeof(UserData) + sizeof(ScriptBindableHandle)));
-                udata->is_handle = true;
-                memcpy(udata->data, &handle, sizeof(ScriptBindableHandle));
-                _set_metatable(state, wrapper);
+
+                if (ptr != nullptr) {
+                    auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
+                    auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
+                            sizeof(UserData) + sizeof(ScriptBindableHandle)));
+                    udata->is_handle = true;
+                    memcpy(udata->data, &handle, sizeof(ScriptBindableHandle));
+                    _set_metatable(state, wrapper);
+                } else {
+                    lua_pushnil(state);
+                }
 
                 break;
             }

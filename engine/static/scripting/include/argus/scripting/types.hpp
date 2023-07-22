@@ -34,6 +34,7 @@ namespace argus {
         Void,
         Integer,
         Float,
+        Boolean,
         String,
         Struct,
         Pointer,

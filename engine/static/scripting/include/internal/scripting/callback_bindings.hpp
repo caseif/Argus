@@ -42,13 +42,13 @@ namespace argus {
 
         ~BindableTimeDelta(void) override;
 
-        uint64_t nanos(void);
+        uint64_t nanos(void) const;
 
-        uint64_t micros(void);
+        uint64_t micros(void) const;
 
-        uint64_t millis(void);
+        uint64_t millis(void) const;
 
-        uint64_t seconds(void);
+        uint64_t seconds(void) const;
     };
 
 

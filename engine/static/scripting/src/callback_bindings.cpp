@@ -40,19 +40,19 @@ namespace argus {
 
     BindableTimeDelta::~BindableTimeDelta(void) = default;
 
-    uint64_t BindableTimeDelta::nanos(void) {
+    uint64_t BindableTimeDelta::nanos(void) const {
         return m_nanos;
     }
 
-    uint64_t BindableTimeDelta::micros(void) {
+    uint64_t BindableTimeDelta::micros(void) const {
         return m_nanos / k_ns_per_us;
     }
 
-    uint64_t BindableTimeDelta::millis(void) {
+    uint64_t BindableTimeDelta::millis(void) const {
         return m_nanos / k_ns_per_ms;
     }
 
-    uint64_t BindableTimeDelta::seconds(void) {
+    uint64_t BindableTimeDelta::seconds(void) const {
         return m_nanos / k_ns_per_s;
     }
 

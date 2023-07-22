@@ -168,6 +168,8 @@ namespace argus {
                      std::make_shared<ScriptCallbackType>(_create_callback_type<B>()) };
         } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
             return { IntegralType::Type, sizeof(std::type_index) };
+        } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
+            return { IntegralType::Boolean, sizeof(bool) };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
             if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int8_t>) {
                 return { IntegralType::Integer, sizeof(int8_t) };
@@ -325,8 +327,9 @@ namespace argus {
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
-            return std::apply([&](auto&&... args){ return (instance->*fn)(std::forward<decltype(args)>(args)...); },
-                    args);
+            return std::apply([&](auto&&... args) -> ReturnType {
+                return (instance->*fn)(std::forward<decltype(args)>(args)...);
+            }, args);
         } else {
             return std::apply(fn, args);
         }
@@ -341,7 +344,10 @@ namespace argus {
 
                 auto ret_obj_type = _create_object_type<ReturnType>();
                 size_t ret_obj_size;
-                if (ret_obj_type.type == IntegralType::String) {
+                if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<
+                        std::remove_pointer_t<ReturnType>>>, std::string>
+                        || std::is_same_v<std::remove_cv_t<std::remove_reference_t<
+                                std::remove_pointer_t<ReturnType>>>, char>) {
                     if constexpr (std::is_reference_v<ReturnType>) {
                         static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>,
                                 std::string>,
@@ -382,15 +388,22 @@ namespace argus {
                 }
 
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
-                if constexpr (std::is_reference_v<ReturnType>) {
-                    wrapper.stored_ptr = &ret;
+                if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<std::remove_reference_t<ReturnType>>>, std::string>) {
+                    return create_object_wrapper(ret_obj_type, ret.c_str(), ret.size());
+                } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>>
+                        && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
+                                std::remove_reference_t<ReturnType>>>, char>) {
+                    return create_object_wrapper(ret_obj_type, ret, strlen(ret));
+                } else if constexpr (std::is_reference_v<ReturnType>) {
+                    wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
+                    return wrapper;
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
+                    return wrapper;
                 } else {
                     return create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
 
-                return wrapper;
             };
         } else {
             return [fn] (const std::vector<ObjectWrapper> &params) {
