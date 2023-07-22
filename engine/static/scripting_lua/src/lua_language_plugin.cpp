@@ -110,7 +110,7 @@ namespace argus {
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
         void *ptr;
         if (udata->is_handle) {
-            ptr = deref_sv_handle(*reinterpret_cast<ScriptVisibleHandle *>(udata->data), type_def.type_index);
+            ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data), type_def.type_index);
 
             if (ptr == nullptr) {
                 return _set_lua_error(state, "Invalid handle passed as parameter " + std::to_string(param_index)
@@ -244,7 +244,7 @@ namespace argus {
                 void *ptr;
                 if (udata->is_handle) {
                     // userdata is storing handle of pointer to struct data
-                    ptr = deref_sv_handle(*reinterpret_cast<ScriptVisibleHandle *>(udata->data),
+                    ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
                             param_def.type_index.value());
 
                     if (ptr == nullptr) {
@@ -388,9 +388,9 @@ namespace argus {
                 void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
                 auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
-                        sizeof(UserData) + sizeof(ScriptVisibleHandle)));
+                        sizeof(UserData) + sizeof(ScriptBindableHandle)));
                 udata->is_handle = true;
-                memcpy(udata->data, &handle, sizeof(ScriptVisibleHandle));
+                memcpy(udata->data, &handle, sizeof(ScriptBindableHandle));
                 _set_metatable(state, wrapper);
 
                 break;

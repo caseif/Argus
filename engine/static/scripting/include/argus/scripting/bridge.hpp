@@ -190,15 +190,15 @@ namespace argus {
             return { IntegralType::String, 0 };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
-            static_assert(std::is_base_of_v<ScriptVisible, B>,
-                    "Types in bound functions must derive from ScriptVisible");
+            static_assert(std::is_base_of_v<ScriptBindable, B>,
+                    "Types in bound functions must derive from ScriptBindable");
             return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else if constexpr (std::is_enum_v<T>) {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
-            static_assert(std::is_base_of_v<ScriptVisible, B>,
-                    "Types in bound functions must derive from ScriptVisible");
+            static_assert(std::is_base_of_v<ScriptBindable, B>,
+                    "Types in bound functions must derive from ScriptBindable");
             return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
@@ -415,7 +415,7 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        static_assert(std::is_base_of_v<ScriptVisible, T>, "Bound types must derive from ScriptVisible");
+        static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
         return create_type_def(name, sizeof(T), typeid(T),
                 [](void *dst, const void *src) { return new(dst) T(*reinterpret_cast<const T *>(src)); },
                 [](void *dst, const void *src) { return new(dst) T(std::move(*reinterpret_cast<const T *>(src))); },

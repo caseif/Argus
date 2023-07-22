@@ -127,14 +127,14 @@ namespace argus {
         std::unordered_set<uint64_t> all_ordinals;
     };
 
-    class   ScriptVisible {
+    class   ScriptBindable {
       public:
-        ScriptVisible(void);
+        ScriptBindable(void);
 
-        ScriptVisible(const ScriptVisible &);
+        ScriptBindable(const ScriptBindable &);
 
-        ScriptVisible(ScriptVisible &&) noexcept;
+        ScriptBindable(ScriptBindable &&) noexcept;
 
-        virtual ~ScriptVisible(void) = 0;
+        virtual ~ScriptBindable(void) = 0;
     };
 }

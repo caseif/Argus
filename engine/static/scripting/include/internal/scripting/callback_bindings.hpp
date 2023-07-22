@@ -33,7 +33,7 @@ namespace argus {
     typedef std::function<void(BindableTimeDelta)> ScriptDeltaCallback;
     typedef std::function<void(ArgusEvent &)> ScriptEventHandler;
 
-    struct BindableTimeDelta : ScriptVisible {
+    struct BindableTimeDelta : ScriptBindable {
         uint64_t m_nanos;
 
         BindableTimeDelta(TimeDelta delta);

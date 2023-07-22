@@ -23,22 +23,22 @@
 #include <cstdint>
 
 namespace argus {
-    typedef uint64_t ScriptVisibleHandle;
+    typedef uint64_t ScriptBindableHandle;
 
-    constexpr const ScriptVisibleHandle k_null_handle = 0;
-    constexpr const ScriptVisibleHandle k_handle_max = UINT64_MAX;
+    constexpr const ScriptBindableHandle k_null_handle = 0;
+    constexpr const ScriptBindableHandle k_handle_max = UINT64_MAX;
 
-    ScriptVisibleHandle get_or_create_sv_handle(void *ptr, const std::type_index &type);
+    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type);
 
     template <typename T>
-    ScriptVisibleHandle get_or_create_sv_handle(T &obj) {
+    ScriptBindableHandle get_or_create_sv_handle(T &obj) {
         return get_or_create_handle(&obj, typeid(obj));
     }
 
-    void *deref_sv_handle(ScriptVisibleHandle handle, const std::type_index &expected_type);
+    void *deref_sv_handle(ScriptBindableHandle handle, const std::type_index &expected_type);
 
     template <typename T>
-    T *deref_handle(ScriptVisibleHandle handle) {
+    T *deref_handle(ScriptBindableHandle handle) {
         return deref_sv_handle(handle, typeid(T));
     }
 

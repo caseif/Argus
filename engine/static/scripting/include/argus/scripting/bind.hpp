@@ -33,7 +33,7 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
-        static_assert(std::is_base_of_v<ScriptVisible, T>, "Bound types must derive from ScriptVisible");
+        static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
         auto def = create_type_def<T>(name);
         bind_type(def);
     }

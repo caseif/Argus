@@ -27,12 +27,12 @@
 #include <utility>
 
 namespace argus {
-    static std::unordered_map<ScriptVisibleHandle, std::pair<std::type_index, void *>> g_handle_to_ptr_map;
-    static std::unordered_map<void *, std::pair<std::type_index, ScriptVisibleHandle>> g_ptr_to_handle_map;
+    static std::unordered_map<ScriptBindableHandle, std::pair<std::type_index, void *>> g_handle_to_ptr_map;
+    static std::unordered_map<void *, std::pair<std::type_index, ScriptBindableHandle>> g_ptr_to_handle_map;
 
-    static ScriptVisibleHandle g_next_handle = 1;
+    static ScriptBindableHandle g_next_handle = 1;
 
-    ScriptVisibleHandle get_or_create_sv_handle(void *ptr, const std::type_index &type) {
+    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type) {
         auto handle_it = g_ptr_to_handle_map.find(ptr);
         if (handle_it != g_ptr_to_handle_map.cend()) {
             assert(handle_it->second.first == type);
@@ -53,7 +53,7 @@ namespace argus {
         }
     }
 
-    void *deref_sv_handle(ScriptVisibleHandle handle, const std::type_index &expected_type) {
+    void *deref_sv_handle(ScriptBindableHandle handle, const std::type_index &expected_type) {
         auto it = g_handle_to_ptr_map.find(handle);
         if (it == g_handle_to_ptr_map.cend()) {
             return nullptr;
@@ -77,13 +77,13 @@ namespace argus {
         g_ptr_to_handle_map.erase(it);
     }
 
-    ScriptVisible::ScriptVisible(void) = default;
+    ScriptBindable::ScriptBindable(void) = default;
 
-    ScriptVisible::ScriptVisible(const ScriptVisible &) = default;
+    ScriptBindable::ScriptBindable(const ScriptBindable &) = default;
 
-    ScriptVisible::ScriptVisible(ScriptVisible &&) noexcept = default;
+    ScriptBindable::ScriptBindable(ScriptBindable &&) noexcept = default;
 
-    ScriptVisible::~ScriptVisible(void) {
+    ScriptBindable::~ScriptBindable(void) {
         invalidate_sv_handle(this);
     }
 }
