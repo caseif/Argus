@@ -51,8 +51,7 @@ namespace argus {
         uint64_t seconds(void) const;
     };
 
-
-    void register_default_bindings(void);
+    void register_core_bindings(void);
 
     void invoke_update_callbacks(TimeDelta delta);
 }

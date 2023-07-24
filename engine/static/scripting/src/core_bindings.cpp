@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/scripting/bind.hpp"
-#include "internal/scripting/callback_bindings.hpp"
 #include "argus/core/event.hpp"
+
+#include "argus/scripting/bind.hpp"
+#include "internal/scripting/core_bindings.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -60,15 +61,23 @@ namespace argus {
         g_update_callbacks.push_back(callback);
     }
 
-    void register_default_bindings(void) {
+    static void _bind_time_delta_type(void) {
         auto delta_type = create_type_def<BindableTimeDelta>("TimeDelta");
         add_member_instance_function(delta_type, "nanos", &BindableTimeDelta::nanos);
         add_member_instance_function(delta_type, "micros", &BindableTimeDelta::micros);
         add_member_instance_function(delta_type, "millis", &BindableTimeDelta::millis);
         add_member_instance_function(delta_type, "seconds", &BindableTimeDelta::seconds);
         bind_type(delta_type);
+    }
 
+    static void _bind_global_fns(void) {
         bind_global_function("register_update_callback", _script_register_update_callback);
+    }
+
+    void register_core_bindings(void) {
+        _bind_time_delta_type();
+
+        _bind_global_fns();
     }
 
     void invoke_update_callbacks(TimeDelta delta) {

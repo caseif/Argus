@@ -23,7 +23,7 @@
 #include "argus/core/module.hpp"
 
 #include "internal/scripting/bind.hpp"
-#include "internal/scripting/callback_bindings.hpp"
+#include "internal/scripting/core_bindings.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
 
@@ -69,7 +69,7 @@ namespace argus {
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                register_default_bindings();
+                register_core_bindings();
 
                 g_invoke_script_callbacks_callback = register_update_callback(invoke_update_callbacks);
 

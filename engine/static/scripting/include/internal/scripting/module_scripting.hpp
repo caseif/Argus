@@ -22,7 +22,7 @@
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
-#include "internal/scripting/callback_bindings.hpp"
+#include "internal/scripting/core_bindings.hpp"
 
 #include <typeindex>
 #include <unordered_set>
