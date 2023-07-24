@@ -40,7 +40,8 @@ namespace argus {
     }
 
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) {
-        assert(type.type == IntegralType::String || type.size == size);
+        assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
+                || type.size == size);
         this->type = type;
 
         // override size for pointer type since we're only copying the pointer

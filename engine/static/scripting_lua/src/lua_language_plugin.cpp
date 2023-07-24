@@ -97,14 +97,36 @@ namespace argus {
         return luaL_error(state, msg.c_str());
     }
 
+    static std::string _get_metatable_name(lua_State *state, int param_index) {
+        // get metatable of userdata
+        lua_getmetatable(state, param_index);
+
+        // get metatable name
+        lua_pushstring(state, k_lua_name);
+        lua_gettable(state, -2);
+        auto type_name = std::string(lua_tostring(state, -1));
+
+        lua_pop(state, 2); // remove field name and metatable from stack
+
+        return type_name;
+    }
+
     static int _wrap_instance_ref(lua_State *state, const std::string &qual_fn_name,
-            int param_index, const BoundTypeDef &type_def, ObjectWrapper *dest) {
-        if (!lua_isuserdata(state, param_index)
-                || !luaL_testudata(state, param_index, type_def.name.c_str())) {
+            int param_index, const BoundTypeDef &type_def, bool require_mut, ObjectWrapper *dest) {
+        if (!lua_isuserdata(state, param_index)) {
             return _set_lua_error(state, "Incorrect type provided for parameter "
                     + std::to_string(param_index) + " of function " + qual_fn_name
                     + " (expected " + type_def.name
                     + ", actual " + luaL_typename(state, param_index) + ")");
+        }
+
+        auto type_name = _get_metatable_name(state, param_index);
+        if (!(type_name == type_def.name
+                || (!require_mut && type_name == "const " + type_def.name))) {
+            return _set_lua_error(state, "Incorrect userdata provided for parameter "
+                    + std::to_string(param_index) + " of function " + qual_fn_name
+                    + " (expected " + type_def.name
+                    + ", actual " + type_name + ")");
         }
 
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -236,20 +258,14 @@ namespace argus {
                             + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
 
-                // get metatable of userdata
-                lua_getmetatable(state, param_index);
+                auto type_name = _get_metatable_name(state, param_index);
 
-                // get metatable name
-                lua_pushstring(state, k_lua_name);
-                lua_gettable(state, -2);
-                const char *type_name = lua_tostring(state, -1);
-
-                lua_pop(state, 2); // remove field name and metatable from stack
-
-                if (param_def.type_name.value() != type_name) {
+                if (!(type_name == param_def.type_name.value()
+                        || (param_def.is_const && type_name == "const " + param_def.type_name.value()))) {
                     return _set_lua_error(state, "Incorrect userdata provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected " + param_def.type_name.value() + ", actual " + type_name + ")");
+                            + " (expected " + (param_def.is_const ? "const " : "") + param_def.type_name.value()
+                            + ", actual " + type_name + ")");
                 }
 
                 auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -366,7 +382,8 @@ namespace argus {
     }
 
     static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
-        auto mt = luaL_getmetatable(state, wrapper.type.type_name.value().c_str());
+        auto mt = luaL_getmetatable(state,
+                ((wrapper.type.is_const ? "const " : "") + wrapper.type.type_name.value()).c_str());
         assert(mt != 0); // binding should have failed if type wasn't bound
 
         lua_setmetatable(state, -2);
@@ -504,14 +521,12 @@ namespace argus {
 
             if (fn_type == FunctionType::MemberInstance) {
                 auto type_def = get_bound_type(type_name);
-                ObjectType instance_type{};
-                instance_type.type = IntegralType::Pointer;
-                instance_type.size = type_def.size;
-                instance_type.type_name = type_def.name;
 
                 //TODO: add safeguard to prevent invocation of functions on non-references
                 ObjectWrapper wrapper{};
-                auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, &wrapper);
+                // 5th param is whether the instance must be mutable, which is
+                // the case iff the function is non-const
+                auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, !fn.is_const, &wrapper);
                 if (wrap_res == 0) {
                     args.push_back(std::move(wrapper));
                 } else {
@@ -661,9 +676,9 @@ namespace argus {
         }
     }
 
-    static void _bind_type(lua_State *state, const BoundTypeDef &type) {
+    static void _create_type_metatable(lua_State *state, const BoundTypeDef &type, bool is_const) {
         // create metatable for type
-        luaL_newmetatable(state, type.name.c_str());
+        luaL_newmetatable(state, ((is_const ? "const " : "") + type.name).c_str());
 
         // create dispatch table
         lua_newtable(state);
@@ -677,8 +692,14 @@ namespace argus {
         lua_pop(state, 1); // remove metatable from stack
     }
 
-    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
-        luaL_getmetatable(state, (type_name).c_str());
+    static void _bind_type(lua_State *state, const BoundTypeDef &type) {
+        _create_type_metatable(state, type, false);
+        _create_type_metatable(state, type, true);
+    }
+
+    static void _add_type_function_to_mt(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn,
+            bool is_const) {
+        luaL_getmetatable(state, ((is_const ? "const " : "") + type_name).c_str());
 
         if (fn.type == FunctionType::MemberInstance) {
             // get the dispatch table for the type
@@ -696,6 +717,13 @@ namespace argus {
             // pop the metatable
             lua_pop(state, 1);
         }
+    }
+
+    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
+        _add_type_function_to_mt(state, type_name, fn, false);
+        //if (fn.is_const) {
+            _add_type_function_to_mt(state, type_name, fn, true);
+        //}
     }
 
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {

@@ -141,11 +141,13 @@ namespace argus {
     static BoundFunctionDef _create_function_def(const std::string &name, FuncType fn, FunctionType type) {
         using ArgsTuple = typename function_traits<FuncType>::argument_types;
         using ReturnType = typename function_traits<FuncType>::return_type;
+        bool is_const = function_traits<FuncType>::is_const::value;
 
         try {
             BoundFunctionDef def{};
             def.name = name;
             def.type = type;
+            def.is_const = is_const;
             def.handle = create_function_wrapper(fn);
             def.params = _tuple_to_object_types<ArgsTuple>();
             def.return_type = _create_object_type<ReturnType>();
@@ -164,7 +166,7 @@ namespace argus {
         } else if constexpr (is_std_function_v<B>) {
             static_assert(is_std_function_v<T>, "Callback reference/pointer params in bound function are not"
                     "permitted (pass by value instead)");
-            return { IntegralType::Callback, sizeof(ProxiedFunction), {}, {},
+            return { IntegralType::Callback, sizeof(ProxiedFunction), false, {}, {},
                      std::make_shared<ScriptCallbackType>(_create_callback_type<B>()) };
         } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
             return { IntegralType::Type, sizeof(std::type_index) };
@@ -194,16 +196,19 @@ namespace argus {
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
             static_assert(std::is_base_of_v<ScriptBindable, B>,
                     "Types in bound functions must derive from ScriptBindable");
-            return { IntegralType::Pointer, sizeof(void *), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+            return { IntegralType::Pointer, sizeof(void *),
+                    std::is_const_v<std::remove_pointer_t<std::remove_reference_t<T>>>,
+                    typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else if constexpr (std::is_enum_v<T>) {
-            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>),
+            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), false,
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
             static_assert(std::is_base_of_v<ScriptBindable, B>,
                     "Types in bound functions must derive from ScriptBindable");
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must be copy-constructible if not passed by reference or pointer");
-            return { IntegralType::Struct, sizeof(T), typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+            return { IntegralType::Struct, sizeof(T), false,
+            typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
 
@@ -350,15 +355,15 @@ namespace argus {
                                 std::remove_pointer_t<ReturnType>>>, char>) {
                     if constexpr (std::is_reference_v<ReturnType>) {
                         static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>,
-                                std::string>,
-                                "Returned string reference from bound function must be direct reference");
+                                              std::string>,
+                                      "Returned string reference from bound function must be direct reference");
 
                         ret_obj_size = ret.length();
                     } else if constexpr (std::is_pointer_v<ReturnType>) {
                         using B = std::remove_cv_t<std::remove_pointer_t<ReturnType>>;
                         static_assert(std::is_same_v<B, std::string> || std::is_same_v<B, char>,
-                                "Returned string pointer from bound function must be direct pointer to "
-                                "std::string or char array");
+                                      "Returned string pointer from bound function must be direct pointer to "
+                                      "std::string or char array");
 
                         if constexpr (std::is_same_v<B, std::string>) {
                             ret_obj_size = ret->length();

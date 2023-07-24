@@ -54,6 +54,7 @@ namespace argus {
     struct ObjectType {
         IntegralType type;
         size_t size;
+        bool is_const = false;
         std::optional<std::type_index> type_index = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
         std::optional<std::shared_ptr<ScriptCallbackType>> callback_type = std::nullopt;
@@ -107,6 +108,7 @@ namespace argus {
     struct BoundFunctionDef {
         std::string name;
         FunctionType type;
+        bool is_const;
         std::vector<ObjectType> params;
         ObjectType return_type;
         ProxiedFunction handle;

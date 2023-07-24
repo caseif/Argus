@@ -50,6 +50,7 @@ namespace argus {
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::false_type;
     };
 
     template <typename Class, typename Ret, typename... Args>
@@ -58,6 +59,7 @@ namespace argus {
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::false_type;
     };
 
     template <typename Class, typename Ret, typename... Args>
@@ -66,6 +68,7 @@ namespace argus {
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::true_type;
     };
 
     template <typename Ret, typename... Args>
@@ -74,6 +77,7 @@ namespace argus {
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
         using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::false_type;
     };
 
     template <typename F>
