@@ -80,7 +80,7 @@ set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_SOURCE_DIR}/include;${ANGELSCRIPT_SOU
 
 # set build variables for test dependencies
 set(CATCH2_LIBRARY "Catch2")
-set(CATCH2_INCLUDE_DIR "${CATCH2_SOURCE_DIR}/src/catch2")
+set(CATCH2_INCLUDE_DIR "${CATCH2_SOURCE_DIR}/src")
 
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")

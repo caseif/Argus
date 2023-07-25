@@ -49,4 +49,5 @@ if len(sys.argv) != 2:
 
 bin_dir = sys.argv[1]
 
-run_tests_for("static/scripting")
+run_tests_for("libs/lowlevel")
+#run_tests_for("static/scripting")
