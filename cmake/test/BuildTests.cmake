@@ -76,7 +76,8 @@ foreach(file ${CPP_FILES})
   get_filename_component(TEST_NAME "${file}" NAME_WE)
 
   add_executable("${TEST_NAME}" "${file};${RES_SOURCE_FILE}")
-  target_include_directories("${TEST_NAME}" PRIVATE "${ARGUS_INCLUDE_DIR};${RES_INCLUDE_PATH}")
+  target_include_directories("${TEST_NAME}" PRIVATE "${ARGUS_INCLUDE_DIR};${RES_INCLUDE_PATH};"
+      "${PROJECT_SOURCE_DIR}/include;${ARGUS_ROOT_DIR}/test/include")
   target_link_libraries("${TEST_NAME}" PRIVATE "${LIBARGUS_NAME};Catch2::Catch2")
 
   # set the C++ standard
