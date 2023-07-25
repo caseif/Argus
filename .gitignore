@@ -462,3 +462,4 @@ zconf.h.included
 # CLion
 .idea/
 cmake-build-*/
+venv/
