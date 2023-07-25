@@ -21,6 +21,8 @@ jobs:
         CC: gcc
     - name: Build
       run: cmake --build build --config Debug --parallel 8
+    - name: Run Tests
+      run: ./test/run_tests.py build
     - name: Archive
       uses: actions/upload-artifact@v3
       with:
@@ -47,6 +49,8 @@ jobs:
           CC: gcc
       - name: Build
         run: cmake --build build --config Release --parallel 8
+      - name: Run Tests
+        run: ./test/run_tests.py build
       - name: Archive
         uses: actions/upload-artifact@v3
         with:
@@ -74,6 +78,8 @@ jobs:
         CXX: clang++
     - name: Build
       run: cmake --build build --config Debug --parallel 8
+    - name: Run Tests
+      run: ./test/run_tests.py build
     - name: Archive
       uses: actions/upload-artifact@v3
       with:
@@ -101,6 +107,8 @@ jobs:
           CXX: clang++
       - name: Build
         run: cmake --build build --config Release --parallel 8
+      - name: Run Tests
+        run: ./test/run_tests.py build
       - name: Archive
         uses: actions/upload-artifact@v3
         with:
@@ -129,6 +137,8 @@ jobs:
       run: mkdir build && cd build && cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Debug ..
     - name: Build
       run: cmake --build build --config Debug --parallel 8
+    - name: Run Tests
+      run: ./test/run_tests.py build
     - name: Archive
       uses: actions/upload-artifact@v3
       with:
@@ -157,6 +167,8 @@ jobs:
         run: mkdir build && cd build && cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Release ..
       - name: Build
         run: cmake --build build --config Release --parallel 8
+      - name: Run Tests
+        run: ./test/run_tests.py build
       - name: Archive
         uses: actions/upload-artifact@v3
         with:
