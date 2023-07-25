@@ -170,13 +170,13 @@ if(CMD_RES)
   message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
 endif()
 
-set(arptool_exe "${arptool_exe_dir}/arptool${CMAKE_EXECUTABLE_SUFFIX}")
+set(ARPTOOL_EXE "${arptool_exe_dir}/arptool${CMAKE_EXECUTABLE_SUFFIX}")
 
-add_custom_command(OUTPUT "${arptool_exe}"
+add_custom_command(OUTPUT "${ARPTOOL_EXE}"
                   COMMAND "${CMAKE_COMMAND}" "--build" "."
                   DEPENDS "${arptool_source_files}"
                   WORKING_DIRECTORY "${arptool_wd}")
-add_custom_target("arptool" DEPENDS "${arptool_exe}")
+add_custom_target("arptool" DEPENDS "${ARPTOOL_EXE}")
 
 ########################
 # /arptool configuration
@@ -200,19 +200,19 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
 
 foreach(id ${ENGINE_LIBRARY_IDS})
   _argus_configure_module("${ENGINE_LIBS_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${arptool_exe}")
+                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 foreach(id ${STATIC_MODULE_IDS})
   _argus_configure_module("${STATIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${arptool_exe}")
+                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 # IMPORTANT: these should be configured last so that they can avoid compiling in
 # libraries already present in the base library
 foreach(id ${DYNAMIC_MODULE_IDS})
   _argus_configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${arptool_exe}")
+                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 # configure module dependency information
