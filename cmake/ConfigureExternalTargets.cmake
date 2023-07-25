@@ -11,6 +11,7 @@ set(SPIRV_CROSS_SOURCE_DIR "${EXT_LIBS_DIR}/SPIRV-Cross")
 set(LUA_SOURCE_DIR "${EXT_LIBS_DIR}/lua")
 set(LUA_BUILDSCRIPT_DIR "${CMAKE_SOURCE_DIR}/cmake/dep/lua")
 set(ANGELSCRIPT_SOURCE_DIR "${EXT_LIBS_DIR}/angelscript/sdk/angelscript")
+set(CATCH2_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/test/libs/catch2")
 
 # disable extra GLFW build steps
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
@@ -77,6 +78,10 @@ set(LUA_INCLUDE_DIR "${LUA_SOURCE_DIR}")
 set(ANGELSCRIPT_LIBRARY "angelscript")
 set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_SOURCE_DIR}/include;${ANGELSCRIPT_SOURCE_DIR}/../add_on")
 
+# set build variables for test dependencies
+set(CATCH2_LIBRARY "Catch2")
+set(CATCH2_INCLUDE_DIR "${CATCH2_SOURCE_DIR}/src/catch2")
+
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
@@ -89,6 +94,9 @@ add_subdirectory("${LUA_BUILDSCRIPT_DIR}")
 #_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptarray")
 #_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptbuilder")
 #_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptstdstring")
+
+# add test dependencies
+add_subdirectory("${CATCH2_SOURCE_DIR}")
 
 # we want to build this lib statically
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)

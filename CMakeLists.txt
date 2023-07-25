@@ -5,6 +5,7 @@ set(STATIC_MODULE_IDS "core;ecs;resman;"
                       "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 
+set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
 set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
 set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
@@ -299,3 +300,5 @@ _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${GLFW_LIBRARY_BASE}" "
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LUA_LIBRARY}" ".")
 #_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ANGELSCRIPT_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ARP_LIBRARY_BASE}" ".")
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/test")
