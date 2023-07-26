@@ -88,7 +88,7 @@ foreach(file ${CPP_FILES})
   _argus_set_compile_flags("${TEST_NAME}")
 
   add_custom_command(TARGET ${TEST_NAME} POST_BUILD
-      COMMAND mkdir -p "${TEST_BINARY_DEST}"
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${TEST_BINARY_DEST}"
       COMMAND "${CMAKE_COMMAND}" -E copy
       "$<TARGET_FILE:${TEST_NAME}>"
       "${TEST_BINARY_DEST}/"
