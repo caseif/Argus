@@ -95,12 +95,19 @@ add_subdirectory("${LUA_BUILDSCRIPT_DIR}")
 #_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptbuilder")
 #_argus_append_source_files(${ANGELSCRIPT_LIBRARY} "${ANGELSCRIPT_SOURCE_DIR}/../add_on/scriptstdstring")
 
+# we want to build this lib statically
+set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory("${GLSLANG_SOURCE_DIR}")
+set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+
 # add test dependencies
-add_subdirectory("${CATCH2_SOURCE_DIR}")
 
 # we want to build this lib statically
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-add_subdirectory("${GLSLANG_SOURCE_DIR}")
+set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory("${CATCH2_SOURCE_DIR}")
+set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
 
 set_target_properties(zlibstatic PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)

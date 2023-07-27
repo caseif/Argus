@@ -71,26 +71,24 @@ if(EXISTS "${res_dir}")
   add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${RES_SOURCE_FILE}")
 endif()
 
-file(GLOB_RECURSE CPP_FILES ${PROJECT_SOURCE_DIR}/tests/*.cpp)
-foreach(file ${CPP_FILES})
-  get_filename_component(TEST_NAME "${file}" NAME_WE)
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/tests/*.cpp)
+list(APPEND SRC_FILES "${RES_SOURCE_FILE}")
 
-  add_executable("${TEST_NAME}" "${file};${RES_SOURCE_FILE}")
-  target_include_directories("${TEST_NAME}" PRIVATE "${ARGUS_INCLUDE_DIR};${RES_INCLUDE_PATH};"
-      "${PROJECT_SOURCE_DIR}/include;${ARGUS_ROOT_DIR}/test/include")
-  target_link_libraries("${TEST_NAME}" PRIVATE "${LIBARGUS_NAME};Catch2::Catch2WithMain")
+add_executable("${PROJECT_NAME}" "${SRC_FILES}")
+target_include_directories("${PROJECT_NAME}" PRIVATE "${ARGUS_INCLUDE_DIR};${RES_INCLUDE_PATH};"
+    "${PROJECT_SOURCE_DIR}/include;${ARGUS_ROOT_DIR}/test/include")
+target_link_libraries("${PROJECT_NAME}" PRIVATE "${LIBARGUS_NAME};Catch2::Catch2WithMain")
 
-  # set the C++ standard
-  set_target_properties(${TEST_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
-  set_target_properties(${TEST_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
-  set_target_properties(${TEST_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
+# set the C++ standard
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 
-  _argus_set_compile_flags("${TEST_NAME}")
+_argus_set_compile_flags("${PROJECT_NAME}")
 
-  add_custom_command(TARGET ${TEST_NAME} POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E make_directory "${TEST_BINARY_DEST}"
-      COMMAND "${CMAKE_COMMAND}" -E copy
-      "$<TARGET_FILE:${TEST_NAME}>"
-      "${TEST_BINARY_DEST}/"
-      COMMENT "Copying binary for test '${TEST_NAME}' to output directory")
-endforeach()
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${TEST_BINARY_DEST}"
+    COMMAND "${CMAKE_COMMAND}" -E copy
+    "$<TARGET_FILE:${PROJECT_NAME}>"
+    "${TEST_BINARY_DEST}/"
+    COMMENT "Copying binary for test set '${PROJECT_NAME}' to output directory")

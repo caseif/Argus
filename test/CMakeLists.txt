@@ -11,4 +11,4 @@ list(APPEND CMAKE_PREFIX_PATH "${ARGUS_ROOT_DIR}")
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/libs/lowlevel")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/static/scripting")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/static/scripting")

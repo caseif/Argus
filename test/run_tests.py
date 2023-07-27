@@ -11,6 +11,11 @@ def eprint(*args, **kwargs):
 
 def run_test(path):
     result = subprocess.run(path, capture_output=True, text=True)
+
+    if result == 3221225781:
+        print("Failed to run test executable due to missing dependency")
+        return False
+
     print(result.stdout)
     if result.returncode != 0:
         eprint(result.stderr)
