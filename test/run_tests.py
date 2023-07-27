@@ -4,6 +4,8 @@ import os
 import subprocess
 import sys
 
+any_failed = False
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -25,6 +27,8 @@ def run_test(path):
 
 
 def run_tests_for(module):
+    global any_failed
+
     print("Running tests for module %s" % module)
 
     base_path = "%s/test_binaries/%s" % (bin_dir, module)
@@ -32,21 +36,13 @@ def run_tests_for(module):
     if not os.path.isdir(base_path):
         raise ValueError("Invalid module path %s" % module)
 
-    success_count = 0
-    total_count = 0
-
     for file in os.listdir(base_path):
         test_name = file[:-4] if file.endswith(".exe") else file
         res = run_test("%s/%s" % (base_path, file))
 
-        if res:
-            success_count += 1
-        else:
-            eprint("Test %s in module %s failed" % (test_name, module))
-
-        total_count += 1
-
-    print("%d/%d tests passed for module %s" % (success_count, total_count, module))
+        if not res:
+            any_failed = True
+            eprint("Test set %s in module %s failed" % (test_name, module))
 
 
 if len(sys.argv) != 2:
@@ -56,3 +52,5 @@ bin_dir = sys.argv[1]
 
 run_tests_for("libs/lowlevel")
 #run_tests_for("static/scripting")
+
+exit(1 if any_failed else 0)
