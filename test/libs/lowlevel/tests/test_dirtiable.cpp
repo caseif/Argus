@@ -3,89 +3,237 @@
 #include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/macros.hpp"
 
-TEST_CASE("Dirty flag is set", "[Dirtiable]") {
+TEST_CASE("Dirty flag and value is set correctly", "[Dirtiable]") {
 
-    SECTION("Dirty flag starts as clear") {
+    GIVEN("A new Dirtiable int") {
         argus::Dirtiable<int> dirtiable(42);
-        CHECK(!dirtiable.read().dirty);
+
+        THEN("the initial value is correct") {
+            CHECK(dirtiable.read().value == 42);
+        }
+
+        THEN("the conversion overload works") {
+            CHECK(dirtiable.read() == 42);
+        }
+
+        THEN("the dirty flag is clear") {
+            CHECK(!dirtiable.read().dirty);
+        }
+
+        WHEN("an lvalue is directly assigned") {
+            int new_val = 43;
+            dirtiable = new_val;
+
+            AND_WHEN("the value is read") {
+                auto val_and_dirty = dirtiable.read();
+
+                THEN("the value is updated") {
+                    CHECK(val_and_dirty.value == new_val);
+                }
+
+                THEN("the dirty flag is set") {
+                    CHECK(val_and_dirty.dirty);
+                }
+
+                AND_WHEN("the value is read again") {
+                    val_and_dirty = dirtiable.read();
+
+                    THEN("the dirty flag is clear") {
+                        CHECK(!val_and_dirty.dirty);
+                    }
+                }
+            }
+
+            AND_WHEN("the value is read to a const lvalue") {
+                const argus::Dirtiable<int> &dirtiable_const_ref = dirtiable;
+                auto const_val_and_dirty = dirtiable_const_ref.read();
+
+                THEN("the read value is correct") {
+                    CHECK(const_val_and_dirty.value == 43);
+                }
+
+                THEN("the dirty flag is set") {
+                    CHECK(const_val_and_dirty.dirty);
+                }
+            }
+
+            AND_WHEN("the value is peeked") {
+                auto val = dirtiable.peek();
+
+                THEN("the value is updated") {
+                    CHECK(val == 43);
+                }
+
+                AND_WHEN("the value is read") {
+                    auto val_and_dirty = dirtiable.read();
+
+                    THEN("the dirty flag is set") {
+                        CHECK(val_and_dirty.dirty);
+                    }
+                }
+            }
+        }
+
+        WHEN("an rvalue is directly assigned") {
+            dirtiable = 43;
+
+            AND_WHEN("the value is read") {
+                auto val_and_dirty = dirtiable.read();
+
+                THEN("the value is updated") {
+                    CHECK(val_and_dirty.value == 43);
+                }
+
+                THEN("the dirty flag is set") {
+                    CHECK(val_and_dirty.dirty);
+                }
+            }
+        }
+
+        WHEN("the addition assignment operator is used") {
+            dirtiable += 1;
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 42 + 1);
+            }
+
+            THEN("the dirty flag is set") {
+                CHECK(dirtiable.read().dirty);
+            }
+        }
+
+        WHEN("the subtraction assignment operator is used") {
+            dirtiable -= 1;
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 42 - 1);
+            }
+
+            THEN("the dirty flag is set") {
+                CHECK(dirtiable.read().dirty);
+            }
+        }
+
+        WHEN("the multiplication assignment operator is used") {
+            dirtiable *= 2;
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 42 * 2);
+            }
+
+            THEN("the dirty flag is set") {
+                CHECK(dirtiable.read().dirty);
+            }
+        }
+
+        WHEN("the addition assignment operator is used") {
+            dirtiable /= 2;
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 42 / 2);
+            }
+
+            THEN("the dirty flag is set") {
+                CHECK(dirtiable.read().dirty);
+            }
+        }
+
+        WHEN("it is set quietly with an lvalue") {
+            int new_val = 43;
+            dirtiable.set_quietly(new_val);
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 43);
+            }
+
+            THEN("the dirty flag is not set") {
+                CHECK(!dirtiable.read().dirty);
+            }
+        }
+
+        WHEN("it is set quietly with an rvalue") {
+            dirtiable.set_quietly(43);
+
+            THEN("the value is updated") {
+                CHECK(dirtiable.read().value == 43);
+            }
+
+            THEN("the dirty flag is not set") {
+                CHECK(!dirtiable.read().dirty);
+            }
+        }
+
+        AND_GIVEN("another new Dirtiable int") {
+            argus::Dirtiable<int> new_dirtiable(43);
+
+            WHEN("it is assigned to the original") {
+                dirtiable = new_dirtiable;
+
+                THEN("the original's value is updated") {
+                    CHECK(dirtiable.read().value == 43);
+                }
+
+                THEN("the original's dirty flag is clear") {
+                    CHECK(!dirtiable.read().dirty);
+                }
+            }
+
+            WHEN("its value is changed") {
+                new_dirtiable = 44;
+
+                AND_WHEN("it is assigned to the original") {
+                    dirtiable = new_dirtiable;
+
+                    THEN("the original's value is updated") {
+                        CHECK(dirtiable.read().value == 44);
+                    }
+
+                    THEN("the original's dirty flag is set") {
+                        CHECK(dirtiable.read().dirty);
+                    }
+                }
+            }
+        }
     }
 
-    SECTION("Dirty flag is cleared on read") {
-        argus::Dirtiable<int> dirtiable(42);
-        dirtiable = 43;
-        dirtiable.read();
-        CHECK(!dirtiable.read().dirty);
+    GIVEN("A new Dirtiable string") {
+        argus::Dirtiable<std::string> dirtiable("foo");
+
+        WHEN("it is read") {
+            auto val_and_dirty = dirtiable.read();
+
+            AND_WHEN("the read value is coerced to a string") {
+                std::string str = val_and_dirty;
+
+                THEN("the value is correct") {
+                    CHECK(str == "foo");
+                }
+            }
+
+            AND_WHEN("the read value is coerced to a const string reference") {
+                const std::string &str_ref = val_and_dirty;
+
+                THEN("the value is correct") {
+                    CHECK(str_ref == "foo");
+                }
+            }
+
+            THEN("the arrow operator works") {
+                CHECK(val_and_dirty->length() == 3);
+            }
+        }
     }
 
-    SECTION("Dirty flag is set on assignment to lvalue") {
-        argus::Dirtiable<int> dirtiable(42);
-        int new_val = 43;
-        dirtiable = new_val;
-        CHECK(dirtiable.read().dirty);
-    }
+    GIVEN("A new Dirtiable string pointer") {
+        std::string str = "foo";
+        argus::Dirtiable<std::string *> dirtiable(&str);
 
-    SECTION("Dirty flag is set on assignment to rvalue") {
-        argus::Dirtiable<int> dirtiable(42);
-        dirtiable = 43;
-        CHECK(dirtiable.read().dirty);
-    }
+        WHEN("it is read") {
+            auto val_and_dirty = dirtiable.read();
 
-    SECTION("Dirty flag is not cleared on peek") {
-        argus::Dirtiable<int> dirtiable(42);
-        dirtiable = 43;
-        dirtiable.peek();
-        CHECK(dirtiable.read().dirty);
-    }
-
-    SECTION("Dirty flag is set on assignment to dirty Dirtiable") {
-        argus::Dirtiable<int> dirtiable(42);
-        argus::Dirtiable<int> another_dirtiable(43);
-        another_dirtiable = 44;
-        dirtiable = another_dirtiable;
-        CHECK(dirtiable.read().dirty);
-    }
-
-    SECTION("Dirty flag is not set on assignment to non-dirty Dirtiable") {
-        argus::Dirtiable<int> dirtiable(42);
-        argus::Dirtiable<int> another_dirtiable(43);
-        dirtiable = another_dirtiable;
-        CHECK(!dirtiable.read().dirty);
+            THEN("the arrow operator works") {
+                CHECK(val_and_dirty->length() == 3);
+            }
+        }
     }
 }
-
-TEST_CASE("Dirtiable value is updated", "[Dirtiable]") {
-    SECTION("Assignment to lvalue") {
-        argus::Dirtiable<int> dirtiable(42);
-        int new_val = 43;
-        dirtiable = new_val;
-        CHECK(dirtiable.read().value == 43);
-    }
-
-    SECTION("Assignment to rvalue") {
-        argus::Dirtiable<int> dirtiable(42);
-        dirtiable = 43;
-        CHECK(dirtiable.read().value == 43);
-    }
-
-    SECTION("Assignment to dirty Dirtiable") {
-        argus::Dirtiable<int> dirtiable(42);
-        argus::Dirtiable<int> another_dirtiable(43);
-        another_dirtiable = 44;
-        dirtiable = another_dirtiable;
-        CHECK(dirtiable.read().value == 44);
-    }
-
-    SECTION("Assignment to non-dirty Dirtiable") {
-        argus::Dirtiable<int> dirtiable(42);
-        argus::Dirtiable<int> another_dirtiable(43);
-        dirtiable = another_dirtiable;
-        CHECK(dirtiable.read().value == 43);
-    }
-}
-
-/*int main(int argc, char **argv) {
-    UNUSED(argc);
-    UNUSED(argv);
-
-
-}*/
