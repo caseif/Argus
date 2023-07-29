@@ -25,7 +25,7 @@ SCENARIO("Dirty flag and value is set correctly", "[Dirtiable]") {
         argus::Dirtiable<int> dirtiable(42);
 
         THEN("the initial value is correct") {
-            CHECK(dirtiable.read().value == 42);
+            REQUIRE(dirtiable.read().value == 42);
         }
 
         THEN("the conversion overload works") {
@@ -33,7 +33,7 @@ SCENARIO("Dirty flag and value is set correctly", "[Dirtiable]") {
         }
 
         THEN("the dirty flag is clear") {
-            CHECK(!dirtiable.read().dirty);
+            REQUIRE(!dirtiable.read().dirty);
         }
 
         WHEN("an lvalue is directly assigned") {

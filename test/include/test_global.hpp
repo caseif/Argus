@@ -20,33 +20,3 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch_all.hpp"
-
-template <typename T, unsigned int N>
-  class RandomArrayGenerator : public Catch::Generators::IGenerator<std::array<T, N>> {
-    using ArrayType = std::array<T, N>;
-
-  private:
-    Catch::Generators::GeneratorWrapper<T> gen;
-    ArrayType cur;
-
-  public:
-    RandomArrayGenerator(T min, T max) :
-        gen(Catch::Generators::random(min, max)) {
-    }
-
-    const ArrayType &get() const override {
-        return cur;
-    }
-
-    bool next() override {
-        std::generate(cur.begin(), cur.end(), [&]() { return gen.get(); });
-        return true;
-    }
-};
-
-template <typename T, unsigned int N>
-Catch::Generators::GeneratorWrapper<std::array<T, N>> random_array(T a, T b) {
-    return Catch::Generators::GeneratorWrapper<std::array<T, N>>(
-            Catch::Detail::make_unique<RandomArrayGenerator<T, N>>(a, b)
-    );
-}

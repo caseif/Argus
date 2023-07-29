@@ -26,23 +26,25 @@ def run_test(path, test_case):
         return True
 
 
-def run_tests_for(module, test_case):
+def run_tests_for(module, test_cases):
     global any_failed
 
-    print("Running test case %s for module %s" % (test_case, module))
+    bin_suffix = ".exe" if os.name == "nt" else ""
+    exe_name = "%s%s" % (module, bin_suffix)
 
-    base_path = "%s/test_binaries/%s" % (bin_dir, module)
+    base_path = "%s/test_binaries/%s" % (bin_dir, exe_name)
 
-    if not os.path.isdir(base_path):
-        raise ValueError("Invalid module path %s" % module)
+    if not os.path.isfile(base_path):
+        raise ValueError("Invalid executable path %s" % exe_name)
 
-    for file in os.listdir(base_path):
-        test_name = file[:-4] if file.endswith(".exe") else file
-        res = run_test("%s/%s" % (base_path, file), test_case)
+    for test_case in test_cases:
+        print("Running test case %s in executable %s" % (test_case, exe_name))
+
+        res = run_test(base_path, test_case)
 
         if not res:
             any_failed = True
-            eprint("Test case %s in module %s failed" % (test_case, module))
+            eprint("Test case %s in executable %s failed" % (test_case, exe_name))
 
 
 if len(sys.argv) != 2:
@@ -50,8 +52,9 @@ if len(sys.argv) != 2:
 
 bin_dir = sys.argv[1]
 
-run_tests_for("libs/lowlevel", "[Dirtiable]")
-run_tests_for("libs/lowlevel", "[Vector2]")
-#run_tests_for("static/scripting")
+run_tests_for("libs/lowlevel/test_lowlevel", [
+    "[Dirtiable]",
+    "[Vector2]"
+])
 
 exit(1 if any_failed else 0)

@@ -24,65 +24,85 @@
 
 TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         int32_t, uint32_t, float, double) {
-    TestType max_val = TestType(100);
-    TestType min_val;
-    if constexpr (std::is_unsigned_v<TestType>) {
-        min_val = 0;
-    } else {
-        min_val = -100;
+    constexpr TestType max_val = TestType(100);
+    constexpr TestType min_val = TestType(std::is_unsigned_v<TestType> ? 0 : -100);
+
+    const unsigned int N = 2;
+
+    GIVEN("A new default-contructed Vector2 object") {
+        argus::Vector2<TestType> vec = argus::Vector2<TestType>();
+
+        THEN("its values are initialized as 0") {
+            CHECK(vec.x == TestType(0));
+            CHECK(vec.y == TestType(0));
+        }
     }
 
     GIVEN("A new Vector2 object") {
-        auto [x, y] = GENERATE_COPY(take(10, random_array<TestType, 2>(min_val, max_val)));
-
-        argus::Vector2<TestType> vec_a(x, y);
+        auto vals = GENERATE(take(10, chunk(N, random<TestType>(min_val, max_val))));
+        auto x = vals.at(0);
+        auto y = vals.at(1);
+        REQUIRE(x >= min_val);
+        REQUIRE(x <= max_val);
+        REQUIRE(y >= min_val);
+        REQUIRE(y <= max_val);
+        argus::Vector2<TestType> vec(x, y);
 
         WHEN("it is multiplied by a constant") {
-            auto res = vec_a * 2;
+            auto res = vec * 2;
 
             THEN("the product vector is correct") {
-                CHECK(res.x == vec_a.x * 2);
-                CHECK(res.y == vec_a.y * 2);
+                CHECK(res.x == vec.x * 2);
+                CHECK(res.y == vec.y * 2);
             }
         }
 
         WHEN("it is divided by a constant") {
-            auto res = vec_a / 2;
+            auto res = vec / 2;
 
             THEN("the quotient vector is correct") {
-                CHECK(res.x == vec_a.x / 2);
-                CHECK(res.y == vec_a.y / 2);
+                CHECK(res.x == vec.x / 2);
+                CHECK(res.y == vec.y / 2);
             }
         }
 
         WHEN("it is multiply-assigned with a constant") {
-            auto orig_x = vec_a.x;
-            auto orig_y = vec_a.y;
-            vec_a *= 2;
+            auto orig_x = vec.x;
+            auto orig_y = vec.y;
+            vec *= 2;
 
             THEN("the product vector is correct") {
-                CHECK(vec_a.x == orig_x * 2);
-                CHECK(vec_a.y == orig_y * 2);
+                CHECK(vec.x == orig_x * 2);
+                CHECK(vec.y == orig_y * 2);
             }
         }
 
         WHEN("it is divide-assigned with a constant") {
-            auto orig_x = vec_a.x;
-            auto orig_y = vec_a.y;
-            vec_a /= 2;
+            auto orig_x = vec.x;
+            auto orig_y = vec.y;
+            vec /= 2;
 
             THEN("the quotient vector is correct") {
-                CHECK(vec_a.x == orig_x / 2);
-                CHECK(vec_a.y == orig_y / 2);
+                CHECK(vec.x == orig_x / 2);
+                CHECK(vec.y == orig_y / 2);
+            }
+        }
+
+        WHEN("it is inverted") {
+            auto inv = vec.inverse();
+
+            THEN("the values are negated") {
+                CHECK(inv.x == -vec.x);
+                CHECK(inv.y == -vec.y);
             }
         }
 
         WHEN("it is converted to a Vector3") {
-            argus::Vector3<TestType> vec3(vec_a);
+            argus::Vector3<TestType> vec3(vec);
 
             THEN("the values are copied") {
-                CHECK(vec3.x == vec_a.x);
-                CHECK(vec3.y == vec_a.y);
+                CHECK(vec3.x == vec.x);
+                CHECK(vec3.y == vec.y);
             }
 
             THEN("the remaining values are initialized to 0") {
@@ -90,91 +110,118 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
             }
         }
 
-        GIVEN("A second Vector2 object") {
-            auto [x_b, y_b] = GENERATE_COPY(take(10, random_array<TestType, 2>(min_val, max_val)));
+        WHEN("it is converted to a Vector3") {
+            argus::Vector4<TestType> vec4(vec);
 
-            argus::Vector2<TestType> vec_b{ x_b, y_b };
-            WHEN("they are added") {
-                auto res = vec_a + vec_b;
-
-                THEN("the sum vector is correct") {
-                    CHECK(res.x == vec_a.x + vec_b.x);
-                    CHECK(res.y == vec_a.y + vec_b.y);
-                }
+            THEN("the values are copied") {
+                CHECK(vec4.x == vec.x);
+                CHECK(vec4.y == vec.y);
             }
 
-            WHEN("the second is subtracted from the first") {
-                auto res = vec_a - vec_b;
+            THEN("the z-value is initialized to 0") {
+                CHECK(vec4.z == TestType(0));
+            }
+        }
+    }
 
-                THEN("the difference vector is correct") {
-                    CHECK(res.x == vec_a.x - vec_b.x);
-                    CHECK(res.y == vec_a.y - vec_b.y);
+    GIVEN("Two new Vector2 objects") {
+        auto vals = GENERATE(take(10, chunk(N, random<TestType>(min_val, max_val))));
+        auto x_a = vals.at(0);
+        auto y_a = vals.at(1);
+        auto x_b = vals.at(0);
+        auto y_b = vals.at(1);
+        argus::Vector2<TestType> vec_a(x_a, y_a);
+        argus::Vector2<TestType> vec_b(x_b, y_b);
+
+        WHEN("they are added") {
+            if constexpr (std::is_same_v<TestType, float>) {
+                if (std::isnan(vec_a.x + vec_b.x)) {
+                    CHECK(vec_a.x == 0.0f);
+                    CHECK(vec_b.x == 0.0f);
+                } else if (std::isnan(vec_a.y + vec_b.y)) {
+                    CHECK(vec_a.y == 0.0f);
+                    CHECK(vec_b.y == 0.0f);
                 }
             }
+            auto res = vec_a + vec_b;
 
-            WHEN("they are multipled") {
-                auto res = vec_a * vec_b;
+            THEN("the sum vector is correct") {
+                CHECK(res.x == vec_a.x + vec_b.x);
+                CHECK(res.y == vec_a.y + vec_b.y);
+            }
+        }
 
-                THEN("the product vector is correct") {
-                    CHECK(res.x == vec_a.x * vec_b.x);
-                    CHECK(res.y == vec_a.y * vec_b.y);
+        WHEN("the second is subtracted from the first") {
+            auto res = vec_a - vec_b;
+
+            THEN("the difference vector is correct") {
+                CHECK(res.x == vec_a.x - vec_b.x);
+                CHECK(res.y == vec_a.y - vec_b.y);
+            }
+        }
+
+        WHEN("they are multipled") {
+            auto res = vec_a * vec_b;
+
+            THEN("the product vector is correct") {
+                CHECK(res.x == vec_a.x * vec_b.x);
+                CHECK(res.y == vec_a.y * vec_b.y);
+            }
+        }
+
+        WHEN("the first is add-assigned with the second") {
+            auto orig_x_a = vec_a.x;
+            auto orig_y_a = vec_a.y;
+            auto orig_x_b = vec_b.x;
+            auto orig_y_b = vec_b.y;
+
+            vec_a += vec_b;
+
+            THEN("the sum vector is correct") {
+                CHECK(vec_a.x == orig_x_a + orig_x_b);
+                CHECK(vec_a.y == orig_y_a + orig_y_b);
+
+                AND_THEN("the second vector is unchanged") {
+                    CHECK(vec_b.x == orig_x_b);
+                    CHECK(vec_b.y == orig_y_b);
                 }
             }
+        }
 
-            WHEN("the first is add-assigned with the second") {
-                auto orig_x_a = vec_a.x;
-                auto orig_y_a = vec_a.y;
-                auto orig_x_b = vec_b.x;
-                auto orig_y_b = vec_b.y;
+        WHEN("the first is subtract-assigned with the second") {
+            auto orig_x_a = vec_a.x;
+            auto orig_y_a = vec_a.y;
+            auto orig_x_b = vec_b.x;
+            auto orig_y_b = vec_b.y;
 
-                vec_a += vec_b;
+            vec_a -= vec_b;
 
-                THEN("the sum vector is correct") {
-                    CHECK(vec_a.x == orig_x_a + orig_x_b);
-                    CHECK(vec_a.y == orig_y_a + orig_y_b);
+            THEN("the difference vector is correct") {
+                CHECK(vec_a.x == orig_x_a - orig_x_b);
+                CHECK(vec_a.y == orig_y_a - orig_y_b);
 
-                    AND_THEN("the second vector is unchanged") {
-                        CHECK(vec_b.x == orig_x_b);
-                        CHECK(vec_b.y == orig_y_b);
-                    }
+                AND_THEN("the second vector is unchanged") {
+                    CHECK(vec_b.x == orig_x_b);
+                    CHECK(vec_b.y == orig_y_b);
                 }
             }
+        }
 
-            WHEN("the first is subtract-assigned with the second") {
-                auto orig_x_a = vec_a.x;
-                auto orig_y_a = vec_a.y;
-                auto orig_x_b = vec_b.x;
-                auto orig_y_b = vec_b.y;
+        WHEN("the first is multiply-assigned with the second") {
+            auto orig_x_a = vec_a.x;
+            auto orig_y_a = vec_a.y;
+            auto orig_x_b = vec_b.x;
+            auto orig_y_b = vec_b.y;
 
-                vec_a -= vec_b;
+            vec_a *= vec_b;
 
-                THEN("the difference vector is correct") {
-                    CHECK(vec_a.x == orig_x_a - orig_x_b);
-                    CHECK(vec_a.y == orig_y_a - orig_y_b);
+            THEN("the product vector is correct") {
+                CHECK(vec_a.x == orig_x_a * orig_x_b);
+                CHECK(vec_a.y == orig_y_a * orig_y_b);
 
-                    AND_THEN("the second vector is unchanged") {
-                        CHECK(vec_b.x == orig_x_b);
-                        CHECK(vec_b.y == orig_y_b);
-                    }
-                }
-            }
-
-            WHEN("the first is multiply-assigned with the second") {
-                auto orig_x_a = vec_a.x;
-                auto orig_y_a = vec_a.y;
-                auto orig_x_b = vec_b.x;
-                auto orig_y_b = vec_b.y;
-
-                vec_a *= vec_b;
-
-                THEN("the product vector is correct") {
-                    CHECK(vec_a.x == orig_x_a * orig_x_b);
-                    CHECK(vec_a.y == orig_y_a * orig_y_b);
-
-                    AND_THEN("the second vector is unchanged") {
-                        CHECK(vec_b.x == orig_x_b);
-                        CHECK(vec_b.y == orig_y_b);
-                    }
+                AND_THEN("the second vector is unchanged") {
+                    CHECK(vec_b.x == orig_x_b);
+                    CHECK(vec_b.y == orig_y_b);
                 }
             }
         }
