@@ -19,10 +19,8 @@
 #include "test_global.hpp"
 
 #include "argus/lowlevel/dirtiable.hpp"
-#include "argus/lowlevel/macros.hpp"
 
-TEST_CASE("Dirty flag and value is set correctly", "[Dirtiable]") {
-
+SCENARIO("Dirty flag and value is set correctly", "[Dirtiable]") {
     GIVEN("A new Dirtiable int") {
         argus::Dirtiable<int> dirtiable(42);
 
