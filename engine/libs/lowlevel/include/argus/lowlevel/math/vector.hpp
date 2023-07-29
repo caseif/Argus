@@ -489,7 +489,7 @@ namespace argus {
 
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
-            return Vector4<T>(this->x, this->y, this->z, 1);
+            return Vector4<T>(this->x, this->y, this->z, 0);
         }
 
         Vector3(T x, T y, T z) :
@@ -689,7 +689,7 @@ namespace argus {
 
         //NOLINTNEXTLINE(google-explicit-constructor)
         operator Vector4<T>() const {
-            return Vector4<T>(this->x, this->y, 0, 1);
+            return Vector4<T>(this->x, this->y, 0, 0);
         }
 
         Vector2(T x, T y) :

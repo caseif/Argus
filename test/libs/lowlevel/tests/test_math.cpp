@@ -118,8 +118,9 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
                 CHECK(vec4.y == vec.y);
             }
 
-            THEN("the z-value is initialized to 0") {
+            THEN("the remaining values are initialized to 0") {
                 CHECK(vec4.z == TestType(0));
+                CHECK(vec4.w == TestType(0));
             }
         }
     }

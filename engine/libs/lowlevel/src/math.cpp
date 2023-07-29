@@ -72,6 +72,18 @@ namespace argus {
         };
     }
 
+    Vector4f multiply_matrix_and_vector(const Vector3f &vec, const Matrix4 &mat) {
+        auto vec4 = Vector4f(vec);
+        vec4.w = 1.0;
+        return multiply_matrix_and_vector(vec4, mat);
+    }
+
+    Vector4f multiply_matrix_and_vector(const Vector2f &vec, const Matrix4 &mat) {
+        auto vec4 = Vector4f(vec);
+        vec4.w = 1.0;
+        return multiply_matrix_and_vector(vec4, mat);
+    }
+
     static inline void _swap_f(float *a, float *b) {
         float temp = *a;
         *a = *b;

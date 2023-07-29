@@ -79,5 +79,9 @@ namespace argus {
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat);
 
+    Vector4f multiply_matrix_and_vector(const Vector3f &vec, const Matrix4 &mat);
+
+    Vector4f multiply_matrix_and_vector(const Vector2f &vec, const Matrix4 &mat);
+
     void transpose_matrix(Matrix4 &mat);
 }
