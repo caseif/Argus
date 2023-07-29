@@ -27,7 +27,7 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
     constexpr TestType max_val = TestType(100);
     constexpr TestType min_val = TestType(std::is_unsigned_v<TestType> ? 0 : -100);
 
-    const unsigned int N = 2;
+    constexpr unsigned int N = 2;
 
     GIVEN("A new default-contructed Vector2 object") {
         argus::Vector2<TestType> vec = argus::Vector2<TestType>();
@@ -39,7 +39,7 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
     }
 
     GIVEN("A new Vector2 object") {
-        auto vals = GENERATE(take(10, chunk(N, random<TestType>(min_val, max_val))));
+        auto vals = GENERATE_COPY(take(10, chunk(N, random<TestType>(min_val, max_val))));
         auto x = vals.at(0);
         auto y = vals.at(1);
         REQUIRE(x >= min_val);
@@ -125,7 +125,7 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
     }
 
     GIVEN("Two new Vector2 objects") {
-        auto vals = GENERATE(take(10, chunk(N, random<TestType>(min_val, max_val))));
+        auto vals = GENERATE_COPY(take(10, chunk(N, random<TestType>(min_val, max_val))));
         auto x_a = vals.at(0);
         auto y_a = vals.at(1);
         auto x_b = vals.at(0);
