@@ -80,8 +80,8 @@ namespace argus {
         }
 
         return {
-                std::clamp(resolution.x, caps.minImageExtent.width, caps.maxImageExtent.width),
-                std::clamp(resolution.y, caps.minImageExtent.height, caps.maxImageExtent.height)
+                std::clamp(uint32_t(resolution.x), caps.minImageExtent.width, caps.maxImageExtent.width),
+                std::clamp(uint32_t(resolution.y), caps.minImageExtent.height, caps.maxImageExtent.height)
         };
     }
 

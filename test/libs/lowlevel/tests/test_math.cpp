@@ -67,8 +67,8 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         }
 
         WHEN("it is multiply-assigned with a constant") {
-            auto orig_x = vec.x;
-            auto orig_y = vec.y;
+            TestType orig_x = vec.x;
+            TestType orig_y = vec.y;
             vec *= 2;
 
             THEN("the product vector is correct") {
@@ -78,8 +78,8 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         }
 
         WHEN("it is divide-assigned with a constant") {
-            auto orig_x = vec.x;
-            auto orig_y = vec.y;
+            TestType orig_x = vec.x;
+            TestType orig_y = vec.y;
             vec /= 2;
 
             THEN("the quotient vector is correct") {
@@ -171,10 +171,10 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         }
 
         WHEN("the first is add-assigned with the second") {
-            auto orig_x_a = vec_a.x;
-            auto orig_y_a = vec_a.y;
-            auto orig_x_b = vec_b.x;
-            auto orig_y_b = vec_b.y;
+            TestType orig_x_a = vec_a.x;
+            TestType orig_y_a = vec_a.y;
+            TestType orig_x_b = vec_b.x;
+            TestType orig_y_b = vec_b.y;
 
             vec_a += vec_b;
 
@@ -190,10 +190,10 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         }
 
         WHEN("the first is subtract-assigned with the second") {
-            auto orig_x_a = vec_a.x;
-            auto orig_y_a = vec_a.y;
-            auto orig_x_b = vec_b.x;
-            auto orig_y_b = vec_b.y;
+            TestType orig_x_a = vec_a.x;
+            TestType orig_y_a = vec_a.y;
+            TestType orig_x_b = vec_b.x;
+            TestType orig_y_b = vec_b.y;
 
             vec_a -= vec_b;
 
@@ -209,10 +209,10 @@ TEMPLATE_TEST_CASE("Vector2 operations behave correctly", "[Vector2]",
         }
 
         WHEN("the first is multiply-assigned with the second") {
-            auto orig_x_a = vec_a.x;
-            auto orig_y_a = vec_a.y;
-            auto orig_x_b = vec_b.x;
-            auto orig_y_b = vec_b.y;
+            TestType orig_x_a = vec_a.x;
+            TestType orig_y_a = vec_a.y;
+            TestType orig_x_b = vec_b.x;
+            TestType orig_y_b = vec_b.y;
 
             vec_a *= vec_b;
 
