@@ -109,7 +109,7 @@ namespace argus {
                 size_t minor_off = 0;
 
                 if (program.reflection.has_attr(SHADER_ATTRIB_POSITION)) {
-                    auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                    auto transformed_pos = vertex.position * transform;
                     mapped_buffer[major_off + minor_off++] = transformed_pos.x;
                     mapped_buffer[major_off + minor_off++] = transformed_pos.y;
                 }
@@ -195,7 +195,7 @@ namespace argus {
                 size_t major_off = total_vertices * vertex_len;
                 size_t minor_off = 0;
 
-                auto transformed_pos = multiply_matrix_and_vector(vertex.position, transform);
+                auto transformed_pos = vertex.position * transform;
                 mapped_buffer[major_off + minor_off++] = transformed_pos.x;
                 mapped_buffer[major_off + minor_off++] = transformed_pos.y;
 

@@ -71,17 +71,23 @@ namespace argus {
 
     Matrix4 &operator*=(Matrix4 &a, const Matrix4 &b);
 
+    Vector4f operator*(const Vector4f &vec, const Matrix4 &mat);
+
+    Vector4f operator*(const Vector3f &vec, const Matrix4 &mat);
+
+    Vector4f operator*(const Vector2f &vec, const Matrix4 &mat);
+
+    Vector4f &operator*=(Vector4f &vec, const Matrix4 &mat);
+
+    Vector4f &operator*=(Vector3f &vec, const Matrix4 &mat);
+
+    Vector4f &operator*=(Vector2f &vec, const Matrix4 &mat);
+
     typedef float mat4_flat_t[16];
 
     std::string mat4_to_str(Matrix4 matrix);
 
     std::string mat4_to_str(mat4_flat_t matrix);
-
-    Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat);
-
-    Vector4f multiply_matrix_and_vector(const Vector3f &vec, const Matrix4 &mat);
-
-    Vector4f multiply_matrix_and_vector(const Vector2f &vec, const Matrix4 &mat);
 
     void transpose_matrix(Matrix4 &mat);
 }
