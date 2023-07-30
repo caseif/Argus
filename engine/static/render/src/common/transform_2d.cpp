@@ -271,6 +271,8 @@ namespace argus {
         return {this->pimpl->translation.inverse(), -this->pimpl->rotation, this->pimpl->scale};
     }
 
+    // this allows the transform to automatically increment the version of an
+    // enclosing object
     void Transform2D::set_version_ref(uint16_t &version_ref) {
         this->pimpl->version_ptr = &version_ref;
     }

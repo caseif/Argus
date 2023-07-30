@@ -49,7 +49,8 @@ namespace argus {
                 translation(translation),
                 rotation(rotation),
                 scale(scale),
-                dirty_matrix(true) {
+                dirty_matrix(true),
+                version_ptr(nullptr) {
         }
 
         void set_dirty(void) {
