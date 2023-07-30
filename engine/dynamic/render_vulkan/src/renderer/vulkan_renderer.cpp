@@ -75,7 +75,7 @@ namespace argus {
             1.0, -1.0, 1.0, 0.0,
     };
 
-    static Matrix4 _compute_view_matrix(unsigned int res_hor, unsigned int res_ver) {
+    static Matrix4 _compute_proj_matrix(unsigned int res_hor, unsigned int res_ver) {
         // screen space is [0, 1] on both axes with the origin in the top-left
         auto l = 0;
         auto r = 1;
@@ -124,12 +124,12 @@ namespace argus {
         });
     }
 
-    static Matrix4 _compute_view_matrix(const Vector2u &resolution) {
-        return _compute_view_matrix(resolution.x, resolution.y);
+    static Matrix4 _compute_proj_matrix(const Vector2u &resolution) {
+        return _compute_proj_matrix(resolution.x, resolution.y);
     }
 
-    [[maybe_unused]] static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
-        return _compute_view_matrix(resolution.x, resolution.y);
+    [[maybe_unused]] static Matrix4 _compute_proj_matrix(const Vector2u &&resolution) {
+        return _compute_proj_matrix(resolution.x, resolution.y);
     }
 
     static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
@@ -154,12 +154,12 @@ namespace argus {
                 0, 0, 0, 1,
         });
         dest = Matrix4::identity();
-        multiply_matrices(dest, anchor_mat_1);
-        multiply_matrices(dest, transform.get_scale_matrix());
-        multiply_matrices(dest, transform.get_rotation_matrix());
-        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, _compute_proj_matrix(resolution));
         multiply_matrices(dest, transform.get_translation_matrix());
-        multiply_matrices(dest, _compute_view_matrix(resolution));
+        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, transform.get_rotation_matrix());
+        multiply_matrices(dest, transform.get_scale_matrix());
+        multiply_matrices(dest, anchor_mat_1);
     }
 
     static std::set<Scene *> _get_associated_scenes_for_canvas(Canvas &canvas) {

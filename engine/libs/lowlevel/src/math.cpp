@@ -51,7 +51,7 @@ namespace argus {
             for (int j = 0; j < 4; j++) {
                 res(i, j) = 0;
                 for (int k = 0; k < 4; k++) {
-                    res(i, j) += a(k, j) * b(i, k);
+                    res(i, j) += a(i, k) * b(k, j);
                 }
             }
         }
@@ -91,7 +91,7 @@ namespace argus {
     }
 
     void transpose_matrix(Matrix4 &mat) {
-        _swap_f(&(mat(0, 1)), &(mat(1, 4)));
+        _swap_f(&(mat(0, 1)), &(mat(1, 0)));
         _swap_f(&(mat(0, 2)), &(mat(2, 0)));
         _swap_f(&(mat(0, 3)), &(mat(3, 0)));
         _swap_f(&(mat(1, 2)), &(mat(2, 1)));

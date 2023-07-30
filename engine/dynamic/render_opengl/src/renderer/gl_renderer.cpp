@@ -65,7 +65,7 @@ namespace argus {
     // forward declarations
     class Scene2D;
 
-    static Matrix4 _compute_view_matrix(unsigned int res_hor, unsigned int res_ver) {
+    static Matrix4 _compute_proj_matrix(unsigned int res_hor, unsigned int res_ver) {
         // screen space is [0, 1] on both axes with the origin in the top-left
         auto l = 0;
         auto r = 1;
@@ -104,22 +104,21 @@ namespace argus {
         }
 
         return Matrix4::from_row_major({
-                2 / (float(r - l) * hor_scale), 0,                              0,
-                                                                                    -float(r + l) /
-                                                                                    (float(r - l) * hor_scale),
+                2 / (float(r - l) * hor_scale), 0,                              0, -float(r + l) /
+                                                                                   (float(r - l) * hor_scale),
                 0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
-                                                                                    (float(t - b) * ver_scale),
+                                                                                   (float(t - b) * ver_scale),
                 0,                              0,                              1, 0,
                 0,                              0,                              0, 1
         });
     }
 
-    static Matrix4 _compute_view_matrix(const Vector2u &resolution) {
-        return _compute_view_matrix(resolution.x, resolution.y);
+    static Matrix4 _compute_proj_matrix(const Vector2u &resolution) {
+        return _compute_proj_matrix(resolution.x, resolution.y);
     }
 
-    [[maybe_unused]] static Matrix4 _compute_view_matrix(const Vector2u &&resolution) {
-        return _compute_view_matrix(resolution.x, resolution.y);
+    [[maybe_unused]] static Matrix4 _compute_proj_matrix(const Vector2u &&resolution) {
+        return _compute_proj_matrix(resolution.x, resolution.y);
     }
 
     static void _recompute_2d_viewport_view_matrix(const Viewport &viewport, const Transform2D &transform,
@@ -131,25 +130,26 @@ namespace argus {
 
         auto cur_translation = transform.get_translation();
 
-        Matrix4 anchor_mat_1 = Matrix4::from_row_major({
+        [[maybe_unused]] Matrix4 anchor_mat_1 = Matrix4::from_row_major({
                 1, 0, 0, -center_x + cur_translation.x,
                 0, 1, 0, -center_y + cur_translation.y,
                 0, 0, 1, 0,
                 0, 0, 0, 1
         });
-        Matrix4 anchor_mat_2 = Matrix4::from_row_major({
+        [[maybe_unused]] Matrix4 anchor_mat_2 = Matrix4::from_row_major({
                 1, 0, 0, center_x - cur_translation.x,
                 0, 1, 0, center_y - cur_translation.y,
                 0, 0, 1, 0,
                 0, 0, 0, 1
         });
+
         dest = Matrix4::identity();
-        multiply_matrices(dest, anchor_mat_1);
-        multiply_matrices(dest, transform.get_scale_matrix());
-        multiply_matrices(dest, transform.get_rotation_matrix());
-        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, _compute_proj_matrix(resolution));
         multiply_matrices(dest, transform.get_translation_matrix());
-        multiply_matrices(dest, _compute_view_matrix(resolution));
+        multiply_matrices(dest, anchor_mat_2);
+        multiply_matrices(dest, transform.get_rotation_matrix());
+        multiply_matrices(dest, transform.get_scale_matrix());
+        multiply_matrices(dest, anchor_mat_1);
     }
 
     static std::set<Scene *> _get_associated_scenes_for_canvas(Canvas &canvas) {
