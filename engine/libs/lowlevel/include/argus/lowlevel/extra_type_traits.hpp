@@ -112,4 +112,13 @@ namespace argus {
     using remove_reference_wrapper_t = typename remove_reference_wrapper<T>::type;
 
     template<class> inline constexpr bool always_false_v = false;
+
+    template <typename T, template <typename...> typename Template>
+    struct is_specialization : std::false_type {};
+
+    template <template <typename...> typename Template, typename... Args>
+    struct is_specialization<Template<Args...>, Template> : std::true_type {};
+
+    template <typename T, template <typename...> typename Template>
+    constexpr bool is_specialization_v = is_specialization<T, Template>::value;
 }

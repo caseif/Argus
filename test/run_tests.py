@@ -54,7 +54,7 @@ bin_dir = sys.argv[1]
 
 run_tests_for("libs/lowlevel/test_lowlevel", [
     "[Dirtiable]",
-    "[Vector2]"
+    "[Vector]"
 ])
 
 exit(1 if any_failed else 0)

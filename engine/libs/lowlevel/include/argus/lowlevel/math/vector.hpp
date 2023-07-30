@@ -31,6 +31,8 @@ namespace argus {
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
     struct Vector4 {
+        using element_type = T;
+
         /**
          * \brief Union containing the first element of the vector.
          */
@@ -168,7 +170,7 @@ namespace argus {
          * @return The resultant scaled vector.
          */
         Vector4<T> operator/(T rhs) const {
-            return Vector4<T>(x / rhs, y / rhs, z * rhs, w * rhs);
+            return Vector4<T>(x / rhs, y / rhs, z / rhs, w / rhs);
         }
 
         /**
@@ -280,6 +282,8 @@ namespace argus {
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
     struct Vector3 {
+        using element_type = T;
+
         /**
          * \brief Union containing the first element of the vector.
          */
@@ -514,6 +518,8 @@ namespace argus {
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
     struct Vector2 {
+        using element_type = T;
+
         /**
          * \brief The first element of the vector.
          */
