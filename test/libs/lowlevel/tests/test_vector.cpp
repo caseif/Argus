@@ -19,7 +19,7 @@
 #include "test_global.hpp"
 
 #include "argus/lowlevel/extra_type_traits.hpp"
-#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/math/vector.hpp"
 
 #include "catch2/catch_all.hpp"
 
@@ -34,7 +34,7 @@ static constexpr unsigned int _get_vector_size(void) {
     }
 }
 
-TEMPLATE_TEST_CASE("Vector operations behave correctly", "[Vector]",
+TEMPLATE_TEST_CASE("Vector operations behave correctly", "[math][Vector]",
         argus::Vector2d, argus::Vector2f, argus::Vector2i, argus::Vector2u,
         argus::Vector3d, argus::Vector3f, argus::Vector3i, argus::Vector3u,
         argus::Vector4d, argus::Vector4f, argus::Vector4i, argus::Vector4u) {
