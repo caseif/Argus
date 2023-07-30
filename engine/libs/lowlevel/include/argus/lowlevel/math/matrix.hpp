@@ -36,6 +36,14 @@ namespace argus {
     };
 
     struct Matrix4 {
+        static Matrix4 from_row_major(const float elements[16]);
+
+        static Matrix4 from_row_major(const std::array<float, 16> &&elements);
+
+        static Matrix4 identity() {
+            return { IDENTITY };
+        }
+
         float data[16]{};
 
         Matrix4(const float elements[16]) {
@@ -56,13 +64,9 @@ namespace argus {
 
         float &operator()(int r, int c);
 
-        static Matrix4 from_row_major(const float elements[16]);
+        std::string to_string(void);
 
-        static Matrix4 from_row_major(const std::array<float, 16> &&elements);
-
-        static Matrix4 identity() {
-            return { IDENTITY };
-        }
+        void transpose(void);
     };
 
     #pragma pack(pop)
@@ -82,12 +86,4 @@ namespace argus {
     Vector4f &operator*=(Vector3f &vec, const Matrix4 &mat);
 
     Vector4f &operator*=(Vector2f &vec, const Matrix4 &mat);
-
-    typedef float mat4_flat_t[16];
-
-    std::string mat4_to_str(Matrix4 matrix);
-
-    std::string mat4_to_str(mat4_flat_t matrix);
-
-    void transpose_matrix(Matrix4 &mat);
 }
