@@ -143,13 +143,13 @@ namespace argus {
                 0, 0, 1, 0,
                 0, 0, 0, 1,
         });
-        dest = Matrix4::identity();
-        multiply_matrices(dest, _compute_proj_matrix(resolution));
-        multiply_matrices(dest, transform.get_translation_matrix());
-        multiply_matrices(dest, anchor_mat_2);
-        multiply_matrices(dest, transform.get_rotation_matrix());
-        multiply_matrices(dest, transform.get_scale_matrix());
-        multiply_matrices(dest, anchor_mat_1);
+        auto view_mat = transform.get_translation_matrix()
+                * anchor_mat_2
+                * transform.get_rotation_matrix()
+                * transform.get_scale_matrix()
+                * anchor_mat_1;
+
+        dest = _compute_proj_matrix(resolution) * view_mat;
     }
 
     static std::set<Scene *> _get_associated_scenes_for_canvas(Canvas &canvas) {

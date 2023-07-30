@@ -39,9 +39,7 @@ namespace argus {
             cur = parent;
             parent = parent->get_parent_group();
 
-            Matrix4 new_transform;
-
-            multiply_matrices(target, cur->peek_transform().as_matrix({0, 0}), new_transform);
+            Matrix4 new_transform = target * cur->peek_transform().as_matrix({0, 0});
 
             target = new_transform;
         }
@@ -62,7 +60,7 @@ namespace argus {
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            multiply_matrices(group_transform.as_matrix({0, 0}), running_transform, cur_transform);
+            cur_transform = group_transform.as_matrix({0, 0}) * running_transform;
 
             new_recompute_transform = true;
         } else if (group.pimpl->version != cur_version_map[group.pimpl->handle]) {
@@ -85,13 +83,13 @@ namespace argus {
             new_version_map[child_object->pimpl->handle] = child_object->pimpl->version;
 
             if (new_recompute_transform) {
-                multiply_matrices(cur_transform, obj_transform.as_matrix(obj_anchor), final_obj_transform);
+                final_obj_transform = cur_transform * obj_transform.as_matrix(obj_anchor);
             } else if (obj_dirty) {
                 // parent transform hasn't been computed so we need to do it here
                 Matrix4 group_abs_transform;
                 _compute_abs_group_transform(group, group_abs_transform);
 
-                multiply_matrices(group_abs_transform, obj_transform.as_matrix(obj_anchor), final_obj_transform);
+                final_obj_transform = group_abs_transform * obj_transform.as_matrix(obj_anchor);
             }
             // don't need to compute anything otherwise, update function will just mark the object as visited
 

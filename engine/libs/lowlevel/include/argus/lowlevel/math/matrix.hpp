@@ -67,15 +67,15 @@ namespace argus {
 
     #pragma pack(pop)
 
+    Matrix4 operator*(const Matrix4 &a, const Matrix4 &b);
+
+    Matrix4 &operator*=(Matrix4 &a, const Matrix4 &b);
+
     typedef float mat4_flat_t[16];
 
     std::string mat4_to_str(Matrix4 matrix);
 
     std::string mat4_to_str(mat4_flat_t matrix);
-
-    void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res);
-
-    void multiply_matrices(Matrix4 &a, const Matrix4 &b);
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat);
 

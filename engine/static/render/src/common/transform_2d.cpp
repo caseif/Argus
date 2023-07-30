@@ -214,12 +214,12 @@ namespace argus {
         });
         UNUSED(anchor_mat_1);
         UNUSED(anchor_mat_2);
-        transform.pimpl->matrix_rep = Matrix4::identity();
-        multiply_matrices(transform.pimpl->matrix_rep, transform.get_translation_matrix());
-        multiply_matrices(transform.pimpl->matrix_rep, anchor_mat_2);
-        multiply_matrices(transform.pimpl->matrix_rep, transform.get_rotation_matrix());
-        multiply_matrices(transform.pimpl->matrix_rep, transform.get_scale_matrix());
-        multiply_matrices(transform.pimpl->matrix_rep, anchor_mat_1);
+        transform.pimpl->matrix_rep
+                = transform.get_translation_matrix()
+                * anchor_mat_2
+                * transform.get_rotation_matrix()
+                * transform.get_scale_matrix()
+                * anchor_mat_1;
     }
 
     static void _compute_matrices(const Transform2D &transform, const Vector2f &anchor_point) {

@@ -46,7 +46,9 @@ namespace argus {
         return this->data[c * 4 + r];
     }
 
-    void multiply_matrices(const Matrix4 &a, const Matrix4 &b, Matrix4 &res) {
+    Matrix4 operator*(const Matrix4 &a, const Matrix4 &b) {
+        Matrix4 res;
+
         // naive implementation
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
@@ -56,12 +58,14 @@ namespace argus {
                 }
             }
         }
+
+        return res;
     }
 
-    void multiply_matrices(Matrix4 &a, const Matrix4 &b) {
-        Matrix4 res;
-        multiply_matrices(a, b, res);
+    Matrix4 &operator*=(Matrix4 &a, const Matrix4 &b) {
+        Matrix4 res = a * b;
         std::memcpy(a.data, res.data, sizeof(a.data));
+        return a;
     }
 
     Vector4f multiply_matrix_and_vector(const Vector4f &vec, const Matrix4 &mat) {
