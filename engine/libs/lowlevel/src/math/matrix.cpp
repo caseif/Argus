@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/math/matrix.hpp"
+#include "argus/lowlevel/math/vector.hpp"
 
 #include <array>
 #include <string>
