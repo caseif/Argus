@@ -47,10 +47,19 @@ def run_tests_for(module, test_cases):
             eprint("Test case %s in executable %s failed" % (test_case, exe_name))
 
 
+cwd = os.getcwd()
+
 if len(sys.argv) != 2:
     raise ValueError("Invalid arguments! Usage: ./run_tests.py <binary dir>")
 
-bin_dir = sys.argv[1]
+bin_dir = os.path.join(cwd, sys.argv[1])
+
+if os.name == "nt":
+    path = os.environ.get("PATH")
+
+    new_path = path + os.pathsep + os.path.join(bin_dir, "dist", "lib")
+
+    os.environ["PATH"] = new_path
 
 run_tests_for("libs/lowlevel/test_lowlevel", [
     "[Dirtiable]",
