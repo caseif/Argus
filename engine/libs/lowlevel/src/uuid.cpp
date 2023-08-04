@@ -58,7 +58,7 @@ namespace argus {
         auto uuid_bytes = CFUUIDGetUUIDBytes(uuid_ref);
 
         argus::Uuid final;
-        std::memcpy(final.data, uuid_bytes, sizeof(final.data));
+        std::memcpy(final.data, &uuid_bytes, sizeof(final.data));
 
         return final;
     }
