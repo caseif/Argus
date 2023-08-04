@@ -92,3 +92,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     "$<TARGET_FILE:${PROJECT_NAME}>"
     "${TEST_BINARY_DEST}/"
     COMMENT "Copying binary for test set '${PROJECT_NAME}' to output directory")
+
+if(ENABLE_CTEST)
+  enable_testing()
+endif()

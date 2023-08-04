@@ -7,7 +7,4 @@ endif()
 project(test_scripting
     LANGUAGES CXX)
 
-set(PROJECT_CXX_VERSION 17)
-set(PROJECT_CXX_EXTENSIONS NO)
-
 include("${ARGUS_ROOT_DIR}/cmake/test/BuildTests.cmake")

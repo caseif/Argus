@@ -1,6 +1,10 @@
 set(EXT_LIBS_DIR "${CMAKE_SOURCE_DIR}/external/libs")
 set(EXT_SPECS_DIR "${CMAKE_SOURCE_DIR}/external/specs")
 
+# disable CTest for external projects
+set(ENABLE_CTEST_SAVED "${ENABLE_CTEST}")
+set(ENABLE_CTEST OFF)
+
 set(GLFW_SOURCE_DIR "${EXT_LIBS_DIR}/glfw")
 set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
 set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
@@ -120,3 +124,6 @@ if(TARGET minigzip64)
 endif()
 set_target_properties(pngfix PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+# pop original value of ENABLE_CTEST option
+set(ENABLE_CTEST "${ENABLE_CTEST_SAVED}")

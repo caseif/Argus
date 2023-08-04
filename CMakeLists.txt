@@ -46,6 +46,7 @@ set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
 set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
 set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 
+option(ENABLE_CTEST "Enable testing" ON)
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGL_LEGACY_BACKEND "Build the legacy OpenGL-based render backend" ON)
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
@@ -71,6 +72,18 @@ include(ExternalProject)
 
 ######################
 # /CMake configuration
+######################
+
+#####################
+# CTest configuration
+#####################
+
+# disable tests for external subprojects that don't provide an option
+# (currently just zlib)
+configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR})
+
+######################
+# /CTest configuration
 ######################
 
 ########################
@@ -300,5 +313,9 @@ _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${GLFW_LIBRARY_BASE}" "
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LUA_LIBRARY}" ".")
 #_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ANGELSCRIPT_LIBRARY}" ".")
 _argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${ARP_LIBRARY_BASE}" ".")
+
+if(ENABLE_CTEST)
+  enable_testing()
+endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/test")
