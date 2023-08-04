@@ -1,159 +1,69 @@
 name: Argus
 on: [push, pull_request]
 jobs:
-  build-ubuntu-gcc-debug:
-    runs-on: ubuntu-22.04
+  Build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+        compiler: [gcc, clang, msvc]
+        configuration: [Release, Debug]
+        exclude:
+          - os: windows-2022
+            compiler: gcc
+          - os: windows-2022
+            compiler: clang
+          - os: ubuntu-22.04
+            compiler: msvc
+    runs-on: ${{ matrix.os }}
+
     steps:
+    - name: Set env vars for current matrix configuration
+      shell: pwsh
+      run: |
+        if ("${{ matrix.os }}" -match "windows") {
+            echo "OS_NAME=windows" >> "$env:GITHUB_ENV"
+        } elseif ("${{ matrix.os }}" -match "ubuntu") {
+            echo "OS_NAME=ubuntu" >> "$env:GITHUB_ENV"
+        }
+        $os_name = if ($env:RUNNER_OS -match "windows") { "windows" } else { "ubuntu" }
+        $config_name = "${{ matrix.configuration }}".ToLower()
+        echo "CONFIG_NAME=$config_name" >> $env:GITHUB_ENV
+
+    - name: Update PATH
+      shell: pwsh
+      run: echo "${{ github.workspace }}/build/dist/lib" >> "$env:GITHUB_PATH"
+
+    - name: Set env vars for GCC
+      run: |
+        echo "CC=gcc" >> "$GITHUB_ENV"
+        echo "CXX=g++" >> "$GITHUB_ENV"
+      if: matrix.compiler == 'gcc'
+
+    - name: Set env vars for Clang
+      run: |
+        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CXX=clang++" >> "$GITHUB_ENV"
+      if: matrix.compiler == 'clang'
+
     - uses: actions/checkout@v3
       with:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
+
     - uses: ruby/setup-ruby@v1
       with:
         working-directory: external/tooling/aglet
         ruby-version: '3.0'
         bundler-cache: true
-    - name: Install dependencies
+
+    - name: Install dependencies (Ubuntu)
       run: |
         sudo apt-get update
         sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
-    - name: Configure
-      run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Debug ..
-      env:
-        CC: gcc
-    - name: Build
-      run: cmake --build build --config Debug --parallel 8
-    - name: Run Tests
-      working-directory: build
-      run: ctest -C Debug
-    - name: Archive
-      uses: actions/upload-artifact@v3
-      with:
-        name: argus_dist_linux_debug
-        path: build/dist/
+      if: startsWith(matrix.os, 'ubuntu')
 
-  build-ubuntu-gcc-release:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{secrets.ACCESS_TOKEN}}
-          submodules: recursive
-      - uses: ruby/setup-ruby@v1
-        with:
-          working-directory: external/tooling/aglet
-          ruby-version: '3.0'
-          bundler-cache: true
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
-      - name: Configure
-        run: | 
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-        env:
-          CC: gcc
-      - name: Build
-        run: cmake --build build --config Release --parallel 8
-      - name: Run Tests
-        working-directory: build
-        run: ctest -C Release
-      - name: Archive
-        uses: actions/upload-artifact@v3
-        with:
-          name: argus_dist_linux_release
-          path: build/dist/
-
-  build-ubuntu-clang-debug:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{secrets.ACCESS_TOKEN}}
-        submodules: recursive
-    - uses: ruby/setup-ruby@v1
-      with:
-        working-directory: external/tooling/aglet
-        ruby-version: '3.0'
-        bundler-cache: true
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
-    - name: Configure
-      run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Debug ..
-      env:
-        CC: clang
-        CXX: clang++
-    - name: Build
-      run: cmake --build build --config Debug --parallel 8
-    - name: Run Tests
-      working-directory: build
-      run: ctest -C Debug
-    - name: Archive
-      uses: actions/upload-artifact@v3
-      with:
-        name: argus_dist_linux_debug
-        path: build/dist/
-
-  build-ubuntu-clang-release:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{secrets.ACCESS_TOKEN}}
-          submodules: recursive
-      - uses: ruby/setup-ruby@v1
-        with:
-          working-directory: external/tooling/aglet
-          ruby-version: '3.0'
-          bundler-cache: true
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-        env:
-          CC: clang
-          CXX: clang++
-      - name: Build
-        run: cmake --build build --config Release --parallel 8
-      - name: Run Tests
-        working-directory: build
-        run: ctest -C Release
-      - name: Archive
-        uses: actions/upload-artifact@v3
-        with:
-          name: argus_dist_linux_release
-          path: build/dist/
-
-  build-windows-debug:
-    runs-on: windows-2022
-    env:
-      VULKAN_SDK: C:\VulkanSDK\
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{secrets.ACCESS_TOKEN}}
-        submodules: recursive
-    - uses: ruby/setup-ruby@v1
-      with:
-        working-directory: external/tooling/aglet
-        ruby-version: '3.0'
-        bundler-cache: true
-    - name: Setup Vulkan SDK
+    - name: Setup Vulkan SDK (Windows)
       run: |
         $ver = (Invoke-WebRequest -Uri "https://vulkan.lunarg.com/sdk/latest.json" | ConvertFrom-Json).windows
         echo Version $ver
@@ -161,60 +71,29 @@ jobs:
         Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/$ver/windows/VulkanSDK-$ver-Installer.exe" -OutFile VulkanSDK.exe
         echo Downloaded
         .\VulkanSDK.exe --root C:\VulkanSDK  --accept-licenses --default-answer --confirm-command install
+        echo "VULKAN_SDK=C:\VulkanSDK\" >> "$env:GITHUB_ENV"
+      if: startsWith(matrix.os, 'windows')
+
     - name: Configure
+      shell: pwsh
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Debug ..
+        if ("${{ matrix.os }}" -match "windows") {
+            cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
+        } elseif ("${{ matrix.os }}" -match "ubuntu") {
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
+        }
+
     - name: Build
-      run: cmake --build build --config Debug --parallel 8
+      run: cmake --build build --config ${{ matrix.configuration }} --parallel 2
+
     - name: Run Tests
       working-directory: build
-      run: |
-        echo ".\dist\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        ctest -C Debug
+      run: ctest -C ${{ matrix.configuration }}
+
     - name: Archive
       uses: actions/upload-artifact@v3
       with:
-        name: argus_dist_windows_debug
+        name: argus_dist_${{ env.OS_NAME }}_${{ matrix.compiler }}_${{ env.CONFIG_NAME }}
         path: build/dist/
-
-  build-windows-release:
-    runs-on: windows-2022
-    env:
-      VULKAN_SDK: C:\VulkanSDK\
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{secrets.ACCESS_TOKEN}}
-          submodules: recursive
-      - uses: ruby/setup-ruby@v1
-        with:
-          working-directory: external/tooling/aglet
-          ruby-version: '3.0'
-          bundler-cache: true
-      - name: Setup Vulkan SDK
-        run: |
-          $ver = (Invoke-WebRequest -Uri "https://vulkan.lunarg.com/sdk/latest.json" | ConvertFrom-Json).windows
-          echo Version $ver
-          $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/$ver/windows/VulkanSDK-$ver-Installer.exe" -OutFile VulkanSDK.exe
-          echo Downloaded
-          .\VulkanSDK.exe --root C:\VulkanSDK  --accept-licenses --default-answer --confirm-command install
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Release ..
-      - name: Build
-        run: cmake --build build --config Release --parallel 8
-      - name: Run Tests
-        working-directory: build
-        run: |
-          echo ".\dist\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          ctest -C Release
-      - name: Archive
-        uses: actions/upload-artifact@v3
-        with:
-          name: argus_dist_windows_release
-          path: build/dist/
