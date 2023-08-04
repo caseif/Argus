@@ -5,7 +5,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022]
+        os: [ubuntu-22.04, windows-2022, macos-12]
         compiler: [gcc, clang, msvc]
         configuration: [Release, Debug]
         exclude:
@@ -14,6 +14,8 @@ jobs:
           - os: windows-2022
             compiler: clang
           - os: ubuntu-22.04
+            compiler: msvc
+          - os: macos-12
             compiler: msvc
     runs-on: ${{ matrix.os }}
 
@@ -80,6 +82,8 @@ jobs:
             cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
         } elseif ("$env:OS_NAME" -eq "linux") {
             cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
+        } elseif ("$env:OS_NAME" -eq "macos") {
+            cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration }} -DBUILD_VULKAN_BACKEND=OFF ..
         }
 
     - name: Build
