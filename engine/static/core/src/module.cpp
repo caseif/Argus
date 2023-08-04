@@ -99,10 +99,13 @@ namespace argus {
                 continue;
             }
 
-            if (strlen(SHARED_LIB_PREFIX) > 0
-                && entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
-                Logger::default_logger().debug("Ignoring module file %s with non-library prefix", filename.c_str());
-                continue;
+            // use constexpr condition to avoid dead code warning when
+            // SHARED_LIB_PREFIX is empty string
+            if constexpr (sizeof(SHARED_LIB_PREFIX) > 1) {
+                if (entry.path().filename().stem().string().rfind(SHARED_LIB_PREFIX, 0) != 0) {
+                    Logger::default_logger().debug("Ignoring module file %s with non-library prefix", filename.c_str());
+                    continue;
+                }
             }
 
             if (entry.path().extension() != EXTENSION_SEPARATOR SHARED_LIB_EXT) {
