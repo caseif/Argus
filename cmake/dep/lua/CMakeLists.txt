@@ -51,7 +51,6 @@ else()
       "$<$<CXX_COMPILER_ID:GNU>:-Wno-aggressive-loop-optimizations>")
 endif()
 
-message("${PROJECT_NAME}")
 if(APPLE)
   target_compile_definitions("${PROJECT_NAME}" PRIVATE "-DLUA_USE_MACOS")
   find_library(READLINE_LIBRARY NAMES readline)
