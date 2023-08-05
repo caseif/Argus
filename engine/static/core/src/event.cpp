@@ -108,7 +108,7 @@ namespace argus {
                 break;
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", uint(target_thread));
+                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", unsigned(target_thread));
             }
         }
 
@@ -132,7 +132,7 @@ namespace argus {
                 break;
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", uint(target_thread));
+                Logger::default_logger().fatal("Unrecognized target thread ordinal %u", unsigned(target_thread));
             }
         }
 

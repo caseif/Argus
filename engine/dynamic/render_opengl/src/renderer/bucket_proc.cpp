@@ -102,7 +102,7 @@ namespace argus {
                     glCreateBuffers(1, &bucket->vertex_buffer);
                     glNamedBufferData(bucket->vertex_buffer, GLsizei(buffer_len), nullptr, GL_DYNAMIC_COPY);
 
-                    auto stride = vertex_len * uint(sizeof(GLfloat));
+                    auto stride = vertex_len * unsigned(sizeof(GLfloat));
                     affirm_precond(stride <= INT_MAX, "Vertex stride is too big");
 
                     glVertexArrayVertexBuffer(bucket->vertex_array, BINDING_INDEX_VBO, bucket->vertex_buffer, 0,
