@@ -34,9 +34,9 @@ namespace argus {
         friend class System;
 
       private:
-        std::string name;
-        std::vector<std::type_index> types;
-        EntityCallback callback;
+        std::string m_name;
+        std::vector<std::type_index> m_types;
+        EntityCallback m_callback;
 
         SystemBuilder(void) = default;
 

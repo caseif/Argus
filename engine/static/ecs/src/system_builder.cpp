@@ -30,13 +30,13 @@ namespace argus {
     SystemBuilder &SystemBuilder::with_name(std::string name) {
         validate_arg(!name.empty(), "System name must be non-empty");
 
-        this->name = name;
+        m_name = name;
 
         return *this;
     }
 
     SystemBuilder &SystemBuilder::targets(std::type_index type) {
-        this->types.push_back(type);
+        m_types.push_back(type);
 
         return *this;
     }
@@ -44,17 +44,17 @@ namespace argus {
     SystemBuilder &SystemBuilder::with_callback(EntityCallback callback) {
         validate_arg(callback != nullptr, "System callback must be non-null");
 
-        this->callback = callback;
+        m_callback = callback;
 
         return *this;
     }
 
     System &SystemBuilder::build(void) {
         validate_state(!g_ecs_initialized, "Systems may not be registered beyond the init lifecycle stage");
-        validate_state(!this->name.empty(), "Name must be supplied before building system");
-        validate_state(!this->types.empty(), "At least one component type must be supplied before building system");
-        validate_state(this->callback != nullptr, "Callback must be supplied before building system");
+        validate_state(!m_name.empty(), "Name must be supplied before building system");
+        validate_state(!m_types.empty(), "At least one component type must be supplied before building system");
+        validate_state(m_callback != nullptr, "Callback must be supplied before building system");
 
-        return System::create(this->name, this->types, this->callback);
+        return System::create(m_name, m_types, m_callback);
     }
 }
