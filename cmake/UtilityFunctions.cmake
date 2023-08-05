@@ -223,7 +223,7 @@ function(_argus_disable_warnings targets)
     if(TARGET_CXX_FLAGS)
       # remove any present warning flags
       if(MSVC)
-        list(FILTER TARGET_CXX_FLAGS EXCLUDE REGEX "^(-W[0-4])|(\\$<\\$<(.*)>:-W[0-4]>)$")
+        list(FILTER TARGET_CXX_FLAGS EXCLUDE REGEX "^(/W[0-4])|(\\$<\\$<(.*)>:/W[0-4]>)$")
       elseif(GCC OR CLANG)
         list(FILTER TARGET_CXX_FLAGS EXCLUDE REGEX "^(-W)|(\\$<\\$<(.*)>:-W(.*)>$)")
       else()
