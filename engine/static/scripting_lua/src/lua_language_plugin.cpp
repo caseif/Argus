@@ -566,7 +566,7 @@ namespace argus {
             if (retval.type.type != IntegralType::Void) {
                 try {
                     _push_value(state, retval);
-                } catch (const std::exception &ex) {
+                } catch (const std::exception &) {
                     Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
                 }
 
