@@ -54,7 +54,7 @@ namespace argus {
 
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
-        #pragma warning(push)
+    #pragma warning(push)
     #pragma warning(disable : 4200)
     #endif
     struct UserData {

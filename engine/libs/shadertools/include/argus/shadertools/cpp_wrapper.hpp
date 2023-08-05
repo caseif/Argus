@@ -58,7 +58,7 @@ namespace argus {
             auto compat_struct = reinterpret_cast<SizedByteArrayWithIndex *>(source + off);
             auto index = compat_struct->index;
             std::string name(reinterpret_cast<const char *>(compat_struct->data), compat_struct->size);
-            dest.insert({name, index});
+            dest.insert({name, uint32_t(index)});
 
             off += sizeof(SizedByteArrayWithIndex) + compat_struct->size;
         }

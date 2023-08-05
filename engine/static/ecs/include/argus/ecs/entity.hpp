@@ -33,11 +33,11 @@ namespace argus {
 
     class EntityBuilder;
 
-// disable non-standard extension warning for flexible array member
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4200)
-#endif
+    // disable non-standard extension warning for zero-sized array member
+    #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4200)
+    #endif
 
     class Entity {
       private:
@@ -74,7 +74,7 @@ namespace argus {
         }
     };
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+    #ifdef _MSC_VER
+    #pragma warning(pop)
+    #endif
 }

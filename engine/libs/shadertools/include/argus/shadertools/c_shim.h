@@ -24,10 +24,18 @@
 #include <cstdint>
 
 extern "C" {
+// disable non-standard extension warning for zero-sized array member
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4200)
+#endif
 struct SizedByteArray {
     size_t size;
     const uint8_t data[0];
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 struct SizedByteArrayWithIndex {
     size_t size;

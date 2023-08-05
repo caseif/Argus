@@ -69,7 +69,7 @@ namespace argus {
 //   chunk - a section of contiguous memory used to store multiple pool objects.
 //           a pool may contain many non-contiguous chunks.
 
-// disable non-standard extension warning for flexible array member
+// disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4200)
