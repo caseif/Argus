@@ -31,10 +31,6 @@ jobs:
         $config_name = "${{ matrix.configuration }}".ToLower()
         echo "CONFIG_NAME=$config_name" >> $env:GITHUB_ENV
 
-    - name: Update PATH
-      shell: pwsh
-      run: echo "${{ github.workspace }}/build/dist/lib" >> "$env:GITHUB_PATH"
-
     - name: Set env vars for GCC
       shell: pwsh
       run: |

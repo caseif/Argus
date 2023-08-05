@@ -8,7 +8,9 @@ set(PROJECT_CXX_VERSION 17)
 set(PROJECT_CXX_EXTENSIONS NO)
 
 set(LIBARGUS_NAME "argus")
+set(ARGUS_DIST_DIR "${CMAKE_BINARY_DIR}/dist")
 set(ARGUS_INCLUDE_DIR "${CMAKE_BINARY_DIR}/dist/include")
+set(ARGUS_LIB_DIR "${CMAKE_BINARY_DIR}/dist/lib")
 
 string(REPLACE "${ARGUS_ROOT_DIR}/test/" "" TEST_REL_PATH "${PROJECT_SOURCE_DIR}")
 
@@ -96,3 +98,9 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 if(ENABLE_CTEST)
   enable_testing()
 endif()
+
+list(APPEND CMAKE_MODULE_PATH "${CATCH2_SOURCE_DIR}/extras")
+include(CTest)
+include(Catch)
+catch_discover_tests("${PROJECT_NAME}"
+    WORKING_DIRECTORY "${ARGUS_LIB_DIR}")
