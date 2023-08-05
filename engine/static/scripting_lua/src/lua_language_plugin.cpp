@@ -83,6 +83,7 @@ namespace argus {
 
         [[nodiscard]] ObjectWrapper call(const std::vector<ObjectWrapper> &params) const {
             auto initial_top = lua_gettop(state);
+            UNUSED(initial_top);
 
             lua_rawgeti(state, LUA_REGISTRYINDEX, ref_key);
 
@@ -384,6 +385,7 @@ namespace argus {
     static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
         auto mt = luaL_getmetatable(state,
                 ((wrapper.type.is_const ? "const " : "") + wrapper.type.type_name.value()).c_str());
+        UNUSED(mt);
         assert(mt != 0); // binding should have failed if type wasn't bound
 
         lua_setmetatable(state, -2);
@@ -800,6 +802,7 @@ namespace argus {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
         auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
 
         _bind_type(state, type);
 
@@ -811,6 +814,7 @@ namespace argus {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
         auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
 
         _bind_type_function(state, type.name, fn);
 
@@ -821,6 +825,7 @@ namespace argus {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
         auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
 
         _bind_global_fn(state, fn);
 
@@ -831,6 +836,7 @@ namespace argus {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
         auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
 
         _bind_enum(state, enum_def);
 
@@ -846,6 +852,7 @@ namespace argus {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
         auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
 
         lua_getglobal(state, name.c_str());
 
