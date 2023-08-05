@@ -21,14 +21,6 @@
 #include <stdexcept>
 #include <system_error>
 
-#ifdef _WIN32
-#include <Windows.h>
-
-#ifndef errno
-#define errno WSAGetLastError()
-#endif
-#endif
-
 #define validate_arg(cond, what) _validate_arg(cond, __func__, what)
 #define validate_arg_not(cond, what) validate_arg(!(cond), what)
 #define validate_state(cond, what) _validate_state(cond, __func__, what)
