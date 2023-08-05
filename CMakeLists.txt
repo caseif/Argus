@@ -119,6 +119,10 @@ set(INCLUDE_DIR_NAME "include")
 set(MODULE_DEFS_HPP_IN "${STATIC_MODULES_SRC_DIR}/core/${INCLUDE_DIR_NAME}/internal/core/module_defs.hpp.in")
 set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INCLUDE_DIR_NAME}/internal/core/module_defs.hpp")
 
+if(APPLE)
+  find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+endif()
+
 ###########################
 # /Dependency configuration
 ###########################
