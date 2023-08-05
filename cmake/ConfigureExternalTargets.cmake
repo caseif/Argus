@@ -125,5 +125,15 @@ endif()
 set_target_properties(pngfix PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+# disable warnings for subprojects
+_argus_disable_warnings(${GLFW_LIBRARY})
+_argus_disable_warnings(${ZLIB_LIBRARY})
+_argus_disable_warnings(${PNG_LIBRARY})
+_argus_disable_warnings(${GLSLANG_LIBRARY})
+_argus_disable_warnings(${SPIRV_CROSS_LIBRARY})
+_argus_disable_warnings(${LUA_LIBRARY})
+#_argus_disable_warnings(${ANGELSCRIPT_LIBRARY})
+_argus_disable_warnings(${CATCH2_LIBRARY})
+
 # pop original value of ENABLE_CTEST option
 set(ENABLE_CTEST "${ENABLE_CTEST_SAVED}")

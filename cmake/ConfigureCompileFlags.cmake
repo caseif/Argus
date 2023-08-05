@@ -47,8 +47,7 @@ function(_argus_set_compile_flags TARGET)
       "$<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>")
 
     # -Wmismatched-tags is only available in Clang or GCC 10+
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-       OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
+    if(CLANG OR (GCC AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
       target_compile_options("${TARGET}" PUBLIC
         "$<$<COMPILE_LANGUAGE:CXX>:-Werror=mismatched-tags>")
     endif()
@@ -58,7 +57,7 @@ function(_argus_set_compile_flags TARGET)
 
     target_compile_options("${TARGET}" PUBLIC "$<$<CONFIG:Release>:-O3>")
 
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CLANG)
       # enable pedantic errors, but with a few exceptions:
       #   - pasting , and __va_args__ so we can have a nice assert macro
       #   - anonymous structs, since there's no good standard alternative
@@ -84,7 +83,7 @@ function(_argus_set_compile_flags TARGET)
           "-fsanitize=leak"
           "-fno-omit-frame-pointer")
       endif()
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    elseif(GCC)
       target_compile_options("${TARGET}" PUBLIC "-Wno-variadic-macros" "-Wno-error=unknown-pragmas")
     endif()
   endif()

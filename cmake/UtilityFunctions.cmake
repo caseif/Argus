@@ -210,3 +210,38 @@ function(_argus_append_source_files TARGET DIR)
     target_sources("${TARGET}" PRIVATE "${file}")
   endforeach()
 endfunction()
+
+function(_argus_disable_warnings targets)
+  foreach(target ${targets})
+    if(NOT TARGET "${target}")
+      message(WARNING "Target '${target}' does not exist")
+      return()
+    endif()
+
+    get_target_property(TARGET_CXX_FLAGS "${target}" COMPILE_OPTIONS)
+
+    if(TARGET_CXX_FLAGS)
+      # remove any present warning flags
+      if(MSVC)
+        list(FILTER TARGET_CXX_FLAGS EXCLUDE REGEX "^(-W[0-4])|(\\$<\\$<(.*)>:-W[0-4]>)$")
+      elseif(GCC OR CLANG)
+        list(FILTER TARGET_CXX_FLAGS EXCLUDE REGEX "^(-W)|(\\$<\\$<(.*)>:-W(.*)>$)")
+      else()
+        message(WARNING "Unknown compiler, unable to disable warnings for dependencies")
+        return()
+      endif()
+
+      # assign the modified flags back to the target
+      set_target_properties("${target}" PROPERTIES COMPILE_OPTIONS "${TARGET_CXX_FLAGS}")
+    endif()
+
+    # add flag to disable all warnings
+    if(MSVC)
+      target_compile_options(${target} PRIVATE "/w")
+    elseif(GCC OR CLANG)
+      target_compile_options(${target} PRIVATE "-w")
+    endif()
+
+    get_target_property(TARGET_CXX_FLAGS "${target}" COMPILE_OPTIONS)
+  endforeach()
+endfunction()
