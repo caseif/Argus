@@ -2,8 +2,9 @@ function(_argus_set_compile_flags TARGET)
   if(MSVC)
     target_compile_options("${TARGET}" PUBLIC
         "/W4" # -Wall
-        "/wd4996" # -Wno-deprecated
         "/wd4068" # -Wno-unknown-pragmas
+        "/wd4708" # assignment within cond expr
+        "/wd4996" # -Wno-deprecated
         "$<$<CONFIG:Debug>:/Od>")
     if(MSVC_VERSION LESS 1911)
       target_compile_options("${TARGET}" PUBLIC "$<$<CONFIG:Debug>:/DEBUG:FULL>")
