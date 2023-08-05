@@ -106,7 +106,7 @@ namespace argus {
             glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
             glEnableVertexAttribArray(attr_index);
             glVertexAttribPointer(attr_index, GLint(attr_len), GL_FLOAT, GL_FALSE,
-                    GLsizei(stride), reinterpret_cast<GLvoid *>(*attr_offset));
+                    GLsizei(stride), reinterpret_cast<GLvoid *>(uint64_t(*attr_offset)));
         }
 
         *attr_offset += attr_len * GLuint(sizeof(GLfloat));
