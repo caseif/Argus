@@ -76,7 +76,7 @@ namespace argus {
 
     static std::map<const Window *, VulkanRenderer *> g_renderer_map;
 
-    VKAPI_ATTR static VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    [[maybe_unused]] VKAPI_ATTR static VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
             VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
             void* user_data) {
         UNUSED(type);
@@ -131,7 +131,6 @@ namespace argus {
         vkCreateDebugUtilsMessengerEXT(inst, &debug_info, nullptr, &g_vk_debug_messenger);
         #else
         UNUSED(inst);
-        UNUSED(_debug_callback);
         #endif
     }
 
