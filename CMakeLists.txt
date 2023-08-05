@@ -286,6 +286,10 @@ set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # export all symbols (required on Windows)
 set_target_properties(${LIB_BASE_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+# set params for shared library output name
+set_target_properties("${LIB_BASE_NAME}" PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties("${LIB_BASE_NAME}" PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties("${LIB_BASE_NAME}" PROPERTIES DEBUG_POSTFIX "d")
 
 # add libraries for linking
 get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
