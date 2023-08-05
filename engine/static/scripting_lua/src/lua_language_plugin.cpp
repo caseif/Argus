@@ -52,10 +52,18 @@ namespace argus {
     static constexpr const char *k_lua_require = "require";
     static constexpr const char *k_lua_require_def = "default_require";
 
+    // disable non-standard extension warning for zero-sized array member
+    #ifdef _MSC_VER
+        #pragma warning(push)
+    #pragma warning(disable : 4200)
+    #endif
     struct UserData {
         bool is_handle;
         char data[0];
     };
+    #ifdef _MSC_VER
+    #pragma warning(pop)
+    #endif
 
     static ObjectWrapper _invoke_lua_function(lua_State *state, const std::vector<ObjectWrapper> &params,
             const std::optional<std::string> &fn_name = std::nullopt);
@@ -568,11 +576,11 @@ namespace argus {
                 assert(lua_gettop(state) == initial_top);
                 return 0;
             }
-        } catch (const TypeNotBoundException &ex) {
+        } catch (const TypeNotBoundException &) {
             _set_lua_error(state, "Type with name " + type_name + " is not bound");
             assert(lua_gettop(state) == initial_top);
             return 0;
-        } catch (const FunctionNotBoundException &ex) {
+        } catch (const FunctionNotBoundException &) {
             _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
             assert(lua_gettop(state) == initial_top);
             return 0;
@@ -639,7 +647,7 @@ namespace argus {
             try {
                 auto &res = plugin.load_resource(uid);
                 return _load_script(state, res);
-            } catch (const std::exception &ex) {
+            } catch (const std::exception &) {
                 // swallow
             }
         }
