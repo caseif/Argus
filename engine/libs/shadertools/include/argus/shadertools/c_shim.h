@@ -33,15 +33,15 @@ struct SizedByteArray {
     size_t size;
     const uint8_t data[0];
 };
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 struct SizedByteArrayWithIndex {
     size_t size;
     size_t index;
     const uint8_t data[0];
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 struct InteropShaderCompilationResult {
     bool success;
