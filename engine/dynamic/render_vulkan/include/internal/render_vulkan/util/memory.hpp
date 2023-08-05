@@ -22,10 +22,12 @@
 
 #include "vulkan/vulkan.h"
 
+#include <type_traits>
+
 #include <cstdint>
 
 namespace argus {
-    enum GraphicsMemoryPropCombos {
+    enum GraphicsMemoryPropCombos : VkMemoryPropertyFlags {
         DeviceRo = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         DeviceRw = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
         DeviceLazy = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT,
