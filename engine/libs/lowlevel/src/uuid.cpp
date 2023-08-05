@@ -28,9 +28,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreFoundation/CFUUID.h>
 #elif defined(__linux__)
-
 #include <uuid/uuid.h>
-
 #else
 #error "This OS is not supported at this time."
 #endif

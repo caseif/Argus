@@ -17,6 +17,8 @@ jobs:
             compiler: msvc
           - os: macos-12
             compiler: msvc
+          - os: macos-12
+            compiler: gcc
     runs-on: ${{ matrix.os }}
 
     steps:
