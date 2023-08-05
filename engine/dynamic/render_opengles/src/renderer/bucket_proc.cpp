@@ -59,7 +59,7 @@ namespace argus {
             assert(program_it != scene_state.parent_state.linked_programs.cend());
 
             // the program should have been linked during object processing
-            auto &program = scene_state.parent_state.linked_programs.find(bucket->material_res.uid)->second;
+            auto &program = program_it->second;
 
             auto attr_position_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION);
             auto attr_normal_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_NORMAL);
