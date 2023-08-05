@@ -1,6 +1,6 @@
 function(_argus_set_compile_flags TARGET)
   if(MSVC)
-    target_compile_options("${TARGET}" PUBLIC "/W4" "/wd4996"
+    target_compile_options("${TARGET}" PUBLIC "/W4" "/wd4996" "/wd4068"
         "$<$<CONFIG:Debug>:/Od>")
     if(MSVC_VERSION LESS 1911)
       target_compile_options("${TARGET}" PUBLIC "$<$<CONFIG:Debug>:/DEBUG:FULL>")
