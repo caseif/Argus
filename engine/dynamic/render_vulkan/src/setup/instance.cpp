@@ -50,7 +50,7 @@ namespace argus {
         return exts;
     }
 
-    static std::vector<VkLayerProperties> _get_available_layers(void) {
+    [[maybe_unused]] static std::vector<VkLayerProperties> _get_available_layers(void) {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
         std::vector<VkLayerProperties> available_layers(layer_count);
@@ -87,7 +87,6 @@ namespace argus {
         }
         #else
         UNUSED(layers);
-        UNUSED(_get_available_layers);
         #endif
 
         return true;
