@@ -26,14 +26,6 @@
 #include <mutex>
 #include <utility>
 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-
-#include <pthread.h> // need it for rwlock
-
-#endif
-
 namespace argus {
     /**
      * \brief A drop-in replacement for std::atomic for non-trvially copyable
