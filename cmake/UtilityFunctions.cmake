@@ -1,41 +1,139 @@
+function(add_file_action)
+  # Parse arguments
+  set(sv_args TARGET ACTION SOURCE DEST DEPENDS GENERATED_TARGET)
+  cmake_parse_arguments(PARSE_ARGV 0 ARG "${options}" "${sv_args}" "")
+
+  if(NOT ARG_TARGET OR NOT ARG_ACTION OR NOT ARG_SOURCE OR NOT ARG_DEST)
+    message(FATAL_ERROR "Missing required arguments")
+  endif()
+
+  set(TIMESTAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/timestamps)
+
+  string(MD5 DEST_HASH "${ARG_DEST}")
+
+  get_filename_component(DEST_DIR "${ARG_DEST}" DIRECTORY)
+
+  set(TIMESTAMP_FILE "${TIMESTAMP_DIR}/${DEST_HASH}.timestamp")
+
+  set(BUILT_COMMAND "${CMAKE_COMMAND}" "-E" "${ARG_ACTION}" "${ARG_SOURCE}" "${ARG_DEST}")
+
+  set(DEPENDS_LIST "")
+  if(ARG_DEPENDS)
+    list(APPEND DEPENDS_LIST "${ARG_DEPENDS}")
+  endif()
+  if(TARGET "${ARG_SOURCE}")
+    list(APPEND DEPENDS_LIST "${ARG_SOURCE}")
+  endif()
+
+  add_custom_command(OUTPUT "${TIMESTAMP_FILE}"
+      DEPENDS ${DEPENDS_LIST}
+      COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${DEST_DIR}"
+      COMMAND ${BUILT_COMMAND}
+      COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${TIMESTAMP_DIR}"
+      COMMAND "${CMAKE_COMMAND}" "-E" "touch" "${TIMESTAMP_FILE}")
+
+  set(GEN_TARGET_NAME "${ARG_ACTION}-${DEST_HASH}")
+  add_custom_target("${GEN_TARGET_NAME}" ALL
+      DEPENDS ${TIMESTAMP_FILE})
+
+  if(GENERATED_TARGET)
+    set("${GENERATED_TARGET}" "${GEN_TARGET_NAME}")
+  endif()
+endfunction()
+
+function(create_so_symlinks TARGET LIB_FILE_DIR)
+  if(WIN32)
+    return()
+  endif()
+
+  get_target_property(TARGET_SOVERSION "${TARGET}" SOVERSION)
+
+  if(TARGET_SOVERSION STREQUAL "TARGET_SOVERSION-NOTFOUND")
+    return()
+  endif()
+
+  get_target_property(TARGET_DEBUG_POSTFIX "${TARGET}" DEBUG_POSTFIX)
+  if(TARGET_DEBUG_POSTFIX STREQUAL "TARGET_DEBUG_POSTFIX-NOTFOUND")
+    set(TARGET_DEBUG_POSTFIX "")
+  endif()
+
+  get_target_property(TARGET_PREFIX "${TARGET}" PREFIX)
+  if(TARGET_PREFIX STREQUAL "TARGET_PREFIX-NOTFOUND")
+    set(TARGET_PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}")
+  endif()
+
+  get_target_property(TARGET_SUFFIX "${TARGET}" SUFFIX)
+  if(TARGET_SUFFIX STREQUAL "TARGET_SUFFIX-NOTFOUND")
+    set(TARGET_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  endif()
+
+  get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+  if(TARGET_OUT_NAME MATCHES "TARGET_OUT_NAME-NOTFOUND")
+    get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME)
+    if(TARGET_OUT_NAME MATCHES "TARGET_OUT_NAME-NOTFOUND")
+      get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+      if(TARGET_OUT_NAME MATCHES "TARGET_OUT_NAME-NOTFOUND")
+        get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME)
+        if(TARGET_OUT_NAME MATCHES "TARGET_OUT_NAME-NOTFOUND")
+          set(TARGET_OUT_NAME "${TARGET}")
+        endif()
+      endif()
+    endif()
+  endif()
+
+  string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type_lower)
+  if(build_type_lower MATCHES "debug")
+    set(SO_POSTFIX "${TARGET_DEBUG_POSTFIX}")
+  else()
+    set(SO_POSTFIX "")
+  endif()
+
+  if(APPLE)
+    set(LINK_MAJOR_NAME "${TARGET_PREFIX}${TARGET_OUT_NAME}${SO_POSTFIX}.${TARGET_SOVERSION}${TARGET_SUFFIX}")
+  else()
+    set(LINK_MAJOR_NAME "${TARGET_PREFIX}${TARGET_OUT_NAME}${SO_POSTFIX}${TARGET_SUFFIX}.${TARGET_SOVERSION}")
+  endif()
+
+  set(LINK_BASE_NAME "${TARGET_PREFIX}${TARGET_OUT_NAME}${SO_POSTFIX}${TARGET_SUFFIX}")
+
+  add_file_action(TARGET "${TARGET}"
+      TIMING "${TIMING}"
+      ACTION "create_symlink"
+      SOURCE "$<TARGET_FILE:${TARGET}>"
+      DEST "${LIB_FILE_DIR}/${LINK_MAJOR_NAME}"
+      GENERATED_TARGET SONAME_TARGET)
+
+  add_file_action(TARGET "${TARGET}"
+      TIMING "${TIMING}"
+      ACTION "create_symlink"
+      SOURCE "${LIB_FILE_DIR}/${LINK_MAJOR_NAME}"
+      DEST "${LIB_FILE_DIR}/${LINK_BASE_NAME}")
+endfunction()
+
 # init task to copy dependency output
-function(_argus_copy_dep_output DIST_DIR PARENT_TARGET DEP_TARGET PREFIX)
+function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
   if(PREFIX MATCHES "^$")
     set(PREFIX ".")
   endif()
 
-  set(LIB_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_FILE_NAME:${DEP_TARGET}>")
+  set(LIB_FILE_DIR "${DIST_DIR}/lib/${PREFIX}")
+  set(LIB_FILE_DEST_PATH "${LIB_FILE_DIR}/$<TARGET_FILE_NAME:${TARGET}>")
 
-  if("${PARENT_TARGET}" STREQUAL "${DEP_TARGET}")
-    add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E echo "Copying '${DEP_TARGET}' dist output to output directory"
-      COMMAND "${CMAKE_COMMAND}" -E copy
-        "$<TARGET_FILE:${DEP_TARGET}>"
-        "${LIB_FILE_DEST_PATH}")
-  else()
-    add_custom_command(TARGET ${PARENT_TARGET} PRE_LINK
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying '${DEP_TARGET}' dist output to output directory"
-        COMMAND "${CMAKE_COMMAND}" -E copy
-        "$<TARGET_FILE:${DEP_TARGET}>"
-        "${LIB_FILE_DEST_PATH}")
-  endif()
+  add_file_action(TARGET "${TARGET}"
+      ACTION "copy_if_different"
+      SOURCE "$<TARGET_FILE:${TARGET}>"
+      DEST "${LIB_FILE_DEST_PATH}")
+
+  create_so_symlinks("${TARGET}" "${LIB_FILE_DIR}")
 
   if(WIN32)
-    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${DEP_TARGET}>")
+    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${TARGET}>")
 
-    if("${PARENT_TARGET}" STREQUAL "${DEP_TARGET}")
-      add_custom_command(TARGET ${PARENT_TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying '${DEP_TARGET}' linker output to output directory"
-        COMMAND "${CMAKE_COMMAND}" -E copy
-          "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-          "${LINKER_FILE_DEST_PATH}")
-    else()
-      add_custom_command(TARGET ${PARENT_TARGET} PRE_LINK
-          COMMAND ${CMAKE_COMMAND} -E echo "Copying '${DEP_TARGET}' linker output to output directory"
-          COMMAND "${CMAKE_COMMAND}" -E copy
-          "$<TARGET_LINKER_FILE:${DEP_TARGET}>"
-          "${LINKER_FILE_DEST_PATH}")
-    endif()
+    add_file_action(TARGET "${TARGET}"
+        TIMING "${TIMING}"
+        ACTION "copy_if_different"
+        SOURCE "$<TARGET_LINKER_FILE:${TARGET}>"
+        DEST "${LINKER_FILE_DEST_PATH}")
   endif()
 endfunction()
 

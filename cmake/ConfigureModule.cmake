@@ -328,7 +328,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
                             optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endforeach()
 
-    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
+    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
