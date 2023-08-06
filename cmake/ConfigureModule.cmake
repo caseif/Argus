@@ -191,11 +191,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       file(GLOB_RECURSE res_files "${res_dir}/*")
       add_custom_command(OUTPUT "${arp_out_path}"
                         COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
-                                "-n" "argus"
-                                "-o" "${arp_out_dir}"
-                                "-f" "${arp_out_name}"
-                                "-c" "deflate"
-                                "-m" "${supp_mappings_path}"
+                                "--namespace" "argus"
+                                "--output" "${arp_out_dir}"
+                                "--name" "${arp_out_name}"
+                                "--compression" "deflate"
+                                "--mappings" "${supp_mappings_path}"
+                                "--quiet"
                         DEPENDS "${res_files}")
 
       add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
