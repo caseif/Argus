@@ -143,17 +143,19 @@ TEMPLATE_TEST_CASE("Vector operations behave correctly", "[math][Vector]",
             }
         }
 
-        WHEN("it is inverted") {
-            auto inv = vec.inverse();
+        if constexpr (std::is_signed_v<ElementType>) {
+            WHEN("it is inverted") {
+                auto inv = vec.inverse();
 
-            THEN("the values are negated") {
-                CHECK(inv.x == -vec.x);
-                CHECK(inv.y == -vec.y);
-                if constexpr (_get_vector_size<TestType>() >= 3) {
-                    CHECK(inv.z == -vec.z);
-                }
-                if constexpr (_get_vector_size<TestType>() >= 4) {
-                    CHECK(inv.w == -vec.w);
+                THEN("the values are negated") {
+                    CHECK(inv.x == -vec.x);
+                    CHECK(inv.y == -vec.y);
+                    if constexpr (_get_vector_size<TestType>() >= 3) {
+                        CHECK(inv.z == -vec.z);
+                    }
+                    if constexpr (_get_vector_size<TestType>() >= 4) {
+                        CHECK(inv.w == -vec.w);
+                    }
                 }
             }
         }

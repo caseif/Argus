@@ -270,6 +270,7 @@ namespace argus {
         }
 
         Vector4<T> inverse(void) const {
+            static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
             return {-x, -y, -z, -w};
         }
     };
@@ -506,6 +507,7 @@ namespace argus {
         }
 
         Vector3<T> inverse(void) const {
+            static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
             return {-x, -y, -z};
         }
     };
@@ -707,6 +709,7 @@ namespace argus {
         }
 
         Vector2<T> inverse(void) const {
+            static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
             return {-x, -y};
         }
     };
