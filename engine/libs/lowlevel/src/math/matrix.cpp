@@ -93,7 +93,7 @@ namespace argus {
         return a;
     }
 
-    Vector4f operator*(const Vector4f &vec, const Matrix4 &mat) {
+    Vector4f operator*(const Matrix4 &mat, const Vector4f &vec) {
         return Vector4f{
                 mat(0, 0) * vec.x + mat(0, 1) * vec.y + mat(0, 2) * vec.z + mat(0, 3) * vec.w,
                 mat(1, 0) * vec.x + mat(1, 1) * vec.y + mat(1, 2) * vec.z + mat(1, 3) * vec.w,
@@ -102,20 +102,8 @@ namespace argus {
         };
     }
 
-    Vector4f operator*(const Vector3f &vec, const Matrix4 &mat) {
-        auto vec4 = Vector4f(vec);
-        vec4.w = 1.0;
-        return vec4 * mat;
-    }
-
-    Vector4f operator*(const Vector2f &vec, const Matrix4 &mat) {
-        auto vec4 = Vector4f(vec);
-        vec4.w = 1.0;
-        return vec4 * mat;
-    }
-
-    Vector4f &operator*=(Vector4f &vec, const Matrix4 &mat) {
-        vec = vec * mat;
+    Vector4f &operator*=(const Matrix4 &mat, Vector4f &vec) {
+        vec = mat * vec;
         return vec;
     }
 
