@@ -18,9 +18,22 @@
 
 #include "test_global.hpp"
 
+#include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/math/matrix.hpp"
+#include "argus/lowlevel/math/vector.hpp"
 
 #include "catch2/catch_all.hpp"
+
+template <typename T>
+static constexpr unsigned int _get_vector_size(void) {
+    if constexpr (argus::is_specialization_v<T, argus::Vector2>) {
+        return 2;
+    } else if constexpr (argus::is_specialization_v<T, argus::Vector3>) {
+        return 3;
+    } else if constexpr (argus::is_specialization_v<T, argus::Vector4>) {
+        return 4;
+    }
+}
 
 TEST_CASE("Matrix operations behave correctly", "[math][Matrix]") {
     GIVEN("A default-constructed Matrix4") {
@@ -167,6 +180,30 @@ TEST_CASE("Matrix operations behave correctly", "[math][Matrix]") {
                 auto c = GENERATE(range(0, 4));
 
                 CHECK(product(r, c) == expected(r, c));
+            }
+        }
+    }
+}
+
+TEST_CASE("Matrix-vector operations behave correctly", "[math][MatrixVectorOps]") {
+    GIVEN("A matrix and a Vector4f") {
+        argus::Matrix4 mat = argus::Matrix4({
+                -0.5, 2.5, -4.5, 6.5,
+                -1.0, 3.0, -5.0, 7.0,
+                -1.5, 3.5, -5.5, 7.5,
+                -2.0, 4.0, -6.0, 8.0
+        });
+
+        argus::Vector4f vec = argus::Vector4f(0.24f, 0.42f, 1.24f, 1.42f);
+
+        WHEN("they are multiplied together") {
+            argus::Vector4f res_vec = mat * vec;
+
+            THEN("the resulting vector is correct") {
+                CHECK(res_vec.x == Catch::Approx(-5.24f));
+                CHECK(res_vec.y == Catch::Approx(11.88f));
+                CHECK(res_vec.z == Catch::Approx(-18.52f));
+                CHECK(res_vec.w == Catch::Approx(25.16f));
             }
         }
     }
