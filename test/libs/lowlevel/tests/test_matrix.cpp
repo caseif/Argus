@@ -200,10 +200,10 @@ TEST_CASE("Matrix-vector operations behave correctly", "[math][MatrixVectorOps]"
             argus::Vector4f res_vec = mat * vec;
 
             THEN("the resulting vector is correct") {
-                CHECK(res_vec.x == Catch::Approx(-5.24f));
-                CHECK(res_vec.y == Catch::Approx(11.88f));
-                CHECK(res_vec.z == Catch::Approx(-18.52f));
-                CHECK(res_vec.w == Catch::Approx(25.16f));
+                CHECK_THAT(res_vec.x, Catch::Matchers::WithinRel(-5.24f));
+                CHECK_THAT(res_vec.y, Catch::Matchers::WithinRel(11.88f));
+                CHECK_THAT(res_vec.z, Catch::Matchers::WithinRel(-18.52f));
+                CHECK_THAT(res_vec.w, Catch::Matchers::WithinRel(25.16f));
             }
         }
     }
