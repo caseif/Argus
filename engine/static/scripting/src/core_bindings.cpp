@@ -27,57 +27,18 @@
 #include <cstdint>
 
 namespace argus {
-    constexpr const uint64_t k_ns_per_us = 1'000;
-    constexpr const uint64_t k_ns_per_ms = 1'000'000;
-    constexpr const uint64_t k_ns_per_s = 1'000'000'000;
-
     std::vector<ScriptDeltaCallback> g_update_callbacks;
-
-    BindableTimeDelta::BindableTimeDelta(TimeDelta delta)
-        : m_nanos(uint64_t(std::max<int64_t>(0, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
-    }
-
-    BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) = default;
-
-    BindableTimeDelta::~BindableTimeDelta(void) = default;
-
-    uint64_t BindableTimeDelta::nanos(void) const {
-        return m_nanos;
-    }
-
-    uint64_t BindableTimeDelta::micros(void) const {
-        return m_nanos / k_ns_per_us;
-    }
-
-    uint64_t BindableTimeDelta::millis(void) const {
-        return m_nanos / k_ns_per_ms;
-    }
-
-    uint64_t BindableTimeDelta::seconds(void) const {
-        return m_nanos / k_ns_per_s;
-    }
 
     static void _script_register_update_callback(ScriptDeltaCallback callback) {
         g_update_callbacks.push_back(callback);
     }
 
-    static void _bind_time_delta_type(void) {
-        auto delta_type = create_type_def<BindableTimeDelta>("TimeDelta");
-        add_member_instance_function(delta_type, "nanos", &BindableTimeDelta::nanos);
-        add_member_instance_function(delta_type, "micros", &BindableTimeDelta::micros);
-        add_member_instance_function(delta_type, "millis", &BindableTimeDelta::millis);
-        add_member_instance_function(delta_type, "seconds", &BindableTimeDelta::seconds);
-        bind_type(delta_type);
-    }
-
-    static void _bind_global_fns(void) {
+    static void _bind_engine_symbols(void) {
         bind_global_function("register_update_callback", _script_register_update_callback);
     }
 
     void register_core_bindings(void) {
-        _bind_time_delta_type();
-
-        _bind_global_fns();
+        _bind_engine_symbols();
     }
 
     void invoke_update_callbacks(TimeDelta delta) {

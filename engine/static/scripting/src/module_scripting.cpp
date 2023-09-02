@@ -69,6 +69,7 @@ namespace argus {
     void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
+                register_lowlevel_bindings();
                 register_core_bindings();
 
                 g_invoke_script_callbacks_callback = register_update_callback(invoke_update_callbacks);

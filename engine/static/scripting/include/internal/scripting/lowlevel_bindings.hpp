@@ -20,21 +20,28 @@
 
 #include "argus/lowlevel/time.hpp"
 
-#include "argus/core/event.hpp"
-
-#include "internal/scripting/lowlevel_bindings.hpp"
-
-#include <chrono>
-#include <functional>
-#include <vector>
+#include "argus/scripting/types.hpp"
 
 #include <cstdint>
 
 namespace argus {
-    typedef std::function<void(BindableTimeDelta)> ScriptDeltaCallback;
-    typedef std::function<void(ArgusEvent &)> ScriptEventHandler;
+    struct BindableTimeDelta : ScriptBindable {
+        uint64_t m_nanos;
 
-    void register_core_bindings(void);
+        BindableTimeDelta(TimeDelta delta);
 
-    void invoke_update_callbacks(TimeDelta delta);
+        BindableTimeDelta(const BindableTimeDelta &rhs);
+
+        ~BindableTimeDelta(void) override;
+
+        uint64_t nanos(void) const;
+
+        uint64_t micros(void) const;
+
+        uint64_t millis(void) const;
+
+        uint64_t seconds(void) const;
+    };
+
+    void register_lowlevel_bindings(void);
 }
