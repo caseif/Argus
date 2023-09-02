@@ -450,6 +450,7 @@ MigrationBackup/
 # Standard build directories
 bin/
 build/
+build-*/
 docs/generated/
 target/
 
