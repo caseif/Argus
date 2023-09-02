@@ -22,7 +22,7 @@
 #include "internal/wm/script_bindings.hpp"
 
 namespace argus {
-    static void _bind_window_type(void) {
+    static void _bind_window_symbols(void) {
         auto def = create_type_def<Window>("Window");
 
         add_member_static_function(def, "get_window", get_window);
@@ -36,7 +36,7 @@ namespace argus {
         add_member_instance_function(def, "set_title", &Window::set_title);
         add_member_instance_function(def, "is_fullscreen", &Window::is_fullscreen);
         add_member_instance_function(def, "set_fullscreen", &Window::set_fullscreen);
-        //TODO: resolution functions
+        add_member_instance_function(def, "get_windowed_resolution", &Window::get_windowed_resolution);
         add_member_instance_function<void(Window::*)(unsigned int, unsigned int)>(def, "set_windowed_resolution",
                 &Window::set_windowed_resolution);
         add_member_instance_function(def, "set_vsync_enabled", &Window::set_vsync_enabled);
@@ -52,6 +52,6 @@ namespace argus {
     }
 
     void register_wm_bindings(void) {
-        _bind_window_type();
+        _bind_window_symbols();
     }
 }
