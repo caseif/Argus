@@ -29,13 +29,13 @@ namespace argus::input {
 
         InputManager(void);
 
+        ~InputManager(void) override;
+
+      public:
         InputManager(InputManager &) = delete;
 
         InputManager(InputManager &&) = delete;
 
-        ~InputManager(void);
-
-      public:
         static InputManager &instance(void);
 
         Controller &get_controller(ControllerIndex controller_index);

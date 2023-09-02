@@ -21,30 +21,12 @@
 #include "argus/lowlevel/math.hpp"
 
 namespace argus::input {
-    typedef uint16_t MouseButtonIndex;
-
-    struct MouseButton {
-        enum enum_value : MouseButtonIndex {
-            Primary,
-            Secondary,
-            Middle,
-            Back,
-            Forward
-        };
-
-        MouseButtonIndex value;
-
-        MouseButton(enum enum_value value) :
-                value(static_cast<MouseButtonIndex>(value)) {
-        }
-
-        MouseButton(MouseButtonIndex index) :
-                value(index) {
-        }
-
-        operator MouseButtonIndex(void) {
-            return value;
-        }
+    enum class MouseButton {
+        Primary,
+        Secondary,
+        Middle,
+        Back,
+        Forward
     };
 
     enum class MouseAxis {

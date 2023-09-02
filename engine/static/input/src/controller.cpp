@@ -87,7 +87,7 @@ namespace argus::input {
         }
 
         // remove action from binding list of things it's bound to
-        for (auto action : to_map[thing]) {
+        for (const auto &action : to_map[thing]) {
             remove_from_vector(from_map[action], thing);
         }
 
@@ -109,7 +109,7 @@ namespace argus::input {
         }
     }
 
-    const std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) const {
+    std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) const {
         auto it = pimpl->key_to_action_bindings.find(key);
         if (it != pimpl->key_to_action_bindings.end()) {
             return it->second; // implicitly deep-copied
@@ -119,7 +119,7 @@ namespace argus::input {
         return {};
     }
 
-    const std::vector<KeyboardScancode> Controller::get_keyboard_action_bindings(const std::string &action) const {
+    std::vector<KeyboardScancode> Controller::get_keyboard_action_bindings(const std::string &action) const {
         auto it = pimpl->action_to_key_bindings.find(action);
         if (it != pimpl->action_to_key_bindings.end()) {
             return it->second; // implicitly deep-copied
@@ -141,15 +141,15 @@ namespace argus::input {
         _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
     }
 
-    void Controller::bind_mouse_button(MouseButtonIndex button, const std::string &action) {
+    void Controller::bind_mouse_button(MouseButton button, const std::string &action) {
         _bind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);
     }
 
-    void Controller::unbind_mouse_button(MouseButtonIndex button) {
+    void Controller::unbind_mouse_button(MouseButton button) {
         _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button);
     }
 
-    void Controller::unbind_mouse_button(MouseButtonIndex button, const std::string &action) {
+    void Controller::unbind_mouse_button(MouseButton button, const std::string &action) {
         _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button,
                 action);//TODO
     }

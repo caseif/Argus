@@ -40,20 +40,20 @@ namespace argus::input {
 
         Controller(ControllerIndex index);
 
-        Controller(Controller &) = delete;
-
-        Controller(Controller &&) = delete;
-
         ~Controller(void);
 
       public:
-        ControllerIndex get_index(void) const;
+        Controller(const Controller &) = delete;
+
+        Controller(Controller &&) = delete;
+
+        [[nodiscard]] ControllerIndex get_index(void) const;
 
         void unbind_action(const std::string &action);
 
-        const std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
+        [[nodiscard]] std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
 
-        const std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
+        [[nodiscard]] std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
 
         void bind_keyboard_key(KeyboardScancode key, const std::string &action);
 
@@ -61,11 +61,11 @@ namespace argus::input {
 
         void unbind_keyboard_key(KeyboardScancode key, const std::string &action);
 
-        void bind_mouse_button(MouseButtonIndex button, const std::string &action);
+        void bind_mouse_button(MouseButton button, const std::string &action);
 
-        void unbind_mouse_button(MouseButtonIndex button);
+        void unbind_mouse_button(MouseButton button);
 
-        void unbind_mouse_button(MouseButtonIndex button, const std::string &action);
+        void unbind_mouse_button(MouseButton button, const std::string &action);
 
         void bind_mouse_axis(MouseAxis axis, const std::string &action);
 
