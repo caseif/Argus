@@ -17,7 +17,7 @@ function(add_file_action)
 
   set(BUILT_COMMAND "${CMAKE_COMMAND}" "-E" "${ARG_ACTION}" "${ARG_SOURCE}" "${ARG_DEST}")
 
-  set(DEPENDS_LIST "")
+  set(DEPENDS_LIST "${ARG_TARGET}")
   if(ARG_DEPENDS)
     list(APPEND DEPENDS_LIST "${ARG_DEPENDS}")
   endif()
@@ -97,14 +97,12 @@ function(create_so_symlinks TARGET LIB_FILE_DIR)
   set(LINK_BASE_NAME "${TARGET_PREFIX}${TARGET_OUT_NAME}${SO_POSTFIX}${TARGET_SUFFIX}")
 
   add_file_action(TARGET "${TARGET}"
-      TIMING "${TIMING}"
       ACTION "create_symlink"
       SOURCE "$<TARGET_FILE:${TARGET}>"
       DEST "${LIB_FILE_DIR}/${LINK_MAJOR_NAME}"
       GENERATED_TARGET SONAME_TARGET)
 
   add_file_action(TARGET "${TARGET}"
-      TIMING "${TIMING}"
       ACTION "create_symlink"
       SOURCE "${LIB_FILE_DIR}/${LINK_MAJOR_NAME}"
       DEST "${LIB_FILE_DIR}/${LINK_BASE_NAME}")
@@ -130,7 +128,6 @@ function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
     set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${TARGET}>")
 
     add_file_action(TARGET "${TARGET}"
-        TIMING "${TIMING}"
         ACTION "copy_if_different"
         SOURCE "$<TARGET_LINKER_FILE:${TARGET}>"
         DEST "${LINKER_FILE_DEST_PATH}")
