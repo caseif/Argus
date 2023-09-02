@@ -32,7 +32,7 @@ namespace argus::input {
 
     typedef uint16_t ControllerIndex;
 
-    class Controller {
+    class Controller : ScriptBindable {
         friend class InputManager;
 
       private:
@@ -40,7 +40,7 @@ namespace argus::input {
 
         Controller(ControllerIndex index);
 
-        ~Controller(void);
+        ~Controller(void) override;
 
       public:
         Controller(const Controller &) = delete;

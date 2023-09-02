@@ -23,7 +23,7 @@
 namespace argus::input {
     struct pimpl_InputManager;
 
-    class InputManager {
+    class InputManager : ScriptBindable {
       private:
         pimpl_InputManager *pimpl;
 

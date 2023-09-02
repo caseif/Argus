@@ -27,6 +27,7 @@
 #include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"
+#include "internal/input/script_bindings.hpp"
 
 namespace argus {
     static void _init_window_input(const Window &window) {
@@ -48,6 +49,9 @@ namespace argus {
         switch (stage) {
             case argus::LifecycleStage::Init:
                 register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
+                break;
+            case argus::LifecycleStage::PostInit:
+                register_input_script_bindings();
                 break;
             default:
                 break;
