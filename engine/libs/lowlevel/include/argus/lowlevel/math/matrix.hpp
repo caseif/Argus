@@ -76,6 +76,4 @@ namespace argus {
     Matrix4 &operator*=(Matrix4 &a, const Matrix4 &b);
 
     Vector4f operator*(const Matrix4 &mat, const Vector4f &vec);
-
-    Vector4f &operator*=(const Matrix4 &mat, Vector4f &vec);
 }

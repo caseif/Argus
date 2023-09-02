@@ -102,11 +102,6 @@ namespace argus {
         };
     }
 
-    Vector4f &operator*=(const Matrix4 &mat, Vector4f &vec) {
-        vec = mat * vec;
-        return vec;
-    }
-
     void Matrix4::transpose() {
         Matrix4 &mat = *this;
         _swap_f(&(mat(0, 1)), &(mat(1, 0)));
