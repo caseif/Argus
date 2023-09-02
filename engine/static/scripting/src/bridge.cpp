@@ -184,7 +184,8 @@ namespace argus {
         return get_bound_type(std::type_index(type_info));
     }
 
-    const BoundTypeDef &get_bound_type(const std::type_index &type_index) {
+    template <typename T>
+    T &_get_bound_type(const std::type_index type_index) {
         auto index_it = g_bound_type_indices.find(std::type_index(type_index));
         if (index_it == g_bound_type_indices.cend()) {
             throw std::invalid_argument("Type " + std::string(type_index.name())
@@ -193,7 +194,11 @@ namespace argus {
         }
         auto type_it = g_bound_types.find(index_it->second);
         assert(type_it != g_bound_types.cend());
-        return type_it->second;
+        return const_cast<T &>(type_it->second);
+    }
+
+    const BoundTypeDef &get_bound_type(std::type_index type_index) {
+        return _get_bound_type<const BoundTypeDef>(type_index);
     }
 
     const BoundEnumDef &get_bound_enum(const std::string &enum_name) {
@@ -210,7 +215,8 @@ namespace argus {
         return get_bound_enum(std::type_index(enum_type_info));
     }
 
-    const BoundEnumDef &get_bound_enum(const std::type_index &enum_type_index) {
+    template <typename T>
+    T &_get_bound_enum(std::type_index enum_type_index) {
         auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
         if (index_it == g_bound_enum_indices.cend()) {
             throw std::invalid_argument("Enum " + std::string(enum_type_index.name())
@@ -219,7 +225,11 @@ namespace argus {
         }
         auto enum_it = g_bound_enums.find(index_it->second);
         assert(enum_it != g_bound_enums.cend());
-        return enum_it->second;
+        return const_cast<T &>(enum_it->second);
+    }
+
+    const BoundEnumDef &get_bound_enum(std::type_index enum_type_index) {
+        return _get_bound_enum<const BoundEnumDef>(enum_type_index);
     }
 
     const BoundFunctionDef &get_native_global_function(const std::string &name) {
@@ -354,6 +364,11 @@ namespace argus {
         type_def.instance_functions.insert({ fn_def.name, fn_def });
     }
 
+    void bind_member_instance_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
+        auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
+        add_member_instance_function(type_def, fn_def);
+    }
+
     void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         if (type_def.static_functions.find(fn_def.name) != type_def.static_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::MemberStatic, type_def.name, fn_def.name);
@@ -361,6 +376,11 @@ namespace argus {
         }
 
         type_def.static_functions.insert({ fn_def.name, fn_def });
+    }
+
+    void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
+        auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
+        add_member_static_function(type_def, fn_def);
     }
 
     BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index) {
@@ -378,5 +398,10 @@ namespace argus {
 
         def.values.insert({ name, value });
         def.all_ordinals.insert(value);
+    }
+
+    void bind_enum_value(std::type_index enum_type, const std::string &name, uint64_t value) {
+        auto &enum_def = _get_bound_enum<BoundEnumDef>(enum_type);
+        add_enum_value(enum_def, name, value);
     }
 }

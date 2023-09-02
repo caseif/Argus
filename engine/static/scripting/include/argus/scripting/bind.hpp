@@ -33,7 +33,7 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
-        static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
+        // ideally we would emit a warning here if the class doesn't derive from ScriptBindable
         auto def = create_type_def<T>(name);
         bind_type(def);
     }
@@ -43,5 +43,11 @@ namespace argus {
     bind_global_function(const std::string &name, FuncType fn) {
         auto def = create_global_function_def<FuncType>(name, fn);
         bind_global_function(def);
+    }
+
+    template <typename T>
+    typename std::enable_if<std::is_enum_v<T>, void>::type bind_enum(const std::string &name) {
+        auto def = create_enum_def<T>(name);
+        bind_enum(def);
     }
 }

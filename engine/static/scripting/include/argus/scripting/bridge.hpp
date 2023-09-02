@@ -67,7 +67,7 @@ namespace argus {
 
     const BoundTypeDef &get_bound_type(const std::type_info &type_info);
 
-    const BoundTypeDef &get_bound_type(const std::type_index &type_index);
+    const BoundTypeDef &get_bound_type(std::type_index type_index);
 
     template <typename T>
     const BoundTypeDef &get_bound_type(void) {
@@ -78,7 +78,7 @@ namespace argus {
 
     const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info);
 
-    const BoundEnumDef &get_bound_enum(const std::type_index &enum_type_index);
+    const BoundEnumDef &get_bound_enum(std::type_index enum_type_index);
 
     template <typename T>
     const BoundEnumDef &get_bound_enum(void) {
@@ -113,17 +113,33 @@ namespace argus {
         }
     }
 
-    template <typename T>
-    static ObjectType _create_object_type(void);
+    template <typename T, bool check_script_bindable>
+    static ObjectType _create_object_type();
 
-    template <typename Tuple, size_t... Is>
+    // Pass true as the second template parameter to forbid passing a reference
+    // to a script if the type doesn't derive from ScriptBindable. We forbid it
+    // because we would have no way of destroying the handle when the pointed-to
+    // object is destroyed.
+    template <typename T>
+    constexpr ObjectType(*_create_return_object_type)()  = _create_object_type<T, true>;
+
+    // Pass false as the second template parameter because we only care about
+    // references being passed from the engine to a script, and not the other
+    // way around.
+    template <typename T>
+    constexpr ObjectType(*_create_callback_return_object_type)()  = _create_object_type<T, false>;
+
+    template <typename Tuple, bool check_script_bindable, size_t... Is>
     static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
-        return std::vector<ObjectType> { _create_object_type<std::tuple_element_t<Is, Tuple>>()... };
+        return std::vector<ObjectType> {
+            _create_object_type<std::tuple_element_t<Is, Tuple>, check_script_bindable>()...
+        };
     }
 
-    template <typename Tuple>
+    template <typename Tuple, bool check_script_bindable>
     static std::vector<ObjectType> _tuple_to_object_types() {
-        return _tuple_to_object_types_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+        return _tuple_to_object_types_impl<Tuple, check_script_bindable>(
+                std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
     }
 
     // this is only enabled for std::functions, not for function pointers
@@ -132,8 +148,16 @@ namespace argus {
             typename Args = typename function_traits<F>::argument_types>
     static std::enable_if_t<!std::is_function_v<F>, ScriptCallbackType> _create_callback_type() {
         return ScriptCallbackType {
-                _tuple_to_object_types<Args>(),
-                _create_object_type<ReturnType>()
+                // Pass true as the second template param to indicate that
+                // reference types are only allowed if they derive from
+                // ScriptBindable.
+                // Callback params are passed directly to the script, and we
+                // only allow scripts to assume ownership of references if the
+                // pointed-to type derives from ScriptBindable so that the
+                // handle can be properly invalidated if the object is
+                // destroyed.
+                _tuple_to_object_types<Args, true>(),
+                _create_callback_return_object_type<ReturnType>()
         };
     }
 
@@ -149,8 +173,11 @@ namespace argus {
             def.type = type;
             def.is_const = is_const;
             def.handle = create_function_wrapper(fn);
-            def.params = _tuple_to_object_types<ArgsTuple>();
-            def.return_type = _create_object_type<ReturnType>();
+            // pass false as the second template param because we only care
+            // about ScriptBindable for objects being passed from the engine to
+            // a script, and not the other way around
+            def.params = _tuple_to_object_types<ArgsTuple, false>();
+            def.return_type = _create_return_object_type<ReturnType>();
 
             return def;
         } catch (const std::exception &ex) {
@@ -158,8 +185,8 @@ namespace argus {
         }
     }
 
-    template <typename T>
-    static ObjectType _create_object_type(void) {
+    template <typename T, bool check_script_bindable>
+    static ObjectType _create_object_type() {
         using B = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
@@ -194,8 +221,9 @@ namespace argus {
             return { IntegralType::String, 0 };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
-            static_assert(std::is_base_of_v<ScriptBindable, B>,
-                    "Types in bound functions must derive from ScriptBindable");
+            // we only allow scripts to receive references to types
+            static_assert(!(check_script_bindable && !std::is_base_of_v<ScriptBindable, B>),
+                    "Bound functions may not return a reference to a type which does not derive from ScriptBindable");
             return { IntegralType::Pointer, sizeof(void *),
                     std::is_const_v<std::remove_pointer_t<std::remove_reference_t<T>>>,
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
@@ -203,8 +231,6 @@ namespace argus {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), false,
                     typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         } else {
-            static_assert(std::is_base_of_v<ScriptBindable, B>,
-                    "Types in bound functions must derive from ScriptBindable");
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
             static_assert(std::is_copy_constructible_v<B>,
@@ -212,7 +238,7 @@ namespace argus {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
             return { IntegralType::Struct, sizeof(T), false,
-            typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+                    typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
     }
 
@@ -361,7 +387,7 @@ namespace argus {
             return [fn] (const std::vector<ObjectWrapper> &params) {
                 ReturnType ret = invoke_function(fn, params);
 
-                auto ret_obj_type = _create_object_type<ReturnType>();
+                auto ret_obj_type = _create_return_object_type<ReturnType>();
                 size_t ret_obj_size;
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<
                         std::remove_pointer_t<ReturnType>>>, std::string>
@@ -426,7 +452,7 @@ namespace argus {
         } else {
             return [fn] (const std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
-                auto type = _create_object_type<void>();
+                auto type = _create_return_object_type<void>();
                 return ObjectWrapper(type, 0);
             };
         }
@@ -444,11 +470,12 @@ namespace argus {
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
             std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
-            std::optional<std::function<void(void *dst, void *src)>> move_ctor, std::optional<std::function<void(void *)>> dtor);
+            std::optional<std::function<void(void *dst, void *src)>> move_ctor,
+            std::optional<std::function<void(void *)>> dtor);
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
+        // ideally we would emit a warning here if the class doesn't derive from ScriptBindable
 
         std::optional<std::function<void(void *, const void *)>> copy_ctor;
         std::optional<std::function<void(void *, void *)>> move_ctor;
@@ -491,6 +518,18 @@ namespace argus {
         add_member_instance_function(type_def, fn_def);
     }
 
+    void bind_member_instance_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+
+    template <typename FuncType>
+    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    bind_member_instance_function(const std::string &fn_name, FuncType fn) {
+        using ClassType = typename function_traits<FuncType>::class_type;
+        static_assert(!std::is_void_v<ClassType>, "Loose function cannot be passed to bind_member_instance_function");
+
+        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        bind_member_instance_function(typeid(ClassType), fn_def);
+    }
+
     void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
     template <typename FuncType>
@@ -498,6 +537,18 @@ namespace argus {
     add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
         add_member_static_function(type_def, fn_def);
+    }
+
+    void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+
+    template <typename FuncType>
+    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    bind_member_static_function(const std::string &fn_name, FuncType fn) {
+        using ClassType = typename function_traits<FuncType>::class_type;
+        static_assert(!std::is_void_v<ClassType>, "Loose function cannot be passed to bind_member_static_function");
+
+        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        bind_member_static_function(typeid(ClassType), fn_def);
     }
 
     BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);
@@ -514,10 +565,23 @@ namespace argus {
     template <typename T>
     typename std::enable_if<std::is_enum_v<T>>::type
     add_enum_value(BoundEnumDef &def, const std::string &name, T value) {
-        if (std::is_signed_v<std::underlying_type_t<T>>) {
-            add_enum_value(def, name, *reinterpret_cast<uint64_t *>(int64_t(value)));
+        if constexpr (std::is_signed_v<std::underlying_type_t<T>>) {
+            add_enum_value(def, name, uint64_t(value));
         } else {
             add_enum_value(def, name, uint64_t(value));
+        }
+    }
+
+    void bind_enum_value(std::type_index enum_type, const std::string &name, uint64_t value);
+
+    template <typename T>
+    typename std::enable_if<std::is_enum_v<T>>::type
+    bind_enum_value(const std::string &name, T value) {
+        std::type_index enum_type = typeid(T);
+        if constexpr (std::is_signed_v<std::underlying_type_t<T>>) {
+            bind_enum_value(enum_type, name, uint64_t(value));
+        } else {
+            bind_enum_value(enum_type, name, uint64_t(value));
         }
     }
 }
