@@ -206,7 +206,11 @@ namespace argus {
             static_assert(std::is_base_of_v<ScriptBindable, B>,
                     "Types in bound functions must derive from ScriptBindable");
             static_assert(std::is_copy_constructible_v<B>,
-                    "Types in bound functions must be copy-constructible if not passed by reference or pointer");
+                    "Types in bound functions must have a public copy constructor if passed by value");
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must have a public move constructor if passed by value");
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must have a public destructor if passed by value");
             return { IntegralType::Struct, sizeof(T), false,
             typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
         }
@@ -257,7 +261,7 @@ namespace argus {
 
             auto ret_type = param.type.callback_type.value()->return_type;
             if (ret_type.type == IntegralType::Pointer
-                || ret_type.type == IntegralType::Struct) {
+                    || ret_type.type == IntegralType::Struct) {
                 ret_type.type_name = get_bound_type<ReturnType>().name;
             } else if (ret_type.type == IntegralType::Enum) {
                 ret_type.type_name = get_bound_enum<ReturnType>().name;
@@ -296,6 +300,13 @@ namespace argus {
                             ? param.value
                             : param.stored_ptr);
         } else {
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must have a public copy constructor if passed by value");
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must have a public move constructor if passed by value");
+            static_assert(std::is_copy_constructible_v<B>,
+                    "Types in bound functions must have a public destructor if passed by value");
+
             return *reinterpret_cast<std::remove_reference_t<T>*>(
                     param.is_on_heap ? param.heap_ptr : param.value);
         }
@@ -336,6 +347,9 @@ namespace argus {
                 return (instance->*fn)(std::forward<decltype(args)>(args)...);
             }, args);
         } else {
+            //TODO: This fails statically before _make_tuple_from_params, which
+            // is where the actually useful diagnostic messages are. Would be
+            // nice to fix this at some point.
             return std::apply(fn, args);
         }
     }
@@ -408,7 +422,6 @@ namespace argus {
                 } else {
                     return create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
-
             };
         } else {
             return [fn] (const std::vector<ObjectWrapper> &params) {
@@ -431,27 +444,37 @@ namespace argus {
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
             std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
-            std::function<void(void *dst, void *src)> move_ctor, std::function<void(void *)> dtor);
+            std::optional<std::function<void(void *dst, void *src)>> move_ctor, std::optional<std::function<void(void *)>> dtor);
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         static_assert(std::is_base_of_v<ScriptBindable, T>, "Bound types must derive from ScriptBindable");
-        static_assert(std::is_move_constructible_v<T>, "Bound types must be move-constructible");
 
         std::optional<std::function<void(void *, const void *)>> copy_ctor;
+        std::optional<std::function<void(void *, void *)>> move_ctor;
+        std::optional<std::function<void(void *)>> dtor;
+
         if constexpr (std::is_copy_constructible_v<T>) {
             copy_ctor = [](void *dst, const void *src) {
                 new(dst) T(*reinterpret_cast<const T *>(src));
             };
         }
 
+        if constexpr (std::is_move_constructible_v<T>) {
+            move_ctor = [](void *dst, void *src) {
+                T &rhs = *reinterpret_cast<T *>(src);
+                new(dst) T(std::move(rhs));
+            };
+        }
+
+        if constexpr (std::is_destructible_v<T>) {
+            dtor = [](void *obj) { reinterpret_cast<T *>(obj)->~T(); };
+        }
+
         return create_type_def(name, sizeof(T), typeid(T),
                 copy_ctor,
-                [](void *dst, void *src) {
-                    T &rhs = *reinterpret_cast<T *>(src);
-                    new(dst) T(std::move(rhs));
-                },
-                [](void *obj) { reinterpret_cast<T *>(obj)->~T(); });
+                move_ctor,
+                dtor);
     }
 
     template <typename FuncType>

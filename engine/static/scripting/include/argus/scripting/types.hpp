@@ -118,9 +118,10 @@ namespace argus {
         std::string name;
         size_t size;
         std::type_index type_index;
+        // the copy and move ctors and dtor are only used for struct value and callback types
         std::optional<std::function<void(void *dst, const void *src)>> copy_ctor;
-        std::function<void(void *dst, void *src)> move_ctor;
-        std::function<void(void *obj)> dtor;
+        std::optional<std::function<void(void *dst, void *src)>> move_ctor;
+        std::optional<std::function<void(void *obj)>> dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
     };
@@ -133,7 +134,7 @@ namespace argus {
         std::unordered_set<uint64_t> all_ordinals;
     };
 
-    class   ScriptBindable {
+    class ScriptBindable {
       public:
         ScriptBindable(void);
 

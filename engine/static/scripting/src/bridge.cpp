@@ -117,6 +117,7 @@ namespace argus {
         return *this;
     }
 
+    // this function is only used with struct value types
     void ObjectWrapper::copy_value(void *dest, size_t size) const {
         assert(size == this->buffer_size);
 
@@ -329,8 +330,8 @@ namespace argus {
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
             std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
-            std::function<void(void *dst, void *src)> move_ctor,
-            std::function<void(void *obj)> dtor) {
+            std::optional<std::function<void(void *dst, void *src)>> move_ctor,
+            std::optional<std::function<void(void *obj)>> dtor) {
         BoundTypeDef def {
                 name,
                 size,
