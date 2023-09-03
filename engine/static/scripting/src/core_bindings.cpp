@@ -37,28 +37,11 @@ namespace argus {
         bind_global_function("register_update_callback", _script_register_update_callback);
     }
 
-    struct Foo : ScriptBindable {
-        std::string bar;
-        Foo(std::string str) : bar(str) {
-        }
-    };
-
-    static Foo foo("Hello World!");
-
-    static Foo &get_foo(void) {
-        return foo;
-    }
-
     void register_core_bindings(void) {
         _bind_engine_symbols();
-
-        bind_type<Foo>("Foo");
-        bind_global_function("get_foo", get_foo);
-        bind_member_field("bar", &Foo::bar);
     }
 
     void invoke_update_callbacks(TimeDelta delta) {
-        printf("C++: %s\n", foo.bar.c_str());
         for (const auto &callback : g_update_callbacks) {
             callback(BindableTimeDelta(delta));
         }

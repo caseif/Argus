@@ -99,6 +99,13 @@ namespace argus {
 
             memcpy(this->value, rhs.value, this->buffer_size);
         }
+
+        rhs.buffer_size = 0;
+        rhs.is_on_heap = false;
+        rhs.heap_ptr = nullptr;
+        rhs.copy_ctor = std::nullopt;
+        rhs.move_ctor = std::nullopt;
+        rhs.dtor = std::nullopt;
     }
 
     ObjectWrapper::~ObjectWrapper(void) {

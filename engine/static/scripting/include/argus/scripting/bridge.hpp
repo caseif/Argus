@@ -310,9 +310,18 @@ namespace argus {
                 }
             };
         } else if constexpr (std::is_same_v<B, std::string>) {
-            assert(string_pool != nullptr);
-            return string_pool->emplace_back(reinterpret_cast<const char *>(
-                    param.is_on_heap ? param.heap_ptr : param.value));
+            if constexpr (std::is_same_v<std::remove_cv_t<T>, std::string>) {
+                if (string_pool != nullptr) {
+                    return string_pool->emplace_back(reinterpret_cast<const char *>(
+                            param.is_on_heap ? param.heap_ptr : param.value));
+                } else {
+                    return std::string(reinterpret_cast<const char *>(param.is_on_heap ? param.heap_ptr : param.value));
+                }
+            } else {
+                assert(string_pool != nullptr);
+                return string_pool->emplace_back(reinterpret_cast<const char *>(
+                        param.is_on_heap ? param.heap_ptr : param.value));
+            }
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::decay_t<T>>>, std::string>) {
             assert(string_pool != nullptr);
             return &string_pool->emplace_back(reinterpret_cast<const char *>(
@@ -349,7 +358,9 @@ namespace argus {
 
     template <typename FieldType, typename ClassType>
     static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
-        constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>;
+        // treat C-string fields as const because there's no good way to manage their memory
+        constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>
+                || std::is_same_v<std::remove_cv_t<std::decay_t<FieldType>>, char *>;
 
         try {
             auto type = _create_object_type<FieldType, true>();
