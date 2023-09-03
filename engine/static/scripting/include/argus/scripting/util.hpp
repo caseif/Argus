@@ -25,4 +25,6 @@
 namespace argus {
     std::string get_qualified_function_name(FunctionType fn_type, const std::string &type_name,
             const std::string &fn_name);
+
+    std::string get_qualified_field_name(const std::string &type_name, const std::string &field_name);
 }

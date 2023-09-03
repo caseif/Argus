@@ -48,9 +48,12 @@ namespace argus {
     static constexpr const char *k_lang_name = "lua";
 
     static constexpr const char *k_lua_index = "__index";
+    static constexpr const char *k_lua_newindex = "__newindex";
     static constexpr const char *k_lua_name = "__name";
     static constexpr const char *k_lua_require = "require";
     static constexpr const char *k_lua_require_def = "default_require";
+
+    static constexpr const char *k_const_prefix = "const ";
 
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
@@ -106,9 +109,9 @@ namespace argus {
         return luaL_error(state, msg.c_str());
     }
 
-    static std::string _get_metatable_name(lua_State *state, int param_index) {
+    static std::string _get_metatable_name(lua_State *state, int index) {
         // get metatable of userdata
-        lua_getmetatable(state, param_index);
+        lua_getmetatable(state, index);
 
         // get metatable name
         lua_pushstring(state, k_lua_name);
@@ -131,7 +134,7 @@ namespace argus {
 
         auto type_name = _get_metatable_name(state, param_index);
         if (!(type_name == type_def.name
-                || (!require_mut && type_name == "const " + type_def.name))) {
+                || (!require_mut && type_name == k_const_prefix + type_def.name))) {
             return _set_lua_error(state, "Incorrect userdata provided for parameter "
                     + std::to_string(param_index) + " of function " + qual_fn_name
                     + " (expected " + type_def.name
@@ -270,10 +273,10 @@ namespace argus {
                 auto type_name = _get_metatable_name(state, param_index);
 
                 if (!(type_name == param_def.type_name.value()
-                        || (param_def.is_const && type_name == "const " + param_def.type_name.value()))) {
+                        || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
                     return _set_lua_error(state, "Incorrect userdata provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected " + (param_def.is_const ? "const " : "") + param_def.type_name.value()
+                            + " (expected " + (param_def.is_const ? k_const_prefix : "") + param_def.type_name.value()
                             + ", actual " + type_name + ")");
                 }
 
@@ -392,7 +395,7 @@ namespace argus {
 
     static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
         auto mt = luaL_getmetatable(state,
-                ((wrapper.type.is_const ? "const " : "") + wrapper.type.type_name.value()).c_str());
+                ((wrapper.type.is_const ? k_const_prefix : "") + wrapper.type.type_name.value()).c_str());
         UNUSED(mt);
         assert(mt != 0); // binding should have failed if type wasn't bound
 
@@ -517,9 +520,15 @@ namespace argus {
             auto arg_count = initial_top;
             auto expected_arg_count = fn.params.size() + (fn.type == FunctionType::MemberInstance ? 1 : 0);
             if (size_t(arg_count) != expected_arg_count) {
-                _set_lua_error(state, "Wrong parameter count provided for function " + qual_fn_name
+                auto err_msg = "Wrong parameter count provided for function " + qual_fn_name
                         + " (expected " + std::to_string(expected_arg_count)
-                        + ", actual " + std::to_string(arg_count) + ")");
+                        + ", actual " + std::to_string(arg_count) + ")";
+
+                if (fn_type == FunctionType::MemberInstance && expected_arg_count == uint32_t(arg_count + 1)) {
+                    err_msg += " (did you forget to use the colon operator?)";
+                }
+
+                _set_lua_error(state, err_msg);
                 assert(lua_gettop(state) == initial_top);
                 return 0;
             }
@@ -580,7 +589,7 @@ namespace argus {
             _set_lua_error(state, "Type with name " + type_name + " is not bound");
             assert(lua_gettop(state) == initial_top);
             return 0;
-        } catch (const FunctionNotBoundException &) {
+        } catch (const SymbolNotBoundException &) {
             _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
             assert(lua_gettop(state) == initial_top);
             return 0;
@@ -589,6 +598,258 @@ namespace argus {
             assert(lua_gettop(state) == initial_top);
             return 0;
         }
+    }
+
+    static int _lookup_fn_in_dispatch_table(lua_State *state, int mt_index, int key_index) {
+        // get value from type's dispatch table instead
+        // get type's metatable
+        lua_getmetatable(state, mt_index);
+        // get dispatch table
+        lua_getmetatable(state, -1);
+        // push key onto stack
+        lua_pushvalue(state, key_index);
+        // get value of key from metatable
+        lua_rawget(state, -2);
+
+        return 1;
+    }
+
+    static bool _get_native_field_val(lua_State *state, const std::string &type_name, const std::string &field_name) {
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        auto real_type_name = type_name.rfind(k_const_prefix, 0) == 0
+                ? type_name.substr(strlen(k_const_prefix))
+                : type_name;
+
+        BoundFieldDef field;
+        try {
+            field = get_native_member_field(real_type_name, field_name);
+        } catch (const SymbolNotBoundException &) {
+            return false;
+        }
+
+        auto qual_field_name = get_qualified_field_name(real_type_name, field_name);
+
+        auto type_def = get_bound_type(real_type_name);
+
+        ObjectWrapper inst_wrapper{};
+        auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def,
+                false, &inst_wrapper);
+        if (wrap_res != 0) {
+            // some error occurred
+            // _wrap_instance_ref already sent error to lua state, so just clean up here
+            assert(lua_gettop(state) == initial_top);
+            return wrap_res;
+        }
+
+        auto val = field.get_mut_proxy(inst_wrapper);
+
+        _push_value(state, val);
+
+        assert(lua_gettop(state) == initial_top + 1);
+
+        return true;
+    }
+
+    static int _lua_index_handler(lua_State *state) {
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        std::string type_name = _get_metatable_name(state, 1);
+        std::string key = lua_tostring(state, -1);
+
+        if (_get_native_field_val(state, type_name, key)) {
+            return 1;
+        } else {
+            return _lookup_fn_in_dispatch_table(state, 1, 2);
+        }
+    }
+
+    // assumes the value is at the top of the stack
+    static int _set_native_field(lua_State *state, const std::string &type_name, const std::string &field_name) {
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        // only necessary for the error message when the object is const since that's the only time it has the prefix
+        auto real_type_name = type_name.rfind(k_const_prefix, 0) == 0
+                ? type_name.substr(strlen(k_const_prefix))
+                : type_name;
+
+        auto qual_field_name = get_qualified_field_name(real_type_name, field_name);
+
+        // can't assign fields of a const object
+        if (type_name.rfind(k_const_prefix, 0) == 0) {
+            return _set_lua_error(state, "Field " + qual_field_name + " in a const object cannot be assigned");
+        }
+
+        BoundFieldDef field;
+        try {
+            field = get_native_member_field(type_name, field_name);
+            // can't assign a const field
+            if (field.m_type.is_const) {
+                return _set_lua_error(state, "Field " + qual_field_name + " is const and cannot be assigned");
+            }
+        } catch (const SymbolNotBoundException &) {
+            return _set_lua_error(state, "Field " + qual_field_name + " is not bound");
+        }
+
+        auto type_def = get_bound_type(type_name);
+
+        ObjectWrapper inst_wrapper{};
+        auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def, true, &inst_wrapper);
+        if (wrap_res != 0) {
+            // some error occurred
+            // _wrap_instance_ref already sent error to lua state, so just clean up here
+            assert(lua_gettop(state) == initial_top);
+            return wrap_res;
+        }
+
+        ObjectWrapper val_wrapper{};
+        _wrap_param(state, qual_field_name, -1, field.m_type, &val_wrapper);
+
+        assert(field.m_assign_proxy.has_value());
+        field.m_assign_proxy.value()(inst_wrapper, val_wrapper);
+
+        assert(lua_gettop(state) == initial_top);
+
+        return 0;
+    }
+
+    static int _lua_newindex_handler(lua_State *state) {
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        std::string type_name = _get_metatable_name(state, 1);
+        std::string key = lua_tostring(state, -2);
+
+        auto res = _set_native_field(state, type_name, key);
+
+        assert(lua_gettop(state) == initial_top);
+
+        return res;
+    }
+
+    static void _bind_fn(lua_State *state, const BoundFunctionDef &fn, const std::string &type_name) {
+        // push function type
+        lua_pushinteger(state, fn.type);
+        // push type name (only if member function)
+        if (fn.type != FunctionType::Global) {
+            lua_pushstring(state, type_name.c_str());
+        }
+        // push function name
+        lua_pushstring(state, fn.name.c_str());
+
+        auto upvalue_count = fn.type == FunctionType::Global ? 2 : 3;
+
+        lua_pushcclosure(state, _lua_trampoline, upvalue_count);
+
+        if (fn.type == FunctionType::Global) {
+            lua_setglobal(state, fn.name.c_str());
+        } else {
+            lua_setfield(state, -2, fn.name.c_str());
+        }
+    }
+
+    static void _create_type_metatable(lua_State *state, const BoundTypeDef &type, bool is_const) {
+        // create metatable for type
+        luaL_newmetatable(state, ((is_const ? k_const_prefix : "") + type.name).c_str());
+
+        // create dispatch table
+        lua_newtable(state);
+
+        // bind __index and __newindex overrides
+
+        // push __newindex function to stack
+        lua_pushcfunction(state, _lua_index_handler);
+        // save function override
+        lua_setfield(state, -3, k_lua_index);
+
+        // push __index function to stack
+        lua_pushcfunction(state, _lua_newindex_handler);
+        // save function override
+        lua_setfield(state, -3, k_lua_newindex);
+
+        // save dispatch table (which pops it from the stack)
+        lua_setmetatable(state, -2);
+
+        /*if (!is_const) {
+            // push upvalue for type name
+            lua_pushstring(state, type.name.c_str());
+            // push upvalue for function name
+            lua_pushstring(state, k_lua_newindex);
+            // push function with 2 upvalue
+            lua_pushcclosure(state, _lua_field_set_trampoline, 1);
+            // save function override
+            lua_settable(state, -3);
+        }*/
+
+        // add metatable to global state to provide access to static type functions (popping it from the stack)
+        lua_setglobal(state, type.name.c_str());
+    }
+
+    static void _bind_type(lua_State *state, const BoundTypeDef &type) {
+        _create_type_metatable(state, type, false);
+        _create_type_metatable(state, type, true);
+    }
+
+    static void _add_type_function_to_mt(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn,
+            bool is_const) {
+        luaL_getmetatable(state, ((is_const ? k_const_prefix : "") + type_name).c_str());
+
+        if (fn.type == FunctionType::MemberInstance) {
+            // get the dispatch table for the type
+            lua_getmetatable(state, -1);
+
+            _bind_fn(state, fn, type_name);
+
+            // pop the dispatch table and metatable
+            lua_pop(state, 2);
+
+            return;
+        } else {
+            _bind_fn(state, fn, type_name);
+
+            // pop the metatable
+            lua_pop(state, 1);
+        }
+    }
+
+    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
+        _add_type_function_to_mt(state, type_name, fn, false);
+        //if (fn.is_const) {
+            _add_type_function_to_mt(state, type_name, fn, true);
+        //}
+    }
+
+    static void _bind_type_field(lua_State *state, const std::string &type_name, const BoundFieldDef &field) {
+        UNUSED(state);
+        UNUSED(type_name);
+        UNUSED(field);
+        //TODO
+    }
+
+    static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
+        assert(fn.type == FunctionType::Global);
+        _bind_fn(state, fn, "");
+    }
+
+    static void _bind_enum(lua_State *state, const BoundEnumDef &def) {
+        // create metatable for enum
+        luaL_newmetatable(state, def.name.c_str());
+
+        // set values in metatable
+        for (const auto &enum_val : def.values) {
+            lua_pushinteger(state, *reinterpret_cast<const int64_t *>(&enum_val.second));
+            lua_setfield(state, -2, enum_val.first.c_str());
+        }
+
+        // add metatable to global state to make enum available
+        luaL_getmetatable(state, def.name.c_str());
+        lua_setglobal(state, def.name.c_str());
+
+        // pop the metatable
+        lua_pop(state, 1);
     }
 
     static std::string _convert_path_to_uid(const std::string &path) {
@@ -665,100 +926,6 @@ namespace argus {
         return 1;
     }
 
-    static void _bind_fn(lua_State *state, const BoundFunctionDef &fn, const std::string &type_name) {
-        // push function type
-        lua_pushinteger(state, fn.type);
-        // push type name (only if member function)
-        if (fn.type != FunctionType::Global) {
-            lua_pushstring(state, type_name.c_str());
-        }
-        // push function name
-        lua_pushstring(state, fn.name.c_str());
-
-        auto upvalue_count = fn.type == FunctionType::Global ? 2 : 3;
-
-        lua_pushcclosure(state, _lua_trampoline, upvalue_count);
-
-        if (fn.type == FunctionType::Global) {
-            lua_setglobal(state, fn.name.c_str());
-        } else {
-            lua_setfield(state, -2, fn.name.c_str());
-        }
-    }
-
-    static void _create_type_metatable(lua_State *state, const BoundTypeDef &type, bool is_const) {
-        // create metatable for type
-        luaL_newmetatable(state, ((is_const ? "const " : "") + type.name).c_str());
-
-        // create dispatch table
-        lua_newtable(state);
-
-        // set dispatch table (which pops it from the stack)
-        lua_setfield(state, -2, k_lua_index);
-
-        // add metatable to global state to provide access to static type functions
-        luaL_getmetatable(state, type.name.c_str());
-        lua_setglobal(state, type.name.c_str());
-        lua_pop(state, 1); // remove metatable from stack
-    }
-
-    static void _bind_type(lua_State *state, const BoundTypeDef &type) {
-        _create_type_metatable(state, type, false);
-        _create_type_metatable(state, type, true);
-    }
-
-    static void _add_type_function_to_mt(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn,
-            bool is_const) {
-        luaL_getmetatable(state, ((is_const ? "const " : "") + type_name).c_str());
-
-        if (fn.type == FunctionType::MemberInstance) {
-            // get the dispatch table for the type
-            lua_getfield(state, -1, k_lua_index);
-
-            _bind_fn(state, fn, type_name);
-
-            // pop the dispatch table and metatable
-            lua_pop(state, 2);
-
-            return;
-        } else {
-            _bind_fn(state, fn, type_name);
-
-            // pop the metatable
-            lua_pop(state, 1);
-        }
-    }
-
-    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
-        _add_type_function_to_mt(state, type_name, fn, false);
-        //if (fn.is_const) {
-            _add_type_function_to_mt(state, type_name, fn, true);
-        //}
-    }
-
-    static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
-        assert(fn.type == FunctionType::Global);
-        _bind_fn(state, fn, "");
-    }
-
-    static void _bind_enum(lua_State *state, const BoundEnumDef &def) {
-        // create metatable for enum
-        luaL_newmetatable(state, def.name.c_str());
-
-        // set values in metatable
-        for (const auto &enum_val : def.values) {
-            lua_pushinteger(state, *reinterpret_cast<const int64_t *>(&enum_val.second));
-            lua_setfield(state, -2, enum_val.first.c_str());
-        }
-
-        // add metatable to global state to make enum available
-        luaL_getmetatable(state, def.name.c_str());
-        lua_setglobal(state, def.name.c_str());
-
-        // pop the metatable
-        lua_pop(state, 1);
-    }
-
     LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, {RESOURCE_TYPE_LUA}) {
     }
 
@@ -825,6 +992,17 @@ namespace argus {
         UNUSED(initial_top);
 
         _bind_type_function(state, type.name, fn);
+
+        assert(lua_gettop(state) == initial_top);
+    }
+
+    void LuaLanguagePlugin::bind_type_field(ScriptContext &context, const BoundTypeDef &type, const BoundFieldDef &fn) {
+        auto *plugin_state = context.get_plugin_data<LuaContextData>();
+        auto *state = plugin_state->state;
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        _bind_type_field(state, type.name, fn);
 
         assert(lua_gettop(state) == initial_top);
     }

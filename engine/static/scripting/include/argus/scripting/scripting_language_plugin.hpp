@@ -66,6 +66,9 @@ namespace argus {
         virtual void bind_type_function(ScriptContext &context, const BoundTypeDef &type,
                 const BoundFunctionDef &fn) = 0;
 
+        virtual void bind_type_field(ScriptContext &context, const BoundTypeDef &type,
+                const BoundFieldDef &field) = 0;
+
         virtual void bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) = 0;
 
         virtual void bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) = 0;

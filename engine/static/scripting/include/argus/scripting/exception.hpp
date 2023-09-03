@@ -42,12 +42,12 @@ namespace argus {
         [[nodiscard]] const char *what(void) const noexcept override;
     };
 
-    class FunctionNotBoundException : public std::exception {
+    class SymbolNotBoundException : public std::exception {
       private:
-        std::string fn_name;
+        std::string name;
 
       public:
-        FunctionNotBoundException(std::string fn_name);
+        SymbolNotBoundException(std::string name);
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };

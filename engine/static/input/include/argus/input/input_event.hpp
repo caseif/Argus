@@ -39,5 +39,13 @@ namespace argus::input {
 
         InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
                 const std::string &action, double axis_value, double axis_delta);
+
+        InputEvent(const InputEvent &rhs) = delete;
+
+        InputEvent(InputEvent &&rhs) = delete;
+
+        ~InputEvent(void) override;
+
+        const Window &get_window(void);
     };
 }

@@ -25,6 +25,7 @@
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/util.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
+#include "argus/scripting/util.hpp"
 
 #include <algorithm>
 #include <set>
@@ -92,16 +93,31 @@ namespace argus {
     }
 
     void resolve_parameter_types(BoundTypeDef &type_def) {
-        try {
-            for (auto &fn : type_def.instance_functions) {
+        for (auto &fn : type_def.instance_functions) {
+            try {
                 _resolve_param_types(fn.second);
+            } catch (const std::exception &ex) {
+                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                throw BindingException(qual_name, ex.what());
             }
+        }
 
-            for (auto &fn : type_def.static_functions) {
+        for (auto &fn : type_def.static_functions) {
+            try {
                 _resolve_param_types(fn.second);
+            } catch (const std::exception &ex) {
+                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                throw BindingException(qual_name, ex.what());
             }
-        } catch (const std::exception &ex) {
-            throw BindingException(type_def.name, ex.what());
+        }
+
+        for (auto &field : type_def.fields) {
+            try {
+                _resolve_param(field.second.m_type);
+            } catch (const std::exception &ex) {
+                auto qual_name = get_qualified_field_name(type_def.name, field.second.m_name);
+                throw BindingException(qual_name, ex.what());
+            }
         }
     }
 
@@ -229,6 +245,24 @@ namespace argus {
             Logger::default_logger().debug("Bound %zu instance and %zu static functions for type %s",
                     type.second.instance_functions.size(), type.second.static_functions.size(),
                     type.second.name.c_str());
+        }
+
+
+        for (const auto &type : g_bound_types) {
+            Logger::default_logger().debug("Binding fields for type %s", type.second.name.c_str());
+
+            for (const auto &type_field : type.second.fields) {
+                Logger::default_logger().debug("Binding field %s::%s",
+                        type.second.name.c_str(), type_field.second.m_name.c_str());
+
+                context.pimpl->plugin->bind_type_field(context, type.second, type_field.second);
+
+                Logger::default_logger().debug("Bound field %s::%s",
+                        type.second.name.c_str(), type_field.second.m_name.c_str());
+            }
+
+            Logger::default_logger().debug("Bound %zu fields for type %s",
+                    type.second.fields.size(), type.second.name.c_str());
         }
 
         for (const auto &enum_def : g_bound_enums) {

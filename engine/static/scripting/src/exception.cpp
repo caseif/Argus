@@ -36,11 +36,11 @@ namespace argus {
         return fn_name.c_str();
     }
 
-    FunctionNotBoundException::FunctionNotBoundException(std::string fn_name) : fn_name(std::move(fn_name)) {
+    SymbolNotBoundException::SymbolNotBoundException(std::string name) : name(std::move(name)) {
     }
 
-    const char *FunctionNotBoundException::what(void) const noexcept {
-        return fn_name.c_str();
+    const char *SymbolNotBoundException::what(void) const noexcept {
+        return name.c_str();
     }
 
     ReflectiveArgumentsException::ReflectiveArgumentsException(std::string fn_name) : fn_name(std::move(fn_name)) {

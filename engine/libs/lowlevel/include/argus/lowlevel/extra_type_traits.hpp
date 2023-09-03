@@ -80,6 +80,16 @@ namespace argus {
         using is_const = std::false_type;
     };
 
+    template <typename FieldType>
+    struct field_traits;
+
+    template <typename Class, typename T>
+    struct field_traits<T Class::*> {
+        using class_type = Class;
+        using field_type = T;
+        using is_const = std::false_type;
+    };
+
     template <typename F>
     struct is_std_function : std::false_type {};
 

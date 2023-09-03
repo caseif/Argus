@@ -114,6 +114,22 @@ namespace argus {
         ProxiedFunction handle;
     };
 
+    struct BoundFieldDef {
+        std::string m_name;
+        ObjectType m_type;
+        std::function<ObjectWrapper(const ObjectWrapper &, const ObjectType &)> m_get_const_proxy;
+        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_get_mut_proxy;
+        std::optional<std::function<void (ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
+
+        ObjectWrapper get_const_proxy(const ObjectWrapper &wrapper) {
+            return m_get_const_proxy(wrapper, m_type);
+        }
+
+        ObjectWrapper get_mut_proxy(ObjectWrapper &wrapper) {
+            return m_get_mut_proxy(wrapper, m_type);
+        }
+    };
+
     struct BoundTypeDef {
         std::string name;
         size_t size;
@@ -124,6 +140,7 @@ namespace argus {
         std::optional<std::function<void(void *obj)>> dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
+        std::map<std::string, BoundFieldDef> fields;
     };
 
     struct BoundEnumDef {

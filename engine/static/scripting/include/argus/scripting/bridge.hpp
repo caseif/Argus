@@ -262,7 +262,7 @@ namespace argus {
     }
 
     template <typename T>
-    static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> &string_pool) {
+    static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> *string_pool) {
         using B = std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>;
         if constexpr (is_std_function_v<B>) {
             assert(param.type.callback_type.has_value());
@@ -302,7 +302,7 @@ namespace argus {
 
                 if constexpr (!std::is_void_v<ReturnType>) {
                     auto retval = (*fn_copy)(wrapped_params);
-                    return _unwrap_param<ReturnType>(retval, string_pool);
+                    return _unwrap_param<ReturnType>(retval, &string_pool);
                 } else {
                     UNUSED(string_pool);
                     (*fn_copy)(wrapped_params);
@@ -310,10 +310,12 @@ namespace argus {
                 }
             };
         } else if constexpr (std::is_same_v<B, std::string>) {
-            return string_pool.emplace_back(reinterpret_cast<const char *>(
+            assert(string_pool != nullptr);
+            return string_pool->emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::decay_t<T>>>, std::string>) {
-            return &string_pool.emplace_back(reinterpret_cast<const char *>(
+            assert(string_pool != nullptr);
+            return &string_pool->emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (is_reference_wrapper_v<T>) {
             return *reinterpret_cast<std::remove_reference_t<remove_reference_wrapper_t<T>> *>(
@@ -342,7 +344,62 @@ namespace argus {
     ArgsTuple _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
             std::index_sequence<Is...>, std::vector<std::string> &string_pool) {
         return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
-                const_cast<ObjectWrapper &>(*(params_it + Is)), string_pool)...);
+                const_cast<ObjectWrapper &>(*(params_it + Is)), &string_pool)...);
+    }
+
+    template <typename FieldType, typename ClassType>
+    static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
+        constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>;
+
+        try {
+            auto type = _create_object_type<FieldType, true>();
+            type.is_const = is_const;
+
+            BoundFieldDef def{};
+            def.m_name = name;
+            def.m_type = type;
+            def.m_get_const_proxy = [field, type](const ObjectWrapper &inst, const ObjectType &field_type) {
+                assert(field_type.type == type.type);
+                assert(field_type.size == type.size);
+                assert(field_type.type_index == type.type_index);
+                assert(field_type.is_const == type.is_const);
+                assert(field_type.callback_type == type.callback_type);
+
+                const ClassType *instance = reinterpret_cast<const ClassType *>(inst.is_on_heap
+                        ? inst.heap_ptr
+                        : inst.stored_ptr);
+
+                return create_object_wrapper(field_type, reinterpret_cast<const void *>(&(instance->*field)));
+            };
+
+            def.m_get_mut_proxy = [field](ObjectWrapper &inst, const ObjectType &field_type) {
+                ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
+                        ? inst.heap_ptr
+                        : inst.stored_ptr);
+
+                auto real_type = field_type;
+                if (field_type.type == IntegralType::Struct) {
+                    real_type.type = IntegralType::Pointer;
+                    real_type.size = sizeof(void *);
+                }
+
+                return create_auto_object_wrapper(real_type, instance->*field);
+            };
+
+            if constexpr (!is_const) {
+                def.m_assign_proxy = [field](ObjectWrapper &inst, ObjectWrapper &val) {
+                    ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
+                            ? inst.heap_ptr
+                            : inst.stored_ptr);
+
+                    instance->*field = _unwrap_param<FieldType>(val, nullptr);
+                };
+            }
+
+            return def;
+        } catch (const std::exception &ex) {
+            throw BindingException(name, ex.what());
+        }
     }
 
     template <typename FuncType,
@@ -466,6 +523,8 @@ namespace argus {
     const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
             const std::string &fn_name);
 
+    const BoundFieldDef &get_native_member_field(const std::string &type_name, const std::string &field_name);
+
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
@@ -549,6 +608,23 @@ namespace argus {
 
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
         bind_member_static_function(typeid(ClassType), fn_def);
+    }
+
+    void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);
+
+    template <typename FieldRef>
+    typename std::enable_if<std::is_member_object_pointer_v<FieldRef>, void>::type
+    add_member_field(BoundTypeDef &type_def, const std::string &field_name, FieldRef field) {
+        auto field_def = _create_field_def(field_name, field);
+        add_member_field(type_def, field_def);
+    }
+
+    void bind_member_field(std::type_index type_index, const BoundFieldDef &field_def);
+
+    template <typename FieldType, typename ClassType>
+    void bind_member_field(const std::string &field_name, FieldType(ClassType::* field)) {
+        auto field_def = _create_field_def(field_name, field);
+        bind_member_field(typeid(ClassType), field_def);
     }
 
     BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);

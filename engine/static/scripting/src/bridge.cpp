@@ -154,20 +154,35 @@ namespace argus {
 
                 auto fn_it = fn_map.find(fn_name);
                 if (fn_it == fn_map.cend()) {
-                    throw FunctionNotBoundException(get_qualified_function_name(fn_type, type_name, fn_name));
+                    throw SymbolNotBoundException(get_qualified_function_name(fn_type, type_name, fn_name));
                 }
                 return fn_it->second;
             }
             case Global: {
                 auto it = g_bound_global_fns.find(fn_name);
                 if (it == g_bound_global_fns.cend()) {
-                    throw FunctionNotBoundException(fn_name);
+                    throw SymbolNotBoundException(fn_name);
                 }
                 return it->second;
             }
             default:
                 Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
         }
+    }
+
+    static const BoundFieldDef &_get_native_field(const std::string &type_name, const std::string &field_name) {
+        auto type_it = g_bound_types.find(type_name);
+        if (type_it == g_bound_types.cend()) {
+            throw TypeNotBoundException(type_name);
+        }
+
+        const auto &field_map = type_it->second.fields;
+
+        auto field_it = field_map.find(field_name);
+        if (field_it == field_map.cend()) {
+            throw SymbolNotBoundException(get_qualified_field_name(type_name, field_name));
+        }
+        return field_it->second;
     }
 
     const BoundTypeDef &get_bound_type(const std::string &type_name) {
@@ -244,6 +259,10 @@ namespace argus {
     const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
             const std::string &fn_name) {
         return _get_native_function(FunctionType::MemberStatic, type_name, fn_name);
+    }
+
+    const BoundFieldDef &get_native_member_field(const std::string &type_name, const std::string &field_name) {
+        return _get_native_field(type_name, field_name);
     }
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params) {
@@ -350,6 +369,7 @@ namespace argus {
                 std::move(move_ctor),
                 std::move(dtor),
                 {},
+                {},
                 {}
         };
         return def;
@@ -381,6 +401,20 @@ namespace argus {
     void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
         auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
         add_member_static_function(type_def, fn_def);
+    }
+
+    void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def) {
+        if (type_def.fields.find(field_def.m_name) != type_def.fields.cend()) {
+            auto qual_name = get_qualified_field_name(type_def.name, field_def.m_name);
+            throw BindingException(qual_name, "Instance function with same name is already bound");
+        }
+
+        type_def.fields.insert({ field_def.m_name, field_def });
+    }
+
+    void bind_member_field(std::type_index type_index, const BoundFieldDef &field_def) {
+        auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
+        add_member_field(type_def, field_def);
     }
 
     BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index) {

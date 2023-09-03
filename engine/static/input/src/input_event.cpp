@@ -34,4 +34,10 @@ namespace argus::input {
             axis_value(axis_value),
             axis_delta(axis_delta) {
     }
+
+    InputEvent::~InputEvent(void) = default;
+
+    const Window &InputEvent::get_window(void) {
+        return window;
+    }
 }

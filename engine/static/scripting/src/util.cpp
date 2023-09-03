@@ -37,6 +37,9 @@ namespace argus {
                 assert(false);
         }
     }
+    std::string get_qualified_field_name(const std::string &type_name, const std::string &fn_name) {
+        return type_name + "::" + fn_name;
+    }
 
     bool is_bound_type(IntegralType type) {
         return type == IntegralType::Pointer

@@ -227,10 +227,26 @@ namespace argus {
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
     }
 
+    static void _bind_event_symbols(void) {
+        bind_enum<input::InputEventType>("InputEventType");
+        bind_enum_value("ButtonDown", input::InputEventType::ButtonDown);
+        bind_enum_value("ButtonUp", input::InputEventType::ButtonUp);
+        bind_enum_value("AxisChanged", input::InputEventType::AxisChanged);
+
+        bind_type<input::InputEvent>("InputEvent");
+        bind_member_field("input_type", &input::InputEvent::input_type);
+        bind_member_field("controller_index", &input::InputEvent::controller_index);
+        bind_member_field("action", &input::InputEvent::action);
+        bind_member_field("axis_value", &input::InputEvent::axis_value);
+        bind_member_field("axis_delta", &input::InputEvent::axis_delta);
+        bind_member_instance_function("get_window", &input::InputEvent::get_window);
+    }
+
     void register_input_script_bindings(void) {
         _bind_input_manager_symbols();
         _bind_keyboard_symbols();
         _bind_mouse_symbols();
         _bind_controller_symbols();
+        _bind_event_symbols();
     }
 }
