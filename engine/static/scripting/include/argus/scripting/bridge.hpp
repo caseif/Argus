@@ -611,12 +611,9 @@ namespace argus {
 
     void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
 
-    template <typename FuncType>
-    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    template <typename ClassType, typename FuncType>
+    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
-        using ClassType = typename function_traits<FuncType>::class_type;
-        static_assert(!std::is_void_v<ClassType>, "Loose function cannot be passed to bind_member_static_function");
-
         auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
         bind_member_static_function(typeid(ClassType), fn_def);
     }
