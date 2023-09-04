@@ -18,7 +18,7 @@
 
 #include "argus/scripting.hpp"
 
-#include "argus/wm/window.hpp"
+#include "argus/wm.hpp"
 #include "internal/wm/script_bindings.hpp"
 
 namespace argus {
@@ -28,7 +28,7 @@ namespace argus {
         static_assert(std::is_function_v<decltype(get_window)>);
         bind_member_static_function<Window>("get_window", get_window);
 
-        //TODO: get_canvas
+        // get_canvas needs to be bound in render since that's where it's defined
         bind_member_instance_function("get_id", &Window::get_id);
         bind_member_instance_function("is_created", &Window::is_created);
         bind_member_instance_function("is_ready", &Window::is_ready);
@@ -50,7 +50,42 @@ namespace argus {
         bind_member_instance_function("set_mouse_raw_input", &Window::set_mouse_raw_input);
     }
 
+    static void _bind_display_symbols(void) {
+        bind_type<DisplayMode>("DisplayMode");
+        bind_member_field("resolution", &DisplayMode::resolution);
+        bind_member_field("refresh_rate", &DisplayMode::refresh_rate);
+        bind_member_field("color_depth", &DisplayMode::color_depth);
+
+        bind_type<Display>("Display");
+        bind_member_instance_function("get_name", &Display::get_name);
+        bind_member_instance_function("get_position", &Display::get_position);
+        bind_member_instance_function("get_physical_size", &Display::get_physical_size);
+        bind_member_instance_function("get_scale", &Display::get_scale);
+    }
+
+    static void _bind_window_event_symbols(void) {
+        bind_enum<WindowEventType>("WindowEventType");
+        bind_enum_value("Create", WindowEventType::Create);
+        bind_enum_value("Update", WindowEventType::Update);
+        bind_enum_value("RequestClose", WindowEventType::RequestClose);
+        bind_enum_value("Minimize", WindowEventType::Minimize);
+        bind_enum_value("Restore", WindowEventType::Restore);
+        bind_enum_value("Focus", WindowEventType::Focus);
+        bind_enum_value("Unfocus", WindowEventType::Unfocus);
+        bind_enum_value("Resize", WindowEventType::Resize);
+        bind_enum_value("Move", WindowEventType::Move);
+
+        bind_type<WindowEvent>("WindowEvent");
+        bind_member_field("type", &WindowEvent::subtype);
+        bind_member_field("resolution", &WindowEvent::resolution);
+        bind_member_field("position", &WindowEvent::position);
+        bind_member_field("delta", &WindowEvent::delta);
+        bind_member_instance_function("get_window", &WindowEvent::get_window);
+    }
+
     void register_wm_bindings(void) {
         _bind_window_symbols();
+        _bind_display_symbols();
+        _bind_window_event_symbols();
     }
 }

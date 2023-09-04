@@ -143,15 +143,15 @@ namespace argus {
         return pimpl->name;
     }
 
-    const Vector2i &Display::get_position(void) const {
+    Vector2i Display::get_position(void) const {
         return pimpl->position;
     }
 
-    const Vector2u &Display::get_physical_size(void) const {
+    Vector2u Display::get_physical_size(void) const {
         return pimpl->size;
     }
 
-    const Vector2f &Display::get_scale(void) const {
+    Vector2f Display::get_scale(void) const {
         return pimpl->scale;
     }
 

@@ -123,5 +123,9 @@ namespace argus {
         WindowEvent(WindowEvent &rhs) :
                 WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
         }
+
+        Window &get_window(void) {
+            return window;
+        }
     };
 }

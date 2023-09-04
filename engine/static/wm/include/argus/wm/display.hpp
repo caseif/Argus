@@ -52,11 +52,11 @@ namespace argus {
 
         const std::string &get_name(void) const;
 
-        const Vector2i &get_position(void) const;
+        Vector2i get_position(void) const;
 
-        const Vector2u &get_physical_size(void) const;
+        Vector2u get_physical_size(void) const;
 
-        const Vector2f &get_scale(void) const;
+        Vector2f get_scale(void) const;
 
         const std::vector<DisplayMode> &get_display_modes(void) const;
     };
