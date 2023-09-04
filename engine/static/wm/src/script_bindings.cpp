@@ -23,32 +23,31 @@
 
 namespace argus {
     static void _bind_window_symbols(void) {
-        auto def = create_type_def<Window>("Window");
+        bind_type<Window>("Window");
 
-        add_member_static_function(def, "get_window", get_window);
+        static_assert(std::is_function_v<decltype(get_window)>);
+        bind_member_static_function<Window>("get_window", get_window);
 
         //TODO: get_canvas
-        add_member_instance_function(def, "get_id", &Window::get_id);
-        add_member_instance_function(def, "is_created", &Window::is_created);
-        add_member_instance_function(def, "is_ready", &Window::is_ready);
-        add_member_instance_function(def, "create_child_window", &Window::create_child_window);
-        add_member_instance_function(def, "remove_child", &Window::remove_child);
-        add_member_instance_function(def, "set_title", &Window::set_title);
-        add_member_instance_function(def, "is_fullscreen", &Window::is_fullscreen);
-        add_member_instance_function(def, "set_fullscreen", &Window::set_fullscreen);
-        add_member_instance_function(def, "get_windowed_resolution", &Window::get_windowed_resolution);
-        add_member_instance_function<void(Window::*)(unsigned int, unsigned int)>(def, "set_windowed_resolution",
+        bind_member_instance_function("get_id", &Window::get_id);
+        bind_member_instance_function("is_created", &Window::is_created);
+        bind_member_instance_function("is_ready", &Window::is_ready);
+        bind_member_instance_function("create_child_window", &Window::create_child_window);
+        bind_member_instance_function("remove_child", &Window::remove_child);
+        bind_member_instance_function("set_title", &Window::set_title);
+        bind_member_instance_function("is_fullscreen", &Window::is_fullscreen);
+        bind_member_instance_function("set_fullscreen", &Window::set_fullscreen);
+        bind_member_instance_function("get_windowed_resolution", &Window::get_windowed_resolution);
+        bind_member_instance_function<void(Window::*)(unsigned int, unsigned int)>("set_windowed_resolution",
                 &Window::set_windowed_resolution);
-        add_member_instance_function(def, "set_vsync_enabled", &Window::set_vsync_enabled);
-        add_member_instance_function<void(Window::*)(int, int)>(def, "set_windowed_position",
+        bind_member_instance_function("set_vsync_enabled", &Window::set_vsync_enabled);
+        bind_member_instance_function<void(Window::*)(int, int)>("set_windowed_position",
                 &Window::set_windowed_position);
         //TODO: display functions
-        add_member_instance_function(def, "is_mouse_captured", &Window::is_mouse_captured);
-        add_member_instance_function(def, "set_mouse_captured", &Window::set_mouse_captured);
-        add_member_instance_function(def, "is_mouse_raw_input", &Window::is_mouse_raw_input);
-        add_member_instance_function(def, "set_mouse_raw_input", &Window::set_mouse_raw_input);
-
-        bind_type(def);
+        bind_member_instance_function("is_mouse_captured", &Window::is_mouse_captured);
+        bind_member_instance_function("set_mouse_captured", &Window::set_mouse_captured);
+        bind_member_instance_function("is_mouse_raw_input", &Window::is_mouse_raw_input);
+        bind_member_instance_function("set_mouse_raw_input", &Window::set_mouse_raw_input);
     }
 
     void register_wm_bindings(void) {
