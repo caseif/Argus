@@ -27,7 +27,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <cassert>
 #include <cstdint>
+#include <stdexcept>
 
 namespace argus {
     enum IntegralType {
@@ -40,7 +42,8 @@ namespace argus {
         Pointer,
         Enum,
         Callback,
-        Type
+        Type,
+        Vector
     };
 
     enum FunctionType {
@@ -57,7 +60,30 @@ namespace argus {
         bool is_const = false;
         std::optional<std::type_index> type_index = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
-        std::optional<std::shared_ptr<ScriptCallbackType>> callback_type = std::nullopt;
+        std::optional<std::unique_ptr<ScriptCallbackType>> callback_type = std::nullopt;
+        std::optional<std::unique_ptr<ObjectType>> element_type = std::nullopt;
+
+        ObjectType(void);
+
+        ObjectType(
+                IntegralType type,
+                size_t size,
+                bool is_const = false,
+                std::optional<std::type_index> type_index = std::nullopt,
+                std::optional<std::string> type_name = std::nullopt,
+                std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type = std::nullopt,
+                std::optional<ObjectType> element_type = std::nullopt
+        );
+
+        ObjectType(const ObjectType &rhs);
+
+        ObjectType(ObjectType &&rhs) noexcept;
+
+        ~ObjectType(void);
+
+        ObjectType &operator=(const ObjectType &rhs);
+
+        ObjectType &operator=(ObjectType &&rhs) noexcept;
     };
 
     struct ScriptCallbackType {
@@ -92,7 +118,7 @@ namespace argus {
 
         ~ObjectWrapper(void);
 
-        ObjectWrapper &operator= (const ObjectWrapper &rhs);
+        ObjectWrapper &operator= (const ObjectWrapper &rhs) = delete;
 
         ObjectWrapper &operator= (ObjectWrapper &&rhs) noexcept;
 
@@ -149,6 +175,41 @@ namespace argus {
         std::type_index type_index;
         std::map<std::string, uint64_t> values;
         std::unordered_set<uint64_t> all_ordinals;
+    };
+
+    struct free_deleter_t {
+        void operator()(void *ptr) { free(ptr); }
+    };
+
+    class ArrayBlob {
+      private:
+        size_t m_element_size;
+        size_t m_count;
+        unsigned char m_blob[0];
+
+      public:
+        ArrayBlob(size_t element_size, size_t count);
+
+        template <typename T>
+        ArrayBlob(size_t count) : ArrayBlob(sizeof(T), count) {
+        }
+
+        void *operator[](size_t index);
+
+        const void *operator[](size_t index) const;
+
+        template <typename T>
+        T &operator[](size_t index) {
+            if (sizeof(T) != m_element_size) {
+                throw std::invalid_argument("Template parameter size does not match element size");
+            }
+            return *reinterpret_cast<T *>(this->operator[](index));
+        }
+
+        template <typename T>
+        const T &operator[](size_t index) const {
+            return const_cast<const T &>(const_cast<ArrayBlob *>(this)->operator[]<T>(index));
+        }
     };
 
     class ScriptBindable {

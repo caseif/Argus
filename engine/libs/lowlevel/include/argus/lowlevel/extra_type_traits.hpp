@@ -18,9 +18,11 @@
 
 #pragma once
 
+#include <array>
 #include <functional>
 #include <optional>
 #include <tuple>
+#include <vector>
 
 namespace argus {
     template <typename T>
@@ -98,6 +100,50 @@ namespace argus {
 
     template <typename F>
     constexpr bool is_std_function_v = is_std_function<F>::value;
+
+    template <typename F>
+    struct is_std_vector : std::false_type {};
+
+    template <typename F>
+    struct is_std_vector<std::vector<F>> : std::true_type {};
+
+    template <typename F>
+    constexpr bool is_std_vector_v = is_std_vector<F>::value;
+
+    template <typename T>
+    struct remove_vector {
+        using type = T;
+    };
+
+    template <typename T>
+    struct remove_vector<std::vector<T>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using remove_vector_t = typename remove_vector<T>::type;
+
+    template <typename F>
+    struct is_std_array : std::false_type {};
+
+    template <typename F, size_t N>
+    struct is_std_array<std::array<F, N>> : std::true_type {};
+
+    template <typename F>
+    constexpr bool is_std_array_v = is_std_array<F>::value;
+
+    template <typename T>
+    struct remove_array {
+        using type = T;
+    };
+
+    template <typename T, size_t N>
+    struct remove_array<std::array<T, N>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using remove_array_t = typename remove_array<T>::type;
 
     template <typename T>
     struct is_reference_wrapper : std::false_type {};

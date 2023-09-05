@@ -154,10 +154,15 @@ namespace argus {
             ptr = static_cast<void *>(udata->data);
         }
 
-        ObjectType obj_type{};
-        obj_type.type = IntegralType::Pointer;
-        obj_type.type_name = type_def.name;
-        obj_type.size = sizeof(void *);
+        bool is_const = type_name.rfind(k_const_prefix, 0) == 0;
+
+        ObjectType obj_type {
+                IntegralType::Pointer,
+                sizeof(void *),
+                is_const,
+                type_def.type_index,
+                type_def.name
+        };
         *dest = create_object_wrapper(obj_type, ptr);
         return 0;
     }
@@ -349,6 +354,12 @@ namespace argus {
                             + std::to_string(param_index) + " of function " + qual_fn_name);
                 }
             }
+            case Vector: {
+                //TODO
+                throw std::runtime_error("Vectors are not yet supported");
+
+                break;
+            }
             default:
                 Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
         }
@@ -450,6 +461,12 @@ namespace argus {
 
                 break;
             }
+            case Vector: {
+                //TODO
+                throw std::runtime_error("Vectors are not yet supported");
+
+                break;
+            }
             default:
                 assert(false);
         }
@@ -474,9 +491,10 @@ namespace argus {
             throw ScriptInvocationException(fn_name.value_or("callback"), err);
         }
 
-        ObjectType type{};
-        type.type = IntegralType::Void;
-        type.size = 0;
+        ObjectType type {
+                IntegralType::Void,
+                0
+        };
         return ObjectWrapper(type, 0); //TODO
     }
 

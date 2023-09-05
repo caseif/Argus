@@ -25,6 +25,7 @@
 #include "argus/scripting/util.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
+#include <new>
 #include <string>
 #include <vector>
 
@@ -32,119 +33,6 @@
 #include <cstring>
 
 namespace argus {
-    ObjectWrapper::ObjectWrapper(void) :
-        type(ObjectType { IntegralType::Void, 0 }),
-        value(),
-        is_on_heap(false),
-        buffer_size(0) {
-    }
-
-    ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) {
-        assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
-                || type.size == size);
-        this->type = type;
-
-        // override size for pointer type since we're only copying the pointer
-        size_t copy_size = type.type == IntegralType::Pointer
-                           ? sizeof(void *)
-                           : type.type == IntegralType::String
-                             ? size
-                             : type.size;
-        this->buffer_size = copy_size;
-
-        if (copy_size <= sizeof(this->value)) {
-            // can store directly in ObjectWrapper struct
-            this->is_on_heap = false;
-        } else {
-            // need to alloc on heap
-            this->heap_ptr = malloc(copy_size);
-            this->is_on_heap = true;
-        }
-    }
-
-    ObjectWrapper::ObjectWrapper(ObjectWrapper &&rhs) noexcept :
-        type(std::move(rhs.type)),
-        is_on_heap(rhs.is_on_heap),
-        buffer_size(rhs.buffer_size),
-        copy_ctor(std::move(rhs.copy_ctor)),
-        move_ctor(std::move(rhs.move_ctor)),
-        // dtor still needs to be able to run on the old object
-        dtor(rhs.dtor) {
-
-        if (this->type.type == IntegralType::Struct
-                || this->type.type == IntegralType::Callback) {
-            assert(this->move_ctor.has_value());
-
-            void *src_ptr;
-            void *dst_ptr;
-            if (this->is_on_heap) {
-                this->heap_ptr = malloc(this->buffer_size);
-
-                src_ptr = rhs.heap_ptr;
-                dst_ptr = this->heap_ptr;
-            } else {
-                src_ptr = rhs.value;
-                dst_ptr = this->value;
-            }
-
-            this->move_ctor.value()(dst_ptr, src_ptr);
-        } else if (this->is_on_heap) {
-            assert(!this->move_ctor.has_value());
-
-            this->is_on_heap = true;
-            this->heap_ptr = rhs.heap_ptr;
-        } else {
-            assert(!this->move_ctor.has_value());
-            assert(this->buffer_size < sizeof(this->value));
-
-            memcpy(this->value, rhs.value, this->buffer_size);
-        }
-
-        rhs.buffer_size = 0;
-        rhs.is_on_heap = false;
-        rhs.heap_ptr = nullptr;
-        rhs.copy_ctor = std::nullopt;
-        rhs.move_ctor = std::nullopt;
-        rhs.dtor = std::nullopt;
-    }
-
-    ObjectWrapper::~ObjectWrapper(void) {
-        if (this->dtor.has_value()) {
-            this->dtor.value()(this->get_ptr());
-        }
-
-        if (this->is_on_heap) {
-            free(this->heap_ptr);
-        }
-    }
-
-    ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
-        this->~ObjectWrapper();
-        new(this) ObjectWrapper(std::move(rhs));
-        return *this;
-    }
-
-    // this function is only used with struct value types
-    void ObjectWrapper::copy_value(void *dest, size_t size) const {
-        assert(size == this->buffer_size);
-
-        const void *src_ptr;
-
-        if (this->is_on_heap) {
-            src_ptr = this->heap_ptr;
-        } else {
-            assert(this->buffer_size < sizeof(this->value));
-
-            src_ptr = this->value;
-        }
-
-        if (this->copy_ctor.has_value()) {
-            this->copy_ctor.value()(dest, src_ptr);
-        } else {
-            memcpy(dest, src_ptr, size);
-        }
-    }
-
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
@@ -352,8 +240,9 @@ namespace argus {
     }
 
     ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn) {
-        affirm_precond(type.type == IntegralType::Callback, "Cannot create object wrapper for "
-                "non-callback-typed value");
+        affirm_precond(type.type == IntegralType::Callback,
+                "Cannot create object wrapper "
+                "(callback-specific overload called for non-callback-typed value)");
 
         ObjectWrapper wrapper(type, sizeof(fn));
 
@@ -362,6 +251,69 @@ namespace argus {
         new(wrapper.get_ptr()) ProxiedFunction(fn);
 
         return create_object_wrapper(type, &fn, sizeof(fn));
+    }
+
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const void *data, size_t count,
+            bool is_trivially_copyable) {
+        affirm_precond(vec_type.type == IntegralType::Vector,
+                "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
+
+        ObjectType &el_type = *vec_type.element_type.value().get();
+
+        if (el_type.type == IntegralType::Void) {
+            throw std::invalid_argument("Vectors of void are not supported");
+        } else if (el_type.type == IntegralType::Callback) {
+            throw std::invalid_argument("Vectors of callbacks are not supported");
+        } else if (el_type.type == IntegralType::Type) {
+            throw std::invalid_argument("Vectors of types are not supported");
+        } else if (el_type.type == IntegralType::Vector) {
+            throw std::invalid_argument("Vectors of vectors are not supported");
+        }
+
+        size_t el_size = el_type.size;
+        if (el_type.type == IntegralType::String) {
+            el_size = sizeof(std::string);
+        }
+
+        size_t blob_size = sizeof(ArrayBlob) + el_size * count;
+
+        ObjectWrapper wrapper(vec_type, blob_size);
+
+        if (is_trivially_copyable) {
+            // can just copy the whole thing in one go and avoid looping
+            memcpy(wrapper.get_ptr(), data, blob_size);
+        } else {
+            ArrayBlob &blob = *reinterpret_cast<ArrayBlob *>(wrapper.get_ptr());
+
+            affirm_precond(count < SIZE_MAX, "Too many vector elements");
+
+            if (el_type.type == IntegralType::String) {
+                // strings need to be handled specially because they're the only
+                // non-struct type allowed in a vector that isn't trivially
+                // copyable
+                for (size_t i = 0; i < count; i++) {
+                    auto src_ptr = reinterpret_cast<std::string *>(
+                            reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size));
+                    void *dst_ptr = blob[i];
+                    new(dst_ptr) std::string(*src_ptr);
+                }
+            } else {
+                assert(el_type.type == IntegralType::Struct);
+
+                const BoundTypeDef &bound_type = get_bound_type(el_type.type_index.value());
+                assert(bound_type.copy_ctor.has_value());
+
+                for (size_t i = 0; i < count; i++) {
+                    void *src_ptr = reinterpret_cast<void *>(
+                            reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size));
+                    void *dst_ptr = blob[i];
+
+                    bound_type.copy_ctor.value()(dst_ptr, src_ptr);
+                }
+            }
+        }
+
+        return wrapper;
     }
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,

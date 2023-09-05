@@ -36,12 +36,12 @@ namespace argus {
     static void _resolve_param(ObjectType &param_def) {
         if (param_def.type == IntegralType::Callback) {
             assert(param_def.callback_type.has_value());
-            auto callback_type = param_def.callback_type.value();
-            for (auto &subparam : callback_type->params) {
+            auto &callback_type = *param_def.callback_type.value();
+            for (auto &subparam : callback_type.params) {
                 _resolve_param(subparam);
             }
 
-            _resolve_param(callback_type->return_type);
+            _resolve_param(callback_type.return_type);
 
             return;
         } else if (!is_bound_type(param_def.type)) {
