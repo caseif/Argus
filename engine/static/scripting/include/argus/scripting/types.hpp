@@ -181,6 +181,11 @@ namespace argus {
         void operator()(void *ptr) { free(ptr); }
     };
 
+    // disable non-standard extension warning for zero-sized array member
+    #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4200)
+    #endif
     class ArrayBlob {
       private:
         size_t m_element_size;
@@ -211,6 +216,9 @@ namespace argus {
             return const_cast<const T &>(const_cast<ArrayBlob *>(this)->operator[]<T>(index));
         }
     };
+    #ifdef _MSC_VER
+    #pragma warning(pop)
+    #endif
 
     class ScriptBindable {
       public:

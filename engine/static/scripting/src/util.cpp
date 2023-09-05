@@ -34,7 +34,7 @@ namespace argus {
             case FunctionType::MemberStatic:
                 return type_name + "::" + fn_name;
             default:
-                assert(false);
+                Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
         }
     }
     std::string get_qualified_field_name(const std::string &type_name, const std::string &fn_name) {
