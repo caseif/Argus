@@ -98,7 +98,7 @@ namespace argus {
                 vp_v_off = 0;
                 break;
             default:
-                assert(false);
+                Logger::default_logger().fatal("Unknown ViewportCoordinateSpaceMode ordinal %d", viewport.mode);
         }
 
         TransformedViewport transformed{};
