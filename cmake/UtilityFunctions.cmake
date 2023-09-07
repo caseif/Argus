@@ -204,19 +204,37 @@ function(_argus_topo_sort NODES EDGES OUT_LIST)
     endif()
   endforeach()
 
-  set(START_NODES "${NODES}")
+  # nodes which have no incoming edges
+  set(START_NODES "")
+  # nodes which have already been checked for incoming edges
+  set(SEEN_NODES "")
 
-  # find the initial list of start nodes (nodes without an incoming edge)
+  # compute list of start nodes
   foreach(edge ${EDGES})
     string(REPLACE "/" ";" edge_arr "${edge}")
-    list(GET edge_arr 1 DEST_NODE)
-    list(REMOVE_ITEM START_NODES "${DEST_NODE}")
+    list(GET edge_arr 0 node)
+
+    # skip nodes that have already been considered
+    list(FIND SEEN_NODES "${node}" seen_node)
+    if(NOT ${seen_node} EQUAL -1)
+      continue()
+    endif()
+    list(APPEND SEEN_NODES "${node}")
+
+    # find all incoming edges for this node
+    set(IN_EDGES "${EDGES}")
+    list(FILTER IN_EDGES INCLUDE REGEX "\\/${node}")
+    list(LENGTH IN_EDGES IN_EDGE_COUNT)
+    # if no incoming edges, add it to the list of start nodes
+    if(${IN_EDGE_COUNT} EQUAL 0)
+      list(APPEND START_NODES "${node}")
+    endif()
   endforeach()
 
-  list(REMOVE_DUPLICATES START_NODES)
-
+  # final list of sorted nodes
   set(SORTED_NODES "")
 
+  # mutable copy of all edges; edges will be removed as they're processed
   set(CUR_EDGES "${EDGES}")
 
   # perform a topological sort using Kahn's algorithm
@@ -230,19 +248,22 @@ function(_argus_topo_sort NODES EDGES OUT_LIST)
     list(REMOVE_AT START_NODES 0)
     list(APPEND SORTED_NODES "${CUR_NODE}")
 
-    set(DEST_IN_EDGES "")
+    # get all outgoing edges from current node
     set(CUR_OUT_EDGES "${CUR_EDGES}")
     list(FILTER CUR_OUT_EDGES INCLUDE REGEX "^${CUR_NODE}/")
+
     foreach(edge ${CUR_OUT_EDGES})
+      # get the destination of the edge
       string(REPLACE "/" ";" edge_arr "${edge}")
-      # get the destination of the edge (the current node is the source)
       list(GET edge_arr 1 DEST_NODE)
       # remove the edge from the graph
       list(REMOVE_ITEM CUR_EDGES "${edge}")
-      # find the number of other incoming edges to the destination node
-      list(FILTER DEST_IN_EDGES INCLUDE REGEX "/${DEST_NODE}$")
+      # find incoming edges to the destination node
+      set(DEST_IN_EDGES "${CUR_EDGES}")
+      list(FILTER DEST_IN_EDGES INCLUDE REGEX "\\/${DEST_NODE}$")
+      # get the number of other incoming edges to the destination node
       list(LENGTH DEST_IN_EDGES DEST_IN_EDGE_COUNT)
-      # if no edges, add it to the list of start nodes
+      # if no other incoming edges, add it to the list of start nodes
       if(${DEST_IN_EDGE_COUNT} EQUAL 0)
         list(APPEND START_NODES "${DEST_NODE}")
       endif()
