@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
+
 #include "argus/scripting/types.hpp"
 
 #include <new>
@@ -111,12 +113,12 @@ namespace argus {
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) :
             type(type) {
         assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
-                || type.size == size);
+                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
 
         // override size for pointer type since we're only copying the pointer
         size_t copy_size = type.type == IntegralType::Pointer
                 ? sizeof(void *)
-                : type.type == IntegralType::String
+                : type.type == IntegralType::String || type.type == IntegralType::Vector
                         ? size
                         : type.size;
         this->buffer_size = copy_size;
@@ -214,12 +216,42 @@ namespace argus {
         }
     }
 
-    ArrayBlob::ArrayBlob(size_t element_size, size_t count) {
+    VectorObject::VectorObject(VectorObjectType type) :
+        m_obj_type(type) {
+    }
+
+    VectorObjectType VectorObject::get_object_type(void) {
+        return m_obj_type;
+    }
+
+    ArrayBlob::ArrayBlob(size_t element_size, size_t count, std::function<void(void *)> element_dtor) :
+        VectorObject(VectorObjectType::ArrayBlob),
+        m_element_size(element_size),
+        m_count(count),
+        m_element_dtor(std::move(element_dtor)) {
         if (element_size == 0) {
             throw std::invalid_argument("Element size must be greater than zero");
         }
-        m_element_size = element_size;
-        m_count = count;
+    }
+
+    ArrayBlob::~ArrayBlob(void) {
+        if (m_element_dtor != nullptr) {
+            for (size_t i = 0; i < m_count; i++) {
+                m_element_dtor(reinterpret_cast<void *>((*this)[i]));
+            }
+        }
+    }
+
+    size_t ArrayBlob::size(void) const {
+        return m_count;
+    }
+
+    size_t ArrayBlob::element_size(void) const {
+        return m_element_size;
+    }
+
+    void *ArrayBlob::data(void) {
+        return m_blob;
     }
 
     void *ArrayBlob::operator[](size_t index) {
@@ -232,5 +264,71 @@ namespace argus {
 
     const void *ArrayBlob::operator[](size_t index) const {
         return const_cast<const void *>(const_cast<ArrayBlob *>(this)->operator[](index));
+    }
+
+    VectorWrapper::VectorWrapper(size_t element_size, const ObjectType &element_type,
+            void *underlying_vec, const size_accessor_t &get_size_fn, const data_accessor_t &get_data_fn,
+            const element_accessor_t &get_element_fn, const element_mutator_t &set_element_fn) :
+        VectorObject(VectorObjectType::VectorWrapper),
+        m_element_size(element_size),
+        m_element_type(element_type),
+        m_underlying_vec(underlying_vec),
+        m_get_size_fn(std::make_shared<size_accessor_t>(get_size_fn)),
+        m_get_data_fn(std::make_shared<data_accessor_t>(get_data_fn)),
+        m_get_element_fn(std::make_shared<element_accessor_t>(get_element_fn)),
+        m_set_element_fn(std::make_shared<element_mutator_t>(set_element_fn)) {
+        if (element_size == 0) {
+            throw std::invalid_argument("Element size must be greater than zero");
+        }
+
+        if (underlying_vec == nullptr) {
+            throw std::invalid_argument("Pointer to underlying vector must not be null");
+        }
+
+        if (get_size_fn == nullptr) {
+            throw std::invalid_argument("Size accessor for underlying vector must not be null");
+        }
+    }
+
+    size_t VectorWrapper::element_size(void) const {
+        return m_element_size;
+    }
+
+    const ObjectType &VectorWrapper::element_type(void) const {
+        return m_element_type;
+    }
+
+    bool VectorWrapper::is_const(void) const {
+        return m_element_type.is_const;
+    }
+
+    size_t VectorWrapper::get_size(void) const {
+        return (*m_get_size_fn)(m_underlying_vec);
+    }
+
+    const void *VectorWrapper::get_data(void) const {
+        return (*m_get_data_fn)(m_underlying_vec);
+    }
+
+    const void *VectorWrapper::at(size_t index) const {
+        auto size = (*m_get_size_fn)(m_underlying_vec);
+        if (index >= size) {
+            throw std::out_of_range("Index " + std::to_string(index)
+                    + " is out of range in vector of size " + std::to_string(size));
+        }
+
+        return reinterpret_cast<void *>(reinterpret_cast<uintptr_t>((*m_get_element_fn)(m_underlying_vec, index)));
+    }
+
+    void *VectorWrapper::at(size_t index) {
+        affirm_precond(!m_element_type.is_const,
+                "Cannot get mutable reference to element of const vector via VectorWrapper");
+
+        return const_cast<void *>(const_cast<const VectorWrapper *>(this)->at(index));
+    }
+
+    void VectorWrapper::set(size_t index, void *val) {
+        affirm_precond(!m_element_type.is_const, "Cannot mutate const vector via VectorWrapper");
+        (*m_set_element_fn)(m_underlying_vec, index, val);
     }
 }

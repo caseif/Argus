@@ -63,6 +63,11 @@ namespace argus {
         }
     };
 
+    enum class DataFlowDirection {
+        ToScript,
+        FromScript
+    };
+
     const BoundTypeDef &get_bound_type(const std::string &type_name);
 
     const BoundTypeDef &get_bound_type(const std::type_info &type_info);
@@ -96,23 +101,31 @@ namespace argus {
 
     ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn);
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &type, const void *data, size_t count,
-            bool is_trivially_copyable);
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &type, const void *data, size_t count);
 
-    template <typename T>
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &type,
-            const std::vector<T> vec) {
-        static_assert(!std::is_function_v<T> && !is_std_function_v<T>, "Vectors of callbacks are not supported");
-        static_assert(!is_std_vector_v<T>, "Vectors of vectors are not supported");
-        static_assert(!std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, char *>,
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
+
+    ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
+
+    template <typename V, typename E = remove_vector_t<std::remove_cv_t<V>>>
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &type, V &vec) {
+        static_assert(!std::is_function_v<E> && !is_std_function_v<E>, "Vectors of callbacks are not supported");
+        static_assert(!is_std_vector_v<E>, "Vectors of vectors are not supported");
+        static_assert(!std::is_same_v<E, bool>, "Vectors of booleans are not supported");
+        static_assert(!std::is_same_v<std::remove_cv_t<std::remove_reference_t<E>>, char *>,
                 "Vectors of C-strings are not supported (use std::string instead)");
+        assert(type.element_type.has_value());
 
-        if (type.type != IntegralType::String) {
-            assert(type.size == sizeof(T));
+        if (type.type == IntegralType::VectorRef) {
+            return create_vector_ref_object_wrapper(type,
+                    VectorWrapper(const_cast<std::remove_cv_t<V> &>(vec), *type.element_type.value()));
+        } else {
+            if (type.element_type.value()->type != IntegralType::String) {
+                assert(type.element_type.value()->size == sizeof(E));
+            }
+
+            return create_vector_object_wrapper(type, reinterpret_cast<const void *>(vec.data()), vec.size());
         }
-
-        return create_vector_object_wrapper(type, reinterpret_cast<const void *>(vec.data()),
-                vec.size(), std::is_trivially_copyable_v<T>);
     }
 
     template <typename T>
@@ -132,32 +145,33 @@ namespace argus {
         }
     }
 
-    template <typename T, bool check_script_bindable>
+    template <typename T, DataFlowDirection flow_dir,
+            bool is_const = std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>>
     static ObjectType _create_object_type();
 
-    // Pass true as the second template parameter to forbid passing a reference
-    // to a script if the type doesn't derive from ScriptBindable. We forbid it
-    // because we would have no way of destroying the handle when the pointed-to
-    // object is destroyed.
+    // Second parameter implies that reference types must derive
+    // from ScriptBindable.
+    // Function return values are passed directly to the script, and we only
+    // allow scripts to assume ownership of references if the pointed-to type
+    // type derives from ScriptBindable so that the handle can be automatically
+    // invalidated when the object is destroyed.
     template <typename T>
-    constexpr ObjectType(*_create_return_object_type)()  = _create_object_type<T, true>;
+    constexpr ObjectType(*_create_return_object_type)() = _create_object_type<T, DataFlowDirection::ToScript>;
 
-    // Pass false as the second template parameter because we only care about
-    // references being passed from the engine to a script, and not the other
-    // way around.
     template <typename T>
-    constexpr ObjectType(*_create_callback_return_object_type)()  = _create_object_type<T, false>;
+    constexpr ObjectType(*_create_callback_return_object_type)()
+            = _create_object_type<T, DataFlowDirection::FromScript>;
 
-    template <typename Tuple, bool check_script_bindable, size_t... Is>
+    template <typename Tuple, DataFlowDirection flow_dir, size_t... Is>
     static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
         return std::vector<ObjectType> {
-            _create_object_type<std::tuple_element_t<Is, Tuple>, check_script_bindable>()...
+            _create_object_type<std::tuple_element_t<Is, Tuple>, flow_dir>()...
         };
     }
 
-    template <typename Tuple, bool check_script_bindable>
+    template <typename Tuple, DataFlowDirection flow_dir>
     static std::vector<ObjectType> _tuple_to_object_types() {
-        return _tuple_to_object_types_impl<Tuple, check_script_bindable>(
+        return _tuple_to_object_types_impl<Tuple, flow_dir>(
                 std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
     }
 
@@ -167,15 +181,14 @@ namespace argus {
             typename Args = typename function_traits<F>::argument_types>
     static std::enable_if_t<!std::is_function_v<F>, ScriptCallbackType> _create_callback_type() {
         return ScriptCallbackType {
-                // Pass true as the second template param to indicate that
-                // reference types are only allowed if they derive from
-                // ScriptBindable.
+                // Second parameter implies that reference types must derive
+                // from ScriptBindable.
                 // Callback params are passed directly to the script, and we
                 // only allow scripts to assume ownership of references if the
                 // pointed-to type derives from ScriptBindable so that the
-                // handle can be properly invalidated if the object is
+                // handle can be automatically invalidated when the object is
                 // destroyed.
-                _tuple_to_object_types<Args, true>(),
+                _tuple_to_object_types<Args, DataFlowDirection::ToScript>(),
                 _create_callback_return_object_type<ReturnType>()
         };
     }
@@ -191,10 +204,9 @@ namespace argus {
                     name,
                     type,
                     is_const,
-                    // pass false as the second template param because we only care
-                    // about ScriptBindable for objects being passed from the engine to
-                    // a script, and not the other way around
-                    _tuple_to_object_types<ArgsTuple, false>(),
+                    // Callback return values flow from the script VM to C++, so
+                    // we don't need to worry about invalidating any handles.
+                    _tuple_to_object_types<ArgsTuple, DataFlowDirection::FromScript>(),
                     _create_return_object_type<ReturnType>(),
                     create_function_wrapper(fn)
             };
@@ -205,56 +217,56 @@ namespace argus {
         }
     }
 
-    template <typename T, bool check_script_bindable>
+    template <typename T, DataFlowDirection flow_dir, bool is_const>
     static ObjectType _create_object_type() {
+        static_assert(!std::is_rvalue_reference_v<T>, "Rvalue reference types are not supported");
+
         using B = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
         if constexpr (std::is_void_v<T>) {
             return { IntegralType::Void, 0 };
         } else if constexpr (is_std_function_v<B>) {
-            static_assert(is_std_function_v<T>, "Callback reference/pointer params in bound function are not"
-                    "permitted (pass by value instead)");
+            static_assert(is_std_function_v<T>,
+                    "Callback reference/pointer params in bound function are not supported (pass by value instead)");
             return { IntegralType::Callback, sizeof(ProxiedFunction), false, std::nullopt, std::nullopt,
                     std::make_unique<ScriptCallbackType>(_create_callback_type<B>()), std::nullopt };
         } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
-            return { IntegralType::Type, sizeof(std::type_index) };
+            return { IntegralType::Type, sizeof(std::type_index), is_const };
+        } else if constexpr (is_std_vector_v<std::remove_cv_t<T>>) {
+            using E = remove_vector_t<B>;
+            return { IntegralType::Vector, sizeof(void *), is_const, typeid(std::remove_cv_t<T>),
+                    std::nullopt, std::nullopt, _create_object_type<E, flow_dir>()};
         } else if constexpr (is_std_vector_v<B>) {
-            return { IntegralType::Vector, sizeof(void *),
-                    std::is_const_v<std::remove_volatile_t<std::remove_pointer_t<std::remove_reference_t<T>>>>,
-                    typeid(std::remove_cv<std::remove_reference_t<std::remove_pointer_t<T>>>),
-                    std::nullopt, std::nullopt, std::nullopt, _create_object_type<remove_vector_t<B>>()};
+            // REALLY big headache, better to just not support it
+            static_assert(!(flow_dir == DataFlowDirection::FromScript
+                    && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>),
+                    "Non-const vector reference parameters are not supported");
+            using E = remove_vector_t<B>;
+            return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B), std::nullopt, std::nullopt,
+                    _create_object_type<E, flow_dir, is_const>()};
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
-            return { IntegralType::Boolean, sizeof(bool) };
+            return { IntegralType::Boolean, sizeof(bool), is_const };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
-            if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int8_t>) {
-                return { IntegralType::Integer, sizeof(int8_t) };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int16_t>) {
-                return { IntegralType::Integer, sizeof(int16_t) };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int32_t>) {
-                return { IntegralType::Integer, sizeof(int32_t) };
-            } else if constexpr (std::is_same_v<std::make_signed_t<std::remove_cv_t<T>>, int64_t>) {
-                return { IntegralType::Integer, sizeof(int64_t) };
-            } else {
-                Logger::default_logger().fatal("Unknown integer type");
-            }
+            return { IntegralType::Integer, sizeof(T), is_const };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, float>) {
-            return { IntegralType::Float, sizeof(float) };
+            return { IntegralType::Float, sizeof(float), is_const };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, double>) {
-            return { IntegralType::Float, sizeof(double) };
+            return { IntegralType::Float, sizeof(double), is_const };
         } else if constexpr ((std::is_pointer_v<T>
                     && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>)
                 || std::is_same_v<B, std::string>) {
-            return { IntegralType::String, 0 };
+            return { IntegralType::String, 0, is_const };
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
-            static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not permitted");
-            // we only allow scripts to receive references to types
-            static_assert(!(check_script_bindable && !std::is_base_of_v<ScriptBindable, B>),
-                    "Bound functions may not return a reference to a type which does not derive from ScriptBindable");
-            return { IntegralType::Pointer, sizeof(void *),
-                    std::is_const_v<std::remove_volatile_t<std::remove_pointer_t<std::remove_reference_t<T>>>>,
-                    typeid(std::remove_cv<std::remove_reference_t<std::remove_pointer_t<T>>>) };
+            // too much of a headache to worry about
+            static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not supported");
+            // References passed to scripts must be invalidated when the
+            // underlying object is destroyed, which is only possible if the
+            // type derives from ScriptBindable.
+            static_assert(!(flow_dir == DataFlowDirection::ToScript && !std::is_base_of_v<ScriptBindable, B>),
+                    "Reference types which flow from the engine to a script "
+                    "(function return values and callback parameters) must derive from ScriptBindable");
+            return { IntegralType::Pointer, sizeof(void *), is_const, typeid(B) };
         } else if constexpr (std::is_enum_v<T>) {
-            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), false,
-                    typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), is_const, typeid(B) };
         } else {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
@@ -262,8 +274,7 @@ namespace argus {
                     "Types in bound functions must have a public move constructor if passed by value");
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
-            return { IntegralType::Struct, sizeof(T), false,
-                    typeid(std::remove_reference_t<std::remove_pointer_t<T>>) };
+            return { IntegralType::Struct, sizeof(T), is_const, typeid(B) };
         }
     }
 
@@ -288,7 +299,7 @@ namespace argus {
 
     template <typename T>
     static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> *string_pool) {
-        using B = std::remove_const_t<remove_reference_wrapper_t<std::decay_t<T>>>;
+        using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
         if constexpr (is_std_function_v<B>) {
             assert(param.type.type == IntegralType::Callback);
             assert(param.type.callback_type.has_value());
@@ -350,11 +361,45 @@ namespace argus {
                 return string_pool->emplace_back(reinterpret_cast<const char *>(
                         param.is_on_heap ? param.heap_ptr : param.value));
             }
-        } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::decay_t<T>>>, std::string>) {
+        } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, std::string>) {
             assert(param.type.type == IntegralType::String);
             assert(string_pool != nullptr);
             return &string_pool->emplace_back(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
+        } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
+            //TODO: This is difficult to implement within the current framework.
+            // Because the vector isn't actually stored as an std::vector (it's
+            // expected to be stored in a format native to the scripting
+            // language instead), we don't have anything to point to.
+            // I think the best way to work around this is to implement a stack
+            // allocator in which we can instantiate std::vector objects. The
+            // allocated memory would simply be freed at the end of the function
+            // call. This will also work for strings, so we can get rid of the
+            // gross string_pool hack that's current in place.
+            static_assert(!is_reference_wrapper_v<T>, "Vector references are not yet supported");
+            using E = remove_vector_t<std::remove_cv_t<remove_reference_wrapper_t<T>>>;
+
+            VectorObject *obj = reinterpret_cast<VectorObject *>(param.get_ptr());
+
+            if (obj->get_object_type() == VectorObjectType::ArrayBlob) {
+                ArrayBlob *blob = reinterpret_cast<ArrayBlob *>(obj);
+                std::vector<E> vec(blob->size());
+                if constexpr (std::is_trivially_copyable_v<E>) {
+                    memcpy(vec.data(), blob->data(), blob->size() * blob->element_size());
+                } else {
+                    auto it = vec.begin();
+                    for (size_t i = 0; i < blob->size(); i++) {
+                        vec.emplace(it, blob->at<E>(i));
+                        it++;
+                    }
+                }
+                return vec;
+            } else if (obj->get_object_type() == VectorObjectType::VectorWrapper) {
+                VectorWrapper *wrapper = reinterpret_cast<VectorWrapper *>(obj);
+                return wrapper->get_underlying_vector<E>();
+            } else {
+                throw std::runtime_error("Invalid vector object type magic");
+            }
         } else if constexpr (is_reference_wrapper_v<T>) {
             assert(param.type.type == IntegralType::Pointer);
             return *reinterpret_cast<std::remove_reference_t<remove_reference_wrapper_t<T>> *>(
@@ -375,8 +420,7 @@ namespace argus {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
 
-            return *reinterpret_cast<std::remove_reference_t<T>*>(
-                    param.is_on_heap ? param.heap_ptr : param.value);
+            return *reinterpret_cast<std::remove_reference_t<T>*>(param.is_on_heap ? param.heap_ptr : param.value);
         }
     }
 
@@ -391,10 +435,11 @@ namespace argus {
     static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
         // treat C-string fields as const because there's no good way to manage their memory
         constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>
-                || std::is_same_v<std::remove_cv_t<std::decay_t<FieldType>>, char *>;
+                || std::is_same_v<std::remove_cv_t<FieldType>, char *>;
 
         try {
-            auto type = _create_object_type<FieldType, true>();
+            // field values are passed from the engine to the script VM
+            auto type = _create_object_type<FieldType, DataFlowDirection::ToScript>();
             type.is_const = is_const;
 
             BoundFieldDef def{};
@@ -444,6 +489,8 @@ namespace argus {
         }
     }
 
+    // proxy function which unwraps the given parameter list, forwards it to
+    // the provided function, and directly returns the result to the caller
     template <typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
     ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
@@ -529,6 +576,15 @@ namespace argus {
                     ret_obj_type.type_name = get_bound_type<ReturnType>().name;
                 } else if (ret_obj_type.type == IntegralType::Enum) {
                     ret_obj_type.type_name = get_bound_enum<ReturnType>().name;
+                } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
+                        && (ret_obj_type.element_type.value()->type == IntegralType::Struct
+                            || ret_obj_type.element_type.value()->type == IntegralType::Pointer)) {
+                    ret_obj_type.element_type.value()->type_name
+                            = get_bound_type(ret_obj_type.element_type.value()->type_index.value()).name;
+                } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
+                        && ret_obj_type.element_type.value()->type == IntegralType::Enum) {
+                    ret_obj_type.element_type.value()->type_name
+                            = get_bound_enum(ret_obj_type.element_type.value()->type_index.value()).name;
                 }
 
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
@@ -538,6 +594,9 @@ namespace argus {
                         && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                                 std::remove_reference_t<ReturnType>>>, char>) {
                     return create_object_wrapper(ret_obj_type, ret, strlen(ret));
+                } else if constexpr (is_std_vector_v<std::remove_cv_t<
+                        std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
+                    return create_vector_object_wrapper(ret_obj_type, ret);
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
                     return wrapper;

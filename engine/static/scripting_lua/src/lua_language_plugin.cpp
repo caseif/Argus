@@ -53,6 +53,9 @@ namespace argus {
     static constexpr const char *k_lua_require = "require";
     static constexpr const char *k_lua_require_def = "default_require";
 
+    static constexpr const char *k_mt_vector = "_internal_vector";
+    static constexpr const char *k_mt_vector_ref = "_internal_vectorref";
+
     static constexpr const char *k_const_prefix = "const ";
 
     // disable non-standard extension warning for zero-sized array member
@@ -164,6 +167,187 @@ namespace argus {
                 type_def.name
         };
         *dest = create_object_wrapper(obj_type, ptr);
+        return 0;
+    }
+
+    template <typename T, typename U = T>
+    static int _wrap_prim_vector_param(lua_State *state, const ObjectType &param_def,
+            const std::function<int(lua_State *, int)> &check_fn, const std::function<U(lua_State *, int)> &read_fn,
+            const char *expected_type_name, int param_index, const std::string &qual_fn_name, ObjectWrapper *dest) {
+        auto initial_top = lua_gettop(state);
+        UNUSED(initial_top);
+
+        // get number of indexed elements
+        auto len = lua_rawlen(state, -1);
+        affirm_precond(len <= INT_MAX, "Too many table indices");
+
+        std::vector<T> vec(len);
+
+        for (size_t i = 0; i < len; i++) {
+            auto index = int(i + 1);
+
+            lua_rawgeti(state, -1, index);
+
+            if (!check_fn(state, -1)) {
+                int rv = _set_lua_error(state, "Incorrect element type in vector parameter "
+                        + std::to_string(param_index) + " of function " + qual_fn_name
+                        + " (expected " + expected_type_name + ", actual " + luaL_typename(state, -1) + ")");
+                lua_pop(state, 1);
+                assert(lua_gettop(state) == initial_top);
+                return rv;
+            }
+
+            vec[i] = T(read_fn(state, -1));
+
+            lua_pop(state, 1);
+        }
+
+        *dest = create_vector_object_wrapper(param_def, vec);
+
+        assert(lua_gettop(state) == initial_top);
+        return 0;
+    }
+
+    static int _read_vector_from_table(lua_State *state, const std::string &qual_fn_name,
+            int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
+        const auto &element_type = *param_def.element_type.value();
+
+        // for simplicity's sake we require contiguous indices
+
+        switch (element_type.type) {
+            case Integer:
+            case Enum: {
+                auto check_fn = [](auto *state, auto index) {
+                    if (lua_isinteger(state, index)) {
+                        return true;
+                    } else if (lua_isnumber(state, index)) {
+                        const double threshold = 1e-10;
+                        auto num = lua_tonumber(state, index);
+                        return fabs(num - round(num)) < threshold;
+                    } else {
+                        return false;
+                    }
+                };
+                auto read_fn = [](auto *state, auto index) {
+                    return lua_tointeger(state, index);
+                };
+                switch (element_type.size) {
+                    case 1:
+                        return _wrap_prim_vector_param<int8_t, lua_Integer>(state, param_def, check_fn, read_fn,
+                                "integer", param_index, qual_fn_name, dest);
+                    case 2:
+                        return _wrap_prim_vector_param<int16_t, lua_Integer>(state, param_def, check_fn, read_fn,
+                                "integer", param_index, qual_fn_name, dest);
+                    case 4:
+                        return _wrap_prim_vector_param<int32_t, lua_Integer>(state, param_def, check_fn, read_fn,
+                                "integer", param_index, qual_fn_name, dest);
+                    case 8:
+                        return _wrap_prim_vector_param<int64_t, lua_Integer>(state, param_def, check_fn, read_fn,
+                                "integer", param_index, qual_fn_name, dest);
+                    default:
+                        Logger::default_logger().fatal("Unknown integer width %s", element_type.size);
+                }
+                break;
+            }
+            case Float: {
+                auto read_fn = [](auto *state, auto index) { return lua_tonumber(state, index); };
+                switch (element_type.size) {
+                    case 4:
+                        return _wrap_prim_vector_param<float, lua_Number>(state, param_def, lua_isnumber,
+                                read_fn, "number", param_index, qual_fn_name, dest);
+                    case 8:
+                        return _wrap_prim_vector_param<double, lua_Number>(state, param_def, lua_isnumber,
+                                read_fn, "number", param_index, qual_fn_name, dest);
+                    default:
+                        Logger::default_logger().fatal("Unknown floating-point width %s", element_type.size);
+                }
+                break;
+            }
+            case String:
+                return _wrap_prim_vector_param<std::string, const char *>(state, param_def, lua_isstring,
+                        [](auto *state, auto index) { return lua_tostring(state, index); },
+                        "string", param_index, qual_fn_name, dest);
+            case Struct:
+            case Pointer: {
+                auto type_name = _get_metatable_name(state, param_index);
+
+                auto bound_type = get_bound_type(type_name);
+
+                // get number of indexed elements
+                auto len = lua_rawlen(state, -1);
+                affirm_precond(len <= INT_MAX, "Too many table indices");
+
+                *dest = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
+
+                auto &blob = *new(dest->get_ptr()) ArrayBlob(element_type.size, len, bound_type.dtor.value_or(nullptr));
+
+                for (size_t i = 0; i < len; i++) {
+                    auto index = int(i + 1);
+
+                    lua_rawgeti(state, -1, index);
+
+                    if (!lua_isuserdata(state, -1)) {
+                        _set_lua_error(state, "Incorrect element type in parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
+                    }
+
+                    if (!(type_name == param_def.type_name.value()
+                            || (element_type.is_const
+                                    && type_name == k_const_prefix + param_def.type_name.value()))) {
+                        return _set_lua_error(state, "Incorrect userdata provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected " + (param_def.is_const ? k_const_prefix : "")
+                                + param_def.type_name.value()
+                                + ", actual " + type_name + ")");
+                    }
+
+                    auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+                    void *ptr;
+                    if (udata->is_handle) {
+                        // userdata is storing handle of pointer to struct data
+                        ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
+                                param_def.type_index.value());
+
+                        if (ptr == nullptr) {
+                            return _set_lua_error(state, "Invalid handle passed as parameter "
+                                    + std::to_string(param_index) + " of function " + qual_fn_name);
+                        }
+                    } else {
+                        if (element_type.type == IntegralType::Pointer) {
+                            //TODO: should we support this?
+                            return _set_lua_error(state,
+                                    "Cannot pass value-typed struct as pointer in parameter "
+                                            + std::to_string(param_index) + " of function " + qual_fn_name);
+                        }
+
+                        // userdata is directly storing struct data
+                        ptr = static_cast<void *>(udata->data);
+                    }
+
+                    if (element_type.type == IntegralType::Pointer) {
+                        blob.set<void *>(i, ptr);
+                    } else {
+                        assert(element_type.type == IntegralType::Struct);
+
+                        if (bound_type.copy_ctor.has_value()) {
+                            bound_type.copy_ctor.value()(ptr, blob[i]);
+                        } else {
+                            memcpy(blob[i], ptr, bound_type.size);
+                        }
+                    }
+
+                    // pop value
+                    lua_pop(state, 1);
+                }
+
+                break;
+            }
+            default:
+                throw std::runtime_error("Unhandled element type ordinal "
+                        + std::to_string(element_type.type));
+        }
+
         return 0;
     }
 
@@ -297,6 +481,12 @@ namespace argus {
                                 + std::to_string(param_index) + " of function " + qual_fn_name);
                     }
                 } else {
+                    if (param_def.type == IntegralType::Pointer) {
+                        return _set_lua_error(state,
+                                "Cannot pass value-typed struct as pointer in parameter "
+                                        + std::to_string(param_index) + " of function " + qual_fn_name);
+                    }
+
                     // userdata is directly storing struct data
                     ptr = static_cast<void *>(udata->data);
                 }
@@ -354,11 +544,29 @@ namespace argus {
                             + std::to_string(param_index) + " of function " + qual_fn_name);
                 }
             }
-            case Vector: {
-                //TODO
-                throw std::runtime_error("Vectors are not yet supported");
+            case Vector:
+            case VectorRef: {
+                assert(param_def.element_type.has_value());
 
-                break;
+                if (lua_istable(state, param_index)) {
+                    return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
+                } else if (lua_isuserdata(state, param_index)) {
+                    auto type_name = _get_metatable_name(state, param_index);
+
+                    if (type_name != k_mt_vector_ref) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected VectorWrapper, actual " + type_name + ")");
+                    }
+
+                    VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
+                    *dest = create_vector_object_wrapper(param_def, *vec);
+                    return 0;
+                } else {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
+                }
             }
             default:
                 Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
@@ -404,13 +612,140 @@ namespace argus {
         return *reinterpret_cast<const bool *>(wrapper.value);
     }
 
-    static void _set_metatable(lua_State *state, const ObjectWrapper &wrapper) {
+    static void _set_metatable(lua_State *state, const ObjectType &type) {
         auto mt = luaL_getmetatable(state,
-                ((wrapper.type.is_const ? k_const_prefix : "") + wrapper.type.type_name.value()).c_str());
+                ((type.is_const ? k_const_prefix : "") + type.type_name.value()).c_str());
         UNUSED(mt);
         assert(mt != 0); // binding should have failed if type wasn't bound
 
         lua_setmetatable(state, -2);
+    }
+
+    static void _push_value(lua_State *state, const ObjectWrapper &wrapper);
+
+    static int _lua_vector_index_handler(lua_State *state) {
+        VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, -2));
+        auto index = lua_tointeger(state, -1);
+
+        auto vec_size = vec->get_size();
+        if (index <= 0 || size_t(index) > vec_size) {
+            return _set_lua_error(state, "Index out of range for vector of size " + std::to_string(vec_size));
+        }
+
+        const void *el_ptr = const_cast<const VectorWrapper *>(vec)->at(size_t(index) - 1);
+        if (vec->element_type().type == IntegralType::Pointer) {
+            el_ptr = *reinterpret_cast<const void *const *>(el_ptr);
+        }
+
+        if (vec->element_type().type == IntegralType::Struct) {
+            // hack to return a reference to the vector element instead of a copy
+            ObjectType modified_type = vec->element_type();
+            modified_type.type = IntegralType::Pointer;
+            _push_value(state, create_object_wrapper(modified_type, el_ptr));
+        } else {
+            _push_value(state, create_object_wrapper(vec->element_type(), el_ptr));
+        }
+
+        return 1;
+    }
+
+    static int _lua_vector_ro_newindex_handler(lua_State *state) {
+        return _set_lua_error(state, "Cannot modify read-only vector returned from a bound function");
+    }
+
+    static int _lua_vector_rw_newindex_handler(lua_State *state) {
+        VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, -3));
+        auto index = lua_tointeger(state, -2);
+
+        auto vec_size = vec->get_size();
+        if (index <= 0 || size_t(index) > vec_size) {
+            return _set_lua_error(state, "Index out of range for vector of size " + std::to_string(vec_size));
+        }
+
+        ObjectWrapper wrapper;
+        _wrap_param(state, "__newindex", -1, vec->element_type(), &wrapper);
+
+        vec->set(size_t(index) - 1, wrapper.get_ptr());
+
+        return 1;
+    }
+
+    static void _push_vector_vals(lua_State *state, const ObjectType &element_type, const ArrayBlob &vec) {
+        assert(vec.size() < INT_MAX);
+        for (size_t i = 0; i < vec.size(); i++) {
+            // push index to stack
+            lua_pushinteger(state, int(i + 1));
+            switch (element_type.type) {
+                case Integer:
+                case Enum:
+                    switch (vec.element_size()) {
+                        case 1:
+                            lua_pushinteger(state, vec.at<int8_t>(i));
+                            break;
+                        case 2:
+                            lua_pushinteger(state, vec.at<int16_t>(i));
+                            break;
+                        case 4:
+                            lua_pushinteger(state, vec.at<int32_t>(i));
+                            break;
+                        case 8:
+                            lua_pushinteger(state, vec.at<int64_t>(i));
+                            break;
+                        default:
+                            throw std::runtime_error("Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
+                    }
+                    break;
+                case Float:
+                    lua_pushnumber(state, vec.element_size() == 8 ? vec.at<double>(i) : vec.at<float>(i));
+                    break;
+                case Boolean:
+                    lua_pushboolean(state, vec.at<bool>(i));
+                    break;
+                case String:
+                    lua_pushstring(state, vec.at<std::string>(i).c_str());
+                    break;
+                case Struct: {
+                    assert(element_type.type_name.has_value());
+
+                    auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
+                            sizeof(UserData) + element_type.size));
+                    udata->is_handle = false;
+
+                    auto bound_type = get_bound_type(element_type.type_index.value());
+                    if (bound_type.copy_ctor.has_value()) {
+                        bound_type.copy_ctor.value()(udata->data, vec[i]);
+                    } else {
+                        memcpy(udata->data, vec[i], vec.element_size());
+                    }
+                    _set_metatable(state, element_type);
+
+                    break;
+                }
+                case Pointer: {
+                    auto ptr = vec.at<void *>(i);
+                    if (ptr != nullptr) {
+                        auto handle = get_or_create_sv_handle(ptr, element_type.type_index.value());
+                        auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
+                                sizeof(UserData) + sizeof(ScriptBindableHandle)));
+                        udata->is_handle = true;
+                        memcpy(udata->data, &handle, sizeof(ScriptBindableHandle));
+                        _set_metatable(state, element_type);
+                    } else {
+                        lua_pushnil(state);
+                    }
+
+                    break;
+                }
+                default:
+                    // remove key from stack
+                    lua_pop(state, 1);
+                    throw std::runtime_error("Unhandled element type ordinal " + std::to_string(element_type.type));
+                    break;
+            }
+
+            // add key-value pair to table
+            lua_settable(state, -3);
+        }
     }
 
     static void _push_value(lua_State *state, const ObjectWrapper &wrapper) {
@@ -438,7 +773,7 @@ namespace argus {
                         sizeof(UserData) + wrapper.type.size));
                 udata->is_handle = false;
                 wrapper.copy_value(udata->data, wrapper.type.size);
-                _set_metatable(state, wrapper);
+                _set_metatable(state, wrapper.type);
 
                 break;
             }
@@ -454,7 +789,7 @@ namespace argus {
                             sizeof(UserData) + sizeof(ScriptBindableHandle)));
                     udata->is_handle = true;
                     memcpy(udata->data, &handle, sizeof(ScriptBindableHandle));
-                    _set_metatable(state, wrapper);
+                    _set_metatable(state, wrapper.type);
                 } else {
                     lua_pushnil(state);
                 }
@@ -462,9 +797,50 @@ namespace argus {
                 break;
             }
             case Vector: {
-                //TODO
-                throw std::runtime_error("Vectors are not yet supported");
+                auto &vec = *reinterpret_cast<const ArrayBlob *>(wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
+                affirm_precond(vec.size() <= INT_MAX, "Vector is too big");
 
+                // create table to return
+                lua_createtable(state, int(vec.size()), 0);
+
+                assert(wrapper.type.element_type.has_value());
+                _push_vector_vals(state, *wrapper.type.element_type.value(), vec);
+
+                // create metatable
+                luaL_newmetatable(state, k_mt_vector);
+                // set __newindex override
+                lua_pushcfunction(state, _lua_vector_ro_newindex_handler);
+                lua_setfield(state, -2, k_lua_newindex);
+                // set metatable on return table
+                lua_setmetatable(state, -2);
+
+                // table is now on top of stack
+                break;
+            }
+            case VectorRef: {
+                auto &vec = *reinterpret_cast<const VectorWrapper *>(
+                        wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
+
+                // create userdata to return
+                VectorWrapper *udata = reinterpret_cast<VectorWrapper *>(lua_newuserdata(state, sizeof(VectorWrapper)));
+                new(udata) VectorWrapper(vec);
+
+                // create metatable
+                luaL_newmetatable(state, k_mt_vector_ref);
+                // set __index override
+                lua_pushcfunction(state, _lua_vector_index_handler);
+                lua_setfield(state, -2, k_lua_index);
+                // set __newindex override
+                if (vec.is_const()) {
+                    lua_pushcfunction(state, _lua_vector_ro_newindex_handler);
+                } else {
+                    lua_pushcfunction(state, _lua_vector_rw_newindex_handler);
+                }
+                lua_setfield(state, -2, k_lua_newindex);
+                // set metatable on return table
+                lua_setmetatable(state, -2);
+
+                // table is now on top of stack
                 break;
             }
             default:
@@ -594,7 +970,8 @@ namespace argus {
                 try {
                     _push_value(state, retval);
                 } catch (const std::exception &) {
-                    Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
+                    //Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
+                    throw;
                 }
 
                 assert(lua_gettop(state) == initial_top + 1);
@@ -670,7 +1047,7 @@ namespace argus {
         return true;
     }
 
-    static int _lua_index_handler(lua_State *state) {
+    static int _lua_type_index_handler(lua_State *state) {
         auto initial_top = lua_gettop(state);
         UNUSED(initial_top);
 
@@ -734,7 +1111,7 @@ namespace argus {
         return 0;
     }
 
-    static int _lua_newindex_handler(lua_State *state) {
+    static int _lua_type_newindex_handler(lua_State *state) {
         auto initial_top = lua_gettop(state);
         UNUSED(initial_top);
 
@@ -778,13 +1155,13 @@ namespace argus {
 
         // bind __index and __newindex overrides
 
-        // push __newindex function to stack
-        lua_pushcfunction(state, _lua_index_handler);
+        // push __index function to stack
+        lua_pushcfunction(state, _lua_type_index_handler);
         // save function override
         lua_setfield(state, -3, k_lua_index);
 
-        // push __index function to stack
-        lua_pushcfunction(state, _lua_newindex_handler);
+        // push __newindex function to stack
+        lua_pushcfunction(state, _lua_type_newindex_handler);
         // save function override
         lua_setfield(state, -3, k_lua_newindex);
 

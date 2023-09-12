@@ -181,6 +181,15 @@ namespace argus {
         ObjectWrapper wrapper(type, size);
 
         switch (type.type) {
+            case String:
+                throw std::invalid_argument(
+                        "create_object_wrapper called for String type (use string-specific function instead)");
+            case Callback:
+                throw std::invalid_argument(
+                        "create_object_wrapper called for Callback type (use callback-specific function instead)");
+            case Vector:
+                throw std::invalid_argument(
+                        "create_object_wrapper called for Vector type (use vector-specific function instead)");
             case Pointer: {
                 // for pointer types we copy the pointer itself
                 memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
@@ -199,7 +208,7 @@ namespace argus {
 
                 break;
             }
-            case Callback: {
+            /*case Callback: {
                 new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
                 wrapper.copy_ctor = [](void *dst, const void *src) {
                     return new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
@@ -210,7 +219,7 @@ namespace argus {
                 wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
 
                 break;
-            }
+            }*/
             default: {
                 // for everything else we bitwise-copy the value
                 // note that std::type_index is trivially copyable
@@ -253,12 +262,8 @@ namespace argus {
         return create_object_wrapper(type, &fn, sizeof(fn));
     }
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const void *data, size_t count,
-            bool is_trivially_copyable) {
-        affirm_precond(vec_type.type == IntegralType::Vector,
-                "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
-
-        ObjectType &el_type = *vec_type.element_type.value().get();
+    static void _validate_vec_obj_type(ObjectType vec_type) {
+        ObjectType &el_type = *vec_type.element_type.value();
 
         if (el_type.type == IntegralType::Void) {
             throw std::invalid_argument("Vectors of void are not supported");
@@ -268,7 +273,26 @@ namespace argus {
             throw std::invalid_argument("Vectors of types are not supported");
         } else if (el_type.type == IntegralType::Vector) {
             throw std::invalid_argument("Vectors of vectors are not supported");
+        } else if (el_type.type == IntegralType::Boolean) {
+            // C++ is stupid and specializes std::vector<bool> as a bitfield,
+            // which fucks with our assumptions about how we can tinker with
+            // the vector. Much easier to just not support it.
+            throw std::invalid_argument("Vectors of booleans are not supported");
         }
+    }
+
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const void *data, size_t count) {
+        affirm_precond(vec_type.type == IntegralType::Vector,
+                "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
+
+        _validate_vec_obj_type(vec_type);
+        affirm_precond(count < SIZE_MAX, "Too many vector elements");
+
+        ObjectType &el_type = *vec_type.element_type.value();
+
+        bool is_trivially_copyable = el_type.type != IntegralType::String
+                && !(el_type.type == IntegralType::Struct
+                        && get_bound_type(el_type.type_index.value()).copy_ctor.has_value());
 
         size_t el_size = el_type.size;
         if (el_type.type == IntegralType::String) {
@@ -278,14 +302,16 @@ namespace argus {
         size_t blob_size = sizeof(ArrayBlob) + el_size * count;
 
         ObjectWrapper wrapper(vec_type, blob_size);
+        ArrayBlob &blob = *new(wrapper.get_ptr()) ArrayBlob(el_size, count,
+                el_type.type == IntegralType::String
+                        ? [](void *ptr) { reinterpret_cast<std::string *>(ptr)->~basic_string(); }
+                        : std::function<void(void *)>(nullptr));
 
         if (is_trivially_copyable) {
             // can just copy the whole thing in one go and avoid looping
-            memcpy(wrapper.get_ptr(), data, blob_size);
+            memcpy(blob[0], data, el_size * count);
         } else {
-            ArrayBlob &blob = *reinterpret_cast<ArrayBlob *>(wrapper.get_ptr());
-
-            affirm_precond(count < SIZE_MAX, "Too many vector elements");
+            assert(count < SIZE_MAX);
 
             if (el_type.type == IntegralType::String) {
                 // strings need to be handled specially because they're the only
@@ -295,6 +321,7 @@ namespace argus {
                     auto src_ptr = reinterpret_cast<std::string *>(
                             reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size));
                     void *dst_ptr = blob[i];
+                    //TODO: free memory when wrapper is destroyed
                     new(dst_ptr) std::string(*src_ptr);
                 }
             } else {
@@ -312,6 +339,26 @@ namespace argus {
                 }
             }
         }
+
+        return wrapper;
+    }
+
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, VectorWrapper vec) {
+        affirm_precond(vec_type.type == IntegralType::Vector,
+                "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
+        _validate_vec_obj_type(vec_type);
+
+        return create_vector_object_wrapper(vec_type, vec.get_data(), vec.get_size());
+    }
+
+    ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec) {
+        affirm_precond(vec_type.type == IntegralType::VectorRef,
+                "Cannot create object wrapper (vectorref-specific overload called for non-vectorref-typed value)");
+        _validate_vec_obj_type(vec_type);
+
+        ObjectWrapper wrapper(vec_type, sizeof(VectorRef));
+
+        new(wrapper.get_ptr()) VectorWrapper(std::move(vec));
 
         return wrapper;
     }

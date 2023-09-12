@@ -21,10 +21,7 @@
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
 
-#include <algorithm>
 #include <chrono>
-
-#include <cstdint>
 
 namespace argus {
     std::vector<ScriptDeltaCallback> g_update_callbacks;

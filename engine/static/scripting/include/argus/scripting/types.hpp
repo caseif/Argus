@@ -43,7 +43,8 @@ namespace argus {
         Enum,
         Callback,
         Type,
-        Vector
+        Vector,
+        VectorRef
     };
 
     enum FunctionType {
@@ -181,44 +182,163 @@ namespace argus {
         void operator()(void *ptr) { free(ptr); }
     };
 
+    enum class VectorObjectType {
+        ArrayBlob,
+        VectorWrapper
+    };
+
+    class VectorObject {
+      private:
+        VectorObjectType m_obj_type;
+
+      protected:
+        VectorObject(VectorObjectType type);
+
+      public:
+        VectorObjectType get_object_type(void);
+    };
+
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4200)
     #endif
-    class ArrayBlob {
+    class ArrayBlob : VectorObject {
       private:
-        size_t m_element_size;
-        size_t m_count;
+        const size_t m_element_size;
+        const size_t m_count;
+        const std::function<void(void *)> m_element_dtor;
         unsigned char m_blob[0];
 
       public:
-        ArrayBlob(size_t element_size, size_t count);
+        ArrayBlob(size_t element_size, size_t count, std::function<void(void *)> element_dtor);
 
-        template <typename T>
-        ArrayBlob(size_t count) : ArrayBlob(sizeof(T), count) {
+        template <typename E>
+        ArrayBlob(size_t count) : ArrayBlob(sizeof(E), count, [](void *ptr) { reinterpret_cast<E *>(ptr).~E(); }) {
         }
+
+        ArrayBlob(const ArrayBlob &) = delete;
+
+        ArrayBlob(ArrayBlob &&) = delete;
+
+        ArrayBlob &operator=(const ArrayBlob &) = delete;
+
+        ArrayBlob &operator=(ArrayBlob &&) = delete;
+
+        ~ArrayBlob(void);
+
+        [[nodiscard]] size_t size(void) const;
+
+        [[nodiscard]] size_t element_size(void) const;
+
+        void *data(void);
 
         void *operator[](size_t index);
 
         const void *operator[](size_t index) const;
 
         template <typename T>
-        T &operator[](size_t index) {
+        [[nodiscard]] const T &at(size_t index) const {
             if (sizeof(T) != m_element_size) {
                 throw std::invalid_argument("Template parameter size does not match element size");
             }
-            return *reinterpret_cast<T *>(this->operator[](index));
+            return *reinterpret_cast<const T *>(this->operator[](index));
         }
 
         template <typename T>
-        const T &operator[](size_t index) const {
-            return const_cast<const T &>(const_cast<ArrayBlob *>(this)->operator[]<T>(index));
+        [[nodiscard]] T &at(size_t index) {
+            return const_cast<T &>(const_cast<const ArrayBlob *>(this)->at<T>(index));
+        }
+
+        template <typename T>
+        void set(size_t index, T val) {
+            *reinterpret_cast<T *>(this->operator[](index)) = val;
         }
     };
     #ifdef _MSC_VER
     #pragma warning(pop)
     #endif
+
+    class VectorWrapper : VectorObject {
+       public:
+        typedef std::function<size_t(const void *)> size_accessor_t;
+        typedef std::function<const void *(void *)> data_accessor_t;
+        typedef std::function<void *(void *, size_t)> element_accessor_t;
+        typedef std::function<void(void *, size_t, void *)> element_mutator_t;
+
+       private:
+        size_t m_element_size;
+        ObjectType m_element_type;
+        void *m_underlying_vec;
+        std::shared_ptr<size_accessor_t> m_get_size_fn;
+        std::shared_ptr<data_accessor_t> m_get_data_fn;
+        std::shared_ptr<element_accessor_t> m_get_element_fn;
+        std::shared_ptr<element_mutator_t> m_set_element_fn;
+
+       public:
+        VectorWrapper(size_t element_size, const ObjectType &element_type, void *underlying_vec,
+                const size_accessor_t &get_size_fn, const data_accessor_t &get_data_fn,
+                const element_accessor_t &get_element_fn, const element_mutator_t &set_element_fn);
+
+        template <typename E>
+        VectorWrapper(std::vector<E> &underlying_vec, ObjectType element_type) : VectorWrapper(
+                sizeof(E),
+                element_type,
+                reinterpret_cast<void *>(&underlying_vec),
+                [](const void *vec_ptr) { return reinterpret_cast<const std::vector<E> *>(vec_ptr)->size(); },
+                [](void *vec_ptr) {
+                    return reinterpret_cast<const void *>(reinterpret_cast<const std::vector<E> *>(vec_ptr)->data());
+                },
+                [](void *vec_ptr, size_t index) { return &reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index); },
+                [](void *vec_ptr, size_t index, void *val) {
+                    reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index) = *reinterpret_cast<E *>(val);
+                }) {
+        }
+
+        [[nodiscard]] size_t element_size(void) const;
+
+        [[nodiscard]] const ObjectType &element_type(void) const;
+
+        [[nodiscard]] bool is_const(void) const;
+
+        [[nodiscard]] size_t get_size(void) const;
+
+        [[nodiscard]] const void *get_data(void) const;
+
+        [[nodiscard]] const void *at(size_t index) const;
+
+        template <typename E>
+        [[nodiscard]] const E &at(size_t index) const {
+            reinterpret_cast<std::vector<E> *>(m_underlying_vec)->at(index);
+        }
+
+        [[nodiscard]] void *at(size_t index);
+
+        template <typename E>
+        [[nodiscard]] E &at(size_t index) {
+            return reinterpret_cast<std::vector<E> *>(m_underlying_vec)->at(index);
+        }
+
+        void set(size_t index, void *val);
+
+        template <typename E>
+        void set(size_t index, const E &val) {
+            if (sizeof(E) != m_element_size) {
+                throw std::invalid_argument("Template type size does not match element size of VectorWrapper");
+            }
+            set(index, reinterpret_cast<void *>(&val));
+        }
+
+        template <typename E>
+        [[nodiscard]] const std::vector<E> &get_underlying_vector(void) const {
+            return *reinterpret_cast<const std::vector<E> *>(m_underlying_vec);
+        }
+
+        template <typename E>
+        [[nodiscard]] std::vector<E> &get_underlying_vector(void) {
+            return *reinterpret_cast<std::vector<E> *>(m_underlying_vec);
+        }
+    };
 
     class ScriptBindable {
       public:

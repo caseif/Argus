@@ -33,7 +33,7 @@
 #include <unordered_set>
 
 namespace argus {
-    static void _resolve_param(ObjectType &param_def) {
+    static void _resolve_param(ObjectType &param_def, bool check_copyable = true) {
         if (param_def.type == IntegralType::Callback) {
             assert(param_def.callback_type.has_value());
             auto &callback_type = *param_def.callback_type.value();
@@ -42,6 +42,11 @@ namespace argus {
             }
 
             _resolve_param(callback_type.return_type);
+
+            return;
+        } else if (param_def.type == IntegralType::Vector) {
+            assert(param_def.element_type.has_value());
+            _resolve_param(*param_def.element_type.value(), false);
 
             return;
         } else if (!is_bound_type(param_def.type)) {
@@ -59,22 +64,24 @@ namespace argus {
             auto &bound_type = get_bound_type(param_def.type_index.value());
 
             if (param_def.type == IntegralType::Struct) {
-                if (!bound_type.copy_ctor.has_value()) {
-                    throw BindingException(bound_type.name,
-                            "Struct-typed parameter passed by value with type "
-                                    + bound_type.name + " is not copy-constructible");
-                }
+                if (check_copyable) {
+                    if (!bound_type.copy_ctor.has_value()) {
+                        throw BindingException(bound_type.name,
+                                "Struct-typed parameter passed by value with type "
+                                        + bound_type.name + " is not copy-constructible");
+                    }
 
-                if (!bound_type.move_ctor.has_value()) {
-                    throw BindingException(bound_type.name,
-                            "Struct-typed parameter passed by value with type "
-                                    + bound_type.name + " is not move-constructible");
-                }
+                    if (!bound_type.move_ctor.has_value()) {
+                        throw BindingException(bound_type.name,
+                                "Struct-typed parameter passed by value with type "
+                                        + bound_type.name + " is not move-constructible");
+                    }
 
-                if (!bound_type.dtor.has_value()) {
-                    throw BindingException(bound_type.name,
-                            "Struct-typed parameter passed by value with type "
-                                    + bound_type.name + " is not destructible");
+                    if (!bound_type.dtor.has_value()) {
+                        throw BindingException(bound_type.name,
+                                "Struct-typed parameter passed by value with type "
+                                        + bound_type.name + " is not destructible");
+                    }
                 }
             }
 
