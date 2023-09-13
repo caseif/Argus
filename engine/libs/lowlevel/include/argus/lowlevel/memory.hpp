@@ -39,11 +39,11 @@ namespace argus {
 
         explicit PoolAllocator(size_t block_size, uint8_t alignment_exp = 3);
 
-        PoolAllocator(PoolAllocator &) = delete;
+        PoolAllocator(const PoolAllocator &) = delete;
 
         PoolAllocator(PoolAllocator &&) = delete;
 
-        PoolAllocator &operator=(PoolAllocator &) = delete;
+        PoolAllocator &operator=(const PoolAllocator &) = delete;
 
         PoolAllocator &operator=(PoolAllocator &&) = delete;
 
@@ -53,16 +53,45 @@ namespace argus {
 
         void free(void *addr);
 
-        template<typename T, typename... Args>
+        template <typename T, typename... Args>
         T &construct(Args &&... args) {
             return *new(this->alloc()) T(args...);
         }
 
-        template<typename T>
+        template <typename T>
         void destroy(T *obj) {
             //TODO: add a safeguard to prevent destructor being invoked on invalid pointer
             obj->~T();
             this->free(obj);
+        }
+    };
+
+    struct pimpl_ScratchAllocator;
+
+    class ScratchAllocator {
+      private:
+        pimpl_ScratchAllocator *m_pimpl;
+
+      public:
+        explicit ScratchAllocator(uint8_t alignment_exp = 3);
+
+        ScratchAllocator(const ScratchAllocator &) = delete;
+
+        ScratchAllocator(ScratchAllocator &&) = delete;
+
+        ScratchAllocator &operator=(const ScratchAllocator &&) = delete;
+
+        ScratchAllocator &operator=(ScratchAllocator &&) = delete;
+
+        ~ScratchAllocator(void);
+
+        void *alloc(size_t size);
+
+        void release(void);
+
+        template <typename T, typename... Args>
+        T &construct(Args &&... args) {
+            return *new(this->alloc(sizeof(T))) T(args...);
         }
     };
 }
