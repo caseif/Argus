@@ -64,12 +64,12 @@ typedef uint32_t CanaryValue;
 
 namespace argus {
 
-// some quick terminology:
-//   block - a section of memory used to store a single object in the pool.
-//   chunk - a section of contiguous memory used to store multiple pool objects.
-//           a pool may contain many non-contiguous chunks.
+    // some quick terminology:
+    //   block - a section of memory used to store a single object in the pool.
+    //   chunk - a section of contiguous memory used to store multiple pool objects.
+    //           a pool may contain many non-contiguous chunks.
 
-// disable non-standard extension warning for zero-sized array member
+    // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4200)
