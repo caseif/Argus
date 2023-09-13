@@ -30,7 +30,7 @@ namespace argus {
     // forward declarations
     struct Vertex2D;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_RenderPrim2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_RenderPrim2D));
 
     RenderPrim2D::RenderPrim2D(const std::vector<Vertex2D> &vertices) {
         pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);

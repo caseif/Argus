@@ -85,7 +85,7 @@ namespace argus {
     #pragma warning(pop)
     #endif
 
-    struct pimpl_AllocPool {
+    struct pimpl_PoolAllocator {
         const size_t nominal_block_size;
         const size_t real_block_size;
         const uint8_t alignment_exp;
@@ -110,8 +110,8 @@ namespace argus {
         return ((base_val - 1) & ~(alignment_bytes - 1U)) + alignment_bytes;
     }
 
-    // helper function for allocating memory for an AllocPool
-    static ChunkMetadata *_create_chunk(pimpl_AllocPool *pool) {
+    // helper function for allocating memory for an PoolAllocator
+    static ChunkMetadata *_create_chunk(pimpl_PoolAllocator *pool) {
         // because this function does a lot of pointer math, it mostly works with uintptr_t
         // to reduce the likelihood of mistakes related to type conversion
 
@@ -157,8 +157,8 @@ namespace argus {
         return new_chunk;
     }
 
-    AllocPool::AllocPool(size_t block_size, uint8_t alignment_exp) :
-            pimpl(new pimpl_AllocPool(
+    PoolAllocator::PoolAllocator(size_t block_size, uint8_t alignment_exp) :
+            pimpl(new pimpl_PoolAllocator(
                     // we pass both the real block size and the size in the pool so objects can be aligned in the pool
                     {block_size, _next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
                      alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
@@ -167,7 +167,7 @@ namespace argus {
         pimpl->first_chunk = first_chunk;
     }
 
-    AllocPool::~AllocPool(void) {
+    PoolAllocator::~PoolAllocator(void) {
         const ChunkMetadata *chunk = pimpl->first_chunk;
         while (chunk != nullptr) {
             uintptr_t addr = chunk->unaligned_addr;
@@ -177,7 +177,7 @@ namespace argus {
         }
     }
 
-    void *AllocPool::alloc(void) {
+    void *PoolAllocator::alloc(void) {
         // return malloc(pimpl->real_block_size); // for benchmarking purposes
 
         //TODO: allow synchronization to be enabled/disabled per pool
@@ -238,7 +238,7 @@ namespace argus {
         return reinterpret_cast<void *>(block_addr);
     }
 
-    void AllocPool::free(void *const addr) {
+    void PoolAllocator::free(void *const addr) {
         if (addr == nullptr) {
             throw std::invalid_argument("Program attempted to free null pointer");
         }

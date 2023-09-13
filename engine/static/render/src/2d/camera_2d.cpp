@@ -25,7 +25,7 @@
 #include <string>
 
 namespace argus {
-    static AllocPool g_alloc_pool(sizeof(pimpl_Camera2D));
+    static PoolAllocator g_alloc_pool(sizeof(pimpl_Camera2D));
 
     Camera2D::Camera2D(const std::string &id, Scene2D &scene) :
             pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {

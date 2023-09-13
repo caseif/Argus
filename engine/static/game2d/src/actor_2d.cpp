@@ -28,7 +28,7 @@
 #include "internal/game2d/pimpl/actor_2d.hpp"
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Actor2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Actor2D));
 
     Actor2D::Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
             const Transform2D &transform) {

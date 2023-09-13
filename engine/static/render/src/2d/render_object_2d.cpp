@@ -37,7 +37,7 @@ namespace argus {
 
     class Scene2D;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_RenderObject2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_RenderObject2D));
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,

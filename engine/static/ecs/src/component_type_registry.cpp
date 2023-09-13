@@ -96,11 +96,11 @@ namespace argus {
             return;
         }
 
-        pimpl->component_pools = static_cast<AllocPool *>(malloc(sizeof(AllocPool) * pimpl->next_id));
+        pimpl->component_pools = static_cast<PoolAllocator *>(malloc(sizeof(PoolAllocator) * pimpl->next_id));
         for (auto cmpt : pimpl->component_types) {
             auto index = cmpt.second.id;
-            AllocPool &target = pimpl->component_pools[index];
-            new(&target) AllocPool(cmpt.second.size);
+            PoolAllocator &target = pimpl->component_pools[index];
+            new(&target) PoolAllocator(cmpt.second.size);
         }
     }
 

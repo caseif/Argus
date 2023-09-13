@@ -32,7 +32,7 @@ namespace argus {
     struct ProcessedRenderObject;
 
     struct RenderBucket {
-        friend class AllocPool;
+        friend class PoolAllocator;
 
         const Resource &material_res;
         const Vector2f atlas_stride;

@@ -28,26 +28,26 @@ namespace argus {
 
     void *alloc_page(void);
 
-    struct pimpl_AllocPool;
+    struct pimpl_PoolAllocator;
 
-    class AllocPool {
+    class PoolAllocator {
       private:
-        pimpl_AllocPool *pimpl;
+        pimpl_PoolAllocator *pimpl;
 
       public:
         std::mutex alloc_mutex;
 
-        explicit AllocPool(size_t block_size, uint8_t alignment_exp = 3);
+        explicit PoolAllocator(size_t block_size, uint8_t alignment_exp = 3);
 
-        AllocPool(AllocPool &) = delete;
+        PoolAllocator(PoolAllocator &) = delete;
 
-        AllocPool(AllocPool &&) = delete;
+        PoolAllocator(PoolAllocator &&) = delete;
 
-        AllocPool &operator=(AllocPool &) = delete;
+        PoolAllocator &operator=(PoolAllocator &) = delete;
 
-        AllocPool &operator=(AllocPool &&) = delete;
+        PoolAllocator &operator=(PoolAllocator &&) = delete;
 
-        ~AllocPool(void);
+        ~PoolAllocator(void);
 
         void *alloc(void);
 
@@ -65,5 +65,4 @@ namespace argus {
             this->free(obj);
         }
     };
-
 }

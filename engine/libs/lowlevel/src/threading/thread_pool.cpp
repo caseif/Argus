@@ -28,7 +28,7 @@
 #include <utility>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_ThreadPool));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_ThreadPool));
 
     static uint16_t _decide_optimal_thread_count() {
         auto cores = std::thread::hardware_concurrency();

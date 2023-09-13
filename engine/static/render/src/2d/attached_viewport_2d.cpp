@@ -25,7 +25,7 @@
 #include <string>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));
 
     AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index) :
             AttachedViewport(SceneType::TwoD),

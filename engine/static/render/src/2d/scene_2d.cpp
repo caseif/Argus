@@ -42,7 +42,7 @@ namespace argus {
 
     struct pimpl_Scene;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Scene2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Scene2D));
 
     Scene2D &Scene2D::create(const std::string &id) {
         if (g_scenes.find(id) != g_scenes.end()) {

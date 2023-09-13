@@ -26,7 +26,7 @@
 #include <cstdint>
 
 namespace argus {
-    static AllocPool g_alloc_pool(sizeof(RenderBucket));
+    static PoolAllocator g_alloc_pool(sizeof(RenderBucket));
 
     RenderBucket &RenderBucket::create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index) {
         return *new(g_alloc_pool.alloc()) RenderBucket(material_res, atlas_stride, z_index);

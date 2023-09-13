@@ -27,7 +27,7 @@
 #include <cstddef>
 
 namespace argus {
-    static AllocPool g_obj_pool(sizeof(ProcessedRenderObject));
+    static PoolAllocator g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Vector2f &atlas_stride,
             uint32_t z_index, buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,

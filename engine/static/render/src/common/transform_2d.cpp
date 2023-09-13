@@ -29,7 +29,7 @@
 #include <cmath>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Transform2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Transform2D));
 
     static void _inc_version(Transform2D &transform) {
         if (transform.pimpl->version_ptr != nullptr) {

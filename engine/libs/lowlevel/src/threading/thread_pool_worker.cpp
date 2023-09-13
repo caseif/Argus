@@ -26,7 +26,7 @@
 #include <utility>
 
 namespace argus {
-    static AllocPool g_task_pool(sizeof(ThreadPoolTask));
+    static PoolAllocator g_task_pool(sizeof(ThreadPoolTask));
 
     ThreadPoolTask::ThreadPoolTask(void) :
             ThreadPoolTask(nullptr) {

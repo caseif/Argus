@@ -24,7 +24,7 @@
 #include <cstdio>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_TextureData));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_TextureData));
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data) :

@@ -28,7 +28,7 @@
 #include <vector>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Sprite));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Sprite));
 
     Sprite::Sprite(const Resource &definition) :
             pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(definition)) {

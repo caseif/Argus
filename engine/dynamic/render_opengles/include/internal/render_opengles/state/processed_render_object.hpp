@@ -36,7 +36,7 @@ namespace argus {
     class RenderObject2D;
 
     struct ProcessedRenderObject {
-        friend class AllocPool;
+        friend class PoolAllocator;
 
         const Resource &material_res;
         const Vector2f atlas_stride;

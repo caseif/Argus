@@ -25,7 +25,7 @@
 #include <vector>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Material));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Material));
 
     Material::Material(const std::string &texture, const std::vector<std::string> &shaders) :
             pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {

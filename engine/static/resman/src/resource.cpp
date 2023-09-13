@@ -29,7 +29,7 @@
 #include <vector>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Resource));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Resource));
 
     Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
             void *const data_ptr, const std::vector<std::string> &dependencies) :

@@ -30,7 +30,7 @@
 #include <cstdint>
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Shader));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Shader));
 
     Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src)
             :

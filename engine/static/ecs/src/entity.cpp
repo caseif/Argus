@@ -36,7 +36,7 @@ namespace argus {
     std::mutex g_entity_changes_mutex;
 
     //TODO: eventually implement some kind of periodic defragmentation routine that can run asynchronously
-    static AllocPool *g_entity_pool;
+    static PoolAllocator *g_entity_pool;
 
     static size_t g_next_id;
 
@@ -48,7 +48,7 @@ namespace argus {
         if (g_entity_pool == nullptr) {
             size_t entity_size = sizeof(Entity)
                                  + (sizeof(void *) * ComponentTypeRegistry::instance().get_type_count());
-            g_entity_pool = new AllocPool(entity_size);
+            g_entity_pool = new PoolAllocator(entity_size);
         }
 
         Entity &entity = *static_cast<Entity *>(g_entity_pool->alloc());

@@ -29,7 +29,7 @@
 #include <cmath> // IWYU pragma: keep
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Transform3D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Transform3D));
 
     Transform3D::Transform3D(void) : Transform3D({0, 0, 0}, {0, 0, 0}, {1, 1, 1}) {
     }

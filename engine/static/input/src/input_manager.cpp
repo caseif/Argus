@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace argus::input {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_InputManager));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_InputManager));
 
     InputManager &InputManager::instance(void) {
         static InputManager instance;

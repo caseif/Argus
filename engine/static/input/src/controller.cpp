@@ -27,7 +27,7 @@
 #include <vector>
 
 namespace argus::input {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_Controller));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_Controller));
 
     Controller::Controller(ControllerIndex index) :
             pimpl(&g_pimpl_pool.construct<pimpl_Controller>(index)) {

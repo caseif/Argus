@@ -41,7 +41,7 @@
 #define BG_LAYER_ID_PREFIX "_background_"
 
 namespace argus {
-    static AllocPool g_pimpl_pool(sizeof(pimpl_World2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_World2D));
 
     static std::map<std::string, World2D *> g_worlds;
 

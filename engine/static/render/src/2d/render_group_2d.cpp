@@ -38,7 +38,7 @@ namespace argus {
 
     class Scene2D;
 
-    static AllocPool g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
+    static PoolAllocator g_pimpl_pool(sizeof(pimpl_RenderGroup2D));
 
     static Handle _make_handle(RenderGroup2D *group) {
         return g_render_handle_table.create_handle(group);
