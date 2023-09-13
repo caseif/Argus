@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include "argus/lowlevel/macros.hpp"
+
+#include <memory>
 #include <mutex>
 #include <new>
 
@@ -92,6 +95,41 @@ namespace argus {
         template <typename T, typename... Args>
         T &construct(Args &&... args) {
             return *new(this->alloc(sizeof(T))) T(args...);
+        }
+    };
+
+    template <typename T>
+    class ScratchAllocatorWrapper {
+      private:
+        ScratchAllocator &m_impl;
+
+      public:
+        using value_type = T;
+
+        ScratchAllocatorWrapper(ScratchAllocator &impl) :
+                m_impl(impl) {
+        }
+
+        ScratchAllocatorWrapper(const ScratchAllocatorWrapper &rhs) = default;
+
+        T *allocate(size_t size) {
+            return reinterpret_cast<T *>(m_impl.alloc(size));
+        }
+
+        void deallocate(T *ptr, size_t size) {
+            // no-op
+            UNUSED(ptr);
+            UNUSED(size);
+        }
+
+        template <typename U>
+        inline bool operator==(const ScratchAllocatorWrapper<U> &rhs) {
+            return m_impl = rhs.m_impl;
+        }
+
+        template <typename U>
+        inline bool operator != (const ScratchAllocatorWrapper<U> &rhs) {
+            return !(*this == rhs);
         }
     };
 }
