@@ -45,6 +45,7 @@ namespace argus {
 
     ScratchAllocator::ScratchAllocator(uint8_t alignment_exp) :
         m_pimpl(nullptr) {
+        UNUSED(m_pimpl);
         UNUSED(alignment_exp);
         //TODO
     }
