@@ -19,9 +19,10 @@
 #pragma once
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/memory.hpp"
 
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
@@ -282,7 +283,8 @@ namespace argus {
     static std::vector<ObjectWrapper> _make_params_from_tuple_impl(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
         std::vector<ObjectWrapper> result;
-        (result.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is), std::get<Is>(tuple))), ...);
+        (result.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is),
+                std::get<Is>(tuple))), ...);
         return result;
     }
 
@@ -298,7 +300,7 @@ namespace argus {
     }
 
     template <typename T>
-    static T _unwrap_param(ObjectWrapper &param, std::vector<std::string> *string_pool) {
+    static T _unwrap_param(ObjectWrapper &param, ScratchAllocator *scratch) {
         using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
         if constexpr (is_std_function_v<B>) {
             assert(param.type.type == IntegralType::Callback);
@@ -331,7 +333,7 @@ namespace argus {
             }
 
             return [fn_copy = std::move(fn_copy), param_types](auto &&... args) {
-                std::vector<std::string> string_pool;
+                ScratchAllocator scratch;
 
                 ArgsTuple tuple = std::make_tuple(_wrap_single_reference_type(args)...);
                 std::vector<ObjectWrapper> wrapped_params = _make_params_from_tuple<ArgsTuple>(tuple,
@@ -339,9 +341,9 @@ namespace argus {
 
                 if constexpr (!std::is_void_v<ReturnType>) {
                     auto retval = (*fn_copy)(wrapped_params);
-                    return _unwrap_param<ReturnType>(retval, &string_pool);
+                    return _unwrap_param<ReturnType>(retval, &scratch);
                 } else {
-                    UNUSED(string_pool);
+                    UNUSED(scratch);
                     (*fn_copy)(wrapped_params);
                     return;
                 }
@@ -350,21 +352,21 @@ namespace argus {
             assert(param.type.type == IntegralType::String);
 
             if constexpr (std::is_same_v<std::remove_cv_t<T>, std::string>) {
-                if (string_pool != nullptr) {
-                    return string_pool->emplace_back(reinterpret_cast<const char *>(
+                if (scratch != nullptr) {
+                    return scratch->construct<std::string>(reinterpret_cast<const char *>(
                             param.is_on_heap ? param.heap_ptr : param.value));
                 } else {
                     return std::string(reinterpret_cast<const char *>(param.is_on_heap ? param.heap_ptr : param.value));
                 }
             } else {
-                assert(string_pool != nullptr);
-                return string_pool->emplace_back(reinterpret_cast<const char *>(
+                assert(scratch != nullptr);
+                return scratch->construct<std::string>(reinterpret_cast<const char *>(
                         param.is_on_heap ? param.heap_ptr : param.value));
             }
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, std::string>) {
             assert(param.type.type == IntegralType::String);
-            assert(string_pool != nullptr);
-            return &string_pool->emplace_back(reinterpret_cast<const char *>(
+            assert(scratch != nullptr);
+            return &scratch->construct<std::string>(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
             //TODO: This is difficult to implement within the current framework.
@@ -426,9 +428,20 @@ namespace argus {
 
     template <typename ArgsTuple, size_t... Is>
     ArgsTuple _make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
-            std::index_sequence<Is...>, std::vector<std::string> &string_pool) {
+            std::index_sequence<Is...>, ScratchAllocator &scratch) {
         return std::make_tuple(_unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
-                const_cast<ObjectWrapper &>(*(params_it + Is)), &string_pool)...);
+                const_cast<ObjectWrapper &>(*(params_it + Is)), &scratch)...);
+    }
+
+    template <typename T>
+    void _destroy_ref_wrapped_obj(T &item) {
+        if constexpr (!is_reference_wrapper_v<std::decay<T>>) {
+            return;
+        }
+        using U = remove_reference_wrapper_t<std::decay_t<T>>;
+        if constexpr (!std::is_trivially_destructible_v<U> && !std::is_scalar_v<U>) {
+            item.get().~U();
+        }
     }
 
     template <typename FieldType, typename ClassType>
@@ -505,9 +518,9 @@ namespace argus {
         }
 
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
-        std::vector<std::string> string_pool;
+        ScratchAllocator scratch;
         auto args = _make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{},
-                string_pool);
+                scratch);
 
         if constexpr (!std::is_void_v<ClassType>) {
             ++it;
@@ -516,7 +529,14 @@ namespace argus {
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
             return std::apply([&](auto&&... args) -> ReturnType {
-                return (instance->*fn)(std::forward<decltype(args)>(args)...);
+                if constexpr (!std::is_void_v<ReturnType>) {
+                    ReturnType retval = (instance->*fn)(std::forward<decltype(args)>(args)...);
+                    // destroy parameters if needed
+                    (_destroy_ref_wrapped_obj(args), ...);
+                    return retval;
+                } else {
+                    (instance->*fn)(std::forward<decltype(args)>(args)...);
+                }
             }, args);
         } else {
             //TODO: This fails statically before _make_tuple_from_params, which

@@ -181,12 +181,6 @@ namespace argus {
         ObjectWrapper wrapper(type, size);
 
         switch (type.type) {
-            case String:
-                throw std::invalid_argument(
-                        "create_object_wrapper called for String type (use string-specific function instead)");
-            case Callback:
-                throw std::invalid_argument(
-                        "create_object_wrapper called for Callback type (use callback-specific function instead)");
             case Vector:
                 throw std::invalid_argument(
                         "create_object_wrapper called for Vector type (use vector-specific function instead)");
@@ -208,7 +202,9 @@ namespace argus {
 
                 break;
             }
-            /*case Callback: {
+            case Callback: {
+                // we use the copy constructor instead of doing a bitwise copy because
+                // std::function isn't trivially copyable
                 new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
                 wrapper.copy_ctor = [](void *dst, const void *src) {
                     return new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
@@ -219,7 +215,7 @@ namespace argus {
                 wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
 
                 break;
-            }*/
+            }
             default: {
                 // for everything else we bitwise-copy the value
                 // note that std::type_index is trivially copyable
@@ -252,12 +248,6 @@ namespace argus {
         affirm_precond(type.type == IntegralType::Callback,
                 "Cannot create object wrapper "
                 "(callback-specific overload called for non-callback-typed value)");
-
-        ObjectWrapper wrapper(type, sizeof(fn));
-
-        // we use the copy constructor instead of doing a bitwise copy because
-        // std::function isn't trivially copyable
-        new(wrapper.get_ptr()) ProxiedFunction(fn);
 
         return create_object_wrapper(type, &fn, sizeof(fn));
     }
