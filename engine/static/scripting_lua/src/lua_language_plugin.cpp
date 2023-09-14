@@ -58,6 +58,8 @@ namespace argus {
 
     static constexpr const char *k_const_prefix = "const ";
 
+    static constexpr const char *k_engine_namespace = "argus";
+
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
@@ -1139,11 +1141,7 @@ namespace argus {
 
         lua_pushcclosure(state, _lua_trampoline, upvalue_count);
 
-        if (fn.type == FunctionType::Global) {
-            lua_setglobal(state, fn.name.c_str());
-        } else {
-            lua_setfield(state, -2, fn.name.c_str());
-        }
+        lua_setfield(state, -2, fn.name.c_str());
     }
 
     static void _create_type_metatable(lua_State *state, const BoundTypeDef &type, bool is_const) {
@@ -1217,7 +1215,12 @@ namespace argus {
 
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
         assert(fn.type == FunctionType::Global);
+
+        // put the namespace table on the stack
+        luaL_getmetatable(state, k_engine_namespace);
         _bind_fn(state, fn, "");
+        // pop the namespace table
+        lua_pop(state, 1);
     }
 
     static void _bind_enum(lua_State *state, const BoundEnumDef &def) {
@@ -1327,6 +1330,10 @@ namespace argus {
 
         lua_pushcfunction(data->state, _require_override);
         lua_setglobal(data->state, k_lua_require);
+
+        // create namespace table
+        luaL_newmetatable(data->state, k_engine_namespace);
+        lua_setglobal(data->state, k_engine_namespace);
 
         return data;
     }
