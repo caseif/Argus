@@ -76,15 +76,16 @@ namespace argus {
         pimpl_ScratchAllocator *m_pimpl;
 
       public:
+
         explicit ScratchAllocator(uint8_t alignment_exp = 3);
 
-        ScratchAllocator(const ScratchAllocator &) = delete;
+        ScratchAllocator(const ScratchAllocator &);
 
-        ScratchAllocator(ScratchAllocator &&) = delete;
+        ScratchAllocator(ScratchAllocator &&) noexcept;
 
-        ScratchAllocator &operator=(const ScratchAllocator &&) = delete;
+        ScratchAllocator &operator=(const ScratchAllocator &);
 
-        ScratchAllocator &operator=(ScratchAllocator &&) = delete;
+        ScratchAllocator &operator=(ScratchAllocator &&) noexcept;
 
         ~ScratchAllocator(void);
 
@@ -107,7 +108,7 @@ namespace argus {
         using value_type = T;
 
         ScratchAllocatorWrapper(ScratchAllocator &impl) :
-                m_impl(impl) {
+            m_impl(impl) {
         }
 
         ScratchAllocatorWrapper(const ScratchAllocatorWrapper &rhs) = default;

@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "internal/lowlevel/memory/util.hpp"
 
 #include <stdexcept>
 
@@ -94,22 +95,6 @@ namespace argus {
         ChunkMetadata *first_chunk;
     };
 
-    // helper function for determining the nearest aligned address following the given unaligned address
-    inline static uintptr_t _next_aligned_value(uintptr_t base_val, size_t alignment_exp) {
-        // special case if no alignment is requested
-        if (alignment_exp == 0) {
-            return base_val;
-        }
-
-        size_t alignment_bytes = size_t(exp2(double(alignment_exp)));
-        // We create a bitmask from the alignment "chunk" size by subtracting one (e.g. 0x0010 -> 0x000F)
-        // and then inverting it (0x000F -> 0xFFF0). Then, we AND it with the base address minus 1 to get
-        // the next aligned address in the direction of zero, then add the alignment "chunk" size to get
-        // the next aligned address in the direction of max size_t.
-        // Subtracting one from the base address accounts for the case where the address is already aligned.
-        return ((base_val - 1) & ~(alignment_bytes - 1U)) + alignment_bytes;
-    }
-
     // helper function for allocating memory for an PoolAllocator
     static ChunkMetadata *_create_chunk(pimpl_PoolAllocator *pool) {
         // because this function does a lot of pointer math, it mostly works with uintptr_t
@@ -131,14 +116,14 @@ namespace argus {
             throw std::runtime_error("Failed to allocate chunk (is block size or alignment too large?)");
         }
 
-        uintptr_t aligned_addr = _next_aligned_value(malloc_addr, pool->alignment_exp);
+        uintptr_t aligned_addr = next_aligned_value(malloc_addr, pool->alignment_exp);
         // the actual data starts at the aligned address. however, we use the preceding n bytes to store the metadata.
         // we need a big enough buffer between the malloc address and aligned address so we can fit the metadata.
         // otherwise, we have to bump up to the next multiple (it's guaranteed to fit anyhow).
         if (aligned_addr - malloc_addr < sizeof(ChunkMetadata)) {
             // we need to get the max of the alignment padding vs the aligned size of the metadata, since if the
             // alignment padding is smaller we won't jump far enough ahead to fit the metadata
-            aligned_addr += MAX(alignment_bytes, _next_aligned_value(sizeof(ChunkMetadata), pool->alignment_exp));
+            aligned_addr += MAX(alignment_bytes, next_aligned_value(sizeof(ChunkMetadata), pool->alignment_exp));
         }
         // generate a pointer to the now properly aligned chunk structure
         ChunkMetadata *new_chunk = reinterpret_cast<ChunkMetadata *>(aligned_addr - sizeof(ChunkMetadata));
@@ -160,7 +145,7 @@ namespace argus {
     PoolAllocator::PoolAllocator(size_t block_size, uint8_t alignment_exp) :
             pimpl(new pimpl_PoolAllocator(
                     // we pass both the real block size and the size in the pool so objects can be aligned in the pool
-                    {block_size, _next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
+                    {block_size, next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
                      alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
 
         ChunkMetadata *first_chunk = _create_chunk(pimpl);
