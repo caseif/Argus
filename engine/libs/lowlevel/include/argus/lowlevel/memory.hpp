@@ -89,13 +89,13 @@ namespace argus {
 
         ~ScratchAllocator(void);
 
-        void *alloc(size_t size);
+        [[nodiscard]] void *alloc(size_t size);
 
         void release(void);
 
         template <typename T, typename... Args>
-        T &construct(Args &&... args) {
-            return *new(this->alloc(sizeof(T))) T(args...);
+        [[nodiscard]] T &construct(Args &&... args) {
+            return *new(this->alloc(sizeof(T))) T(std::forward<Args>(args)...);
         }
     };
 
@@ -111,9 +111,12 @@ namespace argus {
             m_impl(impl) {
         }
 
-        ScratchAllocatorWrapper(const ScratchAllocatorWrapper &rhs) = default;
+        template <typename U>
+        constexpr ScratchAllocatorWrapper(const ScratchAllocatorWrapper<U> &rhs) noexcept :
+            m_impl(rhs.m_impl) {
+        }
 
-        T *allocate(size_t size) {
+        [[nodiscard]] T *allocate(size_t size) {
             return reinterpret_cast<T *>(m_impl.alloc(size));
         }
 
@@ -125,7 +128,7 @@ namespace argus {
 
         template <typename U>
         inline bool operator==(const ScratchAllocatorWrapper<U> &rhs) {
-            return m_impl = rhs.m_impl;
+            return m_impl == rhs.m_impl;
         }
 
         template <typename U>
