@@ -1168,19 +1168,13 @@ namespace argus {
         // save dispatch table (which pops it from the stack)
         lua_setmetatable(state, -2);
 
-        /*if (!is_const) {
-            // push upvalue for type name
-            lua_pushstring(state, type.name.c_str());
-            // push upvalue for function name
-            lua_pushstring(state, k_lua_newindex);
-            // push function with 2 upvalue
-            lua_pushcclosure(state, _lua_field_set_trampoline, 1);
-            // save function override
-            lua_settable(state, -3);
-        }*/
-
-        // add metatable to global state to provide access to static type functions (popping it from the stack)
-        lua_setglobal(state, type.name.c_str());
+        if (!is_const) {
+            // add metatable to global state to provide access to static type functions (popping it from the stack)
+            lua_setglobal(state, type.name.c_str());
+        } else {
+            // don't bother binding const version by name
+            lua_pop(state, 1);
+        }
     }
 
     static void _bind_type(lua_State *state, const BoundTypeDef &type) {
@@ -1200,11 +1194,8 @@ namespace argus {
 
             // pop the dispatch table and metatable
             lua_pop(state, 2);
-
-            return;
         } else {
             _bind_fn(state, fn, type_name);
-
             // pop the metatable
             lua_pop(state, 1);
         }

@@ -724,7 +724,7 @@ namespace argus {
     template <typename ClassType, typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
         bind_member_static_function(typeid(ClassType), fn_def);
     }
 
