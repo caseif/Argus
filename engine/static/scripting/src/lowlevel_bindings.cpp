@@ -37,6 +37,18 @@ namespace argus {
 
     BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) = default;
 
+    BindableTimeDelta::BindableTimeDelta(BindableTimeDelta &&rhs) = default;
+
+    BindableTimeDelta &BindableTimeDelta::operator=(const BindableTimeDelta &rhs) {
+        this->m_nanos = rhs.m_nanos;
+        return *this;
+    }
+
+    BindableTimeDelta &BindableTimeDelta::operator=(BindableTimeDelta &&rhs) {
+        this->m_nanos = rhs.m_nanos;
+        return *this;
+    }
+
     BindableTimeDelta::~BindableTimeDelta(void) = default;
 
     uint64_t BindableTimeDelta::nanos(void) const {

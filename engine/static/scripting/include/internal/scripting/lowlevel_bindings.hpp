@@ -32,6 +32,12 @@ namespace argus {
 
         BindableTimeDelta(const BindableTimeDelta &rhs);
 
+        BindableTimeDelta(BindableTimeDelta &&rhs);
+
+        BindableTimeDelta &operator=(const BindableTimeDelta &rhs);
+
+        BindableTimeDelta &operator=(BindableTimeDelta &&rhs);
+
         ~BindableTimeDelta(void) override;
 
         uint64_t nanos(void) const;

@@ -119,6 +119,7 @@ namespace argus {
         size_t copy_size = type.type == IntegralType::Pointer
                 ? sizeof(void *)
                 : type.type == IntegralType::String || type.type == IntegralType::Vector
+                        || type.type == IntegralType::VectorRef
                         ? size
                         : type.size;
         this->buffer_size = copy_size;
@@ -263,7 +264,12 @@ namespace argus {
     }
 
     const void *ArrayBlob::operator[](size_t index) const {
-        return const_cast<const void *>(const_cast<ArrayBlob *>(this)->operator[](index));
+        //return const_cast<const void *>(const_cast<ArrayBlob *>(this)->operator[](index));
+        if (index >= m_count) {
+            throw std::invalid_argument("Index is out of bounds");
+        }
+
+        return reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(m_blob) + (m_element_size * index));
     }
 
     VectorWrapper::VectorWrapper(size_t element_size, const ObjectType &element_type,

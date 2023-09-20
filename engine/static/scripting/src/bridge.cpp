@@ -272,7 +272,7 @@ namespace argus {
     }
 
     ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const void *data, size_t count) {
-        affirm_precond(vec_type.type == IntegralType::Vector,
+        affirm_precond(vec_type.type == IntegralType::Vector || vec_type.type == IntegralType::VectorRef,
                 "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
 
         _validate_vec_obj_type(vec_type);
@@ -307,12 +307,15 @@ namespace argus {
                 // strings need to be handled specially because they're the only
                 // non-struct type allowed in a vector that isn't trivially
                 // copyable
+                auto str_arr = reinterpret_cast<const std::string *>(data);
                 for (size_t i = 0; i < count; i++) {
-                    auto src_ptr = reinterpret_cast<std::string *>(
-                            reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size));
+                    const std::string &src_str = str_arr[i];
+
+                    /*auto src_ptr = reinterpret_cast<std::string *>(
+                            reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size * i));*/
                     void *dst_ptr = blob[i];
                     //TODO: free memory when wrapper is destroyed
-                    new(dst_ptr) std::string(*src_ptr);
+                    new(dst_ptr) std::string(src_str);
                 }
             } else {
                 assert(el_type.type == IntegralType::Struct);
@@ -322,7 +325,7 @@ namespace argus {
 
                 for (size_t i = 0; i < count; i++) {
                     void *src_ptr = reinterpret_cast<void *>(
-                            reinterpret_cast<uintptr_t>(data) + uintptr_t(el_size));
+                            reinterpret_cast<uintptr_t>(data) + i * uintptr_t(el_size));
                     void *dst_ptr = blob[i];
 
                     bound_type.copy_ctor.value()(dst_ptr, src_ptr);
@@ -346,7 +349,7 @@ namespace argus {
                 "Cannot create object wrapper (vectorref-specific overload called for non-vectorref-typed value)");
         _validate_vec_obj_type(vec_type);
 
-        ObjectWrapper wrapper(vec_type, sizeof(VectorRef));
+        ObjectWrapper wrapper(vec_type, sizeof(VectorWrapper));
 
         new(wrapper.get_ptr()) VectorWrapper(std::move(vec));
 

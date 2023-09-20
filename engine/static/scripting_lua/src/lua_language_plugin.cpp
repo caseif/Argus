@@ -60,6 +60,8 @@ namespace argus {
 
     static constexpr const char *k_engine_namespace = "argus";
 
+    static constexpr const char *k_empty_repl = "(empty)";
+
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
@@ -114,6 +116,10 @@ namespace argus {
         return luaL_error(state, msg.c_str());
     }
 
+    static std::string _string_or(std::string str, std::string def) {
+        return !str.empty() ? str : def;
+    }
+
     static std::string _get_metatable_name(lua_State *state, int index) {
         // get metatable of userdata
         lua_getmetatable(state, index);
@@ -121,11 +127,14 @@ namespace argus {
         // get metatable name
         lua_pushstring(state, k_lua_name);
         lua_gettable(state, -2);
-        auto type_name = std::string(lua_tostring(state, -1));
+        const char *type_name = lua_tostring(state, -1);
+        if (type_name == nullptr) {
+            return "";
+        }
 
         lua_pop(state, 2); // remove field name and metatable from stack
 
-        return type_name;
+        return std::string(type_name);
     }
 
     static int _wrap_instance_ref(lua_State *state, const std::string &qual_fn_name,
@@ -143,7 +152,7 @@ namespace argus {
             return _set_lua_error(state, "Incorrect userdata provided for parameter "
                     + std::to_string(param_index) + " of function " + qual_fn_name
                     + " (expected " + type_def.name
-                    + ", actual " + type_name + ")");
+                    + ", actual " + _string_or(type_name, k_empty_repl) + ")");
         }
 
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -183,7 +192,8 @@ namespace argus {
         auto len = lua_rawlen(state, -1);
         affirm_precond(len <= INT_MAX, "Too many table indices");
 
-        std::vector<T> vec(len);
+        std::vector<T> vec;
+        vec.reserve(len);
 
         for (size_t i = 0; i < len; i++) {
             auto index = int(i + 1);
@@ -204,7 +214,7 @@ namespace argus {
             lua_pop(state, 1);
         }
 
-        *dest = create_vector_object_wrapper(param_def, vec);
+        *dest = create_vector_object_wrapper_from_stack(param_def, vec);
 
         assert(lua_gettop(state) == initial_top);
         return 0;
@@ -271,13 +281,16 @@ namespace argus {
                         "string", param_index, qual_fn_name, dest);
             case Struct:
             case Pointer: {
-                auto type_name = _get_metatable_name(state, param_index);
-
-                auto bound_type = get_bound_type(type_name);
-
                 // get number of indexed elements
                 auto len = lua_rawlen(state, -1);
                 affirm_precond(len <= INT_MAX, "Too many table indices");
+
+                if (len == 0) {
+                    *dest = create_vector_object_wrapper(param_def, nullptr, 0);
+                    return 0;
+                }
+
+                auto bound_type = get_bound_type(element_type.type_name.value());
 
                 *dest = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
 
@@ -290,37 +303,43 @@ namespace argus {
 
                     if (!lua_isuserdata(state, -1)) {
                         _set_lua_error(state, "Incorrect element type in parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
+                                + std::to_string(param_index) + ", index " + std::to_string(index)
+                                + " of function " + qual_fn_name
+                                + " (expected userdata, actual " + luaL_typename(state, -1) + ")");
                     }
 
-                    if (!(type_name == param_def.type_name.value()
+                    auto type_name = _get_metatable_name(state, -1);
+
+                    if (!(type_name == element_type.type_name.value()
                             || (element_type.is_const
                                     && type_name == k_const_prefix + param_def.type_name.value()))) {
-                        return _set_lua_error(state, "Incorrect userdata provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
+                        return _set_lua_error(state, "Incorrect userdata provided in parameter "
+                                + std::to_string(param_index) + ", index " + std::to_string(index)
+                                + " of function " + qual_fn_name
                                 + " (expected " + (param_def.is_const ? k_const_prefix : "")
                                 + param_def.type_name.value()
-                                + ", actual " + type_name + ")");
+                                + ", actual " + _string_or(type_name, k_empty_repl) + ")");
                     }
 
-                    auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+                    auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, -1));
                     void *ptr;
                     if (udata->is_handle) {
                         // userdata is storing handle of pointer to struct data
                         ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
-                                param_def.type_index.value());
+                                element_type.type_index.value());
 
                         if (ptr == nullptr) {
-                            return _set_lua_error(state, "Invalid handle passed as parameter "
-                                    + std::to_string(param_index) + " of function " + qual_fn_name);
+                            return _set_lua_error(state, "Invalid handle passed in parameter "
+                                    + std::to_string(param_index) + ", index " + std::to_string(index)
+                                    + " of function " + qual_fn_name);
                         }
                     } else {
                         if (element_type.type == IntegralType::Pointer) {
                             //TODO: should we support this?
                             return _set_lua_error(state,
                                     "Cannot pass value-typed struct as pointer in parameter "
-                                            + std::to_string(param_index) + " of function " + qual_fn_name);
+                                            + std::to_string(param_index) + ", index " + std::to_string(index)
+                                            + " of function " + qual_fn_name);
                         }
 
                         // userdata is directly storing struct data
@@ -333,7 +352,7 @@ namespace argus {
                         assert(element_type.type == IntegralType::Struct);
 
                         if (bound_type.copy_ctor.has_value()) {
-                            bound_type.copy_ctor.value()(ptr, blob[i]);
+                            bound_type.copy_ctor.value()(blob[i], ptr);
                         } else {
                             memcpy(blob[i], ptr, bound_type.size);
                         }
@@ -468,7 +487,7 @@ namespace argus {
                     return _set_lua_error(state, "Incorrect userdata provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected " + (param_def.is_const ? k_const_prefix : "") + param_def.type_name.value()
-                            + ", actual " + type_name + ")");
+                            + ", actual " + _string_or(type_name, k_empty_repl) + ")");
                 }
 
                 auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -558,11 +577,13 @@ namespace argus {
                     if (type_name != k_mt_vector_ref) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected VectorWrapper, actual " + type_name + ")");
+                                + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
                     }
 
+                    ObjectType real_type = param_def;
+                    real_type.type = IntegralType::VectorRef;
                     VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
-                    *dest = create_vector_object_wrapper(param_def, *vec);
+                    *dest = create_vector_ref_object_wrapper(real_type, *vec);
                     return 0;
                 } else {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
@@ -1056,7 +1077,9 @@ namespace argus {
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -1);
 
-        if (_get_native_field_val(state, type_name, key)) {
+        assert(!type_name.empty());
+
+        if ( _get_native_field_val(state, type_name, key)) {
             return 1;
         } else {
             return _lookup_fn_in_dispatch_table(state, 1, 2);
@@ -1119,6 +1142,8 @@ namespace argus {
 
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -2);
+
+        assert(!type_name.empty());
 
         auto res = _set_native_field(state, type_name, key);
 

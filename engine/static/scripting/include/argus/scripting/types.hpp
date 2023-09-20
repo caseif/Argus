@@ -203,7 +203,7 @@ namespace argus {
     #pragma warning(push)
     #pragma warning(disable : 4200)
     #endif
-    class ArrayBlob : VectorObject {
+    class ArrayBlob : public VectorObject {
       private:
         const size_t m_element_size;
         const size_t m_count;
@@ -259,7 +259,7 @@ namespace argus {
     #pragma warning(pop)
     #endif
 
-    class VectorWrapper : VectorObject {
+    class VectorWrapper : public VectorObject {
        public:
         typedef std::function<size_t(const void *)> size_accessor_t;
         typedef std::function<const void *(void *)> data_accessor_t;

@@ -44,7 +44,7 @@ namespace argus {
             _resolve_param(callback_type.return_type);
 
             return;
-        } else if (param_def.type == IntegralType::Vector) {
+        } else if (param_def.type == IntegralType::Vector || param_def.type == IntegralType::VectorRef) {
             assert(param_def.element_type.has_value());
             _resolve_param(*param_def.element_type.value(), false);
 

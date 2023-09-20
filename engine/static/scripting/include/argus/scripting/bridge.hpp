@@ -108,8 +108,8 @@ namespace argus {
 
     ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
 
-    template <typename V, typename E = remove_vector_t<std::remove_cv_t<V>>>
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &type, V &vec) {
+    template <typename V, typename E = typename std::remove_cv_t<V>::value_type, bool is_heap>
+    ObjectWrapper _create_vector_object_wrapper(const ObjectType &type, V &vec) {
         static_assert(!std::is_function_v<E> && !is_std_function_v<E>, "Vectors of callbacks are not supported");
         static_assert(!is_std_vector_v<E>, "Vectors of vectors are not supported");
         static_assert(!std::is_same_v<E, bool>, "Vectors of booleans are not supported");
@@ -117,7 +117,8 @@ namespace argus {
                 "Vectors of C-strings are not supported (use std::string instead)");
         assert(type.element_type.has_value());
 
-        if (type.type == IntegralType::VectorRef) {
+        // ensure the vector reference will remain valid
+        if (type.type == IntegralType::VectorRef && is_heap) {
             return create_vector_ref_object_wrapper(type,
                     VectorWrapper(const_cast<std::remove_cv_t<V> &>(vec), *type.element_type.value()));
         } else {
@@ -125,13 +126,36 @@ namespace argus {
                 assert(type.element_type.value()->size == sizeof(E));
             }
 
-            return create_vector_object_wrapper(type, reinterpret_cast<const void *>(vec.data()), vec.size());
+            ObjectType real_type = type;
+            real_type.type = IntegralType::Vector;
+            return create_vector_object_wrapper(real_type, reinterpret_cast<const void *>(vec.data()), vec.size());
         }
+    }
+
+    template <typename V, typename E = typename std::remove_cv_t<V>::value_type>
+    inline ObjectWrapper create_vector_object_wrapper_from_heap(const ObjectType &type, V &vec) {
+        return _create_vector_object_wrapper<V, E, true>(type, vec);
+    }
+
+    template <typename V, typename E = typename std::remove_cv_t<V>::value_type>
+    inline ObjectWrapper create_vector_object_wrapper_from_stack(const ObjectType &type, V &vec) {
+        return _create_vector_object_wrapper<V, E, false>(type, vec);
     }
 
     template <typename T>
     ObjectWrapper create_auto_object_wrapper(const ObjectType &type, T val) {
         using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
+
+        // It's possible for a script to pass a vector literal to a bound
+        // function which expects a reference, and without forcing scripting
+        // plugins to detect this scenario and copy the vector to the heap,
+        // we can't automatically determine where the passed vector resides.
+        // We could require that val _always_ be a reference to heap memory,
+        // but that would force additional complexity in plugin code which is
+        // undesirable.
+        static_assert(!is_std_vector_v<std::remove_reference_t<std::remove_pointer_t<T>>>,
+                "Vector objects must be wrapped explicitly");
+
         if constexpr (std::is_same_v<B, std::string>) {
             return create_string_object_wrapper(type, val);
         } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
@@ -233,7 +257,7 @@ namespace argus {
         } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
             return { IntegralType::Type, sizeof(std::type_index), is_const };
         } else if constexpr (is_std_vector_v<std::remove_cv_t<T>>) {
-            using E = remove_vector_t<B>;
+            using E = typename B::value_type;
             return { IntegralType::Vector, sizeof(void *), is_const, typeid(std::remove_cv_t<T>),
                     std::nullopt, std::nullopt, _create_object_type<E, flow_dir>()};
         } else if constexpr (is_std_vector_v<B>) {
@@ -241,7 +265,7 @@ namespace argus {
             static_assert(!(flow_dir == DataFlowDirection::FromScript
                     && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>),
                     "Non-const vector reference parameters are not supported");
-            using E = remove_vector_t<B>;
+            using E = typename B::value_type;
             return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B), std::nullopt, std::nullopt,
                     _create_object_type<E, flow_dir, is_const>()};
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
@@ -271,9 +295,13 @@ namespace argus {
         } else {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
-            static_assert(std::is_copy_constructible_v<B>,
+            static_assert(std::is_copy_assignable_v<B>,
+                    "Types in bound functions must have a public copy assignment operator if passed by value");
+            static_assert(std::is_move_constructible_v<B>,
                     "Types in bound functions must have a public move constructor if passed by value");
-            static_assert(std::is_copy_constructible_v<B>,
+            static_assert(std::is_move_assignable_v<B>,
+                    "Types in bound functions must have a public move assignment operator if passed by value");
+            static_assert(std::is_destructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
             return { IntegralType::Struct, sizeof(T), is_const, typeid(B) };
         }
@@ -369,33 +397,28 @@ namespace argus {
             return &scratch->construct<std::string>(reinterpret_cast<const char *>(
                     param.is_on_heap ? param.heap_ptr : param.value));
         } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
-            //TODO: This is difficult to implement within the current framework.
-            // Because the vector isn't actually stored as an std::vector (it's
-            // expected to be stored in a format native to the scripting
-            // language instead), we don't have anything to point to.
-            // I think the best way to work around this is to implement a stack
-            // allocator in which we can instantiate std::vector objects. The
-            // allocated memory would simply be freed at the end of the function
-            // call. This will also work for strings, so we can get rid of the
-            // gross string_pool hack that's current in place.
-            static_assert(!is_reference_wrapper_v<T>, "Vector references are not yet supported");
-            using E = remove_vector_t<std::remove_cv_t<remove_reference_wrapper_t<T>>>;
+            using E = typename std::remove_cv_t<remove_reference_wrapper_t<T>>::value_type;
 
             VectorObject *obj = reinterpret_cast<VectorObject *>(param.get_ptr());
 
             if (obj->get_object_type() == VectorObjectType::ArrayBlob) {
                 ArrayBlob *blob = reinterpret_cast<ArrayBlob *>(obj);
-                std::vector<E> vec(blob->size());
+                std::vector<E> vec;
+                vec.reserve(blob->size());
                 if constexpr (std::is_trivially_copyable_v<E>) {
-                    memcpy(vec.data(), blob->data(), blob->size() * blob->element_size());
+                    vec.insert(vec.end(), blob->data(), reinterpret_cast<E *>(blob->data()) + blob->size());
                 } else {
-                    auto it = vec.begin();
                     for (size_t i = 0; i < blob->size(); i++) {
-                        vec.emplace(it, blob->at<E>(i));
-                        it++;
+                        vec.push_back(blob->at<E>(i));
                     }
                 }
-                return vec;
+
+                if constexpr (is_reference_wrapper_v<T>) {
+                    std::vector<E> *ptr = &scratch->construct<std::vector<E>>(vec.cbegin(), vec.cend());
+                    return *ptr;
+                } else {
+                    return vec;
+                }
             } else if (obj->get_object_type() == VectorObjectType::VectorWrapper) {
                 VectorWrapper *wrapper = reinterpret_cast<VectorWrapper *>(obj);
                 return wrapper->get_underlying_vector<E>();
@@ -435,12 +458,11 @@ namespace argus {
 
     template <typename T>
     void _destroy_ref_wrapped_obj(T &item) {
-        if constexpr (!is_reference_wrapper_v<std::decay<T>>) {
-            return;
-        }
-        using U = remove_reference_wrapper_t<std::decay_t<T>>;
-        if constexpr (!std::is_trivially_destructible_v<U> && !std::is_scalar_v<U>) {
-            item.get().~U();
+        if constexpr (is_reference_wrapper_v<std::decay<T>>) {
+            using U = remove_reference_wrapper_t<std::decay_t<T>>;
+            if constexpr (!std::is_trivially_destructible_v<U> && !std::is_scalar_v<U>) {
+                item.get().~U();
+            }
         }
     }
 
@@ -449,6 +471,8 @@ namespace argus {
         // treat C-string fields as const because there's no good way to manage their memory
         constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>
                 || std::is_same_v<std::remove_cv_t<FieldType>, char *>;
+
+        using B = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FieldType>>>;
 
         try {
             // field values are passed from the engine to the script VM
@@ -478,12 +502,17 @@ namespace argus {
                         : inst.stored_ptr);
 
                 auto real_type = field_type;
-                if (field_type.type == IntegralType::Struct) {
+                if constexpr (std::is_class_v<FieldType> && !std::is_same_v<B, std::string>
+                        && !is_std_vector_v<B> && !is_std_function_v<B>) {
+                    assert(real_type.type == IntegralType::Struct);
+                    // return a pointer to the field so the script can modify its fields
                     real_type.type = IntegralType::Pointer;
                     real_type.size = sizeof(void *);
+                    return create_auto_object_wrapper(real_type, &(instance->*field));
+                } else {
+                    // return the field by value
+                    return create_auto_object_wrapper(real_type, instance->*field);
                 }
-
-                return create_auto_object_wrapper(real_type, instance->*field);
             };
 
             if constexpr (!is_const) {
@@ -528,7 +557,7 @@ namespace argus {
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
-            return std::apply([&](auto&&... args) -> ReturnType {
+            return std::apply([&](auto &&... args) -> ReturnType {
                 if constexpr (!std::is_void_v<ReturnType>) {
                     ReturnType retval = (instance->*fn)(std::forward<decltype(args)>(args)...);
                     // destroy parameters if needed
@@ -536,13 +565,27 @@ namespace argus {
                     return retval;
                 } else {
                     (instance->*fn)(std::forward<decltype(args)>(args)...);
+                    (_destroy_ref_wrapped_obj(args), ...);
                 }
             }, args);
         } else {
             //TODO: This fails statically before _make_tuple_from_params, which
             // is where the actually useful diagnostic messages are. Would be
             // nice to fix this at some point.
-            return std::apply(fn, args);
+            if constexpr (std::tuple_size_v<ArgsTuple> == 1) {
+                std::tuple_element_t<0, ArgsTuple> obj = std::get<0>(args);
+                UNUSED(obj);
+            }
+            return std::apply([&](auto &&... args) -> ReturnType {
+                if constexpr (!std::is_void_v<ReturnType>) {
+                    ReturnType retval = fn(args...);
+                    (_destroy_ref_wrapped_obj(args), ...);
+                    return retval;
+                } else {
+                    fn(args...);
+                    (_destroy_ref_wrapped_obj(args), ...);
+                }
+            }, args);
         }
     }
 
@@ -614,9 +657,11 @@ namespace argus {
                         && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                                 std::remove_reference_t<ReturnType>>>, char>) {
                     return create_object_wrapper(ret_obj_type, ret, strlen(ret));
+                } else if constexpr (is_std_vector_v<ReturnType>) {
+                    return create_vector_object_wrapper_from_stack(ret_obj_type, ret);
                 } else if constexpr (is_std_vector_v<std::remove_cv_t<
                         std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
-                    return create_vector_object_wrapper(ret_obj_type, ret);
+                    return create_vector_object_wrapper_from_heap(ret_obj_type, ret);
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
                     return wrapper;
