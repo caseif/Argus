@@ -20,6 +20,8 @@
 
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/scripting.hpp"
+
 #include <string>
 #include <vector>
 
@@ -35,7 +37,7 @@ namespace argus {
         Vector3u color_depth;
     };
 
-    class Display {
+    class Display : public ScriptBindable {
       private:
         Display(Display &) = delete;
 
@@ -46,7 +48,7 @@ namespace argus {
 
         Display(void);
 
-        ~Display(void);
+        ~Display(void) override;
 
         static const std::vector<const Display *> &get_available_displays(void);
 

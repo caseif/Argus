@@ -37,17 +37,26 @@ namespace argus {
         bind_member_instance_function("set_title", &Window::set_title);
         bind_member_instance_function("is_fullscreen", &Window::is_fullscreen);
         bind_member_instance_function("set_fullscreen", &Window::set_fullscreen);
+        //TODO: figure out a way to bind get_resolution
+        bind_member_instance_function("peek_resolution", &Window::peek_resolution);
         bind_member_instance_function("get_windowed_resolution", &Window::get_windowed_resolution);
         bind_member_instance_function<void(Window::*)(unsigned int, unsigned int)>("set_windowed_resolution",
                 &Window::set_windowed_resolution);
+        //TODO: bind is_vsync_enabled
         bind_member_instance_function("set_vsync_enabled", &Window::set_vsync_enabled);
         bind_member_instance_function<void(Window::*)(int, int)>("set_windowed_position",
                 &Window::set_windowed_position);
-        //TODO: display functions
+        bind_member_instance_function("get_display_affinity", &Window::get_display_affinity);
+        bind_member_instance_function("set_display_affinity", &Window::set_display_affinity);
+        bind_member_instance_function("get_display_mode", &Window::get_display_mode);
+        bind_member_instance_function("set_display_mode", &Window::set_display_mode);
         bind_member_instance_function("is_mouse_captured", &Window::is_mouse_captured);
         bind_member_instance_function("set_mouse_captured", &Window::set_mouse_captured);
+        bind_member_instance_function("is_mouse_visible", &Window::is_mouse_visible);
+        bind_member_instance_function("set_mouse_visible", &Window::set_mouse_visible);
         bind_member_instance_function("is_mouse_raw_input", &Window::is_mouse_raw_input);
         bind_member_instance_function("set_mouse_raw_input", &Window::set_mouse_raw_input);
+        bind_member_instance_function("commit", &Window::commit);
     }
 
     static void _bind_display_symbols(void) {
