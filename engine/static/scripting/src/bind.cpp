@@ -65,19 +65,19 @@ namespace argus {
 
             if (param_def.type == IntegralType::Struct) {
                 if (check_copyable) {
-                    if (!bound_type.copy_ctor.has_value()) {
+                    if (bound_type.copy_ctor == nullptr) {
                         throw BindingException(bound_type.name,
                                 "Struct-typed parameter passed by value with type "
                                         + bound_type.name + " is not copy-constructible");
                     }
 
-                    if (!bound_type.move_ctor.has_value()) {
+                    if (bound_type.move_ctor == nullptr) {
                         throw BindingException(bound_type.name,
                                 "Struct-typed parameter passed by value with type "
                                         + bound_type.name + " is not move-constructible");
                     }
 
-                    if (!bound_type.dtor.has_value()) {
+                    if (bound_type.dtor == nullptr) {
                         throw BindingException(bound_type.name,
                                 "Struct-typed parameter passed by value with type "
                                         + bound_type.name + " is not destructible");

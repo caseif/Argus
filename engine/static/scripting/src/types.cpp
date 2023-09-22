@@ -107,11 +107,17 @@ namespace argus {
             type(ObjectType { IntegralType::Void, 0 }),
             value(),
             is_on_heap(false),
-            buffer_size(0) {
+            buffer_size(0),
+            copy_ctor(nullptr),
+            move_ctor(nullptr),
+            dtor(nullptr) {
     }
 
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) :
-            type(type) {
+            type(type),
+            copy_ctor(nullptr),
+            move_ctor(nullptr),
+            dtor(nullptr) {
         assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
 
@@ -138,14 +144,14 @@ namespace argus {
             type(std::move(rhs.type)),
             is_on_heap(rhs.is_on_heap),
             buffer_size(rhs.buffer_size),
-            copy_ctor(std::move(rhs.copy_ctor)),
-            move_ctor(std::move(rhs.move_ctor)),
+            copy_ctor(rhs.copy_ctor),
+            move_ctor(rhs.move_ctor),
             // dtor still needs to be able to run on the old object
             dtor(rhs.dtor) {
 
         if (this->type.type == IntegralType::Struct
                 || this->type.type == IntegralType::Callback) {
-            assert(this->move_ctor.has_value());
+            assert(this->move_ctor != nullptr);
 
             void *src_ptr;
             void *dst_ptr;
@@ -159,14 +165,14 @@ namespace argus {
                 dst_ptr = this->value;
             }
 
-            this->move_ctor.value()(dst_ptr, src_ptr);
+            this->move_ctor(dst_ptr, src_ptr);
         } else if (this->is_on_heap) {
-            assert(!this->move_ctor.has_value());
+            assert(this->move_ctor == nullptr);
 
             this->is_on_heap = true;
             this->heap_ptr = rhs.heap_ptr;
         } else {
-            assert(!this->move_ctor.has_value());
+            assert(this->move_ctor == nullptr);
             assert(this->buffer_size < sizeof(this->value));
 
             memcpy(this->value, rhs.value, this->buffer_size);
@@ -175,14 +181,14 @@ namespace argus {
         rhs.buffer_size = 0;
         rhs.is_on_heap = false;
         rhs.heap_ptr = nullptr;
-        rhs.copy_ctor = std::nullopt;
-        rhs.move_ctor = std::nullopt;
-        rhs.dtor = std::nullopt;
+        rhs.copy_ctor = nullptr;
+        rhs.move_ctor = nullptr;
+        rhs.dtor = nullptr;
     }
 
     ObjectWrapper::~ObjectWrapper(void) {
-        if (this->dtor.has_value()) {
-            this->dtor.value()(this->get_ptr());
+        if (this->dtor != nullptr) {
+            this->dtor(this->get_ptr());
         }
 
         if (this->is_on_heap) {
@@ -210,8 +216,8 @@ namespace argus {
             src_ptr = this->value;
         }
 
-        if (this->copy_ctor.has_value()) {
-            this->copy_ctor.value()(dest, src_ptr);
+        if (this->copy_ctor != nullptr) {
+            this->copy_ctor(dest, src_ptr);
         } else {
             memcpy(dest, src_ptr, size);
         }
@@ -225,11 +231,11 @@ namespace argus {
         return m_obj_type;
     }
 
-    ArrayBlob::ArrayBlob(size_t element_size, size_t count, std::function<void(void *)> element_dtor) :
+    ArrayBlob::ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *)) :
         VectorObject(VectorObjectType::ArrayBlob),
         m_element_size(element_size),
         m_count(count),
-        m_element_dtor(std::move(element_dtor)) {
+        m_element_dtor(element_dtor) {
         if (element_size == 0) {
             throw std::invalid_argument("Element size must be greater than zero");
         }
@@ -272,17 +278,17 @@ namespace argus {
         return reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(m_blob) + (m_element_size * index));
     }
 
-    VectorWrapper::VectorWrapper(size_t element_size, const ObjectType &element_type,
-            void *underlying_vec, const size_accessor_t &get_size_fn, const data_accessor_t &get_data_fn,
-            const element_accessor_t &get_element_fn, const element_mutator_t &set_element_fn) :
+    VectorWrapper::VectorWrapper(size_t element_size, ObjectType element_type,
+            void *underlying_vec, SizeAccessor get_size_fn, DataAccessor get_data_fn,
+            ElementAccessor get_element_fn, ElementMutator set_element_fn) :
         VectorObject(VectorObjectType::VectorWrapper),
         m_element_size(element_size),
-        m_element_type(element_type),
+        m_element_type(std::move(element_type)),
         m_underlying_vec(underlying_vec),
-        m_get_size_fn(std::make_shared<size_accessor_t>(get_size_fn)),
-        m_get_data_fn(std::make_shared<data_accessor_t>(get_data_fn)),
-        m_get_element_fn(std::make_shared<element_accessor_t>(get_element_fn)),
-        m_set_element_fn(std::make_shared<element_mutator_t>(set_element_fn)) {
+        m_get_size_fn(get_size_fn),
+        m_get_data_fn(get_data_fn),
+        m_get_element_fn(get_element_fn),
+        m_set_element_fn(set_element_fn) {
         if (element_size == 0) {
             throw std::invalid_argument("Element size must be greater than zero");
         }

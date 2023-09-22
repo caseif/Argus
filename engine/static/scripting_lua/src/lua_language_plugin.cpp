@@ -294,7 +294,7 @@ namespace argus {
 
                 *dest = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
 
-                auto &blob = *new(dest->get_ptr()) ArrayBlob(element_type.size, len, bound_type.dtor.value_or(nullptr));
+                auto &blob = *new(dest->get_ptr()) ArrayBlob(element_type.size, len, bound_type.dtor);
 
                 for (size_t i = 0; i < len; i++) {
                     auto index = int(i + 1);
@@ -351,8 +351,8 @@ namespace argus {
                     } else {
                         assert(element_type.type == IntegralType::Struct);
 
-                        if (bound_type.copy_ctor.has_value()) {
-                            bound_type.copy_ctor.value()(blob[i], ptr);
+                        if (bound_type.copy_ctor != nullptr) {
+                            bound_type.copy_ctor(blob[i], ptr);
                         } else {
                             memcpy(blob[i], ptr, bound_type.size);
                         }
@@ -735,8 +735,8 @@ namespace argus {
                     udata->is_handle = false;
 
                     auto bound_type = get_bound_type(element_type.type_index.value());
-                    if (bound_type.copy_ctor.has_value()) {
-                        bound_type.copy_ctor.value()(udata->data, vec[i]);
+                    if (bound_type.copy_ctor != nullptr) {
+                        bound_type.copy_ctor(udata->data, vec[i]);
                     } else {
                         memcpy(udata->data, vec[i], vec.element_size());
                     }

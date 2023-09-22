@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -32,6 +31,10 @@
 #include <stdexcept>
 
 namespace argus {
+    typedef void(*CopyCtorProxy)(void *, const void *);
+    typedef void(*MoveCtorProxy)(void *, void *);
+    typedef void(*DtorProxy)(void *);
+
     enum IntegralType {
         Void,
         Integer,
@@ -104,9 +107,9 @@ namespace argus {
         };
         bool is_on_heap;
         size_t buffer_size;
-        std::optional<std::function<void(void *, const void *)>> copy_ctor;
-        std::optional<std::function<void(void *, void *)>> move_ctor;
-        std::optional<std::function<void(void *)>> dtor;
+        CopyCtorProxy copy_ctor;
+        MoveCtorProxy move_ctor;
+        DtorProxy dtor;
 
         ObjectWrapper(void);
 
@@ -119,9 +122,9 @@ namespace argus {
 
         ~ObjectWrapper(void);
 
-        ObjectWrapper &operator= (const ObjectWrapper &rhs) = delete;
+        ObjectWrapper &operator=(const ObjectWrapper &rhs) = delete;
 
-        ObjectWrapper &operator= (ObjectWrapper &&rhs) noexcept;
+        ObjectWrapper &operator=(ObjectWrapper &&rhs) noexcept;
 
         void copy_value(void *dest, size_t size) const;
 
@@ -162,9 +165,9 @@ namespace argus {
         size_t size;
         std::type_index type_index;
         // the copy and move ctors and dtor are only used for struct value and callback types
-        std::optional<std::function<void(void *dst, const void *src)>> copy_ctor;
-        std::optional<std::function<void(void *dst, void *src)>> move_ctor;
-        std::optional<std::function<void(void *obj)>> dtor;
+        CopyCtorProxy copy_ctor;
+        MoveCtorProxy move_ctor;
+        DtorProxy dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
         std::map<std::string, BoundFieldDef> fields;
@@ -207,11 +210,11 @@ namespace argus {
       private:
         const size_t m_element_size;
         const size_t m_count;
-        const std::function<void(void *)> m_element_dtor;
+        void(*m_element_dtor)(void *);
         unsigned char m_blob[0];
 
       public:
-        ArrayBlob(size_t element_size, size_t count, std::function<void(void *)> element_dtor);
+        ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *));
 
         template <typename E>
         ArrayBlob(size_t count) : ArrayBlob(sizeof(E), count, [](void *ptr) { reinterpret_cast<E *>(ptr).~E(); }) {
@@ -261,24 +264,24 @@ namespace argus {
 
     class VectorWrapper : public VectorObject {
        public:
-        typedef std::function<size_t(const void *)> size_accessor_t;
-        typedef std::function<const void *(void *)> data_accessor_t;
-        typedef std::function<void *(void *, size_t)> element_accessor_t;
-        typedef std::function<void(void *, size_t, void *)> element_mutator_t;
+        typedef size_t(*SizeAccessor)(const void *);
+        typedef const void *(*DataAccessor)(void *);
+        typedef void *(*ElementAccessor)(void *, size_t);
+        typedef void(*ElementMutator)(void *, size_t, void *);
 
-       private:
+      private:
         size_t m_element_size;
         ObjectType m_element_type;
         void *m_underlying_vec;
-        std::shared_ptr<size_accessor_t> m_get_size_fn;
-        std::shared_ptr<data_accessor_t> m_get_data_fn;
-        std::shared_ptr<element_accessor_t> m_get_element_fn;
-        std::shared_ptr<element_mutator_t> m_set_element_fn;
+        SizeAccessor m_get_size_fn;
+        DataAccessor m_get_data_fn;
+        ElementAccessor m_get_element_fn;
+        ElementMutator m_set_element_fn;
 
-       public:
-        VectorWrapper(size_t element_size, const ObjectType &element_type, void *underlying_vec,
-                const size_accessor_t &get_size_fn, const data_accessor_t &get_data_fn,
-                const element_accessor_t &get_element_fn, const element_mutator_t &set_element_fn);
+      public:
+        VectorWrapper(size_t element_size, ObjectType element_type, void *underlying_vec,
+                SizeAccessor get_size_fn, DataAccessor get_data_fn,
+                ElementAccessor get_element_fn, ElementMutator set_element_fn);
 
         template <typename E>
         VectorWrapper(std::vector<E> &underlying_vec, ObjectType element_type) : VectorWrapper(
@@ -289,7 +292,8 @@ namespace argus {
                 [](void *vec_ptr) {
                     return reinterpret_cast<const void *>(reinterpret_cast<const std::vector<E> *>(vec_ptr)->data());
                 },
-                [](void *vec_ptr, size_t index) { return &reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index); },
+                [](void *vec_ptr, size_t index) -> void * {
+                    return &reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index); },
                 [](void *vec_ptr, size_t index, void *val) {
                     reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index) = *reinterpret_cast<E *>(val);
                 }) {

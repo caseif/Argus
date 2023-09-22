@@ -194,8 +194,8 @@ namespace argus {
                 assert(type.type_index.has_value());
 
                 auto bound_type = get_bound_type(type.type_index.value());
-                assert(bound_type.copy_ctor.has_value());
-                bound_type.copy_ctor.value()(wrapper.get_ptr(), ptr);
+                assert(bound_type.copy_ctor != nullptr);
+                bound_type.copy_ctor(wrapper.get_ptr(), ptr);
                 wrapper.copy_ctor = bound_type.copy_ctor;
                 wrapper.move_ctor = bound_type.move_ctor;
                 wrapper.dtor = bound_type.dtor;
@@ -207,10 +207,10 @@ namespace argus {
                 // std::function isn't trivially copyable
                 new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
                 wrapper.copy_ctor = [](void *dst, const void *src) {
-                    return new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
+                    new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
                 };
                 wrapper.move_ctor = [](void *dst, void *src) {
-                    return new(dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
+                    new(dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
                 };
                 wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
 
@@ -282,7 +282,7 @@ namespace argus {
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
-                        && get_bound_type(el_type.type_index.value()).copy_ctor.has_value());
+                        && get_bound_type(el_type.type_index.value()).copy_ctor != nullptr);
 
         size_t el_size = el_type.size;
         if (el_type.type == IntegralType::String) {
@@ -294,8 +294,8 @@ namespace argus {
         ObjectWrapper wrapper(vec_type, blob_size);
         ArrayBlob &blob = *new(wrapper.get_ptr()) ArrayBlob(el_size, count,
                 el_type.type == IntegralType::String
-                        ? [](void *ptr) { reinterpret_cast<std::string *>(ptr)->~basic_string(); }
-                        : std::function<void(void *)>(nullptr));
+                        ? +[](void *ptr) { reinterpret_cast<std::string *>(ptr)->~basic_string(); }
+                        : nullptr);
 
         if (is_trivially_copyable) {
             // can just copy the whole thing in one go and avoid looping
@@ -321,14 +321,14 @@ namespace argus {
                 assert(el_type.type == IntegralType::Struct);
 
                 const BoundTypeDef &bound_type = get_bound_type(el_type.type_index.value());
-                assert(bound_type.copy_ctor.has_value());
+                assert(bound_type.copy_ctor != nullptr);
 
                 for (size_t i = 0; i < count; i++) {
                     void *src_ptr = reinterpret_cast<void *>(
                             reinterpret_cast<uintptr_t>(data) + i * uintptr_t(el_size));
                     void *dst_ptr = blob[i];
 
-                    bound_type.copy_ctor.value()(dst_ptr, src_ptr);
+                    bound_type.copy_ctor(dst_ptr, src_ptr);
                 }
             }
         }
@@ -357,16 +357,16 @@ namespace argus {
     }
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
-            std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
-            std::optional<std::function<void(void *dst, void *src)>> move_ctor,
-            std::optional<std::function<void(void *obj)>> dtor) {
+            CopyCtorProxy copy_ctor,
+            MoveCtorProxy move_ctor,
+            DtorProxy dtor) {
         BoundTypeDef def {
                 name,
                 size,
                 type_index,
-                std::move(copy_ctor),
-                std::move(move_ctor),
-                std::move(dtor),
+                copy_ctor,
+                move_ctor,
+                dtor,
                 {},
                 {},
                 {}

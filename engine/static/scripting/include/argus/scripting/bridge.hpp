@@ -694,17 +694,17 @@ namespace argus {
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
     BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
-            std::optional<std::function<void(void *dst, const void *src)>> copy_ctor,
-            std::optional<std::function<void(void *dst, void *src)>> move_ctor,
-            std::optional<std::function<void(void *)>> dtor);
+            CopyCtorProxy copy_ctor,
+            MoveCtorProxy move_ctor,
+            DtorProxy dtor);
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from ScriptBindable
 
-        std::optional<std::function<void(void *, const void *)>> copy_ctor;
-        std::optional<std::function<void(void *, void *)>> move_ctor;
-        std::optional<std::function<void(void *)>> dtor;
+        CopyCtorProxy copy_ctor = nullptr;
+        MoveCtorProxy move_ctor = nullptr;
+        DtorProxy dtor = nullptr;
 
         if constexpr (std::is_copy_constructible_v<T>) {
             copy_ctor = [](void *dst, const void *src) {
