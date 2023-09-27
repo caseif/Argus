@@ -82,10 +82,10 @@ namespace argus {
         lua_State *state;
         int ref_key;
 
-        LuaCallback(lua_State *state) : state(state) {
+        LuaCallback(lua_State *state, int index) : state(state) {
             // duplicate the top stack value in order to leave the stack as we
             // found it
-            lua_pushvalue(state, -1);
+            lua_pushvalue(state, index);
             ref_key = luaL_ref(state, LUA_REGISTRYINDEX);
         }
 
@@ -524,7 +524,7 @@ namespace argus {
                                                  + luaL_typename(state, param_index) + ")");
                 }*/
 
-                auto handle = std::make_shared<LuaCallback>(state);
+                auto handle = std::make_shared<LuaCallback>(state, param_index);
 
                 ProxiedFunction fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
                     return handle->call(params);
