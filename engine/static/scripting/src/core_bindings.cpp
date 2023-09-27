@@ -30,12 +30,26 @@ namespace argus {
         g_update_callbacks.push_back(callback);
     }
 
-    static void _bind_engine_symbols(void) {
+    static void _bind_engine_types(void) {
+        bind_enum<TargetThread>("TargetThread");
+        bind_enum_value("Update", TargetThread::Update);
+        bind_enum_value("Render", TargetThread::Render);
+
+        bind_enum<Ordering>("Ordering");
+        bind_enum_value("First", Ordering::First);
+        bind_enum_value("Early", Ordering::Early);
+        bind_enum_value("Standard", Ordering::Standard);
+        bind_enum_value("Late", Ordering::Late);
+        bind_enum_value("Last", Ordering::Last);
+    }
+
+    static void _bind_engine_functions(void) {
         bind_global_function("register_update_callback", _script_register_update_callback);
     }
 
     void register_core_bindings(void) {
-        _bind_engine_symbols();
+        _bind_engine_types();
+        _bind_engine_functions();
     }
 
     void invoke_update_callbacks(TimeDelta delta) {

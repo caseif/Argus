@@ -52,7 +52,7 @@ namespace argus {
      * \sa ArgusEvent
      * \sa Window
      */
-    struct WindowEvent : public ArgusEvent {
+    struct WindowEvent : public ArgusEvent, ScriptBindable {
         /**
          * \brief The specific \link WindowEventType type \endlink of
          *        WindowEvent.
@@ -120,9 +120,15 @@ namespace argus {
                 delta(delta) {
         }
 
-        WindowEvent(WindowEvent &rhs) :
-                WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
-        }
+        WindowEvent(const WindowEvent &rhs) = default;
+
+        WindowEvent(WindowEvent &&rhs) = delete;
+
+        ~WindowEvent(void) override = default;
+
+        WindowEvent &operator =(const WindowEvent &rhs) = delete;
+
+        WindowEvent &operator =(WindowEvent &&rhs) = delete;
 
         Window &get_window(void) {
             return window;

@@ -89,10 +89,18 @@ namespace argus {
     }
 
     static void _bind_math_symbols(void) {
-        bind_type<BindableVector2d>("Vector2d");
-        bind_type<BindableVector2f>("Vector2f");
-        bind_type<BindableVector2i>("Vector2i");
-        bind_type<BindableVector2u>("Vector2u");
+        bind_type<Vector2d>("Vector2d");
+        bind_type<Vector2f>("Vector2f");
+        bind_type<Vector2i>("Vector2i");
+        bind_type<Vector2u>("Vector2u");
+        bind_type<Vector3d>("Vector3d");
+        bind_type<Vector3f>("Vector3f");
+        bind_type<Vector3i>("Vector3i");
+        bind_type<Vector3u>("Vector3u");
+        bind_type<Vector4d>("Vector4d");
+        bind_type<Vector4f>("Vector4f");
+        bind_type<Vector4i>("Vector4i");
+        bind_type<Vector4u>("Vector4u");
     }
 
     void register_lowlevel_bindings(void) {

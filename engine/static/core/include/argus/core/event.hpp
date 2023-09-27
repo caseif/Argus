@@ -51,6 +51,14 @@ namespace argus {
          */
         const std::type_index type;
 
+        ArgusEvent(const ArgusEvent &rhs);
+
+        ArgusEvent(ArgusEvent &&rhs) = delete;
+
+        ArgusEvent &operator=(const ArgusEvent &rhs) = delete;
+
+        ArgusEvent &operator=(ArgusEvent &&rhs) = delete;
+
         virtual ~ArgusEvent() {
         }
     };
@@ -59,7 +67,9 @@ namespace argus {
      * \brief A callback that accepts an event and a piece of user-supplied
      *        data.
      */
-    typedef std::function<void(const ArgusEvent &, void *)> ArgusEventCallback;
+    typedef std::function<void(const ArgusEvent &)> ArgusEventCallback;
+
+    typedef std::function<void(const ArgusEvent &, void *)> ArgusEventWithDataCallback;
 
     enum class TargetThread {
         Update,
@@ -72,7 +82,7 @@ namespace argus {
      *
      * \sa argus::register_event_handler
      */
-    Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
+    Index register_event_handler_with_type(std::type_index type, ArgusEventWithDataCallback callback,
             TargetThread target_thread, void *data, Ordering ordering = Ordering::Standard);
 
     /**
@@ -86,17 +96,41 @@ namespace argus {
      * \param callback The \link ArgusEventCallback callback \endlink
      *        responsible for handling passed events.
      * \param target_thread The thread to invoke the handler function on.
-     * \param data The data pointer to supply to the filter and callback
-     *        functions on each invocation.
      *
      * \return The ID of the new registration.
      */
     template<typename EventType>
-    Index register_event_handler(const std::function<void(const EventType &, void *)> &callback,
+    Index register_event_handler(std::function<void(const EventType &)> callback,
+            const TargetThread target_thread, Ordering ordering = Ordering::Standard) {
+        return register_event_handler_with_type(std::type_index(typeid(EventType)),
+                [callback = std::move(callback)](const ArgusEvent &e, void *d) {
+                    UNUSED(d);
+                    assert(e.type == std::type_index(typeid(EventType)));
+                    callback(reinterpret_cast<const EventType &>(e));
+                },
+                target_thread, nullptr, ordering);
+    }
+
+    /**
+     * \brief Registers a handler for particular events.
+     *
+     * Events which match the given filter will be passed to the callback
+     * function along with the user-supplied data pointer.
+     *
+     * \tparam EventType The type of event to handle.
+     *
+     * \param callback The \link ArgusEventCallback callback \endlink
+     *        responsible for handling passed events.
+     * \param target_thread The thread to invoke the handler function on.
+     *
+     * \return The ID of the new registration.
+     */
+    template<typename EventType>
+    Index register_event_handler(std::function<void(const EventType &, void *)> callback,
             const TargetThread target_thread, void *const data = nullptr,
             Ordering ordering = Ordering::Standard) {
         return register_event_handler_with_type(std::type_index(typeid(EventType)),
-                [callback](const ArgusEvent &e, void *d) {
+                [callback = std::move(callback)](const ArgusEvent &e, void *d) {
                     assert(e.type == std::type_index(typeid(EventType)));
                     callback(reinterpret_cast<const EventType &>(e), d);
                 },

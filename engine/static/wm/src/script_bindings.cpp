@@ -22,6 +22,8 @@
 #include "internal/wm/script_bindings.hpp"
 
 namespace argus {
+    typedef std::function<void(const WindowEvent &)> WindowEventCallback;
+
     static void _bind_window_symbols(void) {
         bind_type<Window>("Window");
 
@@ -90,9 +92,15 @@ namespace argus {
         bind_member_field("position", &WindowEvent::position);
         bind_member_field("delta", &WindowEvent::delta);
         bind_member_instance_function("get_window", &WindowEvent::get_window);
+
+        bind_global_function<Index (*)(std::function<void(const WindowEvent &)>, TargetThread, Ordering)>(
+                "register_window_event_handler", register_event_handler<WindowEvent>);
     }
 
     void register_wm_bindings(void) {
+        //TODO: bind to a better name
+        bind_type<std::chrono::nanoseconds>("TimeDelta2");
+        bind_member_instance_function("nanos", &std::chrono::nanoseconds::count);
         _bind_window_symbols();
         _bind_display_symbols();
         _bind_window_event_symbols();

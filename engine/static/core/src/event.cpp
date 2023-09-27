@@ -39,7 +39,7 @@
 namespace argus {
     struct ArgusEventHandler {
         std::type_index type;
-        ArgusEventCallback callback;
+        ArgusEventWithDataCallback callback;
         void *data;
     };
 
@@ -115,7 +115,7 @@ namespace argus {
         flush_callback_list_queues(*listeners);
     }
 
-    Index register_event_handler_with_type(std::type_index type, const ArgusEventCallback &callback,
+    Index register_event_handler_with_type(std::type_index type, ArgusEventWithDataCallback callback,
             const TargetThread target_thread, void *const data, Ordering ordering) {
         affirm_precond(g_core_initializing || g_core_initialized,
                 "Cannot register event listener before engine initialization.");
@@ -136,7 +136,7 @@ namespace argus {
             }
         }
 
-        ArgusEventHandler listener = {type, callback, data};
+        ArgusEventHandler listener = {type, std::move(callback), data};
         return add_callback(*listeners, listener, ordering);
     }
 
@@ -171,4 +171,6 @@ namespace argus {
     ArgusEvent::ArgusEvent(std::type_index type) :
             type(type) {
     }
+
+    ArgusEvent::ArgusEvent(const ArgusEvent &rhs) = default;
 }

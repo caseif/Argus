@@ -161,11 +161,11 @@ namespace argus {
 
                 g_wm_module_initialized = true;
 
+                register_wm_bindings();
+
                 break;
             }
             case LifecycleStage::PostInit: {
-                register_wm_bindings();
-
                 _create_initial_window();
 
                 break;
