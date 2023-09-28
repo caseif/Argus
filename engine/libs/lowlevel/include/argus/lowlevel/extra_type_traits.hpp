@@ -55,6 +55,15 @@ namespace argus {
         using is_const = std::false_type;
     };
 
+    template <typename Ret, typename... Args>
+    struct function_traits<Ret(*)(Args...) noexcept> {
+        using class_type = void;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::false_type;
+    };
+
     template <typename Class, typename Ret, typename... Args>
     struct function_traits<Ret(Class::*)(Args...)> {
         using class_type = Class;
@@ -66,6 +75,24 @@ namespace argus {
 
     template <typename Class, typename Ret, typename... Args>
     struct function_traits<Ret(Class::*)(Args...) const> {
+        using class_type = Class;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::true_type;
+    };
+
+    template <typename Class, typename Ret, typename... Args>
+    struct function_traits<Ret(Class::*)(Args...) noexcept> {
+        using class_type = Class;
+        using return_type = Ret;
+        using argument_types = std::tuple<Args...>;
+        using argument_types_wrapped = std::tuple<reference_wrapped_t<Args>...>;
+        using is_const = std::true_type;
+    };
+
+    template <typename Class, typename Ret, typename... Args>
+    struct function_traits<Ret(Class::*)(Args...) const noexcept> {
         using class_type = Class;
         using return_type = Ret;
         using argument_types = std::tuple<Args...>;
