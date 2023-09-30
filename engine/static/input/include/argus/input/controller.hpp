@@ -32,7 +32,7 @@ namespace argus::input {
 
     typedef uint16_t ControllerIndex;
 
-    class Controller : ScriptBindable {
+    class Controller : AutoCleanupable {
         friend class InputManager;
 
       private:

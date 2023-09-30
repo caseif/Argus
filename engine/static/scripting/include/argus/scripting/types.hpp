@@ -345,19 +345,4 @@ namespace argus {
             return *reinterpret_cast<std::vector<E> *>(m_underlying_vec);
         }
     };
-
-    class ScriptBindable {
-      public:
-        ScriptBindable(void);
-
-        ScriptBindable(const ScriptBindable &);
-
-        ScriptBindable(ScriptBindable &&) noexcept;
-
-        ScriptBindable &operator=(const ScriptBindable &);
-
-        ScriptBindable &operator=(ScriptBindable &&) noexcept;
-
-        virtual ~ScriptBindable(void) = 0;
-    };
 }

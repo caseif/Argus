@@ -18,6 +18,9 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/misc.hpp"
+
+#include "argus/core/message.hpp"
 
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/handles.hpp"
@@ -76,5 +79,13 @@ namespace argus {
 
         g_handle_to_ptr_map.erase(it->second.second);
         g_ptr_to_handle_map.erase(it);
+    }
+
+    static void _on_object_destroyed(const ObjectDestroyedMessage &message) {
+        invalidate_sv_handle(message.m_ptr);
+    }
+
+    void register_object_destroyed_performer(void) {
+        register_message_performer<ObjectDestroyedMessage>(_on_object_destroyed);
     }
 }

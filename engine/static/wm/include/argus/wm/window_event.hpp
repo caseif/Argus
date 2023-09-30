@@ -21,6 +21,8 @@
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/scripting.hpp"
+
 #include "argus/core/event.hpp"
 
 #include <typeinfo>
@@ -52,7 +54,7 @@ namespace argus {
      * \sa ArgusEvent
      * \sa Window
      */
-    struct WindowEvent : public ArgusEvent, ScriptBindable {
+    struct WindowEvent : public ArgusEvent, AutoCleanupable {
         /**
          * \brief The specific \link WindowEventType type \endlink of
          *        WindowEvent.

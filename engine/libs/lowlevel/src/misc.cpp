@@ -16,10 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/lowlevel/message.hpp"
+#include "argus/lowlevel/misc.hpp"
 
 namespace argus {
-    void invalidate_sv_handle(void *ptr);
+    ObjectDestroyedMessage::ObjectDestroyedMessage(void *ptr) : Message(typeid(*this)), m_ptr(ptr) {
+    }
 
-    void register_object_destroyed_performer(void);
+    AutoCleanupable::AutoCleanupable(void) = default;
+
+    AutoCleanupable::AutoCleanupable(const AutoCleanupable &) = default;
+
+    AutoCleanupable::AutoCleanupable(AutoCleanupable &&) noexcept = default;
+
+    AutoCleanupable &AutoCleanupable::operator=(const AutoCleanupable &) = default;
+
+    AutoCleanupable &AutoCleanupable::operator=(AutoCleanupable &&) noexcept = default;
+
+    AutoCleanupable::~AutoCleanupable(void) {
+        broadcast_message(ObjectDestroyedMessage(this));
+    }
 }

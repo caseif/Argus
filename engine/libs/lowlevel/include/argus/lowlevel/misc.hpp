@@ -18,8 +18,28 @@
 
 #pragma once
 
-namespace argus {
-    void invalidate_sv_handle(void *ptr);
+#include "argus/lowlevel/message.hpp"
 
-    void register_object_destroyed_performer(void);
+namespace argus {
+    class ObjectDestroyedMessage : Message {
+      public:
+        void *m_ptr;
+
+        ObjectDestroyedMessage(void *ptr);
+    };
+
+    class AutoCleanupable {
+      public:
+        AutoCleanupable(void);
+
+        AutoCleanupable(const AutoCleanupable &);
+
+        AutoCleanupable(AutoCleanupable &&) noexcept;
+
+        AutoCleanupable &operator=(const AutoCleanupable &);
+
+        AutoCleanupable &operator=(AutoCleanupable &&) noexcept;
+
+        virtual ~AutoCleanupable(void) = 0;
+    };
 }

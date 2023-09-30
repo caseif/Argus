@@ -37,7 +37,7 @@ namespace argus {
         Vector3u color_depth;
     };
 
-    class Display : public ScriptBindable {
+    class Display : AutoCleanupable {
       private:
         Display(Display &) = delete;
 

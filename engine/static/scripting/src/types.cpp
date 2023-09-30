@@ -344,18 +344,4 @@ namespace argus {
         affirm_precond(!m_element_type.is_const, "Cannot mutate const vector via VectorWrapper");
         (*m_set_element_fn)(m_underlying_vec, index, val);
     }
-
-    ScriptBindable::ScriptBindable(void) = default;
-
-    ScriptBindable::ScriptBindable(const ScriptBindable &) = default;
-
-    ScriptBindable::ScriptBindable(ScriptBindable &&) noexcept = default;
-
-    ScriptBindable &ScriptBindable::operator=(const ScriptBindable &) = default;
-
-    ScriptBindable &ScriptBindable::operator=(ScriptBindable &&) noexcept = default;
-
-    ScriptBindable::~ScriptBindable(void) {
-        invalidate_sv_handle(this);
-    }
 }

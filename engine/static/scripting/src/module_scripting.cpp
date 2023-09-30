@@ -24,6 +24,7 @@
 
 #include "internal/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
+#include "internal/scripting/handles.hpp"
 #include "internal/scripting/module_scripting.hpp"
 #include "internal/scripting/pimpl/script_context.hpp"
 
@@ -69,6 +70,8 @@ namespace argus {
             case LifecycleStage::Init: {
                 register_lowlevel_bindings();
                 register_core_bindings();
+
+                register_object_destroyed_performer();
 
                 break;
             }

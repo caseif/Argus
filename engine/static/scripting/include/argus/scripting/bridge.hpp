@@ -23,6 +23,7 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "argus/lowlevel/misc.hpp"
 
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
@@ -175,10 +176,10 @@ namespace argus {
     static ObjectType _create_object_type();
 
     // Second parameter implies that reference types must derive
-    // from ScriptBindable.
+    // from AutoCleanupable.
     // Function return values are passed directly to the script, and we only
     // allow scripts to assume ownership of references if the pointed-to type
-    // type derives from ScriptBindable so that the handle can be automatically
+    // type derives from AutoCleanupable so that the handle can be automatically
     // invalidated when the object is destroyed.
     template <typename T>
     constexpr ObjectType(*_create_return_object_type)() = _create_object_type<T, DataFlowDirection::ToScript>;
@@ -207,10 +208,10 @@ namespace argus {
     static std::enable_if_t<!std::is_function_v<F>, ScriptCallbackType> _create_callback_type() {
         return ScriptCallbackType {
                 // Second parameter implies that reference types must derive
-                // from ScriptBindable.
+                // from AutoCleanupable.
                 // Callback params are passed directly to the script, and we
                 // only allow scripts to assume ownership of references if the
-                // pointed-to type derives from ScriptBindable so that the
+                // pointed-to type derives from AutoCleanupable so that the
                 // handle can be automatically invalidated when the object is
                 // destroyed.
                 _tuple_to_object_types<Args, DataFlowDirection::ToScript>(),
@@ -292,10 +293,10 @@ namespace argus {
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not supported");
             // References passed to scripts must be invalidated when the
             // underlying object is destroyed, which is only possible if the
-            // type derives from ScriptBindable.
-            static_assert(!(flow_dir == DataFlowDirection::ToScript && !std::is_base_of_v<ScriptBindable, B>),
+            // type derives from AutoCleanupable.
+            static_assert(!(flow_dir == DataFlowDirection::ToScript && !std::is_base_of_v<AutoCleanupable, B>),
                     "Reference types which flow from the engine to a script "
-                    "(function return values and callback parameters) must derive from ScriptBindable");
+                    "(function return values and callback parameters) must derive from AutoCleanupable");
             return { IntegralType::Pointer, sizeof(void *), is_const, typeid(B) };
         } else if constexpr (std::is_enum_v<T>) {
             return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), is_const, typeid(B) };
@@ -710,7 +711,7 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
-        // ideally we would emit a warning here if the class doesn't derive from ScriptBindable
+        // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
 
         CopyCtorProxy copy_ctor = nullptr;
         MoveCtorProxy move_ctor = nullptr;

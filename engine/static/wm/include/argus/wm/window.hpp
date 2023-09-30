@@ -98,7 +98,7 @@ namespace argus {
      *
      * \sa Canvas
      */
-    class Window : ScriptBindable {
+    class Window : AutoCleanupable {
       public:
         pimpl_Window *pimpl;
 

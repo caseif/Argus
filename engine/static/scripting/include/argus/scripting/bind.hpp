@@ -33,7 +33,7 @@ namespace argus {
 
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
-        // ideally we would emit a warning here if the class doesn't derive from ScriptBindable
+        // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
         auto def = create_type_def<T>(name);
         bind_type(def);
     }
