@@ -98,9 +98,6 @@ namespace argus {
     }
 
     void register_wm_bindings(void) {
-        //TODO: bind to a better name
-        bind_type<std::chrono::nanoseconds>("TimeDelta2");
-        bind_member_instance_function("nanos", &std::chrono::nanoseconds::count);
         _bind_window_symbols();
         _bind_display_symbols();
         _bind_window_event_symbols();

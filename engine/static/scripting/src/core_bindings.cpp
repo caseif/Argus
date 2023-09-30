@@ -27,7 +27,7 @@ namespace argus {
     std::vector<ScriptDeltaCallback> g_update_callbacks;
 
     static void _script_register_update_callback(ScriptDeltaCallback callback) {
-        g_update_callbacks.push_back(callback);
+        register_update_callback(callback);
     }
 
     static void _bind_engine_types(void) {
@@ -50,11 +50,5 @@ namespace argus {
     void register_core_bindings(void) {
         _bind_engine_types();
         _bind_engine_functions();
-    }
-
-    void invoke_update_callbacks(TimeDelta delta) {
-        for (const auto &callback : g_update_callbacks) {
-            callback(BindableTimeDelta(delta));
-        }
     }
 }

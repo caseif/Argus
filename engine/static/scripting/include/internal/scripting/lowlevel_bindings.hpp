@@ -25,29 +25,5 @@
 #include <cstdint>
 
 namespace argus {
-    struct BindableTimeDelta : ScriptBindable {
-        uint64_t m_nanos;
-
-        BindableTimeDelta(TimeDelta delta);
-
-        BindableTimeDelta(const BindableTimeDelta &rhs);
-
-        BindableTimeDelta(BindableTimeDelta &&rhs);
-
-        BindableTimeDelta &operator=(const BindableTimeDelta &rhs);
-
-        BindableTimeDelta &operator=(BindableTimeDelta &&rhs);
-
-        ~BindableTimeDelta(void) override;
-
-        uint64_t nanos(void) const;
-
-        uint64_t micros(void) const;
-
-        uint64_t millis(void) const;
-
-        uint64_t seconds(void) const;
-    };
-
     void register_lowlevel_bindings(void);
 }

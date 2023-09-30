@@ -27,65 +27,24 @@
 #include <cstdint>
 
 namespace argus {
-    constexpr const uint64_t k_ns_per_us = 1'000;
-    constexpr const uint64_t k_ns_per_ms = 1'000'000;
-    constexpr const uint64_t k_ns_per_s = 1'000'000'000;
-
-    BindableTimeDelta::BindableTimeDelta(TimeDelta delta)
-            : m_nanos(uint64_t(std::max<int64_t>(0, std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count()))) {
+    static int64_t _nanos_to_micros(const std::chrono::nanoseconds &ns) {
+        return std::chrono::duration_cast<std::chrono::microseconds>(ns).count();
     }
 
-    BindableTimeDelta::BindableTimeDelta(const BindableTimeDelta &rhs) = default;
-
-    BindableTimeDelta::BindableTimeDelta(BindableTimeDelta &&rhs) = default;
-
-    BindableTimeDelta &BindableTimeDelta::operator=(const BindableTimeDelta &rhs) {
-        this->m_nanos = rhs.m_nanos;
-        return *this;
+    static int64_t _nanos_to_millis(const std::chrono::nanoseconds &ns) {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(ns).count();
     }
 
-    BindableTimeDelta &BindableTimeDelta::operator=(BindableTimeDelta &&rhs) {
-        this->m_nanos = rhs.m_nanos;
-        return *this;
+    static int64_t _nanos_to_seconds(const std::chrono::nanoseconds &ns) {
+        return std::chrono::duration_cast<std::chrono::seconds>(ns).count();
     }
-
-    BindableTimeDelta::~BindableTimeDelta(void) = default;
-
-    uint64_t BindableTimeDelta::nanos(void) const {
-        return m_nanos;
-    }
-
-    uint64_t BindableTimeDelta::micros(void) const {
-        return m_nanos / k_ns_per_us;
-    }
-
-    uint64_t BindableTimeDelta::millis(void) const {
-        return m_nanos / k_ns_per_ms;
-    }
-
-    uint64_t BindableTimeDelta::seconds(void) const {
-        return m_nanos / k_ns_per_s;
-    }
-
-    class BindableVector2d : Vector2d, ScriptBindable {
-    };
-
-    class BindableVector2f : Vector2f, ScriptBindable {
-    };
-
-    class BindableVector2i : Vector2i, ScriptBindable {
-    };
-
-    class BindableVector2u : Vector2u, ScriptBindable {
-    };
 
     static void _bind_time_symbols(void) {
-        auto delta_type = create_type_def<BindableTimeDelta>("TimeDelta");
-        add_member_instance_function(delta_type, "nanos", &BindableTimeDelta::nanos);
-        add_member_instance_function(delta_type, "micros", &BindableTimeDelta::micros);
-        add_member_instance_function(delta_type, "millis", &BindableTimeDelta::millis);
-        add_member_instance_function(delta_type, "seconds", &BindableTimeDelta::seconds);
-        bind_type(delta_type);
+        bind_type<TimeDelta>("TimeDelta");
+        bind_member_instance_function("nanos", &TimeDelta::count);
+        bind_extension_function<TimeDelta>("micros", &_nanos_to_micros);
+        bind_extension_function<TimeDelta>("millis", &_nanos_to_millis);
+        bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds);
     }
 
     static void _bind_math_symbols(void) {

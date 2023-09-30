@@ -31,10 +31,8 @@
 #include <cstdint>
 
 namespace argus {
-    typedef std::function<void(BindableTimeDelta)> ScriptDeltaCallback;
+    typedef std::function<void(TimeDelta)> ScriptDeltaCallback;
     typedef std::function<void(ArgusEvent &)> ScriptEventHandler;
 
     void register_core_bindings(void);
-
-    void invoke_update_callbacks(TimeDelta delta);
 }
