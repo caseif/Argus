@@ -16,28 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
+#pragma once
 
-#include "argus/core/event.hpp"
+#include "argus/core/message.hpp"
 
-#include "argus/input/controller.hpp"
-#include "argus/input/input_event.hpp"
-
-namespace argus::input {
-    InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
-            const std::string &action, double axis_value, double axis_delta) :
-            ArgusEvent(typeid(InputEvent)),
-            input_type(type),
-            window(window),
-            controller_index(controller_index),
-            action(action),
-            axis_value(axis_value),
-            axis_delta(axis_delta) {
-    }
-
-    InputEvent::~InputEvent(void) = default;
-
-    const Window &InputEvent::get_window(void) {
-        return window;
-    }
+namespace argus {
+    void dispatch_message(const Message &message);
 }

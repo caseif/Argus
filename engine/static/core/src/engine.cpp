@@ -20,6 +20,7 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/message.hpp"
 #include "argus/lowlevel/threading.hpp"
 #include "argus/lowlevel/time.hpp"
 
@@ -32,6 +33,7 @@
 #include "internal/core/engine.hpp"
 #include "internal/core/engine_config.hpp"
 #include "internal/core/event.hpp"
+#include "internal/core/message.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
 #include "internal/core/module_defs.hpp"
@@ -272,6 +274,8 @@ namespace argus {
         Logger::default_logger().info("Engine initialization started");
 
         signal(SIGINT, _interrupt_handler);
+
+        set_message_dispatcher(dispatch_message);
 
         Logger::default_logger().debug("Enabling requested modules");
         if (!g_engine_config.load_modules.empty()) {

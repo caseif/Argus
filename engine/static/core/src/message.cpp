@@ -16,28 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
+#include "argus/core/message.hpp"
+#include "internal/core/message.hpp"
 
-#include "argus/core/event.hpp"
+#include <map>
+#include <vector>
 
-#include "argus/input/controller.hpp"
-#include "argus/input/input_event.hpp"
+namespace argus {
+    static std::map<std::type_index, std::vector<GenericMessagePerformer>> g_performers;
 
-namespace argus::input {
-    InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
-            const std::string &action, double axis_value, double axis_delta) :
-            ArgusEvent(typeid(InputEvent)),
-            input_type(type),
-            window(window),
-            controller_index(controller_index),
-            action(action),
-            axis_value(axis_value),
-            axis_delta(axis_delta) {
+    void register_message_performer(std::type_index type, GenericMessagePerformer performer) {
+        g_performers[type].push_back(std::move(performer));
     }
 
-    InputEvent::~InputEvent(void) = default;
+    void dispatch_message(const Message &message) {
+        auto it = g_performers.find(message.get_type());
+        if (it == g_performers.cend()) {
+            return;
+        }
 
-    const Window &InputEvent::get_window(void) {
-        return window;
+        for (const auto &performer : it->second) {
+            performer(message);
+        }
     }
 }

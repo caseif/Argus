@@ -163,9 +163,4 @@ namespace argus {
     void dispatch_event(Args &&... args) {
         _dispatch_event_ptr(*new T(std::forward<Args>(args)...));
     }
-
-    template<typename T>
-    std::type_index type_index_of() {
-        return std::type_index(typeid(T));
-    }
 }

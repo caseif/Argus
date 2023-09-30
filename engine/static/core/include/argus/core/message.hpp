@@ -16,28 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
+#pragma once
 
-#include "argus/core/event.hpp"
+#include "argus/lowlevel/message.hpp"
 
-#include "argus/input/controller.hpp"
-#include "argus/input/input_event.hpp"
+#include <typeindex>
 
-namespace argus::input {
-    InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
-            const std::string &action, double axis_value, double axis_delta) :
-            ArgusEvent(typeid(InputEvent)),
-            input_type(type),
-            window(window),
-            controller_index(controller_index),
-            action(action),
-            axis_value(axis_value),
-            axis_delta(axis_delta) {
-    }
+namespace argus {
+    typedef std::function<void(const Message &)> GenericMessagePerformer;
 
-    InputEvent::~InputEvent(void) = default;
+    template <typename T>
+    using MessagePerformer = typename std::function<void(const T &)>;
 
-    const Window &InputEvent::get_window(void) {
-        return window;
+    void register_message_performer(std::type_index type, GenericMessagePerformer performer);
+
+    template <typename T>
+    std::enable_if_t<std::is_base_of_v<Message, T>, void> register_message_performer(
+            const MessagePerformer<T> &performer) {
+        register_message_performer(typeid(T), [performer](const Message &message) {
+            performer(reinterpret_cast<const T &>(message));
+        });
     }
 }
