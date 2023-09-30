@@ -30,6 +30,7 @@ namespace argus {
             case FunctionType::Global:
                 return fn_name;
             case FunctionType::MemberInstance:
+            case FunctionType::Extension:
                 return type_name + "#" + fn_name;
             case FunctionType::MemberStatic:
                 return type_name + "::" + fn_name;

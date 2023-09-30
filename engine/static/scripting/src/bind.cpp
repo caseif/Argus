@@ -109,6 +109,15 @@ namespace argus {
             }
         }
 
+        for (auto &fn : type_def.extension_functions) {
+            try {
+                _resolve_param_types(fn.second);
+            } catch (const std::exception &ex) {
+                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                throw BindingException(qual_name, ex.what());
+            }
+        }
+
         for (auto &fn : type_def.static_functions) {
             try {
                 _resolve_param_types(fn.second);
@@ -156,15 +165,18 @@ namespace argus {
                 std::back_inserter(static_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(static_fn_names.cbegin(), static_fn_names.cend()).size() != static_fn_names.size()) {
-            throw BindingException(def.name, "Script type contains duplicate static function definitions");
+            throw BindingException(def.name, "Bound script type contains duplicate static function definitions");
         }
 
         std::vector<std::string> instance_fn_names;
         std::transform(def.instance_functions.cbegin(), def.instance_functions.cend(),
                 std::back_inserter(instance_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
+        std::transform(def.extension_functions.cbegin(), def.extension_functions.cend(),
+                std::back_inserter(instance_fn_names),
+                [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(instance_fn_names.cbegin(), instance_fn_names.cend()).size() != instance_fn_names.size()) {
-            throw BindingException(def.name, "Script type contains duplicate instance function definitions");
+            throw BindingException(def.name, "Bound script type contains duplicate instance/extension function definitions");
         }
 
         g_bound_types.insert({ def.name, def });
@@ -239,6 +251,16 @@ namespace argus {
                         type.second.name.c_str(), type_fn.second.name.c_str());
             }
 
+            for (const auto &type_fn : type.second.extension_functions) {
+                Logger::default_logger().debug("Binding extension function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+
+                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+
+                Logger::default_logger().debug("Bound extension function %s::%s",
+                        type.second.name.c_str(), type_fn.second.name.c_str());
+            }
+
             for (const auto &type_fn : type.second.static_functions) {
                 Logger::default_logger().debug("Binding static function %s::%s",
                         type.second.name.c_str(), type_fn.second.name.c_str());
@@ -249,9 +271,9 @@ namespace argus {
                         type.second.name.c_str(), type_fn.second.name.c_str());
             }
 
-            Logger::default_logger().debug("Bound %zu instance and %zu static functions for type %s",
-                    type.second.instance_functions.size(), type.second.static_functions.size(),
-                    type.second.name.c_str());
+            Logger::default_logger().debug("Bound %zu instance, %zu extension, and %zu static functions for type %s",
+                    type.second.instance_functions.size(), type.second.extension_functions.size(),
+                    type.second.static_functions.size(), type.second.name.c_str());
         }
 
 

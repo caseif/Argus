@@ -902,7 +902,7 @@ namespace argus {
 
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
-                && fn_type != FunctionType::MemberStatic) {
+                && fn_type != FunctionType::MemberStatic && fn_type != FunctionType::Extension) {
             Logger::default_logger().fatal("Popped unknown function type value from Lua stack");
         }
 
@@ -926,6 +926,9 @@ namespace argus {
                 case FunctionType::MemberInstance:
                     fn = get_native_member_instance_function(type_name, fn_name);
                     break;
+                case FunctionType::Extension:
+                    fn = get_native_extension_function(type_name, fn_name);
+                    break;
                 case FunctionType::MemberStatic:
                     fn = get_native_member_static_function(type_name, fn_name);
                     break;
@@ -941,7 +944,8 @@ namespace argus {
                         + " (expected " + std::to_string(expected_arg_count)
                         + ", actual " + std::to_string(arg_count) + ")";
 
-                if (fn_type == FunctionType::MemberInstance && expected_arg_count == uint32_t(arg_count + 1)) {
+                if ((fn_type == FunctionType::MemberInstance || fn_type == FunctionType::Extension)
+                        && expected_arg_count == uint32_t(arg_count + 1)) {
                     err_msg += " (did you forget to use the colon operator?)";
                 }
 
@@ -1209,7 +1213,7 @@ namespace argus {
             bool is_const) {
         luaL_getmetatable(state, ((is_const ? k_const_prefix : "") + type_name).c_str());
 
-        if (fn.type == FunctionType::MemberInstance) {
+        if (fn.type == FunctionType::MemberInstance || fn.type == FunctionType::Extension) {
             // get the dispatch table for the type
             lua_getmetatable(state, -1);
 

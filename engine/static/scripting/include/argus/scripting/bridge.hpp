@@ -218,16 +218,23 @@ namespace argus {
         };
     }
 
-    template <typename FuncType, typename... Args>
-    static BoundFunctionDef _create_function_def(const std::string &name, FuncType fn, FunctionType type) {
-        using ArgsTuple = typename function_traits<FuncType>::argument_types;
-        using ReturnType = typename function_traits<FuncType>::return_type;
-        bool is_const = function_traits<FuncType>::is_const::value;
+    template <FunctionType FnType, typename FnSig>
+    static BoundFunctionDef _create_function_def(const std::string &name, FnSig fn) {
+        using ArgsTuple = typename function_traits<FnSig>::argument_types;
+        using ReturnType = typename function_traits<FnSig>::return_type;
+        bool is_const;
+        if constexpr (FnType == FunctionType::Extension) {
+            static_assert(std::tuple_size_v<ArgsTuple> > 0);
+            is_const = std::is_const_v<std::remove_reference_t<std::remove_pointer_t<
+                    std::tuple_element_t<0, ArgsTuple>>>>;
+        } else {
+            is_const = function_traits<FnSig>::is_const::value;
+        }
 
         try {
             BoundFunctionDef def {
                     name,
-                    type,
+                    FnType,
                     is_const,
                     // Callback return values flow from the script VM to C++, so
                     // we don't need to worry about invalidating any handles.
@@ -686,6 +693,9 @@ namespace argus {
     const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
             const std::string &fn_name);
 
+    const BoundFunctionDef &get_native_extension_function(const std::string &type_name,
+            const std::string &fn_name);
+
     const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
             const std::string &fn_name);
 
@@ -731,7 +741,7 @@ namespace argus {
 
     template <typename FuncType>
     BoundFunctionDef create_global_function_def(const std::string &name, FuncType fn) {
-        return _create_function_def(name, fn, FunctionType::Global);
+        return _create_function_def<FunctionType::Global>(name, fn);
     }
 
     void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
@@ -739,7 +749,7 @@ namespace argus {
     template <typename FuncType>
     typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
     add_member_instance_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        auto fn_def = _create_function_def<FunctionType::MemberInstance>(fn_name, fn);
         add_member_instance_function(type_def, fn_def);
     }
 
@@ -751,7 +761,7 @@ namespace argus {
         using ClassType = typename function_traits<FuncType>::class_type;
         static_assert(!std::is_void_v<ClassType>, "Loose function cannot be passed to bind_member_instance_function");
 
-        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberInstance);
+        auto fn_def = _create_function_def<FunctionType::MemberInstance>(fn_name, fn);
         bind_member_instance_function(typeid(ClassType), fn_def);
     }
 
@@ -760,7 +770,7 @@ namespace argus {
     template <typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
+        auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
         add_member_static_function(type_def, fn_def);
     }
 
@@ -769,8 +779,33 @@ namespace argus {
     template <typename ClassType, typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def(fn_name, fn, FunctionType::MemberStatic);
+        auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
         bind_member_static_function(typeid(ClassType), fn_def);
+    }
+
+    void add_extension_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
+
+    template <typename ClassType, typename FuncType,
+            typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
+    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
+            && std::is_same_v<ClassType, std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FirstArg>>>>,
+            void>::type
+    add_extension_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
+        auto fn_def = _create_function_def<FunctionType::Extension>(fn_name, fn);
+        add_extension_function(type_def, fn_def);
+    }
+
+    void bind_extension_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+
+    template <typename ClassType, typename FuncType,
+            typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
+    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
+            && (std::is_reference_v<FirstArg> || std::is_pointer_v<FirstArg>)
+            && std::is_same_v<ClassType, std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FirstArg>>>>,
+            void>::type
+    bind_extension_function(const std::string &fn_name, FuncType fn) {
+        auto fn_def = _create_function_def<FunctionType::Extension>(fn_name, fn);
+        bind_extension_function(typeid(ClassType), fn_def);
     }
 
     void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);

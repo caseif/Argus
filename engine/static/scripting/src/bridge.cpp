@@ -37,7 +37,8 @@ namespace argus {
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
             case MemberInstance:
-            case MemberStatic: {
+            case MemberStatic:
+            case Extension: {
                 auto type_it = g_bound_types.find(type_name);
                 if (type_it == g_bound_types.cend()) {
                     throw TypeNotBoundException(type_name);
@@ -45,7 +46,9 @@ namespace argus {
 
                 const auto &fn_map = fn_type == MemberInstance
                         ? type_it->second.instance_functions
-                        : type_it->second.static_functions;
+                        : fn_type == Extension
+                                ? type_it->second.extension_functions
+                                : type_it->second.static_functions;
 
                 auto fn_it = fn_map.find(fn_name);
                 if (fn_it == fn_map.cend()) {
@@ -149,6 +152,11 @@ namespace argus {
     const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
             const std::string &fn_name) {
         return _get_native_function(FunctionType::MemberInstance, type_name, fn_name);
+    }
+
+    const BoundFunctionDef &get_native_extension_function(const std::string &type_name,
+            const std::string &fn_name) {
+        return _get_native_function(FunctionType::Extension, type_name, fn_name);
     }
 
     const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
@@ -369,6 +377,7 @@ namespace argus {
                 dtor,
                 {},
                 {},
+                {},
                 {}
         };
         return def;
@@ -400,6 +409,32 @@ namespace argus {
     void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
         auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
         add_member_static_function(type_def, fn_def);
+    }
+
+    void add_extension_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
+        if (fn_def.params.empty()
+                || !(fn_def.params[0].type == IntegralType::Struct || fn_def.params[0].type == IntegralType::Pointer)
+                || fn_def.params[0].type_index != type_def.type_index) {
+            auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
+            throw BindingException(qual_name, "First parameter of extension function must match extended type");
+        }
+
+        if (type_def.extension_functions.find(fn_def.name) != type_def.extension_functions.cend()) {
+            auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
+            throw BindingException(qual_name, "Extension function with same name is already bound");
+        }
+
+        if (type_def.instance_functions.find(fn_def.name) != type_def.instance_functions.cend()) {
+            auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
+            throw BindingException(qual_name, "Instance function with same name is already bound");
+        }
+
+        type_def.extension_functions.insert({ fn_def.name, fn_def });
+    }
+
+    void bind_extension_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
+        auto &type_def = _get_bound_type<BoundTypeDef>(type_index);
+        add_extension_function(type_def, fn_def);
     }
 
     void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def) {

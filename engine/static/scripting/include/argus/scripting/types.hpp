@@ -54,6 +54,7 @@ namespace argus {
         Global,
         MemberStatic,
         MemberInstance,
+        Extension,
     };
 
     struct ScriptCallbackType;
@@ -169,6 +170,7 @@ namespace argus {
         MoveCtorProxy move_ctor;
         DtorProxy dtor;
         std::map<std::string, BoundFunctionDef> instance_functions;
+        std::map<std::string, BoundFunctionDef> extension_functions;
         std::map<std::string, BoundFunctionDef> static_functions;
         std::map<std::string, BoundFieldDef> fields;
     };
