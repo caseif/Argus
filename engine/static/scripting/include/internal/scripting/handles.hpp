@@ -18,27 +18,6 @@
 
 #pragma once
 
-#include <typeindex>
-
-#include <cstdint>
-
 namespace argus {
-    typedef uint64_t ScriptBindableHandle;
-
-    constexpr const ScriptBindableHandle k_null_handle = 0;
-    constexpr const ScriptBindableHandle k_handle_max = UINT64_MAX;
-
-    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type);
-
-    template <typename T>
-    ScriptBindableHandle get_or_create_sv_handle(T &obj) {
-        return get_or_create_handle(&obj, typeid(obj));
-    }
-
-    void *deref_sv_handle(ScriptBindableHandle handle, const std::type_index &expected_type);
-
-    template <typename T>
-    T *deref_handle(ScriptBindableHandle handle) {
-        return deref_sv_handle(handle, typeid(T));
-    }
+    void invalidate_sv_handle(void *ptr);
 }

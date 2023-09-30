@@ -352,6 +352,10 @@ namespace argus {
 
         ScriptBindable(ScriptBindable &&) noexcept;
 
+        ScriptBindable &operator=(const ScriptBindable &);
+
+        ScriptBindable &operator=(ScriptBindable &&) noexcept;
+
         virtual ~ScriptBindable(void) = 0;
     };
 }

@@ -17,10 +17,11 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
+#include "argus/lowlevel/logging.hpp"
 
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/handles.hpp"
-#include "argus/lowlevel/logging.hpp"
+#include "internal/scripting/handles.hpp"
 
 #include <typeindex>
 #include <unordered_map>
@@ -75,15 +76,5 @@ namespace argus {
 
         g_handle_to_ptr_map.erase(it->second.second);
         g_ptr_to_handle_map.erase(it);
-    }
-
-    ScriptBindable::ScriptBindable(void) = default;
-
-    ScriptBindable::ScriptBindable(const ScriptBindable &) = default;
-
-    ScriptBindable::ScriptBindable(ScriptBindable &&) noexcept = default;
-
-    ScriptBindable::~ScriptBindable(void) {
-        invalidate_sv_handle(this);
     }
 }
