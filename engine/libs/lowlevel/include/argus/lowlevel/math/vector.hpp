@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/misc.hpp"
+
 #include <type_traits>
 
 #include <cstdint>
@@ -30,7 +32,7 @@ namespace argus {
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector4 {
+    struct Vector4 : AutoCleanupable {
         using element_type = T;
 
         /**
@@ -282,7 +284,7 @@ namespace argus {
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector3 {
+    struct Vector3 : AutoCleanupable {
         using element_type = T;
 
         /**
@@ -519,7 +521,7 @@ namespace argus {
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector2 {
+    struct Vector2 : AutoCleanupable {
         using element_type = T;
 
         /**

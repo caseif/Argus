@@ -476,6 +476,24 @@ namespace argus {
 
     template <typename FieldType, typename ClassType>
     static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
+        using B = typename std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FieldType>>>;
+
+        static_assert(std::is_base_of_v<AutoCleanupable, B>
+                || (std::is_copy_constructible_v<B> && std::is_move_constructible_v<B> && std::is_destructible_v<B>),
+                "Type of bound field must either derive from AutoCleanupable "
+                "or be destructible and copy+move-constructible");
+
+        //TODO: technically it should be possible to bind a field for use with
+        // const references and just return a copy in that case, but this would
+        // also require implementing const-enforcement for structs passed to
+        // scripts by value to avoid confusion
+        /*if constexpr (std::is_class_v<FieldType> && !std::is_same_v<B, std::string>
+                && !is_std_vector_v<B> && !is_std_function_v<B>
+                && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<FieldType>>>) {
+            static_assert(std::is_base_of_v<AutoCleanupable, B>,
+                    "Type of non-const class-typed bound field must derive from AutoCleanupable");
+        }*/
+
         // treat C-string fields as const because there's no good way to manage their memory
         constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>
                 || std::is_same_v<std::remove_cv_t<FieldType>, char *>;
@@ -484,7 +502,15 @@ namespace argus {
 
         try {
             // field values are passed from the engine to the script VM
-            auto type = _create_object_type<FieldType, DataFlowDirection::ToScript>();
+            // if the field isn't refable it will always be copied by value, so
+            // we need to pretend it's a non-pointer when creating the object
+            // type and doing the relevant checks
+            ObjectType type;
+            if constexpr (!std::is_class_v<B> || std::is_base_of_v<AutoCleanupable, B>) {
+                type = _create_object_type<FieldType, DataFlowDirection::ToScript>();
+            } else {
+                type = _create_object_type<B, DataFlowDirection::ToScript>();
+            }
             type.is_const = is_const;
 
             BoundFieldDef def{};
@@ -510,13 +536,22 @@ namespace argus {
                         : inst.stored_ptr);
 
                 auto real_type = field_type;
-                if constexpr (std::is_class_v<FieldType> && !std::is_same_v<B, std::string>
-                        && !is_std_vector_v<B> && !is_std_function_v<B>) {
+                if constexpr ((std::is_class_v<FieldType>
+                                || (std::is_class_v<B> && !std::is_base_of_v<AutoCleanupable, B>))
+                        && !std::is_same_v<B, std::string>
+                        && !is_std_vector_v<B>
+                        && !is_std_function_v<B>) {
                     assert(real_type.type == IntegralType::Struct);
-                    // return a pointer to the field so the script can modify its fields
-                    real_type.type = IntegralType::Pointer;
-                    real_type.size = sizeof(void *);
-                    return create_auto_object_wrapper(real_type, &(instance->*field));
+                    if constexpr (std::is_base_of_v<AutoCleanupable, B>) {
+                        // return a pointer to the field so the script can modify its fields
+                        real_type.type = IntegralType::Pointer;
+                        real_type.size = sizeof(void *);
+                        return create_auto_object_wrapper(real_type, &(instance->*field));
+                    } else {
+                        // return a copy of the field since we can't manage a reference to it
+                        real_type.is_const = true;
+                        return create_auto_object_wrapper(real_type, (instance->*field));
+                    }
                 } else {
                     // return the field by value
                     return create_auto_object_wrapper(real_type, instance->*field);
@@ -704,7 +739,7 @@ namespace argus {
 
     ObjectWrapper invoke_native_function(const BoundFunctionDef &def, const std::vector<ObjectWrapper> &params);
 
-    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index, bool is_refable,
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor);
@@ -712,6 +747,8 @@ namespace argus {
     template <typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
+
+        constexpr bool is_refable = std::is_base_of_v<AutoCleanupable, T>;
 
         CopyCtorProxy copy_ctor = nullptr;
         MoveCtorProxy move_ctor = nullptr;
@@ -734,7 +771,7 @@ namespace argus {
             dtor = [](void *obj) { reinterpret_cast<T *>(obj)->~T(); };
         }
 
-        return create_type_def(name, sizeof(T), typeid(T),
+        return create_type_def(name, sizeof(T), typeid(T), is_refable,
                 copy_ctor,
                 move_ctor,
                 dtor);
@@ -811,9 +848,14 @@ namespace argus {
 
     void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);
 
-    template <typename FieldRef>
-    typename std::enable_if<std::is_member_object_pointer_v<FieldRef>, void>::type
-    add_member_field(BoundTypeDef &type_def, const std::string &field_name, FieldRef field) {
+    template <typename FieldType, typename ClassType>
+    void add_member_field(BoundTypeDef &type_def, const std::string &field_name, FieldType(ClassType::* field)) {
+        static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
+                "Callback-typed fields are not supported");
+
+        affirm_precond(std::type_index(typeid(ClassType)) == type_def.type_index,
+                "Class of field reference does not match provided type definition");
+
         auto field_def = _create_field_def(field_name, field);
         add_member_field(type_def, field_def);
     }
@@ -822,6 +864,9 @@ namespace argus {
 
     template <typename FieldType, typename ClassType>
     void bind_member_field(const std::string &field_name, FieldType(ClassType::* field)) {
+        static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
+                "Callback-typed fields are not supported");
+
         auto field_def = _create_field_def(field_name, field);
         bind_member_field(typeid(ClassType), field_def);
     }

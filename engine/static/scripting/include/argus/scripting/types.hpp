@@ -63,6 +63,7 @@ namespace argus {
         IntegralType type;
         size_t size;
         bool is_const = false;
+        bool is_refable = false;
         std::optional<std::type_index> type_index = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
         std::optional<std::unique_ptr<ScriptCallbackType>> callback_type = std::nullopt;
@@ -148,6 +149,7 @@ namespace argus {
     struct BoundFieldDef {
         std::string m_name;
         ObjectType m_type;
+        //TODO: we probably only need one function for getting the value
         std::function<ObjectWrapper(const ObjectWrapper &, const ObjectType &)> m_get_const_proxy;
         std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_get_mut_proxy;
         std::optional<std::function<void (ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
@@ -165,6 +167,9 @@ namespace argus {
         std::string name;
         size_t size;
         std::type_index type_index;
+        // whether references to the type can be passed to scripts
+        // (i.e. whether the type derives from AutoCleanupable)
+        bool is_refable;
         // the copy and move ctors and dtor are only used for struct value and callback types
         CopyCtorProxy copy_ctor;
         MoveCtorProxy move_ctor;

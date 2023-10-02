@@ -67,19 +67,19 @@ namespace argus {
                 if (check_copyable) {
                     if (bound_type.copy_ctor == nullptr) {
                         throw BindingException(bound_type.name,
-                                "Struct-typed parameter passed by value with type "
+                                "Class-typed parameter passed by value with type "
                                         + bound_type.name + " is not copy-constructible");
                     }
 
                     if (bound_type.move_ctor == nullptr) {
                         throw BindingException(bound_type.name,
-                                "Struct-typed parameter passed by value with type "
+                                "Class-typed parameter passed by value with type "
                                         + bound_type.name + " is not move-constructible");
                     }
 
                     if (bound_type.dtor == nullptr) {
                         throw BindingException(bound_type.name,
-                                "Struct-typed parameter passed by value with type "
+                                "Class-typed parameter passed by value with type "
                                         + bound_type.name + " is not destructible");
                     }
                 }
@@ -89,6 +89,54 @@ namespace argus {
         }
 
         param_def.type_name = type_name;
+    }
+
+    static void _resolve_field(ObjectType &field_def) {
+        if (field_def.type == IntegralType::Vector || field_def.type == IntegralType::VectorRef) {
+            assert(field_def.element_type.has_value());
+            _resolve_field(*field_def.element_type.value());
+
+            return;
+        } else if (!is_bound_type(field_def.type)) {
+            return;
+        }
+
+        assert(field_def.type_index.has_value());
+        assert(!field_def.type_name.has_value());
+
+        std::string type_name;
+        if (field_def.type == IntegralType::Enum) {
+            auto &bound_enum = get_bound_enum(field_def.type_index.value());
+            type_name = bound_enum.name;
+        } else {
+            auto &bound_type = get_bound_type(field_def.type_index.value());
+
+            field_def.is_refable = bound_type.is_refable;
+
+            if (!bound_type.is_refable) {
+                if (bound_type.copy_ctor == nullptr) {
+                    throw BindingException(bound_type.name,
+                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                    + " is not copy-constructible");
+                }
+
+                if (bound_type.move_ctor == nullptr) {
+                    throw BindingException(bound_type.name,
+                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                    + " is not move-constructible");
+                }
+
+                if (bound_type.dtor == nullptr) {
+                    throw BindingException(bound_type.name,
+                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                    + " is not destructible");
+                }
+            }
+
+            type_name = bound_type.name;
+        }
+
+        field_def.type_name = type_name;
     }
 
     static void _resolve_param_types(BoundFunctionDef &fn_def) {
@@ -129,7 +177,7 @@ namespace argus {
 
         for (auto &field : type_def.fields) {
             try {
-                _resolve_param(field.second.m_type);
+                _resolve_field(field.second.m_type);
             } catch (const std::exception &ex) {
                 auto qual_name = get_qualified_field_name(type_def.name, field.second.m_name);
                 throw BindingException(qual_name, ex.what());

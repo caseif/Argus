@@ -48,7 +48,8 @@ namespace argus {
         if (g_dispatcher != nullptr) {
             g_dispatcher(message);
         } else {
-            Logger::default_logger().warn("Message will not be broadcast (no dispatcher is set)");
+            // this is super spammy when running tests
+            //Logger::default_logger().warn("Message will not be broadcast (no dispatcher is set)");
         }
     }
 }

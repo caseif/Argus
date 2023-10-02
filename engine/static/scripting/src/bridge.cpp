@@ -364,7 +364,7 @@ namespace argus {
         return wrapper;
     }
 
-    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index,
+    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index, bool is_refable,
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor) {
@@ -372,6 +372,7 @@ namespace argus {
                 name,
                 size,
                 type_index,
+                is_refable,
                 copy_ctor,
                 move_ctor,
                 dtor,
@@ -438,9 +439,14 @@ namespace argus {
     }
 
     void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def) {
+        if (field_def.m_type.type == IntegralType::Callback) {
+            auto qual_name = get_qualified_field_name(type_def.name, field_def.m_name);
+            throw BindingException(qual_name, "Callback-typed fields are not supported");
+        }
+
         if (type_def.fields.find(field_def.m_name) != type_def.fields.cend()) {
             auto qual_name = get_qualified_field_name(type_def.name, field_def.m_name);
-            throw BindingException(qual_name, "Instance function with same name is already bound");
+            throw BindingException(qual_name, "Field with same name is already bound for type");
         }
 
         type_def.fields.insert({ field_def.m_name, field_def });
