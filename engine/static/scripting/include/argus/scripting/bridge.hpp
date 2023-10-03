@@ -505,21 +505,8 @@ namespace argus {
             BoundFieldDef def{};
             def.m_name = name;
             def.m_type = type;
-            def.m_get_const_proxy = [field, type](const ObjectWrapper &inst, const ObjectType &field_type) {
-                assert(field_type.type == type.type);
-                assert(field_type.size == type.size);
-                assert(field_type.type_index == type.type_index);
-                assert(field_type.is_const == type.is_const);
-                assert(field_type.callback_type == type.callback_type);
 
-                const ClassType *instance = reinterpret_cast<const ClassType *>(inst.is_on_heap
-                        ? inst.heap_ptr
-                        : inst.stored_ptr);
-
-                return create_object_wrapper(field_type, reinterpret_cast<const void *>(&(instance->*field)));
-            };
-
-            def.m_get_mut_proxy = [field](ObjectWrapper &inst, const ObjectType &field_type) {
+            def.m_access_proxy = [field](ObjectWrapper &inst, const ObjectType &field_type) {
                 ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
                         ? inst.heap_ptr
                         : inst.stored_ptr);

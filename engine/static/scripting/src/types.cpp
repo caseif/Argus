@@ -224,6 +224,15 @@ namespace argus {
         }
     }
 
+    ObjectWrapper BoundFieldDef::get_value(ObjectWrapper &wrapper) const {
+        return m_access_proxy(wrapper, m_type);
+    }
+
+    void BoundFieldDef::set_value(ObjectWrapper &instance, ObjectWrapper &value) const {
+        assert(m_assign_proxy.has_value());
+        m_assign_proxy.value()(instance, value);
+    }
+
     VectorObject::VectorObject(VectorObjectType type) :
         m_obj_type(type) {
     }

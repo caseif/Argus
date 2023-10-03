@@ -1065,7 +1065,7 @@ namespace argus {
             return wrap_res;
         }
 
-        auto val = field.get_mut_proxy(inst_wrapper);
+        auto val = field.get_value(inst_wrapper);
 
         _push_value(state, val);
 

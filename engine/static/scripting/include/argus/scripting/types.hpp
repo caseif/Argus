@@ -150,17 +150,12 @@ namespace argus {
         std::string m_name;
         ObjectType m_type;
         //TODO: we probably only need one function for getting the value
-        std::function<ObjectWrapper(const ObjectWrapper &, const ObjectType &)> m_get_const_proxy;
-        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_get_mut_proxy;
+        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_access_proxy;
         std::optional<std::function<void (ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
 
-        ObjectWrapper get_const_proxy(const ObjectWrapper &wrapper) {
-            return m_get_const_proxy(wrapper, m_type);
-        }
+        ObjectWrapper get_value(ObjectWrapper &wrapper) const;
 
-        ObjectWrapper get_mut_proxy(ObjectWrapper &wrapper) {
-            return m_get_mut_proxy(wrapper, m_type);
-        }
+        void set_value(ObjectWrapper &instance, ObjectWrapper &value) const;
     };
 
     struct BoundTypeDef {
