@@ -483,17 +483,6 @@ namespace argus {
                 "Type of bound field must either derive from AutoCleanupable "
                 "or be destructible and copy+move-constructible");
 
-        //TODO: technically it should be possible to bind a field for use with
-        // const references and just return a copy in that case, but this would
-        // also require implementing const-enforcement for structs passed to
-        // scripts by value to avoid confusion
-        /*if constexpr (std::is_class_v<FieldType> && !std::is_same_v<B, std::string>
-                && !is_std_vector_v<B> && !is_std_function_v<B>
-                && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<FieldType>>>) {
-            static_assert(std::is_base_of_v<AutoCleanupable, B>,
-                    "Type of non-const class-typed bound field must derive from AutoCleanupable");
-        }*/
-
         // treat C-string fields as const because there's no good way to manage their memory
         constexpr bool is_const = std::is_const_v<std::remove_reference_t<FieldType>>
                 || std::is_same_v<std::remove_cv_t<FieldType>, char *>;
