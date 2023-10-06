@@ -21,11 +21,13 @@
 
 #include "argus/resman.hpp"
 
+#include "argus/scripting/bind.hpp"
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/handles.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
+#include "argus/scripting/wrapper.hpp"
 
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"

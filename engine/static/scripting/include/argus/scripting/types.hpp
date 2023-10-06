@@ -345,4 +345,9 @@ namespace argus {
             return *reinterpret_cast<std::vector<E> *>(m_underlying_vec);
         }
     };
+
+    enum class DataFlowDirection {
+        ToScript,
+        FromScript
+    };
 }
