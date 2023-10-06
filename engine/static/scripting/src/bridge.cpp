@@ -239,10 +239,86 @@ namespace argus {
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr) {
         affirm_precond(type.type != IntegralType::String, "Cannot create object wrapper for string-typed value - "
                 "string-specific overload must be used");
-        affirm_precond(type.type != IntegralType::Callback, "Cannot create object wrapper for callback-typed "
-                "value - callback-specific overload must be used");
 
         return create_object_wrapper(type, ptr, type.size);
+    }
+
+    ObjectWrapper create_int_object_wrapper(const ObjectType &type, int64_t val) {
+        ObjectWrapper wrapper(type, type.size);
+        assert(wrapper.buffer_size >= type.size);
+
+        if (type.type == IntegralType::Enum) {
+            assert(type.type_name.has_value());
+            auto &enum_def = get_bound_enum(type.type_name.value());
+            auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val));
+            if (enum_val_it == enum_def.all_ordinals.cend()) {
+                throw ReflectiveArgumentsException("Unknown ordinal " + std::to_string(val)
+                        + " for enum type " + enum_def.name);
+            }
+        }
+
+        switch (type.size) {
+            case 1: {
+                assert(wrapper.buffer_size >= sizeof(int8_t));
+                *reinterpret_cast<int8_t *>(wrapper.get_ptr()) = int8_t(val);
+                break;
+            }
+            case 2: {
+                assert(wrapper.buffer_size >= sizeof(int16_t));
+                *reinterpret_cast<int16_t *>(wrapper.get_ptr()) = int16_t(val);
+                break;
+            }
+            case 4: {
+                assert(wrapper.buffer_size >= sizeof(int32_t));
+                *reinterpret_cast<int32_t *>(wrapper.get_ptr()) = int32_t(val);
+                break;
+            }
+            case 8: {
+                assert(wrapper.buffer_size >= sizeof(int64_t));
+                *reinterpret_cast<int64_t *>(wrapper.get_ptr()) = val;
+                break;
+            }
+            default:
+                assert(false); // should have been caught during binding
+        }
+
+        return wrapper;
+    }
+
+    ObjectWrapper create_float_object_wrapper(const ObjectType &type, double val) {
+        ObjectWrapper wrapper(type, type.size);
+
+        switch (type.size) {
+            case 4: {
+                assert(wrapper.buffer_size >= sizeof(float));
+                auto val_f32 = float(val);
+                *reinterpret_cast<float *>(wrapper.get_ptr()) = val_f32;
+                break;
+            }
+            case 8: {
+                assert(wrapper.buffer_size >= sizeof(double));
+                *reinterpret_cast<double *>(wrapper.get_ptr()) = val;
+                break;
+            }
+            default:
+                assert(false); // should have been caught during binding
+        }
+
+        return wrapper;
+    }
+
+    ObjectWrapper create_bool_object_wrapper(const ObjectType &type, bool val) {
+        assert(type.size >= sizeof(bool));
+
+        ObjectWrapper wrapper(type, type.size);
+
+        *reinterpret_cast<bool *>(wrapper.get_ptr()) = val;
+
+        return wrapper;
+    }
+
+    ObjectWrapper create_enum_object_wrapper(const ObjectType &type, int64_t val) {
+        return create_int_object_wrapper(type, val);
     }
 
     ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str) {

@@ -99,6 +99,14 @@ namespace argus {
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
 
+    ObjectWrapper create_int_object_wrapper(const ObjectType &type, int64_t val);
+
+    ObjectWrapper create_float_object_wrapper(const ObjectType &type, double val);
+
+    ObjectWrapper create_bool_object_wrapper(const ObjectType &type, bool val);
+
+    ObjectWrapper create_enum_object_wrapper(const ObjectType &type, int64_t ordinal);
+
     ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str);
 
     ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn);
@@ -154,11 +162,20 @@ namespace argus {
         // We could require that val _always_ be a reference to heap memory,
         // but that would force additional complexity in plugin code which is
         // undesirable.
-        static_assert(!is_std_vector_v<std::remove_reference_t<std::remove_pointer_t<T>>>,
+        static_assert(!is_std_vector_v<std::remove_cv<std::remove_reference_t<std::remove_pointer_t<T>>>>,
                 "Vector objects must be wrapped explicitly");
 
-        if constexpr (std::is_same_v<B, std::string>) {
+        if constexpr (std::is_integral_v<B>) {
+            return create_int_object_wrapper(type, int64_t(val));
+        } else if constexpr (std::is_floating_point_v<B>) {
+            return create_float_object_wrapper(type, double(val));
+        } else if constexpr (std::is_same_v<B, bool>) {
+            return create_bool_object_wrapper(type, val);
+        } else if constexpr (std::is_same_v<B, std::string>) {
             return create_string_object_wrapper(type, val);
+        } else if constexpr (std::is_same_v<std::remove_cv<T>, char *>
+                || std::is_same_v<std::remove_cv<T>, const char *>) {
+            return create_string_object_wrapper(type, std::string(val));
         } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
             return create_callback_object_wrapper(type, val);
         } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<T>>>

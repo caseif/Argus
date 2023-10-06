@@ -54,10 +54,10 @@ namespace argus {
 
     class ReflectiveArgumentsException : public std::exception {
       private:
-        std::string fn_name;
+        std::string m_reason;
 
       public:
-        ReflectiveArgumentsException(std::string fn_name);
+        ReflectiveArgumentsException(std::string reason);
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };

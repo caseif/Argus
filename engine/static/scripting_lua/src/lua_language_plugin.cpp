@@ -374,225 +374,184 @@ namespace argus {
 
     static int _wrap_param(lua_State *state, const std::string &qual_fn_name,
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
-        switch (param_def.type) {
-            case Integer:
-            case Enum: {
-                if (!lua_isinteger(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
-                            + ", actual " + luaL_typename(state, param_index) + ")");
-                }
-
-                int64_t val_i64 = lua_tointeger(state, param_index);
-
-                if (param_def.type == IntegralType::Enum) {
-                    assert(param_def.type_name.has_value());
-                    auto &enum_def = get_bound_enum(param_def.type_name.value());
-                    auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val_i64));
-                    if (enum_val_it == enum_def.all_ordinals.cend()) {
-                        return _set_lua_error(state,
-                                "Unknown ordinal " + std::to_string(val_i64) + " provided for enum "
-                                        + enum_def.name + " at parameter " + std::to_string(param_index)
-                                        + " of function "
-                                        + qual_fn_name);
-                    }
-                }
-
-                switch (param_def.size) {
-                    case 1: {
-                        auto val_i8 = int8_t(val_i64);
-                        *dest = create_object_wrapper(param_def, &val_i8);
-                        break;
-                    }
-                    case 2: {
-                        auto val_i16 = int16_t(val_i64);
-                        *dest = create_object_wrapper(param_def, &val_i16);
-                        break;
-                    }
-                    case 4: {
-                        auto val_i32 = int32_t(val_i64);
-                        *dest = create_object_wrapper(param_def, &val_i32);
-                        break;
-                    }
-                    case 8: {
-                        *dest = create_object_wrapper(param_def, &val_i64);
-                        break;
-                    }
-                    default:
-                        assert(false); // should have been caught during binding
-                }
-
-                return 0;
-            }
-            case Float: {
-                if (!lua_isnumber(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected number, actual " + luaL_typename(state, param_index) + ")");
-                }
-
-                double val_f64 = lua_tonumber(state, param_index);
-                if (param_def.size == 8) {
-                    // can push double-precision float as-is
-                    *dest = create_object_wrapper(param_def, &val_f64);
-                } else {
-                    assert(param_def.size == 4); // should have been caught during binding
-                    // need to reduce precision
-                    float val_f32 = float(val_f64);
-                    *dest = create_object_wrapper(param_def, &val_f32);
-                }
-
-                return 0;
-            }
-            case Boolean: {
-                if (!lua_isboolean(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
-                }
-
-                bool val = lua_toboolean(state, param_index);
-                *dest = create_object_wrapper(param_def, &val);
-
-                return 0;
-            }
-            case String: {
-                if (!lua_isstring(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected string, actual " + luaL_typename(state, param_index) + ")");
-                }
-
-                const char *str = lua_tostring(state, param_index);
-                *dest = create_string_object_wrapper(param_def, std::string(str));
-
-                return 0;
-            }
-            case Struct:
-            case Pointer: {
-                assert(param_def.type_name.has_value());
-                assert(param_def.type_index.has_value());
-
-                if (!lua_isuserdata(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
-                }
-
-                auto type_name = _get_metatable_name(state, param_index);
-
-                if (!(type_name == param_def.type_name.value()
-                        || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
-                    return _set_lua_error(state, "Incorrect userdata provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected " + (param_def.is_const ? k_const_prefix : "") + param_def.type_name.value()
-                            + ", actual " + _string_or(type_name, k_empty_repl) + ")");
-                }
-
-                auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
-                void *ptr;
-                if (udata->is_handle) {
-                    // userdata is storing handle of pointer to struct data
-                    ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
-                            param_def.type_index.value());
-
-                    if (ptr == nullptr) {
-                        return _set_lua_error(state, "Invalid handle passed as parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name);
-                    }
-                } else {
-                    if (param_def.type == IntegralType::Pointer) {
-                        return _set_lua_error(state,
-                                "Cannot pass value-typed struct as pointer in parameter "
-                                        + std::to_string(param_index) + " of function " + qual_fn_name);
-                    }
-
-                    // userdata is directly storing struct data
-                    ptr = static_cast<void *>(udata->data);
-                }
-
-                *dest = create_object_wrapper(param_def, ptr);
-
-                return 0;
-            }
-            case Callback: {
-                /*if (!lua_isfunction(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                                                 + std::to_string(param_index) + " of function " + qual_fn_name
-                                                 + " (expected function, actual "
-                                                 + luaL_typename(state, param_index) + ")");
-                }*/
-
-                auto handle = std::make_shared<LuaCallback>(state, param_index);
-
-                ProxiedFunction fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
-                    return handle->call(params);
-                };
-
-                *dest = create_callback_object_wrapper(param_def, fn);
-
-                return 0;
-            }
-            case Type: {
-                if (!lua_istable(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected table, actual " + luaL_typename(state, param_index));
-                }
-
-                lua_pushvalue(state, param_index);
-
-                lua_getfield(state, param_index, k_lua_name);
-
-                if (!lua_isstring(state, -1)) {
-                    lua_pop(state, 2); // pop type name and table
-                    return _set_lua_error(state, "Parameter " + std::to_string(param_index)
-                            + " does not represent type (missing field '" + k_lua_name + "')");
-                }
-
-                const char *type_name = lua_tostring(state, -1);
-
-                lua_pop(state, 2); // pop type name and table
-
-                try {
-                    auto type_index = get_bound_type(type_name).type_index;
-                    *dest = create_object_wrapper(param_def, static_cast<const void *>(&type_index));
-
-                    return 0;
-                } catch (const std::invalid_argument &) {
-                    return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name);
-                }
-            }
-            case Vector:
-            case VectorRef: {
-                assert(param_def.element_type.has_value());
-
-                if (lua_istable(state, param_index)) {
-                    return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
-                } else if (lua_isuserdata(state, param_index)) {
-                    auto type_name = _get_metatable_name(state, param_index);
-
-                    if (type_name != k_mt_vector_ref) {
+        try {
+            switch (param_def.type) {
+                case Integer:
+                case Enum: {
+                    if (!lua_isinteger(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
+                                + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
+                                + ", actual " + luaL_typename(state, param_index) + ")");
                     }
 
-                    ObjectType real_type = param_def;
-                    real_type.type = IntegralType::VectorRef;
-                    VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
-                    *dest = create_vector_ref_object_wrapper(real_type, *vec);
+                    *dest = create_auto_object_wrapper(param_def, lua_tointeger(state, param_index));
+
                     return 0;
-                } else {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
-                            + std::to_string(param_index) + " of function " + qual_fn_name
-                            + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
+                case Float: {
+                    if (!lua_isnumber(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected number, actual " + luaL_typename(state, param_index) + ")");
+                    }
+
+                    *dest = create_auto_object_wrapper(param_def, lua_tonumber(state, param_index));
+
+                    return 0;
+                }
+                case Boolean: {
+                    if (!lua_isboolean(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
+                    }
+
+                    *dest = create_auto_object_wrapper(param_def, lua_toboolean(state, param_index));
+
+                    return 0;
+                }
+                case String: {
+                    if (!lua_isstring(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected string, actual " + luaL_typename(state, param_index) + ")");
+                    }
+
+                    *dest = create_auto_object_wrapper(param_def, lua_tostring(state, param_index));
+
+                    return 0;
+                }
+                case Struct:
+                case Pointer: {
+                    assert(param_def.type_name.has_value());
+                    assert(param_def.type_index.has_value());
+
+                    if (!lua_isuserdata(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
+                    }
+
+                    auto type_name = _get_metatable_name(state, param_index);
+
+                    if (!(type_name == param_def.type_name.value()
+                            || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
+                        return _set_lua_error(state, "Incorrect userdata provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected " + (param_def.is_const ? k_const_prefix : "") +
+                                param_def.type_name.value()
+                                        + ", actual " + _string_or(type_name, k_empty_repl) + ")");
+                    }
+
+                    auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+                    void *ptr;
+                    if (udata->is_handle) {
+                        // userdata is storing handle of pointer to struct data
+                        ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
+                                param_def.type_index.value());
+
+                        if (ptr == nullptr) {
+                            return _set_lua_error(state, "Invalid handle passed as parameter "
+                                    + std::to_string(param_index) + " of function " + qual_fn_name);
+                        }
+                    } else {
+                        if (param_def.type == IntegralType::Pointer) {
+                            return _set_lua_error(state,
+                                    "Cannot pass value-typed struct as pointer in parameter "
+                                            + std::to_string(param_index) + " of function " + qual_fn_name);
+                        }
+
+                        // userdata is directly storing struct data
+                        ptr = static_cast<void *>(udata->data);
+                    }
+
+                    *dest = create_object_wrapper(param_def, ptr);
+
+                    return 0;
+                }
+                case Callback: {
+                    /*if (!lua_isfunction(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                                     + std::to_string(param_index) + " of function " + qual_fn_name
+                                                     + " (expected function, actual "
+                                                     + luaL_typename(state, param_index) + ")");
+                    }*/
+
+                    auto handle = std::make_shared<LuaCallback>(state, param_index);
+
+                    ProxiedFunction fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
+                        return handle->call(params);
+                    };
+
+                    *dest = create_callback_object_wrapper(param_def, fn);
+
+                    return 0;
+                }
+                case Type: {
+                    if (!lua_istable(state, param_index)) {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected table, actual " + luaL_typename(state, param_index));
+                    }
+
+                    lua_pushvalue(state, param_index);
+
+                    lua_getfield(state, param_index, k_lua_name);
+
+                    if (!lua_isstring(state, -1)) {
+                        lua_pop(state, 2); // pop type name and table
+                        return _set_lua_error(state, "Parameter " + std::to_string(param_index)
+                                + " does not represent type (missing field '" + k_lua_name + "')");
+                    }
+
+                    const char *type_name = lua_tostring(state, -1);
+
+                    lua_pop(state, 2); // pop type name and table
+
+                    try {
+                        auto type_index = get_bound_type(type_name).type_index;
+                        *dest = create_object_wrapper(param_def, static_cast<const void *>(&type_index));
+
+                        return 0;
+                    } catch (const std::invalid_argument &) {
+                        return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name);
+                    }
+                }
+                case Vector:
+                case VectorRef: {
+                    assert(param_def.element_type.has_value());
+
+                    if (lua_istable(state, param_index)) {
+                        return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
+                    } else if (lua_isuserdata(state, param_index)) {
+                        auto type_name = _get_metatable_name(state, param_index);
+
+                        if (type_name != k_mt_vector_ref) {
+                            return _set_lua_error(state, "Incorrect type provided for parameter "
+                                    + std::to_string(param_index) + " of function " + qual_fn_name
+                                    + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
+                        }
+
+                        ObjectType real_type = param_def;
+                        real_type.type = IntegralType::VectorRef;
+                        VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
+                        *dest = create_vector_ref_object_wrapper(real_type, *vec);
+                        return 0;
+                    } else {
+                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                                + std::to_string(param_index) + " of function " + qual_fn_name
+                                + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
+                    }
+                }
+                default:
+                    Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
             }
-            default:
-                Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
+        } catch (const ReflectiveArgumentsException &ex) {
+            return _set_lua_error(state,
+                    "Invalid value passed to for parameter " + std::to_string(param_index)
+                            + " of function " + qual_fn_name + "(" + ex.what() + ")");
         }
     }
 

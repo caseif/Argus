@@ -43,11 +43,12 @@ namespace argus {
         return name.c_str();
     }
 
-    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string fn_name) : fn_name(std::move(fn_name)) {
+    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string reason) :
+        m_reason(std::move(reason)) {
     }
 
     const char *ReflectiveArgumentsException::what(void) const noexcept {
-        return fn_name.c_str();
+        return m_reason.c_str();
     }
 
     ScriptLoadException::ScriptLoadException(const std::string &script_uid, const std::string &msg) :
