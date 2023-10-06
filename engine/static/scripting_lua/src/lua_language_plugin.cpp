@@ -75,6 +75,44 @@ namespace argus {
     #pragma warning(pop)
     #endif
 
+    class StackGuard {
+      private:
+        lua_State *m_state;
+        int m_expected;
+
+      public:
+        StackGuard(lua_State *state) : m_state(state), m_expected(lua_gettop(state)) {
+        }
+
+        StackGuard(const StackGuard &) = delete;
+
+        StackGuard(StackGuard &&) = delete;
+
+        ~StackGuard(void) {
+            int cur = lua_gettop(m_state);
+            if (cur != m_expected) {
+                assert(lua_gettop(m_state) == m_expected);
+            }
+        }
+
+        void increment(int count) {
+            m_expected += count;
+        }
+
+        void increment(void) {
+            increment(1);
+        }
+
+        void decrement(int count) {
+            assert(count <= m_expected);
+            increment(-count);
+        }
+
+        void decrement(void) {
+            decrement(1);
+        }
+    };
+
     static ObjectWrapper _invoke_lua_function(lua_State *state, const std::vector<ObjectWrapper> &params,
             const std::optional<std::string> &fn_name = std::nullopt);
 
@@ -100,14 +138,12 @@ namespace argus {
         }
 
         [[nodiscard]] ObjectWrapper call(const std::vector<ObjectWrapper> &params) const {
-            auto initial_top = lua_gettop(state);
-            UNUSED(initial_top);
+            StackGuard stack_guard(state);
 
             lua_rawgeti(state, LUA_REGISTRYINDEX, ref_key);
 
             auto retval = _invoke_lua_function(state, params);
 
-            assert(lua_gettop(state) == initial_top);
             return retval;
         }
     };
@@ -185,8 +221,7 @@ namespace argus {
     static int _wrap_prim_vector_param(lua_State *state, const ObjectType &param_def,
             const std::function<int(lua_State *, int)> &check_fn, const std::function<U(lua_State *, int)> &read_fn,
             const char *expected_type_name, int param_index, const std::string &qual_fn_name, ObjectWrapper *dest) {
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         // get number of indexed elements
         auto len = lua_rawlen(state, -1);
@@ -205,7 +240,6 @@ namespace argus {
                         + std::to_string(param_index) + " of function " + qual_fn_name
                         + " (expected " + expected_type_name + ", actual " + luaL_typename(state, -1) + ")");
                 lua_pop(state, 1);
-                assert(lua_gettop(state) == initial_top);
                 return rv;
             }
 
@@ -216,7 +250,6 @@ namespace argus {
 
         *dest = create_vector_object_wrapper_from_stack(param_def, vec);
 
-        assert(lua_gettop(state) == initial_top);
         return 0;
     }
 
@@ -857,7 +890,7 @@ namespace argus {
     }
 
     static int _lua_trampoline(lua_State *state) {
-        auto initial_top = lua_gettop(state);
+        StackGuard stack_guard(state);
 
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
@@ -896,7 +929,7 @@ namespace argus {
             }
 
             // parameter count not including instance
-            auto arg_count = initial_top;
+            auto arg_count = lua_gettop(state);
             auto expected_arg_count = fn.params.size() + (fn.type == FunctionType::MemberInstance ? 1 : 0);
             if (size_t(arg_count) != expected_arg_count) {
                 auto err_msg = "Wrong parameter count provided for function " + qual_fn_name
@@ -909,7 +942,6 @@ namespace argus {
                 }
 
                 _set_lua_error(state, err_msg);
-                assert(lua_gettop(state) == initial_top);
                 return 0;
             }
 
@@ -930,8 +962,7 @@ namespace argus {
                     args.push_back(std::move(wrapper));
                 } else {
                     // some error occurred
-                    // _wrap_instance_ref already sent error to lua state, so just clean up here
-                    assert(lua_gettop(state) == initial_top);
+                    // _wrap_instance_ref already sent error to lua state
                     return wrap_res;
                 }
             }
@@ -945,7 +976,6 @@ namespace argus {
                 if (wrap_res == 0) {
                     args.push_back(std::move(wrapper));
                 } else {
-                    assert(lua_gettop(state) == initial_top);
                     return wrap_res;
                 }
             }
@@ -955,28 +985,24 @@ namespace argus {
             if (retval.type.type != IntegralType::Void) {
                 try {
                     _push_value(state, retval);
+                    stack_guard.increment();
                 } catch (const std::exception &) {
                     //Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
                     throw;
                 }
 
-                assert(lua_gettop(state) == initial_top + 1);
                 return 1;
             } else {
-                assert(lua_gettop(state) == initial_top);
                 return 0;
             }
         } catch (const TypeNotBoundException &) {
             _set_lua_error(state, "Type with name " + type_name + " is not bound");
-            assert(lua_gettop(state) == initial_top);
             return 0;
         } catch (const SymbolNotBoundException &) {
             _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
-            assert(lua_gettop(state) == initial_top);
             return 0;
         } catch (const ReflectiveArgumentsException &ex) {
             _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name + " (" + ex.what() + ")");
-            assert(lua_gettop(state) == initial_top);
             return 0;
         }
     }
@@ -984,20 +1010,28 @@ namespace argus {
     static int _lookup_fn_in_dispatch_table(lua_State *state, int mt_index, int key_index) {
         // get value from type's dispatch table instead
         // get type's metatable
+        printf("alfa: %d\n", lua_gettop(state));
         lua_getmetatable(state, mt_index);
         // get dispatch table
+        printf("bravo: %d\n", lua_gettop(state));
         lua_getmetatable(state, -1);
+        printf("zulu: %d\n", lua_gettop(state));
+        lua_remove(state, -2);
         // push key onto stack
+        printf("charlie: %d\n", lua_gettop(state));
         lua_pushvalue(state, key_index);
         // get value of key from metatable
+        printf("delta: %d\n", lua_gettop(state));
         lua_rawget(state, -2);
+        printf("yankee: %d\n", lua_gettop(state));
+        lua_remove(state, -2);
+        printf("echo: %d\n", lua_gettop(state));
 
         return 1;
     }
 
     static bool _get_native_field_val(lua_State *state, const std::string &type_name, const std::string &field_name) {
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         auto real_type_name = type_name.rfind(k_const_prefix, 0) == 0
                 ? type_name.substr(strlen(k_const_prefix))
@@ -1019,23 +1053,20 @@ namespace argus {
                 false, &inst_wrapper);
         if (wrap_res != 0) {
             // some error occurred
-            // _wrap_instance_ref already sent error to lua state, so just clean up here
-            assert(lua_gettop(state) == initial_top);
+            // _wrap_instance_ref already sent error to lua state
             return wrap_res;
         }
 
         auto val = field.get_value(inst_wrapper);
 
         _push_value(state, val);
-
-        assert(lua_gettop(state) == initial_top + 1);
+        stack_guard.increment();
 
         return true;
     }
 
     static int _lua_type_index_handler(lua_State *state) {
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -1);
@@ -1043,16 +1074,18 @@ namespace argus {
         assert(!type_name.empty());
 
         if ( _get_native_field_val(state, type_name, key)) {
+            stack_guard.increment();
             return 1;
         } else {
-            return _lookup_fn_in_dispatch_table(state, 1, 2);
+            auto retval = _lookup_fn_in_dispatch_table(state, 1, 2);
+            stack_guard.increment(retval);
+            return retval;
         }
     }
 
     // assumes the value is at the top of the stack
     static int _set_native_field(lua_State *state, const std::string &type_name, const std::string &field_name) {
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         // only necessary for the error message when the object is const since that's the only time it has the prefix
         auto real_type_name = type_name.rfind(k_const_prefix, 0) == 0
@@ -1084,7 +1117,6 @@ namespace argus {
         if (wrap_res != 0) {
             // some error occurred
             // _wrap_instance_ref already sent error to lua state, so just clean up here
-            assert(lua_gettop(state) == initial_top);
             return wrap_res;
         }
 
@@ -1094,14 +1126,11 @@ namespace argus {
         assert(field.m_assign_proxy.has_value());
         field.m_assign_proxy.value()(inst_wrapper, val_wrapper);
 
-        assert(lua_gettop(state) == initial_top);
-
         return 0;
     }
 
     static int _lua_type_newindex_handler(lua_State *state) {
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -2);
@@ -1109,8 +1138,6 @@ namespace argus {
         assert(!type_name.empty());
 
         auto res = _set_native_field(state, type_name, key);
-
-        assert(lua_gettop(state) == initial_top);
 
         return res;
     }
@@ -1357,57 +1384,42 @@ namespace argus {
     void LuaLanguagePlugin::bind_type(ScriptContext &context, const BoundTypeDef &type) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         _bind_type(state, type);
-
-        assert(lua_gettop(state) == initial_top);
     }
 
     void LuaLanguagePlugin::bind_type_function(ScriptContext &context, const BoundTypeDef &type,
             const BoundFunctionDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         _bind_type_function(state, type.name, fn);
-
-        assert(lua_gettop(state) == initial_top);
     }
 
     void LuaLanguagePlugin::bind_type_field(ScriptContext &context, const BoundTypeDef &type, const BoundFieldDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         _bind_type_field(state, type.name, fn);
-
-        assert(lua_gettop(state) == initial_top);
     }
 
     void LuaLanguagePlugin::bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         _bind_global_fn(state, fn);
-
-        assert(lua_gettop(state) == initial_top);
     }
 
     void LuaLanguagePlugin::bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         _bind_enum(state, enum_def);
-
-        assert(lua_gettop(state) == initial_top);
     }
 
     ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
@@ -1418,19 +1430,15 @@ namespace argus {
 
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
         auto *state = plugin_state->state;
-        auto initial_top = lua_gettop(state);
-        UNUSED(initial_top);
+        StackGuard stack_guard(state);
 
         lua_getglobal(state, name.c_str());
 
         try {
             auto retval = _invoke_lua_function(state, params, name);
 
-            assert(lua_gettop(state) == initial_top);
-
             return retval;
         } catch (const InvocationException &ex) {
-            assert(lua_gettop(state) == initial_top);
             throw ex;
         }
     }
