@@ -47,19 +47,46 @@ namespace argus {
         bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds);
     }
 
+    template <typename V>
+    static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
+            _bind_vector2(const std::string &name) {
+        bind_type<V>(name);
+        bind_member_field("x", &V::x);
+        bind_member_field("y", &V::y);
+    }
+
+    template <typename V>
+    static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
+    _bind_vector3(const std::string &name) {
+        bind_type<V>(name);
+        bind_member_field("x", &V::x);
+        bind_member_field("y", &V::y);
+        bind_member_field("z", &V::z);
+    }
+
+    template <typename V>
+    static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
+    _bind_vector4(const std::string &name) {
+        bind_type<V>(name);
+        bind_member_field("x", &V::x);
+        bind_member_field("y", &V::y);
+        bind_member_field("z", &V::z);
+        bind_member_field("w", &V::w);
+    }
+
     static void _bind_math_symbols(void) {
-        bind_type<Vector2d>("Vector2d");
-        bind_type<Vector2f>("Vector2f");
-        bind_type<Vector2i>("Vector2i");
-        bind_type<Vector2u>("Vector2u");
-        bind_type<Vector3d>("Vector3d");
-        bind_type<Vector3f>("Vector3f");
-        bind_type<Vector3i>("Vector3i");
-        bind_type<Vector3u>("Vector3u");
-        bind_type<Vector4d>("Vector4d");
-        bind_type<Vector4f>("Vector4f");
-        bind_type<Vector4i>("Vector4i");
-        bind_type<Vector4u>("Vector4u");
+        _bind_vector2<Vector2d>("Vector2d");
+        _bind_vector2<Vector2f>("Vector2f");
+        _bind_vector2<Vector2i>("Vector2i");
+        _bind_vector2<Vector2u>("Vector2u");
+        _bind_vector3<Vector3d>("Vector3d");
+        _bind_vector3<Vector3f>("Vector3f");
+        _bind_vector3<Vector3i>("Vector3i");
+        _bind_vector3<Vector3u>("Vector3u");
+        _bind_vector4<Vector4d>("Vector4d");
+        _bind_vector4<Vector4f>("Vector4f");
+        _bind_vector4<Vector4i>("Vector4i");
+        _bind_vector4<Vector4u>("Vector4u");
     }
 
     void register_lowlevel_bindings(void) {
