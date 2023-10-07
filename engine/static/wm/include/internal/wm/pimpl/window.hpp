@@ -81,6 +81,8 @@ namespace argus {
             AtomicDirtiable<bool> mouse_raw_input;
         } properties;
 
+        Vector2f content_scale;
+
         /**
          * \brief The callback to be executed upon the Window being closed.
          */

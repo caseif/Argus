@@ -110,12 +110,19 @@ namespace argus {
         _dispatch_window_event(handle, focused == GLFW_TRUE ? WindowEventType::Focus : WindowEventType::Unfocus);
     }
 
+    static void _on_window_content_scale_change(GLFWwindow *handle, float x, float y) {
+        Window *window = get_window_from_handle(handle);
+        window->pimpl->content_scale.x = x;
+        window->pimpl->content_scale.y = y;
+    }
+
     static void _register_callbacks(GLFWwindow *handle) {
         glfwSetWindowCloseCallback(handle, _on_window_close);
         glfwSetWindowIconifyCallback(handle, _on_window_minimize_restore);
         glfwSetWindowSizeCallback(handle, _on_window_resize);
         glfwSetWindowPosCallback(handle, _on_window_move);
         glfwSetWindowFocusCallback(handle, _on_window_focus);
+        glfwSetWindowContentScaleCallback(handle, _on_window_content_scale_change);
     }
 
     Window *get_window(const std::string &id) {
@@ -267,6 +274,8 @@ namespace argus {
             _register_callbacks(pimpl->handle);
 
             pimpl->state |= WINDOW_STATE_CREATED;
+
+            glfwGetWindowContentScale(pimpl->handle, &pimpl->content_scale.x, &pimpl->content_scale.y);
 
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
@@ -554,6 +563,10 @@ namespace argus {
 
     void Window::set_mouse_raw_input(bool raw_input) {
         pimpl->properties.mouse_raw_input = raw_input;
+    }
+
+    Vector2f Window::get_content_scale(void) const {
+        return pimpl->content_scale;
     }
 
     void Window::set_close_callback(WindowCallback callback) {

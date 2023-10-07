@@ -131,9 +131,5 @@ namespace argus {
         WindowEvent &operator =(const WindowEvent &rhs) = delete;
 
         WindowEvent &operator =(WindowEvent &&rhs) = delete;
-
-        Window &get_window(void) {
-            return window;
-        }
     };
 }

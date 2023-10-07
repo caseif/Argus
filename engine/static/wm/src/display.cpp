@@ -41,8 +41,6 @@ namespace argus {
 
         glfwGetMonitorPos(monitor, &display.pimpl->position.x, &display.pimpl->position.y);
 
-        glfwGetMonitorContentScale(monitor, &display.pimpl->scale.x, &display.pimpl->scale.y);
-
         int width;
         int height;
         glfwGetMonitorPhysicalSize(monitor, &width, &height);
@@ -149,10 +147,6 @@ namespace argus {
 
     Vector2u Display::get_physical_size(void) const {
         return pimpl->size;
-    }
-
-    Vector2f Display::get_scale(void) const {
-        return pimpl->scale;
     }
 
     const std::vector<DisplayMode> &Display::get_display_modes(void) const {

@@ -43,7 +43,7 @@ namespace argus {
     template <typename T>
     using reference_wrapped_t = typename reference_wrapped<T>::type;
 
-    template <typename FuncType>
+    template <typename T>
     struct function_traits;
 
     template <typename Ret, typename... Args>

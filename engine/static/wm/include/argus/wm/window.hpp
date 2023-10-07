@@ -430,6 +430,13 @@ namespace argus {
         void set_mouse_raw_input(bool raw_input);
 
         /**
+         * \brief Gets the content scale of the Window as reported by the
+         *        window manager.
+         * \return The content scale of the Window.
+         */
+        [[nodiscard]] Vector2f get_content_scale(void) const;
+
+        /**
          * \brief Sets the WindowCallback to invoke upon this window being
          *        closed.
          *

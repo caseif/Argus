@@ -58,6 +58,7 @@ namespace argus {
         bind_member_instance_function("set_mouse_visible", &Window::set_mouse_visible);
         bind_member_instance_function("is_mouse_raw_input", &Window::is_mouse_raw_input);
         bind_member_instance_function("set_mouse_raw_input", &Window::set_mouse_raw_input);
+        bind_member_instance_function("get_content_scale", &Window::get_content_scale);
         bind_member_instance_function("commit", &Window::commit);
     }
 
@@ -71,7 +72,6 @@ namespace argus {
         bind_member_instance_function("get_name", &Display::get_name);
         bind_member_instance_function("get_position", &Display::get_position);
         bind_member_instance_function("get_physical_size", &Display::get_physical_size);
-        bind_member_instance_function("get_scale", &Display::get_scale);
     }
 
     static void _bind_window_event_symbols(void) {
@@ -91,7 +91,8 @@ namespace argus {
         bind_member_field("resolution", &WindowEvent::resolution);
         bind_member_field("position", &WindowEvent::position);
         bind_member_field("delta", &WindowEvent::delta);
-        bind_member_instance_function("get_window", &WindowEvent::get_window);
+        bind_extension_function<WindowEvent>("get_window",
+                +[](const WindowEvent &event) -> Window & { return event.window; });
 
         bind_global_function<Index (*)(std::function<void(const WindowEvent &)>, TargetThread, Ordering)>(
                 "register_window_event_handler", register_event_handler<WindowEvent>);
