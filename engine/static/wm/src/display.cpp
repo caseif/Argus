@@ -41,12 +41,6 @@ namespace argus {
 
         glfwGetMonitorPos(monitor, &display.pimpl->position.x, &display.pimpl->position.y);
 
-        int width;
-        int height;
-        glfwGetMonitorPhysicalSize(monitor, &width, &height);
-        affirm_precond(width > 0 && height > 0, "Reported monitor dimensions are zero or negative");
-        display.pimpl->size = Vector2u(uint32_t(width), uint32_t(height));
-
         int mode_count;
         auto *glfw_modes = glfwGetVideoModes(display.pimpl->handle, &mode_count);
 
@@ -143,10 +137,6 @@ namespace argus {
 
     Vector2i Display::get_position(void) const {
         return pimpl->position;
-    }
-
-    Vector2u Display::get_physical_size(void) const {
-        return pimpl->size;
     }
 
     const std::vector<DisplayMode> &Display::get_display_modes(void) const {

@@ -56,8 +56,6 @@ namespace argus {
 
         Vector2i get_position(void) const;
 
-        Vector2u get_physical_size(void) const;
-
         const std::vector<DisplayMode> &get_display_modes(void) const;
     };
 }

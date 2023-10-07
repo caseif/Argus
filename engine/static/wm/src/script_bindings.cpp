@@ -71,7 +71,6 @@ namespace argus {
         bind_type<Display>("Display");
         bind_member_instance_function("get_name", &Display::get_name);
         bind_member_instance_function("get_position", &Display::get_position);
-        bind_member_instance_function("get_physical_size", &Display::get_physical_size);
     }
 
     static void _bind_window_event_symbols(void) {
