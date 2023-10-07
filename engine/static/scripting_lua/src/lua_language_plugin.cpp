@@ -1012,22 +1012,15 @@ namespace argus {
     static int _lookup_fn_in_dispatch_table(lua_State *state, int mt_index, int key_index) {
         // get value from type's dispatch table instead
         // get type's metatable
-        printf("alfa: %d\n", lua_gettop(state));
         lua_getmetatable(state, mt_index);
         // get dispatch table
-        printf("bravo: %d\n", lua_gettop(state));
         lua_getmetatable(state, -1);
-        printf("zulu: %d\n", lua_gettop(state));
         lua_remove(state, -2);
         // push key onto stack
-        printf("charlie: %d\n", lua_gettop(state));
         lua_pushvalue(state, key_index);
         // get value of key from metatable
-        printf("delta: %d\n", lua_gettop(state));
         lua_rawget(state, -2);
-        printf("yankee: %d\n", lua_gettop(state));
         lua_remove(state, -2);
-        printf("echo: %d\n", lua_gettop(state));
 
         return 1;
     }
