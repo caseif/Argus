@@ -40,3 +40,6 @@
 [submodule "external/test/libs/catch2"]
 	path = external/test/libs/catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "external/libs/sdl2"]
+	path = external/libs/sdl2
+	url = https://github.com/libsdl-org/SDL.git

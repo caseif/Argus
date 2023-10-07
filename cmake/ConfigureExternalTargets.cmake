@@ -6,6 +6,7 @@ set(ENABLE_CTEST_SAVED "${ENABLE_CTEST}")
 set(ENABLE_CTEST OFF)
 
 set(GLFW_SOURCE_DIR "${EXT_LIBS_DIR}/glfw")
+set(SDL2_SOURCE_DIR "${EXT_LIBS_DIR}/sdl2")
 set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
 set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
 set(JSON_SOURCE_DIR "${EXT_LIBS_DIR}/json")
@@ -54,9 +55,13 @@ endif()
 
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
+
 set(GLFW_LIBRARY_BASE "glfw")
 set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE}")
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
+
+set(SDL2_LIBRARY "sdl2")
+set(SDL2_INCLUDE_DIR "${SDL2_SOURCE_DIR}/include")
 
 set(ZLIB_LIBRARY "zlib")
 set(ZLIB_INCLUDE_DIR "${ZLIB_SOURCE_DIR};${TMP_INCLUDE_DIR}/zlib")
@@ -88,6 +93,7 @@ set(CATCH2_INCLUDE_DIR "${CATCH2_SOURCE_DIR}/src")
 
 # add dependencies
 add_subdirectory("${GLFW_SOURCE_DIR}")
+add_subdirectory("${SDL2_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
 add_subdirectory("${ARP_SOURCE_DIR}")
@@ -127,6 +133,7 @@ set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 # disable warnings for subprojects
 _argus_disable_warnings(${GLFW_LIBRARY})
+_argus_disable_warnings(${SDL2_LIBRARY})
 _argus_disable_warnings(${ZLIB_LIBRARY})
 _argus_disable_warnings(${PNG_LIBRARY})
 _argus_disable_warnings(${GLSLANG_LIBRARY})
