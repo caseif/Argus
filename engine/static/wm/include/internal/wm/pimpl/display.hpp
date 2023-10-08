@@ -39,7 +39,6 @@ namespace argus {
 
         std::string name;
         Vector2i position;
-        Vector2f scale;
 
         std::vector<DisplayMode> modes;
 
