@@ -17,104 +17,175 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/vector.hpp"
 
 #include "argus/wm/display.hpp"
+#include "argus/wm/window.hpp"
 #include "internal/wm/display.hpp"
+#include "internal/wm/module_wm.hpp"
 #include "internal/wm/pimpl/display.hpp"
+#include "internal/wm/pimpl/window.hpp"
 
-#include "GLFW/glfw3.h"
+#include "SDL2/SDL_events.h"
+#include "SDL2/SDL_video.h"
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
 namespace argus {
     static std::vector<const Display *> g_displays;
 
-    static void _add_display(GLFWmonitor *monitor) {
+    // ideally we'd use the POPCNT instruction on x86, but this is only expected
+    // to be called during init
+    static uint8_t sw_popcnt(uint32_t val) {
+        uint32_t val_shifted = val;
+        uint8_t count = 0;
+        for (uint32_t i = 0; i < sizeof(val) * 8; i++) {
+            count += val_shifted & 1;
+            val_shifted >>= 1;
+        }
+        return count;
+    }
+
+    DisplayMode wrap_display_mode(SDL_DisplayMode mode) {
+        affirm_precond(mode.w > 0 && mode.h > 0, "Display mode dimensions must be greater than 0");
+
+        int bpp;
+        uint32_t mask_r;
+        uint32_t mask_g;
+        uint32_t mask_b;
+        uint32_t mask_a;
+        if (SDL_PixelFormatEnumToMasks(mode.format, &bpp, &mask_r, &mask_g, &mask_b, &mask_a) != SDL_TRUE) {
+            Logger::default_logger().warn("Failed to query color channels modes for display mode (%s)",
+                    SDL_GetError());
+        }
+
+        uint8_t bits_r = sw_popcnt(mask_r);
+        uint8_t bits_g = sw_popcnt(mask_g);
+        uint8_t bits_b = sw_popcnt(mask_b);
+        uint8_t bits_a = sw_popcnt(mask_a);
+
+        return DisplayMode {
+                Vector2u(uint32_t(mode.w), uint32_t(mode.h)),
+                uint16_t(mode.refresh_rate),
+                Vector4u(uint32_t(bits_r), uint32_t(bits_g), uint32_t(bits_b), uint32_t(bits_a)),
+                mode.format
+        };
+    }
+
+    SDL_DisplayMode unwrap_display_mode(const DisplayMode &mode) {
+        return SDL_DisplayMode {
+            mode.extra_data,
+            int(mode.resolution.x), int(mode.resolution.y),
+            mode.refresh_rate,
+            nullptr
+        };
+    }
+
+    static Display *_add_display(int index) {
         auto &display = *new Display();
 
-        display.pimpl->handle = monitor;
+        display.pimpl->index = index;
 
-        display.pimpl->name = glfwGetMonitorName(monitor);
+        const char *display_name = SDL_GetDisplayName(index);
+        if (display_name == nullptr) {
+            Logger::default_logger().warn("Failed to query name of display %d (%s)", index, SDL_GetError());
+        }
 
-        glfwGetMonitorPos(monitor, &display.pimpl->position.x, &display.pimpl->position.y);
+        display.pimpl->name = display_name;
 
-        int mode_count;
-        auto *glfw_modes = glfwGetVideoModes(display.pimpl->handle, &mode_count);
+        SDL_Rect bounds;
+        if (SDL_GetDisplayBounds(index, &bounds) != 0) {
+            Logger::default_logger().warn("Failed to query bounds of display %d (%s)", index, SDL_GetError());
+        }
+        display.pimpl->position.x = bounds.x;
+        display.pimpl->position.y = bounds.y;
+
+        int mode_count = SDL_GetNumDisplayModes(display.pimpl->index);
+        if (mode_count < 0) {
+            Logger::default_logger().warn("Failed to query display modes for display %d (%s)", index, SDL_GetError());
+        }
 
         for (int i = 0; i < mode_count; i++) {
-            auto glfw_mode = glfw_modes[i];
-
-            if (glfw_mode.width <= 0 || glfw_mode.height <= 0) {
-                Logger::default_logger().debug("Skipping video mode with non-positive dimensions (%d, %d)",
-                        glfw_mode.width, glfw_mode.height);
+            SDL_DisplayMode mode;
+            if (SDL_GetDisplayMode(display.pimpl->index, i, &mode) != 0) {
+                Logger::default_logger().warn("Failed to query display mode %d for display %d, skipping (%s)",
+                        i, display.pimpl->index, SDL_GetError());
                 continue;
             }
 
-            if (glfw_mode.redBits < 0 || glfw_mode.greenBits < 0 || glfw_mode.blueBits < 0) {
-                Logger::default_logger().debug("Skipping video mode with negative color width (r=%d, g=%d, b=%d)",
-                        glfw_mode.redBits, glfw_mode.greenBits, glfw_mode.blueBits);
-                continue;
-            }
-
-            display.pimpl->modes.push_back(DisplayMode{
-                    Vector2u(uint32_t(glfw_mode.width), uint32_t(glfw_mode.height)),
-                    uint16_t(glfw_mode.refreshRate),
-                    Vector3u(uint32_t(glfw_mode.redBits), uint32_t(glfw_mode.greenBits), uint32_t(glfw_mode.blueBits))
-            });
+            display.pimpl->modes.push_back(wrap_display_mode(mode));
         }
 
-        g_displays.push_back(&display);
+        return &display;
     }
 
-    static void _remove_display(const GLFWmonitor *monitor) {
-        auto *display = get_display_from_handle(monitor);
-
-        if (display == nullptr) {
-            return;
-        }
-
-        remove_from_vector(g_displays, display);
-        delete display;
-    }
-
-    static void _enumerate_displays(void) {
+    static void _enumerate_displays(std::vector<const Display *> &dest) {
         std::vector<Display> displays;
 
-        int count;
-        auto **monitors = glfwGetMonitors(&count);
-
+        int count = SDL_GetNumVideoDisplays();
+        if (count < 0) {
+            Logger::default_logger().fatal("Failed to enumerate displays");
+        }
+        dest.reserve(size_t(count));
         for (int i = 0; i < count; i++) {
-            auto *monitor = monitors[i];
-
-            _add_display(monitor);
+            g_displays[size_t(i)] = _add_display(i);
         }
     }
 
-    static void _monitor_callback(GLFWmonitor *monitor, int type) {
-        if (type == GLFW_CONNECTED) {
-            _add_display(monitor);
-        } else if (type == GLFW_DISCONNECTED) {
-            _remove_display(monitor);
+    static void _update_displays(void) {
+        std::vector<const Display *> old_displays;
+        std::vector<const Display *> new_displays;
+
+        _enumerate_displays(new_displays);
+
+        for (const auto &window_kv : g_window_handle_map) {
+            auto *handle = window_kv.first;
+            auto &window = *window_kv.second;
+            if (window.is_closed()) {
+                continue;
+            }
+
+            auto new_disp_index = SDL_GetWindowDisplayIndex(handle);
+            if (new_disp_index < 0 || size_t(new_disp_index) >= g_displays.size()) {
+                Logger::default_logger().warn("Failed to query new display of window ID %s, "
+                        "things might not work correctly!", window.get_id().c_str());
+                continue;
+            }
+            window.pimpl->properties.display.set_quietly(g_displays[size_t(new_disp_index)]);
         }
+
+        g_displays = new_displays;
+
+        for (auto *display : old_displays) {
+            delete display;
+        }
+    }
+
+    static int _display_callback(void *udata, SDL_Event *event) {
+        UNUSED(udata);
+
+        if (event->type != SDL_DISPLAYEVENT) {
+            return 0;
+        }
+
+        SDL_DisplayEvent disp_event = event->display;
+
+        if (disp_event.type == SDL_DISPLAYEVENT_CONNECTED
+                || disp_event.type == SDL_DISPLAYEVENT_DISCONNECTED) {
+            _update_displays();
+        }
+
+        return 0;
     }
 
     void init_display(void) {
-        _enumerate_displays();
+        _enumerate_displays(g_displays);
 
-        glfwSetMonitorCallback(_monitor_callback);
+        SDL_AddEventWatch(_display_callback, nullptr);
     }
 
-    const Display *get_display_from_handle(const GLFWmonitor *monitor) {
-        auto it = std::find_if(g_displays.begin(), g_displays.end(),
-                [monitor](auto *display) { return display->pimpl->handle == monitor; });
-        if (it == g_displays.end()) {
-            return nullptr;
-        }
-
-        return *it;
+    const Display *get_display_from_index(int index) {
+        return g_displays[uint32_t(index)];
     }
 
     const std::vector<const Display *> &Display::get_available_displays(void) {
@@ -126,9 +197,7 @@ namespace argus {
     }
 
     Display::~Display(void) {
-        if (pimpl != nullptr) {
-            delete pimpl;
-        }
+        delete pimpl;
     }
 
     const std::string &Display::get_name(void) const {

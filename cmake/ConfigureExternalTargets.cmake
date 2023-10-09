@@ -25,6 +25,10 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
+# disable SDL render subsystem and tests
+set(SDL_Render OFF)
+set(SDL_TEST OFF)
+
 # don't let libpng try to install itself
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 # configure libpng build steps
@@ -60,7 +64,7 @@ set(GLFW_LIBRARY_BASE "glfw")
 set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE}")
 set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
 
-set(SDL2_LIBRARY "sdl2")
+set(SDL2_LIBRARY "SDL2")
 set(SDL2_INCLUDE_DIR "${SDL2_SOURCE_DIR}/include")
 
 set(ZLIB_LIBRARY "zlib")

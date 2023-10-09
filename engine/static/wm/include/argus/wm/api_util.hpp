@@ -18,23 +18,28 @@
 
 #pragma once
 
-#include "argus/core/module.hpp"
-
-#include <map>
-
-#include <cstddef>
-
-struct SDL_Window;
+#include "argus/wm/window.hpp"
 
 namespace argus {
-    // forward declarations
-    class Window;
+    typedef void *GLContext;
 
-    extern bool g_wm_module_initialized;
+    GLContext gl_create_context(Window &window);
 
-    extern std::map<std::string, Window *> g_window_id_map;
-    extern std::map<SDL_Window *, Window *> g_window_handle_map;
-    extern size_t g_window_count;
+    void gl_destroy_context(GLContext context);
 
-    void update_lifecycle_wm(LifecycleStage stage);
+    bool gl_is_context_current(GLContext context);
+
+    void gl_make_context_current(Window &window, GLContext context);
+
+    void *gl_load_proc(const char *name);
+
+    void gl_swap_interval(int interval);
+
+    void gl_swap_buffers(Window &window);
+
+    bool vk_is_supported(void);
+
+    void vk_create_surface(Window &window, void *instance, void **out_surface);
+
+    void vk_get_instance_extensions(Window &window, unsigned int *out_count, const char **out_names);
 }

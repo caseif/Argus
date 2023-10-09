@@ -36,7 +36,8 @@
 #include "internal/wm/pimpl/display.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
-#include "GLFW/glfw3.h"
+#include "SDL2/SDL_events.h"
+#include "SDL2/SDL_video.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -46,6 +47,7 @@
 #include <string>
 
 #include <climits>
+#include <SDL2/SDL_hints.h>
 
 #define DEF_WINDOW_DIM 300
 
@@ -68,6 +70,7 @@
 #define WINDOW_STATE_CLOSE_REQUEST_ACKED    0x20U
 
 namespace argus {
+    static WindowCreationFlags g_window_flags = WindowCreationFlags::None;
     static WindowCallback g_window_construct_callback = nullptr;
     static CanvasCtor g_canvas_ctor = nullptr;
     static CanvasDtor g_canvas_dtor = nullptr;
@@ -78,7 +81,7 @@ namespace argus {
         dispatch_event<WindowEvent>(type, window);
     }
 
-    static inline void _dispatch_window_event(GLFWwindow *handle, WindowEventType type) {
+    static inline void _dispatch_window_event(SDL_Window *handle, WindowEventType type) {
         _dispatch_window_event(*g_window_handle_map.find(handle)->second, type);
     }
 
@@ -86,45 +89,50 @@ namespace argus {
         dispatch_event<WindowEvent>(WindowEventType::Update, window, Vector2u(), Vector2i(), delta);
     }
 
-    static void _on_window_close(GLFWwindow *handle) {
-        _dispatch_window_event(handle, WindowEventType::RequestClose);
-    }
-
-    static void _on_window_minimize_restore(GLFWwindow *handle, int minimized) {
-        _dispatch_window_event(handle, minimized ? WindowEventType::Minimize : WindowEventType::Restore);
-    }
-
-    static void _on_window_resize(GLFWwindow *handle, int width, int height) {
+    static int _on_window_event(void *udata, SDL_Event *event) {
         using namespace std::chrono_literals;
 
-        dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_handle_map.find(handle)->second,
-                Vector2u{uint32_t(width), uint32_t(height)}, Vector2i(), 0s);
+        SDL_Window *handle = reinterpret_cast<SDL_Window *>(udata);
+        if (SDL_GetWindowID(handle) != event->window.windowID) {
+            return 0;
+        }
+
+        switch (event->window.type) {
+            case SDL_WINDOWEVENT_MOVED:
+                dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_handle_map.find(handle)->second,
+                        Vector2u(), Vector2i { event->window.data1, event->window.data2 }, 0s);
+                break;
+            case SDL_WINDOWEVENT_RESIZED:
+                dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_handle_map.find(handle)->second,
+                        Vector2u { uint32_t(event->window.data1), uint32_t(event->window.data2) }, Vector2i(), 0s);
+                break;
+            case SDL_WINDOWEVENT_MINIMIZED:
+                _dispatch_window_event(handle, WindowEventType::Minimize);
+                break;
+            case SDL_WINDOWEVENT_RESTORED:
+                _dispatch_window_event(handle, WindowEventType::Restore);
+                break;
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                _dispatch_window_event(handle, WindowEventType::Focus);
+                break;
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                _dispatch_window_event(handle, WindowEventType::Unfocus);
+                break;
+            case SDL_WINDOWEVENT_CLOSE:
+                _dispatch_window_event(handle, WindowEventType::RequestClose);
+                break;
+                //TODO: handle display scale changed event when we move to SDL 3
+        }
+
+        return 0;
     }
 
-    static void _on_window_move(GLFWwindow *handle, int x, int y) {
-        using namespace std::chrono_literals;
-
-        dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_handle_map.find(handle)->second,
-                Vector2u(), Vector2i{x, y}, 0s);
+    static void _register_callbacks(SDL_Window *handle) {
+        SDL_AddEventWatch(_on_window_event, handle);
     }
 
-    static void _on_window_focus(GLFWwindow *handle, int focused) {
-        _dispatch_window_event(handle, focused == GLFW_TRUE ? WindowEventType::Focus : WindowEventType::Unfocus);
-    }
-
-    static void _on_window_content_scale_change(GLFWwindow *handle, float x, float y) {
-        Window *window = get_window_from_handle(handle);
-        window->pimpl->content_scale.x = x;
-        window->pimpl->content_scale.y = y;
-    }
-
-    static void _register_callbacks(GLFWwindow *handle) {
-        glfwSetWindowCloseCallback(handle, _on_window_close);
-        glfwSetWindowIconifyCallback(handle, _on_window_minimize_restore);
-        glfwSetWindowSizeCallback(handle, _on_window_resize);
-        glfwSetWindowPosCallback(handle, _on_window_move);
-        glfwSetWindowFocusCallback(handle, _on_window_focus);
-        glfwSetWindowContentScaleCallback(handle, _on_window_content_scale_change);
+    void set_window_creation_flags(WindowCreationFlags flags) {
+        g_window_flags = flags;
     }
 
     static void _reap_window(Window &window) {
@@ -188,7 +196,7 @@ namespace argus {
 
         g_window_count++;
 
-        pimpl->callback_id = register_render_callback(std::bind(&Window::update, this, std::placeholders::_1));
+        pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); });
 
         if (g_window_construct_callback != nullptr) {
             g_window_construct_callback(*this);
@@ -197,7 +205,7 @@ namespace argus {
         return;
     }
 
-    Window::Window(Window &&rhs) : pimpl(rhs.pimpl) {
+    Window::Window(Window &&rhs) noexcept : pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
     }
 
@@ -210,7 +218,7 @@ namespace argus {
             pimpl->close_callback(*this);
         }
 
-        glfwDestroyWindow(pimpl->handle);
+        SDL_DestroyWindow(pimpl->handle);
 
         for (Window *child : pimpl->children) {
             child->pimpl->parent = nullptr;
@@ -284,18 +292,58 @@ namespace argus {
         // event and initialized itself properly.
 
         if (!(pimpl->state & WINDOW_STATE_CREATED)) {
-            glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-            glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-            glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
-            glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
-            glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);
+            SDL_WindowFlags sdl_flags = SDL_WindowFlags(
+                    SDL_WINDOW_RESIZABLE
+                    | SDL_WINDOW_INPUT_FOCUS
+                    | SDL_WINDOW_HIDDEN
+            );
 
-            pimpl->handle = glfwCreateWindow(DEF_WINDOW_DIM, DEF_WINDOW_DIM, get_client_name().c_str(), nullptr,
-                    nullptr);
+            auto gfx_api_bits = g_window_flags & WindowCreationFlags::GraphicsApi;
+            if ((gfx_api_bits & (int(gfx_api_bits) - 1)) != 0) {
+                throw std::invalid_argument("Only one graphics API may be set during window creation");
+            }
 
+            if ((g_window_flags & WindowCreationFlags::OpenGL) != 0) {
+                auto profile_bits = g_window_flags & WindowCreationFlags::GLProfile;
+                if ((profile_bits & (int(profile_bits) - 1)) != 0) {
+                    throw std::invalid_argument("Only one GL profile flag may be set during window creation");
+                }
+
+                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_OPENGL);
+
+                if ((profile_bits & WindowCreationFlags::GLProfileCore) != 0) {
+                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+                } else if ((profile_bits & WindowCreationFlags::GLProfileES) != 0) {
+                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+                } else if ((profile_bits & WindowCreationFlags::GLProfileCompat) != 0) {
+                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+                }
+
+                SDL_GLcontextFlag context_flags = SDL_GLcontextFlag(0);
+                if ((g_window_flags | WindowCreationFlags::GLDebugContext) != 0) {
+                    context_flags = SDL_GLcontextFlag(int(context_flags) | SDL_GL_CONTEXT_DEBUG_FLAG);
+                }
+                if ((g_window_flags | WindowCreationFlags::GLForwardCompat) != 0) {
+                    context_flags = SDL_GLcontextFlag(int(context_flags) | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+                }
+                SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, (g_window_flags & WindowCreationFlags::GLDoubleBuffered) != 0);
+                SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
+            } else if ((g_window_flags & WindowCreationFlags::Vulkan) != 0) {
+                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_VULKAN);
+            } else if ((g_window_flags & WindowCreationFlags::Metal) != 0) {
+                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_METAL);
+            } else if ((g_window_flags & WindowCreationFlags::DirectX) != 0) {
+                Logger::default_logger().fatal("DirectX contexts are not supported at this time");
+            } else if ((g_window_flags & WindowCreationFlags::WebGPU) != 0) {
+                Logger::default_logger().fatal("WebGPU contexts are not supported at this time");
+            }
+
+            pimpl->handle = SDL_CreateWindow(get_client_name().c_str(),
+                    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                    DEF_WINDOW_DIM, DEF_WINDOW_DIM,
+                    sdl_flags);
             if (pimpl->handle == nullptr) {
-                Logger::default_logger().fatal("Failed to create GLFW window");
+                Logger::default_logger().fatal("Failed to create SDL window");
             }
 
             g_window_handle_map.insert({pimpl->handle, this});
@@ -304,7 +352,7 @@ namespace argus {
 
             pimpl->state |= WINDOW_STATE_CREATED;
 
-            glfwGetWindowContentScale(pimpl->handle, &pimpl->content_scale.x, &pimpl->content_scale.y);
+            //TODO: figure out how to handle content scale
 
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
@@ -335,77 +383,46 @@ namespace argus {
         auto mouse_raw_input = pimpl->properties.mouse_raw_input.read();
 
         if (title.dirty) {
-            glfwSetWindowTitle(pimpl->handle, title->c_str());
+            SDL_SetWindowTitle(pimpl->handle, title->c_str());
         }
 
-        if (fullscreen.dirty || (fullscreen && display.dirty)) {
+        if (fullscreen.dirty
+                || (fullscreen && (display.dirty || custom_display_mode.dirty || display_mode.dirty))) {
             if (fullscreen) {
-                // switch to fullscreen mode (or switch fullscreen monitor)
+                // switch to fullscreen mode or display/display mode
 
-                DisplayMode cur_display_mode;
+                auto disp_off = display->get_position();
+                SDL_SetWindowPosition(pimpl->handle, disp_off.x, disp_off.y);
+                SDL_SetWindowFullscreen(pimpl->handle, SDL_WINDOW_FULLSCREEN);
+                SDL_DisplayMode sdl_mode;
                 if (custom_display_mode) {
-                    cur_display_mode = display_mode;
+                    SDL_DisplayMode cur_mode = unwrap_display_mode(display_mode);
+                    SDL_GetClosestDisplayMode(display->pimpl->index, &cur_mode, &sdl_mode);
+                    assert(sdl_mode.w > 0);
+                    assert(sdl_mode.h > 0);
+                    SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
                 } else {
-                    cur_display_mode = get_display_mode();
+                    SDL_GetDesktopDisplayMode(display->pimpl->index, &sdl_mode);
+                    SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
                 }
 
-                affirm_precond(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
-                        "Current display mode fullscreen resolution is too large");
-
-                glfwSetWindowMonitor(pimpl->handle,
-                        get_display_affinity().pimpl->handle,
-                        0,
-                        0,
-                        int(cur_display_mode.resolution.x),
-                        int(cur_display_mode.resolution.y),
-                        cur_display_mode.refresh_rate);
-
-                pimpl->cur_resolution = cur_display_mode.resolution;
-                pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
+                affirm_precond(sdl_mode.refresh_rate <= UINT16_MAX, "Refresh rate is too big");
+                pimpl->cur_resolution = { uint32_t(sdl_mode.w), uint32_t(sdl_mode.h) };
+                pimpl->cur_refresh_rate = uint16_t(sdl_mode.refresh_rate);
             } else {
                 affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
-                // switch to windowed mode
-                glfwSetWindowMonitor(pimpl->handle,
-                        nullptr,
-                        position->x,
-                        position->y,
-                        int32_t(windowed_res->x),
-                        int32_t(windowed_res->y),
-                        GLFW_DONT_CARE);
+                SDL_SetWindowFullscreen(pimpl->handle, 0);
+
+                auto &target_disp = get_display_affinity();
+                int pos_x = target_disp.get_position().x + position->x;
+                int pos_y = target_disp.get_position().y + position->y;
+                SDL_SetWindowPosition(pimpl->handle, pos_x, pos_y);
+
+                SDL_SetWindowSize(pimpl->handle, int(windowed_res->x), int(windowed_res->y));
+
                 pimpl->cur_resolution = windowed_res;
-            }
-        } else if (fullscreen && (custom_display_mode.dirty || display_mode.dirty)) {
-            // switch fullscreen display mode
-
-            DisplayMode cur_display_mode;
-            if (custom_display_mode) {
-                cur_display_mode = display_mode;
-            } else {
-                cur_display_mode = get_display_mode();
-            }
-
-            affirm_precond(cur_display_mode.resolution.x <= INT_MAX && cur_display_mode.resolution.y <= INT_MAX,
-                    "Current display mode fullscreen resolution is too large");
-
-            if (cur_display_mode.refresh_rate != pimpl->cur_refresh_rate) {
-                glfwSetWindowMonitor(pimpl->handle,
-                        get_display_affinity().pimpl->handle,
-                        0,
-                        0,
-                        int32_t(cur_display_mode.resolution.x),
-                        int32_t(cur_display_mode.resolution.y),
-                        cur_display_mode.refresh_rate);
-
-                pimpl->cur_resolution = cur_display_mode.resolution;
-                pimpl->cur_refresh_rate = cur_display_mode.refresh_rate;
-            } else {
-                glfwSetWindowSize(pimpl->handle,
-                        int32_t(cur_display_mode.resolution.x),
-                        int32_t(cur_display_mode.resolution.y));
-
-                pimpl->cur_resolution = cur_display_mode.resolution;
             }
         } else if (!fullscreen) {
             // update windowed positon and/or resolution
@@ -414,30 +431,30 @@ namespace argus {
                 affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
-                glfwSetWindowSize(pimpl->handle,
-                        int32_t(windowed_res->x),
-                        int32_t(windowed_res->y));
+                SDL_SetWindowSize(pimpl->handle, int(windowed_res->x), int(windowed_res->y));
 
                 pimpl->cur_resolution = windowed_res;
             }
 
             if (position.dirty) {
-                glfwSetWindowPos(pimpl->handle,
-                        position->x,
-                        position->y);
+                auto &target_disp = get_display_affinity();
+                int pos_x = target_disp.get_position().x + position->x;
+                int pos_y = target_disp.get_position().y + position->y;
+                SDL_SetWindowPosition(pimpl->handle, pos_x, pos_y);
             }
         }
 
         if (mouse_capture.dirty || mouse_visible.dirty) {
-            glfwSetInputMode(pimpl->handle, GLFW_CURSOR, mouse_capture
-                                                         ? GLFW_CURSOR_DISABLED
-                                                         : mouse_visible
-                                                           ? GLFW_CURSOR_NORMAL
-                                                           : GLFW_CURSOR_HIDDEN);
-        }
-
-        if (mouse_raw_input.dirty) {
-            glfwSetInputMode(pimpl->handle, GLFW_RAW_MOUSE_MOTION, mouse_raw_input ? GLFW_TRUE : GLFW_FALSE);
+            if (mouse_capture && !mouse_visible) {
+                if (mouse_raw_input.dirty) {
+                    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, mouse_raw_input ? "0" : "1");
+                }
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+            } else {
+                SDL_SetWindowMouseGrab(pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
+                //TODO: not great, would be better to set it per window somehow
+                SDL_ShowCursor(mouse_visible ? SDL_TRUE : SDL_FALSE);
+            }
         }
 
         if (!(pimpl->state & WINDOW_STATE_READY)) {
@@ -445,7 +462,7 @@ namespace argus {
         }
 
         if (!(pimpl->state & WINDOW_STATE_VISIBLE)) {
-            glfwShowWindow(pimpl->handle);
+            SDL_ShowWindow(pimpl->handle);
             pimpl->state |= WINDOW_STATE_VISIBLE;
         }
 
@@ -523,13 +540,13 @@ namespace argus {
     const Display &Window::get_display_affinity(void) const {
         const Display *display = pimpl->properties.display.peek();
         if (display != nullptr) {
-            auto *found = get_display_from_handle(display->pimpl->handle);
+            auto *found = get_display_from_index(display->pimpl->index);
             if (found != nullptr) {
                 return *found;
             }
         }
 
-        auto *primary = get_display_from_handle(glfwGetPrimaryMonitor());
+        auto *primary = get_display_from_index(0);
 
         if (primary == nullptr) {
             throw std::runtime_error("No available displays!");
@@ -540,11 +557,11 @@ namespace argus {
 
     void Window::set_display_affinity(const Display &display) {
         auto *cur_display = pimpl->properties.display.peek();
-        if (cur_display != nullptr && display.pimpl->handle == cur_display->pimpl->handle) {
+        if (cur_display != nullptr && display.pimpl->index == cur_display->pimpl->index) {
             return;
         }
 
-        auto *found = get_display_from_handle(display.pimpl->handle);
+        auto *found = get_display_from_index(display.pimpl->index);
         if (found == nullptr) {
             return;
         }
@@ -558,7 +575,9 @@ namespace argus {
         if (pimpl->properties.custom_display_mode.peek()) {
             return pimpl->properties.display_mode.peek();
         } else {
-            return get_display_affinity().get_display_modes().back();
+            SDL_DisplayMode desktop_mode;
+            SDL_GetDesktopDisplayMode(get_display_affinity().pimpl->index, &desktop_mode);
+            return wrap_display_mode(desktop_mode);
         }
     }
 
@@ -614,7 +633,7 @@ namespace argus {
     }
 
     Window *get_window_from_handle(const void *handle) {
-        auto it = g_window_handle_map.find(static_cast<GLFWwindow *>(const_cast<void *>(handle)));
+        auto it = g_window_handle_map.find(static_cast<SDL_Window *>(const_cast<void *>(handle)));
         if (it == g_window_handle_map.end()) {
             return nullptr;
         }
@@ -645,7 +664,8 @@ namespace argus {
         } else if (event.subtype == WindowEventType::Resize) {
             window.pimpl->cur_resolution = event.resolution;
         } else if (event.subtype == WindowEventType::Move) {
-            if (glfwGetWindowMonitor(window.pimpl->handle) == nullptr) {
+            // if not in fullscreen mode
+            if ((SDL_GetWindowFlags(window.pimpl->handle) & SDL_WINDOW_FULLSCREEN) == 0) {
                 window.pimpl->properties.position.set_quietly(event.position);
             }
         }

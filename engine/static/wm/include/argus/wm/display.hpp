@@ -34,7 +34,8 @@ namespace argus {
     struct DisplayMode {
         Vector2u resolution;
         uint16_t refresh_rate;
-        Vector3u color_depth;
+        Vector4u color_depth;
+        uint32_t extra_data;
     };
 
     class Display : AutoCleanupable {

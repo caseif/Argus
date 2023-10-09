@@ -35,11 +35,9 @@
 
 #pragma GCC diagnostic push
 
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_events.h"
+#include "SDL2/SDL_video.h"
 
 #include <iterator>
 #include <map>
@@ -53,8 +51,8 @@ namespace argus {
 
     // maps window IDs to Window instance pointers
     std::map<std::string, Window *> g_window_id_map;
-    // maps GLFW window pointers to Window instance pointers
-    std::map<GLFWwindow *, Window *> g_window_handle_map;
+    // maps SDL window pointers to Window instance pointers
+    std::map<SDL_Window *, Window *> g_window_handle_map;
     size_t g_window_count = 0;
     bool g_requested_stop = false;
 
@@ -67,24 +65,19 @@ namespace argus {
             delete it->second;
         }
 
-        glfwTerminate();
+        SDL_QuitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
 
         return;
     }
 
-    static void _poll_events() {
-        glfwPollEvents();
+    static void _poll_events(void) {
+        SDL_PumpEvents();
     }
 
     static void _do_window_loop(TimeDelta delta) {
         UNUSED(delta);
         reap_windows();
         _poll_events();
-    }
-
-    static void _on_glfw_error(const int code, const char *desc) {
-        UNUSED(code);
-        Logger::default_logger().warn("GLFW Error: %s", desc);
     }
 
     static void _create_initial_window(void) {
@@ -149,14 +142,10 @@ namespace argus {
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                int glfw_init_rc = glfwInit();
-                if (glfw_init_rc != GLFW_TRUE) {
-                    Logger::default_logger().fatal("GLFW init failed (return code %d)", glfw_init_rc);
+                if (SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO) != 0) {
+                    Logger::default_logger().fatal("SDL init failed (%s)", SDL_GetError());
                 }
-                Logger::default_logger().info("GLFW initialized successfully");
-
-                glfwSetErrorCallback(_on_glfw_error);
-                Logger::default_logger().debug("Initialized GLFW");
+                Logger::default_logger().info("SDL initialized successfully");
 
                 register_update_callback(_check_window_count);
                 register_render_callback(_do_window_loop);
@@ -167,6 +156,8 @@ namespace argus {
                 g_wm_module_initialized = true;
 
                 register_wm_bindings();
+
+                SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
 
                 break;
             }

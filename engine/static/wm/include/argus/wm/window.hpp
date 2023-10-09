@@ -54,6 +54,117 @@ namespace argus {
      */
     typedef std::function<void(Canvas &)> CanvasDtor;
 
+    enum class WindowCreationFlags {
+        None                = 0x0,
+        OpenGL              = 0x1,
+        Vulkan              = 0x2,
+        Metal               = 0x4,
+        DirectX             = 0x8,
+        WebGPU              = 0x10,
+        GLProfileCore       = 0x1000000,
+        GLProfileES         = 0x2000000,
+        GLProfileCompat     = 0x4000000,
+        GLDebugContext      = 0x8000000,
+        GLForwardCompat     = 0x10000000,
+        GLDoubleBuffered    = 0x20000000,
+
+        GraphicsApi = int(WindowCreationFlags::OpenGL)
+                |     int(WindowCreationFlags::Vulkan)
+                |     int(WindowCreationFlags::Metal)
+                |     int(WindowCreationFlags::DirectX)
+                |     int(WindowCreationFlags::WebGPU),
+        GLProfile = int(WindowCreationFlags::GLProfileCore)
+                |   int(WindowCreationFlags::GLProfileES),
+        GL =      int(WindowCreationFlags::GLProfile)
+                | int(WindowCreationFlags::GLDebugContext)
+                | int(WindowCreationFlags::GLDoubleBuffered)
+    };
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags operator&(WindowCreationFlags a, T b) {
+        return WindowCreationFlags(T(a) & b);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags operator|(WindowCreationFlags a, T b) {
+        return WindowCreationFlags(T(a) | b);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags operator^(WindowCreationFlags a, T b) {
+        return WindowCreationFlags(T(a) ^ b);
+    }
+
+    inline WindowCreationFlags operator&(WindowCreationFlags a, WindowCreationFlags b) {
+        return WindowCreationFlags(a & std::underlying_type_t<WindowCreationFlags>(b));
+    }
+
+    inline WindowCreationFlags operator|(WindowCreationFlags a, WindowCreationFlags b) {
+        return WindowCreationFlags(a | std::underlying_type_t<WindowCreationFlags>(b));
+    }
+
+    inline WindowCreationFlags operator^(WindowCreationFlags a, WindowCreationFlags b) {
+        return WindowCreationFlags(a ^ std::underlying_type_t<WindowCreationFlags>(b));
+    }
+
+    inline WindowCreationFlags operator~(WindowCreationFlags a) {
+        return WindowCreationFlags(~std::underlying_type_t<WindowCreationFlags>(a));
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags &operator&=(WindowCreationFlags &lhs, T rhs) {
+        return (lhs = lhs & rhs);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags &operator|=(WindowCreationFlags &lhs, T rhs) {
+        return (lhs = lhs | rhs);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline WindowCreationFlags &operator^=(WindowCreationFlags &lhs, T rhs) {
+        return (lhs = lhs ^ rhs);
+    }
+
+    inline WindowCreationFlags &operator&=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
+        return (lhs = lhs & rhs);
+    }
+
+    inline WindowCreationFlags &operator|=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
+        return (lhs = lhs | rhs);
+    }
+
+    inline WindowCreationFlags &operator^=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
+        return (lhs = lhs ^ rhs);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline bool operator==(WindowCreationFlags lhs, T rhs) {
+        return T(lhs) == rhs;
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline bool operator==(T lhs, WindowCreationFlags rhs) {
+        return lhs == T(rhs);
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline bool operator!=(WindowCreationFlags lhs, T rhs) {
+        return T(lhs) != rhs;
+    }
+
+    template <typename T = std::underlying_type_t<WindowCreationFlags>>
+    inline bool operator!=(T lhs, WindowCreationFlags rhs) {
+        return lhs != T(rhs);
+    }
+
+    /**
+     * \brief Sets the window creation flags globally.
+     *
+     * \param flags The flags to be used for all created windows.
+     */
+    void set_window_creation_flags(WindowCreationFlags flags);
+
     /**
      * \brief Returns the Window with the specified ID. This will return nullptr
      *        if a Window with the specified ID does not exist at the time that
@@ -119,7 +230,7 @@ namespace argus {
          */
         Window(const std::string &id, Window *parent = nullptr);
 
-        Window(Window &&);
+        Window(Window &&) noexcept;
 
       public:
         pimpl_Window *pimpl;

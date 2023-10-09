@@ -18,8 +18,7 @@
 
 #pragma once
 
-// forward declarations
-struct GLFWmonitor;
+#include <SDL2/SDL_video.h>
 
 namespace argus {
     // forward declarations
@@ -27,5 +26,9 @@ namespace argus {
 
     void init_display(void);
 
-    const Display *get_display_from_handle(const GLFWmonitor *monitor);
+    const Display *get_display_from_index(int index);
+
+    DisplayMode wrap_display_mode(SDL_DisplayMode mode);
+
+    SDL_DisplayMode unwrap_display_mode(const DisplayMode &mode);
 }

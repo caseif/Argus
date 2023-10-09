@@ -29,8 +29,7 @@
 #include <string>
 #include <vector>
 
-// forward declarations
-struct GLFWwindow;
+#include "SDL2/SDL_video.h"
 
 namespace argus {
     struct pimpl_Window {
@@ -38,7 +37,7 @@ namespace argus {
          * \brief A handle to the lower-level window represented by this
          *        object.
          */
-        GLFWwindow *handle;
+        SDL_Window *handle;
 
         /**
          * \brief The unique identifier of the window.
