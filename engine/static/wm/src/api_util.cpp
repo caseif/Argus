@@ -20,8 +20,7 @@
 #include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
-#include "SDL2/SDL_opengl.h"
-#include "SDL2/SDL_vulkan.h"
+#include "SDL_vulkan.h"
 
 namespace argus {
     GLContext gl_create_context(Window &window) {

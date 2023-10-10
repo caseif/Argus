@@ -35,9 +35,12 @@
 
 #pragma GCC diagnostic push
 
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_events.h"
-#include "SDL2/SDL_video.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#include "SDL.h"
+#include "SDL_events.h"
+#pragma GCC diagnostic pop
+#include "SDL_video.h"
 
 #include <iterator>
 #include <map>

@@ -36,8 +36,12 @@
 #include "internal/wm/pimpl/display.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
-#include "SDL2/SDL_events.h"
-#include "SDL2/SDL_video.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#include "SDL_events.h"
+#pragma GCC diagnostic pop
+#include "SDL_hints.h"
+#include "SDL_video.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -47,7 +51,6 @@
 #include <string>
 
 #include <climits>
-#include <SDL2/SDL_hints.h>
 
 #define DEF_WINDOW_DIM 300
 

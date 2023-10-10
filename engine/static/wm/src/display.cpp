@@ -25,8 +25,11 @@
 #include "internal/wm/pimpl/display.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
-#include "SDL2/SDL_events.h"
-#include "SDL2/SDL_video.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#include "SDL_events.h"
+#pragma GCC diagnostic pop
+#include "SDL_video.h"
 
 #include <string>
 #include <vector>
