@@ -39,7 +39,7 @@ namespace argus {
                 g_core_initialized = true;
                 break;
             case LifecycleStage::PostDeinit:
-                kill_game_thread();
+                kill_render_thread();
 
                 break;
             default:

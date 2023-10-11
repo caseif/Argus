@@ -24,5 +24,4 @@
 
 #include "argus/lowlevel/threading/future.hpp"
 #include "argus/lowlevel/threading/semaphore.hpp"
-#include "argus/lowlevel/threading/thread.hpp"
 #include "argus/lowlevel/threading/thread_pool.hpp"

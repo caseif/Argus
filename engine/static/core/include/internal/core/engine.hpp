@@ -21,5 +21,5 @@
 namespace argus {
     extern LifecycleStage g_cur_lifecycle_stage;
 
-    void kill_game_thread(void);
+    void kill_render_thread(void);
 }

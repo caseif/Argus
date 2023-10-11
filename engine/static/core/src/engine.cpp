@@ -65,7 +65,7 @@ namespace argus {
     static std::mutex g_one_off_callbacks_mutex;
     static std::vector<NullaryCallback> g_one_off_callbacks;
 
-    static Thread *g_render_thread;
+    static std::thread g_render_thread;
     static std::thread::id g_update_thread_id;
 
     static bool g_engine_stopping = false;
@@ -80,9 +80,8 @@ namespace argus {
         stop_engine();
     }
 
-    void kill_game_thread(void) {
-        g_render_thread->detach();
-        g_render_thread->destroy();
+    void kill_render_thread(void) {
+        g_render_thread.detach();
     }
 
     Index register_update_callback(const DeltaCallback &callback, Ordering ordering) {
@@ -309,7 +308,7 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_render_thread = &Thread::create(_render_loop, nullptr);
+        g_render_thread = std::thread(_render_loop, nullptr);
 
         Logger::default_logger().info("Engine started! Passing control to game loop.");
 

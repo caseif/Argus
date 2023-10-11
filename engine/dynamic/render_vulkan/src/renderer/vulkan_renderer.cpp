@@ -607,7 +607,7 @@ namespace argus {
         state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
 
-        state.submit_thread = &Thread::create(_submit_queues_loop, &state);
+        state.submit_thread = std::thread(_submit_queues_loop, &state);
     }
 
     VulkanRenderer::~VulkanRenderer(void) {

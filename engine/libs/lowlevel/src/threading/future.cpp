@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/threading/future.hpp"
-#include "argus/lowlevel/threading/thread.hpp"
 
 #include <exception>
 #include <functional>
@@ -30,9 +29,8 @@ namespace argus {
             const std::function<void(void)> &callback) {
         auto promise_ptr = std::make_shared<std::promise<void>>();
         std::future<void> future = promise_ptr->get_future();
-        Thread *thread = nullptr;
-        thread = &Thread::create(
-                [thread, function, callback, promise_ptr](const auto user_data) mutable -> void * {
+        std::thread thread(
+                [function, callback, promise_ptr](const auto user_data) mutable -> void * {
                     UNUSED(user_data);
                     try {
                         function();
@@ -45,11 +43,10 @@ namespace argus {
                         promise_ptr->set_exception_at_thread_exit(std::current_exception());
                     }
 
-                    thread->destroy();
-
                     return nullptr;
                 },
-                nullptr);
+                nullptr
+        );
 
         return future;
     }

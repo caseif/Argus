@@ -94,7 +94,7 @@ namespace argus {
 
         VkSemaphore composite_semaphore;
 
-        Thread *submit_thread;
+        std::thread submit_thread;
         std::deque<CommandBufferSubmitParams> submit_bufs;
         std::mutex submit_mutex;
         Semaphore queued_submit_sem;
