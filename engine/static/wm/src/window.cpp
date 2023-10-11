@@ -72,6 +72,8 @@ namespace argus {
     static CanvasCtor g_canvas_ctor = nullptr;
     static CanvasDtor g_canvas_dtor = nullptr;
 
+    static std::vector<Window *> g_windows;
+
     static inline void _dispatch_window_event(Window &window, WindowEventType type) {
         dispatch_event<WindowEvent>(type, window);
     }
@@ -125,6 +127,25 @@ namespace argus {
         glfwSetWindowContentScaleCallback(handle, _on_window_content_scale_change);
     }
 
+    static void _reap_window(Window &window) {
+        unregister_render_callback(window.pimpl->callback_id);
+        run_on_game_thread([&window] { delete &window; });
+    }
+
+    void reap_windows(void) {
+        auto it = g_windows.begin();
+
+        while (it != g_windows.end()) {
+            Window &win = **it;
+            if (win.pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
+                _reap_window(win);
+                it = g_windows.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     Window *get_window(const std::string &id) {
         auto window_it = g_window_id_map.find(id);
         return window_it != g_window_id_map.end() ? g_window_id_map.find(id)->second : nullptr;
@@ -141,6 +162,12 @@ namespace argus {
 
         g_canvas_ctor = ctor;
         g_canvas_dtor = dtor;
+    }
+
+    Window &Window::create(const std::string &id, Window *parent) {
+        auto *window = new Window(id, parent);
+        g_windows.push_back(window);
+        return *window;
     }
 
     Window::Window(const std::string &id, Window *parent) :
@@ -183,6 +210,8 @@ namespace argus {
             pimpl->close_callback(*this);
         }
 
+        glfwDestroyWindow(pimpl->handle);
+
         for (Window *child : pimpl->children) {
             child->pimpl->parent = nullptr;
             _dispatch_window_event(*child, WindowEventType::RequestClose);
@@ -195,9 +224,9 @@ namespace argus {
         g_window_id_map.erase(pimpl->id);
         g_window_handle_map.erase(pimpl->handle);
 
-        delete pimpl;
-
         g_window_count--;
+
+        delete pimpl;
     }
 
     const std::string &Window::get_id(void) const {
@@ -286,12 +315,7 @@ namespace argus {
             return;
         }
 
-        if (pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
-            unregister_render_callback(pimpl->callback_id);
-            glfwDestroyWindow(pimpl->handle);
-            run_on_game_thread([this] { delete this; });
-            return;
-        } else if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
+        if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
             pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
             return; // we forego doing anything to the Window on its last update cycle
         }

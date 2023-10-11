@@ -27,4 +27,6 @@ namespace argus {
     void set_window_construct_callback(WindowCallback callback);
 
     void window_window_event_callback(const WindowEvent &event, void *user_data);
+
+    void reap_windows(void);
 }

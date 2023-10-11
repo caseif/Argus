@@ -99,6 +99,28 @@ namespace argus {
      * \sa Canvas
      */
     class Window : AutoCleanupable {
+      private:
+
+        /**
+         * \brief Creates a new Window.
+         *
+         * \param id The unique identifier of the Window.
+         * \param parent The Window which is parent to the new one, or
+         *        `nullptr` if the window does not have a parent..
+         *
+         * \throw std::invalid_argument If the identifier is invalid or is
+         *        already in use.
+         *
+         * \warning Not all platforms may support multiple
+         *          \link Window Windows \endlink.
+         *
+         * \remark A Canvas will be implicitly created during construction
+         *         of a Window.
+         */
+        Window(const std::string &id, Window *parent = nullptr);
+
+        Window(Window &&);
+
       public:
         pimpl_Window *pimpl;
 
@@ -136,14 +158,12 @@ namespace argus {
          * \warning Not all platforms may support multiple
          *          \link Window Windows \endlink.
          *
-         * \remark A Canvas will be implicitly created upon construction
+         * \remark A Canvas will be implicitly created during construction
          *         of a Window.
          */
-        Window(const std::string &id, Window *parent = nullptr);
+        static Window &create(const std::string &id, Window *parent = nullptr);
 
         Window(const Window &) = delete;
-
-        Window(Window &&);
 
         ~Window(void) override;
 

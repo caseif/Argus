@@ -72,9 +72,14 @@ namespace argus {
         return;
     }
 
-    static void _poll_events(const TimeDelta delta) {
-        UNUSED(delta);
+    static void _poll_events() {
         glfwPollEvents();
+    }
+
+    static void _do_window_loop(TimeDelta delta) {
+        UNUSED(delta);
+        reap_windows();
+        _poll_events();
     }
 
     static void _on_glfw_error(const int code, const char *desc) {
@@ -88,7 +93,7 @@ namespace argus {
             return;
         }
 
-        auto &window = *new Window(params->id.value());
+        auto &window = Window::create(params->id.value());
 
         if (params->title.has_value()) {
             window.set_title(*params->title);
@@ -154,7 +159,7 @@ namespace argus {
                 Logger::default_logger().debug("Initialized GLFW");
 
                 register_update_callback(_check_window_count);
-                register_render_callback(_poll_events);
+                register_render_callback(_do_window_loop);
                 register_event_handler<WindowEvent>(window_window_event_callback, TargetThread::Render);
 
                 init_display();
