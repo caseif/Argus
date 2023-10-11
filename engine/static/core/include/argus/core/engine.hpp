@@ -137,4 +137,6 @@ namespace argus {
      * \param callback The callback to invoke.
      */
     void run_on_game_thread(NullaryCallback callback);
+
+    bool is_current_thread_update_thread(void);
 }

@@ -46,6 +46,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -64,10 +65,11 @@ namespace argus {
     static std::mutex g_one_off_callbacks_mutex;
     static std::vector<NullaryCallback> g_one_off_callbacks;
 
-    static Thread *g_game_thread;
+    static Thread *g_render_thread;
+    static std::thread::id g_update_thread_id;
 
     static bool g_engine_stopping = false;
-    static bool g_game_thread_acknowledged_halt = false;
+    static bool g_render_thread_acknowledged_halt = false;
     static bool g_force_shutdown_on_next_interrupt = false;
     static std::mutex g_engine_stop_mutex;
     static std::condition_variable g_engine_stop_notifier;
@@ -79,8 +81,8 @@ namespace argus {
     }
 
     void kill_game_thread(void) {
-        g_game_thread->detach();
-        g_game_thread->destroy();
+        g_render_thread->detach();
+        g_render_thread->destroy();
     }
 
     Index register_update_callback(const DeltaCallback &callback, Ordering ordering) {
@@ -150,7 +152,7 @@ namespace argus {
 
     static void _deinit_engine() {
         Logger::default_logger().debug("Engine halt request is acknowledged game thread");
-        g_game_thread_acknowledged_halt = true;
+        g_render_thread_acknowledged_halt = true;
 
         // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
         if (!g_render_thread_halted) {
@@ -275,6 +277,8 @@ namespace argus {
 
         signal(SIGINT, _interrupt_handler);
 
+        g_update_thread_id = std::this_thread::get_id();
+
         set_message_dispatcher(dispatch_message);
 
         Logger::default_logger().debug("Enabling requested modules");
@@ -305,7 +309,7 @@ namespace argus {
 
         register_update_callback(game_loop);
 
-        g_game_thread = &Thread::create(_render_loop, nullptr);
+        g_render_thread = &Thread::create(_render_loop, nullptr);
 
         Logger::default_logger().info("Engine started! Passing control to game loop.");
 
@@ -321,7 +325,7 @@ namespace argus {
         if (g_force_shutdown_on_next_interrupt) {
             Logger::default_logger().info("Forcibly terminating process");
             std::exit(0);
-        } else if (g_game_thread_acknowledged_halt) {
+        } else if (g_render_thread_acknowledged_halt) {
             Logger::default_logger().info("Forcibly proceeding with engine bring-down");
             g_force_shutdown_on_next_interrupt = true;
             g_engine_stop_notifier.notify_one();
@@ -338,5 +342,9 @@ namespace argus {
 
     LifecycleStage get_current_lifecycle_stage(void) {
         return g_cur_lifecycle_stage;
+    }
+
+    bool is_current_thread_update_thread(void) {
+        return std::this_thread::get_id() == g_update_thread_id;
     }
 }
