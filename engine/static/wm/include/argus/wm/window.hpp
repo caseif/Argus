@@ -471,5 +471,15 @@ namespace argus {
          * \note This function should be invoked only once.
          */
         void commit(void);
+
+        /**
+         * \brief Sends a close request to the window.
+         *
+         * This will inititate the process of closing the window, although this
+         * process will not occur immediately.
+         *
+         * This function is thread-safe.
+         */
+        void request_close(void);
     };
 }

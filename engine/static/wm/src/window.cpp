@@ -602,6 +602,10 @@ namespace argus {
         return;
     }
 
+    void Window::request_close(void) {
+        _dispatch_window_event(*this, WindowEventType::RequestClose);
+    }
+
     void *get_window_handle(const Window &window) {
         return static_cast<void *>(window.pimpl->handle);
     }
