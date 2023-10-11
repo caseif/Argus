@@ -20,6 +20,8 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/misc.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/core/message.hpp"
 
 #include "argus/scripting/types.hpp"
@@ -82,6 +84,10 @@ namespace argus {
     }
 
     static void _on_object_destroyed(const ObjectDestroyedMessage &message) {
+        if (!is_current_thread_update_thread()) {
+            return;
+        }
+
         invalidate_sv_handle(message.m_ptr);
     }
 
