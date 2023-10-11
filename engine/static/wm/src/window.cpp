@@ -265,6 +265,7 @@ namespace argus {
     }
 
     void Window::update(const TimeDelta delta) {
+        printf("updating\n");
         // The initial part of a Window's lifecycle looks something like this:
         //   - Window gets constructed.
         //   - On next render iteration, Window has initial update and sets its
@@ -315,9 +316,13 @@ namespace argus {
             return;
         }
 
-        if (pimpl->state & WINDOW_STATE_CLOSE_REQUESTED) {
-            pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
-            return; // we forego doing anything to the Window on its last update cycle
+        printf("made it here\n");
+        if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
+            // don't acknowledge close until all references from events are released
+            if (pimpl->refcount.load() == 0) {
+                pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
+            }
+            return; // we forego doing anything else after a close request has been sent
         }
 
         auto title = pimpl->properties.title.read();

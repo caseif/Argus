@@ -88,22 +88,6 @@ namespace argus {
         const TimeDelta delta;
 
         /**
-         * \brief Constructs a new WindowEvent.
-         *
-         * \param subtype The specific \link WindowEventType type \endlink of
-         *        WindowEvent.
-         * \param window The Window associated with the event.
-         */
-        WindowEvent(WindowEventType subtype, Window &window) :
-                ArgusEvent{std::type_index(typeid(WindowEvent))},
-                subtype(subtype),
-                window(window),
-                resolution(),
-                position(),
-                delta() {
-        }
-
-        /**
          * \brief Constructs a new WindowEvent with the given data.
          *
          * \param subtype The specific \link WindowEventType type \endlink of
@@ -113,20 +97,22 @@ namespace argus {
          *        the event.
          */
         WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
-                TimeDelta delta) :
-                ArgusEvent{std::type_index(typeid(WindowEvent))},
-                subtype(subtype),
-                window(window),
-                resolution(resolution),
-                position(position),
-                delta(delta) {
-        }
+                TimeDelta delta);
 
-        WindowEvent(const WindowEvent &rhs) = default;
+        /**
+         * \brief Constructs a new WindowEvent.
+         *
+         * \param subtype The specific \link WindowEventType type \endlink of
+         *        WindowEvent.
+         * \param window The Window associated with the event.
+         */
+        WindowEvent(WindowEventType subtype, Window &window);
+
+        WindowEvent(const WindowEvent &rhs);
 
         WindowEvent(WindowEvent &&rhs) = delete;
 
-        ~WindowEvent(void) override = default;
+        ~WindowEvent(void) override;
 
         WindowEvent &operator =(const WindowEvent &rhs) = delete;
 

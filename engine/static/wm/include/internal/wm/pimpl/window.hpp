@@ -99,6 +99,8 @@ namespace argus {
 
         uint16_t cur_refresh_rate;
 
+        std::atomic_int refcount;
+
         pimpl_Window(const std::string &id, Window *parent) :
                 id(id),
                 parent(parent) {
