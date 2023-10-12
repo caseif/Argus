@@ -18,30 +18,29 @@
 
 #pragma once
 
-#include "internal/scripting_lua/context_data.hpp"
+#include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
-#include "internal/scripting_lua/managed_state.hpp"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-extern "C" {
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
-#pragma GCC diagnostic pop
+struct lua_State;
 
 namespace argus {
-    // forward declarations
-    class LuaLanguagePlugin;
+    struct LuaContextData;
 
-    lua_State *create_lua_state(LuaLanguagePlugin &plugin, LuaContextData &context_data);
+    class ManagedLuaState {
+      private:
+        lua_State *m_handle;
 
-    void destroy_lua_state(lua_State *state);
+      public:
+        ManagedLuaState(LuaLanguagePlugin &plugin, LuaContextData &context_data);
 
-    LuaLanguagePlugin *get_plugin_from_state(lua_State *state);
+        ManagedLuaState(const ManagedLuaState &) = delete;
 
-    LuaContextData *get_context_data_from_state(lua_State *state);
+        ManagedLuaState(ManagedLuaState &&rhs) noexcept;
 
-    const std::shared_ptr<ManagedLuaState> &to_managed_state(lua_State *state);
+        ~ManagedLuaState(void);
+
+        operator lua_State *(void) const;
+
+        [[nodiscard]] lua_State *get_handle(void) const;
+    };
 }

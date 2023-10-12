@@ -29,8 +29,7 @@ namespace argus {
             resolution(resolution),
             position(position),
             delta(delta) {
-        auto rc = window.pimpl->refcount.fetch_add(1);
-        printf("constructed event %p (%d)\n", reinterpret_cast<void *>(this), rc);
+        window.pimpl->refcount.fetch_add(1);
     }
 
     WindowEvent::WindowEvent(WindowEventType subtype, Window &window) :
@@ -39,11 +38,9 @@ namespace argus {
 
     WindowEvent::WindowEvent(const WindowEvent &rhs) :
         WindowEvent(rhs.subtype, rhs.window, rhs.resolution, rhs.position, rhs.delta) {
-        printf("copied event %p -> %p\n", reinterpret_cast<const void *>(&rhs), reinterpret_cast<void *>(this));
     }
 
     WindowEvent::~WindowEvent(void) {
-        auto rc = window.pimpl->refcount.fetch_sub(1);
-        printf("destroyed event %p (%d)\n", reinterpret_cast<void *>(this), rc);
+        window.pimpl->refcount.fetch_sub(1);
     }
 }

@@ -31,7 +31,7 @@
 
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"
-#include "internal/scripting_lua/lua_context_data.hpp"
+#include "internal/scripting_lua/context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
@@ -47,23 +47,6 @@ extern "C" {
 #include <cstdio>
 
 namespace argus {
-    static constexpr const char *k_lang_name = "lua";
-
-    static constexpr const char *k_lua_index = "__index";
-    static constexpr const char *k_lua_newindex = "__newindex";
-    static constexpr const char *k_lua_name = "__name";
-    static constexpr const char *k_lua_require = "require";
-    static constexpr const char *k_lua_require_def = "default_require";
-
-    static constexpr const char *k_mt_vector = "_internal_vector";
-    static constexpr const char *k_mt_vector_ref = "_internal_vectorref";
-
-    static constexpr const char *k_const_prefix = "const ";
-
-    static constexpr const char *k_engine_namespace = "argus";
-
-    static constexpr const char *k_empty_repl = "(empty)";
-
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
@@ -119,34 +102,41 @@ namespace argus {
             const std::optional<std::string> &fn_name = std::nullopt);
 
     struct LuaCallback {
-        lua_State *state;
-        int ref_key;
+        std::weak_ptr<ManagedLuaState> m_state;
+        int m_ref_key;
 
-        LuaCallback(lua_State *state, int index) : state(state) {
+        LuaCallback(const std::shared_ptr<ManagedLuaState> &state, int index) : m_state(state) {
             // duplicate the top stack value in order to leave the stack as we
             // found it
-            lua_pushvalue(state, index);
-            ref_key = luaL_ref(state, LUA_REGISTRYINDEX);
+            lua_pushvalue(*state, index);
+            m_ref_key = luaL_ref(*state, LUA_REGISTRYINDEX);
         }
 
         LuaCallback(const LuaCallback &rhs) = delete;
 
         ~LuaCallback() {
-            if (state == nullptr) {
+            auto state = m_state.lock();
+
+            if (!state) {
+                // Lua state was already destroyed, no need to clean up
                 return;
             }
 
-            luaL_unref(state, LUA_REGISTRYINDEX, ref_key);
+            luaL_unref(*state, LUA_REGISTRYINDEX, m_ref_key);
         }
 
         [[nodiscard]] ObjectWrapper call(const std::vector<ObjectWrapper> &params) const {
-            StackGuard stack_guard(state);
+            auto state = m_state.lock();
 
-            lua_rawgeti(state, LUA_REGISTRYINDEX, ref_key);
+            if (!state) {
+                throw std::logic_error("Attempt to invoke Lua callback after Lua state was destroyed");
+            }
 
-            auto retval = _invoke_lua_function(state, params);
+            StackGuard stack_guard(*state);
 
-            return retval;
+            lua_rawgeti(*state, LUA_REGISTRYINDEX, m_ref_key);
+
+            return _invoke_lua_function(*state, params);
         }
     };
 
@@ -407,8 +397,10 @@ namespace argus {
         return 0;
     }
 
-    static int _wrap_param(lua_State *state, const std::string &qual_fn_name,
+    static int _wrap_param(const std::shared_ptr<ManagedLuaState> &managed_state, const std::string &qual_fn_name,
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
+        lua_State *state = *managed_state;
+
         try {
             switch (param_def.type) {
                 case Integer:
@@ -513,7 +505,7 @@ namespace argus {
                                                      + luaL_typename(state, param_index) + ")");
                     }*/
 
-                    auto handle = std::make_shared<LuaCallback>(state, param_index);
+                    auto handle = std::make_shared<LuaCallback>(managed_state, param_index);
 
                     ProxiedFunction fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
                         return handle->call(params);
@@ -680,7 +672,7 @@ namespace argus {
         }
 
         ObjectWrapper wrapper;
-        _wrap_param(state, "__newindex", -1, vec->element_type(), &wrapper);
+        _wrap_param(to_managed_state(state), "__newindex", -1, vec->element_type(), &wrapper);
 
         vec->set(size_t(index) - 1, wrapper.get_ptr());
 
@@ -974,7 +966,7 @@ namespace argus {
                 auto param_index = i + 1 + first_param_index;
                 auto param_def = fn.params.at(size_t(i));
                 ObjectWrapper wrapper{};
-                auto wrap_res = _wrap_param(state, qual_fn_name, param_index, param_def, &wrapper);
+                auto wrap_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def, &wrapper);
                 if (wrap_res == 0) {
                     args.push_back(std::move(wrapper));
                 } else {
@@ -1116,7 +1108,7 @@ namespace argus {
         }
 
         ObjectWrapper val_wrapper{};
-        _wrap_param(state, qual_field_name, -1, field.m_type, &val_wrapper);
+        _wrap_param(to_managed_state(state), qual_field_name, -1, field.m_type, &val_wrapper);
 
         assert(field.m_assign_proxy.has_value());
         field.m_assign_proxy.value()(inst_wrapper, val_wrapper);
@@ -1325,96 +1317,95 @@ namespace argus {
         return 1;
     }
 
-    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_lang_name, {RESOURCE_TYPE_LUA}) {
+    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_plugin_lang_name, { k_resource_type_lua }) {
     }
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;
 
     void *LuaLanguagePlugin::create_context_data() {
-        auto *data = new LuaContextData();
-        data->state = create_lua_state(*this);
+        // Lua state is implicitly created by LuaContextData's
+        // ManagedLuaState member
+        auto *data = new LuaContextData(*this);
 
         // override require behavior
-        lua_getglobal(data->state, k_lua_require);
-        lua_setglobal(data->state, k_lua_require_def);
+        lua_getglobal(*data->m_state, k_lua_require);
+        lua_setglobal(*data->m_state, k_lua_require_def);
 
-        lua_pushcfunction(data->state, _require_override);
-        lua_setglobal(data->state, k_lua_require);
+        lua_pushcfunction(*data->m_state, _require_override);
+        lua_setglobal(*data->m_state, k_lua_require);
 
         // create namespace table
-        luaL_newmetatable(data->state, k_engine_namespace);
-        lua_setglobal(data->state, k_engine_namespace);
+        luaL_newmetatable(*data->m_state, k_engine_namespace);
+        lua_setglobal(*data->m_state, k_engine_namespace);
 
         return data;
     }
 
     void LuaLanguagePlugin::destroy_context_data(void *data) {
         auto *lua_data = reinterpret_cast<LuaContextData *>(data);
-
-        destroy_lua_state(lua_data->state);
-
+        // Lua state is implicitly destroyed when LuaContextData's
+        // ManagedLuaState member is destructed
         delete lua_data;
     }
 
     void LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &resource) {
-        assert(resource.prototype.media_type == RESOURCE_TYPE_LUA);
+        assert(resource.prototype.media_type == k_resource_type_lua);
 
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
-
-        auto *state = plugin_data->state;
+        auto &state = plugin_data->m_state;
 
         auto &loaded_script = resource.get<LoadedScript>();
 
-        if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
+        if (luaL_loadstring(*state, loaded_script.source.c_str()) != LUA_OK) {
             throw ScriptLoadException(resource.uid, "luaL_loadstring failed");
         }
 
-        auto err = lua_pcall(state, 0, 0, 0);
+        auto err = lua_pcall(*state, 0, 0, 0);
         if (err != LUA_OK) {
             //TODO: print detailed trace info from VM
-            throw ScriptLoadException(resource.uid, lua_tostring(state, -1));
+            throw ScriptLoadException(resource.uid, lua_tostring(*state, -1));
         }
     }
 
     void LuaLanguagePlugin::bind_type(ScriptContext &context, const BoundTypeDef &type) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        _bind_type(state, type);
+        _bind_type(*state, type);
     }
 
     void LuaLanguagePlugin::bind_type_function(ScriptContext &context, const BoundTypeDef &type,
             const BoundFunctionDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        _bind_type_function(state, type.name, fn);
+        _bind_type_function(*state, type.name, fn);
     }
 
     void LuaLanguagePlugin::bind_type_field(ScriptContext &context, const BoundTypeDef &type, const BoundFieldDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        _bind_type_field(state, type.name, fn);
+        _bind_type_field(*state, type.name, fn);
     }
 
     void LuaLanguagePlugin::bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        _bind_global_fn(state, fn);
+        _bind_global_fn(*state, fn);
     }
 
     void LuaLanguagePlugin::bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) {
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        _bind_enum(state, enum_def);
+        _bind_enum(*state, enum_def);
     }
 
     ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
@@ -1424,13 +1415,13 @@ namespace argus {
         }
 
         auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto *state = plugin_state->state;
-        StackGuard stack_guard(state);
+        auto &state = plugin_state->m_state;
+        StackGuard stack_guard(*state);
 
-        lua_getglobal(state, name.c_str());
+        lua_getglobal(*state, name.c_str());
 
         try {
-            auto retval = _invoke_lua_function(state, params, name);
+            auto retval = _invoke_lua_function(*state, params, name);
 
             return retval;
         } catch (const InvocationException &ex) {

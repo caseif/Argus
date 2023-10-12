@@ -19,7 +19,25 @@
 #pragma once
 
 namespace argus {
-    constexpr const char *RESOURCE_TYPE_LUA = "text/x-lua";
+    constexpr const char *k_resource_type_lua = "text/x-lua";
 
-    constexpr const char *REG_KEY_PLUGIN_PTR = "argus_plugin";
+    constexpr const char *k_reg_key_plugin_ptr = "argus_plugin";
+    constexpr const char *k_reg_key_context_data_ptr = "argus_context_data";
+
+    constexpr const char *k_plugin_lang_name = "lua";
+
+    constexpr const char *k_lua_index = "__index";
+    constexpr const char *k_lua_newindex = "__newindex";
+    constexpr const char *k_lua_name = "__name";
+    constexpr const char *k_lua_require = "require";
+    constexpr const char *k_lua_require_def = "default_require";
+
+    constexpr const char *k_mt_vector = "_internal_vector";
+    constexpr const char *k_mt_vector_ref = "_internal_vectorref";
+
+    constexpr const char *k_const_prefix = "const ";
+
+    constexpr const char *k_engine_namespace = "argus";
+
+    constexpr const char *k_empty_repl = "(empty)";
 }

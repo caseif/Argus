@@ -16,32 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include "internal/scripting_lua/context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
-#include "internal/scripting_lua/managed_state.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-extern "C" {
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
-#pragma GCC diagnostic pop
 
 namespace argus {
-    // forward declarations
-    class LuaLanguagePlugin;
-
-    lua_State *create_lua_state(LuaLanguagePlugin &plugin, LuaContextData &context_data);
-
-    void destroy_lua_state(lua_State *state);
-
-    LuaLanguagePlugin *get_plugin_from_state(lua_State *state);
-
-    LuaContextData *get_context_data_from_state(lua_State *state);
-
-    const std::shared_ptr<ManagedLuaState> &to_managed_state(lua_State *state);
+    LuaContextData::LuaContextData(LuaLanguagePlugin &plugin) :
+        m_state(std::make_shared<ManagedLuaState>(plugin, *this)) {
+    }
 }

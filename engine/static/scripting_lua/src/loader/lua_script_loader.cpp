@@ -25,7 +25,7 @@
 #include "internal/scripting_lua/loader/lua_script_loader.hpp"
 
 namespace argus {
-    LuaScriptLoader::LuaScriptLoader(void) : ResourceLoader({ RESOURCE_TYPE_LUA }) {
+    LuaScriptLoader::LuaScriptLoader(void) : ResourceLoader({ k_resource_type_lua }) {
     }
 
     LuaScriptLoader::~LuaScriptLoader(void) = default;

@@ -265,7 +265,6 @@ namespace argus {
     }
 
     void Window::update(const TimeDelta delta) {
-        printf("updating\n");
         // The initial part of a Window's lifecycle looks something like this:
         //   - Window gets constructed.
         //   - On next render iteration, Window has initial update and sets its
@@ -316,7 +315,6 @@ namespace argus {
             return;
         }
 
-        printf("made it here\n");
         if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
             // don't acknowledge close until all references from events are released
             if (pimpl->refcount.load() == 0) {

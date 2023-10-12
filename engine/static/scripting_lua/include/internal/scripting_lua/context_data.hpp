@@ -18,12 +18,16 @@
 
 #pragma once
 
+#include "internal/scripting_lua/managed_state.hpp"
+
 extern "C" {
 #include "lua.h"
 }
 
 namespace argus {
     struct LuaContextData {
-        lua_State *state;
+        std::shared_ptr<ManagedLuaState> m_state;
+
+        LuaContextData(LuaLanguagePlugin &plugin);
     };
 }
