@@ -167,6 +167,9 @@ namespace argus {
         Logger::default_logger().debug(
                 "Game thread observed render thread is halted, proceeding with engine bring-down");
 
+        // unregister message dispatcher to avoid static deinitialization order fiasco
+        set_message_dispatcher(nullptr);
+
         Logger::default_logger().debug("Deinitializing engine modules");
 
         deinit_modules();
@@ -323,7 +326,7 @@ namespace argus {
     void stop_engine(void) {
         if (g_force_shutdown_on_next_interrupt) {
             Logger::default_logger().info("Forcibly terminating process");
-            std::exit(0);
+            std::exit(1);
         } else if (g_render_thread_acknowledged_halt) {
             Logger::default_logger().info("Forcibly proceeding with engine bring-down");
             g_force_shutdown_on_next_interrupt = true;
