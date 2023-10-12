@@ -317,7 +317,7 @@ namespace argus {
 
         if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
             // don't acknowledge close until all references from events are released
-            if (pimpl->refcount.load() == 0) {
+            if (pimpl->refcount.load() <= 0) {
                 pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
             }
             return; // we forego doing anything else after a close request has been sent
