@@ -24,6 +24,7 @@ namespace argus {
     typedef void *GLContext;
 
     enum class GLContextFlags {
+        None              = 0x0,
         ProfileCore       = 0x1,
         ProfileES         = 0x2,
         ProfileCompat     = 0x4,

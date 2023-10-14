@@ -24,12 +24,7 @@
 
 #include "aglet/aglet.h"
 
-// forward declarations
-struct GLFWwindow;
-
 namespace argus {
-    void activate_gl_context(GLFWwindow *window);
-
     void set_attrib_pointer(buffer_handle_t buffer_obj, GLuint vertex_len, GLuint attr_len, GLuint attr_index,
             GLuint *attr_offset);
 

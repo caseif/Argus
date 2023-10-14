@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "internal/render_opengl_legacy/renderer/gl_renderer.hpp"
-
+#include "argus/lowlevel/enum_ops.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
@@ -30,6 +29,7 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 
+#include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 
 #include "argus/render/common/canvas.hpp"
@@ -41,6 +41,7 @@
 #include "internal/render_opengl_legacy/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengl_legacy/renderer/bucket_proc.hpp"
 #include "internal/render_opengl_legacy/renderer/compositing.hpp"
+#include "internal/render_opengl_legacy/renderer/gl_renderer.hpp"
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl_legacy/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl_legacy/state/render_bucket.hpp"
@@ -49,13 +50,6 @@
 #include "internal/render_opengl_legacy/state/viewport_state.hpp"
 
 #include "aglet/aglet.h"
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 
 #include <algorithm>
 #include <set>
@@ -255,10 +249,18 @@ namespace argus {
     GLRenderer::GLRenderer(Window &window) :
             window(window),
             state(*this) {
-        activate_gl_context(get_window_handle<GLFWwindow>(window));
+        using namespace argus::enum_ops;
+
+        auto context_flags = GLContextFlags::ProfileCore;
+        #ifdef _ARGUS_DEBUG_MODE
+        context_flags |= GLContextFlags::DebugContext;
+        #endif
+
+        state.gl_context = gl_create_context(window, 2, 0, context_flags);
+        gl_make_context_current(window, state.gl_context);
 
         int rc;
-        if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress))) != 0) {
+        if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(gl_load_proc))) != 0) {
             Logger::default_logger().fatal("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
         }
 
@@ -270,7 +272,7 @@ namespace argus {
 
         Logger::default_logger().info("Obtained OpenGL context %s", gl_version_str);
 
-        glfwSwapInterval(GLFW_FALSE);
+        gl_swap_interval(0);
 
         resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
                 TargetThread::Render, &state);
@@ -280,16 +282,22 @@ namespace argus {
 
     GLRenderer::~GLRenderer(void) {
         unregister_event_handler(resource_event_handler);
+        gl_destroy_context(state.gl_context);
     }
 
     void GLRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
 
-        activate_gl_context(get_window_handle<GLFWwindow>(window));
+        gl_make_context_current(window, state.gl_context);
+
+        if (!state.are_viewports_initialized) {
+            _update_view_matrix(window, state, window.get_resolution().value);
+            state.are_viewports_initialized = true;
+        }
 
         auto vsync = window.is_vsync_enabled();
         if (vsync.dirty) {
-            glfwSwapInterval(vsync ? 1 : 0);
+            gl_swap_interval(vsync ? 1 : 0);
         }
 
         _rebuild_scene(window, state);
@@ -336,7 +344,7 @@ namespace argus {
             draw_framebuffer_to_screen(scene_state, viewport_state, resolution);
         }
 
-        glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));
+        gl_swap_buffers(canvas.get_window());
     }
 
     void GLRenderer::notify_window_resize(const Vector2u &resolution) {

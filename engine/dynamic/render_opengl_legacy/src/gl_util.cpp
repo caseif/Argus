@@ -24,30 +24,11 @@
 #include "internal/render_opengl_legacy/types.hpp"
 
 #include "aglet/aglet.h"
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 
 #include <climits>
 
 namespace argus {
     static Logger g_gl_logger("GL");
-
-    void activate_gl_context(GLFWwindow *window) {
-        if (glfwGetCurrentContext() == window) {
-            // already current
-            return;
-        }
-
-        glfwMakeContextCurrent(window);
-        if (glfwGetCurrentContext() != window) {
-            Logger::default_logger().fatal("Failed to make GL context current");
-        }
-    }
 
     void set_attrib_pointer(buffer_handle_t buffer_obj, GLuint vertex_len, GLuint attr_len, GLuint attr_index,
             GLuint *attr_offset) {
