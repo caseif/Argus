@@ -33,7 +33,7 @@ namespace argus {
         SDL_GL_UnloadLibrary();
     }
 
-    GLContext gl_create_context(Window &window, GLContextFlags flags) {
+    GLContext gl_create_context(Window &window, int version_major, int version_minor, GLContextFlags flags) {
         using namespace argus::enum_ops;
 
         auto profile_bits = flags & GLContextFlags::ProfileMask;
@@ -41,10 +41,11 @@ namespace argus {
             //throw std::invalid_argument("Only one GL profile flag may be set during context creation aa");
         }
 
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, version_major);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, version_minor);
+
         if ((profile_bits & GLContextFlags::ProfileCore) != 0) {
             // need to request at least GL 3.2 to get a core profile
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         } else if ((profile_bits & GLContextFlags::ProfileES) != 0) {
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);

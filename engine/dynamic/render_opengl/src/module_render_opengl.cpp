@@ -51,7 +51,7 @@ namespace argus {
         auto &window = Window::create("", nullptr);
         window.update({});
         GLContext gl_context;
-        if ((gl_context = gl_create_context(window, GLContextFlags::ProfileCore)) == nullptr) {
+        if ((gl_context = gl_create_context(window, 3, 3, GLContextFlags::ProfileCore)) == nullptr) {
             Logger::default_logger().warn("Failed to create GL context");
             return false;
         }

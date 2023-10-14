@@ -276,7 +276,7 @@ namespace argus {
         context_flags |= GLContextFlags::DebugContext;
         #endif
 
-        state.gl_context = gl_create_context(window, context_flags);
+        state.gl_context = gl_create_context(window, 3, 3, context_flags);
         gl_make_context_current(window, state.gl_context);
 
         int rc;

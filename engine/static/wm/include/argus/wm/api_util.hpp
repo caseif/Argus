@@ -47,7 +47,7 @@ namespace argus {
 
     void gl_unload_library(void);
 
-    GLContext gl_create_context(Window &window, GLContextFlags flags);
+    GLContext gl_create_context(Window &window, int version_major, int version_minor, GLContextFlags flags);
 
     void gl_destroy_context(GLContext context);
 
