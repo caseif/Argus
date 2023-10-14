@@ -28,6 +28,7 @@
 #include "argus/scripting/handles.hpp"
 #include "internal/scripting/handles.hpp"
 
+#include <thread>
 #include <typeindex>
 #include <unordered_map>
 #include <utility>

@@ -61,101 +61,22 @@ namespace argus {
         Metal               = 0x4,
         DirectX             = 0x8,
         WebGPU              = 0x10,
-        GLProfileCore       = 0x1000000,
-        GLProfileES         = 0x2000000,
-        GLProfileCompat     = 0x4000000,
-        GLDebugContext      = 0x8000000,
-        GLForwardCompat     = 0x10000000,
-        GLDoubleBuffered    = 0x20000000,
 
-        GraphicsApi = int(WindowCreationFlags::OpenGL)
+        GraphicsApiMask = int(WindowCreationFlags::OpenGL)
                 |     int(WindowCreationFlags::Vulkan)
                 |     int(WindowCreationFlags::Metal)
                 |     int(WindowCreationFlags::DirectX)
                 |     int(WindowCreationFlags::WebGPU),
-        GLProfile = int(WindowCreationFlags::GLProfileCore)
-                |   int(WindowCreationFlags::GLProfileES),
-        GL =      int(WindowCreationFlags::GLProfile)
-                | int(WindowCreationFlags::GLDebugContext)
-                | int(WindowCreationFlags::GLDoubleBuffered)
     };
 
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags operator&(WindowCreationFlags a, T b) {
-        return WindowCreationFlags(T(a) & b);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags operator|(WindowCreationFlags a, T b) {
-        return WindowCreationFlags(T(a) | b);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags operator^(WindowCreationFlags a, T b) {
-        return WindowCreationFlags(T(a) ^ b);
-    }
-
     inline WindowCreationFlags operator&(WindowCreationFlags a, WindowCreationFlags b) {
-        return WindowCreationFlags(a & std::underlying_type_t<WindowCreationFlags>(b));
+        using U = std::underlying_type_t<WindowCreationFlags>;
+        return WindowCreationFlags(U(a) & U(b));
     }
 
     inline WindowCreationFlags operator|(WindowCreationFlags a, WindowCreationFlags b) {
-        return WindowCreationFlags(a | std::underlying_type_t<WindowCreationFlags>(b));
-    }
-
-    inline WindowCreationFlags operator^(WindowCreationFlags a, WindowCreationFlags b) {
-        return WindowCreationFlags(a ^ std::underlying_type_t<WindowCreationFlags>(b));
-    }
-
-    inline WindowCreationFlags operator~(WindowCreationFlags a) {
-        return WindowCreationFlags(~std::underlying_type_t<WindowCreationFlags>(a));
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags &operator&=(WindowCreationFlags &lhs, T rhs) {
-        return (lhs = lhs & rhs);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags &operator|=(WindowCreationFlags &lhs, T rhs) {
-        return (lhs = lhs | rhs);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline WindowCreationFlags &operator^=(WindowCreationFlags &lhs, T rhs) {
-        return (lhs = lhs ^ rhs);
-    }
-
-    inline WindowCreationFlags &operator&=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
-        return (lhs = lhs & rhs);
-    }
-
-    inline WindowCreationFlags &operator|=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
-        return (lhs = lhs | rhs);
-    }
-
-    inline WindowCreationFlags &operator^=(WindowCreationFlags &lhs, WindowCreationFlags rhs) {
-        return (lhs = lhs ^ rhs);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline bool operator==(WindowCreationFlags lhs, T rhs) {
-        return T(lhs) == rhs;
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline bool operator==(T lhs, WindowCreationFlags rhs) {
-        return lhs == T(rhs);
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline bool operator!=(WindowCreationFlags lhs, T rhs) {
-        return T(lhs) != rhs;
-    }
-
-    template <typename T = std::underlying_type_t<WindowCreationFlags>>
-    inline bool operator!=(T lhs, WindowCreationFlags rhs) {
-        return lhs != T(rhs);
+        using U = std::underlying_type_t<WindowCreationFlags>;
+        return WindowCreationFlags(U(a) | U(b));
     }
 
     /**

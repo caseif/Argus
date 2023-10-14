@@ -61,20 +61,23 @@ namespace argus {
 
     static void _clean_up(void) {
         // use a copy since Window destructor modifies the global list
-        auto windows_copy = g_window_id_map;
+        /*auto windows_copy = g_window_id_map;
         // doing this in reverse ensures that child windows are destroyed before their parents
         for (auto it = windows_copy.rbegin();
              it != windows_copy.rend(); it++) {
             delete it->second;
-        }
+        }*/
 
         SDL_QuitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
+        SDL_Quit();
 
         return;
     }
 
     static void _poll_events(void) {
         SDL_PumpEvents();
+
+        peek_sdl_window_events();
     }
 
     static void _do_window_loop(TimeDelta delta) {
@@ -145,7 +148,8 @@ namespace argus {
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                if (SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO) != 0) {
+                SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11,wayland");
+                if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO) != 0) {
                     Logger::default_logger().fatal("SDL init failed (%s)", SDL_GetError());
                 }
                 Logger::default_logger().info("SDL initialized successfully");
@@ -159,8 +163,6 @@ namespace argus {
                 g_wm_module_initialized = true;
 
                 register_wm_bindings();
-
-                SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
 
                 break;
             }

@@ -95,7 +95,7 @@ namespace argus {
                 vp_v_off = 0;
                 break;
             default:
-                assert(false);
+                throw std::invalid_argument("Viewport mode is invalid");
         }
 
         TransformedViewport transformed{};
@@ -118,6 +118,7 @@ namespace argus {
         if (must_update) {
             viewport_state.ubo.write(viewport_state.view_matrix.data, sizeof(viewport_state.view_matrix.data),
                     SHADER_UNIFORM_VIEWPORT_VM_OFF);
+            viewport_state.view_matrix_dirty = false;
         }
     }
 

@@ -190,9 +190,9 @@ namespace argus {
             case LifecycleStage::Init: {
                 Logger::default_logger().debug("Activating render backend module");
 
-                _activate_backend();
-
                 Window::set_canvas_ctor_and_dtor(_construct_canvas, _destroy_canvas);
+
+                _activate_backend();
 
                 register_update_callback(&_swap_scene_buffers, Ordering::Last);
 

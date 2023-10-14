@@ -36,13 +36,6 @@
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
 
 #include "aglet/aglet.h"
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 
 #include <string>
 
@@ -53,20 +46,22 @@ namespace argus {
     static std::map<const Window *, GLRenderer *> g_renderer_map;
 
     static bool _test_opengl_support() {
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        // we _could_ set the minimum GL version as a window hint here, but the
-        // error message would then be totally useless to end users
-        auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
+        set_window_creation_flags(WindowCreationFlags::OpenGL);
 
-        if (window == nullptr) {
-            Logger::default_logger().warn("Failed to detect OpenGL capabilities (GLFW failed to open window)");
+        auto &window = Window::create("", nullptr);
+        window.update({});
+        GLContext gl_context;
+        if ((gl_context = gl_create_context(window, GLContextFlags::ProfileCore)) == nullptr) {
+            Logger::default_logger().warn("Failed to create GL context");
             return false;
         }
 
-        glfwMakeContextCurrent(window);
+        auto rc = gl_make_context_current(window, gl_context);
+        if (rc != 0) {
+            Logger::default_logger().warn("Failed to make GL context current (%d)", rc);
+        }
 
-        auto cap_rc = agletLoadCapabilities(reinterpret_cast<AgletLoadProc>(glfwGetProcAddress));
+        auto cap_rc = agletLoadCapabilities(reinterpret_cast<AgletLoadProc>(gl_load_proc));
 
         switch (cap_rc) {
             case AGLET_ERROR_NONE:
@@ -88,13 +83,19 @@ namespace argus {
                 return false;
         }
 
-        glfwDestroyWindow(window);
+        window.request_close();
 
         return true;
     }
 
     static bool _activate_opengl_backend() {
+        if (gl_load_library() != 0) {
+            Logger::default_logger().warn("Failed to load OpenGL library");
+            return false;
+        }
+
         if (!_test_opengl_support()) {
+            gl_unload_library();
             return false;
         }
 
@@ -162,14 +163,7 @@ namespace argus {
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
 
-                glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-                #ifdef _ARGUS_DEBUG_MODE
-                glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-                #endif
+                set_window_creation_flags(WindowCreationFlags::OpenGL);
 
                 break;
             }
@@ -180,6 +174,10 @@ namespace argus {
 
                 ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGL_ARP_SRC,
                         RESOURCES_RENDER_OPENGL_ARP_LEN);
+                break;
+            }
+            case LifecycleStage::PostDeinit: {
+                gl_unload_library();
                 break;
             }
             default: {

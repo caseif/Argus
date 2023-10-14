@@ -23,13 +23,37 @@
 namespace argus {
     typedef void *GLContext;
 
-    GLContext gl_create_context(Window &window);
+    enum class GLContextFlags {
+        ProfileCore       = 0x1,
+        ProfileES         = 0x2,
+        ProfileCompat     = 0x4,
+        DebugContext      = 0x100,
+        ProfileMask = int(GLContextFlags::ProfileCore)
+                |     int(GLContextFlags::ProfileES)
+                |     int(GLContextFlags::ProfileCompat),
+    };
+
+    inline GLContextFlags operator&(GLContextFlags a, GLContextFlags b) {
+        using U = std::underlying_type_t<GLContextFlags>;
+        return GLContextFlags(U(a) & U(b));
+    }
+
+    inline GLContextFlags operator|(GLContextFlags a, GLContextFlags b) {
+        using U = std::underlying_type_t<GLContextFlags>;
+        return GLContextFlags(U(a) | U(b));
+    }
+
+    int gl_load_library(void);
+
+    void gl_unload_library(void);
+
+    GLContext gl_create_context(Window &window, GLContextFlags flags);
 
     void gl_destroy_context(GLContext context);
 
     bool gl_is_context_current(GLContext context);
 
-    void gl_make_context_current(Window &window, GLContext context);
+    int gl_make_context_current(Window &window, GLContext context);
 
     void *gl_load_proc(const char *name);
 
@@ -39,7 +63,7 @@ namespace argus {
 
     bool vk_is_supported(void);
 
-    void vk_create_surface(Window &window, void *instance, void **out_surface);
+    int vk_create_surface(Window &window, void *instance, void **out_surface);
 
-    void vk_get_instance_extensions(Window &window, unsigned int *out_count, const char **out_names);
+    int vk_get_instance_extensions(Window &window, unsigned int *out_count, const char **out_names);
 }

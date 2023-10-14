@@ -95,7 +95,7 @@ namespace argus {
                 vp_v_off = 0;
                 break;
             default:
-                assert(false);
+                throw std::invalid_argument("Viewport mode is invalid");
         }
 
         TransformedViewport transformed{};

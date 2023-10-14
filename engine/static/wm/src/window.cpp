@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/debug.hpp"
+#include "argus/lowlevel/enum_ops.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
@@ -28,6 +29,7 @@
 #include "argus/core/event.hpp"
 #include "argus/core/engine.hpp"
 
+#include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/display.hpp"
@@ -84,45 +86,53 @@ namespace argus {
         dispatch_event<WindowEvent>(type, window);
     }
 
-    static inline void _dispatch_window_event(SDL_Window *handle, WindowEventType type) {
-        _dispatch_window_event(*g_window_handle_map.find(handle)->second, type);
-    }
-
-    static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
+    [[maybe_unused]] static inline void _dispatch_window_update_event(Window &window, TimeDelta delta) {
         dispatch_event<WindowEvent>(WindowEventType::Update, window, Vector2u(), Vector2i(), delta);
     }
 
     static int _on_window_event(void *udata, SDL_Event *event) {
         using namespace std::chrono_literals;
 
-        SDL_Window *handle = reinterpret_cast<SDL_Window *>(udata);
-        if (SDL_GetWindowID(handle) != event->window.windowID) {
+        UNUSED(udata);
+
+        SDL_Window *handle = SDL_GetWindowFromID(event->window.windowID);
+        /*if (SDL_GetWindowID(handle) != event->window.windowID) {
+            return 0;
+        }*/
+
+        auto it = g_window_handle_map.find(handle);
+        if (it == g_window_handle_map.end()) {
+            return 0;
+        }
+        auto &window = *it->second;
+
+        if (window.is_closed()) {
             return 0;
         }
 
-        switch (event->window.type) {
+        switch (event->window.event) {
             case SDL_WINDOWEVENT_MOVED:
-                dispatch_event<WindowEvent>(WindowEventType::Move, *g_window_handle_map.find(handle)->second,
+                dispatch_event<WindowEvent>(WindowEventType::Move, window,
                         Vector2u(), Vector2i { event->window.data1, event->window.data2 }, 0s);
                 break;
             case SDL_WINDOWEVENT_RESIZED:
-                dispatch_event<WindowEvent>(WindowEventType::Resize, *g_window_handle_map.find(handle)->second,
+                dispatch_event<WindowEvent>(WindowEventType::Resize, window,
                         Vector2u { uint32_t(event->window.data1), uint32_t(event->window.data2) }, Vector2i(), 0s);
                 break;
             case SDL_WINDOWEVENT_MINIMIZED:
-                _dispatch_window_event(handle, WindowEventType::Minimize);
+                _dispatch_window_event(window, WindowEventType::Minimize);
                 break;
             case SDL_WINDOWEVENT_RESTORED:
-                _dispatch_window_event(handle, WindowEventType::Restore);
+                _dispatch_window_event(window, WindowEventType::Restore);
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
-                _dispatch_window_event(handle, WindowEventType::Focus);
+                _dispatch_window_event(window, WindowEventType::Focus);
                 break;
             case SDL_WINDOWEVENT_FOCUS_LOST:
-                _dispatch_window_event(handle, WindowEventType::Unfocus);
+                _dispatch_window_event(window, WindowEventType::Unfocus);
                 break;
             case SDL_WINDOWEVENT_CLOSE:
-                _dispatch_window_event(handle, WindowEventType::RequestClose);
+                _dispatch_window_event(window, WindowEventType::RequestClose);
                 break;
                 //TODO: handle display scale changed event when we move to SDL 3
         }
@@ -131,7 +141,15 @@ namespace argus {
     }
 
     static void _register_callbacks(SDL_Window *handle) {
-        SDL_AddEventWatch(_on_window_event, handle);
+        UNUSED(handle);
+        //SDL_AddEventWatch(_on_window_event, handle);
+    }
+
+    void peek_sdl_window_events(void) {
+        SDL_Event event;
+        while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT) > 0) {
+            _on_window_event(nullptr, &event);
+        }
     }
 
     void set_window_creation_flags(WindowCreationFlags flags) {
@@ -149,6 +167,7 @@ namespace argus {
         while (it != g_windows.end()) {
             Window &win = **it;
             if (win.pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
+                //run_on_game_thread([&win] { _reap_window(win); });
                 _reap_window(win);
                 it = g_windows.erase(it);
             } else {
@@ -276,6 +295,8 @@ namespace argus {
     }
 
     void Window::update(const TimeDelta delta) {
+        using namespace argus::enum_ops;
+
         // The initial part of a Window's lifecycle looks something like this:
         //   - Window gets constructed.
         //   - On next render iteration, Window has initial update and sets its
@@ -294,6 +315,15 @@ namespace argus {
         // configured and the renderer is guaranteed to have seen the CREATE
         // event and initialized itself properly.
 
+        if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
+            // don't acknowledge close until all references from events are released
+            auto rc = pimpl->refcount.load();
+            if (rc <= 0) {
+                pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
+            }
+            return; // we forego doing anything else after a close request has been sent
+        }
+
         if (!(pimpl->state & WINDOW_STATE_CREATED)) {
             SDL_WindowFlags sdl_flags = SDL_WindowFlags(
                     SDL_WINDOW_RESIZABLE
@@ -301,46 +331,24 @@ namespace argus {
                     | SDL_WINDOW_HIDDEN
             );
 
-            auto gfx_api_bits = g_window_flags & WindowCreationFlags::GraphicsApi;
+            auto gfx_api_bits = g_window_flags & WindowCreationFlags::GraphicsApiMask;
             if ((gfx_api_bits & (int(gfx_api_bits) - 1)) != 0) {
                 throw std::invalid_argument("Only one graphics API may be set during window creation");
             }
 
             if ((g_window_flags & WindowCreationFlags::OpenGL) != 0) {
-                auto profile_bits = g_window_flags & WindowCreationFlags::GLProfile;
-                if ((profile_bits & (int(profile_bits) - 1)) != 0) {
-                    throw std::invalid_argument("Only one GL profile flag may be set during window creation");
-                }
-
-                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_OPENGL);
-
-                if ((profile_bits & WindowCreationFlags::GLProfileCore) != 0) {
-                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-                } else if ((profile_bits & WindowCreationFlags::GLProfileES) != 0) {
-                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-                } else if ((profile_bits & WindowCreationFlags::GLProfileCompat) != 0) {
-                    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-                }
-
-                SDL_GLcontextFlag context_flags = SDL_GLcontextFlag(0);
-                if ((g_window_flags | WindowCreationFlags::GLDebugContext) != 0) {
-                    context_flags = SDL_GLcontextFlag(int(context_flags) | SDL_GL_CONTEXT_DEBUG_FLAG);
-                }
-                if ((g_window_flags | WindowCreationFlags::GLForwardCompat) != 0) {
-                    context_flags = SDL_GLcontextFlag(int(context_flags) | SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-                }
-                SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, (g_window_flags & WindowCreationFlags::GLDoubleBuffered) != 0);
-                SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, context_flags);
+                sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_OPENGL);
             } else if ((g_window_flags & WindowCreationFlags::Vulkan) != 0) {
-                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_VULKAN);
+                sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_VULKAN);
             } else if ((g_window_flags & WindowCreationFlags::Metal) != 0) {
-                sdl_flags = SDL_WindowFlags(int(sdl_flags) | SDL_WINDOW_METAL);
+                sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_METAL);
             } else if ((g_window_flags & WindowCreationFlags::DirectX) != 0) {
                 Logger::default_logger().fatal("DirectX contexts are not supported at this time");
             } else if ((g_window_flags & WindowCreationFlags::WebGPU) != 0) {
                 Logger::default_logger().fatal("WebGPU contexts are not supported at this time");
             }
 
+            //sdl_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
             pimpl->handle = SDL_CreateWindow(get_client_name().c_str(),
                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                     DEF_WINDOW_DIM, DEF_WINDOW_DIM,
@@ -356,6 +364,7 @@ namespace argus {
             pimpl->state |= WINDOW_STATE_CREATED;
 
             //TODO: figure out how to handle content scale
+            pimpl->content_scale = { 1.0, 1.0 };
 
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
@@ -364,14 +373,6 @@ namespace argus {
 
         if (!(pimpl->state & WINDOW_STATE_COMMITTED)) {
             return;
-        }
-
-        if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
-            // don't acknowledge close until all references from events are released
-            if (pimpl->refcount.load() <= 0) {
-                pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
-            }
-            return; // we forego doing anything else after a close request has been sent
         }
 
         auto title = pimpl->properties.title.read();
@@ -394,18 +395,20 @@ namespace argus {
             if (fullscreen) {
                 // switch to fullscreen mode or display/display mode
 
-                auto disp_off = display->get_position();
+                const Display &target_display = get_display_affinity();
+
+                auto disp_off = target_display.get_position();
                 SDL_SetWindowPosition(pimpl->handle, disp_off.x, disp_off.y);
                 SDL_SetWindowFullscreen(pimpl->handle, SDL_WINDOW_FULLSCREEN);
                 SDL_DisplayMode sdl_mode;
                 if (custom_display_mode) {
                     SDL_DisplayMode cur_mode = unwrap_display_mode(display_mode);
-                    SDL_GetClosestDisplayMode(display->pimpl->index, &cur_mode, &sdl_mode);
+                    SDL_GetClosestDisplayMode(target_display.pimpl->index, &cur_mode, &sdl_mode);
                     assert(sdl_mode.w > 0);
                     assert(sdl_mode.h > 0);
                     SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
                 } else {
-                    SDL_GetDesktopDisplayMode(display->pimpl->index, &sdl_mode);
+                    SDL_GetDesktopDisplayMode(target_display.pimpl->index, &sdl_mode);
                     SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
                 }
 
@@ -470,6 +473,7 @@ namespace argus {
         }
 
         _dispatch_window_update_event(*this, delta);
+        UNUSED(delta);
 
         return;
     }

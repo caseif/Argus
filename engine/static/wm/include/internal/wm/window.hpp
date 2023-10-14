@@ -28,5 +28,7 @@ namespace argus {
 
     void window_window_event_callback(const WindowEvent &event, void *user_data);
 
+    void peek_sdl_window_events(void);
+
     void reap_windows(void);
 }
