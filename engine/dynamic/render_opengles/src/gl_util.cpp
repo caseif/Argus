@@ -24,30 +24,11 @@
 #include "internal/render_opengles/types.hpp"
 
 #include "aglet/aglet.h"
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 
 #include <climits>
 
 namespace argus {
     static Logger g_gl_logger("GL");
-
-    void activate_gl_context(GLFWwindow *window) {
-        if (glfwGetCurrentContext() == window) {
-            // already current
-            return;
-        }
-
-        glfwMakeContextCurrent(window);
-        if (glfwGetCurrentContext() != window) {
-            Logger::default_logger().fatal("Failed to make GL context current");
-        }
-    }
 
     void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
             const GLchar *message, const void *userParam) {

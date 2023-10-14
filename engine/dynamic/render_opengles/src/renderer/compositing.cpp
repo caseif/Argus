@@ -118,6 +118,7 @@ namespace argus {
         if (must_update) {
             viewport_state.ubo.write(viewport_state.view_matrix.data,
                     sizeof(viewport_state.view_matrix.data), SHADER_UNIFORM_VIEWPORT_VM_OFF);
+            viewport_state.view_matrix_dirty = false;
         }
     }
 

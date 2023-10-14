@@ -34,14 +34,6 @@
 #include "internal/render_opengles/loader/shader_loader.hpp"
 #include "internal/render_opengles/renderer/gles_renderer.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
-
 #include <string>
 
 #include <cstring>
@@ -51,6 +43,11 @@ namespace argus {
     static std::map<const Window *, GLESRenderer *> g_renderer_map;
 
     static bool _activate_opengles_backend() {
+        if (gl_load_library() != 0) {
+            Logger::default_logger().warn("Failed to load OpenGL ES library");
+            return false;
+        }
+
         g_backend_active = true;
         return true;
     }
@@ -115,12 +112,7 @@ namespace argus {
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
 
-                glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-                #ifdef _ARGUS_DEBUG_MODE
-                glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-                #endif
+                set_window_creation_flags(WindowCreationFlags::OpenGL);
 
                 break;
             }
@@ -131,6 +123,11 @@ namespace argus {
 
                 ResourceManager::instance().add_memory_package(RESOURCES_RENDER_OPENGLES_ARP_SRC,
                         RESOURCES_RENDER_OPENGLES_ARP_LEN);
+                break;
+            }
+            case LifecycleStage::PostDeinit: {
+                gl_unload_library();
+
                 break;
             }
             default: {

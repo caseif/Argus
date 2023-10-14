@@ -24,12 +24,7 @@
 
 #include "aglet/aglet.h"
 
-// forward declarations
-struct GLFWwindow;
-
 namespace argus {
-    void activate_gl_context(GLFWwindow *window);
-
     void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
             const GLchar *message, const void *userParam);
 
