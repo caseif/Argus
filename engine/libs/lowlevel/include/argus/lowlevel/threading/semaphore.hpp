@@ -29,6 +29,7 @@ namespace argus {
 
       public:
         bool signaled;
+
         Semaphore(void);
 
         void notify(void);

@@ -24,14 +24,8 @@
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
+#include "argus/wm/api_util.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -131,18 +125,25 @@ namespace argus {
         return instance;
     }
 
-    std::optional<VkInstance> create_vk_instance(void) {
-        uint32_t glfw_exts_count;
-        auto glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_exts_count);
+    std::optional<VkInstance> create_vk_instance(Window &window) {
+        uint32_t req_exts_count;
+        std::vector<const char *> req_exts_names;
+        if (!vk_get_required_instance_extensions(window, &req_exts_count, nullptr)) {
+            Logger::default_logger().warn("Failed to get required instance extensions");
+        }
+        req_exts_names.resize(req_exts_count);
+        if (!vk_get_required_instance_extensions(window, &req_exts_count, req_exts_names.data())) {
+            Logger::default_logger().warn("Failed to get required instance extensions");
+        }
         std::vector<const char *> all_exts;
-        for (size_t i = 0; i < glfw_exts_count; i++) {
-            all_exts.push_back(glfw_exts[i]);
+        for (size_t i = 0; i < req_exts_count; i++) {
+            all_exts.push_back(req_exts_names[i]);
         }
 
         all_exts.insert(all_exts.end(), g_engine_instance_extensions.cbegin(), g_engine_instance_extensions.cend());
 
         if (!_check_required_extensions(all_exts)) {
-            Logger::default_logger().warn("Required Vulkan extensions for GLFW are not available");
+            Logger::default_logger().warn("Required Vulkan extensions are not available");
             return std::nullopt;
         }
 

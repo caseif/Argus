@@ -18,12 +18,14 @@
 
 #pragma once
 
+#include "argus/wm/window.hpp"
+
 #include "vulkan/vulkan.h"
 
 #include <optional>
 
 namespace argus {
-    std::optional<VkInstance> create_vk_instance(void);
+    std::optional<VkInstance> create_vk_instance(Window &window);
 
     void destroy_vk_instance(VkInstance instance);
 }

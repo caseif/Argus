@@ -43,8 +43,11 @@ namespace argus {
     static std::map<const Window *, GLESRenderer *> g_renderer_map;
 
     static bool _activate_opengles_backend() {
+        set_window_creation_flags(WindowCreationFlags::OpenGL);
+
         if (gl_load_library() != 0) {
             Logger::default_logger().warn("Failed to load OpenGL ES library");
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
 
@@ -111,8 +114,6 @@ namespace argus {
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
-
-                set_window_creation_flags(WindowCreationFlags::OpenGL);
 
                 break;
             }

@@ -22,6 +22,7 @@
 #include "argus/core/engine_config.hpp"
 #include "argus/core/screen_space.hpp"
 
+#include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 
 #include "argus/render/defines.hpp"
@@ -40,18 +41,11 @@
 #include "internal/render_vulkan/util/descriptor_set.hpp"
 #include "internal/render_vulkan/util/framebuffer.hpp"
 #include "internal/render_vulkan/util/image.hpp"
+#include "internal/render_vulkan/util/memory.hpp"
 #include "internal/render_vulkan/util/pipeline.hpp"
 #include "internal/render_vulkan/util/render_pass.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
-#include "internal/render_vulkan/util/memory.hpp"
 
 #include <algorithm>
 #include <mutex>
@@ -571,49 +565,19 @@ namespace argus {
         resource_event_handler(),
         window(window),
         is_initted(false) {
-        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
-                TargetThread::Render, &state);
-
         state.device = g_vk_device;
-
-        auto surface_err = glfwCreateWindowSurface(g_vk_instance,
-                get_window_handle<GLFWwindow>(window), nullptr, &state.surface);
-        if (surface_err) {
-            Logger::default_logger().fatal("glfwCreateWindowSurface returned error code %d", surface_err);
-        }
-        Logger::default_logger().debug("Created surface for new window");
-
-        state.graphics_command_pool = create_command_pool(this->state.device,
-                this->state.device.queue_indices.graphics_family);
-        Logger::default_logger().debug("Created command pools for new window");
-
-        state.desc_pool = create_descriptor_pool(this->state.device);
-        Logger::default_logger().debug("Created descriptor pool for new window");
-
-        auto copy_cmd_bufs = alloc_command_buffers(state.device, state.graphics_command_pool, MAX_FRAMES_IN_FLIGHT);
-        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            state.copy_cmd_buf[i] = copy_cmd_bufs[i];
-        }
-        Logger::default_logger().debug("Created command buffers for new window");
-
-        /*VkSemaphoreCreateInfo sem_info{};
-        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &state.rebuild_semaphore)
-                != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create semaphores for new window");
-        }
-        Logger::default_logger().debug("Created semaphores for new window");*/
-
-        state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                GraphicsMemoryPropCombos::DeviceRw);
-
-        state.submit_thread = std::thread(_submit_queues_loop, &state);
     }
 
     VulkanRenderer::~VulkanRenderer(void) {
+        if (!is_initted) {
+            return;
+        }
+
         state.submit_halt = true;
         state.queued_submit_sem.notify();
         state.submit_halt_acked.wait();
+        state.submit_thread.join();
+
         {
             for (auto &sem : state.present_sem) {
                 sem.wait();
@@ -681,6 +645,41 @@ namespace argus {
     }
 
     void VulkanRenderer::init(void) {
+        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
+                TargetThread::Render, &state);
+
+        if (!vk_create_surface(window, reinterpret_cast<VkDevice *>(g_vk_instance),
+                reinterpret_cast<void **>(&state.surface))) {
+            Logger::default_logger().fatal("Failed to create Vulkan surface");
+        }
+        Logger::default_logger().debug("Created surface for new window");
+
+        state.graphics_command_pool = create_command_pool(this->state.device,
+                this->state.device.queue_indices.graphics_family);
+        Logger::default_logger().debug("Created command pools for new window");
+
+        state.desc_pool = create_descriptor_pool(this->state.device);
+        Logger::default_logger().debug("Created descriptor pool for new window");
+
+        auto copy_cmd_bufs = alloc_command_buffers(state.device, state.graphics_command_pool, MAX_FRAMES_IN_FLIGHT);
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            state.copy_cmd_buf[i] = copy_cmd_bufs[i];
+        }
+        Logger::default_logger().debug("Created command buffers for new window");
+
+        /*VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &state.rebuild_semaphore)
+                != VK_SUCCESS) {
+            Logger::default_logger().fatal("Failed to create semaphores for new window");
+        }
+        Logger::default_logger().debug("Created semaphores for new window");*/
+
+        state.global_ubo = alloc_buffer(this->state.device, SHADER_UBO_GLOBAL_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                GraphicsMemoryPropCombos::DeviceRw);
+
+        state.submit_thread = std::thread(_submit_queues_loop, &state);
+
         state.swapchain = create_swapchain(this->state, state.surface, this->window.peek_resolution());
         Logger::default_logger().debug("Created swapchain for new window");
 
@@ -738,6 +737,11 @@ namespace argus {
         }
 
         _add_remove_state_objects(window, state);
+
+        if (!state.are_viewports_initialized) {
+            _update_view_matrix(window, state, window.get_resolution().value);
+            state.are_viewports_initialized = true;
+        }
 
         timer_start = std::chrono::high_resolution_clock::now();
         _recompute_viewports(window, state);
@@ -804,8 +808,6 @@ namespace argus {
         }
 
         time_samples++;
-
-        //glfwSwapBuffers(get_window_handle<GLFWwindow>(canvas.get_window()));
     }
 
     void VulkanRenderer::notify_window_resize(const Vector2u &resolution) {

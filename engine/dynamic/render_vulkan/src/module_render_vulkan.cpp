@@ -21,6 +21,7 @@
 
 #include "argus/core/module.hpp"
 
+#include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
@@ -36,13 +37,6 @@
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 #include <map>
@@ -57,6 +51,7 @@ namespace argus {
     };
 
     std::vector<const char *> g_engine_instance_extensions = {
+            VK_KHR_SURFACE_EXTENSION_NAME,
             #ifdef _ARGUS_DEBUG_MODE
             VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
             #endif
@@ -146,40 +141,51 @@ namespace argus {
     }
 
     static bool _activate_vulkan_backend() {
-        if (glfwVulkanSupported() != GLFW_TRUE) {
+        set_window_creation_flags(WindowCreationFlags::Vulkan);
+
+        if (!vk_is_supported()) {
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        // create hidden window so we can attach a surface and probe for capabilities
+        auto &window = Window::create("", nullptr);
+        window.update({});
 
-        auto vk_inst = create_vk_instance();
+        auto vk_inst = create_vk_instance(window);
         if (!vk_inst.has_value()) {
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
         g_vk_instance = vk_inst.value();
 
         _init_vk_debug_utils(vk_inst.value());
 
-        // create hidden window so we can attach a surface and probe for capabilities
-        auto *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
-
-        if (window == nullptr) {
-            _deinit_vk_debug_utils(vk_inst.value());
-            Logger::default_logger().warn("Failed to probe Vulkan capabilities (glfwCreateWindow failed)");
+        /*if (window == nullptr) {
+            _deinit_vk_debug_utils(g_vk_instance);
+            destroy_vk_instance(g_vk_instance);
+            Logger::default_logger().warn("Failed to probe Vulkan capabilities (window creation failed)");
             return false;
-        }
+        }*/
 
         VkSurfaceKHR probe_surface{};
-        glfwCreateWindowSurface(g_vk_instance, window, nullptr, &probe_surface);
+        if (!vk_create_surface(window, reinterpret_cast<void *>(g_vk_instance),
+                reinterpret_cast<void **>(&probe_surface))) {
+            Logger::default_logger().warn("Vulkan does not appear to be supported (failed to create surface)");
+            set_window_creation_flags(WindowCreationFlags::None);
+            return false;
+        }
 
         auto vk_device = create_vk_device(g_vk_instance, probe_surface);
 
         vkDestroySurfaceKHR(g_vk_instance, probe_surface, nullptr);
-        glfwDestroyWindow(window);
+        window.request_close();
 
         if (!vk_device.has_value()) {
+            Logger::default_logger().info("Vulkan does not appear to be supported (could not get Vulkan device)");
             _deinit_vk_debug_utils(vk_inst.value());
             destroy_vk_instance(g_vk_instance);
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
         g_vk_device = vk_device.value();

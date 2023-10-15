@@ -83,6 +83,7 @@ namespace argus {
         std::map<const Scene2D *, Scene2DState> scene_states_2d;
         std::vector<SceneState *> all_scene_states;
         std::map<const AttachedViewport2D *, Viewport2DState> viewport_states_2d;
+        bool are_viewports_initialized = false;
 
         bool dirty_viewports;
 

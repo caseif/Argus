@@ -66,5 +66,5 @@ namespace argus {
 
     int vk_create_surface(Window &window, void *instance, void **out_surface);
 
-    int vk_get_instance_extensions(Window &window, unsigned int *out_count, const char **out_names);
+    int vk_get_required_instance_extensions(Window &window, unsigned int *out_count, const char **out_names);
 }

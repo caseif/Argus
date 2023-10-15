@@ -25,13 +25,6 @@
 #include "internal/render_vulkan/setup/queues.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
 #include "vulkan/vulkan.h"
 
 #include <algorithm>
@@ -45,8 +38,8 @@
 namespace argus {
     static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
 
-    static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkInstance instance, VkPhysicalDevice device,
-            VkSurfaceKHR surface, std::vector<VkQueueFamilyProperties> queue_families) {
+    static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkPhysicalDevice device,
+            VkSurfaceKHR surface, const std::vector<VkQueueFamilyProperties> &queue_families) {
         QueueFamilyIndices indices = {};
         std::optional<uint32_t> transfer_queue;
 
@@ -57,16 +50,14 @@ namespace argus {
             }
 
             // check if queue family is suitable for graphics
-            if (glfwGetPhysicalDevicePresentationSupport(instance, device, i) == GLFW_TRUE) {
-                if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                    indices.graphics_family = i;
-                }
+            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphics_family = i;
+            }
 
-                VkBool32 present_support = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
-                if (present_support) {
-                    indices.present_family = i;
-                }
+            VkBool32 present_support = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+            if (present_support) {
+                indices.present_family = i;
             }
 
             i++;
@@ -168,7 +159,7 @@ namespace argus {
             std::vector<VkQueueFamilyProperties> queue_families(qf_props_count);
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &qf_props_count, queue_families.data());
 
-            auto indices = _get_queue_family_indices(instance, dev, probe_surface, queue_families);
+            auto indices = _get_queue_family_indices(dev, probe_surface, queue_families);
             if (!indices.has_value()) {
                 Logger::default_logger().debug("Physical device '%s' is not suitable", dev_props.deviceName);
                 continue;

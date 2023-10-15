@@ -52,8 +52,6 @@ namespace argus {
             return false;
         }
 
-        set_window_creation_flags(WindowCreationFlags::OpenGL);
-
         auto &window = Window::create("", nullptr);
         window.update({});
         GLContext gl_context;
@@ -91,13 +89,17 @@ namespace argus {
     }
 
     static bool _activate_opengl_backend() {
+        set_window_creation_flags(WindowCreationFlags::OpenGL);
+
         if (gl_load_library() != 0) {
             Logger::default_logger().warn("Failed to load OpenGL library");
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
 
         if (!_test_opengl_support()) {
             gl_unload_library();
+            set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
 
@@ -164,8 +166,6 @@ namespace argus {
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
-
-                set_window_creation_flags(WindowCreationFlags::OpenGL);
 
                 break;
             }
