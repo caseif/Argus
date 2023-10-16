@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
-
 #include "argus/core/event.hpp"
 
 #include "argus/input/controller.hpp"
 #include "argus/input/input_event.hpp"
+
+#include <string>
 
 namespace argus::input {
     InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,

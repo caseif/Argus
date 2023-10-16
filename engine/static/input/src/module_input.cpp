@@ -45,9 +45,15 @@ namespace argus {
         }
     }
 
+    static void _on_update(TimeDelta delta) {
+        UNUSED(delta);
+        input::update_keyboard();
+    }
+
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
+                register_update_callback(_on_update);
                 register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
                 break;
             case argus::LifecycleStage::PostInit:

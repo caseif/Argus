@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <string>
-
 #include "argus/core/event.hpp"
+
+#include <string>
 
 namespace argus::input {
     enum class InputEventType {

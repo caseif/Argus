@@ -26,7 +26,16 @@
 #include "argus/input/mouse.hpp"
 #include "internal/input/mouse.hpp"
 
-#include <GLFW/glfw3.h>
+#include "SDL_events.h"
+#include "SDL_mouse.h"
+
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation-deprecated-sync"
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#endif
+#include "GLFW/glfw3.h"
+#pragma GCC diagnostic pop
 
 #include <algorithm>
 #include <map>
@@ -38,11 +47,10 @@ namespace argus::input {
     static std::map<const argus::Window *, MouseState> g_mouse_states;
 
     argus::Vector2d mouse_pos(const argus::Window &window) {
-        auto *glfw_window = get_window_handle<GLFWwindow>(window);
-
-        double x;
-        double y;
-        glfwGetCursorPos(glfw_window, &x, &y);
+        UNUSED(window);
+        int x;
+        int y;
+        SDL_GetMouseState(&x, &y);
 
         return Vector2d(x, y);
     }
@@ -51,7 +59,7 @@ namespace argus::input {
         return g_mouse_states[&window].mouse_delta;
     }
 
-    static void _mouse_button_callback(GLFWwindow *glfw_window, int button, int action, int mods) {
+    [[maybe_unused]] static void _mouse_button_callback(SDL_Window *glfw_window, int button, int action, int mods) {
         UNUSED(mods);
 
         if (action != GLFW_PRESS && action != GLFW_RELEASE) {
@@ -102,7 +110,7 @@ namespace argus::input {
     void init_mouse(const argus::Window &window) {
         auto *glfw_window = get_window_handle<GLFWwindow>(window);
 
-        glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
+        //glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
         glfwSetCursorPosCallback(glfw_window, _cursor_pos_callback);
     }
 }

@@ -21,14 +21,6 @@
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/types.hpp"
 
-#pragma GCC diagnostic push
-
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
-
 #include <mutex>
 
 namespace argus {

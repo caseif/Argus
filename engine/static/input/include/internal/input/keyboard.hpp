@@ -18,13 +18,6 @@
 
 #pragma once
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
-
 namespace argus {
     // forward declarations
     class Window;
@@ -32,4 +25,6 @@ namespace argus {
 
 namespace argus::input {
     void init_keyboard(const Window &window);
+
+    void update_keyboard(void);
 }
