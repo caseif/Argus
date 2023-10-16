@@ -235,6 +235,9 @@ namespace argus {
             return;
         }
 
+        g_window_id_map.erase(pimpl->id);
+        g_window_handle_map.erase(pimpl->handle);
+
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
         }
@@ -249,9 +252,6 @@ namespace argus {
         if (pimpl->parent != nullptr) {
             pimpl->parent->remove_child(*this);
         }
-
-        g_window_id_map.erase(pimpl->id);
-        g_window_handle_map.erase(pimpl->handle);
 
         g_window_count--;
 
