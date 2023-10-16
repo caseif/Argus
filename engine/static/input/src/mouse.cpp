@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
-#include "argus/lowlevel/types.hpp"
 
 #include "argus/wm/window.hpp"
 
@@ -26,22 +25,13 @@
 #include "argus/input/mouse.hpp"
 #include "internal/input/mouse.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include "SDL_events.h"
+#pragma GCC diagnostic pop
 #include "SDL_mouse.h"
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wdocumentation-deprecated-sync"
-#pragma GCC diagnostic ignored "-Wdocumentation"
-#endif
-#include "GLFW/glfw3.h"
-#pragma GCC diagnostic pop
-
-#include <algorithm>
 #include <map>
-#include <mutex>
-
-#include <cmath>
 
 namespace argus::input {
     static std::map<const argus::Window *, MouseState> g_mouse_states;
@@ -59,58 +49,62 @@ namespace argus::input {
         return g_mouse_states[&window].mouse_delta;
     }
 
-    [[maybe_unused]] static void _mouse_button_callback(SDL_Window *glfw_window, int button, int action, int mods) {
-        UNUSED(mods);
+    static void _handle_mouse_events(void) {
+        constexpr size_t event_buf_size = 8;
+        SDL_Event events[event_buf_size];
 
-        if (action != GLFW_PRESS && action != GLFW_RELEASE) {
-            return;
+        int to_process;
+        while ((to_process = SDL_PeepEvents(events, event_buf_size,
+                SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEBUTTONUP)) > 0) {
+            for (int i = 0; i < to_process; i++) {
+                auto &event = events[i];
+
+                auto *window = get_window_from_handle(SDL_GetWindowFromID(event.key.windowID));
+                if (window == nullptr) {
+                    return;
+                }
+
+                if (event.type == SDL_MOUSEMOTION) {
+                    InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Horizontal,
+                            event.motion.x, event.motion.xrel);
+                    InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Vertical,
+                            event.motion.y, event.motion.yrel);
+                } else {
+                    MouseButton button;
+                    switch (event.button.button) {
+                        case SDL_BUTTON_LEFT:
+                            button = MouseButton::Primary;
+                            break;
+                        case SDL_BUTTON_RIGHT:
+                            button = MouseButton::Secondary;
+                            break;
+                        case SDL_BUTTON_MIDDLE:
+                            button = MouseButton::Middle;
+                            break;
+                        case SDL_BUTTON_X1:
+                            button = MouseButton::Back;
+                            break;
+                        case SDL_BUTTON_X2:
+                            button = MouseButton::Forward;
+                            break;
+                        default:
+                            Logger::default_logger().debug("Ignoring unrecognized mouse button with ordinal %d",
+                                    event.button.which);
+                            return;
+                    }
+                    InputManager::instance().handle_mouse_button_press(*window, button,
+                            event.type == SDL_MOUSEBUTTONUP);
+                }
+            }
         }
-
-        auto *window = get_window_from_handle(glfw_window);
-        if (window == nullptr) {
-            return;
-        }
-
-        auto release = action == GLFW_RELEASE;
-
-        InputManager::instance().handle_mouse_button_press(*window, static_cast<MouseButton>(button), release);
-    }
-
-    static void _cursor_pos_callback(GLFWwindow *glfw_window, double x, double y) {
-        auto *window = get_window_from_handle(glfw_window);
-        if (window == nullptr) {
-            return;
-        }
-
-        auto &state = g_mouse_states[window];
-
-        if (state.got_first_mouse_pos) {
-            auto dx = x - state.last_mouse_pos.x;
-            auto dy = y - state.last_mouse_pos.y;
-
-            const auto res = window->peek_resolution();
-            const auto min_window_dim = std::min(res.x, res.y);
-
-            state.mouse_delta.x = dx / min_window_dim;
-            state.mouse_delta.y = dy / min_window_dim;
-        } else {
-            state.got_first_mouse_pos = true;
-
-            state.mouse_delta.x = 0;
-            state.mouse_delta.y = 0;
-        }
-
-        state.last_mouse_pos.x = x;
-        state.last_mouse_pos.y = y;
-
-        InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Horizontal, x, state.mouse_delta.x);
-        InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Vertical, y, state.mouse_delta.y);
     }
 
     void init_mouse(const argus::Window &window) {
-        auto *glfw_window = get_window_handle<GLFWwindow>(window);
+        UNUSED(window);
+        // no-op
+    }
 
-        //glfwSetMouseButtonCallback(glfw_window, _mouse_button_callback);
-        glfwSetCursorPosCallback(glfw_window, _cursor_pos_callback);
+    void update_mouse(void) {
+        _handle_mouse_events();
     }
 }

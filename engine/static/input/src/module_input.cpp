@@ -48,6 +48,7 @@ namespace argus {
     static void _on_update(TimeDelta delta) {
         UNUSED(delta);
         input::update_keyboard();
+        input::update_mouse();
     }
 
     void update_lifecycle_input(const argus::LifecycleStage stage) {

@@ -37,5 +37,7 @@ namespace argus {
         };
 
         void init_mouse(const argus::Window &window);
+
+        void update_mouse(void);
     }
 }
