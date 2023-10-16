@@ -24,6 +24,10 @@
 #include "argus/wm/window_event.hpp"
 
 namespace argus {
+    extern std::map<std::string, Window *> g_window_id_map;
+    extern std::map<SDL_Window *, Window *> g_window_handle_map;
+    extern size_t g_window_count;
+
     void set_window_construct_callback(WindowCallback callback);
 
     void window_window_event_callback(const WindowEvent &event, void *user_data);
@@ -31,4 +35,6 @@ namespace argus {
     void peek_sdl_window_events(void);
 
     void reap_windows(void);
+
+    void reset_window_displays(void);
 }

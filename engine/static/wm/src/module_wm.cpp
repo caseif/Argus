@@ -52,11 +52,6 @@
 namespace argus {
     bool g_wm_module_initialized = false;
 
-    // maps window IDs to Window instance pointers
-    std::map<std::string, Window *> g_window_id_map;
-    // maps SDL window pointers to Window instance pointers
-    std::map<SDL_Window *, Window *> g_window_handle_map;
-    size_t g_window_count = 0;
     bool g_requested_stop = false;
 
     static void _clean_up(void) {

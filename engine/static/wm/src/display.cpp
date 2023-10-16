@@ -21,7 +21,7 @@
 #include "argus/wm/display.hpp"
 #include "argus/wm/window.hpp"
 #include "internal/wm/display.hpp"
-#include "internal/wm/module_wm.hpp"
+#include "internal/wm/window.hpp"
 #include "internal/wm/pimpl/display.hpp"
 #include "internal/wm/pimpl/window.hpp"
 
@@ -141,21 +141,7 @@ namespace argus {
 
         _enumerate_displays(new_displays);
 
-        for (const auto &window_kv : g_window_handle_map) {
-            auto *handle = window_kv.first;
-            auto &window = *window_kv.second;
-            if (window.is_closed()) {
-                continue;
-            }
-
-            auto new_disp_index = SDL_GetWindowDisplayIndex(handle);
-            if (new_disp_index < 0 || size_t(new_disp_index) >= g_displays.size()) {
-                Logger::default_logger().warn("Failed to query new display of window ID %s, "
-                        "things might not work correctly!", window.get_id().c_str());
-                continue;
-            }
-            window.pimpl->properties.display.set_quietly(g_displays[size_t(new_disp_index)]);
-        }
+        reset_window_displays();
 
         g_displays = new_displays;
 

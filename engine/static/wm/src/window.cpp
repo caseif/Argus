@@ -30,6 +30,7 @@
 #include "argus/core/engine.hpp"
 
 #include "argus/wm/api_util.hpp"
+#include "argus/wm/display.hpp"
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 #include "internal/wm/display.hpp"
@@ -50,6 +51,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 
 #include <climits>
@@ -75,6 +77,15 @@
 #define WINDOW_STATE_CLOSE_REQUEST_ACKED    0x20U
 
 namespace argus {
+    // maps window IDs to Window instance pointers
+    std::map<std::string, Window *> g_window_id_map;
+    // maps SDL window pointers to Window instance pointers
+    std::map<SDL_Window *, Window *> g_window_handle_map;
+    size_t g_window_count = 0;
+
+    // mutex for window ID and handle maps
+    static std::shared_mutex g_window_maps_mutex;
+
     static WindowCreationFlags g_window_flags = WindowCreationFlags::None;
     static WindowCallback g_window_construct_callback = nullptr;
     static CanvasCtor g_canvas_ctor = nullptr;
@@ -100,11 +111,13 @@ namespace argus {
             return 0;
         }*/
 
+        g_window_maps_mutex.lock_shared();
         auto it = g_window_handle_map.find(handle);
         if (it == g_window_handle_map.end()) {
             return 0;
         }
         auto &window = *it->second;
+        g_window_maps_mutex.unlock_shared();
 
         if (window.is_closed()) {
             return 0;
@@ -175,7 +188,27 @@ namespace argus {
         }
     }
 
+    void reset_window_displays(void) {
+        std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
+        for (const auto &window_kv : g_window_handle_map) {
+            auto *handle = window_kv.first;
+            auto &window = *window_kv.second;
+            if (window.is_closed()) {
+                continue;
+            }
+
+            auto new_disp_index = SDL_GetWindowDisplayIndex(handle);
+            if (new_disp_index < 0 || size_t(new_disp_index) >= Display::get_available_displays().size()) {
+                Logger::default_logger().warn("Failed to query new display of window ID %s, "
+                                              "things might not work correctly!", window.get_id().c_str());
+                continue;
+            }
+            window.pimpl->properties.display.set_quietly(get_display_from_index(new_disp_index));
+        }
+    }
+
     Window *get_window(const std::string &id) {
+        std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
         auto window_it = g_window_id_map.find(id);
         return window_it != g_window_id_map.end() ? g_window_id_map.find(id)->second : nullptr;
     }
@@ -213,7 +246,10 @@ namespace argus {
 
         pimpl->close_callback = nullptr;
 
-        g_window_id_map.insert({id, this});
+        {
+            std::unique_lock<std::shared_mutex> lock(g_window_maps_mutex);
+            g_window_id_map.insert({ id, this });
+        }
 
         g_window_count++;
 
@@ -235,8 +271,11 @@ namespace argus {
             return;
         }
 
-        g_window_id_map.erase(pimpl->id);
-        g_window_handle_map.erase(pimpl->handle);
+        {
+            std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
+            g_window_id_map.erase(pimpl->id);
+            g_window_handle_map.erase(pimpl->handle);
+        }
 
         if (pimpl->close_callback) {
             pimpl->close_callback(*this);
@@ -356,7 +395,11 @@ namespace argus {
                 Logger::default_logger().fatal("Failed to create SDL window");
             }
 
-            g_window_handle_map.insert({pimpl->handle, this});
+
+            {
+                std::unique_lock<std::shared_mutex> lock(g_window_maps_mutex);
+                g_window_handle_map.insert({ pimpl->handle, this });
+            }
 
             _register_callbacks(pimpl->handle);
 
@@ -639,6 +682,8 @@ namespace argus {
     }
 
     Window *get_window_from_handle(const void *handle) {
+        std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
+
         auto it = g_window_handle_map.find(static_cast<SDL_Window *>(const_cast<void *>(handle)));
         if (it == g_window_handle_map.end()) {
             return nullptr;
