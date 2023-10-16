@@ -4,9 +4,6 @@
 [submodule "external/libs/zlib"]
 	path = external/libs/zlib
 	url = git@github.com:madler/zlib.git
-[submodule "external/libs/glfw"]
-	path = external/libs/glfw
-	url = git@github.com:glfw/glfw.git
 [submodule "external/libs/libarp"]
 	path = external/libs/libarp
 	url = git@github.com:caseif/libarp.git

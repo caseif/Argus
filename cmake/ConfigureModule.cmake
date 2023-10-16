@@ -404,7 +404,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
 
     if(WIN32)
-      target_compile_definitions("${PROJECT_NAME}" PUBLIC "GLFW_DLL")
       target_compile_definitions("${PROJECT_NAME}" PUBLIC "NOMINMAX")
     endif()
     

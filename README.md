@@ -1,6 +1,6 @@
 # Argus Game Engine ![Argus](https://github.com/caseif/Argus/workflows/Argus/badge.svg)
 
-Argus is a 2D game engine written in C++17 and built atop GLFW.
+Argus is a 2D game engine written in C++17 and built atop SDL 2.
 
 ## Features
 
@@ -18,7 +18,7 @@ the engine's architecture in its current iteration.
 Argus was created as a hobby project with the goal of learning as much as possible. As such, it attempts to implement
 as many of its features in-house as possible, with a couple of notable exceptions:
 
-**Windowing/input polling:** For the moment, Argus uses GLFW for OS-level "grunt" work including window and input
+**Windowing/input polling:** For the moment, Argus uses SDL for OS-level "grunt" work including window and input
 management. These tasks are highly OS-specific and thus would be somewhat tedious to maintain, so I would rather avoid
 dedicating any time towards it at least until the project is in a more complete state.
 
@@ -59,10 +59,10 @@ The following software is required by the build process and must be installed an
 
 Argus (the base library and respective render backend modules) depends on the following libraries:
 
-- [GLFW](https://github.com/glfw/glfw/)
+- [SDL 2](https://github.com/libsdl-org/SDL)
 - [glslang](https://github.com/KhronosGroup/glslang)
 - [nlohmann/json](https://github.com/nlohmann/json)
-- [libarp](https://github.com/caseif/libarp/)
+- [libarp](https://github.com/caseif/libarp)
 - [libpng](https://github.com/glennrp/libpng)
 - [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
 - [zlib](https://github.com/madler/zlib) (transitively through libpng)

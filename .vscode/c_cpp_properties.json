@@ -3,7 +3,6 @@
         "defIncludePath": [
             "${workspaceFolder}/build/generated/static/core/include",
             "${workspaceFolder}/build/generated/dynamic/render_opengl/include",
-            "${workspaceFolder}/external/libs/glfw/include",
             "${workspaceFolder}/external/libs/libarp",
             "${workspaceFolder}/external/libs/libpng",
             "${workspaceFolder}/external/libs/zlib",

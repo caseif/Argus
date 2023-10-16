@@ -5,7 +5,6 @@ set(EXT_SPECS_DIR "${CMAKE_SOURCE_DIR}/external/specs")
 set(ENABLE_CTEST_SAVED "${ENABLE_CTEST}")
 set(ENABLE_CTEST OFF)
 
-set(GLFW_SOURCE_DIR "${EXT_LIBS_DIR}/glfw")
 set(SDL2_SOURCE_DIR "${EXT_LIBS_DIR}/sdl2")
 set(ZLIB_SOURCE_DIR "${EXT_LIBS_DIR}/zlib")
 set(PNG_SOURCE_DIR "${EXT_LIBS_DIR}/libpng")
@@ -17,13 +16,6 @@ set(LUA_SOURCE_DIR "${EXT_LIBS_DIR}/lua")
 set(LUA_BUILDSCRIPT_DIR "${CMAKE_SOURCE_DIR}/cmake/dep/lua")
 set(ANGELSCRIPT_SOURCE_DIR "${EXT_LIBS_DIR}/angelscript/sdk/angelscript")
 set(CATCH2_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/test/libs/catch2")
-
-# disable extra GLFW build steps
-set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 # disable SDL render subsystem and tests
 set(SDL_Render OFF)
@@ -60,10 +52,6 @@ endif()
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
 
-set(GLFW_LIBRARY_BASE "glfw")
-set(GLFW_LIBRARY "${GLFW_LIBRARY_BASE}")
-set(GLFW_INCLUDE_DIR "${GLFW_SOURCE_DIR}/include")
-
 set(SDL2_LIBRARY "SDL2")
 set(SDL2_INCLUDE_DIR "${SDL2_SOURCE_DIR}/include")
 
@@ -96,7 +84,6 @@ set(CATCH2_LIBRARY "Catch2")
 set(CATCH2_INCLUDE_DIR "${CATCH2_SOURCE_DIR}/src")
 
 # add dependencies
-add_subdirectory("${GLFW_SOURCE_DIR}")
 add_subdirectory("${SDL2_SOURCE_DIR}")
 add_subdirectory("${ZLIB_SOURCE_DIR}")
 add_subdirectory("${PNG_SOURCE_DIR}")
@@ -136,7 +123,6 @@ set_target_properties(pngfix PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(png-fix-itxt PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 # disable warnings for subprojects
-_argus_disable_warnings(${GLFW_LIBRARY})
 _argus_disable_warnings(${SDL2_LIBRARY})
 _argus_disable_warnings(${ZLIB_LIBRARY})
 _argus_disable_warnings(${PNG_LIBRARY})
