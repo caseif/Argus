@@ -158,7 +158,7 @@ namespace argus {
 
     static void _reap_window(Window &window) {
         unregister_render_callback(window.pimpl->callback_id);
-        run_on_game_thread([&window] { delete &window; });
+        delete &window;
     }
 
     void reap_windows(void) {
@@ -167,7 +167,6 @@ namespace argus {
         while (it != g_windows.end()) {
             Window &win = **it;
             if (win.pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
-                //run_on_game_thread([&win] { _reap_window(win); });
                 _reap_window(win);
                 it = g_windows.erase(it);
             } else {
