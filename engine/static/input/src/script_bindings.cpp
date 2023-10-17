@@ -240,6 +240,13 @@ namespace argus {
         bind_member_field("axis_value", &input::InputEvent::axis_value);
         bind_member_field("axis_delta", &input::InputEvent::axis_delta);
         bind_member_instance_function("get_window", &input::InputEvent::get_window);
+
+        bind_global_function(
+                "register_input_handler",
+                +[](std::function<void(const input::InputEvent &)> fn, Ordering ordering) -> Index {
+                    return register_event_handler<input::InputEvent>(fn, TargetThread::Update, ordering);
+                }
+        );
     }
 
     void register_input_script_bindings(void) {

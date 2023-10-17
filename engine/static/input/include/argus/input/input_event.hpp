@@ -29,7 +29,7 @@ namespace argus::input {
         AxisChanged,
     };
 
-    struct InputEvent : public ArgusEvent {
+    struct InputEvent : public ArgusEvent, AutoCleanupable {
         const InputEventType input_type;
         const Window &window;
         const ControllerIndex controller_index;
