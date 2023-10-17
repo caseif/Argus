@@ -27,6 +27,7 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/canvas.hpp"
+#include "internal/render/script_bindings.hpp"
 #include "internal/render/common/backend.hpp"
 #include "internal/render/common/scene.hpp"
 #include "internal/render/loader/material_loader.hpp"
@@ -201,6 +202,8 @@ namespace argus {
 
                 ResourceManager::instance().register_loader(*new MaterialLoader());
                 ResourceManager::instance().register_loader(*new PngTextureLoader());
+
+                register_render_script_bindings();
 
                 g_render_module_initialized = true;
 
