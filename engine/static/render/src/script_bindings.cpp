@@ -30,6 +30,10 @@ namespace argus {
         bind_member_instance_function("get_translation", &Transform2D::get_translation);
         bind_member_instance_function("get_rotation", &Transform2D::get_rotation);
         bind_member_instance_function("get_scale", &Transform2D::get_scale);
+        bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_translation",
+                &Transform2D::set_translation);
+        bind_member_instance_function("set_rotation", &Transform2D::set_rotation);
+        bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_scale", &Transform2D::set_scale);
         bind_extension_function<Transform2D>("x",
                 +[](const Transform2D &transform) { return transform.get_translation().x; });
         bind_extension_function<Transform2D>("y",

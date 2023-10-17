@@ -40,7 +40,7 @@ namespace argus {
     Transform2D::Transform2D(void) : Transform2D({0, 0}, 0, {1, 1}) {
     }
 
-    Transform2D::Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
+    Transform2D::Transform2D(const Vector2f &translation, float rotation, const Vector2f &scale) :
             pimpl(&g_pimpl_pool.construct<pimpl_Transform2D>(translation, rotation, scale)) {
     }
 
@@ -99,7 +99,7 @@ namespace argus {
         _inc_version(*this);
     }
 
-    void Transform2D::set_translation(const float x, const float y) {
+    void Transform2D::set_translation(float x, float y) {
         this->set_translation({x, y});
     }
 
@@ -112,7 +112,7 @@ namespace argus {
         _inc_version(*this);
     }
 
-    void Transform2D::add_translation(const float x, const float y) {
+    void Transform2D::add_translation(float x, float y) {
         this->add_translation({x, y});
     }
 
@@ -120,14 +120,14 @@ namespace argus {
         return pimpl->rotation;
     }
 
-    void Transform2D::set_rotation(const float rotation_radians) {
+    void Transform2D::set_rotation(float rotation_radians) {
         pimpl->rotation = rotation_radians;
 
         pimpl->set_dirty();
         _inc_version(*this);
     }
 
-    void Transform2D::add_rotation(const float rotation_radians) {
+    void Transform2D::add_rotation(float rotation_radians) {
         float current = pimpl->rotation.load();
         float updated = float(fmod(current + rotation_radians, 2 * M_PI));
         while (!pimpl->rotation.compare_exchange_weak(current, updated));
@@ -152,7 +152,7 @@ namespace argus {
         _inc_version(*this);
     }
 
-    void Transform2D::set_scale(const float x, const float y) {
+    void Transform2D::set_scale(float x, float y) {
         this->set_scale({x, y});
     }
 
