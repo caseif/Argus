@@ -110,7 +110,11 @@ namespace argus {
         static_assert(!is_std_vector_v<std::remove_cv<std::remove_reference_t<std::remove_pointer_t<T>>>>,
                 "Vector objects must be wrapped explicitly");
 
-        if constexpr (std::is_integral_v<B>) {
+        // char* check must come first because it also passes the is_integral check
+        if constexpr (std::is_same_v<std::remove_cv<T>, char *>
+                || std::is_same_v<T, const char *>) {
+            return create_string_object_wrapper(type, std::string(val));
+        } else if constexpr (std::is_integral_v<B>) {
             return create_int_object_wrapper(type, int64_t(val));
         } else if constexpr (std::is_floating_point_v<B>) {
             return create_float_object_wrapper(type, double(val));
@@ -118,9 +122,6 @@ namespace argus {
             return create_bool_object_wrapper(type, val);
         } else if constexpr (std::is_same_v<B, std::string>) {
             return create_string_object_wrapper(type, val);
-        } else if constexpr (std::is_same_v<std::remove_cv<T>, char *>
-                || std::is_same_v<std::remove_cv<T>, const char *>) {
-            return create_string_object_wrapper(type, std::string(val));
         } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
             return create_callback_object_wrapper(type, val);
         } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<T>>>
