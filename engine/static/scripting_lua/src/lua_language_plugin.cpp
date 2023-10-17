@@ -483,12 +483,6 @@ namespace argus {
                                     + std::to_string(param_index) + " of function " + qual_fn_name);
                         }
                     } else {
-                        if (param_def.type == IntegralType::Pointer) {
-                            return _set_lua_error(state,
-                                    "Cannot pass value-typed struct as pointer in parameter "
-                                            + std::to_string(param_index) + " of function " + qual_fn_name);
-                        }
-
                         // userdata is directly storing struct data
                         ptr = static_cast<void *>(udata->data);
                     }
