@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/misc.hpp"
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/render/2d/camera_2d.hpp"
@@ -52,7 +53,7 @@ namespace argus {
      *
      * \sa Window
      */
-    class Canvas {
+    class Canvas : AutoCleanupable {
       public:
         pimpl_Canvas *const pimpl;
 
@@ -67,7 +68,7 @@ namespace argus {
 
         Canvas(Canvas &&rhs) = delete;
 
-        ~Canvas(void);
+        ~Canvas(void) override;
 
         /**
          * \brief Gets the Window which owns this Canvas.

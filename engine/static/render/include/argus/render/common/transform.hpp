@@ -20,6 +20,7 @@
 
 #include "argus/lowlevel/dirtiable.hpp"
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/misc.hpp"
 
 namespace argus {
     struct pimpl_Transform2D;
@@ -30,7 +31,7 @@ namespace argus {
      *
      * \remark All member functions of this class are thread-safe.
      */
-    class Transform2D {
+    class Transform2D : AutoCleanupable {
       public:
         pimpl_Transform2D *pimpl;
 
@@ -48,7 +49,7 @@ namespace argus {
 
         Transform2D &operator=(Transform2D &&rhs) noexcept;
 
-        ~Transform2D(void);
+        ~Transform2D(void) override;
 
         /**
          * \brief Constructs a new 2D transform with the given parameters.

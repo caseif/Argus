@@ -1,5 +1,26 @@
+/*
+ * This file is a part of Argus.
+ * Copyright (c) 2019-2023, Max Roncace <mproncace@protonmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "argus/scripting.hpp"
 
+#include "argus/wm/window.hpp"
+
+#include "argus/render/common/canvas.hpp"
 #include "argus/render/common/transform.hpp"
 #include "internal/render/script_bindings.hpp"
 
@@ -19,7 +40,15 @@ namespace argus {
                 +[](const Transform2D &transform) { return transform.get_scale().y; });
     }
 
+    static void _register_canvas_symbols(void) {
+        bind_type<Canvas>("Canvas");
+        bind_member_instance_function("get_window", &Canvas::get_window);
+        // other Canvas functions are intended for use by downstream modules and
+        // so are not bound
+    }
+
     void register_render_script_bindings(void) {
         _register_transform_symbols();
+        _register_canvas_symbols();
     }
 }
