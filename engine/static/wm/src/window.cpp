@@ -253,7 +253,7 @@ namespace argus {
 
         g_window_count++;
 
-        pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); });
+        pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); }, Ordering::Early);
 
         if (g_window_construct_callback != nullptr) {
             g_window_construct_callback(*this);
