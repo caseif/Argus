@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/math.hpp"
+
 #include "argus/core/event.hpp"
 
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
 
-#include <algorithm>
 #include <chrono>
 
 #include <cstdint>
@@ -50,28 +51,37 @@ namespace argus {
     template <typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
             _bind_vector2(const std::string &name) {
+        using E = typename V::element_type;
         bind_type<V>(name);
         bind_member_field("x", &V::x);
         bind_member_field("y", &V::y);
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
+        bind_member_static_function<V>("of", +[](E x, E y) -> V { return V(x, y); });
     }
 
     template <typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector3(const std::string &name) {
+        using E = typename V::element_type;
         bind_type<V>(name);
         bind_member_field("x", &V::x);
         bind_member_field("y", &V::y);
         bind_member_field("z", &V::z);
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
+        bind_member_static_function<V>("of", +[](E x, E y, E z) -> V { return V(x, y, z); });
     }
 
     template <typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector4(const std::string &name) {
+        using E = typename V::element_type;
         bind_type<V>(name);
         bind_member_field("x", &V::x);
         bind_member_field("y", &V::y);
         bind_member_field("z", &V::z);
         bind_member_field("w", &V::w);
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
+        bind_member_static_function<V>("of", +[](E x, E y, E z, E w) -> V { return V(x, y, z, w); });
     }
 
     static void _bind_math_symbols(void) {
