@@ -27,6 +27,11 @@
 namespace argus {
     static void _register_transform_symbols(void) {
         bind_type<Transform2D>("Transform2D");
+        bind_member_static_function<Transform2D>("new", +[](void) -> Transform2D { return Transform2D(); });
+        bind_member_static_function<Transform2D>("of",
+                +[](const Vector2f translation, float rotation_rads, const Vector2f &scale) -> Transform2D {
+                    return Transform2D(translation, rotation_rads, scale);
+                });
         bind_member_instance_function("get_translation", &Transform2D::get_translation);
         bind_member_instance_function("get_rotation", &Transform2D::get_rotation);
         bind_member_instance_function("get_scale", &Transform2D::get_scale);
