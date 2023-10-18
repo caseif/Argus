@@ -16,9 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/handle.hpp"
 #include "argus/lowlevel/math.hpp"
-
-#include "argus/core/event.hpp"
 
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
@@ -97,10 +96,21 @@ namespace argus {
         _bind_vector4<Vector4f>("Vector4f");
         _bind_vector4<Vector4i>("Vector4i");
         _bind_vector4<Vector4u>("Vector4u");
+
+        bind_type<Padding>("Padding");
+        bind_member_field("top", &Padding::top);
+        bind_member_field("bottom", &Padding::bottom);
+        bind_member_field("left", &Padding::left);
+        bind_member_field("right", &Padding::right);
+    }
+
+    static void _bind_handle_symbols(void) {
+        bind_type<Handle>("Handle");
     }
 
     void register_lowlevel_bindings(void) {
         _bind_time_symbols();
         _bind_math_symbols();
+        _bind_handle_symbols();
     }
 }
