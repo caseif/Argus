@@ -1319,16 +1319,18 @@ namespace argus {
 
         if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
             const char *err_msg = lua_tostring(state, -1);
+            auto uid = resource.prototype.uid;
             resource.release();
-            throw ScriptLoadException(resource.uid, "Failed to parse script " + resource.prototype.uid
+            throw ScriptLoadException(uid, "Failed to parse script " + resource.prototype.uid
                     + " (" + std::string(err_msg) + ")");
         }
 
         auto err = lua_pcall(state, 0, 1, 0);
         if (err != LUA_OK) {
             //TODO: print detailed trace info from VM
+            auto uid = resource.prototype.uid;
             resource.release();
-            throw ScriptLoadException(resource.uid, lua_tostring(state, -1));
+            throw ScriptLoadException(uid, lua_tostring(state, -1));
         }
 
         return 1;
@@ -1344,11 +1346,18 @@ namespace argus {
 
         auto uid = _convert_path_to_uid(path);
         if (!uid.empty()) {
+            Resource *res;
             try {
-                auto &res = plugin.load_resource(uid);
-                return _load_script(state, res);
-            } catch (const std::exception &) {
+                res = &plugin.load_resource(uid);
+            } catch (const std::exception &ex) {
+                Logger::default_logger().debug("Unable to load resource for require path %s (%s)", path, ex.what());
                 // swallow
+            }
+
+            try {
+                return _load_script(state, *res);
+            } catch (const std::exception &ex) {
+                return luaL_error(state, "Unable to parse script %s passed to 'require': %s", path, ex.what());
             }
         }
 
