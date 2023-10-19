@@ -32,6 +32,8 @@ namespace argus {
     constexpr const char *k_lua_require = "require";
     constexpr const char *k_lua_require_def = "default_require";
 
+    constexpr const char *k_clone_fn = "clone";
+
     constexpr const char *k_mt_vector = "_internal_vector";
     constexpr const char *k_mt_vector_ref = "_internal_vectorref";
 

@@ -422,7 +422,7 @@ namespace argus {
     const BoundTypeDef &get_bound_type(const std::string &type_name) {
         auto it = g_bound_types.find(type_name);
         if (it == g_bound_types.cend()) {
-            throw std::invalid_argument("Type name" + std::string(type_name)
+            throw std::invalid_argument("Type name " + std::string(type_name)
                     + " is not bound (check binding order and ensure bind_type"
                       " is called after creating type definition)");
         }

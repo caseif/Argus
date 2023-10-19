@@ -1123,6 +1123,55 @@ namespace argus {
         return res;
     }
 
+    static int _clone_object(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        std::string type_name = _get_metatable_name(state, 1);
+        if (type_name.rfind(k_const_prefix, 0) == 0) {
+            type_name = type_name.substr(strlen(k_const_prefix));
+        }
+
+        auto param_count = lua_gettop(state);
+        if (param_count != 1) {
+            std::string msg = "Wrong parameter count for function clone";
+            if (lua_gettop(state)) {
+                msg += " (did you forget to use the colon operator?)";
+            }
+            return _set_lua_error(state, msg);
+        }
+
+        if (!lua_isuserdata(state, -1)) {
+            throw ScriptInvocationException("clone", "clone() called on non-userdata object");
+        }
+
+        auto &type_def = get_bound_type(type_name);
+        if (type_def.copy_ctor == nullptr) {
+            return _set_lua_error(state, type_name + " is not cloneable");
+        }
+
+        UserData *udata = reinterpret_cast<UserData *>(lua_touserdata(state, -1));
+
+        void *src;
+        if (udata->is_handle) {
+            auto handle = reinterpret_cast<ScriptBindableHandle *>(udata->data);
+            src = deref_sv_handle(*handle, type_def.type_index);
+        } else {
+            src = udata->data;
+        }
+
+        UserData *dest = reinterpret_cast<UserData *>(lua_newuserdata(state, sizeof(UserData) + type_def.size));
+        dest->is_handle = false;
+        stack_guard.increment();
+        auto mt = luaL_getmetatable(state, type_def.name.c_str());
+        UNUSED(mt);
+        assert(mt != 0); // binding should have failed if type wasn't bound
+        lua_setmetatable(state, -2);
+
+        type_def.copy_ctor(dest->data, src);
+
+        return 1;
+    }
+
     static void _bind_fn(lua_State *state, const BoundFunctionDef &fn, const std::string &type_name) {
         // push function type
         lua_pushinteger(state, fn.type);
@@ -1158,6 +1207,11 @@ namespace argus {
         lua_pushcfunction(state, _lua_type_newindex_handler);
         // save function override
         lua_setfield(state, -3, k_lua_newindex);
+
+        // push clone function to stack
+        lua_pushcfunction(state, _clone_object);
+        // save function to dispatch table
+        lua_setfield(state, -2, k_clone_fn);
 
         // save dispatch table (which pops it from the stack)
         lua_setmetatable(state, -2);
@@ -1197,9 +1251,7 @@ namespace argus {
 
     static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
         _add_type_function_to_mt(state, type_name, fn, false);
-        //if (fn.is_const) {
-            _add_type_function_to_mt(state, type_name, fn, true);
-        //}
+        _add_type_function_to_mt(state, type_name, fn, true);
     }
 
     static void _bind_type_field(lua_State *state, const std::string &type_name, const BoundFieldDef &field) {
