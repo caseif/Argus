@@ -30,7 +30,7 @@ namespace argus {
     // forward declarations
     struct pimpl_Sprite;
 
-    class Sprite {
+    class Sprite : AutoCleanupable {
       public:
         pimpl_Sprite *pimpl;
 
@@ -40,7 +40,7 @@ namespace argus {
 
         Sprite(Sprite &&);
 
-        ~Sprite(void);
+        ~Sprite(void) override;
 
         float get_animation_speed(void) const;
 
@@ -56,7 +56,7 @@ namespace argus {
 
         bool is_current_animation_static(void) const;
 
-        const Padding &get_current_animation_padding(void) const;
+        Padding get_current_animation_padding(void) const;
 
         void pause_animation(void);
 

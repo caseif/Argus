@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/handle.hpp"
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/game2d/actor_2d.hpp"
@@ -37,7 +38,7 @@ namespace argus {
 
     struct pimpl_World2DLayer;
 
-    class World2DLayer {
+    class World2DLayer : AutoCleanupable {
       public:
         pimpl_World2DLayer *pimpl;
 
@@ -48,7 +49,7 @@ namespace argus {
 
         World2DLayer(World2DLayer &&) = delete;
 
-        ~World2DLayer();
+        ~World2DLayer() override;
 
         World2D &get_world(void) const;
 

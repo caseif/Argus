@@ -37,7 +37,7 @@ namespace argus {
 
     struct pimpl_World2D;
 
-    class World2D {
+    class World2D : AutoCleanupable {
       public:
         static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
 
@@ -51,7 +51,7 @@ namespace argus {
 
         World2D(World2D &&) = delete;
 
-        ~World2D(void);
+        ~World2D(void) override;
 
         const std::string &get_id(void) const;
 

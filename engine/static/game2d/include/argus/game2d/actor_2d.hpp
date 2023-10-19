@@ -30,7 +30,7 @@ namespace argus {
     // forward declarations
     struct pimpl_Actor2D;
 
-    class Actor2D {
+    class Actor2D : AutoCleanupable {
       public:
         pimpl_Actor2D *pimpl;
 
@@ -40,7 +40,7 @@ namespace argus {
 
         Actor2D(Actor2D &&) = delete;
 
-        ~Actor2D(void);
+        ~Actor2D(void) override;
 
         const Vector2f &get_size(void) const;
 

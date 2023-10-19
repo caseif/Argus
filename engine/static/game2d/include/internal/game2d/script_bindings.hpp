@@ -18,37 +18,6 @@
 
 #pragma once
 
-#include "argus/lowlevel/math.hpp"
-
-#include "argus/render/common/transform.hpp"
-
-#include "argus/game2d/sprite.hpp"
-
-#include <string>
-
 namespace argus {
-    // forward declarations
-    struct pimpl_StaticObject2D;
-
-    class StaticObject2D : AutoCleanupable {
-      public:
-        pimpl_StaticObject2D *pimpl;
-
-        StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
-                const Transform2D &transform);
-
-        StaticObject2D(StaticObject2D &) = delete;
-
-        StaticObject2D(StaticObject2D &&rhs) noexcept;
-
-        ~StaticObject2D(void) override;
-
-        const Vector2f &get_size(void) const;
-
-        uint32_t get_z_index(void) const;
-
-        const Transform2D &get_transform(void) const;
-
-        Sprite &get_sprite(void) const;
-    };
+    void register_game2d_bindings(void);
 }

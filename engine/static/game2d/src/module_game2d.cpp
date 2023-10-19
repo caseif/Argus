@@ -25,6 +25,7 @@
 
 #include "internal/game2d/module_game2d.hpp"
 #include "internal/game2d/resources.h"
+#include "internal/game2d/script_bindings.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/loader/sprite_loader.hpp"
 
@@ -38,6 +39,8 @@ namespace argus {
                 ResourceManager::instance().register_loader(*new SpriteLoader());
 
                 register_update_callback(render_worlds);
+
+                register_game2d_bindings();
 
                 break;
             }
