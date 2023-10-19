@@ -39,6 +39,10 @@ namespace argus {
                 &Transform2D::set_translation);
         bind_member_instance_function("set_rotation", &Transform2D::set_rotation);
         bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_scale", &Transform2D::set_scale);
+        bind_member_instance_function<void (Transform2D::*)(float dx, float dy)>("add_translation",
+                &Transform2D::add_translation);
+        bind_member_instance_function("add_rotation",
+                &Transform2D::add_rotation);
         bind_extension_function<Transform2D>("x",
                 +[](const Transform2D &transform) { return transform.get_translation().x; });
         bind_extension_function<Transform2D>("y",
@@ -54,6 +58,8 @@ namespace argus {
         bind_member_instance_function("get_window", &Canvas::get_window);
         // other Canvas functions are intended for use by downstream modules and
         // so are not bound
+
+        bind_member_instance_function("get_canvas", &Window::get_canvas);
     }
 
     void register_render_script_bindings(void) {
