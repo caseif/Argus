@@ -968,7 +968,12 @@ namespace argus {
                 }
             }
 
-            auto retval = fn.handle(args);
+            ObjectWrapper retval;
+            try {
+                retval = fn.handle(args);
+            } catch (const std::exception &ex) {
+                return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(), ex.what());
+            }
 
             if (retval.type.type != IntegralType::Void) {
                 try {
