@@ -1266,8 +1266,10 @@ namespace argus {
         auto &loaded_script = resource.get<LoadedScript>();
 
         if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
+            const char *err_msg = lua_tostring(state, -1);
             resource.release();
-            throw ScriptLoadException(resource.uid, "luaL_loadstring failed");
+            throw ScriptLoadException(resource.uid, "Failed to parse script " + resource.prototype.uid
+                    + " (" + std::string(err_msg) + ")");
         }
 
         auto err = lua_pcall(state, 0, 1, 0);
@@ -1351,7 +1353,9 @@ namespace argus {
         auto &loaded_script = resource.get<LoadedScript>();
 
         if (luaL_loadstring(*state, loaded_script.source.c_str()) != LUA_OK) {
-            throw ScriptLoadException(resource.uid, "luaL_loadstring failed");
+            const char *err_msg = lua_tostring(*state, -1);
+            throw ScriptLoadException(resource.uid, "Failed to parse script " + resource.prototype.uid
+                    + " (" + std::string(err_msg) + ")");
         }
 
         auto err = lua_pcall(*state, 0, 0, 0);
