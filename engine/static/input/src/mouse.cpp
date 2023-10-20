@@ -52,10 +52,21 @@ namespace argus::input {
         return g_mouse_state.mouse_delta;
     }
 
+    bool is_mouse_button_pressed(MouseButton button) {
+        if (int(button) < 0) {
+            throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
+        }
+        auto sdl_button = g_mouse_button_mappings.find(button);
+        if (sdl_button == g_mouse_button_mappings.cend()) {
+            throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
+        }
+        return (g_mouse_state.button_state & SDL_BUTTON(sdl_button->second)) != 0;
+    }
+
     static void _poll_mouse(void) {
         int x;
         int y;
-        SDL_GetMouseState(&x, &y);
+        g_mouse_state.button_state = SDL_GetMouseState(&x, &y);
 
         if (g_mouse_state.got_first_mouse_pos) {
             g_mouse_state.mouse_delta = { double(x) - g_mouse_state.last_mouse_pos.x,
