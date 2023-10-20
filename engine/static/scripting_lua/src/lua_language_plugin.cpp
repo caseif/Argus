@@ -1322,7 +1322,9 @@ namespace argus {
     static int _load_script(lua_State *state, const Resource &resource) {
         auto &loaded_script = resource.get<LoadedScript>();
 
-        if (luaL_loadstring(state, loaded_script.source.c_str()) != LUA_OK) {
+        auto load_res = luaL_loadbuffer(state, loaded_script.source.c_str(), loaded_script.source.length(),
+                resource.prototype.uid.c_str());
+        if (load_res != LUA_OK) {
             const char *err_msg = lua_tostring(state, -1);
             auto uid = resource.prototype.uid;
             resource.release();
@@ -1330,8 +1332,8 @@ namespace argus {
                     + " (" + std::string(err_msg) + ")");
         }
 
-        auto err = lua_pcall(state, 0, 1, 0);
-        if (err != LUA_OK) {
+        auto call_res = lua_pcall(state, 0, 1, 0);
+        if (call_res != LUA_OK) {
             //TODO: print detailed trace info from VM
             auto uid = resource.prototype.uid;
             resource.release();
@@ -1418,14 +1420,16 @@ namespace argus {
 
         auto &loaded_script = resource.get<LoadedScript>();
 
-        if (luaL_loadstring(*state, loaded_script.source.c_str()) != LUA_OK) {
+        auto load_res = luaL_loadbuffer(*state, loaded_script.source.c_str(), loaded_script.source.length(),
+                resource.prototype.uid.c_str());
+        if (load_res != LUA_OK) {
             const char *err_msg = lua_tostring(*state, -1);
             throw ScriptLoadException(resource.uid, "Failed to parse script " + resource.prototype.uid
                     + " (" + std::string(err_msg) + ")");
         }
 
-        auto err = lua_pcall(*state, 0, 0, 0);
-        if (err != LUA_OK) {
+        auto call_res = lua_pcall(*state, 0, 0, 0);
+        if (call_res != LUA_OK) {
             //TODO: print detailed trace info from VM
             throw ScriptLoadException(resource.uid, lua_tostring(*state, -1));
         }
