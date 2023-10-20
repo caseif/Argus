@@ -31,7 +31,8 @@
 #pragma GCC diagnostic pop
 #include "SDL_mouse.h"
 
-#include <map>
+#include <mutex>
+#include <unordered_map>
 
 namespace argus::input {
     static const std::unordered_map<MouseButton, int> g_mouse_button_mappings({
@@ -43,16 +44,21 @@ namespace argus::input {
     });
 
     static MouseState g_mouse_state;
+    static std::mutex g_mouse_state_mutex;
 
     argus::Vector2d mouse_pos(void) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
         return g_mouse_state.last_mouse_pos;
     }
 
     argus::Vector2d mouse_delta(void) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
         return g_mouse_state.mouse_delta;
     }
 
     bool is_mouse_button_pressed(MouseButton button) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+
         if (int(button) < 0) {
             throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
         }
@@ -64,6 +70,8 @@ namespace argus::input {
     }
 
     static void _poll_mouse(void) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+
         int x;
         int y;
         g_mouse_state.button_state = SDL_GetMouseState(&x, &y);
