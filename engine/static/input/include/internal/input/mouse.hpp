@@ -31,9 +31,7 @@ namespace argus {
         struct MouseState {
             Vector2d last_mouse_pos;
             Vector2d mouse_delta;
-            bool got_first_mouse_pos;
-
-            std::mutex window_mutex;
+            bool got_first_mouse_pos = false;
         };
 
         void init_mouse(const argus::Window &window);

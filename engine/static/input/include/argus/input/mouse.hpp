@@ -22,11 +22,11 @@
 
 namespace argus::input {
     enum class MouseButton {
-        Primary,
-        Secondary,
-        Middle,
-        Back,
-        Forward
+        Primary = 1,
+        Secondary = 2,
+        Middle = 3,
+        Back = 4,
+        Forward = 5,
     };
 
     enum class MouseAxis {
@@ -38,12 +38,13 @@ namespace argus::input {
      * \brief Returns the change in position of the mouse from the previous
      *        frame.
      */
-    argus::Vector2d mouse_delta(const argus::Window &window);
+    argus::Vector2d mouse_delta(void);
 
     /**
-     * \brief Gets the current position of the mouse within the window.
+     * \brief Gets the current position of the mouse within the currently
+     *        focused window.
      */
-    argus::Vector2d mouse_pos(const argus::Window &window);
+    argus::Vector2d mouse_pos(void);
 
     /**
      * \brief Sets whether the mouse cursor should be hidden and locked to the

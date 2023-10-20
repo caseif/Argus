@@ -34,19 +34,36 @@
 #include <map>
 
 namespace argus::input {
-    static std::map<const argus::Window *, MouseState> g_mouse_states;
+    static const std::unordered_map<MouseButton, int> g_mouse_button_mappings({
+            { MouseButton::Primary, SDL_BUTTON_LEFT },
+            { MouseButton::Middle, SDL_BUTTON_MIDDLE },
+            { MouseButton::Secondary, SDL_BUTTON_RIGHT },
+            { MouseButton::Back, SDL_BUTTON_X1 },
+            { MouseButton::Forward, SDL_BUTTON_X2 },
+    });
 
-    argus::Vector2d mouse_pos(const argus::Window &window) {
-        UNUSED(window);
+    static MouseState g_mouse_state;
+
+    argus::Vector2d mouse_pos(void) {
+        return g_mouse_state.last_mouse_pos;
+    }
+
+    argus::Vector2d mouse_delta(void) {
+        return g_mouse_state.mouse_delta;
+    }
+
+    static void _poll_mouse(void) {
         int x;
         int y;
         SDL_GetMouseState(&x, &y);
 
-        return Vector2d(x, y);
-    }
-
-    argus::Vector2d mouse_delta(const argus::Window &window) {
-        return g_mouse_states[&window].mouse_delta;
+        if (g_mouse_state.got_first_mouse_pos) {
+            g_mouse_state.mouse_delta = { double(x) - g_mouse_state.last_mouse_pos.x,
+                    double(y) - g_mouse_state.last_mouse_pos.y };
+        } else {
+            g_mouse_state.got_first_mouse_pos = true;
+        }
+        g_mouse_state.last_mouse_pos = { double(x), double(y) };
     }
 
     static void _handle_mouse_events(void) {
@@ -105,6 +122,7 @@ namespace argus::input {
     }
 
     void update_mouse(void) {
+        _poll_mouse();
         _handle_mouse_events();
     }
 }
