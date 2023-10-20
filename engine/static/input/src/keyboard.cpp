@@ -200,8 +200,9 @@ namespace argus::input {
         { KeyboardScancode::Menu,           SDL_SCANCODE_MENU },
     });
 
-    const uint8_t *g_keyboard_state = nullptr;
-    int g_keyboard_key_count;
+    static const uint8_t *g_keyboard_state = nullptr;
+    static std::mutex g_keyboard_state_mutex;
+    static int g_keyboard_key_count;
 
     static KeyboardScancode _translate_sdl_scancode(int sdl_scancode) {
         if (sdl_scancode < 0) {
@@ -260,6 +261,7 @@ namespace argus::input {
     }
 
     bool is_key_pressed(KeyboardScancode scancode) {
+        std::lock_guard<std::mutex> lock(g_keyboard_state_mutex);
         if (g_keyboard_state == nullptr) {
             return false;
         }
@@ -277,6 +279,7 @@ namespace argus::input {
     }
 
     static void _poll_keyboard_state(void) {
+        std::lock_guard<std::mutex> lock(g_keyboard_state_mutex);
         g_keyboard_state = SDL_GetKeyboardState(&g_keyboard_key_count);
     }
 
