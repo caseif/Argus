@@ -253,10 +253,9 @@ namespace argus::input {
      * \brief Gets whether the key associated with a scancode is currently being
      *        pressed down.
      *
-     * \param window The window to query input for.
      * \param scancode The scancode to query.
      *
      * \return Whether the key is being pressed.
      */
-    bool keyboard_key_down(const Window &window, KeyboardScancode scancode);
+    bool is_key_pressed(KeyboardScancode scancode);
 }

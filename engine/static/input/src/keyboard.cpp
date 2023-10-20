@@ -255,13 +255,11 @@ namespace argus::input {
         UNUSED(window);
     }
 
-    std::string get_key_name(const KeyboardScancode scancode) {
+    std::string get_key_name(KeyboardScancode scancode) {
         return SDL_GetKeyName(SDL_GetKeyFromScancode(_translate_argus_scancode(scancode)));
     }
 
-    bool keyboard_key_down(const argus::Window &window, const KeyboardScancode scancode) {
-        UNUSED(window);
-
+    bool is_key_pressed(KeyboardScancode scancode) {
         if (g_keyboard_state == nullptr) {
             return false;
         }

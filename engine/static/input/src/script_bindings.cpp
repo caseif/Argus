@@ -185,7 +185,7 @@ namespace argus {
         bind_enum_value("Alt", input::KeyboardModifiers::Alt);
 
         bind_global_function("get_key_name", input::get_key_name);
-        bind_global_function("keyboard_key_down", input::keyboard_key_down);
+        bind_global_function("is_key_pressed", input::is_key_pressed);
     }
 
     static void _bind_mouse_symbols(void) {
