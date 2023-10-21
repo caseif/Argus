@@ -325,7 +325,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
 
     set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
-    list(APPEND PROJECT_LINKER_DEPS ${LIB_BASE_NAME})
+    list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
     target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
 
     foreach(lib ${RUST_LIBS_FOR_LINKING})
@@ -344,10 +344,10 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
     _argus_set_compile_flags(${PROJECT_NAME})
 
-    message("include_dirs: ${ARGUS_INCLUDE_DIRS}")
-    target_include_directories(${PROJECT_NAME} PUBLIC ${ARGUS_INCLUDE_DIRS})
-    target_include_directories(${PROJECT_NAME} PUBLIC ${MODULE_INCLUDE_DIR})
+    set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
+    list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
     target_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
+
     set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
     _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${BIN_PREFIX}")
@@ -427,10 +427,15 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     if(WIN32)
       target_compile_definitions("${PROJECT_NAME}" PUBLIC "NOMINMAX")
     endif()
-    
-    # recursively load this module's include dirs
-    _argus_find_module_includes(PROJECT_INCLUDES "${MODULE_PROJECT_DIR}" "${MODULE_GENERATED_DIR}"
-                                "${MODULE_ENGINE_LIB_DEPS}" "${MODULE_ENGINE_MOD_DEPS}")
+
+    if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
+      set(PROJECT_INCLUDES "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}"
+              "${MODULE_GENRATED_DIR}/${INCLUDE_DIR_NAME}" "${ARGUS_INCLUDE_DIRS}" "${MODULE_INCLUDES}")
+    else()
+      # recursively load this module's include dirs
+      _argus_find_module_includes(PROJECT_INCLUDES "${MODULE_PROJECT_DIR}" "${MODULE_GENERATED_DIR}"
+              "${MODULE_ENGINE_LIB_DEPS}" "${MODULE_ENGINE_MOD_DEPS}")
+    endif()
     list(APPEND INCLUDE_DIRS "${PROJECT_INCLUDES}")
     target_include_directories("${PROJECT_NAME}" PUBLIC "${INCLUDE_DIRS}")
 

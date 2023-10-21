@@ -41,7 +41,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(PROJECT_CXX_VERSION 17)
 set(PROJECT_CXX_EXTENSIONS NO)
 
-set(LIB_BASE_NAME argus)
+set(LIB_BASE_NAME "argus")
+set(ARGUS_LIBRARY "${LIB_BASE_NAME}")
 
 set(BIN_PREFIX "bin")
 set(LIB_PREFIX "lib")
@@ -291,32 +292,32 @@ foreach(lib ${STATIC_MODULE_LIBS})
     list(APPEND STATIC_MODULE_LIB_OBJS "$<TARGET_OBJECTS:${lib}>")
   endif()
 endforeach()
-add_library(${LIB_BASE_NAME} SHARED ${STATIC_MODULE_LIB_OBJS})
+add_library(${ARGUS_LIBRARY} SHARED ${STATIC_MODULE_LIB_OBJS})
 
-_argus_set_compile_flags(${LIB_BASE_NAME})
+_argus_set_compile_flags(${ARGUS_LIBRARY})
 
 # set the linker language (since we're not directly including any sources)
-set_target_properties(${LIB_BASE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES LINKER_LANGUAGE CXX)
 # set the C++ standard
-set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
-set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
-set_target_properties(${LIB_BASE_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_EXTENSIONS}")
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES CXX_STANDARD_REQUIRED ON)
 # enable PIC
-set_target_properties(${LIB_BASE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # export all symbols (required on Windows)
-set_target_properties(${LIB_BASE_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set_target_properties(${ARGUS_LIBRARY} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # set params for shared library output name
-set_target_properties("${LIB_BASE_NAME}" PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties("${LIB_BASE_NAME}" PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-set_target_properties("${LIB_BASE_NAME}" PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties("${ARGUS_LIBRARY}" PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties("${ARGUS_LIBRARY}" PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties("${ARGUS_LIBRARY}" PROPERTIES DEBUG_POSTFIX "d")
 
 # add libraries for linking
 get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
 list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
-target_link_libraries(${LIB_BASE_NAME} "${COMBINED_TARGET_LINKER_DEPS}")
+target_link_libraries(${ARGUS_LIBRARY} "${COMBINED_TARGET_LINKER_DEPS}")
 
 foreach(lib ${RUST_LIBS_FOR_LINKING})
-  target_link_libraries(${LIB_BASE_NAME}
+  target_link_libraries(${ARGUS_LIBRARY}
     debug "${RUST_TARGET_DIR}/${lib}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
     optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endforeach()
@@ -324,16 +325,16 @@ endforeach()
 # add global include list
 get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
 list(REMOVE_DUPLICATES COMBINED_TARGET_INCLUDES)
-target_include_directories(${LIB_BASE_NAME} PUBLIC "${COMBINED_TARGET_INCLUDES}")
+target_include_directories(${ARGUS_LIBRARY} PUBLIC "${COMBINED_TARGET_INCLUDES}")
 
 foreach(module ${DYNAMIC_MODULE_IDS})
-  add_dependencies("${module}" "${LIB_BASE_NAME}")
+  add_dependencies("${module}" "${ARGUS_LIBRARY}")
 endforeach()
 
 # make the copy headers target a dependency to force it to run
-add_dependencies(${LIB_BASE_NAME} ${HDR_TARGET})
+add_dependencies(${ARGUS_LIBRARY} ${HDR_TARGET})
 
-_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${ARGUS_LIBRARY}" "${LIB_PREFIX}")
 _argus_copy_dep_output("${DIST_DIR}" "${ZLIB_LIBRARY}" "${LIB_PREFIX}")
 _argus_copy_dep_output("${DIST_DIR}" "${PNG_LIBRARY}" "${LIB_PREFIX}")
 _argus_copy_dep_output("${DIST_DIR}" "${SDL2_LIBRARY}" "${LIB_PREFIX}")
