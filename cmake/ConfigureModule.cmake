@@ -150,12 +150,14 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     project("${MODULE_NAME}" LANGUAGES ${MODULE_LANGUAGES})
   endif()
 
-  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_LIBRARY}")
+  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}")
     set(MODULE_GENERATED_DIR "${ENGINE_LIBS_GENERATED_DIR}/${MODULE_NAME}")
-  elseif("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}")
     set(MODULE_GENERATED_DIR "${STATIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
-  elseif("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_DYNAMIC}")
     set(MODULE_GENERATED_DIR "${DYNAMIC_MODULES_GENERATED_DIR}/${MODULE_NAME}")
+  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
+    set(MODULE_GENERATED_DIR "${EXES_GENERATED_DIR}/${MODULE_NAME}")
   endif()
 
   set(MODULE_CMAKE_PATH "${MODULE_PROJECT_DIR}/module.cmake")
@@ -170,7 +172,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
   string(CONFIGURE "${MODULE_EXTERNAL_LINKER_DEPS}" MODULE_EXTERNAL_LINKER_DEPS)
 
-  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}")
     _argus_compute_dep_edges()
     set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
@@ -253,13 +255,14 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
   endif()
 
-  if(NOT "${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}" OR
+     "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}")
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
 
     # only include libraries if they're explicitly requested from a static module
-    if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_STATIC}")
+    if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}")
       set(STATIC_MODULE_LIBS_LOCAL "${id};${STATIC_MODULE_LIBS}")
       foreach(lib ${MODULE_ENGINE_LIB_DEPS})
         set(STATIC_MODULE_LIBS_LOCAL "${lib};${STATIC_MODULE_LIBS_LOCAL}")
@@ -268,19 +271,22 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
 
     # configure the copy headers task to include this project
-    set(MODULE_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
-    if(EXISTS "${MODULE_INCLUDE_DIR}")
+    set(MODULE_BASE_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}")
+    set(MODULE_PUBLIC_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
+    if(EXISTS "${MODULE_PUBLIC_INCLUDE_DIR}")
       add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
         COMMENT "Copying headers for module ${id}"
         COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${MODULE_INCLUDE_DIR} ${HDR_OUT_DIR})
+          copy_directory ${MODULE_PUBLIC_INCLUDE_DIR} ${HDR_OUT_DIR})
     endif()
+
+    set(ARGUS_INCLUDE_DIRS "${ARGUS_INCLUDE_DIRS}" "${MODULE_BASE_INCLUDE_DIR}" PARENT_SCOPE)
 
     # add this project as a dependency of the copy headers task
     add_dependencies(${HDR_TARGET} ${id})
   endif()
 
-  if("${MODULE_TYPE}" STREQUAL "${PROJECT_TYPE_DYNAMIC}")
+  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_DYNAMIC}")
     if(${IS_EXTERNAL})
       message(FATAL_ERROR "External build systems are not supported for dynamic modules")
     endif()
@@ -329,6 +335,20 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endforeach()
 
     _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
+  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
+    if(${IS_EXTERNAL})
+      message(FATAL_ERROR "External build systems are not supported for executable modules")
+    endif()
+
+    add_executable(${PROJECT_NAME} ${C_FILES} ${CPP_FILES})
+
+    _argus_set_compile_flags(${PROJECT_NAME})
+
+    message("include_dirs: ${ARGUS_INCLUDE_DIRS}")
+    target_include_directories(${PROJECT_NAME} PUBLIC ${ARGUS_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${MODULE_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
+    set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
@@ -385,7 +405,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       endforeach()
 
       add_dependencies(${MODULE_NAME} ${copy_libs_target})
-    #else()
     endif()
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
     list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")

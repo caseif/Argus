@@ -4,12 +4,14 @@ set(STATIC_MODULE_IDS "core;ecs;resman;"
                       #"scripting_angelscript;"
                       "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
+set(EXE_MODULE_IDS "")
 
 set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
 set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
 set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
 set(ENGINE_LIBS_SRC_DIR "${ENGINE_SRC_PATH}/libs")
+set(EXES_SRC_DIR "${ENGINE_SRC_PATH}/exe")
 
 cmake_minimum_required(VERSION 3.17)
 if(POLICY CMP0048)
@@ -51,6 +53,7 @@ set(GENERATED_BASE_DIR "${PROJECT_BINARY_DIR}/generated")
 set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
 set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
 set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
+set(EXES_GENERATED_DIR "${GENERATED_BASE_DIR}/exe")
 
 option(ENABLE_CTEST "Enable testing" ON)
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
@@ -115,9 +118,10 @@ endif()
 
 include("${ROOT_PROJECT_DIR}/cmake/ConfigureExternalTargets.cmake")
 
-set(PROJECT_TYPE_STATIC "static")
-set(PROJECT_TYPE_DYNAMIC "dynamic")
-set(PROJECT_TYPE_LIBRARY "library")
+set(MODULE_TYPE_STATIC "static")
+set(MODULE_TYPE_DYNAMIC "dynamic")
+set(MODULE_TYPE_LIBRARY "library")
+set(MODULE_TYPE_EXE "exe")
 
 set(SOURCE_DIR_NAME "src")
 set(INCLUDE_DIR_NAME "include")
@@ -213,6 +217,8 @@ set(LIB_OUT_DIR ${CMAKE_BINARY_DIR}/lib)
 
 set(LIBRARY_OUTPUT_PATH ${LIB_OUT_DIR})
 
+set(ARGUS_INCLUDE_DIRS "")
+
 # configure the copy headers task
 set(HDR_TARGET "${LIB_BASE_NAME}_headers")
 set(HDR_OUT_DIR "${DIST_DIR}/${INCLUDE_DIR_NAME}/argus/")
@@ -236,6 +242,11 @@ endforeach()
 foreach(id ${DYNAMIC_MODULE_IDS})
   _argus_configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
                           "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+endforeach()
+
+foreach(id ${EXE_MODULE_IDS})
+  _argus_configure_module("${EXES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
+          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 # configure module dependency information

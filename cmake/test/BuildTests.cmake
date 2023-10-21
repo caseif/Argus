@@ -7,7 +7,7 @@ endif()
 set(PROJECT_CXX_VERSION 17)
 set(PROJECT_CXX_EXTENSIONS NO)
 
-set(LIBARGUS_NAME "argus")
+set(ARGUS_LIBRARY "argus")
 set(ARGUS_DIST_DIR "${CMAKE_BINARY_DIR}/dist")
 set(ARGUS_INCLUDE_DIR "${CMAKE_BINARY_DIR}/dist/include")
 set(ARGUS_LIB_DIR "${CMAKE_BINARY_DIR}/dist/lib")
@@ -79,7 +79,7 @@ list(APPEND SRC_FILES "${RES_SOURCE_FILE}")
 add_executable("${PROJECT_NAME}" "${SRC_FILES}")
 target_include_directories("${PROJECT_NAME}" PRIVATE "${ARGUS_INCLUDE_DIR};${RES_INCLUDE_PATH};"
     "${PROJECT_SOURCE_DIR}/include;${ARGUS_ROOT_DIR}/test/include")
-target_link_libraries("${PROJECT_NAME}" PRIVATE "${LIBARGUS_NAME};Catch2::Catch2WithMain")
+target_link_libraries("${PROJECT_NAME}" PRIVATE "${ARGUS_LIBRARY};Catch2::Catch2WithMain")
 
 # set the C++ standard
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD "${PROJECT_CXX_VERSION}")
