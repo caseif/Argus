@@ -16,13 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
+#include "argus/core.hpp"
 
 #include <cstdio>
 
+static argus::Logger g_logger("Bootstrap");
+
 int main(int argc, char **argv) {
-    UNUSED(argc);
-    UNUSED(argv);
-    printf("Hello bootstrap!\n");
-    return 0;
+    if (argc != 2) {
+        printf("Invalid arguments\nUsage: %s <namespace>", argc >= 1 ? argv[0] : "argus_bootstrap");
+    }
+
+    argus::load_client_config(argv[1]);
+    g_logger.debug("Loaded client config");
+
+    argus::initialize_engine();
+    g_logger.debug("Engine initialized");
+
+    g_logger.debug("Starting engine...");
+    argus::start_engine(nullptr);
 }
