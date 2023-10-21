@@ -114,17 +114,21 @@ function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
     set(PREFIX ".")
   endif()
 
-  set(LIB_FILE_DIR "${DIST_DIR}/lib/${PREFIX}")
-  set(LIB_FILE_DEST_PATH "${LIB_FILE_DIR}/$<TARGET_FILE_NAME:${TARGET}>")
+  set(DEST_DIR "${DIST_DIR}/${PREFIX}")
+  set(LIB_FILE_DEST_PATH "${DEST_DIR}/$<TARGET_FILE_NAME:${TARGET}>")
 
   add_file_action(TARGET "${TARGET}"
       ACTION "copy_if_different"
       SOURCE "$<TARGET_FILE:${TARGET}>"
       DEST "${LIB_FILE_DEST_PATH}")
 
-  create_so_symlinks("${TARGET}" "${LIB_FILE_DIR}")
+  get_target_property(TARGET_TYPE "${TARGET}" "TYPE")
 
-  if(WIN32)
+  if("${TARGET_TYPE}" STREQUAL "SHARED_LIBRARY")
+    create_so_symlinks("${TARGET}" "${DEST_DIR}")
+  endif()
+
+  if(WIN32 AND "${TARGET_TYPE}" STREQUAL "SHARED_LIBRARY")
     set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${TARGET}>")
 
     add_file_action(TARGET "${TARGET}"

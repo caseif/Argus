@@ -43,7 +43,9 @@ set(PROJECT_CXX_EXTENSIONS NO)
 
 set(LIB_BASE_NAME argus)
 
-set(DYN_MODULE_DIR "modules")
+set(BIN_PREFIX "bin")
+set(LIB_PREFIX "lib")
+set(DYN_MODULE_PREFIX "${LIB_PREFIX}/modules")
 
 set(ROOT_PROJECT_DIR "${PROJECT_SOURCE_DIR}")
 
@@ -331,13 +333,13 @@ endforeach()
 # make the copy headers target a dependency to force it to run
 add_dependencies(${LIB_BASE_NAME} ${HDR_TARGET})
 
-_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" ".")
-_argus_copy_dep_output("${DIST_DIR}" "${ZLIB_LIBRARY}" ".")
-_argus_copy_dep_output("${DIST_DIR}" "${PNG_LIBRARY}" ".")
-_argus_copy_dep_output("${DIST_DIR}" "${SDL2_LIBRARY}" ".")
-_argus_copy_dep_output("${DIST_DIR}" "${LUA_LIBRARY}" ".")
-#_argus_copy_dep_output("${DIST_DIR}" "${ANGELSCRIPT_LIBRARY}" ".")
-_argus_copy_dep_output("${DIST_DIR}" "${ARP_LIBRARY_BASE}" ".")
+_argus_copy_dep_output("${DIST_DIR}" "${LIB_BASE_NAME}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${ZLIB_LIBRARY}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${PNG_LIBRARY}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${SDL2_LIBRARY}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${LUA_LIBRARY}" "${LIB_PREFIX}")
+#_argus_copy_dep_output("${DIST_DIR}" "${ANGELSCRIPT_LIBRARY}" "${LIB_PREFIX}")
+_argus_copy_dep_output("${DIST_DIR}" "${ARP_LIBRARY_BASE}" "${LIB_PREFIX}")
 
 if(ENABLE_CTEST)
   enable_testing()

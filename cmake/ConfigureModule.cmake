@@ -322,7 +322,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
 
     # output to separate directory
-    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${DYN_MODULE_DIR}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
 
     set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
     list(APPEND PROJECT_LINKER_DEPS ${LIB_BASE_NAME})
@@ -334,7 +334,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
                             optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endforeach()
 
-    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_DIR}")
+    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_PREFIX}")
   elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
     if(${IS_EXTERNAL})
       message(FATAL_ERROR "External build systems are not supported for executable modules")
@@ -349,6 +349,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     target_include_directories(${PROJECT_NAME} PUBLIC ${MODULE_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
     set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${BIN_PREFIX}")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
