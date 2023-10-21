@@ -4,7 +4,7 @@ set(STATIC_MODULE_IDS "core;ecs;resman;"
                       #"scripting_angelscript;"
                       "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
-set(EXE_MODULE_IDS "")
+set(EXE_MODULE_IDS "bootstrap")
 
 set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
