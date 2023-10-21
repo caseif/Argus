@@ -303,13 +303,14 @@ namespace argus {
         Logger::default_logger().info("Bringing up engine");
 
         affirm_precond(g_core_initialized, "Cannot start engine before it is initialized.");
-        affirm_precond(game_loop != nullptr, "start_engine invoked with null callback");
 
         affirm_precond(!get_client_id().empty(), "Client ID must be set prior to engine start");
         affirm_precond(!get_client_name().empty(), "Client ID must be set prior to engine start");
         affirm_precond(!get_client_version().empty(), "Client ID must be set prior to engine start");
 
-        register_update_callback(game_loop);
+        if (game_loop != nullptr) {
+            register_update_callback(game_loop);
+        }
 
         g_render_thread = std::thread(_render_loop, nullptr);
 
