@@ -18,18 +18,8 @@
 
 #pragma once
 
-#include "argus/input/controller.hpp"
-
-#include <map>
+#include "argus/input/input_manager.hpp"
 
 namespace argus::input {
-    struct pimpl_InputManager {
-        std::map<ControllerIndex, Controller *> controllers;
-        std::vector<ControllerIndex> uninitted_controllers;
-
-        pimpl_InputManager(void) :
-            controllers({}),
-            uninitted_controllers({}) {
-        }
-    };
+    void update_input_manager(InputManager &manager);
 }

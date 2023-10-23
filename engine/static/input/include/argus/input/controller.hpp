@@ -36,18 +36,20 @@ namespace argus::input {
         friend class InputManager;
 
       private:
-        pimpl_Controller *pimpl;
-
-        Controller(ControllerIndex index);
+        Controller(ControllerIndex index, bool assign_gamepad);
 
         ~Controller(void) override;
 
       public:
+        pimpl_Controller *pimpl;
+
         Controller(const Controller &) = delete;
 
         Controller(Controller &&) = delete;
 
         [[nodiscard]] ControllerIndex get_index(void) const;
+
+        [[nodiscard]] bool has_gamepad(void) const;
 
         void unbind_action(const std::string &action);
 

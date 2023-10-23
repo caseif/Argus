@@ -26,6 +26,8 @@
 namespace argus::input {
     struct pimpl_Controller {
         ControllerIndex index;
+        bool has_gamepad;
+        bool is_initted;
 
         std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
         std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
@@ -36,8 +38,10 @@ namespace argus::input {
         std::map<MouseAxis, std::vector<std::string>> mouse_axis_to_action_bindings;
         std::map<std::string, std::vector<MouseAxis>> action_to_mouse_axis_bindings;
 
-        pimpl_Controller(ControllerIndex index) :
-                index(index) {
+        pimpl_Controller(ControllerIndex index, bool has_gamepad) :
+                index(index),
+                has_gamepad(has_gamepad),
+                is_initted(false) {
         }
     };
 }

@@ -29,8 +29,8 @@
 namespace argus::input {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Controller));
 
-    Controller::Controller(ControllerIndex index) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Controller>(index)) {
+    Controller::Controller(ControllerIndex index, bool assign_gamepad) :
+            pimpl(&g_pimpl_pool.construct<pimpl_Controller>(index, assign_gamepad)) {
     }
 
     Controller::~Controller(void) {
@@ -41,6 +41,10 @@ namespace argus::input {
 
     ControllerIndex Controller::get_index(void) const {
         return pimpl->index;
+    }
+
+    bool Controller::has_gamepad(void) const {
+        return pimpl->has_gamepad;
     }
 
     void Controller::unbind_action(const std::string &action) {

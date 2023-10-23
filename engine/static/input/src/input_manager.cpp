@@ -21,6 +21,7 @@
 #include "argus/input/controller.hpp"
 #include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
+#include "internal/input/input_manager.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
@@ -63,7 +64,7 @@ namespace argus::input {
         return *res->second;
     }
 
-    Controller &InputManager::add_controller(void) {
+    Controller &InputManager::add_controller(bool assign_gamepad) {
         if (pimpl->controllers.size() > UINT16_MAX) {
             throw std::invalid_argument("Controller limit reached");
         }
@@ -84,18 +85,19 @@ namespace argus::input {
                 }
 
                 // should only be possible if all values in range
-                // [0, UINT16_MAX] have been checked, which is impossible via
-                // the pigeonhole principle because we already verified the map
-                // is smaller than UINT16_MAX
+                // [0, UINT16_MAX] have been checked, which is impossible
+                // because we already verified the map is smaller than
+                // UINT16_MAX
                 assert(pair.first != UINT16_MAX);
             }
 
             last_index = pair.first;
         }
 
-        auto controller = new Controller(free_index);
+        auto controller = new Controller(free_index, assign_gamepad);
 
         pimpl->controllers.insert({free_index, controller});
+        pimpl->uninitted_controllers.push_back(free_index);
 
         return *controller;
     }
@@ -174,6 +176,24 @@ namespace argus::input {
             for (auto &action : it->second) {
                 _dispatch_axis_event(window, controller_index, action, value, delta);
             }
+        }
+    }
+
+    void update_input_manager(InputManager &manager) {
+        if (!manager.pimpl->uninitted_controllers.empty()) {
+            for (auto index : manager.pimpl->uninitted_controllers) {
+                auto it = manager.pimpl->controllers.find(index);
+                // presumably it was added and then immediately removed
+                if (it == manager.pimpl->controllers.cend()) {
+                    continue;
+                }
+
+                if (it->second->has_gamepad()) {
+                    //TODO: init gamepad
+                }
+            }
+
+            manager.pimpl->uninitted_controllers.clear();
         }
     }
 }

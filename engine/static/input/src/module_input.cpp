@@ -24,6 +24,7 @@
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
+#include "internal/input/input_manager.hpp"
 #include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"
@@ -47,6 +48,7 @@ namespace argus {
 
     static void _on_render(TimeDelta delta) {
         UNUSED(delta);
+        update_input_manager(input::InputManager::instance());
         input::update_keyboard();
         input::update_mouse();
     }

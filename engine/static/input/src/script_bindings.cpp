@@ -26,6 +26,10 @@ namespace argus {
         bind_type<input::InputManager>("InputManager");
         bind_member_instance_function("get_controller", &input::InputManager::get_controller);
         bind_member_instance_function("add_controller", &input::InputManager::add_controller);
+        bind_extension_function<input::InputManager>("add_kbm_controller",
+                +[](input::InputManager &manager) -> input::Controller & { return manager.add_controller(false); });
+        bind_extension_function<input::InputManager>("add_gamepad_controller",
+                +[](input::InputManager &manager) -> input::Controller & { return manager.add_controller(true); });
         bind_member_instance_function<void(input::InputManager::*)(input::ControllerIndex)>("remove_controller",
                 &input::InputManager::remove_controller);
 
@@ -207,6 +211,7 @@ namespace argus {
     static void _bind_controller_symbols(void) {
         bind_type<input::Controller>("Controller");
         bind_member_instance_function("get_index", &input::Controller::get_index);
+        bind_member_instance_function("has_gamepad", &input::Controller::has_gamepad);
 
         bind_member_instance_function("bind_keyboard_key", &input::Controller::bind_keyboard_key);
         bind_member_instance_function<void(input::Controller::*)(input::KeyboardScancode)>(

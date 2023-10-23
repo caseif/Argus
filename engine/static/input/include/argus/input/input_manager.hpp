@@ -25,13 +25,14 @@ namespace argus::input {
 
     class InputManager : AutoCleanupable {
       private:
-        pimpl_InputManager *pimpl;
 
         InputManager(void);
 
         ~InputManager(void) override;
 
       public:
+        pimpl_InputManager *pimpl;
+
         InputManager(InputManager &) = delete;
 
         InputManager(InputManager &&) = delete;
@@ -40,7 +41,7 @@ namespace argus::input {
 
         Controller &get_controller(ControllerIndex controller_index);
 
-        Controller &add_controller(void);
+        Controller &add_controller(bool assign_gamepad);
 
         void remove_controller(Controller &controller);
 
