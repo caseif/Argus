@@ -20,6 +20,8 @@
 #include "argus/lowlevel/vector.hpp"
 
 #include "argus/input/controller.hpp"
+#include "argus/input/keyboard.hpp"
+#include "argus/input/mouse.hpp"
 #include "internal/input/pimpl/controller.hpp"
 
 #include <algorithm>
@@ -168,5 +170,27 @@ namespace argus::input {
 
     void Controller::unbind_mouse_axis(MouseAxis axis, const std::string &action) {
         _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
+    }
+
+    bool Controller::is_action_pressed(const std::string &action) {
+        auto kb_it = pimpl->action_to_key_bindings.find(action);
+        if (kb_it != pimpl->action_to_key_bindings.cend()) {
+            for (auto key : kb_it->second) {
+                if (is_key_pressed(key)) {
+                    return true;
+                }
+            }
+        }
+
+        auto mouse_it = pimpl->action_to_mouse_button_bindings.find(action);
+        if (mouse_it != pimpl->action_to_mouse_button_bindings.cend()) {
+            for (auto btn : mouse_it->second) {
+                if (is_mouse_button_pressed(btn)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

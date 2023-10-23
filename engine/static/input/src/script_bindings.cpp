@@ -230,6 +230,8 @@ namespace argus {
                 "unbind_mouse_axis", &input::Controller::unbind_mouse_axis);
         bind_member_instance_function<void(input::Controller::*)(input::MouseAxis, const std::string &)>(
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
+
+        bind_member_instance_function("is_action_pressed", &input::Controller::is_action_pressed);
     }
 
     static void _bind_event_symbols(void) {

@@ -74,5 +74,7 @@ namespace argus::input {
         void unbind_mouse_axis(MouseAxis axis);
 
         void unbind_mouse_axis(MouseAxis axis, const std::string &action);
+
+        bool is_action_pressed(const std::string &action);
     };
 }
