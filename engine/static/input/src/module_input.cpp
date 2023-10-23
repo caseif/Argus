@@ -46,6 +46,11 @@ namespace argus {
         }
     }
 
+    static void _on_update(TimeDelta delta) {
+        UNUSED(delta);
+        input::flush_mouse_delta();
+    }
+
     static void _on_render(TimeDelta delta) {
         UNUSED(delta);
         update_input_manager(input::InputManager::instance());
@@ -56,6 +61,7 @@ namespace argus {
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
+                register_update_callback(_on_update);
                 register_render_callback(_on_render);
                 register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
 

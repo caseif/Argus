@@ -193,4 +193,22 @@ namespace argus::input {
 
         return false;
     }
+
+    double Controller::get_action_axis(const std::string &action) {
+        auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
+        if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
+            return get_mouse_axis(mouse_it->second.front());
+        }
+
+        return 0;
+    }
+
+    double Controller::get_action_axis_delta(const std::string &action) {
+        auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
+        if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
+            return get_mouse_axis_delta(mouse_it->second.front());
+        }
+
+        return 0;
+    }
 }

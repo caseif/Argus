@@ -32,6 +32,7 @@
 #include "SDL_mouse.h"
 
 #include <mutex>
+#include <string>
 #include <unordered_map>
 
 namespace argus::input {
@@ -56,6 +57,35 @@ namespace argus::input {
         return g_mouse_state.mouse_delta;
     }
 
+    double get_mouse_axis(MouseAxis axis) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        switch (axis) {
+            case MouseAxis::Horizontal:
+                return g_mouse_state.last_mouse_pos.x;
+            case MouseAxis::Vertical:
+                return g_mouse_state.last_mouse_pos.y;
+            default:
+                throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
+        }
+    }
+
+    double get_mouse_axis_delta(MouseAxis axis) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        double val;
+        switch (axis) {
+            case MouseAxis::Horizontal:
+                val = g_mouse_state.mouse_delta.x;
+                break;
+            case MouseAxis::Vertical:
+                val = g_mouse_state.mouse_delta.y;
+                break;
+            default:
+                throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
+        }
+        g_mouse_state.is_delta_stale = true;
+        return val;
+    }
+
     bool is_mouse_button_pressed(MouseButton button) {
         std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
 
@@ -77,12 +107,16 @@ namespace argus::input {
         g_mouse_state.button_state = SDL_GetMouseState(&x, &y);
 
         if (g_mouse_state.got_first_mouse_pos) {
-            g_mouse_state.mouse_delta = { double(x) - g_mouse_state.last_mouse_pos.x,
-                    double(y) - g_mouse_state.last_mouse_pos.y };
+            g_mouse_state.mouse_delta.x = double(x) - g_mouse_state.last_mouse_pos.x;
+            g_mouse_state.mouse_delta.y = double(y) - g_mouse_state.last_mouse_pos.y;
         } else {
             g_mouse_state.got_first_mouse_pos = true;
         }
-        g_mouse_state.last_mouse_pos = { double(x), double(y) };
+
+        g_mouse_state.last_mouse_pos.x = double(x);
+        g_mouse_state.last_mouse_pos.y = double(y);
+
+        g_mouse_state.is_delta_stale = false;
     }
 
     static void _handle_mouse_events(void) {
@@ -143,5 +177,13 @@ namespace argus::input {
     void update_mouse(void) {
         _poll_mouse();
         _handle_mouse_events();
+    }
+
+    void flush_mouse_delta(void) {
+        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        if (g_mouse_state.is_delta_stale) {
+            g_mouse_state.mouse_delta.x = 0;
+            g_mouse_state.mouse_delta.y = 0;
+        }
     }
 }

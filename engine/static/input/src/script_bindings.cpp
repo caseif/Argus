@@ -232,6 +232,8 @@ namespace argus {
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
 
         bind_member_instance_function("is_action_pressed", &input::Controller::is_action_pressed);
+        bind_member_instance_function("get_action_axis", &input::Controller::get_action_axis);
+        bind_member_instance_function("get_action_axis_delta", &input::Controller::get_action_axis_delta);
     }
 
     static void _bind_event_symbols(void) {

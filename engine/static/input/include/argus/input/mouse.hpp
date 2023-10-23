@@ -47,6 +47,24 @@ namespace argus::input {
     argus::Vector2d mouse_pos(void);
 
     /**
+     * \brief Gets the current value of the provided mouse axis.
+     *
+     * \param axis The axis to check.
+     *
+     * \return The value of the mouse axis.
+     */
+    double get_mouse_axis(MouseAxis axis);
+
+    /**
+     * \brief Gets the last delta of the provided mouse axis.
+     *
+     * \param axis The axis to check.
+     *
+     * \return The delta of the mouse axis.
+     */
+    double get_mouse_axis_delta(MouseAxis axis);
+
+    /**
      * \brief Gets whether a mouse button is currently pressed.
      *
      * \param button The mouse button to check.
