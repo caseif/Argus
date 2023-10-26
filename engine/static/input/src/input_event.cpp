@@ -24,12 +24,12 @@
 #include <string>
 
 namespace argus::input {
-    InputEvent::InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
+    InputEvent::InputEvent(InputEventType type, const Window &window, const std::string &controller_name,
             const std::string &action, double axis_value, double axis_delta) :
             ArgusEvent(typeid(InputEvent)),
             input_type(type),
             window(window),
-            controller_index(controller_index),
+            controller_name(controller_name),
             action(action),
             axis_value(axis_value),
             axis_delta(axis_delta) {

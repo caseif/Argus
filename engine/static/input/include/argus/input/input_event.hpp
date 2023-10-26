@@ -32,12 +32,12 @@ namespace argus::input {
     struct InputEvent : public ArgusEvent, AutoCleanupable {
         const InputEventType input_type;
         const Window &window;
-        const ControllerIndex controller_index;
+        const std::string controller_name;
         const std::string action;
         const double axis_value;
         const double axis_delta;
 
-        InputEvent(InputEventType type, const Window &window, ControllerIndex controller_index,
+        InputEvent(InputEventType type, const Window &window, const std::string &name,
                 const std::string &action, double axis_value, double axis_delta);
 
         InputEvent(const InputEvent &rhs) = delete;

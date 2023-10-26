@@ -20,16 +20,14 @@
 
 #include "argus/input/controller.hpp"
 
-#include <map>
+#include <unordered_map>
 
 namespace argus::input {
     struct pimpl_InputManager {
-        std::map<ControllerIndex, Controller *> controllers;
-        std::vector<ControllerIndex> uninitted_controllers;
+        std::unordered_map<std::string, Controller *> controllers;
 
         pimpl_InputManager(void) :
-            controllers({}),
-            uninitted_controllers({}) {
+            controllers({}) {
         }
     };
 }

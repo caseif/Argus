@@ -50,6 +50,8 @@
 #include <cstddef>
 
 namespace argus {
+    constexpr uint32_t k_sdl_subsystems = SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER;
+
     bool g_wm_module_initialized = false;
 
     bool g_requested_stop = false;
@@ -63,7 +65,7 @@ namespace argus {
             delete it->second;
         }*/
 
-        SDL_QuitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
+        SDL_QuitSubSystem(k_sdl_subsystems);
         SDL_Quit();
 
         return;
@@ -144,7 +146,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::Init: {
                 SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11,wayland");
-                if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO) != 0) {
+                if (SDL_Init(k_sdl_subsystems) != 0) {
                     Logger::default_logger().fatal("SDL init failed (%s)", SDL_GetError());
                 }
                 Logger::default_logger().info("SDL initialized successfully");

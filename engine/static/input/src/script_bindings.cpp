@@ -27,10 +27,14 @@ namespace argus {
         bind_member_instance_function("get_controller", &input::InputManager::get_controller);
         bind_member_instance_function("add_controller", &input::InputManager::add_controller);
         bind_extension_function<input::InputManager>("add_kbm_controller",
-                +[](input::InputManager &manager) -> input::Controller & { return manager.add_controller(false); });
+                +[](input::InputManager &manager, const std::string &name) -> input::Controller & {
+                    return manager.add_controller(name, false);
+                });
         bind_extension_function<input::InputManager>("add_gamepad_controller",
-                +[](input::InputManager &manager) -> input::Controller & { return manager.add_controller(true); });
-        bind_member_instance_function<void(input::InputManager::*)(input::ControllerIndex)>("remove_controller",
+                +[](input::InputManager &manager, const std::string &name) -> input::Controller & {
+                    return manager.add_controller(name, true);
+            });
+        bind_member_instance_function<void(input::InputManager::*)(const std::string &)>("remove_controller",
                 &input::InputManager::remove_controller);
 
         bind_global_function("get_input_manager", &input::InputManager::instance);
@@ -210,7 +214,7 @@ namespace argus {
 
     static void _bind_controller_symbols(void) {
         bind_type<input::Controller>("Controller");
-        bind_member_instance_function("get_index", &input::Controller::get_index);
+        bind_member_instance_function("get_name", &input::Controller::get_name);
         bind_member_instance_function("has_gamepad", &input::Controller::has_gamepad);
 
         bind_member_instance_function("bind_keyboard_key", &input::Controller::bind_keyboard_key);
@@ -244,7 +248,7 @@ namespace argus {
 
         bind_type<input::InputEvent>("InputEvent");
         bind_member_field("input_type", &input::InputEvent::input_type);
-        bind_member_field("controller_index", &input::InputEvent::controller_index);
+        bind_member_field("controller_name", &input::InputEvent::controller_name);
         bind_member_field("action", &input::InputEvent::action);
         bind_member_field("axis_value", &input::InputEvent::axis_value);
         bind_member_field("axis_delta", &input::InputEvent::axis_delta);
@@ -253,7 +257,7 @@ namespace argus {
         bind_global_function(
                 "register_input_handler",
                 +[](std::function<void(const input::InputEvent &)> fn, Ordering ordering) -> Index {
-                    return register_event_handler<input::InputEvent>(fn, TargetThread::Update, ordering);
+                    return register_event_handler<input::InputEvent>(std::move(fn), TargetThread::Update, ordering);
                 }
         );
     }

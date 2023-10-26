@@ -30,13 +30,11 @@ namespace argus::input {
 
     struct pimpl_Controller;
 
-    typedef uint16_t ControllerIndex;
-
     class Controller : AutoCleanupable {
         friend class InputManager;
 
       private:
-        Controller(ControllerIndex index, bool assign_gamepad);
+        Controller(const std::string &name, bool assign_gamepad);
 
         ~Controller(void) override;
 
@@ -47,7 +45,7 @@ namespace argus::input {
 
         Controller(Controller &&) = delete;
 
-        [[nodiscard]] ControllerIndex get_index(void) const;
+        [[nodiscard]] const std::string &get_name(void) const;
 
         [[nodiscard]] bool has_gamepad(void) const;
 

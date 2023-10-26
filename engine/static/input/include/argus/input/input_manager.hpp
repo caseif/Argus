@@ -20,6 +20,8 @@
 
 #include "argus/input/controller.hpp"
 
+#include <string>
+
 namespace argus::input {
     struct pimpl_InputManager;
 
@@ -39,13 +41,13 @@ namespace argus::input {
 
         static InputManager &instance(void);
 
-        Controller &get_controller(ControllerIndex controller_index);
+        Controller &get_controller(const std::string &name);
 
-        Controller &add_controller(bool assign_gamepad);
+        Controller &add_controller(const std::string &name, bool assign_gamepad);
 
         void remove_controller(Controller &controller);
 
-        void remove_controller(ControllerIndex controller_index);
+        void remove_controller(const std::string &name);
 
         void handle_key_press(const Window &window, KeyboardScancode key, bool release) const;
 
