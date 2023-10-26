@@ -21,6 +21,7 @@
 #include "argus/input/controller.hpp"
 #include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
+#include "internal/input/defines.hpp"
 #include "internal/input/input_manager.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
@@ -65,14 +66,14 @@ namespace argus::input {
     }
 
     Controller &InputManager::add_controller(bool assign_gamepad) {
-        if (pimpl->controllers.size() > UINT16_MAX) {
+        if (pimpl->controllers.size() >= MAX_CONTROLLERS) {
             throw std::invalid_argument("Controller limit reached");
         }
 
-        ControllerIndex last_index = UINT16_MAX;
+        ControllerIndex last_index = MAX_CONTROLLERS;
         ControllerIndex free_index = 0;
         for (auto &pair : pimpl->controllers) {
-            if (last_index == UINT16_MAX) {
+            if (last_index == MAX_CONTROLLERS) {
                 // this is the first index we've inspected
                 if (pair.first != 0) {
                     free_index = 0;
@@ -85,10 +86,10 @@ namespace argus::input {
                 }
 
                 // should only be possible if all values in range
-                // [0, UINT16_MAX] have been checked, which is impossible
+                // [0, MAX_CONTROLLERS] have been checked, which is impossible
                 // because we already verified the map is smaller than
-                // UINT16_MAX
-                assert(pair.first != UINT16_MAX);
+                // MAX_CONTROLLERS
+                assert(pair.first != MAX_CONTROLLERS);
             }
 
             last_index = pair.first;
@@ -186,10 +187,6 @@ namespace argus::input {
                 // presumably it was added and then immediately removed
                 if (it == manager.pimpl->controllers.cend()) {
                     continue;
-                }
-
-                if (it->second->has_gamepad()) {
-                    //TODO: init gamepad
                 }
             }
 

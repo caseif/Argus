@@ -19,3 +19,5 @@
 #pragma once
 
 #define RESOURCE_TYPE_BINDINGS "application/x-argus-bindings+json"
+
+#define MAX_CONTROLLERS 8
