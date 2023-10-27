@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/input/controller.hpp"
+#include "argus/input/gamepad.hpp"
 #include "argus/input/keyboard.hpp"
 
 #include "SDL_gamecontroller.h"
@@ -28,7 +29,8 @@
 namespace argus::input {
     struct pimpl_Controller {
         std::string name;
-        bool has_gamepad;
+        std::optional<int> attached_gamepad;
+        bool was_gamepad_disconnected = false;
 
         std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
         std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
@@ -39,9 +41,11 @@ namespace argus::input {
         std::map<MouseAxis, std::vector<std::string>> mouse_axis_to_action_bindings;
         std::map<std::string, std::vector<MouseAxis>> action_to_mouse_axis_bindings;
 
-        pimpl_Controller(std::string name, bool has_gamepad) :
-            name(std::move(name)),
-            has_gamepad(has_gamepad) {
+        std::map<GamepadButton, std::vector<std::string>> gamepad_button_to_action_bindings;
+        std::map<std::vector<std::string>, GamepadButton> action_to_gamepad_button_bindings;
+
+        pimpl_Controller(std::string name) :
+            name(std::move(name)) {
         }
     };
 }

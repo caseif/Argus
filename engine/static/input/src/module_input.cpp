@@ -46,8 +46,13 @@ namespace argus {
         }
     }
 
+    static void _poll_events(void) {
+        //
+    }
+
     static void _on_update(TimeDelta delta) {
         UNUSED(delta);
+        _poll_events();
         input::flush_mouse_delta();
     }
 

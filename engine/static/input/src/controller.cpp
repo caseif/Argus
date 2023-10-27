@@ -20,9 +20,11 @@
 #include "argus/lowlevel/vector.hpp"
 
 #include "argus/input/controller.hpp"
+#include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "argus/input/mouse.hpp"
 #include "internal/input/pimpl/controller.hpp"
+#include "internal/input/pimpl/input_manager.hpp"
 
 #include <algorithm>
 #include <string>
@@ -32,7 +34,10 @@ namespace argus::input {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Controller));
 
     Controller::Controller(const std::string &name, bool assign_gamepad) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name, assign_gamepad)) {
+            pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
+        if (assign_gamepad) {
+            attach_first_free_gamepad();
+        }
     }
 
     Controller::~Controller(void) {
@@ -46,7 +51,46 @@ namespace argus::input {
     }
 
     bool Controller::has_gamepad(void) const {
-        return pimpl->has_gamepad;
+        return pimpl->attached_gamepad.has_value();
+    }
+
+    void Controller::attach_gamepad(GamepadId id) {
+        if (pimpl->attached_gamepad.has_value()) {
+            throw std::invalid_argument("Controller already has associated gamepad");
+        }
+
+        auto &gamepads = InputManager::instance().pimpl->available_gamepads;
+        auto it = std::find(gamepads.cbegin(), gamepads.cend(), id);
+        if (it == InputManager::instance().pimpl->available_gamepads.cend()) {
+            throw std::invalid_argument("Gamepad ID is not valid or is already in use");
+        }
+
+        pimpl->attached_gamepad = id;
+    }
+
+    void Controller::attach_first_free_gamepad(void) {
+        if (pimpl->attached_gamepad.has_value()) {
+            throw std::invalid_argument("Controller already has associated gamepad");
+        }
+
+        if (InputManager::instance().pimpl->available_gamepads.empty()) {
+            throw std::runtime_error("No gamepads are available to attach to controller");
+        }
+
+        pimpl->attached_gamepad = InputManager::instance().pimpl->available_gamepads.front();
+    }
+
+    void Controller::detach_gamepad(void) {
+        if (!pimpl->attached_gamepad.has_value()) {
+            // silently fail
+            return;
+        }
+
+        pimpl->attached_gamepad = std::nullopt;
+    }
+
+    void Controller::notify_gamepad_disconnected(void) {
+        pimpl->was_gamepad_disconnected = true;
     }
 
     void Controller::unbind_action(const std::string &action) {

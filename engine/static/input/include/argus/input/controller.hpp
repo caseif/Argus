@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/input/gamepad.hpp"
 #include "argus/input/keyboard.hpp"
 #include "argus/input/mouse.hpp"
 
@@ -49,6 +50,14 @@ namespace argus::input {
 
         [[nodiscard]] bool has_gamepad(void) const;
 
+        void attach_gamepad(GamepadId id);
+
+        void attach_first_free_gamepad(void);
+
+        void detach_gamepad(void);
+
+        void notify_gamepad_disconnected(void);
+
         void unbind_action(const std::string &action);
 
         [[nodiscard]] std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
@@ -72,6 +81,12 @@ namespace argus::input {
         void unbind_mouse_axis(MouseAxis axis);
 
         void unbind_mouse_axis(MouseAxis axis, const std::string &action);
+
+        void bind_gamepad_button(GamepadButton button, const std::string &action);
+
+        void unbind_gamepad_button(GamepadButton button);
+
+        void unbind_gamepad_button(GamepadButton button, const std::string &action);
 
         bool is_action_pressed(const std::string &action);
 
