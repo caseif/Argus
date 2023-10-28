@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <cstdint>
 
 namespace argus::input {
@@ -67,6 +69,8 @@ namespace argus::input {
     uint8_t get_connected_gamepad_count(void);
 
     uint8_t get_unattached_gamepad_count(void);
+
+    std::string get_gamepad_name(GamepadId gamepad);
 
     bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button);
 }

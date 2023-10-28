@@ -117,21 +117,31 @@ namespace argus::input {
         return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
     }
 
+    std::string get_gamepad_name(GamepadId id) {
+        auto *controller = SDL_GameControllerFromInstanceID(id);
+        if (controller == nullptr) {
+            Logger::default_logger().warn("Client queried unknown gamepad ID %d", id);
+        }
+
+        const char *name = SDL_GameControllerName(controller);
+        return name != nullptr ? name : "unknown";
+    }
+
     bool is_gamepad_button_pressed(GamepadId id, GamepadButton button) {
         if (button == GamepadButton::Unknown) {
-            Logger::default_logger().warn("Client queried invalid gamepad button ordinal %d", button);
+            Logger::default_logger().warn("Client polled invalid gamepad button ordinal %d", button);
         }
 
         auto &states = InputManager::instance().pimpl->gamepad_button_states;
         auto it = states.find(id);
         if (it == states.cend()) {
-            Logger::default_logger().warn("Client queried unknown gamepad ID %d", id);
+            Logger::default_logger().warn("Client polled unknown gamepad ID %d", id);
             return false;
         }
 
         auto sdl_button_it = g_buttons_argus_to_sdl.find(button);
         if (sdl_button_it == g_buttons_argus_to_sdl.cend()) {
-            Logger::default_logger().warn("Client queried unknown gamepad button ordinal %d", button);
+            Logger::default_logger().warn("Client polled unknown gamepad button ordinal %d", button);
             return false;
         }
 
@@ -146,8 +156,11 @@ namespace argus::input {
         std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
 
         int joystick_count = SDL_NumJoysticks();
+
         for (int i = 0; i < joystick_count; i++) {
+            const char *name = SDL_JoystickNameForIndex(i);
             if (SDL_IsGameController(i)) {
+                Logger::default_logger().debug("Opening joystick '%s' as a gamepad", name);
                 SDL_GameControllerOpen(i);
                 auto instance_id = SDL_JoystickGetDeviceInstanceID(i);
                 if (instance_id == -1) {
@@ -155,7 +168,18 @@ namespace argus::input {
                     continue;
                 }
                 manager.pimpl->available_gamepads.push_back(SDL_JoystickGetDeviceInstanceID(i));
+            } else {
+                Logger::default_logger().debug("Joystick '%s' is not reported as a gamepad, ignoring", name);
             }
+        }
+
+        auto gamepad_count = manager.pimpl->available_gamepads.size();
+        if (gamepad_count > 0) {
+            Logger::default_logger().info("%zu connected gamepad%s found",
+                    gamepad_count, gamepad_count != 1 ? "s" : "");
+        } else {
+            Logger::default_logger().info("No gamepads connected");
+            return;
         }
     }
 

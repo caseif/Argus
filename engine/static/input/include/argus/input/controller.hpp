@@ -56,6 +56,8 @@ namespace argus::input {
 
         void detach_gamepad(void);
 
+        std::string get_gamepad_name(void);
+
         void notify_gamepad_disconnected(void);
 
         void unbind_action(const std::string &action);
