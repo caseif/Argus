@@ -238,6 +238,19 @@ namespace argus::input {
                 button, action);
     }
 
+    void Controller::bind_gamepad_axis(GamepadAxis button, const std::string &action) {
+        _bind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings, button, action);
+    }
+
+    void Controller::unbind_gamepad_axis(GamepadAxis button) {
+        _unbind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings, button);
+    }
+
+    void Controller::unbind_gamepad_axis(GamepadAxis button, const std::string &action) {
+        _unbind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings,
+                button, action);
+    }
+
     bool Controller::is_gamepad_button_pressed(GamepadButton button) {
         if (!has_gamepad()) {
             throw std::runtime_error("Cannot query gamepad button state for controller: No gamepad is associated");
@@ -264,6 +277,15 @@ namespace argus::input {
             }
         }
 
+        auto gamepad_it = pimpl->action_to_gamepad_button_bindings.find(action);
+        if (gamepad_it != pimpl->action_to_gamepad_button_bindings.cend()) {
+            for (auto btn : gamepad_it->second) {
+                if (this->is_gamepad_button_pressed(btn)) {
+                    return true;
+                }
+            }
+        }
+
         auto mouse_it = pimpl->action_to_mouse_button_bindings.find(action);
         if (mouse_it != pimpl->action_to_mouse_button_bindings.cend()) {
             for (auto btn : mouse_it->second) {
@@ -277,6 +299,11 @@ namespace argus::input {
     }
 
     double Controller::get_action_axis(const std::string &action) {
+        auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
+        if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
+            return this->get_gamepad_axis(gamepad_it->second.front());
+        }
+
         auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
         if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
             return get_mouse_axis(mouse_it->second.front());

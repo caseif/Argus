@@ -90,6 +90,12 @@ namespace argus::input {
 
         void unbind_gamepad_button(GamepadButton button, const std::string &action);
 
+        void bind_gamepad_axis(GamepadAxis axis, const std::string &action);
+
+        void unbind_gamepad_axis(GamepadAxis axis);
+
+        void unbind_gamepad_axis(GamepadAxis axis, const std::string &action);
+
         bool is_gamepad_button_pressed(GamepadButton button);
 
         double get_gamepad_axis(GamepadAxis axis);

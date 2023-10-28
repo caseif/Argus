@@ -277,6 +277,18 @@ namespace argus {
         bind_member_instance_function<void(input::Controller::*)(input::MouseAxis, const std::string &)>(
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
 
+        bind_member_instance_function("bind_gamepad_button", &input::Controller::bind_gamepad_button);
+        bind_member_instance_function<void(input::Controller::*)(input::GamepadButton)>(
+                "unbind_gamepad_button", &input::Controller::unbind_gamepad_button);
+        bind_member_instance_function<void(input::Controller::*)(input::GamepadButton, const std::string &)>(
+                "unbind_gamepad_button_action", &input::Controller::unbind_gamepad_button);
+
+        bind_member_instance_function("bind_gamepad_axis", &input::Controller::bind_gamepad_axis);
+        bind_member_instance_function<void(input::Controller::*)(input::GamepadAxis)>(
+                "unbind_gamepad_axis", &input::Controller::unbind_gamepad_axis);
+        bind_member_instance_function<void(input::Controller::*)(input::GamepadAxis, const std::string &)>(
+                "unbind_gamepad_axis_action", &input::Controller::unbind_gamepad_axis);
+
         bind_member_instance_function("get_gamepad_name", &input::Controller::get_gamepad_name);
         bind_member_instance_function("is_gamepad_button_pressed", &input::Controller::is_gamepad_button_pressed);
         bind_member_instance_function("get_gamepad_axis", &input::Controller::get_gamepad_axis);
