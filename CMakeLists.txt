@@ -135,7 +135,12 @@ set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INCLUDE_DIR_NAME
 if(APPLE)
   find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 elseif(UNIX AND NOT APPLE)
-  find_library(ATOMIC_LIBRARY atomic REQUIRED)
+  check_library_exists(atomic __atomic_fetch_add_8 "" HAVE_LIBATOMIC)
+  if(HAVE_LIBATOMIC)
+    set(ATOMIC_LIBRARY "atomic")
+  else()
+    message(FATAL "Unable to find libatomic")
+  endif()
 endif()
 
 ###########################
