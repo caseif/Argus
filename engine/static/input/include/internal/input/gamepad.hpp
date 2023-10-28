@@ -18,6 +18,18 @@
 
 #pragma once
 
+#include "argus/input/gamepad.hpp"
+
 namespace argus::input {
+    void update_gamepads(void);
+
     void handle_gamepad_events(void);
+
+    void assoc_gamepad(GamepadId id, const std::string &controller_name);
+
+    GamepadId assoc_first_available_gamepad(const std::string &controller_name);
+
+    void unassoc_gamepad(GamepadId id);
+
+    void deinit_gamepads(void);
 }

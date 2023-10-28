@@ -52,7 +52,7 @@ namespace argus::input {
 
         void attach_gamepad(GamepadId id);
 
-        void attach_first_free_gamepad(void);
+        void attach_first_available_gamepad(void);
 
         void detach_gamepad(void);
 
@@ -87,6 +87,8 @@ namespace argus::input {
         void unbind_gamepad_button(GamepadButton button);
 
         void unbind_gamepad_button(GamepadButton button, const std::string &action);
+
+        bool is_gamepad_button_pressed(GamepadButton button);
 
         bool is_action_pressed(const std::string &action);
 

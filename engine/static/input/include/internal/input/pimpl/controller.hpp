@@ -42,7 +42,7 @@ namespace argus::input {
         std::map<std::string, std::vector<MouseAxis>> action_to_mouse_axis_bindings;
 
         std::map<GamepadButton, std::vector<std::string>> gamepad_button_to_action_bindings;
-        std::map<std::vector<std::string>, GamepadButton> action_to_gamepad_button_bindings;
+        std::map<std::string, std::vector<GamepadButton>> action_to_gamepad_button_bindings;
 
         pimpl_Controller(std::string name) :
             name(std::move(name)) {

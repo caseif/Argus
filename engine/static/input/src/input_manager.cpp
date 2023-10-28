@@ -153,24 +153,4 @@ namespace argus::input {
             }
         }
     }
-
-    static std::vector<GamepadId> _get_all_gamepads(void) {
-        std::vector<GamepadId> gamepads;
-        int joystick_count = SDL_NumJoysticks();
-        for (int i = 0; i < joystick_count; i++) {
-            if (SDL_IsGameController(i)) {
-                gamepads.push_back(SDL_JoystickGetDeviceInstanceID(i));
-            }
-        }
-        return gamepads;
-    }
-
-    void update_input_manager(InputManager &manager) {
-        UNUSED(manager);
-        if (!manager.pimpl->are_gamepads_initted) {
-            std::lock_guard<std::mutex> lock(manager.pimpl->gamepads_mutex);
-            manager.pimpl->available_gamepads = _get_all_gamepads();
-            manager.pimpl->are_gamepads_initted = true;
-        }
-    }
 }

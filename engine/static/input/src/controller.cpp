@@ -23,6 +23,7 @@
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "argus/input/mouse.hpp"
+#include "internal/input/gamepad.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
@@ -36,7 +37,7 @@ namespace argus::input {
     Controller::Controller(const std::string &name, bool assign_gamepad) :
             pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
         if (assign_gamepad) {
-            attach_first_free_gamepad();
+            this->attach_first_available_gamepad();
         }
     }
 
@@ -59,25 +60,17 @@ namespace argus::input {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
 
-        auto &gamepads = InputManager::instance().pimpl->available_gamepads;
-        auto it = std::find(gamepads.cbegin(), gamepads.cend(), id);
-        if (it == InputManager::instance().pimpl->available_gamepads.cend()) {
-            throw std::invalid_argument("Gamepad ID is not valid or is already in use");
-        }
-
+        assoc_gamepad(id, this->get_name());
         pimpl->attached_gamepad = id;
     }
 
-    void Controller::attach_first_free_gamepad(void) {
+    void Controller::attach_first_available_gamepad(void) {
         if (pimpl->attached_gamepad.has_value()) {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
 
-        if (InputManager::instance().pimpl->available_gamepads.empty()) {
-            throw std::runtime_error("No gamepads are available to attach to controller");
-        }
-
-        pimpl->attached_gamepad = InputManager::instance().pimpl->available_gamepads.front();
+        auto id = assoc_first_available_gamepad(this->get_name());
+        pimpl->attached_gamepad = id;
     }
 
     void Controller::detach_gamepad(void) {
@@ -85,6 +78,8 @@ namespace argus::input {
             // silently fail
             return;
         }
+
+        unassoc_gamepad(pimpl->attached_gamepad.value());
 
         pimpl->attached_gamepad = std::nullopt;
     }
@@ -214,6 +209,27 @@ namespace argus::input {
 
     void Controller::unbind_mouse_axis(MouseAxis axis, const std::string &action) {
         _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
+    }
+
+    void Controller::bind_gamepad_button(GamepadButton button, const std::string &action) {
+        _bind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings, button, action);
+    }
+
+    void Controller::unbind_gamepad_button(GamepadButton button) {
+        _unbind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings, button);
+    }
+
+    void Controller::unbind_gamepad_button(GamepadButton button, const std::string &action) {
+        _unbind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings,
+                button, action);
+    }
+
+    bool Controller::is_gamepad_button_pressed(GamepadButton button) {
+        if (!has_gamepad()) {
+            throw std::runtime_error("Cannot query gamepad button state for controller: No gamepad is associated");
+        }
+
+        return ::argus::input::is_gamepad_button_pressed(pimpl->attached_gamepad.value(), button);
     }
 
     bool Controller::is_action_pressed(const std::string &action) {

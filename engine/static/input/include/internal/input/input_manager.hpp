@@ -21,5 +21,5 @@
 #include "argus/input/input_manager.hpp"
 
 namespace argus::input {
-    void update_input_manager(InputManager &manager);
+    void update_input_manager(void);
 }

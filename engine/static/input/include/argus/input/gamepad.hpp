@@ -50,7 +50,7 @@ namespace argus::input {
         Back,
         Guide,
         Misc1,
-        Max
+        MaxValue,
     };
 
     enum class GamepadAxis {
@@ -68,9 +68,5 @@ namespace argus::input {
 
     uint8_t get_unattached_gamepad_count(void);
 
-    bool is_gamepad_button_pressed(GamepadId gamepad);
-
-    bool is_gamepad_button_pressed(const Controller &controller);
-
-    void update_gamepad(GamepadId gamepad);
+    bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button);
 }

@@ -212,6 +212,36 @@ namespace argus {
         bind_global_function("mouse_pos", input::mouse_pos);
     }
 
+    static void _bind_gamepad_symbols(void) {
+        bind_enum<input::GamepadButton>("GamepadButton");
+        bind_enum_value("Unknown", input::GamepadButton::Unknown);
+        bind_enum_value("A", input::GamepadButton::A);
+        bind_enum_value("B", input::GamepadButton::B);
+        bind_enum_value("X", input::GamepadButton::X);
+        bind_enum_value("Y", input::GamepadButton::Y);
+        bind_enum_value("DpadUp", input::GamepadButton::DpadUp);
+        bind_enum_value("DpadDown", input::GamepadButton::DpadDown);
+        bind_enum_value("DpadLeft", input::GamepadButton::DpadLeft);
+        bind_enum_value("DpadRight", input::GamepadButton::DpadRight);
+        bind_enum_value("LBumper", input::GamepadButton::LBumper);
+        bind_enum_value("RBumper", input::GamepadButton::RBumper);
+        bind_enum_value("LTrigger", input::GamepadButton::LTrigger);
+        bind_enum_value("RTrigger", input::GamepadButton::RTrigger);
+        bind_enum_value("LStick", input::GamepadButton::LStick);
+        bind_enum_value("RStick", input::GamepadButton::RStick);
+        bind_enum_value("L4", input::GamepadButton::L4);
+        bind_enum_value("R4", input::GamepadButton::R4);
+        bind_enum_value("L5", input::GamepadButton::L5);
+        bind_enum_value("R5", input::GamepadButton::R5);
+        bind_enum_value("Start", input::GamepadButton::Start);
+        bind_enum_value("Back", input::GamepadButton::Back);
+        bind_enum_value("Guide", input::GamepadButton::Guide);
+        bind_enum_value("Misc1", input::GamepadButton::Misc1);
+        bind_enum_value("MaxValue", input::GamepadButton::MaxValue);
+
+        bind_global_function("is_gamepad_button_pressed", input::is_gamepad_button_pressed);
+    }
+
     static void _bind_controller_symbols(void) {
         bind_type<input::Controller>("Controller");
         bind_member_instance_function("get_name", &input::Controller::get_name);
@@ -234,6 +264,8 @@ namespace argus {
                 "unbind_mouse_axis", &input::Controller::unbind_mouse_axis);
         bind_member_instance_function<void(input::Controller::*)(input::MouseAxis, const std::string &)>(
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
+
+        bind_member_instance_function("is_gamepad_button_pressed", &input::Controller::is_gamepad_button_pressed);
 
         bind_member_instance_function("is_action_pressed", &input::Controller::is_action_pressed);
         bind_member_instance_function("get_action_axis", &input::Controller::get_action_axis);
@@ -266,6 +298,7 @@ namespace argus {
         _bind_input_manager_symbols();
         _bind_keyboard_symbols();
         _bind_mouse_symbols();
+        _bind_gamepad_symbols();
         _bind_controller_symbols();
         _bind_event_symbols();
     }

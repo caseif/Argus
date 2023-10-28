@@ -19,22 +19,24 @@
 #pragma once
 
 #include "argus/input/controller.hpp"
+#include "internal/input/gamepad.hpp"
 
+#include <mutex>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace argus::input {
     struct pimpl_InputManager {
         std::unordered_map<std::string, Controller *> controllers;
+
         std::vector<GamepadId> available_gamepads;
         std::unordered_map<GamepadId, std::string> mapped_gamepads;
-        bool are_gamepads_initted;
-        std::mutex gamepads_mutex;
+        std::recursive_mutex gamepads_mutex;
+        bool are_gamepads_initted = false;
 
-        pimpl_InputManager(void) :
-            controllers({}),
-            available_gamepads({}),
-            mapped_gamepads({}),
-            are_gamepads_initted(false) {
-        }
+        std::unordered_map<GamepadId, std::atomic_int64_t> gamepad_button_states;
+
+        pimpl_InputManager(void) = default;
     };
 }
