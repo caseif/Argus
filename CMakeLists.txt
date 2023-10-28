@@ -134,6 +134,8 @@ set(MODULE_DEFS_HPP_OUT "${STATIC_MODULES_GENERATED_DIR}/core/${INCLUDE_DIR_NAME
 
 if(APPLE)
   find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+elseif(UNIX AND NOT APPLE)
+  find_library(ATOMIC_LIBRARY atomic REQUIRED)
 endif()
 
 ###########################

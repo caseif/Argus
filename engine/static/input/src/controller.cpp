@@ -246,6 +246,14 @@ namespace argus::input {
         return ::argus::input::is_gamepad_button_pressed(pimpl->attached_gamepad.value(), button);
     }
 
+    double Controller::get_gamepad_axis(GamepadAxis axis) {
+        if (!has_gamepad()) {
+            throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
+        }
+
+        return ::argus::input::get_gamepad_axis(pimpl->attached_gamepad.value(), axis);
+    }
+
     bool Controller::is_action_pressed(const std::string &action) {
         auto kb_it = pimpl->action_to_key_bindings.find(action);
         if (kb_it != pimpl->action_to_key_bindings.cend()) {

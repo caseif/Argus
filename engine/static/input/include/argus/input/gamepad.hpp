@@ -29,7 +29,7 @@ namespace argus::input {
     typedef int GamepadId;
 
     enum class GamepadButton {
-        Unknown,
+        Unknown = -1,
         A,
         B,
         X,
@@ -56,14 +56,14 @@ namespace argus::input {
     };
 
     enum class GamepadAxis {
-        Unknown,
+        Unknown = -1,
         LeftX,
         LeftY,
         RightX,
         RightY,
         LTrigger,
         RTrigger,
-        Max
+        MaxValue,
     };
 
     uint8_t get_connected_gamepad_count(void);
@@ -73,4 +73,6 @@ namespace argus::input {
     std::string get_gamepad_name(GamepadId gamepad);
 
     bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button);
+
+    double get_gamepad_axis(GamepadId gamepad, GamepadAxis axis);
 }

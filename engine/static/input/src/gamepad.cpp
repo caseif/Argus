@@ -31,12 +31,14 @@
 #include "SDL_gamecontroller.h"
 #include "SDL_joystick.h"
 
-#include <map>
+#include <unordered_map>
+
+#include <cstdint>
 
 namespace argus::input {
     typedef uint64_t GamepadButtonState;
 
-    static std::map<SDL_GameControllerButton, GamepadButton> g_buttons_sdl_to_argus = {
+    static std::unordered_map<SDL_GameControllerButton, GamepadButton> g_buttons_sdl_to_argus = {
             { SDL_CONTROLLER_BUTTON_INVALID, GamepadButton::Unknown },
             { SDL_CONTROLLER_BUTTON_A, GamepadButton::A },
             { SDL_CONTROLLER_BUTTON_B, GamepadButton::B },
@@ -62,7 +64,7 @@ namespace argus::input {
             { SDL_CONTROLLER_BUTTON_MISC1, GamepadButton::Misc1 },
     };
 
-    static std::map<GamepadButton, SDL_GameControllerButton> g_buttons_argus_to_sdl = {
+    static std::unordered_map<GamepadButton, SDL_GameControllerButton> g_buttons_argus_to_sdl = {
             { GamepadButton::Unknown, SDL_CONTROLLER_BUTTON_INVALID },
             { GamepadButton::A, SDL_CONTROLLER_BUTTON_A },
             { GamepadButton::B, SDL_CONTROLLER_BUTTON_B },
@@ -88,7 +90,7 @@ namespace argus::input {
             { GamepadButton::Misc1, SDL_CONTROLLER_BUTTON_MISC1 },
     };
 
-    static std::map<SDL_GameControllerAxis, GamepadAxis> g_axes_sdl_to_argus = {
+    static std::unordered_map<SDL_GameControllerAxis, GamepadAxis> g_axes_sdl_to_argus = {
             { SDL_CONTROLLER_AXIS_INVALID, GamepadAxis::Unknown },
             { SDL_CONTROLLER_AXIS_LEFTX, GamepadAxis::LeftX },
             { SDL_CONTROLLER_AXIS_LEFTY, GamepadAxis::LeftY },
@@ -98,7 +100,7 @@ namespace argus::input {
             { SDL_CONTROLLER_AXIS_TRIGGERRIGHT, GamepadAxis::RTrigger },
     };
 
-    static std::map<GamepadAxis, SDL_GameControllerAxis> g_axes_argus_to_sdl = {
+    static std::unordered_map<GamepadAxis, SDL_GameControllerAxis> g_axes_argus_to_sdl = {
             { GamepadAxis::Unknown, SDL_CONTROLLER_AXIS_INVALID },
             { GamepadAxis::LeftX, SDL_CONTROLLER_AXIS_LEFTX },
             { GamepadAxis::LeftY, SDL_CONTROLLER_AXIS_LEFTY },
@@ -117,25 +119,27 @@ namespace argus::input {
         return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
     }
 
-    std::string get_gamepad_name(GamepadId id) {
-        auto *controller = SDL_GameControllerFromInstanceID(id);
+    std::string get_gamepad_name(GamepadId gamepad) {
+        auto *controller = SDL_GameControllerFromInstanceID(gamepad);
         if (controller == nullptr) {
-            Logger::default_logger().warn("Client queried unknown gamepad ID %d", id);
+            Logger::default_logger().warn("Client queried unknown gamepad ID %d", gamepad);
+            return "invalid";
         }
 
         const char *name = SDL_GameControllerName(controller);
         return name != nullptr ? name : "unknown";
     }
 
-    bool is_gamepad_button_pressed(GamepadId id, GamepadButton button) {
-        if (button == GamepadButton::Unknown) {
+    bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button) {
+        if (std::underlying_type_t<GamepadButton>(button) < 0 || button >= GamepadButton::MaxValue) {
             Logger::default_logger().warn("Client polled invalid gamepad button ordinal %d", button);
+            return false;
         }
 
         auto &states = InputManager::instance().pimpl->gamepad_button_states;
-        auto it = states.find(id);
+        auto it = states.find(gamepad);
         if (it == states.cend()) {
-            Logger::default_logger().warn("Client polled unknown gamepad ID %d", id);
+            Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
             return false;
         }
 
@@ -148,6 +152,24 @@ namespace argus::input {
         assert(sdl_button_it->second >= 0);
 
         return (it->second.load() & (1 << sdl_button_it->second)) != 0;
+    }
+
+    double get_gamepad_axis(GamepadId gamepad, GamepadAxis axis) {
+        if (std::underlying_type_t<GamepadAxis>(axis) < 0 || axis >= GamepadAxis::MaxValue) {
+            Logger::default_logger().warn("Client polled invalid gamepad axis ordinal %d", axis);
+            return false;
+        }
+
+        auto &states = InputManager::instance().pimpl->gamepad_axis_states;
+        auto it = states.find(gamepad);
+        if (it == states.cend()) {
+            Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
+            return false;
+        }
+
+        auto axis_vals = it->second.load();
+        assert(size_t(axis) < axis_vals.size());
+        return axis_vals[size_t(axis)];
     }
 
     static void _init_gamepads(void) {
@@ -183,7 +205,15 @@ namespace argus::input {
         }
     }
 
-    [[maybe_unused]] static void _update_gamepad(GamepadId id) {
+    static double _normalize_axis(int16_t val) {
+        return val == 0
+                ? 0
+                : val >= 0
+                        ? double(val) / std::numeric_limits<int16_t>::max()
+                        : -double(val) / std::numeric_limits<int16_t>::min();
+    }
+
+    [[maybe_unused]] static void _poll_gamepad(GamepadId id) {
         auto *controller = SDL_GameControllerFromInstanceID(id);
         if (controller == nullptr) {
             Logger::default_logger().warn("Failed to get SDL controller from instance ID %d", id);
@@ -196,6 +226,14 @@ namespace argus::input {
         }
 
         InputManager::instance().pimpl->gamepad_button_states[id] = int64_t(state);
+
+        std::array<double, size_t(GamepadAxis::MaxValue)> axis_values {};
+        for (size_t i = 0; i < int(GamepadAxis::MaxValue); i++) {
+            axis_values[i] = _normalize_axis(
+                    SDL_GameControllerGetAxis(controller, g_axes_argus_to_sdl[GamepadAxis(i)]));
+        }
+
+        InputManager::instance().pimpl->gamepad_axis_states[id] = axis_values;
     }
 
     void update_gamepads(void) {
@@ -208,11 +246,11 @@ namespace argus::input {
         }
 
         for (auto gamepad_id : manager.pimpl->available_gamepads) {
-            _update_gamepad(gamepad_id);
+            _poll_gamepad(gamepad_id);
         }
 
         for (auto &gamepad_kv : manager.pimpl->mapped_gamepads) {
-            _update_gamepad(gamepad_kv.first);
+            _poll_gamepad(gamepad_kv.first);
         }
     }
 

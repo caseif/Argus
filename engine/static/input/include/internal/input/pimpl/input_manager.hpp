@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/input/controller.hpp"
+#include "argus/input/gamepad.hpp"
 #include "internal/input/gamepad.hpp"
 
 #include <mutex>
@@ -36,6 +37,8 @@ namespace argus::input {
         bool are_gamepads_initted = false;
 
         std::unordered_map<GamepadId, std::atomic_int64_t> gamepad_button_states;
+        std::unordered_map<GamepadId, std::atomic<std::array<double, size_t(GamepadAxis::MaxValue)>>>
+                gamepad_axis_states;
 
         pimpl_InputManager(void) = default;
     };
