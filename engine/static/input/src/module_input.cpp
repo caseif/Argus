@@ -24,6 +24,7 @@
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
+#include "internal/input/controller.hpp"
 #include "internal/input/gamepad.hpp"
 #include "internal/input/input_manager.hpp"
 #include "internal/input/keyboard.hpp"
@@ -47,14 +48,10 @@ namespace argus {
         }
     }
 
-    static void _poll_events(void) {
-        //
-    }
-
     static void _on_update(TimeDelta delta) {
         UNUSED(delta);
-        _poll_events();
         input::flush_mouse_delta();
+        input::ack_gamepad_disconnects();
     }
 
     static void _on_render(TimeDelta delta) {
@@ -67,8 +64,8 @@ namespace argus {
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
-                register_update_callback(_on_update);
-                register_render_callback(_on_render);
+                register_update_callback(_on_update, Ordering::Early);
+                register_render_callback(_on_render, Ordering::Early);
                 register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
 
                 register_input_script_bindings();

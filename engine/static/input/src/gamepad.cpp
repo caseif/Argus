@@ -18,7 +18,12 @@
 
 #include "argus/lowlevel/macros.hpp"
 
+#include "argus/core/event.hpp"
+
+#include "argus/wm/window.hpp"
+
 #include "argus/input/gamepad.hpp"
+#include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
 #include "internal/input/gamepad.hpp"
 #include "internal/input/pimpl/controller.hpp"
@@ -119,7 +124,7 @@ namespace argus::input {
         return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
     }
 
-    std::string get_gamepad_name(GamepadId gamepad) {
+    std::string get_gamepad_name(HidDeviceId gamepad) {
         auto *controller = SDL_GameControllerFromInstanceID(gamepad);
         if (controller == nullptr) {
             Logger::default_logger().warn("Client queried unknown gamepad ID %d", gamepad);
@@ -130,7 +135,7 @@ namespace argus::input {
         return name != nullptr ? name : "unknown";
     }
 
-    bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button) {
+    bool is_gamepad_button_pressed(HidDeviceId gamepad, GamepadButton button) {
         if (std::underlying_type_t<GamepadButton>(button) < 0 || button >= GamepadButton::MaxValue) {
             Logger::default_logger().warn("Client polled invalid gamepad button ordinal %d", button);
             return false;
@@ -154,7 +159,7 @@ namespace argus::input {
         return (it->second.load() & (1 << sdl_button_it->second)) != 0;
     }
 
-    double get_gamepad_axis(GamepadId gamepad, GamepadAxis axis) {
+    double get_gamepad_axis(HidDeviceId gamepad, GamepadAxis axis) {
         if (std::underlying_type_t<GamepadAxis>(axis) < 0 || axis >= GamepadAxis::MaxValue) {
             Logger::default_logger().warn("Client polled invalid gamepad axis ordinal %d", axis);
             return false;
@@ -213,7 +218,7 @@ namespace argus::input {
                         : -double(val) / std::numeric_limits<int16_t>::min();
     }
 
-    [[maybe_unused]] static void _poll_gamepad(GamepadId id) {
+    static void _poll_gamepad(HidDeviceId id) {
         auto *controller = SDL_GameControllerFromInstanceID(id);
         if (controller == nullptr) {
             Logger::default_logger().warn("Failed to get SDL controller from instance ID %d", id);
@@ -236,25 +241,17 @@ namespace argus::input {
         InputManager::instance().pimpl->gamepad_axis_states[id] = axis_values;
     }
 
-    void update_gamepads(void) {
-        auto &manager = InputManager::instance();
-
-        if (!manager.pimpl->are_gamepads_initted) {
-            _init_gamepads();
-
-            manager.pimpl->are_gamepads_initted = true;
-        }
-
-        for (auto gamepad_id : manager.pimpl->available_gamepads) {
-            _poll_gamepad(gamepad_id);
-        }
-
-        for (auto &gamepad_kv : manager.pimpl->mapped_gamepads) {
-            _poll_gamepad(gamepad_kv.first);
-        }
+    static void _dispatch_gamepad_connect_event(HidDeviceId gamepad_id) {
+        dispatch_event<InputDeviceEvent>(InputDeviceEventType::GamepadConnected, "", gamepad_id);
     }
 
-    void handle_gamepad_events(void) {
+    static void _dispatch_gamepad_disconnect_event(std::string controller_name,
+            HidDeviceId gamepad_id) {
+        dispatch_event<InputDeviceEvent>(InputDeviceEventType::GamepadDisconnected, std::move(controller_name),
+                gamepad_id);
+    }
+
+    static void _handle_gamepad_events(void) {
         constexpr size_t event_buf_size = 8;
         SDL_Event events[event_buf_size];
 
@@ -267,20 +264,40 @@ namespace argus::input {
                 auto &event = events[i];
 
                 if (event.type == SDL_CONTROLLERDEVICEADDED) {
-                    auto instance_id = SDL_JoystickGetDeviceInstanceID(event.cdevice.which);
+                    auto device_index = event.cdevice.which;
+
+                    SDL_GameControllerOpen(device_index);
+
+                    auto instance_id = SDL_JoystickGetDeviceInstanceID(device_index);
+                    if (instance_id < 0) {
+                        Logger::default_logger().warn("Failed to get device instance ID of newly connected gamepad: %s",
+                                SDL_GetError());
+                        continue;
+                    }
+
                     InputManager::instance().pimpl->available_gamepads.push_back(instance_id);
+
+                    _dispatch_gamepad_connect_event(instance_id);
                 } else if (event.type == SDL_CONTROLLERDEVICEREMOVED) {
+                    auto instance_id = event.cdevice.which;
+
                     auto &mapped_gamepads = InputManager::instance().pimpl->mapped_gamepads;
-                    auto mapped_it = mapped_gamepads.find(event.cdevice.which);
+                    auto mapped_it = mapped_gamepads.find(instance_id);
                     if (mapped_it != mapped_gamepads.cend()) {
                         auto ctrl_it = InputManager::instance().pimpl->controllers.find(mapped_it->second);
                         auto &controllers = InputManager::instance().pimpl->controllers;
                         if (ctrl_it != controllers.cend()) {
                             Logger::default_logger().warn("Gamepad attached to controller '%s' was disconnected",
                                     ctrl_it->second->get_name().c_str());
-                            ctrl_it->second->detach_gamepad();
+                            ctrl_it->second->notify_gamepad_disconnected();
+
+                            _dispatch_gamepad_disconnect_event(ctrl_it->second->get_name(), instance_id);
                         } else {
+                            // shouldn't happen
+
                             mapped_gamepads.erase(mapped_it);
+
+                            _dispatch_gamepad_disconnect_event("", instance_id);
                         }
                     } else {
                         auto &avail_gamepads = InputManager::instance().pimpl->available_gamepads;
@@ -288,13 +305,35 @@ namespace argus::input {
                         if (avail_it != avail_gamepads.cend()) {
                             avail_gamepads.erase(avail_it);
                         }
+
+                        _dispatch_gamepad_disconnect_event("", instance_id);
                     }
                 }
             }
         }
     }
 
-    void assoc_gamepad(GamepadId id, const std::string &controller_name) {
+    void update_gamepads(void) {
+        auto &manager = InputManager::instance();
+
+        if (!manager.pimpl->are_gamepads_initted) {
+            _init_gamepads();
+
+            manager.pimpl->are_gamepads_initted = true;
+        }
+
+        _handle_gamepad_events();
+
+        for (auto gamepad_id : manager.pimpl->available_gamepads) {
+            _poll_gamepad(gamepad_id);
+        }
+
+        for (auto &gamepad_kv : manager.pimpl->mapped_gamepads) {
+            _poll_gamepad(gamepad_kv.first);
+        }
+    }
+
+    void assoc_gamepad(HidDeviceId id, const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
         std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
@@ -309,7 +348,7 @@ namespace argus::input {
         manager.pimpl->mapped_gamepads.insert({ id, controller_name });
     }
 
-    GamepadId assoc_first_available_gamepad(const std::string &controller_name) {
+    HidDeviceId assoc_first_available_gamepad(const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
         std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
@@ -324,7 +363,7 @@ namespace argus::input {
         return front;
     }
 
-    void unassoc_gamepad(GamepadId id) {
+    void unassoc_gamepad(HidDeviceId id) {
         auto &manager = InputManager::instance();
 
         std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
@@ -340,7 +379,7 @@ namespace argus::input {
         manager.pimpl->available_gamepads.push_back(id);
     }
 
-    static void _close_gamepad(GamepadId id) {
+    static void _close_gamepad(HidDeviceId id) {
         auto *controller = SDL_GameControllerFromInstanceID(id);
         if (controller == nullptr) {
             Logger::default_logger().warn("Failed to get SDL gamepad with instance ID %d while "

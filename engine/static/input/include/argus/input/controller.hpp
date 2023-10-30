@@ -50,7 +50,7 @@ namespace argus::input {
 
         [[nodiscard]] bool has_gamepad(void) const;
 
-        void attach_gamepad(GamepadId id);
+        void attach_gamepad(HidDeviceId id);
 
         void attach_first_available_gamepad(void);
 

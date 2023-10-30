@@ -23,6 +23,7 @@
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "argus/input/mouse.hpp"
+#include "internal/input/controller.hpp"
 #include "internal/input/gamepad.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
@@ -55,7 +56,7 @@ namespace argus::input {
         return pimpl->attached_gamepad.has_value();
     }
 
-    void Controller::attach_gamepad(GamepadId id) {
+    void Controller::attach_gamepad(HidDeviceId id) {
         if (pimpl->attached_gamepad.has_value()) {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
@@ -277,11 +278,13 @@ namespace argus::input {
             }
         }
 
-        auto gamepad_it = pimpl->action_to_gamepad_button_bindings.find(action);
-        if (gamepad_it != pimpl->action_to_gamepad_button_bindings.cend()) {
-            for (auto btn : gamepad_it->second) {
-                if (this->is_gamepad_button_pressed(btn)) {
-                    return true;
+        if (this->has_gamepad()) {
+            auto gamepad_it = pimpl->action_to_gamepad_button_bindings.find(action);
+            if (gamepad_it != pimpl->action_to_gamepad_button_bindings.cend()) {
+                for (auto btn: gamepad_it->second) {
+                    if (this->is_gamepad_button_pressed(btn)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -299,9 +302,11 @@ namespace argus::input {
     }
 
     double Controller::get_action_axis(const std::string &action) {
-        auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
-        if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
-            return this->get_gamepad_axis(gamepad_it->second.front());
+        if (this->has_gamepad()) {
+            auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
+            if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
+                return this->get_gamepad_axis(gamepad_it->second.front());
+            }
         }
 
         auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
@@ -319,5 +324,16 @@ namespace argus::input {
         }
 
         return 0;
+    }
+
+    void ack_gamepad_disconnects(void) {
+        for (auto &controller_kv : InputManager::instance().pimpl->controllers) {
+            if (controller_kv.second->pimpl->was_gamepad_disconnected) {
+                // acknowledge disconnect flag set by render thread and fully
+                // disassoc gamepad from controller
+                controller_kv.second->pimpl->was_gamepad_disconnected = false;
+                controller_kv.second->detach_gamepad();
+            }
+        }
     }
 }

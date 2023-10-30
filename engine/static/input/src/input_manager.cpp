@@ -92,15 +92,16 @@ namespace argus::input {
         pimpl->controllers.erase(res);
     }
 
-    static void _dispatch_button_event(const Window &window, const std::string &controller_name, std::string &action,
+    static void _dispatch_button_event(const Window &window, std::string controller_name, std::string action,
             bool release) {
         auto event_type = release ? InputEventType::ButtonUp : InputEventType::ButtonDown;
-        dispatch_event<InputEvent>(event_type, window, controller_name, action, 0.0, 0.0);
+        dispatch_event<InputEvent>(event_type, window, std::move(controller_name), std::move(action), 0.0, 0.0);
     }
 
-    static void _dispatch_axis_event(const Window &window, const std::string &controller_name, std::string &action,
+    static void _dispatch_axis_event(const Window &window, std::string controller_name, std::string action,
             double value, double delta) {
-        dispatch_event<InputEvent>(InputEventType::AxisChanged, window, controller_name, action, value, delta);
+        dispatch_event<InputEvent>(InputEventType::AxisChanged, window, std::move(controller_name), std::move(action),
+                value, delta);
     }
 
     void InputManager::handle_key_press(const Window &window, KeyboardScancode key, bool release) const {

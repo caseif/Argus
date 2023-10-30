@@ -259,6 +259,10 @@ namespace argus {
         bind_member_instance_function("get_name", &input::Controller::get_name);
         bind_member_instance_function("has_gamepad", &input::Controller::has_gamepad);
 
+        bind_member_instance_function("attach_gamepad", &input::Controller::attach_gamepad);
+        bind_member_instance_function("attach_first_available_gamepad", &input::Controller::attach_first_available_gamepad);
+        bind_member_instance_function("detach_gamepad", &input::Controller::detach_gamepad);
+
         bind_member_instance_function("bind_keyboard_key", &input::Controller::bind_keyboard_key);
         bind_member_instance_function<void(input::Controller::*)(input::KeyboardScancode)>(
                 "unbind_keyboard_key", &input::Controller::unbind_keyboard_key);
@@ -316,6 +320,23 @@ namespace argus {
                 "register_input_handler",
                 +[](std::function<void(const input::InputEvent &)> fn, Ordering ordering) -> Index {
                     return register_event_handler<input::InputEvent>(std::move(fn), TargetThread::Update, ordering);
+                }
+        );
+
+        bind_enum<input::InputDeviceEventType>("InputDeviceEventType");
+        bind_enum_value("GamepadConnected", input::InputDeviceEventType::GamepadConnected);
+        bind_enum_value("GamepadDisconnected", input::InputDeviceEventType::GamepadDisconnected);
+
+        bind_type<input::InputDeviceEvent>("InputDeviceEvent");
+        bind_member_field("device_event", &input::InputDeviceEvent::device_event);
+        bind_member_field("controller_name", &input::InputDeviceEvent::controller_name);
+        bind_member_field("device_id", &input::InputDeviceEvent::device_id);
+
+        bind_global_function(
+                "register_input_device_event_handler",
+                +[](std::function<void(const input::InputDeviceEvent &)> fn, Ordering ordering) -> Index {
+                    return register_event_handler<input::InputDeviceEvent>(std::move(fn),
+                            TargetThread::Update, ordering);
                 }
         );
     }

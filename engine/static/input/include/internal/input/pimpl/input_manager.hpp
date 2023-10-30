@@ -31,13 +31,13 @@ namespace argus::input {
     struct pimpl_InputManager {
         std::unordered_map<std::string, Controller *> controllers;
 
-        std::vector<GamepadId> available_gamepads;
-        std::unordered_map<GamepadId, std::string> mapped_gamepads;
+        std::vector<HidDeviceId> available_gamepads;
+        std::unordered_map<HidDeviceId, std::string> mapped_gamepads;
         std::recursive_mutex gamepads_mutex;
         bool are_gamepads_initted = false;
 
-        std::unordered_map<GamepadId, std::atomic_int64_t> gamepad_button_states;
-        std::unordered_map<GamepadId, std::atomic<std::array<double, size_t(GamepadAxis::MaxValue)>>>
+        std::unordered_map<HidDeviceId, std::atomic_int64_t> gamepad_button_states;
+        std::unordered_map<HidDeviceId, std::atomic<std::array<double, size_t(GamepadAxis::MaxValue)>>>
                 gamepad_axis_states;
 
         pimpl_InputManager(void) = default;

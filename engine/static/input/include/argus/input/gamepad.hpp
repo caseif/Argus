@@ -26,7 +26,7 @@ namespace argus::input {
     // forward declarations
     class Controller;
 
-    typedef int GamepadId;
+    typedef int HidDeviceId;
 
     enum class GamepadButton {
         Unknown = -1,
@@ -70,9 +70,9 @@ namespace argus::input {
 
     uint8_t get_unattached_gamepad_count(void);
 
-    std::string get_gamepad_name(GamepadId gamepad);
+    std::string get_gamepad_name(HidDeviceId gamepad);
 
-    bool is_gamepad_button_pressed(GamepadId gamepad, GamepadButton button);
+    bool is_gamepad_button_pressed(HidDeviceId gamepad, GamepadButton button);
 
-    double get_gamepad_axis(GamepadId gamepad, GamepadAxis axis);
+    double get_gamepad_axis(HidDeviceId gamepad, GamepadAxis axis);
 }

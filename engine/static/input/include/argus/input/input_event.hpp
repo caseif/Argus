@@ -29,6 +29,11 @@ namespace argus::input {
         AxisChanged,
     };
 
+    enum class InputDeviceEventType {
+        GamepadConnected,
+        GamepadDisconnected,
+    };
+
     struct InputEvent : public ArgusEvent, AutoCleanupable {
         const InputEventType input_type;
         const Window &window;
@@ -37,8 +42,8 @@ namespace argus::input {
         const double axis_value;
         const double axis_delta;
 
-        InputEvent(InputEventType type, const Window &window, const std::string &name,
-                const std::string &action, double axis_value, double axis_delta);
+        InputEvent(InputEventType type, const Window &window, std::string controller_name,
+                std::string action, double axis_value, double axis_delta);
 
         InputEvent(const InputEvent &rhs) = delete;
 
@@ -47,5 +52,19 @@ namespace argus::input {
         ~InputEvent(void) override;
 
         const Window &get_window(void);
+    };
+
+    struct InputDeviceEvent : ArgusEvent, AutoCleanupable {
+        const InputDeviceEventType device_event;
+        const std::string controller_name;
+        const HidDeviceId device_id;
+
+        InputDeviceEvent(InputDeviceEventType type, std::string controller_name, HidDeviceId device_id);
+
+        InputDeviceEvent(const InputDeviceEvent &) = delete;
+
+        InputDeviceEvent(InputDeviceEvent &&) = delete;
+
+        ~InputDeviceEvent(void) override;
     };
 }
