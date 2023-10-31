@@ -296,6 +296,7 @@ namespace argus {
         bind_member_instance_function("get_gamepad_name", &input::Controller::get_gamepad_name);
         bind_member_instance_function("is_gamepad_button_pressed", &input::Controller::is_gamepad_button_pressed);
         bind_member_instance_function("get_gamepad_axis", &input::Controller::get_gamepad_axis);
+        bind_member_instance_function("get_gamepad_axis_delta", &input::Controller::get_gamepad_axis_delta);
 
         bind_member_instance_function("is_action_pressed", &input::Controller::is_action_pressed);
         bind_member_instance_function("get_action_axis", &input::Controller::get_action_axis);

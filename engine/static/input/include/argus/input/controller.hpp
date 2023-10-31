@@ -100,6 +100,8 @@ namespace argus::input {
 
         double get_gamepad_axis(GamepadAxis axis);
 
+        double get_gamepad_axis_delta(GamepadAxis axis);
+
         bool is_action_pressed(const std::string &action);
 
         double get_action_axis(const std::string &action);

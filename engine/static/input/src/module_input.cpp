@@ -48,10 +48,16 @@ namespace argus {
         }
     }
 
-    static void _on_update(TimeDelta delta) {
+
+    static void _on_update_early(TimeDelta delta) {
+        UNUSED(delta);
+        input::ack_gamepad_disconnects();
+    }
+
+    static void _on_update_late(TimeDelta delta) {
         UNUSED(delta);
         input::flush_mouse_delta();
-        input::ack_gamepad_disconnects();
+        input::flush_gamepad_deltas();
     }
 
     static void _on_render(TimeDelta delta) {
@@ -64,7 +70,8 @@ namespace argus {
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
-                register_update_callback(_on_update, Ordering::Early);
+                register_update_callback(_on_update_early, Ordering::Early);
+                register_update_callback(_on_update_late, Ordering::Late);
                 register_render_callback(_on_render, Ordering::Early);
                 register_event_handler<WindowEvent>(_on_window_event, argus::TargetThread::Render);
 

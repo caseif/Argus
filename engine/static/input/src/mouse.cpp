@@ -182,8 +182,7 @@ namespace argus::input {
     void flush_mouse_delta(void) {
         std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
         if (g_mouse_state.is_delta_stale) {
-            g_mouse_state.mouse_delta.x = 0;
-            g_mouse_state.mouse_delta.y = 0;
+            g_mouse_state.mouse_delta = {};
         }
     }
 }

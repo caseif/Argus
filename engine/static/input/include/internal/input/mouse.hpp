@@ -32,8 +32,8 @@ namespace argus {
             Vector2d last_mouse_pos;
             Vector2d mouse_delta;
             bool got_first_mouse_pos = false;
-            bool is_delta_stale;
-            uint32_t button_state;
+            bool is_delta_stale = false;
+            uint32_t button_state = 0;
         };
 
         void init_mouse(const argus::Window &window);

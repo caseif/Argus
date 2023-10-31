@@ -141,13 +141,6 @@ namespace argus::input {
             return false;
         }
 
-        auto &states = InputManager::instance().pimpl->gamepad_button_states;
-        auto it = states.find(gamepad);
-        if (it == states.cend()) {
-            Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
-            return false;
-        }
-
         auto sdl_button_it = g_buttons_argus_to_sdl.find(button);
         if (sdl_button_it == g_buttons_argus_to_sdl.cend()) {
             Logger::default_logger().warn("Client polled unknown gamepad button ordinal %d", button);
@@ -156,7 +149,17 @@ namespace argus::input {
 
         assert(sdl_button_it->second >= 0);
 
-        return (it->second.load() & (1 << sdl_button_it->second)) != 0;
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+
+        auto &states = InputManager::instance().pimpl->gamepad_states;
+        auto it = states.find(gamepad);
+        if (it == states.cend()) {
+            Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
+            return false;
+        }
+
+        auto button_state = it->second.button_state;
+        return (button_state & (1 << sdl_button_it->second)) != 0;
     }
 
     double get_gamepad_axis(HidDeviceId gamepad, GamepadAxis axis) {
@@ -165,16 +168,40 @@ namespace argus::input {
             return false;
         }
 
-        auto &states = InputManager::instance().pimpl->gamepad_axis_states;
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+
+        auto &states = InputManager::instance().pimpl->gamepad_states;
         auto it = states.find(gamepad);
         if (it == states.cend()) {
             Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
             return false;
         }
 
-        auto axis_vals = it->second.load();
-        assert(size_t(axis) < axis_vals.size());
-        return axis_vals[size_t(axis)];
+        auto axis_state = it->second.axis_state;
+        assert(size_t(axis) < axis_state.size());
+
+        return axis_state[size_t(axis)];
+    }
+
+    double get_gamepad_axis_delta(HidDeviceId gamepad, GamepadAxis axis) {
+        if (std::underlying_type_t<GamepadAxis>(axis) < 0 || axis >= GamepadAxis::MaxValue) {
+            Logger::default_logger().warn("Client polled invalid gamepad axis ordinal %d", axis);
+            return false;
+        }
+
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+
+        auto &states = InputManager::instance().pimpl->gamepad_states;
+        auto it = states.find(gamepad);
+        if (it == states.cend()) {
+            Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
+            return false;
+        }
+
+        auto deltas = it->second.axis_deltas;
+        assert(size_t(axis) < deltas.size());
+
+        return deltas[size_t(axis)];
     }
 
     static void _init_gamepads(void) {
@@ -225,20 +252,28 @@ namespace argus::input {
             return;
         }
 
-        GamepadButtonState state = 0;
+        GamepadButtonState new_button_state = 0;
         for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
-            state |= uint64_t(SDL_GameControllerGetButton(controller, SDL_GameControllerButton(i))) << i;
+            new_button_state |= uint64_t(SDL_GameControllerGetButton(controller, SDL_GameControllerButton(i))) << i;
         }
 
-        InputManager::instance().pimpl->gamepad_button_states[id] = int64_t(state);
-
-        std::array<double, size_t(GamepadAxis::MaxValue)> axis_values {};
+        std::array<double, size_t(GamepadAxis::MaxValue)> new_axis_state {};
         for (size_t i = 0; i < int(GamepadAxis::MaxValue); i++) {
-            axis_values[i] = _normalize_axis(
+            new_axis_state[i] = _normalize_axis(
                     SDL_GameControllerGetAxis(controller, g_axes_argus_to_sdl[GamepadAxis(i)]));
         }
 
-        InputManager::instance().pimpl->gamepad_axis_states[id] = axis_values;
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+
+        auto prev_axis_state = InputManager::instance().pimpl->gamepad_states[id].axis_state;
+
+        auto &state = InputManager::instance().pimpl->gamepad_states[id];
+
+        state.button_state = uint64_t(new_button_state);
+        state.axis_state = new_axis_state;
+        for (size_t i = 0; i < state.axis_state.size(); i++) {
+            state.axis_deltas[i] += new_axis_state[i] - prev_axis_state[i];
+        }
     }
 
     static void _dispatch_gamepad_connect_event(HidDeviceId gamepad_id) {
@@ -266,7 +301,7 @@ namespace argus::input {
                 if (event.type == SDL_CONTROLLERDEVICEADDED) {
                     auto device_index = event.cdevice.which;
 
-                    SDL_GameControllerOpen(device_index);
+                    auto *gamepad = SDL_GameControllerOpen(device_index);
 
                     auto instance_id = SDL_JoystickGetDeviceInstanceID(device_index);
                     if (instance_id < 0) {
@@ -275,7 +310,23 @@ namespace argus::input {
                         continue;
                     }
 
+                    // and they say Java is verbose
+                    if (InputManager::instance().pimpl->mapped_gamepads.find(instance_id)
+                            != InputManager::instance().pimpl->mapped_gamepads.end()
+                            || std::find(InputManager::instance().pimpl->available_gamepads.cbegin(),
+                                    InputManager::instance().pimpl->available_gamepads.cend(), instance_id)
+                                    != InputManager::instance().pimpl->available_gamepads.end()) {
+                        Logger::default_logger().debug("Ignoring connect event for previously opened gamepad "
+                                                       "with instance ID %d", instance_id);
+                        // this just decrements the ref count
+                        SDL_GameControllerClose(gamepad);
+                        continue;
+                    }
+
                     InputManager::instance().pimpl->available_gamepads.push_back(instance_id);
+
+                    auto *name = SDL_GameControllerName(gamepad);
+                    Logger::default_logger().info("Gamepad '%s' with instance ID %d was connected", name, instance_id);
 
                     _dispatch_gamepad_connect_event(instance_id);
                 } else if (event.type == SDL_CONTROLLERDEVICEREMOVED) {
@@ -287,7 +338,7 @@ namespace argus::input {
                         auto ctrl_it = InputManager::instance().pimpl->controllers.find(mapped_it->second);
                         auto &controllers = InputManager::instance().pimpl->controllers;
                         if (ctrl_it != controllers.cend()) {
-                            Logger::default_logger().warn("Gamepad attached to controller '%s' was disconnected",
+                            Logger::default_logger().info("Gamepad attached to controller '%s' was disconnected",
                                     ctrl_it->second->get_name().c_str());
                             ctrl_it->second->notify_gamepad_disconnected();
 
@@ -305,6 +356,8 @@ namespace argus::input {
                         if (avail_it != avail_gamepads.cend()) {
                             avail_gamepads.erase(avail_it);
                         }
+
+                        Logger::default_logger().info("Gamepad with instance ID %d was disconnected", instance_id);
 
                         _dispatch_gamepad_disconnect_event("", instance_id);
                     }
@@ -330,6 +383,14 @@ namespace argus::input {
 
         for (auto &gamepad_kv : manager.pimpl->mapped_gamepads) {
             _poll_gamepad(gamepad_kv.first);
+        }
+    }
+
+    void flush_gamepad_deltas(void) {
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+
+        for (auto &gamepad_kv : InputManager::instance().pimpl->gamepad_states) {
+            gamepad_kv.second.axis_deltas = {};
         }
     }
 

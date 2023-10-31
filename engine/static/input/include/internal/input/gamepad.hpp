@@ -21,7 +21,15 @@
 #include "argus/input/gamepad.hpp"
 
 namespace argus::input {
+    struct GamepadState {
+        uint64_t button_state = 0;
+        std::array<double, size_t(GamepadAxis::MaxValue)> axis_state = {};
+        std::array<double, size_t(GamepadAxis::MaxValue)> axis_deltas = {};
+    };
+
     void update_gamepads(void);
+
+    void flush_gamepad_deltas(void);
 
     void assoc_gamepad(HidDeviceId id, const std::string &controller_name);
 

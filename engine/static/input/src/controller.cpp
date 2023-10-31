@@ -268,6 +268,14 @@ namespace argus::input {
         return ::argus::input::get_gamepad_axis(pimpl->attached_gamepad.value(), axis);
     }
 
+    double Controller::get_gamepad_axis_delta(GamepadAxis axis) {
+        if (!has_gamepad()) {
+            throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
+        }
+
+        return ::argus::input::get_gamepad_axis_delta(pimpl->attached_gamepad.value(), axis);
+    }
+
     bool Controller::is_action_pressed(const std::string &action) {
         auto kb_it = pimpl->action_to_key_bindings.find(action);
         if (kb_it != pimpl->action_to_key_bindings.cend()) {
@@ -318,6 +326,13 @@ namespace argus::input {
     }
 
     double Controller::get_action_axis_delta(const std::string &action) {
+        if (this->has_gamepad()) {
+            auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
+            if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
+                return this->get_gamepad_axis_delta(gamepad_it->second.front());
+            }
+        }
+
         auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
         if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
             return get_mouse_axis_delta(mouse_it->second.front());

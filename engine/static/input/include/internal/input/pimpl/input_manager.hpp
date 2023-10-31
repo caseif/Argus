@@ -36,9 +36,8 @@ namespace argus::input {
         std::recursive_mutex gamepads_mutex;
         bool are_gamepads_initted = false;
 
-        std::unordered_map<HidDeviceId, std::atomic_int64_t> gamepad_button_states;
-        std::unordered_map<HidDeviceId, std::atomic<std::array<double, size_t(GamepadAxis::MaxValue)>>>
-                gamepad_axis_states;
+        std::unordered_map<HidDeviceId, GamepadState> gamepad_states;
+        std::mutex gamepad_states_mutex;
 
         pimpl_InputManager(void) = default;
     };

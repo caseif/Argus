@@ -75,4 +75,6 @@ namespace argus::input {
     bool is_gamepad_button_pressed(HidDeviceId gamepad, GamepadButton button);
 
     double get_gamepad_axis(HidDeviceId gamepad, GamepadAxis axis);
+
+    double get_gamepad_axis_delta(HidDeviceId gamepad, GamepadAxis axis);
 }
