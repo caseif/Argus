@@ -32,7 +32,6 @@ namespace argus {
             Vector2d last_pos;
             Vector2d delta;
             bool got_first_pos = false;
-            bool is_delta_stale = false;
             uint32_t button_state = 0;
         };
 

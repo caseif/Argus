@@ -86,7 +86,6 @@ namespace argus::input {
             default:
                 throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
         }
-        state.is_delta_stale = true;
         return val;
     }
 
@@ -114,16 +113,14 @@ namespace argus::input {
         state.button_state = SDL_GetMouseState(&x, &y);
 
         if (state.got_first_pos) {
-            state.delta.x = double(x) - state.last_pos.x;
-            state.delta.y = double(y) - state.last_pos.y;
+            state.delta.x += double(x) - state.last_pos.x;
+            state.delta.y += double(y) - state.last_pos.y;
         } else {
             state.got_first_pos = true;
         }
 
         state.last_pos.x = double(x);
         state.last_pos.y = double(y);
-
-        state.is_delta_stale = false;
     }
 
     static void _handle_mouse_events(void) {
@@ -188,8 +185,6 @@ namespace argus::input {
 
     void flush_mouse_delta(void) {
         std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
-        if (InputManager::instance().pimpl->mouse_state.is_delta_stale) {
-            InputManager::instance().pimpl->mouse_state.delta = {};
-        }
+        InputManager::instance().pimpl->mouse_state.delta = {};
     }
 }
