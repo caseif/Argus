@@ -65,12 +65,12 @@ namespace argus::input {
         return *res->second;
     }
 
-    Controller &InputManager::add_controller(const std::string &name, bool assign_gamepad) {
+    Controller &InputManager::add_controller(const std::string &name) {
         if (pimpl->controllers.size() >= MAX_CONTROLLERS) {
             throw std::invalid_argument("Controller limit reached");
         }
 
-        auto controller = new Controller(name, assign_gamepad);
+        auto controller = new Controller(name);
 
         pimpl->controllers.insert({ name, controller });
 

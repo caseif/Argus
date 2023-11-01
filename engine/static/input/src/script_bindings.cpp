@@ -26,14 +26,6 @@ namespace argus {
         bind_type<input::InputManager>("InputManager");
         bind_member_instance_function("get_controller", &input::InputManager::get_controller);
         bind_member_instance_function("add_controller", &input::InputManager::add_controller);
-        bind_extension_function<input::InputManager>("add_kbm_controller",
-                +[](input::InputManager &manager, const std::string &name) -> input::Controller & {
-                    return manager.add_controller(name, false);
-                });
-        bind_extension_function<input::InputManager>("add_gamepad_controller",
-                +[](input::InputManager &manager, const std::string &name) -> input::Controller & {
-                    return manager.add_controller(name, true);
-            });
         bind_member_instance_function<void(input::InputManager::*)(const std::string &)>("remove_controller",
                 &input::InputManager::remove_controller);
 

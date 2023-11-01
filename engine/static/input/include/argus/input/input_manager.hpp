@@ -43,7 +43,7 @@ namespace argus::input {
 
         Controller &get_controller(const std::string &name);
 
-        Controller &add_controller(const std::string &name, bool assign_gamepad);
+        Controller &add_controller(const std::string &name);
 
         void remove_controller(Controller &controller);
 

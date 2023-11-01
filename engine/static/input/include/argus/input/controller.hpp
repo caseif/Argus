@@ -35,7 +35,7 @@ namespace argus::input {
         friend class InputManager;
 
       private:
-        Controller(const std::string &name, bool assign_gamepad);
+        Controller(const std::string &name);
 
         ~Controller(void) override;
 

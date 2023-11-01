@@ -35,11 +35,8 @@
 namespace argus::input {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Controller));
 
-    Controller::Controller(const std::string &name, bool assign_gamepad) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
-        if (assign_gamepad) {
-            this->attach_first_available_gamepad();
-        }
+    Controller::Controller(const std::string &name) :
+        pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
     }
 
     Controller::~Controller(void) {
