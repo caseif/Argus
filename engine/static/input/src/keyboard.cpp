@@ -24,6 +24,7 @@
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
 #include "internal/input/keyboard.hpp"
+#include "internal/input/pimpl/input_manager.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -200,10 +201,6 @@ namespace argus::input {
         { KeyboardScancode::Menu,           SDL_SCANCODE_MENU },
     });
 
-    static const uint8_t *g_keyboard_state = nullptr;
-    static std::mutex g_keyboard_state_mutex;
-    static int g_keyboard_key_count;
-
     static KeyboardScancode _translate_sdl_scancode(int sdl_scancode) {
         if (sdl_scancode < 0) {
             Logger::default_logger().warn("Received negative keyboard scancode %d", sdl_scancode);
@@ -261,8 +258,10 @@ namespace argus::input {
     }
 
     bool is_key_pressed(KeyboardScancode scancode) {
-        std::lock_guard<std::mutex> lock(g_keyboard_state_mutex);
-        if (g_keyboard_state == nullptr) {
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->keyboard_state_mutex);
+
+        auto state = InputManager::instance().pimpl->keyboard_state;
+        if (state == nullptr) {
             return false;
         }
 
@@ -271,16 +270,17 @@ namespace argus::input {
             return false;
         }
 
-        if (sdl_scancode >= g_keyboard_key_count) {
+        if (sdl_scancode >= InputManager::instance().pimpl->keyboard_key_count) {
             return false;
         }
 
-        return g_keyboard_state[sdl_scancode] != 0;
+        return state[sdl_scancode] != 0;
     }
 
     static void _poll_keyboard_state(void) {
-        std::lock_guard<std::mutex> lock(g_keyboard_state_mutex);
-        g_keyboard_state = SDL_GetKeyboardState(&g_keyboard_key_count);
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->keyboard_state_mutex);
+        InputManager::instance().pimpl->keyboard_state
+                = SDL_GetKeyboardState(&InputManager::instance().pimpl->keyboard_key_count);
     }
 
     static void _handle_keyboard_events(void) {

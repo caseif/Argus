@@ -31,6 +31,10 @@ namespace argus::input {
     struct pimpl_InputManager {
         std::unordered_map<std::string, Controller *> controllers;
 
+        const uint8_t *keyboard_state = nullptr;
+        std::mutex keyboard_state_mutex;
+        int keyboard_key_count = 0;
+
         std::vector<HidDeviceId> available_gamepads;
         std::unordered_map<HidDeviceId, std::string> mapped_gamepads;
         std::recursive_mutex gamepads_mutex;
