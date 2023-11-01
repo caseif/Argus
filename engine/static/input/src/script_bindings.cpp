@@ -252,6 +252,9 @@ namespace argus {
         bind_global_function("get_gamepad_name", input::get_gamepad_name);
         bind_global_function("is_gamepad_button_pressed", input::is_gamepad_button_pressed);
         bind_global_function("get_gamepad_axis", input::get_gamepad_axis);
+
+        bind_global_function("get_connected_gamepad_count", &input::get_connected_gamepad_count);
+        bind_global_function("get_unattached_gamepad_count", &input::get_unattached_gamepad_count);
     }
 
     static void _bind_controller_symbols(void) {
