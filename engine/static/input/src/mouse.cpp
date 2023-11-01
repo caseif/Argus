@@ -23,7 +23,9 @@
 
 #include "argus/input/input_manager.hpp"
 #include "argus/input/mouse.hpp"
+#include "internal/input/event_helpers.hpp"
 #include "internal/input/mouse.hpp"
+#include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
 #pragma GCC diagnostic push
@@ -123,6 +125,43 @@ namespace argus::input {
         state.last_pos.y = double(y);
     }
 
+    static void _dispatch_button_event(const Window &window, MouseButton button, bool release) {
+        for (auto &pair : InputManager::instance().pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+
+            auto it = controller.pimpl->mouse_button_to_action_bindings.find(button);
+            if (it == controller.pimpl->mouse_button_to_action_bindings.end()) {
+                continue;
+            }
+
+            for (auto &action : it->second) {
+                dispatch_button_event(window, controller_index, action, release);
+            }
+        }
+    }
+
+    static void _dispatch_axis_events(const Window &window, double x, double y, double dx, double dy) {
+        for (auto &pair : InputManager::instance().pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+
+            auto it_x = controller.pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Horizontal);
+            auto it_y = controller.pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Vertical);
+            if (it_x != controller.pimpl->mouse_axis_to_action_bindings.end()) {
+                for (auto &action : it_x->second) {
+                    dispatch_axis_event(window, controller_index, action, x, dx);
+                }
+            }
+
+            if (it_y == controller.pimpl->mouse_axis_to_action_bindings.end()) {
+                for (auto &action: it_y->second) {
+                    dispatch_axis_event(window, controller_index, action, y, dy);
+                }
+            }
+        }
+    }
+
     static void _handle_mouse_events(void) {
         constexpr size_t event_buf_size = 8;
         SDL_Event events[event_buf_size];
@@ -139,10 +178,8 @@ namespace argus::input {
                 }
 
                 if (event.type == SDL_MOUSEMOTION) {
-                    InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Horizontal,
-                            event.motion.x, event.motion.xrel);
-                    InputManager::instance().handle_mouse_axis_change(*window, MouseAxis::Vertical,
-                            event.motion.y, event.motion.yrel);
+                    _dispatch_axis_events(*window, event.motion.x, event.motion.y,
+                            event.motion.xrel, event.motion.yrel);
                 } else {
                     MouseButton button;
                     switch (event.button.button) {
@@ -166,7 +203,7 @@ namespace argus::input {
                                     event.button.which);
                             return;
                     }
-                    InputManager::instance().handle_mouse_button_press(*window, button,
+                    _dispatch_button_event(*window, button,
                             event.type == SDL_MOUSEBUTTONUP);
                 }
             }

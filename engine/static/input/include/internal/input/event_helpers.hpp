@@ -24,4 +24,7 @@
 
 namespace argus::input {
     void dispatch_button_event(const Window &window, std::string controller_name, std::string action, bool release);
+
+    void dispatch_axis_event(const Window &window, std::string controller_name, std::string action,
+            double value, double delta);
 }

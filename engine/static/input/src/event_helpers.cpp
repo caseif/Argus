@@ -28,4 +28,10 @@ namespace argus::input {
         auto event_type = release ? InputEventType::ButtonUp : InputEventType::ButtonDown;
         dispatch_event<InputEvent>(event_type, window, std::move(controller_name), std::move(action), 0.0, 0.0);
     }
+
+    void dispatch_axis_event(const Window &window, std::string controller_name, std::string action,
+            double value, double delta) {
+        dispatch_event<InputEvent>(InputEventType::AxisChanged, window, std::move(controller_name), std::move(action),
+                value, delta);
+    }
 }

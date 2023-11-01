@@ -92,43 +92,4 @@ namespace argus::input {
 
         pimpl->controllers.erase(res);
     }
-
-    static void _dispatch_axis_event(const Window &window, std::string controller_name, std::string action,
-            double value, double delta) {
-        dispatch_event<InputEvent>(InputEventType::AxisChanged, window, std::move(controller_name), std::move(action),
-                value, delta);
-    }
-
-    void InputManager::handle_mouse_button_press(const Window &window, MouseButton button, bool release) const {
-        for (auto &pair : pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->mouse_button_to_action_bindings.find(button);
-            if (it == controller.pimpl->mouse_button_to_action_bindings.end()) {
-                continue;
-            }
-
-            for (auto &action : it->second) {
-                dispatch_button_event(window, controller_index, action, release);
-            }
-        }
-    }
-
-    void InputManager::handle_mouse_axis_change(const Window &window, MouseAxis axis, double value,
-            double delta) const {
-        for (auto &pair : pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->mouse_axis_to_action_bindings.find(axis);
-            if (it == controller.pimpl->mouse_axis_to_action_bindings.end()) {
-                continue;
-            }
-
-            for (auto &action : it->second) {
-                _dispatch_axis_event(window, controller_index, action, value, delta);
-            }
-        }
-    }
 }
