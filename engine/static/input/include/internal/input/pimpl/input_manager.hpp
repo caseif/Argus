@@ -21,6 +21,7 @@
 #include "argus/input/controller.hpp"
 #include "argus/input/gamepad.hpp"
 #include "internal/input/gamepad.hpp"
+#include "internal/input/mouse.hpp"
 
 #include <mutex>
 #include <string>
@@ -34,6 +35,9 @@ namespace argus::input {
         const uint8_t *keyboard_state = nullptr;
         std::mutex keyboard_state_mutex;
         int keyboard_key_count = 0;
+
+        MouseState mouse_state;
+        std::mutex mouse_state_mutex;
 
         std::vector<HidDeviceId> available_gamepads;
         std::unordered_map<HidDeviceId, std::string> mapped_gamepads;

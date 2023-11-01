@@ -24,6 +24,7 @@
 #include "argus/input/input_manager.hpp"
 #include "argus/input/mouse.hpp"
 #include "internal/input/mouse.hpp"
+#include "internal/input/pimpl/input_manager.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -44,51 +45,52 @@ namespace argus::input {
             { MouseButton::Forward, SDL_BUTTON_X2 },
     });
 
-    static MouseState g_mouse_state;
-    static std::mutex g_mouse_state_mutex;
-
     argus::Vector2d mouse_pos(void) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
-        return g_mouse_state.last_mouse_pos;
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
+        return InputManager::instance().pimpl->mouse_state.last_mouse_pos;
     }
 
     argus::Vector2d mouse_delta(void) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
-        return g_mouse_state.mouse_delta;
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
+        return InputManager::instance().pimpl->mouse_state.mouse_delta;
     }
 
     double get_mouse_axis(MouseAxis axis) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
         switch (axis) {
             case MouseAxis::Horizontal:
-                return g_mouse_state.last_mouse_pos.x;
+                return InputManager::instance().pimpl->mouse_state.last_mouse_pos.x;
             case MouseAxis::Vertical:
-                return g_mouse_state.last_mouse_pos.y;
+                return InputManager::instance().pimpl->mouse_state.last_mouse_pos.y;
             default:
                 throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
         }
     }
 
     double get_mouse_axis_delta(MouseAxis axis) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
+        auto &state = InputManager::instance().pimpl->mouse_state;
+
         double val;
         switch (axis) {
             case MouseAxis::Horizontal:
-                val = g_mouse_state.mouse_delta.x;
+                val = state.mouse_delta.x;
                 break;
             case MouseAxis::Vertical:
-                val = g_mouse_state.mouse_delta.y;
+                val = state.mouse_delta.y;
                 break;
             default:
                 throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
         }
-        g_mouse_state.is_delta_stale = true;
+        state.is_delta_stale = true;
         return val;
     }
 
     bool is_mouse_button_pressed(MouseButton button) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
-
         if (int(button) < 0) {
             throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
         }
@@ -96,27 +98,32 @@ namespace argus::input {
         if (sdl_button == g_mouse_button_mappings.cend()) {
             throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
         }
-        return (g_mouse_state.button_state & SDL_BUTTON(sdl_button->second)) != 0;
+
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
+        return (InputManager::instance().pimpl->mouse_state.button_state & SDL_BUTTON(sdl_button->second)) != 0;
     }
 
     static void _poll_mouse(void) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+
+        auto &state = InputManager::instance().pimpl->mouse_state;
 
         int x;
         int y;
-        g_mouse_state.button_state = SDL_GetMouseState(&x, &y);
+        state.button_state = SDL_GetMouseState(&x, &y);
 
-        if (g_mouse_state.got_first_mouse_pos) {
-            g_mouse_state.mouse_delta.x = double(x) - g_mouse_state.last_mouse_pos.x;
-            g_mouse_state.mouse_delta.y = double(y) - g_mouse_state.last_mouse_pos.y;
+        if (state.got_first_mouse_pos) {
+            state.mouse_delta.x = double(x) - state.last_mouse_pos.x;
+            state.mouse_delta.y = double(y) - state.last_mouse_pos.y;
         } else {
-            g_mouse_state.got_first_mouse_pos = true;
+            state.got_first_mouse_pos = true;
         }
 
-        g_mouse_state.last_mouse_pos.x = double(x);
-        g_mouse_state.last_mouse_pos.y = double(y);
+        state.last_mouse_pos.x = double(x);
+        state.last_mouse_pos.y = double(y);
 
-        g_mouse_state.is_delta_stale = false;
+        state.is_delta_stale = false;
     }
 
     static void _handle_mouse_events(void) {
@@ -180,9 +187,9 @@ namespace argus::input {
     }
 
     void flush_mouse_delta(void) {
-        std::lock_guard<std::mutex> lock(g_mouse_state_mutex);
-        if (g_mouse_state.is_delta_stale) {
-            g_mouse_state.mouse_delta = {};
+        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->mouse_state_mutex);
+        if (InputManager::instance().pimpl->mouse_state.is_delta_stale) {
+            InputManager::instance().pimpl->mouse_state.mouse_delta = {};
         }
     }
 }
