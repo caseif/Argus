@@ -29,9 +29,9 @@ namespace argus {
 
     namespace input {
         struct MouseState {
-            Vector2d last_mouse_pos;
-            Vector2d mouse_delta;
-            bool got_first_mouse_pos = false;
+            Vector2d last_pos;
+            Vector2d delta;
+            bool got_first_pos = false;
             bool is_delta_stale = false;
             uint32_t button_state = 0;
         };
