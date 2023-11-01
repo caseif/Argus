@@ -22,6 +22,7 @@
 #include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
 #include "internal/input/defines.hpp"
+#include "internal/input/event_helpers.hpp"
 #include "internal/input/input_manager.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
@@ -92,34 +93,10 @@ namespace argus::input {
         pimpl->controllers.erase(res);
     }
 
-    static void _dispatch_button_event(const Window &window, std::string controller_name, std::string action,
-            bool release) {
-        auto event_type = release ? InputEventType::ButtonUp : InputEventType::ButtonDown;
-        dispatch_event<InputEvent>(event_type, window, std::move(controller_name), std::move(action), 0.0, 0.0);
-    }
-
     static void _dispatch_axis_event(const Window &window, std::string controller_name, std::string action,
             double value, double delta) {
         dispatch_event<InputEvent>(InputEventType::AxisChanged, window, std::move(controller_name), std::move(action),
                 value, delta);
-    }
-
-    void InputManager::handle_key_press(const Window &window, KeyboardScancode key, bool release) const {
-        //TODO: ignore while in a TextInputContext once we properly implement that
-
-        for (auto &pair : pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->key_to_action_bindings.find(key);
-            if (it == controller.pimpl->key_to_action_bindings.end()) {
-                continue;
-            }
-
-            for (auto &action : it->second) {
-                _dispatch_button_event(window, controller_index, action, release);
-            }
-        }
     }
 
     void InputManager::handle_mouse_button_press(const Window &window, MouseButton button, bool release) const {
@@ -133,7 +110,7 @@ namespace argus::input {
             }
 
             for (auto &action : it->second) {
-                _dispatch_button_event(window, controller_index, action, release);
+                dispatch_button_event(window, controller_index, action, release);
             }
         }
     }

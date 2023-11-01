@@ -23,7 +23,9 @@
 
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
+#include "internal/input/event_helpers.hpp"
 #include "internal/input/keyboard.hpp"
+#include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
 #pragma GCC diagnostic push
@@ -283,6 +285,24 @@ namespace argus::input {
                 = SDL_GetKeyboardState(&InputManager::instance().pimpl->keyboard_key_count);
     }
 
+    static void _dispatch_events(const Window &window, KeyboardScancode key, bool release) {
+        //TODO: ignore while in a TextInputContext once we properly implement that
+
+        for (auto &pair : InputManager::instance().pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+
+            auto it = controller.pimpl->key_to_action_bindings.find(key);
+            if (it == controller.pimpl->key_to_action_bindings.end()) {
+                continue;
+            }
+
+            for (auto &action : it->second) {
+                dispatch_button_event(window, controller_index, action, release);
+            }
+        }
+    }
+
     static void _handle_keyboard_events(void) {
         constexpr size_t event_buf_size = 8;
         SDL_Event events[event_buf_size];
@@ -300,7 +320,7 @@ namespace argus::input {
                 }
 
                 auto key = _translate_sdl_scancode(event.key.keysym.scancode);
-                InputManager::instance().handle_key_press(*window, key, event.type == SDL_KEYUP);
+                _dispatch_events(*window, key, event.type == SDL_KEYUP);
             }
         }
     }

@@ -20,6 +20,8 @@
 
 #include "argus/core/event.hpp"
 
+#include "argus/input/gamepad.hpp"
+
 #include <string>
 
 namespace argus::input {
