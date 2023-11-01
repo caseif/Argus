@@ -52,7 +52,7 @@ namespace argus::input {
 
         void attach_gamepad(HidDeviceId id);
 
-        void attach_first_available_gamepad(void);
+        bool attach_first_available_gamepad(void);
 
         void detach_gamepad(void);
 

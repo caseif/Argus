@@ -65,16 +65,22 @@ namespace argus::input {
                 this->get_gamepad_name().c_str(), this->get_name().c_str());
     }
 
-    void Controller::attach_first_available_gamepad(void) {
+    bool Controller::attach_first_available_gamepad(void) {
         if (pimpl->attached_gamepad.has_value()) {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
 
         auto id = assoc_first_available_gamepad(this->get_name());
+        if (id < 0) {
+            return false;
+        }
+
         pimpl->attached_gamepad = id;
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
                 this->get_gamepad_name().c_str(), this->get_name().c_str());
+
+        return true;
     }
 
     void Controller::detach_gamepad(void) {

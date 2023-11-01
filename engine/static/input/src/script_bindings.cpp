@@ -255,7 +255,8 @@ namespace argus {
         bind_member_instance_function("has_gamepad", &input::Controller::has_gamepad);
 
         bind_member_instance_function("attach_gamepad", &input::Controller::attach_gamepad);
-        bind_member_instance_function("attach_first_available_gamepad", &input::Controller::attach_first_available_gamepad);
+        bind_member_instance_function("attach_first_available_gamepad",
+                &input::Controller::attach_first_available_gamepad);
         bind_member_instance_function("detach_gamepad", &input::Controller::detach_gamepad);
 
         bind_member_instance_function("bind_keyboard_key", &input::Controller::bind_keyboard_key);

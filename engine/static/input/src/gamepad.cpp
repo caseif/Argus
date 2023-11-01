@@ -415,7 +415,7 @@ namespace argus::input {
         std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
 
         if (manager.pimpl->available_gamepads.empty()) {
-            throw std::runtime_error("No gamepads are available to attach to controller");
+            return -1;
         }
 
         auto front = manager.pimpl->available_gamepads.front();
