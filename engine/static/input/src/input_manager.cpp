@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <exception>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace argus::input {
@@ -107,8 +108,46 @@ namespace argus::input {
 
     void InputManager::set_global_deadzone_shape(DeadzoneShape shape) {
         if (shape >= DeadzoneShape::MaxValue) {
-            throw std::invalid_argument("Invalid deadzone shape ordinal " + std::to_string(shape));
+            throw std::invalid_argument("Invalid deadzone shape ordinal "
+                    + std::to_string(std::underlying_type_t<decltype(shape)>(shape)));
         }
         pimpl->dz_shape = shape;
+    }
+
+    static void _check_axis(GamepadAxis axis) {
+        if (axis >= GamepadAxis::MaxValue) {
+            throw std::invalid_argument("Invalid gamepad axis ordinal "
+                    + std::to_string(std::underlying_type_t<decltype(axis)>(axis)));
+        }
+    }
+
+    double InputManager::get_global_axis_deadzone_radius(GamepadAxis axis) {
+        _check_axis(axis);
+        return pimpl->dz_axis_radii.at(size_t(axis)).value_or(pimpl->dz_radius);
+    }
+
+    void InputManager::set_global_axis_deadzone_radius(GamepadAxis axis, double radius) {
+        _check_axis(axis);
+        pimpl->dz_axis_radii.at(size_t(axis)) = std::min(std::max(radius, 0.0), 1.0);
+    }
+
+    void InputManager::clear_global_axis_deadzone_radius(GamepadAxis axis) {
+        _check_axis(axis);
+        pimpl->dz_axis_radii.at(size_t(axis)).reset();
+    }
+
+    DeadzoneShape InputManager::get_global_axis_deadzone_shape(GamepadAxis axis) {
+        _check_axis(axis);
+        return pimpl->dz_axis_shapes.at(size_t(axis)).value_or(pimpl->dz_shape);
+    }
+
+    void InputManager::set_global_deadzone_shape(GamepadAxis axis, DeadzoneShape shape) {
+        _check_axis(axis);
+        pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
+    }
+
+    void InputManager::clear_global_axis_deadzone_shape(GamepadAxis axis) {
+        _check_axis(axis);
+        pimpl->dz_axis_shapes.at(size_t(axis)).reset();
     }
 }

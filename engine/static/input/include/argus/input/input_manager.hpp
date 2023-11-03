@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/input/controller.hpp"
+#include "argus/input/gamepad.hpp"
 
 #include <string>
 
@@ -56,5 +57,17 @@ namespace argus::input {
         DeadzoneShape get_global_deadzone_shape(void);
 
         void set_global_deadzone_shape(DeadzoneShape shape);
+
+        double get_global_axis_deadzone_radius(GamepadAxis axis);
+
+        void set_global_axis_deadzone_radius(GamepadAxis axis, double radius);
+
+        void clear_global_axis_deadzone_radius(GamepadAxis axis);
+
+        DeadzoneShape get_global_axis_deadzone_shape(GamepadAxis axis);
+
+        void set_global_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
+
+        void clear_global_axis_deadzone_shape(GamepadAxis axis);
     };
 }

@@ -35,6 +35,9 @@ namespace argus::input {
         std::optional<double> dz_radius;
         std::optional<DeadzoneShape> dz_shape;
 
+        std::array<std::optional<double>, size_t(GamepadAxis::MaxValue)> dz_axis_radii;
+        std::array<std::optional<DeadzoneShape>, size_t(GamepadAxis::MaxValue)> dz_axis_shapes;
+
         std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
         std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
 

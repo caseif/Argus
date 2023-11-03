@@ -40,6 +40,9 @@ namespace argus::input {
         double dz_radius = k_def_dz_radius;
         DeadzoneShape dz_shape = k_def_dz_shape;
 
+        std::array<std::optional<double>, size_t(GamepadAxis::MaxValue)> dz_axis_radii;
+        std::array<std::optional<DeadzoneShape>, size_t(GamepadAxis::MaxValue)> dz_axis_shapes;
+
         MouseState mouse_state;
         std::mutex mouse_state_mutex;
 

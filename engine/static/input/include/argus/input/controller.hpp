@@ -31,7 +31,7 @@ namespace argus::input {
 
     struct pimpl_Controller;
 
-    enum DeadzoneShape {
+    enum class DeadzoneShape {
         Circle,
         Square,
         Plus,
@@ -76,6 +76,18 @@ namespace argus::input {
         void set_deadzone_shape(DeadzoneShape shape);
 
         void clear_deadzone_shape(void);
+
+        double get_axis_deadzone_radius(GamepadAxis axis);
+
+        void set_axis_deadzone_radius(GamepadAxis axis, double radius);
+
+        void clear_axis_deadzone_radius(GamepadAxis axis);
+
+        DeadzoneShape get_axis_deadzone_shape(GamepadAxis axis);
+
+        void set_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
+
+        void clear_axis_deadzone_shape(GamepadAxis axis);
 
         void unbind_action(const std::string &action);
 
