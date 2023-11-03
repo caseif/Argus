@@ -58,8 +58,6 @@ namespace argus::input {
 
         std::string get_gamepad_name(void);
 
-        void notify_gamepad_disconnected(void);
-
         void unbind_action(const std::string &action);
 
         [[nodiscard]] std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;

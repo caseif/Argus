@@ -102,10 +102,6 @@ namespace argus::input {
         return ::argus::input::get_gamepad_name(pimpl->attached_gamepad.value());
     }
 
-    void Controller::notify_gamepad_disconnected(void) {
-        pimpl->was_gamepad_disconnected = true;
-    }
-
     void Controller::unbind_action(const std::string &action) {
         if (pimpl->action_to_key_bindings.find(action) == pimpl->action_to_key_bindings.end()) {
             return;

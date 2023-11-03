@@ -401,7 +401,7 @@ namespace argus::input {
                             if (ctrl_it != controllers.cend()) {
                                 Logger::default_logger().info("Gamepad attached to controller '%s' was disconnected",
                                         ctrl_it->second->get_name().c_str());
-                                ctrl_it->second->notify_gamepad_disconnected();
+                                ctrl_it->second->pimpl->was_gamepad_disconnected = true;
 
                                 _dispatch_gamepad_disconnect_event(ctrl_it->second->get_name(), instance_id);
                             } else {
