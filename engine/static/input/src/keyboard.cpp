@@ -298,7 +298,7 @@ namespace argus::input {
             }
 
             for (auto &action : it->second) {
-                dispatch_button_event(window, controller_index, action, release);
+                dispatch_button_event(&window, controller_index, action, release);
             }
         }
     }

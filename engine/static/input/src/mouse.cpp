@@ -136,7 +136,7 @@ namespace argus::input {
             }
 
             for (auto &action : it->second) {
-                dispatch_button_event(window, controller_index, action, release);
+                dispatch_button_event(&window, controller_index, action, release);
             }
         }
     }
@@ -150,13 +150,13 @@ namespace argus::input {
             auto it_y = controller.pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Vertical);
             if (it_x != controller.pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action : it_x->second) {
-                    dispatch_axis_event(window, controller_index, action, x, dx);
+                    dispatch_axis_event(&window, controller_index, action, x, dx);
                 }
             }
 
             if (it_y == controller.pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action: it_y->second) {
-                    dispatch_axis_event(window, controller_index, action, y, dy);
+                    dispatch_axis_event(&window, controller_index, action, y, dy);
                 }
             }
         }

@@ -25,6 +25,7 @@
 #include "argus/input/gamepad.hpp"
 #include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
+#include "internal/input/event_helpers.hpp"
 #include "internal/input/gamepad.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
@@ -276,6 +277,36 @@ namespace argus::input {
         }
     }
 
+    static void _dispatch_button_events(GamepadButton key, bool release) {
+        for (auto &pair : InputManager::instance().pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+
+            auto it = controller.pimpl->gamepad_button_to_action_bindings.find(key);
+            if (it == controller.pimpl->gamepad_button_to_action_bindings.end()) {
+                continue;
+            }
+
+            for (auto &action : it->second) {
+                dispatch_button_event(nullptr, controller_index, action, release);
+            }
+        }
+    }
+
+    static void _dispatch_axis_events(GamepadAxis axis, double val, double delta) {
+        for (auto &pair : InputManager::instance().pimpl->controllers) {
+            auto controller_index = pair.first;
+            auto &controller = *pair.second;
+
+            auto it = controller.pimpl->gamepad_axis_to_action_bindings.find(axis);
+            if (it != controller.pimpl->gamepad_axis_to_action_bindings.end()) {
+                for (auto &action : it->second) {
+                    dispatch_axis_event(nullptr, controller_index, action, val, delta);
+                }
+            }
+        }
+    }
+
     static void _dispatch_gamepad_connect_event(HidDeviceId gamepad_id) {
         dispatch_event<InputDeviceEvent>(InputDeviceEventType::GamepadConnected, "", gamepad_id);
     }
@@ -292,75 +323,111 @@ namespace argus::input {
 
         int to_process;
         while ((to_process = SDL_PeepEvents(events, event_buf_size,
-                SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEREMOVED)) > 0) {
+                SDL_GETEVENT, SDL_CONTROLLERAXISMOTION, SDL_CONTROLLERDEVICEREMOVED)) > 0) {
             std::lock_guard<std::recursive_mutex> lock(InputManager::instance().pimpl->gamepads_mutex);
 
             for (int i = 0; i < to_process; i++) {
                 auto &event = events[i];
 
-                if (event.type == SDL_CONTROLLERDEVICEADDED) {
-                    auto device_index = event.cdevice.which;
+                switch (event.type) {
+                    case SDL_CONTROLLERBUTTONDOWN:
+                    case SDL_CONTROLLERBUTTONUP: {
+                        auto it = g_buttons_sdl_to_argus.find(SDL_GameControllerButton(event.cbutton.button));
+                        if (it == g_buttons_sdl_to_argus.cend()) {
+                            Logger::default_logger().warn("Ignoring event for unknown gamepad button ordinal %d",
+                                    event.cbutton.button);
+                            break;
+                        }
+                        _dispatch_button_events(it->second, event.type == SDL_CONTROLLERBUTTONUP);
 
-                    auto *gamepad = SDL_GameControllerOpen(device_index);
-
-                    auto instance_id = SDL_JoystickGetDeviceInstanceID(device_index);
-                    if (instance_id < 0) {
-                        Logger::default_logger().warn("Failed to get device instance ID of newly connected gamepad: %s",
-                                SDL_GetError());
-                        continue;
+                        break;
                     }
+                    case SDL_CONTROLLERAXISMOTION: {
+                        auto it = g_axes_sdl_to_argus.find(SDL_GameControllerAxis(event.caxis.axis));
+                        if (it == g_axes_sdl_to_argus.cend()) {
+                            Logger::default_logger().warn("Ignoring event for unknown gamepad button ordinal %d",
+                                    event.cbutton.button);
+                            break;
+                        }
+                        //TODO: figure out what to do about the delta
+                        _dispatch_axis_events(it->second, _normalize_axis(event.caxis.value), 0);
 
-                    // and they say Java is verbose
-                    if (InputManager::instance().pimpl->mapped_gamepads.find(instance_id)
-                            != InputManager::instance().pimpl->mapped_gamepads.end()
-                            || std::find(InputManager::instance().pimpl->available_gamepads.cbegin(),
-                                    InputManager::instance().pimpl->available_gamepads.cend(), instance_id)
-                                    != InputManager::instance().pimpl->available_gamepads.end()) {
-                        Logger::default_logger().debug("Ignoring connect event for previously opened gamepad "
-                                                       "with instance ID %d", instance_id);
-                        // this just decrements the ref count
-                        SDL_GameControllerClose(gamepad);
-                        continue;
+                        break;
                     }
+                    case SDL_CONTROLLERDEVICEADDED: {
+                        auto device_index = event.cdevice.which;
 
-                    InputManager::instance().pimpl->available_gamepads.push_back(instance_id);
+                        auto *gamepad = SDL_GameControllerOpen(device_index);
 
-                    auto *name = SDL_GameControllerName(gamepad);
-                    Logger::default_logger().info("Gamepad '%s' with instance ID %d was connected", name, instance_id);
+                        auto instance_id = SDL_JoystickGetDeviceInstanceID(device_index);
+                        if (instance_id < 0) {
+                            Logger::default_logger().warn(
+                                    "Failed to get device instance ID of newly connected gamepad: %s",
+                                    SDL_GetError());
+                            continue;
+                        }
 
-                    _dispatch_gamepad_connect_event(instance_id);
-                } else if (event.type == SDL_CONTROLLERDEVICEREMOVED) {
-                    auto instance_id = event.cdevice.which;
+                        // and they say Java is verbose
+                        if (InputManager::instance().pimpl->mapped_gamepads.find(instance_id)
+                                != InputManager::instance().pimpl->mapped_gamepads.end()
+                                || std::find(InputManager::instance().pimpl->available_gamepads.cbegin(),
+                                        InputManager::instance().pimpl->available_gamepads.cend(), instance_id)
+                                        != InputManager::instance().pimpl->available_gamepads.end()) {
+                            Logger::default_logger().debug("Ignoring connect event for previously opened gamepad "
+                                                           "with instance ID %d", instance_id);
+                            // this just decrements the ref count
+                            SDL_GameControllerClose(gamepad);
+                            continue;
+                        }
 
-                    auto &mapped_gamepads = InputManager::instance().pimpl->mapped_gamepads;
-                    auto mapped_it = mapped_gamepads.find(instance_id);
-                    if (mapped_it != mapped_gamepads.cend()) {
-                        auto ctrl_it = InputManager::instance().pimpl->controllers.find(mapped_it->second);
-                        auto &controllers = InputManager::instance().pimpl->controllers;
-                        if (ctrl_it != controllers.cend()) {
-                            Logger::default_logger().info("Gamepad attached to controller '%s' was disconnected",
-                                    ctrl_it->second->get_name().c_str());
-                            ctrl_it->second->notify_gamepad_disconnected();
+                        InputManager::instance().pimpl->available_gamepads.push_back(instance_id);
 
-                            _dispatch_gamepad_disconnect_event(ctrl_it->second->get_name(), instance_id);
+                        auto *name = SDL_GameControllerName(gamepad);
+                        Logger::default_logger().info("Gamepad '%s' with instance ID %d was connected", name,
+                                instance_id);
+
+                        _dispatch_gamepad_connect_event(instance_id);
+
+                        break;
+                    }
+                    case SDL_CONTROLLERDEVICEREMOVED: {
+                        auto instance_id = event.cdevice.which;
+
+                        auto &mapped_gamepads = InputManager::instance().pimpl->mapped_gamepads;
+                        auto mapped_it = mapped_gamepads.find(instance_id);
+                        if (mapped_it != mapped_gamepads.cend()) {
+                            auto ctrl_it = InputManager::instance().pimpl->controllers.find(mapped_it->second);
+                            auto &controllers = InputManager::instance().pimpl->controllers;
+                            if (ctrl_it != controllers.cend()) {
+                                Logger::default_logger().info("Gamepad attached to controller '%s' was disconnected",
+                                        ctrl_it->second->get_name().c_str());
+                                ctrl_it->second->notify_gamepad_disconnected();
+
+                                _dispatch_gamepad_disconnect_event(ctrl_it->second->get_name(), instance_id);
+                            } else {
+                                // shouldn't happen
+
+                                mapped_gamepads.erase(mapped_it);
+
+                                _dispatch_gamepad_disconnect_event("", instance_id);
+                            }
                         } else {
-                            // shouldn't happen
+                            auto &avail_gamepads = InputManager::instance().pimpl->available_gamepads;
+                            auto avail_it = std::find(avail_gamepads.cbegin(), avail_gamepads.cend(),
+                                    event.cdevice.which);
+                            if (avail_it != avail_gamepads.cend()) {
+                                avail_gamepads.erase(avail_it);
+                            }
 
-                            mapped_gamepads.erase(mapped_it);
+                            Logger::default_logger().info("Gamepad with instance ID %d was disconnected", instance_id);
 
                             _dispatch_gamepad_disconnect_event("", instance_id);
                         }
-                    } else {
-                        auto &avail_gamepads = InputManager::instance().pimpl->available_gamepads;
-                        auto avail_it = std::find(avail_gamepads.cbegin(), avail_gamepads.cend(), event.cdevice.which);
-                        if (avail_it != avail_gamepads.cend()) {
-                            avail_gamepads.erase(avail_it);
-                        }
 
-                        Logger::default_logger().info("Gamepad with instance ID %d was disconnected", instance_id);
-
-                        _dispatch_gamepad_disconnect_event("", instance_id);
+                        break;
                     }
+                    default:
+                        break;
                 }
             }
         }

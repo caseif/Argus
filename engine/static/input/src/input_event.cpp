@@ -24,7 +24,7 @@
 #include <string>
 
 namespace argus::input {
-    InputEvent::InputEvent(InputEventType type, const Window &window, std::string controller_name,
+    InputEvent::InputEvent(InputEventType type, const Window *window, std::string controller_name,
             std::string action, double axis_value, double axis_delta) :
             ArgusEvent(typeid(InputEvent)),
             input_type(type),
@@ -37,7 +37,8 @@ namespace argus::input {
 
     InputEvent::~InputEvent(void) = default;
 
-    const Window &InputEvent::get_window(void) {
+    //TODO: replace with std::optional once we have binding support for it
+    const Window *InputEvent::get_window(void) {
         return window;
     }
 
