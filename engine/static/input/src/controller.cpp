@@ -35,6 +35,14 @@
 namespace argus::input {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Controller));
 
+    double get_global_deadzone_radius(double radius);
+
+    void set_global_deadzone_radius(double radius);
+
+    DeadzoneShape get_global_deadzone_shape(void);
+
+    void set_global_deadzone_shape(DeadzoneShape shape);
+
     Controller::Controller(const std::string &name) :
         pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
     }
@@ -100,6 +108,33 @@ namespace argus::input {
         }
 
         return ::argus::input::get_gamepad_name(pimpl->attached_gamepad.value());
+    }
+
+    double Controller::get_deadzone_radius(void) {
+        return pimpl->dz_radius.value_or(InputManager::instance().get_global_deadzone_radius());
+    }
+
+    void Controller::set_deadzone_radius(double radius) {
+        pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
+    }
+
+    void Controller::clear_deadzone_radius(void) {
+        pimpl->dz_radius.reset();
+    }
+
+    DeadzoneShape Controller::get_deadzone_shape(void) {
+        return pimpl->dz_shape.value_or(InputManager::instance().get_global_deadzone_shape());
+    }
+
+    void Controller::set_deadzone_shape(DeadzoneShape shape) {
+        if (shape >= DeadzoneShape::MaxValue) {
+            throw std::invalid_argument("Invalid deadzone shape ordinal " + std::to_string(shape));
+        }
+        pimpl->dz_shape = shape;
+    }
+
+    void Controller::clear_deadzone_shape(void) {
+        pimpl->dz_shape.reset();
     }
 
     void Controller::unbind_action(const std::string &action) {

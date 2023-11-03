@@ -92,4 +92,23 @@ namespace argus::input {
 
         pimpl->controllers.erase(res);
     }
+
+    double InputManager::get_global_deadzone_radius(void) {
+        return pimpl->dz_radius;
+    }
+
+    void InputManager::set_global_deadzone_radius(double radius) {
+        pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
+    }
+
+    DeadzoneShape InputManager::get_global_deadzone_shape(void) {
+        return pimpl->dz_shape;
+    }
+
+    void InputManager::set_global_deadzone_shape(DeadzoneShape shape) {
+        if (shape >= DeadzoneShape::MaxValue) {
+            throw std::invalid_argument("Invalid deadzone shape ordinal " + std::to_string(shape));
+        }
+        pimpl->dz_shape = shape;
+    }
 }

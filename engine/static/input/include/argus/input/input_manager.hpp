@@ -48,5 +48,13 @@ namespace argus::input {
         void remove_controller(Controller &controller);
 
         void remove_controller(const std::string &name);
+
+        double get_global_deadzone_radius(void);
+
+        void set_global_deadzone_radius(double radius);
+
+        DeadzoneShape get_global_deadzone_shape(void);
+
+        void set_global_deadzone_shape(DeadzoneShape shape);
     };
 }

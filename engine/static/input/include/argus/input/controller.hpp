@@ -31,6 +31,13 @@ namespace argus::input {
 
     struct pimpl_Controller;
 
+    enum DeadzoneShape {
+        Circle,
+        Square,
+        Plus,
+        MaxValue
+    };
+
     class Controller : AutoCleanupable {
         friend class InputManager;
 
@@ -57,6 +64,18 @@ namespace argus::input {
         void detach_gamepad(void);
 
         std::string get_gamepad_name(void);
+
+        double get_deadzone_radius(void);
+
+        void set_deadzone_radius(double radius);
+
+        void clear_deadzone_radius(void);
+
+        DeadzoneShape get_deadzone_shape(void);
+
+        void set_deadzone_shape(DeadzoneShape shape);
+
+        void clear_deadzone_shape(void);
 
         void unbind_action(const std::string &action);
 

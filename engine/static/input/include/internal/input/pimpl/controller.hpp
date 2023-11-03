@@ -32,6 +32,9 @@ namespace argus::input {
         std::optional<int> attached_gamepad;
         bool was_gamepad_disconnected = false;
 
+        std::optional<double> dz_radius;
+        std::optional<DeadzoneShape> dz_shape;
+
         std::map<KeyboardScancode, std::vector<std::string>> key_to_action_bindings;
         std::map<std::string, std::vector<KeyboardScancode>> action_to_key_bindings;
 

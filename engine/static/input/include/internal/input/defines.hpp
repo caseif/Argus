@@ -18,6 +18,13 @@
 
 #pragma once
 
+#include "argus/input/controller.hpp"
+
 #define RESOURCE_TYPE_BINDINGS "application/x-argus-bindings+json"
 
 #define MAX_CONTROLLERS 8
+
+namespace argus::input {
+    constexpr const double k_def_dz_radius = 0.2f;
+    constexpr const DeadzoneShape k_def_dz_shape = DeadzoneShape::Circle;
+}

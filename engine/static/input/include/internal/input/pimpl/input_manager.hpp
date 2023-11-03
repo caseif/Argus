@@ -20,6 +20,7 @@
 
 #include "argus/input/controller.hpp"
 #include "argus/input/gamepad.hpp"
+#include "internal/input/defines.hpp"
 #include "internal/input/gamepad.hpp"
 #include "internal/input/mouse.hpp"
 
@@ -35,6 +36,9 @@ namespace argus::input {
         const uint8_t *keyboard_state = nullptr;
         std::mutex keyboard_state_mutex;
         int keyboard_key_count = 0;
+
+        double dz_radius = k_def_dz_radius;
+        DeadzoneShape dz_shape = k_def_dz_shape;
 
         MouseState mouse_state;
         std::mutex mouse_state_mutex;
