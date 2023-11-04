@@ -194,6 +194,19 @@ namespace argus {
     template <typename T>
     using remove_reference_wrapper_t = typename remove_reference_wrapper<T>::type;
 
+    template <typename T>
+    struct remove_initializer_list {
+        using type = T;
+    };
+
+    template <typename T>
+    struct remove_initializer_list<std::initializer_list<T>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using remove_initializer_list_t = typename remove_initializer_list<T>::type;
+
     template<class> inline constexpr bool always_false_v = false;
 
     template <typename T, template <typename...> typename Template>

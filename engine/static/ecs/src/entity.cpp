@@ -18,7 +18,7 @@
 
 #include "argus/lowlevel/error_util.hpp"
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"

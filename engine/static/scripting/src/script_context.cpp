@@ -17,7 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/core/engine.hpp"
 

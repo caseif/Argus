@@ -17,7 +17,7 @@
  */
 
 #include "argus/lowlevel/memory.hpp"
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"

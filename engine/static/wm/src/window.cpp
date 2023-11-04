@@ -23,7 +23,7 @@
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/time.hpp"
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/core/client_properties.hpp"
 #include "argus/core/event.hpp"

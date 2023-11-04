@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/input/text_input_context.hpp"
 

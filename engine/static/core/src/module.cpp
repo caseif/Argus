@@ -18,7 +18,7 @@
 
 #include "argus/lowlevel/filesystem.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/vector.hpp"
+#include "argus/lowlevel/collections.hpp"
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
