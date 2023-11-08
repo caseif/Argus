@@ -29,6 +29,23 @@ namespace argus {
         bind_member_instance_function<void(input::InputManager::*)(const std::string &)>("remove_controller",
                 &input::InputManager::remove_controller);
 
+        bind_member_instance_function("get_global_deadzone_radius", &input::InputManager::get_global_deadzone_radius);
+        bind_member_instance_function("set_global_deadzone_radius", &input::InputManager::set_global_deadzone_radius);
+        bind_member_instance_function("get_global_deadzone_shape", &input::InputManager::get_global_deadzone_shape);
+        bind_member_instance_function("set_global_deadzone_shape", &input::InputManager::set_global_deadzone_shape);
+        bind_member_instance_function("get_global_axis_deadzone_radius",
+                &input::InputManager::get_global_axis_deadzone_radius);
+        bind_member_instance_function("set_global_axis_deadzone_radius",
+                &input::InputManager::set_global_axis_deadzone_radius);
+        bind_member_instance_function("clear_global_axis_deadzone_radius",
+                &input::InputManager::clear_global_axis_deadzone_radius);
+        bind_member_instance_function("get_global_axis_deadzone_shape",
+                &input::InputManager::get_global_axis_deadzone_shape);
+        bind_member_instance_function("set_global_axis_deadzone_shape",
+                &input::InputManager::set_global_axis_deadzone_shape);
+        bind_member_instance_function("clear_global_axis_deadzone_shape",
+                &input::InputManager::clear_global_axis_deadzone_shape);
+
         bind_global_function("get_input_manager", &input::InputManager::instance);
     }
 
@@ -250,9 +267,27 @@ namespace argus {
     }
 
     static void _bind_controller_symbols(void) {
+        bind_enum<input::DeadzoneShape>("DeadzoneShape");
+        bind_enum_value("Ellipse", input::DeadzoneShape::Ellipse);
+        bind_enum_value("Quad", input::DeadzoneShape::Quad);
+        bind_enum_value("Cross", input::DeadzoneShape::Cross);
+
         bind_type<input::Controller>("Controller");
         bind_member_instance_function("get_name", &input::Controller::get_name);
         bind_member_instance_function("has_gamepad", &input::Controller::has_gamepad);
+
+        bind_member_instance_function("get_deadzone_radius", &input::Controller::get_deadzone_radius);
+        bind_member_instance_function("set_deadzone_radius", &input::Controller::set_deadzone_radius);
+        bind_member_instance_function("clear_deadzone_radius", &input::Controller::clear_deadzone_radius);
+        bind_member_instance_function("get_deadzone_shape", &input::Controller::get_deadzone_shape);
+        bind_member_instance_function("set_deadzone_shape", &input::Controller::set_deadzone_shape);
+        bind_member_instance_function("clear_deadzone_shape", &input::Controller::clear_deadzone_shape);
+        bind_member_instance_function("get_axis_deadzone_radius", &input::Controller::get_axis_deadzone_radius);
+        bind_member_instance_function("set_axis_deadzone_radius", &input::Controller::set_axis_deadzone_radius);
+        bind_member_instance_function("clear_axis_deadzone_radius", &input::Controller::clear_axis_deadzone_radius);
+        bind_member_instance_function("get_axis_deadzone_shape", &input::Controller::get_axis_deadzone_shape);
+        bind_member_instance_function("set_axis_deadzone_shape", &input::Controller::set_axis_deadzone_shape);
+        bind_member_instance_function("clear_axis_deadzone_shape", &input::Controller::clear_axis_deadzone_shape);
 
         bind_member_instance_function("attach_gamepad", &input::Controller::attach_gamepad);
         bind_member_instance_function("attach_first_available_gamepad",

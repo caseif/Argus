@@ -26,5 +26,5 @@
 
 namespace argus::input {
     constexpr const double k_def_dz_radius = 0.2f;
-    constexpr const DeadzoneShape k_def_dz_shape = DeadzoneShape::Circle;
+    constexpr const DeadzoneShape k_def_dz_shape = DeadzoneShape::Ellipse;
 }

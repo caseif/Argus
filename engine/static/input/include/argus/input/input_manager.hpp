@@ -66,7 +66,7 @@ namespace argus::input {
 
         DeadzoneShape get_global_axis_deadzone_shape(GamepadAxis axis);
 
-        void set_global_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
+        void set_global_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
 
         void clear_global_axis_deadzone_shape(GamepadAxis axis);
     };

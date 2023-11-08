@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/collections.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/core/event.hpp"
@@ -37,8 +38,14 @@
 #include "SDL_gamecontroller.h"
 #include "SDL_joystick.h"
 
+#include <limits>
+#include <mutex>
+#include <string>
+#include <type_traits>
 #include <unordered_map>
+#include <utility>
 
+#include <cmath>
 #include <cstdint>
 
 namespace argus::input {
@@ -115,6 +122,12 @@ namespace argus::input {
             { GamepadAxis::LTrigger, SDL_CONTROLLER_AXIS_TRIGGERLEFT },
             { GamepadAxis::RTrigger, SDL_CONTROLLER_AXIS_TRIGGERRIGHT },
     };
+
+    [[maybe_unused]] static auto g_axis_pairs = make_array<std::pair<GamepadAxis, GamepadAxis>>(
+            std::pair { GamepadAxis::LeftX, GamepadAxis::LeftY },
+            std::pair { GamepadAxis::RightX, GamepadAxis::RightY },
+            std::pair { GamepadAxis::LTrigger, GamepadAxis::RTrigger }
+    );
 
     uint8_t get_connected_gamepad_count(void) {
         return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size()
@@ -247,21 +260,135 @@ namespace argus::input {
     }
 
     static void _poll_gamepad(HidDeviceId id) {
-        auto *controller = SDL_GameControllerFromInstanceID(id);
-        if (controller == nullptr) {
+        auto *gamepad = SDL_GameControllerFromInstanceID(id);
+        if (gamepad == nullptr) {
             Logger::default_logger().warn("Failed to get SDL controller from instance ID %d", id);
             return;
         }
 
+        std::optional<Controller *> controller;
+        auto controller_name_it = InputManager::instance().pimpl->mapped_gamepads.find(id);
+        if (controller_name_it != InputManager::instance().pimpl->mapped_gamepads.cend()) {
+            auto controller_it = InputManager::instance().pimpl->controllers.find(controller_name_it->second);
+            if (controller_it != InputManager::instance().pimpl->controllers.cend()) {
+                controller = controller_it->second;
+            }
+        }
+
         GamepadButtonState new_button_state = 0;
         for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
-            new_button_state |= uint64_t(SDL_GameControllerGetButton(controller, SDL_GameControllerButton(i))) << i;
+            new_button_state |= uint64_t(SDL_GameControllerGetButton(gamepad, SDL_GameControllerButton(i))) << i;
         }
 
         std::array<double, size_t(GamepadAxis::MaxValue)> new_axis_state {};
         for (size_t i = 0; i < int(GamepadAxis::MaxValue); i++) {
             new_axis_state[i] = _normalize_axis(
-                    SDL_GameControllerGetAxis(controller, g_axes_argus_to_sdl[GamepadAxis(i)]));
+                    SDL_GameControllerGetAxis(gamepad, g_axes_argus_to_sdl[GamepadAxis(i)]));
+        }
+
+        for (const auto &axis_pair : g_axis_pairs) {
+            DeadzoneShape shape;
+            double radius_x;
+            double radius_y;
+            if (controller.has_value()) {
+                shape = controller.value()->get_axis_deadzone_shape(axis_pair.first);
+                radius_x = controller.value()->get_axis_deadzone_radius(axis_pair.first);
+                radius_y = controller.value()->get_axis_deadzone_radius(axis_pair.second);
+            } else {
+                shape = InputManager::instance().get_global_axis_deadzone_shape(axis_pair.first);
+                radius_x = InputManager::instance().get_global_axis_deadzone_radius(axis_pair.first);
+                radius_y = InputManager::instance().get_global_axis_deadzone_radius(axis_pair.second);
+            }
+
+            if (radius_x == 0.0 || radius_y == 0.0) {
+                continue;
+            }
+
+            auto x = new_axis_state[size_t(axis_pair.first)];
+            auto y = new_axis_state[size_t(axis_pair.second)];
+
+            auto x2 = std::pow(x, 2);
+            auto y2 = std::pow(y, 2);
+
+            // distance from the origin to the bounding box along angle theta (where theta = atan2(x, y))
+            double d_boundary = std::abs(x) < std::abs(y)
+                    ? std::sqrt(1.0 + x2 / (x2 + y2))
+                    : std::abs(x) == std::abs(y)
+                            ? std::sqrt(2.0) // degenerate case where we use distance to corner
+                            : std::sqrt(1.0 + y2 / (x2 + y2));
+
+            // distance from the origin to the point
+            double d_center = std::sqrt(x2 + y2);
+
+            // distance from the origin to the edge of the deadzone at angle theta
+            double r_deadzone;
+
+            double new_x;
+            double new_y;
+            switch (shape) {
+                case DeadzoneShape::Ellipse: {
+                    auto a2 = std::pow(radius_x, 2);
+                    auto b2 = std::pow(radius_y, 2);
+                    if (x < radius_x
+                            && y < radius_y
+                            && x2 / a2 + y2 / b2 <= 1) {
+                        new_x = 0;
+                        new_y = 0;
+                    } else {
+                        if (std::abs(std::abs(radius_x) - std::abs(radius_y)) <= std::numeric_limits<double>::epsilon()) {
+                            // it's a circle so literally just use the constant radius
+                            r_deadzone = radius_x;
+                        } else {
+                            // "radius" of ellipse changes with theta so we need to compute it
+                            r_deadzone = std::sqrt(std::abs(2.0 * a2 * b2 - a2 * y2 - b2 * x2));
+                        }
+
+                        auto d_deadzone_to_point = d_center - r_deadzone;
+                        auto d_deadzone_to_boundary = d_boundary - r_deadzone;
+
+                        assert(d_deadzone_to_boundary > 0.0);
+                        new_x = x * (d_deadzone_to_point / d_deadzone_to_boundary);
+                        new_y = y * (d_deadzone_to_point / d_deadzone_to_boundary);
+                    }
+                    break;
+                }
+                case DeadzoneShape::Quad: {
+                    if (std::abs(x) < radius_x
+                            && std::abs(y) < radius_y) {
+                        new_x = 0;
+                        new_y = 0;
+                    } else {
+                        assert(radius_x < 1.0);
+                        assert(radius_y < 1.0);
+                        auto r = std::max(std::abs(x), std::abs(y));
+                        new_x = x * (r - radius_x) / (1.0 - radius_x);
+                        new_y = y * (r - radius_y) / (1.0 - radius_y);
+                    }
+                    break;
+                }
+                case DeadzoneShape::Cross: {
+                    if (std::abs(x) < radius_x) {
+                        new_x = 0;
+                    } else {
+                        assert(radius_x < 1.0);
+                        new_x = x * (std::abs(x) - radius_x) / (1.0 - radius_x);
+                    }
+                    if (std::abs(y) < radius_y) {
+                        new_y = 0;
+                    } else {
+                        assert(radius_y < 1.0);
+                        new_y = y * (std::abs(y) - radius_y) / (1.0 - radius_y);
+                    }
+                    break;
+                }
+                default: {
+                    Logger::default_logger().debug("Ignoring unknown deadzone shape ordinal %d", shape);
+                    continue;
+                }
+            }
+
+            new_axis_state[size_t(axis_pair.first)] = new_x;
+            new_axis_state[size_t(axis_pair.second)] = new_y;
         }
 
         std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);

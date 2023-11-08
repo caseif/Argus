@@ -169,7 +169,7 @@ namespace argus::input {
                         InputManager::instance().get_global_axis_deadzone_shape(axis)));
     }
 
-    void Controller::set_deadzone_shape(GamepadAxis axis, DeadzoneShape shape) {
+    void Controller::set_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape) {
         _check_axis(axis);
         pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
     }
