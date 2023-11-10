@@ -59,9 +59,15 @@ set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 set(EXES_GENERATED_DIR "${GENERATED_BASE_DIR}/exe")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(USE_SYSTEM_LIBS OFF)
+  set(DEF_USE_SYSTEM_SDL2 OFF)
+  set(DEF_USE_SYSTEM_ZLIB OFF)
+  set(DEF_USE_SYSTEM_PNG OFF)
+  set(DEF_USE_SYSTEM_LUA OFF)
 else()
-  set(USE_SYSTEM_LIBS ON)
+  set(DEF_USE_SYSTEM_SDL2 ON)
+  set(DEF_USE_SYSTEM_ZLIB ON)
+  set(DEF_USE_SYSTEM_PNG ON)
+  set(DEF_USE_SYSTEM_LUA ON)
 endif()
 
 option(ENABLE_CTEST "Enable testing" ON)
@@ -71,10 +77,10 @@ option(BUILD_OPENGL_LEGACY_BACKEND "Build the legacy OpenGL-based render backend
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" ON)
 
-option(USE_SYSTEM_SDL2 "Use system-provided SDL2 library and headers" "${USE_SYSTEM_LIBS}")
-option(USE_SYSTEM_ZLIB "Use system-provided zlib library and headers" "${USE_SYSTEM_LIBS}")
-option(USE_SYSTEM_PNG "Use system-provided libpng library and headers" "${USE_SYSTEM_LIBS}")
-option(USE_SYSTEM_LUA "Use system-provided Lua library and headers" "${USE_SYSTEM_LIBS}")
+option(USE_SYSTEM_SDL2 "Use system-provided SDL2 library and headers" "${DEF_USE_SYSTEM_SDL2}")
+option(USE_SYSTEM_ZLIB "Use system-provided zlib library and headers" "${DEF_USE_SYSTEM_ZLIB}")
+option(USE_SYSTEM_PNG "Use system-provided libpng library and headers" "${DEF_USE_SYSTEM_PNG}")
+option(USE_SYSTEM_LUA "Use system-provided Lua library and headers" "${DEF_USE_SYSTEM_LUA}")
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
