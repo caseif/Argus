@@ -100,9 +100,15 @@ else()
 endif()
 
 # json
-set(JSON_INCLUDE_DIRS "${JSON_SOURCE_DIR}/include")
-set(JSON_INCLUDE_DIR "${JSON_INCLUDE_DIRS}")
-# header-only library, nothing to include here
+if(USE_SYSTEM_JSON)
+  find_package(nlohmann_json REQUIRED)
+  get_target_property(JSON_INCLUDE_DIRS nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+  set(JSON_INCLUDE_DIR "${JSON_INCLUDE_DIRS}")
+else()
+  set(JSON_INCLUDE_DIRS "${JSON_SOURCE_DIR}/include")
+  set(JSON_INCLUDE_DIR "${JSON_INCLUDE_DIRS}")
+  # header-only library, don't need to specify any libs
+endif()
 
 # libarp
 set(ARP_LIBRARY "arp")

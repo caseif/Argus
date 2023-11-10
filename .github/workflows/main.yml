@@ -59,12 +59,25 @@ jobs:
     - name: Install dependencies (Ubuntu)
       run: |
         sudo apt-get update
-        sudo apt-get install libgl1-mesa-dev libgl1-mesa-glx libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libvulkan-dev libsdl2-dev liblua5.4-dev
+        sudo apt-get install \
+          libgl1-mesa-dev \
+          libgl1-mesa-glx \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libvulkan-dev \
+          libsdl2-dev \
+          liblua5.4-dev \
+          nlohmann-json3-dev
       if: startsWith(matrix.os, 'ubuntu')
 
     - name: Install dependencies (macOS)
       run: |
-        brew install sdl2 lua
+        brew install \
+          sdl2 \
+          lua \
+          nlohmann-json
       if: startsWith(matrix.os, 'macos')
 
     - name: Setup Vulkan SDK (Windows)

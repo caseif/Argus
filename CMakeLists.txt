@@ -63,11 +63,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DEF_USE_SYSTEM_ZLIB OFF)
   set(DEF_USE_SYSTEM_PNG OFF)
   set(DEF_USE_SYSTEM_LUA OFF)
+  set(DEF_USE_SYSTEM_JSON OFF)
 else()
   set(DEF_USE_SYSTEM_SDL2 ON)
   set(DEF_USE_SYSTEM_ZLIB ON)
   set(DEF_USE_SYSTEM_PNG ON)
   set(DEF_USE_SYSTEM_LUA ON)
+  set(DEF_USE_SYSTEM_JSON ON)
 endif()
 
 option(ENABLE_CTEST "Enable testing" ON)
@@ -81,6 +83,7 @@ option(USE_SYSTEM_SDL2 "Use system-provided SDL2 library and headers" "${DEF_USE
 option(USE_SYSTEM_ZLIB "Use system-provided zlib library and headers" "${DEF_USE_SYSTEM_ZLIB}")
 option(USE_SYSTEM_PNG "Use system-provided libpng library and headers" "${DEF_USE_SYSTEM_PNG}")
 option(USE_SYSTEM_LUA "Use system-provided Lua library and headers" "${DEF_USE_SYSTEM_LUA}")
+option(USE_SYSTEM_JSON "Use system-provided JSON (nlohmann-json) library and headers" "${DEF_USE_SYSTEM_JSON}")
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
