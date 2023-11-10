@@ -1,3 +1,5 @@
+include(CMakeDependentOption)
+
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;"
                       "scripting;scripting_lua;"
@@ -79,11 +81,22 @@ option(BUILD_OPENGL_LEGACY_BACKEND "Build the legacy OpenGL-based render backend
 option(BUILD_OPENGLES_BACKEND "Build the OpenGL ES-based render backend" ON)
 option(BUILD_VULKAN_BACKEND "Build the Vulkan-based render backend" ON)
 
-option(USE_SYSTEM_SDL2 "Use system-provided SDL2 library and headers" "${DEF_USE_SYSTEM_SDL2}")
-option(USE_SYSTEM_ZLIB "Use system-provided zlib library and headers" "${DEF_USE_SYSTEM_ZLIB}")
-option(USE_SYSTEM_PNG "Use system-provided libpng library and headers" "${DEF_USE_SYSTEM_PNG}")
-option(USE_SYSTEM_LUA "Use system-provided Lua library and headers" "${DEF_USE_SYSTEM_LUA}")
-option(USE_SYSTEM_JSON "Use system-provided JSON (nlohmann-json) library and headers" "${DEF_USE_SYSTEM_JSON}")
+option(NO_SYSTEM_LIBS "Do not use any system-provided libraries" OFF)
+cmake_dependent_option(USE_SYSTEM_SDL2 "Use system-provided SDL2 library and headers"
+        "${DEF_USE_SYSTEM_SDL2}"
+        "NOT NO_SYSTEM_LIBS" OFF)
+cmake_dependent_option(USE_SYSTEM_ZLIB "Use system-provided zlib library and headers"
+        "${DEF_USE_SYSTEM_ZLIB}"
+        "NOT NO_SYSTEM_LIBS" OFF)
+cmake_dependent_option(USE_SYSTEM_PNG "Use system-provided libpng library and headers"
+        "${DEF_USE_SYSTEM_PNG}"
+        "NOT NO_SYSTEM_LIBS" OFF)
+cmake_dependent_option(USE_SYSTEM_LUA "Use system-provided Lua library and headers"
+        "${DEF_USE_SYSTEM_LUA}"
+        "NOT NO_SYSTEM_LIBS" OFF)
+cmake_dependent_option(USE_SYSTEM_JSON "Use system-provided JSON (nlohmann-json) library and headers"
+        "${DEF_USE_SYSTEM_JSON}"
+        "NOT NO_SYSTEM_LIBS" OFF)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)
 
