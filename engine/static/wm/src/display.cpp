@@ -129,9 +129,9 @@ namespace argus {
         if (count < 0) {
             Logger::default_logger().fatal("Failed to enumerate displays");
         }
-        dest.reserve(size_t(count));
+        dest.resize(size_t(count));
         for (int i = 0; i < count; i++) {
-            g_displays[size_t(i)] = _add_display(i);
+            dest[size_t(i)] = _add_display(i);
         }
     }
 
