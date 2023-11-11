@@ -76,7 +76,7 @@ namespace argus {
                 Logger::default_logger().warn("Aglet failed to load OpenGL bindings (OpenGL error)");
                 return false;
             case AGLET_ERROR_MINIMUM_VERSION:
-                Logger::default_logger().warn("Argus requires support for OpenGL 3.3 or higher");
+                Logger::default_logger().warn("Argus requires support for OpenGL 2.1 or higher");
                 return false;
             case AGLET_ERROR_MISSING_EXTENSION:
                 Logger::default_logger().warn("Required OpenGL extensions are not available");
