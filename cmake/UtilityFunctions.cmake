@@ -110,6 +110,11 @@ endfunction()
 
 # init task to copy dependency output
 function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
+  get_target_property(TARGET_TYPE "${TARGET}" TYPE)
+  if(TARGET_TYPE STREQUAL STATIC_LIBRARY)
+    return()
+  endif()
+
   if(PREFIX MATCHES "^$")
     set(PREFIX ".")
   endif()
@@ -122,13 +127,11 @@ function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
       SOURCE "$<TARGET_FILE:${TARGET}>"
       DEST "${LIB_FILE_DEST_PATH}")
 
-  get_target_property(TARGET_TYPE "${TARGET}" "TYPE")
-
-  if("${TARGET_TYPE}" STREQUAL "SHARED_LIBRARY")
+  if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
     create_so_symlinks("${TARGET}" "${DEST_DIR}")
   endif()
 
-  if(WIN32 AND "${TARGET_TYPE}" STREQUAL "SHARED_LIBRARY")
+  if(WIN32 AND TARGET_TYPE STREQUAL SHARED_LIBRARY)
     set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${TARGET}>")
 
     add_file_action(TARGET "${TARGET}"
