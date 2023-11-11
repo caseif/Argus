@@ -57,6 +57,10 @@ if(NOT DEFINED UNIX)
   set(UNIX 0)
 endif()
 
+# set install prefix explicitly since a couple of the dependency projects like
+# to clobber it when it's not changed from the default value
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install")
+
 # set relevant build variables so the dependencies can be discovered
 # note that we include the dirs for generated headers
 
