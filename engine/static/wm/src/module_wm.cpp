@@ -145,7 +145,7 @@ namespace argus {
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                #ifdef SDL_HINT_VIDEODRIVER
+                #if defined(SDL_HINT_VIDEODRIVER) && SDL_VIDEO_DRIVER_WAYLAND
                 SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11,wayland");
                 #endif
                 if (SDL_Init(k_sdl_subsystems) != 0) {
