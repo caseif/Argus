@@ -36,17 +36,62 @@
 
 #include <string>
 
-#include <cstring>
-
 namespace argus {
     static bool g_backend_active = false;
     static std::map<const Window *, GLESRenderer *> g_renderer_map;
+
+    static bool _test_opengles_support() {
+        auto &window = Window::create("", nullptr);
+        window.update({});
+        GLContext gl_context;
+        if ((gl_context = gl_create_context(window, 3, 0, GLContextFlags::ProfileES)) == nullptr) {
+            Logger::default_logger().warn("Failed to create GL ES context");
+            return false;
+        }
+
+        auto rc = gl_make_context_current(window, gl_context);
+        if (rc != 0) {
+            Logger::default_logger().warn("Failed to make GL ES context current (%d)", rc);
+        }
+
+        auto cap_rc = agletLoadCapabilities(reinterpret_cast<AgletLoadProc>(gl_load_proc));
+
+        switch (cap_rc) {
+            case AGLET_ERROR_NONE:
+                break;
+            case AGLET_ERROR_UNSPECIFIED:
+                Logger::default_logger().warn("Aglet failed to load OpenGL ES bindings (unspecified error)");
+            return false;
+            case AGLET_ERROR_PROC_LOAD:
+                Logger::default_logger().warn("Aglet failed to load prerequisite OpenGL ES procs");
+            return false;
+            case AGLET_ERROR_GL_ERROR:
+                Logger::default_logger().warn("Aglet failed to load OpenGL ES bindings (OpenGL ES error)");
+            return false;
+            case AGLET_ERROR_MINIMUM_VERSION:
+                Logger::default_logger().warn("Argus requires support for OpenGL ES 3.0 or higher");
+            return false;
+            case AGLET_ERROR_MISSING_EXTENSION:
+                Logger::default_logger().warn("Required OpenGL ES extensions are not available");
+            return false;
+        }
+
+        window.request_close();
+
+        return true;
+    }
 
     static bool _activate_opengles_backend() {
         set_window_creation_flags(WindowCreationFlags::OpenGL);
 
         if (gl_load_library() != 0) {
             Logger::default_logger().warn("Failed to load OpenGL ES library");
+            set_window_creation_flags(WindowCreationFlags::None);
+            return false;
+        }
+
+        if (!_test_opengles_support()) {
+            gl_unload_library();
             set_window_creation_flags(WindowCreationFlags::None);
             return false;
         }
