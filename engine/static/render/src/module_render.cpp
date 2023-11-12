@@ -57,7 +57,7 @@ namespace argus {
 
     HandleTable g_render_handle_table;
 
-    static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> attempted_backends) {
+    static bool _try_backends(const std::vector<std::string> &backends, std::vector<std::string> &attempted_backends) {
         for (const auto &backend : backends) {
             if (std::find(attempted_backends.cbegin(), attempted_backends.cend(), backend)
                 != attempted_backends.cend()) {
