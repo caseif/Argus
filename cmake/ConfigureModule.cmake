@@ -70,7 +70,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     endif()
 
     if(NOT ${span_lines})
-      string(REPLACE "\\\\" "\\" cur_value "${cur_value}") 
+      string(REPLACE "\\\\" "\\" cur_value "${cur_value}")
       string(REGEX REPLACE "(^|[^\\])\\\\n" "\\1\n" cur_value "${cur_value}")
       string(REGEX REPLACE "(^|[^\\])\\\\r" "\\1\r" cur_value "${cur_value}")
       string(REGEX REPLACE "(^|[^\\])\\\\t" "\\1\t" cur_value "${cur_value}")
@@ -192,14 +192,14 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
       file(GLOB_RECURSE res_files "${res_dir}/*")
       add_custom_command(OUTPUT "${arp_out_path}"
-                        COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
-                                "--namespace" "argus"
-                                "--output" "${arp_out_dir}"
-                                "--name" "${arp_out_name}"
-                                "--compression" "deflate"
-                                "--mappings" "${supp_mappings_path}"
-                                "--quiet"
-                        DEPENDS "${res_files}")
+              COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
+              "--namespace" "argus"
+              "--output" "${arp_out_dir}"
+              "--name" "${arp_out_name}"
+              "--compression" "deflate"
+              "--mappings" "${supp_mappings_path}"
+              "--quiet"
+              DEPENDS "${res_files}")
 
       add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
@@ -216,16 +216,16 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       set(h_out_path "${h_out_dir}/resources.h")
       set(c_out_path "${c_out_dir}/${arp_out_name}.arp.c")
       add_custom_command(OUTPUT "${c_out_path}"
-                        COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
-                                "-i" "${arp_out_path}"
-                                "-n" "${arp_file_name}"
-                                "-s" "${c_out_path}"
-                        DEPENDS "${res_pack_target}" "${arp_out_path}")
+              COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
+              "-i" "${arp_out_path}"
+              "-n" "${arp_file_name}"
+              "-s" "${c_out_path}"
+              DEPENDS "${res_pack_target}" "${arp_out_path}")
 
       execute_process(COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
-                              "-n" "${arp_out_name}.arp"
-                              "-h" "${h_out_path}"
-                      RESULT_VARIABLE CMD_RES)
+              "-n" "${arp_out_name}.arp"
+              "-h" "${h_out_path}"
+              RESULT_VARIABLE CMD_RES)
       if(CMD_RES)
         message(FATAL_ERROR "    abacus.rb: ${CMD_RES}")
       endif()
@@ -256,7 +256,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   endif()
 
   if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}" OR
-     "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}")
+          "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}")
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
@@ -275,9 +275,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set(MODULE_PUBLIC_INCLUDE_DIR "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}/argus")
     if(EXISTS "${MODULE_PUBLIC_INCLUDE_DIR}")
       add_custom_command(TARGET ${HDR_TARGET} POST_BUILD
-        COMMENT "Copying headers for module ${id}"
-        COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${MODULE_PUBLIC_INCLUDE_DIR} ${HDR_OUT_DIR})
+              COMMENT "Copying headers for module ${id}"
+              COMMAND ${CMAKE_COMMAND} -E
+              copy_directory ${MODULE_PUBLIC_INCLUDE_DIR} ${HDR_OUT_DIR})
     endif()
 
     set(ARGUS_INCLUDE_DIRS "${ARGUS_INCLUDE_DIRS}" "${MODULE_BASE_INCLUDE_DIR}" PARENT_SCOPE)
@@ -291,9 +291,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       message(FATAL_ERROR "External build systems are not supported for dynamic modules")
     endif()
 
-    # compile in libraries if any are requested if they're not in the base library
+    # compile in any requested static libraries which are not in the base library
     set(DYN_MODULE_STATIC_LIBS "")
-    set(RUST_LIBS_FOR_LINKING "")
+    set(RUST_LIBS_FOR_LINKING_STATIC "")
     foreach(lib ${MODULE_ENGINE_LIB_DEPS})
       list(FIND STATIC_MODULE_LIBS "${lib}" found_index)
       if(found_index EQUAL -1)
@@ -302,7 +302,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
           get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
 
           if(${lib_is_rust})
-            list(APPEND RUST_LIBS_FOR_LINKING "${lib}")
+            list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
           endif()
         else()
           list(APPEND DYN_MODULE_STATIC_LIBS "$<TARGET_OBJECTS:${lib}>")
@@ -328,10 +328,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
     target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
 
-    foreach(lib ${RUST_LIBS_FOR_LINKING})
+    foreach(lib ${RUST_LIBS_FOR_LINKING_STATIC})
+      set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${lib}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
+
       target_link_libraries(${PROJECT_NAME}
-                            debug "${RUST_TARGET_DIR}/${lib}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                            optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+              debug "${RUST_LIB_DIR}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+              optimized "${RUST_LIB_DIR}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endforeach()
 
     _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_PREFIX}")
@@ -354,21 +356,27 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
+        set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${MODULE_NAME}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
+
         ExternalProject_Add(
-          "${MODULE_NAME}"
-          DOWNLOAD_COMMAND ""
-          CONFIGURE_COMMAND ""
-          BUILD_COMMAND "${CMAKE_COMMAND}"
+                "${MODULE_NAME}"
+                DOWNLOAD_COMMAND ""
+                CONFIGURE_COMMAND ""
+                BUILD_COMMAND "${CMAKE_COMMAND}"
                 "-E" "env"
                 "CARGO_TARGET_DIR=${RUST_TARGET_DIR}/${MODULE_NAME}"
                 "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}"
+                "CMAKE_CONFIG=$<CONFIG>"
+                "MINGW=${MINGW}"
+                "${RUSTC_TARGET_FEATURES}"
                 "cargo" "build" "-vv"
                 "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml" "$<$<CONFIG:Release>:--release>"
-          BUILD_BYPRODUCTS "${RUST_TARGET_DIR}/${MODULE_NAME}/$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:release>/${CMAKE_STATIC_LIBRARY_PREFIX}${MODULE_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-          INSTALL_COMMAND ""
-          BUILD_ALWAYS ON
-          LOG_BUILD ON
-          LOG_OUTPUT_ON_FAILURE ON)
+                "$<$<BOOL:${CARGO_TARGET}>:--target=${CARGO_TARGET}>"
+                BUILD_BYPRODUCTS "${RUST_LIB_DIR}/$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:release>/${CMAKE_STATIC_LIBRARY_PREFIX}${MODULE_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                INSTALL_COMMAND ""
+                BUILD_ALWAYS ON
+                LOG_BUILD ON
+                LOG_OUTPUT_ON_FAILURE ON)
       endif()
     else()
       add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
@@ -386,24 +394,24 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
       set(dest_dir "${CMAKE_BINARY_DIR}/external_projects/${MODULE_NAME}/libs")
       add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-        COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
-        COMMAND ${CMAKE_COMMAND} -E
-          rm "-r" "-f" "${dest_dir}")
+              COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
+              COMMAND ${CMAKE_COMMAND} -E
+              rm "-r" "-f" "${dest_dir}")
       foreach(dep ${MODULE_EXTERNAL_LINKER_DEPS})
         if("${dep}" STREQUAL "")
           continue()
         endif()
         set(src_file "$<TARGET_FILE:${dep}>")
-        if(MSVC)
+        if(MSVC OR MINGW)
           # strip debug and version suffixes from file name so Rust doesn't complain
           set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_PREFIX:${dep}>${dep}$<TARGET_LINKER_FILE_SUFFIX:${dep}>")
         else()
           set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_NAME:${dep}>")
         endif()
         add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-          COMMENT "Copying static library ${dep} for module ${MODULE_NAME}"
-          COMMAND ${CMAKE_COMMAND} -E
-            copy "${src_file}" "${dest_file}")
+                COMMENT "Copying static library ${dep} for module ${MODULE_NAME}"
+                COMMAND ${CMAKE_COMMAND} -E
+                copy "${src_file}" "${dest_file}")
       endforeach()
 
       add_dependencies(${MODULE_NAME} ${copy_libs_target})

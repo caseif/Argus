@@ -2,9 +2,9 @@ include(CMakeDependentOption)
 
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;"
-                      "scripting;scripting_lua;"
-                      #"scripting_angelscript;"
-                      "wm;input;render;ui;sound;game2d")
+        "scripting;scripting_lua;"
+        #"scripting_angelscript;"
+        "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
 
@@ -188,8 +188,8 @@ endif()
 if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
-  else()
-    message("OpenGL support will not be built")
+else()
+  message("OpenGL support will not be built")
 endif()
 
 if(${BUILD_OPENGL_LEGACY_BACKEND})
@@ -209,8 +209,8 @@ endif()
 if(${BUILD_VULKAN_BACKEND})
   message("Vulkan support will be built")
   list(APPEND DYNAMIC_MODULE_IDS "render_vulkan")
-  else()
-    message("Vulkan support will not be built")
+else()
+  message("Vulkan support will not be built")
 endif()
 
 ########################
@@ -228,15 +228,15 @@ set(arptool_exe_dir "${CMAKE_BINARY_DIR}/tooling/arptool")
 
 execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
 execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"
-                        "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-                        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
-                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${arptool_exe_dir}"
-                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
-                        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
-                        "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}"
-                        "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
-                WORKING_DIRECTORY "${arptool_wd}"
-                RESULT_VARIABLE CMD_RES)
+        "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${arptool_exe_dir}"
+        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=${arptool_exe_dir}"
+        "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=${arptool_exe_dir}"
+        "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}"
+        "${CMAKE_SOURCE_DIR}/external/tooling/arptool"
+        WORKING_DIRECTORY "${arptool_wd}"
+        RESULT_VARIABLE CMD_RES)
 if(CMD_RES)
   message(FATAL_ERROR "    Failed to configure arptool: ${CMD_RES}")
 endif()
@@ -244,14 +244,37 @@ endif()
 set(ARPTOOL_EXE "${arptool_exe_dir}/arptool${CMAKE_EXECUTABLE_SUFFIX}")
 
 add_custom_command(OUTPUT "${ARPTOOL_EXE}"
-                  COMMAND "${CMAKE_COMMAND}" "--build" "."
-                  DEPENDS "${arptool_source_files}"
-                  WORKING_DIRECTORY "${arptool_wd}")
+        COMMAND "${CMAKE_COMMAND}" "--build" "."
+        DEPENDS "${arptool_source_files}"
+        WORKING_DIRECTORY "${arptool_wd}")
 add_custom_target("arptool" DEPENDS "${ARPTOOL_EXE}")
 
 ########################
 # /arptool configuration
 ########################
+
+####################
+# Rust configuration
+####################
+
+find_program(RUSTC_EXE NAMES rustc)
+
+set(CARGO_ARCH "")
+set(CARGO_TARGET "")
+if(NOT RUSTC_EXE STREQUAL "RUSTC_EXE-NOTFOUND")
+  execute_process(
+          COMMAND "${RUSTC_EXE}" "--version" "--verbose"
+          OUTPUT_VARIABLE RUSTC_VERSION
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  string(REGEX MATCH "host: ([A-Za-z0-9_]+)\\-" _ ${RUSTC_VERSION})
+  set(CARGO_ARCH "${CMAKE_MATCH_1}")
+
+  if(MINGW)
+    set(CARGO_TARGET "${CARGO_ARCH}-pc-windows-gnu")
+  endif()
+endif()
 
 include("${ROOT_PROJECT_DIR}/cmake/ConfigureModule.cmake")
 
@@ -268,24 +291,24 @@ set(HDR_TARGET "${LIB_BASE_NAME}_headers")
 set(HDR_OUT_DIR "${DIST_DIR}/${INCLUDE_DIR_NAME}/argus/")
 add_custom_target(${HDR_TARGET})
 add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
-  COMMAND ${CMAKE_COMMAND} -E
-    make_directory ${HDR_OUT_DIR})
+        COMMAND ${CMAKE_COMMAND} -E
+        make_directory ${HDR_OUT_DIR})
 
 foreach(id ${ENGINE_LIBRARY_IDS})
   _argus_configure_module("${ENGINE_LIBS_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 foreach(id ${STATIC_MODULE_IDS})
   _argus_configure_module("${STATIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 # IMPORTANT: these should be configured last so that they can avoid compiling in
 # libraries already present in the base library
 foreach(id ${DYNAMIC_MODULE_IDS})
   _argus_configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-                          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
 endforeach()
 
 foreach(id ${EXE_MODULE_IDS})
@@ -320,14 +343,14 @@ list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
 
 list(REMOVE_DUPLICATES STATIC_MODULE_LIBS)
-set(RUST_LIBS_FOR_LINKING "")
+set(RUST_LIBS_FOR_LINKING_STATIC "")
 foreach(lib ${STATIC_MODULE_LIBS})
   get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
   if(${lib_is_external})
     get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
 
     if(${lib_is_rust})
-      list(APPEND RUST_LIBS_FOR_LINKING "${lib}")
+      list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
     endif()
   else()
     list(APPEND STATIC_MODULE_LIB_OBJS "$<TARGET_OBJECTS:${lib}>")
@@ -357,10 +380,14 @@ get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_
 list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
 target_link_libraries(${ARGUS_LIBRARY} "${COMBINED_TARGET_LINKER_DEPS}")
 
-foreach(lib ${RUST_LIBS_FOR_LINKING})
+foreach(lib ${RUST_LIBS_FOR_LINKING_STATIC})
+  set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${lib}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
   target_link_libraries(${ARGUS_LIBRARY}
-    debug "${RUST_TARGET_DIR}/${lib}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    optimized "${RUST_TARGET_DIR}/${lib}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+          debug "${RUST_LIB_DIR}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+          optimized "${RUST_LIB_DIR}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  if(MINGW)
+    target_link_libraries(${ARGUS_LIBRARY} "bcrypt" "ntdll" "Userenv" "ws2_32")
+  endif()
 endforeach()
 
 # add global include list
