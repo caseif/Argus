@@ -32,8 +32,8 @@
 #undef assert
 #endif
 #ifdef _ARGUS_DEBUG_MODE
-#define _assert(cond, file, line) ((cond) ? void(0) : Logger::default_logger().fatal("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
-#define assert(cond) _assert(cond, __FILE__, __LINE__)
+#define _argus_assert(cond, file, line) ((cond) ? void(0) : Logger::default_logger().fatal("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
+#define assert(cond) _argus_assert(cond, __FILE__, __LINE__)
 #else
 #define assert(cond) ((cond) ? (void(0)) : (Logger::default_logger().fatal("Assertion failed: " #cond)))
 #endif
