@@ -29,7 +29,10 @@
 #include <vector>
 
 #define MODULES_DIR_NAME "modules"
-#ifdef _WIN32
+#if defined(__MINGW32__)
+#define SHARED_LIB_PREFIX "lib"
+#define SHARED_LIB_EXT "dll"
+#elif defined(_WIN32)
 #define SHARED_LIB_PREFIX ""
 #define SHARED_LIB_EXT "dll"
 #elif defined(__APPLE__)
