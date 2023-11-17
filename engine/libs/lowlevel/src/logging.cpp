@@ -32,7 +32,7 @@
 #define DEFAULT_REALM "Argus"
 
 #ifdef _ARGUS_DEBUG_MODE
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <intrin.h>
 #define DEBUG_BREAK() __debugbreak()
 #else
