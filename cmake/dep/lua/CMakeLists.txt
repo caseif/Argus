@@ -25,7 +25,7 @@ list(TRANSFORM C_FILES REPLACE "^(.+)$" "${SOURCES_DIR}/\\1.c")
 add_library("${PROJECT_NAME}" SHARED "${C_FILES}")
 set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD 99)
 target_include_directories("${PROJECT_NAME}" PRIVATE "${SOURCES_DIR}")
-if(WIN32)
+if(WIN32 AND NOT MINGW)
   target_compile_options("${PROJECT_NAME}" PRIVATE
       "/W4"     # -Wall
       "/GS-"    # -fno-stack-protector
