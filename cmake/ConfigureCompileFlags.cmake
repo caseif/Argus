@@ -1,5 +1,5 @@
 function(_argus_set_compile_flags TARGET)
-  if(MSVC)
+  if(MSVC AND NOT MINGW)
     target_compile_options("${TARGET}" PUBLIC
         "/W4" # -Wall
         "/wd4068" # -Wno-unknown-pragmas
