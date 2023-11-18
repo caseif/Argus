@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 
 #define fileno _fileno
 #define fseek _fseeki64
