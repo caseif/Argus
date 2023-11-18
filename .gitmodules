@@ -40,3 +40,9 @@
 [submodule "external/libs/sdl2"]
 	path = external/libs/sdl2
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "external/libs/SPIRV-Tools"]
+	path = external/libs/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "external/libs/SPIRV-Headers"]
+	path = external/libs/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
