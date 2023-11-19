@@ -77,6 +77,14 @@ namespace argus {
 
         [[nodiscard]] pimpl_Scene *get_pimpl(void) const override;
 
+        [[nodiscard]] float get_ambient_light_level(void) const;
+
+        void set_ambient_light_level(float level);
+
+        [[nodiscard]] const Vector3f &get_ambient_light_color(void) const;
+
+        void set_ambient_light_color(const Vector3f &color);
+
         std::optional<std::reference_wrapper<RenderGroup2D>> get_group(Handle handle);
 
         std::optional<std::reference_wrapper<RenderObject2D>> get_object(Handle handle);

@@ -78,6 +78,22 @@ namespace argus {
         return dynamic_cast<pimpl_Scene *>(pimpl);
     }
 
+    float Scene2D::get_ambient_light_level(void) const {
+        return pimpl->ambient_light_level;
+    }
+
+    void Scene2D::set_ambient_light_level(float level) {
+        pimpl->ambient_light_level = level;
+    }
+
+    const Vector3f &Scene2D::get_ambient_light_color(void) const {
+        return pimpl->ambient_light_color;
+    }
+
+    void Scene2D::set_ambient_light_color(const Vector3f &color) {
+        pimpl->ambient_light_color = color;
+    }
+
     std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(Handle handle) {
         auto *ptr = g_render_handle_table.deref<RenderGroup2D>(handle);
         return ptr != nullptr ? std::make_optional(std::reference_wrapper(*ptr)) : std::nullopt;
