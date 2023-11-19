@@ -46,6 +46,10 @@ namespace argus {
         std::map<std::string, std::string> ubo_names;
     };
 
+    static size_t _next_aligned_val(size_t val) {
+        return ((val - 1U) & ~7U) + 8U;
+    }
+
     static void _copy_compat_map_to_cpp_map_u32(std::map<std::string, uint32_t> &dest, unsigned char *source,
             size_t count) {
         if (source == nullptr) {
@@ -61,6 +65,7 @@ namespace argus {
             dest.insert({name, uint32_t(index)});
 
             off += sizeof(SizedByteArrayWithIndex) + compat_struct->size;
+            off = _next_aligned_val(off); // align to multiple of 0x8
         }
     }
 
@@ -75,13 +80,14 @@ namespace argus {
         for (size_t i = 0; i < count; i++) {
             auto compat_struct = reinterpret_cast<SizedByteArray *>(source + off);
             auto compat_k_struct = reinterpret_cast<const SizedByteArray *>(compat_struct->data);
-            auto val_off = off + compat_k_struct->size + sizeof(SizedByteArray) * 2;
+            auto val_off = _next_aligned_val(off + compat_k_struct->size + sizeof(SizedByteArray) * 2);
             auto compat_v_struct = reinterpret_cast<const SizedByteArray *>(source + val_off);
             std::string key(reinterpret_cast<const char *>(compat_k_struct->data), compat_k_struct->size);
             std::string val(reinterpret_cast<const char *>(compat_v_struct->data), compat_v_struct->size);
             dest.insert({ key, val });
 
             off += sizeof(SizedByteArray) + compat_struct->size;
+            off = _next_aligned_val(off); // align to multiple of 0x8
         }
     }
 

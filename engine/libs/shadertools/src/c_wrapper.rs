@@ -43,9 +43,13 @@ pub struct InteropShaderCompilationResult {
     ubo_names: *const u8,
 }
 
+fn _next_aligned_val(val: usize) -> usize {
+    return ((val - 1) & !7) + 8;
+}
+
 unsafe fn copy_rust_map_to_interop_map_u32(map: &HashMap<String, u32>) -> *const u8 {
     let buf_len = map.iter()
-        .map(|(name, _)| name.len() + size_of::<SizedByteArrayWithIndex>())
+        .map(|(name, _)| (((name.len() + size_of::<SizedByteArrayWithIndex>()) - 1) & !7) + 8)
         .sum::<usize>() + size_of::<usize>();
 
     let interop_map = alloc(match Layout::array::<*const u8>(buf_len) {
@@ -58,6 +62,7 @@ unsafe fn copy_rust_map_to_interop_map_u32(map: &HashMap<String, u32>) -> *const
     for (el_name, el_index) in map {
         let el_struct = &mut *(interop_map.offset(off as isize) as *mut SizedByteArrayWithIndex);
         off += el_name.len() + size_of::<SizedByteArrayWithIndex>();
+        off = _next_aligned_val(off); // align to multiple of 0x8
         el_struct.size = el_name.len();
         el_struct.index = (*el_index) as usize;
         ptr::copy(el_name.as_ptr(), el_struct.data.as_mut_ptr(), el_name.len());
@@ -68,8 +73,9 @@ unsafe fn copy_rust_map_to_interop_map_u32(map: &HashMap<String, u32>) -> *const
 
 unsafe fn copy_rust_map_to_interop_map_str(map: &HashMap<String, String>) -> *const u8 {
     let buf_len = map.iter()
-        .map(|(k, v)| k.len() + v.len())
-        .sum::<usize>() + size_of::<usize>() * 2;
+        .map(|(k, v)| _next_aligned_val(size_of::<SizedByteArray>() + k.len())
+                + _next_aligned_val(size_of::<SizedByteArray>() + v.len()))
+        .sum::<usize>() + size_of::<usize>();
 
     let interop_map = alloc(match Layout::array::<*const u8>(buf_len) {
         Ok(layout) => layout,
@@ -79,12 +85,13 @@ unsafe fn copy_rust_map_to_interop_map_str(map: &HashMap<String, String>) -> *co
     *(interop_map as *mut usize) = buf_len;
     let mut off = size_of::<usize>();
     for (el_key, el_val) in map {
-        let val_off = off + size_of::<usize>() * 2 + el_key.len();
+        let val_off = _next_aligned_val(off + size_of::<usize>() * 2 + el_key.len());
         let el_struct = &mut *(interop_map.offset(off as isize) as *mut SizedByteArray);
         let el_k_struct = &mut *(el_struct.data.as_mut_ptr() as *mut SizedByteArray);
         let el_v_struct = &mut *(interop_map.offset(val_off as isize) as *mut SizedByteArray);
         el_struct.size = el_key.len() + el_val.len() + size_of::<SizedByteArray>() * 2;
         off += el_struct.size + size_of::<SizedByteArray>();
+        off = _next_aligned_val(off);
         el_k_struct.size = el_key.len();
         ptr::copy(el_key.as_ptr(), el_k_struct.data.as_mut_ptr(), el_key.len());
         el_v_struct.size = el_val.len();
