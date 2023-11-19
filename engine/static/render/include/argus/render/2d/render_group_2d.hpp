@@ -116,7 +116,7 @@ namespace argus {
         Handle create_child_object(const std::string &material,
                 const std::vector<RenderPrim2D> &primitives,
                 const Vector2f &anchor_point, const Vector2f &atlas_stride,
-                uint32_t z_index, const Transform2D &transform);
+                uint32_t z_index, float translucency, const Transform2D &transform);
 
         /**
          * \brief Removes the specified child group from this group,

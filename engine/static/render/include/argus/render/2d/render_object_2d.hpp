@@ -53,14 +53,15 @@ namespace argus {
         RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
                 const std::string &material, const std::vector<RenderPrim2D> &primitives,
                 const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index,
-                const Transform2D &transform);
+                float translucency, const Transform2D &transform);
 
       public:
         pimpl_RenderObject2D *pimpl;
 
         RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
-                const Vector2f &atlas_stride, uint32_t z_index, const Transform2D &transform);
+                const Vector2f &atlas_stride, uint32_t z_index, float translucency,
+                const Transform2D &transform);
 
         RenderObject2D(const RenderObject2D &) = delete;
 
@@ -113,6 +114,13 @@ namespace argus {
          * \return THe z-index of the object.
          */
         uint32_t get_z_index(void) const;
+
+        /**
+         * \brief Gets the translucency of the object with respect to lighting.
+         *        0.0 indicates an object which no light will pass through while
+         *        1.0 represents an object which light will fully pass through.
+         */
+        [[nodiscard]] float get_translucency(void) const;
 
         /**
          * \brief Gets the active animation frame.

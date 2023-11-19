@@ -35,6 +35,7 @@ namespace argus {
         Vector2f anchor_point;
         Vector2f atlas_stride;
         uint32_t z_index;
+        float translucency;
 
         Transform2D transform;
         Dirtiable<Vector2u> active_frame;
@@ -43,17 +44,18 @@ namespace argus {
 
         pimpl_RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
                 const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
-                const Vector2f &atlas_stride, uint32_t z_index, const Transform2D &transform) :
-                handle(handle),
-                parent_group(parent_group),
-                material(material),
-                primitives(primitives),
-                anchor_point(anchor_point),
-                atlas_stride(atlas_stride),
-                z_index(z_index),
-                transform(transform),
-                active_frame({0, 0}),
-                version(1) {
+                const Vector2f &atlas_stride, uint32_t z_index, float translucency, const Transform2D &transform) :
+            handle(handle),
+            parent_group(parent_group),
+            material(material),
+            primitives(primitives),
+            anchor_point(anchor_point),
+            atlas_stride(atlas_stride),
+            z_index(z_index),
+            translucency(translucency),
+            transform(transform),
+            active_frame({0, 0}),
+            version(1) {
         }
 
         pimpl_RenderObject2D(const pimpl_RenderObject2D &) = default;
