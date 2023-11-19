@@ -15,14 +15,14 @@ pub enum Stage {
     Geometry,
     Fragment,
     Compute,
-    RaygenNv,
-    IntersectNv,
-    AnyhitNv,
-    ClosesthitNv,
-    MissNv,
-    CallableNv,
-    TaskNv,
-    MeshNv
+    Raygen,
+    Intersect,
+    Anyhit,
+    Closesthit,
+    Miss,
+    Callable,
+    Task,
+    Mesh,
 } // would be better as stage, but this is ancient now
 
 /* EShLanguageMask counterpart */
@@ -35,14 +35,14 @@ bitmask! {
         Geometry = (1 << (Stage::Geometry as i32)),
         Fragment = (1 << (Stage::Fragment as i32)),
         Compute = (1 << (Stage::Compute as i32)),
-        RaygenNv = (1 << (Stage::RaygenNv as i32)),
-        IntersectNv = (1 << (Stage::IntersectNv as i32)),
-        AnyhitNv = (1 << (Stage::AnyhitNv as i32)),
-        ClosesthitNv = (1 << (Stage::ClosesthitNv as i32)),
-        MissNv = (1 << (Stage::MissNv as i32)),
-        CallableNv = (1 << (Stage::CallableNv as i32)),
-        TaskNv = (1 << (Stage::TaskNv as i32)),
-        MeshNv = (1 << (Stage::MeshNv as i32))
+        Raygen = (1 << (Stage::Raygen as i32)),
+        Intersect = (1 << (Stage::Intersect as i32)),
+        Anyhit = (1 << (Stage::Anyhit as i32)),
+        Closesthit = (1 << (Stage::Closesthit as i32)),
+        Miss = (1 << (Stage::Miss as i32)),
+        Callable = (1 << (Stage::Callable as i32)),
+        Task = (1 << (Stage::Task as i32)),
+        Mesh = (1 << (Stage::Mesh as i32)),
     }
 }
 
@@ -314,6 +314,15 @@ pub struct Resource {
     pub max_task_work_group_size_y_nv: c_int,
     pub max_task_work_group_size_z_nv: c_int,
     pub max_mesh_view_count_nv: c_int,
+    pub max_mesh_output_vertices_ext: c_int,
+    pub max_mesh_output_primitives_ext: c_int,
+    pub max_mesh_work_group_size_x_ext: c_int,
+    pub max_mesh_work_group_size_y_ext: c_int,
+    pub max_mesh_work_group_size_z_ext: c_int,
+    pub max_task_work_group_size_x_ext: c_int,
+    pub max_task_work_group_size_y_ext: c_int,
+    pub max_task_work_group_size_z_ext: c_int,
+    pub max_mesh_view_count_ext: c_int,
     pub max_dual_source_draw_buffers_ext: c_int,
 
     pub limits: Limits
@@ -335,7 +344,9 @@ pub struct Input {
     pub force_default_version_and_profile: c_int,
     pub forward_compatible: c_int,
     pub messages: Messages,
-    pub resource: *const Resource
+    pub resource: *const Resource,
+    pub callbacks: IncludeCallbacks,
+    pub callbacks_ctx: *mut c_void,
 }
 
 /* Inclusion result structure allocated by C include_local/include_system callbacks */
@@ -365,9 +376,9 @@ pub type GlslFreeIncludeResultFunc = fn (ctx: *mut c_void, result: *mut IncludeR
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct IncludeCallbacks {
-    pub include_system: GlslIncludeSystemFunc,
-    pub include_local: GlslIncludeLocalFunc,
-    pub free_include_result: GlslFreeIncludeResultFunc
+    pub include_system: Option<GlslIncludeSystemFunc>,
+    pub include_local: Option<GlslIncludeLocalFunc>,
+    pub free_include_result: Option<GlslFreeIncludeResultFunc>,
 }
 
 /* SpvOptions counterpart */
@@ -379,7 +390,10 @@ pub struct SpvOptions {
     pub disable_optimizer: bool,
     pub optimize_size: bool,
     pub disassemble: bool,
-    pub validate: bool
+    pub validate: bool,
+    pub emit_nonsemantic_shader_debug_info: bool,
+    pub emit_nonsemantic_shader_debug_source: bool,
+    //pub compile_only: bool,
 }
 
 #[link(name = "glslang")]
@@ -389,6 +403,7 @@ extern "C" {
 
     pub fn glslang_shader_create(input: *const Input) -> ShaderHandle;
     pub fn glslang_shader_delete(shader: ShaderHandle);
+    pub fn glslang_shader_set_preamble(shader: ShaderHandle, s: *const c_char);
     pub fn glslang_shader_shift_binding(shader: ShaderHandle, res: ResourceType, base: c_uint);
     pub fn glslang_shader_shift_binding_for_set(shader: ShaderHandle, res: ResourceType, base: c_uint, set: c_uint);
     pub fn glslang_shader_set_options(shader: ShaderHandle, options: ShaderOptions); // glslang_shader_options_t
@@ -513,6 +528,15 @@ pub const DEFAULT_BUILT_IN_RESOURCE: Resource = Resource {
     max_task_work_group_size_y_nv: 1,
     max_task_work_group_size_z_nv: 1,
     max_mesh_view_count_nv: 4,
+    max_mesh_output_vertices_ext: 256,
+    max_mesh_output_primitives_ext: 256,
+    max_mesh_work_group_size_x_ext: 128,
+    max_mesh_work_group_size_y_ext: 128,
+    max_mesh_work_group_size_z_ext: 128,
+    max_task_work_group_size_x_ext: 128,
+    max_task_work_group_size_y_ext: 128,
+    max_task_work_group_size_z_ext: 128,
+    max_mesh_view_count_ext: 4,
     max_dual_source_draw_buffers_ext: 1,
     limits: Limits {
         non_inductive_for_loops: true,

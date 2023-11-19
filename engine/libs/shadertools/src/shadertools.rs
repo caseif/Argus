@@ -129,6 +129,12 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
             forward_compatible: 0,
             messages: shader_messages,
             resource: &DEFAULT_BUILT_IN_RESOURCE,
+            callbacks: IncludeCallbacks {
+                include_system: None,
+                include_local: None,
+                free_include_result: None,
+            },
+            callbacks_ctx: std::ptr::null_mut(),
         };
 
         let mut shader = Shader::create(input);
@@ -168,6 +174,9 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
             optimize_size: false,
             disassemble: false,
             validate: false,
+            emit_nonsemantic_shader_debug_info: false,
+            emit_nonsemantic_shader_debug_source: false,
+            //compile_only: false,
         };
 
         program.spirv_generate_with_options(glsl.stage, &spirv_options);
