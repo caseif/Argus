@@ -22,5 +22,6 @@ namespace argus {
     // forward declarations
     class World2DLayer;
 
-    void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform);
+    void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform,
+            const ValueAndDirtyFlag<float> &al_level, const ValueAndDirtyFlag<Vector3f> &al_color);
 }

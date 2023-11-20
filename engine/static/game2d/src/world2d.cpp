@@ -124,12 +124,14 @@ namespace argus {
 
     static void _render_world(World2D &world) {
         auto camera_transform = world.pimpl->abstract_camera.read();
+        auto al_level = world.pimpl->al_level.read();
+        auto al_color = world.pimpl->al_color.read();
 
         for (int64_t i = 0; i < world.pimpl->num_bg_layers; i++) {
-            render_world_layer(*world.pimpl->bg_layers[i], camera_transform);
+            render_world_layer(*world.pimpl->bg_layers[i], camera_transform, al_level, al_color);
         }
 
-        render_world_layer(*world.pimpl->fg_layer, camera_transform);
+        render_world_layer(*world.pimpl->fg_layer, camera_transform, al_level, al_color);
     }
 
     void render_worlds(TimeDelta delta) {

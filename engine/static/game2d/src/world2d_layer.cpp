@@ -271,15 +271,24 @@ namespace argus {
 
         auto read_transform = actor.pimpl->transform.read();
         if (read_transform.dirty) {
-            render_obj->set_transform(get_render_transform(layer, read_transform, false));
+            render_obj->set_transform(get_render_transform(layer, read_transform.value, false));
         }
 
         _update_sprite_frame(actor.get_sprite(), *render_obj);
     }
 
-    void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform) {
+    void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform,
+        const ValueAndDirtyFlag<float> &al_level, const ValueAndDirtyFlag<Vector3f> &al_color) {
         if (camera_transform.dirty) {
             layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
+        }
+
+        if (al_level.dirty) {
+            layer.pimpl->scene->set_ambient_light_level(al_level.value);
+        }
+
+        if (al_color.dirty) {
+            layer.pimpl->scene->set_ambient_light_color(al_color.value);
         }
 
         for (const auto &obj_handle : layer.pimpl->static_objects) {
