@@ -48,9 +48,9 @@ namespace argus {
             id(id),
             canvas(canvas),
             scale_factor(scale_factor),
-            al_level(1.0),
-            al_color({ 1.0, 1.0, 1.0 }),
             num_bg_layers(0) {
+            al_level = 1.0;
+            al_color = { 1.0, 1.0, 1.0 };
         }
     };
 }
