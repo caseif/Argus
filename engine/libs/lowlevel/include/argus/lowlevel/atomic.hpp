@@ -131,48 +131,30 @@ namespace argus {
         bool m_dirty;
         std::mutex m_mutex;
 
-        template<typename V = ValueType>
-        typename std::enable_if<std::is_integral<V>::value, bool>::type
-        is_same_value(V &new_val) {
-            return new_val == this->m_value;
-        }
-
-        template<typename V = ValueType>
-        typename std::enable_if<!std::is_integral<V>::value, bool>::type
-        is_same_value(V &new_val) {
-            UNUSED(new_val);
-            return false;
-        }
-
       public:
         AtomicDirtiable(void) :
                 m_value(),
-                m_dirty(false),
-                m_mutex() {
+                m_dirty(false) {
         }
 
         AtomicDirtiable(const ValueType &rhs) :
                 m_value(rhs),
-                m_dirty(false),
-                m_mutex() {
+                m_dirty(false) {
         }
 
         AtomicDirtiable(ValueType &&rhs) :
                 m_value(std::move(rhs)),
-                m_dirty(false),
-                m_mutex() {
+                m_dirty(false) {
         }
 
         AtomicDirtiable(const AtomicDirtiable &rhs) :
                 m_value(rhs.m_value),
-                m_dirty(rhs.m_dirty),
-                m_mutex() {
+                m_dirty(rhs.m_dirty) {
         }
 
         AtomicDirtiable(AtomicDirtiable &&rhs) noexcept :
                 m_value(std::move(rhs.m_value)),
-                m_dirty(rhs.m_dirty),
-                m_mutex() {
+                m_dirty(rhs.m_dirty) {
         }
 
         /**
@@ -204,7 +186,6 @@ namespace argus {
             std::lock_guard<std::mutex>(this->m_mutex);
 
             auto val_copy = m_value;
-
             return val_copy;
         }
 
@@ -219,10 +200,8 @@ namespace argus {
         inline AtomicDirtiable &operator=(const ValueType &rhs) {
             std::lock_guard<std::mutex>(this->m_mutex);
 
-            if (!is_same_value(rhs)) {
-                m_value = rhs;
-                m_dirty = true;
-            }
+            m_value = rhs;
+            m_dirty = true;
             return *this;
         }
 
@@ -237,10 +216,8 @@ namespace argus {
         inline AtomicDirtiable &operator=(const ValueType &&rhs) {
             std::lock_guard<std::mutex>(this->m_mutex);
 
-            if (!is_same_value(rhs)) {
-                m_value = std::move(rhs);
-                m_dirty = true;
-            }
+            m_value = std::move(rhs);
+            m_dirty = true;
             return *this;
         }
 
