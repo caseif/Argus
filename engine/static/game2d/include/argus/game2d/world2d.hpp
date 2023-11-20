@@ -61,11 +61,11 @@ namespace argus {
 
         void set_camera_transform(const Transform2D &transform);
 
-        float get_ambient_light_level(void);
+        float get_ambient_light_level(void) const;
 
         void set_ambient_light_level(float level);
 
-        Vector3f get_ambient_light_color(void);
+        Vector3f get_ambient_light_color(void) const;
 
         void set_ambient_light_color(const Vector3f &color);
 

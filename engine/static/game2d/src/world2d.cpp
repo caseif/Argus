@@ -85,7 +85,7 @@ namespace argus {
         pimpl->abstract_camera = transform;
     }
 
-    float World2D::get_ambient_light_level(void) {
+    float World2D::get_ambient_light_level(void) const {
         return pimpl->al_level.peek();
     }
 
@@ -93,7 +93,7 @@ namespace argus {
         pimpl->al_level = level;
     }
 
-    Vector3f World2D::get_ambient_light_color(void) {
+    Vector3f World2D::get_ambient_light_color(void) const {
         return pimpl->al_color.peek();
     }
 
