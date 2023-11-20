@@ -32,6 +32,10 @@ namespace argus {
         bind_member_instance_function("get_scale_factor", &World2D::get_scale_factor);
         bind_member_instance_function("get_camera_transform", &World2D::get_camera_transform);
         bind_member_instance_function("set_camera_transform", &World2D::set_camera_transform);
+        bind_member_instance_function("get_ambient_light_level", &World2D::get_ambient_light_level);
+        bind_member_instance_function("set_ambient_light_level", &World2D::set_ambient_light_level);
+        bind_member_instance_function("get_ambient_light_color", &World2D::get_ambient_light_color);
+        bind_member_instance_function("set_ambient_light_color", &World2D::set_ambient_light_color);
         bind_member_instance_function("get_background_layer", &World2D::get_background_layer);
         bind_extension_function<World2D>(
                 "add_background_layer",
