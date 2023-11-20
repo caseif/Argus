@@ -35,6 +35,8 @@ namespace argus {
         std::string id;
         Canvas &canvas;
         const float scale_factor;
+        Dirtiable<float> al_level;
+        Dirtiable<Vector3f> al_color;
 
         World2DLayer *fg_layer;
         uint32_t num_bg_layers;
@@ -43,10 +45,12 @@ namespace argus {
         Dirtiable<Transform2D> abstract_camera;
 
         pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor) :
-                id(id),
-                canvas(canvas),
-                scale_factor(scale_factor),
-                num_bg_layers(0) {
+            id(id),
+            canvas(canvas),
+            scale_factor(scale_factor),
+            al_level(1.0),
+            al_color({ 1.0, 1.0, 1.0 }),
+            num_bg_layers(0) {
         }
     };
 }

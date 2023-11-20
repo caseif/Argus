@@ -85,6 +85,22 @@ namespace argus {
         pimpl->abstract_camera = transform;
     }
 
+    float World2D::get_ambient_light_level(void) {
+        return pimpl->al_level.peek();
+    }
+
+    void World2D::set_ambient_light_level(float level) {
+        pimpl->al_level = level;
+    }
+
+    Vector3f World2D::get_ambient_light_color(void) {
+        return pimpl->al_color.peek();
+    }
+
+    void World2D::set_ambient_light_color(const Vector3f &color) {
+        pimpl->al_color = color;
+    }
+
     World2DLayer &World2D::get_background_layer(uint32_t index) const {
         affirm_precond(index < pimpl->num_bg_layers, "Invalid background index requested");
         return *pimpl->bg_layers[index];

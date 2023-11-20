@@ -61,6 +61,14 @@ namespace argus {
 
         void set_camera_transform(const Transform2D &transform);
 
+        float get_ambient_light_level(void);
+
+        void set_ambient_light_level(float level);
+
+        Vector3f get_ambient_light_color(void);
+
+        void set_ambient_light_color(const Vector3f &color);
+
         World2DLayer &get_background_layer(uint32_t index) const;
 
         World2DLayer &add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval);
