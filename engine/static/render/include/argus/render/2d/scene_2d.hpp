@@ -77,15 +77,15 @@ namespace argus {
 
         [[nodiscard]] pimpl_Scene *get_pimpl(void) const override;
 
-        [[nodiscard]] float get_ambient_light_level(void) const;
+        [[nodiscard]] float peek_ambient_light_level(void) const;
 
-        [[nodiscard]] ValueAndDirtyFlag<float> get_ambient_light_level_with_dirty_flag(void);
+        [[nodiscard]] ValueAndDirtyFlag<float> get_ambient_light_level(void);
 
         void set_ambient_light_level(float level);
 
-        [[nodiscard]] const Vector3f &get_ambient_light_color(void) const;
+        [[nodiscard]] const Vector3f &peek_ambient_light_color(void) const;
 
-        [[nodiscard]] ValueAndDirtyFlag<Vector3f> get_ambient_light_color_with_dirty_flag(void);
+        [[nodiscard]] ValueAndDirtyFlag<Vector3f> get_ambient_light_color(void);
 
         void set_ambient_light_color(const Vector3f &color);
 

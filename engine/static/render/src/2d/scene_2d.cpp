@@ -78,11 +78,11 @@ namespace argus {
         return dynamic_cast<pimpl_Scene *>(pimpl);
     }
 
-    float Scene2D::get_ambient_light_level(void) const {
+    float Scene2D::peek_ambient_light_level(void) const {
         return pimpl->ambient_light_level.peek();
     }
 
-    ValueAndDirtyFlag<float> Scene2D::get_ambient_light_level_with_dirty_flag(void) {
+    ValueAndDirtyFlag<float> Scene2D::get_ambient_light_level(void) {
         return pimpl->ambient_light_level.read();
     }
 
@@ -90,11 +90,11 @@ namespace argus {
         pimpl->ambient_light_level = level;
     }
 
-    const Vector3f &Scene2D::get_ambient_light_color(void) const {
+    const Vector3f &Scene2D::peek_ambient_light_color(void) const {
         return pimpl->ambient_light_color.peek();
     }
 
-    ValueAndDirtyFlag<Vector3f> Scene2D::get_ambient_light_color_with_dirty_flag(void) {
+    ValueAndDirtyFlag<Vector3f> Scene2D::get_ambient_light_color(void) {
         return pimpl->ambient_light_color.read();
     }
 
