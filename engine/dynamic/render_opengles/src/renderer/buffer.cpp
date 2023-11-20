@@ -86,7 +86,7 @@ namespace argus {
 
     void BufferInfo::write(void *src, size_t len, size_t offset) {
         assert(valid);
-        assert(offset + len <= len);
+        assert(offset + len <= this->size);
 
         if (mapped != nullptr) {
             memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);
