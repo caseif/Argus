@@ -184,14 +184,12 @@ namespace argus {
          *         state of the dirty flag.
          */
         ValueAndDirtyFlag<ValueType> read(void) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
 
             auto val_copy = value;
             bool old_dirty = dirty;
 
             dirty = false;
-
-            mutex.unlock();
 
             return ValueAndDirtyFlag<ValueType>{val_copy, old_dirty};
         }
@@ -203,9 +201,9 @@ namespace argus {
          * \return A copy of the current value.
          */
         ValueType peek(void) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
+
             auto val_copy = value;
-            mutex.unlock();
 
             return val_copy;
         }
@@ -219,12 +217,12 @@ namespace argus {
          * \return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &rhs) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
+
             if (!is_same_value(rhs)) {
                 value = rhs;
                 dirty = true;
             }
-            mutex.unlock();
             return *this;
         }
 
@@ -237,12 +235,12 @@ namespace argus {
          * \return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &&rhs) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
+
             if (!is_same_value(rhs)) {
                 value = std::move(rhs);
                 dirty = true;
             }
-            mutex.unlock();
             return *this;
         }
 
@@ -253,9 +251,9 @@ namespace argus {
          * \param rhs The value to assign.
          */
         void set_quietly(const ValueType &rhs) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
+
             value = rhs;
-            mutex.unlock();
         }
 
         /**
@@ -265,9 +263,9 @@ namespace argus {
          * \param rhs The value to assign.
          */
         void set_quietly(const ValueType &&rhs) {
-            mutex.lock();
+            std::lock_guard<std::mutex>(this->mutex);
+
             value = std::move(rhs);
-            mutex.unlock();
         }
     };
 }
