@@ -127,14 +127,14 @@ namespace argus {
     template<typename ValueType>
     class AtomicDirtiable {
       private:
-        ValueType value;
-        bool dirty;
-        std::mutex mutex;
+        ValueType m_value;
+        bool m_dirty;
+        std::mutex m_mutex;
 
         template<typename V = ValueType>
         typename std::enable_if<std::is_integral<V>::value, bool>::type
         is_same_value(V &new_val) {
-            return new_val == this->value;
+            return new_val == this->m_value;
         }
 
         template<typename V = ValueType>
@@ -146,33 +146,33 @@ namespace argus {
 
       public:
         AtomicDirtiable(void) :
-                value(),
-                dirty(false),
-                mutex() {
+                m_value(),
+                m_dirty(false),
+                m_mutex() {
         }
 
         AtomicDirtiable(const ValueType &rhs) :
-                value(rhs),
-                dirty(false),
-                mutex() {
+                m_value(rhs),
+                m_dirty(false),
+                m_mutex() {
         }
 
         AtomicDirtiable(ValueType &&rhs) :
-                value(std::move(rhs)),
-                dirty(false),
-                mutex() {
+                m_value(std::move(rhs)),
+                m_dirty(false),
+                m_mutex() {
         }
 
         AtomicDirtiable(const AtomicDirtiable &rhs) :
-                value(rhs.value),
-                dirty(rhs.dirty),
-                mutex() {
+                m_value(rhs.m_value),
+                m_dirty(rhs.m_dirty),
+                m_mutex() {
         }
 
         AtomicDirtiable(AtomicDirtiable &&rhs) noexcept :
-                value(std::move(rhs.value)),
-                dirty(rhs.dirty),
-                mutex() {
+                m_value(std::move(rhs.m_value)),
+                m_dirty(rhs.m_dirty),
+                m_mutex() {
         }
 
         /**
@@ -184,12 +184,12 @@ namespace argus {
          *         state of the dirty flag.
          */
         ValueAndDirtyFlag<ValueType> read(void) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
-            auto val_copy = value;
-            bool old_dirty = dirty;
+            auto val_copy = m_value;
+            bool old_dirty = m_dirty;
 
-            dirty = false;
+            m_dirty = false;
 
             return ValueAndDirtyFlag<ValueType>{val_copy, old_dirty};
         }
@@ -201,9 +201,9 @@ namespace argus {
          * \return A copy of the current value.
          */
         ValueType peek(void) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
-            auto val_copy = value;
+            auto val_copy = m_value;
 
             return val_copy;
         }
@@ -217,11 +217,11 @@ namespace argus {
          * \return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &rhs) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
             if (!is_same_value(rhs)) {
-                value = rhs;
-                dirty = true;
+                m_value = rhs;
+                m_dirty = true;
             }
             return *this;
         }
@@ -235,11 +235,11 @@ namespace argus {
          * \return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &&rhs) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
             if (!is_same_value(rhs)) {
-                value = std::move(rhs);
-                dirty = true;
+                m_value = std::move(rhs);
+                m_dirty = true;
             }
             return *this;
         }
@@ -251,9 +251,9 @@ namespace argus {
          * \param rhs The value to assign.
          */
         void set_quietly(const ValueType &rhs) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
-            value = rhs;
+            m_value = rhs;
         }
 
         /**
@@ -263,9 +263,9 @@ namespace argus {
          * \param rhs The value to assign.
          */
         void set_quietly(const ValueType &&rhs) {
-            std::lock_guard<std::mutex>(this->mutex);
+            std::lock_guard<std::mutex>(this->m_mutex);
 
-            value = std::move(rhs);
+            m_value = std::move(rhs);
         }
     };
 }
