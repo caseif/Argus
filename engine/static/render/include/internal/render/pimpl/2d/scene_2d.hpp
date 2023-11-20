@@ -40,10 +40,11 @@ namespace argus {
 
         pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform) :
             pimpl_Scene(id, transform),
-            ambient_light_level(1.0),
-            ambient_light_color({ 1.0, 1.0, 1.0 }),
             root_group_read(new RenderGroup2D(scene, nullptr)),
             root_group_write(new RenderGroup2D(scene, nullptr)) {
+            // use assignment operator to set dirty flag
+            ambient_light_level = 1.0;
+            ambient_light_color = { 1.0, 1.0, 1.0 };
         }
 
         pimpl_Scene2D(const pimpl_Scene2D &) = delete;
