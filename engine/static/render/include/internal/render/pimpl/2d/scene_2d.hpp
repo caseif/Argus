@@ -30,8 +30,8 @@ namespace argus {
     struct pimpl_Scene;
 
     struct pimpl_Scene2D : public pimpl_Scene {
-        float ambient_light_level;
-        Vector3f ambient_light_color;
+        Dirtiable<float> ambient_light_level;
+        Dirtiable<Vector3f> ambient_light_color;
 
         RenderGroup2D *root_group_read;
         RenderGroup2D *root_group_write;

@@ -79,9 +79,13 @@ namespace argus {
 
         [[nodiscard]] float get_ambient_light_level(void) const;
 
+        [[nodiscard]] ValueAndDirtyFlag<float> get_ambient_light_level_with_dirty_flag(void);
+
         void set_ambient_light_level(float level);
 
         [[nodiscard]] const Vector3f &get_ambient_light_color(void) const;
+
+        [[nodiscard]] ValueAndDirtyFlag<Vector3f> get_ambient_light_color_with_dirty_flag(void);
 
         void set_ambient_light_color(const Vector3f &color);
 
