@@ -59,6 +59,8 @@ namespace argus {
 
         Scene &scene;
 
+        BufferInfo ubo {};
+
         std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
 
         SceneState(RendererState &parent_state, Scene &scene);

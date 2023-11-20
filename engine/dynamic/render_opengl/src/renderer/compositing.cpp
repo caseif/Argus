@@ -44,6 +44,7 @@
 #include <utility>
 
 #include <climits>
+#include <argus/render/2d/scene_2d.hpp>
 
 #define BINDING_INDEX_VBO 0
 
@@ -107,6 +108,32 @@ namespace argus {
         return transformed;
     }
 
+    static void _update_scene_ubo(SceneState &scene_state) {
+        if (scene_state.scene.type == SceneType::TwoD) {
+            auto &scene = reinterpret_cast<Scene2D &>(scene_state.scene);
+            auto al_level = scene.get_ambient_light_level();
+            auto al_color = scene.get_ambient_light_color();
+
+            bool must_update = al_level.dirty || al_color.dirty;
+
+            if (!scene_state.ubo.valid) {
+                scene_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_SCENE_LEN, GL_STATIC_DRAW, false);
+                must_update = true;
+            }
+
+            if (must_update) {
+                if (al_level.dirty) {
+                    scene_state.ubo.write_val<float>(al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
+                }
+
+                if (al_color.dirty) {
+                    float color[4] = { al_color.value.r, al_color.value.g, al_color.value.b, 1.0 };
+                    scene_state.ubo.write(color, sizeof(color), SHADER_UNIFORM_SCENE_AL_COLOR_OFF);
+                }
+            }
+        }
+    }
+
     static void _update_viewport_ubo(ViewportState &viewport_state) {
         bool must_update = viewport_state.view_matrix_dirty;
 
@@ -137,6 +164,9 @@ namespace argus {
 
         auto fb_width = std::abs(viewport_px.right - viewport_px.left);
         auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
+
+        // set scene uniforms
+        _update_scene_ubo(scene_state);
 
         // set viewport uniforms
         _update_viewport_ubo(viewport_state);
@@ -258,12 +288,12 @@ namespace argus {
 
             bool animated = program_info.reflection.has_ubo(SHADER_UBO_OBJ);
 
-
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
                 last_program = program_info.handle;
 
                 _bind_ubo(program_info, SHADER_UBO_GLOBAL, state.global_ubo);
+                _bind_ubo(program_info, SHADER_UBO_SCENE, scene_state.ubo);
                 _bind_ubo(program_info, SHADER_UBO_VIEWPORT, viewport_state.ubo);
             }
 
