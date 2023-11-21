@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/color.hpp"
 #include "argus/lowlevel/memory.hpp"
 
 #include "argus/render/2d/camera_2d.hpp"
@@ -99,7 +100,12 @@ namespace argus {
     }
 
     void Scene2D::set_ambient_light_color(const Vector3f &color) {
-        pimpl->ambient_light_color = color;
+        // normalize the RGB value
+        auto hsv_color = rgb_to_hsv(color);
+        hsv_color.z = 1.0; // set value to max
+        auto final_rgb = hsv_to_rgb(hsv_color);
+
+        pimpl->ambient_light_color = final_rgb;
     }
 
     std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(Handle handle) {
