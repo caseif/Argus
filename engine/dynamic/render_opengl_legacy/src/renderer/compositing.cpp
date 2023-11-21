@@ -25,6 +25,7 @@
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
+#include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/defines.hpp"
 
 #include "internal/render_opengl_legacy/defines.hpp"
@@ -114,6 +115,43 @@ namespace argus {
                 FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
         set_attrib_pointer(frame_vbo, 4, SHADER_ATTRIB_TEXCOORD_LEN,
                 FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);
+    }
+
+    static void _set_viewport_and_scene_uniforms(const LinkedProgram &program, const ViewportState &viewport) {
+        auto view_mat = viewport.view_matrix;
+        program.reflection.get_uniform_loc_and_then(SHADER_UBO_VIEWPORT, SHADER_UNIFORM_VIEWPORT_VM,
+                [view_mat](auto vm_loc) {
+                    affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
+                    glUniformMatrix4fv(GLint(vm_loc), 1, GL_FALSE, view_mat.data);
+                });
+
+        if (viewport.viewport->type == SceneType::TwoD) {
+            auto &scene = reinterpret_cast<const AttachedViewport2D *>(viewport.viewport)->get_camera().get_scene();
+            auto al_color = scene.peek_ambient_light_color();
+            auto al_level = scene.peek_ambient_light_level();
+
+            program.reflection.get_uniform_loc_and_then(SHADER_UBO_SCENE, SHADER_UNIFORM_SCENE_AL_COLOR,
+                    [al_color](auto color_loc) {
+                        printf("color loc: %d\n", color_loc);
+                        affirm_precond(color_loc <= INT_MAX, "Scene ambient light level uniform location is too big");
+                        glUniform4f(GLint(color_loc), al_color.r, al_color.g, al_color.b, 1.0);
+                    });
+
+            program.reflection.get_uniform_loc_and_then(SHADER_UBO_SCENE, SHADER_UNIFORM_SCENE_AL_LEVEL,
+                    [al_level](auto level_loc) {
+                        affirm_precond(level_loc <= INT_MAX, "Scene ambient light color uniform location is too big");
+                        glUniform1f(GLint(level_loc), al_level);
+                    });
+        }
+    }
+
+    static void _set_object_uniforms(const LinkedProgram &program, const RenderBucket &bucket) {
+        auto &stride = bucket.atlas_stride;
+        program.reflection.get_uniform_loc_and_then(SHADER_UBO_OBJ, SHADER_UNIFORM_OBJ_UV_STRIDE,
+                [stride](auto loc) {
+                    affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
+                    glUniform2f(GLint(loc), stride.x, stride.y);
+                });
     }
 
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
@@ -212,20 +250,10 @@ namespace argus {
                 set_per_frame_global_uniforms(program_info);
                 last_program = program_info.handle;
 
-                auto view_mat = viewport_state.view_matrix;
-                program_info.reflection.get_uniform_loc_and_then(SHADER_UBO_VIEWPORT, SHADER_UNIFORM_VIEWPORT_VM,
-                        [view_mat](auto vm_loc) {
-                            affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
-                            glUniformMatrix4fv(GLint(vm_loc), 1, GL_FALSE, view_mat.data);
-                        });
+                _set_viewport_and_scene_uniforms(program_info, viewport_state);
             }
 
-            auto &stride = bucket.second->atlas_stride;
-            program_info.reflection.get_uniform_loc_and_then(SHADER_UBO_OBJ, SHADER_UNIFORM_OBJ_UV_STRIDE,
-                    [stride](auto loc) {
-                        affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
-                        glUniform2f(GLint(loc), stride.x, stride.y);
-                    });
+            _set_object_uniforms(program_info, *bucket.second);
 
             if (tex_handle != last_texture) {
                 glBindTexture(GL_TEXTURE_2D, tex_handle);
@@ -273,7 +301,10 @@ namespace argus {
             _set_fb_attribs(state.frame_vbo);
 
             glUseProgram(postfx_program->handle);
+
             set_per_frame_global_uniforms(*postfx_program);
+            _set_viewport_and_scene_uniforms(*postfx_program, viewport_state);
+
             glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
