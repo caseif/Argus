@@ -19,6 +19,8 @@
 #include "argus/lowlevel/color.hpp"
 #include "argus/lowlevel/math/vector.hpp"
 
+#include <algorithm>
+
 #include <cmath>
 
 namespace argus {
