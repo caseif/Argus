@@ -127,7 +127,7 @@ namespace argus {
                 }
 
                 if (al_color.dirty) {
-                    float color[4] = { al_color.value.r, al_color.value.g, al_color.value.b, 1.0 };
+                    float color[4] = { al_color->r, al_color->g, al_color->b, 1.0 };
                     scene_state.ubo.write(color, sizeof(color), SHADER_UNIFORM_SCENE_AL_COLOR_OFF);
                 }
             }

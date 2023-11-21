@@ -27,6 +27,7 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/canvas.hpp"
+#include "internal/render/resources.h"
 #include "internal/render/script_bindings.hpp"
 #include "internal/render/common/backend.hpp"
 #include "internal/render/common/scene.hpp"
@@ -206,6 +207,12 @@ namespace argus {
                 register_render_script_bindings();
 
                 g_render_module_initialized = true;
+
+                break;
+            }
+            case LifecycleStage::PostInit: {
+                ResourceManager::instance().add_memory_package(RESOURCES_RENDER_ARP_SRC,
+                        RESOURCES_RENDER_ARP_LEN);
 
                 break;
             }

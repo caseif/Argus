@@ -72,7 +72,11 @@ namespace argus {
             throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
 
-        auto it = pimpl->viewports_2d.insert({id, AttachedViewport2D(viewport, camera, z_index)});
+        auto it = pimpl->viewports_2d.emplace(std::piecewise_construct, std::forward_as_tuple(id),
+                std::forward_as_tuple(viewport, camera, z_index));
+
+        //TODO: put this somewhere that makes more sense
+        it.first->second.add_postprocessing_shader("argus:shader/lighting_frag");
 
         return it.first->second;
     }

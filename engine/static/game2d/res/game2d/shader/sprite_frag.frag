@@ -25,13 +25,5 @@ void main() {
     vec2 norm_tc = vec2(fract(pass_TexCoord.x), fract(pass_TexCoord.y));
     vec2 transformed_tc = (pass_AnimFrame + norm_tc) * obj.UvStride;
 
-    // get the base color of the pixel
-    vec4 base_color = texture(u_Texture, transformed_tc);
-    // then apply the ambient light color multiplicatively
-    vec4 mult_color = base_color * vec4(scene.AmbientLightColor.rgb, 1.0);
-    // finally scale it by the ambient light level
-    out_Color = vec4(mult_color.rgb * scene.AmbientLightLevel, base_color.a);
-    //out_Color = vec4(pass_FragColor, 1);
-    //out_Color = vec4(1, 0, 0, 1);
-    //out_Color = vec4(obj.UvStride, 1, 1);
+    out_Color = texture(u_Texture, transformed_tc);
 }
