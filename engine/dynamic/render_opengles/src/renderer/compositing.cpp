@@ -301,6 +301,10 @@ namespace argus {
             glUseProgram(postfx_program->handle);
             glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
 
+            _bind_ubo(*postfx_program, SHADER_UBO_GLOBAL, state.global_ubo);
+            _bind_ubo(*postfx_program, SHADER_UBO_SCENE, scene_state.ubo);
+            _bind_ubo(*postfx_program, SHADER_UBO_VIEWPORT, viewport_state.ubo);
+
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
