@@ -6,6 +6,7 @@ layout(std140, binding = 3) uniform Global {
 
 layout(std140, binding = 2) uniform Object {
     vec2 UvStride;
+    float LightOpacity;
 } obj;
 
 layout(std140, binding = 4) uniform Scene {

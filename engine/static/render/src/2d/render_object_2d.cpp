@@ -41,17 +41,17 @@ namespace argus {
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
-            uint32_t z_index, float translucency, const Transform2D &transform) :
+            uint32_t z_index, float light_opacity, const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
-                    material, primitives, anchor_point, atlas_stride, z_index, translucency, transform)) {
+                    material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
         pimpl->transform.set_version_ref(pimpl->version);
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
-            uint32_t z_index, float translucency, const Transform2D &transform) :
+            uint32_t z_index, float light_opacity, const Transform2D &transform) :
             pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
-                    material, primitives, anchor_point, atlas_stride, z_index, translucency, transform)) {
+                    material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
         pimpl->transform.set_version_ref(pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
@@ -92,6 +92,10 @@ namespace argus {
         return pimpl->z_index;
     }
 
+    float RenderObject2D::get_light_opacity(void) const {
+        return pimpl->light_opacity;
+    }
+
     ValueAndDirtyFlag<Vector2u> RenderObject2D::get_active_frame(void) const {
         return pimpl->active_frame.read();
     }
@@ -118,7 +122,7 @@ namespace argus {
                 [](auto &v) { return RenderPrim2D(v); });
         auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
         auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->anchor_point,
-                pimpl->atlas_stride, pimpl->z_index, pimpl->translucency, pimpl->transform);
+                pimpl->atlas_stride, pimpl->z_index, pimpl->light_opacity, pimpl->transform);
         copy.pimpl->active_frame = pimpl->active_frame;
         copy.pimpl->version = pimpl->version;
 
