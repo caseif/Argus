@@ -16,6 +16,7 @@ AllowShortLoopsOnASingleLine: false
 
 ColumnLimit: 120
 IndentWidth: 4
+ContinuationIndentWidth: 8
 
 NamespaceIndentation: All
 FixNamespaceComments: false
