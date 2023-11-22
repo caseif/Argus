@@ -42,6 +42,9 @@ namespace argus {
         texture_handle_t front_frame_tex;
         texture_handle_t back_frame_tex;
 
+        buffer_handle_t lightmap_fb;
+        texture_handle_t lightmap_tex;
+
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };
 

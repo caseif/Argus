@@ -67,34 +67,34 @@ namespace argus {
         switch (viewport.mode) {
             case ViewportCoordinateSpaceMode::Individual:
                 vp_h_scale = float(resolution.x);
-                vp_v_scale = float(resolution.y);
-                vp_h_off = 0;
-                vp_v_off = 0;
-                break;
+            vp_v_scale = float(resolution.y);
+            vp_h_off = 0;
+            vp_v_off = 0;
+            break;
             case ViewportCoordinateSpaceMode::MinAxis:
                 vp_h_scale = min_dim;
-                vp_v_scale = min_dim;
-                vp_h_off = resolution.x > resolution.y ? float(resolution.x - resolution.y) / 2.0f : 0;
-                vp_v_off = resolution.y > resolution.x ? float(resolution.y - resolution.x) / 2.0f : 0;
-                break;
+            vp_v_scale = min_dim;
+            vp_h_off = resolution.x > resolution.y ? float(resolution.x - resolution.y) / 2.0f : 0;
+            vp_v_off = resolution.y > resolution.x ? float(resolution.y - resolution.x) / 2.0f : 0;
+            break;
             case ViewportCoordinateSpaceMode::MaxAxis:
                 vp_h_scale = max_dim;
-                vp_v_scale = max_dim;
-                vp_h_off = resolution.x < resolution.y ? -float(resolution.y - resolution.x) / 2.0f : 0;
-                vp_v_off = resolution.y < resolution.x ? -float(resolution.x - resolution.y) / 2.0f : 0;
-                break;
+            vp_v_scale = max_dim;
+            vp_h_off = resolution.x < resolution.y ? -float(resolution.y - resolution.x) / 2.0f : 0;
+            vp_v_off = resolution.y < resolution.x ? -float(resolution.x - resolution.y) / 2.0f : 0;
+            break;
             case ViewportCoordinateSpaceMode::HorizontalAxis:
                 vp_h_scale = float(resolution.x);
-                vp_v_scale = float(resolution.x);
-                vp_h_off = 0;
-                vp_v_off = (float(resolution.y) - float(resolution.x)) / 2.0f;
-                break;
+            vp_v_scale = float(resolution.x);
+            vp_h_off = 0;
+            vp_v_off = (float(resolution.y) - float(resolution.x)) / 2.0f;
+            break;
             case ViewportCoordinateSpaceMode::VerticalAxis:
                 vp_h_scale = float(resolution.y);
-                vp_v_scale = float(resolution.y);
-                vp_h_off = (float(resolution.x) - float(resolution.y)) / 2.0f;
-                vp_v_off = 0;
-                break;
+            vp_v_scale = float(resolution.y);
+            vp_h_off = (float(resolution.x) - float(resolution.y)) / 2.0f;
+            vp_v_off = 0;
+            break;
             default:
                 throw std::invalid_argument("Viewport mode is invalid");
         }
