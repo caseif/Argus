@@ -114,7 +114,7 @@ namespace argus {
         }
 
         auto &processed_obj = ProcessedRenderObject::create(mat_res, object.get_atlas_stride(), object.get_z_index(),
-                staging_buffer, buffer_size, _count_vertices(object));
+                object.get_light_opacity(), staging_buffer, buffer_size, _count_vertices(object));
 
         processed_obj.anim_frame = object.get_active_frame().value;
 

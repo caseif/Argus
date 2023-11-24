@@ -30,9 +30,10 @@ namespace argus {
     static PoolAllocator g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Vector2f &atlas_stride,
-            uint32_t z_index, unsigned char *staging_buffer, size_t staging_buffer_size, size_t vertex_count) {
-        return g_obj_pool.construct<ProcessedRenderObject>(material_res, atlas_stride, z_index, staging_buffer,
-                staging_buffer_size, vertex_count);
+            uint32_t z_index, float light_opacity, unsigned char *staging_buffer, size_t staging_buffer_size,
+            size_t vertex_count) {
+        return g_obj_pool.construct<ProcessedRenderObject>(material_res, atlas_stride, z_index, light_opacity,
+                staging_buffer, staging_buffer_size, vertex_count);
     }
 
     ProcessedRenderObject::~ProcessedRenderObject(void) {

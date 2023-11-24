@@ -26,8 +26,9 @@ namespace argus {
 
     static PoolAllocator g_bucket_pool(sizeof(RenderBucket));
 
-    RenderBucket &RenderBucket::create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index) {
-        return g_bucket_pool.construct<RenderBucket>(material_res, atlas_stride, z_index);
+    RenderBucket &RenderBucket::create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
+            float light_opacity) {
+        return g_bucket_pool.construct<RenderBucket>(material_res, atlas_stride, z_index, light_opacity);
     }
 
     RenderBucket::~RenderBucket(void) {

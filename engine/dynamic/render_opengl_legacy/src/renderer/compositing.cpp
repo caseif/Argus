@@ -121,7 +121,7 @@ namespace argus {
         auto view_mat = viewport.view_matrix;
         program.reflection.get_uniform_loc_and_then(SHADER_UBO_VIEWPORT, SHADER_UNIFORM_VIEWPORT_VM,
                 [view_mat](auto vm_loc) {
-                    affirm_precond(vm_loc <= INT_MAX, "View matrix uniform location is too big");
+                    affirm_precond(vm_loc <= INT_MAX, "Uniform location is too big");
                     glUniformMatrix4fv(GLint(vm_loc), 1, GL_FALSE, view_mat.data);
                 });
 
@@ -132,14 +132,13 @@ namespace argus {
 
             program.reflection.get_uniform_loc_and_then(SHADER_UBO_SCENE, SHADER_UNIFORM_SCENE_AL_COLOR,
                     [al_color](auto color_loc) {
-                        printf("color loc: %d\n", color_loc);
-                        affirm_precond(color_loc <= INT_MAX, "Scene ambient light level uniform location is too big");
+                        affirm_precond(color_loc <= INT_MAX, "Uniform location is too big");
                         glUniform4f(GLint(color_loc), al_color.r, al_color.g, al_color.b, 1.0);
                     });
 
             program.reflection.get_uniform_loc_and_then(SHADER_UBO_SCENE, SHADER_UNIFORM_SCENE_AL_LEVEL,
                     [al_level](auto level_loc) {
-                        affirm_precond(level_loc <= INT_MAX, "Scene ambient light color uniform location is too big");
+                        affirm_precond(level_loc <= INT_MAX, "Uniform location is too big");
                         glUniform1f(GLint(level_loc), al_level);
                     });
         }
@@ -149,8 +148,15 @@ namespace argus {
         auto &stride = bucket.atlas_stride;
         program.reflection.get_uniform_loc_and_then(SHADER_UBO_OBJ, SHADER_UNIFORM_OBJ_UV_STRIDE,
                 [stride](auto loc) {
-                    affirm_precond(loc <= INT_MAX, "UV stride uniform location is too big");
+                    affirm_precond(loc <= INT_MAX, "Uniform location is too big");
                     glUniform2f(GLint(loc), stride.x, stride.y);
+                });
+
+        auto &light_opacity = bucket.light_opacity;
+        program.reflection.get_uniform_loc_and_then(SHADER_UBO_OBJ, SHADER_UNIFORM_OBJ_LIGHT_OPACITY,
+                [light_opacity](auto loc) {
+                    affirm_precond(loc <= INT_MAX, "Uniform location is too big");
+                    glUniform1f(GLint(loc), light_opacity);
                 });
     }
 
