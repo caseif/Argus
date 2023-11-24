@@ -38,8 +38,13 @@ namespace argus {
     static void _create_obj_ubo(RenderBucket &bucket) {
         bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, false);
 
+        // we assume that these values will never change
+
         float stride[2] = { bucket.atlas_stride.x, bucket.atlas_stride.y };
         bucket.obj_ubo.write(stride, sizeof(stride), SHADER_UNIFORM_OBJ_UV_STRIDE_OFF);
+
+        float light_opacity = bucket.light_opacity;
+        bucket.obj_ubo.write_val<float>(light_opacity, SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF);
     }
 
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {
@@ -50,7 +55,7 @@ namespace argus {
             bucket = existing_bucket_it->second;
         } else {
             bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride,
-                    processed_obj.z_index);
+                    processed_obj.z_index, processed_obj.light_opacity);
             scene_state.render_buckets[key] = bucket;
             _create_obj_ubo(*bucket);
         }
