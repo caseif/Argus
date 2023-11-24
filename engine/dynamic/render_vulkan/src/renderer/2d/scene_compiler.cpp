@@ -41,7 +41,7 @@ namespace argus {
             bucket = existing_bucket_it->second;
         } else {
             bucket = &RenderBucket::create(processed_obj.material_res, processed_obj.atlas_stride,
-                    processed_obj.z_index);
+                    processed_obj.z_index, processed_obj.light_opacity);
             scene_state.render_buckets[key] = bucket;
         }
 

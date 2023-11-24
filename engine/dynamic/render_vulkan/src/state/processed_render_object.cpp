@@ -29,15 +29,17 @@ namespace argus {
     static PoolAllocator g_obj_pool(sizeof(ProcessedRenderObject));
 
     ProcessedRenderObject &ProcessedRenderObject::create(const Resource &material_res, const Vector2f &atlas_stride,
-            uint32_t z_index, uint32_t vertex_count) {
-        return *new(g_obj_pool.alloc()) ProcessedRenderObject(material_res, atlas_stride, z_index, vertex_count);
+            uint32_t z_index, float light_opacity, uint32_t vertex_count) {
+        return *new(g_obj_pool.alloc()) ProcessedRenderObject(material_res, atlas_stride, z_index, light_opacity,
+                vertex_count);
     }
 
     ProcessedRenderObject::ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride,
-            uint32_t z_index, uint32_t vertex_count):
+            uint32_t z_index, float light_opacity, uint32_t vertex_count):
         material_res(material_res),
         atlas_stride(atlas_stride),
         z_index(z_index),
+        light_opacity(light_opacity),
         vertex_count(vertex_count) {
     }
 

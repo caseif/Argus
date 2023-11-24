@@ -27,6 +27,8 @@
 #include "vulkan/vulkan.h"
 #include "internal/render_vulkan/util/command_buffer.hpp"
 
+#include <cstring>
+
 namespace argus {
 
     BufferInfo alloc_buffer(const LogicalDevice &device, VkDeviceSize size, VkBufferUsageFlags usage,
@@ -120,5 +122,17 @@ namespace argus {
         copy_region.dstOffset = dst_off;
         copy_region.size = size;
         vkCmdCopyBuffer(cmd_buf.handle, src_buf.handle, dst_buf.handle, 1, &copy_region);
+    }
+
+    void write_to_buffer(BufferInfo &buffer, void *src, size_t offset, size_t len) {
+        affirm_precond(offset + len <= buffer.size, "Invalid write params to BufferInfo");
+
+        if (buffer.mapped != nullptr) {
+            memcpy(reinterpret_cast<void *>(uintptr_t(buffer.mapped) + offset), src, len);
+        } else {
+            map_buffer(buffer, offset, len, 0);
+            memcpy(buffer.mapped, src, len);
+            unmap_buffer(buffer);
+        }
     }
 }

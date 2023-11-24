@@ -50,8 +50,13 @@ namespace argus {
             if (bucket->ubo_buffer.handle == VK_NULL_HANDLE) {
                 bucket->ubo_buffer = alloc_buffer(state.device, SHADER_UBO_OBJ_LEN,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::DeviceRw);
+
+                // we assume these values will never change
+
                 float uv_stride[] = { bucket->atlas_stride.x, bucket->atlas_stride.y };
-                memcpy(bucket->ubo_buffer.mapped, uv_stride, sizeof(uv_stride));
+                write_to_buffer(bucket->ubo_buffer, uv_stride, SHADER_UNIFORM_OBJ_UV_STRIDE_OFF, sizeof(uv_stride));
+
+                write_val_to_buffer(bucket->ubo_buffer, bucket->light_opacity, SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF);
             }
 
             if (bucket->objects.empty()) {

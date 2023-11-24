@@ -45,4 +45,11 @@ namespace argus {
 
     void copy_buffer(const CommandBufferInfo &cmd_buf, const BufferInfo &src_buf,
             VkDeviceSize src_off, const BufferInfo &dst_buf, VkDeviceSize dst_off, size_t size);
+
+    void write_to_buffer(BufferInfo &buffer, void *src, size_t offset, size_t len);
+
+    template <typename T>
+    void write_val_to_buffer(BufferInfo &buffer, T val, size_t offset) {
+        write_to_buffer(buffer, reinterpret_cast<void *>(&val), offset, sizeof(val));
+    }
 }
