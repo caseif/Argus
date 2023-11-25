@@ -45,9 +45,9 @@ namespace argus {
 
         auto &entity = Entity::create(types_list);
 
-        for (auto &pair : types) {
-            if (pair.second != nullptr) {
-                pair.second(entity.get(pair.first));
+        for (auto &[type, deferred_init] : types) {
+            if (deferred_init != nullptr) {
+                deferred_init(entity.get(type));
             }
         }
 

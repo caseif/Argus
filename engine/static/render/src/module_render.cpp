@@ -110,8 +110,7 @@ namespace argus {
     static void _load_backend_modules(void) {
         Logger::default_logger().debug("Loading graphics backend modules");
         size_t count = 0;
-        for (auto &module : get_present_dynamic_modules()) {
-            auto module_id = module.first;
+        for (auto &[module_id, _] : get_present_dynamic_modules()) {
             if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
                 //TODO: fail gracefully
                 if (!enable_dynamic_module(module_id)) {
@@ -139,11 +138,10 @@ namespace argus {
         // as such, we can assume that root_group_write in scenes will not be
         // modified concurrently
 
-        for (auto &scene_pair : g_scenes) {
-            auto &scene = *scene_pair.second;
-            switch (scene.type) {
+        for (auto &[_, scene] : g_scenes) {
+            switch (scene->type) {
                 case SceneType::TwoD: {
-                    auto *scene_pimpl = reinterpret_cast<pimpl_Scene2D *>(scene.get_pimpl());
+                    auto *scene_pimpl = reinterpret_cast<pimpl_Scene2D *>(scene->get_pimpl());
 
                     scene_pimpl->read_lock.lock();
                     std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);
@@ -169,16 +167,16 @@ namespace argus {
     static void _lock_scene_read_buffers(TimeDelta delta) {
         UNUSED(delta);
 
-        for (auto &scene_pair : g_scenes) {
-            scene_pair.second->get_pimpl()->read_lock.lock();
+        for (auto &[_, scene] : g_scenes) {
+            scene->get_pimpl()->read_lock.lock();
         }
     }
 
     static void _unlock_scene_read_buffers(TimeDelta delta) {
         UNUSED(delta);
 
-        for (auto &scene_pair : g_scenes) {
-            scene_pair.second->get_pimpl()->read_lock.unlock();
+        for (auto &[_, scene] : g_scenes) {
+            scene->get_pimpl()->read_lock.unlock();
         }
     }
 

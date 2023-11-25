@@ -288,12 +288,9 @@ namespace argus::input {
     static void _dispatch_events(const Window &window, KeyboardScancode key, bool release) {
         //TODO: ignore while in a TextInputContext once we properly implement that
 
-        for (auto &pair : InputManager::instance().pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->key_to_action_bindings.find(key);
-            if (it == controller.pimpl->key_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
+            auto it = controller->pimpl->key_to_action_bindings.find(key);
+            if (it == controller->pimpl->key_to_action_bindings.end()) {
                 continue;
             }
 

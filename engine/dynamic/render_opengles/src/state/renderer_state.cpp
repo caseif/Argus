@@ -49,18 +49,18 @@ namespace argus {
         // the destructor will be automatically called for each scene state since we're storing the states directly
         this->scene_states_2d.clear();
 
-        for (auto &program : this->linked_programs) {
-            deinit_program(program.second.handle);
+        for (auto &[_, program] : this->linked_programs) {
+            deinit_program(program.handle);
         }
         this->linked_programs.clear();
 
-        for (auto &shader : this->compiled_shaders) {
-            deinit_shader(shader.second);
+        for (auto &[_, shader] : this->compiled_shaders) {
+            deinit_shader(shader);
         }
         this->compiled_shaders.clear();
 
-        for (auto &texture : this->prepared_textures) {
-            deinit_texture(texture.second);
+        for (auto &[_, texture] : this->prepared_textures) {
+            deinit_texture(texture);
         }
         this->prepared_textures.clear();
 

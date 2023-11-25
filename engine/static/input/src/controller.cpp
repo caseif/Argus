@@ -418,12 +418,12 @@ namespace argus::input {
     }
 
     void ack_gamepad_disconnects(void) {
-        for (auto &controller_kv : InputManager::instance().pimpl->controllers) {
-            if (controller_kv.second->pimpl->was_gamepad_disconnected) {
+        for (auto &[_, controller] : InputManager::instance().pimpl->controllers) {
+            if (controller->pimpl->was_gamepad_disconnected) {
                 // acknowledge disconnect flag set by render thread and fully
                 // disassoc gamepad from controller
-                controller_kv.second->pimpl->was_gamepad_disconnected = false;
-                controller_kv.second->detach_gamepad();
+                controller->pimpl->was_gamepad_disconnected = false;
+                controller->detach_gamepad();
             }
         }
     }

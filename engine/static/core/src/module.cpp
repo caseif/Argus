@@ -135,8 +135,8 @@ namespace argus {
             start_nodes.push_back(node);
         }
 
-        for (auto &edge : remaining_edges) {
-            start_nodes.erase(std::find(start_nodes.begin(), start_nodes.end(), edge.second));
+        for (auto &[_, edge] : remaining_edges) {
+            start_nodes.erase(std::find(start_nodes.begin(), start_nodes.end(), edge));
         }
 
         while (!start_nodes.empty()) {
@@ -184,11 +184,11 @@ namespace argus {
         std::vector<std::string> module_ids;
         std::vector<std::pair<std::string, std::string>> edges;
 
-        for (auto &mod_pair : module_map) {
-            module_ids.push_back(mod_pair.first);
-            for (auto &dep : mod_pair.second.dependencies) {
+        for (auto &[module_name, module] : module_map) {
+            module_ids.push_back(module_name);
+            for (auto &dep : module.dependencies) {
                 if (module_map.find(dep) != module_map.end()) {
-                    edges.push_back({dep, mod_pair.first});
+                    edges.emplace_back(dep, module_name);
                 }
             }
         }

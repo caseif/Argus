@@ -205,9 +205,9 @@ namespace argus {
         for (auto *scene_state : state.all_scene_states) {
             std::vector<BucketKey> to_remove;
 
-            for (auto &bucket_kv : scene_state->render_buckets) {
-                if (bucket_kv.first.material_uid == material) {
-                    to_remove.push_back(bucket_kv.first);
+            for (auto &[bucket_key, bucket] : scene_state->render_buckets) {
+                if (bucket_key.material_uid == material) {
+                    to_remove.push_back(bucket_key);
                 }
             }
 

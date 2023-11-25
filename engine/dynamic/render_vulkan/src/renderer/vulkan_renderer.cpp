@@ -586,12 +586,12 @@ namespace argus {
             vkQueueWaitIdle(state.device.queues.graphics_family);
         }
 
-        for (auto &viewport_state : state.viewport_states_2d) {
-            _destroy_viewport(state, viewport_state.second);
+        for (auto &[_, viewport_state] : state.viewport_states_2d) {
+            _destroy_viewport(state, viewport_state);
         }
 
-        for (auto &scene_state : state.scene_states_2d) {
-            _destroy_scene(state, scene_state.second);
+        for (auto &[_, scene_state] : state.scene_states_2d) {
+            _destroy_scene(state, scene_state);
         }
 
         for (auto &cb : state.copy_cmd_buf) {
@@ -600,9 +600,9 @@ namespace argus {
             }
         }
 
-        for (const auto &comp_cmd_buf : state.composite_cmd_bufs) {
-            if (comp_cmd_buf.second.first.handle != VK_NULL_HANDLE) {
-                free_command_buffer(state.device, comp_cmd_buf.second.first);
+        for (const auto &[_, comp_cmd_buf] : state.composite_cmd_bufs) {
+            if (comp_cmd_buf.first.handle != VK_NULL_HANDLE) {
+                free_command_buffer(state.device, comp_cmd_buf.first);
             }
         }
         state.composite_cmd_bufs.clear();
@@ -789,8 +789,8 @@ namespace argus {
         timer_start = std::chrono::high_resolution_clock::now();
 
         if (state.dirty_viewports || resolution.dirty) {
-            for (auto &cmd_buf : state.composite_cmd_bufs) {
-                cmd_buf.second.second = true;
+            for (auto &[_, cmd_buf] : state.composite_cmd_bufs) {
+                cmd_buf.second = true;
             }
             state.dirty_viewports = false;
         }

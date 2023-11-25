@@ -126,12 +126,9 @@ namespace argus::input {
     }
 
     static void _dispatch_button_event(const Window &window, MouseButton button, bool release) {
-        for (auto &pair : InputManager::instance().pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->mouse_button_to_action_bindings.find(button);
-            if (it == controller.pimpl->mouse_button_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
+            auto it = controller->pimpl->mouse_button_to_action_bindings.find(button);
+            if (it == controller->pimpl->mouse_button_to_action_bindings.end()) {
                 continue;
             }
 
@@ -142,19 +139,16 @@ namespace argus::input {
     }
 
     static void _dispatch_axis_events(const Window &window, double x, double y, double dx, double dy) {
-        for (auto &pair : InputManager::instance().pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it_x = controller.pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Horizontal);
-            auto it_y = controller.pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Vertical);
-            if (it_x != controller.pimpl->mouse_axis_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
+            auto it_x = controller->pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Horizontal);
+            auto it_y = controller->pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Vertical);
+            if (it_x != controller->pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action : it_x->second) {
                     dispatch_axis_event(&window, controller_index, action, x, dx);
                 }
             }
 
-            if (it_y == controller.pimpl->mouse_axis_to_action_bindings.end()) {
+            if (it_y == controller->pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action: it_y->second) {
                     dispatch_axis_event(&window, controller_index, action, y, dy);
                 }

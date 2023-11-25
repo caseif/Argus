@@ -47,12 +47,12 @@ namespace argus {
     std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
 
     static void _resolve_all_parameter_types(void) {
-        for (auto &type : g_bound_types) {
-            resolve_parameter_types(type.second);
+        for (auto &[_, type] : g_bound_types) {
+            resolve_parameter_types(type);
         }
 
-        for (auto &fn : g_bound_global_fns) {
-            resolve_parameter_types(fn.second);
+        for (auto &[_, fn] : g_bound_global_fns) {
+            resolve_parameter_types(fn);
         }
     }
 

@@ -286,26 +286,26 @@ namespace argus::input {
                     SDL_GameControllerGetAxis(gamepad, g_axes_argus_to_sdl[GamepadAxis(i)]));
         }
 
-        for (const auto &axis_pair : g_axis_pairs) {
+        for (const auto &[axis_1, axis_2] : g_axis_pairs) {
             DeadzoneShape shape;
             double radius_x;
             double radius_y;
             if (controller.has_value()) {
-                shape = controller.value()->get_axis_deadzone_shape(axis_pair.first);
-                radius_x = controller.value()->get_axis_deadzone_radius(axis_pair.first);
-                radius_y = controller.value()->get_axis_deadzone_radius(axis_pair.second);
+                shape = controller.value()->get_axis_deadzone_shape(axis_1);
+                radius_x = controller.value()->get_axis_deadzone_radius(axis_1);
+                radius_y = controller.value()->get_axis_deadzone_radius(axis_2);
             } else {
-                shape = InputManager::instance().get_global_axis_deadzone_shape(axis_pair.first);
-                radius_x = InputManager::instance().get_global_axis_deadzone_radius(axis_pair.first);
-                radius_y = InputManager::instance().get_global_axis_deadzone_radius(axis_pair.second);
+                shape = InputManager::instance().get_global_axis_deadzone_shape(axis_1);
+                radius_x = InputManager::instance().get_global_axis_deadzone_radius(axis_1);
+                radius_y = InputManager::instance().get_global_axis_deadzone_radius(axis_2);
             }
 
             if (radius_x == 0.0 || radius_y == 0.0) {
                 continue;
             }
 
-            auto x = new_axis_state[size_t(axis_pair.first)];
-            auto y = new_axis_state[size_t(axis_pair.second)];
+            auto x = new_axis_state[size_t(axis_1)];
+            auto y = new_axis_state[size_t(axis_2)];
 
             auto x2 = std::pow(x, 2);
             auto y2 = std::pow(y, 2);
@@ -387,8 +387,8 @@ namespace argus::input {
                 }
             }
 
-            new_axis_state[size_t(axis_pair.first)] = new_x;
-            new_axis_state[size_t(axis_pair.second)] = new_y;
+            new_axis_state[size_t(axis_1)] = new_x;
+            new_axis_state[size_t(axis_2)] = new_y;
         }
 
         std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
@@ -405,12 +405,9 @@ namespace argus::input {
     }
 
     static void _dispatch_button_events(GamepadButton key, bool release) {
-        for (auto &pair : InputManager::instance().pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->gamepad_button_to_action_bindings.find(key);
-            if (it == controller.pimpl->gamepad_button_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
+            auto it = controller->pimpl->gamepad_button_to_action_bindings.find(key);
+            if (it == controller->pimpl->gamepad_button_to_action_bindings.end()) {
                 continue;
             }
 
@@ -421,12 +418,9 @@ namespace argus::input {
     }
 
     static void _dispatch_axis_events(GamepadAxis axis, double val, double delta) {
-        for (auto &pair : InputManager::instance().pimpl->controllers) {
-            auto controller_index = pair.first;
-            auto &controller = *pair.second;
-
-            auto it = controller.pimpl->gamepad_axis_to_action_bindings.find(axis);
-            if (it != controller.pimpl->gamepad_axis_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
+            auto it = controller->pimpl->gamepad_axis_to_action_bindings.find(axis);
+            if (it != controller->pimpl->gamepad_axis_to_action_bindings.end()) {
                 for (auto &action : it->second) {
                     dispatch_axis_event(nullptr, controller_index, action, val, delta);
                 }
@@ -575,16 +569,16 @@ namespace argus::input {
             _poll_gamepad(gamepad_id);
         }
 
-        for (auto &gamepad_kv : manager.pimpl->mapped_gamepads) {
-            _poll_gamepad(gamepad_kv.first);
+        for (auto &[gamepad_id, _] : manager.pimpl->mapped_gamepads) {
+            _poll_gamepad(gamepad_id);
         }
     }
 
     void flush_gamepad_deltas(void) {
         std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
 
-        for (auto &gamepad_kv : InputManager::instance().pimpl->gamepad_states) {
-            gamepad_kv.second.axis_deltas = {};
+        for (auto &[_, gamepad] : InputManager::instance().pimpl->gamepad_states) {
+            gamepad.axis_deltas = {};
         }
     }
 

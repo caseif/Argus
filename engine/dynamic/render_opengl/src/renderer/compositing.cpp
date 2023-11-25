@@ -280,8 +280,8 @@ namespace argus {
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
 
-        for (auto &bucket : scene_state.render_buckets) {
-            auto &mat = bucket.second->material_res;
+        for (auto &[_, bucket] : scene_state.render_buckets) {
+            auto &mat = bucket->material_res;
             auto &program_info = state.linked_programs.find(mat.uid)->second;
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
@@ -298,7 +298,7 @@ namespace argus {
             }
 
             if (animated) {
-                _bind_ubo(program_info, SHADER_UBO_OBJ, bucket.second->obj_ubo);
+                _bind_ubo(program_info, SHADER_UBO_OBJ, bucket->obj_ubo);
             }
 
             if (tex_handle != last_texture) {
@@ -306,12 +306,12 @@ namespace argus {
                 last_texture = tex_handle;
             }
 
-            glBindVertexArray(bucket.second->vertex_array);
+            glBindVertexArray(bucket->vertex_array);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glDrawArrays(GL_TRIANGLES, 0, GLsizei(bucket.second->vertex_count));
+            glDrawArrays(GL_TRIANGLES, 0, GLsizei(bucket->vertex_count));
 
             glBindVertexArray(0);
         }
@@ -329,7 +329,7 @@ namespace argus {
                 postfx_program = &it->second;
             } else {
                 auto linked_program = link_program({FB_SHADER_VERT_PATH, postfx});
-                auto inserted = postfx_programs.insert({postfx, linked_program});
+                auto inserted = postfx_programs.emplace(postfx, linked_program);
                 postfx_program = &inserted.first->second;
             }
 

@@ -32,8 +32,8 @@ namespace argus {
     }
 
     SceneState::~SceneState(void) {
-        for (auto &bucket : render_buckets) {
-            bucket.second->~RenderBucket();
+        for (auto &[_, bucket] : render_buckets) {
+            bucket->~RenderBucket();
         }
     }
 
@@ -42,8 +42,8 @@ namespace argus {
     }
 
     Scene2DState::~Scene2DState(void) {
-        for (auto &obj : this->processed_objs) {
-            reinterpret_cast<ProcessedRenderObject *>(obj.second)->~ProcessedRenderObject();
+        for (auto &[_, obj] : this->processed_objs) {
+            reinterpret_cast<ProcessedRenderObject *>(obj)->~ProcessedRenderObject();
         }
     }
 }

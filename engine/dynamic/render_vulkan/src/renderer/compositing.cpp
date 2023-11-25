@@ -278,11 +278,11 @@ namespace argus {
         clear_rect.rect.extent.width =
         vkCmdClearAttachments(vk_cmd_buf, 1, &clear_att, 1, &clear_rect);*/
 
-        for (auto &bucket : scene_state.render_buckets) {
-            affirm_precond(bucket.second->vertex_count <= UINT32_MAX, "Too many vertices in bucket");
-            auto vertex_count = uint32_t(bucket.second->vertex_count);
+        for (auto &[_, bucket] : scene_state.render_buckets) {
+            affirm_precond(bucket->vertex_count <= UINT32_MAX, "Too many vertices in bucket");
+            auto vertex_count = uint32_t(bucket->vertex_count);
 
-            auto &mat = bucket.second->material_res;
+            auto &mat = bucket->material_res;
             auto &pipeline_info = state.material_pipelines.find(mat.uid)->second;
 
             auto &texture_uid = state.material_textures.find(mat.uid)->second;
@@ -332,7 +332,7 @@ namespace argus {
                         [&ds, &ds_writes, &vp_ubo, &buf_info_viewport] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, vp_ubo, buf_info_viewport));
                         });
-                auto obj_ubo = bucket.second->ubo_buffer;
+                auto obj_ubo = bucket->ubo_buffer;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_OBJ,
                         [&ds, &ds_writes, &obj_ubo, &buf_info_obj] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, obj_ubo, buf_info_obj));
@@ -371,8 +371,8 @@ namespace argus {
             //    last_texture = tex_handle;
             //}
 
-            VkBuffer vertex_buffers[] = { bucket.second->vertex_buffer.handle,
-                                          bucket.second->anim_frame_buffer.handle };
+            VkBuffer vertex_buffers[] = { bucket->vertex_buffer.handle,
+                                          bucket->anim_frame_buffer.handle };
             VkDeviceSize offsets[] = { 0, 0 };
             vkCmdBindVertexBuffers(vk_cmd_buf, 0, sizeof(vertex_buffers) / sizeof(VkBuffer),
                     vertex_buffers, offsets);

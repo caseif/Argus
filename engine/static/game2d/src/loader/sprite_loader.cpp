@@ -194,10 +194,7 @@ namespace argus {
             }
 
             if (json_root.contains(KEY_ANIMS)) {
-                for (auto &anim_pair : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
-                    auto &anim_id = anim_pair.first;
-                    auto &anim_json = anim_pair.second;
-
+                for (auto &[anim_id, anim_json] : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
                     if (anim_id.length() == 0) {
                         Logger::default_logger().severe("Sprite animation ID must be non-empty");
                         return nullptr;

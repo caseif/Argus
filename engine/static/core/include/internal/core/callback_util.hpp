@@ -156,10 +156,10 @@ namespace argus {
     bool try_remove_callback(CallbackList<T> &list, const Index index) {
         list.list_mutex.lock_shared();
         bool present = false;
-        for (auto &list_pair : list.lists) {
-            auto it = std::find_if(list_pair.second.cbegin(), list_pair.second.cend(),
+        for (auto &[_, sublist] : list.lists) {
+            auto it = std::find_if(sublist.cbegin(), sublist.cend(),
                     [index](auto callback) { return callback.id == index; });
-            if ((present = it != list_pair.second.cend())) {
+            if ((present = it != sublist.cend())) {
                 break;
             }
         }

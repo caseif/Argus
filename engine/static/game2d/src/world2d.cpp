@@ -136,9 +136,8 @@ namespace argus {
 
     void render_worlds(TimeDelta delta) {
         UNUSED(delta);
-        for (auto &kv : g_worlds) {
-            auto &world = *kv.second;
-            _render_world(world);
+        for (auto &[_, world] : g_worlds) {
+            _render_world(*world);
         }
     }
 

@@ -201,9 +201,7 @@ namespace argus {
         anim_tex.release();
 
         size_t frame_off = 0;
-        for (auto &kv : sprite.pimpl->get_def().animations) {
-            auto &anim = kv.second;
-
+        for (auto &[_, anim] : sprite.pimpl->get_def().animations) {
             sprite.pimpl->anim_start_offsets.insert({anim.id, frame_off});
             frame_off += anim.frames.size();
         }

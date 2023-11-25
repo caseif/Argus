@@ -148,38 +148,38 @@ namespace argus {
     }
 
     void resolve_parameter_types(BoundTypeDef &type_def) {
-        for (auto &fn : type_def.instance_functions) {
+        for (auto &[_, fn] : type_def.instance_functions) {
             try {
-                _resolve_param_types(fn.second);
+                _resolve_param_types(fn);
             } catch (const std::exception &ex) {
-                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                auto qual_name = get_qualified_function_name(fn.type, type_def.name, fn.name);
                 throw BindingException(qual_name, ex.what());
             }
         }
 
-        for (auto &fn : type_def.extension_functions) {
+        for (auto &[_, fn] : type_def.extension_functions) {
             try {
-                _resolve_param_types(fn.second);
+                _resolve_param_types(fn);
             } catch (const std::exception &ex) {
-                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                auto qual_name = get_qualified_function_name(fn.type, type_def.name, fn.name);
                 throw BindingException(qual_name, ex.what());
             }
         }
 
-        for (auto &fn : type_def.static_functions) {
+        for (auto &[_, fn] : type_def.static_functions) {
             try {
-                _resolve_param_types(fn.second);
+                _resolve_param_types(fn);
             } catch (const std::exception &ex) {
-                auto qual_name = get_qualified_function_name(fn.second.type, type_def.name, fn.second.name);
+                auto qual_name = get_qualified_function_name(fn.type, type_def.name, fn.name);
                 throw BindingException(qual_name, ex.what());
             }
         }
 
-        for (auto &field : type_def.fields) {
+        for (auto &[_, field] : type_def.fields) {
             try {
-                _resolve_field(field.second.m_type);
+                _resolve_field(field.m_type);
             } catch (const std::exception &ex) {
-                auto qual_name = get_qualified_field_name(type_def.name, field.second.m_name);
+                auto qual_name = get_qualified_field_name(type_def.name, field.m_name);
                 throw BindingException(qual_name, ex.what());
             }
         }

@@ -195,14 +195,14 @@ namespace argus {
         auto compiled_shaders = comp_res.first;
         auto refl_info = comp_res.second;
 
-        for (auto &compiled_shader : compiled_shaders) {
-            glAttachShader(program_handle, compiled_shader.second);
+        for (auto &[_, compiled_shader] : compiled_shaders) {
+            glAttachShader(program_handle, compiled_shader);
         }
 
         glLinkProgram(program_handle);
 
-        for (auto &compiled_shader : compiled_shaders) {
-            glDetachShader(program_handle, compiled_shader.second);
+        for (auto &[_, compiled_shader] : compiled_shaders) {
+            glDetachShader(program_handle, compiled_shader);
         }
 
         for (auto &shader_res : shader_resources) {

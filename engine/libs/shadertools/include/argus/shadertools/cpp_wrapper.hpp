@@ -102,9 +102,9 @@ namespace argus {
 
         const char **glsl_sources_c = new const char *[shaders_count];
         unsigned int i = 0;
-        for (auto &source_tuple : glsl_sources) {
-            stages[i] = glslang_stage_t(source_tuple.first);
-            glsl_sources_c[i] = source_tuple.second.c_str();
+        for (auto &[stage, source] : glsl_sources) {
+            stages[i] = glslang_stage_t(stage);
+            glsl_sources_c[i] = source.c_str();
             i++;
         }
 
