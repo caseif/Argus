@@ -164,9 +164,7 @@ namespace argus {
     }
 
     void HandleTable::release_handle(Handle handle) {
-        auto chunk_pair = _get_chunk(*this, handle);
-        auto chunk_index = chunk_pair.first;
-        auto *chunk = chunk_pair.second;
+        auto [chunk_index, chunk] = _get_chunk(*this, handle);
 
         if (chunk == nullptr) {
             Logger::default_logger().warn("Attempt to free invalid handle");

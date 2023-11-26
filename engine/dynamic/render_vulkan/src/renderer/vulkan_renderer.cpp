@@ -172,12 +172,12 @@ namespace argus {
     }
 
     static Viewport2DState &_create_viewport_2d_state(RendererState &state, AttachedViewport2D &viewport) {
-        auto insert_res = state.viewport_states_2d.try_emplace(&viewport, state, &viewport);
-        if (!insert_res.second) {
+        auto [inserted, success] = state.viewport_states_2d.try_emplace(&viewport, state, &viewport);
+        if (!success) {
             Logger::default_logger().fatal("Failed to create new viewport state");
         }
 
-        auto &viewport_state = insert_res.first->second;
+        auto &viewport_state = inserted->second;
 
         VkSemaphoreCreateInfo sem_info{};
         sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -205,16 +205,16 @@ namespace argus {
             frame_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
         }
 
-        return insert_res.first->second;
+        return inserted->second;
     }
 
     static Scene2DState &_create_scene_state(RendererState &state, Scene2D &scene) {
-        auto insert_res = state.scene_states_2d.try_emplace(&scene, state, scene);
-        if (!insert_res.second) {
+        auto [inserted, success] = state.scene_states_2d.try_emplace(&scene, state, scene);
+        if (!success) {
             Logger::default_logger().fatal("Failed to create new scene state");
         }
 
-        return insert_res.first->second;
+        return inserted->second;
     }
 
     static void _destroy_viewport(const RendererState &state, ViewportState &viewport_state) {
@@ -227,8 +227,8 @@ namespace argus {
             destroy_image_and_image_view(state.device, frame_state.back_fb.image);
             free_buffer(frame_state.ubo);
             destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
-            for (const auto &ds : frame_state.material_desc_sets) {
-                destroy_descriptor_sets(state.device, state.desc_pool, ds.second);
+            for (const auto &[_, ds] : frame_state.material_desc_sets) {
+                destroy_descriptor_sets(state.device, state.desc_pool, ds);
             }
 
             free_command_buffer(state.device, frame_state.command_buf);
@@ -238,20 +238,18 @@ namespace argus {
     static void _destroy_scene(const RendererState &state, SceneState &scene_state) {
         UNUSED(state);
 
-        for (const auto &bucket_it : scene_state.render_buckets) {
-            auto &bucket = *bucket_it.second;
-
-            for (auto *pro : bucket.objects) {
+        for (const auto &[_, bucket] : scene_state.render_buckets) {
+            for (auto *pro : bucket->objects) {
                 deinit_object_2d(state, *pro);
             }
 
-            _try_free_buffer(bucket.vertex_buffer);
-            _try_free_buffer(bucket.anim_frame_buffer);
-            _try_free_buffer(bucket.staging_vertex_buffer);
-            _try_free_buffer(bucket.staging_anim_frame_buffer);
-            _try_free_buffer(bucket.ubo_buffer);
+            _try_free_buffer(bucket->vertex_buffer);
+            _try_free_buffer(bucket->anim_frame_buffer);
+            _try_free_buffer(bucket->staging_vertex_buffer);
+            _try_free_buffer(bucket->staging_anim_frame_buffer);
+            _try_free_buffer(bucket->ubo_buffer);
 
-            bucket.destroy();
+            bucket->destroy();
         }
     }
 
@@ -372,8 +370,8 @@ namespace argus {
 
             fill_buckets(scene_state);
 
-            for (const auto &bucket_it : scene_state.render_buckets) {
-                auto &mat = bucket_it.second->material_res;
+            for (const auto &[_, bucket] : scene_state.render_buckets) {
+                auto &mat = bucket->material_res;
                 UNUSED(mat);
 
                 get_or_load_texture(state, mat);
@@ -481,8 +479,8 @@ namespace argus {
         wait_sems.reserve(state.viewport_states_2d.size());
         wait_sems.push_back(state.swapchain.image_avail_sem[state.cur_frame]);
         wait_stages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-        for (const auto &viewport_state : state.viewport_states_2d) {
-            wait_sems.push_back(viewport_state.second.per_frame[state.cur_frame].draw_semaphore);
+        for (const auto &[_, viewport_state] : state.viewport_states_2d) {
+            wait_sems.push_back(viewport_state.per_frame[state.cur_frame].draw_semaphore);
             wait_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         }
 
@@ -623,8 +621,8 @@ namespace argus {
             destroy_pipeline(state.device, state.composite_pipeline);
         }
 
-        for (const auto &pipeline : state.material_pipelines) {
-            destroy_pipeline(state.device, pipeline.second);
+        for (const auto &[_, pipeline] : state.material_pipelines) {
+            destroy_pipeline(state.device, pipeline);
         }
 
         if (state.fb_render_pass != VK_NULL_HANDLE) {
@@ -635,8 +633,8 @@ namespace argus {
             destroy_command_pool(state.device, state.graphics_command_pool);
         }
 
-        for (const auto &texture : state.prepared_textures) {
-            destroy_texture(state.device, texture.second.value);
+        for (const auto &[_, texture] : state.prepared_textures) {
+            destroy_texture(state.device, texture.value);
         }
 
         destroy_swapchain(state, state.swapchain);

@@ -190,20 +190,18 @@ namespace argus {
 
     void reset_window_displays(void) {
         std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
-        for (const auto &window_kv : g_window_handle_map) {
-            auto *handle = window_kv.first;
-            auto &window = *window_kv.second;
-            if (window.is_closed()) {
+        for (const auto &[handle, window] : g_window_handle_map) {
+            if (window->is_closed()) {
                 continue;
             }
 
             auto new_disp_index = SDL_GetWindowDisplayIndex(handle);
             if (new_disp_index < 0 || size_t(new_disp_index) >= Display::get_available_displays().size()) {
                 Logger::default_logger().warn("Failed to query new display of window ID %s, "
-                                              "things might not work correctly!", window.get_id().c_str());
+                                              "things might not work correctly!", window->get_id().c_str());
                 continue;
             }
-            window.pimpl->properties.display.set_quietly(get_display_from_index(new_disp_index));
+            window->pimpl->properties.display.set_quietly(get_display_from_index(new_disp_index));
         }
     }
 

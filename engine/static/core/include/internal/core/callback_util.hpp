@@ -120,9 +120,8 @@ namespace argus {
             list.list_mutex.lock();
             list.queue_mutex.lock();
             while (!list.addition_queue.empty()) {
-                auto &front = list.addition_queue.front();
-                auto ordering = front.first;
-                list.lists[ordering].push_back(front.second);
+                auto &[ordering, val] = list.addition_queue.front();
+                list.lists[ordering].push_back(val);
                 list.addition_queue.pop();
             }
             list.queue_mutex.unlock();

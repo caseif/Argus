@@ -89,10 +89,8 @@ namespace argus {
         auto shader_uids_str = shader_uids_oss.str().substr(0, shader_uids_oss.str().size() - strlen(", "));
         Logger::default_logger().debug("Compiling SPIR-V from shader set [%s]", shader_uids_str.c_str());
 
-        auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
+        auto [spirv_shaders, refl_info] = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
                 glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
-        auto spirv_shaders = std::move(comp_res.first);
-        auto refl_info = comp_res.second;
 
         for (auto &shader : spirv_shaders) {
             Logger::default_logger().debug("Creating shader %s", shader.get_uid().c_str());
@@ -191,9 +189,7 @@ namespace argus {
             shaders.push_back(shader);
         }
 
-        auto comp_res = _compile_shaders(shaders);
-        auto compiled_shaders = comp_res.first;
-        auto refl_info = comp_res.second;
+        auto [compiled_shaders, refl_info] = _compile_shaders(shaders);
 
         for (auto &[_, compiled_shader] : compiled_shaders) {
             glAttachShader(program_handle, compiled_shader);

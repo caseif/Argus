@@ -121,9 +121,9 @@ namespace argus {
             }
 
             std::vector<const Shader *> shaders;
-            for (auto shader_info : shader_map) {
-                const Shader &shader = deps[shader_info.second]->get<const Shader>();
-                if (shader.get_stage() != shader_info.first) {
+            for (auto &[stage, shader_uid] : shader_map) {
+                const Shader &shader = deps[shader_uid]->get<const Shader>();
+                if (shader.get_stage() != stage) {
                     // stage of loaded shader does not match stage specified by material
                     Logger::default_logger().warn("Mismatched shader stage in material %s", proto.uid.c_str());
                     return nullptr;

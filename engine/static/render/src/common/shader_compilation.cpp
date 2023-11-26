@@ -85,10 +85,8 @@ namespace argus {
         std::vector<Shader> spirv_shaders;
         spirv_shaders.reserve(comp_res.spirv_shaders.size());
 
-        for (const auto &spirv_shader_kv : comp_res.spirv_shaders) {
-            auto lang = spirv_shader_kv.first;
+        for (const auto &[lang, spirv_u8] : comp_res.spirv_shaders) {
             auto uid = shader_uids[lang];
-            auto spirv_u8 = spirv_shader_kv.second;
 
             ShaderStage stage;
             switch (lang) {
@@ -105,29 +103,29 @@ namespace argus {
             spirv_shaders.emplace_back(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8);
         }
 
-        for (const auto &shader_attr : comp_res.attributes) {
+        for (const auto &[attr_name, attr_loc] : comp_res.attributes) {
             Logger::default_logger().debug("Found shader program attribute %s @ location %d",
-                    shader_attr.first.c_str(), shader_attr.second);
+                    attr_name.c_str(), attr_loc);
         }
 
-        for (const auto &shader_output : comp_res.outputs) {
+        for (const auto &[output_name, output_loc] : comp_res.outputs) {
             Logger::default_logger().debug("Found shader program output %s @ location %d",
-                    shader_output.first.c_str(), shader_output.second);
+                    output_name.c_str(), output_loc);
         }
 
-        for (const auto &shader_uniform : comp_res.uniforms) {
+        for (const auto &[uniform_name, uniform_loc] : comp_res.uniforms) {
             Logger::default_logger().debug("Found shader program uniform %s @ location %d",
-                    shader_uniform.first.c_str(), shader_uniform.second);
+                    uniform_name.c_str(), uniform_loc);
         }
 
-        for (const auto &shader_buffer : comp_res.buffers) {
+        for (const auto &[buffer_name, buffer_loc] : comp_res.buffers) {
             Logger::default_logger().debug("Found shader program buffer %s @ location %d",
-                    shader_buffer.first.c_str(), shader_buffer.second);
+                    buffer_name.c_str(), buffer_loc);
         }
 
-        for (const auto &ubo : comp_res.ubo_bindings) {
+        for (const auto &[ubo_name, ubo_loc] : comp_res.ubo_bindings) {
             Logger::default_logger().debug("Found shader program UBO %s with binding %d",
-                    ubo.first.c_str(), ubo.second);
+                    ubo_name.c_str(), ubo_loc);
         }
 
         ShaderReflectionInfo refl;

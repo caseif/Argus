@@ -82,12 +82,12 @@ namespace argus {
                     Logger::default_logger().fatal("Failed to get scene state");
                 }
 
-                auto insert_res = this->scene_states_2d.try_emplace(&scene_2d, *this, scene);
-                if (!insert_res.second) {
+                auto [inserted, success] = this->scene_states_2d.try_emplace(&scene_2d, *this, scene);
+                if (!success) {
                     Logger::default_logger().fatal("Failed to create new scene state");
                 }
 
-                return insert_res.first->second;
+                return inserted->second;
             }
             case SceneType::ThreeD: {
                 Logger::default_logger().fatal("Unimplemented scene type");
@@ -112,12 +112,12 @@ namespace argus {
                 }
 
                 Viewport2DState state(*this, &viewport_2d);
-                auto insert_res = this->viewport_states_2d.insert({&viewport_2d, state});
-                if (!insert_res.second) {
+                auto [inserted, success] = this->viewport_states_2d.insert({&viewport_2d, state});
+                if (!success) {
                     Logger::default_logger().fatal("Failed to create new viewport state");
                 }
 
-                return insert_res.first->second;
+                return inserted->second;
             }
             case SceneType::ThreeD: {
                 Logger::default_logger().fatal("Unimplemented viewport type");

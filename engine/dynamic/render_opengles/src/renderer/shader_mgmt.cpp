@@ -93,11 +93,10 @@ namespace argus {
         auto shader_uids_str = shader_uids_oss.str().substr(0, shader_uids_oss.str().size() - strlen(", "));
         Logger::default_logger().debug("Transpiling shader set [%s]", shader_uids_str.c_str());
 
-        auto comp_res = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
+        auto [spirv_shaders, refl_info] = compile_glsl_to_spirv(shaders, glslang::EShClientOpenGL,
                 glslang::EShTargetOpenGL_450, glslang::EShTargetSpv_1_0);
 
-        auto spirv_shaders = std::move(comp_res.first);
-        res.reflection = comp_res.second;
+        res.reflection = refl_info;
 
         spirv_cross::CompilerGLSL::Options options;
 

@@ -101,8 +101,8 @@ namespace argus {
                     }
                 }
 
-                for (const auto &plugin : g_lang_plugins) {
-                    delete plugin.second;
+                for (const auto &[_, plugin] : g_lang_plugins) {
+                    delete plugin;
                 }
                 break;
             }

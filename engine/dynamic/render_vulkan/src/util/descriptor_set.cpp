@@ -42,9 +42,9 @@ namespace argus {
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         bindings.reserve(count);
 
-        for (const auto &ubo : shader_refl.ubo_bindings) {
+        for (const auto &[_, ubo] : shader_refl.ubo_bindings) {
             VkDescriptorSetLayoutBinding ubo_binding{};
-            ubo_binding.binding = ubo.second;
+            ubo_binding.binding = ubo;
             ubo_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             ubo_binding.descriptorCount = 1; //TODO: account for array UBOs
             ubo_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;

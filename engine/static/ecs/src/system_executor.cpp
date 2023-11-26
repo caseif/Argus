@@ -54,8 +54,8 @@ namespace argus {
             entities.erase(entity_id);
         }
 
-        for (auto entity_kv : entities) {
-            system.pimpl->callback(*entity_kv.second, delta);
+        for (auto &[_, entity] : entities) {
+            system.pimpl->callback(*entity, delta);
         }
     }
 

@@ -456,83 +456,83 @@ namespace argus {
     }
 
     void apply_bindings_to_context(ScriptContext &context) {
-        for (const auto &type : g_bound_types) {
-            Logger::default_logger().debug("Binding type %s", type.second.name.c_str());
+        for (const auto &[_, type] : g_bound_types) {
+            Logger::default_logger().debug("Binding type %s", type.name.c_str());
 
-            context.pimpl->plugin->bind_type(context, type.second);
-            Logger::default_logger().debug("Bound type %s", type.second.name.c_str());
+            context.pimpl->plugin->bind_type(context, type);
+            Logger::default_logger().debug("Bound type %s", type.name.c_str());
         }
 
-        for (const auto &type : g_bound_types) {
-            Logger::default_logger().debug("Binding functions for type %s", type.second.name.c_str());
+        for (const auto &[_, type] : g_bound_types) {
+            Logger::default_logger().debug("Binding functions for type %s", type.name.c_str());
 
-            for (const auto &type_fn : type.second.instance_functions) {
+            for (const auto &[_2, type_fn] : type.instance_functions) {
                 Logger::default_logger().debug("Binding instance function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+                context.pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound instance function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
             }
 
-            for (const auto &type_fn : type.second.extension_functions) {
+            for (const auto &[_2, type_fn] : type.extension_functions) {
                 Logger::default_logger().debug("Binding extension function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+                context.pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound extension function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
             }
 
-            for (const auto &type_fn : type.second.static_functions) {
+            for (const auto &[_2, type_fn] : type.static_functions) {
                 Logger::default_logger().debug("Binding static function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type.second, type_fn.second);
+                context.pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound static function %s::%s",
-                        type.second.name.c_str(), type_fn.second.name.c_str());
+                        type.name.c_str(), type_fn.name.c_str());
             }
 
             Logger::default_logger().debug("Bound %zu instance, %zu extension, and %zu static functions for type %s",
-                    type.second.instance_functions.size(), type.second.extension_functions.size(),
-                    type.second.static_functions.size(), type.second.name.c_str());
+                    type.instance_functions.size(), type.extension_functions.size(),
+                    type.static_functions.size(), type.name.c_str());
         }
 
 
-        for (const auto &type : g_bound_types) {
-            Logger::default_logger().debug("Binding fields for type %s", type.second.name.c_str());
+        for (const auto &[_, type] : g_bound_types) {
+            Logger::default_logger().debug("Binding fields for type %s", type.name.c_str());
 
-            for (const auto &type_field : type.second.fields) {
+            for (const auto &[_2, type_field] : type.fields) {
                 Logger::default_logger().debug("Binding field %s::%s",
-                        type.second.name.c_str(), type_field.second.m_name.c_str());
+                        type.name.c_str(), type_field.m_name.c_str());
 
-                context.pimpl->plugin->bind_type_field(context, type.second, type_field.second);
+                context.pimpl->plugin->bind_type_field(context, type, type_field);
 
                 Logger::default_logger().debug("Bound field %s::%s",
-                        type.second.name.c_str(), type_field.second.m_name.c_str());
+                        type.name.c_str(), type_field.m_name.c_str());
             }
 
             Logger::default_logger().debug("Bound %zu fields for type %s",
-                    type.second.fields.size(), type.second.name.c_str());
+                    type.fields.size(), type.name.c_str());
         }
 
-        for (const auto &enum_def : g_bound_enums) {
-            Logger::default_logger().debug("Binding enum %s", enum_def.second.name.c_str());
+        for (const auto &[_, enum_def] : g_bound_enums) {
+            Logger::default_logger().debug("Binding enum %s", enum_def.name.c_str());
 
-            context.pimpl->plugin->bind_enum(context, enum_def.second);
+            context.pimpl->plugin->bind_enum(context, enum_def);
 
-            Logger::default_logger().debug("Bound enum %s", enum_def.second.name.c_str());
+            Logger::default_logger().debug("Bound enum %s", enum_def.name.c_str());
         }
 
-        for (const auto &fn : g_bound_global_fns) {
-            Logger::default_logger().debug("Binding global function %s", fn.second.name.c_str());
+        for (const auto &[_, fn] : g_bound_global_fns) {
+            Logger::default_logger().debug("Binding global function %s", fn.name.c_str());
 
-            context.pimpl->plugin->bind_global_function(context, fn.second);
+            context.pimpl->plugin->bind_global_function(context, fn);
 
-            Logger::default_logger().debug("Bound global function %s", fn.second.name.c_str());
+            Logger::default_logger().debug("Bound global function %s", fn.name.c_str());
         }
     }
 }

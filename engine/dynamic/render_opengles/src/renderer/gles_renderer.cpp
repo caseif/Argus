@@ -187,8 +187,8 @@ namespace argus {
 
             fill_buckets(scene_state);
 
-            for (const auto &bucket_it : scene_state.render_buckets) {
-                auto &mat = bucket_it.second->material_res;
+            for (const auto &[_, bucket] : scene_state.render_buckets) {
+                auto &mat = bucket->material_res;
 
                 build_shaders(state, mat);
 

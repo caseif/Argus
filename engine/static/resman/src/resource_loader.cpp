@@ -46,8 +46,8 @@ namespace argus {
         }
 
         if (failed) {
-            for (const auto &res : acquired) {
-                res.second->release();
+            for (const auto &[_, res] : acquired) {
+                res->release();
             }
 
             if (thrown_exception != nullptr) {

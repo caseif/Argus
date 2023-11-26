@@ -48,8 +48,8 @@ namespace argus::input {
     InputManager::~InputManager(void) {
         if (pimpl != nullptr) {
             std::vector<std::string> remove_names;
-            for (const auto &pair : pimpl->controllers) {
-                delete pair.second;
+            for (const auto &[_, controller] : pimpl->controllers) {
+                delete controller;
             }
 
             g_pimpl_pool.destroy(pimpl);

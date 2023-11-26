@@ -1281,9 +1281,9 @@ namespace argus {
         luaL_newmetatable(state, def.name.c_str());
 
         // set values in metatable
-        for (const auto &enum_val : def.values) {
-            lua_pushinteger(state, *reinterpret_cast<const int64_t *>(&enum_val.second));
-            lua_setfield(state, -2, enum_val.first.c_str());
+        for (const auto &[val_name, val] : def.values) {
+            lua_pushinteger(state, *reinterpret_cast<const int64_t *>(&val));
+            lua_setfield(state, -2, val_name.c_str());
         }
 
         // add metatable to global state to make enum available
