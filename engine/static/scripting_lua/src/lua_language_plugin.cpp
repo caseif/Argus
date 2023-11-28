@@ -1328,7 +1328,7 @@ namespace argus {
             const char *err_msg = lua_tostring(state, -1);
             auto uid = resource.prototype.uid;
             resource.release();
-            throw ScriptLoadException(uid, "Failed to parse script " + resource.prototype.uid
+            throw ScriptLoadException(uid, "Failed to parse script " + uid
                     + " (" + std::string(err_msg) + ")");
         }
 
@@ -1356,15 +1356,15 @@ namespace argus {
             Resource *res;
             try {
                 res = &plugin.load_resource(uid);
+
+                try {
+                    return _load_script(state, *res);
+                } catch (const std::exception &ex) {
+                    return luaL_error(state, "Unable to parse script %s passed to 'require': %s", path, ex.what());
+                }
             } catch (const std::exception &ex) {
                 Logger::default_logger().debug("Unable to load resource for require path %s (%s)", path, ex.what());
                 // swallow
-            }
-
-            try {
-                return _load_script(state, *res);
-            } catch (const std::exception &ex) {
-                return luaL_error(state, "Unable to parse script %s passed to 'require': %s", path, ex.what());
             }
         }
 
