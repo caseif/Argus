@@ -117,7 +117,7 @@ namespace argus {
             bool must_update = al_level.dirty || al_color.dirty;
 
             if (!scene_state.ubo.valid) {
-                scene_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_SCENE_LEN, GL_STATIC_DRAW, false);
+                scene_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_SCENE_LEN, GL_DYNAMIC_DRAW, false);
                 must_update = true;
             }
 
