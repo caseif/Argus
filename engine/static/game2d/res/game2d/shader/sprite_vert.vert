@@ -1,12 +1,17 @@
 #version 460 core
 
-layout(std140, binding = 3) uniform Global {
+layout(std140, binding = 1) uniform Global {
     float Time;
 } global;
 
-layout(std140, binding = 1) uniform Viewport {
+layout(std140, binding = 3) uniform Viewport {
     mat4 ViewMatrix;
 } viewport;
+
+layout(std140, binding = 4) uniform Object {
+    vec2 UvStride;
+    float LightOpacity;
+} obj;
 
 layout(location = 0) in vec2 in_Position;
 // tex coord attr is local to the current atlas "tile" and is generally (but not
@@ -32,7 +37,11 @@ vec3 colors[3] = vec3[](
 
 void main() {
     gl_Position = viewport.ViewMatrix * vec4(in_Position, 0.0, 1.0);
-    pass_TexCoord = in_TexCoord;
+
+    vec2 norm_tc = vec2(fract(in_TexCoord.x), fract(in_TexCoord.y));
+    vec2 transformed_tc = (in_AnimFrame + in_TexCoord) * obj.UvStride;
+    pass_TexCoord = transformed_tc;
+
     pass_AnimFrame = in_AnimFrame;
     /*gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
     pass_FragColor = colors[gl_VertexIndex];*/
