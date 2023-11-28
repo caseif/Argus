@@ -25,6 +25,7 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/texture_data.hpp"
 
+#include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/texture_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
@@ -64,7 +65,7 @@ namespace argus {
             glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         } else {
             glGenTextures(1, &handle);
-            glBindTexture(GL_TEXTURE_2D, handle);
+            bind_texture(0, handle);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -94,7 +95,7 @@ namespace argus {
         }
 
         if (!AGLET_GL_ARB_direct_state_access) {
-            glBindTexture(GL_TEXTURE_2D, 0);
+            bind_texture(0, 0);
         }
 
         texture_res.release();

@@ -102,6 +102,15 @@ namespace argus {
         glDeleteBuffers(1, &buffer);
     }
 
+    void bind_texture(GLuint unit, texture_handle_t texture) {
+        if (AGLET_GL_ARB_direct_state_access) {
+            glBindTextureUnit(unit, texture);
+        } else {
+            glActiveTexture(GL_TEXTURE0 + unit);
+            glBindTexture(GL_TEXTURE_2D, texture);
+        }
+    }
+
     Logger &get_gl_logger(void) {
         return g_gl_logger;
     }

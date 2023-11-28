@@ -221,7 +221,7 @@ namespace argus {
             } else {
                 // back framebuffer texture
                 glGenTextures(1, &viewport_state.back_frame_tex);
-                glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
+                bind_texture(0, viewport_state.back_frame_tex);
 
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
@@ -232,7 +232,7 @@ namespace argus {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                         viewport_state.back_frame_tex, 0);
 
-                glBindTexture(GL_TEXTURE_2D, 0);
+                bind_texture(0, 0);
 
                 auto back_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -241,7 +241,7 @@ namespace argus {
 
                 // front framebuffer texture
                 glGenTextures(1, &viewport_state.front_frame_tex);
-                glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
+                bind_texture(0, viewport_state.front_frame_tex);
 
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0,
                         GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -253,7 +253,7 @@ namespace argus {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                         viewport_state.front_frame_tex, 0);
 
-                glBindTexture(GL_TEXTURE_2D, 0);
+                bind_texture(0, 0);
 
                 auto front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -302,7 +302,7 @@ namespace argus {
             }
 
             if (tex_handle != last_texture) {
-                glBindTexture(GL_TEXTURE_2D, tex_handle);
+                bind_texture(0, tex_handle);
                 last_texture = tex_handle;
             }
 
@@ -317,7 +317,7 @@ namespace argus {
         }
 
         if (!AGLET_GL_ARB_direct_state_access) {
-            glBindTexture(GL_TEXTURE_2D, 0);
+            bind_texture(0, 0);
         }
 
         for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
@@ -350,7 +350,7 @@ namespace argus {
 
             glBindVertexArray(state.frame_vao);
             glUseProgram(postfx_program->handle);
-            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
+            bind_texture(0, viewport_state.back_frame_tex);
 
             _bind_ubo(*postfx_program, SHADER_UBO_GLOBAL, state.global_ubo);
             _bind_ubo(*postfx_program, SHADER_UBO_SCENE, scene_state.ubo);
@@ -359,7 +359,7 @@ namespace argus {
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        bind_texture(0, 0);
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -385,11 +385,11 @@ namespace argus {
 
         glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program.value().handle);
-        glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
+        bind_texture(0, viewport_state.front_frame_tex);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        bind_texture(0, 0);
         glUseProgram(0);
         glBindVertexArray(0);
     }

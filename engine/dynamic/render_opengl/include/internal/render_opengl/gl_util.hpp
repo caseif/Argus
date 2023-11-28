@@ -33,5 +33,7 @@ namespace argus {
 
     void try_delete_buffer(buffer_handle_t buffer);
 
+    void bind_texture(GLuint unit, texture_handle_t texture);
+
     Logger &get_gl_logger(void);
 }
