@@ -182,7 +182,6 @@ namespace argus {
         VkSemaphoreCreateInfo sem_info{};
         sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-
         for (auto &frame_state : viewport_state.per_frame) {
             if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr,
                     &frame_state.rebuild_semaphore) != VK_SUCCESS) {
@@ -203,6 +202,9 @@ namespace argus {
             }
 
             frame_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
+
+            frame_state.scene_ubo = alloc_buffer(state.device, SHADER_UBO_SCENE_LEN,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::HostRw);
         }
 
         return inserted->second;
@@ -213,6 +215,9 @@ namespace argus {
         if (!success) {
             Logger::default_logger().fatal("Failed to create new scene state");
         }
+
+        inserted->second.scene_ubo_staging = alloc_buffer(state.device, SHADER_UBO_SCENE_LEN,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, GraphicsMemoryPropCombos::HostRw);
 
         return inserted->second;
     }
@@ -225,7 +230,7 @@ namespace argus {
             destroy_framebuffer(state.device, frame_state.back_fb.handle);
             destroy_image_and_image_view(state.device, frame_state.front_fb.image);
             destroy_image_and_image_view(state.device, frame_state.back_fb.image);
-            free_buffer(frame_state.ubo);
+            free_buffer(frame_state.viewport_ubo);
             destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
             for (const auto &[_, ds] : frame_state.material_desc_sets) {
                 destroy_descriptor_sets(state.device, state.desc_pool, ds);
@@ -251,6 +256,8 @@ namespace argus {
 
             bucket->destroy();
         }
+
+        free_buffer(scene_state.scene_ubo_staging);
     }
 
     static void _deinit_material(RendererState &state, const std::string &material_uid) {
@@ -360,6 +367,36 @@ namespace argus {
         }
     }
 
+    static void _check_scene_ubo_dirty(SceneState &scene_state) {
+        if (scene_state.scene.type == SceneType::TwoD) {
+            auto &scene = reinterpret_cast<Scene2D &>(scene_state.scene);
+
+            auto al_level = scene.get_ambient_light_level();
+            auto al_color = scene.get_ambient_light_color();
+
+            bool must_update = al_level.dirty || al_color.dirty;
+
+            if (must_update) {
+                /*auto &staging_ubo = scene_state.scene_ubo_staging;
+
+                if (al_color.dirty) {
+                    float al_color_arr[3] = { al_color->r, al_color->g, al_color->b };
+                    write_to_buffer(staging_ubo, al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF, sizeof(al_color_arr));
+                }
+
+                if (al_level.dirty) {
+                    write_val_to_buffer(staging_ubo, al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
+                }*/
+
+                for (auto &viewport_state : scene_state.parent_state.viewport_states_2d) {
+                    for (auto &per_frame : viewport_state.second.per_frame) {
+                        per_frame.scene_ubo_dirty = true;
+                    }
+                }
+            }
+        }
+    }
+
     static void _record_scene_rebuild(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
 
@@ -367,6 +404,8 @@ namespace argus {
 
         for (auto *scene : _get_associated_scenes_for_canvas(canvas)) {
             SceneState &scene_state = state.get_scene_state(*scene);
+
+            _check_scene_ubo_dirty(scene_state);
 
             fill_buckets(scene_state);
 

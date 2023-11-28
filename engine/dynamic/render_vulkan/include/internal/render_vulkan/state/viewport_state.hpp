@@ -54,7 +54,10 @@ namespace argus {
             FramebufferInfo front_fb;
             FramebufferInfo back_fb;
 
-            BufferInfo ubo;
+            BufferInfo scene_ubo;
+            bool scene_ubo_dirty = false;
+
+            BufferInfo viewport_ubo;
 
             VkSemaphore rebuild_semaphore;
             VkSemaphore draw_semaphore;

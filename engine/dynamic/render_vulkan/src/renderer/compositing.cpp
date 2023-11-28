@@ -41,6 +41,7 @@
 #include "internal/render_vulkan/util/memory.hpp"
 
 #include "vulkan/vulkan.h"
+#include "argus/render/2d/scene_2d.hpp"
 
 #include <map>
 #include <string>
@@ -128,19 +129,41 @@ namespace argus {
         return ds_write;
     }
 
+    static void _update_scene_ubo(const RendererState &state, ViewportState &viewport_state) {
+        if (!viewport_state.per_frame[state.cur_frame].scene_ubo_dirty) {
+            return;
+        }
+
+        if (viewport_state.viewport->type == SceneType::TwoD) {
+            auto &scene = reinterpret_cast<AttachedViewport2D *>(viewport_state.viewport)->get_camera().get_scene();
+
+            auto al_level = scene.peek_ambient_light_level();
+            auto al_color = scene.peek_ambient_light_color();
+
+            auto &scene_ubo = viewport_state.per_frame[state.cur_frame].scene_ubo;
+
+            float al_color_arr[3] = { al_color.r, al_color.g, al_color.b };
+            write_to_buffer(scene_ubo, al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF, sizeof(al_color_arr));
+
+            write_val_to_buffer(scene_ubo, al_level, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
+        }
+
+        viewport_state.per_frame[state.cur_frame].scene_ubo_dirty = false;
+    }
+
     static void _update_viewport_ubo(const RendererState &state, ViewportState &viewport_state) {
         bool must_update = viewport_state.per_frame[state.cur_frame].view_matrix_dirty;
-        auto &ubo = viewport_state.per_frame[state.cur_frame].ubo;
 
-        if (ubo.handle == VK_NULL_HANDLE) {
-            ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        auto &viewport_ubo = viewport_state.per_frame[state.cur_frame].viewport_ubo;
+        if (viewport_ubo.handle == VK_NULL_HANDLE) {
+            viewport_ubo = alloc_buffer(state.device, SHADER_UBO_VIEWPORT_LEN, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     GraphicsMemoryPropCombos::DeviceRw);
             must_update = true;
         }
 
         if (must_update) {
-            auto len = sizeof(viewport_state.view_matrix.data);
-            memcpy(ubo.mapped, viewport_state.view_matrix.data, len);
+            write_to_buffer(viewport_ubo, viewport_state.view_matrix.data, SHADER_UNIFORM_VIEWPORT_VM_OFF,
+                    sizeof(viewport_state.view_matrix.data));
         }
     }
 
@@ -223,6 +246,7 @@ namespace argus {
         uint32_t fb_width = state.swapchain.extent.width;
         uint32_t fb_height = state.swapchain.extent.height;
 
+        _update_scene_ubo(state, viewport_state);
         _update_viewport_ubo(state, viewport_state);
 
         auto &frame_state = viewport_state.per_frame[state.cur_frame];
@@ -321,13 +345,19 @@ namespace argus {
 
                 auto global_ubo = state.global_ubo;
                 VkDescriptorBufferInfo buf_info_global{};
+                VkDescriptorBufferInfo buf_info_scene{};
                 VkDescriptorBufferInfo buf_info_viewport{};
                 VkDescriptorBufferInfo buf_info_obj{};
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_GLOBAL,
                         [&ds, &ds_writes, &global_ubo, &buf_info_global] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, global_ubo, buf_info_global));
                         });
-                auto vp_ubo = frame_state.ubo;
+                auto scene_ubo = frame_state.scene_ubo;
+                shader_refl.get_ubo_binding_and_then(SHADER_UBO_SCENE,
+                        [&ds, &ds_writes, &scene_ubo, &buf_info_scene] (auto binding) {
+                            ds_writes.push_back(_create_uniform_ds_write(ds, binding, scene_ubo, buf_info_scene));
+                        });
+                auto vp_ubo = frame_state.viewport_ubo;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_VIEWPORT,
                         [&ds, &ds_writes, &vp_ubo, &buf_info_viewport] (auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, vp_ubo, buf_info_viewport));

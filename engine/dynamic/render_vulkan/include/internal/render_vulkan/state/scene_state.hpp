@@ -25,6 +25,8 @@
 #include "argus/render/util/linked_program.hpp"
 #include "argus/render/util/object_processor.hpp"
 
+#include "internal/render_vulkan/util/buffer.hpp"
+
 #include <map>
 #include <string>
 
@@ -58,6 +60,8 @@ namespace argus {
         Scene &scene;
 
         std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
+
+        BufferInfo scene_ubo_staging {};
 
         bool visited;
 
