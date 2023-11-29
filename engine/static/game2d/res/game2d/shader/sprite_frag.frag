@@ -16,11 +16,11 @@ layout(std140, binding = 4) uniform Object {
 
 layout(binding = 0) uniform sampler2D u_Texture;
 
-in vec2 pass_TexCoord;
-in vec2 pass_AnimFrame;
+in vec2 TexCoord;
+in vec2 AnimFrame;
 
 out vec4 out_Color;
 
 void main() {
-    out_Color = texture(u_Texture, pass_TexCoord);
+    out_Color = texture(u_Texture, TexCoord);
 }

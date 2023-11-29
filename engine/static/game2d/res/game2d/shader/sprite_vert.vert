@@ -19,15 +19,15 @@ layout(location = 0) in vec2 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec2 in_AnimFrame;
 
-out vec2 pass_TexCoord;
-out vec2 pass_AnimFrame;
+out vec2 TexCoord;
+out vec2 AnimFrame;
 
 void main() {
     gl_Position = viewport.ViewMatrix * vec4(in_Position, 0.0, 1.0);
 
     vec2 norm_tc = vec2(fract(in_TexCoord.x), fract(in_TexCoord.y));
     vec2 transformed_tc = (in_AnimFrame + in_TexCoord) * obj.UvStride;
-    pass_TexCoord = transformed_tc;
+    TexCoord = transformed_tc;
 
-    pass_AnimFrame = in_AnimFrame;
+    AnimFrame = in_AnimFrame;
 }

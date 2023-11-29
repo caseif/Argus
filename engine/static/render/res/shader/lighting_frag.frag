@@ -1,6 +1,6 @@
 #version 460 core
 
-in vec2 pass_TexCoord;
+in vec2 TexCoord;
 
 out vec4 out_Color;
 
@@ -13,7 +13,7 @@ layout(std140, binding = 1) uniform Scene {
 
 void main() {
     // get the base color of the pixel
-    vec4 base_color = texture(u_Framebuffer, pass_TexCoord);
+    vec4 base_color = texture(u_Framebuffer, TexCoord);
     // then apply the ambient light color multiplicatively
     vec4 mult_color = base_color * vec4(scene.AmbientLightColor.rgb, 1.0);
     // finally scale it by the ambient light level
