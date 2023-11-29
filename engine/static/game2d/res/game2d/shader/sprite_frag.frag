@@ -16,7 +16,6 @@ layout(std140, binding = 4) uniform Object {
 
 layout(binding = 0) uniform sampler2D u_Texture;
 
-//in vec3 pass_FragColor;
 in vec2 pass_TexCoord;
 in vec2 pass_AnimFrame;
 
