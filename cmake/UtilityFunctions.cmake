@@ -230,7 +230,7 @@ function(_argus_topo_sort NODES EDGES OUT_LIST)
 
     # find all incoming edges for this node
     set(IN_EDGES "${EDGES}")
-    list(FILTER IN_EDGES INCLUDE REGEX "\\/${node}")
+    list(FILTER IN_EDGES INCLUDE REGEX "\\/${node}$")
     list(LENGTH IN_EDGES IN_EDGE_COUNT)
     # if no incoming edges, add it to the list of start nodes
     if(${IN_EDGE_COUNT} EQUAL 0)
