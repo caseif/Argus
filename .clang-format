@@ -25,6 +25,10 @@ IndentPPDirectives: BeforeHash
 
 CommentPragmas: '^TODO'
 
+BraceWrapping:
+  AfterEnum: true
+  AfterExternBlock: false
+
 IncludeCategories:
   - Regex:          '^"argus/lowlevel(/.*|\.hpp)$'
     Priority:       1
