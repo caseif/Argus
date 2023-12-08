@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include "argus/core_cabi/screen_space.h"
 
@@ -44,4 +46,6 @@ ScreenSpaceScaleMode get_screen_space_scale_mode(void);
 
 void set_screen_space_scale_mode(ScreenSpaceScaleMode mode);
 
+#ifdef __cplusplus
 }
+#endif

@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 //TODO: ScreenSpace
 
@@ -30,4 +32,6 @@ typedef enum ScreenSpaceScaleMode {
     SSS_MODE_NONE
 } ScreenSpaceScaleMode;
 
+#ifdef __cplusplus
 }
+#endif

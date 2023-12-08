@@ -18,8 +18,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 void argus_load_client_config(const char *config_namespace);
 
+#ifdef __cplusplus
 }
+#endif

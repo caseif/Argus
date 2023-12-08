@@ -18,8 +18,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include "argus/core/macros.hpp"
 
+#ifdef __cplusplus
 }
+#endif

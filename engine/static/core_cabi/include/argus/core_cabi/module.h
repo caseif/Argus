@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include <stdbool.h>
 
@@ -43,4 +45,6 @@ bool argus_enable_dynamic_module(const char *module_id);
 
 //TODO: argus_get_present_dynamic_modules
 
+#ifdef __cplusplus
 }
+#endif

@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 const char *argus_get_client_id(void);
 
@@ -32,4 +34,6 @@ const char *argus_get_client_version(void);
 
 void argus_set_client_version(const char *id);
 
+#ifdef __cplusplus
 }
+#endif

@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include <stdbool.h>
 
@@ -77,4 +79,6 @@ bool get_save_user_bindings(void);
 
 void set_save_user_bindings(bool save);
 
+#ifdef __cplusplus
 }
+#endif

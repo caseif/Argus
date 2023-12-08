@@ -18,10 +18,14 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include <stdint.h>
 
 typedef uint64_t Index;
 
+#ifdef __cplusplus
 }
+#endif

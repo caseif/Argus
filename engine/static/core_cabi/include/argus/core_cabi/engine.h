@@ -18,7 +18,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #include "argus/core_cabi/callback.h"
 #include "argus/core_cabi/module.h"
@@ -55,4 +57,6 @@ void argus_run_on_game_thread(nullary_callback_t callback);
 
 bool argus_is_current_thread_update_thread(void);
 
+#ifdef __cplusplus
 }
+#endif

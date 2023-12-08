@@ -18,8 +18,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 //TODO
 
+#ifdef __cplusplus
 }
+#endif
