@@ -74,6 +74,16 @@ namespace argus {
     void set_load_modules(const std::vector<std::string> &module_list);
 
     /**
+     * \brief Adds a module to load on engine initialization.
+     *
+     * If any provided module or any its respective dependencies cannot be
+     * loaded, engine initialization will fail.
+     *
+     * \param module The ID of the module to load on engine init.
+     */
+    void add_load_module(const std::string &module);
+
+    /**
      * \brief Returns a list of graphics backends available for use on the
      *        current platform.
      *
@@ -92,7 +102,7 @@ namespace argus {
     /**
      * \brief Sets the graphics backend to be used for rendering.
      *
-     * \param backend A list of render backends to use in order of preference.
+     * \param backends A list of render backends to use in order of preference.
      *
      * \remark This option is treated like a "hint" and will not be honored in
      *          the event that the preferred backend is not available, either
@@ -100,12 +110,12 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backends(const std::initializer_list<std::string> &backend);
+    void set_render_backends(const std::initializer_list<std::string> &backends);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.
      *
-     * \param backend A list of render backends to use in order of preference.
+     * \param backends A list of render backends to use in order of preference.
      *
      * \remark This option is treated like a "hint" and will not be honored in
      *          the event that the preferred backend is not available, either
@@ -113,7 +123,20 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backends(const std::vector<std::string> &backend);
+    void set_render_backends(const std::vector<std::string> &backends);
+
+    /**
+     * \brief Adds a graphics backend to be used for rendering.
+     *
+     * \param backend A render backend to add to the preference list.
+     *
+     * \remark This option is treated like a "hint" and will not be honored in
+     *          the event that the preferred backend is not available, either
+     *          due to a missing implementation or lack of hardware support. If
+     *          none of the specified backends can be used, the OpenGL backend
+     *          will be used as the default fallback.
+     */
+    void add_render_backend(const std::string &backend);
 
     /**
      * \brief Sets the graphics backend to be used for rendering.

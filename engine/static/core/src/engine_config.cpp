@@ -43,6 +43,10 @@ namespace argus {
         g_engine_config.load_modules = module_list;
     }
 
+    void add_load_module(const std::string &module) {
+        g_engine_config.load_modules.push_back(module);
+    }
+
     const std::vector<std::string> &get_preferred_render_backends(void) {
         return g_engine_config.render_backends;
     }
@@ -53,6 +57,10 @@ namespace argus {
 
     void set_render_backends(const std::vector<std::string> &backends) {
         g_engine_config.render_backends = backends;
+    }
+
+    void add_render_backend(const std::string &backend) {
+        g_engine_config.render_backends.push_back(backend);
     }
 
     void set_render_backend(const std::string backend) {
