@@ -84,14 +84,6 @@ namespace argus {
     void add_load_module(const std::string &module);
 
     /**
-     * \brief Returns a list of graphics backends available for use on the
-     *        current platform.
-     *
-     * \return The available graphics backends.
-     */
-    const std::vector<std::string> &get_available_render_backends(void);
-
-    /**
      * \brief Returns an ordered list of IDs of preferred render backends as
      *        specified by the client.
      * 
