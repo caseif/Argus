@@ -24,7 +24,6 @@
 #include "argus/resman/resource_manager.hpp"
 
 #include "internal/game2d/module_game2d.hpp"
-#include "internal/game2d/resources.h"
 #include "internal/game2d/script_bindings.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/loader/sprite_loader.hpp"
@@ -45,8 +44,6 @@ namespace argus {
                 break;
             }
             case LifecycleStage::PostInit: {
-                ResourceManager::instance().add_memory_package(RESOURCES_GAME2D_ARP_SRC,
-                        RESOURCES_GAME2D_ARP_LEN);
                 break;
             }
             case LifecycleStage::PreDeinit: {

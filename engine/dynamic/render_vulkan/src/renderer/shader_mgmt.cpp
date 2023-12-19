@@ -20,6 +20,7 @@
 
 #include "argus/resman.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/shader_compilation.hpp"
 
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"
@@ -83,12 +84,31 @@ namespace argus {
 
         std::vector<Resource *> shader_resources;
         std::vector<Shader> loaded_shaders;
+        bool have_vert = false;
+        bool have_frag = false;
         for (const auto &shader_uid : shader_uids) {
             auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
             auto &shader = shader_res.get<Shader>();
 
             shader_resources.push_back(&shader_res);
             loaded_shaders.push_back(shader);
+
+            if (shader.get_stage() == ShaderStage::Vertex) {
+                have_vert = true;
+            } else if (shader.get_stage() == ShaderStage::Fragment) {
+                have_frag = true;
+            }
+        }
+
+        if (!have_vert) {
+            auto &vert_res = ResourceManager::instance().get_resource(SHADER_STD_VERT);
+            shader_resources.push_back(vert_res);
+            loaded_shaders.push_back(vert_res.get<Shader>());
+        }
+        if (!have_frag) {
+            auto &frag_res = ResourceManager::instance().get_resource(SHADER_STD_FRAG);
+            shader_resources.push_back(frag_res);
+            loaded_shaders.push_back(frag_res.get<Shader>());
         }
 
         //TODO: handle native SPIR-V shaders too

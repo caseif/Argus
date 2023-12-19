@@ -212,7 +212,7 @@ namespace argus {
         //TODO: make this reusable
         auto mat_uid = "internal:game2d/material/sprite_mat_" + Uuid::random().to_string();
         ResourceManager::instance().create_resource(mat_uid, RESOURCE_TYPE_MATERIAL,
-                Material(sprite_def.atlas, {SHADER_SPRITE_VERT, SHADER_SPRITE_FRAG}));
+                Material(sprite_def.atlas, {}));
 
         float atlas_stride_x;
         float atlas_stride_y;

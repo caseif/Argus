@@ -19,8 +19,3 @@
 #pragma once
 
 #define RESOURCE_TYPE_SPRITE "application/x-argus-sprite+json"
-
-#define SHADER_COPY_VERT "argus:game2d/shader/copy_vert"
-#define SHADER_COPY_FRAG "argus:game2d/shader/copy_frag"
-#define SHADER_SPRITE_VERT "argus:game2d/shader/sprite_vert"
-#define SHADER_SPRITE_FRAG "argus:game2d/shader/sprite_frag"

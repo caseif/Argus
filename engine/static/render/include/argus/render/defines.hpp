@@ -55,3 +55,6 @@
 
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
+
+#define SHADER_STD_VERT "argus:render/shader/std_vert"
+#define SHADER_STD_FRAG "argus:render/shader/std_frag"

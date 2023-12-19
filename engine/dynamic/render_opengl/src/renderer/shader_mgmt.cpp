@@ -224,12 +224,27 @@ namespace argus {
 
         std::vector<Resource *> shader_resources;
         std::vector<Shader> shaders;
+        bool have_vert = false;
+        bool have_frag = false;
         for (auto &shader_uid : shader_uids) {
             auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
             auto &shader = shader_res.get<Shader>();
 
             shader_resources.push_back(&shader_res);
             shaders.push_back(shader);
+
+            if (shader.get_stage() == ShaderStage::Vertex) {
+                have_vert = true;
+            } else if (shader.get_stage() == ShaderStage::Fragment) {
+                have_frag = true;
+            }
+        }
+
+        if (!have_vert) {
+            shaders.push_back(ResourceManager::instance().get_resource(SHADER_STD_VERT));
+        }
+        if (!have_frag) {
+            shaders.push_back(ResourceManager::instance().get_resource(SHADER_STD_FRAG));
         }
 
         auto comp_res = _compile_shaders(shaders);
