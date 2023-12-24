@@ -28,6 +28,7 @@
 #define SHADER_ATTRIB_ANIM_FRAME "in_AnimFrame"
 
 #define SHADER_OUT_COLOR "out_Color"
+#define SHADER_OUT_LIGHT_OPACITY "out_LightOpacity"
 
 #define SHADER_UBO_GLOBAL "Global"
 #define SHADER_UBO_GLOBAL_LEN 16U

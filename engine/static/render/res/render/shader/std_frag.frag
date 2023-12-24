@@ -19,8 +19,10 @@ layout(binding = 0) uniform sampler2D u_Texture;
 in vec2 TexCoord;
 in vec2 AnimFrame;
 
-out vec4 out_Color;
+layout(location = 0) out vec4 out_Color;
+layout(location = 1) out float out_LightOpacity;
 
 void main() {
     out_Color = texture(u_Texture, TexCoord);
+    out_LightOpacity = obj.LightOpacity * out_Color.a;
 }

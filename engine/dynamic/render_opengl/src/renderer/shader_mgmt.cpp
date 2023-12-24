@@ -256,6 +256,7 @@ namespace argus {
         }
 
         glBindFragDataLocation(program_handle, 0, SHADER_OUT_COLOR);
+        glBindFragDataLocation(program_handle, 1, SHADER_OUT_LIGHT_OPACITY);
 
         glLinkProgram(program_handle);
 

@@ -25,10 +25,10 @@ namespace argus {
     ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
             parent_state(parent_state),
             viewport(viewport),
-            front_fb(0),
-            back_fb(0),
-            front_frame_tex(0),
-            back_frame_tex(0) {
+            fb_primary(0),
+            fb_secondary(0),
+            color_buf_primary(0),
+            color_buf_secondary(0) {
     }
 
     Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :

@@ -172,76 +172,108 @@ namespace argus {
         _update_viewport_ubo(viewport_state);
 
         // framebuffer setup
-        if (viewport_state.front_fb == 0) {
+        if (viewport_state.fb_primary == 0) {
             if (AGLET_GL_ARB_direct_state_access) {
-                glCreateFramebuffers(1, &viewport_state.front_fb);
-                glCreateFramebuffers(1, &viewport_state.back_fb);
+                glCreateFramebuffers(1, &viewport_state.fb_primary);
+                glCreateFramebuffers(1, &viewport_state.fb_secondary);
             } else {
-                glGenFramebuffers(1, &viewport_state.front_fb);
-                glGenFramebuffers(1, &viewport_state.back_fb);
+                glGenFramebuffers(1, &viewport_state.fb_primary);
+                glGenFramebuffers(1, &viewport_state.fb_secondary);
             }
         }
 
-        if (viewport_state.front_frame_tex == 0 || resolution.dirty) {
-            if (viewport_state.front_frame_tex != 0) {
-                glDeleteTextures(1, &viewport_state.front_frame_tex);
+        if (viewport_state.color_buf_primary == 0 || resolution.dirty) {
+            if (viewport_state.color_buf_primary != 0) {
+                glDeleteTextures(1, &viewport_state.color_buf_primary);
             }
 
-            if (viewport_state.back_frame_tex != 0) {
-                glDeleteTextures(1, &viewport_state.back_frame_tex);
+            if (viewport_state.color_buf_secondary != 0) {
+                glDeleteTextures(1, &viewport_state.color_buf_secondary);
+            }
+
+            if (viewport_state.light_opac_map_buf != 0) {
+                glDeleteTextures(1, &viewport_state.light_opac_map_buf);
             }
 
             if (AGLET_GL_ARB_direct_state_access) {
-                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.front_frame_tex);
-                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.back_frame_tex);
+                // initialize primary color buffers
+                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.color_buf_primary);
+                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.color_buf_secondary);
 
-                glTextureStorage2D(viewport_state.front_frame_tex, 1, GL_RGBA8, fb_width, fb_height);
-                glTextureStorage2D(viewport_state.back_frame_tex, 1, GL_RGBA8, fb_width, fb_height);
+                glTextureStorage2D(viewport_state.color_buf_primary, 1, GL_RGBA8, fb_width, fb_height);
+                glTextureStorage2D(viewport_state.color_buf_secondary, 1, GL_RGBA8, fb_width, fb_height);
 
-                glTextureParameteri(viewport_state.front_frame_tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTextureParameteri(viewport_state.front_frame_tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteri(viewport_state.color_buf_primary, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(viewport_state.color_buf_primary, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glTextureParameteri(viewport_state.back_frame_tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTextureParameteri(viewport_state.back_frame_tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTextureParameteri(viewport_state.color_buf_secondary, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(viewport_state.color_buf_secondary, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glNamedFramebufferTexture(viewport_state.front_fb, GL_COLOR_ATTACHMENT0,
-                        viewport_state.front_frame_tex, 0);
-                glNamedFramebufferTexture(viewport_state.back_fb, GL_COLOR_ATTACHMENT0,
-                        viewport_state.back_frame_tex, 0);
+                // initialize auxiliary buffers
+                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.light_opac_map_buf);
+                glTextureStorage2D(viewport_state.light_opac_map_buf, 1, GL_R32F, fb_width, fb_height);
 
-                auto front_fb_status = glCheckNamedFramebufferStatus(viewport_state.front_fb, GL_FRAMEBUFFER);
+                glTextureParameteri(viewport_state.light_opac_map_buf, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTextureParameteri(viewport_state.light_opac_map_buf, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                // attach primary color buffers
+                glNamedFramebufferTexture(viewport_state.fb_primary, GL_COLOR_ATTACHMENT0,
+                        viewport_state.color_buf_primary, 0);
+                glNamedFramebufferTexture(viewport_state.fb_secondary, GL_COLOR_ATTACHMENT0,
+                        viewport_state.color_buf_secondary, 0);
+
+                // attach auxiliary buffers
+                glNamedFramebufferTexture(viewport_state.fb_primary, GL_COLOR_ATTACHMENT1,
+                        viewport_state.light_opac_map_buf, 0);
+                // don't attach aux buffers to the secondary fb so they don't get
+                // lost while ping-ponging
+
+                GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+                glNamedFramebufferDrawBuffers(viewport_state.fb_primary, 2, draw_bufs);
+
+                auto front_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_primary, GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
                 }
 
-                auto back_fb_status = glCheckNamedFramebufferStatus(viewport_state.back_fb, GL_FRAMEBUFFER);
+                auto back_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_secondary, GL_FRAMEBUFFER);
                 if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
                 }
             } else {
-                // back framebuffer texture
-                glGenTextures(1, &viewport_state.back_frame_tex);
-                bind_texture(0, viewport_state.back_frame_tex);
+                // light opacity buffer
+                glGenTextures(1, &viewport_state.light_opac_map_buf);
+                bind_texture(0, viewport_state.light_opac_map_buf);
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, fb_width, fb_height, 0,
+                        GL_RED, GL_FLOAT, nullptr);
+
+                // secondary framebuffer texture
+                glGenTextures(1, &viewport_state.color_buf_secondary);
+                bind_texture(0, viewport_state.color_buf_secondary);
 
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.back_fb);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                        viewport_state.back_frame_tex, 0);
-
                 bind_texture(0, 0);
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_secondary);
+
+                glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                        viewport_state.color_buf_secondary, 0);
+                // don't attach aux buffers to the secondary fb so they don't get
+                // lost while ping-ponging
 
                 auto back_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
                 }
 
-                // front framebuffer texture
-                glGenTextures(1, &viewport_state.front_frame_tex);
-                bind_texture(0, viewport_state.front_frame_tex);
+                // primary framebuffer texture
+                glGenTextures(1, &viewport_state.color_buf_primary);
+                bind_texture(0, viewport_state.color_buf_primary);
 
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0,
                         GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -249,11 +281,17 @@ namespace argus {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                        viewport_state.front_frame_tex, 0);
-
                 bind_texture(0, 0);
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_primary);
+
+                glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                        viewport_state.color_buf_primary, 0);
+                glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
+                        viewport_state.light_opac_map_buf, 0);
+
+                GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+                glNamedFramebufferDrawBuffers(viewport_state.fb_primary, 2, draw_bufs);
 
                 auto front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -262,7 +300,7 @@ namespace argus {
             }
         }
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_primary);
 
         // clear framebuffer
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -316,6 +354,12 @@ namespace argus {
             glBindVertexArray(0);
         }
 
+        // set buffers for ping-ponging
+        auto fb_front = viewport_state.fb_primary;
+        auto fb_back = viewport_state.fb_secondary;
+        auto color_buf_front = viewport_state.color_buf_primary;
+        auto color_buf_back = viewport_state.color_buf_secondary;
+
         if (!AGLET_GL_ARB_direct_state_access) {
             bind_texture(0, 0);
         }
@@ -333,10 +377,10 @@ namespace argus {
                 postfx_program = &inserted.first->second;
             }
 
-            std::swap(viewport_state.front_fb, viewport_state.back_fb);
-            std::swap(viewport_state.front_frame_tex, viewport_state.back_frame_tex);
+            std::swap(fb_front, fb_back);
+            std::swap(color_buf_front, color_buf_back);
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_front);
 
             glClearColor(0.0, 0.0, 0.0, 0.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -350,7 +394,7 @@ namespace argus {
 
             glBindVertexArray(state.frame_vao);
             glUseProgram(postfx_program->handle);
-            bind_texture(0, viewport_state.back_frame_tex);
+            bind_texture(0, color_buf_back);
 
             _bind_ubo(*postfx_program, SHADER_UBO_GLOBAL, state.global_ubo);
             _bind_ubo(*postfx_program, SHADER_UBO_SCENE, scene_state.ubo);
@@ -358,6 +402,8 @@ namespace argus {
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
+
+        viewport_state.color_buf_front = color_buf_front;
 
         bind_texture(0, 0);
         glUseProgram(0);
@@ -385,7 +431,7 @@ namespace argus {
 
         glBindVertexArray(state.frame_vao);
         glUseProgram(state.frame_program.value().handle);
-        bind_texture(0, viewport_state.front_frame_tex);
+        bind_texture(0, viewport_state.color_buf_front);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

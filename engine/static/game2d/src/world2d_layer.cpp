@@ -227,7 +227,7 @@ namespace argus {
         }
 
         return layer.pimpl->scene->create_child_object(mat_uid, prims, scaled_size / 2,
-                { atlas_stride_x, atlas_stride_y }, z_index, 1.0, {});
+                { atlas_stride_x, atlas_stride_y }, z_index, 0.5, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {

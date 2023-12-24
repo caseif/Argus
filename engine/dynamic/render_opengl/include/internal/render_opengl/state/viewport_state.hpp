@@ -36,11 +36,16 @@ namespace argus {
 
         BufferInfo ubo{};
 
-        buffer_handle_t front_fb;
-        buffer_handle_t back_fb;
+        buffer_handle_t fb_primary;
+        buffer_handle_t fb_secondary;
 
-        texture_handle_t front_frame_tex;
-        texture_handle_t back_frame_tex;
+        texture_handle_t color_buf_primary;
+        texture_handle_t color_buf_secondary;
+        // alias of either primary or secondary color buf depending on how many
+        // ping-pongs took place
+        texture_handle_t color_buf_front;
+
+        texture_handle_t light_opac_map_buf;
 
         buffer_handle_t lightmap_fb;
         texture_handle_t lightmap_tex;
