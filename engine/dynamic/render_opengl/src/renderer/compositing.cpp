@@ -165,6 +165,10 @@ namespace argus {
         auto fb_width = std::abs(viewport_px.right - viewport_px.left);
         auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
 
+        auto have_draw_buffers_blend = AGLET_GL_VERSION_4_0
+                || AGLET_GL_ARB_draw_buffers_blend
+                || AGLET_GL_AMD_draw_buffers_blend;
+
         // set scene uniforms
         _update_scene_ubo(scene_state);
 
@@ -176,9 +180,11 @@ namespace argus {
             if (AGLET_GL_ARB_direct_state_access) {
                 glCreateFramebuffers(1, &viewport_state.fb_primary);
                 glCreateFramebuffers(1, &viewport_state.fb_secondary);
+                glCreateFramebuffers(1, &viewport_state.fb_aux);
             } else {
                 glGenFramebuffers(1, &viewport_state.fb_primary);
                 glGenFramebuffers(1, &viewport_state.fb_secondary);
+                glGenFramebuffers(1, &viewport_state.fb_aux);
             }
         }
 
@@ -228,8 +234,19 @@ namespace argus {
                 // don't attach aux buffers to the secondary fb so they don't get
                 // lost while ping-ponging
 
-                GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-                glNamedFramebufferDrawBuffers(viewport_state.fb_primary, 2, draw_bufs);
+                // need to be able to set a per-attachment blend
+                // function + equation to be able to do it in one pass
+                if (have_draw_buffers_blend) {
+                    GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+                    glNamedFramebufferDrawBuffers(viewport_state.fb_primary, 2, draw_bufs);
+                }
+
+                // set up second-pass auxiliary FBO
+                glNamedFramebufferTexture(viewport_state.fb_aux, GL_COLOR_ATTACHMENT1,
+                        viewport_state.light_opac_map_buf, 0);
+
+                GLenum aux_draw_bufs[] = { GL_NONE, GL_COLOR_ATTACHMENT1 };
+                glNamedFramebufferDrawBuffers(viewport_state.fb_aux, 2, aux_draw_bufs);
 
                 auto front_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_primary, GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -239,6 +256,11 @@ namespace argus {
                 auto back_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_secondary, GL_FRAMEBUFFER);
                 if (back_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
+                }
+
+                auto aux_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_secondary, GL_FRAMEBUFFER);
+                if (aux_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Auxiliary framebuffer is incomplete (error %d)", back_fb_status);
                 }
             } else {
                 // light opacity buffer
@@ -290,12 +312,29 @@ namespace argus {
                 glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
                         viewport_state.light_opac_map_buf, 0);
 
-                GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-                glNamedFramebufferDrawBuffers(viewport_state.fb_primary, 2, draw_bufs);
+                // need to be able to set a per-attachment blend
+                // function + equation to be able to do it in one pass
+                if (have_draw_buffers_blend) {
+                    GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+                    glDrawBuffers(2, draw_bufs);
+                }
 
                 auto front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
+                }
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_aux);
+
+                glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
+                        viewport_state.light_opac_map_buf, 0);
+
+                GLenum draw_bufs[] = { GL_NONE, GL_COLOR_ATTACHMENT1 };
+                glDrawBuffers(2, draw_bufs);
+
+                auto aux_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                if (aux_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Auxiliary framebuffer is incomplete (error %d)", front_fb_status);
                 }
             }
         }
@@ -318,11 +357,17 @@ namespace argus {
         program_handle_t last_program = 0;
         texture_handle_t last_texture = 0;
 
+        std::vector<RenderBucket *> non_std_buckets;
+
         for (auto &[_, bucket] : scene_state.render_buckets) {
             auto &mat = bucket->material_res;
             auto &program_info = state.linked_programs.find(mat.uid)->second;
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
+
+            if (!have_draw_buffers_blend || program_info.has_custom_frag) {
+                non_std_buckets.push_back(bucket);
+            }
 
             bool animated = program_info.reflection.has_ubo(SHADER_UBO_OBJ);
 
@@ -346,6 +391,7 @@ namespace argus {
 
             glBindVertexArray(bucket->vertex_array);
 
+            //TODO: move this to material init
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -403,7 +449,70 @@ namespace argus {
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
+        glBindVertexArray(0);
+
         viewport_state.color_buf_front = color_buf_front;
+
+        // do selective second pass to populate auxiliary buffers
+        if (!non_std_buckets.empty()) {
+            auto &std_program = get_std_program(state);
+            std::string last_tex;
+
+            if (!have_draw_buffers_blend) {
+                glBlendEquation(GL_MAX);
+            }
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_aux);
+
+            glClearColor(0.0, 0.0, 0.0, 0.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glViewport(
+                    -viewport_px.left,
+                    -viewport_px.top,
+                    GLsizei(resolution->x),
+                    GLsizei(resolution->y)
+            );
+
+            glUseProgram(std_program.handle);
+
+            _bind_ubo(std_program, SHADER_UBO_GLOBAL, state.global_ubo);
+            _bind_ubo(std_program, SHADER_UBO_SCENE, scene_state.ubo);
+            _bind_ubo(std_program, SHADER_UBO_VIEWPORT, viewport_state.ubo);
+
+            for (auto *bucket: non_std_buckets) {
+                _bind_ubo(std_program, SHADER_UBO_OBJ, bucket->obj_ubo);
+
+                auto &mat = bucket->material_res;
+                auto &texture_uid = mat.get<Material>().get_texture_uid();
+
+                if (texture_uid != last_tex) {
+                    auto tex_handle = state.prepared_textures.find(texture_uid)->second;
+                    bind_texture(0, tex_handle);
+                    last_tex = texture_uid;
+                }
+
+                glBindVertexArray(bucket->vertex_array);
+
+                //TODO: move this to material init
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                glDrawArrays(GL_TRIANGLES, 0, GLsizei(bucket->vertex_count));
+            }
+
+            glBindVertexArray(0);
+
+            if (!AGLET_GL_ARB_direct_state_access) {
+                bind_texture(0, 0);
+            }
+
+            glUseProgram(0);
+
+            if (!have_draw_buffers_blend) {
+                glBlendEquation(GL_FUNC_ADD);
+            }
+        }
 
         bind_texture(0, 0);
         glUseProgram(0);

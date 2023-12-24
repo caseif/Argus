@@ -341,6 +341,15 @@ namespace argus {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        // set blend equation for light opacity map
+        if (AGLET_GL_VERSION_4_0) {
+            glBlendEquationi(1, GL_MAX);
+        } else if (AGLET_GL_ARB_draw_buffers_blend) {
+            glBlendEquationiARB(1, GL_MAX);
+        } else if (AGLET_GL_AMD_draw_buffers_blend) {
+            glBlendEquationIndexedAMD(1, GL_MAX);
+        }
+
         glDisable(GL_CULL_FACE);
 
         auto &canvas = window.get_canvas();

@@ -23,6 +23,7 @@ layout(location = 0) out vec4 out_Color;
 layout(location = 1) out float out_LightOpacity;
 
 void main() {
-    out_Color = texture(u_Texture, TexCoord);
-    out_LightOpacity = obj.LightOpacity * out_Color.a;
+    vec4 color = texture(u_Texture, TexCoord);
+    out_Color = color;
+    out_LightOpacity = obj.LightOpacity * color.a;
 }

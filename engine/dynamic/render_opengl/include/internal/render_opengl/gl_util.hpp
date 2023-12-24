@@ -36,4 +36,6 @@ namespace argus {
     void bind_texture(GLuint unit, texture_handle_t texture);
 
     Logger &get_gl_logger(void);
+
+    void restore_gl_blend_params(void);
 }

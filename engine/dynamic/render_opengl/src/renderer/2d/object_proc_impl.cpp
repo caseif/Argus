@@ -65,10 +65,7 @@ namespace argus {
 
         const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
 
-        if (state.linked_programs.find(object.get_material()) == state.linked_programs.end()) {
-            build_shaders(state, mat_res);
-        }
-        auto &program = state.linked_programs.find(object.get_material())->second;
+        const auto &program = get_material_program(state, mat_res);
 
         size_t vertex_len = (program.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
                             + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)

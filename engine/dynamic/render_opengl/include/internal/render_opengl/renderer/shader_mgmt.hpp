@@ -36,10 +36,12 @@ namespace argus {
     struct LinkedProgram {
         program_handle_t handle;
         ShaderReflectionInfo reflection;
+        bool has_custom_frag;
 
-        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection) :
+        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection, bool has_custom_frag) :
                 handle(handle),
-                reflection(std::move(reflection)) {
+                reflection(std::move(reflection)),
+                has_custom_frag(has_custom_frag) {
         }
     };
 
@@ -47,11 +49,15 @@ namespace argus {
 
     LinkedProgram link_program(const std::vector<std::string> &shader_uids);
 
-    void build_shaders(RendererState &state, const Resource &material_res);
+    LinkedProgram &build_shaders(RendererState &state, const Resource &material_res);
 
     void deinit_shader(shader_handle_t shader);
 
     void remove_shader(RendererState &state, const std::string &shader_uid);
 
     void deinit_program(program_handle_t program);
+
+    LinkedProgram &get_std_program(RendererState &state);
+
+    LinkedProgram &get_material_program(RendererState &state, const Resource &mat_res);
 }

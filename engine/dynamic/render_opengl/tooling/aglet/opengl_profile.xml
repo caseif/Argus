@@ -11,5 +11,7 @@
         <extension required="false">GL_ARB_buffer_storage</extension>
         <extension required="false">GL_ARB_direct_state_access</extension>
         <extension required="false">GL_ARB_gl_spirv</extension>
+        <extension required="false">GL_ARB_draw_buffers_blend</extension>
+        <extension required="false">GL_AMD_draw_buffers_blend</extension>
     </extensions>
 </profile>

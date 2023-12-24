@@ -47,6 +47,11 @@ namespace argus {
         }
         this->linked_programs.clear();
 
+        if (this->std_program.has_value()) {
+            deinit_program(this->std_program.value().handle);
+        }
+        this->std_program.reset();
+
         for (auto &[_, shader] : this->compiled_shaders) {
             deinit_shader(shader);
         }

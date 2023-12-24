@@ -77,6 +77,7 @@ namespace argus {
         std::map<std::string, std::string> material_textures;
         std::map<std::string, shader_handle_t> compiled_shaders;
         std::map<std::string, LinkedProgram> linked_programs;
+        std::optional<LinkedProgram> std_program;
 
         std::map<std::string, LinkedProgram> postfx_programs;
 

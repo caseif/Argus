@@ -323,13 +323,13 @@ namespace argus {
             }
         }
 
-        return LinkedProgram(program_handle, refl_info);
+        return LinkedProgram(program_handle, refl_info, have_frag);
     }
 
-    void build_shaders(RendererState &state, const Resource &material_res) {
+    LinkedProgram &build_shaders(RendererState &state, const Resource &material_res) {
         auto existing_program_it = state.linked_programs.find(material_res.uid);
         if (existing_program_it != state.linked_programs.end()) {
-            return;
+            return existing_program_it->second;
         }
 
         auto &material = material_res.get<Material>();
@@ -338,7 +338,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        state.linked_programs.insert({material_res.uid, program});
+        return state.linked_programs.insert({material_res.uid, program}).first->second;
     }
 
     void deinit_shader(shader_handle_t shader) {
@@ -357,5 +357,27 @@ namespace argus {
 
     void deinit_program(program_handle_t program) {
         glDeleteProgram(program);
+    }
+
+    LinkedProgram &get_std_program(RendererState &state) {
+        if (!state.std_program.has_value()) {
+            state.std_program = link_program({ SHADER_STD_VERT, SHADER_STD_FRAG });
+        }
+        return state.std_program.value();
+    }
+
+    LinkedProgram &get_material_program(RendererState &state, const Resource &mat_res) {
+        auto &mat = mat_res.get<Material>();
+
+        if (mat.get_shader_uids().empty()) {
+
+        }
+
+        auto it = state.linked_programs.find(mat_res.uid);
+        if (it != state.linked_programs.cend()) {
+            return it->second;
+        } else {
+            return build_shaders(state, mat_res);
+        }
     }
 }

@@ -114,4 +114,13 @@ namespace argus {
     Logger &get_gl_logger(void) {
         return g_gl_logger;
     }
+
+    void restore_gl_blend_params(void) {
+        if (AGLET_GL_VERSION_4_0) {
+            return;
+        }
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendEquation(GL_FUNC_ADD);
+    }
 }

@@ -38,6 +38,7 @@ namespace argus {
 
         buffer_handle_t fb_primary;
         buffer_handle_t fb_secondary;
+        buffer_handle_t fb_aux;
 
         texture_handle_t color_buf_primary;
         texture_handle_t color_buf_secondary;
