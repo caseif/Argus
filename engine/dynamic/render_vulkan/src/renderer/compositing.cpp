@@ -426,10 +426,10 @@ namespace argus {
                 postfx_program = &inserted.first->second;
             }
 
-            std::swap(viewport_state.front_fb, viewport_state.back_fb);
-            std::swap(viewport_state.front_frame_tex, viewport_state.back_frame_tex);
+            std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
+            std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.front_fb);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_primary);
 
             //glClearColor(0.0, 0.0, 0.0, 0.0);
             //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -439,7 +439,7 @@ namespace argus {
             glBindVertexArray(state.frame_vao);
             glUseProgram(postfx_program->handle);
             set_per_frame_global_uniforms(*postfx_program);
-            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_secondary);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }*/

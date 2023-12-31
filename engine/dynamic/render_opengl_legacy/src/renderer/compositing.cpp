@@ -171,32 +171,32 @@ namespace argus {
         auto fb_height = std::abs(viewport_px.bottom - viewport_px.top);
 
         // framebuffer setup
-        if (viewport_state.front_fb == 0) {
-            glGenFramebuffersEXT(1, &viewport_state.front_fb);
-            glGenFramebuffersEXT(1, &viewport_state.back_fb);
+        if (viewport_state.fb_primary == 0) {
+            glGenFramebuffersEXT(1, &viewport_state.fb_primary);
+            glGenFramebuffersEXT(1, &viewport_state.fb_secondary);
         }
 
-        if (viewport_state.front_frame_tex == 0 || resolution.dirty) {
-            if (viewport_state.front_frame_tex != 0) {
-                glDeleteTextures(1, &viewport_state.front_frame_tex);
+        if (viewport_state.color_buf_primary == 0 || resolution.dirty) {
+            if (viewport_state.color_buf_primary != 0) {
+                glDeleteTextures(1, &viewport_state.color_buf_primary);
             }
 
-            if (viewport_state.back_frame_tex != 0) {
-                glDeleteTextures(1, &viewport_state.back_frame_tex);
+            if (viewport_state.color_buf_secondary != 0) {
+                glDeleteTextures(1, &viewport_state.color_buf_secondary);
             }
 
             // back framebuffer texture
-            glGenTextures(1, &viewport_state.back_frame_tex);
-            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
+            glGenTextures(1, &viewport_state.color_buf_secondary);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_secondary);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.back_fb);
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_secondary);
             glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                    viewport_state.back_frame_tex, 0);
+                    viewport_state.color_buf_secondary, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -206,8 +206,8 @@ namespace argus {
             }
 
             // front framebuffer texture
-            glGenTextures(1, &viewport_state.front_frame_tex);
-            glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
+            glGenTextures(1, &viewport_state.color_buf_primary);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_primary);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_width, fb_height, 0,
                     GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -215,9 +215,9 @@ namespace argus {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.front_fb);
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_primary);
             glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                    viewport_state.front_frame_tex, 0);
+                    viewport_state.color_buf_primary, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -227,7 +227,7 @@ namespace argus {
             }
         }
 
-        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.front_fb);
+        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_primary);
 
         // clear framebuffer
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -289,10 +289,10 @@ namespace argus {
                 postfx_program = &inserted.first->second;
             }
 
-            std::swap(viewport_state.front_fb, viewport_state.back_fb);
-            std::swap(viewport_state.front_frame_tex, viewport_state.back_frame_tex);
+            std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
+            std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
 
-            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.front_fb);
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_primary);
 
             glClearColor(0.0, 0.0, 0.0, 0.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -311,7 +311,7 @@ namespace argus {
             set_per_frame_global_uniforms(*postfx_program);
             _set_viewport_and_scene_uniforms(*postfx_program, viewport_state);
 
-            glBindTexture(GL_TEXTURE_2D, viewport_state.back_frame_tex);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_secondary);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
@@ -342,7 +342,7 @@ namespace argus {
         _set_fb_attribs(state.frame_vbo);
 
         glUseProgram(state.frame_program.value().handle);
-        glBindTexture(GL_TEXTURE_2D, viewport_state.front_frame_tex);
+        glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_primary);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
