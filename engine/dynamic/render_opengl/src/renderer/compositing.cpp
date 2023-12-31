@@ -400,15 +400,15 @@ namespace argus {
             glBindVertexArray(0);
         }
 
+        if (!AGLET_GL_ARB_direct_state_access) {
+            bind_texture(0, 0);
+        }
+
         // set buffers for ping-ponging
         auto fb_front = viewport_state.fb_primary;
         auto fb_back = viewport_state.fb_secondary;
         auto color_buf_front = viewport_state.color_buf_primary;
         auto color_buf_back = viewport_state.color_buf_secondary;
-
-        if (!AGLET_GL_ARB_direct_state_access) {
-            bind_texture(0, 0);
-        }
 
         for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
             LinkedProgram *postfx_program;

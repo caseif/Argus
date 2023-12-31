@@ -276,6 +276,12 @@ namespace argus {
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        // set buffers for ping-ponging
+        auto fb_front = viewport_state.fb_primary;
+        auto fb_back = viewport_state.fb_secondary;
+        auto color_buf_front = viewport_state.color_buf_primary;
+        auto color_buf_back = viewport_state.color_buf_secondary;
+
         for (auto &postfx : viewport_state.viewport->get_postprocessing_shaders()) {
             LinkedProgram *postfx_program;
 
@@ -289,10 +295,10 @@ namespace argus {
                 postfx_program = &inserted.first->second;
             }
 
-            std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
-            std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
+            std::swap(fb_front, fb_back);
+            std::swap(color_buf_front, color_buf_back);
 
-            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_primary);
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, fb_front);
 
             glClearColor(0.0, 0.0, 0.0, 0.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -311,7 +317,7 @@ namespace argus {
             set_per_frame_global_uniforms(*postfx_program);
             _set_viewport_and_scene_uniforms(*postfx_program, viewport_state);
 
-            glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_secondary);
+            glBindTexture(GL_TEXTURE_2D, color_buf_back);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
@@ -319,6 +325,8 @@ namespace argus {
         glBindTexture(GL_TEXTURE_2D, 0);
         glUseProgram(0);
         glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+
+        viewport_state.color_buf_front = color_buf_front;
     }
 
     void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
@@ -342,7 +350,7 @@ namespace argus {
         _set_fb_attribs(state.frame_vbo);
 
         glUseProgram(state.frame_program.value().handle);
-        glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_primary);
+        glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_front);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
