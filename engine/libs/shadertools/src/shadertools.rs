@@ -121,7 +121,7 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
             client_version: client_version,
             target_language: TargetLanguage::Spv,
             target_language_version: spirv_version,
-            /** Shader source code */
+            /* Shader source code */
             code: src_c_str.as_ptr(),
             default_version: 0,
             default_profile: ProfileBit::Core.into(),
@@ -1150,7 +1150,7 @@ impl<'a> VisitorMut for MutatingDeclarationVisitor<'a> {
             if let Some(assigned_loc) = configured_decl_info.location {
                 set_decl_location(&mut idl.head.ty, assigned_loc.try_into().unwrap());
             }
-        } else if let Declaration::Block(block) = decl {
+        } else if let Declaration::Block(_block) = decl {
             // no-op
         }
 

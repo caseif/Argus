@@ -337,7 +337,7 @@ pub struct Input {
     pub client_version: TargetClientVersion,
     pub target_language: TargetLanguage,
     pub target_language_version: TargetLanguageVersion,
-    /** Shader source code */
+    /* Shader source code */
     pub code: *const c_char,
     pub default_version: c_int,
     pub default_profile: Profile,
@@ -362,15 +362,15 @@ pub struct IncludeResult {
 }
 
 /* Callback for local file inclusion */
-pub type GlslIncludeLocalFunc = fn(ctx: *mut c_void, header_name: *const c_char, includer_name: *const c_char,
+pub type GlslIncludeLocalFunc = extern "C" fn (ctx: *mut c_void, header_name: *const c_char, includer_name: *const c_char,
                                                         include_depth: usize) -> *mut IncludeResult;
 
 /* Callback for system file inclusion */
-pub type GlslIncludeSystemFunc = fn(ctx: *mut c_void, header_name: *const c_char,
+pub type GlslIncludeSystemFunc = extern "C" fn (ctx: *mut c_void, header_name: *const c_char,
                                    includer_name: *const c_char, include_depth: usize) -> *mut IncludeResult;
 
 /* Callback for include result destruction */
-pub type GlslFreeIncludeResultFunc = fn (ctx: *mut c_void, result: *mut IncludeResult) -> c_int;
+pub type GlslFreeIncludeResultFunc = extern "C" fn (ctx: *mut c_void, result: *mut IncludeResult) -> c_int;
 
 /* Collection of callbacks for GLSL preprocessor */
 #[repr(C)]
