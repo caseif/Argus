@@ -258,24 +258,26 @@ add_custom_target("arptool" DEPENDS "${ARPTOOL_EXE}")
 # Rust configuration
 ####################
 
-find_program(RUSTC_EXE NAMES rustc)
+if(MINGW)
+  find_program(RUSTC_EXE NAMES rustc)
 
-set(CARGO_ARCH "")
-set(CARGO_TARGET "")
-if(NOT RUSTC_EXE STREQUAL "RUSTC_EXE-NOTFOUND")
-  execute_process(
-          COMMAND "${RUSTC_EXE}" "--version" "--verbose"
-          OUTPUT_VARIABLE RUSTC_VERSION
-          OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  set(CARGO_ARCH "")
+  set(CARGO_TARGET "")
+  if(NOT RUSTC_EXE STREQUAL "RUSTC_EXE-NOTFOUND")
+    execute_process(
+            COMMAND "${RUSTC_EXE}" "--version" "--verbose"
+            OUTPUT_VARIABLE RUSTC_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 
-  string(REGEX MATCH "host: ([A-Za-z0-9_]+)\\-" _ ${RUSTC_VERSION})
-  set(CARGO_ARCH "${CMAKE_MATCH_1}")
+    string(REGEX MATCH "host: ([A-Za-z0-9_]+)\\-" _ ${RUSTC_VERSION})
+    set(CARGO_ARCH "${CMAKE_MATCH_1}")
 
-  if(MINGW)
-    set(CARGO_TARGET "${CARGO_ARCH}-pc-windows-gnu")
+    set(Rust_CARGO_TARGET "${CARGO_ARCH}-pc-windows-gnu")
   endif()
 endif()
+
+add_subdirectory("external/tooling/corrosion")
 
 include("${ROOT_PROJECT_DIR}/cmake/ConfigureModule.cmake")
 
@@ -381,15 +383,10 @@ get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_
 list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
 target_link_libraries(${ARGUS_LIBRARY} "${COMBINED_TARGET_LINKER_DEPS}")
 
-foreach(lib ${RUST_LIBS_FOR_LINKING_STATIC})
-  set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${lib}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
-  target_link_libraries(${ARGUS_LIBRARY}
-          debug "${RUST_LIB_DIR}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-          optimized "${RUST_LIB_DIR}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  if(MINGW)
-    target_link_libraries(${ARGUS_LIBRARY} "bcrypt" "ntdll" "Userenv" "ws2_32")
-  endif()
-endforeach()
+target_link_libraries(${ARGUS_LIBRARY} ${RUST_LIBS_FOR_LINKING_STATIC})
+if(MINGW AND NOT ${RUST_LIBS_FOR_LINKING_STATIC} STREQUAL "")
+  target_link_libraries(${ARGUS_LIBRARY} "bcrypt" "ntdll" "Userenv" "ws2_32")
+endif()
 
 # add global include list
 get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)

@@ -46,3 +46,6 @@
 [submodule "external/libs/SPIRV-Headers"]
 	path = external/libs/SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "external/tooling/corrosion"]
+	path = external/tooling/corrosion
+	url = https://github.com/corrosion-rs/corrosion.git

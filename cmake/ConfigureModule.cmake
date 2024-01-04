@@ -301,6 +301,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
         if(${lib_is_external})
           get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
 
+          # handle Rust libs separately since we link the whole archive rather
+          # than the individual object files
           if(${lib_is_rust})
             list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
           endif()
@@ -328,13 +330,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
     target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
 
-    foreach(lib ${RUST_LIBS_FOR_LINKING_STATIC})
-      set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${lib}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
-
-      target_link_libraries(${PROJECT_NAME}
-              debug "${RUST_LIB_DIR}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-              optimized "${RUST_LIB_DIR}/release/${CMAKE_STATIC_LIBRARY_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    endforeach()
+    target_link_libraries(${PROJECT_NAME} ${RUST_LIBS_FOR_LINKING_STATIC})
 
     _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_PREFIX}")
   elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
@@ -358,25 +354,11 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
       if(${IS_RUST})
         set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${MODULE_NAME}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
 
-        ExternalProject_Add(
-                "${MODULE_NAME}"
-                DOWNLOAD_COMMAND ""
-                CONFIGURE_COMMAND ""
-                BUILD_COMMAND "${CMAKE_COMMAND}"
-                "-E" "env"
-                "CARGO_TARGET_DIR=${RUST_TARGET_DIR}/${MODULE_NAME}"
-                "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}"
-                "CMAKE_CONFIG=$<CONFIG>"
-                "MINGW=${MINGW}"
-                "${RUSTC_TARGET_FEATURES}"
-                "cargo" "build" "-vv"
-                "--manifest-path=${MODULE_PROJECT_DIR}/Cargo.toml" "$<$<CONFIG:Release>:--release>"
-                "$<$<BOOL:${CARGO_TARGET}>:--target=${CARGO_TARGET}>"
-                BUILD_BYPRODUCTS "${RUST_LIB_DIR}/$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:release>/${CMAKE_STATIC_LIBRARY_PREFIX}${MODULE_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                INSTALL_COMMAND ""
-                BUILD_ALWAYS ON
-                LOG_BUILD ON
-                LOG_OUTPUT_ON_FAILURE ON)
+        corrosion_import_crate(
+                MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
+        )
+      else()
+        message(FATAL_ERROR "Only Rust projects are supported as external projects at this time")
       endif()
     else()
       add_library(${PROJECT_NAME} OBJECT ${C_FILES} ${CPP_FILES})
@@ -387,35 +369,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
 
-    if(${IS_EXTERNAL})
-      set(copy_libs_target "${MODULE_NAME}_copy_static_libs")
-      add_custom_target(${copy_libs_target})
-      add_dependencies(${PROJECT_NAME} ${MODULE_EXTERNAL_LINKER_DEPS})
-
-      set(dest_dir "${CMAKE_BINARY_DIR}/external_projects/${MODULE_NAME}/libs")
-      add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-              COMMENT "Cleaning static libs directory for module ${MODULE_NAME}"
-              COMMAND ${CMAKE_COMMAND} -E
-              rm "-r" "-f" "${dest_dir}")
-      foreach(dep ${MODULE_EXTERNAL_LINKER_DEPS})
-        if("${dep}" STREQUAL "")
-          continue()
-        endif()
-        set(src_file "$<TARGET_FILE:${dep}>")
-        if(MSVC OR MINGW)
-          # strip debug and version suffixes from file name so Rust doesn't complain
-          set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_PREFIX:${dep}>${dep}$<TARGET_LINKER_FILE_SUFFIX:${dep}>")
-        else()
-          set(dest_file "${dest_dir}/$<TARGET_LINKER_FILE_NAME:${dep}>")
-        endif()
-        add_custom_command(TARGET ${copy_libs_target} POST_BUILD
-                COMMENT "Copying static library ${dep} for module ${MODULE_NAME}"
-                COMMAND ${CMAKE_COMMAND} -E
-                copy "${src_file}" "${dest_file}")
-      endforeach()
-
-      add_dependencies(${MODULE_NAME} ${copy_libs_target})
-    endif()
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
     list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
