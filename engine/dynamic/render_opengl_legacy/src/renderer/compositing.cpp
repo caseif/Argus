@@ -185,7 +185,18 @@ namespace argus {
                 glDeleteTextures(1, &viewport_state.color_buf_secondary);
             }
 
-            // back framebuffer texture
+            if (viewport_state.light_opac_map_buf != 0) {
+                glDeleteTextures(1, &viewport_state.light_opac_map_buf);
+            }
+
+            // light opacity buffer
+            glGenTextures(1, &viewport_state.light_opac_map_buf);
+            glBindTexture(GL_TEXTURE_2D, viewport_state.light_opac_map_buf);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, fb_width, fb_height, 0,
+                    GL_RED, GL_FLOAT, nullptr);
+
+            // secondary framebuffer texture
             glGenTextures(1, &viewport_state.color_buf_secondary);
             glBindTexture(GL_TEXTURE_2D, viewport_state.color_buf_secondary);
 
@@ -216,10 +227,15 @@ namespace argus {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, viewport_state.fb_primary);
-            glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
+            glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
                     viewport_state.color_buf_primary, 0);
+            glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_2D,
+                    viewport_state.light_opac_map_buf, 0);
 
             glBindTexture(GL_TEXTURE_2D, 0);
+
+            GLenum draw_bufs[] = { GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT };
+            glDrawBuffers(2, draw_bufs);
 
             auto front_fb_status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
             if (front_fb_status != GL_FRAMEBUFFER_COMPLETE_EXT) {
