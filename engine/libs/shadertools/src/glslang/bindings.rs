@@ -396,7 +396,6 @@ pub struct SpvOptions {
     //pub compile_only: bool,
 }
 
-#[link(name = "glslang")]
 extern "C" {
     pub fn glslang_initialize_process() -> c_int;
     pub fn glslang_finalize_process();
