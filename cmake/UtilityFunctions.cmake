@@ -109,9 +109,17 @@ function(create_so_symlinks TARGET LIB_FILE_DIR)
 endfunction()
 
 # init task to copy dependency output
-function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
-  get_target_property(TARGET_TYPE "${TARGET}" TYPE)
-  if(TARGET_TYPE STREQUAL STATIC_LIBRARY)
+function(_argus_copy_dep_output)
+  # Parse arguments
+  set(sv_args DEST_DIR TARGET TARGET_FILE PREFIX)
+  cmake_parse_arguments(PARSE_ARGV 0 ARG "${options}" "${sv_args}" "")
+
+  if(NOT ARG_DEST_DIR OR NOT ARG_TARGET)
+    message(FATAL_ERROR "Missing required arguments")
+  endif()
+
+  get_target_property(target_type "${ARG_TARGET}" TYPE)
+  if(target_type STREQUAL STATIC_LIBRARY)
     return()
   endif()
 
@@ -119,24 +127,36 @@ function(_argus_copy_dep_output DIST_DIR TARGET PREFIX)
     set(PREFIX ".")
   endif()
 
-  set(DEST_DIR "${DIST_DIR}/${PREFIX}")
-  set(LIB_FILE_DEST_PATH "${DEST_DIR}/$<TARGET_FILE_NAME:${TARGET}>")
-
-  add_file_action(TARGET "${TARGET}"
-      ACTION "copy_if_different"
-      SOURCE "$<TARGET_FILE:${TARGET}>"
-      DEST "${LIB_FILE_DEST_PATH}")
-
-  if(TARGET_TYPE STREQUAL SHARED_LIBRARY)
-    create_so_symlinks("${TARGET}" "${DEST_DIR}")
+  set(QUAL_DEST_DIR "${ARG_DEST_DIR}/${ARG_PREFIX}")
+  if(ARG_TARGET_FILE)
+    get_filename_component(target_file_name "${TARGET_FILE_NAME}" NAME)
+    set(LIB_FILE_DEST_PATH "${QUAL_DEST_DIR}/${target_file_name}")
+  else()
+    set(LIB_FILE_DEST_PATH "${QUAL_DEST_DIR}/$<TARGET_FILE_NAME:${ARG_TARGET}>")
   endif()
 
-  if(WIN32 AND TARGET_TYPE STREQUAL SHARED_LIBRARY)
-    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${PREFIX}/$<TARGET_LINKER_FILE_NAME:${TARGET}>")
-
-    add_file_action(TARGET "${TARGET}"
+  if(ARG_TARGET_FILE)
+    add_file_action(TARGET "${ARG_TARGET}"
         ACTION "copy_if_different"
-        SOURCE "$<TARGET_LINKER_FILE:${TARGET}>"
+        SOURCE "${ARG_TARGET_FILE}"
+        DEST "${LIB_FILE_DEST_PATH}")
+  else()
+    add_file_action(TARGET "${ARG_TARGET}"
+            ACTION "copy_if_different"
+            SOURCE "$<TARGET_FILE:${ARG_TARGET}>"
+            DEST "${LIB_FILE_DEST_PATH}")
+  endif()
+
+  if(target_type STREQUAL SHARED_LIBRARY)
+    create_so_symlinks("${ARG_TARGET}" "${QUAL_DEST_DIR}")
+  endif()
+
+  if(WIN32 AND target_type STREQUAL SHARED_LIBRARY)
+    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${ARG_PREFIX}/$<TARGET_LINKER_FILE_NAME:${ARG_TARGET}>")
+
+    add_file_action(TARGET "${ARG_TARGET}"
+        ACTION "copy_if_different"
+        SOURCE "$<TARGET_LINKER_FILE:${ARG_TARGET}>"
         DEST "${LINKER_FILE_DEST_PATH}")
   endif()
 endfunction()

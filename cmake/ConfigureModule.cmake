@@ -288,51 +288,71 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
   if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_DYNAMIC}")
     if(${IS_EXTERNAL})
-      message(FATAL_ERROR "External build systems are not supported for dynamic modules")
-    endif()
-
-    # compile in any requested static libraries which are not in the base library
-    set(DYN_MODULE_STATIC_LIBS "")
-    set(RUST_LIBS_FOR_LINKING_STATIC "")
-    foreach(lib ${MODULE_ENGINE_LIB_DEPS})
-      list(FIND STATIC_MODULE_LIBS "${lib}" found_index)
-      if(found_index EQUAL -1)
-        get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
-        if(${lib_is_external})
-          get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
-
-          # handle Rust libs separately since we link the whole archive rather
-          # than the individual object files
-          if(${lib_is_rust})
-            list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
-          endif()
-        else()
-          list(APPEND DYN_MODULE_STATIC_LIBS "$<TARGET_OBJECTS:${lib}>")
-        endif()
+      if(${IS_RUST})
+        corrosion_import_crate(
+                MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
+        )
+        set(LIB_OUT_DIR "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
+        set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
+      else()
+        message(FATAL_ERROR "Only Rust projects are supported as external projects at this time")
       endif()
-    endforeach()
 
-    add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_MODULE_STATIC_LIBS})
+      _argus_copy_dep_output(DEST_DIR "${DIST_DIR}"
+              TARGET "${PROJECT_NAME}"
+              TARGET_FILE "${LIB_OUT_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+              PREFIX "${DYN_MODULE_PREFIX}")
+    else()
+      get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
+      list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS};${MODULE_EXTERNAL_LINKER_DEPS}")
+      set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
 
-    _argus_set_compile_flags(${PROJECT_NAME})
+      # compile in any requested static libraries which are not in the base library
+      set(DYN_MODULE_STATIC_LIBS "")
+      set(RUST_LIBS_FOR_LINKING_STATIC "")
+      foreach(lib ${MODULE_ENGINE_LIB_DEPS})
+        list(FIND STATIC_MODULE_LIBS "${lib}" found_index)
+        if(found_index EQUAL -1)
+          get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
+          if(${lib_is_external})
+            get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
 
-    # enable PIC
-    set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+            # handle Rust libs separately since we link the whole archive rather
+            # than the individual object files
+            if(${lib_is_rust})
+              list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
+            endif()
+          else()
+            list(APPEND DYN_MODULE_STATIC_LIBS "$<TARGET_OBJECTS:${lib}>")
+          endif()
+        endif()
+      endforeach()
 
-    if(NOT MSVC)
-      target_compile_options("${PROJECT_NAME}" PRIVATE "-fvisibility=hidden")
+      add_library(${PROJECT_NAME} MODULE ${C_FILES} ${CPP_FILES} ${DYN_MODULE_STATIC_LIBS})
+
+      set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})
+      set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
+
+      _argus_set_compile_flags(${PROJECT_NAME})
+
+      # enable PIC
+      set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+      if(NOT MSVC)
+        target_compile_options("${PROJECT_NAME}" PRIVATE "-fvisibility=hidden")
+      endif()
+
+      # output to separate directory
+      set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
+
+      set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
+      list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
+      target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
+
+      target_link_libraries(${PROJECT_NAME} ${RUST_LIBS_FOR_LINKING_STATIC})
+
+      _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${PROJECT_NAME}" PREFIX "${DYN_MODULE_PREFIX}")
     endif()
-
-    # output to separate directory
-    set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
-
-    set(PROJECT_LINKER_DEPS ${MODULE_LINKER_DEPS})
-    list(APPEND PROJECT_LINKER_DEPS ${ARGUS_LIBRARY})
-    target_link_libraries(${PROJECT_NAME} ${PROJECT_LINKER_DEPS})
-
-    target_link_libraries(${PROJECT_NAME} ${RUST_LIBS_FOR_LINKING_STATIC})
-
-    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${DYN_MODULE_PREFIX}")
   elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
     if(${IS_EXTERNAL})
       message(FATAL_ERROR "External build systems are not supported for executable modules")
@@ -348,12 +368,10 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
 
     set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-    _argus_copy_dep_output("${DIST_DIR}" "${PROJECT_NAME}" "${BIN_PREFIX}")
+    _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${PROJECT_NAME}" PREFIX "${BIN_PREFIX}")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
-        set(RUST_LIB_DIR "${RUST_TARGET_DIR}/${MODULE_NAME}$<$<BOOL:${CARGO_TARGET}>:/${CARGO_TARGET}>")
-
         corrosion_import_crate(
                 MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
         )
