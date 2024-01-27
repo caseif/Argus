@@ -22,6 +22,7 @@
 
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
+#include "internal/core/defines.hpp"
 #include "internal/core/engine.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
@@ -226,11 +227,16 @@ namespace argus {
             return nullptr;
         }
 
+        auto soname = std::filesystem::path(path).filename();
+
         Logger::default_logger().debug("Attempting to load dynamic module %s from file %s",
                 id.c_str(), path.string().c_str());
         _log_dependent_chain(Logger::default_logger(), dependent_chain, false);
 
         void *handle = nullptr;
+
+        void(*reg_fn)(void) = nullptr;
+
         #ifdef _WIN32
         handle = LoadLibraryA(path.string().c_str());
         if (handle == nullptr) {
@@ -239,6 +245,7 @@ namespace argus {
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;
         }
+        reg_fn = reinterpret_cast<void(*)(void)>(GetProcAddress(handle, ARGUS_PLUGIN_ENTRY_POINT));
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle == nullptr) {
@@ -246,7 +253,20 @@ namespace argus {
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;
         }
+
+        reg_fn = reinterpret_cast<void(*)(void)>(dlsym(handle, ARGUS_PLUGIN_ENTRY_POINT));
         #endif
+
+        if (reg_fn == nullptr) {
+            Logger::default_logger().warn(
+                    "Shared library %s does not provide a " ARGUS_PLUGIN_ENTRY_POINT " function and cannot be loaded",
+                    soname.c_str());
+            _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
+            return nullptr;
+        }
+
+        // register plugin
+        reg_fn();
 
         if (g_dyn_module_registrations.find(id) == g_dyn_module_registrations.end()) {
             Logger::default_logger().warn(

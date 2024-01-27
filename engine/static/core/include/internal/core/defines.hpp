@@ -16,18 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/module.h"
+#pragma once
 
-#include "argus/core/module.hpp"
-
-const char *argus_lifecycle_stage_to_str(LifecycleStage stage) {
-    return argus::lifecycle_stage_to_str(argus::LifecycleStage(stage));
-}
-
-void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage)) {
-    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallbackPtr>(lifecycle_callback));
-}
-
-bool argus_enable_dynamic_module(const char *module_id) {
-    return argus::enable_dynamic_module(module_id);
-}
+#define ARGUS_PLUGIN_ENTRY_POINT "register_plugin"

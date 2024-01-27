@@ -30,8 +30,9 @@
 #include <cstddef>
 
 #ifdef _WIN32
-// required for REGISTER_ARGUS_MODULE macro
-#include <windows.h>
+#define ARGUS_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) || defined(__clang__)
+#define ARGUS_EXPORT __attribute__((visibility("default")))
 #endif
 
 constexpr const char *ModuleCore = "core";
@@ -52,28 +53,15 @@ constexpr const char *ModuleCore = "core";
  * \param ... A list of IDs of modules this one is dependent on.
  *
  * \sa argus::ArgusModule
- * \sa argus::register_argus_module
+ * \sa argus::register_dynamic_module
  */
-#ifdef _MSC_VER
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
-    extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) { \
-        UNUSED(hinstDLL); \
-        UNUSED(lpvReserved); \
-        switch (fdwReason) { \
-            case DLL_PROCESS_ATTACH: \
-                argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
-                break; \
-        } \
-        return true; \
-    }
-#elif defined(__GNUC__) || defined(__clang__)
-#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
-    __attribute__((constructor)) static void __argus_module_ctor(void) { \
+    extern "C" {                                                  \
+    ARGUS_EXPORT void register_plugin(void); \
+    ARGUS_EXPORT void register_plugin(void) { \
         argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
+    } \
     }
-#else
-#error This platform is not supported.
-#endif
 
 namespace argus {
     static constexpr const char *g_lifecycle_stage_names[] = {

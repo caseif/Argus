@@ -24,6 +24,18 @@ extern "C" {
 
 #include <stdbool.h>
 
+#ifdef _WIN32
+#define ARGUS_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) || defined(__clang__)
+#define ARGUS_EXPORT __attribute__((visibility("default")))
+#endif
+
+#define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
+    ARGUS_EXPORT void register_plugin(void); \
+    ARGUS_EXPORT void register_plugin(void) { \
+        argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
+    }
+
 typedef enum LifecycleStage {
     LIFECYCLE_STAGE_LOAD,
     LIFECYCLE_STAGE_PREINIT,
@@ -39,7 +51,8 @@ typedef void(*lifecycle_update_callback_t)(LifecycleStage);
 
 const char *argus_lifecycle_stage_to_str(LifecycleStage stage);
 
-//TODO: argus_register_dynamic_module
+//TODO: dependencies parameter
+void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage));
 
 bool argus_enable_dynamic_module(const char *module_id);
 
