@@ -21,6 +21,7 @@
 #include "internal/sound/module_sound.hpp"
 
 namespace argus {
+    extern "C" {
     void update_lifecycle_sound(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -32,5 +33,6 @@ namespace argus {
                 break;
             }
         }
+    }
     }
 }

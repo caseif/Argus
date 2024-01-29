@@ -145,6 +145,7 @@ namespace argus {
         }
     }
 
+    extern "C" {
     void update_lifecycle_render_opengles(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -180,6 +181,7 @@ namespace argus {
                 break;
             }
         }
+    }
     }
 
     REGISTER_ARGUS_MODULE("render_opengles", update_lifecycle_render_opengles, { "render" })

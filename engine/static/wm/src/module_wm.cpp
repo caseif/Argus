@@ -142,6 +142,7 @@ namespace argus {
         }
     }
 
+    extern "C" {
     void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
@@ -179,5 +180,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

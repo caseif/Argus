@@ -26,6 +26,7 @@
 namespace argus {
     bool g_ecs_initialized = false;
 
+    extern "C" {
     void update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit: {
@@ -42,5 +43,6 @@ namespace argus {
                 break;
             }
         }
+    }
     }
 }

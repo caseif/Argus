@@ -333,14 +333,14 @@ foreach(id ${STATIC_MODULE_IDS})
   set(deps_list ${MODULE_${id}_DEPS})
   list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
   list(JOIN deps_list ", " deps)
-  list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, update_lifecycle_${id}}")
+  list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, reinterpret_cast<LifecycleUpdateCallback>(reinterpret_cast<void *>(update_lifecycle_${id}))}")
 endforeach()
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
 
 list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)
 
 set(MODULE_LIFECYCLE_FNS_LIST "${STATIC_MODULE_IDS}")
-list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(LifecycleStage stage)\\\;")
+list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(std::underlying_type<argus::LifecycleStage> stage)\\\;")
 list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 
 configure_file("${MODULE_DEFS_HPP_IN}" "${MODULE_DEFS_HPP_OUT}")
@@ -384,7 +384,7 @@ list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
 target_link_libraries(${ARGUS_LIBRARY} "${COMBINED_TARGET_LINKER_DEPS}")
 
 target_link_libraries(${ARGUS_LIBRARY} ${RUST_LIBS_FOR_LINKING_STATIC})
-if(MINGW AND NOT ${RUST_LIBS_FOR_LINKING_STATIC} STREQUAL "")
+if(MINGW AND NOT "${RUST_LIBS_FOR_LINKING_STATIC}" STREQUAL "")
   target_link_libraries(${ARGUS_LIBRARY} "bcrypt" "ntdll" "Userenv" "ws2_32")
 endif()
 

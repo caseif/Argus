@@ -28,6 +28,7 @@ namespace argus {
     static LuaScriptLoader *g_res_loader;
     static LuaLanguagePlugin *g_plugin;
 
+    extern "C" {
     void update_lifecycle_scripting_lua(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -54,5 +55,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

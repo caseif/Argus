@@ -67,6 +67,7 @@ namespace argus {
         input::update_gamepads();
     }
 
+    extern "C" {
     void update_lifecycle_input(const argus::LifecycleStage stage) {
         switch (stage) {
             case argus::LifecycleStage::Init:
@@ -85,5 +86,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

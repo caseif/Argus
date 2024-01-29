@@ -180,6 +180,7 @@ namespace argus {
         }
     }
 
+    extern "C" {
     void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Load: {
@@ -221,5 +222,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

@@ -140,13 +140,7 @@ namespace argus {
     /**
      * \brief A callback for passing lifecycle changes to engine modules.
      */
-    typedef std::function<void(const LifecycleStage)> LifecycleUpdateCallback;
-
-    /**
-     * \brief A pointer to a callback for passing lifecycle changes to engine
-     *       modules.
-     */
-    typedef void(*LifecycleUpdateCallbackPtr)(const LifecycleStage);
+    typedef void(*LifecycleUpdateCallback)(const LifecycleStage);
 
     /**
      * \brief Represents a module to be dynamically loaded by the Argus engine.
@@ -174,7 +168,7 @@ namespace argus {
          *
          * \sa LifecycleStage
          */
-        LifecycleUpdateCallbackPtr lifecycle_update_callback;
+        LifecycleUpdateCallback lifecycle_update_callback;
 
         /**
          * \brief A list of IDs of modules this one is dependent on.
@@ -210,7 +204,7 @@ namespace argus {
      * \throw std::invalid_argument If a module with the given ID is already
      *        registered.
      */
-    void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
             std::initializer_list<std::string> dependencies = {});
 
     /**

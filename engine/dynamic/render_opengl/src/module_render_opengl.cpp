@@ -112,7 +112,7 @@ namespace argus {
         switch (event.subtype) {
             case WindowEventType::Create: {
                 auto *renderer = new GLRenderer(window);
-                g_renderer_map.insert({&window, renderer});
+                g_renderer_map.insert({ &window, renderer });
                 break;
             }
             case WindowEventType::Update: {
@@ -150,6 +150,7 @@ namespace argus {
         }
     }
 
+    extern "C" {
     void update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -184,6 +185,7 @@ namespace argus {
                 break;
             }
         }
+    }
     }
 
     REGISTER_ARGUS_MODULE("render_opengl", update_lifecycle_render_opengl, { "render" })

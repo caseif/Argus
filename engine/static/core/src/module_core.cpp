@@ -28,6 +28,7 @@ namespace argus {
     bool g_core_initializing = false;
     bool g_core_initialized = false;
 
+    extern "C" {
     void update_lifecycle_core(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit:
@@ -45,5 +46,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

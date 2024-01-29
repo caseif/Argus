@@ -21,5 +21,7 @@
 #include "argus/core/module.hpp"
 
 namespace argus {
+    extern "C" {
     void update_lifecycle_render_opengl_legacy(LifecycleStage stage);
+    }
 }

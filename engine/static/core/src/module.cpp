@@ -25,7 +25,6 @@
 #include "internal/core/defines.hpp"
 #include "internal/core/engine.hpp"
 #include "internal/core/module.hpp"
-#include "internal/core/module_core.hpp"
 #include "internal/core/module_defs.hpp"
 
 #include <algorithm>
@@ -396,7 +395,7 @@ namespace argus {
         }
     }
 
-    void register_dynamic_module(const std::string &id, LifecycleUpdateCallbackPtr lifecycle_callback,
+    void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
             std::initializer_list<std::string> dependencies) {
         if (std::find_if(id.begin(), id.end(), [](auto c) { return std::isupper(c); }) != id.end()) {
             throw std::invalid_argument("Module identifier must contain only lowercase letters");

@@ -24,8 +24,10 @@
 #pragma clang diagnostic ignored "-Wmissing-prototypes"
 
 namespace argus {
+    extern "C" {
     void update_lifecycle_core_cabi(LifecycleStage stage) {
         UNUSED(stage);
+    }
     }
 }
 

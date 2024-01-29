@@ -25,7 +25,7 @@ const char *argus_lifecycle_stage_to_str(LifecycleStage stage) {
 }
 
 void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage)) {
-    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallbackPtr>(lifecycle_callback));
+    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallback>(lifecycle_callback));
 }
 
 bool argus_enable_dynamic_module(const char *module_id) {

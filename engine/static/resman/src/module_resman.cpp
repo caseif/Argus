@@ -26,6 +26,7 @@
 #include <string>
 
 namespace argus {
+    extern "C" {
     void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit:
@@ -39,5 +40,6 @@ namespace argus {
             default:
                 break;
         }
+    }
     }
 }

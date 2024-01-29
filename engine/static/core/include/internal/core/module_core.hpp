@@ -24,5 +24,7 @@ namespace argus {
     extern bool g_core_initializing;
     extern bool g_core_initialized;
 
+    extern "C" {
     void update_lifecycle_core(LifecycleStage stage);
+    }
 }

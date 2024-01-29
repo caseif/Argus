@@ -244,6 +244,7 @@ namespace argus {
         }
     }
 
+    extern "C" {
     void update_lifecycle_render_vulkan(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -286,6 +287,7 @@ namespace argus {
                 break;
             }
         }
+    }
     }
 
     REGISTER_ARGUS_MODULE("render_vulkan", update_lifecycle_render_vulkan, { "render" })

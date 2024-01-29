@@ -36,7 +36,6 @@
 #include "internal/core/message.hpp"
 #include "internal/core/module.hpp"
 #include "internal/core/module_core.hpp"
-#include "internal/core/module_defs.hpp"
 
 #include <atomic>
 #include <chrono>
