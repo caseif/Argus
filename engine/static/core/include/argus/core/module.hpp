@@ -55,6 +55,7 @@ constexpr const char *ModuleCore = "core";
  * \sa argus::ArgusModule
  * \sa argus::register_dynamic_module
  */
+#ifndef REGISTER_ARGUS_MODULE
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     extern "C" {                                                  \
     ARGUS_EXPORT void register_plugin(void); \
@@ -62,6 +63,7 @@ constexpr const char *ModuleCore = "core";
         argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
     } \
     }
+#endif
 
 namespace argus {
     static constexpr const char *g_lifecycle_stage_names[] = {

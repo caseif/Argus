@@ -30,11 +30,13 @@ extern "C" {
 #define ARGUS_EXPORT __attribute__((visibility("default")))
 #endif
 
+#ifndef REGISTER_ARGUS_MODULE
 #define REGISTER_ARGUS_MODULE(id, lifecycle_update_callback, ...) \
     ARGUS_EXPORT void register_plugin(void); \
     ARGUS_EXPORT void register_plugin(void) { \
         argus::register_dynamic_module(id, lifecycle_update_callback, __VA_ARGS__); \
     }
+#endif
 
 typedef enum LifecycleStage {
     LIFECYCLE_STAGE_LOAD,

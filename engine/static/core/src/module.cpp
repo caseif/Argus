@@ -245,7 +245,7 @@ namespace argus {
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;
         }
-        reg_fn = reinterpret_cast<void(*)(void)>(GetProcAddress(handle, ARGUS_PLUGIN_ENTRY_POINT));
+        reg_fn = reinterpret_cast<void(*)(void)>(GetProcAddress(reinterpret_cast<HMODULE>(handle), ARGUS_PLUGIN_ENTRY_POINT));
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle == nullptr) {
