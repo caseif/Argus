@@ -28,6 +28,13 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#undef ARGUS_NORETURN
+#ifdef __cplusplus
+#define ARGUS_NORETURN [[noreturn]]
+#else
+#define ARGUS_NORETURN _Noreturn
+#endif
+
 typedef void(*nullary_callback_t)(void);
 typedef void(*delta_callback_t)(uint64_t);
 
@@ -41,7 +48,7 @@ typedef enum Ordering {
 
 void argus_initialize_engine(void);
 
-[[noreturn]] void argus_start_engine(delta_callback_t callback);
+ARGUS_NORETURN void argus_start_engine(delta_callback_t callback);
 
 LifecycleStage argus_get_current_lifecycle_stage(void);
 
