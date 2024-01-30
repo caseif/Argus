@@ -1,7 +1,10 @@
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureCompileFlags.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UtilityFunctions.cmake")
 
-function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EXTENSIONS ARPTOOL_EXE_PATH)
+function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
+        C_STANDARD C_EXTENSIONS
+        CXX_STANDARD CXX_EXTENSIONS
+        ARPTOOL_EXE_PATH)
   ###########################
   # Module property constants
   ###########################
@@ -421,6 +424,11 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR CXX_STANDARD CXX_EX
     if(TARGET ${res_gen_target})
       add_dependencies("${PROJECT_NAME}" "${res_gen_target}")
     endif()
+
+    # set the C standard
+    set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD "${C_STANDARD}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES C_EXTENSIONS "${C_EXTENSIONS}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD_REQUIRED ON)
 
     # set the C++ standard
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD "${CXX_STANDARD}")

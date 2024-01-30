@@ -41,6 +41,8 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+set(PROJECT_C_VERSION 11)
+set(PROJECT_C_EXTENSIONS NO)
 set(PROJECT_CXX_VERSION 17)
 set(PROJECT_CXX_EXTENSIONS NO)
 
@@ -298,25 +300,33 @@ add_custom_command(TARGET ${HDR_TARGET} PRE_BUILD
         make_directory ${HDR_OUT_DIR})
 
 foreach(id ${ENGINE_LIBRARY_IDS})
-  _argus_configure_module("${ENGINE_LIBS_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+  _argus_configure_module("${ENGINE_LIBS_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
+          "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
+          "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
+          "${ARPTOOL_EXE}")
 endforeach()
 
 foreach(id ${STATIC_MODULE_IDS})
-  _argus_configure_module("${STATIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+  _argus_configure_module("${STATIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
+          "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
+          "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
+          "${ARPTOOL_EXE}")
 endforeach()
 
 # IMPORTANT: these should be configured last so that they can avoid compiling in
 # libraries already present in the base library
 foreach(id ${DYNAMIC_MODULE_IDS})
-  _argus_configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+  _argus_configure_module("${DYNAMIC_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
+          "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
+          "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
+          "${ARPTOOL_EXE}")
 endforeach()
 
 foreach(id ${EXE_MODULE_IDS})
-  _argus_configure_module("${EXES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}" "${PROJECT_CXX_VERSION}"
-          "${PROJECT_CXX_EXTENSIONS}" "${ARPTOOL_EXE}")
+  _argus_configure_module("${EXES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
+          "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
+          "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
+          "${ARPTOOL_EXE}")
 endforeach()
 
 # configure module dependency information
