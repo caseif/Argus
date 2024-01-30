@@ -52,7 +52,7 @@ ARGUS_NORETURN void argus_start_engine(delta_callback_t callback);
 
 LifecycleStage argus_get_current_lifecycle_stage(void);
 
-Index register_update_callback(delta_callback_t update_callback, Ordering ordering);
+Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering);
 
 void argus_unregister_update_callback(Index id);
 

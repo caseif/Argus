@@ -38,7 +38,7 @@ LifecycleStage argus_get_current_lifecycle_stage(void) {
     return static_cast<LifecycleStage>(argus::get_current_lifecycle_stage());
 }
 
-Index register_update_callback(delta_callback_t update_callback, Ordering ordering) {
+Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering) {
     return argus::register_update_callback(_wrap_delta_callback(update_callback), argus::Ordering(ordering));
 }
 
