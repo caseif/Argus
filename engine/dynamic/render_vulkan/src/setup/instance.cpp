@@ -91,15 +91,15 @@ namespace argus {
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pApplicationName = get_client_name().c_str();
-        app_info.pEngineName = ENGINE_NAME;
+        app_info.pEngineName = ARGUS_ENGINE_NAME;
 
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wold-style-cast"
 
         app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0,
                 0); //TODO: parse out client version into three components
-        app_info.engineVersion = VK_MAKE_API_VERSION(0, ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR,
-                ENGINE_VERSION_INCR);
+        app_info.engineVersion = VK_MAKE_API_VERSION(0, ARGUS_ENGINE_VERSION_MAJOR, ARGUS_ENGINE_VERSION_MINOR,
+                ARGUS_ENGINE_VERSION_INCR);
         app_info.apiVersion = VK_API_VERSION_1_0;
 
         #pragma GCC diagnostic pop
