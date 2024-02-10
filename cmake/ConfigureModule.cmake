@@ -15,6 +15,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   set(MODULE_PROP_INCLUDE_DIRS "include_dirs")
   set(MODULE_PROP_MOD_DEPS "engine_module_deps")
   set(MODULE_PROP_LIB_DEPS "engine_library_deps")
+  set(MODULE_PROP_AUX_DEPS "engine_aux_deps")
   set(MODULE_PROP_LINKER_DEPS "linker_deps")
   set(MODULE_PROP_LINKER_DEPS_WIN32 "linker_deps_win32")
   set(MODULE_PROP_LINKER_DEPS_LINUX "linker_deps_linux")
@@ -96,6 +97,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LIB_DEPS}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_ENGINE_LIB_DEPS "${cur_value}")
+      elseif("${cur_key}" STREQUAL "${MODULE_PROP_AUX_DEPS}")
+        string(REPLACE "," ";" cur_value "${cur_value}")
+        list(APPEND MODULE_ENGINE_AUX_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_LINKER_DEPS}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_LINKER_DEPS "${cur_value}")
@@ -173,10 +177,11 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   string(CONFIGURE "${MODULE_DEFINITIONS}" MODULE_DEFINITIONS)
   string(CONFIGURE "${MODULE_ENGINE_MOD_DEPS}" MODULE_ENGINE_MOD_DEPS)
   string(CONFIGURE "${MODULE_ENGINE_LIB_DEPS}" MODULE_ENGINE_LIB_DEPS)
+  string(CONFIGURE "${MODULE_ENGINE_AUX_DEPS}" MODULE_ENGINE_AUX_DEPS)
   string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
   string(CONFIGURE "${MODULE_EXTERNAL_LINKER_DEPS}" MODULE_EXTERNAL_LINKER_DEPS)
 
-  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}")
+  if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}" OR "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
     _argus_compute_dep_edges()
     set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
@@ -269,6 +274,10 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}")
       set(STATIC_MODULE_LIBS_LOCAL "${id};${STATIC_MODULE_LIBS}")
       foreach(lib ${MODULE_ENGINE_LIB_DEPS})
+        set(STATIC_MODULE_LIBS_LOCAL "${lib};${STATIC_MODULE_LIBS_LOCAL}")
+      endforeach()
+
+      foreach(lib ${MODULE_ENGINE_AUX_DEPS})
         set(STATIC_MODULE_LIBS_LOCAL "${lib};${STATIC_MODULE_LIBS_LOCAL}")
       endforeach()
       set(STATIC_MODULE_LIBS "${STATIC_MODULE_LIBS_LOCAL}" PARENT_SCOPE)
@@ -373,6 +382,15 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
     _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${PROJECT_NAME}" PREFIX "${BIN_PREFIX}")
+  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
+    add_library(${PROJECT_NAME} INTERFACE)
+
+    set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})
+    set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
+
+    get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
+    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS};${MODULE_EXTERNAL_LINKER_DEPS}")
+    set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
@@ -399,6 +417,9 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   # todo: work out how to pass compile definitions to Rust projects
   if(${IS_EXTERNAL})
     # need to set global includes property for the module so dependent modules can pick it up
+    # TODO: if a module in STATIC_MODULE_IDS is placed after a module which depends on it,
+    #       the necessary property will not be set in time and its include directories will
+    #       not be pulled into its dependent
     _argus_set_module_includes("${PROJECT_NAME}" "${INCLUDE_DIRS}")
   else()
     target_compile_definitions("${PROJECT_NAME}" PUBLIC "${MODULE_DEFINITIONS}")

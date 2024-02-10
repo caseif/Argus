@@ -7,6 +7,7 @@ set(STATIC_MODULE_IDS "core;ecs;resman;"
         "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
+set(AUX_MODULE_IDS "")
 
 set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
@@ -14,6 +15,7 @@ set(STATIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/static")
 set(DYNAMIC_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/dynamic")
 set(ENGINE_LIBS_SRC_DIR "${ENGINE_SRC_PATH}/libs")
 set(EXES_SRC_DIR "${ENGINE_SRC_PATH}/exe")
+set(AUX_MODULES_SRC_DIR "${ENGINE_SRC_PATH}/aux")
 
 cmake_minimum_required(VERSION 3.17)
 if(POLICY CMP0048)
@@ -61,6 +63,7 @@ set(STATIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/static")
 set(DYNAMIC_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/dynamic")
 set(ENGINE_LIBS_GENERATED_DIR "${GENERATED_BASE_DIR}/libs")
 set(EXES_GENERATED_DIR "${GENERATED_BASE_DIR}/exe")
+set(AUX_MODULES_GENERATED_DIR "${GENERATED_BASE_DIR}/aux")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DEF_USE_SYSTEM_SDL2 OFF)
@@ -161,6 +164,7 @@ set(MODULE_TYPE_STATIC "static")
 set(MODULE_TYPE_DYNAMIC "dynamic")
 set(MODULE_TYPE_LIBRARY "library")
 set(MODULE_TYPE_EXE "exe")
+set(MODULE_TYPE_AUX "aux")
 
 set(SOURCE_DIR_NAME "src")
 set(INCLUDE_DIR_NAME "include")
@@ -328,17 +332,27 @@ foreach(id ${EXE_MODULE_IDS})
           "${ARPTOOL_EXE}")
 endforeach()
 
+foreach(id ${AUX_MODULE_IDS})
+  _argus_configure_module("${AUX_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
+          "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
+          "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
+          "${ARPTOOL_EXE}")
+endforeach()
+
 # configure module dependency information
 
-get_property(DEP_EDGES GLOBAL PROPERTY "DEPENDENCY_GRAPH_EDGES")
-_argus_topo_sort("${STATIC_MODULE_IDS}" "${DEP_EDGES}" STATIC_MODULE_IDS)
+get_property(DEP_EDGES GLOBAL PROPERTY DEPENDENCY_GRAPH_EDGES)
+_argus_topo_sort("${STATIC_MODULE_IDS};${AUX_MODULE_IDS}" "${DEP_EDGES}" SORTED_MODULE_IDS)
+foreach(aux_mod "${AUX_MODULE_IDS}")
+  list(REMOVE_ITEM SORTED_MODULE_IDS "${aux_mod}")
+endforeach()
 
 set(STATIC_MODULE_ID_SET_LIST ${STATIC_MODULE_IDS})
 list(TRANSFORM STATIC_MODULE_ID_SET_LIST REPLACE "^(.+)$" "\"\\1\"")
 list(JOIN STATIC_MODULE_ID_SET_LIST ",\n        " STATIC_MODULE_ID_SET)
 
 set(STATIC_MODULE_DEFS_LIST "")
-foreach(id ${STATIC_MODULE_IDS})
+foreach(id ${SORTED_MODULE_IDS})
   set(deps_list ${MODULE_${id}_DEPS})
   list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
   list(JOIN deps_list ", " deps)
@@ -346,9 +360,9 @@ foreach(id ${STATIC_MODULE_IDS})
 endforeach()
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
 
-list(LENGTH STATIC_MODULE_IDS MODULE_COUNT)
+list(LENGTH SORTED_MODULE_IDS MODULE_COUNT)
 
-set(MODULE_LIFECYCLE_FNS_LIST "${STATIC_MODULE_IDS}")
+set(MODULE_LIFECYCLE_FNS_LIST "${SORTED_MODULE_IDS}")
 list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(std::underlying_type<argus::LifecycleStage> stage)\\\;")
 list(JOIN MODULE_LIFECYCLE_FNS_LIST "\n    " MODULE_LIFECYCLE_FNS)
 

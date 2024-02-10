@@ -210,6 +210,12 @@ function(_argus_compute_dep_edges)
     endforeach()
   endif()
 
+  if(NOT "${MODULE_ENGINE_AUX_DEPS}" STREQUAL "")
+    foreach(dep ${MODULE_ENGINE_AUX_DEPS})
+      list(APPEND EDGES "${dep}/${PROJECT_NAME}")
+    endforeach()
+  endif()
+
   set_property(GLOBAL PROPERTY "DEPENDENCY_GRAPH_EDGES" "${EDGES}")
 endfunction()
 
@@ -223,11 +229,11 @@ function(_argus_topo_sort NODES EDGES OUT_LIST)
     list(FIND NODES "${DEST_NODE}" DEST_INDEX)
 
     if(SRC_INDEX EQUAL -1)
-      message(FATAL_ERROR "Project \"${SRC_NODE}\" exists in dependency graph but could not be found.")
+      message(FATAL_ERROR "Project \"${SRC_NODE}\" (required by \"${DEST_NODE}\") exists in dependency graph but could not be found.")
     endif()
 
     if(DEST_INDEX EQUAL -1)
-      message(FATAL_ERROR "Project \"${SRC_NODE}\" declares dependency on \"${DEST_NODE}\" but no such project was found.")
+      message(FATAL_ERROR "Project \"${SRC_NODE}\" has dependent \"${DEST_NODE}\" but no such project was found.")
     endif()
   endforeach()
 
