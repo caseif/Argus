@@ -1,0 +1,10 @@
+[package]
+name = "argus_rust_ffi_gen"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "argus_rust_ffi_gen"
+
+[dependencies]
+bindgen = "0.69"
