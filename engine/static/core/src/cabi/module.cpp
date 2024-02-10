@@ -16,30 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/client_properties.h"
+#include "argus/core/cabi/module.h"
 
-#include "argus/core/client_properties.hpp"
+#include "argus/core/module.hpp"
 
-const char *argus_get_client_id(void) {
-    return argus::get_client_id().c_str();
+const char *argus_lifecycle_stage_to_str(LifecycleStage stage) {
+    return argus::lifecycle_stage_to_str(argus::LifecycleStage(stage));
 }
 
-void argus_set_client_id(const char *id) {
-    argus::set_client_id(id);
+void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage)) {
+    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallback>(lifecycle_callback));
 }
 
-const char *argus_get_client_name(void) {
-    return argus::get_client_name().c_str();
-}
-
-void argus_set_client_name(const char *id) {
-    argus::set_client_name(id);
-}
-
-const char *argus_get_client_version(void) {
-    return argus::get_client_version().c_str();
-}
-
-void argus_set_client_version(const char *id) {
-    argus::set_client_version(id);
+bool argus_enable_dynamic_module(const char *module_id) {
+    return argus::enable_dynamic_module(module_id);
 }

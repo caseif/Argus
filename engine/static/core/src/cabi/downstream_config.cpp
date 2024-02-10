@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/downstream_config.h"
+#include "argus/core/cabi/downstream_config.h"
 
 #include "argus/core/downstream_config.hpp"
 

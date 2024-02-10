@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/engine_config.h"
+#include "argus/core/cabi/engine_config.h"
 
 #include "argus/core/engine_config.hpp"
 
@@ -28,7 +28,7 @@ void set_target_framerate(unsigned int target_framerate) {
     argus::set_target_framerate(target_framerate);
 }
 
-void set_load_modules(const char **module_names, size_t count) {
+void set_load_modules(const char *const *module_names, size_t count) {
     std::vector<std::string> vec;
     vec.reserve(count);
     for (size_t i = 0; i < count; i++) {
@@ -59,7 +59,7 @@ void get_preferred_render_backends(size_t *out_count, const char **out_names) {
     }
 }
 
-void set_render_backends(const char **names, size_t count) {
+void set_render_backends(const char *const *names, size_t count) {
     std::vector<std::string> vec;
     vec.reserve(count);
     for (size_t i = 0; i < count; i++) {

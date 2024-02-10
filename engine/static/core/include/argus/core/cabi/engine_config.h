@@ -22,21 +22,21 @@
 extern "C" {
 #endif
 
-#include "argus/core_cabi/screen_space.h"
+#include "screen_space.h"
 
-#include <stddef.h>
+#include "stddef.h"
 
 void set_target_tickrate(unsigned int target_tickrate);
 
 void set_target_framerate(unsigned int target_framerate);
 
-void set_load_modules(const char **module_names, size_t count);
+void set_load_modules(const char *const *module_names, size_t count);
 
 void add_load_module(const char *module_name);
 
 void get_preferred_render_backends(size_t *out_count, const char **out_names);
 
-void set_render_backends(const char **names, size_t count);
+void set_render_backends(const char *const *names, size_t count);
 
 void add_render_backend(const char *name);
 

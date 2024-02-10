@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/engine.h"
+#include "argus/core/cabi/engine.h"
 
 #include "argus/core/engine.hpp"
 

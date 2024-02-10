@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
+#include "stdbool.h"
 
 #ifdef _WIN32
 #define ARGUS_EXPORT __declspec(dllexport)

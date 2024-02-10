@@ -4,8 +4,7 @@ set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;"
         "scripting;scripting_lua;"
         #"scripting_angelscript;"
-        "wm;input;render;ui;sound;game2d;"
-        "core_cabi")
+        "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
 

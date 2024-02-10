@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
+#include "stdbool.h"
 
 //TODO: move to lowlevel_cabi
 typedef enum TriState {

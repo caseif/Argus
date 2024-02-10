@@ -16,16 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "argus/core/cabi/message.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdint.h>
-
-typedef uint64_t Index;
-
-#ifdef __cplusplus
-}
-#endif
+//TODO

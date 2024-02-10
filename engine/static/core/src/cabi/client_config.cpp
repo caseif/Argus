@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/client_config.h"
+#include "argus/core/cabi/client_config.h"
 
 #include "argus/core/client_config.hpp"
 

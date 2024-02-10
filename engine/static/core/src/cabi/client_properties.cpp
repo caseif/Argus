@@ -16,6 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core_cabi/message.h"
+#include "argus/core/cabi/client_properties.h"
 
-//TODO
+#include "argus/core/client_properties.hpp"
+
+const char *argus_get_client_id(void) {
+    return argus::get_client_id().c_str();
+}
+
+void argus_set_client_id(const char *id) {
+    argus::set_client_id(id);
+}
+
+const char *argus_get_client_name(void) {
+    return argus::get_client_name().c_str();
+}
+
+void argus_set_client_name(const char *id) {
+    argus::set_client_name(id);
+}
+
+const char *argus_get_client_version(void) {
+    return argus::get_client_version().c_str();
+}
+
+void argus_set_client_version(const char *id) {
+    argus::set_client_version(id);
+}

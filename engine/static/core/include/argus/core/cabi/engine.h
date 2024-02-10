@@ -22,11 +22,11 @@
 extern "C" {
 #endif
 
-#include "argus/core_cabi/callback.h"
-#include "argus/core_cabi/module.h"
+#include "callback.h"
+#include "module.h"
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "stdbool.h"
+#include "stdint.h"
 
 #undef ARGUS_NORETURN
 #ifdef __cplusplus
