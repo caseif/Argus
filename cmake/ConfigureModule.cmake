@@ -31,6 +31,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     message(AUTHOR_WARNING "Failed to find module.properties in requested path ${MODULE_PROJECT_DIR} - skipping")
     return()
   endif()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MODULE_PROJECT_DIR}/module.properties")
 
   file(READ "${MODULE_PROPS_PATH}" MODULE_PROPS_CONTENT)
   string(REPLACE "\r\n" "\n" MODULE_PROPS_CONTENT "${MODULE_PROPS_CONTENT}")
