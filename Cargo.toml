@@ -3,4 +3,5 @@
 members = [
     "engine/auxiliary/core_rustabi",
     "engine/libs/shadertools",
+    "util/rustgen",
 ]
