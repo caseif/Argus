@@ -464,3 +464,6 @@ zconf.h.included
 .idea/
 cmake-build-*/
 venv/
+
+/Cargo.lock
+/engine/auxiliary/*/Cargo.lock
