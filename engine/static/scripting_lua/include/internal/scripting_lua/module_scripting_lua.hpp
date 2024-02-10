@@ -29,7 +29,5 @@ extern "C" {
 }
 
 namespace argus {
-    extern "C" {
-    void update_lifecycle_scripting_lua(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_scripting_lua(LifecycleStage stage);
 }

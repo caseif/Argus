@@ -67,8 +67,7 @@ namespace argus {
         _register_builtin_functions();
     }
 
-    extern "C" {
-    void update_lifecycle_scripting_angelscript(LifecycleStage stage) {
+    extern "C" void update_lifecycle_scripting_angelscript(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit:
                 ResourceManager::instance().register_loader(*new AngelscriptLoader());
@@ -79,6 +78,5 @@ namespace argus {
             default:
                 break;
         }
-    }
     }
 }

@@ -26,8 +26,7 @@
 #include <string>
 
 namespace argus {
-    extern "C" {
-    void update_lifecycle_resman(LifecycleStage stage) {
+    extern "C" void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit:
                 Logger::default_logger().debug("Discovering resources");
@@ -40,6 +39,5 @@ namespace argus {
             default:
                 break;
         }
-    }
     }
 }

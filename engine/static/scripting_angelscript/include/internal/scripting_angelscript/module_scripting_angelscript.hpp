@@ -25,7 +25,5 @@
 namespace argus {
     extern asIScriptEngine *g_as_script_engine;
 
-    extern "C" {
-    void update_lifecycle_scripting_angelscript(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_scripting_angelscript(LifecycleStage stage);
 }

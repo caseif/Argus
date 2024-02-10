@@ -34,7 +34,5 @@ namespace argus {
     extern VkInstance g_vk_instance;
     extern LogicalDevice g_vk_device;
 
-    extern "C" {
-    void update_lifecycle_render_vulkan(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_render_vulkan(LifecycleStage stage);
 }

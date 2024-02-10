@@ -36,7 +36,5 @@ namespace argus {
 
     extern HandleTable g_render_handle_table;
 
-    extern "C" {
-    void update_lifecycle_render(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_render(LifecycleStage stage);
 }

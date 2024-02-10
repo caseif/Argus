@@ -21,8 +21,7 @@
 #include "internal/ui/module_ui.hpp"
 
 namespace argus {
-    extern "C" {
-    void update_lifecycle_ui(LifecycleStage stage) {
+    extern "C" void update_lifecycle_ui(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
                 //TODO
@@ -33,6 +32,5 @@ namespace argus {
                 break;
             }
         }
-    }
     }
 }

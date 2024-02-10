@@ -42,7 +42,5 @@ namespace argus {
     extern std::vector<ScriptDeltaCallback> g_update_callbacks;
     extern std::vector<ScriptDeltaCallback> g_render_callbacks;
 
-    extern "C" {
-    void update_lifecycle_scripting(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_scripting(LifecycleStage stage);
 }

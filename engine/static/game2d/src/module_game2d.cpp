@@ -32,8 +32,7 @@ namespace argus {
     HandleTable g_static_obj_table;
     HandleTable g_actor_table;
 
-    extern "C" {
-    void update_lifecycle_game2d(LifecycleStage stage) {
+    extern "C" void update_lifecycle_game2d(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
                 ResourceManager::instance().register_loader(*new SpriteLoader());
@@ -54,6 +53,5 @@ namespace argus {
                 break;
             }
         }
-    }
     }
 }

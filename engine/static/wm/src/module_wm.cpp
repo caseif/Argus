@@ -142,8 +142,7 @@ namespace argus {
         }
     }
 
-    extern "C" {
-    void update_lifecycle_wm(LifecycleStage stage) {
+    extern "C" void update_lifecycle_wm(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
                 #if defined(SDL_HINT_VIDEODRIVER) && SDL_VIDEO_DRIVER_WAYLAND
@@ -180,6 +179,5 @@ namespace argus {
             default:
                 break;
         }
-    }
     }
 }

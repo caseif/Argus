@@ -244,8 +244,7 @@ namespace argus {
         }
     }
 
-    extern "C" {
-    void update_lifecycle_render_vulkan(LifecycleStage stage) {
+    extern "C" void update_lifecycle_render_vulkan(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 register_render_backend(BACKEND_ID, _activate_vulkan_backend);
@@ -287,7 +286,6 @@ namespace argus {
                 break;
             }
         }
-    }
     }
 
     REGISTER_ARGUS_MODULE("render_vulkan", update_lifecycle_render_vulkan, { "render" })

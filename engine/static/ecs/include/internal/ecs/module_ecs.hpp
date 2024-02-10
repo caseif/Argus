@@ -23,7 +23,5 @@
 namespace argus {
     extern bool g_ecs_initialized;
 
-    extern "C" {
-    void update_lifecycle_ecs(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_ecs(LifecycleStage stage);
 }

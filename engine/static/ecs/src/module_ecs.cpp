@@ -26,8 +26,7 @@
 namespace argus {
     bool g_ecs_initialized = false;
 
-    extern "C" {
-    void update_lifecycle_ecs(LifecycleStage stage) {
+    extern "C" void update_lifecycle_ecs(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PostInit: {
                 // we only accept component and system registrations during the pre-init and init stages
@@ -43,6 +42,5 @@ namespace argus {
                 break;
             }
         }
-    }
     }
 }

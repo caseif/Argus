@@ -152,8 +152,7 @@ namespace argus {
         }
     }
 
-    extern "C" {
-    void update_lifecycle_render_opengl_legacy(LifecycleStage stage) {
+    extern "C" void update_lifecycle_render_opengl_legacy(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 register_render_backend(BACKEND_ID, _activate_opengl_backend);
@@ -187,7 +186,6 @@ namespace argus {
                 break;
             }
         }
-    }
     }
 
     REGISTER_ARGUS_MODULE("render_opengl_legacy", update_lifecycle_render_opengl_legacy, { "render" })

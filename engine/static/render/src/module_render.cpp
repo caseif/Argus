@@ -180,8 +180,7 @@ namespace argus {
         }
     }
 
-    extern "C" {
-    void update_lifecycle_render(LifecycleStage stage) {
+    extern "C" void update_lifecycle_render(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Load: {
                 _load_backend_modules();
@@ -222,6 +221,5 @@ namespace argus {
             default:
                 break;
         }
-    }
     }
 }

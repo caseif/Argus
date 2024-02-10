@@ -32,7 +32,5 @@ namespace argus {
 
     extern bool g_wm_module_initialized;
 
-    extern "C" {
-    void update_lifecycle_wm(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_wm(LifecycleStage stage);
 }

@@ -26,7 +26,5 @@ namespace argus {
     extern HandleTable g_static_obj_table;
     extern HandleTable g_actor_table;
 
-    extern "C" {
-    void update_lifecycle_game2d(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_game2d(LifecycleStage stage);
 }

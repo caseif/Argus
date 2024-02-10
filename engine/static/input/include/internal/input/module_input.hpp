@@ -21,7 +21,5 @@
 #include "argus/core/module.hpp"
 
 namespace argus {
-    extern "C" {
-    void update_lifecycle_input(LifecycleStage stage);
-    }
+    extern "C" void update_lifecycle_input(LifecycleStage stage);
 }
