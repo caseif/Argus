@@ -36,13 +36,13 @@ fn get_module_type_dir(module_type: &ModuleType) -> &'static str {
         ModuleType::Library => "lib",
         ModuleType::Static => "static",
         ModuleType::Dynamic => "dynamic",
-        ModuleType::Auxiliary => "aux",
+        ModuleType::Auxiliary => "auxiliary",
         ModuleType::Executable => "exe",
     }
 }
 
 fn get_bindings_path(module_name: &str) -> PathBuf {
-    return ["..", "..", "engine", "aux", format!("{module_name}_rustabi").as_str(), "src", "bindings.rs"]
+    return ["..", "..", "engine", "auxiliary", format!("{module_name}_rustabi").as_str(), "src", "bindings.rs"]
             .iter().collect();
 }
 
@@ -75,8 +75,9 @@ fn gen_bindings((module_type, module_name): (ModuleType, &'static str)) {
             .prepend_enum_name(false)
             .enable_function_attribute_detection()
             .merge_extern_blocks(true)
-            .allowlist_function(".*")
-            .allowlist_item("ARGUS_.*")
+            .layout_tests(false)
+            .allowlist_file("^.*[/\\\\]argus[/\\\\].*$")
+            .allowlist_recursively(false)
             .clang_arg(format!("-I{}", module_inc_dir.to_str().unwrap()))
             .clang_arg("-std=c11")
             .generate()
