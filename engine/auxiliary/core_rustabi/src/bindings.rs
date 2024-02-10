@@ -18,6 +18,8 @@ pub const LIFECYCLE_STAGE_PREDEINIT: LifecycleStage = 5;
 pub const LIFECYCLE_STAGE_DEINIT: LifecycleStage = 6;
 pub const LIFECYCLE_STAGE_POSTDEINIT: LifecycleStage = 7;
 pub type LifecycleStage = ::std::os::raw::c_uint;
+pub type lifecycle_update_callback_t =
+    ::std::option::Option<unsafe extern "C" fn(arg1: LifecycleStage)>;
 pub type nullary_callback_t = ::std::option::Option<unsafe extern "C" fn()>;
 pub type delta_callback_t = ::std::option::Option<unsafe extern "C" fn(arg1: u64)>;
 pub const ORDERING_FIRST: Ordering = 0;
@@ -26,6 +28,14 @@ pub const ORDERING_STANDARD: Ordering = 2;
 pub const ORDERING_LATE: Ordering = 3;
 pub const ORDERING_LAST: Ordering = 4;
 pub type Ordering = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ScreenSpace {
+    pub left: f32,
+    pub right: f32,
+    pub top: f32,
+    pub bottom: f32,
+}
 pub const SSS_MODE_NORMALIZE_MIN_DIM: ScreenSpaceScaleMode = 0;
 pub const SSS_MODE_NORMALIZE_MAX_DIM: ScreenSpaceScaleMode = 1;
 pub const SSS_MODE_NORMALIZE_VERTICAL: ScreenSpaceScaleMode = 2;
@@ -64,6 +74,8 @@ extern "C" {
     pub fn argus_register_dynamic_module(
         id: *const ::std::os::raw::c_char,
         lifecycle_callback: ::std::option::Option<unsafe extern "C" fn(arg1: LifecycleStage)>,
+        dependencies_count: usize,
+        dependencies: *mut *const ::std::os::raw::c_char,
     );
     pub fn argus_enable_dynamic_module(module_id: *const ::std::os::raw::c_char) -> bool;
     pub fn argus_initialize_engine();

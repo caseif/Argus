@@ -20,6 +20,8 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::bindings;
 
+use bindings::ScreenSpace;
+
 #[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
 pub enum ScreenSpaceScaleMode {

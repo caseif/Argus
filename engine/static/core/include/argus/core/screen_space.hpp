@@ -24,14 +24,9 @@ namespace argus {
         float right;
         float top;
         float bottom;
-
-        ScreenSpace(float left, float right, float top, float bottom) :
-                left(left),
-                right(right),
-                top(top),
-                bottom(bottom) {
-        }
     };
+
+    static_assert(std::is_pod_v<ScreenSpace>);
 
     /**
      * \brief Controls how the screen space is scaled with respect to window

@@ -22,7 +22,12 @@
 extern "C" {
 #endif
 
-//TODO: ScreenSpace
+struct ScreenSpace {
+    float left;
+    float right;
+    float top;
+    float bottom;
+};
 
 typedef enum ScreenSpaceScaleMode {
     SSS_MODE_NORMALIZE_MIN_DIM,
