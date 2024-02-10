@@ -70,7 +70,9 @@ while read -r file; do
     output="${output:0:-1}"
     # finally, write it to disk!
     printf "$output" > $file
-done <<< $(find "./engine" "./test" -type f \( -iname "*.c" -or -iname "*.h" -or -iname "*.cpp" -or -iname "*.hpp" \))
+done <<< $(find "./engine" "./test" "./util" -type f \( -iname "*.c" -or -iname "*.h" \
+    -or -iname "*.cpp" -or -iname "*.hpp" -or -iname "*.rs" -and -not -iname "bindings.rs" \
+    -and -not -path "*/target/*" \))
 
 # if we didn't update anything, say so (to avoid zero-output)
 if [ $count -eq 0 ]; then
