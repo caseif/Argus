@@ -1,0 +1,12 @@
+[package]
+name = "lowlevel_rustabi"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "lowlevel_rustabi"
+crate-type = ["rlib"]
+
+[dependencies]
+libc = "0.2"
+num_enum = "0.7"
