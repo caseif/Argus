@@ -115,6 +115,9 @@ namespace argus {
 
     Index register_event_handler_with_type(std::string type_id, ArgusEventWithDataCallback callback,
             const TargetThread target_thread, void *const data, Ordering ordering) {
+        affirm_precond(is_current_thread_update_thread(),
+                "Event handlers may only be registered from the update thread");
+
         affirm_precond(g_core_initializing || g_core_initialized,
                 "Cannot register event listener before engine initialization.");
         affirm_precond(callback != nullptr, "Event listener cannot have null callback.");
