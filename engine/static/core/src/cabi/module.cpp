@@ -16,16 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/core/module.hpp"
 #include "argus/core/cabi/module.h"
 
-#include "argus/core/module.hpp"
+#include <iterator>
 
 const char *argus_lifecycle_stage_to_str(LifecycleStage stage) {
     return argus::lifecycle_stage_to_str(argus::LifecycleStage(stage));
 }
 
-void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage)) {
-    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallback>(lifecycle_callback));
+void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage),
+        size_t dependencies_count, const char *const *dependencies) {
+    std::vector<std::string> deps_vec;
+    deps_vec.reserve(dependencies_count);
+    for (size_t i = 0; i < dependencies_count; i++) {
+        deps_vec[i] = dependencies[i];
+    }
+    argus::register_dynamic_module(id, reinterpret_cast<argus::LifecycleUpdateCallback>(lifecycle_callback),
+            deps_vec);
 }
 
 bool argus_enable_dynamic_module(const char *module_id) {

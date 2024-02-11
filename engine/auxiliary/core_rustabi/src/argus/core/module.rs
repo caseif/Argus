@@ -43,9 +43,10 @@ pub fn lifecycle_stage_to_str(stage: LifecycleStage) -> String {
     }
 }
 
-pub fn register_dynamic_module(id: &str, lifecycle_callback: LifecycleUpdateCallback) {
+pub fn register_dynamic_module(id: &str, lifecycle_callback: LifecycleUpdateCallback, dependencies: Vec<String>) {
     unsafe {
-        argus_register_dynamic_module(str_to_cstring(id).as_ptr(), Some(lifecycle_callback));
+        let (names, count) = string_vec_to_cstr_arr(dependencies).into();
+        argus_register_dynamic_module(str_to_cstring(id).as_ptr(), Some(lifecycle_callback), count, names);
     }
 }
 
@@ -54,5 +55,3 @@ pub fn enable_dynamic_module(module_id: &str) -> bool {
         return argus_enable_dynamic_module(str_to_cstring(module_id).as_ptr());
     }
 }
-
-//TODO: argus_get_present_dynamic_modules

@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #include "stdbool.h"
+#include "stddef.h"
 
 #ifdef _WIN32
 #define ARGUS_EXPORT __declspec(dllexport)
@@ -53,12 +54,10 @@ typedef void(*lifecycle_update_callback_t)(LifecycleStage);
 
 const char *argus_lifecycle_stage_to_str(LifecycleStage stage);
 
-//TODO: dependencies parameter
-void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage));
+void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(LifecycleStage),
+        size_t dependencies_count, const char *const *dependencies);
 
 bool argus_enable_dynamic_module(const char *module_id);
-
-//TODO: argus_get_present_dynamic_modules
 
 #ifdef __cplusplus
 }

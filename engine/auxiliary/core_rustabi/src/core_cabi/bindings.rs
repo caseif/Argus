@@ -76,6 +76,8 @@ extern "C" {
     pub fn argus_register_dynamic_module(
         id: *const ::std::os::raw::c_char,
         lifecycle_callback: ::std::option::Option<unsafe extern "C" fn(arg1: LifecycleStage)>,
+        dependencies_count: usize,
+        dependencies: *const *const ::std::os::raw::c_char,
     );
     pub fn argus_enable_dynamic_module(module_id: *const ::std::os::raw::c_char) -> bool;
     pub fn argus_initialize_engine();
