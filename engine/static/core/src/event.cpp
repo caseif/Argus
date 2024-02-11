@@ -31,14 +31,12 @@
 #include <functional>
 #include <mutex>
 #include <queue>
-#include <typeindex>
-#include <typeinfo>
 #include <type_traits>
 #include <vector>
 
 namespace argus {
     struct ArgusEventHandler {
-        std::type_index type;
+        std::string type_id;
         ArgusEventWithDataCallback callback;
         void *data;
     };
@@ -78,7 +76,7 @@ namespace argus {
             auto listeners_copy = listeners;
             for (auto ordering : ORDERINGS) {
                 for (auto &listener : listeners.lists[ordering]) {
-                    if (int(listener.value.type == event.ptr->type)) {
+                    if (int(listener.value.type_id == event.ptr->type_id)) {
                         listener.value.callback(*event.ptr, listener.value.data);
                     }
                 }
@@ -115,7 +113,7 @@ namespace argus {
         flush_callback_list_queues(*listeners);
     }
 
-    Index register_event_handler_with_type(std::type_index type, ArgusEventWithDataCallback callback,
+    Index register_event_handler_with_type(std::string type_id, ArgusEventWithDataCallback callback,
             const TargetThread target_thread, void *const data, Ordering ordering) {
         affirm_precond(g_core_initializing || g_core_initialized,
                 "Cannot register event listener before engine initialization.");
@@ -136,7 +134,7 @@ namespace argus {
             }
         }
 
-        ArgusEventHandler listener = {type, std::move(callback), data};
+        ArgusEventHandler listener = { std::move(type_id), std::move(callback), data };
         return add_callback(*listeners, listener, ordering);
     }
 
@@ -168,8 +166,12 @@ namespace argus {
         g_render_event_queue_mutex.unlock();
     }
 
+    ArgusEvent::ArgusEvent(std::string type_id) :
+            type_id(std::move(type_id)) {
+    }
+
     ArgusEvent::ArgusEvent(std::type_index type) :
-            type(type) {
+            type_id(type.name()) {
     }
 
     ArgusEvent::ArgusEvent(const ArgusEvent &rhs) = default;
