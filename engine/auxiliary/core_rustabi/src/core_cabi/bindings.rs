@@ -44,6 +44,14 @@ pub const SSS_MODE_NORMALIZE_VERTICAL: ScreenSpaceScaleMode = 2;
 pub const SSS_MODE_NORMALIZE_HORIZONTAL: ScreenSpaceScaleMode = 3;
 pub const SSS_MODE_NONE: ScreenSpaceScaleMode = 4;
 pub type ScreenSpaceScaleMode = ::std::os::raw::c_uint;
+pub type argus_event_t = *mut ::std::os::raw::c_void;
+pub type argus_event_const_t = *const ::std::os::raw::c_void;
+pub type argus_event_handler_t = ::std::option::Option<
+    unsafe extern "C" fn(arg1: argus_event_const_t, arg2: *mut ::std::os::raw::c_void),
+>;
+pub const TARGET_THREAD_UPDATE: TargetThread = 0;
+pub const TARGET_THREAD_RENDER: TargetThread = 1;
+pub type TargetThread = ::std::os::raw::c_uint;
 extern "C" {
     pub fn argus_load_client_config(config_namespace: *const ::std::os::raw::c_char);
     pub fn argus_get_client_id() -> *const ::std::os::raw::c_char;
@@ -109,4 +117,13 @@ extern "C" {
     pub fn set_render_backend(name: *const ::std::os::raw::c_char);
     pub fn get_screen_space_scale_mode() -> ScreenSpaceScaleMode;
     pub fn set_screen_space_scale_mode(mode: ScreenSpaceScaleMode);
+    pub fn argus_register_event_handler(
+        type_id: *const ::std::os::raw::c_char,
+        handler: argus_event_handler_t,
+        target_thread: TargetThread,
+        data: *mut ::std::os::raw::c_void,
+        ordering: Ordering,
+    ) -> Index;
+    pub fn argus_unregister_event_handler(index: Index);
+    pub fn argus_dispatch_event(event: argus_event_t);
 }

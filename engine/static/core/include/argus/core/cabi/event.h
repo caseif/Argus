@@ -22,7 +22,25 @@
 extern "C" {
 #endif
 
-//TODO
+#include "argus/core/cabi/callback.h"
+#include "argus/core/cabi/engine.h"
+
+typedef void *argus_event_t;
+typedef const void *argus_event_const_t;
+
+typedef void (*argus_event_handler_t)(argus_event_const_t, void *);
+
+typedef enum TargetThread {
+    TARGET_THREAD_UPDATE,
+    TARGET_THREAD_RENDER,
+} TargetThread;
+
+Index argus_register_event_handler(const char *type_id, argus_event_handler_t handler,
+        TargetThread target_thread, void *data, Ordering ordering);
+
+void argus_unregister_event_handler(Index index);
+
+void argus_dispatch_event(argus_event_t event);
 
 #ifdef __cplusplus
 }
