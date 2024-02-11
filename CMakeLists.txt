@@ -353,6 +353,10 @@ list(JOIN STATIC_MODULE_ID_SET_LIST ",\n        " STATIC_MODULE_ID_SET)
 
 set(STATIC_MODULE_DEFS_LIST "")
 foreach(id ${SORTED_MODULE_IDS})
+  if(NOT id IN_LIST STATIC_MODULE_IDS)
+    continue()
+  endif()
+
   set(deps_list ${MODULE_${id}_DEPS})
   list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
   list(JOIN deps_list ", " deps)
