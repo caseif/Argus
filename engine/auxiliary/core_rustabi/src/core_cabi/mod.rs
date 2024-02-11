@@ -18,4 +18,6 @@
 
 pub mod bindings;
 
+use lowlevel_rustabi::lowlevel_cabi::*;
+
 pub use self::bindings::*;

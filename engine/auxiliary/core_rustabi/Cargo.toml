@@ -10,3 +10,4 @@ crate-type = ["rlib"]
 [dependencies]
 libc = "0.2"
 num_enum = "0.7"
+lowlevel_rustabi = { path = "../lowlevel_rustabi" }
