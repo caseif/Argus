@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#include "argus/lowlevel/cabi/c_interop.h"
+
 #include "stdbool.h"
 #include "stddef.h"
 
@@ -58,6 +60,8 @@ void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(Lif
         size_t dependencies_count, const char *const *dependencies);
 
 bool argus_enable_dynamic_module(const char *module_id);
+
+StringArray argus_get_present_dynamic_modules(void);
 
 #ifdef __cplusplus
 }

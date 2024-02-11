@@ -16,9 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/cabi/c_interop.h"
+
 #include "argus/core/module.hpp"
 #include "argus/core/cabi/module.h"
 
+#include <algorithm>
 #include <iterator>
 
 const char *argus_lifecycle_stage_to_str(LifecycleStage stage) {
@@ -38,4 +41,8 @@ void argus_register_dynamic_module(const char *id, void(*lifecycle_callback)(Lif
 
 bool argus_enable_dynamic_module(const char *module_id) {
     return argus::enable_dynamic_module(module_id);
+}
+
+StringArray argus_get_present_dynamic_modules(void) {
+    return new std::vector<std::string>(argus::get_present_dynamic_modules());
 }

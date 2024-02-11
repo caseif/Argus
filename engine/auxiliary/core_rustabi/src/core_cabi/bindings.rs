@@ -80,6 +80,7 @@ extern "C" {
         dependencies: *const *const ::std::os::raw::c_char,
     );
     pub fn argus_enable_dynamic_module(module_id: *const ::std::os::raw::c_char) -> bool;
+    pub fn argus_get_present_dynamic_modules() -> StringArray;
     pub fn argus_initialize_engine();
     pub fn argus_start_engine(callback: delta_callback_t) -> !;
     pub fn argus_get_current_lifecycle_stage() -> LifecycleStage;
