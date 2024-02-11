@@ -117,6 +117,7 @@ extern "C" {
     pub fn set_render_backend(name: *const ::std::os::raw::c_char);
     pub fn get_screen_space_scale_mode() -> ScreenSpaceScaleMode;
     pub fn set_screen_space_scale_mode(mode: ScreenSpaceScaleMode);
+    pub fn argus_event_get_type_id(event: argus_event_const_t) -> *const ::std::os::raw::c_char;
     pub fn argus_register_event_handler(
         type_id: *const ::std::os::raw::c_char,
         handler: argus_event_handler_t,

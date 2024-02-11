@@ -35,6 +35,8 @@ typedef enum TargetThread {
     TARGET_THREAD_RENDER,
 } TargetThread;
 
+const char *argus_event_get_type_id(argus_event_const_t event);
+
 Index argus_register_event_handler(const char *type_id, argus_event_handler_t handler,
         TargetThread target_thread, void *data, Ordering ordering);
 
