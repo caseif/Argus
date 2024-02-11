@@ -26,7 +26,7 @@
 namespace argus::input {
     InputEvent::InputEvent(InputEventType type, const Window *window, std::string controller_name,
             std::string action, double axis_value, double axis_delta) :
-            ArgusEvent(typeid(InputEvent)),
+            ArgusEvent(get_event_type_id()),
             input_type(type),
             window(window),
             controller_name(std::move(controller_name)),
@@ -44,7 +44,7 @@ namespace argus::input {
 
     InputDeviceEvent::InputDeviceEvent(InputDeviceEventType type, std::string controller_name,
             HidDeviceId device_id) :
-        ArgusEvent(typeid(InputDeviceEvent)),
+        ArgusEvent(get_event_type_id()),
         device_event(type),
         controller_name(std::move(controller_name)),
         device_id(device_id) {

@@ -25,6 +25,9 @@
 #include <string>
 
 namespace argus::input {
+    constexpr const char *EVENT_TYPE_INPUT = "input";
+    constexpr const char *EVENT_TYPE_INPUT_DEVICE = "input_device";
+
     enum class InputEventType {
         ButtonDown,
         ButtonUp,
@@ -37,6 +40,10 @@ namespace argus::input {
     };
 
     struct InputEvent : public ArgusEvent, AutoCleanupable {
+        static constexpr const char *get_event_type_id(void) {
+            return EVENT_TYPE_INPUT;
+        }
+
         const InputEventType input_type;
         //TODO: replace with std::optional once we have proper binding support for it
         const Window *window;
@@ -58,6 +65,10 @@ namespace argus::input {
     };
 
     struct InputDeviceEvent : ArgusEvent, AutoCleanupable {
+        static constexpr const char *get_event_type_id(void) {
+            return EVENT_TYPE_INPUT_DEVICE;
+        }
+
         const InputDeviceEventType device_event;
         const std::string controller_name;
         const HidDeviceId device_id;

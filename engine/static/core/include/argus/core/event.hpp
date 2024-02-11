@@ -22,6 +22,7 @@
 
 #include "argus/core/callback.hpp"
 #include "argus/core/engine.hpp"
+#include "argus/lowlevel/extra_type_traits.hpp"
 
 #include <functional>
 #include <type_traits>
@@ -30,6 +31,15 @@
 #include <cstdint>
 
 namespace argus {
+    template <typename, typename T>
+    struct has_event_type_id_accessor : std::false_type {};
+
+    template <typename T>
+    struct has_event_type_id_accessor<T, std::void_t<decltype(T::get_event_type_id())>> : std::true_type {};
+
+    template <typename T>
+    constexpr bool has_event_type_id_accessor_v = has_event_type_id_accessor<T, void>::value;
+
     /**
      * \brief Represents an event pertaining to the current application,
      *        typically triggered by user interaction.
@@ -106,10 +116,12 @@ namespace argus {
     template<typename EventType>
     Index register_event_handler(std::function<void(const EventType &)> callback,
             const TargetThread target_thread, Ordering ordering = Ordering::Standard) {
-        return register_event_handler_with_type(std::type_index(typeid(EventType)).name(),
+        static_assert(has_event_type_id_accessor_v<EventType>,
+                "Event class must contain static function get_event_type_id");
+        return register_event_handler_with_type(EventType::get_event_type_id(),
                 [callback = std::move(callback)](const ArgusEvent &e, void *d) {
                     UNUSED(d);
-                    assert(e.type_id == std::type_index(typeid(EventType)).name());
+                    assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e));
                 },
                 target_thread, nullptr, ordering);
@@ -133,9 +145,11 @@ namespace argus {
     Index register_event_handler(std::function<void(const EventType &, void *)> callback,
             const TargetThread target_thread, void *const data = nullptr,
             Ordering ordering = Ordering::Standard) {
-        return register_event_handler_with_type(std::type_index(typeid(EventType)).name(),
+        static_assert(has_event_type_id_accessor_v<EventType>,
+                "Event class must contain static function get_event_type_id");
+        return register_event_handler_with_type(EventType::get_event_type_id(),
                 [callback = std::move(callback)](const ArgusEvent &e, void *d) {
-                    assert(e.type_id == std::type_index(typeid(EventType)).name());
+                    assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e), d);
                 },
                 target_thread, data, ordering);

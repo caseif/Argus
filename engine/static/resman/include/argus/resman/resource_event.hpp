@@ -26,6 +26,8 @@ namespace argus {
     // forward declarations
     class Resource;
 
+    constexpr const char *EVENT_TYPE_RESOURCE = "resource";
+
     /**
      * \brief A type of ResourceEvent.
      *
@@ -47,6 +49,10 @@ namespace argus {
      * \sa Resource
      */
     struct ResourceEvent : public ArgusEvent {
+        static constexpr const char *get_event_type_id(void) {
+            return EVENT_TYPE_RESOURCE;
+        }
+
         /**
          * \brief The subtype of the event.
          */
@@ -72,7 +78,7 @@ namespace argus {
          * \param resource The Resource associated with the event.
          */
         ResourceEvent(const ResourceEventType subtype, ResourcePrototype prototype, Resource *resource) :
-                ArgusEvent{std::type_index(typeid(ResourceEvent))},
+                ArgusEvent(get_event_type_id()),
                 subtype(subtype),
                 prototype(std::move(prototype)),
                 resource(resource) {

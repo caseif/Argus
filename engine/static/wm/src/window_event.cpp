@@ -23,7 +23,7 @@
 namespace argus {
     WindowEvent::WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
             TimeDelta delta) :
-            ArgusEvent{std::type_index(typeid(WindowEvent))},
+            ArgusEvent(get_event_type_id()),
             subtype(subtype),
             window(window),
             resolution(resolution),

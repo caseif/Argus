@@ -31,6 +31,8 @@ namespace argus {
     // forward declarations
     class Window;
 
+    constexpr const char *EVENT_TYPE_WINDOW = "window";
+
     /**
      * \brief A type of WindowEvent.
      *
@@ -55,6 +57,10 @@ namespace argus {
      * \sa Window
      */
     struct WindowEvent : public ArgusEvent, AutoCleanupable {
+        static constexpr const char *get_event_type_id(void) {
+            return EVENT_TYPE_WINDOW;
+        }
+
         /**
          * \brief The specific \link WindowEventType type \endlink of
          *        WindowEvent.
