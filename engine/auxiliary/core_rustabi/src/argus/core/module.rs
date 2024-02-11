@@ -18,6 +18,8 @@
 
 use num_enum::TryFromPrimitive;
 
+use lowlevel_rustabi::argus;
+
 use crate::core_cabi;
 use crate::core_cabi::*;
 use crate::util::*;
@@ -55,3 +57,12 @@ pub fn enable_dynamic_module(module_id: &str) -> bool {
         return argus_enable_dynamic_module(str_to_cstring(module_id).as_ptr());
     }
 }
+
+ pub fn get_present_dynamic_modules() -> Vec<String> {
+     unsafe {
+         let arr = argus_get_present_dynamic_modules();
+         let vec = argus::lowlevel::string_array_to_vec(arr);
+         argus::lowlevel::free_string_array(arr);
+         return vec;
+     }
+ }
