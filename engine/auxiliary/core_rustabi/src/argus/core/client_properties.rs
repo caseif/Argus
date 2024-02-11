@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use crate::bindings::*;
+use crate::core_cabi::*;
 use crate::util::*;
 
 pub fn get_client_id() -> String {

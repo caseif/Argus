@@ -18,9 +18,9 @@
 
 #![allow(dead_code)]
 
-use crate::bindings;
+use crate::core_cabi;
 
-const ENGINE_NAME: &str = unsafe { std::str::from_utf8_unchecked(bindings::ARGUS_ENGINE_NAME) };
-const ENGINE_VERISON_MAJOR: u32 = bindings::ARGUS_ENGINE_VERSION_MAJOR;
-const ENGINE_VERISON_MINOR: u32 = bindings::ARGUS_ENGINE_VERSION_MINOR;
-const ENGINE_VERISON_INCR: u32 = bindings::ARGUS_ENGINE_VERSION_INCR;
+const ENGINE_NAME: &str = unsafe { std::str::from_utf8_unchecked(core_cabi::ARGUS_ENGINE_NAME) };
+const ENGINE_VERISON_MAJOR: u32 = core_cabi::ARGUS_ENGINE_VERSION_MAJOR;
+const ENGINE_VERISON_MINOR: u32 = core_cabi::ARGUS_ENGINE_VERSION_MINOR;
+const ENGINE_VERISON_INCR: u32 = core_cabi::ARGUS_ENGINE_VERSION_INCR;

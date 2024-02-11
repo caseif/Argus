@@ -205,7 +205,7 @@ namespace argus {
      *        registered.
      */
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
-            std::initializer_list<std::string> dependencies = {});
+            std::vector<std::string> dependencies = {});
 
     /**
      * \brief Enables a registered dynamic module on demand.
@@ -218,12 +218,9 @@ namespace argus {
     bool enable_dynamic_module(const std::string &module_id);
 
     /**
-     * \brief Returns a map of dynamic modules discovered on the filesystem.
+     * \brief Returns a list of dynamic modules discovered on the filesystem.
      *
-     * The map keys are the IDs of the discovered modules, while the values are
-     * the respective paths at which they are located.
-     *
-     * \return A map from IDs to filesystem paths for present dynamic modules.
+     * \return A list of IDs of present dynamic modules.
      */
-    std::map<std::string, std::filesystem::path> get_present_dynamic_modules(void);
+    std::vector<std::string> get_present_dynamic_modules(void);
 }

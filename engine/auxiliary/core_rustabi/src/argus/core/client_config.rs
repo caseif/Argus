@@ -18,7 +18,7 @@
 
 use std::ffi::CString;
 
-use crate::bindings::*;
+use crate::core_cabi::*;
 use crate::util::*;
 
 pub fn load_client_config(config_namespace: &str) {

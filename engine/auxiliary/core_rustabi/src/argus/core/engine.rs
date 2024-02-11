@@ -20,8 +20,8 @@ use std::convert::TryFrom;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use crate::bindings;
-use crate::bindings::*;
+use crate::core_cabi;
+use crate::core_cabi::*;
 
 pub type NullaryCallback = extern "C" fn();
 pub type DeltaCallback = extern "C" fn(u64);

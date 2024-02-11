@@ -21,9 +21,5 @@ pub mod argus;
 #[allow(non_upper_case_globals)]
 #[allow(non_camel_case_types)]
 #[allow(non_snake_case)]
-pub(crate) mod bindings;
+pub(crate) mod core_cabi;
 pub(crate) mod util;
-
-#[no_mangle]
-pub extern "C" fn update_lifecycle_core_rustabi(_stage: bindings::LifecycleStage) {
-}

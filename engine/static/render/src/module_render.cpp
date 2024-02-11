@@ -110,7 +110,7 @@ namespace argus {
     static void _load_backend_modules(void) {
         Logger::default_logger().debug("Loading graphics backend modules");
         size_t count = 0;
-        for (auto &[module_id, _] : get_present_dynamic_modules()) {
+        for (const auto &module_id : get_present_dynamic_modules()) {
             if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
                 //TODO: fail gracefully
                 if (!enable_dynamic_module(module_id)) {

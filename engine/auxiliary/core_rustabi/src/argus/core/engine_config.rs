@@ -21,41 +21,41 @@ use std::ffi::{CString, c_char};
 use std::ptr::null_mut;
 
 use crate::argus::core::screen_space::ScreenSpaceScaleMode;
-use crate::bindings;
+use crate::core_cabi;
 use crate::util::*;
 
 pub fn set_target_tickrate(target_tickrate: u32) {
     unsafe {
-        bindings::set_target_tickrate(target_tickrate);
+        core_cabi::set_target_tickrate(target_tickrate);
     }
 }
 
 pub fn set_target_framerate(target_framerate: u32) {
     unsafe {
-        bindings::set_target_framerate(target_framerate);
+        core_cabi::set_target_framerate(target_framerate);
     }
 }
 
 pub fn set_load_modules(module_names: Vec<String>) {
     unsafe {
         let (names, count) = string_vec_to_cstr_arr(module_names).into();
-        bindings::set_load_modules(names, count);
+        core_cabi::set_load_modules(names, count);
     }
 }
 
 pub fn add_load_module(module_name: &str) {
     unsafe {
-        bindings::add_load_module(str_to_cstring(module_name).as_ptr());
+        core_cabi::add_load_module(str_to_cstring(module_name).as_ptr());
     }
 }
 
 pub fn get_preferred_render_backends() -> Vec<String> {
     unsafe {
         let mut count: usize = 0;
-        bindings::get_preferred_render_backends(&mut count, null_mut());
+        core_cabi::get_preferred_render_backends(&mut count, null_mut());
 
         let mut names = Vec::<*const c_char>::new();
-        bindings::get_preferred_render_backends(null_mut(), names.as_mut_ptr());
+        core_cabi::get_preferred_render_backends(null_mut(), names.as_mut_ptr());
 
         return names.iter().map(|s| cstr_to_string(*s)).collect();
     }
@@ -64,30 +64,30 @@ pub fn get_preferred_render_backends() -> Vec<String> {
 pub fn set_render_backends(names: Vec<String>) {
     unsafe {
         let (names, count) = string_vec_to_cstr_arr(names).into();
-        bindings::set_render_backends(names, count);
+        core_cabi::set_render_backends(names, count);
     }
 }
 
 pub fn add_render_backend(name: &str) {
     unsafe {
-        bindings::add_render_backend(str_to_cstring(name).as_ptr());
+        core_cabi::add_render_backend(str_to_cstring(name).as_ptr());
     }
 }
 
 pub fn set_render_backend(name: &str) {
     unsafe {
-        bindings::set_render_backend(str_to_cstring(name).as_ptr());
+        core_cabi::set_render_backend(str_to_cstring(name).as_ptr());
     }
 }
 
 pub fn get_screen_space_scale_mode() -> ScreenSpaceScaleMode {
     unsafe {
-        return ScreenSpaceScaleMode::try_from(bindings::get_screen_space_scale_mode()).unwrap();
+        return ScreenSpaceScaleMode::try_from(core_cabi::get_screen_space_scale_mode()).unwrap();
     }
 }
 
 pub fn set_screen_space_scale_mode(mode: ScreenSpaceScaleMode) {
     unsafe {
-        bindings::set_screen_space_scale_mode(mode as bindings::ScreenSpaceScaleMode);
+        core_cabi::set_screen_space_scale_mode(mode as core_cabi::ScreenSpaceScaleMode);
     }
 }

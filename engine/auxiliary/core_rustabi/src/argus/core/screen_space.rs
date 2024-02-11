@@ -18,16 +18,16 @@
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use crate::bindings;
+use crate::core_cabi;
 
-use bindings::ScreenSpace;
+use core_cabi::ScreenSpace;
 
 #[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
 pub enum ScreenSpaceScaleMode {
-    NormalizeMinDim = bindings::SSS_MODE_NORMALIZE_MIN_DIM,
-    NormalizeMaxDim = bindings::SSS_MODE_NORMALIZE_MAX_DIM,
-    NormalizeVertical = bindings::SSS_MODE_NORMALIZE_VERTICAL,
-    NormalizeHorizontal = bindings::SSS_MODE_NORMALIZE_HORIZONTAL,
-    None = bindings::SSS_MODE_NONE,
+    NormalizeMinDim = core_cabi::SSS_MODE_NORMALIZE_MIN_DIM,
+    NormalizeMaxDim = core_cabi::SSS_MODE_NORMALIZE_MAX_DIM,
+    NormalizeVertical = core_cabi::SSS_MODE_NORMALIZE_VERTICAL,
+    NormalizeHorizontal = core_cabi::SSS_MODE_NORMALIZE_HORIZONTAL,
+    None = core_cabi::SSS_MODE_NONE,
 }

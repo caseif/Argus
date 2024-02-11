@@ -81,15 +81,15 @@ namespace argus {
         return module_path;
     }
 
-    std::map<std::string, std::filesystem::path> get_present_dynamic_modules(void) {
+    std::vector<std::string> get_present_dynamic_modules(void) {
         auto modules_dir_path = std::filesystem::current_path() / MODULES_DIR_NAME;
 
         if (!std::filesystem::is_directory(modules_dir_path)) {
             Logger::default_logger().info("No dynamic modules to load.");
-            return std::map<std::string, std::filesystem::path>();
+            return {};
         }
 
-        std::map<std::string, std::filesystem::path> modules;
+        std::vector<std::string> modules;
 
         for (const auto &entry : std::filesystem::directory_iterator(modules_dir_path)) {
             auto filename = entry.path().filename();
@@ -114,7 +114,7 @@ namespace argus {
             }
 
             auto base_name = entry.path().stem().string().substr(strlen(SHARED_LIB_PREFIX));
-            modules[base_name] = entry;
+            modules.push_back(base_name);
         }
 
         if (modules.empty()) {
@@ -396,7 +396,7 @@ namespace argus {
     }
 
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
-            std::initializer_list<std::string> dependencies) {
+            std::vector<std::string> dependencies) {
         if (std::find_if(id.begin(), id.end(), [](auto c) { return std::isupper(c); }) != id.end()) {
             throw std::invalid_argument("Module identifier must contain only lowercase letters");
         }
@@ -416,7 +416,8 @@ namespace argus {
             }
         }
 
-        auto mod = DynamicModule{id, lifecycle_callback, dependencies, nullptr};
+        auto mod = DynamicModule{ id, lifecycle_callback,
+                std::set<std::string>(dependencies.cbegin(), dependencies.cend()), nullptr };
 
         g_dyn_module_registrations.insert({id, std::move(mod)});
 

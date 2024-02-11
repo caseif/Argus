@@ -18,8 +18,8 @@
 
 use num_enum::TryFromPrimitive;
 
-use crate::bindings;
-use crate::bindings::*;
+use crate::core_cabi;
+use crate::core_cabi::*;
 use crate::util::*;
 
 #[derive(Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive)]
