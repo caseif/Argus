@@ -32,9 +32,6 @@
 
 namespace argus {
     class VulkanRenderer {
-       private:
-        Index resource_event_handler;
-
        public:
         Window &window;
         RendererState state;

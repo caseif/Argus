@@ -18,32 +18,11 @@
 
 #pragma once
 
-#include "argus/core/event.hpp"
-
-#include "argus/wm/window.hpp"
-
-#include "internal/render_opengl_legacy/state/renderer_state.hpp"
-
-#include <map>
 #include <string>
 
 namespace argus {
     // forward declarations
-    class Canvas;
+    struct RendererState;
 
-    class GLRenderer {
-      private:
-        Window &window;
-
-      public:
-        RendererState state;
-
-        GLRenderer(Window &window);
-
-        ~GLRenderer(void);
-
-        void render(TimeDelta delta);
-
-        void notify_window_resize(const Vector2u &resolution);
-    };
+    void deinit_material(RendererState &state, const std::string &material);
 }

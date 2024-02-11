@@ -27,12 +27,14 @@
 
 #include "argus/resman/resource_manager.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/resources.h"
 #include "internal/render_vulkan/loader/shader_loader.hpp"
+#include "internal/render_vulkan/renderer/material_mgmt.hpp"
 #include "internal/render_vulkan/renderer/vulkan_renderer.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/instance.hpp"
@@ -194,7 +196,7 @@ namespace argus {
         return true;
     }
 
-    static void _window_event_callback(const WindowEvent &event, void *user_data) {
+    static void _window_event_handler(const WindowEvent &event, void *user_data) {
         UNUSED(user_data);
         Window &window = event.window;
 
@@ -244,6 +246,21 @@ namespace argus {
         }
     }
 
+    static void _resource_event_handler(const ResourceEvent &event, void *renderer_state) {
+        if (event.subtype != ResourceEventType::Unload) {
+            return;
+        }
+
+        auto &state = *static_cast<RendererState *>(renderer_state);
+
+        std::string mt = event.prototype.media_type;
+        if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+            // no-op for now
+        } else if (mt == RESOURCE_TYPE_MATERIAL) {
+            deinit_material(state, event.prototype.uid);
+        }
+    }
+
     extern "C" void update_lifecycle_render_vulkan(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -258,7 +275,8 @@ namespace argus {
 
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
-                register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
+                register_event_handler<WindowEvent>(_window_event_handler, TargetThread::Render);
+                register_event_handler<ResourceEvent>(_resource_event_handler, TargetThread::Render);
 
                 break;
             }

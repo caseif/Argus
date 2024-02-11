@@ -27,6 +27,7 @@
 
 #include "argus/resman/resource_manager.hpp"
 
+#include "argus/render/defines.hpp"
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_opengl/defines.hpp"
@@ -34,6 +35,7 @@
 #include "internal/render_opengl/resources.h"
 #include "internal/render_opengl/loader/shader_loader.hpp"
 #include "internal/render_opengl/renderer/gl_renderer.hpp"
+#include "internal/render_opengl/renderer/material_mgmt.hpp"
 
 #include "aglet/aglet.h"
 
@@ -150,6 +152,23 @@ namespace argus {
         }
     }
 
+    static void _resource_event_handler(const ResourceEvent &event, void *user_data) {
+        UNUSED(user_data);
+
+        if (event.subtype != ResourceEventType::Unload) {
+            return;
+        }
+
+        for (auto [_, renderer] : g_renderer_map) {
+            std::string mt = event.prototype.media_type;
+            if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
+                remove_shader(renderer->state, event.prototype.uid);
+            } else if (mt == RESOURCE_TYPE_MATERIAL) {
+                deinit_material(renderer->state, event.prototype.uid);
+            }
+        }
+    }
+
     extern "C" void update_lifecycle_render_opengl(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::PreInit: {
@@ -164,6 +183,7 @@ namespace argus {
                 ResourceManager::instance().register_loader(*new ShaderLoader());
 
                 register_event_handler<WindowEvent>(_window_event_callback, TargetThread::Render);
+                register_event_handler<ResourceEvent>(_resource_event_handler, TargetThread::Render);
 
                 break;
             }

@@ -260,22 +260,6 @@ namespace argus {
         free_buffer(scene_state.scene_ubo_staging);
     }
 
-    static void _deinit_material(RendererState &state, const std::string &material_uid) {
-        auto pipeline_it = state.material_pipelines.find(material_uid);
-        if (pipeline_it != state.material_pipelines.cend()) {
-            destroy_pipeline(state.device, pipeline_it->second);
-        }
-
-        auto texture_uid_it = state.material_textures.find(material_uid);
-        if (texture_uid_it != state.material_textures.cend()) {
-            auto texture_it = state.prepared_textures.find(texture_uid_it->second);
-            auto new_rc = texture_it->second.release();
-            if (new_rc == 0) {
-                destroy_texture(state.device, texture_it->second);
-            }
-        }
-    }
-
     static void _add_remove_state_objects(const Window &window, RendererState &state) {
         auto &canvas = window.get_canvas();
 
@@ -537,21 +521,6 @@ namespace argus {
         state.queued_submit_sem.notify();
     }
 
-    static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
-        if (event.subtype != ResourceEventType::Unload) {
-            return;
-        }
-
-        auto &state = *static_cast<RendererState *>(renderer_state);
-
-        std::string mt = event.prototype.media_type;
-        if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
-            // no-op for now
-        } else if (mt == RESOURCE_TYPE_MATERIAL) {
-            _deinit_material(state, event.prototype.uid);
-        }
-    }
-
     static void *_submit_queues_loop(void *state_ptr) {
         auto &state = *reinterpret_cast<RendererState *>(state_ptr);
 
@@ -599,7 +568,6 @@ namespace argus {
     }
 
     VulkanRenderer::VulkanRenderer(Window &window):
-        resource_event_handler(),
         window(window),
         is_initted(false) {
         state.device = g_vk_device;
@@ -682,9 +650,6 @@ namespace argus {
     }
 
     void VulkanRenderer::init(void) {
-        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
-                TargetThread::Render, &state);
-
         if (!vk_create_surface(window, reinterpret_cast<VkDevice *>(g_vk_instance),
                 reinterpret_cast<void **>(&state.surface))) {
             Logger::default_logger().fatal("Failed to create Vulkan surface");

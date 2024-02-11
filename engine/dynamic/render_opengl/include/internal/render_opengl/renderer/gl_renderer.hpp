@@ -34,10 +34,10 @@ namespace argus {
     class GLRenderer {
       private:
         Window &window;
-        RendererState state;
-        Index resource_event_handler;
 
       public:
+        RendererState state;
+
         GLRenderer(Window &window);
 
         ~GLRenderer(void);

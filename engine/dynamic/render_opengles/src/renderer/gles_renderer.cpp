@@ -197,40 +197,6 @@ namespace argus {
         }
     }
 
-    static void _deinit_material(RendererState &state, const std::string &material) {
-        Logger::default_logger().debug("De-initializing material %s", material.c_str());
-        for (auto *scene_state : state.all_scene_states) {
-            std::vector<BucketKey> to_remove;
-
-            for (auto &[bucket_key, _] : scene_state->render_buckets) {
-                if (bucket_key.material_uid == material) {
-                    to_remove.push_back(bucket_key);
-                }
-            }
-
-            for (auto &key : to_remove) {
-                auto bucket = scene_state->render_buckets.find(key)->second;
-                try_delete_buffer(bucket->vertex_array);
-                try_delete_buffer(bucket->vertex_buffer);
-                bucket->~RenderBucket();
-
-                scene_state->render_buckets.erase(key);
-            }
-        }
-
-        auto &programs = state.linked_programs;
-        auto program_it = programs.find(material);
-        if (program_it != programs.end()) {
-            deinit_program(program_it->second.handle);
-            programs.erase(program_it);
-        }
-
-        if (auto texture_uid = state.material_textures.find(material);
-                texture_uid != state.material_textures.end()) {
-            release_texture(state, texture_uid->second);
-        }
-    }
-
     static void _create_global_ubo(RendererState &state) {
         state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_DYNAMIC_DRAW, false);
     }
@@ -244,21 +210,6 @@ namespace argus {
         );
 
         state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
-    }
-
-    static void _handle_resource_event(const ResourceEvent &event, void *renderer_state) {
-        if (event.subtype != ResourceEventType::Unload) {
-            return;
-        }
-
-        auto &state = *static_cast<RendererState *>(renderer_state);
-
-        std::string mt = event.prototype.media_type;
-        if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
-            remove_shader(state, event.prototype.uid);
-        } else if (mt == RESOURCE_TYPE_MATERIAL) {
-            _deinit_material(state, event.prototype.uid);
-        }
     }
 
     GLESRenderer::GLESRenderer(Window &window) :
@@ -295,9 +246,6 @@ namespace argus {
 
         gl_swap_interval(false);
 
-        resource_event_handler = register_event_handler<ResourceEvent>(_handle_resource_event,
-                TargetThread::Render, &state);
-
         if (AGLET_GL_KHR_debug) {
             glDebugMessageCallback(gl_debug_callback, nullptr);
         }
@@ -308,7 +256,6 @@ namespace argus {
     }
 
     GLESRenderer::~GLESRenderer(void) {
-        unregister_event_handler(resource_event_handler);
         gl_destroy_context(state.gles_context);
     }
 
