@@ -352,6 +352,7 @@ list(TRANSFORM STATIC_MODULE_ID_SET_LIST REPLACE "^(.+)$" "\"\\1\"")
 list(JOIN STATIC_MODULE_ID_SET_LIST ",\n        " STATIC_MODULE_ID_SET)
 
 set(STATIC_MODULE_DEFS_LIST "")
+set(MODULE_COUNT 0)
 foreach(id ${SORTED_MODULE_IDS})
   if(NOT id IN_LIST STATIC_MODULE_IDS)
     continue()
@@ -361,10 +362,10 @@ foreach(id ${SORTED_MODULE_IDS})
   list(TRANSFORM deps_list REPLACE "^(.+)$" "\"\\1\"")
   list(JOIN deps_list ", " deps)
   list(APPEND STATIC_MODULE_DEFS_LIST "{\"${id}\", {${deps}}, reinterpret_cast<LifecycleUpdateCallback>(reinterpret_cast<void *>(update_lifecycle_${id}))}")
+
+  MATH(EXPR MODULE_COUNT "${MODULE_COUNT}+1")
 endforeach()
 list(JOIN STATIC_MODULE_DEFS_LIST ",\n        " STATIC_MODULE_DEFS)
-
-list(LENGTH SORTED_MODULE_IDS MODULE_COUNT)
 
 set(MODULE_LIFECYCLE_FNS_LIST "${SORTED_MODULE_IDS}")
 list(TRANSFORM MODULE_LIFECYCLE_FNS_LIST REPLACE "^(.+)$" "extern void update_lifecycle_\\1(std::underlying_type<argus::LifecycleStage> stage)\\\;")
