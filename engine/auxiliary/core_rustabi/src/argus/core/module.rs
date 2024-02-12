@@ -24,7 +24,7 @@ use crate::core_cabi;
 use crate::core_cabi::*;
 use crate::util::*;
 
-#[derive(Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive)]
 #[repr(u32)]
 pub enum LifecycleStage {
     Load = LIFECYCLE_STAGE_LOAD as u32,

@@ -49,6 +49,8 @@ pub type argus_event_const_t = *const ::std::os::raw::c_void;
 pub type argus_event_handler_t = ::std::option::Option<
     unsafe extern "C" fn(arg1: argus_event_const_t, arg2: *mut ::std::os::raw::c_void),
 >;
+pub type argus_event_handler_unregister_callback_t =
+    ::std::option::Option<unsafe extern "C" fn(arg1: Index, arg2: *mut ::std::os::raw::c_void)>;
 pub const TARGET_THREAD_UPDATE: TargetThread = 0;
 pub const TARGET_THREAD_RENDER: TargetThread = 1;
 pub type TargetThread = ::std::os::raw::c_uint;
@@ -124,6 +126,7 @@ extern "C" {
         target_thread: TargetThread,
         data: *mut ::std::os::raw::c_void,
         ordering: Ordering,
+        unregister_callback: argus_event_handler_unregister_callback_t,
     ) -> Index;
     pub fn argus_unregister_event_handler(index: Index);
     pub fn argus_dispatch_event(event: argus_event_t);
