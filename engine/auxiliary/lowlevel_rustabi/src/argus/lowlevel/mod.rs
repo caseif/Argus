@@ -18,6 +18,6 @@
 
 #![allow(unused_imports)]
 
-pub mod c_interop;
+mod c_interop;
 
 pub use self::c_interop::*;
