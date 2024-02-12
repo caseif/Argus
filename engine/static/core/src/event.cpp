@@ -39,6 +39,7 @@ namespace argus {
         std::string type_id;
         ArgusEventWithDataCallback callback;
         void *data;
+        ArgusEventHandlerUnregisterCallback unregister_callback;
     };
 
     static CallbackList<ArgusEventHandler> g_update_event_listeners;
@@ -73,9 +74,9 @@ namespace argus {
         while (!queue_copy.empty()) {
             auto &event = *queue_copy.front();
 
-            auto listeners_copy = listeners;
+            auto listeners_copy = listeners.lists;
             for (auto ordering : ORDERINGS) {
-                for (auto &listener : listeners.lists[ordering]) {
+                for (auto &listener : listeners_copy[ordering]) {
                     if (int(listener.value.type_id == event.ptr->type_id)) {
                         listener.value.callback(*event.ptr, listener.value.data);
                     }
@@ -114,7 +115,8 @@ namespace argus {
     }
 
     Index register_event_handler_with_type(std::string type_id, ArgusEventWithDataCallback callback,
-            const TargetThread target_thread, void *const data, Ordering ordering) {
+            const TargetThread target_thread, void *const data, Ordering ordering,
+            ArgusEventHandlerUnregisterCallback unregister_callback) {
         affirm_precond(is_current_thread_update_thread(),
                 "Event handlers may only be registered from the update thread");
 
@@ -137,13 +139,24 @@ namespace argus {
             }
         }
 
-        ArgusEventHandler listener = { std::move(type_id), std::move(callback), data };
-        return add_callback(*listeners, listener, ordering);
+        ArgusEventHandler listener = { std::move(type_id), std::move(callback), data, unregister_callback };
+        auto index = add_callback(*listeners, listener, ordering);
+        return index;
+    }
+
+    static void _handle_unregister(Index id, ArgusEventHandler *handler) {
+        if (handler->unregister_callback != nullptr) {
+            if (is_current_thread_update_thread()) {
+                handler->unregister_callback(id, handler->data);
+            } else {
+                run_on_game_thread([&handler, &id]() { handler->unregister_callback(id, handler->data); });
+            }
+        }
     }
 
     void unregister_event_handler(const Index id) {
-        if (!try_remove_callback(g_update_event_listeners, id)) {
-            remove_callback(g_render_event_listeners, id);
+        if (!try_remove_callback(g_update_event_listeners, id, _handle_unregister)) {
+            remove_callback(g_render_event_listeners, id, _handle_unregister);
         }
     }
 

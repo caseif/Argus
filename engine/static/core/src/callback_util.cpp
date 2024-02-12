@@ -22,6 +22,6 @@
 #include <mutex>
 
 namespace argus {
-    Index g_next_index = 0;
+    Index g_next_index = 1;
     std::mutex g_next_index_mutex;
 }

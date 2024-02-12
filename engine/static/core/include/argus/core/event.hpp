@@ -85,6 +85,8 @@ namespace argus {
 
     typedef std::function<void(const ArgusEvent &, void *)> ArgusEventWithDataCallback;
 
+    typedef void(*ArgusEventHandlerUnregisterCallback)(Index, void *);
+
     enum class TargetThread {
         Update,
         Render
@@ -97,7 +99,8 @@ namespace argus {
      * \sa argus::register_event_handler
      */
     Index register_event_handler_with_type(std::string type_id, ArgusEventWithDataCallback callback,
-            TargetThread target_thread, void *data, Ordering ordering = Ordering::Standard);
+            TargetThread target_thread, void *data, Ordering ordering,
+            ArgusEventHandlerUnregisterCallback unregister_callback);
 
     /**
      * \brief Registers a handler for particular events.
@@ -124,7 +127,7 @@ namespace argus {
                     assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e));
                 },
-                target_thread, nullptr, ordering);
+                target_thread, nullptr, ordering, nullptr);
     }
 
     /**
@@ -152,7 +155,7 @@ namespace argus {
                     assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e), d);
                 },
-                target_thread, data, ordering);
+                target_thread, data, ordering, nullptr);
     }
 
     /**

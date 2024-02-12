@@ -55,7 +55,7 @@ namespace argus {
     struct CallbackList {
         std::map<Ordering, std::vector<IndexedValue<T>>> lists;
         std::queue<std::pair<Ordering, IndexedValue<T>>> addition_queue;
-        std::queue<Index> removal_queue;
+        std::queue<std::pair<Index, void(*)(Index, T *)>> removal_queue;
         std::shared_mutex list_mutex;
         std::shared_mutex queue_mutex;
 
@@ -71,10 +71,14 @@ namespace argus {
     // since IndexedValue is templated we have to define the utility functions here
 
     template<typename T>
-    bool remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id) {
+    bool remove_from_indexed_vector(std::vector<IndexedValue<T>> &vector, const Index id,
+            void(*callback)(Index, T *)) {
         auto it = std::find_if(vector.begin(), vector.end(),
-                [id](auto callback) { return callback.id == id; });
+                [id](auto iv) { return iv.id == id; });
         if (it != vector.end()) {
+            if (callback != nullptr) {
+                callback(id, &it->value);
+            }
             vector.erase(it);
             return true;
         }
@@ -94,11 +98,11 @@ namespace argus {
             list.list_mutex.lock(); // we need to get a lock on the list since we're updating it
             list.queue_mutex.lock();
             while (!list.removal_queue.empty()) {
-                Index id = list.removal_queue.front();
+                auto &[id, callback] = list.removal_queue.front();
                 list.removal_queue.pop();
                 bool removed = false;
                 for (auto it = list.lists.begin(); it != list.lists.end(); it++) {
-                    if ((removed = remove_from_indexed_vector(it->second, id))) {
+                    if ((removed = remove_from_indexed_vector(it->second, id, callback))) {
                         break;
                     }
                 }
@@ -145,14 +149,14 @@ namespace argus {
     }
 
     template<typename T>
-    void remove_callback(CallbackList<T> &list, const Index index) {
+    void remove_callback(CallbackList<T> &list, const Index index, void(*callback)(Index, T *) = nullptr) {
         list.queue_mutex.lock();
-        list.removal_queue.push(index);
+        list.removal_queue.push(std::make_pair(index, callback));
         list.queue_mutex.unlock();
     }
 
     template<typename T>
-    bool try_remove_callback(CallbackList<T> &list, const Index index) {
+    bool try_remove_callback(CallbackList<T> &list, const Index index, void(*callback)(Index, T *) = nullptr) {
         list.list_mutex.lock_shared();
         bool present = false;
         for (auto &[_, sublist] : list.lists) {
@@ -165,7 +169,7 @@ namespace argus {
         list.list_mutex.unlock_shared();
 
         if (present) {
-            remove_callback(list, index);
+            remove_callback(list, index, callback);
         }
 
         return present;

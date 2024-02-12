@@ -30,6 +30,8 @@ typedef const void *argus_event_const_t;
 
 typedef void (*argus_event_handler_t)(argus_event_const_t, void *);
 
+typedef void (*argus_event_handler_unregister_callback_t)(Index, void *);
+
 typedef enum TargetThread {
     TARGET_THREAD_UPDATE,
     TARGET_THREAD_RENDER,
@@ -38,7 +40,8 @@ typedef enum TargetThread {
 const char *argus_event_get_type_id(argus_event_const_t event);
 
 Index argus_register_event_handler(const char *type_id, argus_event_handler_t handler,
-        TargetThread target_thread, void *data, Ordering ordering);
+        TargetThread target_thread, void *data, Ordering ordering,
+        argus_event_handler_unregister_callback_t unregister_callback);
 
 void argus_unregister_event_handler(Index index);
 
