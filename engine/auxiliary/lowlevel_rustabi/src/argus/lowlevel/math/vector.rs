@@ -16,10 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#![allow(unused_imports)]
+use crate::lowlevel_cabi::*;
 
-mod c_interop;
-mod math;
+pub type Vector2d = argus_vector_2d_t;
+pub type Vector3d = argus_vector_3d_t;
+pub type Vector4d = argus_vector_4d_t;
 
-pub use self::c_interop::*;
-pub use self::math::*;
+pub type Vector2f = argus_vector_2d_t;
+pub type Vector3f = argus_vector_3d_t;
+pub type Vector4f = argus_vector_4d_t;
+
+pub type Vector2i = argus_vector_2d_t;
+pub type Vector3i = argus_vector_3d_t;
+pub type Vector4i = argus_vector_4d_t;
+
+pub type Vector2u = argus_vector_2d_t;
+pub type Vector3u = argus_vector_3d_t;
+pub type Vector4u = argus_vector_4d_t;
