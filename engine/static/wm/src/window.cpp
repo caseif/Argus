@@ -634,7 +634,7 @@ namespace argus {
     }
 
 
-    bool Window::is_mouse_captured(void) {
+    bool Window::is_mouse_captured(void) const {
         return pimpl->properties.mouse_capture.peek();
     }
 
@@ -642,7 +642,7 @@ namespace argus {
         pimpl->properties.mouse_capture = captured;
     }
 
-    bool Window::is_mouse_visible(void) {
+    bool Window::is_mouse_visible(void) const {
         return pimpl->properties.mouse_visible.peek();
     }
 
@@ -650,7 +650,7 @@ namespace argus {
         pimpl->properties.mouse_visible = visible;
     }
 
-    bool Window::is_mouse_raw_input(void) {
+    bool Window::is_mouse_raw_input(void) const {
         return pimpl->properties.mouse_raw_input.peek();
     }
 

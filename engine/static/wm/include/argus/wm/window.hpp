@@ -439,7 +439,7 @@ namespace argus {
          *
          * \return Whether the mouse cursor should be captured.
          */
-        bool is_mouse_captured(void);
+        bool is_mouse_captured(void) const;
 
         /**
          * \brief Sets whether the mouse cursor should be captured by the
@@ -455,7 +455,7 @@ namespace argus {
          *
          * \return Whether the mouse cursor is visible.
          */
-        bool is_mouse_visible(void);
+        bool is_mouse_visible(void) const;
 
         /**
          * \brief Sets whether the mouse cursor is visible within the
@@ -471,7 +471,7 @@ namespace argus {
          *
          * \return Whether the raw mouse input should be used.
          */
-        bool is_mouse_raw_input(void);
+        bool is_mouse_raw_input(void) const;
 
         /**
          * \brief Sets whether the raw input from the mouse should be used
