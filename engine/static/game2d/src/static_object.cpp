@@ -54,7 +54,7 @@ namespace argus {
         }
     }
 
-    const Vector2f &StaticObject2D::get_size(void) const {
+    Vector2f StaticObject2D::get_size(void) const {
         return pimpl->size;
     }
 

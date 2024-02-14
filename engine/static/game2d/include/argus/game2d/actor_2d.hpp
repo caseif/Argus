@@ -42,7 +42,7 @@ namespace argus {
 
         ~Actor2D(void) override;
 
-        const Vector2f &get_size(void) const;
+        Vector2f get_size(void) const;
 
         uint32_t get_z_index(void) const;
 

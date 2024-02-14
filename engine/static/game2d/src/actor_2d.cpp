@@ -48,7 +48,7 @@ namespace argus {
         g_pimpl_pool.destroy<pimpl_Actor2D>(pimpl);
     }
 
-    const Vector2f &Actor2D::get_size(void) const {
+    Vector2f Actor2D::get_size(void) const {
         return pimpl->size;
     }
 

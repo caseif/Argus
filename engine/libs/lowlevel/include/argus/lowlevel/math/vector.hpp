@@ -31,8 +31,8 @@ namespace argus {
      * \tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
-    template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector4 : AutoCleanupable {
+    template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
+    struct Vector4 {
         using element_type = T;
 
         /**
@@ -283,8 +283,8 @@ namespace argus {
      * \tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
-    template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector3 : AutoCleanupable {
+    template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
+    struct Vector3 {
         using element_type = T;
 
         /**
@@ -520,8 +520,8 @@ namespace argus {
      * \tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
-    template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-    struct Vector2 : AutoCleanupable {
+    template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
+    struct Vector2 {
         using element_type = T;
 
         /**
