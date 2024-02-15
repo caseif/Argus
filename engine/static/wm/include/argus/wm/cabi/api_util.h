@@ -30,18 +30,20 @@ typedef void *gl_context_t;
 
 typedef enum GLContextFlags {
     GL_CONTEXT_FLAG_NONE = 0x0,
-    GL_CONTEXT_PROFILE_CORE = 0x1,
-    GL_CONTEXT_PROFILE_ES = 0x2,
-    GL_CONTEXT_PROFILE_COMPAT = 0x4,
-    GL_CONTEXT_DEBUG_CONTEXT = 0x100,
-    GL_CONTEXT_PROFILE_MASK = GL_CONTEXT_PROFILE_CORE | GL_CONTEXT_PROFILE_ES | GL_CONTEXT_PROFILE_COMPAT,
+    GL_CONTEXT_FLAG_PROFILE_CORE = 0x1,
+    GL_CONTEXT_FLAG_PROFILE_ES = 0x2,
+    GL_CONTEXT_FLAG_PROFILE_COMPAT = 0x4,
+    GL_CONTEXT_FLAG_DEBUG_CONTEXT = 0x100,
+    GL_CONTEXT_FLAG_PROFILE_MASK = GL_CONTEXT_FLAG_PROFILE_CORE
+            | GL_CONTEXT_FLAG_PROFILE_ES
+            | GL_CONTEXT_FLAG_PROFILE_COMPAT,
 } GLContextFlags;
 
-int argus_gl_load_library(void);
+int32_t argus_gl_load_library(void);
 
 void argus_gl_unload_library(void);
 
-gl_context_t argus_gl_create_context(argus_window_t window, int version_major, int version_minor,
+gl_context_t argus_gl_create_context(argus_window_t window, int32_t version_major, int32_t version_minor,
         GLContextFlags flags);
 
 void argus_gl_destroy_context(gl_context_t context);
@@ -52,7 +54,7 @@ int argus_gl_make_context_current(argus_window_t window, gl_context_t context);
 
 void *argus_gl_load_proc(const char *name);
 
-void argus_gl_swap_interval(int interval);
+void argus_gl_swap_interval(int32_t interval);
 
 void argus_gl_swap_buffers(argus_window_t window);
 

@@ -25,7 +25,7 @@ using argus::Window;
 extern "C" {
 #endif
 
-int argus_gl_load_library(void) {
+int32_t argus_gl_load_library(void) {
     return argus::gl_load_library();
 }
 
@@ -33,7 +33,7 @@ void argus_gl_unload_library(void) {
     argus::gl_unload_library();
 }
 
-gl_context_t argus_gl_create_context(argus_window_t window, int version_major, int version_minor,
+gl_context_t argus_gl_create_context(argus_window_t window, int32_t version_major, int32_t version_minor,
         GLContextFlags flags) {
     return argus::gl_create_context(*reinterpret_cast<Window *>(window), version_major, version_minor,
             argus::GLContextFlags(flags));
@@ -55,7 +55,7 @@ void *argus_gl_load_proc(const char *name) {
     return argus::gl_load_proc(name);
 }
 
-void argus_gl_swap_interval(int interval) {
+void argus_gl_swap_interval(int32_t interval) {
     return argus::gl_swap_interval(interval);
 }
 

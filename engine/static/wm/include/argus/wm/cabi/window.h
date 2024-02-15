@@ -40,7 +40,7 @@ typedef argus_canvas_t (*argus_canvas_ctor_t)(argus_window_t);
 
 typedef void (*argus_canvas_dtor_t)(argus_canvas_t);
 
-enum WindowCreateFlags {
+typedef enum WindowCreateFlags {
     WINDOW_CREATE_FLAG_NONE                = 0x0,
     WINDOW_CREATE_FLAG_OPENGL              = 0x1,
     WINDOW_CREATE_FLAG_VULKAN              = 0x2,
@@ -48,12 +48,12 @@ enum WindowCreateFlags {
     WINDOW_CREATE_FLAG_DIRECTX             = 0x8,
     WINDOW_CREATE_FLAG_WEBGPU              = 0x10,
 
-    GraphicsApiMask = int(WINDOW_CREATE_FLAG_OPENGL)
-            |     int(WINDOW_CREATE_FLAG_VULKAN)
-            |     int(WINDOW_CREATE_FLAG_METAL)
-            |     int(WINDOW_CREATE_FLAG_DIRECTX)
-            |     int(WINDOW_CREATE_FLAG_WEBGPU),
-};
+    WINDOW_CREATE_FLAG_GRAPHICS_API_MASK = WINDOW_CREATE_FLAG_OPENGL
+            |     WINDOW_CREATE_FLAG_VULKAN
+            |     WINDOW_CREATE_FLAG_METAL
+            |     WINDOW_CREATE_FLAG_DIRECTX
+            |     WINDOW_CREATE_FLAG_WEBGPU,
+} WindowCreateFlags;
 
 void argus_set_window_creation_flags(WindowCreateFlags flags);
 
@@ -65,7 +65,7 @@ argus_window_t argus_get_window_from_handle(const void *handle);
 
 void argus_window_set_canvas_ctor_and_dtor(argus_canvas_ctor_t ctor, argus_canvas_dtor_t dtor);
 
-void argus_window_create(const char *id, argus_window_t parent);
+argus_window_t argus_window_create(const char *id, argus_window_t parent);
 
 const char *argus_window_get_id(argus_window_const_t self);
 
@@ -99,7 +99,7 @@ void argus_window_is_vsync_enabled(argus_window_t self, bool *out_enabled, bool 
 
 void argus_window_set_vsync_enabled(argus_window_t self, bool enabled);
 
-void argus_window_set_windowed_position(argus_window_t self, int32_t width, int32_t height);
+void argus_window_set_windowed_position(argus_window_t self, int32_t x, int32_t y);
 
 argus_display_const_t argus_window_get_display_affinity(argus_window_const_t self);
 

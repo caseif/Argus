@@ -26,7 +26,7 @@ extern "C" {
 
 const char *EVENT_TYPE_WINDOW = "window";
 
-enum WindowEventType {
+typedef enum WindowEventType {
     WINDOW_EVENT_TYPE_CREATE,
     WINDOW_EVENT_TYPE_UPDATE,
     WINDOW_EVENT_TYPE_REQUEST_CLOSE,
@@ -36,7 +36,7 @@ enum WindowEventType {
     WINDOW_EVENT_TYPE_UNFOCUS,
     WINDOW_EVENT_TYPE_RESIZE,
     WINDOW_EVENT_TYPE_MOVE,
-};
+} WindowEventType;
 
 typedef void *argus_window_event_t;
 typedef const void *argus_window_event_const_t;

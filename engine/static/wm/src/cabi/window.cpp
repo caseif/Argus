@@ -60,8 +60,8 @@ void argus_window_set_canvas_ctor_and_dtor(argus_canvas_ctor_t ctor, argus_canva
     );
 }
 
-void argus_window_create(const char *id, argus_window_t parent) {
-    Window::create(id, reinterpret_cast<Window *>(parent));
+argus_window_t argus_window_create(const char *id, argus_window_t parent) {
+    return &Window::create(id, reinterpret_cast<Window *>(parent));
 }
 
 const char *argus_window_get_id(argus_window_const_t self) {
@@ -133,8 +133,8 @@ void argus_window_set_vsync_enabled(argus_window_t self, bool enabled) {
     _as_ref(self).set_vsync_enabled(enabled);
 }
 
-void argus_window_set_windowed_position(argus_window_t self, int32_t width, int32_t height) {
-    _as_ref(self).set_windowed_position(width, height);
+void argus_window_set_windowed_position(argus_window_t self, int32_t x, int32_t y) {
+    _as_ref(self).set_windowed_position(x, y);
 }
 
 argus_display_const_t argus_window_get_display_affinity(argus_window_const_t self) {
