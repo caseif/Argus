@@ -49,7 +49,7 @@ const char *argus_display_get_name(argus_display_const_t self) {
 
 argus_vector_2i_t argus_display_get_position(argus_display_const_t self) {
     auto res = _as_ref(self).get_position();
-    return *reinterpret_cast<argus_vector_2i_t *>(&res);
+    return *reinterpret_cast<argus_vector_2i_t *>(reinterpret_cast<void *>(&res));
 }
 
 void argus_display_get_display_modes(argus_display_const_t self, size_t *out_count, argus_display_mode_t *out_modes) {
@@ -61,7 +61,7 @@ void argus_display_get_display_modes(argus_display_const_t self, size_t *out_cou
 
     if (out_modes != nullptr) {
         for (size_t i = 0; i < res.size(); i++) {
-            out_modes[i] = *reinterpret_cast<const argus_display_mode_t *>(&res[i]);
+            out_modes[i] = *reinterpret_cast<const argus_display_mode_t *>(reinterpret_cast<const void *>(&res[i]));
         }
     }
 }
