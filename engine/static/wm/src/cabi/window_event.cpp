@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/math/vector.hpp"
 #include "argus/lowlevel/cabi/math.h"
 
 #include "argus/wm/window.hpp"
@@ -43,11 +44,11 @@ argus_window_t argus_window_event_get_window(argus_window_event_const_t self) {
 }
 
 argus_vector_2u_t argus_window_event_get_resolution(argus_window_event_const_t self) {
-    return *reinterpret_cast<const argus_vector_2u_t *>(&_as_ref(self).resolution);
+    return as_c_vec(_as_ref(self).resolution);
 }
 
 argus_vector_2i_t argus_window_event_get_position(argus_window_event_const_t self) {
-    return *reinterpret_cast<const argus_vector_2i_t *>(&_as_ref(self).resolution);
+    return as_c_vec(_as_ref(self).position);
 }
 
 uint64_t argus_window_event_get_delta_us(argus_window_event_const_t self) {

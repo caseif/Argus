@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/wm/cabi/display.h"
+
 #include "SDL_video.h"
 
 namespace argus {
@@ -31,4 +33,22 @@ namespace argus {
     DisplayMode wrap_display_mode(SDL_DisplayMode mode);
 
     SDL_DisplayMode unwrap_display_mode(const DisplayMode &mode);
+
+    union DisplayModeUnion {
+        argus_display_mode_t c_mode {};
+        argus::DisplayMode cpp_mode;
+        DisplayModeUnion() {}
+    };
+
+    inline argus_display_mode_t as_c_display_mode(argus::DisplayMode mode) {
+        DisplayModeUnion u;
+        u.cpp_mode = mode;
+        return u.c_mode;
+    }
+
+    inline argus::DisplayMode as_cpp_display_mode(argus_display_mode_t mode) {
+        DisplayModeUnion u;
+        u.c_mode = mode;
+        return u.cpp_mode;
+    }
 }

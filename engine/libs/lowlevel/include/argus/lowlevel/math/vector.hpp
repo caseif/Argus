@@ -18,11 +18,31 @@
 
 #pragma once
 
+#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/misc.hpp"
+#include "argus/lowlevel/cabi/math/vector.h"
 
 #include <type_traits>
 
 #include <cstdint>
+
+#define MAKE_INTEROP_UNION(cpp_type, c_type)    \
+union cpp_type##Interop {                       \
+        c_type c_repr {};                       \
+        cpp_type cpp_repr;                      \
+        cpp_type##Interop() {}                  \
+    };                                          \
+    inline c_type as_c_vec(cpp_type vec) {      \
+        cpp_type##Interop u;                    \
+        u.cpp_repr = vec;                       \
+        return u.c_repr;                        \
+    }                                           \
+    inline cpp_type as_cpp_vec(c_type vec) {    \
+        cpp_type##Interop u;                    \
+        u.c_repr = vec;                         \
+        return u.cpp_repr;                      \
+    }                                           \
+    static_assert(true, "")
 
 namespace argus {
     /**
@@ -775,4 +795,19 @@ namespace argus {
      * \brief Represents a vector of four `double`s.
      */
     typedef Vector4<double> Vector4d;
+
+    MAKE_INTEROP_UNION(Vector2d, argus_vector_2d_t);
+    MAKE_INTEROP_UNION(Vector2f, argus_vector_2f_t);
+    MAKE_INTEROP_UNION(Vector2i, argus_vector_2i_t);
+    MAKE_INTEROP_UNION(Vector2u, argus_vector_2u_t);
+
+    MAKE_INTEROP_UNION(Vector3d, argus_vector_3d_t);
+    MAKE_INTEROP_UNION(Vector3f, argus_vector_3f_t);
+    MAKE_INTEROP_UNION(Vector3i, argus_vector_3i_t);
+    MAKE_INTEROP_UNION(Vector3u, argus_vector_3u_t);
+
+    MAKE_INTEROP_UNION(Vector4d, argus_vector_4d_t);
+    MAKE_INTEROP_UNION(Vector4f, argus_vector_4f_t);
+    MAKE_INTEROP_UNION(Vector4i, argus_vector_4i_t);
+    MAKE_INTEROP_UNION(Vector4u, argus_vector_4u_t);
 }

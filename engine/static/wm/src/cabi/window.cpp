@@ -22,6 +22,7 @@
 #include "argus/wm/window.hpp"
 #include "argus/wm/cabi/display.h"
 #include "argus/wm/cabi/window.h"
+#include "internal/wm/display.hpp"
 
 using argus::Window;
 
@@ -110,13 +111,13 @@ void argus_window_set_fullscreen(argus_window_t self, bool fullscreen) {
 
 void argus_window_get_resolution(argus_window_t self, argus_vector_2u_t *out_resolution, bool *out_dirty) {
     auto res = _as_ref(self).get_resolution();
-    *out_resolution = *reinterpret_cast<argus_vector_2u_t *>(&res.value);
+    *out_resolution = as_c_vec(res.value);
     *out_dirty = res.dirty;
 }
 
 argus_vector_2u_t argus_window_peek_resolution(argus_window_const_t self) {
     auto res = _as_ref(self).peek_resolution();
-    return *reinterpret_cast<argus_vector_2u_t *>(&res);
+    return argus::as_c_vec(res);
 }
 
 void argus_window_set_windowed_resolution(argus_window_t self, uint32_t width, uint32_t height) {
@@ -146,12 +147,11 @@ void argus_window_set_display_affinity(argus_window_t self, argus_display_const_
 }
 
 argus_display_mode_t argus_get_display_mode(argus_window_const_t self) {
-    auto mode = _as_ref(self).get_display_mode();
-    return argus_display_mode_t(*reinterpret_cast<argus_display_mode_t *>(&mode));
+    return argus::as_c_display_mode(_as_ref(self).get_display_mode());
 }
 
 void argus_set_display_mode(argus_window_t self, argus_display_mode_t mode) {
-    _as_ref(self).set_display_mode(*reinterpret_cast<argus::DisplayMode *>(&mode));
+    _as_ref(self).set_display_mode(argus::as_cpp_display_mode(mode));
 }
 
 bool argus_window_is_mouse_captured(argus_window_const_t self) {
@@ -180,7 +180,7 @@ void argus_window_set_mouse_raw_input(argus_window_t self, bool raw_input) {
 
 argus_vector_2f_t argus_window_get_content_scale(argus_window_const_t self) {
     auto scale = _as_ref(self).get_content_scale();
-    return *reinterpret_cast<argus_vector_2f_t *>(&scale);
+    return argus::as_c_vec(scale);
 }
 
 void argus_window_set_close_callback(argus_window_t self, argus_window_callback_t callback) {
