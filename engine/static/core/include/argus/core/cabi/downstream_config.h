@@ -22,62 +22,51 @@
 extern "C" {
 #endif
 
-#include "stdbool.h"
+#include "argus/lowlevel/cabi/math/vector.h"
 
-//TODO: move to lowlevel_cabi
-typedef enum TriState {
-    TRISTATE_UNDEF,
-    TRISTATE_FALSE,
-    TRISTATE_TRUE
-} TriState;
+#include <stdbool.h>
 
-const char *get_main_script(void);
+typedef struct argus_scripting_parameters_t {
+    bool has_main;
+    const char *main;
+} argus_scripting_parameters_t;
 
-void set_main_script(const char *script_uid);
+typedef struct argus_initial_window_parameters_t {
+    bool has_id;
+    const char *id;
+    bool has_title;
+    const char *title;
+    bool has_mode;
+    const char *mode;
+    bool has_vsync;
+    bool vsync;
+    bool has_mouse_visible;
+    bool mouse_visible;
+    bool has_mouse_captured;
+    bool mouse_captured;
+    bool has_mouse_raw_input;
+    bool mouse_raw_input;
+    bool has_position;
+    argus_vector_2i_t position;
+    bool has_dimensions;
+    argus_vector_2u_t dimensions;
+} argus_initial_window_parameters_t;
 
-const char *get_initial_window_id(void);
+argus_scripting_parameters_t argus_get_scripting_parameters(void);
 
-void set_initial_window_id(const char *id);
+void argus_set_scripting_parameters(const argus_scripting_parameters_t *params);
 
-const char *get_initial_window_title(void);
+argus_initial_window_parameters_t argus_get_initial_window_parameters(void);
 
-void set_initial_window_title(const char *title);
+void argus_set_initial_window_parameters(const argus_initial_window_parameters_t *params);
 
-const char *get_initial_window_mode(void);
+const char *argus_get_default_bindings_resource_id(void);
 
-void set_initial_window_mode(const char *mode);
+void argus_set_default_bindings_resource_id(const char *resource_id);
 
-TriState get_initial_window_vsync(void);
+bool argus_get_save_user_bindings(void);
 
-void set_initial_window_vsync(bool vsync);
-
-TriState get_initial_window_mouse_visible(void);
-
-void set_initial_window_mouse_visible(bool visible);
-
-TriState get_initial_window_mouse_captured(void);
-
-void set_initial_window_mouse_captured(bool captured);
-
-TriState get_initial_window_mouse_raw_input(void);
-
-void set_initial_window_mouse_raw_input(bool raw_input);
-
-//TODO: get_initial_window_position
-
-//TODO: set_initial_window_position
-
-//TODO: get_initial_window_dimensions
-
-//TODO: set_initial_window_dimensions
-
-const char *get_default_bindings_resource_id(void);
-
-void set_default_bindings_resource_id(const char *resource_id);
-
-bool get_save_user_bindings(void);
-
-void set_save_user_bindings(bool save);
+void argus_set_save_user_bindings(bool save);
 
 #ifdef __cplusplus
 }

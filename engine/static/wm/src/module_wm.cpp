@@ -85,48 +85,48 @@ namespace argus {
 
     static void _create_initial_window(void) {
         auto params = get_initial_window_parameters();
-        if (!params.has_value() || !params->id.has_value() || params->id->empty()) {
+        if (!params.id.has_value() || params.id->empty()) {
             return;
         }
 
-        auto &window = Window::create(params->id.value());
+        auto &window = Window::create(params.id.value());
 
-        if (params->title.has_value()) {
-            window.set_title(*params->title);
+        if (params.title.has_value()) {
+            window.set_title(*params.title);
         }
 
-        if (params->mode.has_value()) {
-            if (*params->mode == WINDOWING_MODE_WINDOWED) {
+        if (params.mode.has_value()) {
+            if (*params.mode == WINDOWING_MODE_WINDOWED) {
                 window.set_fullscreen(false);
-            } else if (*params->mode == WINDOWING_MODE_BORDERLESS) {
+            } else if (*params.mode == WINDOWING_MODE_BORDERLESS) {
                 //TODO
-            } else if (*params->mode == WINDOWING_MODE_FULLSCREEN) {
+            } else if (*params.mode == WINDOWING_MODE_FULLSCREEN) {
                 window.set_fullscreen(true);
             }
         }
 
-        if (params->vsync.has_value()) {
-            window.set_vsync_enabled(*params->vsync);
+        if (params.vsync.has_value()) {
+            window.set_vsync_enabled(*params.vsync);
         }
 
-        if (params->mouse_visible.has_value()) {
-            window.set_mouse_visible(*params->mouse_visible);
+        if (params.mouse_visible.has_value()) {
+            window.set_mouse_visible(*params.mouse_visible);
         }
 
-        if (params->mouse_captured.has_value()) {
-            window.set_mouse_captured(*params->mouse_captured);
+        if (params.mouse_captured.has_value()) {
+            window.set_mouse_captured(*params.mouse_captured);
         }
 
-        if (params->mouse_raw_input.has_value()) {
-            window.set_mouse_raw_input(*params->mouse_raw_input);
+        if (params.mouse_raw_input.has_value()) {
+            window.set_mouse_raw_input(*params.mouse_raw_input);
         }
 
-        if (params->position.has_value()) {
-            window.set_windowed_position(*params->position);
+        if (params.position.has_value()) {
+            window.set_windowed_position(*params.position);
         }
 
-        if (params->dimensions.has_value()) {
-            window.set_windowed_resolution(*params->dimensions);
+        if (params.dimensions.has_value()) {
+            window.set_windowed_resolution(*params.dimensions);
         }
 
         window.commit();

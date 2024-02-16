@@ -83,9 +83,9 @@ namespace argus {
                     apply_bindings_to_context(*context);
                 }
 
-                auto &scripting_params = get_scripting_parameters();
-                if (scripting_params.has_value() && scripting_params->main.has_value()) {
-                    auto &uid = scripting_params->main.value();
+                const auto &scripting_params = get_scripting_parameters();
+                if (scripting_params.main.has_value()) {
+                    auto &uid = scripting_params.main.value();
                     // run it during the first iteration of the update loop
                     run_on_game_thread([&uid]() { _run_init_script(uid); });
                 }

@@ -16,121 +16,102 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/core/cabi/downstream_config.h"
+#include "argus/lowlevel/math/vector.hpp"
 
 #include "argus/core/downstream_config.hpp"
+#include "argus/core/cabi/downstream_config.h"
 
-static TriState _to_tristate(std::optional<bool> opt) {
-    return opt.has_value()
-            ? opt.value()
-                    ? TriState::TRISTATE_TRUE
-                    : TriState::TRISTATE_FALSE
-            : TriState::TRISTATE_UNDEF;
+argus_scripting_parameters_t argus_get_scripting_parameters(void) {
+    const auto &real_params = argus::get_scripting_parameters();
+
+    argus_scripting_parameters_t params {};
+
+    if ((params.has_main = real_params.main.has_value())) {
+        params.main = real_params.main->c_str();
+    }
+
+    return params;
 }
 
-static const char *_to_c_str(const std::optional<std::string> &opt) {
-    return opt.has_value() ? opt.value().c_str() : nullptr;
+void argus_set_scripting_parameters(const argus_scripting_parameters_t *params) {
+    argus::ScriptingParameters real_params {};
+
+    if (params->has_main) {
+        real_params.main = params->main;
+    }
+
+    argus::set_scripting_parameters(real_params);
 }
 
-static std::optional<std::string> _from_c_str(const char *c_str) {
-    return c_str != nullptr ? std::make_optional(c_str) : std::nullopt;
+argus_initial_window_parameters_t argus_get_initial_window_parameters(void) {
+    const auto &real_params = argus::get_initial_window_parameters();
+
+    argus_initial_window_parameters_t params {};
+
+    if ((params.has_id = real_params.id.has_value())) {
+        params.id = real_params.id->c_str();
+    }
+    if ((params.has_title = real_params.title.has_value())) {
+        params.title = real_params.title->c_str();
+    }
+    if ((params.has_mode = real_params.mode.has_value())) {
+        params.mode = real_params.mode->c_str();
+    }
+    if ((params.has_vsync = real_params.vsync.has_value())) {
+        params.vsync = real_params.vsync.value();
+    }
+    if ((params.has_mouse_visible = real_params.mouse_visible.has_value())) {
+        params.mouse_visible = real_params.mouse_visible.value();
+    }
+    if ((params.has_mouse_captured = real_params.mouse_captured.has_value())) {
+        params.mouse_captured = real_params.mouse_captured.value();
+    }
+    if ((params.has_mouse_raw_input = real_params.mouse_raw_input.has_value())) {
+        params.mouse_raw_input = real_params.mouse_raw_input.value();
+    }
+    if ((params.has_position = real_params.position.has_value())) {
+        params.position = argus::as_c_vec(real_params.position.value());
+    }
+    if ((params.has_dimensions = real_params.dimensions.has_value())) {
+        params.dimensions = argus::as_c_vec(real_params.dimensions.value());
+    }
+
+    return params;
 }
 
-const char *get_main_script(void) {
-    auto params = argus::get_scripting_parameters();
-    return params.has_value() ? _to_c_str(params->main) : nullptr;
+void argus_set_initial_window_parameters(const argus_initial_window_parameters_t *params) {
+    argus::InitialWindowParameters real_params {};
+
+    if (params->has_id) {
+        real_params.id = params->id;
+    }
+    if (params->has_title) {
+        real_params.title = params->title;
+    }
+    if (params->has_mode) {
+        real_params.mode = params->mode;
+    }
+    if (params->has_vsync) {
+        real_params.vsync = params->vsync;
+    }
+    if (params->has_mouse_visible) {
+        real_params.mouse_visible = params->mouse_visible;
+    }
+    if (params->has_mouse_captured) {
+        real_params.mouse_captured = params->mouse_captured;
+    }
+    if (params->has_mouse_raw_input) {
+        real_params.mouse_raw_input = params->mouse_raw_input;
+    }
+    if (params->has_position) {
+        real_params.position = argus::as_cpp_vec(params->position);
+    }
+    if (params->has_dimensions) {
+        real_params.dimensions = argus::as_cpp_vec(params->dimensions);
+    }
+
+    argus::set_initial_window_parameters(real_params);
 }
-
-void set_main_script(const char *script_uid) {
-    auto params = argus::get_scripting_parameters().value_or(argus::ScriptingParameters {});
-    params.main = _from_c_str(script_uid);
-    argus::set_scripting_parameters(params);
-}
-
-const char *get_initial_window_id(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_c_str(params->id) : nullptr;
-}
-
-void set_initial_window_id(const char *id) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.id = _from_c_str(id);
-    argus::set_initial_window_parameters(params);
-}
-
-const char *get_initial_window_title(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_c_str(params->title) : nullptr;
-}
-
-void set_initial_window_title(const char *title) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.title = _from_c_str(title);
-    argus::set_initial_window_parameters(params);
-}
-
-const char *get_initial_window_mode(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_c_str(params->mode) : nullptr;
-}
-
-void set_initial_window_mode(const char *mode) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.mode = _from_c_str(mode);
-    argus::set_initial_window_parameters(params);
-}
-
-TriState get_initial_window_vsync(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_tristate(params->vsync) : TriState::TRISTATE_UNDEF;
-}
-
-void set_initial_window_vsync(bool vsync) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.vsync = vsync;
-    argus::set_initial_window_parameters(params);
-}
-
-TriState get_initial_window_mouse_visible(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_tristate(params->mouse_visible) : TriState::TRISTATE_UNDEF;
-}
-
-void set_initial_window_mouse_visible(bool visible) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.mouse_visible = visible;
-    argus::set_initial_window_parameters(params);
-}
-
-TriState get_initial_window_mouse_captured(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_tristate(params->mouse_captured) : TriState::TRISTATE_UNDEF;
-}
-
-void set_initial_window_mouse_captured(bool captured) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.mouse_captured = captured;
-    argus::set_initial_window_parameters(params);
-}
-
-TriState get_initial_window_mouse_raw_input(void) {
-    auto params = argus::get_initial_window_parameters();
-    return params.has_value() ? _to_tristate(params->mouse_raw_input) : TriState::TRISTATE_UNDEF;
-}
-
-void set_initial_window_mouse_raw_input(bool raw_input) {
-    auto params = argus::get_initial_window_parameters().value_or(argus::InitialWindowParameters {});
-    params.mouse_raw_input = raw_input;
-    argus::set_initial_window_parameters(params);
-}
-
-//TODO: get_initial_window_position
-
-//TODO: set_initial_window_position
-
-//TODO: get_initial_window_dimensions
-
-//TODO: set_initial_window_dimensions
 
 const char *get_default_bindings_resource_id(void) {
     return argus::get_default_bindings_resource_id().c_str();

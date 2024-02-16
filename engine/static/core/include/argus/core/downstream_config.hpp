@@ -40,11 +40,11 @@ namespace argus {
         std::optional<Vector2u> dimensions;
     };
 
-    const std::optional<ScriptingParameters> &get_scripting_parameters(void);
+    const ScriptingParameters &get_scripting_parameters(void);
 
     void set_scripting_parameters(const ScriptingParameters &params);
 
-    const std::optional<InitialWindowParameters> &get_initial_window_parameters(void);
+    const InitialWindowParameters &get_initial_window_parameters(void);
 
     void set_initial_window_parameters(const InitialWindowParameters &window_params);
 

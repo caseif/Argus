@@ -7,10 +7,33 @@ pub const ARGUS_ENGINE_VERSION_MAJOR: u32 = 0;
 pub const ARGUS_ENGINE_VERSION_MINOR: u32 = 0;
 pub const ARGUS_ENGINE_VERSION_INCR: u32 = 1;
 pub type Index = u64;
-pub const TRISTATE_UNDEF: TriState = 0;
-pub const TRISTATE_FALSE: TriState = 1;
-pub const TRISTATE_TRUE: TriState = 2;
-pub type TriState = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct argus_scripting_parameters_t {
+    pub has_main: bool,
+    pub main: *const ::std::os::raw::c_char,
+}
+#[repr(C)]
+pub struct argus_initial_window_parameters_t {
+    pub has_id: bool,
+    pub id: *const ::std::os::raw::c_char,
+    pub has_title: bool,
+    pub title: *const ::std::os::raw::c_char,
+    pub has_mode: bool,
+    pub mode: *const ::std::os::raw::c_char,
+    pub has_vsync: bool,
+    pub vsync: bool,
+    pub has_mouse_visible: bool,
+    pub mouse_visible: bool,
+    pub has_mouse_captured: bool,
+    pub mouse_captured: bool,
+    pub has_mouse_raw_input: bool,
+    pub mouse_raw_input: bool,
+    pub has_position: bool,
+    pub position: argus_vector_2i_t,
+    pub has_dimensions: bool,
+    pub dimensions: argus_vector_2u_t,
+}
 pub const LIFECYCLE_STAGE_LOAD: LifecycleStage = 0;
 pub const LIFECYCLE_STAGE_PREINIT: LifecycleStage = 1;
 pub const LIFECYCLE_STAGE_INIT: LifecycleStage = 2;
@@ -62,26 +85,14 @@ extern "C" {
     pub fn argus_set_client_name(id: *const ::std::os::raw::c_char);
     pub fn argus_get_client_version() -> *const ::std::os::raw::c_char;
     pub fn argus_set_client_version(id: *const ::std::os::raw::c_char);
-    pub fn get_main_script() -> *const ::std::os::raw::c_char;
-    pub fn set_main_script(script_uid: *const ::std::os::raw::c_char);
-    pub fn get_initial_window_id() -> *const ::std::os::raw::c_char;
-    pub fn set_initial_window_id(id: *const ::std::os::raw::c_char);
-    pub fn get_initial_window_title() -> *const ::std::os::raw::c_char;
-    pub fn set_initial_window_title(title: *const ::std::os::raw::c_char);
-    pub fn get_initial_window_mode() -> *const ::std::os::raw::c_char;
-    pub fn set_initial_window_mode(mode: *const ::std::os::raw::c_char);
-    pub fn get_initial_window_vsync() -> TriState;
-    pub fn set_initial_window_vsync(vsync: bool);
-    pub fn get_initial_window_mouse_visible() -> TriState;
-    pub fn set_initial_window_mouse_visible(visible: bool);
-    pub fn get_initial_window_mouse_captured() -> TriState;
-    pub fn set_initial_window_mouse_captured(captured: bool);
-    pub fn get_initial_window_mouse_raw_input() -> TriState;
-    pub fn set_initial_window_mouse_raw_input(raw_input: bool);
-    pub fn get_default_bindings_resource_id() -> *const ::std::os::raw::c_char;
-    pub fn set_default_bindings_resource_id(resource_id: *const ::std::os::raw::c_char);
-    pub fn get_save_user_bindings() -> bool;
-    pub fn set_save_user_bindings(save: bool);
+    pub fn argus_get_scripting_parameters() -> argus_scripting_parameters_t;
+    pub fn argus_set_scripting_parameters(params: *const argus_scripting_parameters_t);
+    pub fn argus_get_initial_window_parameters() -> argus_initial_window_parameters_t;
+    pub fn argus_set_initial_window_parameters(params: *const argus_initial_window_parameters_t);
+    pub fn argus_get_default_bindings_resource_id() -> *const ::std::os::raw::c_char;
+    pub fn argus_set_default_bindings_resource_id(resource_id: *const ::std::os::raw::c_char);
+    pub fn argus_get_save_user_bindings() -> bool;
+    pub fn argus_set_save_user_bindings(save: bool);
     pub fn argus_lifecycle_stage_to_str(stage: LifecycleStage) -> *const ::std::os::raw::c_char;
     pub fn argus_register_dynamic_module(
         id: *const ::std::os::raw::c_char,
