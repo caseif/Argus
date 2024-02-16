@@ -22,14 +22,14 @@ pub type Vector2d = argus_vector_2d_t;
 pub type Vector3d = argus_vector_3d_t;
 pub type Vector4d = argus_vector_4d_t;
 
-pub type Vector2f = argus_vector_2d_t;
-pub type Vector3f = argus_vector_3d_t;
-pub type Vector4f = argus_vector_4d_t;
+pub type Vector2f = argus_vector_2f_t;
+pub type Vector3f = argus_vector_3f_t;
+pub type Vector4f = argus_vector_4f_t;
 
-pub type Vector2i = argus_vector_2d_t;
-pub type Vector3i = argus_vector_3d_t;
-pub type Vector4i = argus_vector_4d_t;
+pub type Vector2i = argus_vector_2i_t;
+pub type Vector3i = argus_vector_3i_t;
+pub type Vector4i = argus_vector_4i_t;
 
-pub type Vector2u = argus_vector_2d_t;
-pub type Vector3u = argus_vector_3d_t;
-pub type Vector4u = argus_vector_4d_t;
+pub type Vector2u = argus_vector_2u_t;
+pub type Vector3u = argus_vector_3u_t;
+pub type Vector4u = argus_vector_4u_t;
