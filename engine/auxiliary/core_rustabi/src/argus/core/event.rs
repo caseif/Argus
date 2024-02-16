@@ -18,10 +18,12 @@
 
 use std::ffi::c_void;
 use std::mem;
+
+use lowlevel_rustabi::util::*;
+
 use crate::argus::core::Index;
 use crate::argus::core::Ordering;
 use crate::core_cabi;
-use crate::util::*;
 
 pub use crate::core_cabi::argus_event_t;
 pub use crate::core_cabi::argus_event_const_t;

@@ -17,7 +17,7 @@
  */
 
 use crate::core_cabi::*;
-use crate::util::*;
+use lowlevel_rustabi::util::*;
 
 pub fn get_client_id() -> String {
     unsafe {

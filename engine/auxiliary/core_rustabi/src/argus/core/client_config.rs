@@ -18,8 +18,9 @@
 
 use std::ffi::CString;
 
+use lowlevel_rustabi::util::*;
+
 use crate::core_cabi::*;
-use crate::util::*;
 
 pub fn load_client_config(config_namespace: &str) {
     unsafe {

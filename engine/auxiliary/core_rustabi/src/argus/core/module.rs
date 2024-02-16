@@ -19,10 +19,10 @@
 use num_enum::TryFromPrimitive;
 
 use lowlevel_rustabi::argus;
+use lowlevel_rustabi::util::*;
 
 use crate::core_cabi;
 use crate::core_cabi::*;
-use crate::util::*;
 
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive)]
 #[repr(u32)]

@@ -19,7 +19,9 @@
 #![allow(unused_imports)]
 
 mod c_interop;
+mod dirtiable;
 mod math;
 
 pub use self::c_interop::*;
+pub use self::dirtiable::*;
 pub use self::math::*;

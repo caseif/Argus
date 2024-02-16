@@ -20,9 +20,10 @@ use std::convert::TryFrom;
 use std::ffi::{CString, c_char};
 use std::ptr::null_mut;
 
+use lowlevel_rustabi::util::*;
+
 use crate::argus::core::screen_space::ScreenSpaceScaleMode;
 use crate::core_cabi;
-use crate::util::*;
 
 pub fn set_target_tickrate(target_tickrate: u32) {
     unsafe {
