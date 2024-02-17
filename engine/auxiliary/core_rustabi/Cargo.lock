@@ -7,6 +7,7 @@ name = "core_rustabi"
 version = "0.0.1"
 dependencies = [
  "libc",
+ "lowlevel_rustabi",
  "num_enum",
 ]
 
@@ -37,6 +38,14 @@ name = "libc"
 version = "0.2.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13e3bf6590cbc649f4d1a3eefc9d5d6eb746f5200ffb04e5e142700b8faa56e7"
+
+[[package]]
+name = "lowlevel_rustabi"
+version = "0.0.1"
+dependencies = [
+ "libc",
+ "num_enum",
+]
 
 [[package]]
 name = "memchr"
