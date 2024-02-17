@@ -23,6 +23,8 @@ FixNamespaceComments: false
 
 IndentPPDirectives: BeforeHash
 
+IndentExternBlock: NoIndent
+
 CommentPragmas: '^TODO'
 
 BraceWrapping:
