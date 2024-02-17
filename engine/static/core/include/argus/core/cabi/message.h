@@ -22,7 +22,9 @@
 extern "C" {
 #endif
 
-//TODO
+typedef void (*message_performer_t)(const void *);
+
+void argus_register_message_performer(const char *type_id, message_performer_t performer);
 
 #ifdef __cplusplus
 }

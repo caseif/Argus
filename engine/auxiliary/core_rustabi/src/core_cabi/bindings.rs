@@ -77,6 +77,8 @@ pub type argus_event_handler_unregister_callback_t =
 pub const TARGET_THREAD_UPDATE: TargetThread = 0;
 pub const TARGET_THREAD_RENDER: TargetThread = 1;
 pub type TargetThread = ::std::os::raw::c_uint;
+pub type message_performer_t =
+    ::std::option::Option<unsafe extern "C" fn(arg1: *const ::std::os::raw::c_void)>;
 extern "C" {
     pub fn argus_load_client_config(config_namespace: *const ::std::os::raw::c_char);
     pub fn argus_get_client_id() -> *const ::std::os::raw::c_char;
@@ -141,4 +143,8 @@ extern "C" {
     ) -> Index;
     pub fn argus_unregister_event_handler(index: Index);
     pub fn argus_dispatch_event(event: argus_event_t);
+    pub fn argus_register_message_performer(
+        type_id: *const ::std::os::raw::c_char,
+        performer: message_performer_t,
+    );
 }

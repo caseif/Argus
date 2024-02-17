@@ -28,7 +28,7 @@ namespace argus {
     template <typename T>
     using MessagePerformer = typename std::function<void(const T &)>;
 
-    void register_message_performer(const char *type_id, GenericMessagePerformer performer);
+    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer);
 
     template <typename T>
     void register_message_performer(

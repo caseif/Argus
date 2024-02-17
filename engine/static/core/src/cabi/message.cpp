@@ -16,6 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/core/message.hpp"
 #include "argus/core/cabi/message.h"
 
-//TODO
+extern "C" {
+
+void argus_register_message_performer(const char *type_id, message_performer_t performer) {
+    argus::register_message_performer(type_id, performer);
+}
+
+}

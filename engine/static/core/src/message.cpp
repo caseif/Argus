@@ -25,7 +25,7 @@
 namespace argus {
     static std::map<std::string, std::vector<GenericMessagePerformer>> g_performers;
 
-    void register_message_performer(const char *type_id, GenericMessagePerformer performer) {
+    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer) {
         g_performers[type_id].push_back(std::move(performer));
     }
 
