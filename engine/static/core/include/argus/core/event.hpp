@@ -53,13 +53,6 @@ namespace argus {
          */
         explicit ArgusEvent(std::string type_id);
 
-        /**
-         * \brief Aggregate constructor for ArgusEvent.
-         *
-         * \param type The type of event.
-         */
-        explicit ArgusEvent(std::type_index type);
-
       public:
         /**
          * \brief The ID of the event type.

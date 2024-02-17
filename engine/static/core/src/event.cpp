@@ -16,22 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/types.hpp"
 
-#include "argus/core/callback.hpp"
 #include "argus/core/event.hpp"
 #include "internal/core/callback_util.hpp"
 #include "internal/core/event.hpp"
 #include "internal/core/module_core.hpp"
 
-#include <algorithm>
 #include <functional>
 #include <mutex>
 #include <queue>
-#include <type_traits>
 #include <vector>
 
 namespace argus {
@@ -184,10 +179,6 @@ namespace argus {
 
     ArgusEvent::ArgusEvent(std::string type_id) :
             type_id(std::move(type_id)) {
-    }
-
-    ArgusEvent::ArgusEvent(std::type_index type) :
-            type_id(type.name()) {
     }
 
     ArgusEvent::ArgusEvent(const ArgusEvent &rhs) = default;
