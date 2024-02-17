@@ -16,8 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/lowlevel/cabi/c_interop.h"
-#include "argus/lowlevel/cabi/math.h"
+#include "argus/lowlevel/message.hpp"
 #include "argus/lowlevel/cabi/message.h"
+
+extern "C" {
+
+void argus_set_message_dispatcher(message_dispatcher_t dispatcher) {
+    argus::set_message_dispatcher(dispatcher);
+}
+
+void argus_broadcast_message(const char *type_id, const void *message) {
+    argus::broadcast_message(type_id, message);
+}
+
+}

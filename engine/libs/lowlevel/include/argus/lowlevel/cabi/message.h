@@ -18,6 +18,16 @@
 
 #pragma once
 
-#include "argus/lowlevel/cabi/c_interop.h"
-#include "argus/lowlevel/cabi/math.h"
-#include "argus/lowlevel/cabi/message.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void (*message_dispatcher_t)(const char *, const void *);
+
+void argus_set_message_dispatcher(message_dispatcher_t dispatcher);
+
+void argus_broadcast_message(const char *type_id, const void *message);
+
+#ifdef __cplusplus
+}
+#endif

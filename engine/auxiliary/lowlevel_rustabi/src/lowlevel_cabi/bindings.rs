@@ -256,6 +256,9 @@ pub union argus_vector_4u_t__bindgen_ty_4 {
     pub w: u32,
     pub a: u32,
 }
+pub type message_dispatcher_t = ::std::option::Option<
+    unsafe extern "C" fn(arg1: *const ::std::os::raw::c_char, arg2: *const ::std::os::raw::c_void),
+>;
 extern "C" {
     pub fn string_array_get_count(sa: StringArrayConst) -> usize;
     pub fn string_array_get_element(
@@ -263,4 +266,9 @@ extern "C" {
         index: usize,
     ) -> *const ::std::os::raw::c_char;
     pub fn string_array_free(sa: StringArray);
+    pub fn argus_set_message_dispatcher(dispatcher: message_dispatcher_t);
+    pub fn argus_broadcast_message(
+        type_id: *const ::std::os::raw::c_char,
+        message: *const ::std::os::raw::c_void,
+    );
 }
