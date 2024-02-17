@@ -113,18 +113,18 @@ void argus_set_initial_window_parameters(const argus_initial_window_parameters_t
     argus::set_initial_window_parameters(real_params);
 }
 
-const char *get_default_bindings_resource_id(void) {
+const char *argus_get_default_bindings_resource_id(void) {
     return argus::get_default_bindings_resource_id().c_str();
 }
 
-void set_default_bindings_resource_id(const char *resource_id) {
+void argus_set_default_bindings_resource_id(const char *resource_id) {
     argus::set_default_bindings_resource_id(resource_id);
 }
 
-bool get_save_user_bindings(void) {
+bool argus_get_save_user_bindings(void) {
     return argus::get_save_user_bindings();
 }
 
-void set_save_user_bindings(bool save) {
+void argus_set_save_user_bindings(bool save) {
     argus::set_save_user_bindings(save);
 }
