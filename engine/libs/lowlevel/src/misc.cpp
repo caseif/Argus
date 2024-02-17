@@ -20,7 +20,9 @@
 #include "argus/lowlevel/misc.hpp"
 
 namespace argus {
-    ObjectDestroyedMessage::ObjectDestroyedMessage(void *ptr) : Message(typeid(*this)), m_ptr(ptr) {
+    ObjectDestroyedMessage::ObjectDestroyedMessage(void *ptr) :
+        Message(ObjectDestroyedMessage::get_message_type_id()),
+        m_ptr(ptr) {
     }
 
     AutoCleanupable::AutoCleanupable(void) = default;

@@ -23,16 +23,25 @@
 #include <typeindex>
 
 namespace argus {
+    template <typename, typename T>
+    struct has_message_type_id_accessor : std::false_type {};
+
+    template <typename T>
+    struct has_message_type_id_accessor<T, std::void_t<decltype(T::get_message_type_id())>> : std::true_type {};
+
+    template <typename T>
+    constexpr bool has_message_type_id_accessor_v = has_message_type_id_accessor<T, void>::value;
+
     class Message {
       private:
-        std::type_index m_type;
+        std::string m_type_id;
 
       protected:
-        Message(std::type_index type);
+        Message(std::string type);
 
         Message(const Message &);
 
-        Message(Message &&);
+        Message(Message &&) noexcept;
 
         Message &operator=(const Message &);
 
@@ -41,17 +50,23 @@ namespace argus {
         ~Message(void);
 
       public:
-        std::type_index get_type(void) const;
+        [[nodiscard]] const std::string &get_type_id(void) const;
 
         template <typename T>
         const T &as(void) const {
-            assert(std::type_index(typeid(T)) == m_type);
+            static_assert(has_message_type_id_accessor_v<T>,
+                    "Message class must contain static function get_message_type_id");
+
+            assert(T::get_message_type_id() == m_type_id);
             return reinterpret_cast<const T &>(*this);
         }
 
         template <typename T>
         T &as(void) {
-            assert(std::type_index(typeid(T)) == m_type);
+            static_assert(has_message_type_id_accessor_v<T>,
+                    "Message class must contain static function get_message_type_id");
+
+            assert(T::get_message_type_id() == m_type_id);
             return reinterpret_cast<T &>(*this);
         }
     };

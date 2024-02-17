@@ -23,14 +23,14 @@
 #include <vector>
 
 namespace argus {
-    static std::map<std::type_index, std::vector<GenericMessagePerformer>> g_performers;
+    static std::map<std::string, std::vector<GenericMessagePerformer>> g_performers;
 
-    void register_message_performer(std::type_index type, GenericMessagePerformer performer) {
-        g_performers[type].push_back(std::move(performer));
+    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer) {
+        g_performers[type_id].push_back(std::move(performer));
     }
 
     void dispatch_message(const Message &message) {
-        auto it = g_performers.find(message.get_type());
+        auto it = g_performers.find(message.get_type_id());
         if (it == g_performers.cend()) {
             return;
         }

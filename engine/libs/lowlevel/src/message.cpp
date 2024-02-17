@@ -23,12 +23,12 @@
 namespace argus {
     static MessageDispatcher g_dispatcher = nullptr;
 
-    Message::Message(std::type_index type) : m_type(type) {
+    Message::Message(std::string type_id) : m_type_id(std::move(type_id)) {
     }
 
     Message::Message(const Message &) = default;
 
-    Message::Message(Message &&) = default;
+    Message::Message(Message &&) noexcept = default;
 
     Message &Message::operator=(const Message &) = default;
 
@@ -36,8 +36,8 @@ namespace argus {
 
     Message::~Message(void) = default;
 
-    std::type_index Message::get_type(void) const {
-        return m_type;
+    const std::string &Message::get_type_id(void) const {
+        return m_type_id;
     }
 
     void set_message_dispatcher(MessageDispatcher dispatcher) {

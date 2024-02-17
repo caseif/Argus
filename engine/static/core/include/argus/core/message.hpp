@@ -28,12 +28,15 @@ namespace argus {
     template <typename T>
     using MessagePerformer = typename std::function<void(const T &)>;
 
-    void register_message_performer(std::type_index type, GenericMessagePerformer performer);
+    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer);
 
     template <typename T>
     std::enable_if_t<std::is_base_of_v<Message, T>, void> register_message_performer(
             const MessagePerformer<T> &performer) {
-        register_message_performer(typeid(T), [performer](const Message &message) {
+        static_assert(has_message_type_id_accessor_v<T>,
+                "Message class must contain static function get_message_type_id");
+
+        register_message_performer(T::get_message_type_id(), [performer](const Message &message) {
             performer(reinterpret_cast<const T &>(message));
         });
     }
