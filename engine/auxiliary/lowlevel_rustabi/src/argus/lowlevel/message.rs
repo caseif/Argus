@@ -16,14 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#![allow(unused_imports)]
+use crate::lowlevel_cabi::*;
 
-mod c_interop;
-mod dirtiable;
-mod math;
-mod message;
+pub type MessageDispatcher = message_dispatcher_t;
 
-pub use self::c_interop::*;
-pub use self::dirtiable::*;
-pub use self::math::*;
-pub use self::message::*;
+pub fn set_message_dispatcher(dispatcher: MessageDispatcher) {
+    unsafe {
+        argus_set_message_dispatcher(dispatcher);
+    }
+}
+
+pub fn broadcast_message<T>(message: &T) {
+    unsafe {
+        argus_broadcast_message(T::get_message_type_id(), message);
+    }
+}
