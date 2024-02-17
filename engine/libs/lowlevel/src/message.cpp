@@ -23,30 +23,13 @@
 namespace argus {
     static MessageDispatcher g_dispatcher = nullptr;
 
-    Message::Message(std::string type_id) : m_type_id(std::move(type_id)) {
-    }
-
-    Message::Message(const Message &) = default;
-
-    Message::Message(Message &&) noexcept = default;
-
-    Message &Message::operator=(const Message &) = default;
-
-    Message &Message::operator=(Message &&) = default;
-
-    Message::~Message(void) = default;
-
-    const std::string &Message::get_type_id(void) const {
-        return m_type_id;
-    }
-
     void set_message_dispatcher(MessageDispatcher dispatcher) {
         g_dispatcher = dispatcher;
     }
 
-    void broadcast_message(const Message &message) {
+    void broadcast_message(const std::string &type_id, const void *message) {
         if (g_dispatcher != nullptr) {
-            g_dispatcher(message);
+            g_dispatcher(type_id.c_str(), &message);
         } else {
             // this is super spammy when running tests
             //Logger::default_logger().warn("Message will not be broadcast (no dispatcher is set)");

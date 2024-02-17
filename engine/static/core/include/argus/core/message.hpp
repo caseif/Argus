@@ -23,21 +23,21 @@
 #include <typeindex>
 
 namespace argus {
-    typedef std::function<void(const Message &)> GenericMessagePerformer;
+    typedef std::function<void(const void *)> GenericMessagePerformer;
 
     template <typename T>
     using MessagePerformer = typename std::function<void(const T &)>;
 
-    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer);
+    void register_message_performer(const char *type_id, GenericMessagePerformer performer);
 
     template <typename T>
-    std::enable_if_t<std::is_base_of_v<Message, T>, void> register_message_performer(
+    void register_message_performer(
             const MessagePerformer<T> &performer) {
         static_assert(has_message_type_id_accessor_v<T>,
                 "Message class must contain static function get_message_type_id");
 
-        register_message_performer(T::get_message_type_id(), [performer](const Message &message) {
-            performer(reinterpret_cast<const T &>(message));
+        register_message_performer(T::get_message_type_id(), [performer](const void *message) {
+            performer(*reinterpret_cast<const T *>(message));
         });
     }
 }

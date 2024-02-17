@@ -32,53 +32,17 @@ namespace argus {
     template <typename T>
     constexpr bool has_message_type_id_accessor_v = has_message_type_id_accessor<T, void>::value;
 
-    class Message {
-      private:
-        std::string m_type_id;
-
-      protected:
-        Message(std::string type);
-
-        Message(const Message &);
-
-        Message(Message &&) noexcept;
-
-        Message &operator=(const Message &);
-
-        Message &operator=(Message &&);
-
-        ~Message(void);
-
-      public:
-        [[nodiscard]] const std::string &get_type_id(void) const;
-
-        template <typename T>
-        const T &as(void) const {
-            static_assert(has_message_type_id_accessor_v<T>,
-                    "Message class must contain static function get_message_type_id");
-
-            assert(T::get_message_type_id() == m_type_id);
-            return reinterpret_cast<const T &>(*this);
-        }
-
-        template <typename T>
-        T &as(void) {
-            static_assert(has_message_type_id_accessor_v<T>,
-                    "Message class must contain static function get_message_type_id");
-
-            assert(T::get_message_type_id() == m_type_id);
-            return reinterpret_cast<T &>(*this);
-        }
-    };
-
-    typedef void (*MessageDispatcher)(const Message &);
+    typedef void (*MessageDispatcher)(const char *, const void *);
 
     void set_message_dispatcher(MessageDispatcher dispatcher);
 
-    void broadcast_message(const Message &message);
+    void broadcast_message(const std::string &type_id, const void *message);
 
     template <typename T>
-    std::enable_if_t<std::is_base_of_v<Message, T>, void> broadcast_message(const T &message) {
-        broadcast_message(reinterpret_cast<const Message &>(message));
+    void broadcast_message(const T &message) {
+        static_assert(has_message_type_id_accessor_v<T>,
+                "Message class must contain static function get_message_type_id");
+
+        broadcast_message(T::get_message_type_id(), &message);
     }
 }

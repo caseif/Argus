@@ -23,7 +23,7 @@
 namespace argus {
     constexpr const char *MESSAGE_TYPE_OBJECT_DESTROYED = "object_destroyed";
 
-    class ObjectDestroyedMessage : Message {
+    class ObjectDestroyedMessage {
       public:
         static constexpr const char *get_message_type_id(void) {
             return MESSAGE_TYPE_OBJECT_DESTROYED;

@@ -21,7 +21,6 @@
 
 namespace argus {
     ObjectDestroyedMessage::ObjectDestroyedMessage(void *ptr) :
-        Message(ObjectDestroyedMessage::get_message_type_id()),
         m_ptr(ptr) {
     }
 

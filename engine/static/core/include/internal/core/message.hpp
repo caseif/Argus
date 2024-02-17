@@ -21,5 +21,5 @@
 #include "argus/core/message.hpp"
 
 namespace argus {
-    void dispatch_message(const Message &message);
+    void dispatch_message(const char *type_id, const void *message);
 }

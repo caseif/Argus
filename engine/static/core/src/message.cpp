@@ -25,12 +25,12 @@
 namespace argus {
     static std::map<std::string, std::vector<GenericMessagePerformer>> g_performers;
 
-    void register_message_performer(const std::string &type_id, GenericMessagePerformer performer) {
+    void register_message_performer(const char *type_id, GenericMessagePerformer performer) {
         g_performers[type_id].push_back(std::move(performer));
     }
 
-    void dispatch_message(const Message &message) {
-        auto it = g_performers.find(message.get_type_id());
+    void dispatch_message(const char *type_id, const void *message) {
+        auto it = g_performers.find(type_id);
         if (it == g_performers.cend()) {
             return;
         }
