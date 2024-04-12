@@ -84,7 +84,7 @@ namespace argus {
     }
 
     void gl_swap_interval(int interval) {
-        //SDL_GL_SetSwapInterval(interval);
+        SDL_GL_SetSwapInterval(interval);
         UNUSED(interval);
     }
 
