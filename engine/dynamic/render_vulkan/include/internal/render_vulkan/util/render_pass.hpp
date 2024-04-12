@@ -22,7 +22,8 @@ namespace argus {
     // forward declarations
     struct LogicalDevice;
 
-    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout);
+    VkRenderPass create_render_pass(const LogicalDevice &device, VkFormat format, VkImageLayout final_layout,
+            bool with_supp_attachments);
 
     void destroy_render_pass(const LogicalDevice &device, VkRenderPass render_pass);
 }

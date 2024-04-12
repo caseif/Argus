@@ -156,6 +156,9 @@ namespace argus {
         multisample_info.alphaToCoverageEnable = VK_FALSE;
         multisample_info.alphaToOneEnable = VK_FALSE;
 
+        std::vector<VkPipelineColorBlendAttachmentState> atts;
+        atts.reserve(2);
+
         VkPipelineColorBlendAttachmentState color_blend_att{};
         color_blend_att.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
                 | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -167,12 +170,27 @@ namespace argus {
         color_blend_att.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         color_blend_att.alphaBlendOp = VK_BLEND_OP_ADD;
 
+        atts.push_back(color_blend_att);
+
+        if (shader_refl.get_output_loc(SHADER_OUT_LIGHT_OPACITY).has_value()) {
+            VkPipelineColorBlendAttachmentState light_opac_blend_att {};
+            light_opac_blend_att.colorWriteMask = VK_COLOR_COMPONENT_R_BIT;
+            light_opac_blend_att.blendEnable = VK_TRUE;
+            light_opac_blend_att.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+            light_opac_blend_att.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+            light_opac_blend_att.colorBlendOp = VK_BLEND_OP_ADD;
+            light_opac_blend_att.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+            light_opac_blend_att.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+            light_opac_blend_att.alphaBlendOp = VK_BLEND_OP_ADD;
+            atts.push_back(light_opac_blend_att);
+        }
+
         VkPipelineColorBlendStateCreateInfo color_blend_info{};
         color_blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         color_blend_info.logicOpEnable = VK_FALSE;
         color_blend_info.logicOp = VK_LOGIC_OP_COPY;
-        color_blend_info.attachmentCount = 1;
-        color_blend_info.pAttachments = &color_blend_att;
+        color_blend_info.attachmentCount = uint32_t(atts.size());
+        color_blend_info.pAttachments = atts.data();
         color_blend_info.blendConstants[0] = 0.0f;
         color_blend_info.blendConstants[1] = 0.0f;
         color_blend_info.blendConstants[2] = 0.0f;
@@ -190,9 +208,9 @@ namespace argus {
         VkPipelineLayout pipeline_layout;
         vkCreatePipelineLayout(state.device.logical_device, &pipeline_layout_info, nullptr, &pipeline_layout);
 
-        auto out_loc = shader_refl.get_output_loc(SHADER_OUT_COLOR);
-        affirm_precond(out_loc.has_value(), "Required shader output " SHADER_OUT_COLOR " is missing");
-        affirm_precond(out_loc.value() == SHADER_OUT_COLOR_LOC,
+        auto out_color_loc = shader_refl.get_output_loc(SHADER_OUT_COLOR);
+        affirm_precond(out_color_loc.has_value(), "Required shader output " SHADER_OUT_COLOR " is missing");
+        affirm_precond(out_color_loc.value() == SHADER_OUT_COLOR_LOC,
                 "Required shader output " SHADER_OUT_COLOR " must have location 0");
 
         VkPipelineDepthStencilStateCreateInfo depth_info{};

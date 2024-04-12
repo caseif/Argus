@@ -38,6 +38,7 @@
 #define SHADER_ATTRIB_ANIM_FRAME_FORMAT VK_FORMAT_R32G32_SFLOAT
 
 #define SHADER_OUT_COLOR_LOC 0
+#define SHADER_OUT_LIGHT_OPACITY_LOC 1
 
 #define FB_SHADER_VERT_PATH "argus:shader/vk/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/vk/framebuffer_frag"

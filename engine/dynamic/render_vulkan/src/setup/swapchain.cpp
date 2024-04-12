@@ -140,7 +140,7 @@ namespace argus {
 
         // need to create the render pass before we create the framebuffers
         sc_info.composite_render_pass = create_render_pass(state.device, format.format,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
 
         uint32_t real_image_count;
 
@@ -152,8 +152,11 @@ namespace argus {
             auto image_view = create_image_view(device, sc_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT);
             sc_info.image_views.push_back(image_view);
 
-            auto framebuffer = create_framebuffer(device, sc_info.composite_render_pass, { image_view },
-                    { extent.width, extent.height });
+            //auto light_opac_image = create_image_and_image_view(device, VK_FORMAT_R32_SFLOAT,
+            //        { extent.width, extent.height }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+            auto framebuffer = create_framebuffer(device, sc_info.composite_render_pass,
+                    { image_view }, { extent.width, extent.height });
             sc_info.framebuffers.push_back(framebuffer);
         }
 

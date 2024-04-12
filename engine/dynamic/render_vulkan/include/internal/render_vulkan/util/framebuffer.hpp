@@ -26,12 +26,12 @@
 namespace argus {
     struct FramebufferInfo {
         VkFramebuffer handle;
-        ImageInfo image;
+        std::vector<ImageInfo> images;
         VkSampler sampler;
 
         FramebufferInfo() :
             handle(VK_NULL_HANDLE),
-            image({}),
+            images(),
             sampler(VK_NULL_HANDLE) {
         }
     };

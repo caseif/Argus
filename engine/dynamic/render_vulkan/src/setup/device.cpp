@@ -102,18 +102,22 @@ namespace argus {
         return true;
     }
 
-    static uint32_t _rate_physical_device(VkInstance instance, VkPhysicalDevice device,
+    static int64_t _rate_physical_device(VkInstance instance, VkPhysicalDevice device,
             std::vector<VkQueueFamilyProperties> queue_families) {
         UNUSED(instance);
         UNUSED(queue_families);
 
-        uint32_t score = 0;
+        int64_t score = 0;
 
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(device, &props);
 
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceFeatures(device, &features);
+        if (features.independentBlend == VK_FALSE) {
+            Logger::default_logger().warn("Cannot use device %s which does not support independentBlend");
+            return -1;
+        }
 
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             score += DISCRETE_GPU_RATING_BONUS;
@@ -141,7 +145,7 @@ namespace argus {
 
         VkPhysicalDevice best_dev = nullptr;
         QueueFamilyIndices best_dev_indices;
-        uint32_t best_rating = 0;
+        int64_t best_rating = 0;
 
         for (auto dev : devs) {
             VkPhysicalDeviceProperties dev_props;
@@ -170,6 +174,10 @@ namespace argus {
             }
 
             auto rating = _rate_physical_device(instance, dev, queue_families);
+            if (rating < 0) {
+                continue;
+            }
+
             Logger::default_logger().debug("Physical device '%s' was assigned rating of %d", dev_props.deviceName,
                     rating);
             if (rating > best_rating) {
@@ -210,6 +218,7 @@ namespace argus {
         }
 
         VkPhysicalDeviceFeatures dev_features{};
+        dev_features.independentBlend = VK_TRUE;
 
         VkDeviceCreateInfo dev_create_info{};
         dev_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

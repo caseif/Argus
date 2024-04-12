@@ -228,8 +228,12 @@ namespace argus {
             vkDestroySampler(state.device.logical_device, frame_state.front_fb.sampler, nullptr);
             destroy_framebuffer(state.device, frame_state.front_fb.handle);
             destroy_framebuffer(state.device, frame_state.back_fb.handle);
-            destroy_image_and_image_view(state.device, frame_state.front_fb.image);
-            destroy_image_and_image_view(state.device, frame_state.back_fb.image);
+            for (const auto &image : frame_state.front_fb.images) {
+                destroy_image_and_image_view(state.device, image);
+            }
+            for (const auto &image : frame_state.front_fb.images) {
+                destroy_image_and_image_view(state.device, image);
+            }
             free_buffer(frame_state.viewport_ubo);
             destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
             for (const auto &[_, ds] : frame_state.material_desc_sets) {
@@ -696,7 +700,7 @@ namespace argus {
         Logger::default_logger().debug("Created composite VBO");
 
         state.fb_render_pass = create_render_pass(this->state.device, this->state.swapchain.image_format,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true);
         Logger::default_logger().debug("Created framebuffer render pass for new window");
 
         for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

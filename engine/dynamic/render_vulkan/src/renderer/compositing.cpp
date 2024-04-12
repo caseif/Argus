@@ -171,19 +171,32 @@ namespace argus {
         auto format = state.swapchain.image_format;
 
         for (auto &frame_state : viewport_state.per_frame) {
-            frame_state.front_fb.image = create_image_and_image_view(state.device, format,
+            frame_state.front_fb.images.resize(2);
+            frame_state.back_fb.images.resize(2);
+
+            frame_state.front_fb.images[0] = create_image_and_image_view(state.device, format,
                     { size.x, size.y },
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
                     | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     VK_IMAGE_ASPECT_COLOR_BIT);
-            frame_state.back_fb.image = create_image_and_image_view(state.device, format,
+            frame_state.front_fb.images[1] = create_image_and_image_view(state.device, VK_FORMAT_R32_SFLOAT,
+                    { size.x, size.y },
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                            | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+            frame_state.back_fb.images[0] = create_image_and_image_view(state.device, format,
                     { size.x, size.y },
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_IMAGE_ASPECT_COLOR_BIT);
+            frame_state.back_fb.images[1] = create_image_and_image_view(state.device, VK_FORMAT_R32_SFLOAT,
+                    { size.x, size.y },
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+
             frame_state.front_fb.handle = create_framebuffer(state.device, state.fb_render_pass,
-                    { frame_state.front_fb.image });
+                    frame_state.front_fb.images);
             frame_state.back_fb.handle = create_framebuffer(state.device, state.fb_render_pass,
-                    { frame_state.front_fb.image });
+                    frame_state.back_fb.images);
 
             VkSamplerCreateInfo sampler_info{};
             sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -224,7 +237,7 @@ namespace argus {
                 sampler_ds_write.pImageInfo = nullptr;
                 VkDescriptorImageInfo desc_image_info{};
                 desc_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                desc_image_info.imageView = frame_state.front_fb.image.view;
+                desc_image_info.imageView = frame_state.front_fb.images[0].view;
                 desc_image_info.sampler = frame_state.front_fb.sampler;
                 sampler_ds_write.pImageInfo = &desc_image_info;
                 ds_writes.push_back(sampler_ds_write);
@@ -257,8 +270,12 @@ namespace argus {
                 // delete framebuffers
                 destroy_framebuffer(state.device, frame_state.front_fb.handle);
                 destroy_framebuffer(state.device, frame_state.back_fb.handle);
-                destroy_image_and_image_view(state.device, frame_state.front_fb.image);
-                destroy_image_and_image_view(state.device, frame_state.back_fb.image);
+                for (const auto &image : frame_state.front_fb.images) {
+                    destroy_image_and_image_view(state.device, image);
+                }
+                for (const auto &image : frame_state.back_fb.images) {
+                    destroy_image_and_image_view(state.device, image);
+                }
                 vkDestroySampler(state.device.logical_device, frame_state.front_fb.sampler, nullptr);
                 destroy_descriptor_sets(state.device, state.desc_pool, frame_state.composite_desc_sets);
             }
@@ -270,14 +287,19 @@ namespace argus {
 
         auto vk_cmd_buf = frame_state.command_buf.handle;
 
-        VkClearValue clear_val{};
-        clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+        VkClearValue color_clear_val = {};
+        color_clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+
+        VkClearValue light_opac_clear_val = {};
+        light_opac_clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+
+        VkClearValue clear_vals[] = { color_clear_val, light_opac_clear_val };
 
         VkRenderPassBeginInfo rp_info{};
         rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rp_info.framebuffer = frame_state.front_fb.handle;
-        rp_info.pClearValues = &clear_val;
-        rp_info.clearValueCount = 1;
+        rp_info.pClearValues = clear_vals;
+        rp_info.clearValueCount = sizeof(clear_vals) / sizeof(clear_vals[0]);
         rp_info.renderPass = state.fb_render_pass;
         rp_info.renderArea.extent = { fb_width, fb_height };
         rp_info.renderArea.offset = { 0, 0 };
