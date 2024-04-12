@@ -432,6 +432,8 @@ namespace argus {
 
         uint32_t image_index = 0;
 
+        std::lock_guard<std::mutex> submit_lock(state.submit_mutex);
+
         vkAcquireNextImageKHR(device, state.swapchain.handle, UINT64_MAX,
                 state.swapchain.image_avail_sem[state.cur_frame], VK_NULL_HANDLE, &image_index);
 
