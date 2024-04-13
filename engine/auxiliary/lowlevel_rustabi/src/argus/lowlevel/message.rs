@@ -17,8 +17,13 @@
  */
 
 use crate::lowlevel_cabi::*;
+use crate::util::*;
 
 pub type MessageDispatcher = message_dispatcher_t;
+
+pub trait Message {
+    fn get_message_type_id() -> &'static str;
+}
 
 pub fn set_message_dispatcher(dispatcher: MessageDispatcher) {
     unsafe {
@@ -26,8 +31,9 @@ pub fn set_message_dispatcher(dispatcher: MessageDispatcher) {
     }
 }
 
-pub fn broadcast_message<T>(message: &T) {
+pub fn broadcast_message<T : Message>(message: &T) {
     unsafe {
-        argus_broadcast_message(T::get_message_type_id(), message);
+        argus_broadcast_message(str_to_cstring(T::get_message_type_id()).as_ptr(),
+                &message as *const _ as *const std::ffi::c_void);
     }
 }
