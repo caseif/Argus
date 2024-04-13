@@ -194,7 +194,7 @@ pub fn compile_glsl_to_spirv(glsl_sources: &HashMap<Stage, String>, client: Clie
             validate: false,
             emit_nonsemantic_shader_debug_info: false,
             emit_nonsemantic_shader_debug_source: false,
-            //compile_only: false,
+            compile_only: false,
         };
 
         program.spirv_generate_with_options(glsl.stage, &spirv_options);

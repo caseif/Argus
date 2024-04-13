@@ -393,7 +393,7 @@ pub struct SpvOptions {
     pub validate: bool,
     pub emit_nonsemantic_shader_debug_info: bool,
     pub emit_nonsemantic_shader_debug_source: bool,
-    //pub compile_only: bool,
+    pub compile_only: bool,
 }
 
 extern "C" {
