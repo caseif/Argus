@@ -156,6 +156,8 @@ endif()
 set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
 set(BUILD_SHARED_LIBS OFF)
 
+set(MUST_BUILD_GLSLANG OFF)
+
 # glslang
 if(USE_SYSTEM_GLSLANG)
   find_package(glslang REQUIRED)
@@ -163,14 +165,17 @@ if(USE_SYSTEM_GLSLANG)
 
   get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
   if(NOT GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
-    message(FATAL_ERROR "System-installed glslang library must be static to be usable, "
-                        "please set USE_SYSTEM_GLSLANG=OFF")
+    message(WARNING "System-installed glslang library must be static to be usable, "
+                    "please set USE_SYSTEM_GLSLANG=OFF")
+    set(MUST_BUILD_GLSLANG ON)
   endif()
 
   set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
   set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
   get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
-else()
+endif()
+
+if(MUST_BUILD_GLSLANG)
   set(SKIP_GLSLANG_INSTALL ON CACHE BOOL "" FORCE)
   set(GLSLANG_TARGET "glslang")
   set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
