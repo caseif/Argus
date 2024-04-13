@@ -367,6 +367,12 @@ function(_argus_disable_warnings targets)
       return()
     endif()
 
+    get_target_property(TARGET_IS_IMPORTED "${target}" IMPORTED)
+    if(TARGET_IS_IMPORTED)
+      message(WARNING "Tried to disable warnings on imported target '${target}'")
+      return()
+    endif()
+
     get_target_property(TARGET_CXX_FLAGS "${target}" COMPILE_OPTIONS)
 
     if(TARGET_CXX_FLAGS)

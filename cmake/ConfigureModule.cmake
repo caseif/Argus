@@ -432,6 +432,10 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
       target_compile_definitions("${PROJECT_NAME}" PUBLIC "NOMINMAX")
     endif()
 
+    if(USE_SYSTEM_GLSLANG)
+      target_compile_definitions("${PROJECT_NAME}" PRIVATE "USING_SYSTEM_GLSLANG")
+    endif()
+
     if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_EXE}")
       set(PROJECT_INCLUDES "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}"
               "${MODULE_GENRATED_DIR}/${INCLUDE_DIR_NAME}" "${ARGUS_INCLUDE_DIRS}" "${MODULE_INCLUDES}")
