@@ -69,7 +69,9 @@ jobs:
           libvulkan-dev \
           libsdl2-dev \
           liblua5.4-dev \
-          nlohmann-json3-dev
+          nlohmann-json3-dev \
+          glslang-dev \
+          spirv-tools
       if: startsWith(matrix.os, 'ubuntu')
 
     - name: Install dependencies (macOS)
@@ -77,7 +79,9 @@ jobs:
         brew install \
           sdl2 \
           lua \
-          nlohmann-json
+          nlohmann-json \
+          glslang \
+          spirv-tools
       if: startsWith(matrix.os, 'macos')
 
     - name: Setup Vulkan SDK (Windows)
