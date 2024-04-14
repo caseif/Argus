@@ -125,22 +125,60 @@ set(ARP_INCLUDE_DIRS "${ARP_SOURCE_DIR}/include")
 set(ARP_INCLUDE_DIR "${ARP_INCLUDE_DIRS}")
 add_subdirectory("${ARP_SOURCE_DIR}")
 
-# SPIRV-Tools (required by glslang for SPIR-V optimization)
-if(USE_SYSTEM_SPIRV_TOOLS)
-  # SPIRV-Tools-opt
-  find_package(SPIRV-Tools-opt REQUIRED)
-  set(SPIRV_TOOLS_OPT_TARGET "SPIRV-Tools-opt")
-  set(SPIRV_TOOLS_OPT_LIBRARY "${SPIRV_TOOLS_OPT_TARGET}")
-  set(SPIRV_TOOLS_LIBRARIES "${SPIRV_TOOLS_OPT_LIBRARY}")
-else()
+set(MUST_BUILD_SPIRV_TOOLS 1)
+
+# track whether we need to go forward with building glslang locally
+set(MUST_BUILD_GLSLANG ON)
+
+# glslang
+if(USE_SYSTEM_GLSLANG)
+  # require version between 13.1.0 and 14.1.0 since Khronos doesn't
+  # care about breaking ABI compatibility between minor versions
+  find_package(glslang "14.1.0...<14.2.0" QUIET)
+  if(NOT glslang_FOUND)
+    find_package(glslang "14.0.0...<14.1.0" QUIET)
+    if(NOT glslang_FOUND)
+      find_package(glslang "13.1.0...<13.2.0" QUIET)
+    endif()
+  endif()
+
+  if(glslang_FOUND)
+    set(GLSLANG_TARGET "glslang::glslang")
+
+    get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
+    if(GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
+      find_package(SPIRV-Tools-opt)
+      if(SPIRV-Tools-opt_FOUND)
+        set(MUST_BUILD_GLSLANG OFF)
+        set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
+        set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
+        get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
+      else()
+        message(WARNING "System-installed SPIRV-Tools library could not be found, "
+            "cowardly refusing to use system glslang and forcing local "
+            "versions of SPIRV-Tools and glslang to be built")
+      endif()
+    else()
+      message(WARNING "System-installed glslang library must be static to be usable, "
+                      "forcing local version to be built.")
+    endif()
+  else()
+    message(WARNING "System-installed glslang library could not be found or is not a compatible version, "
+                    "forcing local version to be built.")
+  endif()
+endif()
+
+if(MUST_BUILD_GLSLANG)
   # SPIRV-Headers (required by SPIRV-Tools)
+
   set(SPIRV_HEADERS_TARGET "SPIRV-Headers")
   set(SPIRV_HEADERS_LIBRARY "${SPIRV_HEADERS_TARGET}")
   set(SPIRV_HEADERS_LIBRARIES "${SPIRV_HEADERS_LIBRARY}")
   add_subdirectory("${SPIRV_HEADERS_SOURCE_DIR}")
   get_target_property(SPIRV_HEADERS_INCLUDE_DIRS "${SPIRV_HEADERS_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
 
-  # SPIRV-Tools
+  # SPIRV-Tools (required by glslang for SPIR-V optimization)
+
   set(SPIRV_TOOLS_LIBRARY_TYPE "STATIC" CACHE STRING "" FORCE)
   set(SPIRV_TOOLS_BUILD_STATIC OFF CACHE BOOL "" FORCE)
   set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
@@ -151,51 +189,13 @@ else()
   set(SPIRV_TOOLS_LIBRARIES "${SPIRV_TOOLS_OPT_LIBRARY}")
   get_target_property(SPIRV_TOOLS_OPT_INCLUDE_DIR "${SPIRV_TOOLS_OPT_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
   set(SPIRV_TOOLS_INCLUDE_DIRS "${SPIRV_TOOLS_OPT_INCLUDE_DIR}")
-endif()
 
-# we want to build the next couple libs statically
-set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
-set(BUILD_SHARED_LIBS OFF)
+  # glslang
 
-# track whether we need to go forward with building glslang locally
-set(MUST_BUILD_GLSLANG ON)
+  # build it statically
+  set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+  set(BUILD_SHARED_LIBS OFF)
 
-# glslang
-if(USE_SYSTEM_GLSLANG)
-  find_package(glslang QUIET)
-
-  if(glslang_FOUND)
-    # since Khronos can't be trusted to not break ABI compatibility between minor versions
-    set(glslang_MIN_VERSION "13.1.0")
-    set(glslang_MAX_VERSION "14.1.0")
-    argus_check_version_in_range(glslang_VERSION_IN_RANGE "${glslang_VERSION}"
-            "${glslang_MIN_VERSION}" "${glslang_MAX_VERSION}")
-    if(${glslang_VERSION_IN_RANGE})
-      set(GLSLANG_TARGET "glslang::glslang")
-
-      get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
-      if(GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
-        set(MUST_BUILD_GLSLANG OFF)
-        set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
-        set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
-        get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
-      else()
-        message(WARNING "System-installed glslang library must be static to be usable, "
-                        "forcing local version to be built.")
-      endif()
-    else()
-      message(WARNING "System-installed glslang library is incompatible "
-                      "(needed in range [${glslang_MIN_VERSION}, ${glslang_MAX_VERSION}], "
-                      "found version ${glslang_VERSION}), "
-                      "forcing local version to be built.")
-    endif()
-  else()
-    message(WARNING "System-installed glslang library was not found, "
-                    "forcing local version to be built.")
-  endif()
-endif()
-
-if(MUST_BUILD_GLSLANG)
   set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
   set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
   set(ENABLE_CTEST OFF CACHE BOOL "" FORCE)
@@ -205,9 +205,17 @@ if(MUST_BUILD_GLSLANG)
   set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV")
   set(GLSLANG_INCLUDE_DIRS "${GLSLANG_SOURCE_DIR}")
   add_subdirectory("${GLSLANG_SOURCE_DIR}")
+
+  # pop original value for BUILD_SHARED_LIBS
+  set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
 endif()
 
 # SPIRV-Cross
+
+# build it statically
+set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF)
+
 set(SPIRV_CROSS_TARGET "spirv-cross-cpp")
 set(SPIRV_CROSS_LIBRARY "${SPIRV_CROSS_TARGET}")
 set(SPIRV_CROSS_LIBRARIES "${SPIRV_CROSS_LIBRARY}")
