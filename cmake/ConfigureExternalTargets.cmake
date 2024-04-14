@@ -146,21 +146,16 @@ if(USE_SYSTEM_GLSLANG)
     set(GLSLANG_TARGET "glslang::glslang")
 
     get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
-    if(GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
-      find_package(SPIRV-Tools-opt)
-      if(SPIRV-Tools-opt_FOUND)
-        set(MUST_BUILD_GLSLANG OFF)
-        set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
-        set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
-        get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
-      else()
-        message(WARNING "System-installed SPIRV-Tools library could not be found, "
-            "cowardly refusing to use system glslang and forcing local "
-            "versions of SPIRV-Tools and glslang to be built")
-      endif()
+    find_package(SPIRV-Tools-opt)
+    if(SPIRV-Tools-opt_FOUND)
+      set(MUST_BUILD_GLSLANG OFF)
+      set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
+      set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
+      get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
     else()
-      message(WARNING "System-installed glslang library must be static to be usable, "
-                      "forcing local version to be built.")
+      message(WARNING "System-installed SPIRV-Tools library could not be found, "
+          "cowardly refusing to use system glslang and forcing local "
+          "versions of SPIRV-Tools and glslang to be built")
     endif()
   else()
     message(WARNING "System-installed glslang library could not be found or is not a compatible version, "
