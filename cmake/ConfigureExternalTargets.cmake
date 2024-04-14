@@ -162,18 +162,36 @@ set(MUST_BUILD_GLSLANG ON)
 
 # glslang
 if(USE_SYSTEM_GLSLANG)
-  find_package(glslang REQUIRED)
-  set(GLSLANG_TARGET "glslang::glslang")
+  find_package(glslang QUIET)
 
-  get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
-  if(GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
-    set(MUST_BUILD_GLSLANG OFF)
-    set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
-    set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
-    get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
+  if(glslang_FOUND)
+    # since Khronos can't be trusted to not break ABI compatibility between minor versions
+    set(glslang_MIN_VERSION "13.1.0")
+    set(glslang_MAX_VERSION "14.1.0")
+    argus_check_version_in_range(glslang_VERSION_IN_RANGE "${glslang_VERSION}"
+            "${glslang_MIN_VERSION}" "${glslang_MAX_VERSION}")
+    if(${glslang_VERSION_IN_RANGE})
+      set(GLSLANG_TARGET "glslang::glslang")
+
+      get_target_property(GLSLANG_TARGET_TYPE "${GLSLANG_TARGET}" TYPE)
+      if(GLSLANG_TARGET_TYPE STREQUAL STATIC_LIBRARY)
+        set(MUST_BUILD_GLSLANG OFF)
+        set(GLSLANG_LIBRARY "${GLSLANG_TARGET}")
+        set(GLSLANG_LIBRARIES "${GLSLANG_LIBRARY};SPIRV;${SPIRV_TOOLS_LIBRARIES}")
+        get_target_property(GLSLANG_INCLUDE_DIRS "${GLSLANG_TARGET}" INTERFACE_INCLUDE_DIRECTORIES)
+      else()
+        message(WARNING "System-installed glslang library must be static to be usable, "
+                        "forcing local version to be built.")
+      endif()
+    else()
+      message(WARNING "System-installed glslang library is incompatible "
+                      "(needed in range [${glslang_MIN_VERSION}, ${glslang_MAX_VERSION}], "
+                      "found version ${glslang_VERSION}), "
+                      "forcing local version to be built.")
+    endif()
   else()
-    message(WARNING "System-installed glslang library must be static to be usable, "
-            "please set USE_SYSTEM_GLSLANG=OFF")
+    message(WARNING "System-installed glslang library was not found, "
+                    "forcing local version to be built.")
   endif()
 endif()
 
