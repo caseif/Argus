@@ -73,6 +73,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DEF_USE_SYSTEM_LUA OFF)
   set(DEF_USE_SYSTEM_JSON OFF)
   set(DEF_USE_SYSTEM_GLSLANG OFF)
+  set(DEF_USE_SYSTEM_CATCH2 OFF)
 else()
   set(DEF_USE_SYSTEM_SDL2 ON)
   set(DEF_USE_SYSTEM_ZLIB ON)
@@ -80,6 +81,7 @@ else()
   set(DEF_USE_SYSTEM_LUA ON)
   set(DEF_USE_SYSTEM_JSON ON)
   set(DEF_USE_SYSTEM_GLSLANG ON)
+  set(DEF_USE_SYSTEM_CATCH2 ON)
 endif()
 
 option(ENABLE_CTEST "Enable testing" ON)
@@ -110,6 +112,9 @@ cmake_dependent_option(USE_SYSTEM_SPIRV_TOOLS "Use system-provided SPIRV-Tools l
         "NOT NO_SYSTEM_LIBS" OFF)
 cmake_dependent_option(USE_SYSTEM_GLSLANG "Use system-provided glslang library and headers"
         "${DEF_USE_SYSTEM_GLSLANG}"
+        "NOT NO_SYSTEM_LIBS" OFF)
+cmake_dependent_option(USE_SYSTEM_CATCH2 "Use system-provided Catch2 library and headers"
+        "${DEF_USE_SYSTEM_CATCH2}"
         "NOT NO_SYSTEM_LIBS" OFF)
 
 option(USE_ASAN "Build with AddressSanitizer support" OFF)

@@ -247,17 +247,32 @@ set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_INCLUDE_DIRS}")
 
 # add test dependencies
 
-# set build variables for test dependencies
-set(CATCH2_TARGET "Catch2")
-set(CATCH2_LIBRARY "${CATCH2_TARGET}")
-set(CATCH2_LIBRARIES "${CATCH2_LIBRARY}")
-set(CATCH2_INCLUDE_DIRS "${CATCH2_SOURCE_DIR}/src")
-set(CATCH2_INCLUDE_DIR "${CATCH2_INCLUDE_DIRS}")
-# we want to build this lib statically
-set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
-set(BUILD_SHARED_LIBS OFF)
-add_subdirectory("${CATCH2_SOURCE_DIR}")
-set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+set(MUST_BUILD_CATCH2 OFF)
+
+if(USE_SYSTEM_CATCH2)
+  find_package("Catch2" 3)
+  if(Catch2_FOUND)
+    set(CATCH2_TARGET "Catch2::Catch2WithMain")
+  else()
+    set(MUST_BUILD_CATCH2 ON)
+  endif()
+else()
+  set(MUST_BUILD_CATCH2 ON)
+endif()
+
+if(MUST_BUILD_CATCH2)
+  # set build variables for test dependencies
+  set(CATCH2_TARGET "Catch2")
+  set(CATCH2_LIBRARY "${CATCH2_TARGET}")
+  set(CATCH2_LIBRARIES "${CATCH2_LIBRARY}")
+  set(CATCH2_INCLUDE_DIRS "${CATCH2_SOURCE_DIR}/src")
+  set(CATCH2_INCLUDE_DIR "${CATCH2_INCLUDE_DIRS}")
+  # we want to build this lib statically
+  set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+  set(BUILD_SHARED_LIBS OFF)
+  add_subdirectory("${CATCH2_SOURCE_DIR}")
+  set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+endif()
 
 if(TARGET "example")
   set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL TRUE)
@@ -301,7 +316,9 @@ if(TARGET "${LUA_TARGET}")
   _argus_disable_warnings(${LUA_TARGET})
 endif()
 #_argus_disable_warnings(${ANGELSCRIPT_LIBRARY})
-_argus_disable_warnings(${CATCH2_TARGET})
+if(TARGET "${CATCH2_TARGET}")
+  _argus_disable_warnings(${CATCH2_TARGET})
+endif()
 
 # pop original value of ENABLE_CTEST option
 set(ENABLE_CTEST "${ENABLE_CTEST_SAVED}")
