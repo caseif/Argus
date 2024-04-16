@@ -77,7 +77,7 @@ namespace argus {
         UNUSED(size);
         Logger::default_logger().debug("Loading material %s", proto.uid.c_str());
         try {
-            nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
+            nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true);
 
             std::string tex_uid = json_root.at(KEY_TEXTURE);
             nlohmann::json::array_t shaders_arr = json_root.at(KEY_SHADERS);

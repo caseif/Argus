@@ -279,7 +279,7 @@ namespace argus {
     }
 
     static bool _ingest_config_content(std::istream &stream) {
-        nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
+        nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true);
 
         if (json_root.contains(KEY_CLIENT)) {
             _ingest_client_properties(json_root.at(KEY_CLIENT));

@@ -67,7 +67,7 @@ namespace argus {
         UNUSED(size);
         Logger::default_logger().debug("Loading sprite %s", proto.uid.c_str());
         try {
-            nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true, true);
+            nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true);
 
             SpriteDef sprite;
 
