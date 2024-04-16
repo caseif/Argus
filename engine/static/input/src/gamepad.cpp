@@ -33,10 +33,12 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL_events.h"
-#pragma GCC diagnostic pop
 #include "SDL_gamecontroller.h"
 #include "SDL_joystick.h"
+#include "SDL_version.h"
+#pragma GCC diagnostic pop
 
 #include <limits>
 #include <mutex>
@@ -67,14 +69,16 @@ namespace argus::input {
             //{ SDL_CONTROLLER_BUTTON_RTrigger, GamepadButton::RTrigger },
             { SDL_CONTROLLER_BUTTON_LEFTSTICK, GamepadButton::LStick },
             { SDL_CONTROLLER_BUTTON_RIGHTSTICK, GamepadButton::RStick },
+            { SDL_CONTROLLER_BUTTON_START, GamepadButton::Start },
+            { SDL_CONTROLLER_BUTTON_BACK, GamepadButton::Back },
+            { SDL_CONTROLLER_BUTTON_GUIDE, GamepadButton::Guide },
+            #if SDL_VERSION_ATLEAST(2, 0, 14)
+            { SDL_CONTROLLER_BUTTON_MISC1, GamepadButton::Misc1 },
             { SDL_CONTROLLER_BUTTON_PADDLE1, GamepadButton::L4 },
             { SDL_CONTROLLER_BUTTON_PADDLE2, GamepadButton::R4 },
             { SDL_CONTROLLER_BUTTON_PADDLE3, GamepadButton::L5 },
             { SDL_CONTROLLER_BUTTON_PADDLE4, GamepadButton::R5 },
-            { SDL_CONTROLLER_BUTTON_START, GamepadButton::Start },
-            { SDL_CONTROLLER_BUTTON_BACK, GamepadButton::Back },
-            { SDL_CONTROLLER_BUTTON_GUIDE, GamepadButton::Guide },
-            { SDL_CONTROLLER_BUTTON_MISC1, GamepadButton::Misc1 },
+            #endif
     };
 
     static std::unordered_map<GamepadButton, SDL_GameControllerButton> g_buttons_argus_to_sdl = {
@@ -93,14 +97,16 @@ namespace argus::input {
             //{ GamepadButton::RTrigger, SDL_CONTROLLER_BUTTON_RTrigger },
             { GamepadButton::LStick, SDL_CONTROLLER_BUTTON_LEFTSTICK },
             { GamepadButton::RStick, SDL_CONTROLLER_BUTTON_RIGHTSTICK },
+            { GamepadButton::Start, SDL_CONTROLLER_BUTTON_START },
+            { GamepadButton::Back, SDL_CONTROLLER_BUTTON_BACK },
+            { GamepadButton::Guide, SDL_CONTROLLER_BUTTON_GUIDE },
+            #if SDL_VERSION_ATLEAST(2, 0, 14)
+            { GamepadButton::Misc1, SDL_CONTROLLER_BUTTON_MISC1 },
             { GamepadButton::L4, SDL_CONTROLLER_BUTTON_PADDLE1 },
             { GamepadButton::R4, SDL_CONTROLLER_BUTTON_PADDLE2 },
             { GamepadButton::L5, SDL_CONTROLLER_BUTTON_PADDLE3 },
             { GamepadButton::R5, SDL_CONTROLLER_BUTTON_PADDLE4 },
-            { GamepadButton::Start, SDL_CONTROLLER_BUTTON_START },
-            { GamepadButton::Back, SDL_CONTROLLER_BUTTON_BACK },
-            { GamepadButton::Guide, SDL_CONTROLLER_BUTTON_GUIDE },
-            { GamepadButton::Misc1, SDL_CONTROLLER_BUTTON_MISC1 },
+            #endif
     };
 
     static std::unordered_map<SDL_GameControllerAxis, GamepadAxis> g_axes_sdl_to_argus = {

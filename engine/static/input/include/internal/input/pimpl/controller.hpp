@@ -22,7 +22,10 @@
 #include "argus/input/gamepad.hpp"
 #include "argus/input/keyboard.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL_gamecontroller.h"
+#pragma GCC diagnostic pop
 
 #include <map>
 

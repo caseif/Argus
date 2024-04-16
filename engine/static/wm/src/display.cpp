@@ -29,6 +29,7 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include "SDL_events.h"
 #pragma GCC diagnostic pop
+#include "SDL_version.h"
 #include "SDL_video.h"
 
 #include <string>
@@ -135,7 +136,7 @@ namespace argus {
         }
     }
 
-    static void _update_displays(void) {
+    [[maybe_unused]] static void _update_displays(void) {
         std::vector<const Display *> old_displays;
         std::vector<const Display *> new_displays;
 
@@ -158,11 +159,14 @@ namespace argus {
         }
 
         SDL_DisplayEvent disp_event = event->display;
+        UNUSED(disp_event);
 
+        #if SDL_VERSION_ATLEAST(2, 0, 14)
         if (disp_event.type == SDL_DISPLAYEVENT_CONNECTED
                 || disp_event.type == SDL_DISPLAYEVENT_DISCONNECTED) {
             _update_displays();
         }
+        #endif
 
         return 0;
     }

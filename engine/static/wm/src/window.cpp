@@ -44,6 +44,7 @@
 #include "SDL_events.h"
 #pragma GCC diagnostic pop
 #include "SDL_hints.h"
+#include "SDL_version.h"
 #include "SDL_video.h"
 
 #include <atomic>
@@ -377,7 +378,15 @@ namespace argus {
             } else if ((g_window_flags & WindowCreationFlags::Vulkan) != 0) {
                 sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_VULKAN);
             } else if ((g_window_flags & WindowCreationFlags::Metal) != 0) {
+                #ifdef __APPLE__
+                #if SDL_VERSION_ATLEAST(2, 0, 14)
                 sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_METAL);
+                #else
+                throw std::invalid_argument("Metal contexts require SDL 2.0.14 or newer");
+                #endif
+                #else
+                throw std::invalid_argument("Metal contexts are not supported on non-Apple platforms");
+                #endif
             } else if ((g_window_flags & WindowCreationFlags::DirectX) != 0) {
                 Logger::default_logger().fatal("DirectX contexts are not supported at this time");
             } else if ((g_window_flags & WindowCreationFlags::WebGPU) != 0) {
@@ -497,7 +506,11 @@ namespace argus {
                 }
                 SDL_SetRelativeMouseMode(SDL_TRUE);
             } else {
+                #if SDL_VERSION_ATLEAST(2, 0, 16)
                 SDL_SetWindowMouseGrab(pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
+                #else
+                SDL_SetWindowGrab(pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
+                #endif
                 //TODO: not great, would be better to set it per window somehow
                 SDL_ShowCursor(mouse_visible ? SDL_TRUE : SDL_FALSE);
             }
