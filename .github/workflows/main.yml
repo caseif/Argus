@@ -5,19 +5,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-12]
+        os: [ubuntu-20.04, ubuntu-22.04, windows-2019, windows-2022, macos-12, macos-13, macos-14]
         compiler: [gcc, clang, msvc]
         configuration: [Release, Debug]
         exclude:
+          - os: windows-2019
+            compiler: gcc
+          - os: windows-2019
+            compiler: clang
           - os: windows-2022
             compiler: gcc
           - os: windows-2022
             compiler: clang
+          - os: ubuntu-20.04
+            compiler: msvc
           - os: ubuntu-22.04
             compiler: msvc
           - os: macos-12
             compiler: msvc
           - os: macos-12
+            compiler: gcc
+          - os: macos-13
+            compiler: msvc
+          - os: macos-13
+            compiler: gcc
+          - os: macos-14
+            compiler: msvc
+          - os: macos-14
             compiler: gcc
     runs-on: ${{ matrix.os }}
 
@@ -40,10 +54,18 @@ jobs:
       if: matrix.compiler == 'gcc'
 
     - name: Set env vars for Clang
+      shell: pwsh
       run: |
-        echo "CC=clang" >> "$GITHUB_ENV"
-        echo "CXX=clang++" >> "$GITHUB_ENV"
+        echo "CC=clang" >> "$env:GITHUB_ENV"
+        echo "CXX=clang++" >> "$env:GITHUB_ENV"
       if: matrix.compiler == 'clang'
+
+    - name: Set env vars for Win32 CMake
+      shell: pwsh
+      run: |
+        $vs_version = if ("${{ matrix.os }}" -eq "windows-2019") { "16" } else { "17" }
+          echo "CMAKE_GENERATOR=Visual Studio $vs_version" >> "$env:GITHUB_ENV"
+      if: startsWith(matrix.os, 'windows')
 
     - uses: actions/checkout@v3
       with:
@@ -56,7 +78,25 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: true
 
-    - name: Install dependencies (Ubuntu)
+    - name: Install dependencies (Ubuntu Focal)
+      run: |
+        sudo apt-get update
+        sudo apt-get install \
+          libgl1-mesa-dev \
+          libgl1-mesa-glx \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libvulkan-dev \
+          libsdl2-dev \
+          liblua5.3-dev \
+          nlohmann-json3-dev \
+          glslang-dev \
+          spirv-tools
+      if: matrix.os == 'ubuntu-20.04'
+
+    - name: Install dependencies (Ubuntu Jammy)
       run: |
         sudo apt-get update
         sudo apt-get install \
@@ -72,7 +112,7 @@ jobs:
           nlohmann-json3-dev \
           glslang-dev \
           spirv-tools
-      if: startsWith(matrix.os, 'ubuntu')
+      if: matrix.os == 'ubuntu-22.04'
 
     - name: Install dependencies (macOS)
       run: |
@@ -101,11 +141,11 @@ jobs:
         mkdir build
         cd build
         if ("$env:OS_NAME" -eq "windows") {
-            cmake -G "Visual Studio 17" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
+            cmake -G "$env:CMAKE_GENERATOR" -DCMAKE_SYSTEM_VERSION=10.0.22621.963 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
         } elseif ("$env:OS_NAME" -eq "linux") {
             cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
         } elseif ("$env:OS_NAME" -eq "macos") {
-            cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration }} -DBUILD_VULKAN_BACKEND=OFF ..
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DBUILD_VULKAN_BACKEND=OFF ..
         }
 
     - name: Build
