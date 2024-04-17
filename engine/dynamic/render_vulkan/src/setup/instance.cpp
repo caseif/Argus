@@ -33,6 +33,10 @@
 
 #include <cstring>
 
+#ifndef VK_MAKE_API_VERSION
+#define VK_MAKE_API_VERSION(variant, major, minor, patch) (VK_MAKE_VERSION(major, minor, patch))
+#endif
+
 namespace argus {
     static std::vector<VkExtensionProperties> _get_available_extensions(void) {
         uint32_t ext_count;
