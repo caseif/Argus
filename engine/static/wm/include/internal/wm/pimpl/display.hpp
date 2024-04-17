@@ -22,7 +22,10 @@
 
 #include "argus/wm/display.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL_video.h"
+#pragma GCC diagnostic pop
 
 #include <string>
 #include <vector>

@@ -29,7 +29,10 @@
 #include <string>
 #include <vector>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL_video.h"
+#pragma GCC diagnostic pop
 
 namespace argus {
     struct pimpl_Window {

@@ -20,7 +20,10 @@
 
 #include "argus/wm/cabi/display.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL_video.h"
+#pragma GCC diagnostic pop
 
 namespace argus {
     // forward declarations

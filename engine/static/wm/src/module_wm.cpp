@@ -37,10 +37,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #include "SDL.h"
 #include "SDL_events.h"
-#pragma GCC diagnostic pop
 #include "SDL_video.h"
+#pragma GCC diagnostic pop
 
 #include <iterator>
 #include <map>
