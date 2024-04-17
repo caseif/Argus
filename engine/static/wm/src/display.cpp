@@ -42,12 +42,12 @@ namespace argus {
     // to be called during init
     static uint8_t sw_popcnt(uint32_t val) {
         uint32_t val_shifted = val;
-        uint8_t count = 0;
+        uint32_t count = 0;
         for (uint32_t i = 0; i < sizeof(val) * 8; i++) {
             count += val_shifted & 1;
             val_shifted >>= 1;
         }
-        return count;
+        return uint8_t(count);
     }
 
     DisplayMode wrap_display_mode(SDL_DisplayMode mode) {
