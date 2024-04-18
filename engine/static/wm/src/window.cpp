@@ -61,7 +61,7 @@
 #define DEF_WINDOW_DIM 300
 
 // The window has no associated state yet.
-#define WINDOW_STATE_NULL                   0x00U
+#define WINDOW_STATE_UNDEFINED              0x00U
 // The window has been created in memory and a Create event has been posted.
 #define WINDOW_STATE_CREATED                0x01U
 // The window has been configured for use (Window::commit has been invoked).
@@ -242,7 +242,7 @@ namespace argus {
             Logger::default_logger().warn("No canvas callbacks were set - new window will not have associated canvas!");
         }
 
-        pimpl->state = WINDOW_STATE_NULL;
+        pimpl->state = WINDOW_STATE_UNDEFINED;
 
         pimpl->close_callback = nullptr;
 
