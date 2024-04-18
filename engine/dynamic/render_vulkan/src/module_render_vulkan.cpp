@@ -157,6 +157,7 @@ namespace argus {
         auto vk_inst = create_vk_instance(window);
         if (!vk_inst.has_value()) {
             set_window_creation_flags(WindowCreationFlags::None);
+            window.request_close();
             return false;
         }
         g_vk_instance = vk_inst.value();
@@ -175,6 +176,7 @@ namespace argus {
                 reinterpret_cast<void **>(&probe_surface))) {
             Logger::default_logger().warn("Vulkan does not appear to be supported (failed to create surface)");
             set_window_creation_flags(WindowCreationFlags::None);
+            window.request_close();
             return false;
         }
 
@@ -202,6 +204,11 @@ namespace argus {
 
         switch (event.subtype) {
             case WindowEventType::Create: {
+                // don't create a context if the window was immediately closed
+                if (event.window.is_close_request_pending()) {
+                    break;
+                }
+
                 auto *renderer = new VulkanRenderer(window);
                 g_renderer_map.insert({&window, renderer});
                 break;
@@ -235,7 +242,12 @@ namespace argus {
             }
             case WindowEventType::RequestClose: {
                 auto it = g_renderer_map.find(&window);
-                assert(it != g_renderer_map.end());
+                // This condition passes if the window received a close request
+                // immediately, before a context could be created. This is the
+                // case when creating a hidden window to probe GL capabilities.
+                if (it == g_renderer_map.end()) {
+                    break;
+                }
 
                 delete it->second;
                 break;

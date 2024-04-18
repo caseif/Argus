@@ -233,6 +233,19 @@ namespace argus {
         bool is_ready(void) const;
 
         /**
+         * \brief Gets whether a close request is currently pending for the
+     *            Window.
+         *
+         * This is subtly different from Window#is_closed() in that it will
+         * return true immediately after Window#request_close() is invoked
+         * whereas is_closed will only return true after the window itself has
+         * observed the close request.
+         *
+         * \return Whether the a close request is pending for the Window.
+         */
+        bool is_close_request_pending(void) const;
+
+        /**
          * \brief Gets whether the Window is preparing to close.
          *
          * Once this is observed to return `true`, the Window object should

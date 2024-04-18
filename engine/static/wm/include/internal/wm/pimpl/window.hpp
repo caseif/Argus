@@ -95,7 +95,9 @@ namespace argus {
          *
          * \warning This field's semantic meaning is implementation-defined.
          */
-        std::atomic<unsigned int> state;
+        std::atomic_uint32_t state;
+
+        std::atomic_bool is_close_request_pending;
 
         AtomicDirtiable<Vector2u> cur_resolution;
 

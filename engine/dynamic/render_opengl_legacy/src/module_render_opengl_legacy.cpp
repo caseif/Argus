@@ -115,6 +115,11 @@ namespace argus {
 
         switch (event.subtype) {
             case WindowEventType::Create: {
+                // don't create a context if the window was immediately closed
+                if (event.window.is_close_request_pending()) {
+                    break;
+                }
+
                 auto *renderer = new GLRenderer(window);
                 g_renderer_map.insert({&window, renderer});
                 break;
@@ -143,7 +148,12 @@ namespace argus {
             }
             case WindowEventType::RequestClose: {
                 auto it = g_renderer_map.find(&window);
-                assert(it != g_renderer_map.end());
+                // This condition passes if the window received a close request
+                // immediately, before a context could be created. This is the
+                // case when creating a hidden window to probe GL capabilities.
+                if (it == g_renderer_map.end()) {
+                    break;
+                }
 
                 delete it->second;
                 break;

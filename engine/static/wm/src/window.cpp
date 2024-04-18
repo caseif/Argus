@@ -243,6 +243,7 @@ namespace argus {
         }
 
         pimpl->state = WINDOW_STATE_UNDEFINED;
+        pimpl->is_close_request_pending = false;
 
         pimpl->close_callback = nullptr;
 
@@ -314,6 +315,10 @@ namespace argus {
 
     bool Window::is_ready(void) const {
         return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
+    }
+
+    bool Window::is_close_request_pending(void) const {
+        return pimpl->is_close_request_pending;
     }
 
     bool Window::is_closed(void) const {
@@ -686,6 +691,7 @@ namespace argus {
     }
 
     void Window::request_close(void) {
+        pimpl->is_close_request_pending = true;
         _dispatch_window_event(*this, WindowEventType::RequestClose);
     }
 
