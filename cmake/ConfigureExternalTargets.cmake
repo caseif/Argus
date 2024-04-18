@@ -247,31 +247,33 @@ set(ANGELSCRIPT_INCLUDE_DIR "${ANGELSCRIPT_INCLUDE_DIRS}")
 
 # add test dependencies
 
-set(MUST_BUILD_CATCH2 OFF)
+if(NOT ARGUS_SKIP_TESTS)
+  set(MUST_BUILD_CATCH2 OFF)
 
-if(USE_SYSTEM_CATCH2)
-  find_package("Catch2" 3)
-  if(Catch2_FOUND)
-    set(CATCH2_TARGET "Catch2::Catch2WithMain")
+  if(USE_SYSTEM_CATCH2)
+    find_package("Catch2" 3)
+    if(Catch2_FOUND)
+      set(CATCH2_TARGET "Catch2::Catch2WithMain")
+    else()
+      set(MUST_BUILD_CATCH2 ON)
+    endif()
   else()
     set(MUST_BUILD_CATCH2 ON)
   endif()
-else()
-  set(MUST_BUILD_CATCH2 ON)
-endif()
 
-if(MUST_BUILD_CATCH2)
-  # set build variables for test dependencies
-  set(CATCH2_TARGET "Catch2")
-  set(CATCH2_LIBRARY "${CATCH2_TARGET}")
-  set(CATCH2_LIBRARIES "${CATCH2_LIBRARY}")
-  set(CATCH2_INCLUDE_DIRS "${CATCH2_SOURCE_DIR}/src")
-  set(CATCH2_INCLUDE_DIR "${CATCH2_INCLUDE_DIRS}")
-  # we want to build this lib statically
-  set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
-  set(BUILD_SHARED_LIBS OFF)
-  add_subdirectory("${CATCH2_SOURCE_DIR}")
-  set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+  if(MUST_BUILD_CATCH2)
+    # set build variables for test dependencies
+    set(CATCH2_TARGET "Catch2")
+    set(CATCH2_LIBRARY "${CATCH2_TARGET}")
+    set(CATCH2_LIBRARIES "${CATCH2_LIBRARY}")
+    set(CATCH2_INCLUDE_DIRS "${CATCH2_SOURCE_DIR}/src")
+    set(CATCH2_INCLUDE_DIR "${CATCH2_INCLUDE_DIRS}")
+    # we want to build this lib statically
+    set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+    set(BUILD_SHARED_LIBS OFF)
+    add_subdirectory("${CATCH2_SOURCE_DIR}")
+    set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+  endif()
 endif()
 
 if(TARGET "example")

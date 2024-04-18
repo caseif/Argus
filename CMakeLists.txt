@@ -84,7 +84,7 @@ else()
   set(DEF_USE_SYSTEM_CATCH2 ON)
 endif()
 
-option(ENABLE_CTEST "Enable testing" ON)
+option(ARGUS_SKIP_TESTS "Disable testing" OFF)
 
 option(BUILD_OPENGL_BACKEND "Build the OpenGL-based render backend" ON)
 option(BUILD_OPENGL_LEGACY_BACKEND "Build the legacy OpenGL-based render backend" ON)
@@ -465,8 +465,8 @@ _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${SPIRV_CROSS_TARGET}" PRE
 #_argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${ANGELSCRIPT_LIBRARIES}" PREFIX "${LIB_PREFIX}")
 _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${ARP_TARGET}" PREFIX "${LIB_PREFIX}")
 
-if(ENABLE_CTEST)
+if(NOT ARGUS_SKIP_TESTS)
   enable_testing()
-endif()
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/test")
+  add_subdirectory("${PROJECT_SOURCE_DIR}/test")
+endif()

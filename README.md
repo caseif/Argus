@@ -85,6 +85,8 @@ A system installation of `libuuid` is also required for Linux builds.
 A relatively recent version of Catch2 is required for building and running tests. This will be built locally from a
 submodule if a system installation is not detected.
 
+Tests can be disabled via the `ARGUS_SKIP_TESTS` CMake flag.
+
 ### Tooling
 
 Additionally, the following tools are required as part of the build script tooling:
