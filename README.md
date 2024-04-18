@@ -15,22 +15,22 @@ the engine's architecture in its current iteration.
 
 ### DIY
 
-Argus was created as a hobby project with the goal of learning as much as possible. As such, it attempts to implement
-as many of its features in-house as possible, with a couple of notable exceptions:
+Argus was created as a hobby project with the goal of learning as much as possible. It attempts to implement as much
+functionality in-house as possible, with some notable exceptions:
 
 **Windowing/input polling:** For the moment, Argus uses SDL for OS-level "grunt" work including window and input
-management. These tasks are highly OS-specific and thus would be somewhat tedious to maintain, so I would rather avoid
-dedicating any time towards it at least until the project is in a more complete state.
+management. These tasks are highly OS-specific and would be somewhat tedious to maintain, so I would rather avoid
+dedicating any time towards it (at least until the project is much further along).
 
 **File format support:** The remaining dependencies are devoted to parsing file/data formats including PNG, JSON, and
-DEFLATE data. I am not especially interested in this sort of task and do not see much educational value in it, and
-developing [libarp](https://github.com/caseif/libarp) certainly gave me my fill of it anyhow.
+DEFLATE data. Reimplementing this would be a pretty serious time investment, so I feel a "shortcut" is justified here.
+In any event, developing [libarp](https://github.com/caseif/libarp) more than gave me my fill of parsing work.
 
 ### Platform Support
 
-My vision is for Argus to support at least a handful of platforms, among these macOS, Android, and *BSD. This ties into
-my goal of this being a learning project. This is lower priority though, and it currently only supports Windows and
-Linux.
+My vision is for Argus to support at least a handful of platforms including macOS, Android, and *BSD. This ties into
+my goal of this being a learning project. This is lower priority though, and the engine currently only supports Linux
+and Windows.
 
 ### Modularity
 
@@ -43,29 +43,49 @@ modules must explicitly specify which other modules and external libraries they 
 
 One of the main focuses for Argus has been the quality of the overall architecture and code. This has lead to a large
 number of rewrites and refactors as I learn better ways to architect features and has slowed the project down quite a
-bit, but the primary goal isn't necessarily to ship a game. Consequently, I've generally prioritized the quality of the
-engine versus getting something full-featured out the door quickly.
+bit, but because the primary goal isn't necessarily to ship a game, I've generally prioritized code and architectural
+quality over more quickly getting something full-featured out the door.
 
 ## Building
+
+### Libraries
 
 Building Argus requires CMake and a relatively recent version of GCC, Clang, or MSVC with support for C++17 features.
 The following software is required by the build process and must be installed and available on the path:
 
 - Python 3
-- Ruby 3
-  - Bundler
+- Ruby 3, RubyGems, and Bundler
 - Rust (`cargo`)
-- Vulkan SDK (if building the Vulkan backend)
+- Vulkan SDK if building the Vulkan backend, plus Vulkan validation layers for debug builds
 
 Argus (the base library and respective render backend modules) depends on the following libraries:
 
-- [SDL 2](https://github.com/libsdl-org/SDL)
-- [glslang](https://github.com/KhronosGroup/glslang)
-- [nlohmann/json](https://github.com/nlohmann/json)
-- [libarp](https://github.com/caseif/libarp)
-- [libpng](https://github.com/glennrp/libpng)
+- [libpng](https://github.com/glennrp/libpng) >= 1.6.37
+- [zlib](https://github.com/madler/zlib) >= 1.2.11 (transitively through libpng)
+- [SDL 2](https://github.com/libsdl-org/SDL) >= 2.0.10
+- [nlohmann/json](https://github.com/nlohmann/json) >= 3.8
+- [glslang](https://github.com/KhronosGroup/glslang) >= 13.1.0, <= 14.1.0
+- [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools)
 - [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
-- [zlib](https://github.com/madler/zlib) (transitively through libpng)
+- [libarp](https://github.com/caseif/libarp)
+
+The build script will attempt to use a system installation of all of these libraries on Linux and macOS, except for
+libarp. This behavior can be overridden via the `NO_SYSTEM_LIBS` CMake flag as well as individual `USE_SYSTEM_<LIBRARY>`
+flags for each respective library.
+
+glslang, SPIRV-Tools, and SPIRV-Cross are relatively tightly coupled and the build script will always either use system
+libraries for both or build both locally. All three libraries are controlled via the `USE_SYSTEM_GLSLANG` flag. The
+build script will also automatically fall back to building them locally if adequate system installations can't be
+found.
+
+A system installation of `libuuid` is also required for Linux builds.
+
+### Test Libraries
+
+A relatively recent version of Catch2 is required for building and running tests. This will be built locally from a
+submodule if a system installation is not detected.
+
+### Tooling
 
 Additionally, the following tools are required as part of the build script tooling:
 
@@ -78,7 +98,7 @@ script. The respective shared libraries (where applicable) will be generated as 
 Argus's shared library.
 
 Additionally, the render backends require support from the OS for their respective graphics libraries. Argus currently
-provides OpenGL-based and OpenGL ES-based backends, and a Vulkan backend is currently under development.
+provides OpenGL, OpenGL ES, and Vulkan-based backends.
 
 To set up the build files, please run the following commands:
 
