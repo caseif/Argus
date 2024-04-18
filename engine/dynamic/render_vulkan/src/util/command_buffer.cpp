@@ -24,6 +24,8 @@
 
 #include "vulkan/vulkan.h"
 
+#include <algorithm>
+
 namespace argus {
     VkCommandPool create_command_pool(const LogicalDevice &device, uint32_t queue_index) {
         VkCommandPoolCreateInfo pool_info{};

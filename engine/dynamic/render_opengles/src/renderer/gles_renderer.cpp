@@ -50,6 +50,7 @@
 
 #include "aglet/aglet.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 

@@ -37,6 +37,7 @@
 
 #include "argus/wm/window.hpp"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 

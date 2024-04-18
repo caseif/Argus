@@ -19,6 +19,7 @@
 #include "argus/render/common/attached_viewport.hpp"
 #include "internal/render/pimpl/common/attached_viewport.hpp"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
