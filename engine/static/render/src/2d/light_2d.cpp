@@ -24,8 +24,13 @@
 namespace argus {
     static PoolAllocator g_alloc_pool(sizeof(pimpl_Light2D));
 
-    Light2D::Light2D(const Vector3f &color, float intensity, float decay_factor, const Transform2D &transform) :
-        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(color, intensity, decay_factor, transform)) {
+    Light2D::Light2D(Light2DType type, const Vector3f &color, float intensity, float decay_factor,
+            const Transform2D &transform) :
+        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(type, color, intensity, decay_factor, transform)) {
+    }
+
+    Light2DType Light2D::get_type(void) const {
+        return m_pimpl->type;
     }
 
     const Vector3f &Light2D::get_color(void) const {

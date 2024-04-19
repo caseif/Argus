@@ -20,12 +20,15 @@
 
 namespace argus {
     struct pimpl_Light2D {
+        Light2DType type;
         Vector3f color;
         float intensity;
         float decay_factor;
         Transform2D transform;
 
-        pimpl_Light2D(Vector3f color, float intensity, float decay_factor, const Transform2D &transform) :
+        pimpl_Light2D(Light2DType type, Vector3f color, float intensity, float decay_factor,
+                const Transform2D &transform) :
+            type(type),
             color(color),
             intensity(intensity),
             decay_factor(decay_factor),
