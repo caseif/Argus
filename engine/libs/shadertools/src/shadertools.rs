@@ -812,10 +812,25 @@ fn get_decl_info(single_decl: &SingleDeclaration, struct_sizes: &HashMap<String,
         Some(get_type_size(&decl_type.ty.ty).unwrap())
     };
 
+    let arr_el_count = &single_decl.array_specifier.as_ref()
+            .map(|arr_spec| arr_spec.dimensions.0.iter().fold(Ok(1), |a, dim| {
+                Ok(a.unwrap() * match dim {
+                    ArraySpecifierDimension::ExplicitlySized(size_expr) => match size_expr.as_ref() {
+                        Expr::IntConst(n) => Ok(*n as u32),
+                        _ => Err(GlslCompileError::new("Non-literal array dimension specifiers are not \
+                                    supported at this time")),
+                    }
+                    ArraySpecifierDimension::Unsized =>
+                        Err(GlslCompileError::new("Array specifier dimension for declaration cannot be unsized")),
+                }?)
+            }))
+            .unwrap_or(Ok(1))?;
+    let decl_size = type_size.map(|ts| ts * *arr_el_count);
+
     return Ok(Some(DeclarationInfo {
         name: name.as_ref().unwrap().to_owned().0,
         storage: storage.unwrap(),
-        size: type_size,
+        size: decl_size,
         location: location,
         explicit_location: location.is_some()
     }));
