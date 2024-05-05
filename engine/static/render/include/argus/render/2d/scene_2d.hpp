@@ -22,6 +22,7 @@
 
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
+#include "argus/render/2d/light_2d.hpp"
 
 #include <optional>
 #include <string>
@@ -30,15 +31,11 @@
 namespace argus {
     // forward declarations
     class Material;
-
     class Canvas;
-
     class Camera2D;
-
+    class Light2D;
     class RenderGroup2D;
-
     class RenderObject2D;
-
     class RenderPrim2D;
 
     struct pimpl_Scene2D;
@@ -88,6 +85,17 @@ namespace argus {
         [[nodiscard]] ValueAndDirtyFlag<Vector3f> get_ambient_light_color(void);
 
         void set_ambient_light_color(const Vector3f &color);
+
+        std::vector<std::reference_wrapper<Light2D>> get_lights(void);
+
+        std::vector<std::reference_wrapper<const Light2D>> get_lights_for_render(void);
+
+        Handle add_light(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
+                float decay_factor, const Transform2D &iniital_transform);
+
+        std::optional<std::reference_wrapper<Light2D>> get_light(Handle handle);
+
+        void remove_light(Handle handle);
 
         std::optional<std::reference_wrapper<RenderGroup2D>> get_group(Handle handle);
 
@@ -140,5 +148,9 @@ namespace argus {
         Camera2D &create_camera(const std::string &id);
 
         void destroy_camera(const std::string &id);
+
+        void lock_render_state(void);
+
+        void unlock_render_state(void);
     };
 }

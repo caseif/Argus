@@ -3,7 +3,7 @@
     <api>
         <name>glcore</name>
         <minVersion>3.3</minVersion>
-        <targetVersion>4.1</targetVersion>
+        <targetVersion>4.3</targetVersion>
     </api>
     <extensions>
         <extension required="false">GL_KHR_debug</extension>

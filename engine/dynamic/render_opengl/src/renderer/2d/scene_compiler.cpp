@@ -35,7 +35,7 @@ namespace argus {
     }
 
     static void _create_obj_ubo(RenderBucket &bucket) {
-        bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, false);
+        bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, true, false);
 
         // we assume that these values will never change
 

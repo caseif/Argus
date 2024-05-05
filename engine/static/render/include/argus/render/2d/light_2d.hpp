@@ -25,7 +25,7 @@ namespace argus {
     struct pimpl_Light2D;
 
     enum class Light2DType {
-        Area,
+        Point = 0,
     };
 
     class Light2D {
@@ -34,10 +34,15 @@ namespace argus {
       public:
         pimpl_Light2D *m_pimpl;
 
-        Light2D(Light2DType type, const Vector3f &color, float intensity, float decay_factor,
+        Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float decay_factor,
                 const Transform2D &transform);
 
+        Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
+                float decay_factor, const Transform2D &transform);
+
         [[nodiscard]] Light2DType get_type(void) const;
+
+        [[nodiscard]] bool is_occludable(void) const;
 
         [[nodiscard]] const Vector3f &get_color(void) const;
 

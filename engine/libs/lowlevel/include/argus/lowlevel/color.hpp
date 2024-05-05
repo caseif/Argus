@@ -24,4 +24,6 @@ namespace argus {
     Vector3f rgb_to_hsv(const Vector3f &rgb);
 
     Vector3f hsv_to_rgb(const Vector3f &hsv);
+
+    Vector3f normalize_rgb(const Vector3f &rgb);
 }

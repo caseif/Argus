@@ -366,6 +366,13 @@ namespace argus {
         return state.std_program.value();
     }
 
+    LinkedProgram &get_shadowmap_program(RendererState &state) {
+        if (!state.shadowmap_program.has_value()) {
+            state.shadowmap_program = link_program({ SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG });
+        }
+        return state.shadowmap_program.value();
+    }
+
     LinkedProgram &get_material_program(RendererState &state, const Resource &mat_res) {
         auto &mat = mat_res.get<Material>();
 

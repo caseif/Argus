@@ -76,7 +76,7 @@ namespace argus {
                 std::forward_as_tuple(viewport, camera, z_index));
 
         //TODO: put this somewhere that makes more sense
-        it.first->second.add_postprocessing_shader("argus:render/shader/lighting_frag");
+        //it.first->second.add_postprocessing_shader("argus:render/shader/lighting_frag");
 
         return it.first->second;
     }

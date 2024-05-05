@@ -20,20 +20,26 @@
 
 namespace argus {
     struct pimpl_Light2D {
+        Handle handle;
         Light2DType type;
+        bool is_occludable;
         Vector3f color;
         float intensity;
         float decay_factor;
         Transform2D transform;
 
-        pimpl_Light2D(Light2DType type, Vector3f color, float intensity, float decay_factor,
-                const Transform2D &transform) :
+        uint16_t version;
+
+        pimpl_Light2D(Handle handle, Light2DType type, bool is_occludable, Vector3f color, float intensity,
+                float decay_factor, const Transform2D &transform) :
+            handle(handle),
             type(type),
+            is_occludable(is_occludable),
             color(color),
             intensity(intensity),
             decay_factor(decay_factor),
-            transform(transform) {
-
+            transform(transform),
+            version(1) {
         }
     };
 }

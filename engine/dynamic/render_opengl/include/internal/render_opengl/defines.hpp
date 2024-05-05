@@ -38,5 +38,9 @@
 #define FB_SHADER_ATTRIB_TEXCOORD_LOC 1
 #define FB_SHADER_ATTRIB_ANIM_FRAME_LOC 2
 
+#define SHADOW_RAYS_COUNT 360
+
+#define SHADER_IMAGE_SHADOWMAP_LEN (SHADOW_RAYS_COUNT * LIGHTS_MAX * 4)
+
 #define FB_SHADER_VERT_PATH "argus:shader/gl/framebuffer_vert"
 #define FB_SHADER_FRAG_PATH "argus:shader/gl/framebuffer_frag"

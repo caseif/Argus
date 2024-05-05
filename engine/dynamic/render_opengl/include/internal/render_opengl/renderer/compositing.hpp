@@ -30,6 +30,12 @@ namespace argus {
     void draw_scene_to_framebuffer(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution);
 
+    void compute_scene_shadowmap(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution);
+
+    void draw_scene_lightmap(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution);
+
     void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution);
 

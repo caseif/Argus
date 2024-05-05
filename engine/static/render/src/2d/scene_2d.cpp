@@ -25,6 +25,7 @@
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 #include "internal/render/common/scene.hpp"
+#include "internal/render/pimpl/2d/light_2d.hpp"
 #include "internal/render/pimpl/2d/render_object_2d.hpp"
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 #include "internal/render/module_render.hpp"
@@ -32,6 +33,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace argus {
     // forward declarations
@@ -100,12 +102,39 @@ namespace argus {
     }
 
     void Scene2D::set_ambient_light_color(const Vector3f &color) {
-        // normalize the RGB value
-        auto hsv_color = rgb_to_hsv(color);
-        hsv_color.z = 1.0; // set value to max
-        auto final_rgb = hsv_to_rgb(hsv_color);
+        pimpl->ambient_light_color = normalize_rgb(color);
+    }
 
-        pimpl->ambient_light_color = final_rgb;
+    std::vector<std::reference_wrapper<Light2D>> Scene2D::get_lights(void) {
+        std::vector<std::reference_wrapper<Light2D>> res;
+        res.reserve(pimpl->lights_staging->size());
+        std::transform(pimpl->lights_staging->begin(), pimpl->lights_staging->end(), std::back_inserter(res),
+                [](auto &kvp) { return std::reference_wrapper(kvp.second); });
+        return res;
+    }
+
+    std::vector<std::reference_wrapper<const Light2D>> Scene2D::get_lights_for_render(void) {
+        std::vector<std::reference_wrapper<const Light2D>> res;
+        res.reserve(pimpl->lights->size());
+        std::transform(pimpl->lights->cbegin(), pimpl->lights->cend(), std::back_inserter(res),
+                [](const auto &kvp) { return std::reference_wrapper(kvp.second); });
+        return res;
+    }
+
+    Handle Scene2D::add_light(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
+            float decay_factor, const Transform2D &iniital_transform) {
+        Light2D light(type, is_occludable, normalize_rgb(color), intensity, decay_factor, iniital_transform);
+        auto inserted = pimpl->lights_staging->insert({ light.m_pimpl->handle, light });
+        return inserted.first->second.m_pimpl->handle;
+    }
+
+    std::optional<std::reference_wrapper<Light2D>> Scene2D::get_light(Handle handle) {
+        auto *ptr = g_render_handle_table.deref<Light2D>(handle);
+        return ptr != nullptr ? std::make_optional(std::reference_wrapper(*ptr)) : std::nullopt;
+    }
+
+    void Scene2D::remove_light(Handle handle) {
+        pimpl->lights_staging->erase(handle);
     }
 
     std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(Handle handle) {
@@ -159,5 +188,13 @@ namespace argus {
         }
 
         pimpl->cameras.erase(it);
+    }
+
+    void Scene2D::lock_render_state(void) {
+        pimpl->read_lock.lock();
+    }
+
+    void Scene2D::unlock_render_state(void) {
+        pimpl->read_lock.unlock();
     }
 }

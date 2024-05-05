@@ -105,4 +105,11 @@ namespace argus {
 
         return { float(r), float(g), float(b) };
     }
+
+    Vector3f normalize_rgb(const Vector3f &rgb) {
+        auto hsv_color = rgb_to_hsv(rgb);
+        hsv_color.z = 1.0; // set value to max
+        auto final_rgb = hsv_to_rgb(hsv_color);
+        return final_rgb;
+    }
 }

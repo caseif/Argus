@@ -56,6 +56,21 @@ namespace argus {
         int32_t right;
     };
 
+    struct Std140Light2D {
+        // offset 0
+        float color[4];
+        // offset 16
+        float position[4];
+        // offset 32
+        int32_t type;
+        // offset 36
+        float intensity;
+        // offset 40
+        float decay_factor;
+        // offset 44
+        bool is_occludable;
+    };
+
     static TransformedViewport _transform_viewport_to_pixels(const Viewport &viewport, const Vector2u &resolution) {
         float vp_h_scale;
         float vp_v_scale;
@@ -114,23 +129,48 @@ namespace argus {
             auto al_level = scene.get_ambient_light_level();
             auto al_color = scene.get_ambient_light_color();
 
-            bool must_update = al_level.dirty || al_color.dirty;
+            bool must_update = false;
 
             if (!scene_state.ubo.valid) {
-                scene_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_SCENE_LEN, GL_DYNAMIC_DRAW, false);
+                scene_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_SCENE_LEN, GL_DYNAMIC_DRAW,
+                        true, false);
                 must_update = true;
             }
 
-            if (must_update) {
-                if (al_level.dirty) {
-                    scene_state.ubo.write_val<float>(al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
-                }
-
-                if (al_color.dirty) {
-                    float color[4] = { al_color->r, al_color->g, al_color->b, 1.0 };
-                    scene_state.ubo.write(color, sizeof(color), SHADER_UNIFORM_SCENE_AL_COLOR_OFF);
-                }
+            if (must_update || al_level.dirty) {
+                scene_state.ubo.write_val<float>(al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
             }
+
+            if (must_update || al_color.dirty) {
+                float color[4] = { al_color->r, al_color->g, al_color->b, 1.0 };
+                scene_state.ubo.write(color, sizeof(color), SHADER_UNIFORM_SCENE_AL_COLOR_OFF);
+            }
+
+            Std140Light2D shader_lights_arr[LIGHTS_MAX];
+
+            scene.lock_render_state();
+
+            size_t i = 0;
+            for (const auto &light : scene.get_lights_for_render()) {
+                const auto &color = light.get().get_color();
+                const auto pos = light.get().get_transform().get_translation();
+                shader_lights_arr[i] = Std140Light2D {
+                        { color.r, color.g, color.b, 1.0 }, // color
+                        { pos.x, pos.y, 0.0, 1.0 }, // position
+                        0, // type
+                        light.get().get_intensity(), // intensity
+                        light.get().get_decay_factor(),
+                        light.get().is_occludable(),
+                };
+
+                i++;
+            }
+
+            scene_state.ubo.write_val(scene.get_lights_for_render().size(), SHADER_UNIFORM_SCENE_LIGHT_COUNT_OFF);
+
+            scene.unlock_render_state();
+
+            scene_state.ubo.write(shader_lights_arr, sizeof(shader_lights_arr), SHADER_UNIFORM_SCENE_LIGHTS_OFF);
         }
     }
 
@@ -138,7 +178,8 @@ namespace argus {
         bool must_update = viewport_state.view_matrix_dirty;
 
         if (!viewport_state.ubo.valid) {
-            viewport_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_VIEWPORT_LEN, GL_STATIC_DRAW, false);
+            viewport_state.ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_VIEWPORT_LEN, GL_STATIC_DRAW,
+                    true, false);
             must_update = true;
         }
 
@@ -174,6 +215,24 @@ namespace argus {
 
         // set viewport uniforms
         _update_viewport_ubo(viewport_state);
+
+        // shadowmap setup
+        if (scene_state.shadowmap_texture == 0) {
+            scene_state.shadowmap_buffer = BufferInfo::create(GL_TEXTURE_BUFFER, SHADER_IMAGE_SHADOWMAP_LEN,
+                    GL_STREAM_COPY, false, false);
+            if (AGLET_GL_ARB_direct_state_access) {
+                glCreateTextures(GL_TEXTURE_BUFFER, 1, &scene_state.shadowmap_texture);
+                glTextureBuffer(scene_state.shadowmap_texture, GL_R32UI, scene_state.shadowmap_buffer.handle);
+                glTextureParameteri(scene_state.shadowmap_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTextureParameteri(scene_state.shadowmap_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            } else {
+                glGenTextures(1, &scene_state.shadowmap_texture);
+                glBindTextureUnit(GL_TEXTURE_BUFFER, scene_state.shadowmap_texture);
+                glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, scene_state.shadowmap_buffer.handle);
+                glTexParameteri(GL_TEXTURE_BUFFER, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_BUFFER, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            }
+        }
 
         // framebuffer setup
         if (viewport_state.fb_primary == 0) {
@@ -404,6 +463,12 @@ namespace argus {
             bind_texture(0, 0);
         }
 
+        // generate shadowmap
+        compute_scene_shadowmap(scene_state, viewport_state, resolution);
+
+        // generate lightmap
+        draw_scene_lightmap(scene_state, viewport_state, resolution);
+
         // set buffers for ping-ponging
         auto fb_front = viewport_state.fb_primary;
         auto fb_back = viewport_state.fb_secondary;
@@ -518,6 +583,51 @@ namespace argus {
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    }
+
+    void compute_scene_shadowmap(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution) {
+        UNUSED(resolution);
+
+        auto &state = scene_state.parent_state;
+
+        auto shadowmap_program = get_shadowmap_program(state);
+
+        uint32_t initial_shadowmap_content[SHADER_IMAGE_SHADOWMAP_LEN / sizeof(uint32_t)];
+        std::fill(std::begin(initial_shadowmap_content), std::end(initial_shadowmap_content), UINT32_MAX);
+        scene_state.shadowmap_buffer.write(initial_shadowmap_content, SHADER_IMAGE_SHADOWMAP_LEN, 0);
+
+        // the shadowmap shader discards fragments unconditionally
+        // so we can just reuse the secondary framebuffer
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_secondary);
+        glBindVertexArray(state.frame_vao);
+        glUseProgram(shadowmap_program.handle);
+
+        _bind_ubo(shadowmap_program, SHADER_UBO_SCENE, scene_state.ubo);
+        _bind_ubo(shadowmap_program, SHADER_UBO_VIEWPORT, viewport_state.ubo);
+
+        bind_texture(0, viewport_state.light_opac_map_buf);
+
+        glBindImageTexture(0, scene_state.shadowmap_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+
+        glUseProgram(0);
+        glBindVertexArray(0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
+        std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
+    }
+
+    void draw_scene_lightmap(SceneState &scene_state, ViewportState &viewport_state,
+            ValueAndDirtyFlag<Vector2u> resolution) {
+        UNUSED(scene_state);
+        UNUSED(viewport_state);
+        UNUSED(resolution);
+        //TODO
     }
 
     void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,

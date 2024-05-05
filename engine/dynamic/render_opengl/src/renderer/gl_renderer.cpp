@@ -201,7 +201,7 @@ namespace argus {
     }
 
     static void _create_global_ubo(RendererState &state) {
-        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_DYNAMIC_DRAW, false);
+        state.global_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_GLOBAL_LEN, GL_DYNAMIC_DRAW, true, false);
     }
 
     static void _update_global_ubo(RendererState &state) {

@@ -20,11 +20,10 @@ in vec2 TexCoord;
 in vec2 AnimFrame;
 
 layout(location = 0) out vec4 out_Color;
-layout(location = 1) out vec4 out_LightOpacity;
+layout(location = 1) out float out_LightOpacity;
 
 void main() {
     vec4 color = texture(u_Texture, TexCoord);
     out_Color = color;
-    //out_LightOpacity = vec4(obj.LightOpacity * color.a, 0.0, 0.0, 0.0);
-    out_LightOpacity = vec4(1.0, 0.0, 1.0, 0.5);
+    out_LightOpacity = obj.LightOpacity * color.a;
 }

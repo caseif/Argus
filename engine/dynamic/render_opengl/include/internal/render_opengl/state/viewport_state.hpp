@@ -39,6 +39,7 @@ namespace argus {
         buffer_handle_t fb_primary;
         buffer_handle_t fb_secondary;
         buffer_handle_t fb_aux;
+        buffer_handle_t fb_lightmap;
 
         texture_handle_t color_buf_primary;
         texture_handle_t color_buf_secondary;
@@ -47,9 +48,7 @@ namespace argus {
         texture_handle_t color_buf_front;
 
         texture_handle_t light_opac_map_buf;
-
-        buffer_handle_t lightmap_fb;
-        texture_handle_t lightmap_tex;
+        texture_handle_t lightmap_buf;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };

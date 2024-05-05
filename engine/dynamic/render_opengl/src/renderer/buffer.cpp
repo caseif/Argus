@@ -27,7 +27,8 @@
 #include <cstring>
 
 namespace argus {
-    BufferInfo BufferInfo::create(GLenum target, size_t size, GLenum usage, bool map_nonpersistent) {
+    BufferInfo BufferInfo::create(GLenum target, size_t size, GLenum usage, bool allow_mapping,
+            bool map_nonpersistent) {
         buffer_handle_t handle;
         void *mapped = nullptr;
         bool persistent = false;
@@ -36,13 +37,15 @@ namespace argus {
             glCreateBuffers(1, &handle);
             if (AGLET_GL_ARB_buffer_storage) {
                 glNamedBufferStorage(handle, GLsizeiptr(size), nullptr,
-                        GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
-                mapped = glMapNamedBufferRange(handle, 0, GLsizeiptr(size),
-                        GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
-                persistent = true;
+                        allow_mapping ? GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT : GL_DYNAMIC_STORAGE_BIT);
+                if (allow_mapping) {
+                    mapped = glMapNamedBufferRange(handle, 0, GLsizeiptr(size),
+                            GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT);
+                    persistent = true;
+                }
             } else {
                 glNamedBufferData(handle, GLsizeiptr(size), nullptr, usage);
-                if (map_nonpersistent) {
+                if (allow_mapping && map_nonpersistent) {
                     mapped = glMapNamedBuffer(handle, GL_WRITE_ONLY);
                 }
             }
@@ -50,12 +53,12 @@ namespace argus {
             glGenBuffers(1, &handle);
             glBindBuffer(target, handle);
             glBufferData(target, GLsizeiptr(size), nullptr, usage);
-            if (map_nonpersistent) {
+            if (allow_mapping && map_nonpersistent) {
                 mapped = glMapBuffer(target, GL_WRITE_ONLY);
             }
         }
 
-        return BufferInfo { true, size, target, handle, mapped, persistent };
+        return BufferInfo { true, size, target, handle, mapped, allow_mapping, persistent };
     }
 
     void BufferInfo::destroy() {
@@ -72,6 +75,7 @@ namespace argus {
 
     void BufferInfo::map_write() {
         assert(valid);
+        assert(allow_mapping);
 
         if (persistent) {
             return;
@@ -90,6 +94,7 @@ namespace argus {
 
     void BufferInfo::unmap() {
         assert(valid);
+        assert(allow_mapping);
 
         if (persistent) {
             return;

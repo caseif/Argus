@@ -146,12 +146,16 @@ namespace argus {
 
                     scene_pimpl->read_lock.lock();
                     std::swap(scene_pimpl->root_group_read, scene_pimpl->root_group_write);
+                    std::swap(scene_pimpl->lights, scene_pimpl->lights_staging);
                     delete scene_pimpl->root_group_write;
+                    delete scene_pimpl->lights_staging;
                     // we don't actually need to hold the lock beyond this point, since we
                     // can copy from the read buffer while the renderer is traversing it
                     scene_pimpl->read_lock.unlock();
 
                     scene_pimpl->root_group_write = &scene_pimpl->root_group_read->copy();
+                    scene_pimpl->lights_staging = new std::map<Handle, Light2D>(scene_pimpl->lights->cbegin(),
+                            scene_pimpl->lights->cend());
 
                     break;
                 }

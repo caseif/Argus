@@ -31,9 +31,10 @@ namespace argus {
         GLenum target;
         buffer_handle_t handle;
         void *mapped;
+        bool allow_mapping;
         bool persistent;
 
-        static BufferInfo create(GLenum target, size_t size, GLenum usage, bool map_nonpersistent);
+        static BufferInfo create(GLenum target, size_t size, GLenum usage, bool allow_mapping, bool map_nonpersistent);
 
         void destroy(void);
 

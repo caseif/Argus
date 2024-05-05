@@ -16,21 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/handle.hpp"
 #include "argus/lowlevel/memory.hpp"
 
 #include "argus/render/2d/light_2d.hpp"
+#include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/2d/light_2d.hpp"
 
 namespace argus {
     static PoolAllocator g_alloc_pool(sizeof(pimpl_Light2D));
 
-    Light2D::Light2D(Light2DType type, const Vector3f &color, float intensity, float decay_factor,
+    static Handle _make_handle(Light2D *light) {
+        return g_render_handle_table.create_handle(light);
+    }
+
+    Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float decay_factor,
             const Transform2D &transform) :
-        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(type, color, intensity, decay_factor, transform)) {
+        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(_make_handle(this), type, is_occludable, color, intensity,
+                decay_factor, transform)) {
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
+    }
+
+    Light2D::Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
+            float decay_factor, const Transform2D &transform) :
+        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(handle, type, is_occludable, color, intensity,
+                decay_factor, transform)) {
+        g_render_handle_table.update_handle(handle, *this);
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     Light2DType Light2D::get_type(void) const {
         return m_pimpl->type;
+    }
+
+    bool Light2D::is_occludable(void) const {
+        return m_pimpl->is_occludable;
     }
 
     const Vector3f &Light2D::get_color(void) const {
@@ -39,6 +59,7 @@ namespace argus {
 
     void Light2D::set_color(const Vector3f &color) {
         m_pimpl->color = color;
+        m_pimpl->version++;
     }
 
     float Light2D::get_intensity(void) const {
@@ -49,6 +70,7 @@ namespace argus {
         affirm_precond(intensity >= 0.0, "Light intensity must be >= 0");
 
         m_pimpl->intensity = intensity;
+        m_pimpl->version++;
     }
 
     float Light2D::get_decay_factor(void) const {
@@ -59,6 +81,7 @@ namespace argus {
         affirm_precond(decay_factor >= 0, "Light decay factor must be >= 0");
 
         m_pimpl->decay_factor = decay_factor;
+        m_pimpl->version++;
     }
 
     const Transform2D &Light2D::get_transform(void) const {
@@ -67,5 +90,6 @@ namespace argus {
 
     void Light2D::set_transform(const Transform2D &transform) {
         m_pimpl->transform = transform;
+        m_pimpl->version++;
     }
 }
