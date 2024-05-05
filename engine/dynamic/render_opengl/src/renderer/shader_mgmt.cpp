@@ -373,6 +373,20 @@ namespace argus {
         return state.shadowmap_program.value();
     }
 
+    LinkedProgram &get_lighting_program(RendererState &state) {
+        if (!state.lighting_program.has_value()) {
+            state.lighting_program = link_program({ SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG });
+        }
+        return state.lighting_program.value();
+    }
+
+    LinkedProgram &get_lightmap_composite_program(RendererState &state) {
+        if (!state.lightmap_composite_program.has_value()) {
+            state.lightmap_composite_program = link_program({ SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG });
+        }
+        return state.lightmap_composite_program.value();
+    }
+
     LinkedProgram &get_material_program(RendererState &state, const Resource &mat_res) {
         auto &mat = mat_res.get<Material>();
 

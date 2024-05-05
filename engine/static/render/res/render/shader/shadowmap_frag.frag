@@ -7,6 +7,8 @@
 
 #define LIGHT_TYPE_POINT 0
 
+#define DIST_MULTIPLIER 100000
+
 struct Light2D {
     vec4 color;
     vec4 position;
@@ -45,7 +47,7 @@ void main() {
         discard;
     }
 
-    uint ray_count = 360;
+    uint ray_count = 720;
 
     for (uint i = 0; i < scene.LightCount; i++) {
         Light2D light = scene.Lights[i];
@@ -54,7 +56,7 @@ void main() {
         vec2 offset = NormPos.xy - light_pos;
         float theta = atan(offset.y, offset.x) + PI;
         uint ray_index = uint(round(float(ray_count) * theta / TWO_PI));
-        uint dist = uint(distance(light_pos, NormPos.xy) * 100000);
+        uint dist = uint(distance(light_pos, NormPos.xy) * DIST_MULTIPLIER);
         imageAtomicMin(u_RayBuffer, int(i * ray_count + ray_index), dist);
     }
 

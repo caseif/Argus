@@ -62,7 +62,7 @@ namespace argus {
 
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor) :
             pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
-        pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt);
+        pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt, true);
     }
 
     World2D::~World2D(void) {
@@ -115,7 +115,7 @@ namespace argus {
         layer_id << BG_LAYER_ID_PREFIX;
         layer_id << bg_index;
 
-        auto layer = new World2DLayer(*this, layer_id.str(), 100 + bg_index, parallax_coeff, repeat_interval);
+        auto layer = new World2DLayer(*this, layer_id.str(), 100 + bg_index, parallax_coeff, repeat_interval, false);
 
         pimpl->bg_layers[bg_index] = layer;
         pimpl->num_bg_layers += 1;

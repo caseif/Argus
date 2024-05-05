@@ -48,7 +48,9 @@ namespace argus {
         texture_handle_t color_buf_front;
 
         texture_handle_t light_opac_map_buf;
-        texture_handle_t lightmap_buf;
+        BufferInfo shadowmap_buffer;
+        texture_handle_t shadowmap_texture = 0;
+        texture_handle_t lightmap_buf = 0;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };

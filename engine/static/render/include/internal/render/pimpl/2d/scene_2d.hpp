@@ -31,6 +31,7 @@ namespace argus {
     struct pimpl_Scene;
 
     struct pimpl_Scene2D : public pimpl_Scene {
+        bool lighting_enabled;
         Dirtiable<float> ambient_light_level;
         Dirtiable<Vector3f> ambient_light_color;
 

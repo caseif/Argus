@@ -50,11 +50,12 @@
 
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
-            std::optional<Vector2f> repeat_interval) :
+            std::optional<Vector2f> repeat_interval, bool lighting_enabled) :
             pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
         auto layer_uuid = Uuid::random().to_string();
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
         pimpl->scene = &Scene2D::create(layer_id_str);
+        pimpl->scene->set_lighting_enabled(lighting_enabled);
         pimpl->render_camera = &pimpl->scene->create_camera(layer_id_str);
         world.pimpl->canvas.attach_default_viewport_2d(layer_id_str,  *pimpl->render_camera, z_index);
     }

@@ -79,7 +79,8 @@ namespace argus {
         std::map<std::string, LinkedProgram> linked_programs;
         std::optional<LinkedProgram> std_program;
         std::optional<LinkedProgram> shadowmap_program;
-        std::optional<LinkedProgram> lightmap_program;
+        std::optional<LinkedProgram> lighting_program;
+        std::optional<LinkedProgram> lightmap_composite_program;
 
         std::map<std::string, LinkedProgram> postfx_programs;
 

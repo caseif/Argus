@@ -60,8 +60,6 @@ namespace argus {
         Scene &scene;
 
         BufferInfo ubo {};
-        BufferInfo shadowmap_buffer {};
-        texture_handle_t shadowmap_texture {};
 
         std::map<BucketKey, RenderBucket *, BucketKeyCmp> render_buckets;
 

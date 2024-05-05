@@ -76,3 +76,9 @@
 
 #define SHADER_SHADOWMAP_VERT "argus:render/shader/shadowmap_vert"
 #define SHADER_SHADOWMAP_FRAG "argus:render/shader/shadowmap_frag"
+
+#define SHADER_LIGHTING_VERT "argus:render/shader/lighting_vert"
+#define SHADER_LIGHTING_FRAG "argus:render/shader/lighting_frag"
+
+#define SHADER_LIGHTMAP_COMPOSITE_VERT "argus:render/shader/lightmap_composite_vert"
+#define SHADER_LIGHTMAP_COMPOSITE_FRAG "argus:render/shader/lightmap_composite_frag"

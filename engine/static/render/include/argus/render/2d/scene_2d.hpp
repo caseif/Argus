@@ -74,6 +74,10 @@ namespace argus {
 
         [[nodiscard]] pimpl_Scene *get_pimpl(void) const override;
 
+        [[nodiscard]] bool is_lighting_enabled(void);
+
+        void set_lighting_enabled(bool enabled);
+
         [[nodiscard]] float peek_ambient_light_level(void) const;
 
         [[nodiscard]] ValueAndDirtyFlag<float> get_ambient_light_level(void);

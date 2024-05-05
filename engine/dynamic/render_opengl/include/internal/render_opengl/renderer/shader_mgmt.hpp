@@ -61,5 +61,9 @@ namespace argus {
 
     LinkedProgram &get_shadowmap_program(RendererState &state);
 
+    LinkedProgram &get_lighting_program(RendererState &state);
+
+    LinkedProgram &get_lightmap_composite_program(RendererState &state);
+
     LinkedProgram &get_material_program(RendererState &state, const Resource &mat_res);
 }

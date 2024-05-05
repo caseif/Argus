@@ -81,6 +81,14 @@ namespace argus {
         return dynamic_cast<pimpl_Scene *>(pimpl);
     }
 
+    bool Scene2D::is_lighting_enabled(void) {
+        return pimpl->lighting_enabled;
+    }
+
+    void Scene2D::set_lighting_enabled(bool enabled) {
+        pimpl->lighting_enabled = enabled;
+    }
+
     float Scene2D::peek_ambient_light_level(void) const {
         return pimpl->ambient_light_level.peek();
     }

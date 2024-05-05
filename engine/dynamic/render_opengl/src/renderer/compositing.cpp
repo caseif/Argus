@@ -157,7 +157,7 @@ namespace argus {
                 shader_lights_arr[i] = Std140Light2D {
                         { color.r, color.g, color.b, 1.0 }, // color
                         { pos.x, pos.y, 0.0, 1.0 }, // position
-                        0, // type
+                        int(light.get().get_type()), // type
                         light.get().get_intensity(), // intensity
                         light.get().get_decay_factor(),
                         light.get().is_occludable(),
@@ -217,18 +217,18 @@ namespace argus {
         _update_viewport_ubo(viewport_state);
 
         // shadowmap setup
-        if (scene_state.shadowmap_texture == 0) {
-            scene_state.shadowmap_buffer = BufferInfo::create(GL_TEXTURE_BUFFER, SHADER_IMAGE_SHADOWMAP_LEN,
+        if (viewport_state.shadowmap_texture == 0) {
+            viewport_state.shadowmap_buffer = BufferInfo::create(GL_TEXTURE_BUFFER, SHADER_IMAGE_SHADOWMAP_LEN,
                     GL_STREAM_COPY, false, false);
             if (AGLET_GL_ARB_direct_state_access) {
-                glCreateTextures(GL_TEXTURE_BUFFER, 1, &scene_state.shadowmap_texture);
-                glTextureBuffer(scene_state.shadowmap_texture, GL_R32UI, scene_state.shadowmap_buffer.handle);
-                glTextureParameteri(scene_state.shadowmap_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTextureParameteri(scene_state.shadowmap_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glCreateTextures(GL_TEXTURE_BUFFER, 1, &viewport_state.shadowmap_texture);
+                glTextureBuffer(viewport_state.shadowmap_texture, GL_R32UI, viewport_state.shadowmap_buffer.handle);
+                glTextureParameteri(viewport_state.shadowmap_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTextureParameteri(viewport_state.shadowmap_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             } else {
-                glGenTextures(1, &scene_state.shadowmap_texture);
-                glBindTextureUnit(GL_TEXTURE_BUFFER, scene_state.shadowmap_texture);
-                glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, scene_state.shadowmap_buffer.handle);
+                glGenTextures(1, &viewport_state.shadowmap_texture);
+                glBindTextureUnit(GL_TEXTURE_BUFFER, viewport_state.shadowmap_texture);
+                glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, viewport_state.shadowmap_buffer.handle);
                 glTexParameteri(GL_TEXTURE_BUFFER, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_BUFFER, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             }
@@ -240,10 +240,12 @@ namespace argus {
                 glCreateFramebuffers(1, &viewport_state.fb_primary);
                 glCreateFramebuffers(1, &viewport_state.fb_secondary);
                 glCreateFramebuffers(1, &viewport_state.fb_aux);
+                glCreateFramebuffers(1, &viewport_state.fb_lightmap);
             } else {
                 glGenFramebuffers(1, &viewport_state.fb_primary);
                 glGenFramebuffers(1, &viewport_state.fb_secondary);
                 glGenFramebuffers(1, &viewport_state.fb_aux);
+                glGenFramebuffers(1, &viewport_state.fb_lightmap);
             }
         }
 
@@ -258,6 +260,10 @@ namespace argus {
 
             if (viewport_state.light_opac_map_buf != 0) {
                 glDeleteTextures(1, &viewport_state.light_opac_map_buf);
+            }
+
+            if (viewport_state.lightmap_buf != 0) {
+                glDeleteTextures(1, &viewport_state.lightmap_buf);
             }
 
             if (AGLET_GL_ARB_direct_state_access) {
@@ -277,9 +283,13 @@ namespace argus {
                 // initialize auxiliary buffers
                 glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.light_opac_map_buf);
                 glTextureStorage2D(viewport_state.light_opac_map_buf, 1, GL_R32F, fb_width, fb_height);
-
                 glTextureParameteri(viewport_state.light_opac_map_buf, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTextureParameteri(viewport_state.light_opac_map_buf, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                glCreateTextures(GL_TEXTURE_2D, 1, &viewport_state.lightmap_buf);
+                glTextureStorage2D(viewport_state.lightmap_buf, 1, GL_RGBA8, fb_width, fb_height);
+                glTextureParameteri(viewport_state.lightmap_buf, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTextureParameteri(viewport_state.lightmap_buf, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
                 // attach primary color buffers
                 glNamedFramebufferTexture(viewport_state.fb_primary, GL_COLOR_ATTACHMENT0,
@@ -307,6 +317,15 @@ namespace argus {
                 GLenum aux_draw_bufs[] = { GL_NONE, GL_COLOR_ATTACHMENT1 };
                 glNamedFramebufferDrawBuffers(viewport_state.fb_aux, 2, aux_draw_bufs);
 
+                // set up framebuffer for lighting pass
+                glNamedFramebufferTexture(viewport_state.fb_lightmap, GL_COLOR_ATTACHMENT0,
+                        viewport_state.lightmap_buf, 0);
+
+                GLenum lightmap_draw_bufs[] = { GL_COLOR_ATTACHMENT0 };
+                glNamedFramebufferDrawBuffers(viewport_state.fb_lightmap, 1, lightmap_draw_bufs);
+
+                // check framebuffer statuses
+
                 auto front_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_primary, GL_FRAMEBUFFER);
                 if (front_fb_status != GL_FRAMEBUFFER_COMPLETE) {
                     Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
@@ -319,7 +338,12 @@ namespace argus {
 
                 auto aux_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_secondary, GL_FRAMEBUFFER);
                 if (aux_fb_status != GL_FRAMEBUFFER_COMPLETE) {
-                    Logger::default_logger().fatal("Auxiliary framebuffer is incomplete (error %d)", back_fb_status);
+                    Logger::default_logger().fatal("Opacity map framebuffer is incomplete (error %d)", aux_fb_status);
+                }
+
+                auto lm_fb_status = glCheckNamedFramebufferStatus(viewport_state.fb_secondary, GL_FRAMEBUFFER);
+                if (lm_fb_status != GL_FRAMEBUFFER_COMPLETE) {
+                    Logger::default_logger().fatal("Opacity map framebuffer is incomplete (error %d)", back_fb_status);
                 }
             } else {
                 // light opacity buffer
@@ -463,11 +487,39 @@ namespace argus {
             bind_texture(0, 0);
         }
 
-        // generate shadowmap
-        compute_scene_shadowmap(scene_state, viewport_state, resolution);
+        if (scene_state.scene.type == SceneType::TwoD) {
+            if (reinterpret_cast<Scene2D *>(&scene_state.scene)->is_lighting_enabled()) {
+                // generate shadowmap
+                compute_scene_shadowmap(scene_state, viewport_state, resolution);
 
-        // generate lightmap
-        draw_scene_lightmap(scene_state, viewport_state, resolution);
+                // generate lightmap
+                draw_scene_lightmap(scene_state, viewport_state, resolution);
+
+                // draw lightmap to framebuffer
+                //glUseProgram(get_lightmap_composite_program(state).handle);
+                glUseProgram(state.frame_program->handle);
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_primary);
+
+                glViewport(
+                        0,
+                        0,
+                        fb_width,
+                        fb_height
+                );
+
+                glBindVertexArray(state.frame_vao);
+                //bind_texture(0, viewport_state.color_buf_primary);
+                bind_texture(0, viewport_state.lightmap_buf);
+
+                // blend color multiplicatively, don't touch destination alpha
+                glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                restore_gl_blend_params();
+
+                //std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
+                //std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
+            }
+        }
 
         // set buffers for ping-ponging
         auto fb_front = viewport_state.fb_primary;
@@ -483,7 +535,7 @@ namespace argus {
             if (it != postfx_programs.end()) {
                 postfx_program = &it->second;
             } else {
-                auto linked_program = link_program({FB_SHADER_VERT_PATH, postfx});
+                auto linked_program = link_program({ FB_SHADER_VERT_PATH, postfx });
                 auto inserted = postfx_programs.emplace(postfx, linked_program);
                 postfx_program = &inserted.first->second;
             }
@@ -595,7 +647,7 @@ namespace argus {
 
         uint32_t initial_shadowmap_content[SHADER_IMAGE_SHADOWMAP_LEN / sizeof(uint32_t)];
         std::fill(std::begin(initial_shadowmap_content), std::end(initial_shadowmap_content), UINT32_MAX);
-        scene_state.shadowmap_buffer.write(initial_shadowmap_content, SHADER_IMAGE_SHADOWMAP_LEN, 0);
+        viewport_state.shadowmap_buffer.write(initial_shadowmap_content, SHADER_IMAGE_SHADOWMAP_LEN, 0);
 
         // the shadowmap shader discards fragments unconditionally
         // so we can just reuse the secondary framebuffer
@@ -608,26 +660,46 @@ namespace argus {
 
         bind_texture(0, viewport_state.light_opac_map_buf);
 
-        glBindImageTexture(0, scene_state.shadowmap_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+        glBindImageTexture(0, viewport_state.shadowmap_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+        glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
 
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-        std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
-        std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
+        //std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
+        //std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
     }
 
     void draw_scene_lightmap(SceneState &scene_state, ViewportState &viewport_state,
             ValueAndDirtyFlag<Vector2u> resolution) {
-        UNUSED(scene_state);
-        UNUSED(viewport_state);
         UNUSED(resolution);
-        //TODO
+        UNUSED(resolution);
+
+        auto &state = scene_state.parent_state;
+
+        auto lighting_program = get_lighting_program(state);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, viewport_state.fb_lightmap);
+        glBindVertexArray(state.frame_vao);
+        glUseProgram(lighting_program.handle);
+
+        glClearColor(1, 1, 1, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        _bind_ubo(lighting_program, SHADER_UBO_SCENE, scene_state.ubo);
+        _bind_ubo(lighting_program, SHADER_UBO_VIEWPORT, viewport_state.ubo);
+
+        bind_texture(0, viewport_state.shadowmap_texture);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+
+        glUseProgram(0);
+        glBindVertexArray(0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
     void draw_framebuffer_to_screen(SceneState &scene_state, ViewportState &viewport_state,
