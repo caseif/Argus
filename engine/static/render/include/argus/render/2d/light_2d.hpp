@@ -29,16 +29,14 @@ namespace argus {
     };
 
     class Light2D {
-      private:
-        //TODO
       public:
         pimpl_Light2D *m_pimpl;
 
-        Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float decay_factor,
-                const Transform2D &transform);
+        Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
+                float attenuation_constant, const Transform2D &transform);
 
         Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-                float decay_factor, const Transform2D &transform);
+                float attenuation_constant, const Transform2D &transform);
 
         [[nodiscard]] Light2DType get_type(void) const;
 
@@ -52,9 +50,9 @@ namespace argus {
 
         void set_intensity(float intensity);
 
-        [[nodiscard]] float get_decay_factor(void) const;
+        [[nodiscard]] float get_attenuation_constant(void) const;
 
-        void set_decay_factor(float decay_factor);
+        void set_attenuation_constant(float attenuation_constant);
 
         [[nodiscard]] const Transform2D &get_transform(void) const;
 

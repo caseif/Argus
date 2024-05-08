@@ -25,19 +25,19 @@ namespace argus {
         bool is_occludable;
         Vector3f color;
         float intensity;
-        float decay_factor;
+        float attenuation_constant;
         Transform2D transform;
 
         uint16_t version;
 
         pimpl_Light2D(Handle handle, Light2DType type, bool is_occludable, Vector3f color, float intensity,
-                float decay_factor, const Transform2D &transform) :
+                float attenuation_constant, const Transform2D &transform) :
             handle(handle),
             type(type),
             is_occludable(is_occludable),
             color(color),
             intensity(intensity),
-            decay_factor(decay_factor),
+            attenuation_constant(attenuation_constant),
             transform(transform),
             version(1) {
         }

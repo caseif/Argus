@@ -130,8 +130,8 @@ namespace argus {
     }
 
     Handle Scene2D::add_light(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-            float decay_factor, const Transform2D &iniital_transform) {
-        Light2D light(type, is_occludable, normalize_rgb(color), intensity, decay_factor, iniital_transform);
+            float attenuation_constant, const Transform2D &iniital_transform) {
+        Light2D light(type, is_occludable, normalize_rgb(color), intensity, attenuation_constant, iniital_transform);
         auto inserted = pimpl->lights_staging->insert({ light.m_pimpl->handle, light });
         return inserted.first->second.m_pimpl->handle;
     }

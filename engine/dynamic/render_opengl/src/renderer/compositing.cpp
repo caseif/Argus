@@ -66,7 +66,7 @@ namespace argus {
         // offset 36
         float intensity;
         // offset 40
-        float decay_factor;
+        float attenuation_constant;
         // offset 44
         bool is_occludable;
     };
@@ -159,7 +159,7 @@ namespace argus {
                         { pos.x, pos.y, 0.0, 1.0 }, // position
                         int(light.get().get_type()), // type
                         light.get().get_intensity(), // intensity
-                        light.get().get_decay_factor(),
+                        light.get().get_attenuation_constant(),
                         light.get().is_occludable(),
                 };
 

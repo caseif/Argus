@@ -30,17 +30,17 @@ namespace argus {
         return g_render_handle_table.create_handle(light);
     }
 
-    Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float decay_factor,
+    Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float attenuation_constant,
             const Transform2D &transform) :
         m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(_make_handle(this), type, is_occludable, color, intensity,
-                decay_factor, transform)) {
+                attenuation_constant, transform)) {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     Light2D::Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-            float decay_factor, const Transform2D &transform) :
+            float attenuation_constant, const Transform2D &transform) :
         m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(handle, type, is_occludable, color, intensity,
-                decay_factor, transform)) {
+                attenuation_constant, transform)) {
         g_render_handle_table.update_handle(handle, *this);
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
@@ -73,14 +73,14 @@ namespace argus {
         m_pimpl->version++;
     }
 
-    float Light2D::get_decay_factor(void) const {
-        return m_pimpl->decay_factor;
+    float Light2D::get_attenuation_constant(void) const {
+        return m_pimpl->attenuation_constant;
     }
 
-    void Light2D::set_decay_factor(float decay_factor) {
-        affirm_precond(decay_factor >= 0, "Light decay factor must be >= 0");
+    void Light2D::set_attenuation_constant(float attenuation_constant) {
+        affirm_precond(attenuation_constant >= 0, "Light attenuation constant must be >= 0");
 
-        m_pimpl->decay_factor = decay_factor;
+        m_pimpl->attenuation_constant = attenuation_constant;
         m_pimpl->version++;
     }
 

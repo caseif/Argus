@@ -15,7 +15,7 @@ struct Light2D {
     vec4 position;
     int type;
     float intensity;
-    float decay_factor;
+    float attenuation_constant;
     bool is_occludable;
 };
 
@@ -57,7 +57,7 @@ void main() {
         }
 
         if (!is_occluded) {
-            vec3 light_contrib = light.color.rgb * light.intensity / pow(dist + 1, light.decay_factor);
+            vec3 light_contrib = light.color.rgb * light.intensity / pow(dist + 1, light.attenuation_constant);
             light_sum = vec3(1) - (vec3(1) - light_sum) * (vec3(1) - light_contrib);
         }
     }
