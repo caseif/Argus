@@ -30,7 +30,7 @@ namespace argus {
 
     struct pimpl_Scene;
 
-    enum SceneType {
+    enum class SceneType {
         TwoD,
         ThreeD,
     };
