@@ -129,4 +129,48 @@ namespace argus {
             }
         }
     }
+
+    void BufferInfo::clear(uint32_t value) {
+        bool must_remap = false;
+
+        if (!AGLET_GL_ARB_direct_state_access) {
+            glBindBuffer(target, handle);
+        }
+
+        if (!AGLET_GL_ARB_buffer_storage && mapped != nullptr) {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glUnmapNamedBuffer(handle);
+            } else {
+                glUnmapBuffer(target);
+            }
+            must_remap = true;
+        }
+
+        if (AGLET_GL_VERSION_4_3) {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glClearNamedBufferData(handle, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
+            } else {
+                glClearBufferData(target, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
+            }
+        } else {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glClearNamedBufferSubData(handle, GL_R32UI, 0, GLsizeiptr(size), GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
+            } else {
+                glClearBufferSubData(target, GL_R32UI, 0, GLsizeiptr(size), GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
+            }
+        }
+
+
+        if (must_remap) {
+            if (AGLET_GL_ARB_direct_state_access) {
+                glMapNamedBuffer(handle, GL_WRITE_ONLY);
+            } else {
+                glMapBuffer(target, GL_WRITE_ONLY);
+            }
+        }
+
+        if (!AGLET_GL_ARB_direct_state_access) {
+            glBindBuffer(target, 0);
+        }
+    }
 }

@@ -48,5 +48,7 @@ namespace argus {
         void write_val(T val, size_t offset) {
             write(&val, sizeof(T), offset);
         }
+
+        void clear(uint32_t value);
     };
 }

@@ -645,9 +645,7 @@ namespace argus {
 
         auto shadowmap_program = get_shadowmap_program(state);
 
-        uint32_t initial_shadowmap_content[SHADER_IMAGE_SHADOWMAP_LEN / sizeof(uint32_t)];
-        std::fill(std::begin(initial_shadowmap_content), std::end(initial_shadowmap_content), UINT32_MAX);
-        viewport_state.shadowmap_buffer.write(initial_shadowmap_content, SHADER_IMAGE_SHADOWMAP_LEN, 0);
+        viewport_state.shadowmap_buffer.clear(UINT32_MAX);
 
         // the shadowmap shader discards fragments unconditionally
         // so we can just reuse the secondary framebuffer
