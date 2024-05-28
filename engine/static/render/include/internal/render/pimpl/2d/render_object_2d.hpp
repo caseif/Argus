@@ -35,7 +35,7 @@ namespace argus {
         Vector2f anchor_point;
         Vector2f atlas_stride;
         uint32_t z_index;
-        float light_opacity;
+        Dirtiable<float> light_opacity;
 
         Transform2D transform;
         Dirtiable<Vector2u> active_frame;

@@ -120,8 +120,28 @@ namespace argus {
          *
          * 0.0 indicates an object which light will fully pass through while 1.0
          * indicates an object which no light will pass through.
+         *
+         * In practice this may be treated as a binary setting where values over
+         * a certain threshold are treated as opaque and values under are
+         * treated as translucent.
+         *
+         * \return The opacity of the object.
          */
         [[nodiscard]] float get_light_opacity(void) const;
+
+        /**
+         * \brief Sets the opacity of the object with respect to lighting.
+         *
+         * 0.0 indicates an object which light will fully pass through while 1.0
+         * indicates an object which no light will pass through.
+         *
+         * In practice this may be treated as a binary setting where values over
+         * a certain threshold are treated as opaque and values under are
+         * treated as translucent.
+         *
+         * \param opacity The opacity of the object.
+         */
+        void set_light_opacity(float opacity);
 
         /**
          * \brief Gets the active animation frame.
@@ -158,7 +178,7 @@ namespace argus {
          *
          * \param transform The new local Transform of the object.
          */
-        void set_transform(const Transform2D &transform) const;
+        void set_transform(const Transform2D &transform);
 
         RenderObject2D &copy(RenderGroup2D &parent);
     };

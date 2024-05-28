@@ -94,8 +94,8 @@ namespace argus {
 
         std::vector<std::reference_wrapper<const Light2D>> get_lights_for_render(void);
 
-        Handle add_light(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-                float attenuation_constant, const Transform2D &iniital_transform);
+        Handle add_light(Light2DType type, bool is_occludable, const Vector3f &color,
+                LightParameters params, const Transform2D &iniital_transform);
 
         std::optional<std::reference_wrapper<Light2D>> get_light(Handle handle);
 

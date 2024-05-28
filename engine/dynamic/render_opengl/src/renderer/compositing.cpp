@@ -62,12 +62,20 @@ namespace argus {
         // offset 16
         float position[4];
         // offset 32
-        int32_t type;
-        // offset 36
         float intensity;
+        // offset 36
+        uint32_t falloff_gradient;
         // offset 40
-        float attenuation_constant;
+        float falloff_distance;
         // offset 44
+        float falloff_buffer;
+        // offset 48
+        uint32_t shadow_falloff_gradient;
+        // offset 52
+        float shadow_falloff_distance;
+        // offset 56
+        int32_t type;
+        // offset 60
         bool is_occludable;
     };
 
@@ -157,9 +165,13 @@ namespace argus {
                 shader_lights_arr[i] = Std140Light2D {
                         { color.r, color.g, color.b, 1.0 }, // color
                         { pos.x, pos.y, 0.0, 1.0 }, // position
+                        light.get().get_parameters().m_intensity,
+                        light.get().get_parameters().m_falloff_gradient,
+                        light.get().get_parameters().m_falloff_multiplier,
+                        light.get().get_parameters().m_falloff_buffer,
+                        light.get().get_parameters().m_shadow_falloff_gradient,
+                        light.get().get_parameters().m_shadow_falloff_multiplier,
                         int(light.get().get_type()), // type
-                        light.get().get_intensity(), // intensity
-                        light.get().get_attenuation_constant(),
                         light.get().is_occludable(),
                 };
 
@@ -452,8 +464,6 @@ namespace argus {
                 non_std_buckets.push_back(bucket);
             }
 
-            bool animated = program_info.reflection.has_ubo(SHADER_UBO_OBJ);
-
             if (program_info.handle != last_program) {
                 glUseProgram(program_info.handle);
                 last_program = program_info.handle;
@@ -463,7 +473,7 @@ namespace argus {
                 _bind_ubo(program_info, SHADER_UBO_VIEWPORT, viewport_state.ubo);
             }
 
-            if (animated) {
+            if (program_info.reflection.has_ubo(SHADER_UBO_OBJ)) {
                 _bind_ubo(program_info, SHADER_UBO_OBJ, bucket->obj_ubo);
             }
 
@@ -597,7 +607,7 @@ namespace argus {
             _bind_ubo(std_program, SHADER_UBO_SCENE, scene_state.ubo);
             _bind_ubo(std_program, SHADER_UBO_VIEWPORT, viewport_state.ubo);
 
-            for (auto *bucket: non_std_buckets) {
+            for (auto *bucket : non_std_buckets) {
                 _bind_ubo(std_program, SHADER_UBO_OBJ, bucket->obj_ubo);
 
                 auto &mat = bucket->material_res;

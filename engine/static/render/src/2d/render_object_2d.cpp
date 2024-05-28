@@ -93,7 +93,11 @@ namespace argus {
     }
 
     float RenderObject2D::get_light_opacity(void) const {
-        return pimpl->light_opacity;
+        return pimpl->light_opacity.peek();
+    }
+
+    void RenderObject2D::set_light_opacity(float opacity) {
+        pimpl->light_opacity = opacity;
     }
 
     ValueAndDirtyFlag<Vector2u> RenderObject2D::get_active_frame(void) const {
@@ -112,7 +116,7 @@ namespace argus {
         return pimpl->transform;
     }
 
-    void RenderObject2D::set_transform(const Transform2D &transform) const {
+    void RenderObject2D::set_transform(const Transform2D &transform) {
         pimpl->transform = transform;
     }
 
@@ -122,7 +126,7 @@ namespace argus {
                 [](auto &v) { return RenderPrim2D(v); });
         auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
         auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->anchor_point,
-                pimpl->atlas_stride, pimpl->z_index, pimpl->light_opacity, pimpl->transform);
+                pimpl->atlas_stride, pimpl->z_index, pimpl->light_opacity.peek(), pimpl->transform);
         copy.pimpl->active_frame = pimpl->active_frame;
         copy.pimpl->version = pimpl->version;
 

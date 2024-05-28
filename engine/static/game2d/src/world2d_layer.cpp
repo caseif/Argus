@@ -75,11 +75,16 @@ namespace argus {
         return *obj;
     }
 
-    Handle World2DLayer::create_static_object(const std::string &sprite,
-            const Vector2f &size, uint32_t z_index, const Transform2D &transform) {
-        auto *obj = new StaticObject2D(sprite, size, z_index, transform);
+    Handle World2DLayer::create_static_object(const std::string &sprite, const Vector2f &size,
+            uint32_t z_index, bool can_occlude_light, const Transform2D &transform) {
+        auto *obj = new StaticObject2D(sprite, size, z_index, can_occlude_light, transform);
         pimpl->static_objects.insert(obj->pimpl->handle);
         return obj->pimpl->handle;
+    }
+
+    Handle World2DLayer::create_static_object(const std::string &sprite, const Vector2f &size,
+            uint32_t z_index, const Transform2D &transform) {
+        return create_static_object(sprite, size, z_index, false, transform);
     }
 
     void World2DLayer::delete_static_object(Handle handle) {
@@ -107,10 +112,16 @@ namespace argus {
     }
 
     Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
-            const Transform2D &transform) {
-        auto *actor = new Actor2D(sprite, size, z_index, transform);
+            bool can_occlude_light, const Transform2D &transform) {
+        UNUSED(can_occlude_light);
+        auto *actor = new Actor2D(sprite, size, z_index, can_occlude_light, transform);
         pimpl->actors.insert(actor->pimpl->handle);
         return actor->pimpl->handle;
+    }
+
+    Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
+            const Transform2D &transform) {
+        return create_actor(sprite, size, z_index, false, transform);
     }
 
     void World2DLayer::delete_actor(Handle handle) {
@@ -177,7 +188,7 @@ namespace argus {
     }
 
     static Handle _create_render_object(World2DLayer &layer, Sprite &sprite,
-            const Vector2f &size, uint32_t z_index) {
+            const Vector2f &size, uint32_t z_index, bool can_occlude_light) {
         auto &sprite_def = sprite.pimpl->get_def();
 
         std::vector<RenderPrim2D> prims;
@@ -228,7 +239,7 @@ namespace argus {
         }
 
         return layer.pimpl->scene->create_child_object(mat_uid, prims, scaled_size / 2,
-                { atlas_stride_x, atlas_stride_y }, z_index, 1.0, {});
+                { atlas_stride_x, atlas_stride_y }, z_index, can_occlude_light ? 1.0 : 0.0, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {
@@ -245,7 +256,7 @@ namespace argus {
             render_obj = &layer.pimpl->scene->get_object(static_obj.pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, static_obj.get_sprite(),
-                    static_obj.get_size(), static_obj.get_z_index());
+                    static_obj.get_size(), static_obj.get_z_index(), static_obj.can_occlude_light());
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
             render_obj->set_transform(get_render_transform(layer, static_obj.get_transform(), false));
 
@@ -262,10 +273,15 @@ namespace argus {
             render_obj = &layer.pimpl->scene->get_object(actor.pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, actor.get_sprite(),
-                    actor.get_size(), actor.get_z_index());
+                    actor.get_size(), actor.get_z_index(), actor.pimpl->can_occlude_light.read());
             actor.pimpl->render_obj = handle;
 
             render_obj = &layer.pimpl->scene->get_object(handle).value().get();
+        }
+
+        auto read_occl_light = actor.pimpl->can_occlude_light.read();
+        if (read_occl_light.dirty) {
+            render_obj->set_light_opacity(read_occl_light ? 1.0 : 0.0);
         }
 
         auto read_transform = actor.pimpl->transform.read();

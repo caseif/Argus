@@ -32,6 +32,7 @@ namespace argus {
         const Handle handle;
         const Vector2f size;
         const uint32_t z_index;
+        Dirtiable<bool> can_occlude_light;
         Dirtiable<Transform2D> transform;
 
         Resource &sprite_def_res;
@@ -39,15 +40,16 @@ namespace argus {
 
         std::optional<Handle> render_obj;
 
-        pimpl_Actor2D(Handle handle, const Vector2f &size, uint32_t z_index, const Transform2D &transform,
-                Resource &sprite_def_res, Sprite &sprite) :
-                handle(handle),
-                size(size),
-                z_index(z_index),
-                transform(transform),
-                sprite_def_res(sprite_def_res),
-                sprite(sprite),
-                render_obj() {
+        pimpl_Actor2D(Handle handle, const Vector2f &size, uint32_t z_index, bool can_occlude_light,
+                const Transform2D &transform, Resource &sprite_def_res, Sprite &sprite) :
+            handle(handle),
+            size(size),
+            z_index(z_index),
+            can_occlude_light(can_occlude_light),
+            transform(transform),
+            sprite_def_res(sprite_def_res),
+            sprite(sprite),
+            render_obj() {
         }
     };
 }

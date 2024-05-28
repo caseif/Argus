@@ -33,13 +33,14 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_StaticObject2D));
 
     StaticObject2D::StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
-            const Transform2D &transform) {
+            bool can_occlude_light, const Transform2D &transform) {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
         auto handle = g_static_obj_table.create_handle(this);
 
-        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, z_index, transform);
+        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, z_index,
+                can_occlude_light, transform);
     }
 
     StaticObject2D::StaticObject2D(StaticObject2D &&rhs) noexcept:
@@ -60,6 +61,10 @@ namespace argus {
 
     uint32_t StaticObject2D::get_z_index(void) const {
         return pimpl->z_index;
+    }
+
+    bool StaticObject2D::can_occlude_light(void) const {
+        return pimpl->can_occlude_light;
     }
 
     const Transform2D &StaticObject2D::get_transform(void) const {

@@ -61,10 +61,12 @@ namespace argus {
         bind_type<World2DLayer>("World2DLayer");
         bind_member_instance_function("get_static_object", &World2DLayer::get_static_object);
         bind_member_instance_function("get_world", &World2DLayer::get_world);
-        bind_member_instance_function("create_static_object", &World2DLayer::create_static_object);
+        bind_member_instance_function<Handle(World2DLayer::*)(const std::string &, const Vector2f &, uint32_t,
+                const Transform2D &)>("create_static_object", &World2DLayer::create_static_object);
         bind_member_instance_function("delete_static_object", &World2DLayer::delete_static_object);
         bind_member_instance_function("get_actor", &World2DLayer::get_actor);
-        bind_member_instance_function("create_actor", &World2DLayer::create_actor);
+        bind_member_instance_function<Handle(World2DLayer::*)(const std::string &, const Vector2f &, uint32_t,
+                const Transform2D &)>("create_actor", &World2DLayer::create_actor);
         bind_member_instance_function("delete_actor", &World2DLayer::delete_actor);
     }
 

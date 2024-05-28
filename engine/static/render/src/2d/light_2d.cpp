@@ -30,17 +30,17 @@ namespace argus {
         return g_render_handle_table.create_handle(light);
     }
 
-    Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity, float attenuation_constant,
+    Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, LightParameters params,
             const Transform2D &transform) :
-        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(_make_handle(this), type, is_occludable, color, intensity,
-                attenuation_constant, transform)) {
+        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(_make_handle(this), type, is_occludable, color,
+                params, transform)) {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
-    Light2D::Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-            float attenuation_constant, const Transform2D &transform) :
-        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(handle, type, is_occludable, color, intensity,
-                attenuation_constant, transform)) {
+    Light2D::Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color,
+            LightParameters params, const Transform2D &transform) :
+        m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(handle, type, is_occludable, color,
+                params, transform)) {
         g_render_handle_table.update_handle(handle, *this);
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
@@ -62,25 +62,12 @@ namespace argus {
         m_pimpl->version++;
     }
 
-    float Light2D::get_intensity(void) const {
-        return m_pimpl->intensity;
+    const LightParameters &Light2D::get_parameters(void) const {
+        return m_pimpl->params;
     }
 
-    void Light2D::set_intensity(float intensity) {
-        affirm_precond(intensity >= 0.0, "Light intensity must be >= 0");
-
-        m_pimpl->intensity = intensity;
-        m_pimpl->version++;
-    }
-
-    float Light2D::get_attenuation_constant(void) const {
-        return m_pimpl->attenuation_constant;
-    }
-
-    void Light2D::set_attenuation_constant(float attenuation_constant) {
-        affirm_precond(attenuation_constant >= 0, "Light attenuation constant must be >= 0");
-
-        m_pimpl->attenuation_constant = attenuation_constant;
+    void Light2D::set_parameters(LightParameters params) {
+        m_pimpl->params = params;
         m_pimpl->version++;
     }
 

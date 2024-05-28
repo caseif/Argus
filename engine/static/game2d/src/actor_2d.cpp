@@ -31,12 +31,13 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Actor2D));
 
     Actor2D::Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
-            const Transform2D &transform) {
+            bool can_occlude_light, const Transform2D &transform) {
         auto &res = ResourceManager::instance().get_resource(sprite_uid);
         auto *sprite = new Sprite(res);
 
         auto handle = g_actor_table.create_handle(this);
-        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, z_index, transform, res, *sprite);
+        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, z_index, can_occlude_light,
+                transform, res, *sprite);
     }
 
     Actor2D::~Actor2D(void) {
@@ -54,6 +55,14 @@ namespace argus {
 
     uint32_t Actor2D::get_z_index(void) const {
         return pimpl->z_index;
+    }
+
+    bool Actor2D::can_occlude_light(void) const {
+        return pimpl->can_occlude_light.peek();
+    }
+
+    void Actor2D::set_can_occlude_light(bool can_occlude) {
+        pimpl->can_occlude_light = can_occlude;
     }
 
     const Transform2D &Actor2D::get_transform(void) const {

@@ -46,11 +46,18 @@ namespace argus {
         const std::string material_uid;
         const Vector2f atlas_stride;
         const uint32_t z_index;
+        const float light_opacity;
     };
 
     struct BucketKeyCmp {
         bool operator()(const BucketKey &lhs, const BucketKey &rhs) const {
-            return lhs.z_index < rhs.z_index;
+            return std::tie(lhs.z_index, lhs.light_opacity, lhs.atlas_stride.x, lhs.atlas_stride.y, lhs.material_uid)
+                    < std::tie(rhs.z_index, rhs.light_opacity, rhs.atlas_stride.x, rhs.atlas_stride.y, rhs.material_uid);
+            /*return lhs.z_index < rhs.z_index
+                    || lhs.light_opacity < rhs.light_opacity
+                    || lhs.atlas_stride.x < rhs.atlas_stride.x
+                    || lhs.atlas_stride.y < rhs.atlas_stride.y
+                    || lhs.material_uid < rhs.material_uid;*/
         }
     };
 

@@ -34,7 +34,8 @@ namespace argus {
       public:
         pimpl_Actor2D *pimpl;
 
-        Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index, const Transform2D &transform);
+        Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
+                bool can_occlude_light, const Transform2D &transform);
 
         Actor2D(const Actor2D &) = delete;
 
@@ -45,6 +46,10 @@ namespace argus {
         Vector2f get_size(void) const;
 
         uint32_t get_z_index(void) const;
+
+        [[nodiscard]] bool can_occlude_light(void) const;
+
+        void set_can_occlude_light(bool can_occlude);
 
         const Transform2D &get_transform(void) const;
 

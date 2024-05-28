@@ -31,10 +31,12 @@
 
 namespace argus {
     static BucketKey _get_bucket_key(ProcessedRenderObject &processed_obj) {
-        return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index };
+        return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index,
+                processed_obj.light_opacity };
     }
 
     static void _create_obj_ubo(RenderBucket &bucket) {
+        printf("create obj ubo for %p\n", reinterpret_cast<void *>(&bucket));
         bucket.obj_ubo = BufferInfo::create(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN, GL_STATIC_DRAW, true, false);
 
         // we assume that these values will never change

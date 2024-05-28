@@ -35,7 +35,7 @@ namespace argus {
         pimpl_StaticObject2D *pimpl;
 
         StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
-                const Transform2D &transform);
+                bool can_occlude_light, const Transform2D &transform);
 
         StaticObject2D(StaticObject2D &) = delete;
 
@@ -46,6 +46,8 @@ namespace argus {
         Vector2f get_size(void) const;
 
         uint32_t get_z_index(void) const;
+
+        bool can_occlude_light(void) const;
 
         const Transform2D &get_transform(void) const;
 

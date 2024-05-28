@@ -12,13 +12,17 @@
 struct Light2D {
     vec4 color;
     vec4 position;
-    int type;
     float intensity;
-    float attenuation_constant;
+    uint falloff_gradient;
+    float falloff_distance;
+    float falloff_buffer;
+    uint shadow_falloff_gradient;
+    float shadow_falloff_distance;
+    int type;
     bool is_occludable;
 };
 
-in vec2 NormPos;
+in vec2 WorldPos;
 in vec2 TexCoord;
 
 out vec4 out_Color;
@@ -53,10 +57,10 @@ void main() {
         Light2D light = scene.Lights[i];
         vec2 light_pos = light.position.xy;
 
-        vec2 offset = NormPos.xy - light_pos;
+        vec2 offset = WorldPos.xy - light_pos;
         float theta = atan(offset.y, offset.x) + PI;
-        uint ray_index = uint(round(float(ray_count) * theta / TWO_PI));
-        uint dist = uint(distance(light_pos, NormPos.xy) * DIST_MULTIPLIER);
+        uint ray_index = uint(floor(float(ray_count) * theta / TWO_PI));
+        uint dist = uint(distance(light_pos, WorldPos.xy) * DIST_MULTIPLIER);
         imageAtomicMin(u_RayBuffer, int(i * ray_count + ray_index), dist);
     }
 

@@ -76,14 +76,14 @@ namespace argus {
         StaticObject2D &get_static_object(Handle handle) const;
 
         Handle create_static_object(const std::string &sprite, const Vector2f &size, uint32_t z_index,
-                const Transform2D &transform);
+                bool can_occlude_light, const Transform2D &transform);
 
         void delete_static_object(Handle handle);
 
         Actor2D &get_actor(Handle handle) const;
 
         Handle create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
-                const Transform2D &transform);
+                bool can_occlude_light, const Transform2D &transform);
 
         void delete_actor(Handle handle);
     };

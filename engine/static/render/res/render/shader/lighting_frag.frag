@@ -13,13 +13,17 @@
 struct Light2D {
     vec4 color;
     vec4 position;
-    int type;
     float intensity;
-    float attenuation_constant;
+    uint falloff_gradient;
+    float falloff_distance;
+    float falloff_buffer;
+    uint shadow_falloff_gradient;
+    float shadow_falloff_distance;
+    int type;
     bool is_occludable;
 };
 
-in vec2 NormPos;
+in vec2 WorldPos;
 in vec2 TexCoord;
 
 out vec4 out_Color;
@@ -43,23 +47,41 @@ void main() {
         Light2D light = scene.Lights[i];
         vec2 light_pos = light.position.xy;
 
-        vec2 offset = NormPos.xy - light.position.xy;
+        vec2 offset = WorldPos.xy - light.position.xy;
         float theta = atan(offset.y, offset.x) + PI;
-        uint ray_index = uint(round(float(ray_count) * theta / TWO_PI));
+        uint ray_index = uint(floor(float(ray_count) * theta / TWO_PI));
 
-        float dist = distance(light.position.xy, NormPos.xy);
+        float dist = distance(light.position.xy, WorldPos.xy);
 
         bool is_occluded = false;
+        float occl_dist = dist;
         if (light.is_occludable) {
             int ray_lookup_index = int(i * ray_count + ray_index);
-            float occl_dist = texelFetch(u_RayBuffer, ray_lookup_index).r / float(DIST_MULTIPLIER);
+            occl_dist = texelFetch(u_RayBuffer, ray_lookup_index).r / float(DIST_MULTIPLIER);
             is_occluded = dist >= occl_dist;
         }
 
-        if (!is_occluded) {
-            vec3 light_contrib = light.color.rgb * light.intensity / pow(dist + 1, light.attenuation_constant);
-            light_sum = vec3(1) - (vec3(1) - light_sum) * (vec3(1) - light_contrib);
+        float attenuation_denom;
+        if (is_occluded) {
+            float scaled_dist = occl_dist * light.falloff_distance;
+            float falloff_offset = -light.falloff_buffer + 1.0;
+            float atten_denom_at_occluder = pow(scaled_dist + falloff_offset, light.falloff_gradient);
+
+            float dist_from_occluder = dist - occl_dist;
+            float scaled_shadow_dist = dist_from_occluder * (light.shadow_falloff_distance + light.falloff_distance);
+            float shadow_falloff_offset = 1.0;
+            float shadow_mult = pow(scaled_shadow_dist + shadow_falloff_offset, light.shadow_falloff_gradient);
+
+            attenuation_denom = max(atten_denom_at_occluder, 1.0) * max(shadow_mult, 1.0);
+        } else {
+            float scaled_dist = dist * light.falloff_distance;
+            float falloff_offset = -light.falloff_buffer + 1.0;
+            attenuation_denom = pow(scaled_dist + falloff_offset, light.falloff_gradient);
         }
+        float attenuation = clamp(1.0 / attenuation_denom, 0.0, 1.0);
+
+        vec3 light_contrib = light.color.rgb * light.intensity * attenuation;
+        light_sum = vec3(1) - (vec3(1) - light_sum) * (vec3(1) - light_contrib);
     }
 
     out_Color = vec4(light_sum, 1.0);

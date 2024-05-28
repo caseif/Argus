@@ -28,15 +28,30 @@ namespace argus {
         Point = 0,
     };
 
+    struct LightParameters {
+        // the absolute intensity of the light between 0 and 1
+        float m_intensity;
+        // higher values will result in a steeper falloff gradient
+        uint32_t m_falloff_gradient;
+        // higher values will increase the distance over which the light falls off
+        float m_falloff_multiplier;
+        // higher values will increase the distance before the light starts to fall off
+        float m_falloff_buffer;
+        // higher values will result in a steeper falloff gradient in shadows
+        uint32_t m_shadow_falloff_gradient;
+        // higher values will increase the distance over which light falls off in a shadow
+        float m_shadow_falloff_multiplier;
+    };
+
     class Light2D {
       public:
         pimpl_Light2D *m_pimpl;
 
-        Light2D(Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-                float attenuation_constant, const Transform2D &transform);
+        Light2D(Light2DType type, bool is_occludable, const Vector3f &color, LightParameters params,
+                const Transform2D &transform);
 
-        Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, float intensity,
-                float attenuation_constant, const Transform2D &transform);
+        Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, LightParameters params,
+                const Transform2D &transform);
 
         [[nodiscard]] Light2DType get_type(void) const;
 
@@ -46,13 +61,9 @@ namespace argus {
 
         void set_color(const Vector3f &color);
 
-        [[nodiscard]] float get_intensity(void) const;
+        [[nodiscard]] const LightParameters &get_parameters(void) const;
 
-        void set_intensity(float intensity);
-
-        [[nodiscard]] float get_attenuation_constant(void) const;
-
-        void set_attenuation_constant(float attenuation_constant);
+        void set_parameters(LightParameters params);
 
         [[nodiscard]] const Transform2D &get_transform(void) const;
 
