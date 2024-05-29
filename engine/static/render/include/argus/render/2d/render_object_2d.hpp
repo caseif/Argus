@@ -77,6 +77,13 @@ namespace argus {
         const Scene2D &get_scene(void) const;
 
         /**
+         * \brief Gets the parent group of this object.
+         *
+         * \return The parent group.
+         */
+         const RenderGroup2D &get_parent(void) const;
+
+        /**
          * \brief Gets the UID of the Material used by the object.
          *
          * \return The UID of the Material used by the object.

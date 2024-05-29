@@ -72,6 +72,10 @@ namespace argus {
         return pimpl->parent_group.get_scene();
     }
 
+    const RenderGroup2D &RenderObject2D::get_parent(void) const {
+        return pimpl->parent_group;
+    }
+
     const std::string &RenderObject2D::get_material(void) const {
         return pimpl->material;
     }
