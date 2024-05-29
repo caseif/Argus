@@ -34,7 +34,7 @@ namespace argus {
 
     class Camera2D {
       public:
-        pimpl_Camera2D *pimpl;
+        pimpl_Camera2D *m_pimpl;
 
         Camera2D(const std::string &id, Scene2D &scene);
 

@@ -40,7 +40,7 @@ namespace argus {
      */
     class RenderPrim2D {
       public:
-        pimpl_RenderPrim2D *pimpl;
+        pimpl_RenderPrim2D *m_pimpl;
 
         /**
          * \brief Constructs a new RenderPrim2D object.

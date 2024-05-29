@@ -68,7 +68,7 @@ namespace argus {
       public:
         static Scene2D &create(const std::string &id);
 
-        pimpl_Scene2D *pimpl;
+        pimpl_Scene2D *m_pimpl;
 
         Scene2D(const Scene2D &) noexcept = delete;
 

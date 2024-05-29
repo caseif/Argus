@@ -125,7 +125,7 @@ namespace argus {
                     glUniformMatrix4fv(GLint(vm_loc), 1, GL_FALSE, view_mat.data);
                 });
 
-        if (viewport.viewport->type == SceneType::TwoD) {
+        if (viewport.viewport->m_type == SceneType::TwoD) {
             auto &scene = reinterpret_cast<const AttachedViewport2D *>(viewport.viewport)->get_camera().get_scene();
             auto al_color = scene.peek_ambient_light_color();
             auto al_level = scene.peek_ambient_light_level();

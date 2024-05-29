@@ -60,71 +60,71 @@ namespace argus {
 
     Scene2D::Scene2D(const std::string &id, const Transform2D &transform) :
             Scene(SceneType::TwoD),
-            pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(id, *this, transform)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(id, *this, transform)) {
     }
 
     Scene2D::Scene2D(Scene2D &&rhs) noexcept:
             Scene(SceneType::TwoD),
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Scene2D::~Scene2D(void) {
-        g_scenes.erase(g_scenes.find(pimpl->id), g_scenes.end());
+        g_scenes.erase(g_scenes.find(m_pimpl->id), g_scenes.end());
 
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     pimpl_Scene *Scene2D::get_pimpl(void) const {
-        return dynamic_cast<pimpl_Scene *>(pimpl);
+        return dynamic_cast<pimpl_Scene *>(m_pimpl);
     }
 
     bool Scene2D::is_lighting_enabled(void) {
-        return pimpl->lighting_enabled;
+        return m_pimpl->lighting_enabled;
     }
 
     void Scene2D::set_lighting_enabled(bool enabled) {
-        pimpl->lighting_enabled = enabled;
+        m_pimpl->lighting_enabled = enabled;
     }
 
     float Scene2D::peek_ambient_light_level(void) const {
-        return pimpl->ambient_light_level.peek();
+        return m_pimpl->ambient_light_level.peek();
     }
 
     ValueAndDirtyFlag<float> Scene2D::get_ambient_light_level(void) {
-        return pimpl->ambient_light_level.read();
+        return m_pimpl->ambient_light_level.read();
     }
 
     void Scene2D::set_ambient_light_level(float level) {
-        pimpl->ambient_light_level = level;
+        m_pimpl->ambient_light_level = level;
     }
 
     const Vector3f &Scene2D::peek_ambient_light_color(void) const {
-        return pimpl->ambient_light_color.peek();
+        return m_pimpl->ambient_light_color.peek();
     }
 
     ValueAndDirtyFlag<Vector3f> Scene2D::get_ambient_light_color(void) {
-        return pimpl->ambient_light_color.read();
+        return m_pimpl->ambient_light_color.read();
     }
 
     void Scene2D::set_ambient_light_color(const Vector3f &color) {
-        pimpl->ambient_light_color = normalize_rgb(color);
+        m_pimpl->ambient_light_color = normalize_rgb(color);
     }
 
     std::vector<std::reference_wrapper<Light2D>> Scene2D::get_lights(void) {
         std::vector<std::reference_wrapper<Light2D>> res;
-        res.reserve(pimpl->lights_staging->size());
-        std::transform(pimpl->lights_staging->begin(), pimpl->lights_staging->end(), std::back_inserter(res),
+        res.reserve(m_pimpl->lights_staging->size());
+        std::transform(m_pimpl->lights_staging->begin(), m_pimpl->lights_staging->end(), std::back_inserter(res),
                 [](auto &kvp) { return std::reference_wrapper(kvp.second); });
         return res;
     }
 
     std::vector<std::reference_wrapper<const Light2D>> Scene2D::get_lights_for_render(void) {
         std::vector<std::reference_wrapper<const Light2D>> res;
-        res.reserve(pimpl->lights->size());
-        std::transform(pimpl->lights->cbegin(), pimpl->lights->cend(), std::back_inserter(res),
+        res.reserve(m_pimpl->lights->size());
+        std::transform(m_pimpl->lights->cbegin(), m_pimpl->lights->cend(), std::back_inserter(res),
                 [](const auto &kvp) { return std::reference_wrapper(kvp.second); });
         return res;
     }
@@ -132,7 +132,7 @@ namespace argus {
     Handle Scene2D::add_light(Light2DType type, bool is_occludable, const Vector3f &color,
             LightParameters params, const Transform2D &iniital_transform) {
         Light2D light(type, is_occludable, normalize_rgb(color), params, iniital_transform);
-        auto inserted = pimpl->lights_staging->insert({ light.get_handle(), light });
+        auto inserted = m_pimpl->lights_staging->insert({ light.get_handle(), light });
         return inserted.first->first;
     }
 
@@ -142,7 +142,7 @@ namespace argus {
     }
 
     void Scene2D::remove_light(Handle handle) {
-        pimpl->lights_staging->erase(handle);
+        m_pimpl->lights_staging->erase(handle);
     }
 
     std::optional<std::reference_wrapper<RenderGroup2D>> Scene2D::get_group(Handle handle) {
@@ -156,53 +156,53 @@ namespace argus {
     }
 
     Handle Scene2D::add_group(const Transform2D &transform) {
-        return pimpl->root_group_write->add_group(transform);
+        return m_pimpl->root_group_write->add_group(transform);
     }
 
     Handle Scene2D::add_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
             const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index, float light_opacity,
             const Transform2D &transform) {
-        return pimpl->root_group_write->add_object(material, primitives, anchor_point,
+        return m_pimpl->root_group_write->add_object(material, primitives, anchor_point,
                 atlas_stride, z_index, light_opacity, transform);
     }
 
     void Scene2D::remove_group(Handle handle) {
-        pimpl->root_group_write->remove_group(handle);
+        m_pimpl->root_group_write->remove_group(handle);
     }
 
     void Scene2D::remove_object(Handle handle) {
-        pimpl->root_group_write->remove_object(handle);
+        m_pimpl->root_group_write->remove_object(handle);
     }
 
     std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {
-        auto it = pimpl->cameras.find(id);
-        return it != pimpl->cameras.cend() ? std::make_optional(std::reference_wrapper(it->second)) : std::nullopt;
+        auto it = m_pimpl->cameras.find(id);
+        return it != m_pimpl->cameras.cend() ? std::make_optional(std::reference_wrapper(it->second)) : std::nullopt;
     }
 
     Camera2D &Scene2D::create_camera(const std::string &id) {
-        if (pimpl->cameras.find(id) != pimpl->cameras.end()) {
+        if (m_pimpl->cameras.find(id) != m_pimpl->cameras.end()) {
             throw std::invalid_argument("Camera with provided ID already exists in scene");
         }
 
-        auto it = pimpl->cameras.insert({id, Camera2D(id, *this)});
+        auto it = m_pimpl->cameras.insert({id, Camera2D(id, *this)});
 
         return it.first->second;
     }
 
     void Scene2D::destroy_camera(const std::string &id) {
-        auto it = pimpl->cameras.find(id);
-        if (it == pimpl->cameras.end()) {
+        auto it = m_pimpl->cameras.find(id);
+        if (it == m_pimpl->cameras.end()) {
             throw std::invalid_argument("Camera with provided ID does not exist in scene");
         }
 
-        pimpl->cameras.erase(it);
+        m_pimpl->cameras.erase(it);
     }
 
     void Scene2D::lock_render_state(void) {
-        pimpl->read_lock.lock();
+        m_pimpl->read_lock.lock();
     }
 
     void Scene2D::unlock_render_state(void) {
-        pimpl->read_lock.unlock();
+        m_pimpl->read_lock.unlock();
     }
 }

@@ -34,7 +34,7 @@ namespace argus {
 
     Shader::Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src)
             :
-            pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Shader>(
                     uid,
                     type,
                     stage,
@@ -43,20 +43,20 @@ namespace argus {
     }
 
     Shader::Shader(const Shader &rhs) noexcept:
-            pimpl(&g_pimpl_pool.construct<pimpl_Shader>(*rhs.pimpl)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Shader>(*rhs.m_pimpl)) {
     }
 
     Shader::Shader(Shader &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Shader::~Shader(void) {
-        if (pimpl == nullptr) {
+        if (m_pimpl == nullptr) {
             return;
         }
 
-        g_pimpl_pool.destroy(pimpl);
+        g_pimpl_pool.destroy(m_pimpl);
     }
 
     ShaderStage operator|(ShaderStage lhs, ShaderStage rhs) {
@@ -75,19 +75,19 @@ namespace argus {
     }
 
     const std::string &Shader::get_uid(void) const {
-        return pimpl->uid;
+        return m_pimpl->uid;
     }
 
     const std::string &Shader::get_type(void) const {
-        return pimpl->type;
+        return m_pimpl->type;
     }
 
     ShaderStage Shader::get_stage(void) const {
-        return pimpl->stage;
+        return m_pimpl->stage;
     }
 
     const std::vector<uint8_t> &Shader::get_source(void) const {
-        return pimpl->src;
+        return m_pimpl->src;
     }
 
     bool ShaderReflectionInfo::has_attr(const std::string &name) const {

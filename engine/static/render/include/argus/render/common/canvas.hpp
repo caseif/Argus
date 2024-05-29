@@ -55,7 +55,7 @@ namespace argus {
      */
     class Canvas : AutoCleanupable {
       public:
-        pimpl_Canvas *const pimpl;
+        pimpl_Canvas *const m_pimpl;
 
         /**
          * \brief Constructs a new Canvas attached to the given Window.

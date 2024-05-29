@@ -35,7 +35,7 @@ namespace argus {
     struct pimpl_AttachedViewport2D;
 
     struct AttachedViewport2D : AttachedViewport {
-        pimpl_AttachedViewport2D *pimpl;
+        pimpl_AttachedViewport2D *m_pimpl;
 
         AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index);
 

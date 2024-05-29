@@ -38,7 +38,7 @@ namespace argus {
         friend class MaterialLoader;
 
       public:
-        pimpl_Material *pimpl;
+        pimpl_Material *m_pimpl;
 
         /**
          * \brief Constructs a new Material.

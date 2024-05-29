@@ -45,7 +45,7 @@ namespace argus {
         virtual pimpl_AttachedViewport *get_pimpl(void) const = 0;
 
       public:
-        SceneType type;
+        SceneType m_type;
 
         virtual ~AttachedViewport(void) = 0;
 

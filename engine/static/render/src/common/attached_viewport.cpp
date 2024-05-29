@@ -25,7 +25,7 @@
 
 namespace argus {
     AttachedViewport::AttachedViewport(SceneType type) :
-            type(type) {
+            m_type(type) {
     }
 
     AttachedViewport::~AttachedViewport(void) {

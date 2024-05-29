@@ -52,9 +52,9 @@ namespace argus {
         Matrix4 cur_transform;
 
         auto &scene = group.get_scene();
-        auto cur_version_map = scene.pimpl->last_rendered_versions;
+        auto cur_version_map = scene.m_pimpl->last_rendered_versions;
 
-        new_version_map[group.get_handle()] = group.pimpl->version;
+        new_version_map[group.get_handle()] = group.m_pimpl->version;
 
         auto group_transform = group.get_transform();
         if (recompute_transform) {
@@ -63,13 +63,13 @@ namespace argus {
             cur_transform = group_transform.as_matrix({0, 0}) * running_transform;
 
             new_recompute_transform = true;
-        } else if (group.pimpl->version != cur_version_map[group.get_handle()]) {
+        } else if (group.m_pimpl->version != cur_version_map[group.get_handle()]) {
             _compute_abs_group_transform(group, cur_transform);
 
             new_recompute_transform = true;
         }
 
-        for (RenderObject2D *child_object : group.pimpl->child_objects) {
+        for (RenderObject2D *child_object : group.m_pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
             auto existing_it = processed_obj_map.find(child_object->get_handle());
@@ -78,9 +78,9 @@ namespace argus {
 
             auto obj_anchor = child_object->get_anchor_point();
 
-            auto obj_dirty = child_object->pimpl->version != cur_version_map[child_object->get_handle()];
+            auto obj_dirty = child_object->m_pimpl->version != cur_version_map[child_object->get_handle()];
 
-            new_version_map[child_object->get_handle()] = child_object->pimpl->version;
+            new_version_map[child_object->get_handle()] = child_object->m_pimpl->version;
 
             if (new_recompute_transform) {
                 final_obj_transform = cur_transform * obj_transform.as_matrix(obj_anchor);
@@ -104,7 +104,7 @@ namespace argus {
             }
         }
 
-        for (auto *child_group : group.pimpl->child_groups) {
+        for (auto *child_group : group.m_pimpl->child_groups) {
             _process_render_group_2d(processed_obj_map, *child_group,
                     new_recompute_transform, cur_transform, new_version_map, process_new_fn, update_fn, extra);
         }
@@ -115,12 +115,12 @@ namespace argus {
         std::map<Handle, uint16_t> new_version_map;
 
         // need to acquire a lock to prevent buffer swapping while compiling scene
-        scene.pimpl->read_lock.lock();
-        _process_render_group_2d(processed_obj_map, *scene.pimpl->root_group_read, false, {},
+        scene.m_pimpl->read_lock.lock();
+        _process_render_group_2d(processed_obj_map, *scene.m_pimpl->root_group_read, false, {},
                 new_version_map, process_new_fn, update_fn, extra);
-        scene.pimpl->read_lock.unlock();
+        scene.m_pimpl->read_lock.unlock();
 
         // this map is internal to the renderer and thus doesn't need to be synchronized
-        scene.pimpl->last_rendered_versions = new_version_map;
+        scene.m_pimpl->last_rendered_versions = new_version_map;
     }
 }

@@ -95,7 +95,7 @@ namespace argus {
      */
     class Shader {
       public:
-        pimpl_Shader *pimpl;
+        pimpl_Shader *m_pimpl;
 
         /**
          * \brief Constructs a new Shader with the given parameters.

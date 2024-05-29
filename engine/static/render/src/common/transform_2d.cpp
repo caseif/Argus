@@ -51,7 +51,7 @@ namespace argus {
     ) {
     }
 
-    // for the move ctor, we just steal the pimpl
+    // for the move ctor, we just steal the m_pimpl
     Transform2D::Transform2D(Transform2D &&rhs) noexcept:
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;

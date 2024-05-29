@@ -208,8 +208,8 @@ namespace argus {
         v4.tex_coord = {1, 0};
 
         auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
-        auto atlas_w = anim_tex.get<TextureData>().width;
-        auto atlas_h = anim_tex.get<TextureData>().height;
+        auto atlas_w = anim_tex.get<TextureData>().m_width;
+        auto atlas_h = anim_tex.get<TextureData>().m_height;
         anim_tex.release();
 
         size_t frame_off = 0;

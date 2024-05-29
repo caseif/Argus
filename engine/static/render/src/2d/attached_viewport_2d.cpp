@@ -29,26 +29,26 @@ namespace argus {
 
     AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index) :
             AttachedViewport(SceneType::TwoD),
-            pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
     }
 
     AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) noexcept :
-            AttachedViewport(rhs.type),
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            AttachedViewport(rhs.m_type),
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     AttachedViewport2D::~AttachedViewport2D(void) {
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     pimpl_AttachedViewport *AttachedViewport2D::get_pimpl(void) const {
-        return pimpl;
+        return m_pimpl;
     }
 
     Camera2D &AttachedViewport2D::get_camera(void) const {
-        return pimpl->camera;
+        return m_pimpl->camera;
     }
 }

@@ -35,11 +35,11 @@ namespace argus {
         const auto &texture = texture_res.get<TextureData>();
 
         uint32_t channels = 4;
-        VkDeviceSize image_size = texture.width * texture.height * channels;
+        VkDeviceSize image_size = texture.m_width * texture.m_height * channels;
 
         auto format = VK_FORMAT_R8G8B8A8_SRGB;
 
-        auto image = create_image_and_image_view(device, format, { texture.width, texture.height },
+        auto image = create_image_and_image_view(device, format, { texture.m_width, texture.m_height },
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
         auto staging_buf = alloc_buffer(device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -47,8 +47,8 @@ namespace argus {
 
         {
             const size_t bytes_per_pixel = 4;
-            const size_t bytes_per_row = texture.width * bytes_per_pixel;
-            for (size_t y = 0; y < texture.height; y++) {
+            const size_t bytes_per_row = texture.m_width * bytes_per_pixel;
+            for (size_t y = 0; y < texture.m_height; y++) {
                 auto dst = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(staging_buf.mapped) + (y * bytes_per_row));
                 memcpy(dst, texture.get_pixel_data()[y], bytes_per_row);
             }
@@ -65,7 +65,7 @@ namespace argus {
         region.imageSubresource.layerCount = 1;
 
         region.imageOffset = {0, 0, 0};
-        region.imageExtent = { texture.width, texture.height, 1 };
+        region.imageExtent = { texture.m_width, texture.m_height, 1 };
 
         perform_image_transition(cmd_buf, image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

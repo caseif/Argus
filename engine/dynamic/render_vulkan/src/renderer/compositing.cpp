@@ -134,7 +134,7 @@ namespace argus {
             return;
         }
 
-        if (viewport_state.viewport->type == SceneType::TwoD) {
+        if (viewport_state.viewport->m_type == SceneType::TwoD) {
             auto &scene = reinterpret_cast<AttachedViewport2D *>(viewport_state.viewport)->get_camera().get_scene();
 
             auto al_level = scene.peek_ambient_light_level();

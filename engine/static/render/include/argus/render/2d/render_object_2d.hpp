@@ -56,7 +56,7 @@ namespace argus {
                 float light_opacity, const Transform2D &transform);
 
       public:
-        pimpl_RenderObject2D *pimpl;
+        pimpl_RenderObject2D *m_pimpl;
 
         RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
                 const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,

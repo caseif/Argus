@@ -40,27 +40,27 @@ namespace argus {
     struct ArgusEvent;
 
     Canvas::Canvas(Window &window) :
-            pimpl(new pimpl_Canvas(window)) {
+            m_pimpl(new pimpl_Canvas(window)) {
     }
 
     Canvas::~Canvas() {
-        delete pimpl;
+        delete m_pimpl;
     }
 
     Window &Canvas::get_window(void) const {
-        return pimpl->window;
+        return m_pimpl->window;
     }
 
     std::vector<std::reference_wrapper<AttachedViewport2D>> Canvas::get_viewports_2d(void) const {
         std::vector<std::reference_wrapper<AttachedViewport2D>> viewports;
-        std::transform(pimpl->viewports_2d.begin(), pimpl->viewports_2d.end(),
+        std::transform(m_pimpl->viewports_2d.begin(), m_pimpl->viewports_2d.end(),
                 std::back_inserter(viewports), [](auto &kv) { return std::reference_wrapper(kv.second); });
         return viewports;
     }
 
     std::optional<std::reference_wrapper<AttachedViewport>> Canvas::find_viewport(const std::string &id) const {
-        auto it = pimpl->viewports_2d.find(id);
-        if (it == pimpl->viewports_2d.end()) {
+        auto it = m_pimpl->viewports_2d.find(id);
+        if (it == m_pimpl->viewports_2d.end()) {
             throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
         }
         return it->second;
@@ -68,11 +68,11 @@ namespace argus {
 
     AttachedViewport2D &Canvas::attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
             uint32_t z_index) {
-        if (pimpl->viewports_2d.find(id) != pimpl->viewports_2d.end()) {
+        if (m_pimpl->viewports_2d.find(id) != m_pimpl->viewports_2d.end()) {
             throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
 
-        auto it = pimpl->viewports_2d.emplace(std::piecewise_construct, std::forward_as_tuple(id),
+        auto it = m_pimpl->viewports_2d.emplace(std::piecewise_construct, std::forward_as_tuple(id),
                 std::forward_as_tuple(viewport, camera, z_index));
 
         //TODO: put this somewhere that makes more sense
@@ -82,7 +82,7 @@ namespace argus {
     }
 
     AttachedViewport2D &Canvas::attach_default_viewport_2d(const std::string &id, Camera2D &camera, uint32_t z_index) {
-        if (pimpl->viewports_2d.find(id) != pimpl->viewports_2d.end()) {
+        if (m_pimpl->viewports_2d.find(id) != m_pimpl->viewports_2d.end()) {
             throw std::runtime_error("Viewport with provided ID already exists on the current camera");
         }
 
@@ -98,10 +98,10 @@ namespace argus {
     }
 
     void Canvas::detach_viewport_2d(const std::string &id) {
-        auto it = pimpl->viewports_2d.find(id);
-        if (it == pimpl->viewports_2d.end()) {
+        auto it = m_pimpl->viewports_2d.find(id);
+        if (it == m_pimpl->viewports_2d.end()) {
             throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
         }
-        pimpl->viewports_2d.erase(it);
+        m_pimpl->viewports_2d.erase(it);
     }
 }

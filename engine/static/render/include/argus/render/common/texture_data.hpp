@@ -38,16 +38,16 @@ namespace argus {
      */
     class TextureData {
       public:
-        pimpl_TextureData *pimpl;
+        pimpl_TextureData *m_pimpl;
 
         /**
          * \brief The width in pixels of the texture.
          */
-        const unsigned int width;
+        const unsigned int m_width;
         /**
          * \brief The height in pixels of the texture.
          */
-        const unsigned int height;
+        const unsigned int m_height;
 
         /**
          * \brief Constructs a new instance of this class with the given

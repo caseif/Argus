@@ -28,38 +28,38 @@ namespace argus {
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
     TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data) :
-            pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(image_data)),
-            width(width),
-            height(height) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(image_data)),
+            m_width(width),
+            m_height(height) {
     }
 
     TextureData::TextureData(const TextureData &rhs) noexcept:
-            pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(*rhs.pimpl)),
-            width(rhs.width),
-            height(rhs.height) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(*rhs.m_pimpl)),
+            m_width(rhs.m_width),
+            m_height(rhs.m_height) {
     }
 
     TextureData::TextureData(TextureData &&rhs) noexcept:
-            pimpl(rhs.pimpl),
-            width(rhs.width),
-            height(rhs.height) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl),
+            m_width(rhs.m_width),
+            m_height(rhs.m_height) {
+        rhs.m_pimpl = nullptr;
     }
 
     TextureData::~TextureData(void) {
-        if (pimpl == nullptr) {
+        if (m_pimpl == nullptr) {
             return;
         }
 
-        for (size_t y = 0; y < height; y++) {
-            delete[] pimpl->image_data[y];
+        for (size_t y = 0; y < m_height; y++) {
+            delete[] m_pimpl->image_data[y];
         }
-        delete[] pimpl->image_data;
+        delete[] m_pimpl->image_data;
 
-        g_pimpl_pool.destroy(pimpl);
+        g_pimpl_pool.destroy(m_pimpl);
     }
 
     const unsigned char *const *&TextureData::get_pixel_data(void) const {
-        return const_cast<const unsigned char *const *&>(pimpl->image_data);
+        return const_cast<const unsigned char *const *&>(m_pimpl->image_data);
     }
 }

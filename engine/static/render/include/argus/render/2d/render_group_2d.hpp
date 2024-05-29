@@ -60,7 +60,7 @@ namespace argus {
         RenderGroup2D &copy(RenderGroup2D *parent);
 
       public:
-        pimpl_RenderGroup2D *pimpl;
+        pimpl_RenderGroup2D *m_pimpl;
 
         /**
          * \brief Constructs a new RenderGroup.

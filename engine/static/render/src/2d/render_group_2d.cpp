@@ -46,65 +46,65 @@ namespace argus {
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             const Transform2D &transform) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group,
             Transform2D &&transform) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group, transform)) {
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Scene2D &scene, RenderGroup2D *const parent_group) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(_make_handle(this), scene, parent_group)) {
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     RenderGroup2D::RenderGroup2D(Handle handle, Scene2D &scene, RenderGroup2D *parent_group,
             const Transform2D &transform) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderGroup2D>(handle, scene, parent_group, transform)) {
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
 
     RenderGroup2D::RenderGroup2D(RenderGroup2D &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     RenderGroup2D::~RenderGroup2D(void) {
-        if (pimpl != nullptr) {
-            g_render_handle_table.release_handle(pimpl->handle);
+        if (m_pimpl != nullptr) {
+            g_render_handle_table.release_handle(m_pimpl->handle);
 
-            for (auto *group : pimpl->child_groups) {
+            for (auto *group : m_pimpl->child_groups) {
                 delete group;
             }
 
-            for (auto *obj : pimpl->child_objects) {
+            for (auto *obj : m_pimpl->child_objects) {
                 delete obj;
             }
 
-            g_pimpl_pool.destroy(pimpl);
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
 
     Handle RenderGroup2D::get_handle(void) const {
-        return pimpl->handle;
+        return m_pimpl->handle;
     }
 
     Scene2D &RenderGroup2D::get_scene(void) const {
-        return pimpl->scene;
+        return m_pimpl->scene;
     }
 
     RenderGroup2D *RenderGroup2D::get_parent(void) const {
-        return pimpl->parent_group;
+        return m_pimpl->parent_group;
     }
 
     Handle RenderGroup2D::add_group(const Transform2D &transform) {
-        auto *group = new RenderGroup2D(pimpl->scene, this, transform);
-        pimpl->child_groups.push_back(group);
+        auto *group = new RenderGroup2D(m_pimpl->scene, this, transform);
+        m_pimpl->child_groups.push_back(group);
 
         return group->get_handle();
     }
@@ -115,13 +115,13 @@ namespace argus {
 
         auto *obj = new RenderObject2D(*this, material, primitives, anchor_point, atlas_stride, z_index,
                 light_opacity, transform);
-        pimpl->child_objects.push_back(obj);
+        m_pimpl->child_objects.push_back(obj);
 
         return obj->get_handle();
     }
 
     void RenderGroup2D::remove_group(Handle handle) {
-        auto group_opt = pimpl->scene.get_group(handle);
+        auto group_opt = m_pimpl->scene.get_group(handle);
 
         if (!group_opt.has_value()) {
             throw std::invalid_argument("No group with the given ID exists in the scene");
@@ -129,43 +129,43 @@ namespace argus {
 
         auto &group = group_opt.value().get();
 
-        if (group.pimpl->parent_group != this) {
+        if (group.m_pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderGroup2D is not a child of RenderGroup2D");
         }
 
-        remove_from_vector(pimpl->child_groups, &group);
+        remove_from_vector(m_pimpl->child_groups, &group);
 
         delete &group;
     }
 
     void RenderGroup2D::remove_object(Handle handle) {
-        auto object_opt = pimpl->scene.get_object(handle);
+        auto object_opt = m_pimpl->scene.get_object(handle);
         if (!object_opt.has_value()) {
             throw std::invalid_argument("No object with the given ID exists in the scene");
         }
 
         auto &object = object_opt.value().get();
 
-        /*if (&object.pimpl->parent_group != this) {
+        /*if (&object.m_pimpl->parent_group != this) {
             throw std::invalid_argument("Supplied RenderObject2D is not a child of RenderGroup2D");
         }*/
 
-        remove_from_vector(pimpl->child_objects, &object);
+        remove_from_vector(m_pimpl->child_objects, &object);
 
         delete &object;
     }
 
     const Transform2D &RenderGroup2D::peek_transform(void) const {
-        return pimpl->transform;
+        return m_pimpl->transform;
     }
 
     Transform2D &RenderGroup2D::get_transform(void) {
-        return pimpl->transform;
+        return m_pimpl->transform;
     }
 
     //NOLINTNEXTLINE(readability-make-member-function-const)
     void RenderGroup2D::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
+        m_pimpl->transform = transform;
     }
 
     RenderGroup2D &RenderGroup2D::copy() {
@@ -173,21 +173,21 @@ namespace argus {
     }
 
     RenderGroup2D &RenderGroup2D::copy(RenderGroup2D *parent) {
-        auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
-        auto &copy = *new RenderGroup2D(new_handle, pimpl->scene, parent, pimpl->transform);
-        copy.pimpl->version = pimpl->version;
+        auto new_handle = g_render_handle_table.copy_handle(m_pimpl->handle);
+        auto &copy = *new RenderGroup2D(new_handle, m_pimpl->scene, parent, m_pimpl->transform);
+        copy.m_pimpl->version = m_pimpl->version;
 
-        copy.pimpl->child_groups.reserve(pimpl->child_groups.size());
-        for (auto &child_group : pimpl->child_groups) {
+        copy.m_pimpl->child_groups.reserve(m_pimpl->child_groups.size());
+        for (auto &child_group : m_pimpl->child_groups) {
             auto &child_copy = child_group->copy(this);
-            child_copy.pimpl->parent_group = this;
-            copy.pimpl->child_groups.push_back(&child_copy);
+            child_copy.m_pimpl->parent_group = this;
+            copy.m_pimpl->child_groups.push_back(&child_copy);
         }
 
-        copy.pimpl->child_objects.reserve(pimpl->child_objects.size());
-        for (auto *child_obj : pimpl->child_objects) {
+        copy.m_pimpl->child_objects.reserve(m_pimpl->child_objects.size());
+        for (auto *child_obj : m_pimpl->child_objects) {
             auto &child_copy = child_obj->copy(*this);
-            copy.pimpl->child_objects.push_back(&child_copy);
+            copy.m_pimpl->child_objects.push_back(&child_copy);
         }
 
         return copy;

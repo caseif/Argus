@@ -45,7 +45,7 @@ namespace argus {
     ) {
     }
 
-    // for the move ctor, we just steal the pimpl
+    // for the move ctor, we just steal the m_pimpl
     Transform3D::Transform3D(Transform3D &&rhs) noexcept:
             pimpl(rhs.pimpl) {
         rhs.pimpl = nullptr;
@@ -168,26 +168,26 @@ namespace argus {
             return;
         }
 
-        /*float cos_p = std::cos(transform.pimpl->rotation.x);
-        float sin_p = std::sin(transform.pimpl->rotation.x);
-        float cos_y = std::cos(transform.pimpl->rotation.y);
-        float sin_y = std::sin(transform.pimpl->rotation.y);
-        float cos_r = std::cos(transform.pimpl->rotation.z);
-        float sin_r = std::sin(transform.pimpl->rotation.z);
+        /*float cos_p = std::cos(transform.m_pimpl->rotation.x);
+        float sin_p = std::sin(transform.m_pimpl->rotation.x);
+        float cos_y = std::cos(transform.m_pimpl->rotation.y);
+        float sin_y = std::sin(transform.m_pimpl->rotation.y);
+        float cos_r = std::cos(transform.m_pimpl->rotation.z);
+        float sin_r = std::sin(transform.m_pimpl->rotation.z);
 
-        transform.pimpl->translation_mutex.lock();
-        Vector3f trans_current = transform.pimpl->translation;
-        transform.pimpl->translation_mutex.unlock();
+        transform.m_pimpl->translation_mutex.lock();
+        Vector3f trans_current = transform.m_pimpl->translation;
+        transform.m_pimpl->translation_mutex.unlock();
 
-        transform.pimpl->rotation_mutex.lock();
-        Vector3f rot_current = transform.pimpl->rotation;
-        transform.pimpl->rotation_mutex.unlock();
+        transform.m_pimpl->rotation_mutex.lock();
+        Vector3f rot_current = transform.m_pimpl->rotation;
+        transform.m_pimpl->rotation_mutex.unlock();
 
-        transform.pimpl->scale_mutex.lock();
-        Vector3f scale_current = transform.pimpl->scale;
-        transform.pimpl->scale_mutex.unlock();
+        transform.m_pimpl->scale_mutex.lock();
+        Vector3f scale_current = transform.m_pimpl->scale;
+        transform.m_pimpl->scale_mutex.unlock();
 
-        auto dst = transform.pimpl->matrix_rep;*/
+        auto dst = transform.m_pimpl->matrix_rep;*/
 
         //TODO: compute matrix (probably going to use glm)
 

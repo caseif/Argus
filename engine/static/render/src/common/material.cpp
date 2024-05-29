@@ -28,29 +28,29 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Material));
 
     Material::Material(const std::string &texture, const std::vector<std::string> &shaders) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Material>(texture, shaders)) {
     }
 
     Material::Material(const Material &rhs) noexcept:
-            pimpl(&g_pimpl_pool.construct<pimpl_Material>(*rhs.pimpl)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Material>(*rhs.m_pimpl)) {
     }
 
     Material::Material(Material &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Material::~Material(void) {
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     const std::string &Material::get_texture_uid(void) const {
-        return pimpl->texture;
+        return m_pimpl->texture;
     }
 
     const std::vector<std::string> &Material::get_shader_uids(void) const {
-        return pimpl->shaders;
+        return m_pimpl->shaders;
     }
 }

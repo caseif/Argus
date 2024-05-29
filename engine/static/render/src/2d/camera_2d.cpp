@@ -28,37 +28,37 @@ namespace argus {
     static PoolAllocator g_alloc_pool(sizeof(pimpl_Camera2D));
 
     Camera2D::Camera2D(const std::string &id, Scene2D &scene) :
-            pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {
+            m_pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {
     }
 
     Camera2D::Camera2D(Camera2D &&rhs) :
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Camera2D::~Camera2D(void) {
-        if (pimpl != nullptr) {
-            g_alloc_pool.free(pimpl);
+        if (m_pimpl != nullptr) {
+            g_alloc_pool.free(m_pimpl);
         }
     }
 
     const std::string &Camera2D::get_id(void) const {
-        return pimpl->id;
+        return m_pimpl->id;
     }
 
     Scene2D &Camera2D::get_scene(void) const {
-        return pimpl->scene;
+        return m_pimpl->scene;
     }
 
     Transform2D Camera2D::peek_transform(void) const {
-        return pimpl->transform.peek();
+        return m_pimpl->transform.peek();
     }
 
     ValueAndDirtyFlag<Transform2D> Camera2D::get_transform(void) {
-        return pimpl->transform.read();
+        return m_pimpl->transform.read();
     }
 
     void Camera2D::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
+        m_pimpl->transform = transform;
     }
 }

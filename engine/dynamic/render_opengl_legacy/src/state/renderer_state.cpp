@@ -92,7 +92,7 @@ namespace argus {
     }
 
     ViewportState &RendererState::get_viewport_state(AttachedViewport &viewport, bool create) {
-        switch (viewport.type) {
+        switch (viewport.m_type) {
             case SceneType::TwoD: {
                 auto &viewport_2d = reinterpret_cast<AttachedViewport2D &>(viewport);
                 auto it = this->viewport_states_2d.find(&viewport_2d);

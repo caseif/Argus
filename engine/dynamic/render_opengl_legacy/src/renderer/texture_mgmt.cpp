@@ -50,8 +50,8 @@ namespace argus {
         auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
         auto &texture = texture_res.get<TextureData>();
 
-        affirm_precond(texture.width <= INT_MAX, "Texture width is too big");
-        affirm_precond(texture.height <= INT_MAX, "Texture height is too big");
+        affirm_precond(texture.m_width <= INT_MAX, "Texture width is too big");
+        affirm_precond(texture.m_height <= INT_MAX, "Texture height is too big");
 
         texture_handle_t handle;
 
@@ -65,11 +65,11 @@ namespace argus {
 
         //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GLsizei(texture.width), GLsizei(texture.height),
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GLsizei(texture.m_width), GLsizei(texture.m_height),
                 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-        for (uint32_t y = 0; y < texture.height; y++) {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, GLint(y), GLsizei(texture.width), 1, GL_RGBA,
+        for (uint32_t y = 0; y < texture.m_height; y++) {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, GLint(y), GLsizei(texture.m_width), 1, GL_RGBA,
                     GL_UNSIGNED_BYTE, texture.get_pixel_data()[y]);
         }
 

@@ -42,103 +42,103 @@ namespace argus {
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
             uint32_t z_index, float light_opacity, const Transform2D &transform) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
                     material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
             uint32_t z_index, float light_opacity, const Transform2D &transform) :
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
                     material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
-        pimpl->transform.set_version_ref(pimpl->version);
+        m_pimpl->transform.set_version_ref(m_pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
 
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     RenderObject2D::~RenderObject2D() {
-        if (pimpl != nullptr) {
-            g_render_handle_table.release_handle(pimpl->handle);
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_render_handle_table.release_handle(m_pimpl->handle);
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     Handle RenderObject2D::get_handle(void) const {
-        return pimpl->handle;
+        return m_pimpl->handle;
     }
 
     const Scene2D &RenderObject2D::get_scene(void) const {
-        return pimpl->parent_group.get_scene();
+        return m_pimpl->parent_group.get_scene();
     }
 
     const RenderGroup2D &RenderObject2D::get_parent(void) const {
-        return pimpl->parent_group;
+        return m_pimpl->parent_group;
     }
 
     const std::string &RenderObject2D::get_material(void) const {
-        return pimpl->material;
+        return m_pimpl->material;
     }
 
     const std::vector<RenderPrim2D> &RenderObject2D::get_primitives(void) const {
-        return pimpl->primitives;
+        return m_pimpl->primitives;
     }
 
     const Vector2f &RenderObject2D::get_anchor_point(void) const {
-        return pimpl->anchor_point;
+        return m_pimpl->anchor_point;
     }
 
     const Vector2f &RenderObject2D::get_atlas_stride(void) const {
-        return pimpl->atlas_stride;
+        return m_pimpl->atlas_stride;
     }
 
     uint32_t RenderObject2D::get_z_index(void) const {
-        return pimpl->z_index;
+        return m_pimpl->z_index;
     }
 
     float RenderObject2D::get_light_opacity(void) const {
-        return pimpl->light_opacity.peek();
+        return m_pimpl->light_opacity.peek();
     }
 
     void RenderObject2D::set_light_opacity(float opacity) {
-        pimpl->light_opacity = opacity;
+        m_pimpl->light_opacity = opacity;
     }
 
     ValueAndDirtyFlag<Vector2u> RenderObject2D::get_active_frame(void) const {
-        return pimpl->active_frame.read();
+        return m_pimpl->active_frame.read();
     }
 
     void RenderObject2D::set_active_frame(const Vector2u &index) {
-        pimpl->active_frame = index;
+        m_pimpl->active_frame = index;
     }
 
     const Transform2D &RenderObject2D::peek_transform(void) const {
-        return pimpl->transform;
+        return m_pimpl->transform;
     }
 
     Transform2D &RenderObject2D::get_transform(void) {
-        return pimpl->transform;
+        return m_pimpl->transform;
     }
 
     void RenderObject2D::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
+        m_pimpl->transform = transform;
     }
 
     RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) {
         std::vector<RenderPrim2D> prims_copy;
-        std::transform(pimpl->primitives.begin(), pimpl->primitives.end(), std::back_inserter(prims_copy),
+        std::transform(m_pimpl->primitives.begin(), m_pimpl->primitives.end(), std::back_inserter(prims_copy),
                 [](auto &v) { return RenderPrim2D(v); });
-        auto new_handle = g_render_handle_table.copy_handle(pimpl->handle);
-        auto &copy = *new RenderObject2D(new_handle, parent, pimpl->material, prims_copy, pimpl->anchor_point,
-                pimpl->atlas_stride, pimpl->z_index, pimpl->light_opacity.peek(), pimpl->transform);
-        copy.pimpl->active_frame = pimpl->active_frame;
-        copy.pimpl->version = pimpl->version;
+        auto new_handle = g_render_handle_table.copy_handle(m_pimpl->handle);
+        auto &copy = *new RenderObject2D(new_handle, parent, m_pimpl->material, prims_copy, m_pimpl->anchor_point,
+                m_pimpl->atlas_stride, m_pimpl->z_index, m_pimpl->light_opacity.peek(), m_pimpl->transform);
+        copy.m_pimpl->active_frame = m_pimpl->active_frame;
+        copy.m_pimpl->version = m_pimpl->version;
 
-        g_render_handle_table.update_handle(pimpl->handle, copy);
+        g_render_handle_table.update_handle(m_pimpl->handle, copy);
 
         return copy;
     }

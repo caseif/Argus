@@ -33,7 +33,7 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_RenderPrim2D));
 
     RenderPrim2D::RenderPrim2D(const std::vector<Vertex2D> &vertices) {
-        pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);
+        m_pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);
     }
 
     RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices) :
@@ -41,29 +41,29 @@ namespace argus {
     }
 
     RenderPrim2D::RenderPrim2D(const RenderPrim2D &rhs) noexcept:
-            pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.pimpl->vertices)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.m_pimpl->vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(RenderPrim2D &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     RenderPrim2D::~RenderPrim2D(void) {
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     size_t RenderPrim2D::get_vertex_count(void) const {
-        return pimpl->vertices.size();
+        return m_pimpl->vertices.size();
     }
 
     const std::vector<Vertex2D> &RenderPrim2D::get_vertices(void) const {
-        return pimpl->vertices;
+        return m_pimpl->vertices;
     }
 
     size_t RenderPrim2D::get_frame_count(void) const {
-        return pimpl->frame_count;
+        return m_pimpl->frame_count;
     }
 }
