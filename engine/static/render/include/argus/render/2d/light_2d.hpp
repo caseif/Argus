@@ -53,6 +53,8 @@ namespace argus {
         Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color, LightParameters params,
                 const Transform2D &transform);
 
+        [[nodiscard]] Handle get_handle(void) const;
+
         [[nodiscard]] Light2DType get_type(void) const;
 
         [[nodiscard]] bool is_occludable(void) const;

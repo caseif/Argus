@@ -89,6 +89,11 @@ namespace argus {
         }
     }
 
+
+    Handle RenderGroup2D::get_handle(void) const {
+        return pimpl->handle;
+    }
+
     Scene2D &RenderGroup2D::get_scene(void) const {
         return pimpl->scene;
     }

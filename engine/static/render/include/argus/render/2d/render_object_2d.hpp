@@ -70,6 +70,13 @@ namespace argus {
         ~RenderObject2D();
 
         /**
+         * \brief Returns a persistent handle to the object.
+         *
+         * \return The object's handle.
+         */
+        Handle get_handle(void) const;
+
+        /**
          * \brief Gets the parent Scene of this object.
          *
          * \return The parent Scene.

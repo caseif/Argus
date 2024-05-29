@@ -45,6 +45,10 @@ namespace argus {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
+    Handle Light2D::get_handle(void) const {
+        return m_pimpl->handle;
+    }
+
     Light2DType Light2D::get_type(void) const {
         return m_pimpl->type;
     }

@@ -84,6 +84,13 @@ namespace argus {
         ~RenderGroup2D(void);
 
         /**
+         * \brief Returns a persistent handle to the object.
+         *
+         * \return The object's handle.
+         */
+        Handle get_handle(void) const;
+
+        /**
          * \brief Gets the parent Scene.
          *
          * \return The parent Scene to this group.
