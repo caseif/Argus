@@ -96,14 +96,14 @@ namespace argus {
          * \return The parent group to this one, or nullptr if this is a
          *         root group.
          */
-        RenderGroup2D *get_parent_group(void) const;
+        RenderGroup2D *get_parent(void) const;
 
         /**
          * \brief Creates a new RenderGroup as a child of this group.
          *
          * \param transform The relative transform of the new group.
          */
-        Handle create_child_group(const Transform2D &transform);
+        Handle add_group(const Transform2D &transform);
 
         /**
          * \brief Creates a new RenderObject as a child of this group.
@@ -113,7 +113,7 @@ namespace argus {
          *        comprising the new object.
          * \param transform The relative transform of the new object.
          */
-        Handle create_child_object(const std::string &material,
+        Handle add_object(const std::string &material,
                 const std::vector<RenderPrim2D> &primitives,
                 const Vector2f &anchor_point, const Vector2f &atlas_stride,
                 uint32_t z_index, float light_opacity, const Transform2D &transform);
@@ -128,7 +128,7 @@ namespace argus {
          *        group in the scene or if the matching group is not a child
          *        of this group.
          */
-        void remove_member_group(Handle handle);
+        void remove_group(Handle handle);
 
         /**
          * \brief Removes the specified object from this group,
@@ -140,7 +140,7 @@ namespace argus {
          *        object in the scene or if the matching object is not a
          *        child of this group.
          */
-        void remove_child_object(Handle handle);
+        void remove_object(Handle handle);
 
         /**
          * \brief Peeks the local Transform of this group without clearing

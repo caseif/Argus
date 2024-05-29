@@ -93,18 +93,18 @@ namespace argus {
         return pimpl->scene;
     }
 
-    RenderGroup2D *RenderGroup2D::get_parent_group(void) const {
+    RenderGroup2D *RenderGroup2D::get_parent(void) const {
         return pimpl->parent_group;
     }
 
-    Handle RenderGroup2D::create_child_group(const Transform2D &transform) {
+    Handle RenderGroup2D::add_group(const Transform2D &transform) {
         auto *group = new RenderGroup2D(pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
 
         return group->pimpl->handle;
     }
 
-    Handle RenderGroup2D::create_child_object(const std::string &material,
+    Handle RenderGroup2D::add_object(const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
             uint32_t z_index, float light_opacity, const Transform2D &transform) {
 
@@ -115,7 +115,7 @@ namespace argus {
         return obj->pimpl->handle;
     }
 
-    void RenderGroup2D::remove_member_group(Handle handle) {
+    void RenderGroup2D::remove_group(Handle handle) {
         auto group_opt = pimpl->scene.get_group(handle);
 
         if (!group_opt.has_value()) {
@@ -133,7 +133,7 @@ namespace argus {
         delete &group;
     }
 
-    void RenderGroup2D::remove_child_object(Handle handle) {
+    void RenderGroup2D::remove_object(Handle handle) {
         auto object_opt = pimpl->scene.get_object(handle);
         if (!object_opt.has_value()) {
             throw std::invalid_argument("No object with the given ID exists in the scene");

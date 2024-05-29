@@ -33,11 +33,11 @@ namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {
         group.get_transform().copy_matrix(target, {0, 0});
         const RenderGroup2D *cur = nullptr;
-        const RenderGroup2D *parent = group.get_parent_group();
+        const RenderGroup2D *parent = group.get_parent();
 
         while (parent != nullptr) {
             cur = parent;
-            parent = parent->get_parent_group();
+            parent = parent->get_parent();
 
             Matrix4 new_transform = target * cur->peek_transform().as_matrix({0, 0});
 

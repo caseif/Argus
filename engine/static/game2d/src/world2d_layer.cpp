@@ -98,7 +98,7 @@ namespace argus {
 
         auto render_obj = static_obj->pimpl->render_obj;
         if (render_obj.has_value()) {
-            pimpl->scene->remove_member_object(render_obj.value());
+            pimpl->scene->remove_object(render_obj.value());
         }
 
         delete static_obj;
@@ -135,7 +135,7 @@ namespace argus {
 
         auto render_obj = actor->pimpl->render_obj;
         if (render_obj.has_value()) {
-            pimpl->scene->remove_member_object(render_obj.value());
+            pimpl->scene->remove_object(render_obj.value());
         }
 
         delete actor;
@@ -238,7 +238,7 @@ namespace argus {
             atlas_stride_y = 1.0;
         }
 
-        return layer.pimpl->scene->create_child_object(mat_uid, prims, scaled_size / 2,
+        return layer.pimpl->scene->add_object(mat_uid, prims, scaled_size / 2,
                 { atlas_stride_x, atlas_stride_y }, z_index, can_occlude_light ? 1.0 : 0.0, {});
     }
 

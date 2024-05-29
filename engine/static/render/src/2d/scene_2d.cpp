@@ -155,23 +155,23 @@ namespace argus {
         return ptr != nullptr ? std::make_optional(std::reference_wrapper(*ptr)) : std::nullopt;
     }
 
-    Handle Scene2D::create_child_group(const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_group(transform);
+    Handle Scene2D::add_group(const Transform2D &transform) {
+        return pimpl->root_group_write->add_group(transform);
     }
 
-    Handle Scene2D::create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
+    Handle Scene2D::add_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
             const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index, float light_opacity,
             const Transform2D &transform) {
-        return pimpl->root_group_write->create_child_object(material, primitives, anchor_point,
+        return pimpl->root_group_write->add_object(material, primitives, anchor_point,
                 atlas_stride, z_index, light_opacity, transform);
     }
 
-    void Scene2D::remove_member_group(Handle handle) {
-        pimpl->root_group_write->remove_member_group(handle);
+    void Scene2D::remove_group(Handle handle) {
+        pimpl->root_group_write->remove_group(handle);
     }
 
-    void Scene2D::remove_member_object(Handle handle) {
-        pimpl->root_group_write->remove_child_object(handle);
+    void Scene2D::remove_object(Handle handle) {
+        pimpl->root_group_write->remove_object(handle);
     }
 
     std::optional<std::reference_wrapper<Camera2D>> Scene2D::find_camera(const std::string &id) const {

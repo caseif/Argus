@@ -111,7 +111,7 @@ namespace argus {
          *
          * \param transform The relative transform of the new group.
          */
-        Handle create_child_group(const Transform2D &transform);
+        Handle add_group(const Transform2D &transform);
 
         /**
          * \brief Creates a new RenderObject2D as a direct child of this
@@ -125,7 +125,7 @@ namespace argus {
          *         implicit root RenderGroup contained by this Scene. Thus,
          *         no RenderObject is truly without a parent group.
          */
-        Handle create_child_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
+        Handle add_object(const std::string &material, const std::vector<RenderPrim2D> &primitives,
                 const Vector2f &anchor_point, const Vector2f &atlas_stride, uint32_t z_index, float light_opacity,
                 const Transform2D &transform);
 
@@ -136,7 +136,7 @@ namespace argus {
          * \throw std::invalid_argument If the supplied RenderGroup is not a
          *        direct member of this Scene.
          */
-        void remove_member_group(Handle handle);
+        void remove_group(Handle handle);
 
         /**
          * \brief Removes the specified RenderObject2D from this Scene,
@@ -145,7 +145,7 @@ namespace argus {
          * \throw std::invalid_argument If the supplied RenderObject is not
          *        a direct member of this Scene.
          */
-        void remove_member_object(Handle handle);
+        void remove_object(Handle handle);
 
         [[nodiscard]] std::optional<std::reference_wrapper<Camera2D>> find_camera(const std::string &id) const;
 
