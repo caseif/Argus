@@ -106,7 +106,7 @@ namespace argus {
         auto *group = new RenderGroup2D(pimpl->scene, this, transform);
         pimpl->child_groups.push_back(group);
 
-        return group->pimpl->handle;
+        return group->get_handle();
     }
 
     Handle RenderGroup2D::add_object(const std::string &material,
@@ -117,7 +117,7 @@ namespace argus {
                 light_opacity, transform);
         pimpl->child_objects.push_back(obj);
 
-        return obj->pimpl->handle;
+        return obj->get_handle();
     }
 
     void RenderGroup2D::remove_group(Handle handle) {

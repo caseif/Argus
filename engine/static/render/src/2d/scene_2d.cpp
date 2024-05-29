@@ -132,8 +132,8 @@ namespace argus {
     Handle Scene2D::add_light(Light2DType type, bool is_occludable, const Vector3f &color,
             LightParameters params, const Transform2D &iniital_transform) {
         Light2D light(type, is_occludable, normalize_rgb(color), params, iniital_transform);
-        auto inserted = pimpl->lights_staging->insert({ light.m_pimpl->handle, light });
-        return inserted.first->second.m_pimpl->handle;
+        auto inserted = pimpl->lights_staging->insert({ light.get_handle(), light });
+        return inserted.first->first;
     }
 
     std::optional<std::reference_wrapper<Light2D>> Scene2D::get_light(Handle handle) {

@@ -54,7 +54,7 @@ namespace argus {
         auto &scene = group.get_scene();
         auto cur_version_map = scene.pimpl->last_rendered_versions;
 
-        new_version_map[group.pimpl->handle] = group.pimpl->version;
+        new_version_map[group.get_handle()] = group.pimpl->version;
 
         auto group_transform = group.get_transform();
         if (recompute_transform) {
@@ -63,7 +63,7 @@ namespace argus {
             cur_transform = group_transform.as_matrix({0, 0}) * running_transform;
 
             new_recompute_transform = true;
-        } else if (group.pimpl->version != cur_version_map[group.pimpl->handle]) {
+        } else if (group.pimpl->version != cur_version_map[group.get_handle()]) {
             _compute_abs_group_transform(group, cur_transform);
 
             new_recompute_transform = true;
@@ -72,15 +72,15 @@ namespace argus {
         for (RenderObject2D *child_object : group.pimpl->child_objects) {
             Matrix4 final_obj_transform;
 
-            auto existing_it = processed_obj_map.find(child_object->pimpl->handle);
+            auto existing_it = processed_obj_map.find(child_object->get_handle());
 
             auto obj_transform = child_object->get_transform();
 
             auto obj_anchor = child_object->get_anchor_point();
 
-            auto obj_dirty = child_object->pimpl->version != cur_version_map[child_object->pimpl->handle];
+            auto obj_dirty = child_object->pimpl->version != cur_version_map[child_object->get_handle()];
 
-            new_version_map[child_object->pimpl->handle] = child_object->pimpl->version;
+            new_version_map[child_object->get_handle()] = child_object->pimpl->version;
 
             if (new_recompute_transform) {
                 final_obj_transform = cur_transform * obj_transform.as_matrix(obj_anchor);
@@ -100,7 +100,7 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({child_object->pimpl->handle, processed_obj});
+                processed_obj_map.insert({child_object->get_handle(), processed_obj});
             }
         }
 
