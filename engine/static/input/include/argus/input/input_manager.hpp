@@ -34,7 +34,7 @@ namespace argus::input {
         ~InputManager(void) override;
 
       public:
-        pimpl_InputManager *pimpl;
+        pimpl_InputManager *m_pimpl;
 
         InputManager(InputManager &) = delete;
 

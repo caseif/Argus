@@ -39,39 +39,39 @@ namespace argus {
 
         auto handle = g_static_obj_table.create_handle(this);
 
-        pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, z_index,
+        m_pimpl = &g_pimpl_pool.construct<pimpl_StaticObject2D>(handle, res, *sprite, size, z_index,
                 can_occlude_light, transform);
     }
 
     StaticObject2D::StaticObject2D(StaticObject2D &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     StaticObject2D::~StaticObject2D(void) {
-        if (pimpl != nullptr) {
-            g_static_obj_table.release_handle(pimpl->handle);
-            g_pimpl_pool.free(pimpl);
+        if (m_pimpl != nullptr) {
+            g_static_obj_table.release_handle(m_pimpl->handle);
+            g_pimpl_pool.free(m_pimpl);
         }
     }
 
     Vector2f StaticObject2D::get_size(void) const {
-        return pimpl->size;
+        return m_pimpl->size;
     }
 
     uint32_t StaticObject2D::get_z_index(void) const {
-        return pimpl->z_index;
+        return m_pimpl->z_index;
     }
 
     bool StaticObject2D::can_occlude_light(void) const {
-        return pimpl->can_occlude_light;
+        return m_pimpl->can_occlude_light;
     }
 
     const Transform2D &StaticObject2D::get_transform(void) const {
-        return pimpl->transform;
+        return m_pimpl->transform;
     }
 
     Sprite &StaticObject2D::get_sprite(void) const {
-        return pimpl->sprite;
+        return m_pimpl->sprite;
     }
 }

@@ -42,7 +42,7 @@ namespace argus {
         friend class ResourceManager;
 
       private:
-        pimpl_ResourceLoader *pimpl;
+        pimpl_ResourceLoader *m_pimpl;
 
         /**
          * \brief Loads a resource from an std::istream.

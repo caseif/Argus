@@ -38,7 +38,7 @@ namespace argus {
 
         for (auto *entity : created_entities) {
             bool components_match = true;
-            for (auto comp_type : system.pimpl->component_types) {
+            for (auto comp_type : system.m_pimpl->component_types) {
                 if (!entity->has(comp_type)) {
                     components_match = false;
                     break;
@@ -55,7 +55,7 @@ namespace argus {
         }
 
         for (auto &[_, entity] : entities) {
-            system.pimpl->callback(*entity, delta);
+            system.m_pimpl->callback(*entity, delta);
         }
     }
 

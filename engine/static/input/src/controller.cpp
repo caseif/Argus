@@ -44,37 +44,37 @@ namespace argus::input {
     void set_global_deadzone_shape(DeadzoneShape shape);
 
     Controller::Controller(const std::string &name) :
-        pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
+        m_pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
     }
 
     Controller::~Controller(void) {
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     const std::string &Controller::get_name(void) const {
-        return pimpl->name;
+        return m_pimpl->name;
     }
 
     bool Controller::has_gamepad(void) const {
-        return pimpl->attached_gamepad.has_value();
+        return m_pimpl->attached_gamepad.has_value();
     }
 
     void Controller::attach_gamepad(HidDeviceId id) {
-        if (pimpl->attached_gamepad.has_value()) {
+        if (m_pimpl->attached_gamepad.has_value()) {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
 
         assoc_gamepad(id, this->get_name());
-        pimpl->attached_gamepad = id;
+        m_pimpl->attached_gamepad = id;
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
                 this->get_gamepad_name().c_str(), this->get_name().c_str());
     }
 
     bool Controller::attach_first_available_gamepad(void) {
-        if (pimpl->attached_gamepad.has_value()) {
+        if (m_pimpl->attached_gamepad.has_value()) {
             throw std::invalid_argument("Controller already has associated gamepad");
         }
 
@@ -83,7 +83,7 @@ namespace argus::input {
             return false;
         }
 
-        pimpl->attached_gamepad = id;
+        m_pimpl->attached_gamepad = id;
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
                 this->get_gamepad_name().c_str(), this->get_name().c_str());
@@ -92,14 +92,14 @@ namespace argus::input {
     }
 
     void Controller::detach_gamepad(void) {
-        if (!pimpl->attached_gamepad.has_value()) {
+        if (!m_pimpl->attached_gamepad.has_value()) {
             // silently fail
             return;
         }
 
-        unassoc_gamepad(pimpl->attached_gamepad.value());
+        unassoc_gamepad(m_pimpl->attached_gamepad.value());
 
-        pimpl->attached_gamepad = std::nullopt;
+        m_pimpl->attached_gamepad = std::nullopt;
     }
 
     std::string Controller::get_gamepad_name(void) {
@@ -107,23 +107,23 @@ namespace argus::input {
             throw std::runtime_error("Controller does not have associated gamepad");
         }
 
-        return ::argus::input::get_gamepad_name(pimpl->attached_gamepad.value());
+        return ::argus::input::get_gamepad_name(m_pimpl->attached_gamepad.value());
     }
 
     double Controller::get_deadzone_radius(void) {
-        return pimpl->dz_radius.value_or(InputManager::instance().get_global_deadzone_radius());
+        return m_pimpl->dz_radius.value_or(InputManager::instance().get_global_deadzone_radius());
     }
 
     void Controller::set_deadzone_radius(double radius) {
-        pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
+        m_pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
     }
 
     void Controller::clear_deadzone_radius(void) {
-        pimpl->dz_radius.reset();
+        m_pimpl->dz_radius.reset();
     }
 
     DeadzoneShape Controller::get_deadzone_shape(void) {
-        return pimpl->dz_shape.value_or(InputManager::instance().get_global_deadzone_shape());
+        return m_pimpl->dz_shape.value_or(InputManager::instance().get_global_deadzone_shape());
     }
 
     void Controller::set_deadzone_shape(DeadzoneShape shape) {
@@ -131,11 +131,11 @@ namespace argus::input {
             throw std::invalid_argument("Invalid deadzone shape ordinal "
                     + std::to_string(std::underlying_type_t<decltype(shape)>(shape)));
         }
-        pimpl->dz_shape = shape;
+        m_pimpl->dz_shape = shape;
     }
 
     void Controller::clear_deadzone_shape(void) {
-        pimpl->dz_shape.reset();
+        m_pimpl->dz_shape.reset();
     }
 
     static void _check_axis(GamepadAxis axis) {
@@ -147,50 +147,50 @@ namespace argus::input {
 
     double Controller::get_axis_deadzone_radius(GamepadAxis axis) {
         _check_axis(axis);
-        return pimpl->dz_axis_radii.at(size_t(axis)).value_or(
-                pimpl->dz_radius.value_or(
+        return m_pimpl->dz_axis_radii.at(size_t(axis)).value_or(
+                m_pimpl->dz_radius.value_or(
                         InputManager::instance().get_global_axis_deadzone_radius(axis)));
     }
 
     void Controller::set_axis_deadzone_radius(GamepadAxis axis, double radius) {
         _check_axis(axis);
-        pimpl->dz_axis_radii.at(size_t(axis)) = std::min(std::max(radius, 0.0), 1.0);
+        m_pimpl->dz_axis_radii.at(size_t(axis)) = std::min(std::max(radius, 0.0), 1.0);
     }
 
     void Controller::clear_axis_deadzone_radius(GamepadAxis axis) {
         _check_axis(axis);
-        pimpl->dz_axis_radii.at(size_t(axis)).reset();
+        m_pimpl->dz_axis_radii.at(size_t(axis)).reset();
     }
 
     DeadzoneShape Controller::get_axis_deadzone_shape(GamepadAxis axis) {
         _check_axis(axis);
-        return pimpl->dz_axis_shapes.at(size_t(axis)).value_or(
-                pimpl->dz_shape.value_or(
+        return m_pimpl->dz_axis_shapes.at(size_t(axis)).value_or(
+                m_pimpl->dz_shape.value_or(
                         InputManager::instance().get_global_axis_deadzone_shape(axis)));
     }
 
     void Controller::set_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape) {
         _check_axis(axis);
-        pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
+        m_pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
     }
 
     void Controller::clear_axis_deadzone_shape(GamepadAxis axis) {
         _check_axis(axis);
-        pimpl->dz_axis_shapes.at(size_t(axis)).reset();
+        m_pimpl->dz_axis_shapes.at(size_t(axis)).reset();
     }
 
     void Controller::unbind_action(const std::string &action) {
-        if (pimpl->action_to_key_bindings.find(action) == pimpl->action_to_key_bindings.end()) {
+        if (m_pimpl->action_to_key_bindings.find(action) == m_pimpl->action_to_key_bindings.end()) {
             return;
         }
 
         // remove action from binding list of keys it's bound to
-        for (auto key : pimpl->action_to_key_bindings[action]) {
-            remove_from_vector(pimpl->key_to_action_bindings[key], action);
+        for (auto key : m_pimpl->action_to_key_bindings[action]) {
+            remove_from_vector(m_pimpl->key_to_action_bindings[key], action);
         }
 
         // remove binding list of action
-        pimpl->action_to_key_bindings.erase(action);
+        m_pimpl->action_to_key_bindings.erase(action);
     }
 
     template<typename T>
@@ -246,8 +246,8 @@ namespace argus::input {
     }
 
     std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) const {
-        auto it = pimpl->key_to_action_bindings.find(key);
-        if (it != pimpl->key_to_action_bindings.end()) {
+        auto it = m_pimpl->key_to_action_bindings.find(key);
+        if (it != m_pimpl->key_to_action_bindings.end()) {
             return it->second; // implicitly deep-copied
         }
 
@@ -256,8 +256,8 @@ namespace argus::input {
     }
 
     std::vector<KeyboardScancode> Controller::get_keyboard_action_bindings(const std::string &action) const {
-        auto it = pimpl->action_to_key_bindings.find(action);
-        if (it != pimpl->action_to_key_bindings.end()) {
+        auto it = m_pimpl->action_to_key_bindings.find(action);
+        if (it != m_pimpl->action_to_key_bindings.end()) {
             return it->second; // implicitly deep-copied
         }
 
@@ -266,65 +266,65 @@ namespace argus::input {
     }
 
     void Controller::bind_keyboard_key(KeyboardScancode key, const std::string &action) {
-        _bind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
+        _bind_thing(m_pimpl->key_to_action_bindings, m_pimpl->action_to_key_bindings, key, action);
     }
 
     void Controller::unbind_keyboard_key(KeyboardScancode key) {
-        _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key);
+        _unbind_thing(m_pimpl->key_to_action_bindings, m_pimpl->action_to_key_bindings, key);
     }
 
     void Controller::unbind_keyboard_key(KeyboardScancode key, const std::string &action) {
-        _unbind_thing(pimpl->key_to_action_bindings, pimpl->action_to_key_bindings, key, action);
+        _unbind_thing(m_pimpl->key_to_action_bindings, m_pimpl->action_to_key_bindings, key, action);
     }
 
     void Controller::bind_mouse_button(MouseButton button, const std::string &action) {
-        _bind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button, action);
+        _bind_thing(m_pimpl->mouse_button_to_action_bindings, m_pimpl->action_to_mouse_button_bindings, button, action);
     }
 
     void Controller::unbind_mouse_button(MouseButton button) {
-        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button);
+        _unbind_thing(m_pimpl->mouse_button_to_action_bindings, m_pimpl->action_to_mouse_button_bindings, button);
     }
 
     void Controller::unbind_mouse_button(MouseButton button, const std::string &action) {
-        _unbind_thing(pimpl->mouse_button_to_action_bindings, pimpl->action_to_mouse_button_bindings, button,
+        _unbind_thing(m_pimpl->mouse_button_to_action_bindings, m_pimpl->action_to_mouse_button_bindings, button,
                 action);//TODO
     }
 
     void Controller::bind_mouse_axis(MouseAxis axis, const std::string &action) {
-        _bind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
+        _bind_thing(m_pimpl->mouse_axis_to_action_bindings, m_pimpl->action_to_mouse_axis_bindings, axis, action);
     }
 
     void Controller::unbind_mouse_axis(MouseAxis axis) {
-        _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis);
+        _unbind_thing(m_pimpl->mouse_axis_to_action_bindings, m_pimpl->action_to_mouse_axis_bindings, axis);
     }
 
     void Controller::unbind_mouse_axis(MouseAxis axis, const std::string &action) {
-        _unbind_thing(pimpl->mouse_axis_to_action_bindings, pimpl->action_to_mouse_axis_bindings, axis, action);
+        _unbind_thing(m_pimpl->mouse_axis_to_action_bindings, m_pimpl->action_to_mouse_axis_bindings, axis, action);
     }
 
     void Controller::bind_gamepad_button(GamepadButton button, const std::string &action) {
-        _bind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings, button, action);
+        _bind_thing(m_pimpl->gamepad_button_to_action_bindings, m_pimpl->action_to_gamepad_button_bindings, button, action);
     }
 
     void Controller::unbind_gamepad_button(GamepadButton button) {
-        _unbind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings, button);
+        _unbind_thing(m_pimpl->gamepad_button_to_action_bindings, m_pimpl->action_to_gamepad_button_bindings, button);
     }
 
     void Controller::unbind_gamepad_button(GamepadButton button, const std::string &action) {
-        _unbind_thing(pimpl->gamepad_button_to_action_bindings, pimpl->action_to_gamepad_button_bindings,
+        _unbind_thing(m_pimpl->gamepad_button_to_action_bindings, m_pimpl->action_to_gamepad_button_bindings,
                 button, action);
     }
 
     void Controller::bind_gamepad_axis(GamepadAxis button, const std::string &action) {
-        _bind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings, button, action);
+        _bind_thing(m_pimpl->gamepad_axis_to_action_bindings, m_pimpl->action_to_gamepad_axis_bindings, button, action);
     }
 
     void Controller::unbind_gamepad_axis(GamepadAxis button) {
-        _unbind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings, button);
+        _unbind_thing(m_pimpl->gamepad_axis_to_action_bindings, m_pimpl->action_to_gamepad_axis_bindings, button);
     }
 
     void Controller::unbind_gamepad_axis(GamepadAxis button, const std::string &action) {
-        _unbind_thing(pimpl->gamepad_axis_to_action_bindings, pimpl->action_to_gamepad_axis_bindings,
+        _unbind_thing(m_pimpl->gamepad_axis_to_action_bindings, m_pimpl->action_to_gamepad_axis_bindings,
                 button, action);
     }
 
@@ -333,7 +333,7 @@ namespace argus::input {
             throw std::runtime_error("Cannot query gamepad button state for controller: No gamepad is associated");
         }
 
-        return ::argus::input::is_gamepad_button_pressed(pimpl->attached_gamepad.value(), button);
+        return ::argus::input::is_gamepad_button_pressed(m_pimpl->attached_gamepad.value(), button);
     }
 
     double Controller::get_gamepad_axis(GamepadAxis axis) {
@@ -341,7 +341,7 @@ namespace argus::input {
             throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
 
-        return ::argus::input::get_gamepad_axis(pimpl->attached_gamepad.value(), axis);
+        return ::argus::input::get_gamepad_axis(m_pimpl->attached_gamepad.value(), axis);
     }
 
     double Controller::get_gamepad_axis_delta(GamepadAxis axis) {
@@ -349,12 +349,12 @@ namespace argus::input {
             throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
 
-        return ::argus::input::get_gamepad_axis_delta(pimpl->attached_gamepad.value(), axis);
+        return ::argus::input::get_gamepad_axis_delta(m_pimpl->attached_gamepad.value(), axis);
     }
 
     bool Controller::is_action_pressed(const std::string &action) {
-        auto kb_it = pimpl->action_to_key_bindings.find(action);
-        if (kb_it != pimpl->action_to_key_bindings.cend()) {
+        auto kb_it = m_pimpl->action_to_key_bindings.find(action);
+        if (kb_it != m_pimpl->action_to_key_bindings.cend()) {
             for (auto key : kb_it->second) {
                 if (is_key_pressed(key)) {
                     return true;
@@ -363,8 +363,8 @@ namespace argus::input {
         }
 
         if (this->has_gamepad()) {
-            auto gamepad_it = pimpl->action_to_gamepad_button_bindings.find(action);
-            if (gamepad_it != pimpl->action_to_gamepad_button_bindings.cend()) {
+            auto gamepad_it = m_pimpl->action_to_gamepad_button_bindings.find(action);
+            if (gamepad_it != m_pimpl->action_to_gamepad_button_bindings.cend()) {
                 for (auto btn: gamepad_it->second) {
                     if (this->is_gamepad_button_pressed(btn)) {
                         return true;
@@ -373,8 +373,8 @@ namespace argus::input {
             }
         }
 
-        auto mouse_it = pimpl->action_to_mouse_button_bindings.find(action);
-        if (mouse_it != pimpl->action_to_mouse_button_bindings.cend()) {
+        auto mouse_it = m_pimpl->action_to_mouse_button_bindings.find(action);
+        if (mouse_it != m_pimpl->action_to_mouse_button_bindings.cend()) {
             for (auto btn : mouse_it->second) {
                 if (is_mouse_button_pressed(btn)) {
                     return true;
@@ -387,14 +387,14 @@ namespace argus::input {
 
     double Controller::get_action_axis(const std::string &action) {
         if (this->has_gamepad()) {
-            auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
-            if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
+            auto gamepad_it = m_pimpl->action_to_gamepad_axis_bindings.find(action);
+            if (gamepad_it != m_pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
                 return this->get_gamepad_axis(gamepad_it->second.front());
             }
         }
 
-        auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
-        if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
+        auto mouse_it = m_pimpl->action_to_mouse_axis_bindings.find(action);
+        if (mouse_it != m_pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
             return get_mouse_axis(mouse_it->second.front());
         }
 
@@ -403,14 +403,14 @@ namespace argus::input {
 
     double Controller::get_action_axis_delta(const std::string &action) {
         if (this->has_gamepad()) {
-            auto gamepad_it = pimpl->action_to_gamepad_axis_bindings.find(action);
-            if (gamepad_it != pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
+            auto gamepad_it = m_pimpl->action_to_gamepad_axis_bindings.find(action);
+            if (gamepad_it != m_pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
                 return this->get_gamepad_axis_delta(gamepad_it->second.front());
             }
         }
 
-        auto mouse_it = pimpl->action_to_mouse_axis_bindings.find(action);
-        if (mouse_it != pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
+        auto mouse_it = m_pimpl->action_to_mouse_axis_bindings.find(action);
+        if (mouse_it != m_pimpl->action_to_mouse_axis_bindings.cend() && !mouse_it->second.empty()) {
             return get_mouse_axis_delta(mouse_it->second.front());
         }
 
@@ -418,11 +418,11 @@ namespace argus::input {
     }
 
     void ack_gamepad_disconnects(void) {
-        for (auto &[_, controller] : InputManager::instance().pimpl->controllers) {
-            if (controller->pimpl->was_gamepad_disconnected) {
+        for (auto &[_, controller] : InputManager::instance().m_pimpl->controllers) {
+            if (controller->m_pimpl->was_gamepad_disconnected) {
                 // acknowledge disconnect flag set by render thread and fully
                 // disassoc gamepad from controller
-                controller->pimpl->was_gamepad_disconnected = false;
+                controller->m_pimpl->was_gamepad_disconnected = false;
                 controller->detach_gamepad();
             }
         }

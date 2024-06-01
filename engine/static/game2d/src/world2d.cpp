@@ -61,55 +61,55 @@ namespace argus {
     }
 
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor) :
-            pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
-        pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt, true);
+            m_pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
+        m_pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt, true);
     }
 
     World2D::~World2D(void) {
-        g_pimpl_pool.destroy(pimpl);
+        g_pimpl_pool.destroy(m_pimpl);
     }
 
     const std::string &World2D::get_id(void) const {
-        return pimpl->id;
+        return m_pimpl->id;
     }
 
     float World2D::get_scale_factor(void) const {
-        return pimpl->scale_factor;
+        return m_pimpl->scale_factor;
     }
 
     const Transform2D &World2D::get_camera_transform(void) const {
-        return pimpl->abstract_camera.peek();
+        return m_pimpl->abstract_camera.peek();
     }
 
     void World2D::set_camera_transform(const Transform2D &transform) {
-        pimpl->abstract_camera = transform;
+        m_pimpl->abstract_camera = transform;
     }
 
     float World2D::get_ambient_light_level(void) const {
-        return pimpl->al_level.peek();
+        return m_pimpl->al_level.peek();
     }
 
     void World2D::set_ambient_light_level(float level) {
-        pimpl->al_level = level;
+        m_pimpl->al_level = level;
     }
 
     Vector3f World2D::get_ambient_light_color(void) const {
-        return pimpl->al_color.peek();
+        return m_pimpl->al_color.peek();
     }
 
     void World2D::set_ambient_light_color(const Vector3f &color) {
-        pimpl->al_color = color;
+        m_pimpl->al_color = color;
     }
 
     World2DLayer &World2D::get_background_layer(uint32_t index) const {
-        affirm_precond(index < pimpl->num_bg_layers, "Invalid background index requested");
-        return *pimpl->bg_layers[index];
+        affirm_precond(index < m_pimpl->num_bg_layers, "Invalid background index requested");
+        return *m_pimpl->bg_layers[index];
     }
 
     World2DLayer &World2D::add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval) {
-        affirm_precond(pimpl->num_bg_layers < MAX_BACKGROUND_LAYERS, "Too many background layers added");
+        affirm_precond(m_pimpl->num_bg_layers < MAX_BACKGROUND_LAYERS, "Too many background layers added");
 
-        auto bg_index = pimpl->num_bg_layers;
+        auto bg_index = m_pimpl->num_bg_layers;
 
         std::stringstream layer_id;
         layer_id << BG_LAYER_ID_PREFIX;
@@ -117,21 +117,21 @@ namespace argus {
 
         auto layer = new World2DLayer(*this, layer_id.str(), 100 + bg_index, parallax_coeff, repeat_interval, false);
 
-        pimpl->bg_layers[bg_index] = layer;
-        pimpl->num_bg_layers += 1;
+        m_pimpl->bg_layers[bg_index] = layer;
+        m_pimpl->num_bg_layers += 1;
         return *layer;
     }
 
     static void _render_world(World2D &world) {
-        auto camera_transform = world.pimpl->abstract_camera.read();
-        auto al_level = world.pimpl->al_level.read();
-        auto al_color = world.pimpl->al_color.read();
+        auto camera_transform = world.m_pimpl->abstract_camera.read();
+        auto al_level = world.m_pimpl->al_level.read();
+        auto al_color = world.m_pimpl->al_color.read();
 
-        for (int64_t i = 0; i < world.pimpl->num_bg_layers; i++) {
-            render_world_layer(*world.pimpl->bg_layers[i], camera_transform, al_level, al_color);
+        for (int64_t i = 0; i < world.m_pimpl->num_bg_layers; i++) {
+            render_world_layer(*world.m_pimpl->bg_layers[i], camera_transform, al_level, al_color);
         }
 
-        render_world_layer(*world.pimpl->fg_layer, camera_transform, al_level, al_color);
+        render_world_layer(*world.m_pimpl->fg_layer, camera_transform, al_level, al_color);
     }
 
     void render_worlds(TimeDelta delta) {
@@ -142,7 +142,7 @@ namespace argus {
     }
 
     static World2DLayer &_get_foreground_layer(const World2D &world) {
-        return *world.pimpl->fg_layer;
+        return *world.m_pimpl->fg_layer;
     }
 
     StaticObject2D &World2D::get_static_object(Handle handle) const {

@@ -44,7 +44,7 @@ namespace argus {
         System(System &&) = delete;
 
       public:
-        pimpl_System *pimpl;
+        pimpl_System *m_pimpl;
 
         static SystemBuilder builder(void);
 

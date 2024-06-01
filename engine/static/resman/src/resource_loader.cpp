@@ -55,16 +55,16 @@ namespace argus {
             }
         }
 
-        pimpl->last_dependencies = dependencies;
+        m_pimpl->last_dependencies = dependencies;
 
         return acquired;
     }
 
     ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types) :
-            pimpl(new pimpl_ResourceLoader(media_types)) {
+            m_pimpl(new pimpl_ResourceLoader(media_types)) {
     }
 
     ResourceLoader::~ResourceLoader(void) {
-        delete pimpl;
+        delete m_pimpl;
     }
 }

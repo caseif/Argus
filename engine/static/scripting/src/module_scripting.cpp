@@ -94,8 +94,8 @@ namespace argus {
             }
             case LifecycleStage::Deinit: {
                 for (auto context : g_script_contexts) {
-                    auto &plugin = *context->pimpl->plugin;
-                    auto *data = context->pimpl->plugin_data;
+                    auto &plugin = *context->m_pimpl->plugin;
+                    auto *data = context->m_pimpl->plugin_data;
                     if (data != nullptr) {
                         plugin.destroy_context_data(data);
                     }

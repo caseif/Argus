@@ -136,12 +136,12 @@ namespace argus::input {
     );
 
     uint8_t get_connected_gamepad_count(void) {
-        return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size()
-                + InputManager::instance().pimpl->mapped_gamepads.size(), size_t(UINT8_MAX)));
+        return uint8_t(std::min(InputManager::instance().m_pimpl->available_gamepads.size()
+                + InputManager::instance().m_pimpl->mapped_gamepads.size(), size_t(UINT8_MAX)));
     }
 
     uint8_t get_unattached_gamepad_count(void) {
-        return uint8_t(std::min(InputManager::instance().pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
+        return uint8_t(std::min(InputManager::instance().m_pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
     }
 
     std::string get_gamepad_name(HidDeviceId gamepad) {
@@ -169,9 +169,9 @@ namespace argus::input {
 
         assert(sdl_button_it->second >= 0);
 
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
-        auto &states = InputManager::instance().pimpl->gamepad_states;
+        auto &states = InputManager::instance().m_pimpl->gamepad_states;
         auto it = states.find(gamepad);
         if (it == states.cend()) {
             Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
@@ -188,9 +188,9 @@ namespace argus::input {
             return false;
         }
 
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
-        auto &states = InputManager::instance().pimpl->gamepad_states;
+        auto &states = InputManager::instance().m_pimpl->gamepad_states;
         auto it = states.find(gamepad);
         if (it == states.cend()) {
             Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
@@ -209,9 +209,9 @@ namespace argus::input {
             return false;
         }
 
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
-        auto &states = InputManager::instance().pimpl->gamepad_states;
+        auto &states = InputManager::instance().m_pimpl->gamepad_states;
         auto it = states.find(gamepad);
         if (it == states.cend()) {
             Logger::default_logger().warn("Client polled unknown gamepad ID %d", gamepad);
@@ -227,7 +227,7 @@ namespace argus::input {
     static void _init_gamepads(void) {
         auto &manager = InputManager::instance();
 
-        std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
+        std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
         int joystick_count = SDL_NumJoysticks();
 
@@ -241,13 +241,13 @@ namespace argus::input {
                     Logger::default_logger().warn("Unable to get instance ID for joystick at index %d", i);
                     continue;
                 }
-                manager.pimpl->available_gamepads.push_back(SDL_JoystickGetDeviceInstanceID(i));
+                manager.m_pimpl->available_gamepads.push_back(SDL_JoystickGetDeviceInstanceID(i));
             } else {
                 Logger::default_logger().debug("Joystick '%s' is not reported as a gamepad, ignoring", name);
             }
         }
 
-        auto gamepad_count = manager.pimpl->available_gamepads.size();
+        auto gamepad_count = manager.m_pimpl->available_gamepads.size();
         if (gamepad_count > 0) {
             Logger::default_logger().info("%zu connected gamepad%s found",
                     gamepad_count, gamepad_count != 1 ? "s" : "");
@@ -273,10 +273,10 @@ namespace argus::input {
         }
 
         std::optional<Controller *> controller;
-        auto controller_name_it = InputManager::instance().pimpl->mapped_gamepads.find(id);
-        if (controller_name_it != InputManager::instance().pimpl->mapped_gamepads.cend()) {
-            auto controller_it = InputManager::instance().pimpl->controllers.find(controller_name_it->second);
-            if (controller_it != InputManager::instance().pimpl->controllers.cend()) {
+        auto controller_name_it = InputManager::instance().m_pimpl->mapped_gamepads.find(id);
+        if (controller_name_it != InputManager::instance().m_pimpl->mapped_gamepads.cend()) {
+            auto controller_it = InputManager::instance().m_pimpl->controllers.find(controller_name_it->second);
+            if (controller_it != InputManager::instance().m_pimpl->controllers.cend()) {
                 controller = controller_it->second;
             }
         }
@@ -397,11 +397,11 @@ namespace argus::input {
             new_axis_state[size_t(axis_2)] = new_y;
         }
 
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
-        auto prev_axis_state = InputManager::instance().pimpl->gamepad_states[id].axis_state;
+        auto prev_axis_state = InputManager::instance().m_pimpl->gamepad_states[id].axis_state;
 
-        auto &state = InputManager::instance().pimpl->gamepad_states[id];
+        auto &state = InputManager::instance().m_pimpl->gamepad_states[id];
 
         state.button_state = uint64_t(new_button_state);
         state.axis_state = new_axis_state;
@@ -411,9 +411,9 @@ namespace argus::input {
     }
 
     static void _dispatch_button_events(GamepadButton key, bool release) {
-        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
-            auto it = controller->pimpl->gamepad_button_to_action_bindings.find(key);
-            if (it == controller->pimpl->gamepad_button_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().m_pimpl->controllers) {
+            auto it = controller->m_pimpl->gamepad_button_to_action_bindings.find(key);
+            if (it == controller->m_pimpl->gamepad_button_to_action_bindings.end()) {
                 continue;
             }
 
@@ -424,9 +424,9 @@ namespace argus::input {
     }
 
     static void _dispatch_axis_events(GamepadAxis axis, double val, double delta) {
-        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
-            auto it = controller->pimpl->gamepad_axis_to_action_bindings.find(axis);
-            if (it != controller->pimpl->gamepad_axis_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().m_pimpl->controllers) {
+            auto it = controller->m_pimpl->gamepad_axis_to_action_bindings.find(axis);
+            if (it != controller->m_pimpl->gamepad_axis_to_action_bindings.end()) {
                 for (auto &action : it->second) {
                     dispatch_axis_event(nullptr, controller_index, action, val, delta);
                 }
@@ -451,7 +451,7 @@ namespace argus::input {
         int to_process;
         while ((to_process = SDL_PeepEvents(events, event_buf_size,
                 SDL_GETEVENT, SDL_CONTROLLERAXISMOTION, SDL_CONTROLLERDEVICEREMOVED)) > 0) {
-            std::lock_guard<std::recursive_mutex> lock(InputManager::instance().pimpl->gamepads_mutex);
+            std::lock_guard<std::recursive_mutex> lock(InputManager::instance().m_pimpl->gamepads_mutex);
 
             for (int i = 0; i < to_process; i++) {
                 auto &event = events[i];
@@ -495,11 +495,11 @@ namespace argus::input {
                         }
 
                         // and they say Java is verbose
-                        if (InputManager::instance().pimpl->mapped_gamepads.find(instance_id)
-                                != InputManager::instance().pimpl->mapped_gamepads.end()
-                                || std::find(InputManager::instance().pimpl->available_gamepads.cbegin(),
-                                        InputManager::instance().pimpl->available_gamepads.cend(), instance_id)
-                                        != InputManager::instance().pimpl->available_gamepads.end()) {
+                        if (InputManager::instance().m_pimpl->mapped_gamepads.find(instance_id)
+                                != InputManager::instance().m_pimpl->mapped_gamepads.end()
+                                || std::find(InputManager::instance().m_pimpl->available_gamepads.cbegin(),
+                                        InputManager::instance().m_pimpl->available_gamepads.cend(), instance_id)
+                                        != InputManager::instance().m_pimpl->available_gamepads.end()) {
                             Logger::default_logger().debug("Ignoring connect event for previously opened gamepad "
                                                            "with instance ID %d", instance_id);
                             // this just decrements the ref count
@@ -507,7 +507,7 @@ namespace argus::input {
                             continue;
                         }
 
-                        InputManager::instance().pimpl->available_gamepads.push_back(instance_id);
+                        InputManager::instance().m_pimpl->available_gamepads.push_back(instance_id);
 
                         auto *name = SDL_GameControllerName(gamepad);
                         Logger::default_logger().info("Gamepad '%s' with instance ID %d was connected", name,
@@ -520,15 +520,15 @@ namespace argus::input {
                     case SDL_CONTROLLERDEVICEREMOVED: {
                         auto instance_id = event.cdevice.which;
 
-                        auto &mapped_gamepads = InputManager::instance().pimpl->mapped_gamepads;
+                        auto &mapped_gamepads = InputManager::instance().m_pimpl->mapped_gamepads;
                         auto mapped_it = mapped_gamepads.find(instance_id);
                         if (mapped_it != mapped_gamepads.cend()) {
-                            auto ctrl_it = InputManager::instance().pimpl->controllers.find(mapped_it->second);
-                            auto &controllers = InputManager::instance().pimpl->controllers;
+                            auto ctrl_it = InputManager::instance().m_pimpl->controllers.find(mapped_it->second);
+                            auto &controllers = InputManager::instance().m_pimpl->controllers;
                             if (ctrl_it != controllers.cend()) {
                                 Logger::default_logger().info("Gamepad attached to controller '%s' was disconnected",
                                         ctrl_it->second->get_name().c_str());
-                                ctrl_it->second->pimpl->was_gamepad_disconnected = true;
+                                ctrl_it->second->m_pimpl->was_gamepad_disconnected = true;
 
                                 _dispatch_gamepad_disconnect_event(ctrl_it->second->get_name(), instance_id);
                             } else {
@@ -539,7 +539,7 @@ namespace argus::input {
                                 _dispatch_gamepad_disconnect_event("", instance_id);
                             }
                         } else {
-                            auto &avail_gamepads = InputManager::instance().pimpl->available_gamepads;
+                            auto &avail_gamepads = InputManager::instance().m_pimpl->available_gamepads;
                             auto avail_it = std::find(avail_gamepads.cbegin(), avail_gamepads.cend(),
                                     event.cdevice.which);
                             if (avail_it != avail_gamepads.cend()) {
@@ -563,27 +563,27 @@ namespace argus::input {
     void update_gamepads(void) {
         auto &manager = InputManager::instance();
 
-        if (!manager.pimpl->are_gamepads_initted) {
+        if (!manager.m_pimpl->are_gamepads_initted) {
             _init_gamepads();
 
-            manager.pimpl->are_gamepads_initted = true;
+            manager.m_pimpl->are_gamepads_initted = true;
         }
 
         _handle_gamepad_events();
 
-        for (auto gamepad_id : manager.pimpl->available_gamepads) {
+        for (auto gamepad_id : manager.m_pimpl->available_gamepads) {
             _poll_gamepad(gamepad_id);
         }
 
-        for (auto &[gamepad_id, _] : manager.pimpl->mapped_gamepads) {
+        for (auto &[gamepad_id, _] : manager.m_pimpl->mapped_gamepads) {
             _poll_gamepad(gamepad_id);
         }
     }
 
     void flush_gamepad_deltas(void) {
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->gamepad_states_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
-        for (auto &[_, gamepad] : InputManager::instance().pimpl->gamepad_states) {
+        for (auto &[_, gamepad] : InputManager::instance().m_pimpl->gamepad_states) {
             gamepad.axis_deltas = {};
         }
     }
@@ -591,28 +591,28 @@ namespace argus::input {
     void assoc_gamepad(HidDeviceId id, const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
-        std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
+        std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
-        auto &gamepads = manager.pimpl->available_gamepads;
+        auto &gamepads = manager.m_pimpl->available_gamepads;
         auto it = std::find(gamepads.cbegin(), gamepads.cend(), id);
-        if (it == manager.pimpl->available_gamepads.cend()) {
+        if (it == manager.m_pimpl->available_gamepads.cend()) {
             throw std::invalid_argument("Gamepad ID is not valid or is already in use");
         }
 
-        manager.pimpl->available_gamepads.erase(it);
-        manager.pimpl->mapped_gamepads.insert({ id, controller_name });
+        manager.m_pimpl->available_gamepads.erase(it);
+        manager.m_pimpl->mapped_gamepads.insert({ id, controller_name });
     }
 
     HidDeviceId assoc_first_available_gamepad(const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
-        std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
+        std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
-        if (manager.pimpl->available_gamepads.empty()) {
+        if (manager.m_pimpl->available_gamepads.empty()) {
             return -1;
         }
 
-        auto front = manager.pimpl->available_gamepads.front();
+        auto front = manager.m_pimpl->available_gamepads.front();
         assoc_gamepad(front, controller_name);
 
         return front;
@@ -621,17 +621,17 @@ namespace argus::input {
     void unassoc_gamepad(HidDeviceId id) {
         auto &manager = InputManager::instance();
 
-        std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
+        std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
-        auto it = manager.pimpl->mapped_gamepads.find(id);
+        auto it = manager.m_pimpl->mapped_gamepads.find(id);
 
-        if (it == manager.pimpl->mapped_gamepads.cend()) {
+        if (it == manager.m_pimpl->mapped_gamepads.cend()) {
             Logger::default_logger().warn("Client attempted to close unmapped gamepad instance ID %d", id);
             return;
         }
 
-        manager.pimpl->mapped_gamepads.erase(it);
-        manager.pimpl->available_gamepads.push_back(id);
+        manager.m_pimpl->mapped_gamepads.erase(it);
+        manager.m_pimpl->available_gamepads.push_back(id);
     }
 
     static void _close_gamepad(HidDeviceId id) {
@@ -647,13 +647,13 @@ namespace argus::input {
     void deinit_gamepads(void) {
         auto &manager = InputManager::instance();
 
-        std::lock_guard<std::recursive_mutex> lock(manager.pimpl->gamepads_mutex);
+        std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
-        for (auto id : manager.pimpl->available_gamepads) {
+        for (auto id : manager.m_pimpl->available_gamepads) {
             _close_gamepad(id);
         }
 
-        for (const auto &kv : manager.pimpl->mapped_gamepads) {
+        for (const auto &kv : manager.m_pimpl->mapped_gamepads) {
             _close_gamepad(kv.first);
         }
     }

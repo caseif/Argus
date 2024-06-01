@@ -31,7 +31,7 @@ namespace argus {
 
     class ScriptContext {
       public:
-        pimpl_ScriptContext *pimpl;
+        pimpl_ScriptContext *m_pimpl;
 
         ScriptContext(std::string language, void *data);
 

@@ -260,9 +260,9 @@ namespace argus::input {
     }
 
     bool is_key_pressed(KeyboardScancode scancode) {
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->keyboard_state_mutex);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->keyboard_state_mutex);
 
-        auto state = InputManager::instance().pimpl->keyboard_state;
+        auto state = InputManager::instance().m_pimpl->keyboard_state;
         if (state == nullptr) {
             return false;
         }
@@ -272,7 +272,7 @@ namespace argus::input {
             return false;
         }
 
-        if (sdl_scancode >= InputManager::instance().pimpl->keyboard_key_count) {
+        if (sdl_scancode >= InputManager::instance().m_pimpl->keyboard_key_count) {
             return false;
         }
 
@@ -280,17 +280,17 @@ namespace argus::input {
     }
 
     static void _poll_keyboard_state(void) {
-        std::lock_guard<std::mutex> lock(InputManager::instance().pimpl->keyboard_state_mutex);
-        InputManager::instance().pimpl->keyboard_state
-                = SDL_GetKeyboardState(&InputManager::instance().pimpl->keyboard_key_count);
+        std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->keyboard_state_mutex);
+        InputManager::instance().m_pimpl->keyboard_state
+                = SDL_GetKeyboardState(&InputManager::instance().m_pimpl->keyboard_key_count);
     }
 
     static void _dispatch_events(const Window &window, KeyboardScancode key, bool release) {
         //TODO: ignore while in a TextInputContext once we properly implement that
 
-        for (auto &[controller_index, controller] : InputManager::instance().pimpl->controllers) {
-            auto it = controller->pimpl->key_to_action_bindings.find(key);
-            if (it == controller->pimpl->key_to_action_bindings.end()) {
+        for (auto &[controller_index, controller] : InputManager::instance().m_pimpl->controllers) {
+            auto it = controller->m_pimpl->key_to_action_bindings.find(key);
+            if (it == controller->m_pimpl->key_to_action_bindings.end()) {
                 continue;
             }
 

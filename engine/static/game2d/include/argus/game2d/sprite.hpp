@@ -32,7 +32,7 @@ namespace argus {
 
     class Sprite : AutoCleanupable {
       public:
-        pimpl_Sprite *pimpl;
+        pimpl_Sprite *m_pimpl;
 
         Sprite(const Resource &definition);
 

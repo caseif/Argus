@@ -59,17 +59,17 @@ namespace argus {
     }
 
     ThreadPool::ThreadPool(uint16_t threads) :
-            pimpl(&g_pimpl_pool.construct<pimpl_ThreadPool>(*this, threads)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_ThreadPool>(*this, threads)) {
     }
 
     ThreadPool::~ThreadPool(void) {
-        g_pimpl_pool.destroy(pimpl);
+        g_pimpl_pool.destroy(m_pimpl);
     }
 
     std::future<void *> ThreadPool::submit(std::function<void *(void)> task) {
-        auto &worker = pimpl->workers.at(pimpl->next_worker);
-        if (++pimpl->next_worker >= pimpl->thread_count) {
-            pimpl->next_worker = 0;
+        auto &worker = m_pimpl->workers.at(m_pimpl->next_worker);
+        if (++m_pimpl->next_worker >= m_pimpl->thread_count) {
+            m_pimpl->next_worker = 0;
         }
 
         return worker->add_task(std::move(task));

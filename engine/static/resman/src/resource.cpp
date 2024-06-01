@@ -33,29 +33,29 @@ namespace argus {
 
     Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
             void *const data_ptr, const std::vector<std::string> &dependencies) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)),
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)),
             prototype(std::move(prototype)) {
     }
 
     Resource::Resource(Resource &&rhs) noexcept:
-            pimpl(rhs.pimpl),
+            m_pimpl(rhs.m_pimpl),
             prototype(rhs.prototype) {
     }
 
     Resource::~Resource(void) {
-        g_pimpl_pool.destroy(pimpl);
+        g_pimpl_pool.destroy(m_pimpl);
     }
 
     void Resource::release(void) const {
-        unsigned int new_ref_count = pimpl->ref_count.fetch_sub(1) - 1;
+        unsigned int new_ref_count = m_pimpl->ref_count.fetch_sub(1) - 1;
         Logger::default_logger().debug("Releasing handle on resource %s (new refcount is %d)",
                 this->prototype.uid.c_str(), new_ref_count);
         if (new_ref_count == 0) {
-            pimpl->manager.unload_resource(prototype.uid);
+            m_pimpl->manager.unload_resource(prototype.uid);
         }
     }
 
     const void *Resource::get_data_ptr(void) const {
-        return pimpl->data_ptr;
+        return m_pimpl->data_ptr;
     }
 }

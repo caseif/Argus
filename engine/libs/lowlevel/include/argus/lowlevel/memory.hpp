@@ -35,7 +35,7 @@ namespace argus {
 
     class PoolAllocator {
       private:
-        pimpl_PoolAllocator *pimpl;
+        pimpl_PoolAllocator *m_pimpl;
 
       public:
         std::mutex alloc_mutex;

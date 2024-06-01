@@ -38,7 +38,7 @@ namespace argus {
 
     class HandleTable {
       public:
-        pimpl_HandleTable *pimpl;
+        pimpl_HandleTable *m_pimpl;
 
         explicit HandleTable(void);
 

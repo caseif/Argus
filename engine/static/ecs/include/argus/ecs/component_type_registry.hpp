@@ -32,7 +32,7 @@ namespace argus {
 
     class ComponentTypeRegistry {
       private:
-        pimpl_ComponentTypeRegistry *pimpl;
+        pimpl_ComponentTypeRegistry *m_pimpl;
 
         ComponentTypeRegistry(void);
 

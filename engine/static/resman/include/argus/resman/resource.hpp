@@ -103,7 +103,7 @@ namespace argus {
         ~Resource(void);
 
       public:
-        pimpl_Resource *pimpl;
+        pimpl_Resource *m_pimpl;
 
         /**
          * \brief The prototype of this Resource.

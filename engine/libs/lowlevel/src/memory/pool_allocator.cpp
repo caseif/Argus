@@ -143,17 +143,17 @@ namespace argus {
     }
 
     PoolAllocator::PoolAllocator(size_t block_size, uint8_t alignment_exp) :
-            pimpl(new pimpl_PoolAllocator(
+            m_pimpl(new pimpl_PoolAllocator(
                     // we pass both the real block size and the size in the pool so objects can be aligned in the pool
                     {block_size, next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
                      alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
 
-        ChunkMetadata *first_chunk = _create_chunk(pimpl);
-        pimpl->first_chunk = first_chunk;
+        ChunkMetadata *first_chunk = _create_chunk(m_pimpl);
+        m_pimpl->first_chunk = first_chunk;
     }
 
     PoolAllocator::~PoolAllocator(void) {
-        const ChunkMetadata *chunk = pimpl->first_chunk;
+        const ChunkMetadata *chunk = m_pimpl->first_chunk;
         while (chunk != nullptr) {
             uintptr_t addr = chunk->unaligned_addr;
             const ChunkMetadata *next_chunk = chunk->next_chunk;
@@ -163,11 +163,11 @@ namespace argus {
     }
 
     void *PoolAllocator::alloc(void) {
-        // return malloc(pimpl->real_block_size); // for benchmarking purposes
+        // return malloc(m_pimpl->real_block_size); // for benchmarking purposes
 
         //TODO: allow synchronization to be enabled/disabled per pool
         this->alloc_mutex.lock();
-        ChunkMetadata *cur_chunk = pimpl->first_chunk;
+        ChunkMetadata *cur_chunk = m_pimpl->first_chunk;
         ChunkMetadata *selected_chunk = nullptr;
         size_t max_block_count = 0;
         // iterate the chunks and pick the one with the highest block count.
@@ -183,9 +183,9 @@ namespace argus {
 
         if (selected_chunk == nullptr) {
             // need to allocate a new chunk
-            selected_chunk = _create_chunk(pimpl);
-            selected_chunk->next_chunk = pimpl->first_chunk;
-            pimpl->first_chunk = selected_chunk;
+            selected_chunk = _create_chunk(m_pimpl);
+            selected_chunk->next_chunk = m_pimpl->first_chunk;
+            m_pimpl->first_chunk = selected_chunk;
         }
 
         // this is ultimately set to the sequential memory index of the first free block
@@ -214,7 +214,7 @@ namespace argus {
         selected_chunk->occupied_block_map |= (BlockBitField(1) << (~first_free_block_index & BF_INDEX_MASK));
 
         uintptr_t block_addr
-                = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * pimpl->real_block_size);
+                = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * m_pimpl->real_block_size);
 
         selected_chunk->occupied_blocks += 1;
 
@@ -230,22 +230,22 @@ namespace argus {
 
         this->alloc_mutex.lock();
 
-        const size_t chunk_len = pimpl->real_block_size * pimpl->blocks_per_chunk;
+        const size_t chunk_len = m_pimpl->real_block_size * m_pimpl->blocks_per_chunk;
 
         // keep track of the last chunk in case we have to remove one
         ChunkMetadata *last_chunk = nullptr;
 
-        ChunkMetadata *chunk = pimpl->first_chunk;
+        ChunkMetadata *chunk = m_pimpl->first_chunk;
         while (chunk != nullptr) {
             if (addr >= chunk->data && addr < chunk->data + chunk_len) {
                 size_t offset_in_chunk = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(chunk->data);
-                if ((offset_in_chunk % pimpl->real_block_size) != 0) {
+                if ((offset_in_chunk % m_pimpl->real_block_size) != 0) {
                     this->alloc_mutex.unlock();
 
                     throw std::invalid_argument("Pointer does not point to a valid block");
                 }
 
-                size_t block_index = offset_in_chunk / pimpl->real_block_size;
+                size_t block_index = offset_in_chunk / m_pimpl->real_block_size;
 
                 // clear appropriate bit in block map
                 // we convert the index to a bit position by taking the one's-complement and masking
@@ -261,14 +261,14 @@ namespace argus {
                 chunk->occupied_block_map &= ~block_flag_mask;
 
                 // if the chunk is empty and not the last one, delete it
-                if (--chunk->occupied_blocks == 0 && pimpl->chunk_count > 1) {
+                if (--chunk->occupied_blocks == 0 && m_pimpl->chunk_count > 1) {
                     bool should_delete = true;
 
                     // if this is the head, delete it and make the next one the new head
                     if (last_chunk == nullptr) {
                         // don't delete the last remaining chunk
                         if (chunk->next_chunk != nullptr) {
-                            pimpl->first_chunk = chunk->next_chunk;
+                            m_pimpl->first_chunk = chunk->next_chunk;
                         } else {
                             should_delete = false;
                         }
@@ -280,7 +280,7 @@ namespace argus {
                     if (should_delete) {
                         #ifdef _ARGUS_DEBUG_MODE
                         CanaryValue *canary = reinterpret_cast<CanaryValue *>(
-                                chunk->data + pimpl->real_block_size * pimpl->blocks_per_chunk);
+                                chunk->data + m_pimpl->real_block_size * m_pimpl->blocks_per_chunk);
                         if (*canary != CANARY_MAGIC) {
                             Logger::default_logger().fatal("Detected heap overrun in chunk @ %p (aligned: %p)",
                                     reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void *>(chunk));

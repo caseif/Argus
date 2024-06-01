@@ -36,44 +36,44 @@ namespace argus {
         auto *sprite = new Sprite(res);
 
         auto handle = g_actor_table.create_handle(this);
-        pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, z_index, can_occlude_light,
+        m_pimpl = &g_pimpl_pool.construct<pimpl_Actor2D>(handle, size, z_index, can_occlude_light,
                 transform, res, *sprite);
     }
 
     Actor2D::~Actor2D(void) {
-        g_actor_table.release_handle(pimpl->handle);
+        g_actor_table.release_handle(m_pimpl->handle);
 
-        pimpl->sprite_def_res.release();
-        delete &pimpl->sprite;
+        m_pimpl->sprite_def_res.release();
+        delete &m_pimpl->sprite;
 
-        g_pimpl_pool.destroy<pimpl_Actor2D>(pimpl);
+        g_pimpl_pool.destroy<pimpl_Actor2D>(m_pimpl);
     }
 
     Vector2f Actor2D::get_size(void) const {
-        return pimpl->size;
+        return m_pimpl->size;
     }
 
     uint32_t Actor2D::get_z_index(void) const {
-        return pimpl->z_index;
+        return m_pimpl->z_index;
     }
 
     bool Actor2D::can_occlude_light(void) const {
-        return pimpl->can_occlude_light.peek();
+        return m_pimpl->can_occlude_light.peek();
     }
 
     void Actor2D::set_can_occlude_light(bool can_occlude) {
-        pimpl->can_occlude_light = can_occlude;
+        m_pimpl->can_occlude_light = can_occlude;
     }
 
     const Transform2D &Actor2D::get_transform(void) const {
-        return pimpl->transform.peek();
+        return m_pimpl->transform.peek();
     }
 
     void Actor2D::set_transform(const Transform2D &transform) {
-        pimpl->transform = transform;
+        m_pimpl->transform = transform;
     }
 
     Sprite &Actor2D::get_sprite(void) const {
-        return pimpl->sprite;
+        return m_pimpl->sprite;
     }
 }

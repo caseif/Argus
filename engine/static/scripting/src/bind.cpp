@@ -459,7 +459,7 @@ namespace argus {
         for (const auto &[_, type] : g_bound_types) {
             Logger::default_logger().debug("Binding type %s", type.name.c_str());
 
-            context.pimpl->plugin->bind_type(context, type);
+            context.m_pimpl->plugin->bind_type(context, type);
             Logger::default_logger().debug("Bound type %s", type.name.c_str());
         }
 
@@ -470,7 +470,7 @@ namespace argus {
                 Logger::default_logger().debug("Binding instance function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type, type_fn);
+                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound instance function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
@@ -480,7 +480,7 @@ namespace argus {
                 Logger::default_logger().debug("Binding extension function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type, type_fn);
+                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound extension function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
@@ -490,7 +490,7 @@ namespace argus {
                 Logger::default_logger().debug("Binding static function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
 
-                context.pimpl->plugin->bind_type_function(context, type, type_fn);
+                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
 
                 Logger::default_logger().debug("Bound static function %s::%s",
                         type.name.c_str(), type_fn.name.c_str());
@@ -509,7 +509,7 @@ namespace argus {
                 Logger::default_logger().debug("Binding field %s::%s",
                         type.name.c_str(), type_field.m_name.c_str());
 
-                context.pimpl->plugin->bind_type_field(context, type, type_field);
+                context.m_pimpl->plugin->bind_type_field(context, type, type_field);
 
                 Logger::default_logger().debug("Bound field %s::%s",
                         type.name.c_str(), type_field.m_name.c_str());
@@ -522,7 +522,7 @@ namespace argus {
         for (const auto &[_, enum_def] : g_bound_enums) {
             Logger::default_logger().debug("Binding enum %s", enum_def.name.c_str());
 
-            context.pimpl->plugin->bind_enum(context, enum_def);
+            context.m_pimpl->plugin->bind_enum(context, enum_def);
 
             Logger::default_logger().debug("Bound enum %s", enum_def.name.c_str());
         }
@@ -530,7 +530,7 @@ namespace argus {
         for (const auto &[_, fn] : g_bound_global_fns) {
             Logger::default_logger().debug("Binding global function %s", fn.name.c_str());
 
-            context.pimpl->plugin->bind_global_function(context, fn);
+            context.m_pimpl->plugin->bind_global_function(context, fn);
 
             Logger::default_logger().debug("Bound global function %s", fn.name.c_str());
         }

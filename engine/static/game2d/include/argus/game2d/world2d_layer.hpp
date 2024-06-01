@@ -40,7 +40,7 @@ namespace argus {
 
     class World2DLayer : AutoCleanupable {
       public:
-        pimpl_World2DLayer *pimpl;
+        pimpl_World2DLayer *m_pimpl;
 
         World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
                 std::optional<Vector2f> repeat_interval, bool lighting_enabled);

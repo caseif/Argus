@@ -47,7 +47,7 @@ namespace argus::input {
         ~Controller(void) override;
 
       public:
-        pimpl_Controller *pimpl;
+        pimpl_Controller *m_pimpl;
 
         Controller(const Controller &) = delete;
 

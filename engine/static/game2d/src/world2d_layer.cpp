@@ -51,21 +51,21 @@
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
             std::optional<Vector2f> repeat_interval, bool lighting_enabled) :
-            pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
+            m_pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
         auto layer_uuid = Uuid::random().to_string();
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
-        pimpl->scene = &Scene2D::create(layer_id_str);
-        pimpl->scene->set_lighting_enabled(lighting_enabled);
-        pimpl->render_camera = &pimpl->scene->create_camera(layer_id_str);
-        world.pimpl->canvas.attach_default_viewport_2d(layer_id_str,  *pimpl->render_camera, z_index);
+        m_pimpl->scene = &Scene2D::create(layer_id_str);
+        m_pimpl->scene->set_lighting_enabled(lighting_enabled);
+        m_pimpl->render_camera = &m_pimpl->scene->create_camera(layer_id_str);
+        world.m_pimpl->canvas.attach_default_viewport_2d(layer_id_str,  *m_pimpl->render_camera, z_index);
     }
 
     World2DLayer::~World2DLayer(void) {
-        delete pimpl;
+        delete m_pimpl;
     }
 
     World2D &World2DLayer::get_world(void) const {
-        return pimpl->world;
+        return m_pimpl->world;
     }
 
     StaticObject2D &World2DLayer::get_static_object(Handle handle) const {
@@ -78,8 +78,8 @@ namespace argus {
     Handle World2DLayer::create_static_object(const std::string &sprite, const Vector2f &size,
             uint32_t z_index, bool can_occlude_light, const Transform2D &transform) {
         auto *obj = new StaticObject2D(sprite, size, z_index, can_occlude_light, transform);
-        pimpl->static_objects.insert(obj->pimpl->handle);
-        return obj->pimpl->handle;
+        m_pimpl->static_objects.insert(obj->m_pimpl->handle);
+        return obj->m_pimpl->handle;
     }
 
     Handle World2DLayer::create_static_object(const std::string &sprite, const Vector2f &size,
@@ -94,11 +94,11 @@ namespace argus {
 
         g_static_obj_table.release_handle(handle);
 
-        pimpl->static_objects.erase(handle);
+        m_pimpl->static_objects.erase(handle);
 
-        auto render_obj = static_obj->pimpl->render_obj;
+        auto render_obj = static_obj->m_pimpl->render_obj;
         if (render_obj.has_value()) {
-            pimpl->scene->remove_object(render_obj.value());
+            m_pimpl->scene->remove_object(render_obj.value());
         }
 
         delete static_obj;
@@ -115,8 +115,8 @@ namespace argus {
             bool can_occlude_light, const Transform2D &transform) {
         UNUSED(can_occlude_light);
         auto *actor = new Actor2D(sprite, size, z_index, can_occlude_light, transform);
-        pimpl->actors.insert(actor->pimpl->handle);
-        return actor->pimpl->handle;
+        m_pimpl->actors.insert(actor->m_pimpl->handle);
+        return actor->m_pimpl->handle;
     }
 
     Handle World2DLayer::create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
@@ -131,18 +131,18 @@ namespace argus {
 
         g_actor_table.release_handle(handle);
 
-        pimpl->actors.erase(handle);
+        m_pimpl->actors.erase(handle);
 
-        auto render_obj = actor->pimpl->render_obj;
+        auto render_obj = actor->m_pimpl->render_obj;
         if (render_obj.has_value()) {
-            pimpl->scene->remove_object(render_obj.value());
+            m_pimpl->scene->remove_object(render_obj.value());
         }
 
         delete actor;
     }
 
     static TimeDelta _get_current_frame_duration(const Sprite &sprite) {
-        auto &cur_frame = sprite.pimpl->cur_anim->frames[sprite.pimpl->cur_frame.peek()];
+        auto &cur_frame = sprite.m_pimpl->cur_anim->frames[sprite.m_pimpl->cur_frame.peek()];
         uint64_t dur_ns = uint64_t(cur_frame.duration * sprite.get_animation_speed() * 1'000'000'000.0);
         return std::chrono::nanoseconds(dur_ns);
     }
@@ -151,7 +151,7 @@ namespace argus {
             bool include_parallax) {
         auto transform = Transform2D();
         transform.set_translation(world_transform.get_translation()
-                * (include_parallax ? layer.pimpl->parallax_coeff : 1.0f)
+                * (include_parallax ? layer.m_pimpl->parallax_coeff : 1.0f)
                 / layer.get_world().get_scale_factor());
         transform.set_rotation(world_transform.get_rotation());
         transform.set_scale(world_transform.get_scale());
@@ -159,37 +159,37 @@ namespace argus {
     }
 
     static void _advance_sprite_animation(Sprite &sprite) {
-        if (sprite.pimpl->pending_reset) {
-            sprite.pimpl->cur_frame = 0;
-            sprite.pimpl->next_frame_update = now() + _get_current_frame_duration(sprite);
+        if (sprite.m_pimpl->pending_reset) {
+            sprite.m_pimpl->cur_frame = 0;
+            sprite.m_pimpl->next_frame_update = now() + _get_current_frame_duration(sprite);
             return;
         }
 
-        if (sprite.pimpl->paused) {
+        if (sprite.m_pimpl->paused) {
             //TODO: we don't update next_frame_update so the next frame would
             //      likely be displayed immediately after unpausing - we should
             //      store the remaining time instead
             return;
         }
 
-        auto &anim = sprite.pimpl->cur_anim;
+        auto &anim = sprite.m_pimpl->cur_anim;
         // you could theoretically force an infinite loop if now() was evaluated every iteration
         auto cur_time = now();
-        while (cur_time >= sprite.pimpl->next_frame_update) {
-            if (sprite.pimpl->cur_frame.peek() == anim->frames.size() - 1) {
-                sprite.pimpl->cur_frame = 0;
+        while (cur_time >= sprite.m_pimpl->next_frame_update) {
+            if (sprite.m_pimpl->cur_frame.peek() == anim->frames.size() - 1) {
+                sprite.m_pimpl->cur_frame = 0;
             } else {
-                sprite.pimpl->cur_frame += 1;
+                sprite.m_pimpl->cur_frame += 1;
             }
 
             auto frame_dur = _get_current_frame_duration(sprite);
-            sprite.pimpl->next_frame_update += frame_dur;
+            sprite.m_pimpl->next_frame_update += frame_dur;
         }
     }
 
     static Handle _create_render_object(World2DLayer &layer, Sprite &sprite,
             const Vector2f &size, uint32_t z_index, bool can_occlude_light) {
-        auto &sprite_def = sprite.pimpl->get_def();
+        auto &sprite_def = sprite.m_pimpl->get_def();
 
         std::vector<RenderPrim2D> prims;
 
@@ -213,8 +213,8 @@ namespace argus {
         anim_tex.release();
 
         size_t frame_off = 0;
-        for (auto &[_, anim] : sprite.pimpl->get_def().animations) {
-            sprite.pimpl->anim_start_offsets.insert({anim.id, frame_off});
+        for (auto &[_, anim] : sprite.m_pimpl->get_def().animations) {
+            sprite.m_pimpl->anim_start_offsets.insert({anim.id, frame_off});
             frame_off += anim.frames.size();
         }
 
@@ -228,39 +228,39 @@ namespace argus {
 
         float atlas_stride_x;
         float atlas_stride_y;
-        if (sprite.pimpl->get_def().tile_size.x > 0) {
-            atlas_stride_x = float(sprite.pimpl->get_def().tile_size.x)
+        if (sprite.m_pimpl->get_def().tile_size.x > 0) {
+            atlas_stride_x = float(sprite.m_pimpl->get_def().tile_size.x)
                              / float(atlas_w);
-            atlas_stride_y = float(sprite.pimpl->get_def().tile_size.y)
+            atlas_stride_y = float(sprite.m_pimpl->get_def().tile_size.y)
                              / float(atlas_h);
         } else {
             atlas_stride_x = 1.0;
             atlas_stride_y = 1.0;
         }
 
-        return layer.pimpl->scene->add_object(mat_uid, prims, scaled_size / 2,
+        return layer.m_pimpl->scene->add_object(mat_uid, prims, scaled_size / 2,
                 { atlas_stride_x, atlas_stride_y }, z_index, can_occlude_light ? 1.0 : 0.0, {});
     }
 
     static void _update_sprite_frame(Sprite &sprite, RenderObject2D &render_obj) {
-        auto cur_frame = sprite.pimpl->cur_frame.read();
+        auto cur_frame = sprite.m_pimpl->cur_frame.read();
         if (cur_frame.dirty) {
-            render_obj.set_active_frame(sprite.pimpl->cur_anim->frames[cur_frame].offset);
+            render_obj.set_active_frame(sprite.m_pimpl->cur_anim->frames[cur_frame].offset);
         }
     }
 
     static void _render_static_object(World2DLayer &layer, StaticObject2D &static_obj) {
         RenderObject2D *render_obj;
 
-        if (static_obj.pimpl->render_obj.has_value()) {
-            render_obj = &layer.pimpl->scene->get_object(static_obj.pimpl->render_obj.value()).value().get();
+        if (static_obj.m_pimpl->render_obj.has_value()) {
+            render_obj = &layer.m_pimpl->scene->get_object(static_obj.m_pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, static_obj.get_sprite(),
                     static_obj.get_size(), static_obj.get_z_index(), static_obj.can_occlude_light());
-            render_obj = &layer.pimpl->scene->get_object(handle).value().get();
+            render_obj = &layer.m_pimpl->scene->get_object(handle).value().get();
             render_obj->set_transform(get_render_transform(layer, static_obj.get_transform(), false));
 
-            static_obj.pimpl->render_obj = handle;
+            static_obj.m_pimpl->render_obj = handle;
         }
 
         _update_sprite_frame(static_obj.get_sprite(), *render_obj);
@@ -269,22 +269,22 @@ namespace argus {
     static void _render_actor(World2DLayer &layer, Actor2D &actor) {
         RenderObject2D *render_obj;
 
-        if (actor.pimpl->render_obj.has_value()) {
-            render_obj = &layer.pimpl->scene->get_object(actor.pimpl->render_obj.value()).value().get();
+        if (actor.m_pimpl->render_obj.has_value()) {
+            render_obj = &layer.m_pimpl->scene->get_object(actor.m_pimpl->render_obj.value()).value().get();
         } else {
             auto handle = _create_render_object(layer, actor.get_sprite(),
-                    actor.get_size(), actor.get_z_index(), actor.pimpl->can_occlude_light.read());
-            actor.pimpl->render_obj = handle;
+                    actor.get_size(), actor.get_z_index(), actor.m_pimpl->can_occlude_light.read());
+            actor.m_pimpl->render_obj = handle;
 
-            render_obj = &layer.pimpl->scene->get_object(handle).value().get();
+            render_obj = &layer.m_pimpl->scene->get_object(handle).value().get();
         }
 
-        auto read_occl_light = actor.pimpl->can_occlude_light.read();
+        auto read_occl_light = actor.m_pimpl->can_occlude_light.read();
         if (read_occl_light.dirty) {
             render_obj->set_light_opacity(read_occl_light ? 1.0 : 0.0);
         }
 
-        auto read_transform = actor.pimpl->transform.read();
+        auto read_transform = actor.m_pimpl->transform.read();
         if (read_transform.dirty) {
             render_obj->set_transform(get_render_transform(layer, read_transform.value, false));
         }
@@ -295,18 +295,18 @@ namespace argus {
     void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform,
         const ValueAndDirtyFlag<float> &al_level, const ValueAndDirtyFlag<Vector3f> &al_color) {
         if (camera_transform.dirty) {
-            layer.pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
+            layer.m_pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
         }
 
         if (al_level.dirty) {
-            layer.pimpl->scene->set_ambient_light_level(al_level.value);
+            layer.m_pimpl->scene->set_ambient_light_level(al_level.value);
         }
 
         if (al_color.dirty) {
-            layer.pimpl->scene->set_ambient_light_color(al_color.value);
+            layer.m_pimpl->scene->set_ambient_light_color(al_color.value);
         }
 
-        for (const auto &obj_handle : layer.pimpl->static_objects) {
+        for (const auto &obj_handle : layer.m_pimpl->static_objects) {
             auto *obj = g_static_obj_table.deref<StaticObject2D>(obj_handle);
             if (obj == nullptr) {
                 continue;
@@ -318,7 +318,7 @@ namespace argus {
             _render_static_object(layer, *obj);
         }
 
-        for (const auto &actor_handle : layer.pimpl->actors) {
+        for (const auto &actor_handle : layer.m_pimpl->actors) {
             auto *actor = g_actor_table.deref<Actor2D>(actor_handle);
             if (!actor->get_sprite().is_current_animation_static()) {
                 _advance_sprite_animation(actor->get_sprite());

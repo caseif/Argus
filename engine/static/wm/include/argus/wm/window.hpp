@@ -154,7 +154,7 @@ namespace argus {
         Window(Window &&) noexcept;
 
       public:
-        pimpl_Window *pimpl;
+        pimpl_Window *m_pimpl;
 
         /**
          * \brief Sets the callbacks used to construct and destroy a Canvas

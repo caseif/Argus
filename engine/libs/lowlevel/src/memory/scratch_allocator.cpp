@@ -57,22 +57,22 @@ namespace argus {
 
     static PoolAllocator g_pimpl_pool = PoolAllocator(sizeof(pimpl_ScratchAllocator));
 
-    static void _alloc_chunk(pimpl_ScratchAllocator *pimpl, size_t min_space = 1) {
+    static void _alloc_chunk(pimpl_ScratchAllocator &pimpl, size_t min_space = 1) {
         size_t min_size = min_space + offsetof(ScratchChunk, m_data);
         size_t actual_size = next_aligned_value(min_size, k_chunk_alignment_exp);
 
         //TODO: use direct page allocation
         ScratchChunk *new_chunk = reinterpret_cast<ScratchChunk *>(malloc(actual_size));
         new_chunk->m_size = actual_size;
-        new_chunk->m_prev_chunk = pimpl->m_tail;
-        pimpl->m_tail = new_chunk;
-        pimpl->m_next_addr = next_aligned_value(
-                reinterpret_cast<uintptr_t>(&pimpl->m_tail->m_data), pimpl->m_alignment_exp);
+        new_chunk->m_prev_chunk = pimpl.m_tail;
+        pimpl.m_tail = new_chunk;
+        pimpl.m_next_addr = next_aligned_value(
+                reinterpret_cast<uintptr_t>(&pimpl.m_tail->m_data), pimpl.m_alignment_exp);
     }
 
     ScratchAllocator::ScratchAllocator(uint8_t alignment_exp) :
         m_pimpl(&g_pimpl_pool.construct<pimpl_ScratchAllocator>(alignment_exp)) {
-        _alloc_chunk(m_pimpl);
+        _alloc_chunk(*m_pimpl);
     }
 
     ScratchAllocator::ScratchAllocator(const ScratchAllocator &rhs) :
@@ -90,7 +90,7 @@ namespace argus {
         }
 
         m_pimpl = &g_pimpl_pool.construct<pimpl_ScratchAllocator>(rhs.m_pimpl->m_alignment_exp);
-        _alloc_chunk(m_pimpl);
+        _alloc_chunk(*m_pimpl);
 
         return *this;
     }
@@ -118,7 +118,7 @@ namespace argus {
     void *ScratchAllocator::alloc(size_t size) {
         size_t remaining = reinterpret_cast<uintptr_t>(m_pimpl->m_tail) + m_pimpl->m_tail->m_size - m_pimpl->m_next_addr;
         if (remaining < size) {
-            _alloc_chunk(m_pimpl, size);
+            _alloc_chunk(*m_pimpl, size);
         }
         void *addr = reinterpret_cast<void *>(m_pimpl->m_next_addr);
         m_pimpl->m_next_addr = next_aligned_value(m_pimpl->m_next_addr + size, m_pimpl->m_alignment_exp);

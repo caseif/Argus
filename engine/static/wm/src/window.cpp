@@ -172,7 +172,7 @@ namespace argus {
     }
 
     static void _reap_window(Window &window) {
-        unregister_render_callback(window.pimpl->callback_id);
+        unregister_render_callback(window.m_pimpl->callback_id);
         delete &window;
     }
 
@@ -181,7 +181,7 @@ namespace argus {
 
         while (it != g_windows.end()) {
             Window &win = **it;
-            if (win.pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
+            if (win.m_pimpl->state & WINDOW_STATE_CLOSE_REQUEST_ACKED) {
                 _reap_window(win);
                 it = g_windows.erase(it);
             } else {
@@ -203,7 +203,7 @@ namespace argus {
                                               "things might not work correctly!", window->get_id().c_str());
                 continue;
             }
-            window->pimpl->properties.display.set_quietly(get_display_from_index(new_disp_index));
+            window->m_pimpl->properties.display.set_quietly(get_display_from_index(new_disp_index));
         }
     }
 
@@ -233,19 +233,19 @@ namespace argus {
     }
 
     Window::Window(const std::string &id, Window *parent) :
-            pimpl(new pimpl_Window(id, parent)) {
+            m_pimpl(new pimpl_Window(id, parent)) {
         affirm_precond(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         if (g_canvas_ctor != nullptr) {
-            pimpl->canvas = &g_canvas_ctor(*this);
+            m_pimpl->canvas = &g_canvas_ctor(*this);
         } else {
             Logger::default_logger().warn("No canvas callbacks were set - new window will not have associated canvas!");
         }
 
-        pimpl->state = WINDOW_STATE_UNDEFINED;
-        pimpl->is_close_request_pending = false;
+        m_pimpl->state = WINDOW_STATE_UNDEFINED;
+        m_pimpl->is_close_request_pending = false;
 
-        pimpl->close_callback = nullptr;
+        m_pimpl->close_callback = nullptr;
 
         {
             std::unique_lock<std::shared_mutex> lock(g_window_maps_mutex);
@@ -254,7 +254,7 @@ namespace argus {
 
         g_window_count++;
 
-        pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); }, Ordering::Early);
+        m_pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); }, Ordering::Early);
 
         if (g_window_construct_callback != nullptr) {
             g_window_construct_callback(*this);
@@ -263,78 +263,78 @@ namespace argus {
         return;
     }
 
-    Window::Window(Window &&rhs) noexcept : pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+    Window::Window(Window &&rhs) noexcept : m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Window::~Window(void) {
-        if (pimpl == nullptr) {
+        if (m_pimpl == nullptr) {
             return;
         }
 
         {
             std::shared_lock<std::shared_mutex> lock(g_window_maps_mutex);
-            g_window_id_map.erase(pimpl->id);
-            g_window_handle_map.erase(pimpl->handle);
+            g_window_id_map.erase(m_pimpl->id);
+            g_window_handle_map.erase(m_pimpl->handle);
         }
 
-        if (pimpl->close_callback) {
-            pimpl->close_callback(*this);
+        if (m_pimpl->close_callback) {
+            m_pimpl->close_callback(*this);
         }
 
-        SDL_DestroyWindow(pimpl->handle);
+        SDL_DestroyWindow(m_pimpl->handle);
 
-        for (Window *child : pimpl->children) {
-            child->pimpl->parent = nullptr;
+        for (Window *child : m_pimpl->children) {
+            child->m_pimpl->parent = nullptr;
             _dispatch_window_event(*child, WindowEventType::RequestClose);
         }
 
-        if (pimpl->parent != nullptr) {
-            pimpl->parent->remove_child(*this);
+        if (m_pimpl->parent != nullptr) {
+            m_pimpl->parent->remove_child(*this);
         }
 
         g_window_count--;
 
-        delete pimpl;
+        delete m_pimpl;
     }
 
     const std::string &Window::get_id(void) const {
-        return pimpl->id;
+        return m_pimpl->id;
     }
 
     Canvas &Window::get_canvas(void) const {
-        if (pimpl->canvas == nullptr) {
+        if (m_pimpl->canvas == nullptr) {
             throw std::runtime_error("Canvas member was not set for window! (Ensure the render module is loaded)");
         }
-        return *pimpl->canvas;
+        return *m_pimpl->canvas;
     }
 
     bool Window::is_created(void) const {
-        return pimpl->state & WINDOW_STATE_CREATED;
+        return m_pimpl->state & WINDOW_STATE_CREATED;
     }
 
     bool Window::is_ready(void) const {
-        return pimpl->state & WINDOW_STATE_READY && !(pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
+        return m_pimpl->state & WINDOW_STATE_READY && !(m_pimpl->state & WINDOW_STATE_CLOSE_REQUESTED);
     }
 
     bool Window::is_close_request_pending(void) const {
-        return pimpl->is_close_request_pending;
+        return m_pimpl->is_close_request_pending;
     }
 
     bool Window::is_closed(void) const {
-        return pimpl->state & WINDOW_STATE_CLOSE_REQUESTED;
+        return m_pimpl->state & WINDOW_STATE_CLOSE_REQUESTED;
     }
 
     Window &Window::create_child_window(const std::string &id) {
         Window *child_window = new Window(id, this);
 
-        pimpl->children.insert(pimpl->children.cend(), child_window);
+        m_pimpl->children.insert(m_pimpl->children.cend(), child_window);
 
         return *child_window;
     }
 
     void Window::remove_child(const Window &child) {
-        remove_from_vector(pimpl->children, &child);
+        remove_from_vector(m_pimpl->children, &child);
     }
 
     void Window::update(const TimeDelta delta) {
@@ -358,16 +358,16 @@ namespace argus {
         // configured and the renderer is guaranteed to have seen the CREATE
         // event and initialized itself properly.
 
-        if ((pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
+        if ((m_pimpl->state & WINDOW_STATE_CLOSE_REQUESTED)) {
             // don't acknowledge close until all references from events are released
-            auto rc = pimpl->refcount.load();
+            auto rc = m_pimpl->refcount.load();
             if (rc <= 0) {
-                pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
+                m_pimpl->state |= WINDOW_STATE_CLOSE_REQUEST_ACKED;
             }
             return; // we forego doing anything else after a close request has been sent
         }
 
-        if (!(pimpl->state & WINDOW_STATE_CREATED)) {
+        if (!(m_pimpl->state & WINDOW_STATE_CREATED)) {
             SDL_WindowFlags sdl_flags = SDL_WindowFlags(
                     SDL_WINDOW_RESIZABLE
                     | SDL_WINDOW_INPUT_FOCUS
@@ -400,49 +400,49 @@ namespace argus {
             }
 
             //sdl_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
-            pimpl->handle = SDL_CreateWindow(get_client_name().c_str(),
+            m_pimpl->handle = SDL_CreateWindow(get_client_name().c_str(),
                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                     DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                     sdl_flags);
-            if (pimpl->handle == nullptr) {
+            if (m_pimpl->handle == nullptr) {
                 Logger::default_logger().fatal("Failed to create SDL window");
             }
 
 
             {
                 std::unique_lock<std::shared_mutex> lock(g_window_maps_mutex);
-                g_window_handle_map.insert({ pimpl->handle, this });
+                g_window_handle_map.insert({ m_pimpl->handle, this });
             }
 
-            _register_callbacks(pimpl->handle);
+            _register_callbacks(m_pimpl->handle);
 
-            pimpl->state |= WINDOW_STATE_CREATED;
+            m_pimpl->state |= WINDOW_STATE_CREATED;
 
             //TODO: figure out how to handle content scale
-            pimpl->content_scale = { 1.0, 1.0 };
+            m_pimpl->content_scale = { 1.0, 1.0 };
 
             dispatch_event<WindowEvent>(WindowEventType::Create, *this);
 
             return;
         }
 
-        if (!(pimpl->state & WINDOW_STATE_COMMITTED)) {
+        if (!(m_pimpl->state & WINDOW_STATE_COMMITTED)) {
             return;
         }
 
-        auto title = pimpl->properties.title.read();
-        auto fullscreen = pimpl->properties.fullscreen.read();
-        auto display = pimpl->properties.display.read();
-        auto custom_display_mode = pimpl->properties.custom_display_mode.read();
-        auto display_mode = pimpl->properties.display_mode.read();
-        auto windowed_res = pimpl->properties.windowed_resolution.read();
-        auto position = pimpl->properties.position.read();
-        auto mouse_capture = pimpl->properties.mouse_capture.read();
-        auto mouse_visible = pimpl->properties.mouse_visible.read();
-        auto mouse_raw_input = pimpl->properties.mouse_raw_input.read();
+        auto title = m_pimpl->properties.title.read();
+        auto fullscreen = m_pimpl->properties.fullscreen.read();
+        auto display = m_pimpl->properties.display.read();
+        auto custom_display_mode = m_pimpl->properties.custom_display_mode.read();
+        auto display_mode = m_pimpl->properties.display_mode.read();
+        auto windowed_res = m_pimpl->properties.windowed_resolution.read();
+        auto position = m_pimpl->properties.position.read();
+        auto mouse_capture = m_pimpl->properties.mouse_capture.read();
+        auto mouse_visible = m_pimpl->properties.mouse_visible.read();
+        auto mouse_raw_input = m_pimpl->properties.mouse_raw_input.read();
 
         if (title.dirty) {
-            SDL_SetWindowTitle(pimpl->handle, title->c_str());
+            SDL_SetWindowTitle(m_pimpl->handle, title->c_str());
         }
 
         if (fullscreen.dirty
@@ -453,37 +453,37 @@ namespace argus {
                 const Display &target_display = get_display_affinity();
 
                 auto disp_off = target_display.get_position();
-                SDL_SetWindowPosition(pimpl->handle, disp_off.x, disp_off.y);
-                SDL_SetWindowFullscreen(pimpl->handle, SDL_WINDOW_FULLSCREEN);
+                SDL_SetWindowPosition(m_pimpl->handle, disp_off.x, disp_off.y);
+                SDL_SetWindowFullscreen(m_pimpl->handle, SDL_WINDOW_FULLSCREEN);
                 SDL_DisplayMode sdl_mode;
                 if (custom_display_mode) {
                     SDL_DisplayMode cur_mode = unwrap_display_mode(display_mode);
-                    SDL_GetClosestDisplayMode(target_display.pimpl->index, &cur_mode, &sdl_mode);
+                    SDL_GetClosestDisplayMode(target_display.m_pimpl->index, &cur_mode, &sdl_mode);
                     assert(sdl_mode.w > 0);
                     assert(sdl_mode.h > 0);
-                    SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
+                    SDL_SetWindowDisplayMode(m_pimpl->handle, &sdl_mode);
                 } else {
-                    SDL_GetDesktopDisplayMode(target_display.pimpl->index, &sdl_mode);
-                    SDL_SetWindowDisplayMode(pimpl->handle, &sdl_mode);
+                    SDL_GetDesktopDisplayMode(target_display.m_pimpl->index, &sdl_mode);
+                    SDL_SetWindowDisplayMode(m_pimpl->handle, &sdl_mode);
                 }
 
                 affirm_precond(sdl_mode.refresh_rate <= UINT16_MAX, "Refresh rate is too big");
-                pimpl->cur_resolution = { uint32_t(sdl_mode.w), uint32_t(sdl_mode.h) };
-                pimpl->cur_refresh_rate = uint16_t(sdl_mode.refresh_rate);
+                m_pimpl->cur_resolution = { uint32_t(sdl_mode.w), uint32_t(sdl_mode.h) };
+                m_pimpl->cur_refresh_rate = uint16_t(sdl_mode.refresh_rate);
             } else {
                 affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
-                SDL_SetWindowFullscreen(pimpl->handle, 0);
+                SDL_SetWindowFullscreen(m_pimpl->handle, 0);
 
                 auto &target_disp = get_display_affinity();
                 int pos_x = target_disp.get_position().x + position->x;
                 int pos_y = target_disp.get_position().y + position->y;
-                SDL_SetWindowPosition(pimpl->handle, pos_x, pos_y);
+                SDL_SetWindowPosition(m_pimpl->handle, pos_x, pos_y);
 
-                SDL_SetWindowSize(pimpl->handle, int(windowed_res->x), int(windowed_res->y));
+                SDL_SetWindowSize(m_pimpl->handle, int(windowed_res->x), int(windowed_res->y));
 
-                pimpl->cur_resolution = windowed_res;
+                m_pimpl->cur_resolution = windowed_res;
             }
         } else if (!fullscreen) {
             // update windowed positon and/or resolution
@@ -492,16 +492,16 @@ namespace argus {
                 affirm_precond(windowed_res->x <= INT_MAX && windowed_res->y <= INT_MAX,
                         "Current windowed resolution is too large");
 
-                SDL_SetWindowSize(pimpl->handle, int(windowed_res->x), int(windowed_res->y));
+                SDL_SetWindowSize(m_pimpl->handle, int(windowed_res->x), int(windowed_res->y));
 
-                pimpl->cur_resolution = windowed_res;
+                m_pimpl->cur_resolution = windowed_res;
             }
 
             if (position.dirty) {
                 auto &target_disp = get_display_affinity();
                 int pos_x = target_disp.get_position().x + position->x;
                 int pos_y = target_disp.get_position().y + position->y;
-                SDL_SetWindowPosition(pimpl->handle, pos_x, pos_y);
+                SDL_SetWindowPosition(m_pimpl->handle, pos_x, pos_y);
             }
         }
 
@@ -513,22 +513,22 @@ namespace argus {
                 SDL_SetRelativeMouseMode(SDL_TRUE);
             } else {
                 #if SDL_VERSION_ATLEAST(2, 0, 16)
-                SDL_SetWindowMouseGrab(pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
+                SDL_SetWindowMouseGrab(m_pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
                 #else
-                SDL_SetWindowGrab(pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
+                SDL_SetWindowGrab(m_pimpl->handle, mouse_capture ? SDL_TRUE : SDL_FALSE);
                 #endif
                 //TODO: not great, would be better to set it per window somehow
                 SDL_ShowCursor(mouse_visible ? SDL_TRUE : SDL_FALSE);
             }
         }
 
-        if (!(pimpl->state & WINDOW_STATE_READY)) {
-            pimpl->state |= WINDOW_STATE_READY;
+        if (!(m_pimpl->state & WINDOW_STATE_READY)) {
+            m_pimpl->state |= WINDOW_STATE_READY;
         }
 
-        if (!(pimpl->state & WINDOW_STATE_VISIBLE)) {
-            SDL_ShowWindow(pimpl->handle);
-            pimpl->state |= WINDOW_STATE_VISIBLE;
+        if (!(m_pimpl->state & WINDOW_STATE_VISIBLE)) {
+            SDL_ShowWindow(m_pimpl->handle);
+            m_pimpl->state |= WINDOW_STATE_VISIBLE;
         }
 
         _dispatch_window_update_event(*this, delta);
@@ -539,7 +539,7 @@ namespace argus {
 
     void Window::set_title(const std::string &title) {
         if (title != "20171026") {
-            pimpl->properties.title = title;
+            m_pimpl->properties.title = title;
             return;
         }
 
@@ -549,64 +549,64 @@ namespace argus {
         for (size_t i = 0; i < sizeof(c); i++) {
             c[i] = a[i] ^ b[i];
         }
-        pimpl->properties.title = std::string(c);
+        m_pimpl->properties.title = std::string(c);
         return;
     }
 
     bool Window::is_fullscreen(void) const {
-        return pimpl->properties.fullscreen.peek();
+        return m_pimpl->properties.fullscreen.peek();
     }
 
     void Window::set_fullscreen(const bool fullscreen) {
-        pimpl->properties.fullscreen = fullscreen;
+        m_pimpl->properties.fullscreen = fullscreen;
         return;
     }
 
     ValueAndDirtyFlag<Vector2u> Window::get_resolution(void) {
-        return pimpl->cur_resolution.read();
+        return m_pimpl->cur_resolution.read();
     }
 
     Vector2u Window::peek_resolution(void) const {
-        return pimpl->cur_resolution.peek();
+        return m_pimpl->cur_resolution.peek();
     }
 
     Vector2u Window::get_windowed_resolution(void) const {
-        return pimpl->properties.windowed_resolution.peek();
+        return m_pimpl->properties.windowed_resolution.peek();
     }
 
     void Window::set_windowed_resolution(unsigned int width, unsigned int height) {
-        pimpl->properties.windowed_resolution = {width, height};
+        m_pimpl->properties.windowed_resolution = {width, height};
         return;
     }
 
     void Window::set_windowed_resolution(const Vector2u &resolution) {
-        pimpl->properties.windowed_resolution = {resolution.x, resolution.y};
+        m_pimpl->properties.windowed_resolution = {resolution.x, resolution.y};
         return;
     }
 
     ValueAndDirtyFlag<bool> Window::is_vsync_enabled(void) const {
-        return pimpl->properties.vsync.read();
+        return m_pimpl->properties.vsync.read();
     }
 
     void Window::set_vsync_enabled(bool enabled) {
-        pimpl->properties.vsync = enabled;
+        m_pimpl->properties.vsync = enabled;
         return;
     }
 
     void Window::set_windowed_position(int x, int y) {
-        pimpl->properties.position = {x, y};
+        m_pimpl->properties.position = {x, y};
         return;
     }
 
     void Window::set_windowed_position(const Vector2i &position) {
-        pimpl->properties.position = {position.x, position.y};
+        m_pimpl->properties.position = {position.x, position.y};
         return;
     }
 
     const Display &Window::get_display_affinity(void) const {
-        const Display *display = pimpl->properties.display.peek();
+        const Display *display = m_pimpl->properties.display.peek();
         if (display != nullptr) {
-            auto *found = get_display_from_index(display->pimpl->index);
+            auto *found = get_display_from_index(display->m_pimpl->index);
             if (found != nullptr) {
                 return *found;
             }
@@ -622,81 +622,81 @@ namespace argus {
     }
 
     void Window::set_display_affinity(const Display &display) {
-        auto *cur_display = pimpl->properties.display.peek();
-        if (cur_display != nullptr && display.pimpl->index == cur_display->pimpl->index) {
+        auto *cur_display = m_pimpl->properties.display.peek();
+        if (cur_display != nullptr && display.m_pimpl->index == cur_display->m_pimpl->index) {
             return;
         }
 
-        auto *found = get_display_from_index(display.pimpl->index);
+        auto *found = get_display_from_index(display.m_pimpl->index);
         if (found == nullptr) {
             return;
         }
 
-        pimpl->properties.display = found;
+        m_pimpl->properties.display = found;
         // reset display mode since it's not necessarily valid on the new display
-        pimpl->properties.custom_display_mode = false;
+        m_pimpl->properties.custom_display_mode = false;
     }
 
     DisplayMode Window::get_display_mode(void) const {
-        if (pimpl->properties.custom_display_mode.peek()) {
-            return pimpl->properties.display_mode.peek();
+        if (m_pimpl->properties.custom_display_mode.peek()) {
+            return m_pimpl->properties.display_mode.peek();
         } else {
             SDL_DisplayMode desktop_mode;
-            SDL_GetDesktopDisplayMode(get_display_affinity().pimpl->index, &desktop_mode);
+            SDL_GetDesktopDisplayMode(get_display_affinity().m_pimpl->index, &desktop_mode);
             return wrap_display_mode(desktop_mode);
         }
     }
 
     void Window::set_display_mode(DisplayMode mode) {
-        pimpl->properties.custom_display_mode = true;
-        pimpl->properties.display_mode = mode;
+        m_pimpl->properties.custom_display_mode = true;
+        m_pimpl->properties.display_mode = mode;
     }
 
 
     bool Window::is_mouse_captured(void) const {
-        return pimpl->properties.mouse_capture.peek();
+        return m_pimpl->properties.mouse_capture.peek();
     }
 
     void Window::set_mouse_captured(bool captured) {
-        pimpl->properties.mouse_capture = captured;
+        m_pimpl->properties.mouse_capture = captured;
     }
 
     bool Window::is_mouse_visible(void) const {
-        return pimpl->properties.mouse_visible.peek();
+        return m_pimpl->properties.mouse_visible.peek();
     }
 
     void Window::set_mouse_visible(bool visible) {
-        pimpl->properties.mouse_visible = visible;
+        m_pimpl->properties.mouse_visible = visible;
     }
 
     bool Window::is_mouse_raw_input(void) const {
-        return pimpl->properties.mouse_raw_input.peek();
+        return m_pimpl->properties.mouse_raw_input.peek();
     }
 
     void Window::set_mouse_raw_input(bool raw_input) {
-        pimpl->properties.mouse_raw_input = raw_input;
+        m_pimpl->properties.mouse_raw_input = raw_input;
     }
 
     Vector2f Window::get_content_scale(void) const {
-        return pimpl->content_scale;
+        return m_pimpl->content_scale;
     }
 
     void Window::set_close_callback(WindowCallback callback) {
-        pimpl->close_callback = callback;
+        m_pimpl->close_callback = callback;
     }
 
     void Window::commit(void) {
-        pimpl->state |= WINDOW_STATE_COMMITTED;
+        m_pimpl->state |= WINDOW_STATE_COMMITTED;
         return;
     }
 
     void Window::request_close(void) {
-        pimpl->is_close_request_pending = true;
+        m_pimpl->is_close_request_pending = true;
         _dispatch_window_event(*this, WindowEventType::RequestClose);
     }
 
     void *get_window_handle(const Window &window) {
-        return static_cast<void *>(window.pimpl->handle);
+        return static_cast<void *>(window.m_pimpl->handle);
     }
 
     Window *get_window_from_handle(const void *handle) {
@@ -719,23 +719,23 @@ namespace argus {
         const Window &window = event.window;
 
         // ignore events for uninitialized windows
-        if (!(window.pimpl->state & WINDOW_STATE_CREATED)) {
+        if (!(window.m_pimpl->state & WINDOW_STATE_CREATED)) {
             return;
         }
 
         if (event.subtype == WindowEventType::RequestClose) {
-            window.pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
-            window.pimpl->state &= ~WINDOW_STATE_READY;
+            window.m_pimpl->state |= WINDOW_STATE_CLOSE_REQUESTED;
+            window.m_pimpl->state &= ~WINDOW_STATE_READY;
 
-            if (window.pimpl->canvas != nullptr) {
-                g_canvas_dtor(*window.pimpl->canvas);
+            if (window.m_pimpl->canvas != nullptr) {
+                g_canvas_dtor(*window.m_pimpl->canvas);
             }
         } else if (event.subtype == WindowEventType::Resize) {
-            window.pimpl->cur_resolution = event.resolution;
+            window.m_pimpl->cur_resolution = event.resolution;
         } else if (event.subtype == WindowEventType::Move) {
             // if not in fullscreen mode
-            if ((SDL_GetWindowFlags(window.pimpl->handle) & SDL_WINDOW_FULLSCREEN) == 0) {
-                window.pimpl->properties.position.set_quietly(event.position);
+            if ((SDL_GetWindowFlags(window.m_pimpl->handle) & SDL_WINDOW_FULLSCREEN) == 0) {
+                window.m_pimpl->properties.position.set_quietly(event.position);
             }
         }
     }

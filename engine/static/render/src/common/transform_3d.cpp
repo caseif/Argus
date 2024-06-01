@@ -35,68 +35,68 @@ namespace argus {
     }
 
     Transform3D::Transform3D(const Vector3f &translation, const Vector3f &rotation, const Vector3f &scale) :
-            pimpl(&g_pimpl_pool.construct<pimpl_Transform3D>(translation, rotation, scale)) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_Transform3D>(translation, rotation, scale)) {
     }
 
     Transform3D::Transform3D(const Transform3D &rhs) noexcept: Transform3D(
-            rhs.pimpl->translation,
-            rhs.pimpl->rotation,
-            rhs.pimpl->scale
+            rhs.m_pimpl->translation,
+            rhs.m_pimpl->rotation,
+            rhs.m_pimpl->scale
     ) {
     }
 
     // for the move ctor, we just steal the m_pimpl
     Transform3D::Transform3D(Transform3D &&rhs) noexcept:
-            pimpl(rhs.pimpl) {
-        rhs.pimpl = nullptr;
+            m_pimpl(rhs.m_pimpl) {
+        rhs.m_pimpl = nullptr;
     }
 
     Transform3D::~Transform3D(void) {
-        if (pimpl != nullptr) {
-            g_pimpl_pool.destroy(pimpl);
+        if (m_pimpl != nullptr) {
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     Transform3D &Transform3D::operator=(const Transform3D &rhs) noexcept {
-        pimpl->translation_mutex.lock();
-        pimpl->rotation_mutex.lock();
-        pimpl->scale_mutex.lock();
+        m_pimpl->translation_mutex.lock();
+        m_pimpl->rotation_mutex.lock();
+        m_pimpl->scale_mutex.lock();
 
-        pimpl->translation = rhs.pimpl->translation;
-        pimpl->rotation = rhs.pimpl->rotation;
-        pimpl->scale = rhs.pimpl->scale;
-        pimpl->dirty = (&rhs != this) || this->pimpl->dirty;
-        pimpl->dirty_matrix = (&rhs != this) || this->pimpl->dirty_matrix;
+        m_pimpl->translation = rhs.m_pimpl->translation;
+        m_pimpl->rotation = rhs.m_pimpl->rotation;
+        m_pimpl->scale = rhs.m_pimpl->scale;
+        m_pimpl->dirty = (&rhs != this) || this->m_pimpl->dirty;
+        m_pimpl->dirty_matrix = (&rhs != this) || this->m_pimpl->dirty_matrix;
 
-        pimpl->scale_mutex.unlock();
-        pimpl->rotation_mutex.unlock();
-        pimpl->translation_mutex.unlock();
+        m_pimpl->scale_mutex.unlock();
+        m_pimpl->rotation_mutex.unlock();
+        m_pimpl->translation_mutex.unlock();
 
         return *this;
     }
 
     Transform3D Transform3D::operator+(const Transform3D &rhs) const {
         return Transform3D(
-                pimpl->translation + rhs.pimpl->translation,
-                pimpl->rotation + rhs.pimpl->rotation,
-                pimpl->scale * rhs.pimpl->scale
+                m_pimpl->translation + rhs.m_pimpl->translation,
+                m_pimpl->rotation + rhs.m_pimpl->rotation,
+                m_pimpl->scale * rhs.m_pimpl->scale
         );
     }
 
     Vector3f Transform3D::get_translation(void) const {
-        pimpl->translation_mutex.lock();
-        Vector3f translation_current = pimpl->translation;
-        pimpl->translation_mutex.unlock();
+        m_pimpl->translation_mutex.lock();
+        Vector3f translation_current = m_pimpl->translation;
+        m_pimpl->translation_mutex.unlock();
 
         return translation_current;
     }
 
     void Transform3D::set_translation(const Vector3f &translation) {
-        pimpl->translation_mutex.lock();
-        pimpl->translation = translation;
-        pimpl->translation_mutex.unlock();
+        m_pimpl->translation_mutex.lock();
+        m_pimpl->translation = translation;
+        m_pimpl->translation_mutex.unlock();
 
-        pimpl->set_dirty();
+        m_pimpl->set_dirty();
     }
 
     void Transform3D::set_translation(const float x, const float y, const float z) {
@@ -104,11 +104,11 @@ namespace argus {
     }
 
     void Transform3D::add_translation(const Vector3f &translation_delta) {
-        pimpl->translation_mutex.lock();
-        pimpl->translation += translation_delta;
-        pimpl->translation_mutex.unlock();
+        m_pimpl->translation_mutex.lock();
+        m_pimpl->translation += translation_delta;
+        m_pimpl->translation_mutex.unlock();
 
-        pimpl->set_dirty();
+        m_pimpl->set_dirty();
     }
 
     void Transform3D::add_translation(const float x, const float y, const float z) {
@@ -116,15 +116,15 @@ namespace argus {
     }
 
     Vector3f Transform3D::get_rotation(void) const {
-        return pimpl->rotation;
+        return m_pimpl->rotation;
     }
 
     void Transform3D::set_rotation(const Vector3f &rotation_radians) {
-        pimpl->rotation_mutex.lock();
-        pimpl->rotation = rotation_radians;
-        pimpl->rotation_mutex.unlock();
+        m_pimpl->rotation_mutex.lock();
+        m_pimpl->rotation = rotation_radians;
+        m_pimpl->rotation_mutex.unlock();
 
-        pimpl->set_dirty();
+        m_pimpl->set_dirty();
     }
 
     void Transform3D::set_rotation(const float pitch, const float yaw, const float roll) {
@@ -132,11 +132,11 @@ namespace argus {
     }
 
     void Transform3D::add_rotation(const Vector3f &rotation_delta) {
-        pimpl->rotation_mutex.lock();
-        pimpl->rotation += rotation_delta;
-        pimpl->rotation_mutex.unlock();
+        m_pimpl->rotation_mutex.lock();
+        m_pimpl->rotation += rotation_delta;
+        m_pimpl->rotation_mutex.unlock();
 
-        pimpl->set_dirty();
+        m_pimpl->set_dirty();
     }
 
     void Transform3D::add_rotation(const float pitch_delta, const float yaw_delta, const float roll_delta) {
@@ -144,19 +144,19 @@ namespace argus {
     }
 
     Vector3f Transform3D::get_scale(void) const {
-        pimpl->scale_mutex.lock();
-        Vector3f scale_current = pimpl->scale;
-        pimpl->scale_mutex.unlock();
+        m_pimpl->scale_mutex.lock();
+        Vector3f scale_current = m_pimpl->scale;
+        m_pimpl->scale_mutex.unlock();
 
         return scale_current;
     }
 
     void Transform3D::set_scale(const Vector3f &scale) {
-        pimpl->scale_mutex.lock();
-        pimpl->scale = scale;
-        pimpl->scale_mutex.unlock();
+        m_pimpl->scale_mutex.lock();
+        m_pimpl->scale = scale;
+        m_pimpl->scale_mutex.unlock();
 
-        pimpl->set_dirty();
+        m_pimpl->set_dirty();
     }
 
     void Transform3D::set_scale(const float x, const float y, const float z) {
@@ -164,7 +164,7 @@ namespace argus {
     }
 
     static void _compute_matrix(Transform3D &transform) {
-        if (!transform.pimpl->dirty_matrix) {
+        if (!transform.m_pimpl->dirty_matrix) {
             return;
         }
 
@@ -191,18 +191,18 @@ namespace argus {
 
         //TODO: compute matrix (probably going to use glm)
 
-        transform.pimpl->dirty_matrix = false;
+        transform.m_pimpl->dirty_matrix = false;
     }
 
     const Matrix4 &Transform3D::as_matrix(void) {
         _compute_matrix(*this);
 
-        return pimpl->matrix_rep;
+        return m_pimpl->matrix_rep;
     }
 
     void Transform3D::copy_matrix(Matrix4 &target) {
         _compute_matrix(*this);
 
-        target = pimpl->matrix_rep;
+        target = m_pimpl->matrix_rep;
     }
 }

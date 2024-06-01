@@ -48,23 +48,23 @@ namespace argus {
     }
 
     System::System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback) :
-            pimpl(new pimpl_System(name, component_types, callback, true)) {
+            m_pimpl(new pimpl_System(name, component_types, callback, true)) {
     }
 
     System::~System(void) {
-        delete pimpl;
+        delete m_pimpl;
     }
 
     const std::string System::get_name(void) {
-        return pimpl->name;
+        return m_pimpl->name;
     }
 
     bool System::is_active(void) {
-        return pimpl->active;
+        return m_pimpl->active;
     }
 
     void System::set_active(bool active) {
-        pimpl->active = active;
+        m_pimpl->active = active;
     }
 
 }

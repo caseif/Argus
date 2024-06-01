@@ -38,35 +38,35 @@ namespace argus {
             Logger::default_logger().fatal("Unknown scripting language '%s'", language.c_str());
         }
 
-        pimpl = new pimpl_ScriptContext(std::move(language), it->second, plugin_data);
+        m_pimpl = new pimpl_ScriptContext(std::move(language), it->second, plugin_data);
     }
 
     ScriptContext::~ScriptContext(void) = default;
 
     void *ScriptContext::get_plugin_data_ptr(void) {
-        return pimpl->plugin_data;
+        return m_pimpl->plugin_data;
     }
 
     void ScriptContext::load_script(const std::string &uid) {
-        auto &res = pimpl->plugin->load_resource(uid);
+        auto &res = m_pimpl->plugin->load_resource(uid);
 
         this->load_script(res);
     }
 
     void ScriptContext::load_script(const Resource &resource) {
         auto lang_it = g_media_type_langs.find(resource.media_type);
-        if (lang_it == g_media_type_langs.cend() || lang_it->second != pimpl->language) {
+        if (lang_it == g_media_type_langs.cend() || lang_it->second != m_pimpl->language) {
             throw ScriptLoadException(resource.uid, "Resource with media type '" + resource.prototype.media_type
-                    + "' cannot be loaded by plugin '" + pimpl->language + "'");
+                    + "' cannot be loaded by plugin '" + m_pimpl->language + "'");
         }
 
-        pimpl->plugin->move_resource(resource);
-        pimpl->plugin->load_script(*this, resource);
+        m_pimpl->plugin->move_resource(resource);
+        m_pimpl->plugin->load_script(*this, resource);
     }
 
     ObjectWrapper ScriptContext::invoke_script_function(const std::string &fn_name,
             const std::vector<ObjectWrapper> &params) {
-        return pimpl->plugin->invoke_script_function(*this, fn_name, params);
+        return m_pimpl->plugin->invoke_script_function(*this, fn_name, params);
     }
 
     ScriptContext &create_script_context(const std::string &language) {
@@ -91,8 +91,8 @@ namespace argus {
     void destroy_script_context(ScriptContext &context) {
         remove_from_vector(g_script_contexts, &context);
 
-        auto *plugin = context.pimpl->plugin;
-        plugin->destroy_context_data(context.pimpl->plugin_data);
+        auto *plugin = context.m_pimpl->plugin;
+        plugin->destroy_context_data(context.m_pimpl->plugin_data);
 
         delete &context;
     }

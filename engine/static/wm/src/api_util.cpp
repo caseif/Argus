@@ -63,7 +63,7 @@ namespace argus {
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-        auto ctx = SDL_GL_CreateContext(window.pimpl->handle);
+        auto ctx = SDL_GL_CreateContext(window.m_pimpl->handle);
         return ctx;
     }
 
@@ -76,7 +76,7 @@ namespace argus {
     }
 
     int gl_make_context_current(Window &window, GLContext context) {
-        return SDL_GL_MakeCurrent(window.pimpl->handle, context);
+        return SDL_GL_MakeCurrent(window.m_pimpl->handle, context);
     }
 
     void *gl_load_proc(const char *name) {
@@ -89,7 +89,7 @@ namespace argus {
     }
 
     void gl_swap_buffers(Window &window) {
-        SDL_GL_SwapWindow(window.pimpl->handle);
+        SDL_GL_SwapWindow(window.m_pimpl->handle);
     }
 
     bool vk_is_supported(void) {
@@ -97,11 +97,11 @@ namespace argus {
     }
 
     int vk_create_surface(Window &window, void *instance, void **out_surface) {
-        return SDL_Vulkan_CreateSurface(window.pimpl->handle, VkInstance(instance),
+        return SDL_Vulkan_CreateSurface(window.m_pimpl->handle, VkInstance(instance),
                 reinterpret_cast<VkSurfaceKHR *>(out_surface));
     }
 
     int vk_get_required_instance_extensions(Window &window, unsigned int *out_count, const char **out_names) {
-        return SDL_Vulkan_GetInstanceExtensions(window.pimpl->handle, out_count, out_names);
+        return SDL_Vulkan_GetInstanceExtensions(window.m_pimpl->handle, out_count, out_names);
     }
 }

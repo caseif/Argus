@@ -43,7 +43,7 @@ namespace argus {
 
         static World2D &get(const std::string &id);
 
-        pimpl_World2D *pimpl;
+        pimpl_World2D *m_pimpl;
 
         World2D(const std::string &id, Canvas &canvas, float scale_factor);
 

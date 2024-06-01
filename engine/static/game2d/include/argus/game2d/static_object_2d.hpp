@@ -32,7 +32,7 @@ namespace argus {
 
     class StaticObject2D : AutoCleanupable {
       public:
-        pimpl_StaticObject2D *pimpl;
+        pimpl_StaticObject2D *m_pimpl;
 
         StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);

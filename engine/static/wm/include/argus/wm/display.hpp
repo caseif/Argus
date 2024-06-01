@@ -45,7 +45,7 @@ namespace argus {
         Display(Display &&) = delete;
 
       public:
-        pimpl_Display *pimpl;
+        pimpl_Display *m_pimpl;
 
         Display(void);
 

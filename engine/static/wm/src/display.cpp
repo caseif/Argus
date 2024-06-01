@@ -89,36 +89,36 @@ namespace argus {
     static Display *_add_display(int index) {
         auto &display = *new Display();
 
-        display.pimpl->index = index;
+        display.m_pimpl->index = index;
 
         const char *display_name = SDL_GetDisplayName(index);
         if (display_name == nullptr) {
             Logger::default_logger().warn("Failed to query name of display %d (%s)", index, SDL_GetError());
         }
 
-        display.pimpl->name = display_name;
+        display.m_pimpl->name = display_name;
 
         SDL_Rect bounds;
         if (SDL_GetDisplayBounds(index, &bounds) != 0) {
             Logger::default_logger().warn("Failed to query bounds of display %d (%s)", index, SDL_GetError());
         }
-        display.pimpl->position.x = bounds.x;
-        display.pimpl->position.y = bounds.y;
+        display.m_pimpl->position.x = bounds.x;
+        display.m_pimpl->position.y = bounds.y;
 
-        int mode_count = SDL_GetNumDisplayModes(display.pimpl->index);
+        int mode_count = SDL_GetNumDisplayModes(display.m_pimpl->index);
         if (mode_count < 0) {
             Logger::default_logger().warn("Failed to query display modes for display %d (%s)", index, SDL_GetError());
         }
 
         for (int i = 0; i < mode_count; i++) {
             SDL_DisplayMode mode;
-            if (SDL_GetDisplayMode(display.pimpl->index, i, &mode) != 0) {
+            if (SDL_GetDisplayMode(display.m_pimpl->index, i, &mode) != 0) {
                 Logger::default_logger().warn("Failed to query display mode %d for display %d, skipping (%s)",
-                        i, display.pimpl->index, SDL_GetError());
+                        i, display.m_pimpl->index, SDL_GetError());
                 continue;
             }
 
-            display.pimpl->modes.push_back(wrap_display_mode(mode));
+            display.m_pimpl->modes.push_back(wrap_display_mode(mode));
         }
 
         return &display;
@@ -187,22 +187,22 @@ namespace argus {
     }
 
     Display::Display(void) :
-            pimpl(new pimpl_Display()) {
+            m_pimpl(new pimpl_Display()) {
     }
 
     Display::~Display(void) {
-        delete pimpl;
+        delete m_pimpl;
     }
 
     const std::string &Display::get_name(void) const {
-        return pimpl->name;
+        return m_pimpl->name;
     }
 
     Vector2i Display::get_position(void) const {
-        return pimpl->position;
+        return m_pimpl->position;
     }
 
     const std::vector<DisplayMode> &Display::get_display_modes(void) const {
-        return pimpl->modes;
+        return m_pimpl->modes;
     }
 }

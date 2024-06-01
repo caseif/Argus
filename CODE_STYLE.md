@@ -181,7 +181,7 @@ contain a pointer to an opaque pimpl class that contains the actual fields. This
 as needed without breaking ABI compatibility.
 
 Classes using this pattern should have a corresponding struct named `pimpl_<ClassName>`. In most cases the "real" class
-should contain only a single member field named `m_pimpl` of type `pimpl_<ClassName> *`. If the class is inherited by
+should contain only a single member field named `pimpl` of type `pimpl_<ClassName> *`. If the class is inherited by
 subclasses which need their own specific member fields, then a corresponding hierarchy should be created for the
 respective pimpl classes. In this scenario, the superclass should not define a pimpl member of its own and should
 instead declare a virtual function called `get_pimpl` which the subclasses must implement. The return type of this
@@ -192,7 +192,7 @@ specific to their own type. The correpsonding pimpl classes `pimpl_Foo`, `pimpl_
 defined with the former two extending from the latter and with `Foo`-specific fields going in `pimpl_Foo`,
 `Bar`-specific fields going in `pimpl_Bar`, and common fields going in `pimpl_Xyzzy`. `pimpl_Xyzzy` should declare a
 virtual function `get_pimpl` which returns type `pimpl_Xyzzy *`. `pimpl_Foo` and `pimpl_Bar` should contain their own
-`m_pimpl` fields respectively of types `pimpl_Foo` and `pimpl_Bar` and should return these in their own implementations
+`pimpl` fields respectively of types `pimpl_Foo` and `pimpl_Bar` and should return these in their own implementations
 of `get_pimpl`.
 
 All this said, given that inheritance should generally be avoided, this only actually occurs in a couple of instances
@@ -231,7 +231,7 @@ metaprogramming. An example of this is the `function_traits` struct and its spec
 The second exception is carved out for pimpl structs. Pimpl struct names have the prefix `pimpl_` and  otherwise use
 PascalCase, and pimpl struct member names do not have the `m_` prefix. The reasoning behind the exception for member
 names is that pimpl structs should not define any member functions (apart from constructors/destructors), and as a
-result are only ever access through the `m_pimpl` field of the enclosing class and thus the prefix is always redundant.
+result are only ever access through the `pimpl` field of the enclosing class and thus the prefix is always redundant.
 
 The final exception applies to structs which do not declare member functions. In this case, access to member fields
 will always be external and there is no point in differentiating between member fields and other variables. Note that

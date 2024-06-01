@@ -42,25 +42,25 @@ namespace argus::input {
     }
 
     InputManager::InputManager(void) :
-            pimpl(&g_pimpl_pool.construct<pimpl_InputManager>()) {
+            m_pimpl(&g_pimpl_pool.construct<pimpl_InputManager>()) {
     }
 
     InputManager::~InputManager(void) {
-        if (pimpl != nullptr) {
+        if (m_pimpl != nullptr) {
             std::vector<std::string> remove_names;
-            for (const auto &[_, controller] : pimpl->controllers) {
+            for (const auto &[_, controller] : m_pimpl->controllers) {
                 delete controller;
             }
 
-            g_pimpl_pool.destroy(pimpl);
+            g_pimpl_pool.destroy(m_pimpl);
         }
     }
 
     Controller &InputManager::get_controller(const std::string &name) {
-        auto res = std::find_if(pimpl->controllers.begin(), pimpl->controllers.end(),
+        auto res = std::find_if(m_pimpl->controllers.begin(), m_pimpl->controllers.end(),
                 [name](auto &pair) { return pair.second->get_name() == name; });
 
-        if (res == pimpl->controllers.end()) {
+        if (res == m_pimpl->controllers.end()) {
             throw std::invalid_argument("Invalid controller index");
         }
 
@@ -68,13 +68,13 @@ namespace argus::input {
     }
 
     Controller &InputManager::add_controller(const std::string &name) {
-        if (pimpl->controllers.size() >= MAX_CONTROLLERS) {
+        if (m_pimpl->controllers.size() >= MAX_CONTROLLERS) {
             throw std::invalid_argument("Controller limit reached");
         }
 
         auto controller = new Controller(name);
 
-        pimpl->controllers.insert({ name, controller });
+        m_pimpl->controllers.insert({ name, controller });
 
         return *controller;
     }
@@ -84,26 +84,26 @@ namespace argus::input {
     }
 
     void InputManager::remove_controller(const std::string &name) {
-        auto res = pimpl->controllers.find(name);
-        if (res == pimpl->controllers.end()) {
+        auto res = m_pimpl->controllers.find(name);
+        if (res == m_pimpl->controllers.end()) {
             throw std::invalid_argument("Client attempted to remove unknown controller index");
         }
 
         delete res->second;
 
-        pimpl->controllers.erase(res);
+        m_pimpl->controllers.erase(res);
     }
 
     double InputManager::get_global_deadzone_radius(void) {
-        return pimpl->dz_radius;
+        return m_pimpl->dz_radius;
     }
 
     void InputManager::set_global_deadzone_radius(double radius) {
-        pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
+        m_pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
     }
 
     DeadzoneShape InputManager::get_global_deadzone_shape(void) {
-        return pimpl->dz_shape;
+        return m_pimpl->dz_shape;
     }
 
     void InputManager::set_global_deadzone_shape(DeadzoneShape shape) {
@@ -111,7 +111,7 @@ namespace argus::input {
             throw std::invalid_argument("Invalid deadzone shape ordinal "
                     + std::to_string(std::underlying_type_t<decltype(shape)>(shape)));
         }
-        pimpl->dz_shape = shape;
+        m_pimpl->dz_shape = shape;
     }
 
     static void _check_axis(GamepadAxis axis) {
@@ -123,31 +123,31 @@ namespace argus::input {
 
     double InputManager::get_global_axis_deadzone_radius(GamepadAxis axis) {
         _check_axis(axis);
-        return pimpl->dz_axis_radii.at(size_t(axis)).value_or(pimpl->dz_radius);
+        return m_pimpl->dz_axis_radii.at(size_t(axis)).value_or(m_pimpl->dz_radius);
     }
 
     void InputManager::set_global_axis_deadzone_radius(GamepadAxis axis, double radius) {
         _check_axis(axis);
-        pimpl->dz_axis_radii.at(size_t(axis)) = std::min(std::max(radius, 0.0), 1.0);
+        m_pimpl->dz_axis_radii.at(size_t(axis)) = std::min(std::max(radius, 0.0), 1.0);
     }
 
     void InputManager::clear_global_axis_deadzone_radius(GamepadAxis axis) {
         _check_axis(axis);
-        pimpl->dz_axis_radii.at(size_t(axis)).reset();
+        m_pimpl->dz_axis_radii.at(size_t(axis)).reset();
     }
 
     DeadzoneShape InputManager::get_global_axis_deadzone_shape(GamepadAxis axis) {
         _check_axis(axis);
-        return pimpl->dz_axis_shapes.at(size_t(axis)).value_or(pimpl->dz_shape);
+        return m_pimpl->dz_axis_shapes.at(size_t(axis)).value_or(m_pimpl->dz_shape);
     }
 
     void InputManager::set_global_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape) {
         _check_axis(axis);
-        pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
+        m_pimpl->dz_axis_shapes.at(size_t(axis)) = shape;
     }
 
     void InputManager::clear_global_axis_deadzone_shape(GamepadAxis axis) {
         _check_axis(axis);
-        pimpl->dz_axis_shapes.at(size_t(axis)).reset();
+        m_pimpl->dz_axis_shapes.at(size_t(axis)).reset();
     }
 }

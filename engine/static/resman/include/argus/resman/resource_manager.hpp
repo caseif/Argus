@@ -66,7 +66,7 @@ namespace argus {
                 std::type_index type);
 
       public:
-        pimpl_ResourceManager *pimpl;
+        pimpl_ResourceManager *m_pimpl;
 
         /**
          * \brief Gets the global ResourceManager instance.

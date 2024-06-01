@@ -37,7 +37,7 @@ namespace argus {
     static ComponentTypeRegistry *g_comp_reg_singleton;
 
     ComponentTypeRegistry::ComponentTypeRegistry(void) :
-            pimpl(new pimpl_ComponentTypeRegistry()) {
+            m_pimpl(new pimpl_ComponentTypeRegistry()) {
         //TODO
     }
 
@@ -49,32 +49,32 @@ namespace argus {
     }
 
     void *ComponentTypeRegistry::alloc(std::type_index type) {
-        auto info_it = pimpl->component_types.find(type);
-        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
+        auto info_it = m_pimpl->component_types.find(type);
+        validate_arg(info_it != m_pimpl->component_types.end(), "Unregistered component type");
 
-        return pimpl->component_pools[info_it->second.id].alloc();
+        return m_pimpl->component_pools[info_it->second.id].alloc();
     }
 
     void ComponentTypeRegistry::free(std::type_index type, void *ptr) {
-        auto info_it = pimpl->component_types.find(type);
-        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
+        auto info_it = m_pimpl->component_types.find(type);
+        validate_arg(info_it != m_pimpl->component_types.end(), "Unregistered component type");
 
-        pimpl->component_pools[info_it->second.id].free(ptr);
+        m_pimpl->component_pools[info_it->second.id].free(ptr);
     }
 
     void ComponentTypeRegistry::free(ComponentTypeId id, void *ptr) {
         validate_arg(id < get_type_count(), "Invalid component type ID " + std::to_string(id));
 
-        pimpl->component_pools[id].free(ptr);
+        m_pimpl->component_pools[id].free(ptr);
     }
 
     size_t ComponentTypeRegistry::get_type_count(void) {
-        return pimpl->next_id;
+        return m_pimpl->next_id;
     }
 
     ComponentTypeId ComponentTypeRegistry::get_id(std::type_index type) {
-        auto info_it = pimpl->component_types.find(type);
-        validate_arg(info_it != pimpl->component_types.end(), "Unregistered component type");
+        auto info_it = m_pimpl->component_types.find(type);
+        validate_arg(info_it != m_pimpl->component_types.end(), "Unregistered component type");
 
         return info_it->second.id;
     }
@@ -82,30 +82,30 @@ namespace argus {
     void ComponentTypeRegistry::register_type(std::type_index type, size_t size) {
         validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
-        ComponentTypeId new_id = pimpl->next_id++;
-        pimpl->component_types.insert({type, ComponentTypeInfo(new_id, size)});
+        ComponentTypeId new_id = m_pimpl->next_id++;
+        m_pimpl->component_types.insert({type, ComponentTypeInfo(new_id, size)});
     }
 
     void ComponentTypeRegistry::_seal(void) {
-        validate_state(!pimpl->sealed, "Cannot seal component registry because it is already sealed.");
+        validate_state(!m_pimpl->sealed, "Cannot seal component registry because it is already sealed.");
 
-        pimpl->sealed = true;
+        m_pimpl->sealed = true;
 
-        if (pimpl->next_id == 0) {
+        if (m_pimpl->next_id == 0) {
             // no need to allocate pools if no components are registered
             return;
         }
 
-        pimpl->component_pools = static_cast<PoolAllocator *>(malloc(sizeof(PoolAllocator) * pimpl->next_id));
-        for (auto [_, cmpt] : pimpl->component_types) {
+        m_pimpl->component_pools = static_cast<PoolAllocator *>(malloc(sizeof(PoolAllocator) * m_pimpl->next_id));
+        for (auto [_, cmpt] : m_pimpl->component_types) {
             auto index = cmpt.id;
-            PoolAllocator &target = pimpl->component_pools[index];
+            PoolAllocator &target = m_pimpl->component_pools[index];
             new(&target) PoolAllocator(cmpt.size);
         }
     }
 
     bool ComponentTypeRegistry::_is_sealed(void) {
-        return pimpl->sealed;
+        return m_pimpl->sealed;
     }
 
 }

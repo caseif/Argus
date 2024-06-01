@@ -32,7 +32,7 @@ namespace argus {
 
     class Actor2D : AutoCleanupable {
       public:
-        pimpl_Actor2D *pimpl;
+        pimpl_Actor2D *m_pimpl;
 
         Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);

@@ -33,7 +33,7 @@ namespace argus {
      */
     class Transform2D : AutoCleanupable {
       public:
-        pimpl_Transform2D *pimpl;
+        pimpl_Transform2D *m_pimpl;
 
         /**
          * \brief Constructs a transform with no translation or rotation and
@@ -208,7 +208,7 @@ namespace argus {
      */
     class Transform3D {
       public:
-        pimpl_Transform3D *pimpl;
+        pimpl_Transform3D *m_pimpl;
 
         /**
          * \brief Constructs a transform with no translation or rotation and

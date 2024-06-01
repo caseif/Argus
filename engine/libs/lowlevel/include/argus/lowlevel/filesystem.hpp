@@ -72,12 +72,12 @@ namespace argus {
      */
     class FileHandle {
       private:
-        std::filesystem::path path;
-        int mode;
-        size_t size;
-        void *handle;
+        std::filesystem::path m_path;
+        int m_mode;
+        size_t m_size;
+        void *m_handle;
 
-        bool valid;
+        bool m_valid;
 
         FileHandle(std::filesystem::path path, int mode, size_t size, void *handle);
 

@@ -39,7 +39,7 @@ namespace argus {
      */
     class ThreadPool {
       public:
-        pimpl_ThreadPool *pimpl;
+        pimpl_ThreadPool *m_pimpl;
 
         /**
          * \brief Constructs a new ThreadPool with the thread count being

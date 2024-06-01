@@ -94,13 +94,13 @@ namespace argus {
         // complexity.
         //
         // This is also kind of a hack - currently we don't do any initialization
-        // after assigning the pimpl member, so this check is guaranteed to be
+        // after assigning the m_pimpl member, so this check is guaranteed to be
         // sufficient as long as we don't start doing more initialization.
         // Ideally we'd use a bool member to track whether the pool is ready,
         // but we would need to put it in the ThreadPool object (and not the
-        // pimpl) and I'd rather have this small hack than bleed implementation
+        // m_pimpl) and I'd rather have this small hack than bleed implementation
         // details into the API.
-        while (pool.pimpl == nullptr) {
+        while (pool.m_pimpl == nullptr) {
             continue;
         }
 
@@ -116,7 +116,7 @@ namespace argus {
                     // try to steal task from another worker
                     //TODO: this might actually be much slower in the case of a
                     //      thread pool that only has a few tasks at a time
-                    for (auto &worker : pool.pimpl->workers) {
+                    for (auto &worker : pool.m_pimpl->workers) {
                         if (!worker->task_queue_mutex.try_lock()) {
                             continue;
                         }

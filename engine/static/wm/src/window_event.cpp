@@ -29,7 +29,7 @@ namespace argus {
             resolution(resolution),
             position(position),
             delta(delta) {
-        window.pimpl->refcount.fetch_add(1);
+        window.m_pimpl->refcount.fetch_add(1);
     }
 
     WindowEvent::WindowEvent(WindowEventType subtype, Window &window) :
@@ -41,6 +41,6 @@ namespace argus {
     }
 
     WindowEvent::~WindowEvent(void) {
-        window.pimpl->refcount.fetch_sub(1);
+        window.m_pimpl->refcount.fetch_sub(1);
     }
 }
