@@ -56,7 +56,7 @@ namespace argus {
                 typename = std::enable_if_t<std::is_constructible_v<std::remove_reference_t<T>, Args...>>>
         EntityBuilder &with(Args &&... args) {
             return with(std::type_index(typeid(T)),
-                    [args = std::make_tuple(std::forward<Args>(args)...)](void *dest) mutable {
+                    [args = std::make_tuple(std::forward<Args>(args)...)](void *dest) {
                         std::apply([dest](auto &&... args) {
                             new(static_cast<T *>(dest)) T(args...);
                         }, args);

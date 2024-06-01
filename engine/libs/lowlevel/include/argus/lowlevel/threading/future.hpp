@@ -53,7 +53,7 @@ namespace argus {
         auto promise_ptr = std::make_shared<std::promise<Out>>();
         std::future<Out> future = promise_ptr->get_future();
         std::thread thread(
-                [function, callback, promise_ptr](const auto user_data) mutable -> void * {
+                [function, callback, promise_ptr](const auto user_data) -> void * {
                     UNUSED(user_data);
                     try {
                         Out res = function();
