@@ -293,7 +293,7 @@ namespace argus {
 
         Vector4<T> inverse(void) const {
             static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
-            return {-x, -y, -z, -w};
+            return { -x, -y, -z, -w };
         }
     };
 
@@ -530,7 +530,7 @@ namespace argus {
 
         Vector3<T> inverse(void) const {
             static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
-            return {-x, -y, -z};
+            return { -x, -y, -z };
         }
     };
 
@@ -558,9 +558,9 @@ namespace argus {
          *
          * \param rhs The vector to compare against.
          */
-         bool operator==(const Vector2<T> &rhs) const {
-             return this->x == rhs.x && this->y == rhs.y;
-         }
+        bool operator==(const Vector2<T> &rhs) const {
+            return this->x == rhs.x && this->y == rhs.y;
+        }
 
         /**
          * \brief Performs a negative element-wise comparison between two
@@ -732,7 +732,7 @@ namespace argus {
 
         Vector2<T> inverse(void) const {
             static_assert(std::is_signed_v<T>, "inverse() cannot be called on vector with unsigned element type");
-            return {-x, -y};
+            return { -x, -y };
         }
     };
 
@@ -797,17 +797,26 @@ namespace argus {
     typedef Vector4<double> Vector4d;
 
     MAKE_INTEROP_UNION(Vector2d, argus_vector_2d_t);
+
     MAKE_INTEROP_UNION(Vector2f, argus_vector_2f_t);
+
     MAKE_INTEROP_UNION(Vector2i, argus_vector_2i_t);
+
     MAKE_INTEROP_UNION(Vector2u, argus_vector_2u_t);
 
     MAKE_INTEROP_UNION(Vector3d, argus_vector_3d_t);
+
     MAKE_INTEROP_UNION(Vector3f, argus_vector_3f_t);
+
     MAKE_INTEROP_UNION(Vector3i, argus_vector_3i_t);
+
     MAKE_INTEROP_UNION(Vector3u, argus_vector_3u_t);
 
     MAKE_INTEROP_UNION(Vector4d, argus_vector_4d_t);
+
     MAKE_INTEROP_UNION(Vector4f, argus_vector_4f_t);
+
     MAKE_INTEROP_UNION(Vector4i, argus_vector_4i_t);
+
     MAKE_INTEROP_UNION(Vector4u, argus_vector_4u_t);
 }

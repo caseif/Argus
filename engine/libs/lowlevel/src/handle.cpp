@@ -49,10 +49,10 @@ namespace argus {
     static std::pair<uint32_t, HandleTableChunk *> _get_chunk(const HandleTable &table, Handle handle) {
         auto chunk_index = handle.index / CHUNK_SIZE;
         if (table.m_pimpl->chunks.find(chunk_index) == table.m_pimpl->chunks.cend()) {
-            return {0, nullptr};
+            return { 0, nullptr };
         }
 
-        return {chunk_index, table.m_pimpl->chunks[chunk_index]};
+        return { chunk_index, table.m_pimpl->chunks[chunk_index] };
     }
 
     static HandleTableEntry *_get_entry(const HandleTable &table, Handle handle) {
@@ -79,7 +79,7 @@ namespace argus {
         for (int64_t i = CHUNK_SIZE - 1; i >= 0; i--) {
             initial_chunk->open_indices.push(uint32_t(i));
         }
-        m_pimpl->chunks.insert({0, initial_chunk});
+        m_pimpl->chunks.insert({ 0, initial_chunk });
     }
 
     HandleTable::~HandleTable(void) {
@@ -90,7 +90,7 @@ namespace argus {
         HandleTableChunk *dest_chunk = nullptr;
         uint32_t dest_chunk_index = 0;
         int64_t last_chunk = -1;
-        for (auto chunk_it : m_pimpl->chunks) {
+        for (auto chunk_it: m_pimpl->chunks) {
             auto chunk_index = chunk_it.first;
 
             auto *chunk = chunk_it.second;
@@ -109,7 +109,7 @@ namespace argus {
 
             uint32_t first_empty_chunk_index = MAX_CHUNKS - 1;
             bool found_empty = false;
-            for (auto chunk_it : m_pimpl->chunks) {
+            for (auto chunk_it: m_pimpl->chunks) {
                 auto chunk_index = chunk_it.first;
                 if (chunk_index != last_chunk + 1) {
                     first_empty_chunk_index = uint32_t(last_chunk + 1);
@@ -128,18 +128,18 @@ namespace argus {
                 new_chunk->open_indices.push(uint32_t(i));
             }
 
-            m_pimpl->chunks.insert({first_empty_chunk_index, new_chunk});
+            m_pimpl->chunks.insert({ first_empty_chunk_index, new_chunk });
 
             dest_chunk = new_chunk;
         }
 
         auto index_in_chunk = dest_chunk->open_indices.top();
         auto uid = uint32_t(rand_distr(rand_mt));
-        dest_chunk->entries[index_in_chunk] = {ptr, uid, 1};
+        dest_chunk->entries[index_in_chunk] = { ptr, uid, 1 };
         dest_chunk->open_indices.pop();
 
         auto handle_index = dest_chunk_index * CHUNK_SIZE + index_in_chunk;
-        return {handle_index, uid};
+        return { handle_index, uid };
     }
 
     Handle HandleTable::copy_handle(Handle handle) {
@@ -192,7 +192,7 @@ namespace argus {
 
         auto index_in_chunk = handle.index % CHUNK_SIZE;
 
-        chunk->entries[index_in_chunk] = {nullptr, 0, 0};
+        chunk->entries[index_in_chunk] = { nullptr, 0, 0 };
         chunk->open_indices.push(index_in_chunk);
     }
 

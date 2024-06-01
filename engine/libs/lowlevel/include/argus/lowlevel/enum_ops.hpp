@@ -21,87 +21,87 @@
 #include <type_traits>
 
 namespace argus::enum_ops {
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator&(T a, T b) {
         return T(U(a) & U(b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator&(T a, U b) {
         return T(U(a) & b);
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator&=(T &a, T b) {
         return (a = T(U(a) & U(b)));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator&=(T &a, U b) {
         return (a = T(U(a) & b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator|(T a, T b) {
         return T(U(a) | U(b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator|(T a, U b) {
         return T(U(a) | b);
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator|=(T &a, T b) {
         return (a = T(U(a) | U(b)));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator|=(T &a, U b) {
         return (a = T(U(a) | b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator^(T a, T b) {
         return T(U(a) ^ U(b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator^(T a, U b) {
         return T(U(a) ^ b);
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator^=(T &a, T b) {
         return (a = T(U(a) ^ U(b)));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T &> operator^=(T &a, U b) {
         return (a = T(U(a) ^ b));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, T> operator~(T a) {
         return T(~U(a));
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, bool> operator==(T a, U b) {
         return U(a) == b;
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, bool> operator==(U a, T b) {
         return a == U(b);
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, bool> operator!=(T a, U b) {
         return U(a) != b;
     }
 
-    template <typename T, typename U = std::underlying_type_t<T>>
+    template<typename T, typename U = std::underlying_type_t<T>>
     std::enable_if_t<std::is_enum_v<T>, bool> operator!=(U a, T b) {
         return a != U(b);
     }

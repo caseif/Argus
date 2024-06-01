@@ -23,13 +23,15 @@
 #include <typeindex>
 
 namespace argus {
-    template <typename, typename T>
-    struct has_message_type_id_accessor : std::false_type {};
+    template<typename, typename T>
+    struct has_message_type_id_accessor : std::false_type {
+    };
 
-    template <typename T>
-    struct has_message_type_id_accessor<T, std::void_t<decltype(T::get_message_type_id())>> : std::true_type {};
+    template<typename T>
+    struct has_message_type_id_accessor<T, std::void_t<decltype(T::get_message_type_id())>> : std::true_type {
+    };
 
-    template <typename T>
+    template<typename T>
     constexpr bool has_message_type_id_accessor_v = has_message_type_id_accessor<T, void>::value;
 
     typedef void (*MessageDispatcher)(const char *, const void *);
@@ -38,7 +40,7 @@ namespace argus {
 
     void broadcast_message(const std::string &type_id, const void *message);
 
-    template <typename T>
+    template<typename T>
     void broadcast_message(const T &message) {
         static_assert(has_message_type_id_accessor_v<T>,
                 "Message class must contain static function get_message_type_id");

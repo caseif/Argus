@@ -35,7 +35,6 @@ namespace argus {
                 value(value) {
         }
 
-
         operator bool() {
             return value == True;
         }

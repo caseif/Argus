@@ -22,13 +22,19 @@
 #include <cstring>
 
 #ifdef _WIN32
+
 #include <windows.h>
 #include <rpcdce.h>
+
 #elif defined(__APPLE__)
+
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreFoundation/CFUUID.h>
+
 #elif defined(__linux__)
+
 #include <uuid/uuid.h>
+
 #else
 #error "This OS is not supported at this time."
 #endif
@@ -66,7 +72,7 @@ namespace argus {
         uuid_t uuid;
         uuid_generate(uuid);
 
-        argus::Uuid final{};
+        argus::Uuid final {};
         memcpy(final.data, uuid, sizeof(final.data));
 
         return final;

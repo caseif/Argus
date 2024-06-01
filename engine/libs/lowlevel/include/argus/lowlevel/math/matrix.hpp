@@ -44,7 +44,7 @@ namespace argus {
             return { IDENTITY };
         }
 
-        float data[16]{};
+        float data[16] {};
 
         Matrix4(const float elements[16]) {
             if (elements != nullptr) {

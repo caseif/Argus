@@ -60,28 +60,28 @@ namespace argus {
 
       public:
         Dirtiable(void) :
-                value(),
-                dirty(false) {
+            value(),
+            dirty(false) {
         }
 
         Dirtiable(const ValueType &rhs) :
-                value(rhs),
-                dirty(false) {
+            value(rhs),
+            dirty(false) {
         }
 
         Dirtiable(ValueType &&rhs) :
-                value(std::move(rhs)),
-                dirty(false) {
+            value(std::move(rhs)),
+            dirty(false) {
         }
 
         Dirtiable(const Dirtiable<ValueType> &rhs) :
-                value(rhs.value),
-                dirty(rhs.dirty) {
+            value(rhs.value),
+            dirty(rhs.dirty) {
         }
 
-        Dirtiable(Dirtiable<ValueType> &&rhs) noexcept :
-                value(std::move(rhs.value)),
-                dirty(rhs.dirty) {
+        Dirtiable(Dirtiable<ValueType> &&rhs) noexcept:
+            value(std::move(rhs.value)),
+            dirty(rhs.dirty) {
         }
 
         /**
@@ -96,7 +96,7 @@ namespace argus {
 
             dirty = false;
 
-            return ValueAndDirtyFlag<ValueType>{value, old_dirty};
+            return ValueAndDirtyFlag<ValueType> { value, old_dirty };
         }
 
         ValueAndDirtyFlag<const ValueType> read(void) const {
@@ -104,7 +104,7 @@ namespace argus {
 
             dirty = false;
 
-            return ValueAndDirtyFlag<const ValueType>{value, old_dirty};
+            return ValueAndDirtyFlag<const ValueType> { value, old_dirty };
         }
 
         /**

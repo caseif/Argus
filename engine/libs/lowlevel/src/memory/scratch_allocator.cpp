@@ -79,8 +79,8 @@ namespace argus {
         m_pimpl(&g_pimpl_pool.construct<pimpl_ScratchAllocator>(rhs.m_pimpl->m_alignment_exp)) {
     }
 
-    ScratchAllocator::ScratchAllocator(ScratchAllocator &&rhs) noexcept :
-            m_pimpl(rhs.m_pimpl) {
+    ScratchAllocator::ScratchAllocator(ScratchAllocator &&rhs) noexcept:
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 
@@ -116,7 +116,8 @@ namespace argus {
     }
 
     void *ScratchAllocator::alloc(size_t size) {
-        size_t remaining = reinterpret_cast<uintptr_t>(m_pimpl->m_tail) + m_pimpl->m_tail->m_size - m_pimpl->m_next_addr;
+        size_t remaining = reinterpret_cast<uintptr_t>(m_pimpl->m_tail)
+                + m_pimpl->m_tail->m_size - m_pimpl->m_next_addr;
         if (remaining < size) {
             _alloc_chunk(*m_pimpl, size);
         }

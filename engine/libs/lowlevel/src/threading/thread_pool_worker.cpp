@@ -32,27 +32,27 @@ namespace argus {
             ThreadPoolTask(nullptr) {
     }
 
-    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) noexcept :
-            func(std::move(rhs.func)) {
+    ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) noexcept:
+        func(std::move(rhs.func)) {
         promise.swap(rhs.promise);
     }
 
     ThreadPoolTask::ThreadPoolTask(WorkerFunction func) :
-            func(std::move(func)) {
+        func(std::move(func)) {
     }
 
     ThreadPoolWorker::ThreadPoolWorker(ThreadPool &pool) :
-            busy(false),
-            pool(pool),
-            current_task(nullptr),
-            task_queue(),
-            task_queue_mutex(),
-            cond(),
-            terminate(false),
-            thread([this] { worker_impl(); }) {
+        busy(false),
+        pool(pool),
+        current_task(nullptr),
+        task_queue(),
+        task_queue_mutex(),
+        cond(),
+        terminate(false),
+        thread([this] { worker_impl(); }) {
     }
 
-    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs) noexcept :
+    ThreadPoolWorker::ThreadPoolWorker(ThreadPoolWorker &&rhs) noexcept:
             pool(rhs.pool) {
     }
 
@@ -62,7 +62,7 @@ namespace argus {
         thread.join();
     }
 
-    std::future<void *> ThreadPoolWorker::add_task(const WorkerFunction& func) {
+    std::future<void *> ThreadPoolWorker::add_task(const WorkerFunction &func) {
         task_queue_mutex.lock();
         auto &task = g_task_pool.construct<ThreadPoolTask>(func);
 

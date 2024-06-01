@@ -108,9 +108,9 @@ namespace argus {
         // plus the canary length if we're in debug mode
         uintptr_t malloc_addr = reinterpret_cast<uintptr_t>(
                 malloc(pool->real_block_size * pool->blocks_per_chunk
-                       + alignment_bytes - 1
-                       + sizeof(ChunkMetadata)
-                       + CANARY_LEN)
+                        + alignment_bytes - 1
+                        + sizeof(ChunkMetadata)
+                        + CANARY_LEN)
         );
         if (malloc_addr == reinterpret_cast<uintptr_t>(nullptr)) {
             throw std::runtime_error("Failed to allocate chunk (is block size or alignment too large?)");
@@ -135,7 +135,7 @@ namespace argus {
 
         #ifdef _ARGUS_DEBUG_MODE
         CanaryValue *canary = reinterpret_cast<CanaryValue *>(new_chunk->data
-                                                              + pool->real_block_size * pool->blocks_per_chunk);
+                + pool->real_block_size * pool->blocks_per_chunk);
         *canary = CANARY_MAGIC;
         #endif
 
@@ -145,8 +145,8 @@ namespace argus {
     PoolAllocator::PoolAllocator(size_t block_size, uint8_t alignment_exp) :
             m_pimpl(new pimpl_PoolAllocator(
                     // we pass both the real block size and the size in the pool so objects can be aligned in the pool
-                    {block_size, next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
-                     alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr})) {
+                    { block_size, next_aligned_value(block_size, std::min(alignment_exp, static_cast<uint8_t>(3))),
+                            alignment_exp, BLOCKS_PER_CHUNK, 1, nullptr })) {
 
         ChunkMetadata *first_chunk = _create_chunk(m_pimpl);
         m_pimpl->first_chunk = first_chunk;
@@ -213,8 +213,8 @@ namespace argus {
         // it to exclude bits not relevant when addressing the bitfield
         selected_chunk->occupied_block_map |= (BlockBitField(1) << (~first_free_block_index & BF_INDEX_MASK));
 
-        uintptr_t block_addr
-                = reinterpret_cast<uintptr_t>(selected_chunk->data) + (first_free_block_index * m_pimpl->real_block_size);
+        uintptr_t block_addr = reinterpret_cast<uintptr_t>(selected_chunk->data)
+                + (first_free_block_index * m_pimpl->real_block_size);
 
         selected_chunk->occupied_blocks += 1;
 

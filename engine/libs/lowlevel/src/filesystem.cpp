@@ -94,11 +94,11 @@
 namespace argus {
 
     FileHandle::FileHandle(std::filesystem::path path, const int mode, const size_t size, void *const handle) :
-            m_path(std::move(path)),
-            m_mode(mode),
-            m_size(size),
-            m_handle(handle),
-            m_valid(true) {
+        m_path(std::move(path)),
+        m_mode(mode),
+        m_size(size),
+        m_handle(handle),
+        m_valid(true) {
     }
 
     //TODO: use the native Windows file API, if available
@@ -124,7 +124,7 @@ namespace argus {
 
         FILE *file;
         if (mode == (FILE_MODE_READ | FILE_MODE_CREATE)) {
-            stat_t stat_buf{};
+            stat_t stat_buf {};
             int stat_rc = stat(path.string().c_str(), &stat_buf);
 
             if (stat_rc) {
@@ -152,7 +152,7 @@ namespace argus {
 
         validate_syscall(file != nullptr, "fopen");
 
-        stat_t stat_buf{};
+        stat_t stat_buf {};
         validate_syscall(fstat(fileno(file), &stat_buf), "fstat");
 
         assert(stat_buf.st_size >= 0);
@@ -234,7 +234,7 @@ namespace argus {
         size_t write_chunks = fwrite(buf, write_size, 1, static_cast<FILE *>(m_handle));
         validate_syscall(write_chunks == 1, "fwrite");
 
-        stat_t file_stat{};
+        stat_t file_stat {};
         validate_syscall(fstat(fileno(static_cast<FILE *>(m_handle)), &file_stat), "fstat");
 
         assert(file_stat.st_size >= 0);

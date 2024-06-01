@@ -56,12 +56,12 @@ namespace argus {
 
         void free(void *addr);
 
-        template <typename T, typename... Args>
+        template<typename T, typename... Args>
         T &construct(Args &&... args) {
             return *new(this->alloc()) T(args...);
         }
 
-        template <typename T>
+        template<typename T>
         void destroy(T *obj) {
             //TODO: add a safeguard to prevent destructor being invoked on invalid pointer
             obj->~T();
@@ -93,13 +93,13 @@ namespace argus {
 
         void release(void);
 
-        template <typename T, typename... Args>
+        template<typename T, typename... Args>
         [[nodiscard]] T &construct(Args &&... args) {
             return *new(this->alloc(sizeof(T))) T(std::forward<Args>(args)...);
         }
     };
 
-    template <typename T>
+    template<typename T>
     class ScratchAllocatorWrapper {
       private:
         ScratchAllocator &m_impl;
@@ -111,7 +111,7 @@ namespace argus {
             m_impl(impl) {
         }
 
-        template <typename U>
+        template<typename U>
         constexpr ScratchAllocatorWrapper(const ScratchAllocatorWrapper<U> &rhs) noexcept :
             m_impl(rhs.m_impl) {
         }
@@ -126,13 +126,13 @@ namespace argus {
             UNUSED(size);
         }
 
-        template <typename U>
+        template<typename U>
         inline bool operator==(const ScratchAllocatorWrapper<U> &rhs) {
             return m_impl == rhs.m_impl;
         }
 
-        template <typename U>
-        inline bool operator != (const ScratchAllocatorWrapper<U> &rhs) {
+        template<typename U>
+        inline bool operator!=(const ScratchAllocatorWrapper<U> &rhs) {
             return !(*this == rhs);
         }
     };

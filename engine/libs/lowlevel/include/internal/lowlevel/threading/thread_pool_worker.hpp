@@ -45,15 +45,15 @@ namespace argus {
 
     class ThreadPoolWorker {
       public:
-        std::atomic_bool busy{};
+        std::atomic_bool busy {};
 
       private:
         ThreadPool &pool;
-        ThreadPoolTask *current_task{};
+        ThreadPoolTask *current_task {};
         std::deque<ThreadPoolTask *> task_queue;
         std::recursive_mutex task_queue_mutex;
         std::condition_variable_any cond;
-        std::atomic_bool terminate{};
+        std::atomic_bool terminate {};
         std::thread thread;
 
         void worker_impl(void);
@@ -65,7 +65,7 @@ namespace argus {
 
         ~ThreadPoolWorker(void);
 
-        std::future<void *> add_task(const WorkerFunction& func);
+        std::future<void *> add_task(const WorkerFunction &func);
 
         void notify(void);
 

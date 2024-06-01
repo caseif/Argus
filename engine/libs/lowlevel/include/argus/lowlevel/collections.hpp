@@ -36,8 +36,8 @@ namespace argus {
         vec.erase(std::remove(vec.begin(), vec.end(), item), vec.end());
     }
 
-    template <typename T, typename... P>
-    constexpr std::array<T, sizeof...(P)> make_array(P&&... elements) {
-        return {{  std::forward<P>(elements)... }};
+    template<typename T, typename... P>
+    constexpr std::array<T, sizeof...(P)> make_array(P &&... elements) {
+        return {{ std::forward<P>(elements)... }};
     }
 }

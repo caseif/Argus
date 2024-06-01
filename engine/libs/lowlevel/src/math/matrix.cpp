@@ -33,10 +33,10 @@ namespace argus {
 
     Matrix4 Matrix4::from_row_major(const float elements[16]) {
         return { {
-            elements[0], elements[4], elements[8],  elements[12],
-            elements[1], elements[5], elements[9],  elements[13],
-            elements[2], elements[6], elements[10], elements[14],
-            elements[3], elements[7], elements[11], elements[15]
+                elements[0], elements[4], elements[8], elements[12],
+                elements[1], elements[5], elements[9], elements[13],
+                elements[2], elements[6], elements[10], elements[14],
+                elements[3], elements[7], elements[11], elements[15]
         } };
     }
 
@@ -94,7 +94,7 @@ namespace argus {
     }
 
     Vector4f operator*(const Matrix4 &mat, const Vector4f &vec) {
-        return Vector4f{
+        return Vector4f {
                 mat(0, 0) * vec.x + mat(0, 1) * vec.y + mat(0, 2) * vec.z + mat(0, 3) * vec.w,
                 mat(1, 0) * vec.x + mat(1, 1) * vec.y + mat(1, 2) * vec.z + mat(1, 3) * vec.w,
                 mat(2, 0) * vec.x + mat(2, 1) * vec.y + mat(2, 2) * vec.z + mat(2, 3) * vec.w,
