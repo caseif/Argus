@@ -1,6 +1,6 @@
 /*
  * This file is a part of Argus.
- * Copyright (c) 2019-2023, Max Roncace <mproncace@protonmail.com>
+ * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -87,5 +87,3 @@ pub fn dispatch_event(event: &dyn ArgusEvent) {
         core_cabi::argus_dispatch_event(event.get_handle());
     }
 }
-
-

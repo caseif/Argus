@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJECT="Argus"
-YEAR="2019-2023"
+YEAR="2019-2024"
 AUTHOR="Max Roncace"
 EMAIL="mproncace@protonmail.com"
 
