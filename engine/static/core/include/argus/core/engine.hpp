@@ -89,7 +89,7 @@ namespace argus {
      *
      * \return The current lifecycle stage of the engine.
      */
-     LifecycleStage get_current_lifecycle_stage(void);
+    LifecycleStage get_current_lifecycle_stage(void);
 
     /**
      * \brief Registers a callback for invocation on each game update.
@@ -136,7 +136,7 @@ namespace argus {
      *
      * \param callback The callback to invoke.
      */
-    void run_on_game_thread(NullaryCallback callback);
+    void run_on_game_thread(const NullaryCallback &callback);
 
     bool is_current_thread_update_thread(void);
 }

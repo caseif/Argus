@@ -55,7 +55,7 @@ namespace argus {
     struct CallbackList {
         std::map<Ordering, std::vector<IndexedValue<T>>> lists;
         std::queue<std::pair<Ordering, IndexedValue<T>>> addition_queue;
-        std::queue<std::pair<Index, void(*)(Index, T *)>> removal_queue;
+        std::queue<std::pair<Index, void (*)(Index, T *)>> removal_queue;
         std::shared_mutex list_mutex;
         std::shared_mutex queue_mutex;
 
@@ -142,7 +142,7 @@ namespace argus {
         g_next_index_mutex.unlock();
 
         list.queue_mutex.lock();
-        list.addition_queue.push(std::make_pair(ordering, IndexedValue<T>{index, callback}));
+        list.addition_queue.push(std::make_pair(ordering, IndexedValue<T> { index, callback }));
         list.queue_mutex.unlock();
 
         return index;

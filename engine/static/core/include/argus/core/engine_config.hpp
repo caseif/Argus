@@ -38,7 +38,7 @@ namespace argus {
      * \attention This is independent from the target framerate, which controls
      *            how frequently frames are rendered.
      */
-    void set_target_tickrate(const unsigned int target_tickrate);
+    void set_target_tickrate(unsigned int target_tickrate);
 
     /**
      * \brief Sets the target framerate of the engine.
@@ -51,7 +51,7 @@ namespace argus {
      * \attention This is independent from the target tickrate, which controls
      *            how frequently the game logic routine is called.
      */
-    void set_target_framerate(const unsigned int target_framerate);
+    void set_target_framerate(unsigned int target_framerate);
 
     /**
      * \brief Sets the modules to load on engine initialization.
@@ -141,7 +141,7 @@ namespace argus {
      *          none of the specified backends can be used, the OpenGL backend
      *          will be used as the default fallback.
      */
-    void set_render_backend(const std::string backend);
+    void set_render_backend(const std::string &backend);
 
     /**
      * \brief Returns the currently configured scale mode for the screen space.

@@ -1,4 +1,5 @@
 /*
+ *
  * This file is a part of Argus.
  * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
  *
@@ -53,8 +54,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-#define NS_PER_US 1'000ULL
-
 namespace argus {
     LifecycleStage g_cur_lifecycle_stage;
 
@@ -108,7 +107,7 @@ namespace argus {
         g_render_callbacks.lists.clear();
     }
 
-    void run_on_game_thread(NullaryCallback callback) {
+    void run_on_game_thread(const NullaryCallback &callback) {
         g_one_off_callbacks_mutex.lock();
         g_one_off_callbacks.push_back(callback);
         g_one_off_callbacks_mutex.unlock();
@@ -155,7 +154,8 @@ namespace argus {
         // wait for render thread to finish up what it's doing so we don't interrupt it and cause a segfault
         if (!g_render_thread_halted) {
             Logger::default_logger().debug(
-                    "Game thread observed render thread was not halted, waiting on monitor (send SIGINT again to force halt)");
+                    "Game thread observed render thread was not halted, waiting on monitor "
+                            " (send SIGINT again to force halt)");
             std::unique_lock<std::mutex> lock(g_engine_stop_mutex);
             g_engine_stop_notifier.wait(lock);
         }
@@ -207,7 +207,7 @@ namespace argus {
 
             // prioritize one-off callbacks
             g_one_off_callbacks_mutex.lock();
-            for (auto callback : g_one_off_callbacks) {
+            for (const auto &callback : g_one_off_callbacks) {
                 callback();
             }
             g_one_off_callbacks.clear();
@@ -286,7 +286,7 @@ namespace argus {
         if (!g_engine_config.load_modules.empty()) {
             enable_modules(g_engine_config.load_modules);
         } else {
-            enable_modules({ModuleCore});
+            enable_modules({ ModuleCore });
         }
 
         //load_dynamic_modules();

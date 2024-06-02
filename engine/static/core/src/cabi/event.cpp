@@ -28,9 +28,10 @@ const char *argus_event_get_type_id(argus_event_const_t event) {
 Index argus_register_event_handler(const char *type_id, argus_event_handler_t handler,
         TargetThread target_thread, void *data, Ordering ordering,
         argus::ArgusEventHandlerUnregisterCallback unregister_callback) {
-    auto index = argus::register_event_handler_with_type(type_id, [handler](const argus::ArgusEvent &event, void *data) {
-        handler(reinterpret_cast<const void *>(&event), data);
-    }, argus::TargetThread(target_thread), data, argus::Ordering(ordering), unregister_callback);
+    auto index = argus::register_event_handler_with_type(type_id,
+            [handler](const argus::ArgusEvent &event, void *data) {
+                handler(reinterpret_cast<const void *>(&event), data);
+            }, argus::TargetThread(target_thread), data, argus::Ordering(ordering), unregister_callback);
     return index;
 }
 

@@ -38,15 +38,8 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
-
-#ifdef _WIN32
-#include <direct.h>
-#else
-
-#include <unistd.h>
-
-#endif
 
 #define EXT_SEPARATOR "."
 
@@ -192,7 +185,7 @@ namespace argus {
     static void _ingest_scripting_config(nlohmann::json window_obj) {
         ScriptingParameters params;
 
-        if (auto main = _get_json_string(window_obj, KEY_SCRIPTING_MAIN); main.has_value()) {
+        if (auto main = _get_json_string(std::move(window_obj), KEY_SCRIPTING_MAIN); main.has_value()) {
             params.main = main.value();
         }
 
@@ -413,7 +406,7 @@ namespace argus {
     void load_client_config(const std::string &config_namespace) {
         std::string cur_path;
         if (!_ingest_config_from_file(config_namespace)
-            && !_ingest_config_from_arp(config_namespace)) {
+                && !_ingest_config_from_arp(config_namespace)) {
             Logger::default_logger().fatal("Failed to locate " CONFIG_FILE_NAME " in namespace %s",
                     config_namespace.c_str());
         }

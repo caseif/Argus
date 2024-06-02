@@ -34,8 +34,8 @@ namespace argus {
     extern EngineConfig g_engine_config;
 
     struct EngineConfig {
-        unsigned int target_tickrate{0};
-        unsigned int target_framerate{0};
+        unsigned int target_tickrate = 0;
+        unsigned int target_framerate = 0;
         std::vector<std::string> load_modules;
         std::vector<std::string> render_backends;
         ScreenSpaceScaleMode screen_space_scale_mode;

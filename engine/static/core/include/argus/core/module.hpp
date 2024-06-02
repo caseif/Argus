@@ -205,7 +205,7 @@ namespace argus {
      *        registered.
      */
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
-            std::vector<std::string> dependencies = {});
+            const std::vector<std::string>& dependencies = {});
 
     /**
      * \brief Enables a registered dynamic module on demand.

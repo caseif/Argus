@@ -23,7 +23,10 @@
 #include <cassert>
 
 static argus::DeltaCallback _wrap_delta_callback(delta_callback_t callback) {
-    return [callback](auto dur) { assert(dur.count() >= 0); callback(uint64_t(dur.count())); };
+    return [callback](auto dur) {
+        assert(dur.count() >= 0);
+        callback(uint64_t(dur.count()));
+    };
 }
 
 void argus_initialize_engine(void) {

@@ -25,12 +25,12 @@
 namespace argus {
     typedef std::function<void(const void *)> GenericMessagePerformer;
 
-    template <typename T>
+    template<typename T>
     using MessagePerformer = typename std::function<void(const T &)>;
 
     void register_message_performer(const std::string &type_id, GenericMessagePerformer performer);
 
-    template <typename T>
+    template<typename T>
     void register_message_performer(
             const MessagePerformer<T> &performer) {
         static_assert(has_message_type_id_accessor_v<T>,

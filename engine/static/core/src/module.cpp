@@ -180,7 +180,7 @@ namespace argus {
         return sorted_nodes;
     }
 
-    static std::vector<DynamicModule> _topo_sort_modules(const std::map<std::string, DynamicModule> module_map) {
+    static std::vector<DynamicModule> _topo_sort_modules(const std::map<std::string, DynamicModule> &module_map) {
         std::vector<std::string> module_ids;
         std::vector<std::pair<std::string, std::string>> edges;
 
@@ -206,7 +206,7 @@ namespace argus {
         return sorted_modules;
     }
 
-    static void _log_dependent_chain(Logger &logger, std::vector<std::string> dependent_chain, bool warn) {
+    static void _log_dependent_chain(Logger &logger, const std::vector<std::string> &dependent_chain, bool warn) {
         for (const auto &dependent : dependent_chain) {
             auto format = "    Required by module \"%s\"";
             if (warn) {
@@ -217,8 +217,8 @@ namespace argus {
         }
     }
 
-    static DynamicModule *_load_dynamic_module(std::string id,
-            std::vector<std::string> dependent_chain = {}) {
+    static DynamicModule *_load_dynamic_module(const std::string &id,
+            const std::vector<std::string> &dependent_chain = {}) {
         auto path = _locate_dynamic_module(id);
         if (path.empty()) {
             Logger::default_logger().warn("Dynamic module %s was requested but could not be located", id.c_str());
@@ -234,7 +234,7 @@ namespace argus {
 
         void *handle = nullptr;
 
-        void(*reg_fn)(void) = nullptr;
+        void (*reg_fn)(void) = nullptr;
 
         #ifdef _WIN32
         handle = LoadLibraryA(path.string().c_str());
@@ -244,7 +244,8 @@ namespace argus {
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;
         }
-        reg_fn = reinterpret_cast<void(*)(void)>(GetProcAddress(reinterpret_cast<HMODULE>(handle), ARGUS_PLUGIN_ENTRY_POINT));
+        reg_fn = reinterpret_cast<void(*)(void)>(
+                GetProcAddress(reinterpret_cast<HMODULE>(handle), ARGUS_PLUGIN_ENTRY_POINT));
         #else
         handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle == nullptr) {
@@ -253,7 +254,7 @@ namespace argus {
             return nullptr;
         }
 
-        reg_fn = reinterpret_cast<void(*)(void)>(dlsym(handle, ARGUS_PLUGIN_ENTRY_POINT));
+        reg_fn = reinterpret_cast<void (*)(void)>(dlsym(handle, ARGUS_PLUGIN_ENTRY_POINT));
         #endif
 
         if (reg_fn == nullptr) {
@@ -333,7 +334,7 @@ namespace argus {
             }
         }
 
-        g_enabled_dyn_modules_staging.insert({module_id, it->second});
+        g_enabled_dyn_modules_staging.insert({ module_id, it->second });
 
         Logger::default_logger().info("Enabled dynamic module %s.", module_id.c_str());
 
@@ -355,7 +356,7 @@ namespace argus {
             auto found_static = std::find_if(g_static_modules.cbegin(), g_static_modules.cend(),
                     [module_id](auto &sm) { return sm.id == module_id; });
             if (found_static != g_static_modules.cend()) {
-                all_modules.insert({found_static->id});
+                all_modules.insert({ found_static->id });
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
             } else {
                 enable_dynamic_module(module_id);
@@ -364,7 +365,7 @@ namespace argus {
 
         // we add them to the master list like this in order to preserve the hardcoded load order
         for (const auto &mod : g_static_modules) {
-            if (std::count(all_modules.begin(), all_modules.end(), mod.id) != 0) {
+            if (all_modules.count(mod.id) != 0) {
                 g_enabled_static_modules.push_back(mod);
             }
         }
@@ -396,13 +397,12 @@ namespace argus {
     }
 
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
-            std::vector<std::string> dependencies) {
+            const std::vector<std::string> &dependencies) {
         if (std::find_if(id.begin(), id.end(), [](auto c) { return std::isupper(c); }) != id.end()) {
             throw std::invalid_argument("Module identifier must contain only lowercase letters");
         }
 
-
-        if (std::count(g_static_module_ids.begin(), g_static_module_ids.end(), id)) {
+        if (g_static_module_ids.count(id)) {
             throw std::invalid_argument("Module identifier is already in use by static module: " + id);
         }
 
@@ -416,10 +416,10 @@ namespace argus {
             }
         }
 
-        auto mod = DynamicModule{ id, lifecycle_callback,
+        auto mod = DynamicModule { id, lifecycle_callback,
                 std::set<std::string>(dependencies.cbegin(), dependencies.cend()), nullptr };
 
-        g_dyn_module_registrations.insert({id, std::move(mod)});
+        g_dyn_module_registrations.insert({ id, std::move(mod) });
 
         Logger::default_logger().debug("Registered dynamic module %s", id.c_str());
     }
@@ -460,7 +460,7 @@ namespace argus {
         Logger::default_logger().debug("Propagating remaining bring-up lifecycle stages");
 
         for (LifecycleStage stage = LifecycleStage::PreInit; stage <= LifecycleStage::PostInit;
-             stage = LifecycleStage(uint32_t(stage) + 1)) {
+                stage = LifecycleStage(uint32_t(stage) + 1)) {
             g_cur_lifecycle_stage = stage;
             _send_lifecycle_update(stage);
         }
@@ -470,7 +470,7 @@ namespace argus {
 
     void deinit_modules(void) {
         for (LifecycleStage stage = LifecycleStage::PreDeinit; stage <= LifecycleStage::PostDeinit;
-             stage = LifecycleStage(uint32_t(stage) + 1)) {
+                stage = LifecycleStage(uint32_t(stage) + 1)) {
             g_cur_lifecycle_stage = stage;
 
             for (auto it = g_enabled_static_modules.rbegin(); it != g_enabled_static_modules.rend(); ++it) {

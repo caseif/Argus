@@ -31,13 +31,15 @@
 #include <cstdint>
 
 namespace argus {
-    template <typename, typename T>
-    struct has_event_type_id_accessor : std::false_type {};
+    template<typename, typename T>
+    struct has_event_type_id_accessor : std::false_type {
+    };
 
-    template <typename T>
-    struct has_event_type_id_accessor<T, std::void_t<decltype(T::get_event_type_id())>> : std::true_type {};
+    template<typename T>
+    struct has_event_type_id_accessor<T, std::void_t<decltype(T::get_event_type_id())>> : std::true_type {
+    };
 
-    template <typename T>
+    template<typename T>
     constexpr bool has_event_type_id_accessor_v = has_event_type_id_accessor<T, void>::value;
 
     /**

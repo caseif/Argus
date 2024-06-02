@@ -29,7 +29,7 @@ namespace argus {
     class RefCountable {
       public:
 
-        std::atomic_uint32_t refcount{0};
+        std::atomic_uint32_t refcount = 0;
         T *ptr;
 
         explicit RefCountable(T *ptr) {

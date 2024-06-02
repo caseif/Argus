@@ -63,8 +63,8 @@ namespace argus {
         g_engine_config.render_backends.push_back(backend);
     }
 
-    void set_render_backend(const std::string backend) {
-        set_render_backends({backend});
+    void set_render_backend(const std::string &backend) {
+        set_render_backends({ backend });
     }
 
     ScreenSpaceScaleMode get_screen_space_scale_mode(void) {
