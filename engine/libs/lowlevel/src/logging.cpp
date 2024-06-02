@@ -67,19 +67,19 @@ namespace argus {
     }
 
     Logger::Logger(FILE *target, const std::string &realm) :
-            target(target),
-            realm(realm) {
+            m_target(target),
+            m_realm(realm) {
     }
 
     Logger::Logger(const std::string &realm) :
-            target(nullptr),
-            realm(realm) {
+            m_target(nullptr),
+            m_realm(realm) {
     }
 
     void Logger::log(const std::string &level, std::string format, va_list args) const {
-        _log_generic(target != nullptr ? target : stdout, realm, level, format, args);
-        if (target != nullptr && target != stdout) {
-            _log_generic(target != nullptr ? target : stdout, realm, level, format, args);
+        _log_generic(m_target != nullptr ? m_target : stdout, m_realm, level, format, args);
+        if (m_target != nullptr && m_target != stdout) {
+            _log_generic(m_target != nullptr ? m_target : stdout, m_realm, level, format, args);
         }
     }
 
@@ -91,7 +91,7 @@ namespace argus {
     }
 
     void Logger::log_error(const std::string &level, std::string format, va_list args) const {
-        _log_generic(target != nullptr ? target : stderr, realm, level, format, args);
+        _log_generic(m_target != nullptr ? m_target : stderr, m_realm, level, format, args);
     }
 
     void Logger::log_error(const std::string &level, std::string format, ...) const {

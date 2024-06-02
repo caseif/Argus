@@ -18,8 +18,6 @@
 
 #include "argus/lowlevel/message.hpp"
 
-#include <typeindex>
-
 namespace argus {
     static MessageDispatcher g_dispatcher = nullptr;
 

@@ -166,7 +166,7 @@ namespace argus {
         // return malloc(m_pimpl->real_block_size); // for benchmarking purposes
 
         //TODO: allow synchronization to be enabled/disabled per pool
-        this->alloc_mutex.lock();
+        this->m_alloc_mutex.lock();
         ChunkMetadata *cur_chunk = m_pimpl->first_chunk;
         ChunkMetadata *selected_chunk = nullptr;
         size_t max_block_count = 0;
@@ -218,7 +218,7 @@ namespace argus {
 
         selected_chunk->occupied_blocks += 1;
 
-        this->alloc_mutex.unlock();
+        this->m_alloc_mutex.unlock();
 
         return reinterpret_cast<void *>(block_addr);
     }
@@ -228,7 +228,7 @@ namespace argus {
             throw std::invalid_argument("Program attempted to free null pointer");
         }
 
-        this->alloc_mutex.lock();
+        this->m_alloc_mutex.lock();
 
         const size_t chunk_len = m_pimpl->real_block_size * m_pimpl->blocks_per_chunk;
 
@@ -240,7 +240,7 @@ namespace argus {
             if (addr >= chunk->data && addr < chunk->data + chunk_len) {
                 size_t offset_in_chunk = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(chunk->data);
                 if ((offset_in_chunk % m_pimpl->real_block_size) != 0) {
-                    this->alloc_mutex.unlock();
+                    this->m_alloc_mutex.unlock();
 
                     throw std::invalid_argument("Pointer does not point to a valid block");
                 }
@@ -253,7 +253,7 @@ namespace argus {
                 uint64_t block_flag_mask = uint64_t(1) << ((~block_index) & BF_INDEX_MASK);
 
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
-                    this->alloc_mutex.unlock();
+                    this->m_alloc_mutex.unlock();
 
                     throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)");
                 }
@@ -291,7 +291,7 @@ namespace argus {
                     }
                 }
 
-                this->alloc_mutex.unlock();
+                this->m_alloc_mutex.unlock();
                 return;
             }
 
@@ -299,7 +299,7 @@ namespace argus {
             chunk = chunk->next_chunk;
         }
 
-        this->alloc_mutex.unlock();
+        this->m_alloc_mutex.unlock();
         throw std::invalid_argument("Pointer is not contained by a chunk");
     }
 }

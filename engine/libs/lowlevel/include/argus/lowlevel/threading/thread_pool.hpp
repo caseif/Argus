@@ -75,7 +75,7 @@ namespace argus {
          * \return A std::future representing the result of the task
          *         execution.
          */
-        std::future<void *> submit(std::function<void *(void)> task);
+        std::future<void *> submit(const std::function<void *(void)> &task);
 
         /**
          * \brief Submits a new task to the ThreadPool, passing the extra

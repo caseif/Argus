@@ -222,7 +222,7 @@ namespace argus {
          * \sa FileHandle::read
          */
         std::future<void> read_async(off_t offset, size_t read_size,
-                unsigned char *buf, std::function<void(FileHandle &)> callback);
+                unsigned char *buf, const std::function<void(FileHandle &)> &callback);
 
         /**
          * \brief Writes data into the file referenced by the handle
@@ -256,6 +256,6 @@ namespace argus {
          * \sa FileHandle::write
          */
         std::future<void> write_async(off_t offset, size_t write_size,
-                unsigned char *buf, std::function<void(FileHandle &)> callback);
+                unsigned char *buf, const std::function<void(FileHandle &)> &callback);
     };
 }

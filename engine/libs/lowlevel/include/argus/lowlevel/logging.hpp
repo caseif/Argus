@@ -29,8 +29,8 @@
 namespace argus {
     class Logger {
       private:
-        FILE *target;
-        const std::string realm;
+        FILE *m_target;
+        const std::string m_realm;
 
         void log(const std::string &level, std::string format, va_list args) const;
 

@@ -41,8 +41,8 @@ namespace argus {
     template<typename ValueType>
     class ComplexAtomic {
       private:
-        ValueType value;
-        std::mutex mutex;
+        ValueType m_value;
+        std::mutex m_mutex;
 
       public:
         /**
@@ -50,7 +50,7 @@ namespace argus {
          *        empty value.
          */
         ComplexAtomic(void) :
-                value() {
+            m_value() {
         }
 
         /**
@@ -59,7 +59,7 @@ namespace argus {
          * \param val The value to copy into this `ComplexAtomic`'s state.
          */
         explicit ComplexAtomic(ValueType &val) :
-                value(val) {
+            m_value(val) {
         }
 
         /**
@@ -68,7 +68,7 @@ namespace argus {
          * \param val The value to move into this `ComplexAtomic`'s state.
          */
         explicit ComplexAtomic(ValueType &&val) :
-                value(val) {
+            m_value(val) {
         }
 
         /**
@@ -78,9 +78,9 @@ namespace argus {
          * \return The base value.
          */
         inline operator ValueType(void) {
-            mutex.lock();
-            ValueType val_copy = value;
-            mutex.unlock();
+            m_mutex.lock();
+            ValueType val_copy = m_value;
+            m_mutex.unlock();
             return val_copy;
         }
 
@@ -92,9 +92,9 @@ namespace argus {
          * \return This ComplexAtomic.
          */
         inline ComplexAtomic &operator=(const ValueType &rhs) {
-            mutex.lock();
-            value = rhs;
-            mutex.unlock();
+            m_mutex.lock();
+            m_value = rhs;
+            m_mutex.unlock();
             return *this;
         }
 
@@ -106,9 +106,9 @@ namespace argus {
          * \return This ComplexAtomic.
          */
         inline ComplexAtomic &operator=(const ValueType &&rhs) {
-            mutex.lock();
-            value = std::move(rhs);
-            mutex.unlock();
+            m_mutex.lock();
+            m_value = std::move(rhs);
+            m_mutex.unlock();
             return *this;
         }
 

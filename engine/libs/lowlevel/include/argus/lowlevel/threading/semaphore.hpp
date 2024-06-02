@@ -24,8 +24,8 @@
 namespace argus {
     class Semaphore {
       private:
-        std::mutex mtx;
-        std::condition_variable cv;
+        std::mutex m_mtx;
+        std::condition_variable m_cv;
 
       public:
         bool signaled;

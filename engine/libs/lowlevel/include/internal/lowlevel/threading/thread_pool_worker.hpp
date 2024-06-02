@@ -48,13 +48,13 @@ namespace argus {
         std::atomic_bool busy {};
 
       private:
-        ThreadPool &pool;
-        ThreadPoolTask *current_task {};
-        std::deque<ThreadPoolTask *> task_queue;
-        std::recursive_mutex task_queue_mutex;
-        std::condition_variable_any cond;
-        std::atomic_bool terminate {};
-        std::thread thread;
+        ThreadPool &m_pool;
+        ThreadPoolTask *m_current_task {};
+        std::deque<ThreadPoolTask *> m_task_queue;
+        std::recursive_mutex m_task_queue_mutex;
+        std::condition_variable_any m_cond;
+        std::atomic_bool m_terminate {};
+        std::thread m_thread;
 
         void worker_impl(void);
 

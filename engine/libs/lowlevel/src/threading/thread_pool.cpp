@@ -20,7 +20,6 @@
 #include "argus/lowlevel/threading/thread_pool.hpp"
 #include "internal/lowlevel/pimpl/threading/thread_pool.hpp"
 
-#include <functional>
 #include <future>
 #include <thread>
 
@@ -66,12 +65,12 @@ namespace argus {
         g_pimpl_pool.destroy(m_pimpl);
     }
 
-    std::future<void *> ThreadPool::submit(std::function<void *(void)> task) {
+    std::future<void *> ThreadPool::submit(const std::function<void *(void)> &task) {
         auto &worker = m_pimpl->workers.at(m_pimpl->next_worker);
         if (++m_pimpl->next_worker >= m_pimpl->thread_count) {
             m_pimpl->next_worker = 0;
         }
 
-        return worker->add_task(std::move(task));
+        return worker->add_task(task);
     }
 }

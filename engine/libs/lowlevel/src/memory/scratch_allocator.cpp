@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <cstdio>
 
 namespace argus {
 

@@ -43,8 +43,8 @@ namespace argus {
 
     // HandleTable implementation
 
-    static std::mt19937 rand_mt((std::random_device()) ());
-    static std::uniform_real_distribution<double> rand_distr(0, std::nextafter(UINT32_MAX, DBL_MAX));
+    static std::mt19937 g_rand_mt((std::random_device()) ());
+    static std::uniform_real_distribution<double> g_rand_distr(0, std::nextafter(UINT32_MAX, DBL_MAX));
 
     static std::pair<uint32_t, HandleTableChunk *> _get_chunk(const HandleTable &table, Handle handle) {
         auto chunk_index = handle.index / CHUNK_SIZE;
@@ -134,7 +134,7 @@ namespace argus {
         }
 
         auto index_in_chunk = dest_chunk->open_indices.top();
-        auto uid = uint32_t(rand_distr(rand_mt));
+        auto uid = uint32_t(g_rand_distr(g_rand_mt));
         dest_chunk->entries[index_in_chunk] = { ptr, uid, 1 };
         dest_chunk->open_indices.pop();
 

@@ -23,15 +23,15 @@ namespace argus {
     }
 
     void Semaphore::notify(void) {
-        std::unique_lock<std::mutex> lock(mtx);
+        std::unique_lock<std::mutex> lock(m_mtx);
         signaled = true;
-        cv.notify_one();
+        m_cv.notify_one();
     }
 
     void Semaphore::wait(void) {
-        std::unique_lock<std::mutex> lock(mtx);
+        std::unique_lock<std::mutex> lock(m_mtx);
         while (!signaled) {
-            cv.wait(lock);
+            m_cv.wait(lock);
         }
         signaled = false;
     }

@@ -243,7 +243,7 @@ namespace argus {
     }
 
     std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
-            const std::function<void(FileHandle &)> callback) {
+            const std::function<void(FileHandle &)> &callback) {
         validate_state(m_valid, "Non-valid FileHandle");
 
         validate_arg(read_size > 0, "Invalid size parameter");
@@ -252,11 +252,11 @@ namespace argus {
 
         validate_arg(size_t(offset) +read_size <= this->m_size, "Invalid offset/size combintation");
 
-        return make_future([this, offset, buf] { read(offset, m_size, buf); }, std::bind(callback, *this));
+        return make_future([this, offset, buf] { read(offset, m_size, buf); }, [callback, this] { callback(*this); });
     }
 
     std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
-            unsigned char *const buf, std::function<void(FileHandle &)> callback) {
+            unsigned char *const buf, const std::function<void(FileHandle &)> &callback) {
         validate_state(m_valid, "Non-valid FileHandle");
 
         validate_arg(write_size > 0, "Invalid size parameter");
@@ -264,6 +264,6 @@ namespace argus {
         validate_arg(offset >= -1, "Invalid offset parameter");
 
         return make_future([this, offset, write_size, buf] { write(offset, write_size, buf); },
-                std::bind(callback, *this));
+                [callback, this] { callback(*this); });
     }
 }

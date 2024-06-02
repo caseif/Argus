@@ -24,9 +24,6 @@
 #include <type_traits>
 
 namespace argus {
-    /**
-     *
-     */
     template<typename ValueType>
     struct ValueAndDirtyFlag {
         ValueType value;
@@ -75,8 +72,8 @@ namespace argus {
         }
 
         Dirtiable(const Dirtiable<ValueType> &rhs) :
-            value(rhs.value),
-            dirty(rhs.dirty) {
+            value(rhs.m_value),
+            dirty(rhs.m_dirty) {
         }
 
         Dirtiable(Dirtiable<ValueType> &&rhs) noexcept:

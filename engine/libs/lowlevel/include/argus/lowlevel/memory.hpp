@@ -38,7 +38,7 @@ namespace argus {
         pimpl_PoolAllocator *m_pimpl;
 
       public:
-        std::mutex alloc_mutex;
+        std::mutex m_alloc_mutex;
 
         explicit PoolAllocator(size_t block_size, uint8_t alignment_exp = 3);
 
