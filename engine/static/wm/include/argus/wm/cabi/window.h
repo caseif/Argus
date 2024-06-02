@@ -49,10 +49,10 @@ typedef enum WindowCreateFlags {
     WINDOW_CREATE_FLAG_WEBGPU              = 0x10,
 
     WINDOW_CREATE_FLAG_GRAPHICS_API_MASK = WINDOW_CREATE_FLAG_OPENGL
-            |     WINDOW_CREATE_FLAG_VULKAN
-            |     WINDOW_CREATE_FLAG_METAL
-            |     WINDOW_CREATE_FLAG_DIRECTX
-            |     WINDOW_CREATE_FLAG_WEBGPU,
+            | WINDOW_CREATE_FLAG_VULKAN
+            | WINDOW_CREATE_FLAG_METAL
+            | WINDOW_CREATE_FLAG_DIRECTX
+            | WINDOW_CREATE_FLAG_WEBGPU,
 } WindowCreateFlags;
 
 void argus_set_window_creation_flags(WindowCreateFlags flags);

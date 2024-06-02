@@ -28,9 +28,11 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_events.h"
 #include "SDL_version.h"
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
 #include <string>
@@ -79,49 +81,42 @@ namespace argus {
 
     SDL_DisplayMode unwrap_display_mode(const DisplayMode &mode) {
         return SDL_DisplayMode {
-            mode.extra_data,
-            int(mode.resolution.x), int(mode.resolution.y),
-            mode.refresh_rate,
-            nullptr
+                mode.extra_data,
+                int(mode.resolution.x), int(mode.resolution.y),
+                mode.refresh_rate,
+                nullptr
         };
     }
 
     static Display *_add_display(int index) {
-        auto &display = *new Display();
-
-        display.m_pimpl->index = index;
-
         const char *display_name = SDL_GetDisplayName(index);
         if (display_name == nullptr) {
             Logger::default_logger().warn("Failed to query name of display %d (%s)", index, SDL_GetError());
         }
 
-        display.m_pimpl->name = display_name;
-
         SDL_Rect bounds;
         if (SDL_GetDisplayBounds(index, &bounds) != 0) {
             Logger::default_logger().warn("Failed to query bounds of display %d (%s)", index, SDL_GetError());
         }
-        display.m_pimpl->position.x = bounds.x;
-        display.m_pimpl->position.y = bounds.y;
 
-        int mode_count = SDL_GetNumDisplayModes(display.m_pimpl->index);
+        int mode_count = SDL_GetNumDisplayModes(index);
         if (mode_count < 0) {
             Logger::default_logger().warn("Failed to query display modes for display %d (%s)", index, SDL_GetError());
         }
 
+        std::vector<DisplayMode> modes;
         for (int i = 0; i < mode_count; i++) {
             SDL_DisplayMode mode;
-            if (SDL_GetDisplayMode(display.m_pimpl->index, i, &mode) != 0) {
+            if (SDL_GetDisplayMode(index, i, &mode) != 0) {
                 Logger::default_logger().warn("Failed to query display mode %d for display %d, skipping (%s)",
-                        i, display.m_pimpl->index, SDL_GetError());
+                        i, index, SDL_GetError());
                 continue;
             }
 
-            display.m_pimpl->modes.push_back(wrap_display_mode(mode));
+            modes.push_back(wrap_display_mode(mode));
         }
 
-        return &display;
+        return new Display(index, display_name, { bounds.x, bounds.y }, modes);
     }
 
     static void _enumerate_displays(std::vector<const Display *> &dest) {
@@ -186,8 +181,8 @@ namespace argus {
         return g_displays;
     }
 
-    Display::Display(void) :
-            m_pimpl(new pimpl_Display()) {
+    Display::Display(int index, std::string name, Vector2i position, std::vector<DisplayMode> modes) :
+        m_pimpl(new pimpl_Display(index, std::move(name), position, std::move(modes))) {
     }
 
     Display::~Display(void) {
@@ -198,6 +193,9 @@ namespace argus {
         return m_pimpl->name;
     }
 
+    // this would normally return a reference type, but the scripting engine
+    // would then require the type (Vector2i) to derive from AutoCleanupable
+    // which is inconvenient
     Vector2i Display::get_position(void) const {
         return m_pimpl->position;
     }

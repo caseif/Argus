@@ -31,7 +31,7 @@ namespace argus {
     // forward declarations
     class Window;
 
-    constexpr const char *EVENT_TYPE_WINDOW = "window";
+    constexpr const char *k_event_type_window = "window";
 
     /**
      * \brief A type of WindowEvent.
@@ -58,7 +58,7 @@ namespace argus {
      */
     struct WindowEvent : public ArgusEvent, AutoCleanupable {
         static constexpr const char *get_event_type_id(void) {
-            return EVENT_TYPE_WINDOW;
+            return k_event_type_window;
         }
 
         /**
@@ -120,8 +120,8 @@ namespace argus {
 
         ~WindowEvent(void) override;
 
-        WindowEvent &operator =(const WindowEvent &rhs) = delete;
+        WindowEvent &operator=(const WindowEvent &rhs) = delete;
 
-        WindowEvent &operator =(WindowEvent &&rhs) = delete;
+        WindowEvent &operator=(WindowEvent &&rhs) = delete;
     };
 }

@@ -27,11 +27,14 @@
 
 #include <atomic>
 #include <string>
+#include <utility>
 #include <vector>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
 namespace argus {
@@ -105,8 +108,8 @@ namespace argus {
 
         std::atomic_int refcount;
 
-        pimpl_Window(const std::string &id, Window *parent) :
-                id(id),
+        pimpl_Window(std::string id, Window *parent) :
+                id(std::move(id)),
                 parent(parent) {
         }
 

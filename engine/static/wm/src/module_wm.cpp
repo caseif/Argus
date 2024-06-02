@@ -38,17 +38,14 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL.h"
 #include "SDL_events.h"
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
-#include <iterator>
-#include <map>
 #include <string>
-#include <utility>
-
-#include <cstddef>
 
 namespace argus {
     constexpr uint32_t k_sdl_subsystems = SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER;

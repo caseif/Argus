@@ -22,7 +22,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
 namespace argus {
@@ -40,6 +42,7 @@ namespace argus {
     union DisplayModeUnion {
         argus_display_mode_t c_mode {};
         argus::DisplayMode cpp_mode;
+
         DisplayModeUnion() {}
     };
 

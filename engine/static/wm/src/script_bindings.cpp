@@ -42,11 +42,11 @@ namespace argus {
         //TODO: figure out a way to bind get_resolution
         bind_member_instance_function("peek_resolution", &Window::peek_resolution);
         bind_member_instance_function("get_windowed_resolution", &Window::get_windowed_resolution);
-        bind_member_instance_function<void(Window::*)(unsigned int, unsigned int)>("set_windowed_resolution",
+        bind_member_instance_function<void (Window::*)(unsigned int, unsigned int)>("set_windowed_resolution",
                 &Window::set_windowed_resolution);
         //TODO: bind is_vsync_enabled
         bind_member_instance_function("set_vsync_enabled", &Window::set_vsync_enabled);
-        bind_member_instance_function<void(Window::*)(int, int)>("set_windowed_position",
+        bind_member_instance_function<void (Window::*)(int, int)>("set_windowed_position",
                 &Window::set_windowed_position);
         bind_member_instance_function("get_display_affinity", &Window::get_display_affinity);
         bind_member_instance_function("set_display_affinity", &Window::set_display_affinity);

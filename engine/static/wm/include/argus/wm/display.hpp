@@ -39,24 +39,23 @@ namespace argus {
     };
 
     class Display : AutoCleanupable {
-      private:
-        Display(Display &) = delete;
-
-        Display(Display &&) = delete;
-
       public:
         pimpl_Display *m_pimpl;
 
-        Display(void);
+        Display(int index, std::string name, Vector2i position, std::vector<DisplayMode> modes);
+
+        Display(Display &) = delete;
+
+        Display(Display &&) = delete;
 
         ~Display(void) override;
 
         static const std::vector<const Display *> &get_available_displays(void);
 
-        const std::string &get_name(void) const;
+        [[nodiscard]] const std::string &get_name(void) const;
 
-        Vector2i get_position(void) const;
+        [[nodiscard]] Vector2i get_position(void) const;
 
-        const std::vector<DisplayMode> &get_display_modes(void) const;
+        [[nodiscard]] const std::vector<DisplayMode> &get_display_modes(void) const;
     };
 }

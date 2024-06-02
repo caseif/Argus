@@ -63,10 +63,10 @@ namespace argus {
         WebGPU              = 0x10,
 
         GraphicsApiMask = int(WindowCreationFlags::OpenGL)
-                |     int(WindowCreationFlags::Vulkan)
-                |     int(WindowCreationFlags::Metal)
-                |     int(WindowCreationFlags::DirectX)
-                |     int(WindowCreationFlags::WebGPU),
+                |         int(WindowCreationFlags::Vulkan)
+                |         int(WindowCreationFlags::Metal)
+                |         int(WindowCreationFlags::DirectX)
+                |         int(WindowCreationFlags::WebGPU),
     };
 
     inline WindowCreationFlags operator&(WindowCreationFlags a, WindowCreationFlags b) {
@@ -175,7 +175,7 @@ namespace argus {
          * \throw std::invalid_argument If either parameter is nullptr.
          * \throw std::runtime_error If the callbacks have already been set.
          */
-        static void set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor);
+        static void set_canvas_ctor_and_dtor(const CanvasCtor &ctor, const CanvasDtor &dtor);
 
         /**
          * \brief Creates a new Window.
@@ -204,7 +204,7 @@ namespace argus {
          *
          * \return The unique identifier of the Window.
          */
-        const std::string &get_id(void) const;
+        [[nodiscard]] const std::string &get_id(void) const;
 
         /**
          * \brief Gets the Canvas associated with the Window.
@@ -215,7 +215,7 @@ namespace argus {
          *        with the Window. This can occur if a renderer module has
          *        not been requested or if the renderer module is buggy.
          */
-        Canvas &get_canvas(void) const;
+        [[nodiscard]] Canvas &get_canvas(void) const;
 
         /**
          * \brief Gets whether the Window has been created by the windowing
@@ -223,14 +223,14 @@ namespace argus {
          *
          * \return Whether the Window has been created.
          */
-        bool is_created(void) const;
+        [[nodiscard]] bool is_created(void) const;
 
         /**
          * \brief Gets whether the Window is ready for manipulation or interaction.
          *
          * \return Whether the Window is ready.
          */
-        bool is_ready(void) const;
+        [[nodiscard]] bool is_ready(void) const;
 
         /**
          * \brief Gets whether a close request is currently pending for the
@@ -243,7 +243,7 @@ namespace argus {
          *
          * \return Whether the a close request is pending for the Window.
          */
-        bool is_close_request_pending(void) const;
+        [[nodiscard]] bool is_close_request_pending(void) const;
 
         /**
          * \brief Gets whether the Window is preparing to close.
@@ -253,7 +253,7 @@ namespace argus {
          *
          * \return Whether the Window is preparing to close.
          */
-        bool is_closed(void) const;
+        [[nodiscard]] bool is_closed(void) const;
 
         /**
          * \brief Creates a new window as a child of this one.
@@ -279,7 +279,7 @@ namespace argus {
          *
          * \param delta The time in microseconds since the last frame.
          */
-        void update(const TimeDelta delta);
+        void update(TimeDelta delta);
 
         /**
          * Sets the window title.
@@ -293,7 +293,7 @@ namespace argus {
          *
          * \return The window's fullscreen state.
          */
-        bool is_fullscreen(void) const;
+        [[nodiscard]] bool is_fullscreen(void) const;
 
         /**
          * \brief Sets the fullscreen state of the window.
@@ -303,7 +303,7 @@ namespace argus {
          * \param fullscreen Whether the window is to be displayed in
          *        fullscreen.
          */
-        void set_fullscreen(const bool fullscreen);
+        void set_fullscreen(bool fullscreen);
 
         /**
          * \brief Gets the window's current resolution and whether it has
@@ -331,14 +331,14 @@ namespace argus {
          *
          * \sa get_resolution
          */
-        Vector2u peek_resolution(void) const;
+        [[nodiscard]] Vector2u peek_resolution(void) const;
 
         /**
          * \brief Gets the window's configured windowed resolution.
          *
          * \return The windowed resolution.
          */
-        Vector2u get_windowed_resolution(void) const;
+        [[nodiscard]] Vector2u get_windowed_resolution(void) const;
 
         /**
          * \brief Sets the window's windowed resolution.
@@ -365,7 +365,7 @@ namespace argus {
          * \return Whether the window's vsync flag is set and its dirty
          *         flag.
          */
-        ValueAndDirtyFlag<bool> is_vsync_enabled(void) const;
+        [[nodiscard]] ValueAndDirtyFlag<bool> is_vsync_enabled(void) const;
 
         /**
          * \brief Enabled or disabled vertical synchronization (vsync) for
@@ -407,7 +407,7 @@ namespace argus {
          *
          * \return The Display to show on.
          */
-        const Display &get_display_affinity(void) const;
+        [[nodiscard]] const Display &get_display_affinity(void) const;
 
         /**
          * \brief Sets the Display this Window will attempt to show on in
@@ -431,7 +431,7 @@ namespace argus {
          *
          * \return The display mode of the Window.
          */
-        DisplayMode get_display_mode(void) const;
+        [[nodiscard]] DisplayMode get_display_mode(void) const;
 
         /**
          * \brief Sets the DisplayMode of this Window while in fullscreen
@@ -452,7 +452,7 @@ namespace argus {
          *
          * \return Whether the mouse cursor should be captured.
          */
-        bool is_mouse_captured(void) const;
+        [[nodiscard]] bool is_mouse_captured(void) const;
 
         /**
          * \brief Sets whether the mouse cursor should be captured by the
@@ -468,7 +468,7 @@ namespace argus {
          *
          * \return Whether the mouse cursor is visible.
          */
-        bool is_mouse_visible(void) const;
+        [[nodiscard]] bool is_mouse_visible(void) const;
 
         /**
          * \brief Sets whether the mouse cursor is visible within the
@@ -484,7 +484,7 @@ namespace argus {
          *
          * \return Whether the raw mouse input should be used.
          */
-        bool is_mouse_raw_input(void) const;
+        [[nodiscard]] bool is_mouse_raw_input(void) const;
 
         /**
          * \brief Sets whether the raw input from the mouse should be used

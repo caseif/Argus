@@ -24,7 +24,7 @@ extern "C" {
 
 #include "argus/wm/cabi/window.h"
 
-const char *EVENT_TYPE_WINDOW = "window";
+const char *k_event_type_window = "window";
 
 typedef enum WindowEventType {
     WINDOW_EVENT_TYPE_CREATE,

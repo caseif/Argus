@@ -29,7 +29,6 @@
 #include "argus/core/event.hpp"
 #include "argus/core/engine.hpp"
 
-#include "argus/wm/api_util.hpp"
 #include "argus/wm/display.hpp"
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
@@ -42,10 +41,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_events.h"
 #include "SDL_hints.h"
 #include "SDL_version.h"
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
 #include <atomic>
@@ -213,7 +214,7 @@ namespace argus {
         return window_it != g_window_id_map.end() ? g_window_id_map.find(id)->second : nullptr;
     }
 
-    void Window::set_canvas_ctor_and_dtor(CanvasCtor ctor, CanvasDtor dtor) {
+    void Window::set_canvas_ctor_and_dtor(const CanvasCtor &ctor, const CanvasDtor &dtor) {
         if (ctor == nullptr || dtor == nullptr) {
             throw std::invalid_argument("Canvas constructor/destructor cannot be nullptr.");
         }
@@ -233,7 +234,7 @@ namespace argus {
     }
 
     Window::Window(const std::string &id, Window *parent) :
-            m_pimpl(new pimpl_Window(id, parent)) {
+        m_pimpl(new pimpl_Window(id, parent)) {
         affirm_precond(g_wm_module_initialized, "Cannot create window before wm module is initialized.");
 
         if (g_canvas_ctor != nullptr) {
@@ -254,7 +255,8 @@ namespace argus {
 
         g_window_count++;
 
-        m_pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); }, Ordering::Early);
+        m_pimpl->callback_id = register_render_callback([this](TimeDelta delta) { this->update(delta); },
+                Ordering::Early);
 
         if (g_window_construct_callback != nullptr) {
             g_window_construct_callback(*this);
@@ -263,7 +265,7 @@ namespace argus {
         return;
     }
 
-    Window::Window(Window &&rhs) noexcept : m_pimpl(rhs.m_pimpl) {
+    Window::Window(Window &&rhs) noexcept: m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 
@@ -369,7 +371,7 @@ namespace argus {
 
         if (!(m_pimpl->state & WINDOW_STATE_CREATED)) {
             SDL_WindowFlags sdl_flags = SDL_WindowFlags(
-                    SDL_WINDOW_RESIZABLE
+                      SDL_WINDOW_RESIZABLE
                     | SDL_WINDOW_INPUT_FOCUS
                     | SDL_WINDOW_HIDDEN
             );
@@ -407,7 +409,6 @@ namespace argus {
             if (m_pimpl->handle == nullptr) {
                 Logger::default_logger().fatal("Failed to create SDL window");
             }
-
 
             {
                 std::unique_lock<std::shared_mutex> lock(g_window_maps_mutex);
@@ -575,12 +576,12 @@ namespace argus {
     }
 
     void Window::set_windowed_resolution(unsigned int width, unsigned int height) {
-        m_pimpl->properties.windowed_resolution = {width, height};
+        m_pimpl->properties.windowed_resolution = { width, height };
         return;
     }
 
     void Window::set_windowed_resolution(const Vector2u &resolution) {
-        m_pimpl->properties.windowed_resolution = {resolution.x, resolution.y};
+        m_pimpl->properties.windowed_resolution = { resolution.x, resolution.y };
         return;
     }
 
@@ -594,12 +595,12 @@ namespace argus {
     }
 
     void Window::set_windowed_position(int x, int y) {
-        m_pimpl->properties.position = {x, y};
+        m_pimpl->properties.position = { x, y };
         return;
     }
 
     void Window::set_windowed_position(const Vector2i &position) {
-        m_pimpl->properties.position = {position.x, position.y};
+        m_pimpl->properties.position = { position.x, position.y };
         return;
     }
 
@@ -651,7 +652,6 @@ namespace argus {
         m_pimpl->properties.custom_display_mode = true;
         m_pimpl->properties.display_mode = mode;
     }
-
 
     bool Window::is_mouse_captured(void) const {
         return m_pimpl->properties.mouse_capture.peek();
@@ -711,7 +711,7 @@ namespace argus {
     }
 
     void set_window_construct_callback(WindowCallback callback) {
-        g_window_construct_callback = callback;
+        g_window_construct_callback = std::move(callback);
     }
 
     void window_window_event_callback(const WindowEvent &event, void *user_data) {

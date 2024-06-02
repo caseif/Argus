@@ -24,7 +24,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_video.h"
+
 #pragma GCC diagnostic pop
 
 #include <string>
@@ -39,7 +41,11 @@ namespace argus {
 
         std::vector<DisplayMode> modes;
 
-        pimpl_Display(void) {
+        pimpl_Display(int index, std::string name, Vector2i position, std::vector<DisplayMode> modes):
+            index(index),
+            name(std::move(name)),
+            position(position),
+            modes(std::move(modes)) {
         }
     };
 }
