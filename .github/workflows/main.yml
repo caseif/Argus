@@ -42,6 +42,9 @@ jobs:
         $os_name = "${{ runner.os }}".ToLower()
         echo "OS_NAME=$os_name" >> "$env:GITHUB_ENV"
 
+        $runner_name = "${{ matrix.os }}".Replace("-", "").Replace(".", "").ToLower()
+        echo "RUNNER_NAME=$runner_name" >> "$env:GITHUB_ENV"
+
         $config_name = "${{ matrix.configuration }}".ToLower()
         echo "CONFIG_NAME=$config_name" >> $env:GITHUB_ENV
 
@@ -67,7 +70,7 @@ jobs:
           echo "CMAKE_GENERATOR=Visual Studio $vs_version" >> "$env:GITHUB_ENV"
       if: startsWith(matrix.os, 'windows')
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         token: ${{secrets.ACCESS_TOKEN}}
         submodules: recursive
@@ -156,7 +159,7 @@ jobs:
       run: ctest -C ${{ matrix.configuration }}
 
     - name: Archive
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: argus_dist-${{ env.OS_NAME }}-${{ matrix.compiler }}-${{ env.CONFIG_NAME }}
+        name: argus_dist-${{ env.RUNNER_NAME }}-${{ matrix.compiler }}-${{ env.CONFIG_NAME }}
         path: build/dist/
