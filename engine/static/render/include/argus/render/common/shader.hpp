@@ -60,13 +60,13 @@ namespace argus {
 
         [[nodiscard]] std::optional<uint32_t> get_attr_loc(const std::string &name) const;
 
-        void get_attr_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+        void get_attr_loc_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
         [[nodiscard]] bool has_output(const std::string &name) const;
 
         [[nodiscard]] std::optional<uint32_t> get_output_loc(const std::string &name) const;
 
-        void get_output_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+        void get_output_loc_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
         [[nodiscard]] bool has_uniform(const std::string &name) const;
 
@@ -76,16 +76,16 @@ namespace argus {
 
         [[nodiscard]] std::optional<uint32_t> get_uniform_loc(const std::string &ubo, const std::string &name) const;
 
-        void get_uniform_loc_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+        void get_uniform_loc_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
         void get_uniform_loc_and_then(const std::string &ubo, const std::string &name,
-                std::function<void(uint32_t)> fn) const;
+                const std::function<void(uint32_t)>& fn) const;
 
         [[nodiscard]] bool has_ubo(const std::string &name) const;
 
         [[nodiscard]] std::optional<uint32_t> get_ubo_binding(const std::string &name) const;
 
-        void get_ubo_binding_and_then(const std::string &name, std::function<void(uint32_t)> fn) const;
+        void get_ubo_binding_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
         [[nodiscard]] std::optional<std::string> get_ubo_instance_name(const std::string &name) const;
     };
@@ -114,12 +114,12 @@ namespace argus {
 
         ~Shader(void);
 
-        const std::string &get_uid(void) const;
+        [[nodiscard]] const std::string &get_uid(void) const;
 
-        const std::string &get_type(void) const;
+        [[nodiscard]] const std::string &get_type(void) const;
 
-        ShaderStage get_stage(void) const;
+        [[nodiscard]] ShaderStage get_stage(void) const;
 
-        const std::vector<uint8_t> &get_source(void) const;
+        [[nodiscard]] const std::vector<uint8_t> &get_source(void) const;
     };
 }

@@ -43,8 +43,9 @@ namespace argus {
 
         std::map<std::string, Camera2D> cameras;
 
-        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform) :
+        pimpl_Scene2D(const std::string &id, Scene2D &scene, const Transform2D &transform):
             pimpl_Scene(id, transform),
+            lighting_enabled(false),
             root_group_read(new RenderGroup2D(scene, nullptr)),
             root_group_write(new RenderGroup2D(scene, nullptr)),
             lights(new std::map<Handle, Light2D>),

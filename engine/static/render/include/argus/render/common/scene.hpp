@@ -48,11 +48,7 @@ namespace argus {
          *
          * \param type The type of Scene.
          */
-        Scene(const SceneType type);
-
-        Scene(const Scene &rhs) = delete;
-
-        Scene(const Scene &&rhs) = delete;
+        Scene(SceneType type);
 
       public:
         static std::optional<std::reference_wrapper<Scene>> find(const std::string &id);
@@ -63,10 +59,14 @@ namespace argus {
             return dynamic_cast<std::optional<std::reference_wrapper<T>>>(Scene::find(id));
         }
 
+        Scene(const Scene &rhs) = delete;
+
+        Scene(const Scene &&rhs) = delete;
+
         virtual ~Scene(void) = 0;
 
         const SceneType type;
 
-        virtual pimpl_Scene *get_pimpl(void) const = 0;
+        [[nodiscard]] virtual pimpl_Scene *get_pimpl(void) const = 0;
     };
 }

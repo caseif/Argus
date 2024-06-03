@@ -28,8 +28,6 @@ namespace argus {
 
     class Transform2D;
 
-    struct Viewport2D;
-
     struct pimpl_Camera2D;
 
     class Camera2D {
@@ -40,13 +38,13 @@ namespace argus {
 
         Camera2D(const Camera2D &) = delete;
 
-        Camera2D(Camera2D &&);
+        Camera2D(Camera2D &&) noexcept;
 
         ~Camera2D(void);
 
-        const std::string &get_id(void) const;
+        [[nodiscard]] const std::string &get_id(void) const;
 
-        Scene2D &get_scene(void) const;
+        [[nodiscard]] Scene2D &get_scene(void) const;
 
         /**
          * \brief Gets the transform of the camera without affecting its
@@ -56,7 +54,7 @@ namespace argus {
          *
          * \sa Transform2D::get_transform
          */
-        Transform2D peek_transform(void) const;
+        [[nodiscard]] Transform2D peek_transform(void) const;
 
         /**
          * \brief Gets the transform of the camera and clears its dirty

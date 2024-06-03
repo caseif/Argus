@@ -31,14 +31,14 @@ namespace argus {
     }
 
     Light2D::Light2D(Light2DType type, bool is_occludable, const Vector3f &color, LightParameters params,
-            const Transform2D &transform) :
+            const Transform2D &transform):
         m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(_make_handle(this), type, is_occludable, color,
                 params, transform)) {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     Light2D::Light2D(Handle handle, Light2DType type, bool is_occludable, const Vector3f &color,
-            LightParameters params, const Transform2D &transform) :
+            LightParameters params, const Transform2D &transform):
         m_pimpl(&g_alloc_pool.construct<pimpl_Light2D>(handle, type, is_occludable, color,
                 params, transform)) {
         g_render_handle_table.update_handle(handle, *this);

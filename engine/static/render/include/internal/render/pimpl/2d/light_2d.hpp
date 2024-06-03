@@ -1,3 +1,5 @@
+#include <utility>
+
 /*
  * This file is a part of Argus.
  * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
@@ -30,13 +32,13 @@ namespace argus {
         uint16_t version;
 
         pimpl_Light2D(Handle handle, Light2DType type, bool is_occludable, Vector3f color,
-                LightParameters params, const Transform2D &transform) :
+                LightParameters params, Transform2D transform):
             handle(handle),
             type(type),
             is_occludable(is_occludable),
             color(color),
             params(params),
-            transform(transform),
+            transform(std::move(transform)),
             version(1) {
         }
     };

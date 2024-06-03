@@ -22,19 +22,17 @@
 #include "argus/render/common/attached_viewport.hpp"
 #include "internal/render/pimpl/2d/attached_viewport_2d.hpp"
 
-#include <string>
-
 namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_AttachedViewport2D));
 
-    AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index) :
-            AttachedViewport(SceneType::TwoD),
-            m_pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
+    AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index):
+        AttachedViewport(SceneType::TwoD),
+        m_pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
     }
 
-    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) noexcept :
-            AttachedViewport(rhs.m_type),
-            m_pimpl(rhs.m_pimpl) {
+    AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) noexcept:
+        AttachedViewport(rhs.m_type),
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 

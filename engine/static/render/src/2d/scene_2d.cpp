@@ -53,14 +53,14 @@ namespace argus {
         }
 
         auto scene = new Scene2D(id, Transform2D());
-        g_scenes.insert({id, scene});
+        g_scenes.insert({ id, scene });
 
         return *scene;
     }
 
-    Scene2D::Scene2D(const std::string &id, const Transform2D &transform) :
-            Scene(SceneType::TwoD),
-            m_pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(id, *this, transform)) {
+    Scene2D::Scene2D(const std::string &id, const Transform2D &transform):
+        Scene(SceneType::TwoD),
+        m_pimpl(&g_pimpl_pool.construct<pimpl_Scene2D>(id, *this, transform)) {
     }
 
     Scene2D::Scene2D(Scene2D &&rhs) noexcept:
@@ -184,7 +184,7 @@ namespace argus {
             throw std::invalid_argument("Camera with provided ID already exists in scene");
         }
 
-        auto it = m_pimpl->cameras.insert({id, Camera2D(id, *this)});
+        auto it = m_pimpl->cameras.insert({ id, Camera2D(id, *this) });
 
         return it.first->second;
     }

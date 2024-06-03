@@ -38,14 +38,14 @@ namespace argus {
         std::atomic_bool dirty;
         std::atomic_bool dirty_matrix;
 
-        Matrix4 matrix_rep{};
+        Matrix4 matrix_rep {};
 
-        pimpl_Transform3D(const Vector3f &translation, const Vector3f rotation, const Vector3f &scale) :
-                translation(translation),
-                rotation(rotation),
-                scale(scale),
-                dirty(true),
-                dirty_matrix(true) {
+        pimpl_Transform3D(const Vector3f &translation, const Vector3f rotation, const Vector3f &scale):
+            translation(translation),
+            rotation(rotation),
+            scale(scale),
+            dirty(true),
+            dirty_matrix(true) {
         }
 
         void set_dirty(void) {

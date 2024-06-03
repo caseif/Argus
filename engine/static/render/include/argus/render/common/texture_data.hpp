@@ -61,7 +61,7 @@ namespace argus {
          *
          * \attention The pixel data must be in RGBA format with a bit-depth of 8.
          */
-        TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data);
+        TextureData(unsigned int width, unsigned int height, unsigned char **&&image_data);
 
         TextureData(const TextureData &) noexcept;
 
@@ -79,6 +79,6 @@ namespace argus {
          *
          * \return The pixel data of the texture;
          */
-        const unsigned char *const *&get_pixel_data(void) const;
+        [[nodiscard]] const unsigned char *const *&get_pixel_data(void) const;
     };
 }

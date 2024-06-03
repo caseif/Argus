@@ -74,28 +74,28 @@ namespace argus {
          *
          * \return The object's handle.
          */
-        Handle get_handle(void) const;
+        [[nodiscard]] Handle get_handle(void) const;
 
         /**
          * \brief Gets the parent Scene of this object.
          *
          * \return The parent Scene.
          */
-        const Scene2D &get_scene(void) const;
+        [[nodiscard]] const Scene2D &get_scene(void) const;
 
         /**
          * \brief Gets the parent group of this object.
          *
          * \return The parent group.
          */
-         const RenderGroup2D &get_parent(void) const;
+        [[nodiscard]] const RenderGroup2D &get_parent(void) const;
 
         /**
          * \brief Gets the UID of the Material used by the object.
          *
          * \return The UID of the Material used by the object.
          */
-        const std::string &get_material(void) const;
+        [[nodiscard]] const std::string &get_material(void) const;
 
         /**
          * \brief Gets the \link RenderPrim RenderPrims \endlink comprising this
@@ -104,14 +104,14 @@ namespace argus {
          * \return The \link RenderPrim RenderPrims \endlink comprising this
          *         object.
          */
-        const std::vector<RenderPrim2D> &get_primitives(void) const;
+        [[nodiscard]] const std::vector<RenderPrim2D> &get_primitives(void) const;
 
         /**
          * \brief Gets the anchor point of the object about which rotation and
          *        scaling will be applied.
          * \return The anchor point of the object.
          */
-        const Vector2f &get_anchor_point(void) const;
+        [[nodiscard]] const Vector2f &get_anchor_point(void) const;
 
         /**
          * \brief Gets the stride on each axis between atlas tiles, if the
@@ -119,7 +119,7 @@ namespace argus {
          *
          * \return The stride between atlas tiles.
          */
-        const Vector2f &get_atlas_stride(void) const;
+        [[nodiscard]] const Vector2f &get_atlas_stride(void) const;
 
         /**
          * \brief Gets the z-index of the object. Objects with larger z-indices
@@ -127,7 +127,7 @@ namespace argus {
          *
          * \return THe z-index of the object.
          */
-        uint32_t get_z_index(void) const;
+        [[nodiscard]] uint32_t get_z_index(void) const;
 
         /**
          * \brief Gets the opacity of the object with respect to lighting.
@@ -163,7 +163,7 @@ namespace argus {
          * \return The x- and y-index of the currently active animation
          *        frame.
          */
-        ValueAndDirtyFlag<Vector2u> get_active_frame() const;
+        [[nodiscard]] ValueAndDirtyFlag<Vector2u> get_active_frame() const;
 
         /**
          * \brief Sets the active animation frame.
@@ -174,7 +174,7 @@ namespace argus {
          */
         void set_active_frame(const Vector2u &frame);
 
-        const Transform2D &peek_transform(void) const;
+        [[nodiscard]] const Transform2D &peek_transform(void) const;
 
         /**
          * \brief Gets the local Transform of this object.

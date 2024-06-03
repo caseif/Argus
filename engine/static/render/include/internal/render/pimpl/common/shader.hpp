@@ -22,6 +22,7 @@
 
 #include <initializer_list>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstdint>
@@ -45,12 +46,12 @@ namespace argus {
          */
         const std::vector<uint8_t> src;
 
-        pimpl_Shader(const std::string &uid, const std::string &type, ShaderStage stage,
-                const std::vector<uint8_t> &src) :
-                uid(uid),
-                type(type),
-                stage(stage),
-                src(src) {
+        pimpl_Shader(std::string uid, std::string type, ShaderStage stage,
+                const std::vector<uint8_t> &src):
+            uid(std::move(uid)),
+            type(std::move(type)),
+            stage(stage),
+            src(src) {
         }
 
         pimpl_Shader(const pimpl_Shader &) = default;

@@ -23,16 +23,17 @@
 #include "internal/render/pimpl/2d/camera_2d.hpp"
 
 #include <string>
+#include <utility>
 
 namespace argus {
     static PoolAllocator g_alloc_pool(sizeof(pimpl_Camera2D));
 
-    Camera2D::Camera2D(const std::string &id, Scene2D &scene) :
-            m_pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {
+    Camera2D::Camera2D(const std::string &id, Scene2D &scene):
+        m_pimpl(&g_alloc_pool.construct<pimpl_Camera2D>(id, scene)) {
     }
 
-    Camera2D::Camera2D(Camera2D &&rhs) :
-            m_pimpl(rhs.m_pimpl) {
+    Camera2D::Camera2D(Camera2D &&rhs) noexcept:
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 
@@ -60,5 +61,10 @@ namespace argus {
 
     void Camera2D::set_transform(const Transform2D &transform) {
         m_pimpl->transform = transform;
+    }
+
+    pimpl_Camera2D::pimpl_Camera2D(std::string id, Scene2D &scene):
+            id(std::move(id)),
+            scene(scene) {
     }
 }

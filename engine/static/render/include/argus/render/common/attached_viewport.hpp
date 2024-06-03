@@ -38,22 +38,22 @@ namespace argus {
       protected:
         AttachedViewport(SceneType type);
 
-        AttachedViewport(const AttachedViewport &) = delete;
-
-        AttachedViewport(AttachedViewport &&) = delete;
-
-        virtual pimpl_AttachedViewport *get_pimpl(void) const = 0;
+        [[nodiscard]] virtual pimpl_AttachedViewport *get_pimpl(void) const = 0;
 
       public:
         SceneType m_type;
 
+        AttachedViewport(const AttachedViewport &) = delete;
+
+        AttachedViewport(AttachedViewport &&) = delete;
+
         virtual ~AttachedViewport(void) = 0;
 
-        Viewport get_viewport(void) const;
+        [[nodiscard]] Viewport get_viewport(void) const;
 
-        uint32_t get_z_index(void) const;
+        [[nodiscard]] uint32_t get_z_index(void) const;
 
-        std::vector<std::string> get_postprocessing_shaders(void) const;
+        [[nodiscard]] std::vector<std::string> get_postprocessing_shaders(void) const;
 
         void add_postprocessing_shader(const std::string &shader_uid);
 

@@ -77,7 +77,7 @@ namespace argus {
          *
          * \return The translation component of the transform.
          */
-        Vector2f get_translation(void) const;
+        [[nodiscard]] Vector2f get_translation(void) const;
 
         /**
          * \brief Sets the translation component of the transform.
@@ -119,7 +119,7 @@ namespace argus {
          *
          * \return The rotation component of the transform in radians.
          */
-        float get_rotation(void) const;
+        [[nodiscard]] float get_rotation(void) const;
 
         /**
          * \brief Sets the rotation component of the transform.
@@ -142,7 +142,7 @@ namespace argus {
          *
          * \return The scale component of the transform.
          */
-        Vector2f get_scale(void) const;
+        [[nodiscard]] Vector2f get_scale(void) const;
 
         /**
          * \brief Sets the scale component of the transform.
@@ -167,13 +167,13 @@ namespace argus {
          *        scaling transformation.
          * \return The matrix representation.
          */
-        const Matrix4 &as_matrix(const Vector2f &anchor_point) const;
+        [[nodiscard]] const Matrix4 &as_matrix(const Vector2f &anchor_point) const;
 
-        const Matrix4 &get_translation_matrix(void) const;
+        [[nodiscard]] const Matrix4 &get_translation_matrix(void) const;
 
-        const Matrix4 &get_rotation_matrix(void) const;
+        [[nodiscard]] const Matrix4 &get_rotation_matrix(void) const;
 
-        const Matrix4 &get_scale_matrix(void) const;
+        [[nodiscard]] const Matrix4 &get_scale_matrix(void) const;
 
         /**
          * \brief Copys a 4x4 matrix representation of the transform into
@@ -189,7 +189,7 @@ namespace argus {
          * \brief Returns a transform comprised of the inverse position and
          *        rotation of this one. The scale is unaffected.
          */
-        Transform2D inverse(void) const;
+        [[nodiscard]] Transform2D inverse(void) const;
 
         /**
          * \brief Sets the reference used for object versioning. The value
@@ -251,7 +251,7 @@ namespace argus {
          *
          * \return The translation component of the transform.
          */
-        Vector3f get_translation(void) const;
+        [[nodiscard]] Vector3f get_translation(void) const;
 
         /**
          * \brief Sets the translation component of the transform.
@@ -297,7 +297,7 @@ namespace argus {
          * \return The rotation component of the transform in radians in the
          *         order (pitch, yaw, roll).
          */
-        Vector3f get_rotation(void) const;
+        [[nodiscard]] Vector3f get_rotation(void) const;
 
         /**
          * \brief Sets the rotation component of the transform.
@@ -344,7 +344,7 @@ namespace argus {
          *
          * \return The scale component of the transform.
          */
-        Vector3f get_scale(void) const;
+        [[nodiscard]] Vector3f get_scale(void) const;
 
         /**
          * \brief Sets the scale component of the transform.

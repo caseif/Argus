@@ -41,23 +41,23 @@ namespace argus {
 
     RenderObject2D::RenderObject2D(const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
-            uint32_t z_index, float light_opacity, const Transform2D &transform) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
-                    material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
+            uint32_t z_index, float light_opacity, const Transform2D &transform):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(g_render_handle_table.create_handle(this), parent_group,
+                material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
     }
 
     RenderObject2D::RenderObject2D(Handle handle, const RenderGroup2D &parent_group, const std::string &material,
             const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point, const Vector2f &atlas_stride,
-            uint32_t z_index, float light_opacity, const Transform2D &transform) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
-                    material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
+            uint32_t z_index, float light_opacity, const Transform2D &transform):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_RenderObject2D>(handle, parent_group,
+                material, primitives, anchor_point, atlas_stride, z_index, light_opacity, transform)) {
         m_pimpl->transform.set_version_ref(m_pimpl->version);
         g_render_handle_table.update_handle(handle, this);
     }
 
     RenderObject2D::RenderObject2D(RenderObject2D &&rhs) noexcept:
-            m_pimpl(rhs.m_pimpl) {
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 

@@ -56,9 +56,9 @@ namespace argus {
 
         ~Material(void);
 
-        const std::string &get_texture_uid(void) const;
+        [[nodiscard]] const std::string &get_texture_uid(void) const;
 
-        const std::vector<std::string> &get_shader_uids(void) const;
+        [[nodiscard]] const std::vector<std::string> &get_shader_uids(void) const;
     };
 
 }

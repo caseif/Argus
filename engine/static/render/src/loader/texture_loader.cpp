@@ -50,8 +50,8 @@ namespace argus {
                 std::streamsize(size));
     }
 
-    PngTextureLoader::PngTextureLoader() :
-            ResourceLoader({RESOURCE_TYPE_TEXTURE_PNG}) {
+    PngTextureLoader::PngTextureLoader():
+        ResourceLoader({ RESOURCE_TYPE_TEXTURE_PNG }) {
     }
 
     void *PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -89,7 +89,7 @@ namespace argus {
         #pragma warning(push, 3)
         #pragma warning(disable: 4611)
         #endif
-        if (setjmp(png_jmpbuf(png_ptr)) != 0) {
+        if (setjmp(png_jmpbuf(png_ptr)) != 0) { // NOLINT(*-err52-cpp)
             Logger::default_logger().fatal("libpng failed");
         }
         #ifdef _MSC_VER
@@ -134,13 +134,13 @@ namespace argus {
         }
 
         if (color_type == PNG_COLOR_TYPE_RGB
-            || color_type == PNG_COLOR_TYPE_GRAY
-            || color_type == PNG_COLOR_TYPE_PALETTE) {
+                || color_type == PNG_COLOR_TYPE_GRAY
+                || color_type == PNG_COLOR_TYPE_PALETTE) {
             png_set_filler(png_ptr, 0xFF, PNG_FILLER_AFTER);
         }
 
         if (color_type == PNG_COLOR_TYPE_GRAY
-            || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
+                || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
             png_set_gray_to_rgb(png_ptr);
         }
 
@@ -157,7 +157,7 @@ namespace argus {
 
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
-        return new TextureData{width, height, std::move(row_pointers)};
+        return new TextureData { width, height, std::move(row_pointers) };
     }
 
     void *PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,

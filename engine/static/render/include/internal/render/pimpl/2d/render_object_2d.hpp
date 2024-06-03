@@ -24,6 +24,7 @@
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 
+#include <utility>
 #include <vector>
 
 namespace argus {
@@ -43,18 +44,18 @@ namespace argus {
         uint16_t version;
 
         pimpl_RenderObject2D(Handle handle, const RenderGroup2D &parent_group,
-                const std::string &material, const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
-                const Vector2f &atlas_stride, uint32_t z_index, float light_opacity, const Transform2D &transform) :
+                std::string material, const std::vector<RenderPrim2D> &primitives, const Vector2f &anchor_point,
+                const Vector2f &atlas_stride, uint32_t z_index, float light_opacity, Transform2D transform):
             handle(handle),
             parent_group(parent_group),
-            material(material),
+            material(std::move(material)),
             primitives(primitives),
             anchor_point(anchor_point),
             atlas_stride(atlas_stride),
             z_index(z_index),
             light_opacity(light_opacity),
-            transform(transform),
-            active_frame({0, 0}),
+            transform(std::move(transform)),
+            active_frame({ 0, 0 }),
             version(1) {
         }
 

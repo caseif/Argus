@@ -45,12 +45,12 @@ namespace argus {
 
         uint16_t *version_ptr;
 
-        pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale) :
-                translation(translation),
-                rotation(rotation),
-                scale(scale),
-                dirty_matrix(true),
-                version_ptr(nullptr) {
+        pimpl_Transform2D(const Vector2f &translation, const float rotation, const Vector2f &scale):
+            translation(translation),
+            rotation(rotation),
+            scale(scale),
+            dirty_matrix(true),
+            version_ptr(nullptr) {
         }
 
         void set_dirty(void) {

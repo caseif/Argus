@@ -28,9 +28,9 @@
 namespace argus {
     struct pimpl_AttachedViewport {
       protected:
-        pimpl_AttachedViewport(const Viewport &viewport, uint32_t z_index) :
-                viewport(viewport),
-                z_index(z_index) {
+        pimpl_AttachedViewport(const Viewport &viewport, uint32_t z_index):
+            viewport(viewport),
+            z_index(z_index) {
         }
 
       public:

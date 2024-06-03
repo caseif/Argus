@@ -26,7 +26,6 @@
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/2d/scene_2d.hpp"
-#include "internal/render/module_render.hpp"
 #include "internal/render/pimpl/common/canvas.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
@@ -39,8 +38,8 @@ namespace argus {
     // forward declarations
     struct ArgusEvent;
 
-    Canvas::Canvas(Window &window) :
-            m_pimpl(new pimpl_Canvas(window)) {
+    Canvas::Canvas(Window &window):
+        m_pimpl(new pimpl_Canvas(window)) {
     }
 
     Canvas::~Canvas() {

@@ -28,25 +28,26 @@
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
 #include <map>
+#include <optional>
 
 namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {
-        group.get_transform().copy_matrix(target, {0, 0});
-        const RenderGroup2D *cur = nullptr;
-        const RenderGroup2D *parent = group.get_parent();
+        group.get_transform().copy_matrix(target, { 0, 0 });
+        auto parent = group.get_parent();
 
-        while (parent != nullptr) {
-            cur = parent;
-            parent = parent->get_parent();
+        while (parent.has_value()) {
+            const auto &cur = parent.value().get();
+            parent = cur.get_parent();
 
-            Matrix4 new_transform = target * cur->peek_transform().as_matrix({0, 0});
+            Matrix4 new_transform = target * cur.peek_transform().as_matrix({ 0, 0 });
 
             target = new_transform;
         }
     }
 
     static void _process_render_group_2d(ProcessedRenderObject2DMap &processed_obj_map, RenderGroup2D &group,
-            const bool recompute_transform, const Matrix4 running_transform, std::map<Handle, uint16_t> &new_version_map,
+            const bool recompute_transform, const Matrix4 running_transform,
+            std::map<Handle, uint16_t> &new_version_map,
             const ProcessRenderObj2DFn &process_new_fn, const UpdateRenderObj2DFn &update_fn, void *extra) {
         bool new_recompute_transform = recompute_transform;
         Matrix4 cur_transform;
@@ -60,7 +61,7 @@ namespace argus {
         if (recompute_transform) {
             // we already know we have to recompute the transform of this whole
             // branch since a parent was dirty
-            cur_transform = group_transform.as_matrix({0, 0}) * running_transform;
+            cur_transform = group_transform.as_matrix({ 0, 0 }) * running_transform;
 
             new_recompute_transform = true;
         } else if (group.m_pimpl->version != cur_version_map[group.get_handle()]) {
@@ -100,7 +101,7 @@ namespace argus {
             } else {
                 auto *processed_obj = process_new_fn(*child_object, final_obj_transform, extra);
 
-                processed_obj_map.insert({child_object->get_handle(), processed_obj});
+                processed_obj_map.insert({ child_object->get_handle(), processed_obj });
             }
         }
 

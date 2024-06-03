@@ -24,6 +24,8 @@
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
 
+#include <map>
+#include <utility>
 #include <vector>
 
 namespace argus {
@@ -35,9 +37,9 @@ namespace argus {
 
         std::mutex read_lock;
 
-        pimpl_Scene(const std::string &id, const Transform2D &transform) :
-                id(id),
-                transform(transform) {
+        pimpl_Scene(std::string id, const Transform2D &transform):
+            id(std::move(id)),
+            transform(transform) {
         }
 
         pimpl_Scene(const pimpl_Scene &) = delete;

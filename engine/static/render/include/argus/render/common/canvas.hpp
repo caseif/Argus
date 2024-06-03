@@ -75,11 +75,11 @@ namespace argus {
          *
          * \return The Window which owns this Canvas.
          */
-        Window &get_window(void) const;
+        [[nodiscard]] Window &get_window(void) const;
 
-        std::vector<std::reference_wrapper<AttachedViewport2D>> get_viewports_2d(void) const;
+        [[nodiscard]] std::vector<std::reference_wrapper<AttachedViewport2D>> get_viewports_2d(void) const;
 
-        std::optional<std::reference_wrapper<AttachedViewport>> find_viewport(const std::string &id) const;
+        [[nodiscard]] std::optional<std::reference_wrapper<AttachedViewport>> find_viewport(const std::string &id) const;
 
         AttachedViewport2D &attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
                 uint32_t z_index);

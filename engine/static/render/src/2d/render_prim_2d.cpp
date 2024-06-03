@@ -36,16 +36,16 @@ namespace argus {
         m_pimpl = &g_pimpl_pool.construct<pimpl_RenderPrim2D>(vertices);
     }
 
-    RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices) :
-            RenderPrim2D(std::vector<Vertex2D>(vertices)) {
+    RenderPrim2D::RenderPrim2D(std::initializer_list<Vertex2D> vertices):
+        RenderPrim2D(std::vector<Vertex2D>(vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(const RenderPrim2D &rhs) noexcept:
-            m_pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.m_pimpl->vertices)) {
+        m_pimpl(&g_pimpl_pool.construct<pimpl_RenderPrim2D>(rhs.m_pimpl->vertices)) {
     }
 
     RenderPrim2D::RenderPrim2D(RenderPrim2D &&rhs) noexcept:
-            m_pimpl(rhs.m_pimpl) {
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 

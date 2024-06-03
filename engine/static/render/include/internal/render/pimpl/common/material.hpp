@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace argus {
@@ -34,9 +35,9 @@ namespace argus {
         const std::string texture;
         const std::vector<std::string> shaders;
 
-        pimpl_Material(const std::string &texture, const std::vector<std::string> &shaders) :
-                texture(texture),
-                shaders(shaders) {
+        pimpl_Material(std::string texture, const std::vector<std::string> &shaders):
+            texture(std::move(texture)),
+            shaders(shaders) {
         }
 
         pimpl_Material(const pimpl_Material &) = default;

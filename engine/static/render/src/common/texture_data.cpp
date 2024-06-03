@@ -27,22 +27,22 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_TextureData));
 
     // IMPORTANT: image_data is assumed to be allocated on the heap
-    TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(image_data)),
-            m_width(width),
-            m_height(height) {
+    TextureData::TextureData(const unsigned int width, const unsigned int height, unsigned char **&&image_data):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(image_data)),
+        m_width(width),
+        m_height(height) {
     }
 
     TextureData::TextureData(const TextureData &rhs) noexcept:
-            m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(*rhs.m_pimpl)),
-            m_width(rhs.m_width),
-            m_height(rhs.m_height) {
+        m_pimpl(&g_pimpl_pool.construct<pimpl_TextureData>(*rhs.m_pimpl)),
+        m_width(rhs.m_width),
+        m_height(rhs.m_height) {
     }
 
     TextureData::TextureData(TextureData &&rhs) noexcept:
-            m_pimpl(rhs.m_pimpl),
-            m_width(rhs.m_width),
-            m_height(rhs.m_height) {
+        m_pimpl(rhs.m_pimpl),
+        m_width(rhs.m_width),
+        m_height(rhs.m_height) {
         rhs.m_pimpl = nullptr;
     }
 

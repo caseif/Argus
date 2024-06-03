@@ -18,7 +18,6 @@
 
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
-#include "internal/render/common/scene.hpp"
 #include "internal/render/pimpl/common/scene.hpp"
 
 #include <functional>
@@ -36,10 +35,9 @@ namespace argus {
         return it != g_scenes.end() ? std::make_optional(std::reference_wrapper(*it->second)) : std::nullopt;
     }
 
-    Scene::Scene(SceneType type) :
-            type(type) {
+    Scene::Scene(SceneType type):
+        type(type) {
     }
 
-    Scene::~Scene(void) {
-    }
+    Scene::~Scene(void) = default;
 }

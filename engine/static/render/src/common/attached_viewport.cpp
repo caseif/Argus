@@ -24,13 +24,11 @@
 #include <vector>
 
 namespace argus {
-    AttachedViewport::AttachedViewport(SceneType type) :
-            m_type(type) {
+    AttachedViewport::AttachedViewport(SceneType type):
+        m_type(type) {
     }
 
-    AttachedViewport::~AttachedViewport(void) {
-    }
-
+    AttachedViewport::~AttachedViewport(void) = default;
 
     Viewport AttachedViewport::get_viewport(void) const {
         return get_pimpl()->viewport;

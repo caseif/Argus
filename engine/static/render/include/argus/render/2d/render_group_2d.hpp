@@ -24,6 +24,7 @@
 #include "argus/render/common/transform.hpp"
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -88,14 +89,14 @@ namespace argus {
          *
          * \return The object's handle.
          */
-        Handle get_handle(void) const;
+        [[nodiscard]] Handle get_handle(void) const;
 
         /**
          * \brief Gets the parent Scene.
          *
          * \return The parent Scene to this group.
          */
-        Scene2D &get_scene(void) const;
+        [[nodiscard]] Scene2D &get_scene(void) const;
 
         /**
          * \brief Gets the parent RenderGroup, if applicable.
@@ -103,7 +104,7 @@ namespace argus {
          * \return The parent group to this one, or nullptr if this is a
          *         root group.
          */
-        RenderGroup2D *get_parent(void) const;
+        [[nodiscard]] std::optional<std::reference_wrapper<RenderGroup2D>> get_parent(void) const;
 
         /**
          * \brief Creates a new RenderGroup as a child of this group.
@@ -160,7 +161,7 @@ namespace argus {
          *         group's absolute transform with respect to the
          *         Scene containing the group.
          */
-        const Transform2D &peek_transform(void) const;
+        [[nodiscard]] const Transform2D &peek_transform(void) const;
 
         /**
          * \brief Gets the local Transform of this group and clears its

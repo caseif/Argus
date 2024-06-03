@@ -35,8 +35,8 @@ namespace argus {
 
         std::map<std::string, AttachedViewport2D> viewports_2d;
 
-        pimpl_Canvas(Window &window) :
-                window(window) {
+        pimpl_Canvas(Window &window):
+            window(window) {
         }
 
         pimpl_Canvas(const pimpl_Canvas &) = delete;

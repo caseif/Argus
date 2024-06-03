@@ -37,23 +37,21 @@ namespace argus {
         }
     }
 
-    Transform2D::Transform2D(void) : Transform2D({0, 0}, 0, {1, 1}) {
+    Transform2D::Transform2D(void):
+        Transform2D({ 0, 0 }, 0, { 1, 1 }) {
     }
 
-    Transform2D::Transform2D(const Vector2f &translation, float rotation, const Vector2f &scale) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_Transform2D>(translation, rotation, scale)) {
+    Transform2D::Transform2D(const Vector2f &translation, float rotation, const Vector2f &scale):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_Transform2D>(translation, rotation, scale)) {
     }
 
-    Transform2D::Transform2D(const Transform2D &rhs) noexcept: Transform2D(
-            rhs.m_pimpl->translation,
-            rhs.m_pimpl->rotation,
-            rhs.m_pimpl->scale
-    ) {
+    Transform2D::Transform2D(const Transform2D &rhs) noexcept:
+        Transform2D(rhs.m_pimpl->translation, rhs.m_pimpl->rotation, rhs.m_pimpl->scale) {
     }
 
     // for the move ctor, we just steal the m_pimpl
     Transform2D::Transform2D(Transform2D &&rhs) noexcept:
-            m_pimpl(rhs.m_pimpl) {
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 
@@ -68,6 +66,17 @@ namespace argus {
         m_pimpl->rotation.store(rhs.m_pimpl->rotation);
         m_pimpl->scale = rhs.m_pimpl->scale;
         m_pimpl->dirty_matrix = &rhs != this || m_pimpl->dirty_matrix;
+
+        _inc_version(*this);
+
+        return *this;
+    }
+
+    Transform2D &Transform2D::operator=(Transform2D &&rhs) noexcept {
+        m_pimpl->translation = rhs.m_pimpl->translation;
+        m_pimpl->rotation.store(std::move(rhs.m_pimpl->rotation));
+        m_pimpl->scale = rhs.m_pimpl->scale;
+        m_pimpl->dirty_matrix = &rhs != this || std::move(m_pimpl->dirty_matrix);
 
         _inc_version(*this);
 
@@ -100,7 +109,7 @@ namespace argus {
     }
 
     void Transform2D::set_translation(float x, float y) {
-        this->set_translation({x, y});
+        this->set_translation({ x, y });
     }
 
     void Transform2D::add_translation(const Vector2f &translation_delta) {
@@ -113,7 +122,7 @@ namespace argus {
     }
 
     void Transform2D::add_translation(float x, float y) {
-        this->add_translation({x, y});
+        this->add_translation({ x, y });
     }
 
     float Transform2D::get_rotation(void) const {
@@ -153,7 +162,7 @@ namespace argus {
     }
 
     void Transform2D::set_scale(float x, float y) {
-        this->set_scale({x, y});
+        this->set_scale({ x, y });
     }
 
     static void _compute_aux_matrices(const Transform2D &transform) {
@@ -181,16 +190,16 @@ namespace argus {
 
         transform.m_pimpl->rotation_matrix = Matrix4::from_row_major({
                 cos_rot, -sin_rot, 0, 0,
-                sin_rot, cos_rot,  0, 0,
-                0,       0,        1, 0,
-                0,       0,        0, 1
+                sin_rot, cos_rot, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
         });
 
         transform.m_pimpl->scale_matrix = Matrix4::from_row_major({
-                scale_current.x, 0,               0, 0,
-                0,               scale_current.y, 0, 0,
-                0,               0,               1, 0,
-                0,               0,               0, 1
+                scale_current.x, 0, 0, 0,
+                0, scale_current.y, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
         });
 
         transform.m_pimpl->dirty_matrix = false;
@@ -228,7 +237,6 @@ namespace argus {
         if (dirty) {
             _compute_aux_matrices(transform);
         }
-
 
         if (dirty || anchor_point != transform.m_pimpl->last_anchor_point) {
             _compute_transform_matrix(transform, anchor_point);
@@ -268,7 +276,7 @@ namespace argus {
     }
 
     Transform2D Transform2D::inverse(void) const {
-        return {this->m_pimpl->translation.inverse(), -this->m_pimpl->rotation, this->m_pimpl->scale};
+        return { this->m_pimpl->translation.inverse(), -this->m_pimpl->rotation, this->m_pimpl->scale };
     }
 
     // this allows the transform to automatically increment the version of an

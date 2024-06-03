@@ -25,6 +25,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace argus {
     static std::map<std::string, ActivateRenderBackendFn> g_render_backend_activate_fns;
@@ -34,11 +35,11 @@ namespace argus {
         if (g_render_backend_activate_fns.find(id) != g_render_backend_activate_fns.end()) {
             throw std::invalid_argument("Render backend is already registered for provided ID");
         }
-        g_render_backend_activate_fns[id] = activate_fn;
+        g_render_backend_activate_fns[id] = std::move(activate_fn);
         Logger::default_logger().debug("Successfully registered render backend with ID %s", id.c_str());
     }
 
-    std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(std::string backend_id) {
+    std::optional<ActivateRenderBackendFn> get_render_backend_activate_fn(const std::string& backend_id) {
         auto it = g_render_backend_activate_fns.find(backend_id);
         if (it != g_render_backend_activate_fns.end()) {
             return it->second;
