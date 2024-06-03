@@ -30,8 +30,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+
 #include "SDL_events.h"
+
 #pragma GCC diagnostic pop
+
 #include "SDL_keyboard.h"
 #include "SDL_scancode.h"
 
@@ -238,17 +241,17 @@ namespace argus::input {
 
     constexpr inline KeyboardModifiers operator|(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
         return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                                              | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
+                | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
     inline KeyboardModifiers operator|=(KeyboardModifiers &lhs, const KeyboardModifiers rhs) {
         return lhs = static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                                                    | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
+                | static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
     constexpr inline KeyboardModifiers operator&(const KeyboardModifiers lhs, const KeyboardModifiers rhs) {
         return static_cast<KeyboardModifiers>(static_cast<std::underlying_type<KeyboardModifiers>::type>(lhs)
-                                              & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
+                & static_cast<std::underlying_type<KeyboardModifiers>::type>(rhs));
     }
 
     void init_keyboard(const Window &window) {

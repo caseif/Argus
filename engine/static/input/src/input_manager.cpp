@@ -22,8 +22,6 @@
 #include "argus/input/input_event.hpp"
 #include "argus/input/input_manager.hpp"
 #include "internal/input/defines.hpp"
-#include "internal/input/event_helpers.hpp"
-#include "internal/input/input_manager.hpp"
 #include "internal/input/pimpl/controller.hpp"
 #include "internal/input/pimpl/input_manager.hpp"
 
@@ -41,8 +39,8 @@ namespace argus::input {
         return instance;
     }
 
-    InputManager::InputManager(void) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_InputManager>()) {
+    InputManager::InputManager(void):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_InputManager>()) {
     }
 
     InputManager::~InputManager(void) {

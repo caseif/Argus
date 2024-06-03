@@ -30,15 +30,11 @@ namespace argus::input {
      */
     class TextInputContext {
       private:
-        bool valid;
-        bool active;
-        std::string text;
+        bool m_valid;
+        bool m_active;
+        std::string m_text;
 
         TextInputContext(void);
-
-        TextInputContext(TextInputContext &context) = delete;
-
-        TextInputContext(TextInputContext &&context) = delete;
 
       public:
         /**
@@ -46,12 +42,16 @@ namespace argus::input {
          *
          * \sa TextInputContext#release(void)
          */
-        TextInputContext &create_context(void);
+        static TextInputContext &create_context(void);
+
+        TextInputContext(TextInputContext &context) = delete;
+
+        TextInputContext(TextInputContext &&context) = delete;
 
         /**
          * \brief Returns the context's current text.
          */
-        std::string get_current_text(void) const;
+        [[nodiscard]] std::string get_current_text(void) const;
 
         /**
          * \brief Resumes capturing text input to the context.

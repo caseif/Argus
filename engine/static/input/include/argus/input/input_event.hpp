@@ -25,8 +25,8 @@
 #include <string>
 
 namespace argus::input {
-    constexpr const char *EVENT_TYPE_INPUT = "input";
-    constexpr const char *EVENT_TYPE_INPUT_DEVICE = "input_device";
+    constexpr const char *k_event_type_input = "input";
+    constexpr const char *k_event_type_input_device = "input_device";
 
     enum class InputEventType {
         ButtonDown,
@@ -41,7 +41,7 @@ namespace argus::input {
 
     struct InputEvent : public ArgusEvent, AutoCleanupable {
         static constexpr const char *get_event_type_id(void) {
-            return EVENT_TYPE_INPUT;
+            return k_event_type_input;
         }
 
         const InputEventType input_type;
@@ -66,7 +66,7 @@ namespace argus::input {
 
     struct InputDeviceEvent : ArgusEvent, AutoCleanupable {
         static constexpr const char *get_event_type_id(void) {
-            return EVENT_TYPE_INPUT_DEVICE;
+            return k_event_type_input_device;
         }
 
         const InputDeviceEventType device_event;

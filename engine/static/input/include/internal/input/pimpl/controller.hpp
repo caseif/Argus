@@ -24,7 +24,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_gamecontroller.h"
+
 #pragma GCC diagnostic pop
 
 #include <map>
@@ -56,7 +58,7 @@ namespace argus::input {
         std::map<GamepadAxis, std::vector<std::string>> gamepad_axis_to_action_bindings;
         std::map<std::string, std::vector<GamepadAxis>> action_to_gamepad_axis_bindings;
 
-        pimpl_Controller(std::string name) :
+        pimpl_Controller(std::string name):
             name(std::move(name)) {
         }
     };

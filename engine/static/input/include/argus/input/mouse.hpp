@@ -71,7 +71,7 @@ namespace argus::input {
      *
      * \return Whether the mouse button is currently pressed.
      */
-     bool is_mouse_button_pressed(MouseButton button);
+    bool is_mouse_button_pressed(MouseButton button);
 
     /**
      * \brief Sets whether the mouse cursor should be hidden and locked to the

@@ -30,8 +30,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+
 #include "SDL_events.h"
+
 #pragma GCC diagnostic pop
+
 #include "SDL_mouse.h"
 
 #include <mutex>
@@ -149,7 +152,7 @@ namespace argus::input {
             }
 
             if (it_y == controller->m_pimpl->mouse_axis_to_action_bindings.end()) {
-                for (auto &action: it_y->second) {
+                for (auto &action : it_y->second) {
                     dispatch_axis_event(&window, controller_index, action, y, dy);
                 }
             }

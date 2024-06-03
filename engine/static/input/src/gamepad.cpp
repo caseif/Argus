@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/collections.hpp"
-#include "argus/lowlevel/macros.hpp"
 
 #include "argus/core/event.hpp"
 
@@ -34,10 +33,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 #include "SDL_events.h"
 #include "SDL_gamecontroller.h"
 #include "SDL_joystick.h"
 #include "SDL_version.h"
+
 #pragma GCC diagnostic pop
 
 #include <limits>
@@ -341,7 +342,8 @@ namespace argus::input {
                         new_x = 0;
                         new_y = 0;
                     } else {
-                        if (std::abs(std::abs(radius_x) - std::abs(radius_y)) <= std::numeric_limits<double>::epsilon()) {
+                        if (std::abs(std::abs(radius_x) - std::abs(radius_y))
+                                <= std::numeric_limits<double>::epsilon()) {
                             // it's a circle so literally just use the constant radius
                             r_deadzone = radius_x;
                         } else {

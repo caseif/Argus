@@ -27,19 +27,19 @@ namespace argus::input {
     static std::vector<TextInputContext *> g_input_contexts;
     static TextInputContext *g_active_input_context = nullptr;
 
-    TextInputContext::TextInputContext(void) :
-            valid(true),
-            active(false),
-            text() {
-        this->activate();
-    }
-
     TextInputContext &TextInputContext::create_context(void) {
         return *new TextInputContext();
     }
 
+    TextInputContext::TextInputContext(void):
+        m_valid(true),
+        m_active(false),
+        m_text() {
+        this->activate();
+    }
+
     std::string TextInputContext::get_current_text(void) const {
-        return text;
+        return m_text;
     }
 
     void TextInputContext::activate(void) {
@@ -47,22 +47,22 @@ namespace argus::input {
             g_active_input_context->deactivate();
         }
 
-        this->active = true;
+        this->m_active = true;
         g_active_input_context = this;
     }
 
     void TextInputContext::deactivate(void) {
-        if (!this->active) {
+        if (!this->m_active) {
             return;
         }
 
-        this->active = false;
+        this->m_active = false;
         g_active_input_context = nullptr;
     }
 
     void TextInputContext::release(void) {
         this->deactivate();
-        this->valid = false;
+        this->m_valid = false;
         remove_from_vector(g_input_contexts, this);
     }
 }

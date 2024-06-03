@@ -26,7 +26,6 @@
 
 #include "internal/input/controller.hpp"
 #include "internal/input/gamepad.hpp"
-#include "internal/input/input_manager.hpp"
 #include "internal/input/keyboard.hpp"
 #include "internal/input/module_input.hpp"
 #include "internal/input/mouse.hpp"
@@ -47,7 +46,6 @@ namespace argus {
             //TODO: figure out how to move cursor inside window boundary
         }
     }
-
 
     static void _on_update_early(TimeDelta delta) {
         UNUSED(delta);

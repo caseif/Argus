@@ -43,7 +43,7 @@ namespace argus::input {
 
     void set_global_deadzone_shape(DeadzoneShape shape);
 
-    Controller::Controller(const std::string &name) :
+    Controller::Controller(const std::string &name):
         m_pimpl(&g_pimpl_pool.construct<pimpl_Controller>(name)) {
     }
 
@@ -303,7 +303,8 @@ namespace argus::input {
     }
 
     void Controller::bind_gamepad_button(GamepadButton button, const std::string &action) {
-        _bind_thing(m_pimpl->gamepad_button_to_action_bindings, m_pimpl->action_to_gamepad_button_bindings, button, action);
+        _bind_thing(m_pimpl->gamepad_button_to_action_bindings, m_pimpl->action_to_gamepad_button_bindings, button,
+                action);
     }
 
     void Controller::unbind_gamepad_button(GamepadButton button) {
@@ -365,7 +366,7 @@ namespace argus::input {
         if (this->has_gamepad()) {
             auto gamepad_it = m_pimpl->action_to_gamepad_button_bindings.find(action);
             if (gamepad_it != m_pimpl->action_to_gamepad_button_bindings.cend()) {
-                for (auto btn: gamepad_it->second) {
+                for (auto btn : gamepad_it->second) {
                     if (this->is_gamepad_button_pressed(btn)) {
                         return true;
                     }

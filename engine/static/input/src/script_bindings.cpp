@@ -26,7 +26,7 @@ namespace argus {
         bind_type<input::InputManager>("InputManager");
         bind_member_instance_function("get_controller", &input::InputManager::get_controller);
         bind_member_instance_function("add_controller", &input::InputManager::add_controller);
-        bind_member_instance_function<void(input::InputManager::*)(const std::string &)>("remove_controller",
+        bind_member_instance_function<void (input::InputManager::*)(const std::string &)>("remove_controller",
                 &input::InputManager::remove_controller);
 
         bind_member_instance_function("get_global_deadzone_radius", &input::InputManager::get_global_deadzone_radius);
@@ -295,33 +295,33 @@ namespace argus {
         bind_member_instance_function("detach_gamepad", &input::Controller::detach_gamepad);
 
         bind_member_instance_function("bind_keyboard_key", &input::Controller::bind_keyboard_key);
-        bind_member_instance_function<void(input::Controller::*)(input::KeyboardScancode)>(
+        bind_member_instance_function<void (input::Controller::*)(input::KeyboardScancode)>(
                 "unbind_keyboard_key", &input::Controller::unbind_keyboard_key);
-        bind_member_instance_function<void(input::Controller::*)(input::KeyboardScancode, const std::string &)>(
+        bind_member_instance_function<void (input::Controller::*)(input::KeyboardScancode, const std::string &)>(
                 "unbind_keyboard_key_action", &input::Controller::unbind_keyboard_key);
 
         bind_member_instance_function("bind_mouse_button", &input::Controller::bind_mouse_button);
-        bind_member_instance_function<void(input::Controller::*)(input::MouseButton)>(
+        bind_member_instance_function<void (input::Controller::*)(input::MouseButton)>(
                 "unbind_mouse_button", &input::Controller::unbind_mouse_button);
-        bind_member_instance_function<void(input::Controller::*)(input::MouseButton, const std::string &)>(
+        bind_member_instance_function<void (input::Controller::*)(input::MouseButton, const std::string &)>(
                 "unbind_mouse_button_action", &input::Controller::unbind_mouse_button);
 
         bind_member_instance_function("bind_mouse_axis", &input::Controller::bind_mouse_axis);
-        bind_member_instance_function<void(input::Controller::*)(input::MouseAxis)>(
+        bind_member_instance_function<void (input::Controller::*)(input::MouseAxis)>(
                 "unbind_mouse_axis", &input::Controller::unbind_mouse_axis);
-        bind_member_instance_function<void(input::Controller::*)(input::MouseAxis, const std::string &)>(
+        bind_member_instance_function<void (input::Controller::*)(input::MouseAxis, const std::string &)>(
                 "unbind_mouse_axis_action", &input::Controller::unbind_mouse_axis);
 
         bind_member_instance_function("bind_gamepad_button", &input::Controller::bind_gamepad_button);
-        bind_member_instance_function<void(input::Controller::*)(input::GamepadButton)>(
+        bind_member_instance_function<void (input::Controller::*)(input::GamepadButton)>(
                 "unbind_gamepad_button", &input::Controller::unbind_gamepad_button);
-        bind_member_instance_function<void(input::Controller::*)(input::GamepadButton, const std::string &)>(
+        bind_member_instance_function<void (input::Controller::*)(input::GamepadButton, const std::string &)>(
                 "unbind_gamepad_button_action", &input::Controller::unbind_gamepad_button);
 
         bind_member_instance_function("bind_gamepad_axis", &input::Controller::bind_gamepad_axis);
-        bind_member_instance_function<void(input::Controller::*)(input::GamepadAxis)>(
+        bind_member_instance_function<void (input::Controller::*)(input::GamepadAxis)>(
                 "unbind_gamepad_axis", &input::Controller::unbind_gamepad_axis);
-        bind_member_instance_function<void(input::Controller::*)(input::GamepadAxis, const std::string &)>(
+        bind_member_instance_function<void (input::Controller::*)(input::GamepadAxis, const std::string &)>(
                 "unbind_gamepad_axis_action", &input::Controller::unbind_gamepad_axis);
 
         bind_member_instance_function("get_gamepad_name", &input::Controller::get_gamepad_name);
