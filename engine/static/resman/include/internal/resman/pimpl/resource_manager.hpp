@@ -36,7 +36,7 @@ namespace argus {
         /**
          * \brief A set of all ARP packages currently loaded.
          */
-        ArpPackageSet package_set{nullptr};
+        ArpPackageSet package_set { nullptr };
 
         /**
          * \brief All currently loaded resources.
@@ -47,7 +47,7 @@ namespace argus {
          * \brief Whether discovery of resources from the filesystem has taken
          *        place.
          */
-        bool discovery_done;
+        bool discovery_done = false;
 
         /**
          * \brief All currently registered resource loaders.

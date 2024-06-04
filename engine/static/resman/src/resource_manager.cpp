@@ -21,7 +21,6 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading/future.hpp"
-#include "argus/lowlevel/threading/thread_pool.hpp"
 
 #include "argus/core/event.hpp"
 
@@ -43,28 +42,16 @@
 
 #include <algorithm>
 #include <atomic>
-#include <exception>
 #include <filesystem>
-#include <functional>
 #include <future>
-#include <istream>
 #include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <cctype>
 #include <cstddef>
-
-#ifdef _WIN32
-#include <direct.h>
-#else
-
-#include <unistd.h>
-
-#endif
 
 #define UID_NS_SEPARATOR ':'
 #define UID_PATH_SEPARATOR '/'
@@ -84,7 +71,7 @@ namespace argus {
 
         for (size_t i = 0; i < count; i++) {
             const extension_mapping_t *mapping = &mappings[i];
-            target.insert({std::string(mapping->extension), std::string(mapping->media_type)});
+            target.insert({ std::string(mapping->extension), std::string(mapping->media_type) });
         }
 
         arp_free_extension_mappings(mappings);
@@ -95,8 +82,8 @@ namespace argus {
         return instance;
     }
 
-    ResourceManager::ResourceManager(void) :
-            m_pimpl(new pimpl_ResourceManager()) {
+    ResourceManager::ResourceManager(void):
+        m_pimpl(new pimpl_ResourceManager()) {
         m_pimpl->package_set = arp_create_set();
         m_pimpl->discovery_done = false;
 
@@ -189,7 +176,7 @@ namespace argus {
                     continue;
                 }
 
-                prototype_map.insert({cur_uid, {cur_uid, type_it->second, child}});
+                prototype_map.insert({ cur_uid, { cur_uid, type_it->second, child }});
 
                 Logger::default_logger().debug("Discovered filesystem resource %s at path %s", cur_uid.c_str(),
                         child.path().c_str());
@@ -237,7 +224,7 @@ namespace argus {
             if (m_pimpl->registered_loaders.find(media_type) != m_pimpl->registered_loaders.cend()) {
                 throw std::invalid_argument("Cannot register loader for type more than once");
             }
-            m_pimpl->registered_loaders.insert({media_type, &loader});
+            m_pimpl->registered_loaders.insert({ media_type, &loader });
             Logger::default_logger().debug("Registered loader for media type %s", media_type.c_str());
         }
 
@@ -350,11 +337,7 @@ namespace argus {
                     proto.media_type.c_str());
         }
 
-        if (res == nullptr) {
-            throw ResourceNotPresentException(uid);
-        }
-
-        m_pimpl->loaded_resources.insert({res->uid, res});
+        m_pimpl->loaded_resources.insert({ res->uid, res });
 
         dispatch_event<ResourceEvent>(ResourceEventType::Load, res->prototype, res);
 
@@ -391,7 +374,7 @@ namespace argus {
             promise_ptr->set_value(*res);
             return future;
         } else {
-            return make_future<Resource &>(std::bind(&ResourceManager::get_resource, this, uid), callback);
+            return make_future<Resource &>([this, uid](void) -> auto & { return get_resource(uid); }, callback);
         }
     }
 
@@ -410,7 +393,7 @@ namespace argus {
 
         IMemStream stream(data, len);
 
-        ResourcePrototype proto = {uid, media_type, ""};
+        ResourcePrototype proto = { uid, media_type, "" };
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
@@ -421,7 +404,7 @@ namespace argus {
         }
 
         Resource *res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
-        m_pimpl->loaded_resources.insert({uid, res});
+        m_pimpl->loaded_resources.insert({ uid, res });
 
         Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());
 
@@ -441,7 +424,7 @@ namespace argus {
             throw NoLoaderException(uid, media_type);
         }
 
-        ResourcePrototype proto = {uid, media_type, ""};
+        ResourcePrototype proto = { uid, media_type, "" };
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
@@ -452,7 +435,7 @@ namespace argus {
         }
 
         Resource *res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
-        m_pimpl->loaded_resources.insert({uid, res});
+        m_pimpl->loaded_resources.insert({ uid, res });
 
         Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());
 

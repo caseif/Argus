@@ -32,14 +32,14 @@ namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Resource));
 
     Resource::Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
-            void *const data_ptr, const std::vector<std::string> &dependencies) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)),
-            prototype(std::move(prototype)) {
+            void *const data_ptr, const std::vector<std::string> &dependencies):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_Resource>(manager, loader, data_ptr, dependencies)),
+        prototype(std::move(prototype)) {
     }
 
     Resource::Resource(Resource &&rhs) noexcept:
-            m_pimpl(rhs.m_pimpl),
-            prototype(rhs.prototype) {
+        m_pimpl(rhs.m_pimpl),
+        prototype(rhs.prototype) {
     }
 
     Resource::~Resource(void) {

@@ -67,10 +67,10 @@ namespace argus {
          * \param fs_path The path to the resource or archive containing the
          *        resource on the filesystem.
          */
-        ResourcePrototype(std::string uid, std::string media_type, std::filesystem::path fs_path) :
-                uid(std::move(uid)),
-                media_type(std::move(media_type)),
-                fs_path(std::move(fs_path)) {
+        ResourcePrototype(std::string uid, std::string media_type, std::filesystem::path fs_path):
+            uid(std::move(uid)),
+            media_type(std::move(media_type)),
+            fs_path(std::move(fs_path)) {
         }
     };
 
@@ -138,7 +138,7 @@ namespace argus {
             inline operator std::string(void) const {
                 return parent.prototype.uid;
             }
-        } uid{*this};
+        } uid { *this };
         /**
          * \brief The media type of this resource.
          *
@@ -162,7 +162,7 @@ namespace argus {
             inline operator std::string(void) const {
                 return parent.prototype.media_type;
             }
-        } media_type{*this};
+        } media_type { *this };
 
         Resource(Resource &res) = delete;
 
@@ -193,7 +193,7 @@ namespace argus {
          *
          * \return A pointer to the Resource data.
          */
-        const void *get_data_ptr(void) const;
+        [[nodiscard]] const void *get_data_ptr(void) const;
 
         /**
          * \brief Gets the underlying data of this Resource.

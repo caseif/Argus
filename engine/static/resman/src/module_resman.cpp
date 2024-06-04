@@ -23,8 +23,6 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/module_resman.hpp"
 
-#include <string>
-
 namespace argus {
     extern "C" void update_lifecycle_resman(LifecycleStage stage) {
         switch (stage) {

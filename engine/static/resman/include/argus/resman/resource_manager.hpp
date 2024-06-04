@@ -53,10 +53,6 @@ namespace argus {
          */
         ResourceManager(void);
 
-        ResourceManager(ResourceManager &) = delete;
-
-        ResourceManager(ResourceManager &&) = delete;
-
         /**
          * \brief Destroys the ResourceManager.
          */
@@ -66,14 +62,18 @@ namespace argus {
                 std::type_index type);
 
       public:
-        pimpl_ResourceManager *m_pimpl;
-
         /**
          * \brief Gets the global ResourceManager instance.
          *
          * \return The global ResourceManager.
          */
         static ResourceManager &instance(void);
+
+        pimpl_ResourceManager *m_pimpl;
+
+        ResourceManager(ResourceManager &) = delete;
+
+        ResourceManager(ResourceManager &&) = delete;
 
         /**
          * \brief Discovers all present resources from the filesystem.
@@ -165,7 +165,7 @@ namespace argus {
          *
          * \sa ResourceManager#get_resource
          */
-        Resource &try_get_resource(const std::string &uid) const;
+        [[nodiscard]] Resource &try_get_resource(const std::string &uid) const;
 
         /**
          * \brief Attempts to retrieve the Resource with the given UID
