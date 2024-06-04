@@ -193,7 +193,7 @@ namespace argus {
         }
     }
 
-    template <typename T>
+    template<typename T>
     T &_get_bound_type(const std::type_index type_index) {
         auto index_it = g_bound_type_indices.find(std::type_index(type_index));
         if (index_it == g_bound_type_indices.cend()) {
@@ -206,7 +206,7 @@ namespace argus {
         return const_cast<T &>(type_it->second);
     }
 
-    template <typename T>
+    template<typename T>
     T &_get_bound_enum(std::type_index enum_type_index) {
         auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
         if (index_it == g_bound_enum_indices.cend()) {
@@ -270,7 +270,8 @@ namespace argus {
                 std::back_inserter(instance_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(instance_fn_names.cbegin(), instance_fn_names.cend()).size() != instance_fn_names.size()) {
-            throw BindingException(def.name, "Bound script type contains duplicate instance/extension function definitions");
+            throw BindingException(def.name,
+                    "Bound script type contains duplicate instance/extension function definitions");
         }
 
         g_bound_types.insert({ def.name, def });
@@ -304,7 +305,7 @@ namespace argus {
     }
 
     BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index) {
-        return { name, width, type_index, {}, {} };
+        return { name, width, type_index, {}, {}};
     }
 
     void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value) {
@@ -500,7 +501,6 @@ namespace argus {
                     type.instance_functions.size(), type.extension_functions.size(),
                     type.static_functions.size(), type.name.c_str());
         }
-
 
         for (const auto &[_, type] : g_bound_types) {
             Logger::default_logger().debug("Binding fields for type %s", type.name.c_str());

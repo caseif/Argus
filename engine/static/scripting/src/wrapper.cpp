@@ -208,7 +208,7 @@ namespace argus {
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
-                && get_bound_type(el_type.type_index.value()).copy_ctor != nullptr);
+                        && get_bound_type(el_type.type_index.value()).copy_ctor != nullptr);
 
         size_t el_size = el_type.size;
         if (el_type.type == IntegralType::String) {
@@ -262,7 +262,7 @@ namespace argus {
         return wrapper;
     }
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, VectorWrapper vec) {
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const VectorWrapper &vec) {
         affirm_precond(vec_type.type == IntegralType::Vector,
                 "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
         _validate_vec_obj_type(vec_type);

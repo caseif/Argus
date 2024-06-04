@@ -16,22 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
-#include "argus/scripting/bind.hpp"
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/util.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
-#include <new>
 #include <string>
 #include <vector>
-
-#include <cstdlib>
-#include <cstring>
 
 namespace argus {
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,

@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/misc.hpp"
 
@@ -28,7 +27,6 @@
 #include "argus/scripting/handles.hpp"
 #include "internal/scripting/handles.hpp"
 
-#include <thread>
 #include <typeindex>
 #include <unordered_map>
 #include <utility>
@@ -53,8 +51,8 @@ namespace argus {
             }
 
             auto handle = g_next_handle++;
-            g_handle_to_ptr_map.insert({ handle, { type, ptr } });
-            g_ptr_to_handle_map.insert({ ptr, { type, handle } });
+            g_handle_to_ptr_map.insert({ handle, { type, ptr }});
+            g_ptr_to_handle_map.insert({ ptr, { type, handle }});
 
             return handle;
         }

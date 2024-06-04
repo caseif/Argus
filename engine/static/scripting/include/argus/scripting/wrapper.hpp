@@ -32,12 +32,12 @@
 namespace argus {
     const BoundTypeDef &get_bound_type(std::type_index type_index);
 
-    template <typename T>
+    template<typename T>
     const BoundTypeDef &get_bound_type(void);
 
     const BoundEnumDef &get_bound_enum(std::type_index enum_type_index);
 
-    template <typename T>
+    template<typename T>
     const BoundEnumDef &get_bound_enum(void);
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr);
@@ -58,11 +58,11 @@ namespace argus {
 
     ObjectWrapper create_vector_object_wrapper(const ObjectType &type, const void *data, size_t count);
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
+    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const VectorWrapper &vec);
 
     ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
 
-    template <typename V, typename E = typename std::remove_cv_t<V>::value_type, bool is_heap>
+    template<typename V, typename E = typename std::remove_cv_t<V>::value_type, bool is_heap>
     ObjectWrapper _create_vector_object_wrapper(const ObjectType &type, V &vec) {
         static_assert(!std::is_function_v<E> && !is_std_function_v<E>, "Vectors of callbacks are not supported");
         static_assert(!is_std_vector_v<E>, "Vectors of vectors are not supported");
@@ -86,17 +86,17 @@ namespace argus {
         }
     }
 
-    template <typename V, typename E = typename std::remove_cv_t<V>::value_type>
+    template<typename V, typename E = typename std::remove_cv_t<V>::value_type>
     inline ObjectWrapper create_vector_object_wrapper_from_heap(const ObjectType &type, V &vec) {
         return _create_vector_object_wrapper<V, E, true>(type, vec);
     }
 
-    template <typename V, typename E = typename std::remove_cv_t<V>::value_type>
+    template<typename V, typename E = typename std::remove_cv_t<V>::value_type>
     inline ObjectWrapper create_vector_object_wrapper_from_stack(const ObjectType &type, V &vec) {
         return _create_vector_object_wrapper<V, E, false>(type, vec);
     }
 
-    template <typename T>
+    template<typename T>
     ObjectWrapper create_auto_object_wrapper(const ObjectType &type, T val) {
         using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
 
@@ -134,7 +134,7 @@ namespace argus {
         }
     }
 
-    template <typename ArgsTuple, size_t... Is>
+    template<typename ArgsTuple, size_t... Is>
     static std::vector<ObjectWrapper> _make_params_from_tuple_impl(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
         std::vector<ObjectWrapper> result;
@@ -143,18 +143,18 @@ namespace argus {
         return result;
     }
 
-    template <typename ArgsTuple>
+    template<typename ArgsTuple>
     static std::vector<ObjectWrapper> _make_params_from_tuple(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it) {
-        return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{});
+        return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {});
     }
 
-    template <typename T>
+    template<typename T>
     reference_wrapped_t<T> _wrap_single_reference_type(T &&value) {
         return std::forward<T>(value);
     }
 
-    template <typename T>
+    template<typename T>
     static T unwrap_param(ObjectWrapper &param, ScratchAllocator *scratch) {
         using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
         if constexpr (is_std_function_v<B>) {
@@ -168,7 +168,7 @@ namespace argus {
             auto fn_copy = std::make_shared<ProxiedFunction>(*proxied_fn);
 
             auto param_types = param.type.callback_type.value()->params;
-            for (auto &subparam: param_types) {
+            for (auto &subparam : param_types) {
                 if (subparam.type == IntegralType::Pointer
                         || subparam.type == IntegralType::Struct) {
                     assert(subparam.type_index.has_value());
@@ -272,11 +272,11 @@ namespace argus {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
 
-            return *reinterpret_cast<std::remove_reference_t<T>*>(param.is_on_heap ? param.heap_ptr : param.value);
+            return *reinterpret_cast<std::remove_reference_t<T> *>(param.is_on_heap ? param.heap_ptr : param.value);
         }
     }
 
-    template <typename ArgsTuple, size_t... Is>
+    template<typename ArgsTuple, size_t... Is>
     ArgsTuple make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
             std::index_sequence<Is...>, ScratchAllocator &scratch) {
         return std::make_tuple(unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(

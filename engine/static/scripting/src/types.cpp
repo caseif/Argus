@@ -34,7 +34,7 @@ namespace argus {
             std::optional<std::type_index> type_index,
             std::optional<std::string> type_name,
             std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type,
-            std::optional<ObjectType> element_type) :
+            std::optional<ObjectType> element_type):
         type(type),
         size(size),
         is_const(is_const),
@@ -48,7 +48,7 @@ namespace argus {
 
     }
 
-    ObjectType::ObjectType(const ObjectType &rhs) :
+    ObjectType::ObjectType(const ObjectType &rhs):
         type(rhs.type),
         size(rhs.size),
         is_const(rhs.is_const),
@@ -64,7 +64,7 @@ namespace argus {
                 : std::nullopt) {
     }
 
-    ObjectType::ObjectType(ObjectType &&rhs) noexcept :
+    ObjectType::ObjectType(ObjectType &&rhs) noexcept:
         type(rhs.type),
         size(rhs.size),
         is_const(rhs.is_const),
@@ -104,21 +104,21 @@ namespace argus {
         return *this;
     }
 
-    ObjectWrapper::ObjectWrapper(void) :
-            type(ObjectType { IntegralType::Void, 0 }),
-            value(),
-            is_on_heap(false),
-            buffer_size(0),
-            copy_ctor(nullptr),
-            move_ctor(nullptr),
-            dtor(nullptr) {
+    ObjectWrapper::ObjectWrapper(void):
+        type(ObjectType { IntegralType::Void, 0 }),
+        value(),
+        is_on_heap(false),
+        buffer_size(0),
+        copy_ctor(nullptr),
+        move_ctor(nullptr),
+        dtor(nullptr) {
     }
 
-    ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size) :
-            type(type),
-            copy_ctor(nullptr),
-            move_ctor(nullptr),
-            dtor(nullptr) {
+    ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size):
+        type(type),
+        copy_ctor(nullptr),
+        move_ctor(nullptr),
+        dtor(nullptr) {
         assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
 
@@ -141,14 +141,14 @@ namespace argus {
         }
     }
 
-    ObjectWrapper::ObjectWrapper(ObjectWrapper &&rhs) noexcept :
-            type(std::move(rhs.type)),
-            is_on_heap(rhs.is_on_heap),
-            buffer_size(rhs.buffer_size),
-            copy_ctor(rhs.copy_ctor),
-            move_ctor(rhs.move_ctor),
-            // dtor still needs to be able to run on the old object
-            dtor(rhs.dtor) {
+    ObjectWrapper::ObjectWrapper(ObjectWrapper &&rhs) noexcept:
+        type(std::move(rhs.type)),
+        is_on_heap(rhs.is_on_heap),
+        buffer_size(rhs.buffer_size),
+        copy_ctor(rhs.copy_ctor),
+        move_ctor(rhs.move_ctor),
+        // dtor still needs to be able to run on the old object
+        dtor(rhs.dtor) {
 
         if (this->type.type == IntegralType::Struct
                 || this->type.type == IntegralType::Callback) {
@@ -197,7 +197,7 @@ namespace argus {
         }
     }
 
-    ObjectWrapper &ObjectWrapper::operator= (ObjectWrapper &&rhs) noexcept {
+    ObjectWrapper &ObjectWrapper::operator=(ObjectWrapper &&rhs) noexcept {
         this->~ObjectWrapper();
         new(this) ObjectWrapper(std::move(rhs));
         return *this;
@@ -233,19 +233,19 @@ namespace argus {
         m_assign_proxy.value()(instance, value);
     }
 
-    VectorObject::VectorObject(VectorObjectType type) :
-        m_obj_type(type) {
+    VectorObject::VectorObject(VectorObjectType type):
+            m_obj_type(type) {
     }
 
     VectorObjectType VectorObject::get_object_type(void) {
         return m_obj_type;
     }
 
-    ArrayBlob::ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *)) :
-        VectorObject(VectorObjectType::ArrayBlob),
-        m_element_size(element_size),
-        m_count(count),
-        m_element_dtor(element_dtor) {
+    ArrayBlob::ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *)):
+            VectorObject(VectorObjectType::ArrayBlob),
+            m_element_size(element_size),
+            m_count(count),
+            m_element_dtor(element_dtor) {
         if (element_size == 0) {
             throw std::invalid_argument("Element size must be greater than zero");
         }
@@ -290,8 +290,8 @@ namespace argus {
 
     VectorWrapper::VectorWrapper(size_t element_size, ObjectType element_type,
             void *underlying_vec, SizeAccessor get_size_fn, DataAccessor get_data_fn,
-            ElementAccessor get_element_fn, ElementMutator set_element_fn) :
-        VectorObject(VectorObjectType::VectorWrapper),
+            ElementAccessor get_element_fn, ElementMutator set_element_fn):
+            VectorObject(VectorObjectType::VectorWrapper),
         m_element_size(element_size),
         m_element_type(std::move(element_type)),
         m_underlying_vec(underlying_vec),

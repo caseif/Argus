@@ -51,10 +51,11 @@ namespace argus {
 
     class InvocationException : public std::exception {
       private:
-        const std::string msg;
+        const std::string m_msg;
 
       public:
-        InvocationException(std::string msg) : msg(std::move(msg)) {
+        InvocationException(std::string msg):
+            m_msg(std::move(msg)) {
         }
 
         /**
@@ -63,11 +64,11 @@ namespace argus {
          * \return The exception message.
          */
         [[nodiscard]] const char *what(void) const noexcept override {
-            return msg.c_str();
+            return m_msg.c_str();
         }
     };
 
-    template <typename T>
+    template<typename T>
     void _destroy_ref_wrapped_obj(T &item) {
         if constexpr (is_reference_wrapper_v<std::decay<T>>) {
             using U = remove_reference_wrapper_t<std::decay_t<T>>;
@@ -79,7 +80,7 @@ namespace argus {
 
     // proxy function which unwraps the given parameter list, forwards it to
     // the provided function, and directly returns the result to the caller
-    template <typename FuncType,
+    template<typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
     ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
@@ -94,7 +95,7 @@ namespace argus {
 
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
         ScratchAllocator scratch;
-        auto args = make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>>{},
+        auto args = make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {},
                 scratch);
 
         if constexpr (!std::is_void_v<ClassType>) {

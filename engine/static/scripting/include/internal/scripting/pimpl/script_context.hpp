@@ -28,7 +28,7 @@ namespace argus {
         ScriptingLanguagePlugin *const plugin;
         void *const plugin_data;
 
-        pimpl_ScriptContext(std::string language, ScriptingLanguagePlugin *plugin, void *plugin_data) :
+        pimpl_ScriptContext(std::string language, ScriptingLanguagePlugin *plugin, void *plugin_data):
             language(std::move(language)),
             plugin(plugin),
             plugin_data(plugin_data) {

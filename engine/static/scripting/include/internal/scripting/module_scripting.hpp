@@ -36,9 +36,9 @@ namespace argus {
     extern std::map<std::string, BoundEnumDef> g_bound_enums;
     extern std::map<std::type_index, std::string> g_bound_enum_indices;
     extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-    extern std::vector<ScriptContext*> g_script_contexts;
+    extern std::vector<ScriptContext *> g_script_contexts;
     // key = language name, value = resources loaded by the corresponding plugin
-    extern std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
+    extern std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
     extern std::vector<ScriptDeltaCallback> g_update_callbacks;
     extern std::vector<ScriptDeltaCallback> g_render_callbacks;
 

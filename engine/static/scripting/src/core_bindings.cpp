@@ -21,12 +21,11 @@
 #include "argus/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
 
-#include <chrono>
-
 namespace argus {
     std::vector<ScriptDeltaCallback> g_update_callbacks;
 
-    static void _script_register_update_callback(ScriptDeltaCallback callback) {
+    // value-typed param is necessary to be able to bind the function
+    static void _script_register_update_callback(ScriptDeltaCallback callback) { // NOLINT(*-unnecessary-value-param)
         register_update_callback(callback);
     }
 

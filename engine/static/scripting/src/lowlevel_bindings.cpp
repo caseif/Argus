@@ -47,9 +47,9 @@ namespace argus {
         bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds);
     }
 
-    template <typename V>
+    template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
-            _bind_vector2(const std::string &name) {
+    _bind_vector2(const std::string &name) {
         using E = typename V::element_type;
         bind_type<V>(name);
         bind_member_field("x", &V::x);
@@ -58,7 +58,7 @@ namespace argus {
         bind_member_static_function<V>("of", +[](E x, E y) -> V { return V(x, y); });
     }
 
-    template <typename V>
+    template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector3(const std::string &name) {
         using E = typename V::element_type;
@@ -70,7 +70,7 @@ namespace argus {
         bind_member_static_function<V>("of", +[](E x, E y, E z) -> V { return V(x, y, z); });
     }
 
-    template <typename V>
+    template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector4(const std::string &name) {
         using E = typename V::element_type;

@@ -43,8 +43,8 @@ namespace argus {
     std::map<std::string, BoundFunctionDef> g_bound_global_fns;
     std::map<std::string, BoundEnumDef> g_bound_enums;
     std::map<std::type_index, std::string> g_bound_enum_indices;
-    std::vector<ScriptContext*> g_script_contexts;
-    std::map<std::string, std::unordered_set<const Resource*>> g_loaded_resources;
+    std::vector<ScriptContext *> g_script_contexts;
+    std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
 
     static void _resolve_all_parameter_types(void) {
         for (auto &[_, type] : g_bound_types) {

@@ -27,6 +27,7 @@
 namespace argus {
     // forward declarations
     class Resource;
+
     struct pimpl_ScriptContext;
 
     class ScriptContext {
@@ -49,7 +50,7 @@ namespace argus {
 
         void *get_plugin_data_ptr(void);
 
-        template <typename T>
+        template<typename T>
         T *get_plugin_data(void) {
             return reinterpret_cast<T *>(get_plugin_data_ptr());
         }

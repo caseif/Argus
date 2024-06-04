@@ -36,7 +36,7 @@ namespace argus {
             MoveCtorProxy move_ctor,
             DtorProxy dtor);
 
-    template <typename T>
+    template<typename T>
     typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
 
@@ -71,7 +71,7 @@ namespace argus {
 
     void bind_type(const BoundTypeDef &def);
 
-    template <typename T>
+    template<typename T>
     typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
         auto def = create_type_def<T>(name);
@@ -80,16 +80,16 @@ namespace argus {
 
     void bind_enum(const BoundEnumDef &def);
 
-    BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);
+    [[nodiscard]] BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);
 
-    template <typename E>
-    typename std::enable_if<std::is_enum_v<E>, BoundEnumDef>::type
+    template<typename E>
+    [[nodiscard]] typename std::enable_if<std::is_enum_v<E>, BoundEnumDef>::type
     create_enum_def(const std::string &name) {
         return create_enum_def(name, sizeof(std::underlying_type_t<E>),
                 typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>));
     }
 
-    template <typename T>
+    template<typename T>
     typename std::enable_if<std::is_enum_v<T>, void>::type bind_enum(const std::string &name) {
         auto def = create_enum_def<T>(name);
         bind_enum(def);
@@ -97,7 +97,7 @@ namespace argus {
 
     void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
 
-    template <typename T>
+    template<typename T>
     typename std::enable_if<std::is_enum_v<T>>::type
     add_enum_value(BoundEnumDef &def, const std::string &name, T value) {
         add_enum_value(def, name, uint64_t(value));
@@ -105,18 +105,18 @@ namespace argus {
 
     void bind_enum_value(std::type_index enum_type, const std::string &name, uint64_t value);
 
-    template <typename T>
+    template<typename T>
     typename std::enable_if<std::is_enum_v<T>>::type
     bind_enum_value(const std::string &name, T value) {
         std::type_index enum_type = typeid(T);
         bind_enum_value(enum_type, name, uint64_t(value));
     }
 
-    template <typename FuncType>
-    ProxiedFunction create_function_wrapper(FuncType fn) {
+    template<typename FuncType>
+    [[nodiscard]] ProxiedFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
-            return [fn] (const std::vector<ObjectWrapper> &params) {
+            return [fn](const std::vector<ObjectWrapper> &params) {
                 ReturnType ret = invoke_function(fn, params);
 
                 auto ret_obj_type = create_return_object_type<ReturnType>();
@@ -124,7 +124,7 @@ namespace argus {
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<
                         std::remove_pointer_t<ReturnType>>>, std::string>
                         || std::is_same_v<std::remove_cv_t<std::remove_reference_t<
-                        std::remove_pointer_t<ReturnType>>>, char>) {
+                                std::remove_pointer_t<ReturnType>>>, char>) {
                     if constexpr (std::is_reference_v<ReturnType>) {
                         static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>,
                                         std::string>,
@@ -164,7 +164,7 @@ namespace argus {
                     ret_obj_type.type_name = get_bound_enum<ReturnType>().name;
                 } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
                         && (ret_obj_type.element_type.value()->type == IntegralType::Struct
-                        || ret_obj_type.element_type.value()->type == IntegralType::Pointer)) {
+                                || ret_obj_type.element_type.value()->type == IntegralType::Pointer)) {
                     ret_obj_type.element_type.value()->type_name
                             = get_bound_type(ret_obj_type.element_type.value()->type_index.value()).name;
                 } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
@@ -174,11 +174,12 @@ namespace argus {
                 }
 
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
-                if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<std::remove_reference_t<ReturnType>>>, std::string>) {
+                if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
+                        std::remove_reference_t<ReturnType>>>, std::string>) {
                     return create_object_wrapper(ret_obj_type, ret.c_str(), ret.size());
                 } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>>
                         && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
-                        std::remove_reference_t<ReturnType>>>, char>) {
+                                std::remove_reference_t<ReturnType>>>, char>) {
                     return create_object_wrapper(ret_obj_type, ret, strlen(ret));
                 } else if constexpr (is_std_vector_v<ReturnType>) {
                     return create_vector_object_wrapper_from_stack(ret_obj_type, ret);
@@ -196,7 +197,7 @@ namespace argus {
                 }
             };
         } else {
-            return [fn] (const std::vector<ObjectWrapper> &params) {
+            return [fn](const std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
                 auto type = create_return_object_type<void>();
                 return ObjectWrapper(type, 0);
@@ -204,7 +205,7 @@ namespace argus {
         }
     }
 
-    template <FunctionType FnType, typename FnSig>
+    template<FunctionType FnType, typename FnSig>
     static BoundFunctionDef _create_function_def(const std::string &name, FnSig fn) {
         using ArgsTuple = typename function_traits<FnSig>::argument_types;
         using ReturnType = typename function_traits<FnSig>::return_type;
@@ -235,14 +236,14 @@ namespace argus {
         }
     }
 
-    template <typename FuncType>
-    BoundFunctionDef create_global_function_def(const std::string &name, FuncType fn) {
+    template<typename FuncType>
+    [[nodiscard]] BoundFunctionDef create_global_function_def(const std::string &name, FuncType fn) {
         return _create_function_def<FunctionType::Global>(name, fn);
     }
 
     void bind_global_function(const BoundFunctionDef &def);
 
-    template <typename FuncType>
+    template<typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_global_function(const std::string &name, FuncType fn) {
         auto def = create_global_function_def<FuncType>(name, fn);
@@ -251,7 +252,7 @@ namespace argus {
 
     void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
-    template <typename FuncType>
+    template<typename FuncType>
     typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
     add_member_instance_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def<FunctionType::MemberInstance>(fn_name, fn);
@@ -260,7 +261,7 @@ namespace argus {
 
     void bind_member_instance_function(std::type_index type_index, const BoundFunctionDef &fn_def);
 
-    template <typename FuncType>
+    template<typename FuncType>
     typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
     bind_member_instance_function(const std::string &fn_name, FuncType fn) {
         using ClassType = typename function_traits<FuncType>::class_type;
@@ -272,7 +273,7 @@ namespace argus {
 
     void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
-    template <typename FuncType>
+    template<typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
@@ -281,7 +282,7 @@ namespace argus {
 
     void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
 
-    template <typename ClassType, typename FuncType>
+    template<typename ClassType, typename FuncType>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
         auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
@@ -290,7 +291,7 @@ namespace argus {
 
     void add_extension_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
-    template <typename ClassType, typename FuncType,
+    template<typename ClassType, typename FuncType,
             typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
             && std::is_same_v<ClassType, std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FirstArg>>>>,
@@ -302,7 +303,7 @@ namespace argus {
 
     void bind_extension_function(std::type_index type_index, const BoundFunctionDef &fn_def);
 
-    template <typename ClassType, typename FuncType,
+    template<typename ClassType, typename FuncType,
             typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
     typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
             && (std::is_reference_v<FirstArg> || std::is_pointer_v<FirstArg>)
@@ -313,12 +314,14 @@ namespace argus {
         bind_extension_function(typeid(ClassType), fn_def);
     }
 
-    template <typename FieldType, typename ClassType>
+    template<typename FieldType, typename ClassType>
     static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
         using B = typename std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FieldType>>>;
 
         static_assert(std::is_base_of_v<AutoCleanupable, B>
-                        || (std::is_copy_constructible_v<B> && std::is_move_constructible_v<B> && std::is_destructible_v<B>),
+                        || (std::is_copy_constructible_v<B>
+                                && std::is_move_constructible_v<B>
+                                && std::is_destructible_v<B>),
                 "Type of bound field must either derive from AutoCleanupable "
                 "or be destructible and copy+move-constructible");
 
@@ -341,7 +344,7 @@ namespace argus {
             }
             type.is_const = is_const;
 
-            BoundFieldDef def{};
+            BoundFieldDef def {};
             def.m_name = name;
             def.m_type = type;
 
@@ -391,7 +394,7 @@ namespace argus {
 
     void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);
 
-    template <typename FieldType, typename ClassType>
+    template<typename FieldType, typename ClassType>
     void add_member_field(BoundTypeDef &type_def, const std::string &field_name, FieldType(ClassType::* field)) {
         static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
                 "Callback-typed fields are not supported");
@@ -405,7 +408,7 @@ namespace argus {
 
     void bind_member_field(std::type_index type_index, const BoundFieldDef &field_def);
 
-    template <typename FieldType, typename ClassType>
+    template<typename FieldType, typename ClassType>
     void bind_member_field(const std::string &field_name, FieldType(ClassType::* field)) {
         static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
                 "Callback-typed fields are not supported");
@@ -414,25 +417,21 @@ namespace argus {
         bind_member_field(typeid(ClassType), field_def);
     }
 
-    const BoundTypeDef &get_bound_type(const std::string &type_name);
+    [[nodiscard]] const BoundTypeDef &get_bound_type(const std::string &type_name);
 
-    const BoundTypeDef &get_bound_type(const std::type_info &type_info);
+    [[nodiscard]] const BoundTypeDef &get_bound_type(const std::type_info &type_info);
 
-    const BoundTypeDef &get_bound_type(std::type_index type_index);
-
-    template <typename T>
-    const BoundTypeDef &get_bound_type(void) {
+    template<typename T>
+    [[nodiscard]] const BoundTypeDef &get_bound_type(void) {
         return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>));
     }
 
-    const BoundEnumDef &get_bound_enum(const std::string &enum_name);
+    [[nodiscard]] const BoundEnumDef &get_bound_enum(const std::string &enum_name);
 
-    const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info);
+    [[nodiscard]] const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info);
 
-    const BoundEnumDef &get_bound_enum(std::type_index enum_type_index);
-
-    template <typename T>
-    const BoundEnumDef &get_bound_enum(void) {
+    template<typename T>
+    [[nodiscard]] const BoundEnumDef &get_bound_enum(void) {
         return get_bound_enum(typeid(std::remove_const_t<T>));
     }
 }

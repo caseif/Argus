@@ -33,7 +33,9 @@
 
 namespace argus {
     typedef void(*CopyCtorProxy)(void *, const void *);
+
     typedef void(*MoveCtorProxy)(void *, void *);
+
     typedef void(*DtorProxy)(void *);
 
     enum IntegralType {
@@ -152,7 +154,7 @@ namespace argus {
         ObjectType m_type;
         //TODO: we probably only need one function for getting the value
         std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_access_proxy;
-        std::optional<std::function<void (ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
+        std::optional<std::function<void(ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
 
         ObjectWrapper get_value(ObjectWrapper &wrapper) const;
 
@@ -209,17 +211,20 @@ namespace argus {
     #pragma warning(push)
     #pragma warning(disable : 4200)
     #endif
+
     class ArrayBlob : public VectorObject {
       private:
         const size_t m_element_size;
         const size_t m_count;
-        void(*m_element_dtor)(void *);
+
+        void (*m_element_dtor)(void *);
+
         unsigned char m_blob[0];
 
       public:
         ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *));
 
-        template <typename E>
+        template<typename E>
         ArrayBlob(size_t count) : ArrayBlob(sizeof(E), count, [](void *ptr) { reinterpret_cast<E *>(ptr).~E(); }) {
         }
 
@@ -243,7 +248,7 @@ namespace argus {
 
         const void *operator[](size_t index) const;
 
-        template <typename T>
+        template<typename T>
         [[nodiscard]] const T &at(size_t index) const {
             if (sizeof(T) != m_element_size) {
                 throw std::invalid_argument("Template parameter size does not match element size");
@@ -251,25 +256,29 @@ namespace argus {
             return *reinterpret_cast<const T *>(this->operator[](index));
         }
 
-        template <typename T>
+        template<typename T>
         [[nodiscard]] T &at(size_t index) {
             return const_cast<T &>(const_cast<const ArrayBlob *>(this)->at<T>(index));
         }
 
-        template <typename T>
+        template<typename T>
         void set(size_t index, T val) {
             *reinterpret_cast<T *>(this->operator[](index)) = val;
         }
     };
+
     #ifdef _MSC_VER
     #pragma warning(pop)
     #endif
 
     class VectorWrapper : public VectorObject {
-       public:
+      public:
         typedef size_t(*SizeAccessor)(const void *);
+
         typedef const void *(*DataAccessor)(void *);
+
         typedef void *(*ElementAccessor)(void *, size_t);
+
         typedef void(*ElementMutator)(void *, size_t, void *);
 
       private:
@@ -286,7 +295,7 @@ namespace argus {
                 SizeAccessor get_size_fn, DataAccessor get_data_fn,
                 ElementAccessor get_element_fn, ElementMutator set_element_fn);
 
-        template <typename E>
+        template<typename E>
         VectorWrapper(std::vector<E> &underlying_vec, ObjectType element_type) : VectorWrapper(
                 sizeof(E),
                 element_type,
@@ -296,7 +305,8 @@ namespace argus {
                     return reinterpret_cast<const void *>(reinterpret_cast<const std::vector<E> *>(vec_ptr)->data());
                 },
                 [](void *vec_ptr, size_t index) -> void * {
-                    return &reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index); },
+                    return &reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index);
+                },
                 [](void *vec_ptr, size_t index, void *val) {
                     reinterpret_cast<std::vector<E> *>(vec_ptr)->at(index) = *reinterpret_cast<E *>(val);
                 }) {
@@ -314,21 +324,21 @@ namespace argus {
 
         [[nodiscard]] const void *at(size_t index) const;
 
-        template <typename E>
+        template<typename E>
         [[nodiscard]] const E &at(size_t index) const {
             reinterpret_cast<std::vector<E> *>(m_underlying_vec)->at(index);
         }
 
         [[nodiscard]] void *at(size_t index);
 
-        template <typename E>
+        template<typename E>
         [[nodiscard]] E &at(size_t index) {
             return reinterpret_cast<std::vector<E> *>(m_underlying_vec)->at(index);
         }
 
         void set(size_t index, void *val);
 
-        template <typename E>
+        template<typename E>
         void set(size_t index, const E &val) {
             if (sizeof(E) != m_element_size) {
                 throw std::invalid_argument("Template type size does not match element size of VectorWrapper");
@@ -336,12 +346,12 @@ namespace argus {
             set(index, reinterpret_cast<void *>(&val));
         }
 
-        template <typename E>
+        template<typename E>
         [[nodiscard]] const std::vector<E> &get_underlying_vector(void) const {
             return *reinterpret_cast<const std::vector<E> *>(m_underlying_vec);
         }
 
-        template <typename E>
+        template<typename E>
         [[nodiscard]] std::vector<E> &get_underlying_vector(void) {
             return *reinterpret_cast<std::vector<E> *>(m_underlying_vec);
         }

@@ -30,23 +30,24 @@
 namespace argus {
     class ScriptingLanguagePlugin {
       private:
-        std::string lang_name;
-        std::vector<std::string> media_types;
+        std::string m_lang_name;
+        std::vector<std::string> m_media_types;
 
       public:
         ScriptingLanguagePlugin(std::string lang_name, const std::initializer_list<std::string> &media_types);
 
         ScriptingLanguagePlugin(const ScriptingLanguagePlugin &) = delete;
+
         ScriptingLanguagePlugin(ScriptingLanguagePlugin &&) = delete;
 
         virtual ~ScriptingLanguagePlugin(void) = 0;
 
         const std::string &get_language_name(void) {
-            return this->lang_name;
+            return this->m_lang_name;
         }
 
         const std::vector<std::string> &get_media_types(void) {
-            return this->media_types;
+            return this->m_media_types;
         }
 
         Resource &load_resource(const std::string &uid);

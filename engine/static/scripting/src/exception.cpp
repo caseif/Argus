@@ -21,29 +21,31 @@
 #include <exception>
 
 namespace argus {
-    BindingException::BindingException(const std::string &name, const std::string &what)
-        : msg("Unable to bind " + name + ": " + what) {
+    BindingException::BindingException(const std::string &name, const std::string &what):
+        m_msg("Unable to bind " + name + ": " + what) {
     }
 
     const char *BindingException::what(void) const noexcept {
-        return msg.c_str();
+        return m_msg.c_str();
     }
 
-    TypeNotBoundException::TypeNotBoundException(std::string fn_name) : fn_name(std::move(fn_name)) {
+    TypeNotBoundException::TypeNotBoundException(std::string fn_name):
+        m_fn_name(std::move(fn_name)) {
     }
 
     const char *TypeNotBoundException::what(void) const noexcept {
-        return fn_name.c_str();
+        return m_fn_name.c_str();
     }
 
-    SymbolNotBoundException::SymbolNotBoundException(std::string name) : name(std::move(name)) {
+    SymbolNotBoundException::SymbolNotBoundException(std::string name):
+        m_name(std::move(name)) {
     }
 
     const char *SymbolNotBoundException::what(void) const noexcept {
-        return name.c_str();
+        return m_name.c_str();
     }
 
-    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string reason) :
+    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string reason):
         m_reason(std::move(reason)) {
     }
 
@@ -51,19 +53,19 @@ namespace argus {
         return m_reason.c_str();
     }
 
-    ScriptLoadException::ScriptLoadException(const std::string &script_uid, const std::string &msg) :
-        msg("Load failed for " + script_uid + ": " + msg) {
+    ScriptLoadException::ScriptLoadException(const std::string &script_uid, const std::string &msg) noexcept:
+        m_msg("Load failed for " + script_uid + ": " + msg) {
     }
 
     const char *ScriptLoadException::what(void) const noexcept {
-        return msg.c_str();
+        return m_msg.c_str();
     }
 
-    ScriptInvocationException::ScriptInvocationException(const std::string &fn_name, const std::string &msg) :
-        msg("Invocation failed for script function " + fn_name + ": " + msg) {
+    ScriptInvocationException::ScriptInvocationException(const std::string &fn_name, const std::string &msg):
+        m_msg("Invocation failed for script function " + fn_name + ": " + msg) {
     }
 
     const char *ScriptInvocationException::what(void) const noexcept {
-        return msg.c_str();
+        return m_msg.c_str();
     }
 }

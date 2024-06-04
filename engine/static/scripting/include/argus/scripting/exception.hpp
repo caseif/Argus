@@ -22,19 +22,19 @@
 #include <string>
 
 namespace argus {
-      class BindingException : public std::exception {
-        private:
-          std::string msg;
+    class BindingException : public std::exception {
+      private:
+        std::string m_msg;
 
-        public:
-          BindingException(const std::string &name, const std::string &what);
+      public:
+        BindingException(const std::string &name, const std::string &what);
 
-          [[nodiscard]] const char *what(void) const noexcept override;
-      };
+        [[nodiscard]] const char *what(void) const noexcept override;
+    };
 
     class TypeNotBoundException : public std::exception {
       private:
-        std::string fn_name;
+        std::string m_fn_name;
 
       public:
         TypeNotBoundException(std::string fn_name);
@@ -44,7 +44,7 @@ namespace argus {
 
     class SymbolNotBoundException : public std::exception {
       private:
-        std::string name;
+        std::string m_name;
 
       public:
         SymbolNotBoundException(std::string name);
@@ -64,16 +64,16 @@ namespace argus {
 
     class ScriptLoadException : public std::exception {
       private:
-        std::string msg;
+        std::string m_msg;
       public:
-        ScriptLoadException(const std::string &script_uid, const std::string &msg);
+        ScriptLoadException(const std::string &script_uid, const std::string &msg) noexcept;
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };
 
     class ScriptInvocationException : public std::exception {
       private:
-        std::string msg;
+        std::string m_msg;
       public:
         ScriptInvocationException(const std::string &fn_name, const std::string &msg);
 

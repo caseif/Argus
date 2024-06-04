@@ -38,13 +38,14 @@ namespace argus {
                 Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
         }
     }
+
     std::string get_qualified_field_name(const std::string &type_name, const std::string &fn_name) {
         return type_name + "::" + fn_name;
     }
 
     bool is_bound_type(IntegralType type) {
         return type == IntegralType::Pointer
-               || type == IntegralType::Struct
-               || type == IntegralType::Enum;
+                || type == IntegralType::Struct
+                || type == IntegralType::Enum;
     }
 }

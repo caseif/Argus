@@ -26,9 +26,9 @@
 
 namespace argus {
     ScriptingLanguagePlugin::ScriptingLanguagePlugin(std::string lang_name,
-            const std::initializer_list<std::string> &media_types) :
-        lang_name(std::move(lang_name)),
-        media_types(media_types) {
+            const std::initializer_list<std::string> &media_types):
+        m_lang_name(std::move(lang_name)),
+        m_media_types(media_types) {
     }
 
     ScriptingLanguagePlugin::~ScriptingLanguagePlugin(void) {

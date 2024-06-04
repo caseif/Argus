@@ -29,7 +29,7 @@
 #include <vector>
 
 namespace argus {
-    template <typename T, DataFlowDirection flow_dir,
+    template<typename T, DataFlowDirection flow_dir,
             bool is_const = std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>>
     ObjectType create_object_type();
 
@@ -39,28 +39,28 @@ namespace argus {
     // allow scripts to assume ownership of references if the pointed-to type
     // type derives from AutoCleanupable so that the handle can be automatically
     // invalidated when the object is destroyed.
-    template <typename T>
-    constexpr ObjectType(*create_return_object_type)() = create_object_type<T, DataFlowDirection::ToScript>;
+    template<typename T>
+    constexpr ObjectType (*create_return_object_type)() = create_object_type<T, DataFlowDirection::ToScript>;
 
-    template <typename T>
-    constexpr ObjectType(*_create_callback_return_object_type)()
+    template<typename T>
+    constexpr ObjectType (*_create_callback_return_object_type)()
             = create_object_type<T, DataFlowDirection::FromScript>;
 
-    template <typename Tuple, DataFlowDirection flow_dir, size_t... Is>
+    template<typename Tuple, DataFlowDirection flow_dir, size_t... Is>
     static std::vector<ObjectType> _tuple_to_object_types_impl(std::index_sequence<Is...>) {
         return std::vector<ObjectType> {
                 create_object_type<std::tuple_element_t<Is, Tuple>, flow_dir>()...
         };
     }
 
-    template <typename Tuple, DataFlowDirection flow_dir>
+    template<typename Tuple, DataFlowDirection flow_dir>
     std::vector<ObjectType> tuple_to_object_types() {
         return _tuple_to_object_types_impl<Tuple, flow_dir>(
-                std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+                std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>> {});
     }
 
     // this is only enabled for std::functions, not for function pointers
-    template <typename F,
+    template<typename F,
             typename ReturnType = typename function_traits<F>::return_type,
             typename Args = typename function_traits<F>::argument_types>
     static std::enable_if_t<!std::is_function_v<F>, ScriptCallbackType> _create_callback_type() {
@@ -77,7 +77,7 @@ namespace argus {
         };
     }
 
-    template <typename T, DataFlowDirection flow_dir, bool is_const>
+    template<typename T, DataFlowDirection flow_dir, bool is_const>
     ObjectType create_object_type() {
         static_assert(!std::is_rvalue_reference_v<T>, "Rvalue reference types are not supported");
 
@@ -94,15 +94,15 @@ namespace argus {
         } else if constexpr (is_std_vector_v<std::remove_cv_t<T>>) {
             using E = typename B::value_type;
             return { IntegralType::Vector, sizeof(void *), is_const, typeid(std::remove_cv_t<T>),
-                    std::nullopt, std::nullopt, create_object_type<E, flow_dir>()};
+                    std::nullopt, std::nullopt, create_object_type<E, flow_dir>() };
         } else if constexpr (is_std_vector_v<B>) {
             // REALLY big headache, better to just not support it
             static_assert(!(flow_dir == DataFlowDirection::FromScript
-                    && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>),
-            "Non-const vector reference parameters are not supported");
+                            && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>),
+                    "Non-const vector reference parameters are not supported");
             using E = typename B::value_type;
             return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B), std::nullopt, std::nullopt,
-                    create_object_type<E, flow_dir, is_const>()};
+                    create_object_type<E, flow_dir, is_const>() };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
             return { IntegralType::Boolean, sizeof(bool), is_const };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
