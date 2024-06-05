@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/uuid.hpp"
+#include "internal/lowlevel/crash.hpp"
 
 #include <cstring>
 
