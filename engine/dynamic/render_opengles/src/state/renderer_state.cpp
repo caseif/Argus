@@ -20,20 +20,14 @@
 
 #include "argus/lowlevel/logging.hpp"
 
-#include "argus/resman/resource.hpp"
-
 #include "argus/render/common/scene.hpp"
 
 #include "internal/render_opengles/renderer/shader_mgmt.hpp"
 #include "internal/render_opengles/renderer/texture_mgmt.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
 #include "internal/render_opengles/state/viewport_state.hpp"
-#include "internal/render_opengles/types.hpp"
 
 #include <map>
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace argus {
     // forward declarations
@@ -41,8 +35,8 @@ namespace argus {
 
     class Scene2D;
 
-    RendererState::RendererState(GLESRenderer &renderer) :
-            renderer(renderer) {
+    RendererState::RendererState(GLESRenderer &renderer):
+        renderer(renderer) {
     }
 
     RendererState::~RendererState(void) {
@@ -112,7 +106,7 @@ namespace argus {
                 }
 
                 Viewport2DState state(*this, &viewport_2d);
-                auto [inserted, success] = this->viewport_states_2d.insert({&viewport_2d, state});
+                auto [inserted, success] = this->viewport_states_2d.insert({ &viewport_2d, state });
                 if (!success) {
                     Logger::default_logger().fatal("Failed to create new viewport state");
                 }

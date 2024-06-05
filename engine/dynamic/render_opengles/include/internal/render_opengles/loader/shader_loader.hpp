@@ -29,7 +29,7 @@ namespace argus {
         void *copy(ResourceManager &manager, const ResourcePrototype &proto,
                 void *src, std::type_index type) const override;
 
-        void unload(void *const data_ptr) const override;
+        void unload(void *data_ptr) const override;
 
       public:
         ShaderLoader();

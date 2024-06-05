@@ -31,12 +31,12 @@ namespace argus {
     static Logger g_gl_logger("GL");
 
     void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-            const GLchar *message, const void *userParam) {
+            const GLchar *message, const void *user_param) {
         UNUSED(source);
         UNUSED(type);
         UNUSED(id);
         UNUSED(length);
-        UNUSED(userParam);
+        UNUSED(user_param);
         #ifndef _ARGUS_DEBUG_MODE
         if (severity == GL_DEBUG_SEVERITY_NOTIFICATION || severity == GL_DEBUG_SEVERITY_LOW) {
             return;

@@ -21,7 +21,6 @@
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 
-#include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengles/renderer/2d/scene_compiler.hpp"
 #include "internal/render_opengles/renderer/shader_mgmt.hpp"

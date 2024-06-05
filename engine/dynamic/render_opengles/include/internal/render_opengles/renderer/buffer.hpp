@@ -43,7 +43,7 @@ namespace argus {
 
         void write(void *src, size_t size, size_t offset);
 
-        template <typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
+        template<typename T, std::enable_if_t<!std::is_pointer_v<T>, bool> = true>
         void write_val(T val, size_t offset) {
             write(&val, sizeof(T), offset);
         }

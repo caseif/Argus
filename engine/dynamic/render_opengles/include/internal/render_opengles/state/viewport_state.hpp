@@ -32,18 +32,18 @@ namespace argus {
         AttachedViewport *viewport;
 
         Matrix4 view_matrix;
-        bool view_matrix_dirty;
+        bool view_matrix_dirty = false;
 
-        BufferInfo ubo{};
+        BufferInfo ubo {};
 
-        buffer_handle_t fb_primary;
-        buffer_handle_t fb_secondary;
+        buffer_handle_t fb_primary = 0;
+        buffer_handle_t fb_secondary = 0;
 
-        texture_handle_t color_buf_primary;
-        texture_handle_t color_buf_secondary;
+        texture_handle_t color_buf_primary = 0;
+        texture_handle_t color_buf_secondary = 0;
 
-        buffer_handle_t lightmap_fb;
-        texture_handle_t lightmap_tex;
+        buffer_handle_t lightmap_fb = 0;
+        texture_handle_t lightmap_tex = 0;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };

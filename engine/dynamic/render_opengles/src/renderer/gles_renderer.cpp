@@ -23,10 +23,7 @@
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/core/engine_config.hpp"
-#include "argus/core/event.hpp"
 #include "argus/core/screen_space.hpp"
-
-#include "argus/resman/resource_event.hpp"
 
 #include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
@@ -52,7 +49,6 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 
 namespace argus {
     // forward declarations
@@ -97,13 +93,13 @@ namespace argus {
         }
 
         return Matrix4::from_row_major({
-                2 / (float(r - l) * hor_scale), 0,                              0,
-                                                                                    -float(r + l) /
-                                                                                    (float(r - l) * hor_scale),
-                0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
-                                                                                    (float(t - b) * ver_scale),
-                0,                              0,                              1, 0,
-                0,                              0,                              0, 1
+                2 / (float(r - l) * hor_scale), 0, 0,
+                -float(r + l) /
+                        (float(r - l) * hor_scale),
+                0, 2 / (float(t - b) * ver_scale), 0, -float(t + b) /
+                        (float(t - b) * ver_scale),
+                0, 0, 1, 0,
+                0, 0, 0, 1
         });
     }
 
@@ -213,9 +209,9 @@ namespace argus {
         state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
     }
 
-    GLESRenderer::GLESRenderer(Window &window) :
-            window(window),
-            state(*this) {
+    GLESRenderer::GLESRenderer(Window &window):
+            m_window(window),
+            m_state(*this) {
         using namespace argus::enum_ops;
 
         auto context_flags = GLContextFlags::ProfileES;
@@ -223,8 +219,8 @@ namespace argus {
         context_flags |= GLContextFlags::DebugContext;
         #endif
 
-        state.gles_context = gl_create_context(window, 3, 0, context_flags);
-        gl_make_context_current(window, state.gles_context);
+        m_state.gles_context = gl_create_context(window, 3, 0, context_flags);
+        gl_make_context_current(window, m_state.gles_context);
 
         int rc;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(gl_load_proc))) != 0) {
@@ -251,33 +247,33 @@ namespace argus {
             glDebugMessageCallback(gl_debug_callback, nullptr);
         }
 
-        _create_global_ubo(state);
+        _create_global_ubo(m_state);
 
-        setup_framebuffer(state);
+        setup_framebuffer(m_state);
     }
 
     GLESRenderer::~GLESRenderer(void) {
-        gl_destroy_context(state.gles_context);
+        gl_destroy_context(m_state.gles_context);
     }
 
     void GLESRenderer::render(const TimeDelta delta) {
         UNUSED(delta);
 
-        gl_make_context_current(window, state.gles_context);
+        gl_make_context_current(m_window, m_state.gles_context);
 
-        if (!state.are_viewports_initialized) {
-            _update_view_matrix(window, state, window.get_resolution().value);
-            state.are_viewports_initialized = true;
+        if (!m_state.are_viewports_initialized) {
+            _update_view_matrix(m_window, m_state, m_window.get_resolution().value);
+            m_state.are_viewports_initialized = true;
         }
 
-        auto vsync = window.is_vsync_enabled();
+        auto vsync = m_window.is_vsync_enabled();
         if (vsync.dirty) {
             gl_swap_interval(vsync ? 1 : 0);
         }
 
-        _update_global_ubo(state);
+        _update_global_ubo(m_state);
 
-        _rebuild_scene(window, state);
+        _rebuild_scene(m_window, m_state);
 
         // set up state for drawing scene to framebuffers
         glEnable(GL_DEPTH_TEST);
@@ -288,18 +284,18 @@ namespace argus {
 
         glDisable(GL_CULL_FACE);
 
-        auto &canvas = window.get_canvas();
+        auto &canvas = m_window.get_canvas();
 
-        auto resolution = window.get_resolution();
+        auto resolution = m_window.get_resolution();
 
         auto viewports = canvas.get_viewports_2d();
         std::sort(viewports.begin(), viewports.end(),
                 [](auto a, auto b) { return a.get().get_z_index() < b.get().get_z_index(); });
 
         for (auto viewport : viewports) {
-            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &viewport_state = m_state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
-            auto &scene_state = state.get_scene_state(scene);
+            auto &scene_state = m_state.get_scene_state(scene);
             draw_scene_to_framebuffer(scene_state, viewport_state, resolution);
         }
 
@@ -314,17 +310,17 @@ namespace argus {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         for (auto &viewport : viewports) {
-            auto &viewport_state = state.get_viewport_state(viewport);
+            auto &viewport_state = m_state.get_viewport_state(viewport);
             auto &scene = viewport.get().get_camera().get_scene();
-            auto &scene_state = state.get_scene_state(scene);
+            auto &scene_state = m_state.get_scene_state(scene);
 
             draw_framebuffer_to_screen(scene_state, viewport_state, resolution);
         }
 
-        gl_swap_buffers(window);
+        gl_swap_buffers(m_window);
     }
 
     void GLESRenderer::notify_window_resize(const Vector2u &resolution) {
-        _update_view_matrix(this->window, this->state, resolution);
+        _update_view_matrix(this->m_window, this->m_state, resolution);
     }
 }

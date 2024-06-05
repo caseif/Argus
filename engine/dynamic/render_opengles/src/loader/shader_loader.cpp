@@ -26,7 +26,6 @@
 #include "argus/render/common/shader.hpp"
 #include "argus/render/defines.hpp"
 
-#include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/loader/shader_loader.hpp"
 
 #include <istream>
@@ -41,8 +40,8 @@ namespace argus {
     // forward declarations
     class ResourceManager;
 
-    ShaderLoader::ShaderLoader() :
-            ResourceLoader({RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG}) {
+    ShaderLoader::ShaderLoader():
+        ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }
 
     void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,

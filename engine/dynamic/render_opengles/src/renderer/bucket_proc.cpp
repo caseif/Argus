@@ -68,9 +68,9 @@ namespace argus {
             auto attr_anim_frame_loc = program.reflection.get_attr_loc(SHADER_ATTRIB_ANIM_FRAME);
 
             uint32_t vertex_len = (attr_position_loc.has_value() ? SHADER_ATTRIB_POSITION_LEN : 0)
-                                  + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                                  + (attr_color_loc.has_value() ? SHADER_ATTRIB_COLOR_LEN : 0)
-                                  + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                    + (attr_normal_loc.has_value() ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                    + (attr_color_loc.has_value() ? SHADER_ATTRIB_COLOR_LEN : 0)
+                    + (attr_texcoord_loc.has_value() ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
             size_t anim_frame_buf_len = 0;
             if (bucket->needs_rebuild) {

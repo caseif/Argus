@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/time.hpp"
 
@@ -50,8 +49,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include <climits>
 
 namespace argus {
     struct CompiledShader {
@@ -288,7 +285,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        state.linked_programs.insert({material_res.uid, program});
+        state.linked_programs.insert({ material_res.uid, program });
     }
 
     void deinit_shader(shader_handle_t shader) {
