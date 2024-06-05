@@ -347,10 +347,6 @@ fn process_glsl(glsl_sources: &HashMap<Stage, String>) -> Result<Vec<ProcessedGl
             return Err(GlslCompileError { message: struct_visitor.fail_message.unwrap() });
         }
 
-        for ss in &struct_visitor.struct_sizes {
-            println!("Struct {}: {:?}", ss.0, ss.1);
-        }
-
         let mut scan_visitor = ScanningDeclarationVisitor::new(&struct_visitor.struct_sizes);
         ast.visit(&mut scan_visitor);
 
