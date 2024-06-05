@@ -20,7 +20,7 @@
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 
 namespace argus {
-    LuaContextData::LuaContextData(LuaLanguagePlugin &plugin) :
+    LuaContextData::LuaContextData(LuaLanguagePlugin &plugin):
         m_state(std::make_shared<ManagedLuaState>(plugin, *this)) {
     }
 }

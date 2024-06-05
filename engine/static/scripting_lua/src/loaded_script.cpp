@@ -21,6 +21,7 @@
 #include <string>
 
 namespace argus {
-    LoadedScript::LoadedScript(std::string source) : source(std::move(source)) {
+    LoadedScript::LoadedScript(std::string source):
+        source(std::move(source)) {
     }
 }

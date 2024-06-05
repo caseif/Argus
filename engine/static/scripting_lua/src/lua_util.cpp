@@ -22,7 +22,6 @@
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/lua_util.hpp"
-#include "internal/scripting_lua/module_scripting_lua.hpp"
 
 namespace argus {
     lua_State *create_lua_state(LuaLanguagePlugin &plugin, LuaContextData &context_data) {

@@ -22,11 +22,11 @@
 #include "internal/scripting_lua/managed_state.hpp"
 
 namespace argus {
-    ManagedLuaState::ManagedLuaState(LuaLanguagePlugin &plugin, LuaContextData &context_data) :
+    ManagedLuaState::ManagedLuaState(LuaLanguagePlugin &plugin, LuaContextData &context_data):
         m_handle(create_lua_state(plugin, context_data)) {
     }
 
-    ManagedLuaState::ManagedLuaState(ManagedLuaState &&rhs) noexcept : m_handle(rhs.m_handle) {
+    ManagedLuaState::ManagedLuaState(ManagedLuaState &&rhs) noexcept: m_handle(rhs.m_handle) {
         rhs.m_handle = nullptr;
     }
 

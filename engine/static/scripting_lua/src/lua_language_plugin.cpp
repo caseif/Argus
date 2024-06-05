@@ -44,8 +44,6 @@ extern "C" {
 #include <memory>
 #include <string>
 
-#include <cstdio>
-
 namespace argus {
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
@@ -66,7 +64,9 @@ namespace argus {
         int m_expected;
 
       public:
-        StackGuard(lua_State *state) : m_state(state), m_expected(lua_gettop(state)) {
+        StackGuard(lua_State *state):
+            m_state(state),
+            m_expected(lua_gettop(state)) {
         }
 
         StackGuard(const StackGuard &) = delete;
@@ -105,7 +105,8 @@ namespace argus {
         std::weak_ptr<ManagedLuaState> m_state;
         int m_ref_key;
 
-        LuaCallback(const std::shared_ptr<ManagedLuaState> &state, int index) : m_state(state) {
+        LuaCallback(const std::shared_ptr<ManagedLuaState> &state, int index):
+            m_state(state) {
             // duplicate the top stack value in order to leave the stack as we
             // found it
             lua_pushvalue(*state, index);
@@ -144,7 +145,7 @@ namespace argus {
         return luaL_error(state, msg.c_str());
     }
 
-    static std::string _string_or(std::string str, std::string def) {
+    static std::string _string_or(const std::string& str, const std::string& def) {
         return !str.empty() ? str : def;
     }
 
@@ -209,7 +210,7 @@ namespace argus {
         return 0;
     }
 
-    template <typename T, typename U = T>
+    template<typename T, typename U = T>
     static int _wrap_prim_vector_param(lua_State *state, const ObjectType &param_def,
             const std::function<int(lua_State *, int)> &check_fn, const std::function<U(lua_State *, int)> &read_fn,
             const char *expected_type_name, int param_index, const std::string &qual_fn_name, ObjectWrapper *dest) {
@@ -468,7 +469,7 @@ namespace argus {
                                 + std::to_string(param_index) + " of function " + qual_fn_name
                                 + " (expected " + (param_def.is_const ? k_const_prefix : "") +
                                 param_def.type_name.value()
-                                        + ", actual " + _string_or(type_name, k_empty_repl) + ")");
+                                + ", actual " + _string_or(type_name, k_empty_repl) + ")");
                     }
 
                     auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
@@ -695,7 +696,8 @@ namespace argus {
                             lua_pushinteger(state, vec.at<int64_t>(i));
                             break;
                         default:
-                            throw std::runtime_error("Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
+                            throw std::runtime_error(
+                                    "Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
                     }
                     break;
                 case Float:
@@ -942,7 +944,7 @@ namespace argus {
                 auto type_def = get_bound_type(type_name);
 
                 //TODO: add safeguard to prevent invocation of functions on non-references
-                ObjectWrapper wrapper{};
+                ObjectWrapper wrapper {};
                 // 5th param is whether the instance must be mutable, which is
                 // the case iff the function is non-const
                 auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, !fn.is_const, &wrapper);
@@ -959,7 +961,7 @@ namespace argus {
                 // Lua is 1-indexed, plus add offset to skip instance parameter if present
                 auto param_index = i + 1 + first_param_index;
                 auto param_def = fn.params.at(size_t(i));
-                ObjectWrapper wrapper{};
+                ObjectWrapper wrapper {};
                 auto wrap_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def, &wrapper);
                 if (wrap_res == 0) {
                     args.push_back(std::move(wrapper));
@@ -1034,7 +1036,7 @@ namespace argus {
 
         auto type_def = get_bound_type(real_type_name);
 
-        ObjectWrapper inst_wrapper{};
+        ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def,
                 false, &inst_wrapper);
         if (wrap_res != 0) {
@@ -1059,7 +1061,7 @@ namespace argus {
 
         assert(!type_name.empty());
 
-        if ( _get_native_field_val(state, type_name, key)) {
+        if (_get_native_field_val(state, type_name, key)) {
             stack_guard.increment();
             return 1;
         } else {
@@ -1098,7 +1100,7 @@ namespace argus {
 
         auto type_def = get_bound_type(type_name);
 
-        ObjectWrapper inst_wrapper{};
+        ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def, true, &inst_wrapper);
         if (wrap_res != 0) {
             // some error occurred
@@ -1106,7 +1108,7 @@ namespace argus {
             return wrap_res;
         }
 
-        ObjectWrapper val_wrapper{};
+        ObjectWrapper val_wrapper {};
         _wrap_param(to_managed_state(state), qual_field_name, -1, field.m_type, &val_wrapper);
 
         assert(field.m_assign_proxy.has_value());
@@ -1381,7 +1383,8 @@ namespace argus {
         return 1;
     }
 
-    LuaLanguagePlugin::LuaLanguagePlugin(void) : ScriptingLanguagePlugin(k_plugin_lang_name, { k_resource_type_lua }) {
+    LuaLanguagePlugin::LuaLanguagePlugin(void):
+        ScriptingLanguagePlugin(k_plugin_lang_name, { k_resource_type_lua }) {
     }
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;
@@ -1488,12 +1491,7 @@ namespace argus {
 
         lua_getglobal(*state, name.c_str());
 
-        try {
-            auto retval = _invoke_lua_function(*state, params, name);
-
-            return retval;
-        } catch (const InvocationException &ex) {
-            throw ex;
-        }
+        auto retval = _invoke_lua_function(*state, params, name);
+        return retval;
     }
 }
