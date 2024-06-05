@@ -41,35 +41,35 @@ namespace argus {
 
     class Entity {
       private:
-        const EntityId id;
-        void *component_pointers[0];
+        const EntityId m_id;
+        void *m_component_pointers[0];
 
         Entity(void);
+
+      public:
+        static EntityBuilder builder(void);
+
+        static Entity &create(const std::vector<std::type_index> &components);
 
         Entity(Entity &) = delete;
 
         Entity(Entity &&) = delete;
 
-      public:
-        static EntityBuilder builder(void);
-
-        static Entity &create(std::vector<std::type_index> components);
-
         void destroy(void);
 
-        EntityId get_id(void) const;
+        [[nodiscard]] EntityId get_id(void) const;
 
-        void *get(std::type_index type) const;
+        [[nodiscard]] void *get(std::type_index type) const;
 
         template<typename T>
-        T &get() const {
+        [[nodiscard]] T &get() const {
             return *static_cast<T *>(get(std::type_index(typeid(T))));
         }
 
-        bool has(std::type_index type) const;
+        [[nodiscard]] bool has(std::type_index type) const;
 
         template<typename T>
-        bool has(void) const {
+        [[nodiscard]] bool has(void) const {
             return has(std::type_index(typeid(T)));
         }
     };

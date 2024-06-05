@@ -22,7 +22,6 @@
 #include "argus/ecs/system_builder.hpp"
 #include "internal/ecs/module_ecs.hpp"
 
-#include <stdexcept>
 #include <string>
 #include <typeindex>
 
@@ -30,7 +29,7 @@ namespace argus {
     SystemBuilder &SystemBuilder::with_name(std::string name) {
         validate_arg(!name.empty(), "System name must be non-empty");
 
-        m_name = name;
+        m_name = std::move(name);
 
         return *this;
     }
@@ -44,7 +43,7 @@ namespace argus {
     SystemBuilder &SystemBuilder::with_callback(EntityCallback callback) {
         validate_arg(callback != nullptr, "System callback must be non-null");
 
-        m_callback = callback;
+        m_callback = std::move(callback);
 
         return *this;
     }

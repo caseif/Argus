@@ -21,10 +21,10 @@
 #include "argus/ecs/system.hpp"
 #include "argus/ecs/system_builder.hpp"
 #include "internal/ecs/module_ecs.hpp"
-#include "internal/ecs/system.hpp"
 #include "internal/ecs/pimpl/system.hpp"
 
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace argus {
@@ -42,20 +42,20 @@ namespace argus {
         validate_arg(!component_types.empty(), "At least one component type must be supplied for system");
         validate_arg(callback != nullptr, "System callback must be non-null");
 
-        auto system = new System(name, component_types, callback);
+        auto system = new System(std::move(name), std::move(component_types), std::move(callback));
         g_systems.push_back(system);
         return *system;
     }
 
-    System::System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback) :
-            m_pimpl(new pimpl_System(name, component_types, callback, true)) {
+    System::System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback):
+        m_pimpl(new pimpl_System(std::move(name), std::move(component_types), std::move(callback), true)) {
     }
 
     System::~System(void) {
         delete m_pimpl;
     }
 
-    const std::string System::get_name(void) {
+    const std::string &System::get_name(void) {
         return m_pimpl->name;
     }
 

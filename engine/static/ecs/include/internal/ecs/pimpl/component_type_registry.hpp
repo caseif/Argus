@@ -27,16 +27,12 @@
 namespace argus {
     struct ComponentTypeInfo {
         ComponentTypeId id;
-        //std::string name;
         size_t size;
 
-        // clang-format off
-        ComponentTypeInfo(ComponentTypeId id, size_t size) :
-                id(id),
-                //name(name),
-                size(size) {
+        ComponentTypeInfo(ComponentTypeId id, size_t size):
+            id(id),
+            size(size) {
         }
-        // clang-format on
     };
 
     struct pimpl_ComponentTypeRegistry {

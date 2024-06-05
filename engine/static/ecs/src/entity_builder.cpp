@@ -16,36 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
 #include "argus/ecs/entity_builder.hpp"
 
 #include <algorithm>
 #include <functional>
-#include <iterator>
+#include <iterator> // needed on Win32
 #include <map>
 #include <typeindex>
-#include <utility>
-
-#include <cstring>
+#include <vector>
 
 namespace argus {
-    EntityBuilder::EntityBuilder(void) {
-    }
+    EntityBuilder::EntityBuilder(void) = default;
 
     EntityBuilder &EntityBuilder::with(std::type_index type, std::function<void(void *)> deferred_init) {
-        types[type] = deferred_init;
+        m_types[type] = std::move(deferred_init);
         return *this;
     }
 
     Entity &EntityBuilder::build(void) {
         std::vector<std::type_index> types_list;
-        std::transform(types.begin(), types.end(), std::back_inserter(types_list),
+        std::transform(m_types.begin(), m_types.end(), std::back_inserter(types_list),
                 [](auto &pair) { return pair.first; });
 
         auto &entity = Entity::create(types_list);
 
-        for (auto &[type, deferred_init] : types) {
+        for (auto &[type, deferred_init] : m_types) {
             if (deferred_init != nullptr) {
                 deferred_init(entity.get(type));
             }

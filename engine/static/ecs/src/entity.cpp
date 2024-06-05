@@ -23,10 +23,10 @@
 #include "argus/ecs/component_type_registry.hpp"
 #include "argus/ecs/entity.hpp"
 #include "argus/ecs/entity_builder.hpp"
-#include "internal/ecs/entity.hpp"
 
 #include <vector>
 
+#include <cassert>
 #include <cstddef>
 
 namespace argus {
@@ -44,10 +44,10 @@ namespace argus {
         return EntityBuilder();
     }
 
-    Entity &Entity::create(std::vector<std::type_index> component_types) {
+    Entity &Entity::create(const std::vector<std::type_index> &component_types) {
         if (g_entity_pool == nullptr) {
             size_t entity_size = sizeof(Entity)
-                                 + (sizeof(void *) * ComponentTypeRegistry::instance().get_type_count());
+                    + (sizeof(void *) * ComponentTypeRegistry::instance().get_type_count());
             g_entity_pool = new PoolAllocator(entity_size);
         }
 
@@ -55,7 +55,7 @@ namespace argus {
 
         for (auto cmp_type : component_types) {
             auto cmp_id = ComponentTypeRegistry::instance().get_id(cmp_type);
-            entity.component_pointers[cmp_id] = ComponentTypeRegistry::instance().alloc(cmp_type);
+            entity.m_component_pointers[cmp_id] = ComponentTypeRegistry::instance().alloc(cmp_type);
         }
 
         {
@@ -69,13 +69,16 @@ namespace argus {
         return entity;
     }
 
-    Entity::Entity(void) :
-            id(g_next_id++) {
+    Entity::Entity(void):
+        m_id(g_next_id++) {
     }
 
     void Entity::destroy(void) {
-        for (ComponentTypeId cmp_id = 0; cmp_id < ComponentTypeRegistry::instance().get_type_count(); cmp_id++) {
-            void *cmp_ptr = component_pointers[cmp_id];
+        assert(ComponentTypeRegistry::instance().get_type_count() < UINT16_MAX);
+        for (ComponentTypeId cmp_id = 0;
+                cmp_id < uint16_t(ComponentTypeRegistry::instance().get_type_count());
+                cmp_id++) {
+            void *cmp_ptr = m_component_pointers[cmp_id];
             if (cmp_ptr != nullptr) {
                 ComponentTypeRegistry::instance().free(cmp_id, cmp_ptr);
             }
@@ -94,19 +97,19 @@ namespace argus {
     }
 
     EntityId Entity::get_id(void) const {
-        return id;
+        return m_id;
     }
 
     void *Entity::get(std::type_index type) const {
         auto cmp_id = ComponentTypeRegistry::instance().get_id(type);
-        void *cmp_ptr = component_pointers[cmp_id];
+        void *cmp_ptr = m_component_pointers[cmp_id];
         validate_arg(cmp_ptr != nullptr, "Entity does not have component " "TODO");
         return cmp_ptr;
     }
 
     bool Entity::has(std::type_index type) const {
         auto cmp_id = ComponentTypeRegistry::instance().get_id(type);
-        return component_pointers[cmp_id] != nullptr;
+        return m_component_pointers[cmp_id] != nullptr;
     }
 
 }

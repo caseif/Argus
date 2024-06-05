@@ -32,7 +32,7 @@ namespace argus {
         friend class Entity;
 
       private:
-        std::map<std::type_index, std::function<void(void *)>> types;
+        std::map<std::type_index, std::function<void(void *)>> m_types;
 
         EntityBuilder(void);
 

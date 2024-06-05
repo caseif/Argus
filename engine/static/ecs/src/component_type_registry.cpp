@@ -22,22 +22,17 @@
 #include "argus/ecs/component_type_registry.hpp"
 #include "internal/ecs/pimpl/component_type_registry.hpp"
 
-#include <algorithm>
-#include <functional>
-#include <memory>
 #include <new>
 #include <string>
-#include <vector>
 
-#include <cctype>
 #include <cstdlib>
 
 namespace argus {
 
     static ComponentTypeRegistry *g_comp_reg_singleton;
 
-    ComponentTypeRegistry::ComponentTypeRegistry(void) :
-            m_pimpl(new pimpl_ComponentTypeRegistry()) {
+    ComponentTypeRegistry::ComponentTypeRegistry(void):
+        m_pimpl(new pimpl_ComponentTypeRegistry()) {
         //TODO
     }
 
@@ -83,7 +78,7 @@ namespace argus {
         validate_state(!_is_sealed(), "Failed to register component type because registry is already sealed");
 
         ComponentTypeId new_id = m_pimpl->next_id++;
-        m_pimpl->component_types.insert({type, ComponentTypeInfo(new_id, size)});
+        m_pimpl->component_types.insert({ type, ComponentTypeInfo(new_id, size) });
     }
 
     void ComponentTypeRegistry::_seal(void) {

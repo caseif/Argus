@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/ecs/entity.hpp"

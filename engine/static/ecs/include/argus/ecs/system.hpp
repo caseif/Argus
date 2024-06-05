@@ -39,21 +39,20 @@ namespace argus {
       private:
         System(std::string name, std::vector<std::type_index> component_types, EntityCallback callback);
 
+      public:
+        static SystemBuilder builder(void);
+
+        static System &create(std::string name, std::vector<std::type_index> component_types, EntityCallback callback);
+
         System(System &) = delete;
 
         System(System &&) = delete;
 
-      public:
         pimpl_System *m_pimpl;
-
-        static SystemBuilder builder(void);
-
-        static System &create(std::string name, std::vector<std::type_index> component_types,
-                EntityCallback callback);
 
         ~System(void);
 
-        const std::string get_name(void);
+        const std::string &get_name(void);
 
         bool is_active(void);
 
