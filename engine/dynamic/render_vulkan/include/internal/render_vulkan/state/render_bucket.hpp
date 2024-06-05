@@ -54,18 +54,18 @@ namespace argus {
       private:
         RenderBucket(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 float light_opacity):
-                material_res(material_res),
-                atlas_stride(atlas_stride),
-                z_index(z_index),
-                light_opacity(light_opacity),
-                objects(),
-                vertex_buffer(),
-                staging_vertex_buffer(),
-                anim_frame_buffer(),
-                staging_anim_frame_buffer(),
-                vertex_count(0),
-                ubo_buffer({}),
-                needs_rebuild(true) {
+            material_res(material_res),
+            atlas_stride(atlas_stride),
+            z_index(z_index),
+            light_opacity(light_opacity),
+            objects(),
+            vertex_buffer(),
+            staging_vertex_buffer(),
+            anim_frame_buffer(),
+            staging_anim_frame_buffer(),
+            vertex_count(0),
+            ubo_buffer({}),
+            needs_rebuild(true) {
         }
 
         ~RenderBucket();

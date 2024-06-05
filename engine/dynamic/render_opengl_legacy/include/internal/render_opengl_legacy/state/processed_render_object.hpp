@@ -64,13 +64,13 @@ namespace argus {
       private:
         ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 float light_opacity, unsigned char *staging_buffer, size_t staging_buffer_size, size_t vertex_count):
-                material_res(material_res),
-                atlas_stride(atlas_stride),
-                z_index(z_index),
-                light_opacity(light_opacity),
-                staging_buffer(staging_buffer),
-                staging_buffer_size(staging_buffer_size),
-                vertex_count(vertex_count) {
+            material_res(material_res),
+            atlas_stride(atlas_stride),
+            z_index(z_index),
+            light_opacity(light_opacity),
+            staging_buffer(staging_buffer),
+            staging_buffer_size(staging_buffer_size),
+            vertex_count(vertex_count) {
         }
     };
 }

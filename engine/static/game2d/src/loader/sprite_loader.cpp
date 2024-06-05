@@ -58,7 +58,7 @@ static constexpr const char *k_magic_anim_static = "_static";
 
 namespace argus {
     SpriteLoader::SpriteLoader(void):
-            ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
+        ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
     }
 
     void *SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,

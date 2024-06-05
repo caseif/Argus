@@ -33,7 +33,7 @@ namespace argus {
     SceneState::~SceneState(void) = default;
 
     Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
-            SceneState(parent_state, scene) {
+        SceneState(parent_state, scene) {
     }
 
     Scene2DState::Scene2DState(Scene2DState &&rhs) noexcept = default;

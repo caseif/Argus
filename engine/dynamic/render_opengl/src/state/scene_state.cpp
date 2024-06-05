@@ -27,8 +27,8 @@ namespace argus {
     struct RendererState;
 
     SceneState::SceneState(RendererState &parent_state, Scene &scene):
-            parent_state(parent_state),
-            scene(scene) {
+        parent_state(parent_state),
+        scene(scene) {
     }
 
     SceneState::~SceneState(void) {
@@ -38,7 +38,7 @@ namespace argus {
     }
 
     Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
-            SceneState(parent_state, scene) {
+        SceneState(parent_state, scene) {
     }
 
     Scene2DState::~Scene2DState(void) {

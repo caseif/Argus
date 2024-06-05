@@ -211,8 +211,8 @@ namespace argus {
     }
 
     GLRenderer::GLRenderer(Window &window):
-            m_window(window),
-            m_state(*this) {
+        m_window(window),
+        m_state(*this) {
         using namespace argus::enum_ops;
 
         auto context_flags = GLContextFlags::ProfileCore;

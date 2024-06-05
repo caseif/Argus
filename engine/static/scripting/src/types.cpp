@@ -234,7 +234,7 @@ namespace argus {
     }
 
     VectorObject::VectorObject(VectorObjectType type):
-            m_obj_type(type) {
+        m_obj_type(type) {
     }
 
     VectorObjectType VectorObject::get_object_type(void) {
@@ -242,10 +242,10 @@ namespace argus {
     }
 
     ArrayBlob::ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *)):
-            VectorObject(VectorObjectType::ArrayBlob),
-            m_element_size(element_size),
-            m_count(count),
-            m_element_dtor(element_dtor) {
+        VectorObject(VectorObjectType::ArrayBlob),
+        m_element_size(element_size),
+        m_count(count),
+        m_element_dtor(element_dtor) {
         if (element_size == 0) {
             throw std::invalid_argument("Element size must be greater than zero");
         }
@@ -291,7 +291,7 @@ namespace argus {
     VectorWrapper::VectorWrapper(size_t element_size, ObjectType element_type,
             void *underlying_vec, SizeAccessor get_size_fn, DataAccessor get_data_fn,
             ElementAccessor get_element_fn, ElementMutator set_element_fn):
-            VectorObject(VectorObjectType::VectorWrapper),
+        VectorObject(VectorObjectType::VectorWrapper),
         m_element_size(element_size),
         m_element_type(std::move(element_type)),
         m_underlying_vec(underlying_vec),

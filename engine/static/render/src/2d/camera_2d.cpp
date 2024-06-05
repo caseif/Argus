@@ -64,7 +64,7 @@ namespace argus {
     }
 
     pimpl_Camera2D::pimpl_Camera2D(std::string id, Scene2D &scene):
-            id(std::move(id)),
-            scene(scene) {
+        id(std::move(id)),
+        scene(scene) {
     }
 }

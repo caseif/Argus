@@ -58,7 +58,7 @@ namespace argus {
         Scene2D(const std::string &id, const Transform2D &transform);
 
         Scene2D(const std::string &id, Transform2D &&transform):
-                Scene2D(id, transform) {
+            Scene2D(id, transform) {
         }
 
         Scene2D(Scene2D &&) noexcept;

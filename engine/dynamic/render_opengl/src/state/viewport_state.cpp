@@ -23,11 +23,11 @@ namespace argus {
     struct RendererState;
 
     ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport):
-            parent_state(parent_state),
-            viewport(viewport) {
+        parent_state(parent_state),
+        viewport(viewport) {
     }
 
     Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport):
-            ViewportState(parent_state, viewport) {
+        ViewportState(parent_state, viewport) {
     }
 }
