@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/macros.hpp" // needed for release builds
 
 #include <string>
 
