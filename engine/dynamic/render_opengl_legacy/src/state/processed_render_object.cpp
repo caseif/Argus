@@ -21,7 +21,6 @@
 
 #include "argus/resman/resource.hpp"
 
-#include "internal/render_opengl_legacy/types.hpp"
 #include "internal/render_opengl_legacy/state/processed_render_object.hpp"
 
 #include <cstddef>

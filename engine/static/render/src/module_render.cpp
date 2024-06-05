@@ -63,6 +63,7 @@ namespace argus {
         for (const auto &backend : backends) {
             if (std::find(attempted_backends.cbegin(), attempted_backends.cend(), backend)
                     != attempted_backends.cend()) {
+                Logger::default_logger().debug("Skipping graphics \"%s\" because we already tried it", backend.c_str());
                 continue;
             }
 

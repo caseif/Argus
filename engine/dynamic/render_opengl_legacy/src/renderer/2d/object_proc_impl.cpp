@@ -28,7 +28,6 @@
 #include "argus/render/2d/render_prim_2d.hpp"
 
 #include "internal/render_opengl_legacy/defines.hpp"
-#include "internal/render_opengl_legacy/types.hpp"
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl_legacy/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_opengl_legacy/state/processed_render_object.hpp"
@@ -71,16 +70,16 @@ namespace argus {
         auto &program = state.linked_programs.find(object.get_material())->second;
 
         size_t vertex_len = (program.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         size_t buffer_size = vertex_count * vertex_len * sizeof(GLfloat);
 
         affirm_precond(buffer_size <= INT_MAX, "Buffer size is too big");
 
         unsigned char *staging_buffer = new unsigned char[buffer_size];
-        float *staging_buffer_f = reinterpret_cast<float*>(staging_buffer);
+        float *staging_buffer_f = reinterpret_cast<float *>(staging_buffer);
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -150,11 +149,11 @@ namespace argus {
         }
 
         size_t vertex_len = (program.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                            + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                + (program.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                + (program.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                + (program.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
-        float *staging_buffer = reinterpret_cast<float*>(proc_obj.staging_buffer);
+        float *staging_buffer = reinterpret_cast<float *>(proc_obj.staging_buffer);
 
         size_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {

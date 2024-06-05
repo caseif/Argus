@@ -34,8 +34,8 @@ namespace argus {
 
     class Scene2D;
 
-    RendererState::RendererState(GLRenderer &renderer) :
-            renderer(renderer) {
+    RendererState::RendererState(GLRenderer &renderer):
+        renderer(renderer) {
     }
 
     RendererState::~RendererState(void) {
@@ -105,7 +105,7 @@ namespace argus {
                 }
 
                 Viewport2DState state(*this, &viewport_2d);
-                auto [inserted, success] = this->viewport_states_2d.insert({&viewport_2d, state});
+                auto [inserted, success] = this->viewport_states_2d.insert({ &viewport_2d, state });
                 if (!success) {
                     Logger::default_logger().fatal("Failed to create new viewport state");
                 }

@@ -27,9 +27,7 @@
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
-#include "argus/render/util/linked_program.hpp"
 
-#include "internal/render_opengl_legacy/defines.hpp"
 #include "internal/render_opengl_legacy/gl_util.hpp"
 #include "internal/render_opengl_legacy/types.hpp"
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"
@@ -73,7 +71,7 @@ namespace argus {
         std::vector<std::pair<Shader, shader_handle_t>> handles;
 
         if (shaders.empty()) {
-            return std::make_pair(handles, ShaderReflectionInfo{});
+            return std::make_pair(handles, ShaderReflectionInfo {});
         }
 
         std::vector<std::string> shader_uids;
@@ -286,7 +284,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        state.linked_programs.insert({material_res.uid, program});
+        state.linked_programs.insert({ material_res.uid, program });
     }
 
     void deinit_shader(shader_handle_t shader) {

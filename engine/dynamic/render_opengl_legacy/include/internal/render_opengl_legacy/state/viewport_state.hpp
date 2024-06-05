@@ -31,19 +31,19 @@ namespace argus {
 
         Matrix4 view_matrix;
 
-        buffer_handle_t fb_primary;
-        buffer_handle_t fb_secondary;
+        buffer_handle_t fb_primary = 0;
+        buffer_handle_t fb_secondary = 0;
 
-        texture_handle_t color_buf_primary;
-        texture_handle_t color_buf_secondary;
+        texture_handle_t color_buf_primary = 0;
+        texture_handle_t color_buf_secondary = 0;
         // alias of either primary or secondary color buf depending on how many
         // ping-pongs took place
-        texture_handle_t color_buf_front;
+        texture_handle_t color_buf_front = 0;
 
-        texture_handle_t light_opac_map_buf;
+        texture_handle_t light_opac_map_buf = 0;
 
-        buffer_handle_t lightmap_fb;
-        texture_handle_t lightmap_tex;
+        buffer_handle_t lightmap_fb = 0;
+        texture_handle_t lightmap_tex = 0;
 
         ViewportState(RendererState &parent_state, AttachedViewport *viewport);
     };

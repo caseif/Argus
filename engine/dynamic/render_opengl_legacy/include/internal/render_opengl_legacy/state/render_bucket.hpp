@@ -40,13 +40,13 @@ namespace argus {
         const float light_opacity;
 
         std::vector<ProcessedRenderObject *> objects;
-        buffer_handle_t vertex_buffer;
-        buffer_handle_t anim_frame_buffer;
-        void *anim_frame_buffer_staging;
-        array_handle_t vertex_array;
-        size_t vertex_count;
+        buffer_handle_t vertex_buffer = 0;
+        buffer_handle_t anim_frame_buffer = 0;
+        void *anim_frame_buffer_staging = nullptr;
+        array_handle_t vertex_array = 0;
+        size_t vertex_count = 0;
 
-        bool needs_rebuild;
+        bool needs_rebuild = true;
 
         static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 float light_opacity);
@@ -55,17 +55,11 @@ namespace argus {
 
       private:
         RenderBucket(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
-                float light_opacity) :
-            material_res(material_res),
-            atlas_stride(atlas_stride),
-            z_index(z_index),
-            light_opacity(light_opacity),
-            objects(),
-            vertex_buffer(0),
-            anim_frame_buffer_staging(nullptr),
-            vertex_array(0),
-            vertex_count(0),
-            needs_rebuild(true) {
+                float light_opacity):
+                material_res(material_res),
+                atlas_stride(atlas_stride),
+                z_index(z_index),
+                light_opacity(light_opacity) {
         }
     };
 }

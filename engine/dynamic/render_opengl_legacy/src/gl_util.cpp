@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/macros.hpp"
 
 #include "internal/render_opengl_legacy/gl_util.hpp"
 #include "internal/render_opengl_legacy/types.hpp"

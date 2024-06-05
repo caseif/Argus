@@ -40,8 +40,8 @@ namespace argus {
     // forward declarations
     class ResourceManager;
 
-    ShaderLoader::ShaderLoader() :
-            ResourceLoader({RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG}) {
+    ShaderLoader::ShaderLoader():
+        ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }
 
     void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,

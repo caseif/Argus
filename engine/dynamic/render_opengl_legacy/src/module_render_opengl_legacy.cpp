@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/math.hpp"
 
 #include "argus/core/module.hpp"
 
@@ -41,8 +40,6 @@
 #include "aglet/aglet.h"
 
 #include <string>
-
-#include <cstring>
 
 namespace argus {
     static bool g_backend_active = false;
@@ -121,7 +118,7 @@ namespace argus {
                 }
 
                 auto *renderer = new GLRenderer(window);
-                g_renderer_map.insert({&window, renderer});
+                g_renderer_map.insert({ &window, renderer });
                 break;
             }
             case WindowEventType::Update: {
@@ -174,9 +171,9 @@ namespace argus {
         for (auto [_, renderer] : g_renderer_map) {
             std::string mt = event.prototype.media_type;
             if (mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG) {
-                remove_shader(renderer->state, event.prototype.uid);
+                remove_shader(renderer->m_state, event.prototype.uid);
             } else if (mt == RESOURCE_TYPE_MATERIAL) {
-                deinit_material(renderer->state, event.prototype.uid);
+                deinit_material(renderer->m_state, event.prototype.uid);
             }
         }
     }

@@ -37,9 +37,9 @@ namespace argus {
         program_handle_t handle;
         ShaderReflectionInfo reflection;
 
-        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection) :
-                handle(handle),
-                reflection(std::move(reflection)) {
+        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection):
+            handle(handle),
+            reflection(std::move(reflection)) {
         }
     };
 
