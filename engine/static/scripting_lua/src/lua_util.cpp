@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-
 #include "internal/scripting_lua/context_data.hpp"
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
@@ -27,7 +25,7 @@ namespace argus {
     lua_State *create_lua_state(LuaLanguagePlugin &plugin, LuaContextData &context_data) {
         auto *state = luaL_newstate();
         if (state == nullptr) {
-            Logger::default_logger().fatal("Failed to create Lua state");
+            crash("Failed to create Lua state");
         }
 
         luaL_openlibs(state);

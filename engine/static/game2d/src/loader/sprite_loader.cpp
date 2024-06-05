@@ -20,6 +20,8 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/game2d/sprite.hpp"
 #include "internal/game2d/defines.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"

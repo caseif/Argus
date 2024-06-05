@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "internal/render_opengles/types.hpp"
 #include "internal/render_opengles/renderer/buffer.hpp"
 

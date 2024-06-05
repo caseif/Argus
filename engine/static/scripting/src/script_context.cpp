@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/collections.hpp"
 
 #include "argus/core/engine.hpp"
@@ -35,7 +34,7 @@ namespace argus {
     ScriptContext::ScriptContext(std::string language, void *plugin_data) {
         auto it = g_lang_plugins.find(language);
         if (it == g_lang_plugins.cend()) {
-            Logger::default_logger().fatal("Unknown scripting language '%s'", language.c_str());
+            crash("Unknown scripting language '%s'", language.c_str());
         }
 
         m_pimpl = new pimpl_ScriptContext(std::move(language), it->second, plugin_data);
@@ -72,7 +71,7 @@ namespace argus {
     ScriptContext &create_script_context(const std::string &language) {
         auto plugin_it = g_lang_plugins.find(language);
         if (plugin_it == g_lang_plugins.cend()) {
-            Logger::default_logger().fatal("No plugin is loaded for scripting language: %s", language.c_str());
+            crash("No plugin is loaded for scripting language: %s", language.c_str());
         }
 
         void *plugin_data = plugin_it->second->create_context_data();

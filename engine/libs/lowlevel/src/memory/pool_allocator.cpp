@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "internal/lowlevel/crash.hpp"
 #include "internal/lowlevel/memory/util.hpp"
 
 #include <stdexcept>
@@ -282,7 +282,7 @@ namespace argus {
                         CanaryValue *canary = reinterpret_cast<CanaryValue *>(
                                 chunk->data + m_pimpl->real_block_size * m_pimpl->blocks_per_chunk);
                         if (*canary != CANARY_MAGIC) {
-                            Logger::default_logger().fatal("Detected heap overrun in chunk @ %p (aligned: %p)",
+                            crash("Detected heap overrun in chunk @ %p (aligned: %p)",
                                     reinterpret_cast<void *>(chunk->unaligned_addr), static_cast<void *>(chunk));
                         }
                         #endif

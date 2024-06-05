@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/buffer.hpp"
 

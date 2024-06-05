@@ -19,8 +19,8 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/error_util.hpp"
 #include "argus/lowlevel/filesystem.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/threading/future.hpp"
+#include "internal/lowlevel/crash.hpp"
 
 #include <filesystem>
 #include <future>
@@ -119,7 +119,7 @@ namespace argus {
         } else if (mode & FILE_MODE_WRITE) {
             std_mode = "w";
         } else {
-            Logger::default_logger().fatal("Unable to determine mode string");
+            crash("Unable to determine mode string");
         }
 
         FILE *file;

@@ -18,8 +18,9 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/types.hpp"
-#include "internal/scripting/handles.hpp"
 
 #include <new>
 #include <optional>

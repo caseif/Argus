@@ -24,12 +24,12 @@
 #ifdef _ARGUS_DEBUG_MODE
 #define _affirm_precond(cond, fmt, file, line)  ((cond) \
         ? void(0) \
-        : Logger::default_logger().fatal("Precondition failed: " file ":" STRINGIZE(line) ": " #cond " (" fmt ")"))
+        : crash("Precondition failed: " file ":" STRINGIZE(line) ": " #cond " (" fmt ")"))
 #define affirm_precond(cond, fmt)  _affirm_precond(cond, fmt, __FILE__, __LINE__)
 #else
 #define affirm_precond(cond, fmt)  ((cond) \
         ? void(0) \
-        : Logger::default_logger().fatal("Precondition failed: " #cond " (" fmt ")"))
+        : crash("Precondition failed: " #cond " (" fmt ")"))
 #endif
 
 #ifdef assert
@@ -38,8 +38,8 @@
 #ifdef _ARGUS_DEBUG_MODE
 #define _argus_assert(cond, file, line) ((cond) \
         ? void(0) \
-        : Logger::default_logger().fatal("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
+        : crash("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
 #define assert(cond) _argus_assert(cond, __FILE__, __LINE__)
 #else
-#define assert(cond) ((cond) ? (void(0)) : (Logger::default_logger().fatal("Assertion failed: " #cond)))
+#define assert(cond) ((cond) ? (void(0)) : (crash("Assertion failed: " #cond)))
 #endif

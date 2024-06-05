@@ -147,7 +147,7 @@ namespace argus {
                 SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11,wayland");
                 #endif
                 if (SDL_Init(k_sdl_subsystems) != 0) {
-                    Logger::default_logger().fatal("SDL init failed (%s)", SDL_GetError());
+                    crash("SDL init failed (%s)", SDL_GetError());
                 }
                 Logger::default_logger().info("SDL initialized successfully");
 

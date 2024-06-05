@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/common/shader.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
@@ -79,7 +81,7 @@ namespace argus {
 
         VkDescriptorSetLayout layout;
         if (vkCreateDescriptorSetLayout(device.logical_device, &layout_info, nullptr, &layout) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create UBO descriptor set layout");
+            crash("Failed to create UBO descriptor set layout");
         }
 
         return layout;
@@ -105,7 +107,7 @@ namespace argus {
 
         VkDescriptorPool pool;
         if (vkCreateDescriptorPool(device.logical_device, &desc_pool_info, nullptr, &pool) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create descriptor pool");
+            crash("Failed to create descriptor pool");
         }
 
         return pool;
@@ -145,7 +147,7 @@ namespace argus {
         std::vector<VkDescriptorSet> sets;
         sets.resize(count);
         if (vkAllocateDescriptorSets(device.logical_device, &ds_info, sets.data()) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to allocate descriptor sets");
+            crash("Failed to allocate descriptor sets");
         }
 
         return sets;

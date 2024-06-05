@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/handle.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "internal/lowlevel/crash.hpp"
 #include "internal/lowlevel/handle.hpp"
 #include "internal/lowlevel/pimpl/handle.hpp"
 
@@ -104,7 +105,7 @@ namespace argus {
             // need to allocate new chunk
 
             if (m_pimpl->chunks.rbegin()->first == MAX_CHUNKS) {
-                Logger::default_logger().fatal("Too many handles allocated");
+                crash("Too many handles allocated");
             }
 
             uint32_t first_empty_chunk_index = MAX_CHUNKS - 1;

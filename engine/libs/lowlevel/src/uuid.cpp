@@ -45,7 +45,7 @@ namespace argus {
         UUID uuid;
         auto res = UuidCreate(&uuid);
         if (!(res == RPC_S_OK || res == RPC_S_UUID_LOCAL_ONLY)) {
-            Logger::default_logger().fatal("Failed to generate UUID");
+            crash("Failed to generate UUID");
         }
 
         argus::Uuid final;

@@ -85,6 +85,38 @@ namespace argus {
     void stop_engine(void);
 
     /**
+     * @brief Crashes the engine with the given error message.
+     *
+     * This function is intended for internal engine use only.
+     *
+     * @param format The message to display.
+     */
+    [[noreturn]] void _crash_va(const char *format, ...);
+
+    /**
+     * @brief Crashes the engine with the given error message.
+     *
+     * The message will be printed to stdout and may be displayed to the end
+     * user in some form, but this is not guaranteed.
+     *
+     * @param format The message to display.
+     */
+     template<typename... Args>
+     [[noreturn]] inline void crash(const std::string &format, Args... args) {
+        _crash_va(format.c_str(), args...);
+     }
+
+    /**
+     * @brief Crashes the engine with the given error message.
+     *
+     * The message will be printed to stdout and may be displayed to the end
+     * user in some form, but this is not guaranteed.
+     *
+     * @param format The message to display.
+     */
+    [[noreturn]] void crash(const char *format, va_list args);
+
+    /**
      * @brief Gets the current lifecycle stage of the engine.
      *
      * @return The current lifecycle stage of the engine.

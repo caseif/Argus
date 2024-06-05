@@ -21,6 +21,8 @@
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/types.hpp"
 
 #include <string>

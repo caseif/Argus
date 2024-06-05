@@ -19,11 +19,9 @@
 #include "argus/lowlevel/debug.hpp"
 
 #include "argus/wm/display.hpp"
-#include "argus/wm/window.hpp"
 #include "internal/wm/display.hpp"
 #include "internal/wm/window.hpp"
 #include "internal/wm/pimpl/display.hpp"
-#include "internal/wm/pimpl/window.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -124,7 +122,7 @@ namespace argus {
 
         int count = SDL_GetNumVideoDisplays();
         if (count < 0) {
-            Logger::default_logger().fatal("Failed to enumerate displays");
+            crash("Failed to enumerate displays");
         }
         dest.resize(size_t(count));
         for (int i = 0; i < count; i++) {

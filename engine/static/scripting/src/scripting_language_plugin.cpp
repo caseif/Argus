@@ -64,7 +64,7 @@ namespace argus {
         for (const auto &mt : plugin.get_media_types()) {
             auto existing = g_media_type_langs.find(mt);
             if (existing != g_media_type_langs.cend()) {
-                Logger::default_logger().fatal("Media type '%s' is already associated with language plugin '%s'",
+                crash("Media type '%s' is already associated with language plugin '%s'",
                         mt.c_str(), existing->second.c_str());
             }
             g_media_type_langs.insert({ mt, plugin.get_language_name() });

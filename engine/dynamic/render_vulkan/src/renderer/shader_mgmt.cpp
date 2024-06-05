@@ -128,7 +128,7 @@ namespace argus {
                     vk_shader_stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                     break;
                 default:
-                    Logger::default_logger().fatal("Unrecognized shader stage ordinal %d",
+                    crash("Unrecognized shader stage ordinal %d",
                             static_cast<std::underlying_type<ShaderStage>::type>(stage));
             }
 
@@ -139,7 +139,7 @@ namespace argus {
 
             VkShaderModule shader_module;
             if (vkCreateShaderModule(device, &stage_create_info, nullptr, &shader_module) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create shader");
+                crash("Failed to create shader");
             }
 
             VkPipelineShaderStageCreateInfo pipeline_stage_create_info {};

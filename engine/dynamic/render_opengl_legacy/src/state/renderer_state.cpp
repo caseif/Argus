@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-
 #include "argus/render/common/scene.hpp"
 
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"
@@ -72,21 +70,21 @@ namespace argus {
                 }
 
                 if (!create) {
-                    Logger::default_logger().fatal("Failed to get scene state");
+                    crash("Failed to get scene state");
                 }
 
                 auto [inserted, success] = this->scene_states_2d.try_emplace(&scene_2d, *this, scene);
                 if (!success) {
-                    Logger::default_logger().fatal("Failed to create new scene state");
+                    crash("Failed to create new scene state");
                 }
 
                 return inserted->second;
             }
             case SceneType::ThreeD: {
-                Logger::default_logger().fatal("Unimplemented scene type");
+                crash("Unimplemented scene type");
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized scene type");
+                crash("Unrecognized scene type");
             }
         }
     }
@@ -101,22 +99,22 @@ namespace argus {
                 }
 
                 if (!create) {
-                    Logger::default_logger().fatal("Failed to get viewport state");
+                    crash("Failed to get viewport state");
                 }
 
                 Viewport2DState state(*this, &viewport_2d);
                 auto [inserted, success] = this->viewport_states_2d.insert({ &viewport_2d, state });
                 if (!success) {
-                    Logger::default_logger().fatal("Failed to create new viewport state");
+                    crash("Failed to create new viewport state");
                 }
 
                 return inserted->second;
             }
             case SceneType::ThreeD: {
-                Logger::default_logger().fatal("Unimplemented viewport type");
+                crash("Unimplemented viewport type");
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized viewport type");
+                crash("Unrecognized viewport type");
             }
         }
     }

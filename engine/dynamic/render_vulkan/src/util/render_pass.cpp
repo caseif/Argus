@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/util/render_pass.hpp"
@@ -90,7 +92,7 @@ namespace argus {
 
         VkRenderPass render_pass;
         if (vkCreateRenderPass(device.logical_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create render pass");
+            crash("Failed to create render pass");
         }
 
         return render_pass;

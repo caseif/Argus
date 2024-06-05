@@ -17,8 +17,9 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
+
+#include "argus/core/engine.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/util/buffer.hpp"
@@ -43,7 +44,7 @@ namespace argus {
 
         VkBuffer buffer {};
         if (vkCreateBuffer(device.logical_device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create buffer");
+            crash("Failed to create buffer");
         }
 
         VkMemoryRequirements mem_reqs;
@@ -56,7 +57,7 @@ namespace argus {
 
         VkDeviceMemory buffer_mem;
         if (vkAllocateMemory(device.logical_device, &alloc_info, nullptr, &buffer_mem) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to allocate buffer memory!");
+            crash("Failed to allocate buffer memory!");
         }
 
         vkBindBufferMemory(device.logical_device, buffer, buffer_mem, 0);
@@ -93,7 +94,7 @@ namespace argus {
 
         void *ptr;
         if (vkMapMemory(buffer.device, buffer.mem, offset, size, flags, &ptr) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to map buffer");
+            crash("Failed to map buffer");
         }
 
         buffer.mapped = ptr;

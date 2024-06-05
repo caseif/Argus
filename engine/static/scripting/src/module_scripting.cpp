@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-
 #include "argus/core/downstream_config.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
@@ -61,7 +59,7 @@ namespace argus {
             auto &context = load_script(uid);
             context.invoke_script_function(k_init_fn_name, {});
         } catch (const std::exception &ex) {
-            Logger::default_logger().fatal("Failed to run init script: " + std::string(ex.what()));
+            crash("Failed to run init script: " + std::string(ex.what()));
         }
     }
 

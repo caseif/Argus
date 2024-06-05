@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/util.hpp"
 
@@ -35,7 +37,7 @@ namespace argus {
             case FunctionType::MemberStatic:
                 return type_name + "::" + fn_name;
             default:
-                Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
+                crash("Unknown function type ordinal %d", fn_type);
         }
     }
 

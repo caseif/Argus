@@ -17,7 +17,7 @@
  */
 
 #include "argus/lowlevel/cabi/c_interop.h"
-#include "argus/lowlevel/logging.hpp"
+#include "internal/lowlevel/crash.hpp"
 
 #include <string>
 #include <vector>
@@ -33,8 +33,7 @@ size_t string_array_get_count(StringArrayConst sa) {
 const char *string_array_get_element(StringArrayConst sa, size_t index) {
     const auto &vec = *reinterpret_cast<const StringArrayImpl *>(sa);
     if (index >= vec.size()) {
-        argus::Logger::default_logger()
-                .fatal("Attempt to access invalid vector index %llu (vector size = %llu)", index, vec.size());
+        crash("Attempt to access invalid vector index %llu (vector size = %llu)", index, vec.size());
     }
     return vec[index].c_str();
 }

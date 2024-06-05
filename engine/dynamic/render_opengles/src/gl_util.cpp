@@ -20,6 +20,8 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "internal/render_opengles/gl_util.hpp"
 #include "internal/render_opengles/types.hpp"
 

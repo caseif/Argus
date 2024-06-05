@@ -206,12 +206,12 @@ namespace argus {
 
         int rc;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(gl_load_proc))) != 0) {
-            Logger::default_logger().fatal("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
+            crash("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
         }
 
         const unsigned char *gl_version_str = glGetString(GL_VERSION);
         if (!AGLET_GL_VERSION_2_0) {
-            Logger::default_logger().fatal("Argus requires support for OpenGL 2.0 or higher (got %s)",
+            crash("Argus requires support for OpenGL 2.0 or higher (got %s)",
                     gl_version_str);
         }
 

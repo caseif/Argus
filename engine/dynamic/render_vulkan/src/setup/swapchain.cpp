@@ -127,7 +127,7 @@ namespace argus {
 
         SwapchainInfo sc_info;
         if (vkCreateSwapchainKHR(device.logical_device, &sc_create_info, nullptr, &sc_info.handle) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create Vulkan swapchain");
+            crash("Failed to create Vulkan swapchain");
         }
 
         sc_info.resolution = resolution;
@@ -163,14 +163,14 @@ namespace argus {
             if (vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.image_avail_sem[i]) != VK_SUCCESS
                     || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem[i])
                             != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create swapchain semaphores");
+                crash("Failed to create swapchain semaphores");
             }
 
             VkFenceCreateInfo fence_info {};
             fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
             if (vkCreateFence(device.logical_device, &fence_info, nullptr, &sc_info.in_flight_fence[i]) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create swapchain fences");
+                crash("Failed to create swapchain fences");
             }
         }
 

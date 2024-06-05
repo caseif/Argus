@@ -173,7 +173,7 @@ namespace argus {
     static Viewport2DState &_create_viewport_2d_state(RendererState &state, AttachedViewport2D &viewport) {
         auto [inserted, success] = state.viewport_states_2d.try_emplace(&viewport, state, &viewport);
         if (!success) {
-            Logger::default_logger().fatal("Failed to create new viewport state");
+            crash("Failed to create new viewport state");
         }
 
         auto &viewport_state = inserted->second;
@@ -184,12 +184,12 @@ namespace argus {
         for (auto &frame_state : viewport_state.per_frame) {
             if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr,
                     &frame_state.rebuild_semaphore) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create semaphores for viewport");
+                crash("Failed to create semaphores for viewport");
             }
 
             if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr,
                     &frame_state.draw_semaphore) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create semaphores for viewport");
+                crash("Failed to create semaphores for viewport");
             }
 
             VkFenceCreateInfo fence_info {};
@@ -197,7 +197,7 @@ namespace argus {
             fence_info.flags = 0;
             if (vkCreateFence(state.device.logical_device, &fence_info, nullptr,
                     &frame_state.composite_fence) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create fences for viewport");
+                crash("Failed to create fences for viewport");
             }
 
             frame_state.command_buf = alloc_command_buffers(state.device, state.graphics_command_pool, 1).front();
@@ -212,7 +212,7 @@ namespace argus {
     static Scene2DState &_create_scene_state(RendererState &state, Scene2D &scene) {
         auto [inserted, success] = state.scene_states_2d.try_emplace(&scene, state, scene);
         if (!success) {
-            Logger::default_logger().fatal("Failed to create new scene state");
+            crash("Failed to create new scene state");
         }
 
         inserted->second.scene_ubo_staging = alloc_buffer(state.device, SHADER_UBO_SCENE_LEN,
@@ -659,7 +659,7 @@ namespace argus {
     void VulkanRenderer::init(void) {
         if (!vk_create_surface(m_window, reinterpret_cast<VkDevice *>(g_vk_instance),
                 reinterpret_cast<void **>(&m_state.surface))) {
-            Logger::default_logger().fatal("Failed to create Vulkan surface");
+            crash("Failed to create Vulkan surface");
         }
         Logger::default_logger().debug("Created surface for new window");
 
@@ -680,7 +680,7 @@ namespace argus {
         sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         if (vkCreateSemaphore(state.device.logical_device, &sem_info, nullptr, &state.rebuild_semaphore)
                 != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create semaphores for new window");
+            crash("Failed to create semaphores for new window");
         }
         Logger::default_logger().debug("Created semaphores for new window");*/
 

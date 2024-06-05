@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
+
+#include "argus/core/engine.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/util/image.hpp"
@@ -68,11 +69,11 @@ namespace argus {
 
         VkDeviceMemory image_memory;
         if (vkAllocateMemory(device.logical_device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to allocate memory for image");
+            crash("Failed to allocate memory for image");
         }
 
         if (vkBindImageMemory(device.logical_device, image, image_memory, 0) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to bind image memory");
+            crash("Failed to bind image memory");
         }
 
         return image;

@@ -225,7 +225,7 @@ namespace argus {
 
         int rc;
         if ((rc = agletLoad(reinterpret_cast<AgletLoadProc>(gl_load_proc))) != 0) {
-            Logger::default_logger().fatal("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
+            crash("Failed to load OpenGL bindings (Aglet returned code %d)", rc);
         }
 
         int gl_major;
@@ -234,7 +234,7 @@ namespace argus {
         glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
         glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
         if (!AGLET_GL_VERSION_3_3) {
-            Logger::default_logger().fatal("Argus requires support for OpenGL 3.3 or higher (got %d.%d)", gl_major,
+            crash("Argus requires support for OpenGL 3.3 or higher (got %d.%d)", gl_major,
                     gl_minor);
         }
 

@@ -24,7 +24,6 @@
 #include <thread>
 
 #include <cstdint>
-#include <utility>
 
 namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_ThreadPool));

@@ -17,8 +17,9 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
+
+#include "argus/core/engine.hpp"
 
 #include "internal/render_vulkan/util/framebuffer.hpp"
 #include "internal/render_vulkan/util/image.hpp"
@@ -43,7 +44,7 @@ namespace argus {
 
         VkFramebuffer fb;
         if (vkCreateFramebuffer(device.logical_device, &fb_info, nullptr, &fb) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create framebuffer");
+            crash("Failed to create framebuffer");
         }
 
         return fb;

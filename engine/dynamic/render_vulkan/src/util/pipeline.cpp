@@ -240,7 +240,7 @@ namespace argus {
         VkPipeline pipeline;
         if (vkCreateGraphicsPipelines(state.device.logical_device, VK_NULL_HANDLE, 1,
                 &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create graphics pipeline");
+            crash("Failed to create graphics pipeline");
         }
 
         destroy_shaders(state.device, prepared_shaders);

@@ -50,7 +50,6 @@
 #pragma GCC diagnostic pop
 
 #include <atomic>
-#include <condition_variable>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -396,9 +395,9 @@ namespace argus {
                 throw std::invalid_argument("Metal contexts are not supported on non-Apple platforms");
                 #endif
             } else if ((g_window_flags & WindowCreationFlags::DirectX) != 0) {
-                Logger::default_logger().fatal("DirectX contexts are not supported at this time");
+                crash("DirectX contexts are not supported at this time");
             } else if ((g_window_flags & WindowCreationFlags::WebGPU) != 0) {
-                Logger::default_logger().fatal("WebGPU contexts are not supported at this time");
+                crash("WebGPU contexts are not supported at this time");
             }
 
             //sdl_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
@@ -407,7 +406,7 @@ namespace argus {
                     DEF_WINDOW_DIM, DEF_WINDOW_DIM,
                     sdl_flags);
             if (m_pimpl->handle == nullptr) {
-                Logger::default_logger().fatal("Failed to create SDL window");
+                crash("Failed to create SDL window");
             }
 
             {

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
+#include "argus/core/engine.hpp"
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
@@ -59,7 +59,7 @@ namespace argus {
                 return it->second;
             }
             default:
-                Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
+                crash("Unknown function type ordinal %d", fn_type);
         }
     }
 

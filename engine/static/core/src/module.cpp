@@ -29,9 +29,7 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <functional>
 #include <map>
-#include <optional>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -50,7 +48,6 @@
 #else
 
 #include <dlfcn.h>
-#include <unistd.h>
 
 #endif
 
@@ -200,7 +197,7 @@ namespace argus {
                 sorted_modules.push_back(module_map.find(id)->second);
             }
         } catch (std::invalid_argument const &) {
-            Logger::default_logger().fatal("Circular dependency detected in dynamic modules, cannot proceed.");
+            crash("Circular dependency detected in dynamic modules, cannot proceed.");
         }
 
         return sorted_modules;

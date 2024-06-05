@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/color.hpp"
 #include "argus/lowlevel/math/vector.hpp"
+#include "internal/lowlevel/crash.hpp"
 
 #include <algorithm>
 

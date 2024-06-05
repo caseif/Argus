@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/resman/resource_manager.hpp"
@@ -213,7 +212,7 @@ namespace argus {
 
             auto back_fb_status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
             if (back_fb_status != GL_FRAMEBUFFER_COMPLETE_EXT) {
-                Logger::default_logger().fatal("Back framebuffer is incomplete (error %d)", back_fb_status);
+                crash("Back framebuffer is incomplete (error %d)", back_fb_status);
             }
 
             // front framebuffer texture
@@ -239,7 +238,7 @@ namespace argus {
 
             auto front_fb_status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
             if (front_fb_status != GL_FRAMEBUFFER_COMPLETE_EXT) {
-                Logger::default_logger().fatal("Front framebuffer is incomplete (error %d)", front_fb_status);
+                crash("Front framebuffer is incomplete (error %d)", front_fb_status);
             }
         }
 
@@ -380,10 +379,10 @@ namespace argus {
         state.frame_program = frame_program;
 
         if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required position attribute");
+            crash("Frame program is missing required position attribute");
         }
         if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
+            crash("Frame program is missing required texcoords attribute");
         }
 
         float frame_quad_vertex_data[] = {

@@ -16,24 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-#include "argus/core.hpp"
+#pragma once
 
-#include <cstdio>
+#include "argus/lowlevel/crash.hpp"
 
-static argus::Logger g_logger("Bootstrap");
+#define crash ::argus::crash_ll
 
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("Invalid arguments\nUsage: %s <namespace>", argc >= 1 ? argv[0] : "argus_bootstrap");
+namespace argus {
+    [[noreturn]] void _crash_ll_va(const char *format, ...);
+
+    template<typename... Args>
+    [[noreturn]] void crash_ll(const std::string &format, Args... args) {
+        _crash_ll_va(format.c_str(), args...);
     }
-
-    argus::load_client_config(argv[1]);
-    g_logger.debug("Loaded client config");
-
-    argus::initialize_engine();
-    g_logger.debug("Engine initialized");
-
-    g_logger.debug("Starting engine...");
-    argus::start_engine(nullptr);
 }

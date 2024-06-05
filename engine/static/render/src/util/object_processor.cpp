@@ -28,7 +28,6 @@
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 
 #include <map>
-#include <optional>
 
 namespace argus {
     static void _compute_abs_group_transform(RenderGroup2D &group, Matrix4 &target) {

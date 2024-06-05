@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/resman/resource.hpp"
@@ -56,7 +55,7 @@ namespace argus {
             type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Fragment;
         } else {
-            Logger::default_logger().fatal("Unrecognized shader media type %s", proto.media_type.c_str());
+            crash("Unrecognized shader media type %s", proto.media_type.c_str());
         }
 
         std::vector<uint8_t> src(std::istreambuf_iterator<char>(stream), {});

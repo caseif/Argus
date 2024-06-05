@@ -106,7 +106,7 @@ namespace argus {
             return;
         }
 
-        Logger::default_logger().fatal("Failed to select graphics backend");
+        crash("Failed to select graphics backend");
     }
 
     static void _load_backend_modules(void) {
@@ -161,10 +161,10 @@ namespace argus {
                     break;
                 }
                 case SceneType::ThreeD: {
-                    Logger::default_logger().fatal("Unimplemented scene type");
+                    crash("Unimplemented scene type");
                 }
                 default: {
-                    Logger::default_logger().fatal("Unrecognized scene type");
+                    crash("Unrecognized scene type");
                 }
             }
         }

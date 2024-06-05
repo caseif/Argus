@@ -19,6 +19,8 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
@@ -27,7 +29,6 @@
 #include "argus/render/common/shader_compilation.hpp"
 #include "argus/render/defines.hpp"
 
-#include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
@@ -133,13 +134,13 @@ namespace argus {
                     gl_shader_stage = GL_FRAGMENT_SHADER;
                     break;
                 default:
-                    Logger::default_logger().fatal("Unrecognized shader stage ordinal %d",
+                    crash("Unrecognized shader stage ordinal %d",
                             static_cast<std::underlying_type<ShaderStage>::type>(stage));
             }
 
             auto shader_handle = glCreateShader(gl_shader_stage);
             if (!glIsShader(shader_handle)) {
-                Logger::default_logger().fatal("Failed to create shader: %d", glGetError());
+                crash("Failed to create shader: %d", glGetError());
             }
 
             if (have_gl_spirv) {
@@ -192,7 +193,7 @@ namespace argus {
                         stage_str = "unknown";
                         break;
                 }
-                get_gl_logger().fatal([log]() { delete[] log; }, "Failed to compile %s shader: %s",
+                crash("Failed to compile %s shader: %s",
                         stage_str.c_str(), log);
             }
             res.shaders.emplace_back(CompiledShader { shader, shader_handle });
@@ -214,7 +215,7 @@ namespace argus {
     LinkedProgram link_program(const std::vector<std::string> &shader_uids) {
         auto program_handle = glCreateProgram();
         if (!glIsProgram(program_handle)) {
-            Logger::default_logger().fatal("Failed to create program: %d", glGetError());
+            crash("Failed to create program: %d", glGetError());
         }
 
         std::vector<Resource *> shader_resources;
@@ -271,7 +272,7 @@ namespace argus {
             assert(log_len >= 0);
             char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
-            get_gl_logger().fatal([log]() { delete[] log; }, "Failed to link program: %s", log);
+            crash("Failed to link program: %s", log);
         }
 
         if (!comp_res.explicit_attrib_locations) {

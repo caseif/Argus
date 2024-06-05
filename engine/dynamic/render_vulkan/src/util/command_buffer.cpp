@@ -35,7 +35,7 @@ namespace argus {
 
         VkCommandPool command_pool {};
         if (vkCreateCommandPool(device.logical_device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create command pool");
+            crash("Failed to create command pool");
         }
 
         return command_pool;
@@ -56,7 +56,7 @@ namespace argus {
         std::vector<VkCommandBuffer> handles;
         handles.resize(count);
         if (vkAllocateCommandBuffers(device.logical_device, &cb_alloc_info, handles.data()) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to allocate command buffers");
+            crash("Failed to allocate command buffers");
         }
 
         std::vector<CommandBufferInfo> buffers;
@@ -123,7 +123,7 @@ namespace argus {
         submit_info.signalSemaphoreCount = uint32_t(signal_semaphores.size());
         submit_info.pSignalSemaphores = signal_semaphores.data();
         if (vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to submit command queues");
+            crash("Failed to submit command queues");
         }
     }
 

@@ -1,5 +1,4 @@
 /*
- *
  * This file is a part of Argus.
  * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
  *
@@ -17,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/atomic.hpp"
+#include "argus/lowlevel/crash.hpp"
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
@@ -42,19 +41,17 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
-#include <map>
 #include <mutex>
-#include <set>
-#include <string>
 #include <thread>
-#include <utility>
 #include <vector>
 
 #include <csignal>
-#include <cstdint>
+#include <cstdarg>
 #include <cstdlib>
 
 namespace argus {
+    static constexpr const char *g_log_level_fatal = "FATAL";
+
     LifecycleStage g_cur_lifecycle_stage;
 
     static CallbackList<DeltaCallback> g_update_callbacks;
@@ -278,6 +275,8 @@ namespace argus {
 
         signal(SIGINT, _interrupt_handler);
 
+        set_ll_crash_callback(crash);
+
         g_update_thread_id = std::this_thread::get_id();
 
         set_message_dispatcher(dispatch_message);
@@ -340,6 +339,18 @@ namespace argus {
         affirm_precond(g_core_initialized, "Cannot stop engine before it is initialized.");
 
         g_engine_stopping = true;
+    }
+
+    [[noreturn]] void crash(const char *format, va_list args) {
+        Logger::default_logger().log_error(g_log_level_fatal, format, args);
+        std::exit(1);
+    }
+
+    [[noreturn]] void _crash_va(const char *format, ...) {
+        va_list args;
+        va_start(args, format);
+        crash(format, args);
+        va_end(args);
     }
 
     LifecycleStage get_current_lifecycle_stage(void) {

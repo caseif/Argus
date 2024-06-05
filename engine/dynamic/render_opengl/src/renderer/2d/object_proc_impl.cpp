@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/resman/resource_manager.hpp"

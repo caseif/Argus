@@ -68,7 +68,7 @@ namespace argus {
         UNUSED(proto);
         UNUSED(src);
         UNUSED(type);
-        Logger::default_logger().fatal("Copy not supported for script resources");
+        crash("Copy not supported for script resources");
     }
 
     void AngelscriptLoader::unload(void *data_ptr) const {

@@ -134,7 +134,7 @@ namespace argus {
         uint32_t dev_count = 0;
         auto enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, nullptr);
         if (enum_res) {
-            Logger::default_logger().fatal("vkEnumeratePhysicalDevices returned error code %d", enum_res);
+            crash("vkEnumeratePhysicalDevices returned error code %d", enum_res);
         }
 
         affirm_precond(dev_count > 0, "No physical video devices found");
@@ -187,7 +187,7 @@ namespace argus {
         }
 
         if (best_rating == 0) {
-            Logger::default_logger().fatal("Failed to find suitable video device");
+            crash("Failed to find suitable video device");
         }
 
         return std::make_pair(best_dev, best_dev_indices);
@@ -244,7 +244,7 @@ namespace argus {
         VkDevice dev;
         auto rc = vkCreateDevice(phys_dev, &dev_create_info, nullptr, &dev);
         if (rc != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to create logical Vulkan device (rc: %d)", rc);
+            crash("Failed to create logical Vulkan device (rc: %d)", rc);
         }
 
         Logger::default_logger().debug("Successfully created logical Vulkan device");

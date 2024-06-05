@@ -201,7 +201,7 @@ namespace argus {
 
             m_pimpl->discovery_done = true;
         } catch (std::exception &ex) {
-            Logger::default_logger().fatal("Failed to get executable directory: %s", ex.what());
+            crash("Failed to get executable directory: %s", ex.what());
         }
     }
 
@@ -210,7 +210,7 @@ namespace argus {
 
         ArpPackage pack = nullptr;
         if ((rc = arp_load_from_memory(buf, len, nullptr, &pack)) != 0) {
-            Logger::default_logger().fatal("Failed to load in-memory package (return code %d)", rc);
+            crash("Failed to load in-memory package (return code %d)", rc);
         }
         arp_add_to_set(m_pimpl->package_set, pack);
 

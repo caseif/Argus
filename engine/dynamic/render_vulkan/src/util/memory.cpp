@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
+#include "argus/core/engine.hpp"
 
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/util/memory.hpp"
@@ -43,6 +43,6 @@ namespace argus {
             break;
         }
 
-        Logger::default_logger().fatal("Failed to find suitable memory type");
+        crash("Failed to find suitable memory type");
     }
 }

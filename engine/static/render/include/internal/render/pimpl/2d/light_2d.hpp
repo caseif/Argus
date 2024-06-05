@@ -1,5 +1,3 @@
-#include <utility>
-
 /*
  * This file is a part of Argus.
  * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
@@ -19,6 +17,8 @@
  */
 
 #pragma once
+
+#include <utility>
 
 namespace argus {
     struct pimpl_Light2D {

@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/misc.hpp"
 
 #include "argus/core/engine.hpp"
@@ -47,7 +46,7 @@ namespace argus {
                 // should virtually never happen, even if we assign a billion
                 // handles per second it would take around 600 years to get to
                 // this point
-                Logger::default_logger().fatal("Exhausted script object handles");
+                crash("Exhausted script object handles");
             }
 
             auto handle = g_next_handle++;

@@ -19,6 +19,8 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/resman.hpp"
 
 #include "argus/scripting/bind.hpp"
@@ -283,7 +285,7 @@ namespace argus {
                         return _wrap_prim_vector_param<int64_t, lua_Integer>(state, param_def, check_fn, read_fn,
                                 "integer", param_index, qual_fn_name, dest);
                     default:
-                        Logger::default_logger().fatal("Unknown integer width %s", element_type.size);
+                        crash("Unknown integer width %s", element_type.size);
                 }
                 break;
             }
@@ -297,7 +299,7 @@ namespace argus {
                         return _wrap_prim_vector_param<double, lua_Number>(state, param_def, lua_isnumber,
                                 read_fn, "number", param_index, qual_fn_name, dest);
                     default:
-                        Logger::default_logger().fatal("Unknown floating-point width %s", element_type.size);
+                        crash("Unknown floating-point width %s", element_type.size);
                 }
                 break;
             }
@@ -568,7 +570,7 @@ namespace argus {
                     }
                 }
                 default:
-                    Logger::default_logger().fatal("Unknown integral type ordinal %d\n", param_def.type);
+                    crash("Unknown integral type ordinal %d\n", param_def.type);
             }
         } catch (const ReflectiveArgumentsException &ex) {
             return _set_lua_error(state,
@@ -885,7 +887,7 @@ namespace argus {
         auto fn_type = static_cast<FunctionType>(lua_tointeger(state, lua_upvalueindex(1)));
         if (fn_type != FunctionType::Global && fn_type != FunctionType::MemberInstance
                 && fn_type != FunctionType::MemberStatic && fn_type != FunctionType::Extension) {
-            Logger::default_logger().fatal("Popped unknown function type value from Lua stack");
+            crash("Popped unknown function type value from Lua stack");
         }
 
         std::string type_name;
@@ -915,7 +917,7 @@ namespace argus {
                     fn = get_native_member_static_function(type_name, fn_name);
                     break;
                 default:
-                    Logger::default_logger().fatal("Unknown function type ordinal %d", fn_type);
+                    crash("Unknown function type ordinal %d", fn_type);
             }
 
             // parameter count not including instance
@@ -982,7 +984,7 @@ namespace argus {
                     _push_value(state, retval);
                     stack_guard.increment();
                 } catch (const std::exception &) {
-                    //Logger::default_logger().fatal("Failed to push return type of bound function to Lua VM");
+                    //crash("Failed to push return type of bound function to Lua VM");
                     throw;
                 }
 

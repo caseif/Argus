@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/atomic.hpp"
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/canvas.hpp"
@@ -92,7 +91,7 @@ namespace argus {
                 vp_v_off = 0;
                 break;
             default:
-                Logger::default_logger().fatal("Unknown ViewportCoordinateSpaceMode ordinal %d", viewport.mode);
+                crash("Unknown ViewportCoordinateSpaceMode ordinal %d", viewport.mode);
         }
 
         TransformedViewport transformed {};
@@ -211,7 +210,7 @@ namespace argus {
 
             if (vkCreateSampler(state.device.logical_device, &sampler_info, nullptr,
                     &frame_state.front_fb.sampler) != VK_SUCCESS) {
-                Logger::default_logger().fatal("Failed to create framebuffer sampler");
+                crash("Failed to create framebuffer sampler");
             }
 
             frame_state.composite_desc_sets = create_descriptor_sets(state.device, state.desc_pool,
@@ -462,7 +461,7 @@ namespace argus {
         vkCmdEndRenderPass(vk_cmd_buf);
 
         /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
-            Logger::default_logger().fatal("Failed to record command buffer");
+            crash("Failed to record command buffer");
         }*/
         end_command_buffer(state.device, frame_state.command_buf);
         vkResetFences(state.device.logical_device, 1, &frame_state.composite_fence);
@@ -514,10 +513,10 @@ namespace argus {
         state.frame_program = frame_program;
 
         if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required position attribute");
+            crash("Frame program is missing required position attribute");
         }
         if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
-            Logger::default_logger().fatal("Frame program is missing required texcoords attribute");
+            crash("Frame program is missing required texcoords attribute");
         }
 
         float frame_quad_vertex_data[] = {

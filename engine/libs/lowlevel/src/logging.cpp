@@ -23,7 +23,6 @@
 
 #include <cstdio>
 
-#define LOG_LEVEL_FATAL "FATAL"
 #define LOG_LEVEL_SEVERE "SEVERE"
 #define LOG_LEVEL_WARN "WARN"
 #define LOG_LEVEL_INFO "INFO"
@@ -102,6 +101,15 @@ namespace argus {
         va_end(args);
     }
 
+    void Logger::debug(const char *format, va_list args) const {
+        #ifdef _ARGUS_DEBUG_MODE
+        log(LOG_LEVEL_DEBUG, format, args);
+        #else
+        UNUSED(format);
+        UNUSED(args);
+        #endif
+    }
+
     void Logger::debug_va(const char *format, ...) const {
         #ifdef _ARGUS_DEBUG_MODE
         va_list args;
@@ -113,11 +121,19 @@ namespace argus {
         #endif
     }
 
+    void Logger::info(const char *format, va_list args) const {
+        log(LOG_LEVEL_INFO, format, args);
+    }
+
     void Logger::info_va(const char *format, ...) const {
         va_list args;
         va_start(args, format);
         log(LOG_LEVEL_INFO, format, args);
         va_end(args);
+    }
+
+    void Logger::warn(const char *format, va_list args) const {
+        log_error(LOG_LEVEL_WARN, format, args);
     }
 
     void Logger::warn_va(const char *format, ...) const {
@@ -127,27 +143,14 @@ namespace argus {
         va_end(args);
     }
 
+    void Logger::severe(const char *format, va_list args) const {
+        log_error(LOG_LEVEL_SEVERE, format, args);
+    }
+
     void Logger::severe_va(const char *format, ...) const {
         va_list args;
         va_start(args, format);
         log_error(LOG_LEVEL_SEVERE, format, args);
         va_end(args);
-    }
-
-    [[noreturn]] void Logger::fatal_va(const std::function<void(void)> &deinit, const char *format, ...) const {
-        va_list args;
-        va_start(args, format);
-        log_error(LOG_LEVEL_FATAL, format, args);
-        va_end(args);
-
-        if (deinit) {
-            deinit();
-        }
-
-        _ABORT();
-    }
-
-    [[noreturn]] void Logger::fatal_va(const char *format, ...) const {
-        fatal(std::function<void(void)>(), format);
     }
 }

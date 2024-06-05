@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/common/scene.hpp"
 
@@ -34,13 +32,13 @@ namespace argus {
                     return it->second;
                 }
 
-                Logger::default_logger().fatal("Failed to get scene state");
+                crash("Failed to get scene state");
             }
             case SceneType::ThreeD: {
-                Logger::default_logger().fatal("Unimplemented scene type");
+                crash("Unimplemented scene type");
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized scene type");
+                crash("Unrecognized scene type");
             }
         }
     }
@@ -54,13 +52,13 @@ namespace argus {
                     return it->second;
                 }
 
-                Logger::default_logger().fatal("Failed to get viewport state");
+                crash("Failed to get viewport state");
             }
             case SceneType::ThreeD: {
-                Logger::default_logger().fatal("Unimplemented viewport type");
+                crash("Unimplemented viewport type");
             }
             default: {
-                Logger::default_logger().fatal("Unrecognized viewport type");
+                crash("Unrecognized viewport type");
             }
         }
     }

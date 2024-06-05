@@ -18,11 +18,10 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 #include "internal/core/engine.hpp"
 #include "internal/core/module_core.hpp"
-
-#include <string>
 
 namespace argus {
     bool g_core_initializing = false;

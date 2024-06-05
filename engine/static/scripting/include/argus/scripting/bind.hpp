@@ -21,6 +21,8 @@
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/misc.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/object_type.hpp"

@@ -23,6 +23,7 @@
 #include "argus/core/client_config.hpp"
 #include "argus/core/client_properties.hpp"
 #include "argus/core/downstream_config.hpp"
+#include "argus/core/engine.hpp"
 #include "internal/core/engine_config.hpp"
 
 #include "arp/arp.h"
@@ -311,7 +312,7 @@ namespace argus {
         handle.to_istream(0, stream);
 
         if (!_ingest_config_content(stream)) {
-            Logger::default_logger().fatal("Failed to parse config from file at %s", config_path.c_str());
+            crash("Failed to parse config from file at %s", config_path.c_str());
         }
 
         handle.release();
@@ -407,7 +408,7 @@ namespace argus {
         std::string cur_path;
         if (!_ingest_config_from_file(config_namespace)
                 && !_ingest_config_from_arp(config_namespace)) {
-            Logger::default_logger().fatal("Failed to locate " CONFIG_FILE_NAME " in namespace %s",
+            crash("Failed to locate " CONFIG_FILE_NAME " in namespace %s",
                     config_namespace.c_str());
         }
     }

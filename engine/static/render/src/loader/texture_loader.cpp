@@ -17,7 +17,6 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
-#include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/resman/resource_loader.hpp"
@@ -90,7 +89,7 @@ namespace argus {
         #pragma warning(disable: 4611)
         #endif
         if (setjmp(png_jmpbuf(png_ptr)) != 0) { // NOLINT(*-err52-cpp)
-            Logger::default_logger().fatal("libpng failed");
+            crash("libpng failed");
         }
         #ifdef _MSC_VER
         #pragma warning(pop)
