@@ -30,13 +30,13 @@
 namespace argus {
     static PoolAllocator g_pimpl_pool(sizeof(pimpl_Sprite));
 
-    Sprite::Sprite(const Resource &definition) :
+    Sprite::Sprite(const Resource &definition):
             m_pimpl(&g_pimpl_pool.construct<pimpl_Sprite>(definition)) {
         set_current_animation(m_pimpl->get_def().def_anim);
     }
 
-    Sprite::Sprite(Sprite &&rhs) :
-            m_pimpl(rhs.m_pimpl) {
+    Sprite::Sprite(Sprite &&rhs) noexcept:
+        m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
     }
 

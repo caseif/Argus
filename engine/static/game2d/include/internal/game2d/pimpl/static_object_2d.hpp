@@ -25,6 +25,7 @@
 
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace argus {
     struct pimpl_StaticObject2D {
@@ -40,15 +41,15 @@ namespace argus {
 
         pimpl_StaticObject2D(Handle handle, Resource &sprite_def_res, Sprite &sprite,
                 const Vector2f &size, uint32_t z_index, bool can_occlude_light,
-                const Transform2D &transform) :
-                handle(handle),
-                sprite_def_res(sprite_def_res),
-                sprite(sprite),
-                size(size),
-                z_index(z_index),
-                can_occlude_light(can_occlude_light),
-                transform(transform),
-                render_obj() {
+                Transform2D transform):
+            handle(handle),
+            sprite_def_res(sprite_def_res),
+            sprite(sprite),
+            size(size),
+            z_index(z_index),
+            can_occlude_light(can_occlude_light),
+            transform(std::move(transform)),
+            render_obj() {
         }
     };
 }

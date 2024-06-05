@@ -53,34 +53,34 @@ namespace argus {
 
         ~World2D(void) override;
 
-        const std::string &get_id(void) const;
+        [[nodiscard]] const std::string &get_id(void) const;
 
-        float get_scale_factor(void) const;
+        [[nodiscard]] float get_scale_factor(void) const;
 
-        const Transform2D &get_camera_transform(void) const;
+        [[nodiscard]] const Transform2D &get_camera_transform(void) const;
 
         void set_camera_transform(const Transform2D &transform);
 
-        float get_ambient_light_level(void) const;
+        [[nodiscard]] float get_ambient_light_level(void) const;
 
         void set_ambient_light_level(float level);
 
-        Vector3f get_ambient_light_color(void) const;
+        [[nodiscard]] Vector3f get_ambient_light_color(void) const;
 
         void set_ambient_light_color(const Vector3f &color);
 
-        World2DLayer &get_background_layer(uint32_t index) const;
+        [[nodiscard]] World2DLayer &get_background_layer(uint32_t index) const;
 
         World2DLayer &add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval);
 
-        StaticObject2D &get_static_object(Handle handle) const;
+        [[nodiscard]] StaticObject2D &get_static_object(Handle handle) const;
 
         Handle create_static_object(const std::string &sprite, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);
 
         void delete_static_object(Handle handle);
 
-        Actor2D &get_actor(Handle handle) const;
+        [[nodiscard]] Actor2D &get_actor(Handle handle) const;
 
         Handle create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);

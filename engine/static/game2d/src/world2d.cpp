@@ -47,7 +47,7 @@ namespace argus {
 
     World2D &World2D::create(const std::string &id, Canvas &canvas, float scale_factor) {
         auto *world = new World2D(id, canvas, scale_factor);
-        g_worlds.insert({id, world});
+        g_worlds.insert({ id, world });
         return *world;
     }
 
@@ -60,12 +60,16 @@ namespace argus {
         return *it->second;
     }
 
-    World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor) :
-            m_pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
+    World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):
+        m_pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
         m_pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt, true);
     }
 
     World2D::~World2D(void) {
+        for (size_t i = 0; i < m_pimpl->bg_layers_count; i++) {
+            delete m_pimpl->bg_layers[i];
+        }
+
         g_pimpl_pool.destroy(m_pimpl);
     }
 
@@ -102,14 +106,14 @@ namespace argus {
     }
 
     World2DLayer &World2D::get_background_layer(uint32_t index) const {
-        affirm_precond(index < m_pimpl->num_bg_layers, "Invalid background index requested");
+        affirm_precond(index < m_pimpl->bg_layers_count, "Invalid background index requested");
         return *m_pimpl->bg_layers[index];
     }
 
     World2DLayer &World2D::add_background_layer(float parallax_coeff, std::optional<Vector2f> repeat_interval) {
-        affirm_precond(m_pimpl->num_bg_layers < MAX_BACKGROUND_LAYERS, "Too many background layers added");
+        affirm_precond(m_pimpl->bg_layers_count < MAX_BACKGROUND_LAYERS, "Too many background layers added");
 
-        auto bg_index = m_pimpl->num_bg_layers;
+        auto bg_index = uint32_t(m_pimpl->bg_layers_count);
 
         std::stringstream layer_id;
         layer_id << BG_LAYER_ID_PREFIX;
@@ -118,7 +122,7 @@ namespace argus {
         auto layer = new World2DLayer(*this, layer_id.str(), 100 + bg_index, parallax_coeff, repeat_interval, false);
 
         m_pimpl->bg_layers[bg_index] = layer;
-        m_pimpl->num_bg_layers += 1;
+        m_pimpl->bg_layers_count += 1;
         return *layer;
     }
 
@@ -127,7 +131,7 @@ namespace argus {
         auto al_level = world.m_pimpl->al_level.read();
         auto al_color = world.m_pimpl->al_color.read();
 
-        for (int64_t i = 0; i < world.m_pimpl->num_bg_layers; i++) {
+        for (size_t i = 0; i < world.m_pimpl->bg_layers_count; i++) {
             render_world_layer(*world.m_pimpl->bg_layers[i], camera_transform, al_level, al_color);
         }
 

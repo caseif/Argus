@@ -20,8 +20,10 @@
 
 #include "argus/game2d/world2d_layer.hpp"
 
+#include <array>
 #include <map>
 #include <string>
+#include <utility>
 
 namespace argus {
     // forward declarations
@@ -38,17 +40,16 @@ namespace argus {
         Dirtiable<float> al_level;
         Dirtiable<Vector3f> al_color;
 
-        World2DLayer *fg_layer;
-        uint32_t num_bg_layers;
-        World2DLayer *bg_layers[MAX_BACKGROUND_LAYERS];
+        World2DLayer *fg_layer = nullptr;
+        std::array<World2DLayer *, MAX_BACKGROUND_LAYERS> bg_layers {};
+        size_t bg_layers_count = 0;
 
         Dirtiable<Transform2D> abstract_camera;
 
-        pimpl_World2D(const std::string &id, Canvas &canvas, float scale_factor) :
-            id(id),
+        pimpl_World2D(std::string id, Canvas &canvas, float scale_factor):
+            id(std::move(id)),
             canvas(canvas),
-            scale_factor(scale_factor),
-            num_bg_layers(0) {
+            scale_factor(scale_factor) {
             al_level = 1.0;
             al_color = { 1.0, 1.0, 1.0 };
         }

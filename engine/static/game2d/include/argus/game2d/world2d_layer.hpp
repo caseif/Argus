@@ -51,9 +51,9 @@ namespace argus {
 
         ~World2DLayer() override;
 
-        World2D &get_world(void) const;
+        [[nodiscard]] World2D &get_world(void) const;
 
-        StaticObject2D &get_static_object(Handle handle) const;
+        [[nodiscard]] StaticObject2D &get_static_object(Handle handle) const;
 
         Handle create_static_object(const std::string &sprite, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);
@@ -63,7 +63,7 @@ namespace argus {
 
         void delete_static_object(Handle handle);
 
-        Actor2D &get_actor(Handle handle) const;
+        [[nodiscard]] Actor2D &get_actor(Handle handle) const;
 
         Handle create_actor(const std::string &sprite, const Vector2f &size, uint32_t z_index,
                 bool can_occlude_light, const Transform2D &transform);

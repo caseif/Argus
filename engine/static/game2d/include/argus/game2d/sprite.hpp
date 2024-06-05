@@ -38,25 +38,25 @@ namespace argus {
 
         Sprite(const Sprite &) = delete;
 
-        Sprite(Sprite &&);
+        Sprite(Sprite &&) noexcept;
 
         ~Sprite(void) override;
 
-        float get_animation_speed(void) const;
+        [[nodiscard]] float get_animation_speed(void) const;
 
         void set_animation_speed(float speed);
 
-        std::vector<std::string> get_available_animations(void) const;
+        [[nodiscard]] std::vector<std::string> get_available_animations(void) const;
 
-        const std::string &get_current_animation(void) const;
+        [[nodiscard]] const std::string &get_current_animation(void) const;
 
         void set_current_animation(const std::string &animation_id);
 
-        bool does_current_animation_loop(void) const;
+        [[nodiscard]] bool does_current_animation_loop(void) const;
 
-        bool is_current_animation_static(void) const;
+        [[nodiscard]] bool is_current_animation_static(void) const;
 
-        Padding get_current_animation_padding(void) const;
+        [[nodiscard]] Padding get_current_animation_padding(void) const;
 
         void pause_animation(void);
 

@@ -37,16 +37,16 @@ namespace argus {
 
         float speed;
         std::string cur_anim_id;
-        SpriteAnimation *cur_anim;
+        SpriteAnimation *cur_anim = nullptr;
 
         Dirtiable<size_t> cur_frame;
         Timestamp next_frame_update;
-        bool paused;
-        bool pending_reset;
+        bool paused = false;
+        bool pending_reset = false;
 
-        pimpl_Sprite(const Resource &def) :
-                def(def),
-                speed(def.get<SpriteDef>().def_speed) {
+        pimpl_Sprite(const Resource &def):
+            def(def),
+            speed(def.get<SpriteDef>().def_speed) {
         }
 
         const SpriteDef &get_def(void) const {

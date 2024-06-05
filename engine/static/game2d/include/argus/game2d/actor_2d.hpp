@@ -43,18 +43,18 @@ namespace argus {
 
         ~Actor2D(void) override;
 
-        Vector2f get_size(void) const;
+        [[nodiscard]] Vector2f get_size(void) const;
 
-        uint32_t get_z_index(void) const;
+        [[nodiscard]] uint32_t get_z_index(void) const;
 
         [[nodiscard]] bool can_occlude_light(void) const;
 
         void set_can_occlude_light(bool can_occlude);
 
-        const Transform2D &get_transform(void) const;
+        [[nodiscard]] const Transform2D &get_transform(void) const;
 
         void set_transform(const Transform2D &transform);
 
-        Sprite &get_sprite(void) const;
+        [[nodiscard]] Sprite &get_sprite(void) const;
     };
 }

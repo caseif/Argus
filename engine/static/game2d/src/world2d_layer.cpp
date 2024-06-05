@@ -32,7 +32,6 @@
 
 #include "argus/game2d/world2d.hpp"
 #include "argus/game2d/world2d_layer.hpp"
-#include "internal/game2d/defines.hpp"
 #include "internal/game2d/module_game2d.hpp"
 #include "internal/game2d/world2d.hpp"
 #include "internal/game2d/world2d_layer.hpp"
@@ -50,14 +49,14 @@
 
 namespace argus {
     World2DLayer::World2DLayer(World2D &world, const std::string &id, uint32_t z_index, float parallax_coeff,
-            std::optional<Vector2f> repeat_interval, bool lighting_enabled) :
-            m_pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
+            std::optional<Vector2f> repeat_interval, bool lighting_enabled):
+        m_pimpl(new pimpl_World2DLayer(world, id, z_index, parallax_coeff, repeat_interval)) {
         auto layer_uuid = Uuid::random().to_string();
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
         m_pimpl->scene = &Scene2D::create(layer_id_str);
         m_pimpl->scene->set_lighting_enabled(lighting_enabled);
         m_pimpl->render_camera = &m_pimpl->scene->create_camera(layer_id_str);
-        world.m_pimpl->canvas.attach_default_viewport_2d(layer_id_str,  *m_pimpl->render_camera, z_index);
+        world.m_pimpl->canvas.attach_default_viewport_2d(layer_id_str, *m_pimpl->render_camera, z_index);
     }
 
     World2DLayer::~World2DLayer(void) {
@@ -197,15 +196,15 @@ namespace argus {
 
         Vertex2D v1, v2, v3, v4;
 
-        v1.position = {0, 0};
-        v2.position = {0, scaled_size.y};
-        v3.position = {scaled_size.x, scaled_size.y};
-        v4.position = {scaled_size.x, 0};
+        v1.position = { 0, 0 };
+        v2.position = { 0, scaled_size.y };
+        v3.position = { scaled_size.x, scaled_size.y };
+        v4.position = { scaled_size.x, 0 };
 
-        v1.tex_coord = {0, 0};
-        v2.tex_coord = {0, 1};
-        v3.tex_coord = {1, 1};
-        v4.tex_coord = {1, 0};
+        v1.tex_coord = { 0, 0 };
+        v2.tex_coord = { 0, 1 };
+        v3.tex_coord = { 1, 1 };
+        v4.tex_coord = { 1, 0 };
 
         auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
         auto atlas_w = anim_tex.get<TextureData>().m_width;
@@ -214,12 +213,12 @@ namespace argus {
 
         size_t frame_off = 0;
         for (auto &[_, anim] : sprite.m_pimpl->get_def().animations) {
-            sprite.m_pimpl->anim_start_offsets.insert({anim.id, frame_off});
+            sprite.m_pimpl->anim_start_offsets.insert({ anim.id, frame_off });
             frame_off += anim.frames.size();
         }
 
-        prims.push_back(RenderPrim2D({v1, v2, v3}));
-        prims.push_back(RenderPrim2D({v1, v3, v4}));
+        prims.push_back(RenderPrim2D({ v1, v2, v3 }));
+        prims.push_back(RenderPrim2D({ v1, v3, v4 }));
 
         //TODO: make this reusable
         auto mat_uid = "internal:game2d/material/sprite_mat_" + Uuid::random().to_string();
@@ -230,9 +229,9 @@ namespace argus {
         float atlas_stride_y;
         if (sprite.m_pimpl->get_def().tile_size.x > 0) {
             atlas_stride_x = float(sprite.m_pimpl->get_def().tile_size.x)
-                             / float(atlas_w);
+                    / float(atlas_w);
             atlas_stride_y = float(sprite.m_pimpl->get_def().tile_size.y)
-                             / float(atlas_h);
+                    / float(atlas_h);
         } else {
             atlas_stride_x = 1.0;
             atlas_stride_y = 1.0;
@@ -293,7 +292,7 @@ namespace argus {
     }
 
     void render_world_layer(World2DLayer &layer, const ValueAndDirtyFlag<Transform2D> &camera_transform,
-        const ValueAndDirtyFlag<float> &al_level, const ValueAndDirtyFlag<Vector3f> &al_color) {
+            const ValueAndDirtyFlag<float> &al_level, const ValueAndDirtyFlag<Vector3f> &al_color) {
         if (camera_transform.dirty) {
             layer.m_pimpl->render_camera->set_transform(get_render_transform(layer, camera_transform.value, true));
         }

@@ -42,22 +42,23 @@
 #define KEY_TILE_HEIGHT "tile_height"
 #define KEY_ANIMS "animations"
 
-static constexpr const char *KEY_ANIM_LOOP = "loop";
-static constexpr const char *KEY_ANIM_DEF_FRAME_DUR = "frame_duration";
-static constexpr const char *KEY_ANIM_PADDING = "padding";
-static constexpr const char *KEY_ANIM_PAD_TOP = "top";
-static constexpr const char *KEY_ANIM_PAD_BOTTOM = "bottom";
-static constexpr const char *KEY_ANIM_PAD_LEFT = "left";
-static constexpr const char *KEY_ANIM_PAD_RIGHT = "right";
-static constexpr const char *KEY_ANIM_FRAMES = "frames";
-static constexpr const char *KEY_ANIM_FRAME_X = "x";
-static constexpr const char *KEY_ANIM_FRAME_Y = "y";
-static constexpr const char *KEY_ANIM_FRAME_DUR = "duration";
+static constexpr const char *k_key_anim_loop = "loop";
+static constexpr const char *k_key_anim_def_frame_dur = "frame_duration";
+static constexpr const char *k_key_anim_padding = "padding";
+static constexpr const char *k_key_anim_pad_top = "top";
+static constexpr const char *k_key_anim_pad_bottom = "bottom";
+static constexpr const char *k_key_anim_pad_left = "left";
+static constexpr const char *k_key_anim_pad_right = "right";
+static constexpr const char *k_key_anim_frames = "frames";
+static constexpr const char *k_key_anim_frame_x = "x";
+static constexpr const char *k_key_anim_frame_y = "y";
+static constexpr const char *k_key_anim_frame_dur = "duration";
 
-static constexpr const char *MAGIC_ANIM_STATIC = "_static";
+static constexpr const char *k_magic_anim_static = "_static";
 
 namespace argus {
-    SpriteLoader::SpriteLoader(void) : ResourceLoader({RESOURCE_TYPE_SPRITE}) {
+    SpriteLoader::SpriteLoader(void):
+            ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
     }
 
     void *SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
@@ -126,7 +127,7 @@ namespace argus {
                 if (json_root.contains(KEY_DEF_ANIM)) {
                     sprite.def_anim = json_root.at(KEY_DEF_ANIM);
                 } else if (json_root.contains(KEY_STATIC_FRAME)) {
-                    sprite.def_anim = MAGIC_ANIM_STATIC;
+                    sprite.def_anim = k_magic_anim_static;
                 } else {
                     Logger::default_logger().severe("Sprite definition must specify at least one of '"
                                                     KEY_DEF_ANIM "' or '" KEY_STATIC_FRAME
@@ -162,11 +163,11 @@ namespace argus {
                     static_anim.loop = false;
 
                     AnimationFrame static_frame;
-                    static_frame.offset = {uint32_t(frame_x), uint32_t(frame_y)};
+                    static_frame.offset = { uint32_t(frame_x), uint32_t(frame_y) };
                     static_frame.duration = 1;
                     static_anim.frames.push_back(static_frame);
 
-                    sprite.animations.insert({MAGIC_ANIM_STATIC, static_anim});
+                    sprite.animations.insert({ k_magic_anim_static, static_anim });
                 }
             } else {
                 if (json_root.contains(KEY_STATIC_FRAME)) {
@@ -179,23 +180,23 @@ namespace argus {
                                                     KEY_ANIMS "' when tile size is implicit");
                 }
 
-                sprite.def_anim = MAGIC_ANIM_STATIC;
+                sprite.def_anim = k_magic_anim_static;
 
                 SpriteAnimation static_anim;
                 static_anim.id = KEY_STATIC_FRAME;
                 static_anim.loop = false;
 
                 AnimationFrame static_frame;
-                static_frame.offset = {0, 0};
+                static_frame.offset = { 0, 0 };
                 static_frame.duration = 1;
                 static_anim.frames.push_back(static_frame);
 
-                sprite.animations.insert({MAGIC_ANIM_STATIC, static_anim});
+                sprite.animations.insert({ k_magic_anim_static, static_anim });
             }
 
             if (json_root.contains(KEY_ANIMS)) {
                 for (auto &[anim_id, anim_json] : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
-                    if (anim_id.length() == 0) {
+                    if (anim_id.empty()) {
                         Logger::default_logger().severe("Sprite animation ID must be non-empty");
                         return nullptr;
                     }
@@ -212,12 +213,12 @@ namespace argus {
 
                     SpriteAnimation anim;
 
-                    if (anim_json.contains(KEY_ANIM_LOOP)) {
-                        anim.loop = anim_json.at(KEY_ANIM_LOOP);
+                    if (anim_json.contains(k_key_anim_loop)) {
+                        anim.loop = anim_json.at(k_key_anim_loop);
                     }
 
-                    if (anim_json.contains(KEY_ANIM_DEF_FRAME_DUR)) {
-                        anim.def_duration = anim_json.at(KEY_ANIM_DEF_FRAME_DUR);
+                    if (anim_json.contains(k_key_anim_def_frame_dur)) {
+                        anim.def_duration = anim_json.at(k_key_anim_def_frame_dur);
                         if (anim.def_duration <= 0) {
                             Logger::default_logger().severe("Sprite frame duration must be >= 0");
                             return nullptr;
@@ -226,8 +227,8 @@ namespace argus {
                         anim.def_duration = 0;
                     }
 
-                    if (anim_json.contains(KEY_ANIM_PADDING)) {
-                        auto padding_json = anim_json.at(KEY_ANIM_PADDING);
+                    if (anim_json.contains(k_key_anim_padding)) {
+                        auto padding_json = anim_json.at(k_key_anim_padding);
 
                         // oversized intermediate variables again
                         int64_t pad_left = 0;
@@ -235,30 +236,30 @@ namespace argus {
                         int64_t pad_top = 0;
                         int64_t pad_bottom = 0;
 
-                        if (padding_json.contains(KEY_ANIM_PAD_LEFT)) {
-                            pad_left = padding_json.at(KEY_ANIM_PAD_LEFT);
+                        if (padding_json.contains(k_key_anim_pad_left)) {
+                            pad_left = padding_json.at(k_key_anim_pad_left);
                         }
 
-                        if (padding_json.contains(KEY_ANIM_PAD_RIGHT)) {
-                            pad_right = padding_json.at(KEY_ANIM_PAD_RIGHT);
+                        if (padding_json.contains(k_key_anim_pad_right)) {
+                            pad_right = padding_json.at(k_key_anim_pad_right);
                         }
 
-                        if (padding_json.contains(KEY_ANIM_PAD_TOP)) {
-                            pad_top = padding_json.at(KEY_ANIM_PAD_TOP);
+                        if (padding_json.contains(k_key_anim_pad_top)) {
+                            pad_top = padding_json.at(k_key_anim_pad_top);
                         }
 
-                        if (padding_json.contains(KEY_ANIM_PAD_BOTTOM)) {
-                            pad_bottom = padding_json.at(KEY_ANIM_PAD_BOTTOM);
+                        if (padding_json.contains(k_key_anim_pad_bottom)) {
+                            pad_bottom = padding_json.at(k_key_anim_pad_bottom);
                         }
 
                         if (pad_left < 0 || pad_right < 0
-                            || pad_top < 0 || pad_bottom < 0) {
+                                || pad_top < 0 || pad_bottom < 0) {
                             Logger::default_logger().severe("Sprite padding values must be >= 0");
                             return nullptr;
                         }
 
                         if (pad_left > UINT32_MAX || pad_right > UINT32_MAX
-                            || pad_top > UINT32_MAX || pad_bottom > UINT32_MAX) {
+                                || pad_top > UINT32_MAX || pad_bottom > UINT32_MAX) {
                             Logger::default_logger().severe("Sprite padding values must be < UINT32_MAX");
                             return nullptr;
                         }
@@ -281,12 +282,12 @@ namespace argus {
                         anim.padding.bottom = uint32_t(pad_bottom);
                     }
 
-                    for (auto &frame_json : anim_json.at(KEY_ANIM_FRAMES).get<nlohmann::json::array_t>()) {
+                    for (auto &frame_json : anim_json.at(k_key_anim_frames).get<nlohmann::json::array_t>()) {
                         AnimationFrame frame;
 
                         // oversized intermediate variables again
-                        int64_t offset_x = frame_json.at(KEY_ANIM_FRAME_X);
-                        int64_t offset_y = frame_json.at(KEY_ANIM_FRAME_Y);
+                        int64_t offset_x = frame_json.at(k_key_anim_frame_x);
+                        int64_t offset_y = frame_json.at(k_key_anim_frame_y);
 
                         if (offset_x < 0 || offset_y < 0) {
                             Logger::default_logger().severe("Sprite animation frame offset values must be >= 0");
@@ -302,8 +303,8 @@ namespace argus {
                         frame.offset.x = uint32_t(offset_x);
                         frame.offset.y = uint32_t(offset_y);
 
-                        if (frame_json.contains(KEY_ANIM_FRAME_DUR)) {
-                            frame.duration = frame_json.at(KEY_ANIM_FRAME_DUR);
+                        if (frame_json.contains(k_key_anim_frame_dur)) {
+                            frame.duration = frame_json.at(k_key_anim_frame_dur);
                             if (frame.duration <= 0) {
                                 Logger::default_logger().severe("Sprite animation frame duration must be > 0");
                                 return nullptr;
@@ -319,7 +320,7 @@ namespace argus {
                         anim.frames.push_back(frame);
                     }
 
-                    sprite.animations.insert({anim_id, anim});
+                    sprite.animations.insert({ anim_id, anim });
                 }
             }
 
