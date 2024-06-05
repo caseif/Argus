@@ -65,8 +65,8 @@ namespace argus {
         VkSurfaceKHR surface;
         SwapchainInfo swapchain;
 
-        PipelineInfo composite_pipeline{};
-        BufferInfo composite_vbo{};
+        PipelineInfo composite_pipeline {};
+        BufferInfo composite_vbo {};
 
         VkCommandPool graphics_command_pool;
         VkDescriptorPool desc_pool;
@@ -78,7 +78,7 @@ namespace argus {
         CommandBufferInfo copy_cmd_buf[MAX_FRAMES_IN_FLIGHT];
         std::map<uint32_t, std::pair<CommandBufferInfo, bool>> composite_cmd_bufs;
 
-        BufferInfo global_ubo{};
+        BufferInfo global_ubo {};
 
         std::map<const Scene2D *, Scene2DState> scene_states_2d;
         std::vector<SceneState *> all_scene_states;
@@ -87,7 +87,7 @@ namespace argus {
 
         bool dirty_viewports;
 
-        std::map<std::string, const Resource*> material_resources;
+        std::map<std::string, const Resource *> material_resources;
         std::map<std::string, PipelineInfo> material_pipelines;
         std::map<std::string, RefCountable<PreparedTexture>> prepared_textures;
         std::map<std::string, std::string> material_textures;

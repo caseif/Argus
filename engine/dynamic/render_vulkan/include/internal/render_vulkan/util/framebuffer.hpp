@@ -29,7 +29,7 @@ namespace argus {
         std::vector<ImageInfo> images;
         VkSampler sampler;
 
-        FramebufferInfo() :
+        FramebufferInfo():
             handle(VK_NULL_HANDLE),
             images(),
             sampler(VK_NULL_HANDLE) {

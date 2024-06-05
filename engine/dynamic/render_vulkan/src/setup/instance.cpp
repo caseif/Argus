@@ -120,9 +120,9 @@ namespace argus {
 
         VkInstance instance;
 
-        auto createRes = vkCreateInstance(&create_info, nullptr, &instance);
-        if (createRes != VK_SUCCESS) {
-            Logger::default_logger().warn("vkCreateInstance returned error code %d", createRes);
+        auto create_res = vkCreateInstance(&create_info, nullptr, &instance);
+        if (create_res != VK_SUCCESS) {
+            Logger::default_logger().warn("vkCreateInstance returned error code %d", create_res);
             return nullptr;
         }
 

@@ -22,17 +22,17 @@
 #include "internal/render_vulkan/state/scene_state.hpp"
 
 namespace argus {
-    SceneState::SceneState(RendererState &parent_state, Scene &scene) :
-            parent_state(parent_state),
-            scene(scene),
-            visited(false) {
+    SceneState::SceneState(RendererState &parent_state, Scene &scene):
+        parent_state(parent_state),
+        scene(scene),
+        visited(false) {
     }
 
     SceneState::SceneState(SceneState &&rhs) noexcept = default;
 
     SceneState::~SceneState(void) = default;
 
-    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene) :
+    Scene2DState::Scene2DState(RendererState &parent_state, Scene &scene):
             SceneState(parent_state, scene) {
     }
 

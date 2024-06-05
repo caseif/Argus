@@ -32,7 +32,7 @@ namespace argus {
         atts.reserve(2);
         att_refs.reserve(2);
 
-        VkAttachmentDescription color_att{};
+        VkAttachmentDescription color_att {};
         color_att.format = format;
         color_att.samples = VK_SAMPLE_COUNT_1_BIT;
         color_att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -43,7 +43,7 @@ namespace argus {
         color_att.finalLayout = final_layout;
         atts.push_back(color_att);
 
-        VkAttachmentReference color_att_ref{};
+        VkAttachmentReference color_att_ref {};
         color_att_ref.attachment = SHADER_OUT_COLOR_LOC;
         color_att_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         att_refs.push_back(color_att_ref);
@@ -66,12 +66,12 @@ namespace argus {
             att_refs.push_back(light_opac_att_ref);
         }
 
-        VkSubpassDescription subpass{};
+        VkSubpassDescription subpass {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = uint32_t(att_refs.size());
         subpass.pColorAttachments = att_refs.data();
 
-        VkSubpassDependency subpass_dep{};
+        VkSubpassDependency subpass_dep {};
         subpass_dep.srcSubpass = VK_SUBPASS_EXTERNAL;
         subpass_dep.dstSubpass = 0;
         subpass_dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -79,7 +79,7 @@ namespace argus {
         subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         subpass_dep.dstAccessMask = 0;
 
-        VkRenderPassCreateInfo render_pass_info{};
+        VkRenderPassCreateInfo render_pass_info {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         render_pass_info.attachmentCount = uint32_t(atts.size());
         render_pass_info.pAttachments = atts.data();

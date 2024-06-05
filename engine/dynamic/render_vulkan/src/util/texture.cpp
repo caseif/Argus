@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/logging.hpp"
-
 #include "argus/resman/resource.hpp"
 
 #include "argus/render/common/material.hpp"
@@ -49,12 +47,13 @@ namespace argus {
             const size_t bytes_per_pixel = 4;
             const size_t bytes_per_row = texture.m_width * bytes_per_pixel;
             for (size_t y = 0; y < texture.m_height; y++) {
-                auto dst = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(staging_buf.mapped) + (y * bytes_per_row));
+                auto dst = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(staging_buf.mapped)
+                        + (y * bytes_per_row));
                 memcpy(dst, texture.get_pixel_data()[y], bytes_per_row);
             }
         }
 
-        VkBufferImageCopy region{};
+        VkBufferImageCopy region {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
         region.bufferImageHeight = 0;
@@ -64,7 +63,7 @@ namespace argus {
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        region.imageOffset = {0, 0, 0};
+        region.imageOffset = { 0, 0, 0 };
         region.imageExtent = { texture.m_width, texture.m_height, 1 };
 
         perform_image_transition(cmd_buf, image,
@@ -80,7 +79,7 @@ namespace argus {
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-        VkSamplerCreateInfo sampler_info{};
+        VkSamplerCreateInfo sampler_info {};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         sampler_info.magFilter = VK_FILTER_NEAREST;
         sampler_info.minFilter = VK_FILTER_NEAREST;
@@ -110,7 +109,7 @@ namespace argus {
         auto existing_it = state.prepared_textures.find(texture_uid);
         if (existing_it != state.prepared_textures.end()) {
             existing_it->second.acquire();
-            state.material_textures.insert({material_res.uid, texture_uid});
+            state.material_textures.insert({ material_res.uid, texture_uid });
             return;
         }
 

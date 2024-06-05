@@ -18,9 +18,6 @@
 
 #include "argus/lowlevel/debug.hpp"
 
-#include "argus/wm/window.hpp"
-
-#include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/swapchain.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/util/framebuffer.hpp"
@@ -100,7 +97,7 @@ namespace argus {
             image_count = support_info.caps.maxImageCount;
         }
 
-        VkSwapchainCreateInfoKHR sc_create_info{};
+        VkSwapchainCreateInfoKHR sc_create_info {};
         sc_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         sc_create_info.surface = surface;
         sc_create_info.minImageCount = image_count;
@@ -161,15 +158,15 @@ namespace argus {
         }
 
         for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            VkSemaphoreCreateInfo sem_info{};
+            VkSemaphoreCreateInfo sem_info {};
             sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             if (vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.image_avail_sem[i]) != VK_SUCCESS
-                || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem[i])
-                   != VK_SUCCESS) {
+                    || vkCreateSemaphore(device.logical_device, &sem_info, nullptr, &sc_info.render_done_sem[i])
+                            != VK_SUCCESS) {
                 Logger::default_logger().fatal("Failed to create swapchain semaphores");
             }
 
-            VkFenceCreateInfo fence_info{};
+            VkFenceCreateInfo fence_info {};
             fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
             if (vkCreateFence(device.logical_device, &fence_info, nullptr, &sc_info.in_flight_fence[i]) != VK_SUCCESS) {

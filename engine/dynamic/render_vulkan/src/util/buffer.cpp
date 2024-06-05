@@ -35,13 +35,13 @@ namespace argus {
             GraphicsMemoryPropCombos props) {
         assert(size > 0);
 
-        VkBufferCreateInfo buffer_info{};
+        VkBufferCreateInfo buffer_info {};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer_info.size = size;
         buffer_info.usage = usage;
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkBuffer buffer{};
+        VkBuffer buffer {};
         if (vkCreateBuffer(device.logical_device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to create buffer");
         }
@@ -49,7 +49,7 @@ namespace argus {
         VkMemoryRequirements mem_reqs;
         vkGetBufferMemoryRequirements(device.logical_device, buffer, &mem_reqs);
 
-        VkMemoryAllocateInfo alloc_info{};
+        VkMemoryAllocateInfo alloc_info {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = mem_reqs.size;
         alloc_info.memoryTypeIndex = find_memory_type(device, mem_reqs.memoryTypeBits, props);
@@ -117,7 +117,7 @@ namespace argus {
         assert(dst_buf.device != VK_NULL_HANDLE);
         assert(dst_buf.handle != VK_NULL_HANDLE);
 
-        VkBufferCopy copy_region{};
+        VkBufferCopy copy_region {};
         copy_region.srcOffset = src_off;
         copy_region.dstOffset = dst_off;
         copy_region.size = size;

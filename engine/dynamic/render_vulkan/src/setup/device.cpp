@@ -27,7 +27,6 @@
 
 #include "vulkan/vulkan.h"
 
-#include <algorithm>
 #include <map>
 #include <optional>
 #include <utility>
@@ -36,7 +35,7 @@
 #include <cstdint>
 
 namespace argus {
-    static const uint32_t DISCRETE_GPU_RATING_BONUS = 10000;
+    static const uint32_t k_discrete_gpu_rating_bonus = 10000;
 
     static std::optional<QueueFamilyIndices> _get_queue_family_indices(VkPhysicalDevice device,
             VkSurfaceKHR surface, const std::vector<VkQueueFamilyProperties> &queue_families) {
@@ -103,7 +102,7 @@ namespace argus {
     }
 
     static int64_t _rate_physical_device(VkInstance instance, VkPhysicalDevice device,
-            std::vector<VkQueueFamilyProperties> queue_families) {
+            const std::vector<VkQueueFamilyProperties> &queue_families) {
         UNUSED(instance);
         UNUSED(queue_families);
 
@@ -120,7 +119,7 @@ namespace argus {
         }
 
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            score += DISCRETE_GPU_RATING_BONUS;
+            score += k_discrete_gpu_rating_bonus;
         }
 
         score += props.limits.maxImageDimension2D;
@@ -144,7 +143,7 @@ namespace argus {
         enum_res = vkEnumeratePhysicalDevices(instance, &dev_count, devs.data());
 
         VkPhysicalDevice best_dev = nullptr;
-        QueueFamilyIndices best_dev_indices;
+        QueueFamilyIndices best_dev_indices {};
         int64_t best_rating = 0;
 
         for (auto dev : devs) {
@@ -196,7 +195,7 @@ namespace argus {
 
     std::optional<LogicalDevice> create_vk_device(VkInstance instance, VkSurfaceKHR probe_surface) {
         VkPhysicalDevice phys_dev;
-        QueueFamilyIndices qf_indices{};
+        QueueFamilyIndices qf_indices {};
         std::tie(phys_dev, qf_indices) = _select_physical_device(instance, probe_surface);
         VkPhysicalDeviceProperties phys_dev_props;
         vkGetPhysicalDeviceProperties(phys_dev, &phys_dev_props);
@@ -204,10 +203,10 @@ namespace argus {
         Logger::default_logger().info("Selected video device %s", phys_dev_props.deviceName);
 
         std::set<uint32_t> unique_queue_families = { qf_indices.graphics_family, qf_indices.present_family,
-                                                     qf_indices.transfer_family };
+                qf_indices.transfer_family };
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
         for (auto queue_id : unique_queue_families) {
-            VkDeviceQueueCreateInfo queue_create_info{};
+            VkDeviceQueueCreateInfo queue_create_info {};
             queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queue_create_info.queueFamilyIndex = queue_id;
             queue_create_info.queueCount = 1;
@@ -217,10 +216,10 @@ namespace argus {
             queue_create_infos.push_back(queue_create_info);
         }
 
-        VkPhysicalDeviceFeatures dev_features{};
+        VkPhysicalDeviceFeatures dev_features {};
         dev_features.independentBlend = VK_TRUE;
 
-        VkDeviceCreateInfo dev_create_info{};
+        VkDeviceCreateInfo dev_create_info {};
         dev_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         dev_create_info.pQueueCreateInfos = queue_create_infos.data();
         dev_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
@@ -250,7 +249,7 @@ namespace argus {
 
         Logger::default_logger().debug("Successfully created logical Vulkan device");
 
-        QueueFamilies queues{};
+        QueueFamilies queues {};
         vkGetDeviceQueue(dev, qf_indices.graphics_family, 0, &queues.graphics_family);
         vkGetDeviceQueue(dev, qf_indices.present_family, 0, &queues.present_family);
         vkGetDeviceQueue(dev, qf_indices.transfer_family, 0, &queues.transfer_family);

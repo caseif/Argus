@@ -28,7 +28,6 @@
 #include "argus/render/2d/render_prim_2d.hpp"
 
 #include "internal/render_vulkan/defines.hpp"
-#include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 #include "internal/render_vulkan/renderer/2d/object_proc_impl.hpp"
 #include "internal/render_vulkan/state/processed_render_object.hpp"
 #include "internal/render_vulkan/state/render_bucket.hpp"
@@ -39,7 +38,6 @@
 #include "internal/render_vulkan/util/pipeline.hpp"
 
 #include <map>
-#include <numeric>
 
 #include <climits>
 #include <cstddef>
@@ -80,7 +78,7 @@ namespace argus {
         auto staging_buffer = alloc_buffer(state.device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 GraphicsMemoryPropCombos::DeviceRw);
 
-        auto float_buffer = reinterpret_cast<float*>(staging_buffer.mapped);
+        auto float_buffer = reinterpret_cast<float *>(staging_buffer.mapped);
 
         uint32_t total_vertices = 0;
         for (const RenderPrim2D &prim : object.get_primitives()) {
@@ -152,9 +150,9 @@ namespace argus {
         auto &pipeline = state.material_pipelines.find(object.get_material())->second;
 
         size_t vertex_comps = (pipeline.reflection.has_attr(SHADER_ATTRIB_POSITION) ? SHADER_ATTRIB_POSITION_LEN : 0)
-                            + (pipeline.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
-                            + (pipeline.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
-                            + (pipeline.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
+                + (pipeline.reflection.has_attr(SHADER_ATTRIB_NORMAL) ? SHADER_ATTRIB_NORMAL_LEN : 0)
+                + (pipeline.reflection.has_attr(SHADER_ATTRIB_COLOR) ? SHADER_ATTRIB_COLOR_LEN : 0)
+                + (pipeline.reflection.has_attr(SHADER_ATTRIB_TEXCOORD) ? SHADER_ATTRIB_TEXCOORD_LEN : 0);
 
         auto float_buffer = reinterpret_cast<float *>(proc_obj.staging_buffer.mapped);
 

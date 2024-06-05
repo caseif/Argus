@@ -28,12 +28,12 @@
 
 namespace argus {
     VkCommandPool create_command_pool(const LogicalDevice &device, uint32_t queue_index) {
-        VkCommandPoolCreateInfo pool_info{};
+        VkCommandPoolCreateInfo pool_info {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         pool_info.queueFamilyIndex = queue_index;
 
-        VkCommandPool command_pool{};
+        VkCommandPool command_pool {};
         if (vkCreateCommandPool(device.logical_device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to create command pool");
         }
@@ -47,7 +47,7 @@ namespace argus {
 
     std::vector<CommandBufferInfo> alloc_command_buffers(const LogicalDevice &device, VkCommandPool pool,
             uint32_t count) {
-        VkCommandBufferAllocateInfo cb_alloc_info{};
+        VkCommandBufferAllocateInfo cb_alloc_info {};
         cb_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         cb_alloc_info.commandPool = pool;
         cb_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -61,8 +61,8 @@ namespace argus {
 
         std::vector<CommandBufferInfo> buffers;
         buffers.resize(count);
-        std::transform(handles.cbegin(), handles.cend(), buffers.begin(), [&pool] (auto handle) {
-            CommandBufferInfo cb_info{};
+        std::transform(handles.cbegin(), handles.cend(), buffers.begin(), [&pool](auto handle) {
+            CommandBufferInfo cb_info {};
             cb_info.pool = pool;
             cb_info.handle = handle;
             return cb_info;
@@ -78,7 +78,7 @@ namespace argus {
 
         std::vector<VkCommandBuffer> handles;
         handles.reserve(buffers.size());
-        std::transform(buffers.cbegin(), buffers.cend(), handles.begin(), [] (const auto &buf) { return buf.handle; });
+        std::transform(buffers.cbegin(), buffers.cend(), handles.begin(), [](const auto &buf) { return buf.handle; });
 
         vkFreeCommandBuffers(device.logical_device, buffers.front().pool,
                 static_cast<uint32_t>(handles.size()), handles.data());
@@ -93,7 +93,7 @@ namespace argus {
 
         vkResetCommandBuffer(buffer.handle, 0);
 
-        VkCommandBufferBeginInfo begin_info{};
+        VkCommandBufferBeginInfo begin_info {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(buffer.handle, &begin_info);
@@ -113,7 +113,7 @@ namespace argus {
 
         assert(wait_semaphores.size() == wait_stages.size());
 
-        VkSubmitInfo submit_info{};
+        VkSubmitInfo submit_info {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &buffer.handle;

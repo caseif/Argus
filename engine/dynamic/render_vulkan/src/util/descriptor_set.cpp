@@ -27,13 +27,14 @@
 #include "vulkan/vulkan.h"
 
 namespace argus {
-    static constexpr const uint32_t INITIAL_VIEWPORT_CAP = 2;
-    static constexpr const uint32_t INITIAL_BUCKET_CAP = 64;
-    static constexpr const uint32_t SAMPLERS_PER_BUCKET = 1;
-    static constexpr const uint32_t UBOS_PER_BUCKET = 3;
-    static constexpr const uint32_t INITIAL_DS_COUNT = INITIAL_VIEWPORT_CAP * INITIAL_BUCKET_CAP * MAX_FRAMES_IN_FLIGHT;
-    static constexpr const uint32_t INITIAL_UBO_COUNT = INITIAL_DS_COUNT * UBOS_PER_BUCKET;
-    static constexpr const uint32_t INITIAL_SAMPLER_COUNT = INITIAL_DS_COUNT * SAMPLERS_PER_BUCKET;
+    static constexpr const uint32_t k_initial_viewport_cap = 2;
+    static constexpr const uint32_t k_initial_bucket_cap = 64;
+    static constexpr const uint32_t k_samplers_per_bucket = 1;
+    static constexpr const uint32_t k_ubos_per_bucket = 3;
+    static constexpr const uint32_t k_initial_ds_count = k_initial_viewport_cap * k_initial_bucket_cap
+            * MAX_FRAMES_IN_FLIGHT;
+    static constexpr const uint32_t k_initial_ubo_count = k_initial_ds_count * k_ubos_per_bucket;
+    static constexpr const uint32_t k_initial_sampler_count = k_initial_ds_count * k_samplers_per_bucket;
 
     static std::vector<VkDescriptorSetLayoutBinding> _create_ubo_bindings(const ShaderReflectionInfo &shader_refl) {
         auto count = shader_refl.ubo_bindings.size();
@@ -43,7 +44,7 @@ namespace argus {
         bindings.reserve(count);
 
         for (const auto &[_, ubo] : shader_refl.ubo_bindings) {
-            VkDescriptorSetLayoutBinding ubo_binding{};
+            VkDescriptorSetLayoutBinding ubo_binding {};
             ubo_binding.binding = ubo;
             ubo_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             ubo_binding.descriptorCount = 1; //TODO: account for array UBOs
@@ -57,7 +58,7 @@ namespace argus {
     }
 
     static VkDescriptorSetLayoutBinding _create_sampler_binding(void) {
-        VkDescriptorSetLayoutBinding binding{};
+        VkDescriptorSetLayoutBinding binding {};
         binding.binding = 0; //TODO: pass actual value through reflection info
         binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         binding.descriptorCount = 1;
@@ -71,7 +72,7 @@ namespace argus {
             const std::vector<VkDescriptorSetLayoutBinding> &bindings) {
         affirm_precond(bindings.size() <= UINT32_MAX, "Too many descriptor set layout bindings");
 
-        VkDescriptorSetLayoutCreateInfo layout_info{};
+        VkDescriptorSetLayoutCreateInfo layout_info {};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layout_info.bindingCount = uint32_t(bindings.size());
         layout_info.pBindings = bindings.data();
@@ -85,21 +86,21 @@ namespace argus {
     }
 
     VkDescriptorPool create_descriptor_pool(const LogicalDevice &device) {
-        VkDescriptorPoolSize ubo_pool_size{};
+        VkDescriptorPoolSize ubo_pool_size {};
         ubo_pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        ubo_pool_size.descriptorCount = INITIAL_UBO_COUNT;
+        ubo_pool_size.descriptorCount = k_initial_ubo_count;
 
-        VkDescriptorPoolSize sampler_pool_size{};
+        VkDescriptorPoolSize sampler_pool_size {};
         sampler_pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        sampler_pool_size.descriptorCount = INITIAL_SAMPLER_COUNT;
+        sampler_pool_size.descriptorCount = k_initial_sampler_count;
 
         VkDescriptorPoolSize pool_sizes[] = { ubo_pool_size, sampler_pool_size };
 
-        VkDescriptorPoolCreateInfo desc_pool_info{};
+        VkDescriptorPoolCreateInfo desc_pool_info {};
         desc_pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         desc_pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(VkDescriptorPoolSize);
         desc_pool_info.pPoolSizes = pool_sizes;
-        desc_pool_info.maxSets = INITIAL_DS_COUNT;
+        desc_pool_info.maxSets = k_initial_ds_count;
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         VkDescriptorPool pool;
@@ -135,7 +136,7 @@ namespace argus {
         uint32_t count = 1;
         std::vector<VkDescriptorSetLayout> layouts(count, create_descriptor_set_layout(device, shader_refl));
 
-        VkDescriptorSetAllocateInfo ds_info{};
+        VkDescriptorSetAllocateInfo ds_info {};
         ds_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         ds_info.descriptorPool = pool;
         ds_info.descriptorSetCount = count;

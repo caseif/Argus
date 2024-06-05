@@ -132,7 +132,7 @@ namespace argus {
                             static_cast<std::underlying_type<ShaderStage>::type>(stage));
             }
 
-            VkShaderModuleCreateInfo stage_create_info{};
+            VkShaderModuleCreateInfo stage_create_info {};
             stage_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
             stage_create_info.codeSize = shader.get_source().size();
             stage_create_info.pCode = reinterpret_cast<const uint32_t *>(shader.get_source().data());
@@ -142,7 +142,7 @@ namespace argus {
                 Logger::default_logger().fatal("Failed to create shader");
             }
 
-            VkPipelineShaderStageCreateInfo pipeline_stage_create_info{};
+            VkPipelineShaderStageCreateInfo pipeline_stage_create_info {};
             pipeline_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             pipeline_stage_create_info.stage = vk_shader_stage;
             pipeline_stage_create_info.module = shader_module;

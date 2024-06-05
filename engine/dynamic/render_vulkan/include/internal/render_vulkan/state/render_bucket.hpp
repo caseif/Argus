@@ -28,6 +28,9 @@
 namespace argus {
     struct RenderBucket {
       public:
+        static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
+                float light_opacity);
+
         const Resource &material_res;
         const Vector2f atlas_stride;
         const uint32_t z_index;
@@ -44,29 +47,26 @@ namespace argus {
 
         bool needs_rebuild;
 
-        static RenderBucket &create(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
-                float light_opacity);
+        RenderBucket(RenderBucket &) = delete;
 
         void destroy(void);
 
       private:
         RenderBucket(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
-                float light_opacity) :
-            material_res(material_res),
-            atlas_stride(atlas_stride),
-            z_index(z_index),
-            light_opacity(light_opacity),
-            objects(),
-            vertex_buffer(),
-            staging_vertex_buffer(),
-            anim_frame_buffer(),
-            staging_anim_frame_buffer(),
-            vertex_count(0),
-            ubo_buffer({}),
-            needs_rebuild(true) {
+                float light_opacity):
+                material_res(material_res),
+                atlas_stride(atlas_stride),
+                z_index(z_index),
+                light_opacity(light_opacity),
+                objects(),
+                vertex_buffer(),
+                staging_vertex_buffer(),
+                anim_frame_buffer(),
+                staging_anim_frame_buffer(),
+                vertex_count(0),
+                ubo_buffer({}),
+                needs_rebuild(true) {
         }
-
-        RenderBucket(RenderBucket &) = delete;
 
         ~RenderBucket();
     };

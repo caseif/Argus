@@ -32,7 +32,7 @@
 namespace argus {
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
             const std::vector<VkImageView> &image_views, Vector2u size) {
-        VkFramebufferCreateInfo fb_info{};
+        VkFramebufferCreateInfo fb_info {};
         fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fb_info.renderPass = render_pass;
         fb_info.attachmentCount = static_cast<uint32_t>(image_views.size());
@@ -55,7 +55,7 @@ namespace argus {
 
         std::vector<VkImageView> image_views;
         image_views.resize(images.size());
-        std::transform(images.cbegin(), images.cend(), image_views.begin(), [] (const auto &img) { return img.view; });
+        std::transform(images.cbegin(), images.cend(), image_views.begin(), [](const auto &img) { return img.view; });
 
         return create_framebuffer(device, render_pass, image_views, images.front().size);
     }

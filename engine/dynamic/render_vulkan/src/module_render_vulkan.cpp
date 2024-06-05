@@ -66,16 +66,17 @@ namespace argus {
     };
 
     VkInstance g_vk_instance = nullptr;
-    LogicalDevice g_vk_device{};
+    LogicalDevice g_vk_device {};
     VkDebugUtilsMessengerEXT g_vk_debug_messenger;
 
     static Logger g_vk_logger("Vulkan");
 
     static std::map<const Window *, VulkanRenderer *> g_renderer_map;
 
-    [[maybe_unused]] VKAPI_ATTR static VkBool32 VKAPI_CALL _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    [[maybe_unused]] VKAPI_ATTR static VkBool32 VKAPI_CALL
+    _debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
             VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-            void* user_data) {
+            void *user_data) {
         UNUSED(type);
         UNUSED(user_data);
 
@@ -111,14 +112,14 @@ namespace argus {
 
     static void _init_vk_debug_utils(VkInstance inst) {
         #ifdef _ARGUS_DEBUG_MODE
-        VkDebugUtilsMessengerCreateInfoEXT debug_info{};
+        VkDebugUtilsMessengerCreateInfoEXT debug_info {};
         debug_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
-                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
-                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-                                     | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-                                 | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+                | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         debug_info.pfnUserCallback = _debug_callback;
 
         PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT
@@ -171,7 +172,7 @@ namespace argus {
             return false;
         }*/
 
-        VkSurfaceKHR probe_surface{};
+        VkSurfaceKHR probe_surface {};
         if (!vk_create_surface(window, reinterpret_cast<void *>(g_vk_instance),
                 reinterpret_cast<void **>(&probe_surface))) {
             Logger::default_logger().warn("Vulkan does not appear to be supported (failed to create surface)");
@@ -210,7 +211,7 @@ namespace argus {
                 }
 
                 auto *renderer = new VulkanRenderer(window);
-                g_renderer_map.insert({&window, renderer});
+                g_renderer_map.insert({ &window, renderer });
                 break;
             }
             case WindowEventType::Update: {
@@ -222,7 +223,7 @@ namespace argus {
                 assert(it != g_renderer_map.end());
                 auto &renderer = it->second;
 
-                if (!renderer->is_initted) {
+                if (!renderer->m_is_initted) {
                     renderer->init();
                 }
 

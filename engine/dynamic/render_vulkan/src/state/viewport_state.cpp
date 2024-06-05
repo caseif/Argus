@@ -22,18 +22,18 @@ namespace argus {
     // forward declarations
     struct RendererState;
 
-    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport) :
-            parent_state(parent_state),
-            viewport(viewport),
-            visited(false),
-            view_matrix({}),
-            per_frame() {
+    ViewportState::ViewportState(RendererState &parent_state, AttachedViewport *viewport):
+        parent_state(parent_state),
+        viewport(viewport),
+        visited(false),
+        view_matrix({}),
+        per_frame() {
     }
 
     ViewportState::ViewportState(ViewportState &&rhs) noexcept = default;
 
-    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport) :
-            ViewportState(parent_state, viewport) {
+    Viewport2DState::Viewport2DState(RendererState &parent_state, AttachedViewport2D *viewport):
+        ViewportState(parent_state, viewport) {
     }
 
     Viewport2DState::Viewport2DState(Viewport2DState &&rhs) noexcept = default;

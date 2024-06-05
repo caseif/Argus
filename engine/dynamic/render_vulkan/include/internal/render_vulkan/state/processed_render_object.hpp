@@ -38,11 +38,11 @@ namespace argus {
 
         Vector2u anim_frame;
 
-        BufferInfo staging_buffer{};
-        bool newly_created{};
-        bool visited{};
-        bool updated{};
-        bool anim_frame_updated{};
+        BufferInfo staging_buffer {};
+        bool newly_created {};
+        bool visited {};
+        bool updated {};
+        bool anim_frame_updated {};
 
         static ProcessedRenderObject &create(const Resource &material_res, const Vector2f &atlas_stride,
                 uint32_t z_index, float light_opacity, uint32_t vertex_count);
@@ -55,6 +55,6 @@ namespace argus {
         ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 float light_opacity, uint32_t vertex_count);
 
-        ~ProcessedRenderObject();
+        ~ProcessedRenderObject(void);
     };
 }

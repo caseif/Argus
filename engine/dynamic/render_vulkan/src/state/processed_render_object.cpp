@@ -43,8 +43,7 @@ namespace argus {
         vertex_count(vertex_count) {
     }
 
-    ProcessedRenderObject::~ProcessedRenderObject(void) {
-    }
+    ProcessedRenderObject::~ProcessedRenderObject(void) = default;
 
     void ProcessedRenderObject::destroy(void) {
         g_obj_pool.free(this);

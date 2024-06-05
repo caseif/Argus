@@ -21,15 +21,10 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/math.hpp"
 
-#include "argus/resman/resource_manager.hpp"
-
 #include "argus/render/common/canvas.hpp"
-#include "argus/render/common/material.hpp"
 #include "argus/render/defines.hpp"
 
-#include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/renderer/compositing.hpp"
-#include "internal/render_vulkan/renderer/shader_mgmt.hpp"
 #include "internal/render_vulkan/state/render_bucket.hpp"
 #include "internal/render_vulkan/state/renderer_state.hpp"
 #include "internal/render_vulkan/state/scene_state.hpp"
@@ -44,8 +39,6 @@
 #include "argus/render/2d/scene_2d.hpp"
 
 #include <map>
-#include <string>
-#include <utility>
 
 #include <climits>
 
@@ -102,7 +95,7 @@ namespace argus {
                 Logger::default_logger().fatal("Unknown ViewportCoordinateSpaceMode ordinal %d", viewport.mode);
         }
 
-        TransformedViewport transformed{};
+        TransformedViewport transformed {};
         transformed.left = int32_t(viewport.left * vp_h_scale + vp_h_off);
         transformed.right = int32_t(viewport.right * vp_h_scale + vp_h_off);
         transformed.top = int32_t(viewport.top * vp_v_scale + vp_v_off);
@@ -117,7 +110,7 @@ namespace argus {
         buf_info.offset = 0;
         buf_info.range = VK_WHOLE_SIZE;
 
-        VkWriteDescriptorSet ds_write{};
+        VkWriteDescriptorSet ds_write {};
         ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         ds_write.dstSet = ds;
         ds_write.dstBinding = binding;
@@ -177,7 +170,7 @@ namespace argus {
             frame_state.front_fb.images[0] = create_image_and_image_view(state.device, format,
                     { size.x, size.y },
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                    | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                            | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     VK_IMAGE_ASPECT_COLOR_BIT);
             frame_state.front_fb.images[1] = create_image_and_image_view(state.device, VK_FORMAT_R32_SFLOAT,
                     { size.x, size.y },
@@ -198,7 +191,7 @@ namespace argus {
             frame_state.back_fb.handle = create_framebuffer(state.device, state.fb_render_pass,
                     frame_state.back_fb.images);
 
-            VkSamplerCreateInfo sampler_info{};
+            VkSamplerCreateInfo sampler_info {};
             sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
             sampler_info.magFilter = VK_FILTER_NEAREST;
             sampler_info.minFilter = VK_FILTER_NEAREST;
@@ -227,7 +220,7 @@ namespace argus {
             std::vector<VkWriteDescriptorSet> ds_writes;
             for (const auto &ds : frame_state.composite_desc_sets) {
                 ds_writes.reserve(frame_state.composite_desc_sets.size());
-                VkWriteDescriptorSet sampler_ds_write{};
+                VkWriteDescriptorSet sampler_ds_write {};
                 sampler_ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 sampler_ds_write.dstSet = ds;
                 sampler_ds_write.dstBinding = 0;
@@ -235,7 +228,7 @@ namespace argus {
                 sampler_ds_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 sampler_ds_write.descriptorCount = 1;
                 sampler_ds_write.pImageInfo = nullptr;
-                VkDescriptorImageInfo desc_image_info{};
+                VkDescriptorImageInfo desc_image_info {};
                 desc_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 desc_image_info.imageView = frame_state.front_fb.images[0].view;
                 desc_image_info.sampler = frame_state.front_fb.sampler;
@@ -288,14 +281,14 @@ namespace argus {
         auto vk_cmd_buf = frame_state.command_buf.handle;
 
         VkClearValue color_clear_val = {};
-        color_clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+        color_clear_val.color = {{ 0.0, 0.0, 0.0, 0.0 }};
 
         VkClearValue light_opac_clear_val = {};
-        light_opac_clear_val.color = { { 0.0, 0.0, 0.0, 0.0 } };
+        light_opac_clear_val.color = {{ 0.0, 0.0, 0.0, 0.0 }};
 
         VkClearValue clear_vals[] = { color_clear_val, light_opac_clear_val };
 
-        VkRenderPassBeginInfo rp_info{};
+        VkRenderPassBeginInfo rp_info {};
         rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         rp_info.framebuffer = frame_state.front_fb.handle;
         rp_info.pClearValues = clear_vals;
@@ -350,7 +343,7 @@ namespace argus {
 
                 auto ds = desc_sets[0];
 
-                VkWriteDescriptorSet sampler_ds_write{};
+                VkWriteDescriptorSet sampler_ds_write {};
                 sampler_ds_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 sampler_ds_write.dstSet = ds;
                 sampler_ds_write.dstBinding = 0;
@@ -358,7 +351,7 @@ namespace argus {
                 sampler_ds_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 sampler_ds_write.descriptorCount = 1;
                 sampler_ds_write.pImageInfo = nullptr;
-                VkDescriptorImageInfo sampler_info{};
+                VkDescriptorImageInfo sampler_info {};
                 sampler_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 sampler_info.imageView = texture->image.view;
                 sampler_info.sampler = texture->sampler;
@@ -366,27 +359,27 @@ namespace argus {
                 ds_writes.push_back(sampler_ds_write);
 
                 auto global_ubo = state.global_ubo;
-                VkDescriptorBufferInfo buf_info_global{};
-                VkDescriptorBufferInfo buf_info_scene{};
-                VkDescriptorBufferInfo buf_info_viewport{};
-                VkDescriptorBufferInfo buf_info_obj{};
+                VkDescriptorBufferInfo buf_info_global {};
+                VkDescriptorBufferInfo buf_info_scene {};
+                VkDescriptorBufferInfo buf_info_viewport {};
+                VkDescriptorBufferInfo buf_info_obj {};
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_GLOBAL,
-                        [&ds, &ds_writes, &global_ubo, &buf_info_global] (auto binding) {
+                        [&ds, &ds_writes, &global_ubo, &buf_info_global](auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, global_ubo, buf_info_global));
                         });
                 auto scene_ubo = frame_state.scene_ubo;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_SCENE,
-                        [&ds, &ds_writes, &scene_ubo, &buf_info_scene] (auto binding) {
+                        [&ds, &ds_writes, &scene_ubo, &buf_info_scene](auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, scene_ubo, buf_info_scene));
                         });
                 auto vp_ubo = frame_state.viewport_ubo;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_VIEWPORT,
-                        [&ds, &ds_writes, &vp_ubo, &buf_info_viewport] (auto binding) {
+                        [&ds, &ds_writes, &vp_ubo, &buf_info_viewport](auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, vp_ubo, buf_info_viewport));
                         });
                 auto obj_ubo = bucket->ubo_buffer;
                 shader_refl.get_ubo_binding_and_then(SHADER_UBO_OBJ,
-                        [&ds, &ds_writes, &obj_ubo, &buf_info_obj] (auto binding) {
+                        [&ds, &ds_writes, &obj_ubo, &buf_info_obj](auto binding) {
                             ds_writes.push_back(_create_uniform_ds_write(ds, binding, obj_ubo, buf_info_obj));
                         });
 
@@ -402,14 +395,14 @@ namespace argus {
                 vkCmdBindPipeline(vk_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.handle);
                 last_pipeline = pipeline_info.handle;
 
-                VkViewport vk_vp{};
+                VkViewport vk_vp {};
                 vk_vp.width = float(fb_width);
                 vk_vp.height = float(fb_height);
                 vk_vp.x = float(-viewport_px.left);
                 vk_vp.y = float(-viewport_px.top);
                 vkCmdSetViewport(vk_cmd_buf, 0, 1, &vk_vp);
 
-                VkRect2D scissor{};
+                VkRect2D scissor {};
                 scissor.extent = { fb_width, fb_height };
                 scissor.offset = { 0, 0 };
                 vkCmdSetScissor(vk_cmd_buf, 0, 1, &scissor);
@@ -424,7 +417,7 @@ namespace argus {
             //}
 
             VkBuffer vertex_buffers[] = { bucket->vertex_buffer.handle,
-                                          bucket->anim_frame_buffer.handle };
+                    bucket->anim_frame_buffer.handle };
             VkDeviceSize offsets[] = { 0, 0 };
             vkCmdBindVertexBuffers(vk_cmd_buf, 0, sizeof(vertex_buffers) / sizeof(VkBuffer),
                     vertex_buffers, offsets);
@@ -496,14 +489,14 @@ namespace argus {
         auto fb_width = state.swapchain.resolution.x;
         auto fb_height = state.swapchain.resolution.y;
 
-        VkViewport vk_vp{};
+        VkViewport vk_vp {};
         vk_vp.width = float(fb_width);
         vk_vp.height = float(fb_height);
         vk_vp.x = float(-viewport_px.left);
         vk_vp.y = float(-viewport_px.top);
         vkCmdSetViewport(vk_cmd_buf, 0, 1, &vk_vp);
 
-        VkRect2D scissor{};
+        VkRect2D scissor {};
         scissor.extent = { fb_width, fb_height };
         scissor.offset = { 0, 0 };
         vkCmdSetScissor(vk_cmd_buf, 0, 1, &scissor);

@@ -48,7 +48,7 @@ namespace argus {
 
     void write_to_buffer(BufferInfo &buffer, void *src, size_t offset, size_t len);
 
-    template <typename T>
+    template<typename T>
     void write_val_to_buffer(BufferInfo &buffer, T val, size_t offset) {
         write_to_buffer(buffer, reinterpret_cast<void *>(&val), offset, sizeof(val));
     }

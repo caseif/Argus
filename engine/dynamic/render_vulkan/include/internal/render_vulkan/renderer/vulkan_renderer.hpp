@@ -32,10 +32,10 @@
 
 namespace argus {
     class VulkanRenderer {
-       public:
-        Window &window;
-        RendererState state;
-        bool is_initted;
+      public:
+        Window &m_window;
+        RendererState m_state;
+        bool m_is_initted;
 
         VulkanRenderer(Window &window);
 

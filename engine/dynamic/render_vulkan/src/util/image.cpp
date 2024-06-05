@@ -24,8 +24,6 @@
 #include "internal/render_vulkan/util/memory.hpp"
 
 #include "vulkan/vulkan.h"
-#include "argus/render/common/texture_data.hpp"
-#include "internal/render_vulkan/util/buffer.hpp"
 #include "internal/render_vulkan/util/command_buffer.hpp"
 
 #include <vector>
@@ -36,9 +34,9 @@ namespace argus {
     VkImage create_image(const LogicalDevice &device, VkFormat format, const Vector2u &size,
             VkImageUsageFlags usage) {
         VkExtent3D extent = { size.x, size.y, 1 };
-        std::vector<uint32_t> qf_indices{ device.queue_indices.graphics_family };
+        std::vector<uint32_t> qf_indices { device.queue_indices.graphics_family };
 
-        VkImageCreateInfo image_info{};
+        VkImageCreateInfo image_info {};
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         image_info.imageType = VK_IMAGE_TYPE_2D;
         image_info.format = format;
@@ -62,18 +60,18 @@ namespace argus {
         VkMemoryRequirements mem_reqs;
         vkGetImageMemoryRequirements(device.logical_device, image, &mem_reqs);
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = mem_reqs.size;
-        allocInfo.memoryTypeIndex = find_memory_type(device, mem_reqs.memoryTypeBits,
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_reqs.size;
+        alloc_info.memoryTypeIndex = find_memory_type(device, mem_reqs.memoryTypeBits,
                 GraphicsMemoryPropCombos::DeviceRo);
 
-        VkDeviceMemory imageMemory;
-        if (vkAllocateMemory(device.logical_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        VkDeviceMemory image_memory;
+        if (vkAllocateMemory(device.logical_device, &alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to allocate memory for image");
         }
 
-        if (vkBindImageMemory(device.logical_device, image, imageMemory, 0) != VK_SUCCESS) {
+        if (vkBindImageMemory(device.logical_device, image, image_memory, 0) != VK_SUCCESS) {
             Logger::default_logger().fatal("Failed to bind image memory");
         }
 
@@ -82,7 +80,7 @@ namespace argus {
 
     VkImageView create_image_view(const LogicalDevice &device, VkImage image, VkFormat format,
             VkImageAspectFlags aspect_mask) {
-        VkImageViewCreateInfo view_info{};
+        VkImageViewCreateInfo view_info {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         view_info.image = image;
         view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -127,7 +125,7 @@ namespace argus {
             VkImageLayout old_layout, VkImageLayout new_layout,
             VkAccessFlags src_access, VkAccessFlags dst_access,
             VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
-        VkImageMemoryBarrier barrier{};
+        VkImageMemoryBarrier barrier {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = old_layout;
         barrier.newLayout = new_layout;

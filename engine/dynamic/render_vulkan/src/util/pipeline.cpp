@@ -36,7 +36,7 @@
 namespace argus {
     static void _push_attr(std::vector<VkVertexInputAttributeDescription> &attr_descs, uint32_t binding,
             uint32_t location, VkFormat format, uint32_t components, uint32_t &offset) {
-        VkVertexInputAttributeDescription attr_desc{};
+        VkVertexInputAttributeDescription attr_desc {};
         attr_desc.binding = binding;
         attr_desc.location = location;
         attr_desc.format = format;
@@ -57,7 +57,7 @@ namespace argus {
 
         std::vector<VkDynamicState> dyn_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
-        VkPipelineDynamicStateCreateInfo dyn_state_info{};
+        VkPipelineDynamicStateCreateInfo dyn_state_info {};
         dyn_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dyn_state_info.dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
         dyn_state_info.pDynamicStates = dyn_states.data();
@@ -65,25 +65,25 @@ namespace argus {
         std::vector<VkVertexInputAttributeDescription> attr_descs;
 
         uint32_t offset = 0;
-        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_POSITION, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_POSITION, [&attr_descs, &offset](auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_POSITION_FORMAT,
                     SHADER_ATTRIB_POSITION_LEN, offset);
         });
-        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_NORMAL, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_NORMAL, [&attr_descs, &offset](auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_NORMAL_FORMAT,
                     SHADER_ATTRIB_NORMAL_LEN, offset);
         });
-        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_COLOR, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_COLOR, [&attr_descs, &offset](auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_COLOR_FORMAT,
                     SHADER_ATTRIB_COLOR_LEN, offset);
         });
-        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_TEXCOORD, [&attr_descs, &offset] (auto loc) {
+        shader_refl.get_attr_loc_and_then(SHADER_ATTRIB_TEXCOORD, [&attr_descs, &offset](auto loc) {
             _push_attr(attr_descs, BINDING_INDEX_VBO, loc, SHADER_ATTRIB_TEXCOORD_FORMAT,
                     SHADER_ATTRIB_TEXCOORD_LEN, offset);
         });
 
         std::vector<VkVertexInputBindingDescription> binding_descs;
-        VkVertexInputBindingDescription vbo_desc{};
+        VkVertexInputBindingDescription vbo_desc {};
         vbo_desc.binding = BINDING_INDEX_VBO;
         vbo_desc.stride = offset;
         vbo_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -95,7 +95,7 @@ namespace argus {
             _push_attr(attr_descs, BINDING_INDEX_ANIM_FRAME_BUF, anim_frame_loc.value(),
                     SHADER_ATTRIB_ANIM_FRAME_FORMAT, SHADER_ATTRIB_ANIM_FRAME_LEN, af_offset);
 
-            VkVertexInputBindingDescription anim_buf_desc{};
+            VkVertexInputBindingDescription anim_buf_desc {};
             anim_buf_desc.binding = BINDING_INDEX_ANIM_FRAME_BUF;
             anim_buf_desc.stride = af_offset;
             anim_buf_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -103,19 +103,19 @@ namespace argus {
             binding_descs.push_back(anim_buf_desc);
         }
 
-        VkPipelineVertexInputStateCreateInfo vert_in_state_info{};
+        VkPipelineVertexInputStateCreateInfo vert_in_state_info {};
         vert_in_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vert_in_state_info.vertexBindingDescriptionCount = static_cast<uint32_t>(binding_descs.size());
         vert_in_state_info.pVertexBindingDescriptions = binding_descs.data();
         vert_in_state_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attr_descs.size());
         vert_in_state_info.pVertexAttributeDescriptions = attr_descs.data();
 
-        VkPipelineInputAssemblyStateCreateInfo in_assembly_info{};
+        VkPipelineInputAssemblyStateCreateInfo in_assembly_info {};
         in_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         in_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         in_assembly_info.primitiveRestartEnable = VK_FALSE;
 
-        VkViewport viewport{};
+        VkViewport viewport {};
         viewport.x = 0;
         viewport.y = 0;
         viewport.width = float(state.viewport_size.x);
@@ -123,18 +123,18 @@ namespace argus {
         viewport.minDepth = 0;
         viewport.maxDepth = 1;
 
-        VkRect2D scissor{};
+        VkRect2D scissor {};
         scissor.offset = { 0, 0 };
         scissor.extent = { state.viewport_size.x, state.viewport_size.y };
 
-        VkPipelineViewportStateCreateInfo viewport_info{};
+        VkPipelineViewportStateCreateInfo viewport_info {};
         viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewport_info.viewportCount = 1;
         viewport_info.pViewports = &viewport;
         viewport_info.scissorCount = 1;
         viewport_info.pScissors = &scissor;
 
-        VkPipelineRasterizationStateCreateInfo raster_info{};
+        VkPipelineRasterizationStateCreateInfo raster_info {};
         raster_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster_info.depthClampEnable = VK_FALSE;
         raster_info.rasterizerDiscardEnable = VK_FALSE;
@@ -147,7 +147,7 @@ namespace argus {
         raster_info.depthBiasClamp = 0;
         raster_info.depthBiasSlopeFactor = 0;
 
-        VkPipelineMultisampleStateCreateInfo multisample_info{};
+        VkPipelineMultisampleStateCreateInfo multisample_info {};
         multisample_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisample_info.sampleShadingEnable = VK_FALSE;
         multisample_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -159,7 +159,7 @@ namespace argus {
         std::vector<VkPipelineColorBlendAttachmentState> atts;
         atts.reserve(2);
 
-        VkPipelineColorBlendAttachmentState color_blend_att{};
+        VkPipelineColorBlendAttachmentState color_blend_att {};
         color_blend_att.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
                 | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         color_blend_att.blendEnable = VK_TRUE;
@@ -185,7 +185,7 @@ namespace argus {
             atts.push_back(light_opac_blend_att);
         }
 
-        VkPipelineColorBlendStateCreateInfo color_blend_info{};
+        VkPipelineColorBlendStateCreateInfo color_blend_info {};
         color_blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         color_blend_info.logicOpEnable = VK_FALSE;
         color_blend_info.logicOp = VK_LOGIC_OP_COPY;
@@ -198,7 +198,7 @@ namespace argus {
 
         auto ds_layout = create_descriptor_set_layout(state.device, shader_refl);
 
-        VkPipelineLayoutCreateInfo pipeline_layout_info{};
+        VkPipelineLayoutCreateInfo pipeline_layout_info {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &ds_layout;
@@ -213,7 +213,7 @@ namespace argus {
         affirm_precond(out_color_loc.value() == SHADER_OUT_COLOR_LOC,
                 "Required shader output " SHADER_OUT_COLOR " must have location 0");
 
-        VkPipelineDepthStencilStateCreateInfo depth_info{};
+        VkPipelineDepthStencilStateCreateInfo depth_info {};
         depth_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         depth_info.depthTestEnable = VK_TRUE;
         depth_info.depthWriteEnable = VK_FALSE;
@@ -221,7 +221,7 @@ namespace argus {
         depth_info.depthBoundsTestEnable = VK_FALSE;
         depth_info.stencilTestEnable = VK_FALSE;
 
-        VkGraphicsPipelineCreateInfo pipeline_info{};
+        VkGraphicsPipelineCreateInfo pipeline_info {};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline_info.stageCount = static_cast<uint32_t>(prepared_shaders.stages.size());
         pipeline_info.pStages = prepared_shaders.stages.data();
@@ -245,7 +245,7 @@ namespace argus {
 
         destroy_shaders(state.device, prepared_shaders);
 
-        PipelineInfo ret{};
+        PipelineInfo ret {};
         ret.handle = pipeline;
         ret.layout = pipeline_layout;
         ret.ds_layout = ds_layout;
