@@ -35,7 +35,7 @@ namespace argus {
     constexpr const char *SHADER_TYPE_SPIR_V = "spirv";
 
     /**
-     * \brief Represents a stage corresponding to a step in the render pipeline.
+     * @brief Represents a stage corresponding to a step in the render pipeline.
      */
     enum class ShaderStage : uint32_t {
         Vertex = 0x01,
@@ -91,20 +91,20 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a shader for use with a RenderObject.
+     * @brief Represents a shader for use with a RenderObject.
      */
     class Shader {
       public:
         pimpl_Shader *m_pimpl;
 
         /**
-         * \brief Constructs a new Shader with the given parameters.
+         * @brief Constructs a new Shader with the given parameters.
          *
-         * \param uid The unique identifier of the shader.
-         * \param type The type of shader stored by this object.
-         * \param stage The stage of the graphblock_locationsics pipeline this shader is to
+         * @param uid The unique identifier of the shader.
+         * @param type The type of shader stored by this object.
+         * @param stage The stage of the graphblock_locationsics pipeline this shader is to
          *        be run at.
-         * \param src The source data of the Shader.
+         * @param src The source data of the Shader.
          */
         Shader(const std::string &uid, const std::string &type, ShaderStage stage, const std::vector<uint8_t> &src);
 

@@ -22,7 +22,7 @@
 
 namespace argus {
     /**
-     * \brief Specifies the conversion from viewport coordinate space to
+     * @brief Specifies the conversion from viewport coordinate space to
      *        pixel space for each axis with respect to surface aspect ratio.
      *
      * This can be conceptualized as defining where the values of 0 and 1 are
@@ -30,12 +30,12 @@ namespace argus {
      */
     enum class ViewportCoordinateSpaceMode {
         /**
-         * \brief Each axis will be scaled independently, with 0 and 1 being on
+         * @brief Each axis will be scaled independently, with 0 and 1 being on
          *        opposite edges of the surface.
          */
         Individual,
         /**
-         * \brief Both axes will be scaled relative to the smaller of the two
+         * @brief Both axes will be scaled relative to the smaller of the two
          *        axes.
          *
          * If the axes are not equal in length, the edges of the viewport on the
@@ -43,7 +43,7 @@ namespace argus {
          */
         MinAxis,
         /**
-         * \brief Both axes will be scaled relative to the larger of the two
+         * @brief Both axes will be scaled relative to the larger of the two
          *        axes.
          *
          * If the axes are not equal in length, the edges of the viewport on the
@@ -51,12 +51,12 @@ namespace argus {
          */
         MaxAxis,
         /**
-         * \brief Both axes will be scaled relative to the horizontal axis,
+         * @brief Both axes will be scaled relative to the horizontal axis,
          *        regardless of which dimension is larger.
          */
         HorizontalAxis,
         /**
-         * \brief Both axes will be scaled relative to the vertical axis,
+         * @brief Both axes will be scaled relative to the vertical axis,
          *        regardless of which dimension is larger.
          */
         VerticalAxis

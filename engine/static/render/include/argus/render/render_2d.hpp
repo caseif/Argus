@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/render/2d/render_2d.hpp
+ * @file argus/render/2d/render_2d.hpp
  *
  * Primary interface for the 2D component of the rendering engine.
  */

@@ -47,29 +47,29 @@ namespace argus {
         [[nodiscard]] Scene2D &get_scene(void) const;
 
         /**
-         * \brief Gets the transform of the camera without affecting its
+         * @brief Gets the transform of the camera without affecting its
          *        dirty flag.
          *
-         * \return The camera's Transform.
+         * @return The camera's Transform.
          *
-         * \sa Transform2D::get_transform
+         * @sa Transform2D::get_transform
          */
         [[nodiscard]] Transform2D peek_transform(void) const;
 
         /**
-         * \brief Gets the transform of the camera and clears its dirty
+         * @brief Gets the transform of the camera and clears its dirty
          *        flag.
          *
-         * \return The camera's transform and previous dirty flag state.
+         * @return The camera's transform and previous dirty flag state.
          *
-         * \sa Transform2D::peek_transform
+         * @sa Transform2D::peek_transform
          */
         ValueAndDirtyFlag<Transform2D> get_transform(void);
 
         /**
-         * \brief Sets the transform of the camera.
+         * @brief Sets the transform of the camera.
          *
-         * \param transform The new transform.
+         * @param transform The new transform.
          */
         void set_transform(const Transform2D &transform);
     };

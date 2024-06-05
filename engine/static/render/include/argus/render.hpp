@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/render.hpp
+ * @file argus/render.hpp
  *
  * Primary rendering engine interface, providing high-level abstractions for
  * rendering concepts.

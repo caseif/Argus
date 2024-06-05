@@ -40,18 +40,18 @@
 namespace argus {
     struct pimpl_Window {
         /**
-         * \brief A handle to the lower-level window represented by this
+         * @brief A handle to the lower-level window represented by this
          *        object.
          */
         SDL_Window *handle;
 
         /**
-         * \brief The unique identifier of the window.
+         * @brief The unique identifier of the window.
          */
         std::string id;
 
         /**
-         * \brief The Canvas associated with this Window.
+         * @brief The Canvas associated with this Window.
          *
          * This is only set if the Canvas constructor has been set by the module
          * responsible for implementing canvases.
@@ -59,16 +59,16 @@ namespace argus {
         Canvas *canvas;
 
         /**
-         * \brief The ID of the engine callback registered for this Window.
+         * @brief The ID of the engine callback registered for this Window.
          */
         Index callback_id;
 
         /**
-         * \brief The Window parent to this one, if applicable.
+         * @brief The Window parent to this one, if applicable.
          */
         Window *parent;
         /**
-         * \brief This Window's child \link Window Windows \endlink, if any.
+         * @brief This Window's child \link Window Windows \endlink, if any.
          */
         std::vector<Window *> children;
 
@@ -89,14 +89,14 @@ namespace argus {
         Vector2f content_scale;
 
         /**
-         * \brief The callback to be executed upon the Window being closed.
+         * @brief The callback to be executed upon the Window being closed.
          */
         WindowCallback close_callback;
 
         /**
-         * \brief The state of this Window as a bitfield.
+         * @brief The state of this Window as a bitfield.
          *
-         * \warning This field's semantic meaning is implementation-defined.
+         * @warning This field's semantic meaning is implementation-defined.
          */
         std::atomic_uint32_t state;
 

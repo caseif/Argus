@@ -29,7 +29,7 @@ namespace argus {
     static_assert(std::is_pod_v<ScreenSpace>);
 
     /**
-     * \brief Controls how the screen space is scaled with respect to window
+     * @brief Controls how the screen space is scaled with respect to window
      *        aspect ratio.
      *
      * When configured as any value other than `None`, either the horizontal or
@@ -41,7 +41,7 @@ namespace argus {
      */
     enum class ScreenSpaceScaleMode {
         /**
-         * \brief Normalizes the screen space dimension with the minimum range.
+         * @brief Normalizes the screen space dimension with the minimum range.
          *
          * The bounds of the smaller window dimension will be exactly as
          * configured. Meanwhile, the bounds of the larger dimension will be
@@ -61,7 +61,7 @@ namespace argus {
          */
         NormalizeMinDimension,
         /**
-         * \brief Normalizes the screen space dimension with the maximum range.
+         * @brief Normalizes the screen space dimension with the maximum range.
          *
          * This is effectively the inverse of `NormalizedMinDimension`. The
          * bounds of the screen space are preserved on the larger dimension, and
@@ -70,7 +70,7 @@ namespace argus {
          */
         NormalizeMaxDimension,
         /**
-         * \brief Normalizes the vertical screen space dimension.
+         * @brief Normalizes the vertical screen space dimension.
          *
          * This invariably normalizes the vertical dimension of the screen
          * space regardless of which dimension is larger. The horizontal
@@ -79,7 +79,7 @@ namespace argus {
          */
         NormalizeVertical,
         /**
-         * \brief Normalizes the horizontal screen space dimension.
+         * @brief Normalizes the horizontal screen space dimension.
          *
          * This invariably normalizes the horizontal dimension of the screen
          * space regardless of which dimension is larger. The vertical
@@ -88,7 +88,7 @@ namespace argus {
          */
         NormalizeHorizontal,
         /**
-         * \brief Does not normalize screen space with respect to aspect ratio.
+         * @brief Does not normalize screen space with respect to aspect ratio.
          *
          * Given an aspect ratio other than 1:1, the contents of the window will
          * be stretched in one dimension or the other depending on which is

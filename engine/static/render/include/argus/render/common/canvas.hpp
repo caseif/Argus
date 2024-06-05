@@ -42,7 +42,7 @@ namespace argus {
     struct pimpl_Canvas;
 
     /**
-     * \brief A construct which contains a set of Scenes which will be rendered
+     * @brief A construct which contains a set of Scenes which will be rendered
      *        to the screen by a renderer implementation.
      *
      * Each Canvas has a one-to-one mapping with a Window, and a one-to-many
@@ -51,16 +51,16 @@ namespace argus {
      * A Canvas is guaranteed to have at least one Scene, considered to
      * be the "base" scene.
      *
-     * \sa Window
+     * @sa Window
      */
     class Canvas : AutoCleanupable {
       public:
         pimpl_Canvas *const m_pimpl;
 
         /**
-         * \brief Constructs a new Canvas attached to the given Window.
+         * @brief Constructs a new Canvas attached to the given Window.
          *
-         * \param window The Window to attach the new Canvas to.
+         * @param window The Window to attach the new Canvas to.
          */
         Canvas(Window &window);
 
@@ -71,9 +71,9 @@ namespace argus {
         ~Canvas(void) override;
 
         /**
-         * \brief Gets the Window which owns this Canvas.
+         * @brief Gets the Window which owns this Canvas.
          *
-         * \return The Window which owns this Canvas.
+         * @return The Window which owns this Canvas.
          */
         [[nodiscard]] Window &get_window(void) const;
 

@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/lowlevel/math.hpp
+ * @file argus/lowlevel/math.hpp
  *
  * Various mathematics utility functions and classes.
  */

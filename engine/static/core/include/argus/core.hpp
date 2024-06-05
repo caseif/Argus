@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/core.hpp
+ * @file argus/core.hpp
  *
  * Contains core engine functionality, primarily for bootstrapping.
  */

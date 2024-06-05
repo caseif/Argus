@@ -41,10 +41,10 @@ namespace argus {
         pimpl_Material *m_pimpl;
 
         /**
-         * \brief Constructs a new Material.
+         * @brief Constructs a new Material.
          *
-         * \param texture The UID of the texture used by the Material.
-         * \param shaders The UIDs of the shaders used by the Material. Only
+         * @param texture The UID of the texture used by the Material.
+         * @param shaders The UIDs of the shaders used by the Material. Only
          *        one Shader may be specified per \link ShaderStage shader
          *        stage \endlink.
          */

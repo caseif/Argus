@@ -29,7 +29,7 @@ namespace argus {
     struct pimpl_TextureData;
 
     /**
-     * \brief Contains metadata and data pertaining to an image to be used as a
+     * @brief Contains metadata and data pertaining to an image to be used as a
      *        texture for rendering.
      *
      * Depending on whether the data has been prepared by the renderer, the
@@ -41,25 +41,25 @@ namespace argus {
         pimpl_TextureData *m_pimpl;
 
         /**
-         * \brief The width in pixels of the texture.
+         * @brief The width in pixels of the texture.
          */
         const unsigned int m_width;
         /**
-         * \brief The height in pixels of the texture.
+         * @brief The height in pixels of the texture.
          */
         const unsigned int m_height;
 
         /**
-         * \brief Constructs a new instance of this class with the given
+         * @brief Constructs a new instance of this class with the given
          *        metadata and pixel data.
          *
-         * \param width The width of the texture in pixels.
-         * \param height The height of the texture in pixels.
-         * \param image_data A pointer to a column-major 2D-array containing the
+         * @param width The width of the texture in pixels.
+         * @param height The height of the texture in pixels.
+         * @param image_data A pointer to a column-major 2D-array containing the
          *        texture's pixel data. This *must* point to heap memory. The
          *        calling method's copy of the pointer will be set to nullptr.
          *
-         * \attention The pixel data must be in RGBA format with a bit-depth of 8.
+         * @attention The pixel data must be in RGBA format with a bit-depth of 8.
          */
         TextureData(unsigned int width, unsigned int height, unsigned char **&&image_data);
 
@@ -68,16 +68,16 @@ namespace argus {
         TextureData(TextureData &&) noexcept;
 
         /**
-         * \brief Destroys this object, deleting any buffers in system or video
+         * @brief Destroys this object, deleting any buffers in system or video
          *        memory currently in use.
          */
         ~TextureData(void);
 
         /**
-         * \brief Returns a two-dimensional array of pixel data for the
+         * @brief Returns a two-dimensional array of pixel data for the
          *        texture.
          *
-         * \return The pixel data of the texture;
+         * @return The pixel data of the texture;
          */
         [[nodiscard]] const unsigned char *const *&get_pixel_data(void) const;
     };

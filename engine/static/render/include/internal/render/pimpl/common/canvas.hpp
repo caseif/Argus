@@ -29,7 +29,7 @@
 namespace argus {
     struct pimpl_Canvas {
         /**
-         * \brief The Window which this Canvas is mapped to.
+         * @brief The Window which this Canvas is mapped to.
          */
         Window &window;
 

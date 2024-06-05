@@ -36,37 +36,37 @@ namespace argus {
         friend class ResourceManager;
 
         /**
-         * \brief The ResourceManager parent to this Resource.
+         * @brief The ResourceManager parent to this Resource.
          */
         ResourceManager &manager;
 
         /**
-         * \brief The ResourceLoader responsible for the handling of the loading
+         * @brief The ResourceLoader responsible for the handling of the loading
          *        and unloading of the Resource.
          */
         const ResourceLoader &loader;
 
         /**
-         * \brief The number of current handles to this Resource.
+         * @brief The number of current handles to this Resource.
          *
-         * \remark When the refcount reaches zero, the Resource will be
+         * @remark When the refcount reaches zero, the Resource will be
          *         unloaded.
          */
         std::atomic<unsigned int> ref_count;
 
         /**
-         * \brief The UIDs of \link Resource Resources \endlink this one is
+         * @brief The UIDs of \link Resource Resources \endlink this one is
          *        dependent on.
          */
         std::vector<std::string> dependencies;
 
         /**
-         * \brief A generic pointer to the data contained by this Resource.
+         * @brief A generic pointer to the data contained by this Resource.
          */
         void *const data_ptr;
 
         /**
-         * \brief The ARP resource backing this Resource.
+         * @brief The ARP resource backing this Resource.
          */
         arp_resource_t *arp_resource { nullptr };
 

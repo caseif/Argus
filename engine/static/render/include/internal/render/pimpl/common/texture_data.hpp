@@ -23,9 +23,9 @@
 namespace argus {
     struct pimpl_TextureData {
         /**
-         * \brief A two-dimensional array of pixel data for this texture.
+         * @brief A two-dimensional array of pixel data for this texture.
          *
-         * \remark The data is stored in column-major form.
+         * @remark The data is stored in column-major form.
          */
         unsigned char **image_data;
 

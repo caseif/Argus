@@ -47,7 +47,7 @@ namespace argus {
     struct pimpl_RenderGroup2D;
 
     /**
-     * \brief Represents a set of RenderGroups and RenderObjects to be rendered
+     * @brief Represents a set of RenderGroups and RenderObjects to be rendered
      *        together.
      *
      * A RenderGroup supplies a Transform which will be applied when rendering
@@ -64,10 +64,10 @@ namespace argus {
         pimpl_RenderGroup2D *m_pimpl;
 
         /**
-         * \brief Constructs a new RenderGroup.
+         * @brief Constructs a new RenderGroup.
          *
-         * \param scene The Scene this group belongs to.
-         * \param parent_group The parent group this group belongs to, if
+         * @param scene The Scene this group belongs to.
+         * @param parent_group The parent group this group belongs to, if
          *        applicable. This may be nullptr.
          */
         RenderGroup2D(Scene2D &scene, RenderGroup2D *parent_group,
@@ -85,41 +85,41 @@ namespace argus {
         ~RenderGroup2D(void);
 
         /**
-         * \brief Returns a persistent handle to the object.
+         * @brief Returns a persistent handle to the object.
          *
-         * \return The object's handle.
+         * @return The object's handle.
          */
         [[nodiscard]] Handle get_handle(void) const;
 
         /**
-         * \brief Gets the parent Scene.
+         * @brief Gets the parent Scene.
          *
-         * \return The parent Scene to this group.
+         * @return The parent Scene to this group.
          */
         [[nodiscard]] Scene2D &get_scene(void) const;
 
         /**
-         * \brief Gets the parent RenderGroup, if applicable.
+         * @brief Gets the parent RenderGroup, if applicable.
          *
-         * \return The parent group to this one, or nullptr if this is a
+         * @return The parent group to this one, or nullptr if this is a
          *         root group.
          */
         [[nodiscard]] std::optional<std::reference_wrapper<RenderGroup2D>> get_parent(void) const;
 
         /**
-         * \brief Creates a new RenderGroup as a child of this group.
+         * @brief Creates a new RenderGroup as a child of this group.
          *
-         * \param transform The relative transform of the new group.
+         * @param transform The relative transform of the new group.
          */
         Handle add_group(const Transform2D &transform);
 
         /**
-         * \brief Creates a new RenderObject as a child of this group.
+         * @brief Creates a new RenderObject as a child of this group.
          *
-         * \param material The Material to be used by the new object.
-         * \param primitives The \link RenderPrim primitives \endlink
+         * @param material The Material to be used by the new object.
+         * @param primitives The \link RenderPrim primitives \endlink
          *        comprising the new object.
-         * \param transform The relative transform of the new object.
+         * @param transform The relative transform of the new object.
          */
         Handle add_object(const std::string &material,
                 const std::vector<RenderPrim2D> &primitives,
@@ -127,36 +127,36 @@ namespace argus {
                 uint32_t z_index, float light_opacity, const Transform2D &transform);
 
         /**
-         * \brief Removes the specified child group from this group,
+         * @brief Removes the specified child group from this group,
          *        destroying it in the process.
          *
-         * \param handle The handle of the group to remove and destroy.
+         * @param handle The handle of the group to remove and destroy.
          *
-         * \throw std::invalid_argument If the given ID does not match a
+         * @throw std::invalid_argument If the given ID does not match a
          *        group in the scene or if the matching group is not a child
          *        of this group.
          */
         void remove_group(Handle handle);
 
         /**
-         * \brief Removes the specified object from this group,
+         * @brief Removes the specified object from this group,
          *        destroying it in the process.
          *
-         * \param handle The handle of the object remove and destroy.
+         * @param handle The handle of the object remove and destroy.
          *
-         * \throw std::invalid_argument If the given ID does not match an
+         * @throw std::invalid_argument If the given ID does not match an
          *        object in the scene or if the matching object is not a
          *        child of this group.
          */
         void remove_object(Handle handle);
 
         /**
-         * \brief Peeks the local Transform of this group without clearing
+         * @brief Peeks the local Transform of this group without clearing
          *        its dirty flag.
          *
-         * \return The local Transform.
+         * @return The local Transform.
          *
-         * \remark The returned Transform is local and, if this group is a
+         * @remark The returned Transform is local and, if this group is a
          *         child of another, does not necessarily reflect the
          *         group's absolute transform with respect to the
          *         Scene containing the group.
@@ -164,12 +164,12 @@ namespace argus {
         [[nodiscard]] const Transform2D &peek_transform(void) const;
 
         /**
-         * \brief Gets the local Transform of this group and clears its
+         * @brief Gets the local Transform of this group and clears its
          *        dirty flag.
          *
-         * \return The local Transform and its dirty flag.
+         * @return The local Transform and its dirty flag.
          *
-         * \remark The returned Transform is local and, if this group is a
+         * @remark The returned Transform is local and, if this group is a
          *         child of another, does not necessarily reflect the
          *         group's absolute transform with respect to the
          *         Scene containing the group.
@@ -179,7 +179,7 @@ namespace argus {
         /**
          * Sets the local Transform of this group.
          *
-         * \param transform The new local Transform for this group.
+         * @param transform The new local Transform for this group.
          */
         void set_transform(const Transform2D &transform);
 

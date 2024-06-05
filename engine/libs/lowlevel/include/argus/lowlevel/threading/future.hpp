@@ -28,20 +28,20 @@
 
 namespace argus {
     /**
-     * \brief Constructs a std::future with the given function as a supplier,
+     * @brief Constructs a std::future with the given function as a supplier,
      *        and optionally invoking the given callback upon completion.
      *
-     * \param function A function containing a task which will supply the
+     * @param function A function containing a task which will supply the
      *                 returned std::future.
-     * \param callback The function to invoke after completion of the task.
+     * @param callback The function to invoke after completion of the task.
      *                 This callback must accept the supplied value and may be
      *                 left absent if unneeded.
      *
-     * \tparam Out The type of value provided by the returned std::future.
+     * @tparam Out The type of value provided by the returned std::future.
      *
-     * \return The created std::future.
+     * @return The created std::future.
      *
-     * \attention The provided functions \em must be thread-safe, as they will
+     * @attention The provided functions \em must be thread-safe, as they will
      *            be performed on a new thread.
      */
     template<typename Out>
@@ -75,15 +75,15 @@ namespace argus {
     }
 
     /**
-     * \brief Template specialization for make_future for the `void` type.
+     * @brief Template specialization for make_future for the `void` type.
      *
      * This is useful when an asynchronous task does not return anything
      * meaningful, but notification of completion is still desired.
      *
-     * \param function The function containing the task to be executed.
-     * \param callback The callback to be invoked upon completion of the task.
+     * @param function The function containing the task to be executed.
+     * @param callback The callback to be invoked upon completion of the task.
      *
-     * \remark This specialization is necessary for technical reasons, as the
+     * @remark This specialization is necessary for technical reasons, as the
      *         `void` type has unique language semantics which require special
      *         handling.
      */

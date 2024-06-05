@@ -29,7 +29,7 @@
 namespace argus {
     struct pimpl_RenderPrim2D {
         /**
-         * \brief The vertices comprising this RenderPrim.
+         * @brief The vertices comprising this RenderPrim.
          */
         const std::vector<Vertex2D> vertices;
 

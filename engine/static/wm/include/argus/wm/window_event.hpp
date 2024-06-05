@@ -34,9 +34,9 @@ namespace argus {
     constexpr const char *k_event_type_window = "window";
 
     /**
-     * \brief A type of WindowEvent.
+     * @brief A type of WindowEvent.
      *
-     * \sa WindowEvent
+     * @sa WindowEvent
      */
     enum class WindowEventType {
         Create,
@@ -51,10 +51,10 @@ namespace argus {
     };
 
     /**
-     * \brief An ArgusEvent pertaining to a Window.
+     * @brief An ArgusEvent pertaining to a Window.
      *
-     * \sa ArgusEvent
-     * \sa Window
+     * @sa ArgusEvent
+     * @sa Window
      */
     struct WindowEvent : public ArgusEvent, AutoCleanupable {
         static constexpr const char *get_event_type_id(void) {
@@ -62,55 +62,55 @@ namespace argus {
         }
 
         /**
-         * \brief The specific \link WindowEventType type \endlink of
+         * @brief The specific \link WindowEventType type \endlink of
          *        WindowEvent.
          */
         const WindowEventType subtype;
         /**
-         * \brief The Window associated with the event.
+         * @brief The Window associated with the event.
          */
         Window &window;
 
         /**
-         * \brief The new resolution of the Window.
+         * @brief The new resolution of the Window.
          *
-         * \note This is populated only for resize events.
+         * @note This is populated only for resize events.
          */
         const Vector2u resolution;
 
         /**
-         * \brief The new position of the Window.
+         * @brief The new position of the Window.
          *
-         * \note This is populated only for move events.
+         * @note This is populated only for move events.
          */
         const Vector2i position;
 
         /**
-         * \brief The \link TimeDelta delta \endlink of the current render
+         * @brief The \link TimeDelta delta \endlink of the current render
          *        frame.
          *
-         * \note This is populated only for update events.
+         * @note This is populated only for update events.
          */
         const TimeDelta delta;
 
         /**
-         * \brief Constructs a new WindowEvent with the given data.
+         * @brief Constructs a new WindowEvent with the given data.
          *
-         * \param subtype The specific \link WindowEventType type \endlink of
+         * @param subtype The specific \link WindowEventType type \endlink of
          *        WindowEvent.
-         * \param window The Window associated with the event.
-         * \param data The new position of resolution of the window following
+         * @param window The Window associated with the event.
+         * @param data The new position of resolution of the window following
          *        the event.
          */
         WindowEvent(WindowEventType subtype, Window &window, Vector2u resolution, Vector2i position,
                 TimeDelta delta);
 
         /**
-         * \brief Constructs a new WindowEvent.
+         * @brief Constructs a new WindowEvent.
          *
-         * \param subtype The specific \link WindowEventType type \endlink of
+         * @param subtype The specific \link WindowEventType type \endlink of
          *        WindowEvent.
-         * \param window The Window associated with the event.
+         * @param window The Window associated with the event.
          */
         WindowEvent(WindowEventType subtype, Window &window);
 

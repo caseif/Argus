@@ -41,7 +41,7 @@ namespace argus {
     struct pimpl_Scene2D;
 
     /**
-     * \brief Represents a scene which contains a set of geometry in
+     * @brief Represents a scene which contains a set of geometry in
      *        2-dimensional space.
      *
      * Scenes are composited to the screen as stacked layers when a frame is
@@ -50,10 +50,10 @@ namespace argus {
     class Scene2D : public Scene {
       private:
         /**
-         * \brief Constructs a new Scene2D.
+         * @brief Constructs a new Scene2D.
          *
-         * \param id The ID of the Scene.
-         * \param transform The Transform of the Scene.
+         * @param id The ID of the Scene.
+         * @param transform The Transform of the Scene.
          */
         Scene2D(const std::string &id, const Transform2D &transform);
 
@@ -106,22 +106,22 @@ namespace argus {
         std::optional<std::reference_wrapper<RenderObject2D>> get_object(Handle handle);
 
         /**
-         * \brief Creates a new RenderGroup2D as a direct child of this
+         * @brief Creates a new RenderGroup2D as a direct child of this
          *        Scene.
          *
-         * \param transform The relative transform of the new group.
+         * @param transform The relative transform of the new group.
          */
         Handle add_group(const Transform2D &transform);
 
         /**
-         * \brief Creates a new RenderObject2D as a direct child of this
+         * @brief Creates a new RenderObject2D as a direct child of this
          *        Scene.
          *
-         * \param material The Material to be used by the new object.
-         * \param primitives The primitives comprising the new object.
-         * \param transform The relative transform of the new object.
+         * @param material The Material to be used by the new object.
+         * @param primitives The primitives comprising the new object.
+         * @param transform The relative transform of the new object.
          *
-         * \remark Internally, the object will be created as a child of the
+         * @remark Internally, the object will be created as a child of the
          *         implicit root RenderGroup contained by this Scene. Thus,
          *         no RenderObject is truly without a parent group.
          */
@@ -130,19 +130,19 @@ namespace argus {
                 const Transform2D &transform);
 
         /**
-         * \brief Removes the supplied RenderGroup2D from this Scene,
+         * @brief Removes the supplied RenderGroup2D from this Scene,
          *        destroying it in the process.
-         * \param handle The handle to the group to remove and destroy.
-         * \throw std::invalid_argument If the supplied RenderGroup is not a
+         * @param handle The handle to the group to remove and destroy.
+         * @throw std::invalid_argument If the supplied RenderGroup is not a
          *        direct member of this Scene.
          */
         void remove_group(Handle handle);
 
         /**
-         * \brief Removes the specified RenderObject2D from this Scene,
+         * @brief Removes the specified RenderObject2D from this Scene,
          *        destroying it in the process.
-         * \param handle The handle to the RenderObject2D to remove and destroy.
-         * \throw std::invalid_argument If the supplied RenderObject is not
+         * @param handle The handle to the RenderObject2D to remove and destroy.
+         * @throw std::invalid_argument If the supplied RenderObject is not
          *        a direct member of this Scene.
          */
         void remove_object(Handle handle);

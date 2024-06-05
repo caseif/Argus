@@ -23,7 +23,7 @@
 
 namespace argus {
     /**
-     * \brief Represents an exception related to a Resource.
+     * @brief Represents an exception related to a Resource.
      */
     class ResourceException : public std::exception {
       private:
@@ -31,16 +31,16 @@ namespace argus {
 
       public:
         /**
-         * \brief The UID of the Resource asssociated with this exception.
+         * @brief The UID of the Resource asssociated with this exception.
          */
         const std::string m_uid;
 
         /**
-         * \brief Constructs a ResourceException.
+         * @brief Constructs a ResourceException.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
-         * \param msg The message associated with the exception.
+         * @param msg The message associated with the exception.
          */
         ResourceException(std::string res_uid, std::string msg):
             m_msg(std::move(msg)),
@@ -48,9 +48,9 @@ namespace argus {
         }
 
         /**
-         * \copydoc std::exception::what()
+         * @copydoc std::exception::what()
          *
-         * \return The exception message.
+         * @return The exception message.
          */
         [[nodiscard]] const char *what(void) const noexcept override {
             return m_msg.c_str();
@@ -58,15 +58,15 @@ namespace argus {
     };
 
     /**
-     * \brief Thrown when a Resource not in memory is accessed without being
+     * @brief Thrown when a Resource not in memory is accessed without being
      *        loaded first.
      */
     class ResourceNotLoadedException : public ResourceException {
       public:
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
          */
         explicit ResourceNotLoadedException(const std::string &res_uid):
@@ -75,14 +75,14 @@ namespace argus {
     };
 
     /**
-     * \brief Thrown when a load is requested for an already-loaded Resource.
+     * @brief Thrown when a load is requested for an already-loaded Resource.
      */
     class ResourceLoadedException : public ResourceException {
       public:
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
          */
         explicit ResourceLoadedException(const std::string &res_uid):
@@ -91,15 +91,15 @@ namespace argus {
     };
 
     /**
-     * \brief Thrown when a Resource not in memory is requested without being
+     * @brief Thrown when a Resource not in memory is requested without being
      *        loaded first.
      */
     class ResourceNotPresentException : public ResourceException {
       public:
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
          */
         explicit ResourceNotPresentException(const std::string &res_uid):
@@ -108,22 +108,22 @@ namespace argus {
     };
 
     /**
-     * \brief Thrown when a load is requested for a Resource with a type which
+     * @brief Thrown when a load is requested for a Resource with a type which
      *        is missing a registered loader.
      */
     class NoLoaderException : public ResourceException {
       public:
         /**
-         * \brief The type of Resource for which a load failed.
+         * @brief The type of Resource for which a load failed.
          */
         const std::string resource_type;
 
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
-         * \param media_type The media type of the Resource for which a load
+         * @param media_type The media type of the Resource for which a load
          *        failed.
          */
         NoLoaderException(const std::string &res_uid, const std::string &media_type):
@@ -133,26 +133,26 @@ namespace argus {
     };
 
     /**
-     * \brief Thrown when a load is requested for a Resource present on disk,
+     * @brief Thrown when a load is requested for a Resource present on disk,
      *        but said load fails for any reason.
      */
     class LoadFailedException : public ResourceException {
       public:
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
-         * \param msg The error message.
+         * @param msg The error message.
          */
         explicit LoadFailedException(const std::string &res_uid, const std::string &msg):
             ResourceException(res_uid, msg) {
         }
 
         /**
-         * \brief Constructs a new exception.
+         * @brief Constructs a new exception.
          *
-         * \param res_uid The UID of the Resource associated with the
+         * @param res_uid The UID of the Resource associated with the
          *        exception.
          */
         explicit LoadFailedException(const std::string &res_uid):

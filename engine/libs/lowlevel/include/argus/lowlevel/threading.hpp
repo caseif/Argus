@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/lowlevel/threading.hpp
+ * @file argus/lowlevel/threading.hpp
  *
  * Platform-agnostic system threading interfaces.
  */

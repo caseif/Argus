@@ -24,12 +24,12 @@
 namespace argus {
     struct pimpl_ResourceLoader {
         /**
-         * \brief The media types handled by this loader.
+         * @brief The media types handled by this loader.
          */
         const std::vector<std::string> media_types;
 
         /**
-         * \brief The dependencies of the Resource last loaded.
+         * @brief The dependencies of the Resource last loaded.
          */
         //TODO: this is super non-threadsafe and needs to be reworked
         std::vector<std::string> last_dependencies;

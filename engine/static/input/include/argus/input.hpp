@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/input.hpp
+ * @file argus/input.hpp
  *
  * Primary user input API.
  */

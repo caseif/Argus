@@ -25,14 +25,14 @@
 
 namespace argus {
     /**
-     * \brief For internal use only.
+     * @brief For internal use only.
      *
-     * \sa ThreadPool
+     * @sa ThreadPool
      */
     struct pimpl_ThreadPool;
 
     /**
-     * \brief A pool of threads to which tasks may be assigned.
+     * @brief A pool of threads to which tasks may be assigned.
      *
      * The pool will attempt to automatically balance the workload across the
      * available threads to ensure efficiency.
@@ -42,17 +42,17 @@ namespace argus {
         pimpl_ThreadPool *m_pimpl;
 
         /**
-         * \brief Constructs a new ThreadPool with the thread count being
+         * @brief Constructs a new ThreadPool with the thread count being
          * initialized automatically based on the number of available
          * logical cores.
          */
         ThreadPool(void);
 
         /**
-         * \brief Constructs a new ThreadPool with a fixed number of
+         * @brief Constructs a new ThreadPool with a fixed number of
          *        threads.
          *
-         * \remark Providing a fixed thread count is generally discouraged
+         * @remark Providing a fixed thread count is generally discouraged
          *         unless you know what you're doing - the nullary
          *         constructor is recommended for most use cases.
          */
@@ -65,30 +65,30 @@ namespace argus {
         ~ThreadPool(void);
 
         /**
-         * \brief Submits a new task to the ThreadPool.
+         * @brief Submits a new task to the ThreadPool.
          *
          * The pointer returned by the callback will be passed back through
          * the std::future returned by this function.
          *
-         * \param task The callback which the ThreadPool will invoke to
+         * @param task The callback which the ThreadPool will invoke to
          *        complete the task.
-         * \return A std::future representing the result of the task
+         * @return A std::future representing the result of the task
          *         execution.
          */
         std::future<void *> submit(const std::function<void *(void)> &task);
 
         /**
-         * \brief Submits a new task to the ThreadPool, passing the extra
+         * @brief Submits a new task to the ThreadPool, passing the extra
          *        parameter through to the provided callback.
          *
          * The pointer returned by the callback will be passed back through
          * the std::future returned by this function.
          *
-         * \param task The callback which the ThreadPool will invoke to
+         * @param task The callback which the ThreadPool will invoke to
          *        complete the task.
-         * \param param A parameter which will be passed through to the
+         * @param param A parameter which will be passed through to the
          *        callback.
-         * \return A std::future representing the result of the task
+         * @return A std::future representing the result of the task
          *         execution.
          */
         std::future<void *> submit(const std::function<void *(void *)> &task, void *param) {
@@ -96,15 +96,15 @@ namespace argus {
         }
 
         /**
-         * \brief Submits a new task to the ThreadPool.
+         * @brief Submits a new task to the ThreadPool.
          *
          * The pointer returned by the callback will be passed back through
          * the std::future returned by this function.
          *
-         * \tparam R The type returned by the callback function.
-         * \param task The callback which the ThreadPool will invoke to
+         * @tparam R The type returned by the callback function.
+         * @param task The callback which the ThreadPool will invoke to
          *        complete the task.
-         * \return A std::future representing the result of the task
+         * @return A std::future representing the result of the task
          *         execution.
          */
         template<typename R>
@@ -113,20 +113,20 @@ namespace argus {
         }
 
         /**
-         * \brief Submits a new task to the ThreadPool, passing the extra
+         * @brief Submits a new task to the ThreadPool, passing the extra
          *        parameter through to the provided callback.
          *
          * The pointer returned by the callback will be passed back through
          * the std::future returned by this function.
          *
-         * \tparam R The type returned by the callback function.
-         * \tparam P The type of the parameter accepted by the callback
+         * @tparam R The type returned by the callback function.
+         * @tparam P The type of the parameter accepted by the callback
          *         function.
-         * \param task The callback which the ThreadPool will invoke to
+         * @param task The callback which the ThreadPool will invoke to
          *        complete the task.
-         * \param param A parameter which will be passed through to the
+         * @param param A parameter which will be passed through to the
          *        callback.
-         * \return A std::future representing the result of the task
+         * @return A std::future representing the result of the task
          *         execution.
          */
         template<typename R, typename P>

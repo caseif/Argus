@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/lowlevel/time.hpp
+ * @file argus/lowlevel/time.hpp
  *
  * Time-related utility functions.
  */
@@ -30,19 +30,19 @@
 
 namespace argus {
     /**
-     * \brief Represents an instant in time.
+     * @brief Represents an instant in time.
      */
     typedef std::chrono::time_point<std::chrono::steady_clock> Timestamp;
 
     /**
-     * \brief Represents a duration of time.
+     * @brief Represents a duration of time.
      */
     typedef std::chrono::nanoseconds TimeDelta;
 
     /**
-     * \brief Returns the current monotonic time.
+     * @brief Returns the current monotonic time.
      *
-     * \return The current monotonic time.
+     * @return The current monotonic time.
      */
     Timestamp now(void);
 }

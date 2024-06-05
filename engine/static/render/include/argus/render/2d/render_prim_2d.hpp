@@ -36,23 +36,23 @@ namespace argus {
     struct pimpl_RenderPrim2D;
 
     /**
-     * \brief Represents primitive 2D geometry to be rendered.
+     * @brief Represents primitive 2D geometry to be rendered.
      */
     class RenderPrim2D {
       public:
         pimpl_RenderPrim2D *m_pimpl;
 
         /**
-         * \brief Constructs a new RenderPrim2D object.
+         * @brief Constructs a new RenderPrim2D object.
          *
-         * \param vertices The vertices comprising the new primitive.
+         * @param vertices The vertices comprising the new primitive.
          */
         RenderPrim2D(const std::vector<Vertex2D> &vertices);
 
         /**
-         * \brief Constructs a new RenderPrim2D object.
+         * @brief Constructs a new RenderPrim2D object.
          *
-         * \param vertices The vertices comprising the new primitive.
+         * @param vertices The vertices comprising the new primitive.
          */
         RenderPrim2D(std::initializer_list<Vertex2D> vertices);
 
@@ -65,19 +65,19 @@ namespace argus {
         ~RenderPrim2D(void);
 
         /**
-         * \brief Gets the current vertex count of this RenderPrim2D.
+         * @brief Gets the current vertex count of this RenderPrim2D.
          *
-         * \return The current vertex count of this RenderPrim2D.
+         * @return The current vertex count of this RenderPrim2D.
          */
         [[nodiscard]] size_t get_vertex_count(void) const;
 
         [[nodiscard]] const std::vector<Vertex2D> &get_vertices(void) const;
 
         /**
-         * \brief Gets the number of unique animation frames of this
+         * @brief Gets the number of unique animation frames of this
          *        RenderPrim2D.
          *
-         * \return The number of unique animation frames.
+         * @return The number of unique animation frames.
          */
         [[nodiscard]] size_t get_frame_count(void) const;
     };

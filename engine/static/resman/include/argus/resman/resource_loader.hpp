@@ -36,7 +36,7 @@ namespace argus {
     struct pimpl_ResourceLoader;
 
     /**
-     * \brief Handles deserialization of Resource data.
+     * @brief Handles deserialization of Resource data.
      */
     class ResourceLoader {
         friend class ResourceManager;
@@ -45,11 +45,11 @@ namespace argus {
         pimpl_ResourceLoader *m_pimpl;
 
         /**
-         * \brief Loads a resource from an std::istream.
+         * @brief Loads a resource from an std::istream.
          *
-         * \param proto The prototype of the Resource being loaded.
-         * \param stream The stream to load the Resource from.
-         * \param size The size in bytes of the Resource data.
+         * @param proto The prototype of the Resource being loaded.
+         * @param stream The stream to load the Resource from.
+         * @param size The size in bytes of the Resource data.
          */
         virtual void *load(ResourceManager &manager, const ResourcePrototype &proto,
                 std::istream &stream, size_t size) const = 0;
@@ -58,36 +58,36 @@ namespace argus {
                 void *src, std::type_index type) const = 0;
 
         /**
-         * \brief Performs necessary deinitialization for loaded resource
+         * @brief Performs necessary deinitialization for loaded resource
          *        data.
-         * \param data_ptr A pointer to the resource data to be deinitialized.
+         * @param data_ptr A pointer to the resource data to be deinitialized.
          */
         virtual void unload(void *data_ptr) const = 0;
 
       protected:
         /**
-         * \brief Constructs a new ResourceLoader.
+         * @brief Constructs a new ResourceLoader.
          *
-         * \param media_types The media types handled by this loader.
+         * @param media_types The media types handled by this loader.
          */
         ResourceLoader(std::initializer_list<std::string> media_types);
 
         /**
-         * \brief Destroys the ResourceLoader.
+         * @brief Destroys the ResourceLoader.
          */
         virtual ~ResourceLoader(void);
 
         /**
-         * \brief Loads \link Resource Resources \endlink this one is
+         * @brief Loads \link Resource Resources \endlink this one is
          *        dependent on.
          *
          * Subclasses should invoke this during Resource loading.
          *
-         * \param manager The ResourceManager requesting the load.
-         * \param dependencies A std::vector of UIDs of dependency
+         * @param manager The ResourceManager requesting the load.
+         * @param dependencies A std::vector of UIDs of dependency
          *        \link Resource Resources \endlink.
          *
-         * \throw ResourceException If any dependency Resource cannot be
+         * @throw ResourceException If any dependency Resource cannot be
          *        loaded.
          */
         std::map<std::string, const Resource *> load_dependencies(ResourceManager &manager,

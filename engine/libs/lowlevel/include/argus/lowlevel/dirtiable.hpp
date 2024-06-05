@@ -82,10 +82,10 @@ namespace argus {
         }
 
         /**
-         * \brief Fetches the current value and clears the dirty flag,
+         * @brief Fetches the current value and clears the dirty flag,
                   returning both the value and the previous dirty state.
          *
-         * \return A `struct` containing the copied value and the previous
+         * @return A `struct` containing the copied value and the previous
          *         state of the dirty flag.
          */
         ValueAndDirtyFlag<ValueType> read(void) {
@@ -105,22 +105,22 @@ namespace argus {
         }
 
         /**
-         * \brief Fetches the current value without affecting the dirty
+         * @brief Fetches the current value without affecting the dirty
          *        flag.
          *
-         * \return A copy of the current value.
+         * @return A copy of the current value.
          */
         const ValueType &peek(void) const {
             return value;
         }
 
         /**
-         * \brief Performs a copy assignment to an lvalue, carrying over the
+         * @brief Performs a copy assignment to an lvalue, carrying over the
          *        current value and dirty flag.
          *
-         * \param rhs The Dirtiable to assign.
+         * @param rhs The Dirtiable to assign.
          *
-         * \return This Dirtiable.
+         * @return This Dirtiable.
          */
         inline Dirtiable &operator=(const Dirtiable<ValueType> &rhs) {
             this->value = rhs.value;
@@ -129,12 +129,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an assignment to an lvalue, setting the dirty
+         * @brief Performs an assignment to an lvalue, setting the dirty
          *        flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This Dirtiable.
+         * @return This Dirtiable.
          */
         inline Dirtiable &operator=(const ValueType &rhs) {
             value = rhs;
@@ -143,12 +143,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an assignment to an rvalue, setting the dirty
+         * @brief Performs an assignment to an rvalue, setting the dirty
          *        flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This Dirtiable.
+         * @return This Dirtiable.
          */
         inline Dirtiable &operator=(const ValueType &&rhs) {
             value = std::move(rhs);
@@ -184,7 +184,7 @@ namespace argus {
          * Performs an assignment to an lvalue without setting the dirty
          * flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          */
         void set_quietly(const ValueType &rhs) {
             value = rhs;
@@ -194,7 +194,7 @@ namespace argus {
          * Performs an assignment to an rvalue without setting the dirty
          * flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          */
         void set_quietly(const ValueType &&rhs) {
             value = std::move(rhs);

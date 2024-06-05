@@ -59,9 +59,9 @@ namespace argus {
         }
 
         /**
-         * \copydoc std::exception::what()
+         * @copydoc std::exception::what()
          *
-         * \return The exception message.
+         * @return The exception message.
          */
         [[nodiscard]] const char *what(void) const noexcept override {
             return m_msg.c_str();

@@ -46,9 +46,9 @@ union cpp_type##Interop {                       \
 
 namespace argus {
     /**
-     * \brief Represents a vector with four elements.
+     * @brief Represents a vector with four elements.
      *
-     * \tparam T The type of element contained by this vector. This must be a number
+     * @tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
@@ -56,103 +56,103 @@ namespace argus {
         using element_type = T;
 
         /**
-         * \brief Union containing the first element of the vector.
+         * @brief Union containing the first element of the vector.
          */
         union {
             /**
-             * \brief The first element of this vector.
+             * @brief The first element of this vector.
              */
             T x;
             /**
-             * \brief The first element of this vector, aliased as the red channel
+             * @brief The first element of this vector, aliased as the red channel
              *        of an RGBA value.
              */
             T r;
         };
         /**
-         * \brief Union containing the second element of the vector.
+         * @brief Union containing the second element of the vector.
          */
         union {
             /**
-             * \brief The second element of this vector.
+             * @brief The second element of this vector.
              */
             T y;
             /**
-             * \brief The second element of this vector, aliased as the green
+             * @brief The second element of this vector, aliased as the green
              *        channel of an RGBA value.
              */
             T g;
         };
         /**
-         * \brief Union containing the third element of the vector.
+         * @brief Union containing the third element of the vector.
          */
         union {
             /**
-             * \brief The third element of this vector.
+             * @brief The third element of this vector.
              */
             T z;
             /**
-             * \brief The third element of this vector, aliased as the blue channel
+             * @brief The third element of this vector, aliased as the blue channel
              *        of an RGBA value.
              */
             T b;
         };
         /**
-         * \brief Union containing the fourth element of the vector.
+         * @brief Union containing the fourth element of the vector.
          */
         union {
             /**
-             * \brief The fourth element of this vector.
+             * @brief The fourth element of this vector.
              */
             T w;
             /**
-             * \brief The fourth element of this vector, aliased as the alpha
+             * @brief The fourth element of this vector, aliased as the alpha
              *        channel of an RGBA value.
              */
             T a;
         };
 
         /**
-         * \brief Performs an element-wise comparison between two vectors.
+         * @brief Performs an element-wise comparison between two vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator==(const Vector4<T> &rhs) const {
             return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z && this->w == rhs.w;
         }
 
         /**
-         * \brief Performs a negative element-wise comparison between two
+         * @brief Performs a negative element-wise comparison between two
          *        vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator!=(const Vector4<T> &rhs) const {
             return !(*this == rhs);
         }
 
         /**
-         * \brief Performs element-wise addition with another Vector4 with the same
+         * @brief Performs element-wise addition with another Vector4 with the same
          *        element type, returning the result as a new Vector4.
          *
-         * \param rhs The vector to add to this one.
+         * @param rhs The vector to add to this one.
          *
-         * \return The element-wise sum of the two vectors as a new Vector4.
+         * @return The element-wise sum of the two vectors as a new Vector4.
          */
         Vector4<T> operator+(const Vector4<T> &rhs) const {
             return Vector4<T>(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
         }
 
         /**
-         * \brief Performs element-wise subtraction with another Vector4 with the
+         * @brief Performs element-wise subtraction with another Vector4 with the
          *        same element type, returning the result as a new Vector4.
          *
          * Each element of the parameter is subtracted from the respective element
          * of this one.
          *
-         * \param rhs The vector to subtract from this one.
+         * @param rhs The vector to subtract from this one.
          *
-         * \return The element-wise difference between the two vectors as a new
+         * @return The element-wise difference between the two vectors as a new
          *         Vector4.
          */
         Vector4<T> operator-(const Vector4<T> &rhs) const {
@@ -160,12 +160,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs element-wise multiplication with another Vector4 with the
+         * @brief Performs element-wise multiplication with another Vector4 with the
          *        same element type, returning the result as a new Vector4.
          *
-         * \param rhs The vector to multiply this one by.
+         * @param rhs The vector to multiply this one by.
          *
-         * \return The element-wise product of the two vectors as a new Vector4.
+         * @return The element-wise product of the two vectors as a new Vector4.
          */
         Vector4<T> operator*(const Vector4<T> &rhs) const {
             return Vector4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
@@ -196,13 +196,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise addition with another Vector4.
+         * @brief Performs in-place element-wise addition with another Vector4.
          *
-         * \param rhs The Vector4 to add to this.
+         * @param rhs The Vector4 to add to this.
          *
-         * \return This Vector4 after being updated.
+         * @return This Vector4 after being updated.
          *
-         * \sa Vector4::operator+
+         * @sa Vector4::operator+
          */
         Vector4<T> &operator+=(const Vector4<T> &rhs) {
             x += rhs.x;
@@ -213,13 +213,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise subtraction with another Vector4.
+         * @brief Performs in-place element-wise subtraction with another Vector4.
          *
-         * \param rhs The Vector4 to subtract from this.
+         * @param rhs The Vector4 to subtract from this.
          *
-         * \return This Vector4 after being updated.
+         * @return This Vector4 after being updated.
          *
-         * \sa Vector4::operator-
+         * @sa Vector4::operator-
          */
         Vector4<T> &operator-=(const Vector4<T> &rhs) {
             x -= rhs.x;
@@ -230,14 +230,14 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise multiplication with another
+         * @brief Performs in-place element-wise multiplication with another
          *        Vector4.
          *
-         * \param rhs The Vector3 to multiply this by.
+         * @param rhs The Vector3 to multiply this by.
          *
-         * \return This Vector4 after being updated.
+         * @return This Vector4 after being updated.
          *
-         * \sa Vector4::operator*
+         * @sa Vector4::operator*
          */
         Vector4<T> &operator*=(const Vector4<T> &rhs) {
             x *= rhs.x;
@@ -248,13 +248,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place multiplication against a constant value.
+         * @brief Performs in-place multiplication against a constant value.
          *
          * @param rhs The constant value to multiply each vector element by.
          *
          * @return This Vector4 after being updated.
          *
-         * \sa Vector4::operator*
+         * @sa Vector4::operator*
          */
         Vector4<T> &operator*=(T rhs) {
             x *= rhs;
@@ -265,13 +265,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place division against a constant value.
+         * @brief Performs in-place division against a constant value.
          *
          * @param rhs The constant value to divide each vector element by.
          *
          * @return This Vector4 after being updated.
          *
-         * \sa Vector4::operator/
+         * @sa Vector4::operator/
          */
         Vector4<T> &operator/=(T rhs) {
             x /= rhs;
@@ -298,9 +298,9 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a vector with three elements.
+     * @brief Represents a vector with three elements.
      *
-     * \tparam T The type of element contained by this vector. This must be a number
+     * @tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
@@ -308,89 +308,89 @@ namespace argus {
         using element_type = T;
 
         /**
-         * \brief Union containing the first element of the vector.
+         * @brief Union containing the first element of the vector.
          */
         union {
             /**
-             * \brief The first element of this vector.
+             * @brief The first element of this vector.
              */
             T x;
             /**
-             * \brief The first element of this vector, aliased as the red channel
+             * @brief The first element of this vector, aliased as the red channel
              *        of an RGB value.
              */
             T r;
         };
         /**
-         * \brief Union containing the second element of the vector.
+         * @brief Union containing the second element of the vector.
          */
         union {
             /**
-             * \brief The second element of this vector.
+             * @brief The second element of this vector.
              */
             T y;
             /**
-             * \brief The second element of this vector, aliased as the green channel
+             * @brief The second element of this vector, aliased as the green channel
              *        of an RGB value.
              */
             T g;
         };
         /**
-         * \brief Union containing the third element of the vector.
+         * @brief Union containing the third element of the vector.
          */
         union {
             /**
-             * \brief The third element of this vector.
+             * @brief The third element of this vector.
              */
             T z;
             /**
-             * \brief The third element of this vector, aliased as the blue channel
+             * @brief The third element of this vector, aliased as the blue channel
              *        of an RGB value.
              */
             T b;
         };
 
         /**
-         * \brief Performs an element-wise comparison between two vectors.
+         * @brief Performs an element-wise comparison between two vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator==(const Vector3<T> &rhs) const {
             return this->x == rhs.x && this->y == rhs.y && this->z == rhs.z;
         }
 
         /**
-         * \brief Performs a negative element-wise comparison between two
+         * @brief Performs a negative element-wise comparison between two
          *        vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator!=(const Vector3<T> &rhs) const {
             return !(*this == rhs);
         }
 
         /**
-         * \brief Performs element-wise addition with another Vector3 with the same
+         * @brief Performs element-wise addition with another Vector3 with the same
          *        element type, returning the result as a new Vector3.
          *
-         * \param rhs The vector to add to this one.
+         * @param rhs The vector to add to this one.
          *
-         * \return The element-wise sum of the two vectors as a new Vector3.
+         * @return The element-wise sum of the two vectors as a new Vector3.
          */
         Vector3<T> operator+(const Vector3<T> &rhs) const {
             return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
 
         /**
-         * \brief Performs element-wise subtraction with another Vector3 with the
+         * @brief Performs element-wise subtraction with another Vector3 with the
          *        same element type, returning the result as a new Vector3.
          *
          * Each element of the parameter is subtracted from the respective element
          * of this one.
          *
-         * \param rhs The vector to subtract from this one.
+         * @param rhs The vector to subtract from this one.
          *
-         * \return The element-wise difference between the two vectors as a new
+         * @return The element-wise difference between the two vectors as a new
          *         Vector3.
          */
         Vector3<T> operator-(const Vector3<T> &rhs) const {
@@ -398,12 +398,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs element-wise multiplication with another Vector3 with the
+         * @brief Performs element-wise multiplication with another Vector3 with the
          *        same element type, returning the result as a new Vector3.
          *
-         * \param rhs The vector to multiply this one by.
+         * @param rhs The vector to multiply this one by.
          *
-         * \return The element-wise product of the two vectors as a new Vector3.
+         * @return The element-wise product of the two vectors as a new Vector3.
          */
         Vector3<T> operator*(const Vector3<T> &rhs) const {
             return Vector3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
@@ -434,13 +434,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise addition with another Vector3.
+         * @brief Performs in-place element-wise addition with another Vector3.
          *
-         * \param rhs The Vector3 to add to this.
+         * @param rhs The Vector3 to add to this.
          *
-         * \return This Vector3 after being updated.
+         * @return This Vector3 after being updated.
          *
-         * \sa Vector3::operator+
+         * @sa Vector3::operator+
          */
         Vector3<T> &operator+=(const Vector3<T> &rhs) {
             x += rhs.x;
@@ -450,13 +450,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise subtraction with another Vector3.
+         * @brief Performs in-place element-wise subtraction with another Vector3.
          *
-         * \param rhs The Vector3 to subtract from this.
+         * @param rhs The Vector3 to subtract from this.
          *
-         * \return This Vector3 after being updated.
+         * @return This Vector3 after being updated.
          *
-         * \sa Vector3::operator-
+         * @sa Vector3::operator-
          */
         Vector3<T> &operator-=(const Vector3<T> &rhs) {
             x -= rhs.x;
@@ -466,14 +466,14 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise multiplication with another
+         * @brief Performs in-place element-wise multiplication with another
          *        Vector3.
          *
-         * \param rhs The Vector3 to multiply this by.
+         * @param rhs The Vector3 to multiply this by.
          *
-         * \return This Vector3 after being updated.
+         * @return This Vector3 after being updated.
          *
-         * \sa Vector3::operator*
+         * @sa Vector3::operator*
          */
         Vector3<T> &operator*=(const Vector3<T> &rhs) {
             x *= rhs.x;
@@ -483,13 +483,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place multiplication against a constant value.
+         * @brief Performs in-place multiplication against a constant value.
          *
          * @param rhs The constant value to multiply each vector element by.
          *
          * @return This Vector3 after being updated.
          *
-         * \sa Vector3::operator*
+         * @sa Vector3::operator*
          */
         Vector3<T> &operator*=(T rhs) {
             x *= rhs;
@@ -499,13 +499,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place division against a constant value.
+         * @brief Performs in-place division against a constant value.
          *
          * @param rhs The constant value to divide each vector element by.
          *
          * @return This Vector3 after being updated.
          *
-         * \sa Vector3::operator/
+         * @sa Vector3::operator/
          */
         Vector3<T> &operator/=(T rhs) {
             x /= rhs;
@@ -535,9 +535,9 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a vector with two elements.
+     * @brief Represents a vector with two elements.
      *
-     * \tparam T The type of element contained by this vector. This must be a number
+     * @tparam T The type of element contained by this vector. This must be a number
      *           which passes std::is_arithmetic.
      */
     template<typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
@@ -545,55 +545,55 @@ namespace argus {
         using element_type = T;
 
         /**
-         * \brief The first element of the vector.
+         * @brief The first element of the vector.
          */
         T x;
         /**
-         * \brief The second element of the vector.
+         * @brief The second element of the vector.
          */
         T y;
 
         /**
-         * \brief Performs an element-wise comparison between two vectors.
+         * @brief Performs an element-wise comparison between two vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator==(const Vector2<T> &rhs) const {
             return this->x == rhs.x && this->y == rhs.y;
         }
 
         /**
-         * \brief Performs a negative element-wise comparison between two
+         * @brief Performs a negative element-wise comparison between two
          *        vectors.
          *
-         * \param rhs The vector to compare against.
+         * @param rhs The vector to compare against.
          */
         bool operator!=(const Vector2<T> &rhs) const {
             return !(*this == rhs);
         }
 
         /**
-         * \brief Performs element-wise addition with another Vector2 with the same
+         * @brief Performs element-wise addition with another Vector2 with the same
          *        element type, returning the result as a new Vector2.
          *
-         * \param rhs The vector to add to this one.
+         * @param rhs The vector to add to this one.
          *
-         * \return The element-wise sum of the two vectors as a new Vector2.
+         * @return The element-wise sum of the two vectors as a new Vector2.
          */
         Vector2<T> operator+(const Vector2<T> &rhs) const {
             return Vector2<T>(x + rhs.x, y + rhs.y);
         }
 
         /**
-         * \brief Performs element-wise subtraction with another Vector2 with the
+         * @brief Performs element-wise subtraction with another Vector2 with the
          *        same element type, returning the result as a new Vector2.
          *
          * Each element of the parameter is subtracted from the respective element
          * of this one.
          *
-         * \param rhs The vector to subtract from this one.
+         * @param rhs The vector to subtract from this one.
          *
-         * \return The element-wise difference between the two vectors as a new
+         * @return The element-wise difference between the two vectors as a new
          *         Vector2.
          */
         Vector2<T> operator-(const Vector2<T> &rhs) const {
@@ -601,12 +601,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs element-wise multiplication with another Vector2 with the
+         * @brief Performs element-wise multiplication with another Vector2 with the
          *        same element type, returning the result as a new Vector2.
          *
-         * \param rhs The vector to multiply this one by.
+         * @param rhs The vector to multiply this one by.
          *
-         * \return The element-wise product of the two vectors as a new Vector2.
+         * @return The element-wise product of the two vectors as a new Vector2.
          */
         Vector2<T> operator*(const Vector2<T> &rhs) const {
             return Vector2<T>(x * rhs.x, y * rhs.y);
@@ -637,13 +637,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise addition with another Vector2.
+         * @brief Performs in-place element-wise addition with another Vector2.
          *
-         * \param rhs The Vector2 to add to this.
+         * @param rhs The Vector2 to add to this.
          *
-         * \return This Vector2 after being updated.
+         * @return This Vector2 after being updated.
          *
-         * \sa Vector2::operator+
+         * @sa Vector2::operator+
          */
         Vector2<T> &operator+=(const Vector2<T> &rhs) {
             x += rhs.x;
@@ -652,13 +652,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise subtraction with another Vector2.
+         * @brief Performs in-place element-wise subtraction with another Vector2.
          *
-         * \param rhs The Vector2 to subtract from this.
+         * @param rhs The Vector2 to subtract from this.
          *
-         * \return This Vector2 after being updated.
+         * @return This Vector2 after being updated.
          *
-         * \sa Vector2::operator-
+         * @sa Vector2::operator-
          */
         Vector2<T> &operator-=(const Vector2<T> &rhs) {
             x -= rhs.x;
@@ -667,14 +667,14 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place element-wise multiplication with another
+         * @brief Performs in-place element-wise multiplication with another
          *        Vector2.
          *
-         * \param rhs The Vector2 to multiply this by.
+         * @param rhs The Vector2 to multiply this by.
          *
-         * \return This Vector2 after being updated.
+         * @return This Vector2 after being updated.
          *
-         * \sa Vector2::operator*
+         * @sa Vector2::operator*
          */
         Vector2<T> &operator*=(const Vector2<T> &rhs) {
             x *= rhs.x;
@@ -683,13 +683,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place multiplication against a constant value.
+         * @brief Performs in-place multiplication against a constant value.
          *
          * @param rhs The constant value to multiply each vector element by.
          *
          * @return This Vector2 after being updated.
          *
-         * \sa Vector2::operator*
+         * @sa Vector2::operator*
          */
         Vector2<T> &operator*=(T rhs) {
             x *= rhs;
@@ -698,13 +698,13 @@ namespace argus {
         }
 
         /**
-         * \brief Performs in-place division against a constant value.
+         * @brief Performs in-place division against a constant value.
          *
          * @param rhs The constant value to divide each vector element by.
          *
          * @return This Vector2 after being updated.
          *
-         * \sa Vector2::operator/
+         * @sa Vector2::operator/
          */
         Vector2<T> &operator/=(T rhs) {
             x /= rhs;
@@ -737,62 +737,62 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a vector of two `int32_t`s.
+     * @brief Represents a vector of two `int32_t`s.
      */
     typedef Vector2<int32_t> Vector2i;
 
     /**
-     * \brief Represents a vector of two `uint32_t`s.
+     * @brief Represents a vector of two `uint32_t`s.
      */
     typedef Vector2<uint32_t> Vector2u;
 
     /**
-     * \brief Represents a vector of two `float`s.
+     * @brief Represents a vector of two `float`s.
      */
     typedef Vector2<float> Vector2f;
 
     /**
-     * \brief Represents a vector of two `double`s.
+     * @brief Represents a vector of two `double`s.
      */
     typedef Vector2<double> Vector2d;
 
     /**
-     * \brief Represents a vector of three `int32_t`s.
+     * @brief Represents a vector of three `int32_t`s.
      */
     typedef Vector3<int32_t> Vector3i;
 
     /**
-     * \brief Represents a vector of three `uint32_t`s.
+     * @brief Represents a vector of three `uint32_t`s.
      */
     typedef Vector3<uint32_t> Vector3u;
 
     /**
-     * \brief Represents a vector of three `float`s.
+     * @brief Represents a vector of three `float`s.
      */
     typedef Vector3<float> Vector3f;
 
     /**
-     * \brief Represents a vector of three `double`s.
+     * @brief Represents a vector of three `double`s.
      */
     typedef Vector3<double> Vector3d;
 
     /**
-     * \brief Represents a vector of four `int32_t`s.
+     * @brief Represents a vector of four `int32_t`s.
      */
     typedef Vector4<int32_t> Vector4i;
 
     /**
-     * \brief Represents a vector of four `uint32_t`s.
+     * @brief Represents a vector of four `uint32_t`s.
      */
     typedef Vector4<uint32_t> Vector4u;
 
     /**
-     * \brief Represents a vector of four `float`s.
+     * @brief Represents a vector of four `float`s.
      */
     typedef Vector4<float> Vector4f;
 
     /**
-     * \brief Represents a vector of four `double`s.
+     * @brief Represents a vector of four `double`s.
      */
     typedef Vector4<double> Vector4d;
 

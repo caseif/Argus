@@ -28,7 +28,7 @@
 
 namespace argus {
     /**
-     * \brief A drop-in replacement for std::atomic for non-trvially copyable
+     * @brief A drop-in replacement for std::atomic for non-trvially copyable
      *        types.
      *
      * Because std::atomic generally operates on primitive types only, it cannot
@@ -36,7 +36,7 @@ namespace argus {
      * wraps an object not eligible for use with std::atomic and provides
      * transparent atomicity support in a similar fashion.
      *
-     * \tparam ValueType The type of value to be wrapped for atomic use.
+     * @tparam ValueType The type of value to be wrapped for atomic use.
      */
     template<typename ValueType>
     class ComplexAtomic {
@@ -46,7 +46,7 @@ namespace argus {
 
       public:
         /**
-         * \brief The default constructor; creates a `ComplexAtomic` with an
+         * @brief The default constructor; creates a `ComplexAtomic` with an
          *        empty value.
          */
         ComplexAtomic(void) :
@@ -54,28 +54,28 @@ namespace argus {
         }
 
         /**
-         * \brief The copy constructor.
+         * @brief The copy constructor.
          *
-         * \param val The value to copy into this `ComplexAtomic`'s state.
+         * @param val The value to copy into this `ComplexAtomic`'s state.
          */
         explicit ComplexAtomic(ValueType &val) :
             m_value(val) {
         }
 
         /**
-         * \brief The move constructor.
+         * @brief The move constructor.
          *
-         * \param val The value to move into this `ComplexAtomic`'s state.
+         * @param val The value to move into this `ComplexAtomic`'s state.
          */
         explicit ComplexAtomic(ValueType &&val) :
             m_value(val) {
         }
 
         /**
-         * \brief Converts the ComplexAtomic to its base type, effectively
+         * @brief Converts the ComplexAtomic to its base type, effectively
          * "unwrapping" it.
          *
-         * \return The base value.
+         * @return The base value.
          */
         inline operator ValueType(void) {
             m_mutex.lock();
@@ -85,11 +85,11 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an atomic assignment to an lvalue.
+         * @brief Performs an atomic assignment to an lvalue.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This ComplexAtomic.
+         * @return This ComplexAtomic.
          */
         inline ComplexAtomic &operator=(const ValueType &rhs) {
             m_mutex.lock();
@@ -99,11 +99,11 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an atomic assignment to an rvalue.
+         * @brief Performs an atomic assignment to an rvalue.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This ComplexAtomic.
+         * @return This ComplexAtomic.
          */
         inline ComplexAtomic &operator=(const ValueType &&rhs) {
             m_mutex.lock();
@@ -116,13 +116,13 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a value which is to be read and written atomically,
+     * @brief Represents a value which is to be read and written atomically,
      *        and contains a "dirtiness" attribute.
      *
      * An `AtomicDirtiable` is essentially equivalent to a ComplexAtomic, but
      * contains an additional std::atomic_bool attribute to track its dirtiness.
      *
-     * \tparam ValueType The type of value to be wrapped for use.
+     * @tparam ValueType The type of value to be wrapped for use.
      */
     template<typename ValueType>
     class AtomicDirtiable {
@@ -158,11 +158,11 @@ namespace argus {
         }
 
         /**
-         * \brief Atomically fetches the current value and clears the dirty
+         * @brief Atomically fetches the current value and clears the dirty
          *        flag, returning both the copied value and the previous
          *        dirty state.
          *
-         * \return A `struct` containing the copied value and the previous
+         * @return A `struct` containing the copied value and the previous
          *         state of the dirty flag.
          */
         ValueAndDirtyFlag<ValueType> read(void) {
@@ -177,10 +177,10 @@ namespace argus {
         }
 
         /**
-         * \brief Atomically fetches the current value without affecting the
+         * @brief Atomically fetches the current value without affecting the
                   dirty flag.
          *
-         * \return A copy of the current value.
+         * @return A copy of the current value.
          */
         ValueType peek(void) {
             std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -190,12 +190,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an atomic assignment to an lvalue, setting the
+         * @brief Performs an atomic assignment to an lvalue, setting the
          *        dirty flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This AtomicDirtiable.
+         * @return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &rhs) {
             std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -206,12 +206,12 @@ namespace argus {
         }
 
         /**
-         * \brief Performs an atomic assignment to an rvalue, setting the
+         * @brief Performs an atomic assignment to an rvalue, setting the
          *        dirty flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          *
-         * \return This AtomicDirtiable.
+         * @return This AtomicDirtiable.
          */
         inline AtomicDirtiable &operator=(const ValueType &&rhs) {
             std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -225,7 +225,7 @@ namespace argus {
          * Performs an atomic assignment to an lvalue without setting the
          * dirty flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          */
         void set_quietly(const ValueType &rhs) {
             std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -237,7 +237,7 @@ namespace argus {
          * Performs an atomic assignment to an rvalue without setting the
          * dirty flag.
          *
-         * \param rhs The value to assign.
+         * @param rhs The value to assign.
          */
         void set_quietly(const ValueType &&rhs) {
             std::lock_guard<std::mutex> lock(this->m_mutex);

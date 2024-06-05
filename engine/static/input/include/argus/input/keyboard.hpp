@@ -17,7 +17,7 @@
  */
 
 /**
- * \file argus/input/keyboard.hpp
+ * @file argus/input/keyboard.hpp
  *
  * API for detecting and interpreting keyboard events.
  */
@@ -30,7 +30,7 @@
 
 namespace argus::input {
     /**
-     * \brief Represents a scancode tied to a key press.
+     * @brief Represents a scancode tied to a key press.
      *
      * Argus's scancode definitions are based on a 104-key QWERTY layout.
      *
@@ -148,7 +148,7 @@ namespace argus::input {
     };
 
     /**
-     * \brief Represents a command sent by a key press.
+     * @brief Represents a command sent by a key press.
      *
      * Command keys are defined as those which are not representative of a
      * textual character nor a key modifier.
@@ -192,7 +192,7 @@ namespace argus::input {
     };
 
     /**
-     * \brief Represents a modifier enabled by a key press.
+     * @brief Represents a modifier enabled by a key press.
      *
      * Modifier keys are defined as the left and right shift, alt, and control
      * keys, the Super key, and the num lock, caps lock, and scroll lock
@@ -209,53 +209,53 @@ namespace argus::input {
     // clang-format on
 
     /**
-     * \brief Bitwise OR implementation for KeyboardModifiers bitmask elements.
+     * @brief Bitwise OR implementation for KeyboardModifiers bitmask elements.
      *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
+     * @param lhs Left-hand operand.
+     * @param rhs Right-hand operand.
      *
-     * \return The bitwise OR of the operands.
+     * @return The bitwise OR of the operands.
      */
     constexpr inline KeyboardModifiers operator|(KeyboardModifiers lhs, KeyboardModifiers rhs);
 
     /**
-     * \brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
+     * @brief Bitwise OR-assignment implementation for KeyboardModifiers bitmask
      *        elements.
      *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
+     * @param lhs Left-hand operand.
+     * @param rhs Right-hand operand.
      *
-     * \return The bitwise OR of the operands.
+     * @return The bitwise OR of the operands.
      *
-     * \sa KeyboardModifiers::operator|
+     * @sa KeyboardModifiers::operator|
      */
     inline KeyboardModifiers operator|=(KeyboardModifiers &lhs, KeyboardModifiers rhs);
 
     /**
-     * \brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
+     * @brief Bitwise AND implementation for KeyboardModifiers bitmask elements.
      *
-     * \param lhs Left-hand operand.
-     * \param rhs Right-hand operand.
+     * @param lhs Left-hand operand.
+     * @param rhs Right-hand operand.
      *
-     * \return The bitwise AND of the operands.
+     * @return The bitwise AND of the operands.
      */
     constexpr inline KeyboardModifiers operator&(KeyboardModifiers lhs, KeyboardModifiers rhs);
 
     /**
-     * \brief Gets the semantic name of the key associated with the given
+     * @brief Gets the semantic name of the key associated with the given
      *        scancode.
      *
-     * \return The name of the key.
+     * @return The name of the key.
      */
     std::string get_key_name(KeyboardScancode scancode);
 
     /**
-     * \brief Gets whether the key associated with a scancode is currently being
+     * @brief Gets whether the key associated with a scancode is currently being
      *        pressed down.
      *
-     * \param scancode The scancode to query.
+     * @param scancode The scancode to query.
      *
-     * \return Whether the key is being pressed.
+     * @return Whether the key is being pressed.
      */
     bool is_key_pressed(KeyboardScancode scancode);
 }

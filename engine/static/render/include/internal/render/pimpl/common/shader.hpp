@@ -30,19 +30,19 @@
 namespace argus {
     struct pimpl_Shader {
         /**
-         * \brief The unique identifier of the shader.
+         * @brief The unique identifier of the shader.
          */
         const std::string uid;
         /**
-         * \brief The type of shader stored by this object as a magic ID.
+         * @brief The type of shader stored by this object as a magic ID.
          */
         const std::string type;
         /**
-         * \brief The stage this shader is to be run at.
+         * @brief The stage this shader is to be run at.
          */
         const ShaderStage stage;
         /**
-         * \brief The source code for this shader.
+         * @brief The source code for this shader.
          */
         const std::vector<uint8_t> src;
 

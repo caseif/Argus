@@ -23,7 +23,7 @@
 namespace argus::input {
     //TODO: this doc needs some love
     /**
-     * \brief Represents context regarding captured text input.
+     * @brief Represents context regarding captured text input.
      *
      * This object may be used to access text input captured while it is active,
      * as well as to deactivate and release the input context.
@@ -38,9 +38,9 @@ namespace argus::input {
 
       public:
         /**
-         * \brief Creates a new TextInputContext.
+         * @brief Creates a new TextInputContext.
          *
-         * \sa TextInputContext#release(void)
+         * @sa TextInputContext#release(void)
          */
         static TextInputContext &create_context(void);
 
@@ -49,26 +49,26 @@ namespace argus::input {
         TextInputContext(TextInputContext &&context) = delete;
 
         /**
-         * \brief Returns the context's current text.
+         * @brief Returns the context's current text.
          */
         [[nodiscard]] std::string get_current_text(void) const;
 
         /**
-         * \brief Resumes capturing text input to the context.
+         * @brief Resumes capturing text input to the context.
          *
-         * \attention Any other active context will be deactivated.
+         * @attention Any other active context will be deactivated.
          */
         void activate(void);
 
         /**
-         * \brief Suspends text input capture for the context.
+         * @brief Suspends text input capture for the context.
          */
         void deactivate(void);
 
         /**
-         * \brief Relases the context, invalidating it for any further use.
+         * @brief Relases the context, invalidating it for any further use.
          *
-         * \warning Invoking any function on the context following its
+         * @warning Invoking any function on the context following its
          *          release is undefined behavior.
          */
         void release(void);

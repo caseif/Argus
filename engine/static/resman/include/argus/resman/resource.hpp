@@ -31,12 +31,12 @@ namespace argus {
     struct pimpl_Resource;
 
     /**
-     * \brief The minimum information required to uniquely identify and locate
+     * @brief The minimum information required to uniquely identify and locate
      *        a resource.
      */
     struct ResourcePrototype {
         /**
-         * \brief The unique identifier of the resource.
+         * @brief The unique identifier of the resource.
          *
          * The UID does not include a file extension and is prefixed with a
          * namespace. The delimiter following the namespace is a colon (:), and
@@ -47,24 +47,24 @@ namespace argus {
         std::string uid;
 
         /**
-         * \brief The resource's type.
+         * @brief The resource's type.
          */
         std::string media_type;
 
         /**
-         * \brief The path to the resource on the filesystem.
+         * @brief The path to the resource on the filesystem.
          *
-         * \attention This will point either to the loose resource file on the
+         * @attention This will point either to the loose resource file on the
          *            disk, or the archive containing the resource data.
          */
         std::filesystem::path fs_path;
 
         /**
-         * \brief Creates a new ResourcePrototype.
+         * @brief Creates a new ResourcePrototype.
          *
-         * \param uid The unique identifier of the resource.
-         * \param media_type The media type of the resource.
-         * \param fs_path The path to the resource or archive containing the
+         * @param uid The unique identifier of the resource.
+         * @param media_type The media type of the resource.
+         * @param fs_path The path to the resource or archive containing the
          *        resource on the filesystem.
          */
         ResourcePrototype(std::string uid, std::string media_type, std::filesystem::path fs_path):
@@ -75,7 +75,7 @@ namespace argus {
     };
 
     /**
-     * \brief Represents semantically structured data loaded from the
+     * @brief Represents semantically structured data loaded from the
      *        filesystem.
      */
     class Resource {
@@ -83,22 +83,22 @@ namespace argus {
 
       private:
         /**
-         * \brief Constructs a new Resource.
+         * @brief Constructs a new Resource.
          *
-         * \param manager The parent ResourceManager of the new Resource.
-         * \param loader The ResourceLoader responsible for the new
+         * @param manager The parent ResourceManager of the new Resource.
+         * @param loader The ResourceLoader responsible for the new
          *        Resource.
-         * \param prototype The \link ResourcePrototype prototype \endlink
+         * @param prototype The \link ResourcePrototype prototype \endlink
          *        of the new Resource.
-         * \param data A pointer to the resource data.
-         * \param dependencies The UIDs of Resources the new one is
+         * @param data A pointer to the resource data.
+         * @param dependencies The UIDs of Resources the new one is
          *        dependent on.
          */
         Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
                 void *data, const std::vector<std::string> &dependencies);
 
         /**
-         * \brief Destroys the Resource.
+         * @brief Destroys the Resource.
          */
         ~Resource(void);
 
@@ -106,7 +106,7 @@ namespace argus {
         pimpl_Resource *m_pimpl;
 
         /**
-         * \brief The prototype of this Resource.
+         * @brief The prototype of this Resource.
          */
         const ResourcePrototype prototype;
 
@@ -116,48 +116,48 @@ namespace argus {
         // mostly-transparent manner
 
         /**
-         * \brief The UID of this resource.
+         * @brief The UID of this resource.
          *
-         * \attention This is a proxy to the same field of the underlying
+         * @attention This is a proxy to the same field of the underlying
          *            ResourcePrototype and has been implemented in a way
          *            to allow a direct proxy while maintaining field
          *            syntax.
          */
         const struct {
             /**
-             * \brief The parent Resource to proxy for.
+             * @brief The parent Resource to proxy for.
              */
             Resource &parent;
 
             /**
-             * \brief Extracts the resource's UID from its
+             * @brief Extracts the resource's UID from its
              *        ResourcePrototype.
              *
-             * \return The resource's UID.
+             * @return The resource's UID.
              */
             inline operator std::string(void) const {
                 return parent.prototype.uid;
             }
         } uid { *this };
         /**
-         * \brief The media type of this resource.
+         * @brief The media type of this resource.
          *
-         * \attention This is a proxy to the same field of the underlying
+         * @attention This is a proxy to the same field of the underlying
          *            ResourcePrototype and has been implemented in a way
          *            to allow a direct proxy while maintaining field
          *            syntax.
          */
         const struct {
             /**
-             * \brief The parent Resource to proxy to.
+             * @brief The parent Resource to proxy to.
              */
             Resource &parent;
 
             /**
-             * \brief Extracts the resource's media type from its
+             * @brief Extracts the resource's media type from its
              *        ResourcePrototype.
              *
-             * \return The resource's media type.
+             * @return The resource's media type.
              */
             inline operator std::string(void) const {
                 return parent.prototype.media_type;
@@ -169,38 +169,38 @@ namespace argus {
         Resource operator=(Resource &ref) = delete;
 
         /**
-         * \brief The move constructor.
+         * @brief The move constructor.
          *
-         * \param rhs The Resource to move.
+         * @param rhs The Resource to move.
          */
         Resource(Resource &&rhs) noexcept;
 
         /**
-         * \brief Releases a handle on this Resource.
+         * @brief Releases a handle on this Resource.
          *
-         * \remark This simply decrements an internal refcount, as the class
+         * @remark This simply decrements an internal refcount, as the class
          *         has no way of tracking specific acquisitions.
          */
         void release(void) const;
 
         /**
-         * \brief Gets a raw pointer to the underlying data of this
+         * @brief Gets a raw pointer to the underlying data of this
          *        Resource.
          *
-         * \note In almost all cases, the templated function
+         * @note In almost all cases, the templated function
          *       Resource::get_data is preferable and should be used
          *       instead.
          *
-         * \return A pointer to the Resource data.
+         * @return A pointer to the Resource data.
          */
         [[nodiscard]] const void *get_data_ptr(void) const;
 
         /**
-         * \brief Gets the underlying data of this Resource.
+         * @brief Gets the underlying data of this Resource.
          *
-         * \tparam DataType The type of data contained by this Resource.
+         * @tparam DataType The type of data contained by this Resource.
          *
-         * \return The Resource data.
+         * @return The Resource data.
          */
         template<typename DataType>
         const DataType &get(void) const {

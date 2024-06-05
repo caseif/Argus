@@ -43,21 +43,21 @@ namespace argus {
     constexpr bool has_event_type_id_accessor_v = has_event_type_id_accessor<T, void>::value;
 
     /**
-     * \brief Represents an event pertaining to the current application,
+     * @brief Represents an event pertaining to the current application,
      *        typically triggered by user interaction.
      */
     struct ArgusEvent {
       protected:
         /**
-         * \brief Aggregate constructor for ArgusEvent.
+         * @brief Aggregate constructor for ArgusEvent.
          *
-         * \param type_id The ID of the event type.
+         * @param type_id The ID of the event type.
          */
         explicit ArgusEvent(std::string type_id);
 
       public:
         /**
-         * \brief The ID of the event type.
+         * @brief The ID of the event type.
          */
         const std::string type_id;
 
@@ -73,7 +73,7 @@ namespace argus {
     };
 
     /**
-     * \brief A callback that accepts an event and a piece of user-supplied
+     * @brief A callback that accepts an event and a piece of user-supplied
      *        data.
      */
     typedef std::function<void(const ArgusEvent &)> ArgusEventCallback;
@@ -88,28 +88,28 @@ namespace argus {
     };
 
     /**
-     * \brief For internal use only. Please use
+     * @brief For internal use only. Please use
      *        \link argus::register_event_handler \endlink.
      *
-     * \sa argus::register_event_handler
+     * @sa argus::register_event_handler
      */
     Index register_event_handler_with_type(std::string type_id, ArgusEventWithDataCallback callback,
             TargetThread target_thread, void *data, Ordering ordering,
             ArgusEventHandlerUnregisterCallback unregister_callback);
 
     /**
-     * \brief Registers a handler for particular events.
+     * @brief Registers a handler for particular events.
      *
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
      *
-     * \tparam EventType The type of event to handle.
+     * @tparam EventType The type of event to handle.
      *
-     * \param callback The \link ArgusEventCallback callback \endlink
+     * @param callback The \link ArgusEventCallback callback \endlink
      *        responsible for handling passed events.
-     * \param target_thread The thread to invoke the handler function on.
+     * @param target_thread The thread to invoke the handler function on.
      *
-     * \return The ID of the new registration.
+     * @return The ID of the new registration.
      */
     template<typename EventType>
     Index register_event_handler(std::function<void(const EventType &)> callback,
@@ -126,18 +126,18 @@ namespace argus {
     }
 
     /**
-     * \brief Registers a handler for particular events.
+     * @brief Registers a handler for particular events.
      *
      * Events which match the given filter will be passed to the callback
      * function along with the user-supplied data pointer.
      *
-     * \tparam EventType The type of event to handle.
+     * @tparam EventType The type of event to handle.
      *
-     * \param callback The \link ArgusEventCallback callback \endlink
+     * @param callback The \link ArgusEventCallback callback \endlink
      *        responsible for handling passed events.
-     * \param target_thread The thread to invoke the handler function on.
+     * @param target_thread The thread to invoke the handler function on.
      *
-     * \return The ID of the new registration.
+     * @return The ID of the new registration.
      */
     template<typename EventType>
     Index register_event_handler(std::function<void(const EventType &, void *)> callback,
@@ -154,26 +154,26 @@ namespace argus {
     }
 
     /**
-     * \brief Unregisters an event handler.
+     * @brief Unregisters an event handler.
      *
-     * \param id The ID of the callback to unregister.
+     * @param id The ID of the callback to unregister.
      */
     void unregister_event_handler(Index id);
 
     /**
-     * \brief Dispatches an event.
+     * @brief Dispatches an event.
      *
      * This function is intended for internal use only, and is exposed here
      * solely due to C++ templating restrictions.
      *
-     * \param event The event to be dispatched.
+     * @param event The event to be dispatched.
      */
     void _dispatch_event_ptr(ArgusEvent &event);
 
     /**
-     * \brief Dispatches an event to all respective registered listeners.
+     * @brief Dispatches an event to all respective registered listeners.
      *
-     * \param args Arguments to be forwarded to the event constructor.
+     * @param args Arguments to be forwarded to the event constructor.
      */
     template<typename T, typename... Args>
     void dispatch_event(Args &&... args) {

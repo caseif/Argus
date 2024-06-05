@@ -29,33 +29,33 @@
 namespace argus {
     struct pimpl_ResourceManager {
         /**
-         * \brief Prototypes for all resources discovered on the filesystem.
+         * @brief Prototypes for all resources discovered on the filesystem.
          */
         std::map<std::string, ResourcePrototype> discovered_fs_protos;
 
         /**
-         * \brief A set of all ARP packages currently loaded.
+         * @brief A set of all ARP packages currently loaded.
          */
         ArpPackageSet package_set { nullptr };
 
         /**
-         * \brief All currently loaded resources.
+         * @brief All currently loaded resources.
          */
         std::map<std::string, Resource *> loaded_resources;
 
         /**
-         * \brief Whether discovery of resources from the filesystem has taken
+         * @brief Whether discovery of resources from the filesystem has taken
          *        place.
          */
         bool discovery_done = false;
 
         /**
-         * \brief All currently registered resource loaders.
+         * @brief All currently registered resource loaders.
          */
         std::map<const std::string, ResourceLoader *> registered_loaders;
 
         /**
-         * \brief All current extension registrations, with extensions being
+         * @brief All current extension registrations, with extensions being
          *        mapped to formal types.
          */
         std::map<std::string, std::string> extension_mappings;

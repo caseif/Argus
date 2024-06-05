@@ -36,7 +36,7 @@ namespace argus {
     };
 
     /**
-     * \brief Represents a Scene containing a set of geometry in space.
+     * @brief Represents a Scene containing a set of geometry in space.
      *
      * Scenes are composited to the screen as stacked layers when a frame is
      * rendered.
@@ -44,9 +44,9 @@ namespace argus {
     class Scene {
       protected:
         /**
-         * \brief Constructs a new Scene.
+         * @brief Constructs a new Scene.
          *
-         * \param type The type of Scene.
+         * @param type The type of Scene.
          */
         Scene(SceneType type);
 
