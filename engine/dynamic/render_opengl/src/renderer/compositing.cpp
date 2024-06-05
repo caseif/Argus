@@ -122,7 +122,7 @@ namespace argus {
                 throw std::invalid_argument("Viewport mode is invalid");
         }
 
-        TransformedViewport transformed{};
+        TransformedViewport transformed {};
         transformed.left = int32_t(viewport.left * vp_h_scale + vp_h_off);
         transformed.right = int32_t(viewport.right * vp_h_scale + vp_h_off);
         transformed.top = int32_t(viewport.top * vp_v_scale + vp_v_off);
@@ -740,7 +740,7 @@ namespace argus {
     }
 
     void setup_framebuffer(RendererState &state) {
-        auto frame_program = link_program({FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH});
+        auto frame_program = link_program({ FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
 
         state.frame_program = frame_program;
 

@@ -32,23 +32,23 @@ namespace argus {
         AttachedViewport *viewport;
 
         Matrix4 view_matrix;
-        bool view_matrix_dirty;
+        bool view_matrix_dirty = false;
 
-        BufferInfo ubo{};
+        BufferInfo ubo {};
 
-        buffer_handle_t fb_primary;
-        buffer_handle_t fb_secondary;
-        buffer_handle_t fb_aux;
-        buffer_handle_t fb_lightmap;
+        buffer_handle_t fb_primary = 0;
+        buffer_handle_t fb_secondary = 0;
+        buffer_handle_t fb_aux = 0;
+        buffer_handle_t fb_lightmap = 0;
 
-        texture_handle_t color_buf_primary;
-        texture_handle_t color_buf_secondary;
+        texture_handle_t color_buf_primary = 0;
+        texture_handle_t color_buf_secondary = 0;
         // alias of either primary or secondary color buf depending on how many
         // ping-pongs took place
-        texture_handle_t color_buf_front;
+        texture_handle_t color_buf_front = 0;
 
-        texture_handle_t light_opac_map_buf;
-        BufferInfo shadowmap_buffer;
+        texture_handle_t light_opac_map_buf = 0;
+        BufferInfo shadowmap_buffer {};
         texture_handle_t shadowmap_texture = 0;
         texture_handle_t lightmap_buf = 0;
 

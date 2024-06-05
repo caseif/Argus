@@ -154,12 +154,12 @@ namespace argus {
             }
         } else {
             if (AGLET_GL_ARB_direct_state_access) {
-                glClearNamedBufferSubData(handle, GL_R32UI, 0, GLsizeiptr(size), GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
+                glClearNamedBufferSubData(handle, GL_R32UI, 0, GLsizeiptr(size), GL_RED_INTEGER, GL_UNSIGNED_INT,
+                        &value);
             } else {
                 glClearBufferSubData(target, GL_R32UI, 0, GLsizeiptr(size), GL_RED_INTEGER, GL_UNSIGNED_INT, &value);
             }
         }
-
 
         if (must_remap) {
             if (AGLET_GL_ARB_direct_state_access) {

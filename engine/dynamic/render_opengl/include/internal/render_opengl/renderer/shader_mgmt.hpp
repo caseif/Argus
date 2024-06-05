@@ -38,10 +38,10 @@ namespace argus {
         ShaderReflectionInfo reflection;
         bool has_custom_frag;
 
-        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection, bool has_custom_frag) :
-                handle(handle),
-                reflection(std::move(reflection)),
-                has_custom_frag(has_custom_frag) {
+        LinkedProgram(program_handle_t handle, ShaderReflectionInfo reflection, bool has_custom_frag):
+            handle(handle),
+            reflection(std::move(reflection)),
+            has_custom_frag(has_custom_frag) {
         }
     };
 

@@ -65,7 +65,7 @@ namespace argus {
     struct RendererState {
         GLRenderer &renderer;
 
-        GLContext gl_context;
+        GLContext gl_context = nullptr;
 
         std::vector<Resource *> intrinsic_resources;
 
@@ -84,11 +84,11 @@ namespace argus {
 
         std::map<std::string, LinkedProgram> postfx_programs;
 
-        buffer_handle_t frame_vbo;
-        array_handle_t frame_vao;
-        std::optional<LinkedProgram> frame_program;
+        buffer_handle_t frame_vbo {};
+        array_handle_t frame_vao {};
+        std::optional<LinkedProgram> frame_program {};
 
-        BufferInfo global_ubo;
+        BufferInfo global_ubo {};
 
         RendererState(GLRenderer &renderer);
 

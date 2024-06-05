@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/time.hpp"
 
@@ -27,11 +26,9 @@
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
 #include "argus/render/defines.hpp"
-#include "argus/render/util/linked_program.hpp"
 
 #include "internal/render_opengl/gl_util.hpp"
 #include "internal/render_opengl/types.hpp"
-#include "internal/render_opengl/renderer/buffer.hpp"
 #include "internal/render_opengl/renderer/shader_mgmt.hpp"
 #include "internal/render_opengl/state/renderer_state.hpp"
 
@@ -52,8 +49,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include <climits>
 
 namespace argus {
     struct CompiledShader {
@@ -338,7 +333,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        return state.linked_programs.insert({material_res.uid, program}).first->second;
+        return state.linked_programs.insert({ material_res.uid, program }).first->second;
     }
 
     void deinit_shader(shader_handle_t shader) {
@@ -382,7 +377,8 @@ namespace argus {
 
     LinkedProgram &get_lightmap_composite_program(RendererState &state) {
         if (!state.lightmap_composite_program.has_value()) {
-            state.lightmap_composite_program = link_program({ SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG });
+            state.lightmap_composite_program = link_program(
+                    { SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG });
         }
         return state.lightmap_composite_program.value();
     }

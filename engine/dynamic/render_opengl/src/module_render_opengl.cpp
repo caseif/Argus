@@ -18,7 +18,6 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
-#include "argus/lowlevel/math.hpp"
 
 #include "argus/core/module.hpp"
 
@@ -40,8 +39,6 @@
 #include "aglet/aglet.h"
 
 #include <string>
-
-#include <cstring>
 
 namespace argus {
     static bool g_backend_active = false;

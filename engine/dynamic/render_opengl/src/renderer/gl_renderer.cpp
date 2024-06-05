@@ -25,11 +25,7 @@
 #include "argus/lowlevel/time.hpp"
 
 #include "argus/core/engine_config.hpp"
-#include "argus/core/event.hpp"
 #include "argus/core/screen_space.hpp"
-
-#include "argus/resman/resource.hpp"
-#include "argus/resman/resource_event.hpp"
 
 #include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
@@ -54,7 +50,6 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 
 namespace argus {
     // forward declarations
@@ -99,12 +94,12 @@ namespace argus {
         }
 
         return Matrix4::from_row_major({
-                2 / (float(r - l) * hor_scale), 0,                              0, -float(r + l) /
-                                                                                   (float(r - l) * hor_scale),
-                0,                              2 / (float(t - b) * ver_scale), 0, -float(t + b) /
-                                                                                   (float(t - b) * ver_scale),
-                0,                              0,                              1, 0,
-                0,                              0,                              0, 1
+                2 / (float(r - l) * hor_scale), 0, 0, -float(r + l) /
+                        (float(r - l) * hor_scale),
+                0, 2 / (float(t - b) * ver_scale), 0, -float(t + b) /
+                        (float(t - b) * ver_scale),
+                0, 0, 1, 0,
+                0, 0, 0, 1
         });
     }
 
@@ -215,7 +210,7 @@ namespace argus {
         state.global_ubo.write_val(time, SHADER_UNIFORM_GLOBAL_TIME_OFF);
     }
 
-    GLRenderer::GLRenderer(Window &window) :
+    GLRenderer::GLRenderer(Window &window):
             window(window),
             state(*this) {
         using namespace argus::enum_ops;

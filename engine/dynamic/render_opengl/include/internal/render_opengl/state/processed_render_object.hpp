@@ -49,10 +49,10 @@ namespace argus {
         size_t staging_buffer_size;
         size_t vertex_count;
         void *mapped_buffer;
-        bool newly_created;
-        bool visited;
-        bool updated;
-        bool anim_frame_updated;
+        bool newly_created = false;
+        bool visited = false;
+        bool updated = false;
+        bool anim_frame_updated = false;
 
         static ProcessedRenderObject &create(const Resource &material_res, const Vector2f &atlas_stride,
                 uint32_t z_index, float light_opacity, buffer_handle_t staging_buffer, size_t staging_buffer_size,
@@ -65,15 +65,15 @@ namespace argus {
       private:
         ProcessedRenderObject(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
                 float light_opacity, buffer_handle_t staging_buffer, size_t staging_buffer_size, size_t vertex_count,
-                void *mapped_buffer) :
-                material_res(material_res),
-                atlas_stride(atlas_stride),
-                z_index(z_index),
-                light_opacity(light_opacity),
-                staging_buffer(staging_buffer),
-                staging_buffer_size(staging_buffer_size),
-                vertex_count(vertex_count),
-                mapped_buffer(mapped_buffer) {
+                void *mapped_buffer):
+            material_res(material_res),
+            atlas_stride(atlas_stride),
+            z_index(z_index),
+            light_opacity(light_opacity),
+            staging_buffer(staging_buffer),
+            staging_buffer_size(staging_buffer_size),
+            vertex_count(vertex_count),
+            mapped_buffer(mapped_buffer) {
         }
     };
 }

@@ -46,7 +46,7 @@ namespace argus {
         void *anim_frame_buffer_staging;
         array_handle_t vertex_array;
         size_t vertex_count;
-        BufferInfo obj_ubo{};
+        BufferInfo obj_ubo {};
 
         bool needs_rebuild;
 
@@ -57,12 +57,13 @@ namespace argus {
 
       private:
         RenderBucket(const Resource &material_res, const Vector2f &atlas_stride, uint32_t z_index,
-                float light_opacity) :
+                float light_opacity):
             material_res(material_res),
             atlas_stride(atlas_stride),
             z_index(z_index),
             light_opacity(light_opacity),
             vertex_buffer(0),
+            anim_frame_buffer(0),
             anim_frame_buffer_staging(nullptr),
             vertex_array(0),
             vertex_count(0),
