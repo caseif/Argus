@@ -32,31 +32,72 @@ namespace argus {
         FILE *m_target;
         const std::string m_realm;
 
-        void log(const std::string &level, std::string format, va_list args) const;
+        void log(const std::string &level, const char *format, va_list args) const;
 
-        void log_error(const std::string &level, std::string format, va_list args) const;
+        void log_error(const std::string &level, const char *format, va_list args) const;
+
+        void log_va(const std::string &level, const char *format, ...) const;
+
+        void log_error_va(const std::string &level, const char *format, ...) const;
+
+        void debug_va(const char *format, ...) const;
+
+        void info_va(const char *format, ...) const;
+
+        void warn_va(const char *format, ...) const;
+
+        void severe_va(const char *format, ...) const;
+
+        [[noreturn]] void fatal_va(const std::function<void(void)> &deinit, const char *format, ...) const;
+
+        [[noreturn]] void fatal_va(const char *format, ...) const;
 
       public:
         static Logger &default_logger(void);
 
-        Logger(FILE *target, const std::string &realm);
+        Logger(FILE *target, std::string realm);
 
-        Logger(const std::string &realm);
+        Logger(std::string realm);
 
-        void log(const std::string &level, std::string format, ...) const;
+        template<typename... Args>
+        void log(const std::string &level, const std::string &format, Args... args) const {
+            log_va(level, format.c_str(), args...);
+        }
 
-        void log_error(const std::string &level, std::string format, ...) const;
+        template<typename... Args>
+        void log_error(const std::string &level, const std::string &format, Args... args) const {
+            log_error_va(level, format.c_str(), args...);
+        }
 
-        void debug(std::string format, ...) const;
+        template<typename... Args>
+        void debug(const std::string &format, Args... args) const {
+            debug_va(format.c_str(), args...);
+        }
 
-        void info(std::string format, ...) const;
+        template<typename... Args>
+        void info(const std::string &format, Args... args) const {
+            info_va(format.c_str(), args...);
+        }
 
-        void warn(std::string format, ...) const;
+        template<typename... Args>
+        void warn(const std::string &format, Args... args) const {
+            warn_va(format.c_str(), args...);
+        }
 
-        void severe(std::string format, ...) const;
+        template<typename... Args>
+        void severe(const std::string &format, Args... args) const {
+            severe_va(format.c_str(), args...);
+        }
 
-        [[noreturn]] void fatal(std::function<void(void)> deinit, std::string format, ...) const;
+        template<typename... Args>
+        [[noreturn]] void fatal(const std::function<void(void)> &deinit, const std::string &format,
+                Args... args) const {
+            fatal_va(deinit, format.c_str(), args...);
+        }
 
-        [[noreturn]] void fatal(std::string format, ...) const;
+        template<typename... Args>
+        [[noreturn]] void fatal(const std::string &format, Args... args) const {
+            fatal_va(format.c_str(), args...);
+        }
     };
 }
