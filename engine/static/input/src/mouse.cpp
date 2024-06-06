@@ -71,7 +71,7 @@ namespace argus::input {
             case MouseAxis::Vertical:
                 return InputManager::instance().m_pimpl->mouse_state.last_pos.y;
             default:
-                throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
+                crash("Unknown mouse axis ordinal " + std::to_string(int(axis)));
         }
     }
 
@@ -89,18 +89,18 @@ namespace argus::input {
                 val = state.delta.y;
                 break;
             default:
-                throw std::invalid_argument("Unknown mouse axis ordinal " + std::to_string(int(axis)));
+                crash("Unknown mouse axis ordinal " + std::to_string(int(axis)));
         }
         return val;
     }
 
     bool is_mouse_button_pressed(MouseButton button) {
         if (int(button) < 0) {
-            throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
+            crash("Invalid mouse button ordinal " + std::to_string(int(button)));
         }
         auto sdl_button = g_mouse_button_mappings.find(button);
         if (sdl_button == g_mouse_button_mappings.cend()) {
-            throw std::invalid_argument("Invalid mouse button ordinal " + std::to_string(int(button)));
+            crash("Invalid mouse button ordinal " + std::to_string(int(button)));
         }
 
         std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->mouse_state_mutex);

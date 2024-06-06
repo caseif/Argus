@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/bind.hpp"
 #include "argus/scripting/types.hpp"
 
@@ -197,7 +199,7 @@ namespace argus {
     T &_get_bound_type(const std::type_index type_index) {
         auto index_it = g_bound_type_indices.find(std::type_index(type_index));
         if (index_it == g_bound_type_indices.cend()) {
-            throw std::invalid_argument("Type " + std::string(type_index.name())
+            crash("Type " + std::string(type_index.name())
                     + " is not bound (check binding order and ensure bind_type"
                       " is called after creating type definition)");
         }
@@ -210,7 +212,7 @@ namespace argus {
     T &_get_bound_enum(std::type_index enum_type_index) {
         auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
         if (index_it == g_bound_enum_indices.cend()) {
-            throw std::invalid_argument("Enum " + std::string(enum_type_index.name())
+            crash("Enum " + std::string(enum_type_index.name())
                     + " is not bound (check binding order and ensure bind_type"
                       " is called after creating type definition)");
         }
@@ -423,7 +425,7 @@ namespace argus {
     const BoundTypeDef &get_bound_type(const std::string &type_name) {
         auto it = g_bound_types.find(type_name);
         if (it == g_bound_types.cend()) {
-            throw std::invalid_argument("Type name " + std::string(type_name)
+            crash("Type name " + std::string(type_name)
                     + " is not bound (check binding order and ensure bind_type"
                       " is called after creating type definition)");
         }
@@ -441,7 +443,7 @@ namespace argus {
     const BoundEnumDef &get_bound_enum(const std::string &enum_name) {
         auto it = g_bound_enums.find(enum_name);
         if (it == g_bound_enums.cend()) {
-            throw std::invalid_argument("Enum name" + std::string(enum_name)
+            crash("Enum name" + std::string(enum_name)
                     + " is not bound (check binding order and ensure bind_type"
                       " is called after creating type definition)");
         }

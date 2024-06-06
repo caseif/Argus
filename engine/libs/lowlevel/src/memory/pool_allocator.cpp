@@ -113,7 +113,7 @@ namespace argus {
                         + CANARY_LEN)
         );
         if (malloc_addr == reinterpret_cast<uintptr_t>(nullptr)) {
-            throw std::runtime_error("Failed to allocate chunk (is block size or alignment too large?)");
+            crash("Failed to allocate chunk (is block size or alignment too large?)");
         }
 
         uintptr_t aligned_addr = next_aligned_value(malloc_addr, pool->alignment_exp);
@@ -225,7 +225,7 @@ namespace argus {
 
     void PoolAllocator::free(void *const addr) {
         if (addr == nullptr) {
-            throw std::invalid_argument("Program attempted to free null pointer");
+            crash("Program attempted to free null pointer");
         }
 
         this->m_alloc_mutex.lock();
@@ -242,7 +242,7 @@ namespace argus {
                 if ((offset_in_chunk % m_pimpl->real_block_size) != 0) {
                     this->m_alloc_mutex.unlock();
 
-                    throw std::invalid_argument("Pointer does not point to a valid block");
+                    crash("Pointer does not point to a valid block");
                 }
 
                 size_t block_index = offset_in_chunk / m_pimpl->real_block_size;
@@ -255,7 +255,7 @@ namespace argus {
                 if (!(chunk->occupied_block_map & block_flag_mask)) {
                     this->m_alloc_mutex.unlock();
 
-                    throw std::invalid_argument("Invalid free from pool (block not alloced, possible double-free?)");
+                    crash("Invalid free from pool (block not alloced, possible double-free?)");
                 }
 
                 chunk->occupied_block_map &= ~block_flag_mask;
@@ -300,6 +300,6 @@ namespace argus {
         }
 
         this->m_alloc_mutex.unlock();
-        throw std::invalid_argument("Pointer is not contained by a chunk");
+        crash("Pointer is not contained by a chunk");
     }
 }

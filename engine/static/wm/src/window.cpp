@@ -215,11 +215,11 @@ namespace argus {
 
     void Window::set_canvas_ctor_and_dtor(const CanvasCtor &ctor, const CanvasDtor &dtor) {
         if (ctor == nullptr || dtor == nullptr) {
-            throw std::invalid_argument("Canvas constructor/destructor cannot be nullptr.");
+            crash("Canvas constructor/destructor cannot be nullptr.");
         }
 
         if (g_canvas_ctor != nullptr || g_canvas_dtor != nullptr) {
-            throw std::runtime_error("Cannot set canvas constructor/destructor more than once");
+            crash("Cannot set canvas constructor/destructor more than once");
         }
 
         g_canvas_ctor = ctor;
@@ -305,7 +305,7 @@ namespace argus {
 
     Canvas &Window::get_canvas(void) const {
         if (m_pimpl->canvas == nullptr) {
-            throw std::runtime_error("Canvas member was not set for window! (Ensure the render module is loaded)");
+            crash("Canvas member was not set for window! (Ensure the render module is loaded)");
         }
         return *m_pimpl->canvas;
     }
@@ -377,7 +377,7 @@ namespace argus {
 
             auto gfx_api_bits = g_window_flags & WindowCreationFlags::GraphicsApiMask;
             if ((gfx_api_bits & (int(gfx_api_bits) - 1)) != 0) {
-                throw std::invalid_argument("Only one graphics API may be set during window creation");
+                crash("Only one graphics API may be set during window creation");
             }
 
             if ((g_window_flags & WindowCreationFlags::OpenGL) != 0) {
@@ -392,7 +392,7 @@ namespace argus {
                 throw std::invalid_argument("Metal contexts require SDL 2.0.14 or newer");
                 #endif
                 #else
-                throw std::invalid_argument("Metal contexts are not supported on non-Apple platforms");
+                crash("Metal contexts are not supported on non-Apple platforms");
                 #endif
             } else if ((g_window_flags & WindowCreationFlags::DirectX) != 0) {
                 crash("DirectX contexts are not supported at this time");
@@ -615,7 +615,7 @@ namespace argus {
         auto *primary = get_display_from_index(0);
 
         if (primary == nullptr) {
-            throw std::runtime_error("No available displays!");
+            crash("No available displays!");
         }
 
         return *primary;

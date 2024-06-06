@@ -132,7 +132,7 @@ namespace argus {
             auto state = m_state.lock();
 
             if (!state) {
-                throw std::logic_error("Attempt to invoke Lua callback after Lua state was destroyed");
+                crash("Attempt to invoke Lua callback after Lua state was destroyed");
             }
 
             StackGuard stack_guard(*state);
@@ -393,7 +393,7 @@ namespace argus {
                 break;
             }
             default:
-                throw std::runtime_error("Unhandled element type ordinal "
+                crash("Unhandled element type ordinal "
                         + std::to_string(element_type.type));
         }
 
@@ -593,7 +593,7 @@ namespace argus {
             case 8:
                 return *reinterpret_cast<const int64_t *>(wrapper.value);
             default:
-                throw std::invalid_argument("Bad integer width " + std::to_string(wrapper.type.size)
+                crash("Bad integer width " + std::to_string(wrapper.type.size)
                         + " (must be 1, 2, 4, or 8)");
         }
     }
@@ -698,8 +698,7 @@ namespace argus {
                             lua_pushinteger(state, vec.at<int64_t>(i));
                             break;
                         default:
-                            throw std::runtime_error(
-                                    "Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
+                            crash("Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
                     }
                     break;
                 case Float:
@@ -746,7 +745,7 @@ namespace argus {
                 default:
                     // remove key from stack
                     lua_pop(state, 1);
-                    throw std::runtime_error("Unhandled element type ordinal " + std::to_string(element_type.type));
+                    crash("Unhandled element type ordinal " + std::to_string(element_type.type));
                     break;
             }
 

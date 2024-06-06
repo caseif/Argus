@@ -25,4 +25,11 @@ namespace argus {
     typedef void(*CrashCallback)(const char *, va_list);
 
     void set_ll_crash_callback(CrashCallback callback);
+
+    [[noreturn]] void _crash_ll_va(const char *format, ...);
+
+    template<typename... Args>
+    [[noreturn]] void crash_ll(const std::string &format, Args... args) {
+        _crash_ll_va(format.c_str(), args...);
+    }
 }

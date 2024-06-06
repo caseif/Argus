@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/crash.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #include <exception>
@@ -47,7 +48,7 @@ namespace argus {
     template<typename Out>
     std::future<Out> make_future(const std::function<Out(void)> &function, const std::function<void(Out)> &callback) {
         if (!function) {
-            throw std::invalid_argument("make_future: Function must be present");
+            crash_ll("make_future: Function must be present");
         }
 
         auto promise_ptr = std::make_shared<std::promise<Out>>();

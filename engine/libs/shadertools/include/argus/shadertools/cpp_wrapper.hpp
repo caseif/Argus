@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/crash.hpp"
+
 #include "argus/shadertools/c_shim.h"
 
 #include "glslang/Public/ShaderLang.h"
@@ -114,7 +116,7 @@ namespace argus {
         if (!res->success) {
             free_compilation_result(res);
 
-            throw std::runtime_error("Failed to compile GLSL");
+            crash_ll("Failed to compile GLSL");
         }
 
         delete[] glsl_sources_c;

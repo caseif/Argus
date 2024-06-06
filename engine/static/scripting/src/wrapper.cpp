@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/scripting/bind.hpp"
 #include "argus/scripting/wrapper.hpp"
 
@@ -32,8 +34,7 @@ namespace argus {
 
         switch (type.type) {
             case Vector:
-                throw std::invalid_argument(
-                        "create_object_wrapper called for Vector type (use vector-specific function instead)");
+                crash("create_object_wrapper called for Vector type (use vector-specific function instead)");
             case Pointer: {
                 // for pointer types we copy the pointer itself
                 memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);

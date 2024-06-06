@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/wm/window.hpp"
 #include "argus/wm/window_event.hpp"
 
@@ -60,7 +62,7 @@ namespace argus {
     std::optional<std::reference_wrapper<AttachedViewport>> Canvas::find_viewport(const std::string &id) const {
         auto it = m_pimpl->viewports_2d.find(id);
         if (it == m_pimpl->viewports_2d.end()) {
-            throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
+            crash("Viewport with provided ID does not exist on the current camera");
         }
         return it->second;
     }
@@ -68,7 +70,7 @@ namespace argus {
     AttachedViewport2D &Canvas::attach_viewport_2d(const std::string &id, const Viewport &viewport, Camera2D &camera,
             uint32_t z_index) {
         if (m_pimpl->viewports_2d.find(id) != m_pimpl->viewports_2d.end()) {
-            throw std::runtime_error("Viewport with provided ID already exists on the current camera");
+            crash("Viewport with provided ID already exists on the current camera");
         }
 
         auto it = m_pimpl->viewports_2d.emplace(std::piecewise_construct, std::forward_as_tuple(id),
@@ -82,7 +84,7 @@ namespace argus {
 
     AttachedViewport2D &Canvas::attach_default_viewport_2d(const std::string &id, Camera2D &camera, uint32_t z_index) {
         if (m_pimpl->viewports_2d.find(id) != m_pimpl->viewports_2d.end()) {
-            throw std::runtime_error("Viewport with provided ID already exists on the current camera");
+            crash("Viewport with provided ID already exists on the current camera");
         }
 
         Viewport viewport;
@@ -99,7 +101,7 @@ namespace argus {
     void Canvas::detach_viewport_2d(const std::string &id) {
         auto it = m_pimpl->viewports_2d.find(id);
         if (it == m_pimpl->viewports_2d.end()) {
-            throw std::runtime_error("Viewport with provided ID does not exist on the current camera");
+            crash("Viewport with provided ID does not exist on the current camera");
         }
         m_pimpl->viewports_2d.erase(it);
     }

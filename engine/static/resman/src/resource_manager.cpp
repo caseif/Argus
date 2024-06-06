@@ -22,6 +22,7 @@
 #include "argus/lowlevel/streams.hpp"
 #include "argus/lowlevel/threading/future.hpp"
 
+#include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
 
 #include "argus/resman/exception.hpp"
@@ -222,7 +223,7 @@ namespace argus {
 
         for (const std::string &media_type : loader.m_pimpl->media_types) {
             if (m_pimpl->registered_loaders.find(media_type) != m_pimpl->registered_loaders.cend()) {
-                throw std::invalid_argument("Cannot register loader for type more than once");
+                crash("Cannot register loader for type more than once");
             }
             m_pimpl->registered_loaders.insert({ media_type, &loader });
             Logger::default_logger().debug("Registered loader for media type %s", media_type.c_str());

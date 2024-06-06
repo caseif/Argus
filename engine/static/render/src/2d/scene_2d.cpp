@@ -19,6 +19,8 @@
 #include "argus/lowlevel/color.hpp"
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/2d/camera_2d.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
@@ -49,7 +51,7 @@ namespace argus {
 
     Scene2D &Scene2D::create(const std::string &id) {
         if (g_scenes.find(id) != g_scenes.end()) {
-            throw std::invalid_argument("Scene with given ID already exists");
+            crash("Scene with given ID already exists");
         }
 
         auto scene = new Scene2D(id, Transform2D());
@@ -181,7 +183,7 @@ namespace argus {
 
     Camera2D &Scene2D::create_camera(const std::string &id) {
         if (m_pimpl->cameras.find(id) != m_pimpl->cameras.end()) {
-            throw std::invalid_argument("Camera with provided ID already exists in scene");
+            crash("Camera with provided ID already exists in scene");
         }
 
         auto it = m_pimpl->cameras.insert({ id, Camera2D(id, *this) });
@@ -192,7 +194,7 @@ namespace argus {
     void Scene2D::destroy_camera(const std::string &id) {
         auto it = m_pimpl->cameras.find(id);
         if (it == m_pimpl->cameras.end()) {
-            throw std::invalid_argument("Camera with provided ID does not exist in scene");
+            crash("Camera with provided ID does not exist in scene");
         }
 
         m_pimpl->cameras.erase(it);

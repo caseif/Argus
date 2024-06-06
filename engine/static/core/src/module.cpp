@@ -20,6 +20,7 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/collections.hpp"
 
+#include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 #include "internal/core/callback_util.hpp"
 #include "internal/core/defines.hpp"
@@ -171,7 +172,7 @@ namespace argus {
         }
 
         if (!remaining_edges.empty()) {
-            throw std::invalid_argument("Graph contains cycles");
+            crash("Graph contains cycles");
         }
 
         return sorted_nodes;
@@ -387,7 +388,7 @@ namespace argus {
             }
             #else
             if (dlclose(handle) != 0) {
-                Logger::default_logger().warn("Failed to unload dynamic module %s (errno: %d)", "foobar", errno);
+                Logger::default_logger().warn("Failed to unload dynamic engine module %s (errno: %d)", "foobar", errno);
             }
             #endif
         }
@@ -396,20 +397,20 @@ namespace argus {
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
             const std::vector<std::string> &dependencies) {
         if (std::find_if(id.begin(), id.end(), [](auto c) { return std::isupper(c); }) != id.end()) {
-            throw std::invalid_argument("Module identifier must contain only lowercase letters");
+            crash("Engine module identifier must contain only lowercase letters");
         }
 
         if (g_static_module_ids.count(id)) {
-            throw std::invalid_argument("Module identifier is already in use by static module: " + id);
+            crash("Engine module identifier is already in use by static module: " + id);
         }
 
         if (g_dyn_module_registrations.find(id) != g_dyn_module_registrations.cend()) {
-            throw std::invalid_argument("Module is already registered: " + id);
+            crash("Engine module is already registered: " + id);
         }
 
         for (char ch : id) {
             if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || (ch == '_'))) {
-                throw std::invalid_argument("Invalid module identifier: " + id);
+                crash("Invalid engine module identifier: " + id);
             }
         }
 
@@ -418,7 +419,7 @@ namespace argus {
 
         g_dyn_module_registrations.insert({ id, std::move(mod) });
 
-        Logger::default_logger().debug("Registered dynamic module %s", id.c_str());
+        Logger::default_logger().debug("Registered dynamic engine module %s", id.c_str());
     }
 
     static void _send_lifecycle_update(LifecycleStage stage) {

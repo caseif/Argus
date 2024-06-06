@@ -128,7 +128,7 @@ namespace argus::input {
 
     void Controller::set_deadzone_shape(DeadzoneShape shape) {
         if (shape >= DeadzoneShape::MaxValue) {
-            throw std::invalid_argument("Invalid deadzone shape ordinal "
+            crash("Invalid deadzone shape ordinal "
                     + std::to_string(std::underlying_type_t<decltype(shape)>(shape)));
         }
         m_pimpl->dz_shape = shape;
@@ -140,7 +140,7 @@ namespace argus::input {
 
     static void _check_axis(GamepadAxis axis) {
         if (axis >= GamepadAxis::MaxValue) {
-            throw std::invalid_argument("Invalid gamepad axis ordinal "
+            crash("Invalid gamepad axis ordinal "
                     + std::to_string(std::underlying_type_t<decltype(axis)>(axis)));
         }
     }

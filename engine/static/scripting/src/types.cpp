@@ -301,15 +301,15 @@ namespace argus {
         m_get_element_fn(get_element_fn),
         m_set_element_fn(set_element_fn) {
         if (element_size == 0) {
-            throw std::invalid_argument("Element size must be greater than zero");
+            crash("Element size must be greater than zero");
         }
 
         if (underlying_vec == nullptr) {
-            throw std::invalid_argument("Pointer to underlying vector must not be null");
+            crash("Pointer to underlying vector must not be null");
         }
 
         if (get_size_fn == nullptr) {
-            throw std::invalid_argument("Size accessor for underlying vector must not be null");
+            crash("Size accessor for underlying vector must not be null");
         }
     }
 

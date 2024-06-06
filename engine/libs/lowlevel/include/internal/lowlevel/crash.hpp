@@ -23,10 +23,4 @@
 #define crash ::argus::crash_ll
 
 namespace argus {
-    [[noreturn]] void _crash_ll_va(const char *format, ...);
-
-    template<typename... Args>
-    [[noreturn]] void crash_ll(const std::string &format, Args... args) {
-        _crash_ll_va(format.c_str(), args...);
-    }
 }

@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/logging.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/common/backend.hpp"
 #include "internal/render/common/backend.hpp"
 
@@ -33,7 +35,7 @@ namespace argus {
 
     void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn) {
         if (g_render_backend_activate_fns.find(id) != g_render_backend_activate_fns.end()) {
-            throw std::invalid_argument("Render backend is already registered for provided ID");
+            crash("Render backend is already registered for provided ID");
         }
         g_render_backend_activate_fns[id] = std::move(activate_fn);
         Logger::default_logger().debug("Successfully registered render backend with ID %s", id.c_str());

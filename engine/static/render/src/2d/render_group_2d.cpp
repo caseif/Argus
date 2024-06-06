@@ -19,6 +19,8 @@
 #include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/collections.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/common/transform.hpp"
 #include "argus/render/2d/render_group_2d.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
@@ -124,13 +126,13 @@ namespace argus {
         auto group_opt = m_pimpl->scene.get_group(handle);
 
         if (!group_opt.has_value()) {
-            throw std::invalid_argument("No group with the given ID exists in the scene");
+            crash("No group with the given ID exists in the scene");
         }
 
         auto &group = group_opt.value().get();
 
         if (group.m_pimpl->parent_group != this) {
-            throw std::invalid_argument("Supplied RenderGroup2D is not a child of RenderGroup2D");
+            crash("Supplied RenderGroup2D is not a child of RenderGroup2D");
         }
 
         remove_from_vector(m_pimpl->child_groups, &group);
@@ -141,7 +143,7 @@ namespace argus {
     void RenderGroup2D::remove_object(Handle handle) {
         auto object_opt = m_pimpl->scene.get_object(handle);
         if (!object_opt.has_value()) {
-            throw std::invalid_argument("No object with the given ID exists in the scene");
+            crash("No object with the given ID exists in the scene");
         }
 
         auto &object = object_opt.value().get();
