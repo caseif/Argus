@@ -257,8 +257,9 @@ built-in keywords.
 
 ## Exceptions
 
-Avoid using exceptions. Eventually the plan is to compile with `-fno-exceptions` so that exceptions are completely
-disabled.
+Avoid using exceptions. Either print a warning and move on, return the error to the caller, or crash the program.
+
+The plan is to eventually compile with `-fno-exceptions` so that exceptions are completely disabled.
 
 ## Code Hygiene
 
