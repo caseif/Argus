@@ -3,7 +3,6 @@ include(CMakeDependentOption)
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;"
         "scripting;scripting_lua;"
-        "rust_module_test;"
         #"scripting_angelscript;"
         "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
