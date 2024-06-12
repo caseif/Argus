@@ -5,7 +5,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, windows-2019, windows-2022, macos-12, macos-13, macos-14]
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2019, windows-2022, macos-12, macos-13, macos-14]
         compiler: [gcc, clang, msvc]
         configuration: [Release, Debug]
         exclude:
@@ -20,6 +20,8 @@ jobs:
           - os: ubuntu-20.04
             compiler: msvc
           - os: ubuntu-22.04
+            compiler: msvc
+          - os: ubuntu-24.04
             compiler: msvc
           - os: macos-12
             compiler: msvc
@@ -116,6 +118,27 @@ jobs:
           glslang-dev \
           spirv-tools
       if: matrix.os == 'ubuntu-22.04'
+
+    - name: Install dependencies (Ubuntu Noble)
+      run: |
+        sudo apt-get update
+        sudo apt-get install \
+          libgl1 \
+          libgl1-mesa-dev \
+          libglx-mesa0 \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libvulkan-dev \
+          libsdl2-dev \
+          libpng-dev \
+          liblua5.4-dev \
+          nlohmann-json3-dev \
+          glslang-dev \
+          glslang-tools \
+          spirv-tools
+      if: matrix.os == 'ubuntu-24.04'
 
     - name: Install dependencies (macOS)
       run: |
