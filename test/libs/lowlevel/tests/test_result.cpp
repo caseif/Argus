@@ -96,12 +96,12 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("map_or_else returns correct mapped value") {
-            REQUIRE(result.map_or_else<int, int>([](auto _) { return 1337; },
+            REQUIRE(result.map_or_else<int, int>([](auto) { return 1337; },
                     [](auto val) { return val + 1; }) == 43);
         }
 
         THEN("or_else returns OK Result") {
-            auto mapped = result.or_else<int>([](auto _) { return argus::err<int, int>(1337); });
+            auto mapped = result.or_else<int>([](auto) { return argus::err<int, int>(1337); });
             REQUIRE(mapped.is_ok());
             AND_THEN("or_else returns original value") {
                 REQUIRE(mapped.unwrap() == 42);
@@ -194,7 +194,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("map_or_else returns correct mapped value") {
             REQUIRE(result.map_or_else<int, int>([](auto err) { return err + 1; },
-                    [](auto _) { return 1337; }) == 43);
+                    [](auto) { return 1337; }) == 43);
         }
 
         THEN("or_else returns fallback OK Result") {
@@ -296,7 +296,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("map returns OK Result") {
             int other = 1337;
-            auto mapped = result.map<int &>([&other](int &_) -> int & { return other; });
+            auto mapped = result.map<int &>([&other](auto) -> int & { return other; });
             REQUIRE(mapped.is_ok());
             AND_THEN("map returns correct mapped value") {
                 REQUIRE(mapped.unwrap() == 1337);
@@ -305,7 +305,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("map_err returns OK Result") {
             int other = 1337;
-            auto mapped = result.map_err<int &>([&other](auto &_) -> int & { return other; });
+            auto mapped = result.map_err<int &>([&other](auto) -> int & { return other; });
             REQUIRE(mapped.is_ok());
             AND_THEN("map_err returns original value") {
                 REQUIRE(mapped.unwrap() == 42);
@@ -315,19 +315,19 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         THEN("map_or returns correct mapped value") {
             int other = 1337;
             int other_2 = 1338;
-            REQUIRE(result.map_or<int>(other, [&other_2](auto &_) -> int & { return other_2; }) == 1338);
+            REQUIRE(result.map_or<int>(other, [&other_2](auto) -> int & { return other_2; }) == 1338);
         }
 
         THEN("map_or_else returns correct mapped value") {
             int other = 1337;
             int other_2 = 1338;
-            REQUIRE(result.map_or_else<int &, int &>([&other](auto &_) -> int & { return other; },
-                    [&other_2](auto &_) -> int & { return other_2; }) == 1338);
+            REQUIRE(result.map_or_else<int &, int &>([&other](auto) -> int & { return other; },
+                    [&other_2](auto) -> int & { return other_2; }) == 1338);
         }
 
         THEN("or_else returns OK Result") {
             int other = 1337;
-            auto mapped = result.or_else<int &>([&other](auto &_) { return argus::err<int &, int &>(other); });
+            auto mapped = result.or_else<int &>([&other](auto) { return argus::err<int &, int &>(other); });
             REQUIRE(mapped.is_ok());
             AND_THEN("or_else returns original value") {
                 REQUIRE(mapped.unwrap() == 42);
@@ -363,7 +363,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("and_then returns OK Result") {
             auto other = 1337;
-            auto combined = result.and_then<int &>([&other](int &_) -> int & { return other; });
+            auto combined = result.and_then<int &>([&other](int) -> int & { return other; });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 1337);
@@ -430,7 +430,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("map returns error Result") {
             int other = 1337;
-            auto mapped = result.map<int &>([&other](auto &_) -> int & { return other; });
+            auto mapped = result.map<int &>([&other](auto) -> int & { return other; });
             REQUIRE(mapped.is_err());
             AND_THEN("map returns original value") {
                 REQUIRE(mapped.unwrap_err() == 42);
@@ -439,7 +439,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("map_err returns error Result") {
             int other = 1337;
-            auto mapped = result.map_err<int &>([&other](auto &_) -> int & { return other; });
+            auto mapped = result.map_err<int &>([&other](auto) -> int & { return other; });
             REQUIRE(mapped.is_err());
             AND_THEN("map_err returns correct mapped value") {
                 REQUIRE(mapped.unwrap_err() == 1337);
@@ -449,17 +449,17 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         THEN("map_or returns default value") {
             int other = 1337;
             int other_2 = 1338;
-            REQUIRE(result.map_or<int &>(other, [&other_2](auto &_) -> int & { return other_2; }) == 1337);
+            REQUIRE(result.map_or<int &>(other, [&other_2](auto) -> int & { return other_2; }) == 1337);
         }
 
         THEN("map_or_else returns correct mapped value") {
             REQUIRE(result.map_or_else<int, int>([](auto err) { return err + 1; },
-                    [](auto _) { return 1337; }) == 43);
+                    [](auto) { return 1337; }) == 43);
         }
 
         THEN("or_else returns fallback OK Result") {
             int other = 1337;
-            auto mapped = result.or_else<int>([&other](auto _) { return argus::ok<int &, int>(other); });
+            auto mapped = result.or_else<int>([&other](auto) { return argus::ok<int &, int>(other); });
             REQUIRE(mapped.is_ok());
             AND_THEN("or_else returns correct fallback value") {
                 REQUIRE(mapped.unwrap() == 1337);
@@ -495,7 +495,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("and_then returns error Result") {
             auto other = 1337;
-            auto combined = result.and_then<int &>([&other](int &_) -> int & { return other; });
+            auto combined = result.and_then<int &>([&other](int) -> int & { return other; });
             REQUIRE(combined.is_err());
             AND_THEN("unwrap_err returns original value") {
                 REQUIRE(combined.unwrap_err() == 42);
@@ -532,7 +532,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("or_else returns OK Result") {
-            auto mapped = result.or_else<int>([](auto _) { return argus::err<void, int>(1337); });
+            auto mapped = result.or_else<int>([](auto) { return argus::err<void, int>(1337); });
             REQUIRE(mapped.is_ok());
         }
 
@@ -595,7 +595,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("or_else returns fallback OK Result") {
-            auto mapped = result.or_else<int>([](auto _) { return argus::ok<void, int>(); });
+            auto mapped = result.or_else<int>([](auto) { return argus::ok<void, int>(); });
             REQUIRE(mapped.is_ok());
         }
 
