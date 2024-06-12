@@ -160,7 +160,7 @@ namespace argus {
 
         auto cur_frame = object.get_active_frame();
         if (cur_frame.dirty) {
-            proc_obj.anim_frame = cur_frame;
+            proc_obj.anim_frame = cur_frame.value;
             proc_obj.anim_frame_updated = true;
         }
 

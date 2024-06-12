@@ -483,7 +483,7 @@ namespace argus {
 
                 SDL_SetWindowSize(m_pimpl->handle, int(windowed_res->x), int(windowed_res->y));
 
-                m_pimpl->cur_resolution = windowed_res;
+                m_pimpl->cur_resolution = windowed_res.value;
             }
         } else if (!fullscreen) {
             // update windowed positon and/or resolution
@@ -494,7 +494,7 @@ namespace argus {
 
                 SDL_SetWindowSize(m_pimpl->handle, int(windowed_res->x), int(windowed_res->y));
 
-                m_pimpl->cur_resolution = windowed_res;
+                m_pimpl->cur_resolution = windowed_res.value;
             }
 
             if (position.dirty) {

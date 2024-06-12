@@ -76,7 +76,7 @@ namespace argus {
         ResultStorage<T, E> m_storage;
 
       public:
-        Result<T, E>(ResultStorage<T, E> storage):
+        Result(ResultStorage<T, E> storage):
             m_storage(std::move(storage)) {
         }
 

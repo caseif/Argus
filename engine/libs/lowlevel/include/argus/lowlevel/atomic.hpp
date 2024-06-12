@@ -213,7 +213,7 @@ namespace argus {
          *
          * @return This AtomicDirtiable.
          */
-        inline AtomicDirtiable &operator=(const ValueType &&rhs) {
+        inline AtomicDirtiable &operator=(ValueType &&rhs) {
             std::lock_guard<std::mutex> lock(this->m_mutex);
 
             m_value = std::move(rhs);

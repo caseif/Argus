@@ -28,12 +28,12 @@ namespace argus {
         T value;
         size_t refcount;
 
-        RefCountable<T>(const T &value) :
+        RefCountable(const T &value) :
                 value(value),
                 refcount(1) {
         }
 
-        RefCountable<T>(T &&value) :
+        RefCountable(T &&value) :
                 value(std::move(value)),
                 refcount(1) {
         }
