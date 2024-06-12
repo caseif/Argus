@@ -207,7 +207,8 @@ namespace argus {
         v3.tex_coord = { 1, 1 };
         v4.tex_coord = { 1, 0 };
 
-        auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas);
+        auto &anim_tex = ResourceManager::instance().get_resource(sprite_def.atlas)
+                .expect("Failed to load sprite atlas '" + sprite_def.atlas + "'");
         auto atlas_w = anim_tex.get<TextureData>().m_width;
         auto atlas_h = anim_tex.get<TextureData>().m_height;
         anim_tex.release();

@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "argus/resman/exception.hpp"
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_event.hpp"
 #include "argus/resman/resource_loader.hpp"

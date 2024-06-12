@@ -48,7 +48,8 @@ namespace argus {
             return;
         }
 
-        auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
+        auto &texture_res = ResourceManager::instance().get_resource(texture_uid)
+                .expect("Failed to load texture " + texture_uid);
         auto &texture = texture_res.get<TextureData>();
 
         affirm_precond(texture.m_width <= INT_MAX, "Texture width is too big");

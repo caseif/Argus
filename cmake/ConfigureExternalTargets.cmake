@@ -132,7 +132,7 @@ set(MUST_BUILD_GLSLANG ON)
 
 # glslang
 if(USE_SYSTEM_GLSLANG)
-  # require version between 13.1.0 and 14.2.0 since Khronos doesn't
+  # require version between 13.1.0 and 14.2.x since Khronos doesn't
   # care about breaking ABI compatibility between minor versions
   find_package(glslang "14.2.0...<14.3.0" QUIET)
   if(NOT glslang_FOUND)

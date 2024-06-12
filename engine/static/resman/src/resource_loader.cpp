@@ -28,19 +28,19 @@
 #include <vector>
 
 namespace argus {
-    std::map<std::string, const Resource *> ResourceLoader::load_dependencies(ResourceManager &manager,
-            const std::vector<std::string> &dependencies) const {
+    Result<std::map<std::string, const Resource *>, ResourceError> ResourceLoader::load_dependencies(
+            ResourceManager &manager, const std::vector<std::string> &dependencies) const {
         std::map<std::string, const Resource *> acquired;
 
         bool failed = false;
-        std::exception *thrown_exception = nullptr;
+        ResourceError res_err;
         for (auto it = dependencies.begin(); it < dependencies.end(); it++) {
-            try {
-                auto &res = manager.get_resource(*it);
-                acquired.insert({ res.uid, &res });
-            } catch (std::exception &ex) {
+            auto res = manager.get_resource(*it);
+            if (res.is_ok()) {
+                acquired.insert({ res.unwrap().uid, &res.unwrap() });
+            } else {
                 failed = true;
-                thrown_exception = &ex;
+                res_err = res.unwrap_err();
                 break;
             }
         }
@@ -50,14 +50,12 @@ namespace argus {
                 res->release();
             }
 
-            if (thrown_exception != nullptr) {
-                throw *thrown_exception;
-            }
+            return err<decltype(acquired), ResourceError>(res_err);
         }
 
         m_pimpl->last_dependencies = dependencies;
 
-        return acquired;
+        return ok<decltype(acquired), ResourceError>(acquired);
     }
 
     ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types):

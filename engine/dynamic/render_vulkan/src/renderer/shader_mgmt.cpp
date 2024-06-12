@@ -87,7 +87,8 @@ namespace argus {
         bool have_vert = false;
         bool have_frag = false;
         for (const auto &shader_uid : shader_uids) {
-            auto &shader_res = ResourceManager::instance().get_resource(shader_uid);
+            auto &shader_res = ResourceManager::instance().get_resource(shader_uid)
+                    .expect("Failed to load shader " + shader_uid);
             auto &shader = shader_res.get<Shader>();
 
             shader_resources.push_back(&shader_res);
@@ -101,12 +102,14 @@ namespace argus {
         }
 
         if (!have_vert) {
-            auto &vert_res = ResourceManager::instance().get_resource(SHADER_STD_VERT);
+            auto &vert_res = ResourceManager::instance().get_resource(SHADER_STD_VERT)
+                    .expect("Failed to load built-in shader " SHADER_STD_VERT);
             shader_resources.push_back(vert_res);
             loaded_shaders.push_back(vert_res.get<Shader>());
         }
         if (!have_frag) {
-            auto &frag_res = ResourceManager::instance().get_resource(SHADER_STD_FRAG);
+            auto &frag_res = ResourceManager::instance().get_resource(SHADER_STD_FRAG)
+                    .expect("Failed to load built-in shader " SHADER_STD_FRAG);
             shader_resources.push_back(frag_res);
             loaded_shaders.push_back(frag_res.get<Shader>());
         }

@@ -34,7 +34,8 @@ namespace argus {
 
     StaticObject2D::StaticObject2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
             bool can_occlude_light, const Transform2D &transform) {
-        auto &res = ResourceManager::instance().get_resource(sprite_uid);
+        auto &res = ResourceManager::instance().get_resource(sprite_uid)
+                .expect("Failed to load sprite '" + sprite_uid + "'");
         auto *sprite = new Sprite(res);
 
         auto handle = g_static_obj_table.create_handle(this);

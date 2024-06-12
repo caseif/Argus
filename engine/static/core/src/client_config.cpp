@@ -305,7 +305,8 @@ namespace argus {
             return false;
         }
 
-        auto handle = FileHandle::create(config_path, FILE_MODE_READ);
+        auto handle = FileHandle::create(config_path, FILE_MODE_READ)
+                .expect("Failed to open handle to loose client config file");
 
         std::ostringstream str_stream;
         std::ifstream stream;

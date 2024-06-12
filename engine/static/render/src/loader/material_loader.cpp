@@ -106,13 +106,12 @@ namespace argus {
             std::vector<std::string> dep_uids;
             dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
 
-            std::map<std::string, const Resource *> deps;
-            try {
-                deps = load_dependencies(manager, dep_uids);
-            } catch (...) {
+            auto deps_res = load_dependencies(manager, dep_uids);
+            if (deps_res.is_err()) {
                 Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
                 return nullptr;
             }
+            auto deps = deps_res.unwrap();
 
             std::vector<const Shader *> shaders;
             for (auto &[stage, shader_uid] : shader_map) {
@@ -155,9 +154,8 @@ namespace argus {
         dep_uids.insert(dep_uids.end(), src_mat.get_shader_uids().begin(), src_mat.get_shader_uids().end());
 
         std::map<std::string, const Resource *> deps;
-        try {
-            deps = load_dependencies(manager, dep_uids);
-        } catch (...) {
+        auto deps_res = load_dependencies(manager, dep_uids);
+        if (deps_res.is_err()) {
             Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
             return nullptr;
         }

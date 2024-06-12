@@ -98,23 +98,28 @@ namespace argus {
 
     ScriptContext &load_script(const std::string &uid) {
         try {
-            auto &res = ResourceManager::instance().get_resource(uid);
+            auto res = ResourceManager::instance().get_resource(uid);
 
-            auto lang_it = g_media_type_langs.find(res.media_type);
+            if (!res.is_ok()) {
+                const auto &err = res.unwrap_err();
+                throw new ScriptLoadException(uid, "Resource load failed (return code "
+                        + std::to_string(static_cast<std::underlying_type_t<ResourceErrorReason>>(err.reason))
+                        + (!err.info.empty() ? (": " + err.info) : "") + ")");
+            }
+
+            auto lang_it = g_media_type_langs.find(res.unwrap().media_type);
             if (lang_it == g_media_type_langs.cend()) {
                 throw ScriptLoadException(uid, "No plugin registered for media type '"
-                        + res.prototype.media_type + "'");
+                        + res.unwrap().prototype.media_type + "'");
             }
 
             auto &context = create_script_context(lang_it->second);
 
-            context.load_script(res);
+            context.load_script(res.unwrap());
 
             return context;
         } catch (const ScriptLoadException &ex) {
             throw ex;
-        } catch (const std::exception &ex) {
-            throw ScriptLoadException(uid, ex.what());
         }
     }
 }

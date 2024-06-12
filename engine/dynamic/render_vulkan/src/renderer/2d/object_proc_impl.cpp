@@ -60,7 +60,11 @@ namespace argus {
             vertex_count += prim.get_vertex_count();
         }
 
-        const auto &mat_res = ResourceManager::instance().get_resource(object.get_material());
+        // GCC complains (likely erroneously) about a dangling reference if the
+        // Result is unwrapped inline, so we store it to a variable first
+        auto mat_res_res = ResourceManager::instance().get_resource(object.get_material());
+        const Resource &mat_res = mat_res_res
+                .expect("Failed to load material " + object.get_material() + " for RenderObject2D");
 
         if (state.material_pipelines.find(object.get_material()) == state.material_pipelines.end()) {
             auto pipeline = create_pipeline(state, mat_res.get<Material>(), state.fb_render_pass);

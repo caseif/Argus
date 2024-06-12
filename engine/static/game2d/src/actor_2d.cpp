@@ -32,7 +32,8 @@ namespace argus {
 
     Actor2D::Actor2D(const std::string &sprite_uid, const Vector2f &size, uint32_t z_index,
             bool can_occlude_light, const Transform2D &transform) {
-        auto &res = ResourceManager::instance().get_resource(sprite_uid);
+        auto &res = ResourceManager::instance().get_resource(sprite_uid).expect("Failed to load sprite '"
+                + sprite_uid + "' for Actor2D");
         auto *sprite = new Sprite(res);
 
         auto handle = g_actor_table.create_handle(this);

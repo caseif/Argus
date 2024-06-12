@@ -22,6 +22,8 @@
 
 #include "argus/core/engine.hpp"
 
+#include "argus/resman/resource_manager.hpp"
+
 #include "argus/game2d/sprite.hpp"
 #include "internal/game2d/defines.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
@@ -351,11 +353,11 @@ namespace argus {
 
         std::vector<std::string> dep_uids;
 
-        std::map<std::string, const Resource *> deps;
-        try {
-            deps = load_dependencies(manager, dep_uids);
-        } catch (...) {
-            Logger::default_logger().warn("Failed to load dependencies for sprite %s", proto.uid.c_str());
+        auto deps_res = load_dependencies(manager, dep_uids);
+        if (deps_res.is_err()) {
+            Logger::default_logger().warn("Failed to load dependency %s for sprite %s (%d)",
+                    deps_res.unwrap_err().uid.c_str(), proto.uid.c_str(),
+                    static_cast<std::underlying_type_t<ResourceErrorReason>>(deps_res.unwrap_err().reason));
             return nullptr;
         }
 

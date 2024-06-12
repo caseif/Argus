@@ -19,6 +19,7 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/error_util.hpp"
 #include "argus/lowlevel/filesystem.hpp"
+#include "argus/lowlevel/result.hpp"
 #include "argus/lowlevel/threading/future.hpp"
 #include "internal/lowlevel/crash.hpp"
 
@@ -92,6 +93,30 @@
 #define CHUNK_SIZE 4096LU
 
 namespace argus {
+    static FileOpenErrorReason _map_file_error(int code) {
+        switch (code) {
+            case EPERM:
+                return FileOpenErrorReason::OperationNotPermitted;
+            case EIO:
+                return FileOpenErrorReason::IoError;
+            case ENXIO:
+            case ENODEV:
+                return FileOpenErrorReason::NoDevice;
+            case EACCES:
+                return FileOpenErrorReason::PermissionDenied;
+            case ENOTBLK:
+                return FileOpenErrorReason::NotBlockDevice;
+            case EBUSY:
+            case ETXTBSY:
+                return FileOpenErrorReason::Busy;
+            case ENOSPC:
+                return FileOpenErrorReason::NoSpace;
+            case EROFS:
+                return FileOpenErrorReason::ReadOnlyFilesystem;
+            default:
+                return FileOpenErrorReason::Generic;
+        }
+    }
 
     FileHandle::FileHandle(std::filesystem::path path, const int mode, const size_t size, void *const handle) :
         m_path(std::move(path)),
@@ -102,13 +127,15 @@ namespace argus {
     }
 
     //TODO: use the native Windows file API, if available
-    FileHandle FileHandle::create(const std::filesystem::path &path, const int mode) {
+    Result<FileHandle, FileOpenError> FileHandle::create(const std::filesystem::path &path, const int mode) {
         const char *std_mode;
         // we check for the following invalid cases:
         // - no modes set at all
         // - create set without any other modes
         // - read and create set without any other modes
-        validate_arg_not((mode == 0) || ((mode & FILE_MODE_CREATE) && !(mode & FILE_MODE_WRITE)), "Invalid mode");
+        if ((mode == 0) || ((mode & FILE_MODE_CREATE) && !(mode & FILE_MODE_WRITE))) {
+            crash("Invalid file open mode %d", mode);
+        }
 
         if ((mode & FILE_MODE_READ) && (mode & FILE_MODE_WRITE) && (mode & FILE_MODE_CREATE)) {
             std_mode = "w+";
@@ -119,7 +146,7 @@ namespace argus {
         } else if (mode & FILE_MODE_WRITE) {
             std_mode = "w";
         } else {
-            crash("Unable to determine mode string");
+            crash("Unable to determine mode string (mode = %d)", mode);
         }
 
         FILE *file;
@@ -128,8 +155,10 @@ namespace argus {
             int stat_rc = stat(path.string().c_str(), &stat_buf);
 
             if (stat_rc) {
-                // throw the error directly if it's not ENOENT (file not found)
-                validate_syscall(errno == ENOENT, "stat");
+                // don't return an error yet if it just doesn't exist
+                if (errno != ENOENT) {
+                    return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+                }
 
                 // if the file doesn't exist, create it
                 #ifdef _WIN32
@@ -138,7 +167,9 @@ namespace argus {
                 #else
                 FILE *file_tmp = fopen(path.c_str(), "w");
                 #endif
-                validate_syscall(file_tmp, "fopen");
+                if (file_tmp == nullptr) {
+                    return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+                }
 
                 fclose(file_tmp);
             }
@@ -150,14 +181,19 @@ namespace argus {
         file = fopen(path.string().c_str(), std_mode);
         #endif
 
-        validate_syscall(file != nullptr, "fopen");
+        if (file == nullptr) {
+            return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+        }
 
         stat_t stat_buf {};
-        validate_syscall(fstat(fileno(file), &stat_buf), "fstat");
+        if (fstat(fileno(file), &stat_buf) != 0) {
+            return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+        }
 
         assert(stat_buf.st_size >= 0);
 
-        return FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void *>(file));
+        return ok<FileHandle, FileOpenError>(
+                FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void *>(file)));
     }
 
     const std::filesystem::path &FileHandle::get_path(void) const {
@@ -169,10 +205,12 @@ namespace argus {
     }
 
     void FileHandle::release(void) {
-        validate_state(this->m_valid, "Non-valid FileHandle");
+        validate_state(m_valid, "Invalid FileHandle");
 
         this->m_valid = false;
-        validate_syscall(fclose(static_cast<FILE *>(this->m_handle)), "fclose");
+        if (fclose(static_cast<FILE *>(this->m_handle)) != 0) {
+            crash("fclose failed: %d", errno);
+        }
     }
 
     void FileHandle::remove(void) {
@@ -180,8 +218,8 @@ namespace argus {
         ::remove(this->m_path.string().c_str());
     }
 
-    void FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
-        validate_state(m_valid, "Non-valid FileHandle");
+    Result<void, FileOpenError> FileHandle::to_istream(const off_t offset, std::ifstream &target) const {
+        validate_state(m_valid, "Invalid FileHandle");
 
         fseek(static_cast<FILE *>(m_handle), offset, SEEK_SET);
 
@@ -200,6 +238,7 @@ namespace argus {
         }
 
         //stream->seekg(offset);
+        return ok<void, FileOpenError>();
     }
 
     void FileHandle::read(off_t offset, size_t read_size, unsigned char *buf) const {

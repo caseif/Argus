@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/resman/resource.hpp"
 
 #include <initializer_list>
@@ -31,6 +33,7 @@
 
 namespace argus {
     // forward declarations
+    struct ResourceError;
     class ResourceManager;
 
     struct pimpl_ResourceLoader;
@@ -86,11 +89,8 @@ namespace argus {
          * @param manager The ResourceManager requesting the load.
          * @param dependencies A std::vector of UIDs of dependency
          *        \link Resource Resources \endlink.
-         *
-         * @throw ResourceException If any dependency Resource cannot be
-         *        loaded.
          */
-        std::map<std::string, const Resource *> load_dependencies(ResourceManager &manager,
+        Result<std::map<std::string, const Resource *>, ResourceError> load_dependencies(ResourceManager &manager,
                 const std::vector<std::string> &dependencies) const;
     };
 }

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include <functional>
 #include <future>
 #include <map>
@@ -32,6 +34,20 @@ namespace argus {
 
     struct pimpl_ResourceManager;
 
+    enum class ResourceErrorReason {
+        NotFound,
+        NotLoaded,
+        AlreadyLoaded,
+        NoLoader,
+        LoadFailed,
+    };
+
+    struct ResourceError {
+        ResourceErrorReason reason;
+        std::string uid;
+        std::string info;
+    };
+
     /**
      * @brief Manages Resource lifetimes and provides a high-level interface for
      *        loading, retrieving, and unloading them.
@@ -42,11 +58,8 @@ namespace argus {
       private:
         /**
          * @brief Unloads the Resource with the given UID.
-         *
-         * @throw ResourceNotLoadedException If the Resource is not
-         *        currently loaded.
          */
-        int unload_resource(const std::string &uid);
+        Result<void, ResourceError> unload_resource(const std::string &uid);
 
         /**
          * @brief Constructs a new ResourceManager.
@@ -58,7 +71,7 @@ namespace argus {
          */
         ~ResourceManager(void);
 
-        Resource &create_resource(const std::string &uid, const std::string &media_type, void *obj,
+        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type, void *obj,
                 std::type_index type);
 
       public:
@@ -114,16 +127,13 @@ namespace argus {
          *
          * @return The retrieved Resource.
          *
-         * @throw ResourceNotPresentException If no Resource with the given
-         *        UID exists.
-         *
          * @attention This method will attempt to load the Resource if it is
          *            not already in memory.
          *
          * @sa ResourceManager#get_resource_async
          * @sa ResourceManager#try_get_resource
          */
-        Resource &get_resource(const std::string &uid);
+        Result<Resource &, ResourceError> get_resource(const std::string &uid);
 
         /**
          * @brief Attempts to get the Resource with the given UID without
@@ -135,11 +145,6 @@ namespace argus {
          *
          * @return The retrieved Resource.
          *
-         * @throw ResourceNotPresentException If no Resource with the given
-         *        UID exists.
-         * @throw ResourceNotLoadedException If the Resource is not already
-         *        loaded.
-         *
          * @warning This should not be used unless you know what you are
          *          doing. This function is intended for use with dependent
          *          Resources guaranteed to have a lifetime extending until
@@ -148,7 +153,7 @@ namespace argus {
          *
          * @sa ResourceManager#get_resource
          */
-        Resource &get_resource_weak(const std::string &uid);
+        Result<Resource &, ResourceError> get_resource_weak(const std::string &uid);
 
         /**
          * @brief Attempts to get the Resource with the given UID, failing
@@ -158,14 +163,9 @@ namespace argus {
          *
          * @return The retrieved Resource.
          *
-         * @throw ResourceNotPresentException If no Resource with the given
-         *        UID exists.
-         * @throw ResourceNotLoadedException If the Resource is not already
-         *        loaded.
-         *
          * @sa ResourceManager#get_resource
          */
-        [[nodiscard]] Resource &try_get_resource(const std::string &uid) const;
+        [[nodiscard]] Result<Resource &, ResourceError> try_get_resource(const std::string &uid) const;
 
         /**
          * @brief Attempts to retrieve the Resource with the given UID
@@ -176,12 +176,12 @@ namespace argus {
          *        routine. This callback _must_ be thread-safe.
          *
          * @return A std::future which will provide the retrieved Resource
-         *         (or any exception thrown by the load routine).
+         *         (or any error returned by the load routine).
          *
          * @sa ResourceManager#get_resource
          */
-        std::future<Resource &> get_resource_async(const std::string &uid,
-                const std::function<void(Resource &)> &callback = nullptr);
+        std::future<Result<Resource &, ResourceError>> get_resource_async(const std::string &uid,
+                const std::function<void(Result<Resource &, ResourceError>)> &callback = nullptr);
 
         /**
          * @brief Creates a Resource with the given UID from data presently
@@ -193,15 +193,13 @@ namespace argus {
          * @param len The size of the Resource in bytes.
          *
          * @return The created Resource.
-         *
-         * @throw ResourceLoadedException If a Resource with the given UID
-         *        is already loaded.
          */
-        Resource &create_resource(const std::string &uid, const std::string &media_type, const void *data,
-                size_t len);
+        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
+                const void *data, size_t len);
 
         template<typename T>
-        Resource &create_resource(const std::string &uid, const std::string &media_type, T &&res_obj) {
+        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
+                T &&res_obj) {
             return create_resource(uid, media_type, &res_obj, std::type_index(typeid(res_obj)));
         }
     };

@@ -113,7 +113,8 @@ namespace argus {
             return;
         }
 
-        auto &texture_res = ResourceManager::instance().get_resource(texture_uid);
+        auto &texture_res = ResourceManager::instance().get_resource(texture_uid)
+                .expect("Failed to load texture " + texture_uid);
 
         auto prepared = prepare_texture(state.device, state.copy_cmd_buf[state.cur_frame], texture_res);
 

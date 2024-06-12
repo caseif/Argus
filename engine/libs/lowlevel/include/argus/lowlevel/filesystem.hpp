@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -62,6 +64,23 @@
 #define FILE_MODE_CREATE 4
 
 namespace argus {
+    enum class FileOpenErrorReason {
+        OperationNotPermitted,
+        NotFound,
+        PermissionDenied,
+        Busy,
+        NotBlockDevice,
+        NoDevice,
+        IoError,
+        NoSpace,
+        ReadOnlyFilesystem,
+        Generic,
+    };
+
+    struct FileOpenError {
+        FileOpenErrorReason reason;
+        int error_code;
+    };
 
     /**
      * @brief Represents a handle to a file on the disk.
@@ -99,7 +118,7 @@ namespace argus {
          * @throw std::system_error If an error occurs while opening or
          *        creating the file.
          */
-        static FileHandle create(const std::filesystem::path &path, int mode);
+        static Result<FileHandle, FileOpenError> create(const std::filesystem::path &path, int mode);
 
         /**
          * @brief Gets the path of the file referenced by this handle.
@@ -153,7 +172,7 @@ namespace argus {
          *
          * @throw std::runtime_error If the handle is not valid.
          */
-        void to_istream(off_t offset, std::ifstream &target) const;
+        Result<void, FileOpenError> to_istream(off_t offset, std::ifstream &target) const;
 
         /**
          * @brief Reads data from the file referenced by the handle.
