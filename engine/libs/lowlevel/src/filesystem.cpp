@@ -104,8 +104,10 @@ namespace argus {
                 return FileOpenErrorReason::NoDevice;
             case EACCES:
                 return FileOpenErrorReason::PermissionDenied;
+            #ifdef ENOTBLK
             case ENOTBLK:
                 return FileOpenErrorReason::NotBlockDevice;
+            #endif
             case EBUSY:
             case ETXTBSY:
                 return FileOpenErrorReason::Busy;
