@@ -41,10 +41,12 @@ namespace argus {
 
     template<typename T, typename E>
     struct ResultStorage {
-        #if defined(_MSC_VER) && _MSC_VER < 1930
-        // workaround for VS 2019 and earlier which requires std::future's type
-        // parameter type to be default-constructible
+        #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+        // workaround for VS versions prior to 17.2 (2022) which require
+        // std::future's type parameter type to be default-constructible
         std::optional<std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>>> val_or_err;
+
+        ResultStorage(void) = default;
         #else
         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> val_or_err;
         #endif
@@ -88,8 +90,8 @@ namespace argus {
 
         [[nodiscard]] bool is_ok(void) const {
             if constexpr (!std::is_void_v<T> && !std::is_void_v<E>) {
-                #if defined _MSC_VER && _MSC_VER < 1930
-                // workaround for VS <=2019, see comment in ResultStorage
+                #if defined _MSC_VER && _MSC_VER < 1932
+                // workaround for VS <=17.2, see comment in ResultStorage
                 // definition
                 return m_storage.val_or_err.value().index() == 0;
                 #else
@@ -114,8 +116,8 @@ namespace argus {
                 crash_ll("Attempted to call unwrap() on error-typed Result");
             }
             if constexpr (!std::is_void_v<E>) {
-                #if defined(_MSC_VER) && _MSC_VER < 1930
-                // workaround for VS <=2019, see comment in ResultStorage
+                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+                // workaround for VS <=17.2, see comment in ResultStorage
                 // definition
                 return std::get<0>(m_storage.val_or_err.value());
                 #else
@@ -137,8 +139,8 @@ namespace argus {
                 crash_ll("Attempted to call unwrap() on value-typed Result");
             }
             if constexpr (!std::is_void_v<T>) {
-                #if defined(_MSC_VER) && _MSC_VER < 1930
-                // workaround for VS <=2019, see comment in ResultStorage
+                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+                // workaround for VS <=17.2, see comment in ResultStorage
                 // definition
                 return std::get<1>(m_storage.val_or_err.value());
                 #else
@@ -264,8 +266,9 @@ namespace argus {
         static_assert(!std::is_void_v<T>);
 
         if constexpr (!std::is_void_v<E>) {
-            #if defined(_MSC_VER) && _MSC_VER < 1930
-            // workaround for VS <=2019, see comment in ResultStorage definition
+            #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+            // workaround for VS <=17.2, see comment in ResultStorage
+            // definition
             return Result<T, E>(ResultStorage<T, E> { std::make_optional(
                     std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
                             std::in_place_index<0>, wrap_if_reference<T>(value)
