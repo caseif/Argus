@@ -84,13 +84,19 @@ namespace argus {
         ResultStorage<T, E> m_storage;
 
       public:
+        // workaround for VS <=17.2, see comment in ResultStorage
+        // definition
+        #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+        Result(void) = default;
+        #endif
+
         Result(ResultStorage<T, E> storage):
             m_storage(std::move(storage)) {
         }
 
         [[nodiscard]] bool is_ok(void) const {
             if constexpr (!std::is_void_v<T> && !std::is_void_v<E>) {
-                #if defined _MSC_VER && _MSC_VER < 1932
+                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
                 // workaround for VS <=17.2, see comment in ResultStorage
                 // definition
                 return m_storage.val_or_err.value().index() == 0;

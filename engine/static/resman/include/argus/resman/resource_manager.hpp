@@ -71,8 +71,8 @@ namespace argus {
          */
         ~ResourceManager(void);
 
-        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type, void *obj,
-                std::type_index type);
+        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
+                void *obj, std::type_index type);
 
       public:
         /**
