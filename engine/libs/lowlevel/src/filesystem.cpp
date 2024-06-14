@@ -236,7 +236,7 @@ namespace argus {
         target.open(m_path, omode);
 
         if (!target.good()) {
-            throw std::runtime_error("Failed to create file stream");
+            return err<void, FileOpenError>({ FileOpenErrorReason::Generic, -1 });
         }
 
         //stream->seekg(offset);

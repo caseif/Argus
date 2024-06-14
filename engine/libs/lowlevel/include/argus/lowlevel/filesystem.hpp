@@ -111,12 +111,6 @@ namespace argus {
          * @param mode The mode to open the file with.
          *
          * @return The created FileHandle.
-         *
-         * @throw std::invalid_argument If the given mode is invalid. This
-         *        occurs if no mode is set, or if CREATE is set without
-         *        WRITE.
-         * @throw std::system_error If an error occurs while opening or
-         *        creating the file.
          */
         static Result<FileHandle, FileOpenError> create(const std::filesystem::path &path, int mode);
 
@@ -142,10 +136,6 @@ namespace argus {
          *
          * @attention The handle will thereafter be invalidated and thus
          *            ineligible for further use.
-         *
-         * @throw std::runtime_error If the handle is not valid.
-         * @throw std::system_error If an error occurs while closing the
-         *        file.
          */
         void release(void);
 
@@ -154,10 +144,6 @@ namespace argus {
          *
          * @attention This operation implicitly releases the handle,
          *            invalidating it.
-         *
-         * @throw std::runtime_error If the handle is not valid.
-         * @throw std::system_error If an error occurs while removing the
-         *        file or closing its handle.
          *
          * @sa FileHandle::release
          */
@@ -169,8 +155,6 @@ namespace argus {
          * @param offset The offset in bytes at which to open the
          *        std::istream.
          * @param target The object to use when opening the stream.
-         *
-         * @throw std::runtime_error If the handle is not valid.
          */
         Result<void, FileOpenError> to_istream(off_t offset, std::ifstream &target) const;
 
@@ -182,13 +166,6 @@ namespace argus {
          * @param buf The buffer to store data into. This buffer _must_ be
          *            at least `size` bytes in length to avoid a buffer
          *            overflow.
-         *
-         * @throw std::runtime_error If the handle is not valid.
-         * @throw std::invalid_argument If the current mode does not support
-         *        reading, or if `size` or `offset` are nonsensical
-         *        (individiually or in conjunction).
-         * @throw std::system_error If an error occurs while reading from
-         *        the file.
          */
         void read(off_t offset, size_t read_size, unsigned char *buf) const;
 
@@ -201,13 +178,6 @@ namespace argus {
          * @param buf A buffer containing the data to be written. This
          *            buffer _must_ be at least `size` bytes in length to
          *            avoid a buffer over-read.
-         *
-         * @throw std::runtime_error If the handle is not valid.
-         * @throw std::invalid_argument If the current mode does not support
-         *        writing, or if `size` or `offset` are nonsensical
-         *        (individiually or in conjunction).
-         * @throw std::system_error If an error occurs while writing to the
-         *        file.
          */
         void write(off_t offset, size_t write_size, unsigned char *buf);
 
@@ -230,11 +200,7 @@ namespace argus {
          *         been fully read, or after the read operation generates an
          *         exception.
          *
-         * @throw std::invalid_argument If the current mode does not support
-         *        reading, or if `size` or `offset` are nonsensical
-         *        (individiually or in conjunction).
-         *
-         * @attention Any exceptions thrown by the read operation itself (not
+         * @attention Any errors returned the read operation itself (not
          *            including parameter validation) are exposed through the
          *            returned std::future.
          *
@@ -263,12 +229,7 @@ namespace argus {
          *         been fully written, or after the write operation
          *         generates an exception.
          *
-         * @throw std::runtime_error If the handle is not valid.
-         * @throw std::invalid_argument If the current mode does not support
-         *        writing, or if `size` or `offset` are nonsensical
-         *        (individiually or in conjunction).
-         *
-         * @attention Any exceptions thrown by the read operation itself (not
+         * @attention Any errors returned by the read operation itself (not
          *            including parameter validation) are exposed through the
          *            returned std::future.
          *
