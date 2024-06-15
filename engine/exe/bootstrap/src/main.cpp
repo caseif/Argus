@@ -25,7 +25,8 @@ static argus::Logger g_logger("Bootstrap");
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        printf("Invalid arguments\nUsage: %s <namespace>", argc >= 1 ? argv[0] : "argus_bootstrap");
+        printf("Invalid arguments\nUsage: %s <namespace>\n", argc >= 1 ? argv[0] : "argus_bootstrap");
+        return 1;
     }
 
     argus::load_client_config(argv[1]);
