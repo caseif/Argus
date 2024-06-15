@@ -59,7 +59,7 @@ namespace argus::input {
                 [name](auto &pair) { return pair.second->get_name() == name; });
 
         if (res == m_pimpl->controllers.end()) {
-            throw std::invalid_argument("Invalid controller index");
+            crash("Invalid controller name");
         }
 
         return *res->second;
@@ -67,7 +67,7 @@ namespace argus::input {
 
     Controller &InputManager::add_controller(const std::string &name) {
         if (m_pimpl->controllers.size() >= MAX_CONTROLLERS) {
-            throw std::invalid_argument("Controller limit reached");
+            crash("Controller limit reached");
         }
 
         auto controller = new Controller(name);
@@ -84,7 +84,7 @@ namespace argus::input {
     void InputManager::remove_controller(const std::string &name) {
         auto res = m_pimpl->controllers.find(name);
         if (res == m_pimpl->controllers.end()) {
-            throw std::invalid_argument("Client attempted to remove unknown controller index");
+            crash("Client attempted to remove unknown controller '%s'", name.c_str());
         }
 
         delete res->second;

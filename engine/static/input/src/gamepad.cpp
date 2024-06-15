@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/collections.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/event.hpp"
 
@@ -590,7 +591,7 @@ namespace argus::input {
         }
     }
 
-    void assoc_gamepad(HidDeviceId id, const std::string &controller_name) {
+    Result<void, std::string> assoc_gamepad(HidDeviceId id, const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
         std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
@@ -598,26 +599,27 @@ namespace argus::input {
         auto &gamepads = manager.m_pimpl->available_gamepads;
         auto it = std::find(gamepads.cbegin(), gamepads.cend(), id);
         if (it == manager.m_pimpl->available_gamepads.cend()) {
-            throw std::invalid_argument("Gamepad ID is not valid or is already in use");
+            return err<void, std::string>("Gamepad ID is not valid or is already in use");
         }
 
         manager.m_pimpl->available_gamepads.erase(it);
         manager.m_pimpl->mapped_gamepads.insert({ id, controller_name });
+
+        return ok<void, std::string>();
     }
 
-    HidDeviceId assoc_first_available_gamepad(const std::string &controller_name) {
+    Result<HidDeviceId, std::string> assoc_first_available_gamepad(const std::string &controller_name) {
         auto &manager = InputManager::instance();
 
         std::lock_guard<std::recursive_mutex> lock(manager.m_pimpl->gamepads_mutex);
 
         if (manager.m_pimpl->available_gamepads.empty()) {
-            return -1;
+            return err<HidDeviceId, std::string>("No available gamepads");
         }
 
         auto front = manager.m_pimpl->available_gamepads.front();
-        assoc_gamepad(front, controller_name);
-
-        return front;
+        return assoc_gamepad(front, controller_name)
+                .and_then<HidDeviceId>([front](void) { return front; });
     }
 
     void unassoc_gamepad(HidDeviceId id) {

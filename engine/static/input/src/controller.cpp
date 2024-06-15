@@ -19,6 +19,8 @@
 #include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/collections.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/input/controller.hpp"
 #include "argus/input/input_manager.hpp"
 #include "argus/input/keyboard.hpp"
@@ -63,7 +65,7 @@ namespace argus::input {
 
     void Controller::attach_gamepad(HidDeviceId id) {
         if (m_pimpl->attached_gamepad.has_value()) {
-            throw std::invalid_argument("Controller already has associated gamepad");
+            crash("Controller already has associated gamepad");
         }
 
         assoc_gamepad(id, this->get_name());
@@ -75,15 +77,15 @@ namespace argus::input {
 
     bool Controller::attach_first_available_gamepad(void) {
         if (m_pimpl->attached_gamepad.has_value()) {
-            throw std::invalid_argument("Controller already has associated gamepad");
+            crash("Controller already has associated gamepad");
         }
 
         auto id = assoc_first_available_gamepad(this->get_name());
-        if (id < 0) {
+        if (id.is_err()) {
             return false;
         }
 
-        m_pimpl->attached_gamepad = id;
+        m_pimpl->attached_gamepad = id.unwrap();
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
                 this->get_gamepad_name().c_str(), this->get_name().c_str());
@@ -104,7 +106,7 @@ namespace argus::input {
 
     std::string Controller::get_gamepad_name(void) {
         if (!this->has_gamepad()) {
-            throw std::runtime_error("Controller does not have associated gamepad");
+            crash("Controller does not have associated gamepad");
         }
 
         return ::argus::input::get_gamepad_name(m_pimpl->attached_gamepad.value());
@@ -331,7 +333,7 @@ namespace argus::input {
 
     bool Controller::is_gamepad_button_pressed(GamepadButton button) {
         if (!has_gamepad()) {
-            throw std::runtime_error("Cannot query gamepad button state for controller: No gamepad is associated");
+            crash("Cannot query gamepad button state for controller: No gamepad is associated");
         }
 
         return ::argus::input::is_gamepad_button_pressed(m_pimpl->attached_gamepad.value(), button);
@@ -339,7 +341,7 @@ namespace argus::input {
 
     double Controller::get_gamepad_axis(GamepadAxis axis) {
         if (!has_gamepad()) {
-            throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
+            crash("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
 
         return ::argus::input::get_gamepad_axis(m_pimpl->attached_gamepad.value(), axis);
@@ -347,7 +349,7 @@ namespace argus::input {
 
     double Controller::get_gamepad_axis_delta(GamepadAxis axis) {
         if (!has_gamepad()) {
-            throw std::runtime_error("Cannot query gamepad axis state for controller: No gamepad is associated");
+            crash("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
 
         return ::argus::input::get_gamepad_axis_delta(m_pimpl->attached_gamepad.value(), axis);

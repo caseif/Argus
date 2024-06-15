@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/input/gamepad.hpp"
 
 namespace argus::input {
@@ -31,9 +33,9 @@ namespace argus::input {
 
     void flush_gamepad_deltas(void);
 
-    void assoc_gamepad(HidDeviceId id, const std::string &controller_name);
+    Result<void, std::string> assoc_gamepad(HidDeviceId id, const std::string &controller_name);
 
-    HidDeviceId assoc_first_available_gamepad(const std::string &controller_name);
+    Result<HidDeviceId, std::string> assoc_first_available_gamepad(const std::string &controller_name);
 
     void unassoc_gamepad(HidDeviceId id);
 
