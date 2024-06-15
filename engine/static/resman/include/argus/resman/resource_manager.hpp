@@ -105,9 +105,6 @@ namespace argus {
          * @brief Registers a ResourceLoader for the given type.
          *
          * @param loader The ResourceLoader to register.
-         *
-         * @throw std::invalid_argument If a loader is already registered
-         *        for the provided type.
          */
         void register_loader(ResourceLoader &loader);
 
