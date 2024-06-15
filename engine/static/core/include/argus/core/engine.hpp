@@ -65,9 +65,6 @@ namespace argus {
      *
      * @attention This must be called before any other interaction with the
      * engine takes place.
-     *
-     * @throw std::invalid_argument If any of the requested modules (or their
-     *        dependencies) cannot be loaded.
      */
     void initialize_engine(void);
 

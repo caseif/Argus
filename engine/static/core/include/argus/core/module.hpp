@@ -200,9 +200,6 @@ namespace argus {
      *
      * @attention For convenience, the macro REGISTER_ARGUS_MODULE registers an
      *            entry point which invokes this function automatically.
-     *
-     * @throw std::invalid_argument If a module with the given ID is already
-     *        registered.
      */
     void register_dynamic_module(const std::string &id, LifecycleUpdateCallback lifecycle_callback,
             const std::vector<std::string>& dependencies = {});
@@ -212,8 +209,7 @@ namespace argus {
      *
      * @param module_id The ID of the dynamic module to enable.
      *
-     * @throw std::invalid_argument If no dynamic module with the given ID is
-     *        currently registered.
+     * @return Whether the module was successfully enabled.
      */
     bool enable_dynamic_module(const std::string &module_id);
 

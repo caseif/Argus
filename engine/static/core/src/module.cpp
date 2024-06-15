@@ -293,7 +293,7 @@ namespace argus {
                 if (dependent_chain.empty()) {
                     Logger::default_logger().warn("Module \"%s\" requested more than once.", module_id.c_str());
                 }
-                return false;
+                return true;
             }
         }
 
@@ -334,7 +334,7 @@ namespace argus {
 
         g_enabled_dyn_modules_staging.insert({ module_id, it->second });
 
-        Logger::default_logger().info("Enabled dynamic module %s.", module_id.c_str());
+        Logger::default_logger().info("Enabled dynamic module %s", module_id.c_str());
 
         return true;
     }
@@ -357,7 +357,9 @@ namespace argus {
                 all_modules.insert({ found_static->id });
                 all_modules.insert(found_static->dependencies.begin(), found_static->dependencies.end());
             } else {
-                enable_dynamic_module(module_id);
+                if (!enable_dynamic_module(module_id)) {
+                    crash("Failed to load required module %s", module_id.c_str());
+                }
             }
         }
 
