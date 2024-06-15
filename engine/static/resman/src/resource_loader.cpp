@@ -28,6 +28,15 @@
 #include <vector>
 
 namespace argus {
+    Result<void *, ResourceError> ResourceLoader::make_ok_result(void *ptr) {
+        return ok<void *, ResourceError>(ptr);
+    }
+
+    Result<void *, ResourceError> ResourceLoader::make_err_result(ResourceErrorReason reason,
+            const ResourcePrototype &proto, std::string msg) {
+        return err<void *, ResourceError>(ResourceError { reason, proto.uid, std::move(msg) });
+    }
+
     Result<std::map<std::string, const Resource *>, ResourceError> ResourceLoader::load_dependencies(
             ResourceManager &manager, const std::vector<std::string> &dependencies) const {
         std::map<std::string, const Resource *> acquired;

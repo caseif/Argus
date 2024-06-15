@@ -31,7 +31,7 @@ namespace argus {
 
     LuaScriptLoader::~LuaScriptLoader(void) = default;
 
-    void *LuaScriptLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> LuaScriptLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(proto);
@@ -39,17 +39,17 @@ namespace argus {
 
         std::string script_src(std::istreambuf_iterator<char>(stream), {});
 
-        return new LoadedScript(script_src);
+        return make_ok_result(new LoadedScript(script_src));
     }
 
-    void *LuaScriptLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> LuaScriptLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
         UNUSED(manager);
         UNUSED(proto);
         UNUSED(type);
 
         auto *loaded_script = reinterpret_cast<LoadedScript *>(src);
-        return new LoadedScript(loaded_script->source);
+        return make_ok_result(new LoadedScript(loaded_script->source));
     }
 
     void LuaScriptLoader::unload(void *data_ptr) const {

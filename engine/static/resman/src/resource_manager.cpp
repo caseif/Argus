@@ -299,16 +299,16 @@ namespace argus {
 
             auto &loader = *loader_it->second;
             loader.m_pimpl->last_dependencies = {};
-            void *const data_ptr = loader.load(*this, proto, stream, file_handle.get_size());
+            auto load_res = loader.load(*this, proto, stream, file_handle.get_size());
 
             stream.close();
             file_handle.release();
 
-            if (data_ptr == nullptr) {
-                return make_err_res(ResourceErrorReason::LoadFailed, "Loader returned null pointer");
+            if (load_res.is_err()) {
+                return err<Resource &, ResourceError>(load_res.unwrap_err());
             }
 
-            res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
+            res = new Resource(*this, loader, proto, load_res.unwrap(), loader.m_pimpl->last_dependencies);
 
             Logger::default_logger().debug("Loaded filesystem resource %s of type %s", proto.uid.c_str(),
                     proto.media_type.c_str());
@@ -343,15 +343,15 @@ namespace argus {
 
             auto &loader = *loader_it->second;
             loader.m_pimpl->last_dependencies = {};
-            void *const data_ptr = loader.load(*this, proto, stream, arp_res->meta.size);
+            auto load_res = loader.load(*this, proto, stream, arp_res->meta.size);
 
-            if (!data_ptr) {
-                return make_err_res(ResourceErrorReason::LoadFailed, "Loader returned null pointer");
+            if (load_res.is_err()) {
+                return err<Resource &, ResourceError>(load_res.unwrap_err());
             }
 
             arp_unload_resource(arp_res);
 
-            res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
+            res = new Resource(*this, loader, proto, load_res.unwrap(), loader.m_pimpl->last_dependencies);
 
             Logger::default_logger().debug("Loaded ARP resource %s of type %s", proto.uid.c_str(),
                     proto.media_type.c_str());
@@ -409,13 +409,13 @@ namespace argus {
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
-        void *const data_ptr = loader.load(*this, proto, stream, len);
+        auto load_res = loader.load(*this, proto, stream, len);
 
-        if (!data_ptr) {
-            return make_err_res(ResourceErrorReason::LoadFailed, "Loader returned null pointer");
+        if (load_res.is_err()) {
+            return err<Resource &, ResourceError>(load_res.unwrap_err());
         }
 
-        Resource *res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
+        Resource *res = new Resource(*this, loader, proto, load_res.unwrap(), loader.m_pimpl->last_dependencies);
         m_pimpl->loaded_resources.insert({ uid, res });
 
         Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());
@@ -440,13 +440,13 @@ namespace argus {
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
-        void *const data_ptr = loader.copy(*this, proto, obj, type);
+        auto load_res = loader.copy(*this, proto, obj, type);
 
-        if (!data_ptr) {
-            return make_err_res(ResourceErrorReason::LoadFailed, "Loader returned null pointer");
+        if (load_res.is_err()) {
+            return err<Resource &, ResourceError>(load_res.unwrap_err());
         }
 
-        Resource *res = new Resource(*this, loader, proto, data_ptr, loader.m_pimpl->last_dependencies);
+        Resource *res = new Resource(*this, loader, proto, load_res.unwrap(), loader.m_pimpl->last_dependencies);
         m_pimpl->loaded_resources.insert({ uid, res });
 
         Logger::default_logger().debug("Created ad hoc resource %s", uid.c_str());

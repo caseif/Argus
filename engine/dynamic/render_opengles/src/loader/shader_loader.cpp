@@ -43,12 +43,14 @@ namespace argus {
         ResourceLoader({ RESOURCE_TYPE_SHADER_GLSL_VERT, RESOURCE_TYPE_SHADER_GLSL_FRAG }) {
     }
 
-    void *ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(size);
+
         std::string type;
         ShaderStage stage;
+
         if (proto.media_type == RESOURCE_TYPE_SHADER_GLSL_VERT) {
             type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Vertex;
@@ -56,26 +58,27 @@ namespace argus {
             type = SHADER_TYPE_GLSL;
             stage = ShaderStage::Fragment;
         } else {
+            // shouldn't ever happen
             crash("Unrecognized shader media type %s", proto.media_type.c_str());
         }
 
         std::vector<uint8_t> src(std::istreambuf_iterator<char>(stream), {});
         src.push_back('\0');
 
-        return new Shader(proto.uid, type, stage, src);
+        return make_ok_result(new Shader(proto.uid, type, stage, src));
     }
 
-    void *ShaderLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> ShaderLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
         UNUSED(manager);
-        UNUSED(proto);
 
-        affirm_precond(type == std::type_index(typeid(Shader)),
-                "Incorrect pointer type passed to ShaderLoader::copy");
+        if (type != std::type_index(typeid(Shader))) {
+            return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
+        }
 
         // no dependencies to load so we can just do a blind copy
 
-        return new Shader(std::move(*reinterpret_cast<Shader *>(src)));
+        return make_ok_result(new Shader(std::move(*static_cast<Shader *>(src))));
     }
 
     void ShaderLoader::unload(void *const data_buf) const {

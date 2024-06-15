@@ -20,6 +20,8 @@
 
 #include "argus/shadertools.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
 
@@ -78,7 +80,7 @@ namespace argus {
                     lang = EShLangFragment;
                     break;
                 default:
-                    throw std::invalid_argument("Unsupported shader stage");
+                    crash("Unsupported shader stage");
             }
 
             shaders_map[lang] = src_str;
@@ -102,7 +104,7 @@ namespace argus {
                     stage = ShaderStage::Fragment;
                     break;
                 default:
-                    throw std::invalid_argument("Unsupported shader stage");
+                    crash("Unsupported shader stage");
             }
 
             spirv_shaders.emplace_back(uid, SHADER_TYPE_SPIR_V, stage, spirv_u8);

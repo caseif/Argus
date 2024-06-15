@@ -21,6 +21,7 @@
 #include "argus/lowlevel/result.hpp"
 
 #include "argus/resman/resource.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 #include <initializer_list>
 #include <istream>
@@ -54,10 +55,10 @@ namespace argus {
          * @param stream The stream to load the Resource from.
          * @param size The size in bytes of the Resource data.
          */
-        virtual void *load(ResourceManager &manager, const ResourcePrototype &proto,
+        virtual Result<void *, ResourceError> load(ResourceManager &manager, const ResourcePrototype &proto,
                 std::istream &stream, size_t size) const = 0;
 
-        virtual void *copy(ResourceManager &manager, const ResourcePrototype &proto,
+        virtual Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
                 void *src, std::type_index type) const = 0;
 
         /**
@@ -68,6 +69,11 @@ namespace argus {
         virtual void unload(void *data_ptr) const = 0;
 
       protected:
+        static Result<void *, ResourceError> make_ok_result(void *ptr);
+
+        static Result<void *, ResourceError> make_err_result(ResourceErrorReason reason, const ResourcePrototype &proto,
+                std::string msg = "");
+
         /**
          * @brief Constructs a new ResourceLoader.
          *

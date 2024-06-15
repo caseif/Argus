@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_loader.hpp"
@@ -65,7 +65,7 @@ namespace argus {
         ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
     }
 
-    void *MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(proto);
         UNUSED(size);
@@ -89,14 +89,14 @@ namespace argus {
                     stage = ShaderStage::Fragment;
                 } else {
                     // we don't support any other shader stages right now
-                    Logger::default_logger().warn("Invalid shader stage in material %s", proto.uid.c_str());
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Invalid shader stage in material");
                 }
 
                 if (shader_map.find(stage) != shader_map.end()) {
                     // only one shader can be specified per stage
-                    Logger::default_logger().warn("Duplicate shader stage in material %s", proto.uid.c_str());
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Duplicate shader stage in material");
                 }
 
                 shader_map[stage] = shader_uid;
@@ -108,8 +108,7 @@ namespace argus {
 
             auto deps_res = load_dependencies(manager, dep_uids);
             if (deps_res.is_err()) {
-                Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
-                return nullptr;
+                return err<void *, ResourceError>(deps_res.unwrap_err());
             }
             auto deps = deps_res.unwrap();
 
@@ -118,33 +117,31 @@ namespace argus {
                 const Shader &shader = deps[shader_uid]->get<const Shader>();
                 if (shader.get_stage() != stage) {
                     // stage of loaded shader does not match stage specified by material
-                    Logger::default_logger().warn("Mismatched shader stage in material %s", proto.uid.c_str());
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Mismatched shader stage in material");
                 }
 
                 shaders.push_back(&shader);
             }
 
             Logger::default_logger().debug("Successfully loaded material %s", proto.uid.c_str());
-            return new Material(tex_uid, shader_uids);
+            return make_ok_result(new Material(tex_uid, shader_uids));
         } catch (nlohmann::detail::parse_error &) {
-            Logger::default_logger().warn("Failed to parse material %s", proto.uid.c_str());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::MalformedContent, proto);
         } catch (std::out_of_range &) {
-            Logger::default_logger().debug("Material %s is incomplete or malformed", proto.uid.c_str());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::InvalidContent, proto, "Material is incomplete or malformed");
         } catch (std::exception &ex) {
             UNUSED(ex); // only gets used in debug mode
-            Logger::default_logger().debug("Unspecified exception while parsing material %s (what: %s)",
-                    proto.uid.c_str(), ex.what());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                    "Unspecified exception while parsing material: " + std::string(ex.what()));
         }
     }
 
-    void *MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
-        affirm_precond(type == std::type_index(typeid(Material)),
-                "Incorrect pointer type passed to MaterialLoader::copy");
+        if (type != std::type_index(typeid(Material))) {
+            return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
+        }
 
         auto &src_mat = *reinterpret_cast<Material *>(src);
 
@@ -156,11 +153,10 @@ namespace argus {
         std::map<std::string, const Resource *> deps;
         auto deps_res = load_dependencies(manager, dep_uids);
         if (deps_res.is_err()) {
-            Logger::default_logger().warn("Failed to load dependencies for material %s", proto.uid.c_str());
-            return nullptr;
+            return err<void *, ResourceError>(deps_res.unwrap_err());
         }
 
-        return new Material(std::move(src_mat));
+        return make_ok_result(new Material(std::move(src_mat)));
     }
 
     void MaterialLoader::unload(void *const data_buf) const {

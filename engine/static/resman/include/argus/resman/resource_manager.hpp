@@ -35,11 +35,16 @@ namespace argus {
     struct pimpl_ResourceManager;
 
     enum class ResourceErrorReason {
+        Generic,
         NotFound,
         NotLoaded,
         AlreadyLoaded,
         NoLoader,
         LoadFailed,
+        MalformedContent,
+        InvalidContent,
+        UnsupportedContent,
+        UnexpectedReferenceType,
     };
 
     struct ResourceError {

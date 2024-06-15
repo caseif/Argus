@@ -65,7 +65,7 @@ namespace argus {
         ResourceLoader({ RESOURCE_TYPE_SPRITE }) {
     }
 
-    void *SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(proto);
@@ -80,8 +80,8 @@ namespace argus {
                 sprite.def_speed = json_root.at(KEY_SPEED);
 
                 if (sprite.def_speed <= 0) {
-                    Logger::default_logger().severe("Sprite animation speed must be > 0");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite animation speed must be > 0");
                 }
             } else {
                 sprite.def_speed = 1.0f;
@@ -97,8 +97,8 @@ namespace argus {
 
             if (json_root.contains(KEY_TILE_WIDTH)) {
                 if (!json_root.contains(KEY_TILE_HEIGHT)) {
-                    Logger::default_logger().severe("Sprite specifies tile width but not height");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite specifies tile width but not height");
                 }
 
                 tile_width = json_root.at(KEY_TILE_WIDTH);
@@ -106,21 +106,21 @@ namespace argus {
 
             if (json_root.contains(KEY_TILE_HEIGHT)) {
                 if (!json_root.contains(KEY_TILE_WIDTH)) {
-                    Logger::default_logger().severe("Sprite specifies tile height but not width");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite specifies tile height but not width");
                 }
 
                 tile_height = json_root.at(KEY_TILE_HEIGHT);
 
                 // these values default to zero, so we only want to validate them if they're provided
                 if (tile_width <= 0 || tile_height <= 0) {
-                    Logger::default_logger().severe("Sprite tile dimensions must be >= 0");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite tile dimensions must be >= 0");
                 }
 
                 if (tile_width > UINT32_MAX || tile_height > UINT32_MAX) {
-                    Logger::default_logger().severe("Sprite tile dimensions must be <= UINT32_MAX");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite tile dimensions must be <= UINT32_MAX");
                 }
             }
 
@@ -133,17 +133,15 @@ namespace argus {
                 } else if (json_root.contains(KEY_STATIC_FRAME)) {
                     sprite.def_anim = k_magic_anim_static;
                 } else {
-                    Logger::default_logger().severe("Sprite definition must specify at least one of '"
-                                                    KEY_DEF_ANIM "' or '" KEY_STATIC_FRAME
-                                                    "' when tile size is provided explicitly");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite definition must specify at least one of '" KEY_DEF_ANIM "' or '"
+                            KEY_STATIC_FRAME "' when tile size is provided explicitly");
                 }
 
                 if (!json_root.contains(KEY_ANIMS) && !json_root.contains(KEY_STATIC_FRAME)) {
-                    Logger::default_logger().severe("Sprite must contain at least one of '"
-                                                    KEY_ANIMS "' or '" KEY_STATIC_FRAME
-                                                    "' when tile size is provided explicitly");
-                    return nullptr;
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite must contain at least one of '" KEY_ANIMS "' or '"
+                            KEY_STATIC_FRAME "' when tile size is provided explicitly");
                 }
 
                 if (json_root.contains(KEY_STATIC_FRAME)) {
@@ -153,13 +151,13 @@ namespace argus {
                     int64_t frame_y = frame_json.at(KEY_STATIC_FRAME_Y);
 
                     if (frame_x < 0 || frame_y < 0) {
-                        Logger::default_logger().severe("Static frame offset values must be >= 0");
-                        return nullptr;
+                        return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                "Static frame offset values must be >= 0");
                     }
 
                     if (frame_x > UINT32_MAX || frame_y > UINT32_MAX) {
-                        Logger::default_logger().severe("Static frame offset values must be < UINT32_MAX");
-                        return nullptr;
+                        return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                "Static frame offset values must be < UINT32_MAX");
                     }
 
                     SpriteAnimation static_anim;
@@ -175,13 +173,13 @@ namespace argus {
                 }
             } else {
                 if (json_root.contains(KEY_STATIC_FRAME)) {
-                    Logger::default_logger().severe("Sprite definition must not include '"
-                                                    KEY_STATIC_FRAME "' when tile size is implicit");
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite definition must not include '" KEY_STATIC_FRAME "' when tile size is implicit");
                 }
 
                 if (json_root.contains(KEY_ANIMS)) {
-                    Logger::default_logger().severe("Sprite definition must not include '"
-                                                    KEY_ANIMS "' when tile size is implicit");
+                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                            "Sprite definition must not include '" KEY_ANIMS "' when tile size is implicit");
                 }
 
                 sprite.def_anim = k_magic_anim_static;
@@ -201,18 +199,18 @@ namespace argus {
             if (json_root.contains(KEY_ANIMS)) {
                 for (auto &[anim_id, anim_json] : json_root.at(KEY_ANIMS).get<nlohmann::json::object_t>()) {
                     if (anim_id.empty()) {
-                        Logger::default_logger().severe("Sprite animation ID must be non-empty");
-                        return nullptr;
+                        return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                "Sprite animation ID must be non-empty");
                     }
 
                     if (anim_id.at(0) == '_') {
-                        Logger::default_logger().severe("Sprite animation ID must not begin with underscore");
-                        return nullptr;
+                        return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                "Sprite animation ID must not begin with underscore");
                     }
 
                     if (sprite.animations.find(anim_id) != sprite.animations.cend()) {
-                        Logger::default_logger().severe("Sprite animation \"" + anim_id + "\" is already defined");
-                        return nullptr;
+                        return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                "Sprite animation \"" + anim_id + "\" is already defined");
                     }
 
                     SpriteAnimation anim;
@@ -224,8 +222,8 @@ namespace argus {
                     if (anim_json.contains(k_key_anim_def_frame_dur)) {
                         anim.def_duration = anim_json.at(k_key_anim_def_frame_dur);
                         if (anim.def_duration <= 0) {
-                            Logger::default_logger().severe("Sprite frame duration must be >= 0");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite frame duration must be >= 0");
                         }
                     } else {
                         anim.def_duration = 0;
@@ -258,26 +256,24 @@ namespace argus {
 
                         if (pad_left < 0 || pad_right < 0
                                 || pad_top < 0 || pad_bottom < 0) {
-                            Logger::default_logger().severe("Sprite padding values must be >= 0");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite padding values must be >= 0");
                         }
 
                         if (pad_left > UINT32_MAX || pad_right > UINT32_MAX
                                 || pad_top > UINT32_MAX || pad_bottom > UINT32_MAX) {
-                            Logger::default_logger().severe("Sprite padding values must be < UINT32_MAX");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite padding values must be < UINT32_MAX");
                         }
 
                         if (pad_left + pad_right >= sprite.tile_size.x) {
-                            Logger::default_logger().severe("Sprite animation horizontal padding must not "
-                                                            "exceed atlas tile width");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite animation horizontal padding must not exceed atlas tile width");
                         }
 
                         if (pad_top + pad_bottom >= sprite.tile_size.y) {
-                            Logger::default_logger().severe("Sprite animation vertical padding must not "
-                                                            "exceed atlas tile height");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite animation vertical padding must not exceed atlas tile height");
                         }
 
                         anim.padding.left = uint32_t(pad_left);
@@ -294,14 +290,13 @@ namespace argus {
                         int64_t offset_y = frame_json.at(k_key_anim_frame_y);
 
                         if (offset_x < 0 || offset_y < 0) {
-                            Logger::default_logger().severe("Sprite animation frame offset values must be >= 0");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite animation frame offset values must be >= 0");
                         }
 
                         if (offset_x > UINT32_MAX || offset_y > UINT32_MAX) {
-                            Logger::default_logger().severe(
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
                                     "Sprite animation frame offset values must be <= UINT32_MAX");
-                            return nullptr;
                         }
 
                         frame.offset.x = uint32_t(offset_x);
@@ -310,15 +305,15 @@ namespace argus {
                         if (frame_json.contains(k_key_anim_frame_dur)) {
                             frame.duration = frame_json.at(k_key_anim_frame_dur);
                             if (frame.duration <= 0) {
-                                Logger::default_logger().severe("Sprite animation frame duration must be > 0");
-                                return nullptr;
+                                return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                        "Sprite animation frame duration must be > 0");
                             }
                         } else if (anim.def_duration > 0) {
                             frame.duration = anim.def_duration;
                         } else {
-                            Logger::default_logger().severe("Sprite animation frame duration must be provided if no "
-                                                            "default exists for the containing animation");
-                            return nullptr;
+                            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                                    "Sprite animation frame duration must be provided if no default exists for the "
+                                    "containing animation");
                         }
 
                         anim.frames.push_back(frame);
@@ -330,26 +325,26 @@ namespace argus {
 
             Logger::default_logger().debug("Successfully loaded sprite definition %s", proto.uid.c_str());
 
-            return new SpriteDef(std::move(sprite));
+            return make_ok_result(new SpriteDef(std::move(sprite)));
         } catch (nlohmann::detail::parse_error &) {
-            Logger::default_logger().severe("Failed to parse sprite definition %s", proto.uid.c_str());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::MalformedContent, proto,
+                    "Failed to parse sprite definition");
         } catch (std::out_of_range &) {
-            Logger::default_logger().severe("Sprite definition %s is incomplete or malformed", proto.uid.c_str());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                    "Sprite definition is incomplete or malformed");
         } catch (std::exception &ex) {
-            Logger::default_logger().severe("Unspecified exception while parsing sprite definition %s (what: %s)",
-                    proto.uid.c_str(), ex.what());
-            return nullptr;
+            return make_err_result(ResourceErrorReason::Generic, proto,
+                    "Unspecified exception while parsing sprite definition: " + std::string(ex.what()));
         }
     }
 
-    void *SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
-        affirm_precond(type == std::type_index(typeid(SpriteDef)),
-                "Incorrect pointer type passed to SpriteLoader::copy");
+        if (type == std::type_index(typeid(SpriteDef))) {
+            return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
+        }
 
-        auto &src_sprite = *reinterpret_cast<SpriteDef *>(src);
+        auto &src_sprite = *static_cast<SpriteDef *>(src);
 
         std::vector<std::string> dep_uids;
 
@@ -358,10 +353,9 @@ namespace argus {
             Logger::default_logger().warn("Failed to load dependency %s for sprite %s (%d)",
                     deps_res.unwrap_err().uid.c_str(), proto.uid.c_str(),
                     static_cast<std::underlying_type_t<ResourceErrorReason>>(deps_res.unwrap_err().reason));
-            return nullptr;
         }
 
-        return new SpriteDef(std::move(src_sprite));
+        return make_ok_result(new SpriteDef(std::move(src_sprite)));
     }
 
     void SpriteLoader::unload(void *data_ptr) const {

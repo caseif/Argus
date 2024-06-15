@@ -20,6 +20,7 @@
 #include "argus/lowlevel/macros.hpp"
 
 #include "argus/resman/resource_loader.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/defines.hpp"
 #include "argus/render/common/texture_data.hpp"
@@ -53,7 +54,7 @@ namespace argus {
         ResourceLoader({ RESOURCE_TYPE_TEXTURE_PNG }) {
     }
 
-    void *PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(manager);
         UNUSED(proto);
@@ -62,7 +63,7 @@ namespace argus {
         stream.read(reinterpret_cast<char *>(sig), 8);
 
         if (png_sig_cmp(sig, 0, 8) != 0) {
-            throw std::invalid_argument("Invalid PNG file");
+            return make_err_result(ResourceErrorReason::MalformedContent, proto, "Invalid PNG file");
         }
 
         png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -78,7 +79,7 @@ namespace argus {
         }
 
         png_infop end_info_ptr = png_create_info_struct(png_ptr);
-        if (info_ptr == nullptr) {
+        if (end_info_ptr == nullptr) {
             png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
             crash("png_create_info_struct failed");
@@ -89,7 +90,7 @@ namespace argus {
         #pragma warning(disable: 4611)
         #endif
         if (setjmp(png_jmpbuf(png_ptr)) != 0) { // NOLINT(*-err52-cpp)
-            crash("libpng failed");
+            crash("libpng setjmp failed");
         }
         #ifdef _MSC_VER
         #pragma warning(pop)
@@ -107,7 +108,8 @@ namespace argus {
         auto color_type = png_get_color_type(png_ptr, info_ptr);
 
         if (width > INT32_MAX || height > INT32_MAX) {
-            throw std::runtime_error("Texture dimensions are too large (max 2147483647 pixels)");
+            return make_err_result(ResourceErrorReason::UnsupportedContent, proto,
+                    "Texture dimensions are too large (max 2147483647 pixels)");
         }
 
         if (bit_depth == 16) {
@@ -156,20 +158,20 @@ namespace argus {
 
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
-        return new TextureData { width, height, std::move(row_pointers) };
+        return make_ok_result(new TextureData { width, height, std::move(row_pointers) });
     }
 
-    void *PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+    Result<void *, ResourceError> PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
             void *src, std::type_index type) const {
         UNUSED(manager);
-        UNUSED(proto);
 
-        affirm_precond(type == std::type_index(typeid(TextureData)),
-                "Incorrect pointer type passed to PngTextureLoader::copy");
+        if (type != std::type_index(typeid(TextureData))) {
+            return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
+        }
 
         // no dependencies to load so we can just do a blind copy
 
-        return new TextureData(std::move(*reinterpret_cast<TextureData *>(src)));
+        return make_ok_result(new TextureData(std::move(*static_cast<TextureData *>(src))));
     }
 
     void PngTextureLoader::unload(void *const data_buf) const {
