@@ -20,9 +20,6 @@
 
 #include "argus/lowlevel/crash.hpp"
 
-#include <stdexcept>
-#include <system_error>
-
 #define validate_arg(cond, what) _validate_arg(cond, __func__, what)
 #define validate_arg_not(cond, what) validate_arg(!(cond), what)
 #define validate_state(cond, what) _validate_state(cond, __func__, what)
@@ -31,7 +28,7 @@
 
 inline void _validate_arg(bool cond, const std::string &caller, const std::string &what) {
     if (!cond) {
-        throw std::invalid_argument(caller + ": " + what);
+        argus::crash_ll(caller + ": " + what);
     }
 }
 
