@@ -140,9 +140,6 @@ namespace argus {
          * @param parent The Window which is parent to the new one, or
          *        `nullptr` if the window does not have a parent..
          *
-         * @throw std::invalid_argument If the identifier is invalid or is
-         *        already in use.
-         *
          * @warning Not all platforms may support multiple
          *          \link Window Windows \endlink.
          *
@@ -171,9 +168,6 @@ namespace argus {
          * @param ctor The constructor used to create Canvases.
          * @param dtor The destructor used to deinitialize and deallocate
          *        Canvases.
-         *
-         * @throw std::invalid_argument If either parameter is nullptr.
-         * @throw std::runtime_error If the callbacks have already been set.
          */
         static void set_canvas_ctor_and_dtor(const CanvasCtor &ctor, const CanvasDtor &dtor);
 
@@ -183,9 +177,6 @@ namespace argus {
          * @param id The unique identifier of the Window.
          * @param parent The Window which is parent to the new one, or
          *        `nullptr` if the window does not have a parent..
-         *
-         * @throw std::invalid_argument If the identifier is invalid or is
-         *        already in use.
          *
          * @warning Not all platforms may support multiple
          *          \link Window Windows \endlink.
@@ -211,9 +202,9 @@ namespace argus {
          *
          * @return The Canvas associated with the Window.
          *
-         * @throw std::runtime_error If a Canvas has not been associated
-         *        with the Window. This can occur if a renderer module has
-         *        not been requested or if the renderer module is buggy.
+         * @note This will trigger a panic if a Canvas has not been associated
+         *       with the Window. This can occur if a render module has not been
+         *       requested or if the renderer module is buggy.
          */
         [[nodiscard]] Canvas &get_canvas(void) const;
 

@@ -389,7 +389,7 @@ namespace argus {
                 #if SDL_VERSION_ATLEAST(2, 0, 14)
                 sdl_flags = SDL_WindowFlags(sdl_flags | SDL_WINDOW_METAL);
                 #else
-                throw std::invalid_argument("Metal contexts require SDL 2.0.14 or newer");
+                crash("Metal contexts require SDL 2.0.14 or newer");
                 #endif
                 #else
                 crash("Metal contexts are not supported on non-Apple platforms");

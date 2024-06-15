@@ -38,7 +38,7 @@ namespace argus {
 
         auto profile_bits = flags & GLContextFlags::ProfileMask;
         if ((profile_bits & (int(profile_bits) - 1)) != 0) {
-            //throw std::invalid_argument("Only one GL profile flag may be set during context creation aa");
+            crash("Only one GL profile flag may be set during context creation");
         }
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, version_major);
