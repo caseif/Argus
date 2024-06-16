@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/render/2d/camera_2d.hpp"
 
@@ -41,7 +42,7 @@ namespace argus {
       public:
         static World2D &create(const std::string &id, Canvas &canvas, float scale_factor);
 
-        static World2D &get(const std::string &id);
+        static Result<World2D &, std::string> get(const std::string &id);
 
         pimpl_World2D *m_pimpl;
 

@@ -19,6 +19,7 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/math.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
@@ -53,13 +54,13 @@ namespace argus {
         return *world;
     }
 
-    World2D &World2D::get(const std::string &id) {
+    Result<World2D &, std::string> World2D::get(const std::string &id) {
         auto it = g_worlds.find(id);
         if (it == g_worlds.cend()) {
-            throw std::invalid_argument("Unknown world ID");
+            return err<World2D &, std::string>("Unknown world ID");
         }
 
-        return *it->second;
+        return ok<World2D &, std::string>(*it->second);
     }
 
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):

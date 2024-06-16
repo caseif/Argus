@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/memory.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/game2d/sprite.hpp"
 #include "internal/game2d/pimpl/sprite.hpp"
 #include "internal/game2d/sprite.hpp"
@@ -67,7 +69,7 @@ namespace argus {
     void Sprite::set_current_animation(const std::string &animation_id) {
         auto it = m_pimpl->get_def().animations.find(animation_id);
         if (it == m_pimpl->get_def().animations.end()) {
-            throw std::invalid_argument("Animation not found by ID");
+            crash("Animation not found by ID");
         }
 
         m_pimpl->cur_anim_id = animation_id;
