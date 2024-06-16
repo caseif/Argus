@@ -133,8 +133,6 @@ namespace argus {
          * @brief Removes the supplied RenderGroup2D from this Scene,
          *        destroying it in the process.
          * @param handle The handle to the group to remove and destroy.
-         * @throw std::invalid_argument If the supplied RenderGroup is not a
-         *        direct member of this Scene.
          */
         void remove_group(Handle handle);
 
@@ -142,8 +140,6 @@ namespace argus {
          * @brief Removes the specified RenderObject2D from this Scene,
          *        destroying it in the process.
          * @param handle The handle to the RenderObject2D to remove and destroy.
-         * @throw std::invalid_argument If the supplied RenderObject is not
-         *        a direct member of this Scene.
          */
         void remove_object(Handle handle);
 

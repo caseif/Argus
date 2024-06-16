@@ -131,10 +131,6 @@ namespace argus {
          *        destroying it in the process.
          *
          * @param handle The handle of the group to remove and destroy.
-         *
-         * @throw std::invalid_argument If the given ID does not match a
-         *        group in the scene or if the matching group is not a child
-         *        of this group.
          */
         void remove_group(Handle handle);
 
@@ -143,10 +139,6 @@ namespace argus {
          *        destroying it in the process.
          *
          * @param handle The handle of the object remove and destroy.
-         *
-         * @throw std::invalid_argument If the given ID does not match an
-         *        object in the scene or if the matching object is not a
-         *        child of this group.
          */
         void remove_object(Handle handle);
 
