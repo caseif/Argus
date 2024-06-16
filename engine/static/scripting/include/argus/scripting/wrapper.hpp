@@ -252,7 +252,7 @@ namespace argus {
                 VectorWrapper *wrapper = reinterpret_cast<VectorWrapper *>(obj);
                 return wrapper->get_underlying_vector<E>();
             } else {
-                throw std::runtime_error("Invalid vector object type magic");
+                crash("Invalid vector object type magic");
             }
         } else if constexpr (is_reference_wrapper_v<T>) {
             assert(param.type.type == IntegralType::Pointer);

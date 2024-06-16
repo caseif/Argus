@@ -607,7 +607,7 @@ namespace argus {
             case 8:
                 return *reinterpret_cast<const double *>(wrapper.value);
             default:
-                throw std::invalid_argument("Bad floating-point width " + std::to_string(wrapper.type.size)
+                crash("Bad floating-point width " + std::to_string(wrapper.type.size)
                         + " (must be 4, or 8)");
         }
     }

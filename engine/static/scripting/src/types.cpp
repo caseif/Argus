@@ -248,7 +248,7 @@ namespace argus {
         m_count(count),
         m_element_dtor(element_dtor) {
         if (element_size == 0) {
-            throw std::invalid_argument("Element size must be greater than zero");
+            crash("Element size must be greater than zero");
         }
     }
 
@@ -274,7 +274,7 @@ namespace argus {
 
     void *ArrayBlob::operator[](size_t index) {
         if (index >= m_count) {
-            throw std::invalid_argument("Index is out of bounds");
+            crash("ArrayBlob index is out of bounds");
         }
 
         return reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(m_blob) + (m_element_size * index));
@@ -283,7 +283,7 @@ namespace argus {
     const void *ArrayBlob::operator[](size_t index) const {
         //return const_cast<const void *>(const_cast<ArrayBlob *>(this)->operator[](index));
         if (index >= m_count) {
-            throw std::invalid_argument("Index is out of bounds");
+            crash("ArrayBlob index is out of bounds");
         }
 
         return reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(m_blob) + (m_element_size * index));
@@ -336,8 +336,8 @@ namespace argus {
     const void *VectorWrapper::at(size_t index) const {
         auto size = (*m_get_size_fn)(m_underlying_vec);
         if (index >= size) {
-            throw std::out_of_range("Index " + std::to_string(index)
-                    + " is out of range in vector of size " + std::to_string(size));
+            crash("Index " + std::to_string(index)
+                    + " is out of range in VectorWrapper of size " + std::to_string(size));
         }
 
         return reinterpret_cast<void *>(reinterpret_cast<uintptr_t>((*m_get_element_fn)(m_underlying_vec, index)));

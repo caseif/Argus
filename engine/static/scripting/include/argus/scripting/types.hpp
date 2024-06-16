@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/core/engine.hpp"
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -251,7 +253,7 @@ namespace argus {
         template<typename T>
         [[nodiscard]] const T &at(size_t index) const {
             if (sizeof(T) != m_element_size) {
-                throw std::invalid_argument("Template parameter size does not match element size");
+                crash("Template parameter size does not match element size");
             }
             return *reinterpret_cast<const T *>(this->operator[](index));
         }
@@ -341,7 +343,7 @@ namespace argus {
         template<typename E>
         void set(size_t index, const E &val) {
             if (sizeof(E) != m_element_size) {
-                throw std::invalid_argument("Template type size does not match element size of VectorWrapper");
+                crash("Template type size does not match element size of VectorWrapper");
             }
             set(index, reinterpret_cast<void *>(&val));
         }

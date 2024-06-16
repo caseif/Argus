@@ -225,6 +225,10 @@ namespace argus {
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor) {
+        if (size == 0) {
+            crash("Bound types cannot be zero-sized");
+        }
+
         BoundTypeDef def {
                 name,
                 size,

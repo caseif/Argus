@@ -183,18 +183,18 @@ namespace argus {
         ObjectType &el_type = *vec_type.element_type.value();
 
         if (el_type.type == IntegralType::Void) {
-            throw std::invalid_argument("Vectors of void are not supported");
+            crash("Vectors of void are not supported");
         } else if (el_type.type == IntegralType::Callback) {
-            throw std::invalid_argument("Vectors of callbacks are not supported");
+            crash("Vectors of callbacks are not supported");
         } else if (el_type.type == IntegralType::Type) {
-            throw std::invalid_argument("Vectors of types are not supported");
+            crash("Vectors of types are not supported");
         } else if (el_type.type == IntegralType::Vector) {
-            throw std::invalid_argument("Vectors of vectors are not supported");
+            crash("Vectors of vectors are not supported");
         } else if (el_type.type == IntegralType::Boolean) {
-            // C++ is stupid and specializes std::vector<bool> as a bitfield,
-            // which fucks with our assumptions about how we can tinker with
-            // the vector. Much easier to just not support it.
-            throw std::invalid_argument("Vectors of booleans are not supported");
+            // C++ is stupid and specializes std::vector<bool> as a bitfield
+            // which messes up our assumptions about how we can tinker with the
+            // vector. Much easier to just not support it.
+            crash("Vectors of booleans are not supported");
         }
     }
 
