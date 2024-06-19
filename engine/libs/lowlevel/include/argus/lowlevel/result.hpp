@@ -144,7 +144,7 @@ namespace argus {
             } else if constexpr (has_to_string_fn_v<E>) {
                 return unwrap_err().to_string();
             } else {
-                static_assert(false, "Cannot apply stringify_error to type");
+                static_assert(!sizeof(E *), "Cannot apply stringify_error to type");
             }
         }
 
