@@ -16,15 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <string>
+#include "argus/scripting/error.hpp"
 
 namespace argus {
-    struct BindingError {
-        std::string bound_name;
-        std::string msg;
-
-        std::string to_string(void) const;
-    };
+    std::string BindingError::to_string(void) const {
+        return "{ "
+                "bound_name = \""
+                + bound_name
+                + "\", message = \""
+                + msg
+                + "\" }";
+    }
 }

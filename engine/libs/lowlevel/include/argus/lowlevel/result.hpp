@@ -27,6 +27,50 @@ namespace argus {
     template<typename T, typename E>
     class Result;
 
+    template<typename, typename T>
+    struct has_to_string_fn : std::false_type {
+    };
+
+    template<typename T>
+    struct has_to_string_fn<T, std::enable_if_t<
+            std::is_same_v<std::string, typename function_traits<decltype(&T::to_string)>::return_type>
+                    && std::tuple_size_v<typename function_traits<decltype(&T::to_string)>::argument_types> == 0
+                    && function_traits<decltype(&T::to_string)>::is_const::value,
+            void>> : std::true_type {
+    };
+
+    template<typename T>
+    constexpr bool has_to_string_fn_v = has_to_string_fn<T, void>::value;
+
+    template<typename, typename T>
+    struct is_stringifiable : std::false_type {
+    };
+
+    template<>
+    struct is_stringifiable<void, void> : std::true_type {
+    };
+
+    template<>
+    struct is_stringifiable<std::string, void> : std::true_type {
+    };
+
+    template<>
+    struct is_stringifiable<std::string &, void> : std::true_type {
+    };
+
+    template<>
+    struct is_stringifiable<const std::string &, void> : std::true_type {
+    };
+
+    template<typename T>
+    struct is_stringifiable<T,
+            std::void_t<decltype(std::to_string(*static_cast<std::remove_reference_t<T> *>(nullptr)))>>
+            : std::true_type {
+    };
+
+    template<typename T>
+    constexpr bool is_stringifiable_v = is_stringifiable<T, void>::value;
+
     template<typename T, typename E>
     std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(T value);
 
@@ -80,8 +124,29 @@ namespace argus {
 
     template<typename T, typename E>
     class Result {
+        static_assert(is_stringifiable_v<E> || has_to_string_fn_v<E>,
+                "Error type of Result must be a string or otherwise provide a valid to_string member function");
+
       private:
         ResultStorage<T, E> m_storage;
+
+        std::string stringify_error(void) const {
+            if (!is_err()) {
+                crash_ll("Cannot stringify non-error Result");
+            }
+
+            if constexpr (std::is_void_v<E>) {
+                return "(void)";
+            } else if constexpr (std::is_same_v<std::string, std::remove_cv_t<std::remove_reference_t<E>>>) {
+                return unwrap_err();
+            } else if constexpr (std::is_arithmetic_v<std::remove_reference_t<E>>) {
+                return std::to_string(unwrap_err());
+            } else if constexpr (has_to_string_fn_v<E>) {
+                return unwrap_err().to_string();
+            } else {
+                static_assert(false, "Cannot apply stringify_error to type");
+            }
+        }
 
       public:
         // workaround for VS <=17.2, see comment in ResultStorage
@@ -119,7 +184,7 @@ namespace argus {
         template<typename U = T>
         [[nodiscard]] std::enable_if_t<!std::is_void_v<U>, const U &> unwrap(void) const {
             if (!is_ok()) {
-                crash_ll("Attempted to call unwrap() on error-typed Result");
+                crash_ll("Attempted to call unwrap() on error-typed Result (" + stringify_error() + ")");
             }
             if constexpr (!std::is_void_v<E>) {
                 #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
@@ -142,7 +207,7 @@ namespace argus {
         template<typename U = E>
         [[nodiscard]] std::enable_if_t<!std::is_void_v<U>, const U &> unwrap_err(void) const {
             if (!is_err()) {
-                crash_ll("Attempted to call unwrap() on value-typed Result");
+                crash_ll("Attempted to call unwrap_err() on value-typed Result");
             }
             if constexpr (!std::is_void_v<T>) {
                 #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
@@ -239,7 +304,7 @@ namespace argus {
         template<typename U = T>
         std::enable_if_t<!std::is_void_v<U>, const U &> expect(const std::string &msg) const {
             if (!is_ok()) {
-                crash_ll(msg);
+                crash_ll(msg + " (" + stringify_error() + ")");
             }
             return unwrap();
         }
@@ -252,7 +317,7 @@ namespace argus {
         template<typename U = T>
         std::enable_if_t<std::is_void_v<U>, void> expect(const std::string &msg) const {
             if (!is_ok()) {
-                crash_ll(msg);
+                crash_ll(msg + " (" + stringify_error() + ")");
             }
         }
 

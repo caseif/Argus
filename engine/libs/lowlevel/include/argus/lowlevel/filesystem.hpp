@@ -80,6 +80,8 @@ namespace argus {
     struct FileOpenError {
         FileOpenErrorReason reason;
         int error_code;
+
+        std::string to_string(void) const;
     };
 
     /**

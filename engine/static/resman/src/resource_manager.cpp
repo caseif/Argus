@@ -62,6 +62,17 @@
 #define RESOURCES_DIR "resources"
 
 namespace argus {
+    std::string ResourceError::to_string(void) const {
+        return "ResourceError { "
+                "reason = "
+                + std::to_string(std::underlying_type_t<ResourceErrorReason>(reason))
+                + ", uid = \""
+                + uid
+                + "\", info = \""
+                + info
+                + "\" }";
+    }
+
     static void _load_initial_ext_mappings(std::map<std::string, std::string> &target) {
         size_t count = 0;
         extension_mapping_t *mappings = arp_get_extension_mappings(&count);

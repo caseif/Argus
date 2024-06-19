@@ -93,6 +93,15 @@
 #define CHUNK_SIZE 4096LU
 
 namespace argus {
+    std::string FileOpenError::to_string(void) const {
+        return "FileOpenError { "
+                "reason = "
+                + std::to_string(std::underlying_type_t<FileOpenErrorReason>(reason))
+                + ", error_code = "
+                + std::to_string(error_code)
+                + " }";
+    }
+
     static FileOpenErrorReason _map_file_error(int code) {
         switch (code) {
             case EPERM:

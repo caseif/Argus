@@ -51,6 +51,8 @@ namespace argus {
         ResourceErrorReason reason;
         std::string uid;
         std::string info;
+
+        std::string to_string(void) const;
     };
 
     /**
