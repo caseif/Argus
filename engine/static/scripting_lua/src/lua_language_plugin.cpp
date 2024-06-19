@@ -255,8 +255,8 @@ namespace argus {
         // for simplicity's sake we require contiguous indices
 
         switch (element_type.type) {
-            case Integer:
-            case Enum: {
+            case IntegralType::Integer:
+            case IntegralType::Enum: {
                 auto check_fn = [](auto *state, auto index) {
                     if (lua_isinteger(state, index)) {
                         return true;
@@ -289,7 +289,7 @@ namespace argus {
                 }
                 break;
             }
-            case Float: {
+            case IntegralType::Float: {
                 auto read_fn = [](auto *state, auto index) { return lua_tonumber(state, index); };
                 switch (element_type.size) {
                     case 4:
@@ -303,12 +303,12 @@ namespace argus {
                 }
                 break;
             }
-            case String:
+            case IntegralType::String:
                 return _wrap_prim_vector_param<std::string, const char *>(state, param_def, lua_isstring,
                         [](auto *state, auto index) { return lua_tostring(state, index); },
                         "string", param_index, qual_fn_name, dest);
-            case Struct:
-            case Pointer: {
+            case IntegralType::Struct:
+            case IntegralType::Pointer: {
                 // get number of indexed elements
                 auto len = lua_rawlen(state, -1);
                 affirm_precond(len <= INT_MAX, "Too many table indices");
@@ -395,7 +395,7 @@ namespace argus {
             }
             default:
                 crash("Unhandled element type ordinal "
-                        + std::to_string(element_type.type));
+                        + std::to_string(std::underlying_type_t<IntegralType>(element_type.type)));
         }
 
         return 0;
@@ -407,8 +407,8 @@ namespace argus {
 
         try {
             switch (param_def.type) {
-                case Integer:
-                case Enum: {
+                case IntegralType::Integer:
+                case IntegralType::Enum: {
                     if (!lua_isinteger(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
@@ -420,7 +420,7 @@ namespace argus {
 
                     return 0;
                 }
-                case Float: {
+                case IntegralType::Float: {
                     if (!lua_isnumber(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
@@ -431,7 +431,7 @@ namespace argus {
 
                     return 0;
                 }
-                case Boolean: {
+                case IntegralType::Boolean: {
                     if (!lua_isboolean(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
@@ -442,7 +442,7 @@ namespace argus {
 
                     return 0;
                 }
-                case String: {
+                case IntegralType::String: {
                     if (!lua_isstring(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
@@ -453,8 +453,8 @@ namespace argus {
 
                     return 0;
                 }
-                case Struct:
-                case Pointer: {
+                case IntegralType::Struct:
+                case IntegralType::Pointer: {
                     assert(param_def.type_name.has_value());
                     assert(param_def.type_index.has_value());
 
@@ -495,7 +495,7 @@ namespace argus {
 
                     return 0;
                 }
-                case Callback: {
+                case IntegralType::Callback: {
                     /*if (!lua_isfunction(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                                      + std::to_string(param_index) + " of function " + qual_fn_name
@@ -513,7 +513,7 @@ namespace argus {
 
                     return 0;
                 }
-                case Type: {
+                case IntegralType::Type: {
                     if (!lua_istable(state, param_index)) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
@@ -545,8 +545,8 @@ namespace argus {
 
                     return 0;
                 }
-                case Vector:
-                case VectorRef: {
+                case IntegralType::Vector:
+                case IntegralType::VectorRef: {
                     assert(param_def.element_type.has_value());
 
                     if (lua_istable(state, param_index)) {
@@ -684,8 +684,8 @@ namespace argus {
             // push index to stack
             lua_pushinteger(state, int(i + 1));
             switch (element_type.type) {
-                case Integer:
-                case Enum:
+                case IntegralType::Integer:
+                case IntegralType::Enum:
                     switch (vec.element_size()) {
                         case 1:
                             lua_pushinteger(state, vec.at<int8_t>(i));
@@ -703,16 +703,16 @@ namespace argus {
                             crash("Unhandled int width " + std::to_string(vec.element_size()) + " in vector");
                     }
                     break;
-                case Float:
+                case IntegralType::Float:
                     lua_pushnumber(state, vec.element_size() == 8 ? vec.at<double>(i) : vec.at<float>(i));
                     break;
-                case Boolean:
+                case IntegralType::Boolean:
                     lua_pushboolean(state, vec.at<bool>(i));
                     break;
-                case String:
+                case IntegralType::String:
                     lua_pushstring(state, vec.at<std::string>(i).c_str());
                     break;
-                case Struct: {
+                case IntegralType::Struct: {
                     assert(element_type.type_name.has_value());
 
                     auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
@@ -730,7 +730,7 @@ namespace argus {
 
                     break;
                 }
-                case Pointer: {
+                case IntegralType::Pointer: {
                     auto ptr = vec.at<void *>(i);
                     if (ptr != nullptr) {
                         auto handle = get_or_create_sv_handle(ptr, element_type.type_index.value());
@@ -748,7 +748,8 @@ namespace argus {
                 default:
                     // remove key from stack
                     lua_pop(state, 1);
-                    crash("Unhandled element type ordinal " + std::to_string(element_type.type));
+                    crash("Unhandled element type ordinal "
+                            + std::to_string(std::underlying_type_t<IntegralType>(element_type.type)));
                     break;
             }
 
@@ -761,21 +762,21 @@ namespace argus {
         assert(wrapper.type.type != IntegralType::Void);
 
         switch (wrapper.type.type) {
-            case Integer:
-            case Enum:
+            case IntegralType::Integer:
+            case IntegralType::Enum:
                 lua_pushinteger(state, _unwrap_int_wrapper(wrapper));
                 break;
-            case Float:
+            case IntegralType::Float:
                 lua_pushnumber(state, _unwrap_float_wrapper(wrapper));
                 break;
-            case Boolean:
+            case IntegralType::Boolean:
                 lua_pushboolean(state, _unwrap_boolean_wrapper(wrapper));
                 break;
-            case String:
+            case IntegralType::String:
                 lua_pushstring(state, reinterpret_cast<const char *>(
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
                 break;
-            case Struct: {
+            case IntegralType::Struct: {
                 assert(wrapper.type.type_name.has_value());
 
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
@@ -786,7 +787,7 @@ namespace argus {
 
                 break;
             }
-            case Pointer: {
+            case IntegralType::Pointer: {
                 assert(wrapper.type.type_name.has_value());
                 assert(wrapper.type.type_index.has_value());
 
@@ -805,7 +806,7 @@ namespace argus {
 
                 break;
             }
-            case Vector: {
+            case IntegralType::Vector: {
                 auto &vec = *reinterpret_cast<const ArrayBlob *>(wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
                 affirm_precond(vec.size() <= INT_MAX, "Vector is too big");
 
@@ -826,7 +827,7 @@ namespace argus {
                 // table is now on top of stack
                 break;
             }
-            case VectorRef: {
+            case IntegralType::VectorRef: {
                 auto &vec = *reinterpret_cast<const VectorWrapper *>(
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
 
@@ -1196,7 +1197,7 @@ namespace argus {
 
     static void _bind_fn(lua_State *state, const BoundFunctionDef &fn, const std::string &type_name) {
         // push function type
-        lua_pushinteger(state, fn.type);
+        lua_pushinteger(state, uint32_t(fn.type));
         // push type name (only if member function)
         if (fn.type != FunctionType::Global) {
             lua_pushstring(state, type_name.c_str());

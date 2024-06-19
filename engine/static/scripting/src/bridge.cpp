@@ -31,17 +31,17 @@ namespace argus {
     static const BoundFunctionDef &_get_native_function(FunctionType fn_type,
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
-            case MemberInstance:
-            case MemberStatic:
-            case Extension: {
+            case FunctionType::MemberInstance:
+            case FunctionType::MemberStatic:
+            case FunctionType::Extension: {
                 auto type_it = g_bound_types.find(type_name);
                 if (type_it == g_bound_types.cend()) {
                     throw TypeNotBoundException(type_name);
                 }
 
-                const auto &fn_map = fn_type == MemberInstance
+                const auto &fn_map = fn_type == FunctionType::MemberInstance
                         ? type_it->second.instance_functions
-                        : fn_type == Extension
+                        : fn_type == FunctionType::Extension
                                 ? type_it->second.extension_functions
                                 : type_it->second.static_functions;
 
@@ -51,7 +51,7 @@ namespace argus {
                 }
                 return fn_it->second;
             }
-            case Global: {
+            case FunctionType::Global: {
                 auto it = g_bound_global_fns.find(fn_name);
                 if (it == g_bound_global_fns.cend()) {
                     throw SymbolNotBoundException(fn_name);

@@ -40,7 +40,7 @@ namespace argus {
 
     typedef void(*DtorProxy)(void *);
 
-    enum IntegralType {
+    enum class IntegralType {
         Void,
         Integer,
         Float,
@@ -55,7 +55,7 @@ namespace argus {
         VectorRef
     };
 
-    enum FunctionType {
+    enum class FunctionType {
         Global,
         MemberStatic,
         MemberInstance,

@@ -33,14 +33,14 @@ namespace argus {
         ObjectWrapper wrapper(type, size);
 
         switch (type.type) {
-            case Vector:
+            case IntegralType::Vector:
                 crash("create_object_wrapper called for Vector type (use vector-specific function instead)");
-            case Pointer: {
+            case IntegralType::Pointer: {
                 // for pointer types we copy the pointer itself
                 memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
                 break;
             }
-            case Struct: {
+            case IntegralType::Struct: {
                 // for complex value types we indirectly use the copy constructor
                 assert(type.type_index.has_value());
 
@@ -54,7 +54,7 @@ namespace argus {
 
                 break;
             }
-            case Callback: {
+            case IntegralType::Callback: {
                 // we use the copy constructor instead of doing a bitwise copy because
                 // std::function isn't trivially copyable
                 new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
