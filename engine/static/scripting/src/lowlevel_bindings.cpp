@@ -40,47 +40,47 @@ namespace argus {
     }
 
     static void _bind_time_symbols(void) {
-        bind_type<TimeDelta>("TimeDelta");
-        bind_member_instance_function("nanos", &TimeDelta::count);
-        bind_extension_function<TimeDelta>("micros", &_nanos_to_micros);
-        bind_extension_function<TimeDelta>("millis", &_nanos_to_millis);
-        bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds);
+        bind_type<TimeDelta>("TimeDelta").expect();
+        bind_member_instance_function("nanos", &TimeDelta::count).expect();
+        bind_extension_function<TimeDelta>("micros", &_nanos_to_micros).expect();
+        bind_extension_function<TimeDelta>("millis", &_nanos_to_millis).expect();
+        bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector2(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name);
-        bind_member_field("x", &V::x);
-        bind_member_field("y", &V::y);
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
-        bind_member_static_function<V>("of", +[](E x, E y) -> V { return V(x, y); });
+        bind_type<V>(name).expect();
+        bind_member_field("x", &V::x).expect();
+        bind_member_field("y", &V::y).expect();
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
+        bind_member_static_function<V>("of", +[](E x, E y) -> V { return V(x, y); }).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector3(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name);
-        bind_member_field("x", &V::x);
-        bind_member_field("y", &V::y);
-        bind_member_field("z", &V::z);
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
-        bind_member_static_function<V>("of", +[](E x, E y, E z) -> V { return V(x, y, z); });
+        bind_type<V>(name).expect();
+        bind_member_field("x", &V::x).expect();
+        bind_member_field("y", &V::y).expect();
+        bind_member_field("z", &V::z).expect();
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
+        bind_member_static_function<V>("of", +[](E x, E y, E z) -> V { return V(x, y, z); }).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector4(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name);
-        bind_member_field("x", &V::x);
-        bind_member_field("y", &V::y);
-        bind_member_field("z", &V::z);
-        bind_member_field("w", &V::w);
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); });
-        bind_member_static_function<V>("of", +[](E x, E y, E z, E w) -> V { return V(x, y, z, w); });
+        bind_type<V>(name).expect();
+        bind_member_field("x", &V::x).expect();
+        bind_member_field("y", &V::y).expect();
+        bind_member_field("z", &V::z).expect();
+        bind_member_field("w", &V::w).expect();
+        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
+        bind_member_static_function<V>("of", +[](E x, E y, E z, E w) -> V { return V(x, y, z, w); }).expect();
     }
 
     static void _bind_math_symbols(void) {
@@ -97,15 +97,15 @@ namespace argus {
         _bind_vector4<Vector4i>("Vector4i");
         _bind_vector4<Vector4u>("Vector4u");
 
-        bind_type<Padding>("Padding");
-        bind_member_field("top", &Padding::top);
-        bind_member_field("bottom", &Padding::bottom);
-        bind_member_field("left", &Padding::left);
-        bind_member_field("right", &Padding::right);
+        bind_type<Padding>("Padding").expect();
+        bind_member_field("top", &Padding::top).expect();
+        bind_member_field("bottom", &Padding::bottom).expect();
+        bind_member_field("left", &Padding::left).expect();
+        bind_member_field("right", &Padding::right).expect();
     }
 
     static void _bind_handle_symbols(void) {
-        bind_type<Handle>("Handle");
+        bind_type<Handle>("Handle").expect();
     }
 
     void register_lowlevel_bindings(void) {

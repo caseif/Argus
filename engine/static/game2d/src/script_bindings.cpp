@@ -25,81 +25,81 @@
 
 namespace argus {
     static void _bind_world_symbols(void) {
-        bind_type<World2D>("World2D");
-        bind_member_static_function<World2D>("create", &World2D::create);
-        bind_member_static_function<World2D>("get", &World2D::get);
-        bind_member_instance_function("get_id", &World2D::get_id);
-        bind_member_instance_function("get_scale_factor", &World2D::get_scale_factor);
-        bind_member_instance_function("get_camera_transform", &World2D::get_camera_transform);
-        bind_member_instance_function("set_camera_transform", &World2D::set_camera_transform);
-        bind_member_instance_function("get_ambient_light_level", &World2D::get_ambient_light_level);
-        bind_member_instance_function("set_ambient_light_level", &World2D::set_ambient_light_level);
-        bind_member_instance_function("get_ambient_light_color", &World2D::get_ambient_light_color);
-        bind_member_instance_function("set_ambient_light_color", &World2D::set_ambient_light_color);
-        bind_member_instance_function("get_background_layer", &World2D::get_background_layer);
+        bind_type<World2D>("World2D").expect();
+        bind_member_static_function<World2D>("create", &World2D::create).expect();
+        bind_member_static_function<World2D>("get", &World2D::get_or_crash).expect();
+        bind_member_instance_function("get_id", &World2D::get_id).expect();
+        bind_member_instance_function("get_scale_factor", &World2D::get_scale_factor).expect();
+        bind_member_instance_function("get_camera_transform", &World2D::get_camera_transform).expect();
+        bind_member_instance_function("set_camera_transform", &World2D::set_camera_transform).expect();
+        bind_member_instance_function("get_ambient_light_level", &World2D::get_ambient_light_level).expect();
+        bind_member_instance_function("set_ambient_light_level", &World2D::set_ambient_light_level).expect();
+        bind_member_instance_function("get_ambient_light_color", &World2D::get_ambient_light_color).expect();
+        bind_member_instance_function("set_ambient_light_color", &World2D::set_ambient_light_color).expect();
+        bind_member_instance_function("get_background_layer", &World2D::get_background_layer).expect();
         bind_extension_function<World2D>(
                 "add_background_layer",
                 +[](World2D &world, float parallax) -> World2DLayer & {
                     return world.add_background_layer(parallax, std::nullopt);
                 }
-        );
+        ).expect();
         bind_extension_function<World2D>(
                 "add_repeating_background_layer",
                 +[](World2D &world, float parallax, float interval_x, float interval_y) -> World2DLayer & {
                     return world.add_background_layer(parallax, Vector2f { interval_x, interval_y });
                 }
-        );
-        bind_member_instance_function("get_static_object", &World2D::get_static_object);
-        bind_member_instance_function("create_static_object", &World2D::create_static_object);
-        bind_member_instance_function("delete_static_object", &World2D::delete_static_object);
-        bind_member_instance_function("get_actor", &World2D::get_actor);
-        bind_member_instance_function("create_actor", &World2D::create_actor);
-        bind_member_instance_function("delete_actor", &World2D::delete_actor);
+        ).expect();
+        bind_member_instance_function("get_static_object", &World2D::get_static_object).expect();
+        bind_member_instance_function("create_static_object", &World2D::create_static_object).expect();
+        bind_member_instance_function("delete_static_object", &World2D::delete_static_object).expect();
+        bind_member_instance_function("get_actor", &World2D::get_actor).expect();
+        bind_member_instance_function("create_actor", &World2D::create_actor).expect();
+        bind_member_instance_function("delete_actor", &World2D::delete_actor).expect();
     }
 
     static void _bind_world_layer_symbols(void) {
-        bind_type<World2DLayer>("World2DLayer");
-        bind_member_instance_function("get_static_object", &World2DLayer::get_static_object);
-        bind_member_instance_function("get_world", &World2DLayer::get_world);
+        bind_type<World2DLayer>("World2DLayer").expect();
+        bind_member_instance_function("get_static_object", &World2DLayer::get_static_object).expect();
+        bind_member_instance_function("get_world", &World2DLayer::get_world).expect();
         bind_member_instance_function<Handle(World2DLayer::*)(const std::string &, const Vector2f &, uint32_t,
-                const Transform2D &)>("create_static_object", &World2DLayer::create_static_object);
-        bind_member_instance_function("delete_static_object", &World2DLayer::delete_static_object);
-        bind_member_instance_function("get_actor", &World2DLayer::get_actor);
+                const Transform2D &)>("create_static_object", &World2DLayer::create_static_object).expect();
+        bind_member_instance_function("delete_static_object", &World2DLayer::delete_static_object).expect();
+        bind_member_instance_function("get_actor", &World2DLayer::get_actor).expect();
         bind_member_instance_function<Handle(World2DLayer::*)(const std::string &, const Vector2f &, uint32_t,
-                const Transform2D &)>("create_actor", &World2DLayer::create_actor);
-        bind_member_instance_function("delete_actor", &World2DLayer::delete_actor);
+                const Transform2D &)>("create_actor", &World2DLayer::create_actor).expect();
+        bind_member_instance_function("delete_actor", &World2DLayer::delete_actor).expect();
     }
 
     static void _bind_sprite_symbols(void) {
-        bind_type<Sprite>("Sprite");
-        bind_member_instance_function("get_animation_speed", &Sprite::get_animation_speed);
-        bind_member_instance_function("set_animation_speed", &Sprite::set_animation_speed);
-        bind_member_instance_function("get_available_animations", &Sprite::get_available_animations);
-        bind_member_instance_function("get_current_animation", &Sprite::get_current_animation);
-        bind_member_instance_function("set_current_animation", &Sprite::set_current_animation);
-        bind_member_instance_function("does_current_animation_loop", &Sprite::does_current_animation_loop);
-        bind_member_instance_function("is_current_animation_static", &Sprite::is_current_animation_static);
-        bind_member_instance_function("get_current_animation_padding", &Sprite::get_current_animation_padding);
-        bind_member_instance_function("pause_animation", &Sprite::pause_animation);
-        bind_member_instance_function("resume_animation", &Sprite::resume_animation);
-        bind_member_instance_function("reset_animation", &Sprite::reset_animation);
+        bind_type<Sprite>("Sprite").expect();
+        bind_member_instance_function("get_aimation_speed", &Sprite::get_animation_speed).expect();
+        bind_member_instance_function("set_animation_speed", &Sprite::set_animation_speed).expect();
+        bind_member_instance_function("get_available_animations", &Sprite::get_available_animations).expect();
+        bind_member_instance_function("get_current_animation", &Sprite::get_current_animation).expect();
+        bind_member_instance_function("set_current_animation", &Sprite::set_current_animation).expect();
+        bind_member_instance_function("does_current_animation_loop", &Sprite::does_current_animation_loop).expect();
+        bind_member_instance_function("is_current_animation_static", &Sprite::is_current_animation_static).expect();
+        bind_member_instance_function("get_current_animation_padding", &Sprite::get_current_animation_padding).expect();
+        bind_member_instance_function("pause_animation", &Sprite::pause_animation).expect();
+        bind_member_instance_function("resume_animation", &Sprite::resume_animation).expect();
+        bind_member_instance_function("reset_animation", &Sprite::reset_animation).expect();
     }
 
     static void _bind_static_object_symbols(void) {
-        bind_type<StaticObject2D>("StaticObject2D");
-        bind_member_instance_function("get_size", &StaticObject2D::get_size);
-        bind_member_instance_function("get_z_index", &StaticObject2D::get_z_index);
-        bind_member_instance_function("get_transform", &StaticObject2D::get_transform);
-        bind_member_instance_function("get_sprite", &StaticObject2D::get_sprite);
+        bind_type<StaticObject2D>("StaticObject2D").expect();
+        bind_member_instance_function("get_size", &StaticObject2D::get_size).expect();
+        bind_member_instance_function("get_z_index", &StaticObject2D::get_z_index).expect();
+        bind_member_instance_function("get_transform", &StaticObject2D::get_transform).expect();
+        bind_member_instance_function("get_sprite", &StaticObject2D::get_sprite).expect();
     }
 
     static void _bind_actor_symbols(void) {
-        bind_type<Actor2D>("Actor2D");
-        bind_member_instance_function("get_size", &Actor2D::get_size);
-        bind_member_instance_function("get_z_index", &Actor2D::get_z_index);
-        bind_member_instance_function("get_transform", &Actor2D::get_transform);
-        bind_member_instance_function("set_transform", &Actor2D::set_transform);
-        bind_member_instance_function("get_sprite", &Actor2D::get_sprite);
+        bind_type<Actor2D>("Actor2D").expect();
+        bind_member_instance_function("get_size", &Actor2D::get_size).expect();
+        bind_member_instance_function("get_z_index", &Actor2D::get_z_index).expect();
+        bind_member_instance_function("get_transform", &Actor2D::get_transform).expect();
+        bind_member_instance_function("set_transform", &Actor2D::set_transform).expect();
+        bind_member_instance_function("get_sprite", &Actor2D::get_sprite).expect();
     }
 
     void register_game2d_bindings(void) {

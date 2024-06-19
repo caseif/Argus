@@ -81,7 +81,7 @@ namespace argus {
         g_script_contexts.push_back(context);
 
         if (get_current_lifecycle_stage() >= LifecycleStage::PostInit) {
-            apply_bindings_to_context(*context);
+            apply_bindings_to_context(*context).expect("Failed to apply bindings to script context");
         }
 
         return *context;

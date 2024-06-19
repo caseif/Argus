@@ -619,7 +619,7 @@ namespace argus::input {
 
         auto front = manager.m_pimpl->available_gamepads.front();
         return assoc_gamepad(front, controller_name)
-                .and_then<HidDeviceId>([front](void) { return front; });
+                .and_then<HidDeviceId>([front](void) { return ok<int, std::string>(front); });
     }
 
     void unassoc_gamepad(HidDeviceId id) {

@@ -165,9 +165,9 @@ namespace argus {
         [[nodiscard]] Result<U, E> and_then(F op) const {
             if (is_ok()) {
                 if constexpr (!std::is_void_v<T>) {
-                    return ok<U, E>(op(unwrap()));
+                    return op(unwrap());
                 } else {
-                    return ok<U, E>(op());
+                    return op();
                 }
             } else {
                 if constexpr (!std::is_void_v<E>) {
@@ -245,10 +245,20 @@ namespace argus {
         }
 
         template<typename U = T>
+        std::enable_if_t<!std::is_void_v<U>, const U &> expect(void) const {
+            return expect("Expectation failed");
+        }
+
+        template<typename U = T>
         std::enable_if_t<std::is_void_v<U>, void> expect(const std::string &msg) const {
             if (!is_ok()) {
                 crash_ll(msg);
             }
+        }
+
+        template<typename U = T>
+        std::enable_if_t<std::is_void_v<U>, void> expect(void) const {
+            return expect("Expectation failed");
         }
 
         template<typename U = E>
@@ -287,9 +297,6 @@ namespace argus {
                     }
             });
             #endif
-        } else if constexpr (std::is_reference_v<T>) {
-            return Result<T, E>(ResultStorage<T, E> {
-                    std::make_optional(wrap_if_reference<T>(value)) });
         } else {
             return Result<T, E>(ResultStorage<T, E> {
                     std::make_optional(wrap_if_reference<T>(value)) });
@@ -312,9 +319,6 @@ namespace argus {
         if constexpr (!std::is_void_v<T>) {
             return Result<T, E>(ResultStorage<T, E> { std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
                     std::in_place_index<1>, wrap_if_reference<E>(error) } });
-        } else if constexpr (std::is_reference_v<E>) {
-            return Result<T, E>(ResultStorage<T, E> {
-                    std::make_optional(wrap_if_reference<E>(error)) });
         } else {
             return Result<T, E>(ResultStorage<T, E> {
                     std::make_optional(wrap_if_reference<E>(error)) });

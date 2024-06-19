@@ -318,7 +318,8 @@ namespace argus {
                     return 0;
                 }
 
-                auto bound_type = get_bound_type(element_type.type_name.value());
+                auto bound_type = get_bound_type(element_type.type_name.value())
+                        .expect("Encountered unbound element type when reading vector from Lua VM");
 
                 *dest = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
 
@@ -533,15 +534,16 @@ namespace argus {
 
                     lua_pop(state, 2); // pop type name and table
 
-                    try {
-                        auto type_index = get_bound_type(type_name).type_index;
-                        *dest = create_object_wrapper(param_def, static_cast<const void *>(&type_index));
-
-                        return 0;
-                    } catch (const std::invalid_argument &) {
+                    auto bound_type_res = get_bound_type(type_name);
+                    if (bound_type_res.is_ok()) {
+                        auto bound_type_index = bound_type_res.unwrap().type_index;
+                        *dest = create_object_wrapper(param_def, static_cast<const void *>(&bound_type_index));
+                    } else {
                         return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name);
                     }
+
+                    return 0;
                 }
                 case Vector:
                 case VectorRef: {
@@ -717,7 +719,8 @@ namespace argus {
                             sizeof(UserData) + element_type.size));
                     udata->is_handle = false;
 
-                    auto bound_type = get_bound_type(element_type.type_index.value());
+                    auto bound_type = get_bound_type(element_type.type_index.value())
+                            .expect("Tried to wrap parameter of unbound struct type");
                     if (bound_type.copy_ctor != nullptr) {
                         bound_type.copy_ctor(udata->data, vec[i]);
                     } else {
@@ -942,7 +945,10 @@ namespace argus {
             std::vector<ObjectWrapper> args;
 
             if (fn_type == FunctionType::MemberInstance) {
-                auto type_def = get_bound_type(type_name);
+                // type should definitely be bound since the trampoline function
+                // is accessed via the bound type's metatable
+                auto type_def = get_bound_type(type_name)
+                        .expect("Failed to find bound type while handling bound instance function");
 
                 //TODO: add safeguard to prevent invocation of functions on non-references
                 ObjectWrapper wrapper {};
@@ -1035,7 +1041,10 @@ namespace argus {
 
         auto qual_field_name = get_qualified_field_name(real_type_name, field_name);
 
-        auto type_def = get_bound_type(real_type_name);
+        // type should definitely be bound since the field is accessed through
+        // its associated metatable
+        auto type_def = get_bound_type(real_type_name)
+                .expect("Failed to find type while accessing field");
 
         ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def,
@@ -1099,7 +1108,9 @@ namespace argus {
             return _set_lua_error(state, "Field " + qual_field_name + " is not bound");
         }
 
-        auto type_def = get_bound_type(type_name);
+        // type should definitely be bound since the field is accessed through
+        // its associated metatable
+        auto type_def = get_bound_type(type_name).expect("Failed to find bound type while setting field");
 
         ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def, true, &inst_wrapper);
@@ -1152,7 +1163,10 @@ namespace argus {
             throw ScriptInvocationException("clone", "clone() called on non-userdata object");
         }
 
-        auto &type_def = get_bound_type(type_name);
+        // type should definitely be bound since we're getting it directly from
+        // its associated metatable
+        auto type_def_res = get_bound_type(type_name);
+        const auto &type_def = type_def_res.expect("Failed to find type while cloning object");
         if (type_def.copy_ctor == nullptr) {
             return _set_lua_error(state, type_name + " is not cloneable");
         }

@@ -133,7 +133,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns OK Result") {
-            auto combined = result.and_then<int>([](auto val) { return val + 1; });
+            auto combined = result.and_then<int>([](auto val) { return argus::ok<int, int>(val + 1); });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 43);
@@ -230,7 +230,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns error Result") {
-            auto combined = result.and_then<int>([](auto val) { return val + 1; });
+            auto combined = result.and_then<int>([](auto val) { return argus::ok<int, int>(val + 1); });
             REQUIRE(combined.is_err());
             AND_THEN("unwrap_err returns original value") {
                 REQUIRE(combined.unwrap_err() == 42);
@@ -363,7 +363,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("and_then returns OK Result") {
             auto other = 1337;
-            auto combined = result.and_then<int &>([&other](int) -> int & { return other; });
+            auto combined = result.and_then<int &>([&other](int) { return argus::ok<int &, int &>(other); });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 1337);
@@ -495,7 +495,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
 
         THEN("and_then returns error Result") {
             auto other = 1337;
-            auto combined = result.and_then<int &>([&other](int) -> int & { return other; });
+            auto combined = result.and_then<int &>([&other](int) { return argus::ok<int &, int &>(other); });
             REQUIRE(combined.is_err());
             AND_THEN("unwrap_err returns original value") {
                 REQUIRE(combined.unwrap_err() == 42);
@@ -555,7 +555,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns OK Result") {
-            auto combined = result.and_then<int>([]() { return 1337; });
+            auto combined = result.and_then<int>([]() { return argus::ok<int, int>(1337); });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 1337);
@@ -621,7 +621,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns error Result") {
-            auto combined = result.and_then<int>([]() { return 1337; });
+            auto combined = result.and_then<int>([]() { return argus::ok<int, int>(1337); });
             REQUIRE(combined.is_err());
             AND_THEN("unwrap_err returns original value") {
                 REQUIRE(combined.unwrap_err() == 42);
@@ -698,7 +698,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns OK Result") {
-            auto combined = result.and_then<int>([](auto val) { return val + 1; });
+            auto combined = result.and_then<int>([](auto val) { return argus::ok<int, void>(val + 1); });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 43);
@@ -765,7 +765,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns error Result") {
-            auto combined = result.and_then<int>([](auto val) { return val + 1; });
+            auto combined = result.and_then<int>([](auto val) { return argus::ok<int, void>(val + 1); });
             REQUIRE(combined.is_err());
         }
     }
@@ -810,7 +810,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns OK Result") {
-            auto combined = result.and_then<int>([](void) { return 42; });
+            auto combined = result.and_then<int>([](void) { return argus::ok<int, void>(42); });
             REQUIRE(combined.is_ok());
             AND_THEN("unwrap returns correct value") {
                 REQUIRE(combined.unwrap() == 42);
@@ -858,7 +858,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("and_then returns error Result") {
-            auto combined = result.and_then<int>([](void) { return 42; });
+            auto combined = result.and_then<int>([](void) { return argus::ok<int, void>(42); });
             REQUIRE(combined.is_err());
         }
     }

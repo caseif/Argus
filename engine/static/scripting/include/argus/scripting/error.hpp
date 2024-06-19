@@ -18,16 +18,11 @@
 
 #pragma once
 
-#include "argus/lowlevel/result.hpp"
-
-#include "argus/scripting/error.hpp"
-#include "argus/scripting/script_context.hpp"
-#include "argus/scripting/types.hpp"
+#include <string>
 
 namespace argus {
-    [[nodiscard]] Result<void, BindingError> resolve_parameter_types(BoundTypeDef &type_def);
-
-    [[nodiscard]] Result<void, BindingError> resolve_parameter_types(BoundFunctionDef &fn_def);
-
-    [[nodiscard]] Result<void, BindingError> apply_bindings_to_context(ScriptContext &context);
+    struct BindingError {
+        std::string bound_name;
+        std::string msg;
+    };
 }

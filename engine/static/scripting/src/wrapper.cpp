@@ -44,7 +44,8 @@ namespace argus {
                 // for complex value types we indirectly use the copy constructor
                 assert(type.type_index.has_value());
 
-                auto bound_type = get_bound_type(type.type_index.value());
+                auto bound_type = get_bound_type(type.type_index.value())
+                        .expect("Tried to create ObjectWrapper with unbound struct type");
                 assert(bound_type.copy_ctor != nullptr);
                 bound_type.copy_ctor(wrapper.get_ptr(), ptr);
                 wrapper.copy_ctor = bound_type.copy_ctor;
@@ -92,7 +93,8 @@ namespace argus {
 
         if (type.type == IntegralType::Enum) {
             assert(type.type_name.has_value());
-            auto &enum_def = get_bound_enum(type.type_name.value());
+            auto enum_def = get_bound_enum(type.type_name.value())
+                    .expect("Tried to create ObjectWrapper with unbound enum type");
             auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val));
             if (enum_val_it == enum_def.all_ordinals.cend()) {
                 throw ReflectiveArgumentsException("Unknown ordinal " + std::to_string(val)
@@ -209,7 +211,8 @@ namespace argus {
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
-                        && get_bound_type(el_type.type_index.value()).copy_ctor != nullptr);
+                        && get_bound_type(el_type.type_index.value())
+                                .expect("Tried to create ObjectWrapper with unbound type").copy_ctor != nullptr);
 
         size_t el_size = el_type.size;
         if (el_type.type == IntegralType::String) {
@@ -247,7 +250,9 @@ namespace argus {
             } else {
                 assert(el_type.type == IntegralType::Struct);
 
-                const BoundTypeDef &bound_type = get_bound_type(el_type.type_index.value());
+                auto bound_type_res = get_bound_type(el_type.type_index.value());
+                const BoundTypeDef &bound_type = bound_type_res
+                        .expect("Tried to create ObjectWrapper with unbound struct type");
                 assert(bound_type.copy_ctor != nullptr);
 
                 for (size_t i = 0; i < count; i++) {

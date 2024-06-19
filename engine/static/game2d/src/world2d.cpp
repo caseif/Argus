@@ -63,6 +63,14 @@ namespace argus {
         return ok<World2D &, std::string>(*it->second);
     }
 
+    World2D &World2D::get_or_crash(const std::string &id) {
+        auto res = get(id);
+        if (res.is_err()) {
+            crash(res.unwrap_err());
+        }
+        return res.unwrap();
+    }
+
     World2D::World2D(const std::string &id, Canvas &canvas, float scale_factor):
         m_pimpl(&g_pimpl_pool.construct<pimpl_World2D>(id, canvas, scale_factor)) {
         m_pimpl->fg_layer = new World2DLayer(*this, FG_LAYER_ID, 1000, 1.0, std::nullopt, true);

@@ -44,6 +44,9 @@ namespace argus {
 
         static Result<World2D &, std::string> get(const std::string &id);
 
+        // stopgap until scripting module can handle Result tyoe
+        static World2D &get_or_crash(const std::string &id);
+
         pimpl_World2D *m_pimpl;
 
         World2D(const std::string &id, Canvas &canvas, float scale_factor);

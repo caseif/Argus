@@ -26,40 +26,40 @@
 
 namespace argus {
     static void _register_transform_symbols(void) {
-        bind_type<Transform2D>("Transform2D");
-        bind_member_static_function<Transform2D>("new", +[](void) -> Transform2D { return Transform2D(); });
+        bind_type<Transform2D>("Transform2D").expect();
+        bind_member_static_function<Transform2D>("new", +[](void) -> Transform2D { return Transform2D(); }).expect();
         bind_member_static_function<Transform2D>("of",
                 +[](const Vector2f translation, float rotation_rads, const Vector2f &scale) -> Transform2D {
                     return Transform2D(translation, rotation_rads, scale);
-                });
-        bind_member_instance_function("get_translation", &Transform2D::get_translation);
-        bind_member_instance_function("get_rotation", &Transform2D::get_rotation);
-        bind_member_instance_function("get_scale", &Transform2D::get_scale);
+                }).expect();
+        bind_member_instance_function("get_translation", &Transform2D::get_translation).expect();
+        bind_member_instance_function("get_rotation", &Transform2D::get_rotation).expect();
+        bind_member_instance_function("get_scale", &Transform2D::get_scale).expect();
         bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_translation",
-                &Transform2D::set_translation);
-        bind_member_instance_function("set_rotation", &Transform2D::set_rotation);
-        bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_scale", &Transform2D::set_scale);
+                &Transform2D::set_translation).expect();
+        bind_member_instance_function("set_rotation", &Transform2D::set_rotation).expect();
+        bind_member_instance_function<void (Transform2D::*)(float x, float y)>("set_scale", &Transform2D::set_scale).expect();
         bind_member_instance_function<void (Transform2D::*)(float dx, float dy)>("add_translation",
-                &Transform2D::add_translation);
+                &Transform2D::add_translation).expect();
         bind_member_instance_function("add_rotation",
-                &Transform2D::add_rotation);
+                &Transform2D::add_rotation).expect();
         bind_extension_function<Transform2D>("x",
-                +[](const Transform2D &transform) { return transform.get_translation().x; });
+                +[](const Transform2D &transform) { return transform.get_translation().x; }).expect();
         bind_extension_function<Transform2D>("y",
-                +[](const Transform2D &transform) { return transform.get_translation().y; });
+                +[](const Transform2D &transform) { return transform.get_translation().y; }).expect();
         bind_extension_function<Transform2D>("sx",
-                +[](const Transform2D &transform) { return transform.get_scale().x; });
+                +[](const Transform2D &transform) { return transform.get_scale().x; }).expect();
         bind_extension_function<Transform2D>("sy",
-                +[](const Transform2D &transform) { return transform.get_scale().y; });
+                +[](const Transform2D &transform) { return transform.get_scale().y; }).expect();
     }
 
     static void _register_canvas_symbols(void) {
-        bind_type<Canvas>("Canvas");
-        bind_member_instance_function("get_window", &Canvas::get_window);
+        bind_type<Canvas>("Canvas").expect();
+        bind_member_instance_function("get_window", &Canvas::get_window).expect();
         // other Canvas functions are intended for use by downstream modules and
         // so are not bound
 
-        bind_member_instance_function("get_canvas", &Window::get_canvas);
+        bind_member_instance_function("get_canvas", &Window::get_canvas).expect();
     }
 
     void register_render_script_bindings(void) {

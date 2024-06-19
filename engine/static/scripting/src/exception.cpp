@@ -21,14 +21,6 @@
 #include <exception>
 
 namespace argus {
-    BindingException::BindingException(const std::string &name, const std::string &what):
-        m_msg("Unable to bind " + name + ": " + what) {
-    }
-
-    const char *BindingException::what(void) const noexcept {
-        return m_msg.c_str();
-    }
-
     TypeNotBoundException::TypeNotBoundException(std::string fn_name):
         m_fn_name(std::move(fn_name)) {
     }

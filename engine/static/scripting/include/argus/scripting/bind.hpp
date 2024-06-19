@@ -20,10 +20,12 @@
 
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/misc.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/object_type.hpp"
 #include "argus/scripting/types.hpp"
@@ -33,13 +35,15 @@
 #include <string>
 
 namespace argus {
-    BoundTypeDef create_type_def(const std::string &name, size_t size, std::type_index type_index, bool is_refable,
+    [[nodiscard]] Result<BoundTypeDef, BindingError> create_type_def(const std::string &name, size_t size,
+            std::type_index type_index, bool is_refable,
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor);
 
     template<typename T>
-    typename std::enable_if<std::is_class_v<T>, BoundTypeDef>::type create_type_def(const std::string &name) {
+    [[nodiscard]] std::enable_if_t<std::is_class_v<T>, Result<BoundTypeDef, BindingError>>
+    create_type_def(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
 
         constexpr bool is_refable = std::is_base_of_v<AutoCleanupable, T>;
@@ -71,47 +75,55 @@ namespace argus {
                 dtor);
     }
 
-    void bind_type(const BoundTypeDef &def);
+    [[nodiscard]] Result<void, BindingError> bind_type(const BoundTypeDef &def);
 
     template<typename T>
-    typename std::enable_if<std::is_class_v<T>, void>::type bind_type(const std::string &name) {
+    [[nodiscard]] std::enable_if_t<std::is_class_v<T>, Result<void, BindingError>>
+    bind_type(const std::string &name) {
         // ideally we would emit a warning here if the class doesn't derive from AutoCleanupable
-        auto def = create_type_def<T>(name);
-        bind_type(def);
+        return create_type_def<T>(name)
+                .template and_then<void>([](const auto &fn_def) {
+                    return bind_type(fn_def);
+                });
     }
 
-    void bind_enum(const BoundEnumDef &def);
+    [[nodiscard]] Result<void, BindingError> bind_enum(const BoundEnumDef &def);
 
-    [[nodiscard]] BoundEnumDef create_enum_def(const std::string &name, size_t width, std::type_index type_index);
+    [[nodiscard]] Result<BoundEnumDef, BindingError> create_enum_def(const std::string &name, size_t width,
+            std::type_index type_index);
 
     template<typename E>
-    [[nodiscard]] typename std::enable_if<std::is_enum_v<E>, BoundEnumDef>::type
+    [[nodiscard]] std::enable_if_t<std::is_enum_v<E>, Result<BoundEnumDef, BindingError>>
     create_enum_def(const std::string &name) {
         return create_enum_def(name, sizeof(std::underlying_type_t<E>),
                 typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>));
     }
 
     template<typename T>
-    typename std::enable_if<std::is_enum_v<T>, void>::type bind_enum(const std::string &name) {
-        auto def = create_enum_def<T>(name);
-        bind_enum(def);
+    [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>> bind_enum(
+            const std::string &name) {
+        return create_enum_def<T>(name)
+                .template and_then<void>([](const auto &def) {
+                    return bind_enum(def);
+                });
     }
 
-    void add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
+    [[nodiscard]] Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
 
     template<typename T>
-    typename std::enable_if<std::is_enum_v<T>>::type
+    [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>>
     add_enum_value(BoundEnumDef &def, const std::string &name, T value) {
-        add_enum_value(def, name, uint64_t(value));
+        return add_enum_value(def, name, uint64_t(value));
     }
 
-    void bind_enum_value(std::type_index enum_type, const std::string &name, uint64_t value);
+    [[nodiscard]] Result<void, BindingError> bind_enum_value(std::type_index enum_type, const std::string &name,
+            uint64_t value);
 
     template<typename T>
-    typename std::enable_if<std::is_enum_v<T>>::type
+    [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>>
     bind_enum_value(const std::string &name, T value) {
         std::type_index enum_type = typeid(T);
-        bind_enum_value(enum_type, name, uint64_t(value));
+        return bind_enum_value(enum_type, name, uint64_t(value));
     }
 
     template<typename FuncType>
@@ -161,18 +173,24 @@ namespace argus {
                 // too so it doesn't attempt to resolve the type name
                 if (ret_obj_type.type == IntegralType::Pointer
                         || ret_obj_type.type == IntegralType::Struct) {
-                    ret_obj_type.type_name = get_bound_type<ReturnType>().name;
+                    ret_obj_type.type_name = get_bound_type<ReturnType>()
+                            .expect("Tried to create function wrapper with unbound return struct type").name;
                 } else if (ret_obj_type.type == IntegralType::Enum) {
-                    ret_obj_type.type_name = get_bound_enum<ReturnType>().name;
+                    ret_obj_type.type_name = get_bound_enum<ReturnType>()
+                            .expect("Tried to create function wrapper with unbound return enum type").name;
                 } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
                         && (ret_obj_type.element_type.value()->type == IntegralType::Struct
                                 || ret_obj_type.element_type.value()->type == IntegralType::Pointer)) {
                     ret_obj_type.element_type.value()->type_name
-                            = get_bound_type(ret_obj_type.element_type.value()->type_index.value()).name;
+                            = get_bound_type(ret_obj_type.element_type.value()->type_index.value())
+                            .expect("Tried to create function wrapper with vector return type and "
+                                    "unbound element struct type").name;
                 } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
                         && ret_obj_type.element_type.value()->type == IntegralType::Enum) {
                     ret_obj_type.element_type.value()->type_name
-                            = get_bound_enum(ret_obj_type.element_type.value()->type_index.value()).name;
+                            = get_bound_enum(ret_obj_type.element_type.value()->type_index.value())
+                            .expect("Tried to create function wrapper with vector return type and "
+                                    "unbound element enum type").name;
                 }
 
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
@@ -208,7 +226,8 @@ namespace argus {
     }
 
     template<FunctionType FnType, typename FnSig>
-    static BoundFunctionDef _create_function_def(const std::string &name, FnSig fn) {
+    [[nodiscard]] static Result<BoundFunctionDef, BindingError> _create_function_def(const std::string &name,
+            FnSig fn) {
         using ArgsTuple = typename function_traits<FnSig>::argument_types;
         using ReturnType = typename function_traits<FnSig>::return_type;
         bool is_const;
@@ -232,92 +251,112 @@ namespace argus {
                     create_function_wrapper(fn)
             };
 
-            return def;
+            return ok<BoundFunctionDef, BindingError>(def);
         } catch (const std::exception &ex) {
-            throw BindingException(name, ex.what());
+            return err<BoundFunctionDef, BindingError>({ name, ex.what() });
         }
     }
 
     template<typename FuncType>
-    [[nodiscard]] BoundFunctionDef create_global_function_def(const std::string &name, FuncType fn) {
+    [[nodiscard]] Result<BoundFunctionDef, BindingError> create_global_function_def(const std::string &name,
+            FuncType fn) {
         return _create_function_def<FunctionType::Global>(name, fn);
     }
 
-    void bind_global_function(const BoundFunctionDef &def);
+    [[nodiscard]] Result<void, BindingError> bind_global_function(const BoundFunctionDef &def);
 
     template<typename FuncType>
-    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
+    [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
     bind_global_function(const std::string &name, FuncType fn) {
-        auto def = create_global_function_def<FuncType>(name, fn);
-        bind_global_function(def);
+        return create_global_function_def<FuncType>(name, fn)
+                .template and_then<void>([](const auto &def) {
+                    return bind_global_function(def);
+                });
     }
 
-    void add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> add_member_instance_function(BoundTypeDef &type_def,
+            const BoundFunctionDef &fn_def);
 
     template<typename FuncType>
-    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    [[nodiscard]] std::enable_if_t<std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
     add_member_instance_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def<FunctionType::MemberInstance>(fn_name, fn);
-        add_member_instance_function(type_def, fn_def);
+        return _create_function_def<FunctionType::MemberInstance>(fn_name, fn)
+                .template and_then<void>([&type_def](const auto &fn_def) {
+                    return add_member_instance_function(type_def, fn_def.unwrap());
+                });
     }
 
-    void bind_member_instance_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> bind_member_instance_function(std::type_index type_index,
+            const BoundFunctionDef &fn_def);
 
     template<typename FuncType>
-    typename std::enable_if<std::is_member_function_pointer_v<FuncType>, void>::type
+    [[nodiscard]] std::enable_if_t<std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
     bind_member_instance_function(const std::string &fn_name, FuncType fn) {
         using ClassType = typename function_traits<FuncType>::class_type;
         static_assert(!std::is_void_v<ClassType>, "Loose function cannot be passed to bind_member_instance_function");
 
-        auto fn_def = _create_function_def<FunctionType::MemberInstance>(fn_name, fn);
-        bind_member_instance_function(typeid(ClassType), fn_def);
+        return _create_function_def<FunctionType::MemberInstance>(fn_name, fn)
+                .template and_then<void>([](const auto &fn_def) {
+                    return bind_member_instance_function(typeid(ClassType), fn_def);
+                });
     }
 
-    void add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
 
     template<typename FuncType>
-    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
+    [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
     add_member_static_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
-        add_member_static_function(type_def, fn_def);
+        return _create_function_def<FunctionType::MemberStatic>(fn_name, fn)
+                .template and_then<void>([&type_def](const auto &fn_def) {
+                    return add_member_static_function(type_def, fn_def.unwrap());
+                });
     }
 
-    void bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType>
-    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>, void>::type
+    [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def<FunctionType::MemberStatic>(fn_name, fn);
-        bind_member_static_function(typeid(ClassType), fn_def);
+        return _create_function_def<FunctionType::MemberStatic>(fn_name, fn)
+                .template and_then<void>([](const auto &fn_def) {
+                    return bind_member_static_function(typeid(ClassType), fn_def);
+                });
     }
 
-    void add_extension_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> add_extension_function(BoundTypeDef &type_def,
+            const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType,
             typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
-    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
+    [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>
             && std::is_same_v<ClassType, std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FirstArg>>>>,
-            void>::type
+            Result<void, BindingError>>
     add_extension_function(BoundTypeDef &type_def, const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def<FunctionType::Extension>(fn_name, fn);
-        add_extension_function(type_def, fn_def);
+        return _create_function_def<FunctionType::Extension>(fn_name, fn)
+                .template and_then<void>([&type_def](const auto &fn_def) {
+                    return add_extension_function(type_def, fn_def);
+                });
     }
 
-    void bind_extension_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> bind_extension_function(std::type_index type_index,
+            const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType,
             typename FirstArg = typename std::tuple_element_t<0, typename function_traits<FuncType>::argument_types>>
-    typename std::enable_if<!std::is_member_function_pointer_v<FuncType>
+    [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>
             && (std::is_reference_v<FirstArg> || std::is_pointer_v<FirstArg>)
             && std::is_same_v<ClassType, std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FirstArg>>>>,
-            void>::type
+            Result<void, BindingError>>
     bind_extension_function(const std::string &fn_name, FuncType fn) {
-        auto fn_def = _create_function_def<FunctionType::Extension>(fn_name, fn);
-        bind_extension_function(typeid(ClassType), fn_def);
+        return _create_function_def<FunctionType::Extension>(fn_name, fn)
+                .template and_then<void>([](const auto &fn_def) {
+                    return bind_extension_function(typeid(ClassType), fn_def);
+                });
     }
 
     template<typename FieldType, typename ClassType>
-    static BoundFieldDef _create_field_def(const std::string &name, FieldType(ClassType::* field)) {
+    [[nodiscard]] static Result<BoundFieldDef, BindingError> _create_field_def(const std::string &name,
+            FieldType(ClassType::* field)) {
         using B = typename std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FieldType>>>;
 
         static_assert(std::is_base_of_v<AutoCleanupable, B>
@@ -388,52 +427,59 @@ namespace argus {
                 };
             }
 
-            return def;
+            return ok<BoundFieldDef, BindingError>(def);
         } catch (const std::exception &ex) {
-            throw BindingException(name, ex.what());
+            return err<BoundFieldDef, BindingError>({ name, ex.what() });
         }
     }
 
-    void add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);
+    [[nodiscard]] Result<void, BindingError> add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);
 
     template<typename FieldType, typename ClassType>
-    void add_member_field(BoundTypeDef &type_def, const std::string &field_name, FieldType(ClassType::* field)) {
+    [[nodiscard]] Result<void, BindingError> add_member_field(BoundTypeDef &type_def, const std::string &field_name,
+            FieldType(ClassType::* field)) {
         static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
                 "Callback-typed fields are not supported");
 
         affirm_precond(std::type_index(typeid(ClassType)) == type_def.type_index,
                 "Class of field reference does not match provided type definition");
 
-        auto field_def = _create_field_def(field_name, field);
-        add_member_field(type_def, field_def);
+        auto field_def = _create_field_def(field_name, field)
+                .template and_then<void>([&type_def](const auto field_def) {
+                    return add_member_field(type_def, field_def);
+                });
     }
 
-    void bind_member_field(std::type_index type_index, const BoundFieldDef &field_def);
+    [[nodiscard]] Result<void, BindingError> bind_member_field(std::type_index type_index,
+            const BoundFieldDef &field_def);
 
     template<typename FieldType, typename ClassType>
-    void bind_member_field(const std::string &field_name, FieldType(ClassType::* field)) {
+    [[nodiscard]] Result<void, BindingError> bind_member_field(const std::string &field_name,
+            FieldType(ClassType::* field)) {
         static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
                 "Callback-typed fields are not supported");
 
-        auto field_def = _create_field_def(field_name, field);
-        bind_member_field(typeid(ClassType), field_def);
+        return _create_field_def(field_name, field)
+                .template and_then<void>([](const auto &field_def) {
+                    return bind_member_field(typeid(ClassType), field_def);
+                });
     }
 
-    [[nodiscard]] const BoundTypeDef &get_bound_type(const std::string &type_name);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_name);
 
-    [[nodiscard]] const BoundTypeDef &get_bound_type(const std::type_info &type_info);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::type_info &type_info);
 
     template<typename T>
-    [[nodiscard]] const BoundTypeDef &get_bound_type(void) {
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void) {
         return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>));
     }
 
-    [[nodiscard]] const BoundEnumDef &get_bound_enum(const std::string &enum_name);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_name);
 
-    [[nodiscard]] const BoundEnumDef &get_bound_enum(const std::type_info &enum_type_info);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::type_info &enum_type_info);
 
     template<typename T>
-    [[nodiscard]] const BoundEnumDef &get_bound_enum(void) {
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void) {
         return get_bound_enum(typeid(std::remove_const_t<T>));
     }
 }

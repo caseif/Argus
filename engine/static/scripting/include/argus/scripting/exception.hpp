@@ -22,16 +22,6 @@
 #include <string>
 
 namespace argus {
-    class BindingException : public std::exception {
-      private:
-        std::string m_msg;
-
-      public:
-        BindingException(const std::string &name, const std::string &what);
-
-        [[nodiscard]] const char *what(void) const noexcept override;
-    };
-
     class TypeNotBoundException : public std::exception {
       private:
         std::string m_fn_name;

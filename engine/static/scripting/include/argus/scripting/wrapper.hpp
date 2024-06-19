@@ -20,9 +20,11 @@
 
 #include "argus/lowlevel/extra_type_traits.hpp"
 #include "argus/lowlevel/memory.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
 
 #include <string>
@@ -32,15 +34,17 @@
 #include <vector>
 
 namespace argus {
-    const BoundTypeDef &get_bound_type(std::type_index type_index);
+    struct BindingError;
+
+    Result<const BoundTypeDef &, BindingError> get_bound_type(std::type_index type_index);
 
     template<typename T>
-    const BoundTypeDef &get_bound_type(void);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void);
 
-    const BoundEnumDef &get_bound_enum(std::type_index enum_type_index);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(std::type_index enum_type_index);
 
     template<typename T>
-    const BoundEnumDef &get_bound_enum(void);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void);
 
     ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr);
 
@@ -174,19 +178,23 @@ namespace argus {
                 if (subparam.type == IntegralType::Pointer
                         || subparam.type == IntegralType::Struct) {
                     assert(subparam.type_index.has_value());
-                    subparam.type_name = get_bound_type(subparam.type_index.value()).name;
+                    subparam.type_name = get_bound_type(subparam.type_index.value())
+                            .expect("Tried to unwrap callback param with unbound struct type").name;
                 } else if (subparam.type == IntegralType::Enum) {
                     assert(subparam.type_index.has_value());
-                    subparam.type_name = get_bound_enum(subparam.type_index.value()).name;
+                    subparam.type_name = get_bound_enum(subparam.type_index.value())
+                            .expect("Tried to unwrap callback param with unbound enum type").name;
                 }
             }
 
             auto ret_type = param.type.callback_type.value()->return_type;
             if (ret_type.type == IntegralType::Pointer
                     || ret_type.type == IntegralType::Struct) {
-                ret_type.type_name = get_bound_type<ReturnType>().name;
+                ret_type.type_name = get_bound_type<ReturnType>()
+                        .expect("Tried to unwrap callback return type with unbound struct type").name;
             } else if (ret_type.type == IntegralType::Enum) {
-                ret_type.type_name = get_bound_enum<ReturnType>().name;
+                ret_type.type_name = get_bound_enum<ReturnType>()
+                        .expect("Tried to unwrap callback return type with unbound enum type").name;
             }
 
             return [fn_copy = std::move(fn_copy), param_types](auto &&... args) {

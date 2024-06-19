@@ -30,20 +30,20 @@ namespace argus {
     }
 
     static void _bind_engine_types(void) {
-        bind_enum<TargetThread>("TargetThread");
-        bind_enum_value("Update", TargetThread::Update);
-        bind_enum_value("Render", TargetThread::Render);
+        bind_enum<TargetThread>("TargetThread").expect();
+        bind_enum_value("Update", TargetThread::Update).expect();
+        bind_enum_value("Render", TargetThread::Render).expect();
 
-        bind_enum<Ordering>("Ordering");
-        bind_enum_value("First", Ordering::First);
-        bind_enum_value("Early", Ordering::Early);
-        bind_enum_value("Standard", Ordering::Standard);
-        bind_enum_value("Late", Ordering::Late);
-        bind_enum_value("Last", Ordering::Last);
+        bind_enum<Ordering>("Ordering").expect();
+        bind_enum_value("First", Ordering::First).expect();
+        bind_enum_value("Early", Ordering::Early).expect();
+        bind_enum_value("Standard", Ordering::Standard).expect();
+        bind_enum_value("Late", Ordering::Late).expect();
+        bind_enum_value("Last", Ordering::Last).expect();
     }
 
     static void _bind_engine_functions(void) {
-        bind_global_function("register_update_callback", _script_register_update_callback);
+        bind_global_function("register_update_callback", _script_register_update_callback).expect();
     }
 
     void register_core_bindings(void) {

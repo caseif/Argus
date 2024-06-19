@@ -44,14 +44,22 @@ namespace argus {
     std::vector<ScriptContext *> g_script_contexts;
     std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
 
-    static void _resolve_all_parameter_types(void) {
+    static Result<void, BindingError> _resolve_all_parameter_types(void) {
         for (auto &[_, type] : g_bound_types) {
-            resolve_parameter_types(type);
+            auto res = resolve_parameter_types(type);
+            if (res.is_err()) {
+                return res;
+            }
         }
 
         for (auto &[_, fn] : g_bound_global_fns) {
-            resolve_parameter_types(fn);
+            auto res = resolve_parameter_types(fn);
+            if (res.is_err()) {
+                return res;
+            }
         }
+
+        return ok<void, BindingError>();
     }
 
     static void _run_init_script(const std::string &uid) {
@@ -78,7 +86,7 @@ namespace argus {
                 // types have been registered first
                 _resolve_all_parameter_types();
                 for (auto context : g_script_contexts) {
-                    apply_bindings_to_context(*context);
+                    apply_bindings_to_context(*context).expect("Failed to apply bindings to script context");
                 }
 
                 const auto &scripting_params = get_scripting_parameters();
