@@ -419,7 +419,7 @@ namespace argus {
             #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
             // workaround for VS <=17.2, see comment in ResultStorage
             // definition
-            if constexpr (std::is_reference_t<E>) {
+            if constexpr (std::is_reference_v<E>) {
                 return Result<T, E>(ResultStorage<T, E> { std::make_optional(
                         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
                                 std::in_place_index<1>, std::reference_wrapper<std::remove_reference_t<E>>(
