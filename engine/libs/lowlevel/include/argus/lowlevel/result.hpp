@@ -363,6 +363,7 @@ namespace argus {
                                 std::in_place_index<0>, std::forward<U>(value)
                         }
                 ) });
+            }
             #else
             if constexpr (std::is_reference_v<T>) {
                 return Result<T, E>(ResultStorage<T, E> {
