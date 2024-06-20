@@ -18,7 +18,11 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/core/engine.hpp"
+
+#include "argus/scripting/error.hpp"
 
 #include <functional>
 #include <map>
@@ -140,7 +144,8 @@ namespace argus {
         }
     };
 
-    typedef std::function<ObjectWrapper(const std::vector<ObjectWrapper> &)> ProxiedFunction;
+    typedef std::function<Result<ObjectWrapper, ScriptInvocationError>(const std::vector<ObjectWrapper> &)>
+            ProxiedFunction;
 
     struct BoundFunctionDef {
         std::string name;

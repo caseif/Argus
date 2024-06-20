@@ -95,7 +95,7 @@ namespace argus {
 
     static Result<Resource &, ResourceError> make_err_res(ResourceErrorReason reason, std::string uid,
             std::string info = "") {
-        return err<Resource &, ResourceError>({ reason, uid, info });
+        return err<Resource &, ResourceError>(reason, uid, info);
     }
 
     ResourceManager &ResourceManager::instance(void) {
@@ -470,7 +470,7 @@ namespace argus {
 
         auto it = m_pimpl->loaded_resources.find(uid);
         if (it == m_pimpl->loaded_resources.cend()) {
-            return err<void, ResourceError>({ ResourceErrorReason::NotLoaded, uid, {} });
+            return err<void, ResourceError>(ResourceErrorReason::NotLoaded, uid, "");
         }
 
         auto *res = it->second;

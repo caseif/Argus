@@ -74,8 +74,8 @@ namespace argus {
 
         virtual void bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) = 0;
 
-        virtual ObjectWrapper invoke_script_function(ScriptContext &context, const std::string &name,
-                const std::vector<ObjectWrapper> &params) = 0;
+        virtual Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(ScriptContext &context,
+                const std::string &name, const std::vector<ObjectWrapper> &params) = 0;
     };
 
     void register_scripting_language(ScriptingLanguagePlugin &plugin);

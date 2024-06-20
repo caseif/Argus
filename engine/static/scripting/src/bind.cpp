@@ -72,15 +72,15 @@ namespace argus {
         if (param_def.type == IntegralType::Enum) {
             auto bound_enum_res = get_bound_enum(param_def.type_index.value());
             if (bound_enum_res.is_err()) {
-                return err<void, BindingError>({ param_def.type_index->name(),
-                        "Failed to get enum while resolving function parameter" });
+                return err<void, BindingError>(param_def.type_index->name(),
+                        "Failed to get enum while resolving function parameter");
             }
             type_name = bound_enum_res.unwrap().name;
         } else {
             auto bound_type_res = get_bound_type(param_def.type_index.value());
             if (bound_type_res.is_err()) {
-                return err<void, BindingError>({ param_def.type_index->name(),
-                        "Failed to get type while resolving function parameter" });
+                return err<void, BindingError>(param_def.type_index->name(),
+                        "Failed to get type while resolving function parameter");
             }
 
             auto &bound_type = bound_type_res.unwrap();
@@ -88,21 +88,21 @@ namespace argus {
             if (param_def.type == IntegralType::Struct) {
                 if (check_copyable) {
                     if (bound_type.copy_ctor == nullptr) {
-                        return err<void, BindingError>({ bound_type.name,
+                        return err<void, BindingError>(bound_type.name,
                                 "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not copy-constructible" });
+                                        + bound_type.name + " is not copy-constructible");
                     }
 
                     if (bound_type.move_ctor == nullptr) {
-                        return err<void, BindingError>({ bound_type.name,
+                        return err<void, BindingError>(bound_type.name,
                                 "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not move-constructible" });
+                                        + bound_type.name + " is not move-constructible");
                     }
 
                     if (bound_type.dtor == nullptr) {
-                        return err<void, BindingError>({ bound_type.name,
+                        return err<void, BindingError>(bound_type.name,
                                 "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not destructible" });
+                                        + bound_type.name + " is not destructible");
                     }
                 }
             }
@@ -150,21 +150,21 @@ namespace argus {
 
             if (!bound_type.is_refable) {
                 if (bound_type.copy_ctor == nullptr) {
-                    return err<void, BindingError>({ bound_type.name,
+                    return err<void, BindingError>(bound_type.name,
                             "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not copy-constructible" });
+                                    + " is not copy-constructible");
                 }
 
                 if (bound_type.move_ctor == nullptr) {
-                    return err<void, BindingError>({ bound_type.name,
+                    return err<void, BindingError>(bound_type.name,
                             "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not move-constructible" });
+                                    + " is not move-constructible");
                 }
 
                 if (bound_type.dtor == nullptr) {
-                    return err<void, BindingError>({ bound_type.name,
+                    return err<void, BindingError>(bound_type.name,
                             "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not destructible" });
+                                    + " is not destructible");
                 }
             }
 
@@ -271,9 +271,9 @@ namespace argus {
     Result<T &, BindingError> _get_bound_enum(std::type_index enum_type_index) {
         auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
         if (index_it == g_bound_enum_indices.cend()) {
-            return err<T &, BindingError>({ enum_type_index.name(),
+            return err<T &, BindingError>(enum_type_index.name(),
                     "Enum is not bound (check binding order and ensure bind_type "
-                    "is called after creating type definition)" });
+                    "is called after creating type definition)");
         }
         auto enum_it = g_bound_enums.find(index_it->second);
         assert(enum_it != g_bound_enums.cend());
@@ -306,16 +306,16 @@ namespace argus {
 
     Result<void, BindingError> bind_type(const BoundTypeDef &def) {
         if (g_bound_types.find(def.name) != g_bound_types.cend()) {
-            return err<void, BindingError>({ def.name, "Type with same name has already been bound" });
+            return err<void, BindingError>(def.name, "Type with same name has already been bound");
         }
 
         if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
-            return err<void, BindingError>({ def.name,
-                    "Global function with same name as type has already been bound" });
+            return err<void, BindingError>(def.name,
+                    "Global function with same name as type has already been bound");
         }
 
         if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
-            return err<void, BindingError>({ def.name, "Enum with same name as type has already been bound" });
+            return err<void, BindingError>(def.name, "Enum with same name as type has already been bound");
         }
 
         //TODO: perform validation on member functions
@@ -325,8 +325,8 @@ namespace argus {
                 std::back_inserter(static_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(static_fn_names.cbegin(), static_fn_names.cend()).size() != static_fn_names.size()) {
-            return err<void, BindingError>({ def.name,
-                    "Bound script type contains duplicate static function definitions" });
+            return err<void, BindingError>(def.name,
+                    "Bound script type contains duplicate static function definitions");
         }
 
         std::vector<std::string> instance_fn_names;
@@ -337,8 +337,8 @@ namespace argus {
                 std::back_inserter(instance_fn_names),
                 [](const auto &fn_def) { return fn_def.second.name; });
         if (std::set(instance_fn_names.cbegin(), instance_fn_names.cend()).size() != instance_fn_names.size()) {
-            return err<void, BindingError>({ def.name,
-                    "Bound script type contains duplicate instance/extension function definitions" });
+            return err<void, BindingError>(def.name,
+                    "Bound script type contains duplicate instance/extension function definitions");
         }
 
         g_bound_types.insert({ def.name, def });
@@ -354,20 +354,20 @@ namespace argus {
         std::transform(def.values.cbegin(), def.values.cend(), std::inserter(ordinals, ordinals.end()),
                 [](const auto &kv) { return kv.second; });
         if (ordinals != def.all_ordinals) {
-            return err<void, BindingError>({ def.name, "Enum definition is corrupted" });
+            return err<void, BindingError>(def.name, "Enum definition is corrupted");
         }
 
         if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
-            return err<void, BindingError>({ def.name, "Enum with same name has already been bound" });
+            return err<void, BindingError>(def.name, "Enum with same name has already been bound");
         }
 
         if (g_bound_types.find(def.name) != g_bound_types.cend()) {
-            return err<void, BindingError>({ def.name, "Type with same name as enum has already been bound" });
+            return err<void, BindingError>(def.name, "Type with same name as enum has already been bound");
         }
 
         if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
-            return err<void, BindingError>({ def.name,
-                    "Global function with same name as enum has already been bound" });
+            return err<void, BindingError>(def.name,
+                    "Global function with same name as enum has already been bound");
         }
 
         g_bound_enums.insert({ def.name, def });
@@ -377,17 +377,17 @@ namespace argus {
     }
 
     Result<BoundEnumDef, BindingError> create_enum_def(const std::string &name, size_t width, std::type_index type_index) {
-        return ok<BoundEnumDef, BindingError>({ name, width, type_index, {}, {} });
+        return ok<BoundEnumDef, BindingError>(BoundEnumDef { name, width, type_index, {}, {} });
     }
 
     Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value) {
         if (def.values.find(name) != def.values.cend()) {
-            return err<void, BindingError>({ def.name + "::" + name, "Enum value with same name is already bound" });
+            return err<void, BindingError>(def.name + "::" + name, "Enum value with same name is already bound");
         }
 
         if (def.all_ordinals.find(value) != def.all_ordinals.cend()) {
-            return err<void, BindingError>({ def.name + "::" + name,
-                    "Enum value with same ordinal is already bound" });
+            return err<void, BindingError>(def.name + "::" + name,
+                    "Enum value with same ordinal is already bound");
         }
 
         def.values.insert({ name, value });
@@ -406,17 +406,17 @@ namespace argus {
 
     Result<void, BindingError> bind_global_function(const BoundFunctionDef &def) {
         if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
-            return err<void, BindingError>({ def.name, "Global function with same name has already been bound" });
+            return err<void, BindingError>(def.name, "Global function with same name has already been bound");
         }
 
         if (g_bound_types.find(def.name) != g_bound_types.cend()) {
-            return err<void, BindingError>({ def.name,
-                    "Type with same name as global function has already been bound" });
+            return err<void, BindingError>(def.name,
+                    "Type with same name as global function has already been bound");
         }
 
         if (g_bound_enums.find(def.name) != g_bound_enums.cend()) {
-            return err<void, BindingError>({ def.name,
-                    "Enum with same name as global function has already been bound" });
+            return err<void, BindingError>(def.name,
+                    "Enum with same name as global function has already been bound");
         }
 
         //TODO: perform validation including:
@@ -432,7 +432,7 @@ namespace argus {
     Result<void, BindingError> add_member_instance_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         if (type_def.instance_functions.find(fn_def.name) != type_def.instance_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::MemberInstance, type_def.name, fn_def.name);
-            return err<void, BindingError>({ qual_name, "Instance function with same name is already bound" });
+            return err<void, BindingError>(qual_name, "Instance function with same name is already bound");
         }
 
         type_def.instance_functions.insert({ fn_def.name, fn_def });
@@ -451,7 +451,7 @@ namespace argus {
     Result<void, BindingError> add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         if (type_def.static_functions.find(fn_def.name) != type_def.static_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::MemberStatic, type_def.name, fn_def.name);
-            return err<void, BindingError>({ qual_name, "Static function with same name is already bound" });
+            return err<void, BindingError>(qual_name, "Static function with same name is already bound");
         }
 
         type_def.static_functions.insert({ fn_def.name, fn_def });
@@ -472,18 +472,18 @@ namespace argus {
                 || !(fn_def.params[0].type == IntegralType::Struct || fn_def.params[0].type == IntegralType::Pointer)
                 || fn_def.params[0].type_index != type_def.type_index) {
             auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
-            return err<void, BindingError>({ qual_name,
-                    "First parameter of extension function must match extended type" });
+            return err<void, BindingError>(qual_name,
+                    "First parameter of extension function must match extended type");
         }
 
         if (type_def.extension_functions.find(fn_def.name) != type_def.extension_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
-            return err<void, BindingError>({ qual_name, "Extension function with same name is already bound" });
+            return err<void, BindingError>(qual_name, "Extension function with same name is already bound");
         }
 
         if (type_def.instance_functions.find(fn_def.name) != type_def.instance_functions.cend()) {
             auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
-            return err<void, BindingError>({ qual_name, "Instance function with same name is already bound" });
+            return err<void, BindingError>(qual_name, "Instance function with same name is already bound");
         }
 
         type_def.extension_functions.insert({ fn_def.name, fn_def });
@@ -502,12 +502,12 @@ namespace argus {
     Result<void, BindingError> add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def) {
         if (field_def.m_type.type == IntegralType::Callback) {
             auto qual_name = get_qualified_field_name(type_def.name, field_def.m_name);
-            return err<void, BindingError>({ qual_name, "Callback-typed fields are not supported" });
+            return err<void, BindingError>(qual_name, "Callback-typed fields are not supported");
         }
 
         if (type_def.fields.find(field_def.m_name) != type_def.fields.cend()) {
             auto qual_name = get_qualified_field_name(type_def.name, field_def.m_name);
-            return err<void, BindingError>({ qual_name, "Field with same name is already bound for type" });
+            return err<void, BindingError>(qual_name, "Field with same name is already bound for type");
         }
 
         type_def.fields.insert({ field_def.m_name, field_def });
@@ -526,9 +526,9 @@ namespace argus {
     Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_name) {
         auto it = g_bound_types.find(type_name);
         if (it == g_bound_types.cend()) {
-            return err<const BoundTypeDef &, BindingError>({ type_name,
+            return err<const BoundTypeDef &, BindingError>(type_name,
                     "Type name is not bound (check binding order and ensure bind_type is called after "
-                    "creating type definition)" });
+                    "creating type definition)");
         }
         return ok<const BoundTypeDef &, BindingError>(it->second);
     }
@@ -544,9 +544,9 @@ namespace argus {
     Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_name) {
         auto it = g_bound_enums.find(enum_name);
         if (it == g_bound_enums.cend()) {
-            return err<const BoundEnumDef &, BindingError>({ enum_name,
+            return err<const BoundEnumDef &, BindingError>(enum_name,
                     "Enum name is not bound (check binding order and ensure bind_enum "
-                    "is called after creating enum definition)" });
+                    "is called after creating enum definition)");
         }
         return ok<const BoundEnumDef &, BindingError>(it->second);
     }

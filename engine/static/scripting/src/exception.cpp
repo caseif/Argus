@@ -52,12 +52,4 @@ namespace argus {
     const char *ScriptLoadException::what(void) const noexcept {
         return m_msg.c_str();
     }
-
-    ScriptInvocationException::ScriptInvocationException(const std::string &fn_name, const std::string &msg):
-        m_msg("Invocation failed for script function " + fn_name + ": " + msg) {
-    }
-
-    const char *ScriptInvocationException::what(void) const noexcept {
-        return m_msg.c_str();
-    }
 }

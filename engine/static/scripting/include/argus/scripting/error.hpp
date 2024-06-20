@@ -27,4 +27,11 @@ namespace argus {
 
         std::string to_string(void) const;
     };
+
+    struct ScriptInvocationError {
+        std::string function_name;
+        std::string msg;
+
+        std::string to_string(void) const;
+    };
 }

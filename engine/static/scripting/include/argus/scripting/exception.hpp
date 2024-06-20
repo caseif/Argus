@@ -60,13 +60,4 @@ namespace argus {
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };
-
-    class ScriptInvocationException : public std::exception {
-      private:
-        std::string m_msg;
-      public:
-        ScriptInvocationException(const std::string &fn_name, const std::string &msg);
-
-        [[nodiscard]] const char *what(void) const noexcept override;
-    };
 }

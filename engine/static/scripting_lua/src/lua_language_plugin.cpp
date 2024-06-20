@@ -31,9 +31,9 @@
 #include "argus/scripting/util.hpp"
 #include "argus/scripting/wrapper.hpp"
 
+#include "internal/scripting_lua/context_data.hpp"
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"
-#include "internal/scripting_lua/context_data.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
@@ -100,8 +100,8 @@ namespace argus {
         }
     };
 
-    static ObjectWrapper _invoke_lua_function(lua_State *state, const std::vector<ObjectWrapper> &params,
-            const std::optional<std::string> &fn_name = std::nullopt);
+    static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
+            const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name = std::nullopt);
 
     struct LuaCallback {
         std::weak_ptr<ManagedLuaState> m_state;
@@ -128,7 +128,8 @@ namespace argus {
             luaL_unref(*state, LUA_REGISTRYINDEX, m_ref_key);
         }
 
-        [[nodiscard]] ObjectWrapper call(const std::vector<ObjectWrapper> &params) const {
+        [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> call(
+                const std::vector<ObjectWrapper> &params) const {
             auto state = m_state.lock();
 
             if (!state) {
@@ -858,8 +859,8 @@ namespace argus {
         }
     }
 
-    static ObjectWrapper _invoke_lua_function(lua_State *state, const std::vector<ObjectWrapper> &params,
-            const std::optional<std::string> &fn_name) {
+    static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
+            const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name) {
         int i = 1;
         try {
             for (const auto &param : params) {
@@ -867,21 +868,21 @@ namespace argus {
                 i++;
             }
         } catch (const std::exception &ex) {
-            throw ScriptInvocationException(fn_name.value_or("callback"),
+            return err<ObjectWrapper, ScriptInvocationError>(fn_name.value_or("callback"),
                     "Bad value passed for parameter " + std::to_string(i) + ": " + ex.what());
         }
 
         if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
-            auto err = lua_tostring(state, -1);
+            auto err_msg = lua_tostring(state, -1);
             lua_pop(state, 1); // pop error message
-            throw ScriptInvocationException(fn_name.value_or("callback"), err);
+            return err<ObjectWrapper, ScriptInvocationError>(fn_name.value_or("callback"), err_msg);
         }
 
         ObjectType type {
                 IntegralType::Void,
                 0
         };
-        return ObjectWrapper(type, 0); //TODO
+        return ok<ObjectWrapper, ScriptInvocationError>(ObjectWrapper { type, 0 }); //TODO
     }
 
     static int _lua_trampoline(lua_State *state) {
@@ -980,9 +981,15 @@ namespace argus {
 
             ObjectWrapper retval;
             try {
-                retval = fn.handle(args);
+                auto fn_res = fn.handle(args);
+                if (fn_res.is_err()) {
+                    return luaL_error(state, "Function %s returned error: %s", qual_fn_name.c_str(),
+                            fn_res.unwrap_err().msg.c_str());
+                }
+                retval = std::move(const_cast<ObjectWrapper &>(fn_res.unwrap()));
             } catch (const std::exception &ex) {
-                return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(), ex.what());
+                return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
+                        ex.what());
             }
 
             if (retval.type.type != IntegralType::Void) {
@@ -1161,7 +1168,7 @@ namespace argus {
         }
 
         if (!lua_isuserdata(state, -1)) {
-            throw ScriptInvocationException("clone", "clone() called on non-userdata object");
+            return _set_lua_error(state, "clone() called on non-userdata object");
         }
 
         // type should definitely be bound since we're getting it directly from
@@ -1495,10 +1502,10 @@ namespace argus {
         _bind_enum(*state, enum_def);
     }
 
-    ObjectWrapper LuaLanguagePlugin::invoke_script_function(ScriptContext &context, const std::string &name,
-            const std::vector<ObjectWrapper> &params) {
+    Result<ObjectWrapper, ScriptInvocationError> LuaLanguagePlugin::invoke_script_function(ScriptContext &context,
+            const std::string &name, const std::vector<ObjectWrapper> &params) {
         if (params.size() > INT32_MAX) {
-            throw ScriptInvocationException(name, "Too many params");
+            return err<ObjectWrapper, ScriptInvocationError>(name, "Too many params");
         }
 
         auto *plugin_state = context.get_plugin_data<LuaContextData>();

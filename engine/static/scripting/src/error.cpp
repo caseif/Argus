@@ -20,10 +20,19 @@
 
 namespace argus {
     std::string BindingError::to_string(void) const {
-        return "{ "
+        return "BindingError { "
                 "bound_name = \""
                 + bound_name
                 + "\", message = \""
+                + msg
+                + "\" }";
+    }
+
+    std::string ScriptInvocationError::to_string(void) const {
+        return "ScriptInvocationError { "
+                "function_name = \""
+                + function_name
+                + ", message = \""
                 + msg
                 + "\" }";
     }

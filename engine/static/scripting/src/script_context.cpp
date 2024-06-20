@@ -63,7 +63,7 @@ namespace argus {
         m_pimpl->plugin->load_script(*this, resource);
     }
 
-    ObjectWrapper ScriptContext::invoke_script_function(const std::string &fn_name,
+    Result<ObjectWrapper, ScriptInvocationError> ScriptContext::invoke_script_function(const std::string &fn_name,
             const std::vector<ObjectWrapper> &params) {
         return m_pimpl->plugin->invoke_script_function(*this, fn_name, params);
     }

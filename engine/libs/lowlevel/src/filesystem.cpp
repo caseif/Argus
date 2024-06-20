@@ -168,7 +168,7 @@ namespace argus {
             if (stat_rc) {
                 // don't return an error yet if it just doesn't exist
                 if (errno != ENOENT) {
-                    return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+                    return err<FileHandle, FileOpenError>(_map_file_error(errno), errno);
                 }
 
                 // if the file doesn't exist, create it
@@ -179,7 +179,7 @@ namespace argus {
                 FILE *file_tmp = fopen(path.c_str(), "w");
                 #endif
                 if (file_tmp == nullptr) {
-                    return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+                    return err<FileHandle, FileOpenError>(_map_file_error(errno), errno);
                 }
 
                 fclose(file_tmp);
@@ -193,12 +193,12 @@ namespace argus {
         #endif
 
         if (file == nullptr) {
-            return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+            return err<FileHandle, FileOpenError>(_map_file_error(errno), errno);
         }
 
         stat_t stat_buf {};
         if (fstat(fileno(file), &stat_buf) != 0) {
-            return err<FileHandle, FileOpenError>({ _map_file_error(errno), errno });
+            return err<FileHandle, FileOpenError>(_map_file_error(errno), errno);
         }
 
         assert(stat_buf.st_size >= 0);
@@ -245,7 +245,7 @@ namespace argus {
         target.open(m_path, omode);
 
         if (!target.good()) {
-            return err<void, FileOpenError>({ FileOpenErrorReason::Generic, -1 });
+            return err<void, FileOpenError>(FileOpenErrorReason::Generic, -1);
         }
 
         //stream->seekg(offset);

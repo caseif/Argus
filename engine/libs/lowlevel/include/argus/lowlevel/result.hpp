@@ -71,14 +71,14 @@ namespace argus {
     template<typename T>
     constexpr bool is_stringifiable_v = is_stringifiable<T, void>::value;
 
-    template<typename T, typename E>
-    std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(T value);
+    template<typename T, typename E, typename U>
+    std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(U &&value);
 
     template<typename T, typename E>
     std::enable_if_t<std::is_void_v<T>, Result<void, E>> ok(void);
 
-    template<typename T, typename E>
-    std::enable_if_t<!std::is_void_v<E>, Result<T, E>> err(E error);
+    template<typename T, typename E, typename F>
+    std::enable_if_t<!std::is_void_v<E>, Result<T, E>> err(F &&error);
 
     template<typename T, typename E>
     std::enable_if_t<std::is_void_v<E>, Result<T, void>> err(void);
@@ -113,12 +113,12 @@ namespace argus {
 
     template<typename T>
     static inline std::enable_if_t<std::is_reference_v<T>, std::reference_wrapper<std::remove_reference_t<T>>>
-            wrap_if_reference(T rhs) {
-        return reference_wrapped_t<T>(rhs);
+            wrap_if_reference(T &&rhs) {
+        return reference_wrapped_t<T>(std::forward<T>(rhs));
     }
 
     template<typename T>
-    static inline std::enable_if_t<!std::is_reference_v<T>, T> wrap_if_reference(T rhs) {
+    static inline std::enable_if_t<!std::is_reference_v<T>, T> wrap_if_reference(T &&rhs) {
         return rhs;
     }
 
@@ -342,30 +342,63 @@ namespace argus {
         }
     };
 
-    template<typename T, typename E>
-    std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(T value) {
+    template<typename T, typename E, typename U>
+    std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(U &&value) {
         static_assert(!std::is_void_v<T>);
 
         if constexpr (!std::is_void_v<E>) {
             #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
             // workaround for VS <=17.2, see comment in ResultStorage
             // definition
-            return Result<T, E>(ResultStorage<T, E> { std::make_optional(
+            if constexpr (std::is_reference_v<T>) {
+                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
                     std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                            std::in_place_index<0>, wrap_if_reference<T>(value)
+                            std::in_place_index<0>, std::reference_wrapper<std::remove_reference_t<T>>(
+                                    std::forward<U>(value))
                     }
-            ) });
+                ) });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<0>, std::forward<U>(value)
+                        }
+                ) });
             #else
-            return Result<T, E>(ResultStorage<T, E> {
-                    std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                            std::in_place_index<0>, wrap_if_reference<T>(value)
-                    }
-            });
+            if constexpr (std::is_reference_v<T>) {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<0>, std::move(std::reference_wrapper<std::remove_reference_t<T>>(
+                                        std::forward<U>(value)))
+                        }
+                });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<0>, std::move(std::forward<U>(value))
+                        }
+                });
+            }
             #endif
         } else {
-            return Result<T, E>(ResultStorage<T, E> {
-                    std::make_optional(wrap_if_reference<T>(value)) });
+            if constexpr (std::is_reference_v<T>) {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::make_optional(std::reference_wrapper<std::remove_reference_t<T>>(std::forward<U>(value))) });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::make_optional(std::forward<U>(value)) });
+            }
         }
+    }
+
+    template<typename T, typename E, typename... Args>
+    std::enable_if_t<!std::is_void_v<T>, Result<T, E>> ok(Args... args) {
+        return ok<T, E>(std::move(T(std::forward<Args>(args)...)));
+    }
+
+    template<typename T, typename E, typename... Args>
+    std::enable_if_t<!std::is_void_v<E> && std::is_constructible_v<decltype(T { std::declval<Args>()... })>,
+            Result<T, E>> err(Args... args) {
+        return ok<T, E>(std::move(T { std::forward<Args>(args)... }));
     }
 
     template<typename T, typename E>
@@ -377,17 +410,65 @@ namespace argus {
         }
     }
 
-    template<typename T, typename E>
-    std::enable_if_t<!std::is_void_v<E>, Result<T, E>> err(E error) {
+    template<typename T, typename E, typename F>
+    std::enable_if_t<!std::is_void_v<E>, Result<T, E>> err(F &&error) {
         static_assert(!std::is_void_v<E>);
 
         if constexpr (!std::is_void_v<T>) {
-            return Result<T, E>(ResultStorage<T, E> { std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                    std::in_place_index<1>, wrap_if_reference<E>(error) } });
+            #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
+            // workaround for VS <=17.2, see comment in ResultStorage
+            // definition
+            if constexpr (std::is_reference_t<E>) {
+                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<1>, std::reference_wrapper<std::remove_reference_t<E>>(
+                                        std::forward<F>(error)) }) });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<1>, std::forward<F>(error)
+                        }
+                ) });
+            }
+            #else
+            if constexpr (std::is_reference_v<E>) {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<1>, std::reference_wrapper<std::remove_reference_t<E>>(
+                                        std::forward<F>(error))
+                        }
+                });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
+                                std::in_place_index<1>, std::forward<F>(error)
+                        }
+                });
+            }
+            #endif
         } else {
-            return Result<T, E>(ResultStorage<T, E> {
-                    std::make_optional(wrap_if_reference<E>(error)) });
+            if constexpr (std::is_reference_v<E>) {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::make_optional(std::reference_wrapper<std::remove_reference_t<E>>(
+                                std::forward<F>(error)))
+                });
+            } else {
+                return Result<T, E>(ResultStorage<T, E> {
+                        std::make_optional(std::forward<F>(error))
+                });
+            }
         }
+    }
+
+    template<typename T, typename E, typename... Args>
+    std::enable_if_t<!std::is_void_v<E> && std::is_constructible_v<E, Args...>, Result<T, E>> err(Args... args) {
+        return ok<T, E>(std::move(E(std::forward<Args>(args)...)));
+    }
+
+    template<typename T, typename E, typename... Args>
+    std::enable_if_t<!std::is_void_v<E> && std::is_constructible_v<decltype(E { std::declval<Args>()... })>,
+            Result<T, E>> err(Args... args) {
+        return err<T, E>(std::move(E { std::forward<Args>(args)... }));
     }
 
     template<typename T, typename E>
