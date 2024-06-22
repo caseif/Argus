@@ -87,7 +87,7 @@ namespace argus {
         } else if constexpr (is_std_function_v<B>) {
             static_assert(is_std_function_v<T>,
                     "Callback reference/pointer params in bound function are not supported (pass by value instead)");
-            return { IntegralType::Callback, sizeof(ProxiedFunction), false, std::nullopt, std::nullopt,
+            return { IntegralType::Callback, sizeof(ProxiedNativeFunction), false, std::nullopt, std::nullopt,
                     std::make_unique<ScriptCallbackType>(_create_callback_type<B>()), std::nullopt };
         } else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::type_index>) {
             return { IntegralType::Type, sizeof(std::type_index), is_const };

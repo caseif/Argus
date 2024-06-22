@@ -506,7 +506,7 @@ namespace argus {
 
                     auto handle = std::make_shared<LuaCallback>(managed_state, param_index);
 
-                    ProxiedFunction fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
+                    ProxiedScriptCallback fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
                         return handle->call(params);
                     };
 
@@ -981,12 +981,7 @@ namespace argus {
 
             ObjectWrapper retval;
             try {
-                auto fn_res = fn.handle(args);
-                if (fn_res.is_err()) {
-                    return luaL_error(state, "Function %s returned error: %s", qual_fn_name.c_str(),
-                            fn_res.unwrap_err().msg.c_str());
-                }
-                retval = std::move(const_cast<ObjectWrapper &>(fn_res.unwrap()));
+                retval = fn.handle(args);
             } catch (const std::exception &ex) {
                 return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
                         ex.what());

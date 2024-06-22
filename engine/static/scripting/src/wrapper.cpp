@@ -57,14 +57,14 @@ namespace argus {
             case IntegralType::Callback: {
                 // we use the copy constructor instead of doing a bitwise copy because
                 // std::function isn't trivially copyable
-                new(wrapper.get_ptr()) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(ptr));
+                new(wrapper.get_ptr()) ProxiedScriptCallback(*reinterpret_cast<const ProxiedScriptCallback *>(ptr));
                 wrapper.copy_ctor = [](void *dst, const void *src) {
-                    new(dst) ProxiedFunction(*reinterpret_cast<const ProxiedFunction *>(src));
+                    new(dst) ProxiedScriptCallback(*reinterpret_cast<const ProxiedScriptCallback *>(src));
                 };
                 wrapper.move_ctor = [](void *dst, void *src) {
-                    new(dst) ProxiedFunction(std::move(*reinterpret_cast<ProxiedFunction *>(src)));
+                    new(dst) ProxiedScriptCallback(std::move(*reinterpret_cast<ProxiedScriptCallback *>(src)));
                 };
-                wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedFunction *>(rhs)->~ProxiedFunction(); };
+                wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedScriptCallback *>(rhs)->~ProxiedScriptCallback(); };
 
                 break;
             }
@@ -173,7 +173,7 @@ namespace argus {
         return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
 
-    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn) {
+    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn) {
         affirm_precond(type.type == IntegralType::Callback,
                 "Cannot create object wrapper "
                 "(callback-specific overload called for non-callback-typed value)");

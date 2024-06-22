@@ -60,7 +60,7 @@ namespace argus {
 
     ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str);
 
-    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedFunction &fn);
+    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn);
 
     ObjectWrapper create_vector_object_wrapper(const ObjectType &type, const void *data, size_t count);
 
@@ -128,7 +128,7 @@ namespace argus {
             return create_bool_object_wrapper(type, val);
         } else if constexpr (std::is_same_v<B, std::string>) {
             return create_string_object_wrapper(type, val);
-        } else if constexpr (std::is_same_v<B, ProxiedFunction>) {
+        } else if constexpr (std::is_same_v<B, ProxiedScriptCallback>) {
             return create_callback_object_wrapper(type, val);
         } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<T>>>
                 || std::is_reference_v<T>) {
@@ -170,8 +170,8 @@ namespace argus {
             using ReturnType = typename function_traits<B>::return_type;
             using ArgsTuple = typename function_traits<B>::argument_types_wrapped;
 
-            auto proxied_fn = reinterpret_cast<ProxiedFunction *>(param.get_ptr());
-            auto fn_copy = std::make_shared<ProxiedFunction>(*proxied_fn);
+            auto proxied_fn = reinterpret_cast<ProxiedScriptCallback *>(param.get_ptr());
+            auto fn_copy = std::make_shared<ProxiedScriptCallback>(*proxied_fn);
 
             auto param_types = param.type.callback_type.value()->params;
             for (auto &subparam : param_types) {

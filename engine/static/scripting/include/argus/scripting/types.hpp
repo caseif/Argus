@@ -144,8 +144,11 @@ namespace argus {
         }
     };
 
+    typedef std::function<ObjectWrapper(const std::vector<ObjectWrapper> &)>
+            ProxiedNativeFunction;
+
     typedef std::function<Result<ObjectWrapper, ScriptInvocationError>(const std::vector<ObjectWrapper> &)>
-            ProxiedFunction;
+            ProxiedScriptCallback;
 
     struct BoundFunctionDef {
         std::string name;
@@ -153,7 +156,7 @@ namespace argus {
         bool is_const;
         std::vector<ObjectType> params;
         ObjectType return_type;
-        ProxiedFunction handle;
+        ProxiedNativeFunction handle;
     };
 
     struct BoundFieldDef {

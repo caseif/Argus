@@ -127,7 +127,7 @@ namespace argus {
     }
 
     template<typename FuncType>
-    [[nodiscard]] ProxiedFunction create_function_wrapper(FuncType fn) {
+    [[nodiscard]] ProxiedNativeFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
             return [fn](const std::vector<ObjectWrapper> &params) {
@@ -196,36 +196,31 @@ namespace argus {
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                         std::remove_reference_t<ReturnType>>>, std::string>) {
-                    return ok<ObjectWrapper, ScriptInvocationError>(
-                            create_object_wrapper(ret_obj_type, ret.c_str(), ret.size()));
+                    return ObjectWrapper(create_object_wrapper(ret_obj_type, ret.c_str(), ret.size()));
                 } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>>
                         && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                                 std::remove_reference_t<ReturnType>>>, char>) {
-                    return ok<ObjectWrapper, ScriptInvocationError>(
-                            create_object_wrapper(ret_obj_type, ret, strlen(ret)));
+                    return ObjectWrapper(create_object_wrapper(ret_obj_type, ret, strlen(ret)));
                 } else if constexpr (is_std_vector_v<ReturnType>) {
-                    return ok<ObjectWrapper, ScriptInvocationError>(
-                            create_vector_object_wrapper_from_stack(ret_obj_type, ret));
+                    return ObjectWrapper(create_vector_object_wrapper_from_stack(ret_obj_type, ret));
                 } else if constexpr (is_std_vector_v<std::remove_cv_t<
                         std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
-                    return ok<ObjectWrapper, ScriptInvocationError>(
-                            create_vector_object_wrapper_from_heap(ret_obj_type, ret));
+                    return ObjectWrapper(create_vector_object_wrapper_from_heap(ret_obj_type, ret));
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
-                    return ok<ObjectWrapper, ScriptInvocationError>(std::move(wrapper));
+                    return ObjectWrapper(std::move(wrapper));
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
-                    return ok<ObjectWrapper, ScriptInvocationError>(std::move(wrapper));
+                    return ObjectWrapper(std::move(wrapper));
                 } else {
-                    return ok<ObjectWrapper, ScriptInvocationError>(
-                            create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType)));
+                    return ObjectWrapper(create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType)));
                 }
             };
         } else {
             return [fn](const std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
                 auto type = create_return_object_type<void>();
-                return ok<ObjectWrapper, ScriptInvocationError>(type, size_t(0));
+                return ObjectWrapper(type, 0);
             };
         }
     }

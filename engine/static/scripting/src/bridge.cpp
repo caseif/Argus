@@ -101,7 +101,7 @@ namespace argus {
         return _get_native_field(type_name, field_name);
     }
 
-    Result<ObjectWrapper, ScriptInvocationError> invoke_native_function(const BoundFunctionDef &def,
+    ObjectWrapper invoke_native_function(const BoundFunctionDef &def,
             const std::vector<ObjectWrapper> &params) {
         auto expected_param_count = def.params.size();
         if (def.type == FunctionType::MemberInstance) {
