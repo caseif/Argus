@@ -208,10 +208,10 @@ namespace argus {
                     return ObjectWrapper(create_vector_object_wrapper_from_heap(ret_obj_type, ret));
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
-                    return ObjectWrapper(std::move(wrapper));
+                    return wrapper;
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
-                    return ObjectWrapper(std::move(wrapper));
+                    return wrapper;
                 } else {
                     return ObjectWrapper(create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType)));
                 }
