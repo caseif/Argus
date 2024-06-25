@@ -34,4 +34,11 @@ namespace argus {
 
         std::string to_string(void) const;
     };
+
+    struct ScriptLoadError {
+        std::string resource_uid;
+        std::string msg;
+
+        std::string to_string(void) const;
+    };
 }

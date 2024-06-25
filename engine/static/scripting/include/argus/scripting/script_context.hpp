@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/scripting/types.hpp"
 
 #include <string>
@@ -42,9 +44,9 @@ namespace argus {
 
         ~ScriptContext(void);
 
-        void load_script(const std::string &uid);
+        Result<void, ScriptLoadError> load_script(const std::string &uid);
 
-        void load_script(const Resource &resource);
+        Result<void, ScriptLoadError> load_script(const Resource &resource);
 
         Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(const std::string &fn_name,
                 const std::vector<ObjectWrapper> &params);
@@ -61,5 +63,5 @@ namespace argus {
 
     void destroy_script_context(ScriptContext &context);
 
-    ScriptContext &load_script(const std::string &uid);
+    Result<ScriptContext &, ScriptLoadError> load_script(const std::string &uid);
 }

@@ -64,8 +64,12 @@ namespace argus {
 
     static void _run_init_script(const std::string &uid) {
         try {
-            auto &context = load_script(uid);
-            context.invoke_script_function(k_init_fn_name, {});
+            auto context_res = load_script(uid);
+            if (context_res.is_err()) {
+                crash("Failed to run init script: " + context_res.unwrap_err().msg);
+            }
+
+            context_res.unwrap().invoke_script_function(k_init_fn_name, {});
         } catch (const std::exception &ex) {
             crash("Failed to run init script: " + std::string(ex.what()));
         }

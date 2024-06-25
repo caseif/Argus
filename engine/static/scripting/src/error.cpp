@@ -36,4 +36,13 @@ namespace argus {
                 + msg
                 + "\" }";
     }
+
+    std::string ScriptLoadError::to_string(void) const {
+        return "ScriptInvocationError { "
+                "resource_uid = \""
+                + resource_uid
+                + ", message = \""
+                + msg
+                + "\" }";
+    }
 }

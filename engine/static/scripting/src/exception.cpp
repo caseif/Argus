@@ -44,12 +44,4 @@ namespace argus {
     const char *ReflectiveArgumentsException::what(void) const noexcept {
         return m_reason.c_str();
     }
-
-    ScriptLoadException::ScriptLoadException(const std::string &script_uid, const std::string &msg) noexcept:
-        m_msg("Load failed for " + script_uid + ": " + msg) {
-    }
-
-    const char *ScriptLoadException::what(void) const noexcept {
-        return m_msg.c_str();
-    }
 }

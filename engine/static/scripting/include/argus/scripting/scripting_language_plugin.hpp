@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/resman/resource.hpp"
 
 #include "argus/scripting/bridge.hpp"
@@ -50,7 +52,7 @@ namespace argus {
             return this->m_media_types;
         }
 
-        Resource &load_resource(const std::string &uid);
+        Result<Resource &, ScriptLoadError> load_resource(const std::string &uid);
 
         void move_resource(const Resource &resource);
 
@@ -60,7 +62,7 @@ namespace argus {
 
         virtual void destroy_context_data(void *data) = 0;
 
-        virtual void load_script(ScriptContext &context, const Resource &resource) = 0;
+        virtual Result<void, ScriptLoadError> load_script(ScriptContext &context, const Resource &resource) = 0;
 
         virtual void bind_type(ScriptContext &context, const BoundTypeDef &type) = 0;
 

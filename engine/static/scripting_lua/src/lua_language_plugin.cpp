@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
@@ -1339,7 +1340,7 @@ namespace argus {
         return uid;
     }
 
-    static int _load_script(lua_State *state, const Resource &resource) {
+    static Result<int, ScriptLoadError> _load_script(lua_State *state, const Resource &resource) {
         auto &loaded_script = resource.get<LoadedScript>();
 
         auto load_res = luaL_loadbuffer(state, loaded_script.source.c_str(), loaded_script.source.length(),
@@ -1348,7 +1349,7 @@ namespace argus {
             const char *err_msg = lua_tostring(state, -1);
             auto uid = resource.prototype.uid;
             resource.release();
-            throw ScriptLoadException(uid, "Failed to parse script " + uid
+            return err<int, ScriptLoadError>(uid, "Failed to parse script " + uid
                     + " (" + std::string(err_msg) + ")");
         }
 
@@ -1357,10 +1358,10 @@ namespace argus {
             //TODO: print detailed trace info from VM
             auto uid = resource.prototype.uid;
             resource.release();
-            throw ScriptLoadException(uid, lua_tostring(state, -1));
+            return err<int, ScriptLoadError>(uid, lua_tostring(state, -1));
         }
 
-        return 1;
+        return ok<int, ScriptLoadError>(1);
     }
 
     static int _require_override(lua_State *state) {
@@ -1373,14 +1374,20 @@ namespace argus {
 
         auto uid = _convert_path_to_uid(path);
         if (!uid.empty()) {
-            Resource *res;
             try {
-                res = &plugin.load_resource(uid);
-
-                try {
-                    return _load_script(state, *res);
-                } catch (const std::exception &ex) {
-                    return luaL_error(state, "Unable to parse script %s passed to 'require': %s", path, ex.what());
+                auto load_res = plugin.load_resource(uid);
+                if (load_res.is_ok()) {
+                    auto load_script_res = _load_script(state, load_res.unwrap());
+                    if (load_script_res.is_ok()) {
+                        return load_script_res.unwrap();
+                    } else {
+                        return luaL_error(state, "Unable to parse script %s passed to 'require': %s",
+                                path, load_script_res.unwrap_err().msg.c_str());
+                    }
+                } else {
+                    Logger::default_logger().debug("Unable to load resource for require path %s (%s)",
+                            path, load_res.unwrap_err().msg.c_str());
+                    // swallow
                 }
             } catch (const std::exception &ex) {
                 Logger::default_logger().debug("Unable to load resource for require path %s (%s)", path, ex.what());
@@ -1433,7 +1440,7 @@ namespace argus {
         delete lua_data;
     }
 
-    void LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &resource) {
+    Result<void, ScriptLoadError> LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &resource) {
         assert(resource.prototype.media_type == k_resource_type_lua);
 
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
@@ -1445,15 +1452,17 @@ namespace argus {
                 resource.prototype.uid.c_str());
         if (load_res != LUA_OK) {
             const char *err_msg = lua_tostring(*state, -1);
-            throw ScriptLoadException(resource.uid, "Failed to parse script " + resource.prototype.uid
+            return err<void, ScriptLoadError>(resource.uid, "Failed to parse script " + resource.prototype.uid
                     + " (" + std::string(err_msg) + ")");
         }
 
         auto call_res = lua_pcall(*state, 0, 0, 0);
         if (call_res != LUA_OK) {
             //TODO: print detailed trace info from VM
-            throw ScriptLoadException(resource.uid, lua_tostring(*state, -1));
+            return err<void, ScriptLoadError>(resource.uid, lua_tostring(*state, -1));
         }
+
+        return ok<void, ScriptLoadError>();
     }
 
     void LuaLanguagePlugin::bind_type(ScriptContext &context, const BoundTypeDef &type) {

@@ -17,6 +17,7 @@
  */
 
 #include "argus/lowlevel/collections.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
@@ -46,21 +47,20 @@ namespace argus {
         return m_pimpl->plugin_data;
     }
 
-    void ScriptContext::load_script(const std::string &uid) {
-        auto &res = m_pimpl->plugin->load_resource(uid);
-
-        this->load_script(res);
+    Result<void, ScriptLoadError> ScriptContext::load_script(const std::string &uid) {
+        return m_pimpl->plugin->load_resource(uid)
+                .and_then<void>([this](const auto &res) { return this->load_script(res); });
     }
 
-    void ScriptContext::load_script(const Resource &resource) {
+    Result<void, ScriptLoadError> ScriptContext::load_script(const Resource &resource) {
         auto lang_it = g_media_type_langs.find(resource.media_type);
         if (lang_it == g_media_type_langs.cend() || lang_it->second != m_pimpl->language) {
-            throw ScriptLoadException(resource.uid, "Resource with media type '" + resource.prototype.media_type
+            return err<void, ScriptLoadError>(resource.uid, "Resource with media type '" + resource.prototype.media_type
                     + "' cannot be loaded by plugin '" + m_pimpl->language + "'");
         }
 
         m_pimpl->plugin->move_resource(resource);
-        m_pimpl->plugin->load_script(*this, resource);
+        return m_pimpl->plugin->load_script(*this, resource);
     }
 
     Result<ObjectWrapper, ScriptInvocationError> ScriptContext::invoke_script_function(const std::string &fn_name,
@@ -96,30 +96,29 @@ namespace argus {
         delete &context;
     }
 
-    ScriptContext &load_script(const std::string &uid) {
-        try {
-            auto res = ResourceManager::instance().get_resource(uid);
+    Result<ScriptContext &, ScriptLoadError> load_script(const std::string &uid) {
+        auto res = ResourceManager::instance().get_resource(uid);
 
-            if (!res.is_ok()) {
-                const auto &err = res.unwrap_err();
-                throw new ScriptLoadException(uid, "Resource load failed (return code "
-                        + std::to_string(static_cast<std::underlying_type_t<ResourceErrorReason>>(err.reason))
-                        + (!err.info.empty() ? (": " + err.info) : "") + ")");
-            }
-
-            auto lang_it = g_media_type_langs.find(res.unwrap().media_type);
-            if (lang_it == g_media_type_langs.cend()) {
-                throw ScriptLoadException(uid, "No plugin registered for media type '"
-                        + res.unwrap().prototype.media_type + "'");
-            }
-
-            auto &context = create_script_context(lang_it->second);
-
-            context.load_script(res.unwrap());
-
-            return context;
-        } catch (const ScriptLoadException &ex) {
-            throw ex;
+        if (!res.is_ok()) {
+            const auto &res_err = res.unwrap_err();
+            return err<ScriptContext &, ScriptLoadError>(uid, "Resource load failed (return code "
+                    + std::to_string(static_cast<std::underlying_type_t<ResourceErrorReason>>(res_err.reason))
+                    + (!res_err.info.empty() ? (": " + res_err.info) : "") + ")");
         }
+
+        auto lang_it = g_media_type_langs.find(res.unwrap().media_type);
+        if (lang_it == g_media_type_langs.cend()) {
+            return err<ScriptContext &, ScriptLoadError>(uid, "No plugin registered for media type '"
+                    + res.unwrap().prototype.media_type + "'");
+        }
+
+        auto &context = create_script_context(lang_it->second);
+
+        auto load_res = context.load_script(res.unwrap());
+        if (load_res.is_err()) {
+            return err<ScriptContext &, ScriptLoadError>(load_res.unwrap_err());
+        }
+
+        return ok<ScriptContext &, ScriptLoadError>(context);
     }
 }

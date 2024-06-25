@@ -37,12 +37,12 @@ namespace argus {
         }
     }
 
-    Resource &ScriptingLanguagePlugin::load_resource(const std::string &uid) {
+    Result<Resource &, ScriptLoadError> ScriptingLanguagePlugin::load_resource(const std::string &uid) {
         auto res = ResourceManager::instance().get_resource(uid);
         if (res.is_err()) {
             //TODO: return error result
             if (res.unwrap_err().reason == ResourceErrorReason::NotFound) {
-                throw ScriptLoadException(uid, "Cannot load script (resource does not exist)");
+                return err<Resource &, ScriptLoadError>(uid, "Cannot load script (resource does not exist)");
             } else {
                 crash_ll("Failed to load script");
             }
@@ -50,7 +50,7 @@ namespace argus {
 
         g_loaded_resources.find(get_language_name())->second.insert(&res.unwrap());
 
-        return res.unwrap();
+        return ok<Resource &, ScriptLoadError>(res.unwrap());
     }
 
     void ScriptingLanguagePlugin::move_resource(const Resource &resource) {

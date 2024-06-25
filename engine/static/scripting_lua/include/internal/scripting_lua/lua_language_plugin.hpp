@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/scripting/script_context.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 
@@ -36,7 +38,7 @@ namespace argus {
 
         void destroy_context_data(void *data) override;
 
-        void load_script(ScriptContext &context, const Resource &resource) override;
+        Result<void, ScriptLoadError> load_script(ScriptContext &context, const Resource &resource) override;
 
         void bind_type(ScriptContext &context, const BoundTypeDef &type) override;
 
