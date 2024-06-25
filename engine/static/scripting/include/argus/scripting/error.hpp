@@ -28,6 +28,13 @@ namespace argus {
         std::string to_string(void) const;
     };
 
+    struct ScriptLoadError {
+        std::string resource_uid;
+        std::string msg;
+
+        std::string to_string(void) const;
+    };
+
     struct ScriptInvocationError {
         std::string function_name;
         std::string msg;
@@ -35,9 +42,10 @@ namespace argus {
         std::string to_string(void) const;
     };
 
-    struct ScriptLoadError {
-        std::string resource_uid;
-        std::string msg;
+    struct ReflectiveArgumentsError {
+        std::string reason;
+
+        ReflectiveArgumentsError(std::string reason);
 
         std::string to_string(void) const;
     };

@@ -144,7 +144,7 @@ namespace argus {
         }
     };
 
-    typedef std::function<ObjectWrapper(const std::vector<ObjectWrapper> &)>
+    typedef std::function<Result<ObjectWrapper, ReflectiveArgumentsError>(const std::vector<ObjectWrapper> &)>
             ProxiedNativeFunction;
 
     typedef std::function<Result<ObjectWrapper, ScriptInvocationError>(const std::vector<ObjectWrapper> &)>

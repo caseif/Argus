@@ -200,7 +200,17 @@ namespace argus {
         }
 
         template<typename U = T>
+        [[nodiscard]] std::enable_if_t<!std::is_void_v<U>, U &> unwrap(void) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->unwrap());
+        }
+
+        template<typename U = T>
         [[nodiscard]] std::enable_if_t<!std::is_void_v<T>, const U &> unwrap_or_default(const U &def) const {
+            return is_ok() ? unwrap() : def;
+        }
+
+        template<typename U = T>
+        [[nodiscard]] std::enable_if_t<!std::is_void_v<T>, U &> unwrap_or_default(U &def) {
             return is_ok() ? unwrap() : def;
         }
 
@@ -220,6 +230,11 @@ namespace argus {
             } else {
                 return m_storage.err.value();
             }
+        }
+
+        template<typename U = E>
+        [[nodiscard]] std::enable_if_t<!std::is_void_v<U>, U &> unwrap_err(void) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->unwrap_err());
         }
 
         [[nodiscard]] Result<T, E> collate(Result<T, E> &&other) const {
@@ -310,8 +325,18 @@ namespace argus {
         }
 
         template<typename U = T>
+        std::enable_if_t<!std::is_void_v<U>, U &> expect(const std::string &msg) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->expect(msg));
+        }
+
+        template<typename U = T>
         std::enable_if_t<!std::is_void_v<U>, const U &> expect(void) const {
             return expect("Expectation failed");
+        }
+
+        template<typename U = T>
+        std::enable_if_t<!std::is_void_v<U>, U &> expect(void) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->expect());
         }
 
         template<typename U = T>
@@ -335,10 +360,30 @@ namespace argus {
         }
 
         template<typename U = E>
+        std::enable_if_t<!std::is_void_v<U>, U &> expect_err(const std::string &msg) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->expect_err(msg));
+        }
+
+        template<typename U = T>
+        std::enable_if_t<!std::is_void_v<U>, const U &> expect_err(void) const {
+            return expect_err("Expectation failed");
+        }
+
+        template<typename U = T>
+        std::enable_if_t<!std::is_void_v<U>, U &> expect_err(void) {
+            return const_cast<U &>(const_cast<const Result<T, E> *>(this)->expect());
+        }
+
+        template<typename U = E>
         std::enable_if_t<std::is_void_v<U>, void> expect_err(const std::string &msg) const {
             if (!is_err()) {
                 crash_ll(msg);
             }
+        }
+
+        template<typename U = T>
+        std::enable_if_t<std::is_void_v<U>, void> expect_err(void) const {
+            return expect_err("Expectation failed");
         }
     };
 

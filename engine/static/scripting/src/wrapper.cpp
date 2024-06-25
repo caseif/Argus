@@ -17,10 +17,12 @@
  */
 
 #include "argus/lowlevel/debug.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
 
 #include "argus/scripting/bind.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/wrapper.hpp"
 
 #include <stdexcept>
@@ -29,7 +31,7 @@
 #include <cstring>
 
 namespace argus {
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
         ObjectWrapper wrapper(type, size);
 
         switch (type.type) {
@@ -77,17 +79,17 @@ namespace argus {
             }
         }
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr) {
         affirm_precond(type.type != IntegralType::String, "Cannot create object wrapper for string-typed value - "
                                                           "string-specific overload must be used");
 
         return create_object_wrapper(type, ptr, type.size);
     }
 
-    ObjectWrapper create_int_object_wrapper(const ObjectType &type, int64_t val) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(const ObjectType &type, int64_t val) {
         ObjectWrapper wrapper(type, type.size);
         assert(wrapper.buffer_size >= type.size);
 
@@ -97,7 +99,7 @@ namespace argus {
                     .expect("Tried to create ObjectWrapper with unbound enum type");
             auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val));
             if (enum_val_it == enum_def.all_ordinals.cend()) {
-                throw ReflectiveArgumentsException("Unknown ordinal " + std::to_string(val)
+                return err<ObjectWrapper, ReflectiveArgumentsError>("Unknown ordinal " + std::to_string(val)
                         + " for enum type " + enum_def.name);
             }
         }
@@ -127,10 +129,10 @@ namespace argus {
                 assert(false); // should have been caught during binding
         }
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
-    ObjectWrapper create_float_object_wrapper(const ObjectType &type, double val) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_float_object_wrapper(const ObjectType &type, double val) {
         ObjectWrapper wrapper(type, type.size);
 
         switch (type.size) {
@@ -149,31 +151,32 @@ namespace argus {
                 assert(false); // should have been caught during binding
         }
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
-    ObjectWrapper create_bool_object_wrapper(const ObjectType &type, bool val) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(const ObjectType &type, bool val) {
         assert(type.size >= sizeof(bool));
 
         ObjectWrapper wrapper(type, type.size);
 
         *reinterpret_cast<bool *>(wrapper.get_ptr()) = val;
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
-    ObjectWrapper create_enum_object_wrapper(const ObjectType &type, int64_t val) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_enum_object_wrapper(const ObjectType &type, int64_t val) {
         return create_int_object_wrapper(type, val);
     }
 
-    ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_string_object_wrapper(const ObjectType &type,
+            const std::string &str) {
         affirm_precond(type.type == IntegralType::String, "Cannot create object wrapper (string-specific overload "
                                                           "called for non-string-typed value");
 
         return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
 
-    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn) {
         affirm_precond(type.type == IntegralType::Callback,
                 "Cannot create object wrapper "
                 "(callback-specific overload called for non-callback-typed value)");
@@ -200,7 +203,8 @@ namespace argus {
         }
     }
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const void *data, size_t count) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &vec_type,
+            const void *data, size_t count) {
         affirm_precond(vec_type.type == IntegralType::Vector || vec_type.type == IntegralType::VectorRef,
                 "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
 
@@ -265,10 +269,11 @@ namespace argus {
             }
         }
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const VectorWrapper &vec) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &vec_type,
+            const VectorWrapper &vec) {
         affirm_precond(vec_type.type == IntegralType::Vector,
                 "Cannot create object wrapper (vector-specific overload called for non-vector-typed value)");
         _validate_vec_obj_type(vec_type);
@@ -276,7 +281,8 @@ namespace argus {
         return create_vector_object_wrapper(vec_type, vec.get_data(), vec.get_size());
     }
 
-    ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_ref_object_wrapper(const ObjectType &vec_type,
+            VectorWrapper vec) {
         affirm_precond(vec_type.type == IntegralType::VectorRef,
                 "Cannot create object wrapper (vectorref-specific overload called for non-vectorref-typed value)");
         _validate_vec_obj_type(vec_type);
@@ -285,6 +291,6 @@ namespace argus {
 
         new(wrapper.get_ptr()) VectorWrapper(std::move(vec));
 
-        return wrapper;
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 }

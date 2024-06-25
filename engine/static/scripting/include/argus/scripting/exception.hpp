@@ -41,14 +41,4 @@ namespace argus {
 
         [[nodiscard]] const char *what(void) const noexcept override;
     };
-
-    class ReflectiveArgumentsException : public std::exception {
-      private:
-        std::string m_reason;
-
-      public:
-        ReflectiveArgumentsException(std::string reason);
-
-        [[nodiscard]] const char *what(void) const noexcept override;
-    };
 }

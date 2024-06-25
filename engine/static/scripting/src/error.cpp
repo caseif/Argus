@@ -28,21 +28,31 @@ namespace argus {
                 + "\" }";
     }
 
-    std::string ScriptInvocationError::to_string(void) const {
-        return "ScriptInvocationError { "
-                "function_name = \""
-                + function_name
-                + ", message = \""
+    std::string ScriptLoadError::to_string(void) const {
+        return "ScriptLoadError { "
+               "resource_uid = \""
+                + resource_uid
+                + "\", message = \""
                 + msg
                 + "\" }";
     }
 
-    std::string ScriptLoadError::to_string(void) const {
+    std::string ScriptInvocationError::to_string(void) const {
         return "ScriptInvocationError { "
-                "resource_uid = \""
-                + resource_uid
-                + ", message = \""
+                "function_name = \""
+                + function_name
+                + "\", message = \""
                 + msg
+                + "\" }";
+    }
+
+    ReflectiveArgumentsError::ReflectiveArgumentsError(std::string reason):
+        reason(reason) {
+    }
+    std::string ReflectiveArgumentsError::to_string(void) const {
+        return "ReflectiveArgumentsError { "
+               "reason = \""
+                + reason
                 + "\" }";
     }
 }

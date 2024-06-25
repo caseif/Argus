@@ -36,12 +36,4 @@ namespace argus {
     const char *SymbolNotBoundException::what(void) const noexcept {
         return m_name.c_str();
     }
-
-    ReflectiveArgumentsException::ReflectiveArgumentsException(std::string reason):
-        m_reason(std::move(reason)) {
-    }
-
-    const char *ReflectiveArgumentsException::what(void) const noexcept {
-        return m_reason.c_str();
-    }
 }

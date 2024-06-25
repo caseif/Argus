@@ -210,7 +210,12 @@ namespace argus {
                 type_def.type_index,
                 type_def.name
         };
-        *dest = create_object_wrapper(obj_type, ptr);
+        auto wrapper_res = create_object_wrapper(obj_type, ptr);
+        if (wrapper_res.is_err()) {
+            return luaL_error(state, "Invalid arguments provided for function %s: %s",
+                    qual_fn_name.c_str(), wrapper_res.unwrap_err().reason.c_str());
+        }
+        *dest = std::move(wrapper_res.unwrap());
         return 0;
     }
 
@@ -245,7 +250,14 @@ namespace argus {
             lua_pop(state, 1);
         }
 
-        *dest = create_vector_object_wrapper_from_stack(param_def, vec);
+        auto wrapper_res = create_vector_object_wrapper_from_stack(param_def, vec);
+
+        if (wrapper_res.is_err()) {
+            return luaL_error(state, "Expected array type for parameter %d of function %s",
+                    param_index, qual_fn_name.c_str());
+        }
+
+        *dest = std::move(wrapper_res.unwrap());
 
         return 0;
     }
@@ -316,7 +328,8 @@ namespace argus {
                 affirm_precond(len <= INT_MAX, "Too many table indices");
 
                 if (len == 0) {
-                    *dest = create_vector_object_wrapper(param_def, nullptr, 0);
+                    *dest = std::move(create_vector_object_wrapper(param_def, nullptr, 0)
+                            .expect("Failed to create object wrapper while reading vector from Lua VM"));
                     return 0;
                 }
 
@@ -407,180 +420,186 @@ namespace argus {
             int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
         lua_State *state = *managed_state;
 
-        try {
-            switch (param_def.type) {
-                case IntegralType::Integer:
-                case IntegralType::Enum: {
-                    if (!lua_isinteger(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
-                                + ", actual " + luaL_typename(state, param_index) + ")");
-                    }
+        std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> wrapper_res;
 
-                    *dest = create_auto_object_wrapper(param_def, lua_tointeger(state, param_index));
-
-                    return 0;
+        switch (param_def.type) {
+            case IntegralType::Integer:
+            case IntegralType::Enum: {
+                if (!lua_isinteger(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
+                            + ", actual " + luaL_typename(state, param_index) + ")");
                 }
-                case IntegralType::Float: {
-                    if (!lua_isnumber(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected number, actual " + luaL_typename(state, param_index) + ")");
-                    }
 
-                    *dest = create_auto_object_wrapper(param_def, lua_tonumber(state, param_index));
+                wrapper_res = create_auto_object_wrapper(param_def, lua_tointeger(state, param_index));
 
-                    return 0;
+                break;
+            }
+            case IntegralType::Float: {
+                if (!lua_isnumber(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected number, actual " + luaL_typename(state, param_index) + ")");
                 }
-                case IntegralType::Boolean: {
-                    if (!lua_isboolean(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
-                    }
 
-                    *dest = create_auto_object_wrapper(param_def, lua_toboolean(state, param_index));
+                wrapper_res = create_auto_object_wrapper(param_def, lua_tonumber(state, param_index));
 
-                    return 0;
+                break;
+            }
+            case IntegralType::Boolean: {
+                if (!lua_isboolean(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
                 }
-                case IntegralType::String: {
-                    if (!lua_isstring(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected string, actual " + luaL_typename(state, param_index) + ")");
-                    }
 
-                    *dest = create_auto_object_wrapper(param_def, lua_tostring(state, param_index));
+                wrapper_res = create_auto_object_wrapper(param_def, lua_toboolean(state, param_index));
 
-                    return 0;
+                break;
+            }
+            case IntegralType::String: {
+                if (!lua_isstring(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected string, actual " + luaL_typename(state, param_index) + ")");
                 }
-                case IntegralType::Struct:
-                case IntegralType::Pointer: {
-                    assert(param_def.type_name.has_value());
-                    assert(param_def.type_index.has_value());
 
-                    if (!lua_isuserdata(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
-                    }
+                wrapper_res = create_auto_object_wrapper(param_def, lua_tostring(state, param_index));
 
-                    auto type_name = _get_metatable_name(state, param_index);
+                break;
+            }
+            case IntegralType::Struct:
+            case IntegralType::Pointer: {
+                assert(param_def.type_name.has_value());
+                assert(param_def.type_index.has_value());
 
-                    if (!(type_name == param_def.type_name.value()
-                            || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
-                        return _set_lua_error(state, "Incorrect userdata provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected " + (param_def.is_const ? k_const_prefix : "") +
-                                param_def.type_name.value()
-                                + ", actual " + _string_or(type_name, k_empty_repl) + ")");
-                    }
-
-                    auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
-                    void *ptr;
-                    if (udata->is_handle) {
-                        // userdata is storing handle of pointer to struct data
-                        ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
-                                param_def.type_index.value());
-
-                        if (ptr == nullptr) {
-                            return _set_lua_error(state, "Invalid handle passed as parameter "
-                                    + std::to_string(param_index) + " of function " + qual_fn_name);
-                        }
-                    } else {
-                        // userdata is directly storing struct data
-                        ptr = static_cast<void *>(udata->data);
-                    }
-
-                    *dest = create_object_wrapper(param_def, ptr);
-
-                    return 0;
+                if (!lua_isuserdata(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
-                case IntegralType::Callback: {
-                    /*if (!lua_isfunction(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                                     + std::to_string(param_index) + " of function " + qual_fn_name
-                                                     + " (expected function, actual "
-                                                     + luaL_typename(state, param_index) + ")");
-                    }*/
 
-                    auto handle = std::make_shared<LuaCallback>(managed_state, param_index);
+                auto type_name = _get_metatable_name(state, param_index);
 
-                    ProxiedScriptCallback fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
-                        return handle->call(params);
-                    };
-
-                    *dest = create_callback_object_wrapper(param_def, fn);
-
-                    return 0;
+                if (!(type_name == param_def.type_name.value()
+                        || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
+                    return _set_lua_error(state, "Incorrect userdata provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected " + (param_def.is_const ? k_const_prefix : "") +
+                            param_def.type_name.value()
+                            + ", actual " + _string_or(type_name, k_empty_repl) + ")");
                 }
-                case IntegralType::Type: {
-                    if (!lua_istable(state, param_index)) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
-                                + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected table, actual " + luaL_typename(state, param_index));
-                    }
 
-                    lua_pushvalue(state, param_index);
+                auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
+                void *ptr;
+                if (udata->is_handle) {
+                    // userdata is storing handle of pointer to struct data
+                    ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
+                            param_def.type_index.value());
 
-                    lua_getfield(state, param_index, k_lua_name);
-
-                    if (!lua_isstring(state, -1)) {
-                        lua_pop(state, 2); // pop type name and table
-                        return _set_lua_error(state, "Parameter " + std::to_string(param_index)
-                                + " does not represent type (missing field '" + k_lua_name + "')");
-                    }
-
-                    const char *type_name = lua_tostring(state, -1);
-
-                    lua_pop(state, 2); // pop type name and table
-
-                    auto bound_type_res = get_bound_type(type_name);
-                    if (bound_type_res.is_ok()) {
-                        auto bound_type_index = bound_type_res.unwrap().type_index;
-                        *dest = create_object_wrapper(param_def, static_cast<const void *>(&bound_type_index));
-                    } else {
-                        return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
+                    if (ptr == nullptr) {
+                        return _set_lua_error(state, "Invalid handle passed as parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name);
                     }
-
-                    return 0;
+                } else {
+                    // userdata is directly storing struct data
+                    ptr = static_cast<void *>(udata->data);
                 }
-                case IntegralType::Vector:
-                case IntegralType::VectorRef: {
-                    assert(param_def.element_type.has_value());
 
-                    if (lua_istable(state, param_index)) {
-                        return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
-                    } else if (lua_isuserdata(state, param_index)) {
-                        auto type_name = _get_metatable_name(state, param_index);
+                wrapper_res = create_object_wrapper(param_def, ptr);
 
-                        if (type_name != k_mt_vector_ref) {
-                            return _set_lua_error(state, "Incorrect type provided for parameter "
-                                    + std::to_string(param_index) + " of function " + qual_fn_name
-                                    + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
-                        }
+                break;
+            }
+            case IntegralType::Callback: {
+                /*if (!lua_isfunction(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                                                 + std::to_string(param_index) + " of function " + qual_fn_name
+                                                 + " (expected function, actual "
+                                                 + luaL_typename(state, param_index) + ")");
+                }*/
 
-                        ObjectType real_type = param_def;
-                        real_type.type = IntegralType::VectorRef;
-                        VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
-                        *dest = create_vector_ref_object_wrapper(real_type, *vec);
-                        return 0;
-                    } else {
+                auto handle = std::make_shared<LuaCallback>(managed_state, param_index);
+
+                ProxiedScriptCallback fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
+                    return handle->call(params);
+                };
+
+                wrapper_res = create_callback_object_wrapper(param_def, fn);
+
+                break;
+            }
+            case IntegralType::Type: {
+                if (!lua_istable(state, param_index)) {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected table, actual " + luaL_typename(state, param_index));
+                }
+
+                lua_pushvalue(state, param_index);
+
+                lua_getfield(state, param_index, k_lua_name);
+
+                if (!lua_isstring(state, -1)) {
+                    lua_pop(state, 2); // pop type name and table
+                    return _set_lua_error(state, "Parameter " + std::to_string(param_index)
+                            + " does not represent type (missing field '" + k_lua_name + "')");
+                }
+
+                const char *type_name = lua_tostring(state, -1);
+
+                lua_pop(state, 2); // pop type name and table
+
+                auto bound_type_res = get_bound_type(type_name);
+                if (bound_type_res.is_ok()) {
+                    auto bound_type_index = bound_type_res.unwrap().type_index;
+                    wrapper_res = create_object_wrapper(param_def, static_cast<const void *>(&bound_type_index));
+
+                    break;
+                } else {
+                    return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name);
+                }
+            }
+            case IntegralType::Vector:
+            case IntegralType::VectorRef: {
+                assert(param_def.element_type.has_value());
+
+                if (lua_istable(state, param_index)) {
+                    return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
+                } else if (lua_isuserdata(state, param_index)) {
+                    auto type_name = _get_metatable_name(state, param_index);
+
+                    if (type_name != k_mt_vector_ref) {
                         return _set_lua_error(state, "Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
-                                + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
+                                + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
                     }
+
+                    ObjectType real_type = param_def;
+                    real_type.type = IntegralType::VectorRef;
+                    VectorWrapper *vec = reinterpret_cast<VectorWrapper *>(lua_touserdata(state, param_index));
+                    wrapper_res = create_vector_ref_object_wrapper(real_type, *vec);
+
+                    break;
+                } else {
+                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                            + std::to_string(param_index) + " of function " + qual_fn_name
+                            + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
-                default:
-                    crash("Unknown integral type ordinal %d\n", param_def.type);
             }
-        } catch (const ReflectiveArgumentsException &ex) {
+            default:
+                crash("Unknown integral type ordinal %d\n", param_def.type);
+        }
+
+        if (wrapper_res->is_err()) {
             return _set_lua_error(state,
                     "Invalid value passed to for parameter " + std::to_string(param_index)
-                            + " of function " + qual_fn_name + "(" + ex.what() + ")");
+                            + " of function " + qual_fn_name + "(" + wrapper_res->unwrap_err().reason + ")");
         }
+
+        *dest = std::move(wrapper_res->unwrap());
+        return 0;
     }
 
     static int64_t _unwrap_int_wrapper(const ObjectWrapper &wrapper) {
@@ -651,9 +670,12 @@ namespace argus {
             // hack to return a reference to the vector element instead of a copy
             ObjectType modified_type = vec->element_type();
             modified_type.type = IntegralType::Pointer;
-            _push_value(state, create_object_wrapper(modified_type, el_ptr));
+
+            auto wrapper_res = create_object_wrapper(modified_type, el_ptr);
+            _push_value(state, wrapper_res.expect("Failed to create object wrapper while accessing vector element"));
         } else {
-            _push_value(state, create_object_wrapper(vec->element_type(), el_ptr));
+            auto wrapper_res = create_object_wrapper(vec->element_type(), el_ptr);
+            _push_value(state, wrapper_res.expect("Failed to create object wrapper while accessing vector element"));
         }
 
         return 1;
@@ -939,7 +961,7 @@ namespace argus {
                 }
 
                 _set_lua_error(state, err_msg);
-                return 0;
+                return LUA_ERRRUN;
             }
 
             // calls to instance member functions push the instance as the first "parameter"
@@ -980,13 +1002,20 @@ namespace argus {
                 }
             }
 
-            ObjectWrapper retval;
+            std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> retval_res;
             try {
-                retval = fn.handle(args);
+                retval_res = fn.handle(args);
             } catch (const std::exception &ex) {
                 return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
                         ex.what());
             }
+
+            if (retval_res->is_err()) {
+                return _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name
+                        + " (" + retval_res->unwrap_err().reason + ")");
+            }
+
+            auto retval = std::move(retval_res->unwrap());
 
             if (retval.type.type != IntegralType::Void) {
                 try {
@@ -1006,9 +1035,6 @@ namespace argus {
             return 0;
         } catch (const SymbolNotBoundException &) {
             _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
-            return 0;
-        } catch (const ReflectiveArgumentsException &ex) {
-            _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name + " (" + ex.what() + ")");
             return 0;
         }
     }

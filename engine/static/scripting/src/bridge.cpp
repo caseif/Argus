@@ -16,9 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/result.hpp"
+
 #include "argus/core/engine.hpp"
 
 #include "argus/scripting/bridge.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/util.hpp"
@@ -101,7 +104,7 @@ namespace argus {
         return _get_native_field(type_name, field_name);
     }
 
-    ObjectWrapper invoke_native_function(const BoundFunctionDef &def,
+    Result<ObjectWrapper, ReflectiveArgumentsError> invoke_native_function(const BoundFunctionDef &def,
             const std::vector<ObjectWrapper> &params) {
         auto expected_param_count = def.params.size();
         if (def.type == FunctionType::MemberInstance) {
@@ -109,9 +112,9 @@ namespace argus {
         }
 
         if (params.size() < expected_param_count) {
-            throw ReflectiveArgumentsException("Too few arguments provided");
+            return err<ObjectWrapper, ReflectiveArgumentsError>("Too few arguments provided");
         } else if (params.size() > expected_param_count) {
-            throw ReflectiveArgumentsException("Too many arguments provided");
+            return err<ObjectWrapper, ReflectiveArgumentsError>("Too many arguments provided");
         }
 
         assert(params.size() == expected_param_count);

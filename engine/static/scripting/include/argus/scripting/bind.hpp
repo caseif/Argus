@@ -196,31 +196,31 @@ namespace argus {
                 ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                         std::remove_reference_t<ReturnType>>>, std::string>) {
-                    return ObjectWrapper(create_object_wrapper(ret_obj_type, ret.c_str(), ret.size()));
+                    return create_object_wrapper(ret_obj_type, ret.c_str(), ret.size());
                 } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<ReturnType>>>
                         && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                                 std::remove_reference_t<ReturnType>>>, char>) {
-                    return ObjectWrapper(create_object_wrapper(ret_obj_type, ret, strlen(ret)));
+                    return create_object_wrapper(ret_obj_type, ret, strlen(ret));
                 } else if constexpr (is_std_vector_v<ReturnType>) {
-                    return ObjectWrapper(create_vector_object_wrapper_from_stack(ret_obj_type, ret));
+                    return create_vector_object_wrapper_from_stack(ret_obj_type, ret);
                 } else if constexpr (is_std_vector_v<std::remove_cv_t<
                         std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
-                    return ObjectWrapper(create_vector_object_wrapper_from_heap(ret_obj_type, ret));
+                    return create_vector_object_wrapper_from_heap(ret_obj_type, ret);
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
-                    return wrapper;
+                    return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
                     wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
-                    return wrapper;
+                    return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
                 } else {
-                    return ObjectWrapper(create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType)));
+                    return create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
             };
         } else {
             return [fn](const std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
                 auto type = create_return_object_type<void>();
-                return ObjectWrapper(type, 0);
+                return ok<ObjectWrapper, ReflectiveArgumentsError>(ObjectWrapper(type, 0));
             };
         }
     }
@@ -389,7 +389,7 @@ namespace argus {
             def.m_name = name;
             def.m_type = type;
 
-            def.m_access_proxy = [field](ObjectWrapper &inst, const ObjectType &field_type) {
+            def.m_access_proxy = [name, field](ObjectWrapper &inst, const ObjectType &field_type) {
                 ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
                         ? inst.heap_ptr
                         : inst.stored_ptr);
@@ -405,15 +405,21 @@ namespace argus {
                         // return a pointer to the field so the script can modify its fields
                         real_type.type = IntegralType::Pointer;
                         real_type.size = sizeof(void *);
-                        return create_auto_object_wrapper(real_type, &(instance->*field));
+                        return std::move(create_auto_object_wrapper(real_type, &(instance->*field))
+                                .expect("Failed to create object wrapper while accessing native field "
+                                        + name + " from Lua VM"));
                     } else {
                         // return a copy of the field since we can't manage a reference to it
                         real_type.is_const = true;
-                        return create_auto_object_wrapper(real_type, (instance->*field));
+                        return std::move(create_auto_object_wrapper(real_type, (instance->*field))
+                                .expect("Failed to create object wrapper while accessing native field "
+                                        + name + " from Lua VM"));
                     }
                 } else {
                     // return the field by value
-                    return create_auto_object_wrapper(real_type, instance->*field);
+                    return std::move(create_auto_object_wrapper(real_type, instance->*field)
+                            .expect("Failed to create object wrapper while accessing native field "
+                                    + name + " from Lua VM"));
                 }
             };
 

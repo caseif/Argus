@@ -24,6 +24,7 @@
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/memory.hpp"
 #include "argus/lowlevel/misc.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/scripting/exception.hpp"
 #include "argus/scripting/object_type.hpp"
@@ -149,6 +150,6 @@ namespace argus {
 
     const BoundFieldDef &get_native_member_field(const std::string &type_name, const std::string &field_name);
 
-    ObjectWrapper invoke_native_function(const BoundFunctionDef &def,
+    Result<ObjectWrapper, ReflectiveArgumentsError> invoke_native_function(const BoundFunctionDef &def,
             const std::vector<ObjectWrapper> &params);
 }

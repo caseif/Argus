@@ -27,6 +27,7 @@
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
 
+#include <algorithm>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -46,30 +47,36 @@ namespace argus {
     template<typename T>
     [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void);
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr);
 
-    ObjectWrapper create_object_wrapper(const ObjectType &type, const void *ptr, size_t size);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr,
+            size_t size);
 
-    ObjectWrapper create_int_object_wrapper(const ObjectType &type, int64_t val);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(const ObjectType &type, int64_t val);
 
-    ObjectWrapper create_float_object_wrapper(const ObjectType &type, double val);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_float_object_wrapper(const ObjectType &type, double val);
 
-    ObjectWrapper create_bool_object_wrapper(const ObjectType &type, bool val);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(const ObjectType &type, bool val);
 
-    ObjectWrapper create_enum_object_wrapper(const ObjectType &type, int64_t ordinal);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_enum_object_wrapper(const ObjectType &type, int64_t ordinal);
 
-    ObjectWrapper create_string_object_wrapper(const ObjectType &type, const std::string &str);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_string_object_wrapper(const ObjectType &type,
+            const std::string &str);
 
-    ObjectWrapper create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type,
+            const ProxiedScriptCallback &fn);
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &type, const void *data, size_t count);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &type,
+            const void *data, size_t count);
 
-    ObjectWrapper create_vector_object_wrapper(const ObjectType &vec_type, const VectorWrapper &vec);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &vec_type,
+            const VectorWrapper &vec);
 
-    ObjectWrapper create_vector_ref_object_wrapper(const ObjectType &vec_type, VectorWrapper vec);
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_ref_object_wrapper(const ObjectType &vec_type,
+            VectorWrapper vec);
 
     template<typename V, typename E = typename std::remove_cv_t<V>::value_type, bool is_heap>
-    ObjectWrapper _create_vector_object_wrapper(const ObjectType &type, V &vec) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> _create_vector_object_wrapper(const ObjectType &type, V &vec) {
         static_assert(!std::is_function_v<E> && !is_std_function_v<E>, "Vectors of callbacks are not supported");
         static_assert(!is_std_vector_v<E>, "Vectors of vectors are not supported");
         static_assert(!std::is_same_v<E, bool>, "Vectors of booleans are not supported");
@@ -93,17 +100,19 @@ namespace argus {
     }
 
     template<typename V, typename E = typename std::remove_cv_t<V>::value_type>
-    inline ObjectWrapper create_vector_object_wrapper_from_heap(const ObjectType &type, V &vec) {
+    inline Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper_from_heap(
+            const ObjectType &type, V &vec) {
         return _create_vector_object_wrapper<V, E, true>(type, vec);
     }
 
     template<typename V, typename E = typename std::remove_cv_t<V>::value_type>
-    inline ObjectWrapper create_vector_object_wrapper_from_stack(const ObjectType &type, V &vec) {
+    inline Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper_from_stack(
+            const ObjectType &type, V &vec) {
         return _create_vector_object_wrapper<V, E, false>(type, vec);
     }
 
     template<typename T>
-    ObjectWrapper create_auto_object_wrapper(const ObjectType &type, T val) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_auto_object_wrapper(const ObjectType &type, T val) {
         using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
 
         // It's possible for a script to pass a vector literal to a bound
@@ -141,16 +150,26 @@ namespace argus {
     }
 
     template<typename ArgsTuple, size_t... Is>
-    static std::vector<ObjectWrapper> _make_params_from_tuple_impl(ArgsTuple &tuple,
+    static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple_impl(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
-        std::vector<ObjectWrapper> result;
-        (result.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is),
+        std::vector<Result<ObjectWrapper, ReflectiveArgumentsError>> results;
+        (results.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is),
                 std::get<Is>(tuple))), ...);
-        return result;
+
+        auto err_it = std::find_if(results.cbegin(), results.cend(), ([](const auto &res) { return res.is_err(); }));
+        if (err_it != results.cend()) {
+            return err<std::vector<ObjectWrapper>, ReflectiveArgumentsError>(err_it->unwrap_err());
+        }
+
+        std::vector<ObjectWrapper> values;
+        for (auto &res : results) {
+            values.emplace_back(std::move(res.unwrap()));
+        }
+        return ok<std::vector<ObjectWrapper>, ReflectiveArgumentsError>(values);
     }
 
     template<typename ArgsTuple>
-    static std::vector<ObjectWrapper> _make_params_from_tuple(ArgsTuple &tuple,
+    static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple(ArgsTuple &tuple,
             const std::vector<ObjectType>::const_iterator &types_it) {
         return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {});
     }
@@ -201,16 +220,23 @@ namespace argus {
                 ScratchAllocator scratch;
 
                 ArgsTuple tuple = std::make_tuple(_wrap_single_reference_type(args)...);
-                std::vector<ObjectWrapper> wrapped_params = _make_params_from_tuple<ArgsTuple>(tuple,
+                auto wrapped_params = _make_params_from_tuple<ArgsTuple>(tuple,
                         param_types.cbegin());
 
+                if (wrapped_params.is_err()) {
+                    return err<ReturnType, ScriptInvocationError>("(callback)", wrapped_params.unwrap_err().reason);
+                }
+
                 if constexpr (!std::is_void_v<ReturnType>) {
-                    auto retval = (*fn_copy)(wrapped_params);
-                    return unwrap_param<ReturnType>(retval, &scratch);
+                    auto retval = (*fn_copy)(wrapped_params.unwrap());
+                    if (retval.is_err()) {
+                        return err<ReturnType, ScriptInvocationError>(retval.unwrap_err());
+                    }
+                    return unwrap_param<ReturnType>(retval.unwrap(), &scratch);
                 } else {
                     UNUSED(scratch);
-                    (*fn_copy)(wrapped_params);
-                    return;
+                    (*fn_copy)(wrapped_params.unwrap());
+                    return ok<void, ScriptInvocationError>();
                 }
             };
         } else if constexpr (std::is_same_v<B, std::string>) {

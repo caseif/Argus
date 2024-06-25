@@ -69,7 +69,10 @@ namespace argus {
                 crash("Failed to run init script: " + context_res.unwrap_err().msg);
             }
 
-            context_res.unwrap().invoke_script_function(k_init_fn_name, {});
+            auto init_res = context_res.unwrap().invoke_script_function(k_init_fn_name, {});
+            if (init_res.is_err()) {
+                crash("Failed to run init script: " + std::string(init_res.unwrap_err().msg));
+            }
         } catch (const std::exception &ex) {
             crash("Failed to run init script: " + std::string(ex.what()));
         }
