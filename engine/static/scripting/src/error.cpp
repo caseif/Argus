@@ -17,6 +17,10 @@
  */
 
 #include "argus/scripting/error.hpp"
+#include "argus/scripting/types.hpp"
+
+#include <string>
+#include <type_traits>
 
 namespace argus {
     std::string BindingError::to_string(void) const {
@@ -49,10 +53,25 @@ namespace argus {
     ReflectiveArgumentsError::ReflectiveArgumentsError(std::string reason):
         reason(reason) {
     }
+
     std::string ReflectiveArgumentsError::to_string(void) const {
         return "ReflectiveArgumentsError { "
                "reason = \""
                 + reason
+                + "\" }";
+    }
+
+    SymbolNotBoundError::SymbolNotBoundError(SymbolType symbol_type, std::string symbol_name):
+        symbol_type(symbol_type),
+        symbol_name(symbol_name) {
+    }
+
+    std::string SymbolNotBoundError::to_string(void) const {
+        return "SymbolNotBoundError { "
+               "symbol_type = "
+                + std::to_string(std::underlying_type_t<SymbolType>(symbol_type))
+                + ", symbol_name = \""
+                + symbol_name
                 + "\" }";
     }
 }

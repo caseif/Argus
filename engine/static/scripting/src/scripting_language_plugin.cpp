@@ -17,10 +17,11 @@
  */
 
 #include "argus/lowlevel/collections.hpp"
+#include "argus/lowlevel/result.hpp"
 
 #include "argus/resman.hpp"
 
-#include "argus/scripting/exception.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "internal/scripting/module_scripting.hpp"
 

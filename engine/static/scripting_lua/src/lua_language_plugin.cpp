@@ -26,7 +26,7 @@
 
 #include "argus/scripting/bind.hpp"
 #include "argus/scripting/bridge.hpp"
-#include "argus/scripting/exception.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/handles.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
@@ -928,113 +928,131 @@ namespace argus {
 
         auto qual_fn_name = get_qualified_function_name(fn_type, type_name, fn_name);
 
-        try {
-            BoundFunctionDef fn;
-            switch (fn_type) {
-                case FunctionType::Global:
-                    fn = get_native_global_function(fn_name);
+        std::optional<Result<const BoundFunctionDef &, SymbolNotBoundError>> fn_res;
+        switch (fn_type) {
+            case FunctionType::Global:
+                fn_res = get_native_global_function(fn_name);
+                break;
+            case FunctionType::MemberInstance:
+                fn_res = get_native_member_instance_function(type_name, fn_name);
+                break;
+            case FunctionType::Extension:
+                fn_res = get_native_extension_function(type_name, fn_name);
+                break;
+            case FunctionType::MemberStatic:
+                fn_res = get_native_member_static_function(type_name, fn_name);
+                break;
+            default:
+                crash("Unknown function type ordinal %d", fn_type);
+        }
+
+        if (fn_res->is_err()) {
+            const char *symbol_type_disp;
+            switch (fn_res->unwrap_err().symbol_type) {
+                case SymbolType::Type:
+                    symbol_type_disp = "Type";
                     break;
-                case FunctionType::MemberInstance:
-                    fn = get_native_member_instance_function(type_name, fn_name);
+                case SymbolType::Field:
+                    symbol_type_disp = "Field";
                     break;
-                case FunctionType::Extension:
-                    fn = get_native_extension_function(type_name, fn_name);
-                    break;
-                case FunctionType::MemberStatic:
-                    fn = get_native_member_static_function(type_name, fn_name);
+                case SymbolType::Function:
+                    symbol_type_disp = "Function";
                     break;
                 default:
-                    crash("Unknown function type ordinal %d", fn_type);
+                    symbol_type_disp = "Symbol";
+                    break;
             }
 
-            // parameter count not including instance
-            auto arg_count = lua_gettop(state);
-            auto expected_arg_count = fn.params.size() + (fn.type == FunctionType::MemberInstance ? 1 : 0);
-            if (size_t(arg_count) != expected_arg_count) {
-                auto err_msg = "Wrong parameter count provided for function " + qual_fn_name
-                        + " (expected " + std::to_string(expected_arg_count)
-                        + ", actual " + std::to_string(arg_count) + ")";
+            luaL_error(state, "%s with name %s is not bound",
+                    symbol_type_disp, fn_res->unwrap_err().symbol_name.c_str());
 
-                if ((fn_type == FunctionType::MemberInstance || fn_type == FunctionType::Extension)
-                        && expected_arg_count == uint32_t(arg_count + 1)) {
-                    err_msg += " (did you forget to use the colon operator?)";
-                }
+            return LUA_ERRRUN;
+        }
 
-                _set_lua_error(state, err_msg);
-                return LUA_ERRRUN;
+        const auto &fn = fn_res->unwrap();
+
+        // parameter count not including instance
+        auto arg_count = lua_gettop(state);
+        auto expected_arg_count = fn.params.size()
+                + (fn.type == FunctionType::MemberInstance ? 1 : 0);
+        if (size_t(arg_count) != expected_arg_count) {
+            auto err_msg = "Wrong parameter count provided for function " + qual_fn_name
+                    + " (expected " + std::to_string(expected_arg_count)
+                    + ", actual " + std::to_string(arg_count) + ")";
+
+            if ((fn_type == FunctionType::MemberInstance || fn_type == FunctionType::Extension)
+                    && expected_arg_count == uint32_t(arg_count + 1)) {
+                err_msg += " (did you forget to use the colon operator?)";
             }
 
-            // calls to instance member functions push the instance as the first "parameter"
-            auto first_param_index = fn_type == FunctionType::MemberInstance ? 1 : 0;
+            _set_lua_error(state, err_msg);
+            return LUA_ERRRUN;
+        }
 
-            std::vector<ObjectWrapper> args;
+        // calls to instance member functions push the instance as the first "parameter"
+        auto first_param_index = fn_type == FunctionType::MemberInstance ? 1 : 0;
 
-            if (fn_type == FunctionType::MemberInstance) {
-                // type should definitely be bound since the trampoline function
-                // is accessed via the bound type's metatable
-                auto type_def = get_bound_type(type_name)
-                        .expect("Failed to find bound type while handling bound instance function");
+        std::vector<ObjectWrapper> args;
 
-                //TODO: add safeguard to prevent invocation of functions on non-references
-                ObjectWrapper wrapper {};
-                // 5th param is whether the instance must be mutable, which is
-                // the case iff the function is non-const
-                auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, !fn.is_const, &wrapper);
-                if (wrap_res == 0) {
-                    args.push_back(std::move(wrapper));
-                } else {
-                    // some error occurred
-                    // _wrap_instance_ref already sent error to lua state
-                    return wrap_res;
-                }
-            }
+        if (fn_type == FunctionType::MemberInstance) {
+            // type should definitely be bound since the trampoline function
+            // is accessed via the bound type's metatable
+            auto type_def = get_bound_type(type_name)
+                    .expect("Failed to find bound type while handling bound instance function");
 
-            for (int i = 0; i < (arg_count - first_param_index); i++) {
-                // Lua is 1-indexed, plus add offset to skip instance parameter if present
-                auto param_index = i + 1 + first_param_index;
-                auto param_def = fn.params.at(size_t(i));
-                ObjectWrapper wrapper {};
-                auto wrap_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def, &wrapper);
-                if (wrap_res == 0) {
-                    args.push_back(std::move(wrapper));
-                } else {
-                    return wrap_res;
-                }
-            }
-
-            std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> retval_res;
-            try {
-                retval_res = fn.handle(args);
-            } catch (const std::exception &ex) {
-                return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
-                        ex.what());
-            }
-
-            if (retval_res->is_err()) {
-                return _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name
-                        + " (" + retval_res->unwrap_err().reason + ")");
-            }
-
-            auto retval = std::move(retval_res->unwrap());
-
-            if (retval.type.type != IntegralType::Void) {
-                try {
-                    _push_value(state, retval);
-                    stack_guard.increment();
-                } catch (const std::exception &) {
-                    //crash("Failed to push return type of bound function to Lua VM");
-                    throw;
-                }
-
-                return 1;
+            //TODO: add safeguard to prevent invocation of functions on non-references
+            ObjectWrapper wrapper {};
+            // 5th param is whether the instance must be mutable, which is
+            // the case iff the function is non-const
+            auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, !fn.is_const, &wrapper);
+            if (wrap_res == 0) {
+                args.push_back(std::move(wrapper));
             } else {
-                return 0;
+                // some error occurred
+                // _wrap_instance_ref already sent error to lua state
+                return wrap_res;
             }
-        } catch (const TypeNotBoundException &) {
-            _set_lua_error(state, "Type with name " + type_name + " is not bound");
-            return 0;
-        } catch (const SymbolNotBoundException &) {
-            _set_lua_error(state, "Function with name " + qual_fn_name + " is not bound");
+        }
+
+        for (int i = 0; i < (arg_count - first_param_index); i++) {
+            // Lua is 1-indexed, plus add offset to skip instance parameter if present
+            auto param_index = i + 1 + first_param_index;
+            auto param_def = fn.params.at(size_t(i));
+            ObjectWrapper wrapper {};
+            auto wrap_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def, &wrapper);
+            if (wrap_res == 0) {
+                args.push_back(std::move(wrapper));
+            } else {
+                return wrap_res;
+            }
+        }
+
+        std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> retval_res;
+        try {
+            retval_res = fn.handle(args);
+        } catch (const std::exception &ex) {
+            return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
+                    ex.what());
+        }
+
+        if (retval_res->is_err()) {
+            return _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name
+                    + " (" + retval_res->unwrap_err().reason + ")");
+        }
+
+        auto retval = std::move(retval_res->unwrap());
+
+        if (retval.type.type != IntegralType::Void) {
+            try {
+                _push_value(state, retval);
+                stack_guard.increment();
+            } catch (const std::exception &) {
+                //crash("Failed to push return type of bound function to Lua VM");
+                throw;
+            }
+
+            return 1;
+        } else {
             return 0;
         }
     }
@@ -1062,12 +1080,12 @@ namespace argus {
                 ? type_name.substr(strlen(k_const_prefix))
                 : type_name;
 
-        BoundFieldDef field;
-        try {
-            field = get_native_member_field(real_type_name, field_name);
-        } catch (const SymbolNotBoundException &) {
+        auto field_res = get_native_member_field(real_type_name, field_name);
+        if (field_res.is_err()) {
             return false;
         }
+
+        const auto &field = field_res.unwrap();
 
         auto qual_field_name = get_qualified_field_name(real_type_name, field_name);
 
@@ -1127,15 +1145,16 @@ namespace argus {
             return _set_lua_error(state, "Field " + qual_field_name + " in a const object cannot be assigned");
         }
 
-        BoundFieldDef field;
-        try {
-            field = get_native_member_field(type_name, field_name);
-            // can't assign a const field
-            if (field.m_type.is_const) {
-                return _set_lua_error(state, "Field " + qual_field_name + " is const and cannot be assigned");
-            }
-        } catch (const SymbolNotBoundException &) {
+        auto field_res = get_native_member_field(type_name, field_name);
+        if (field_res.is_err()) {
             return _set_lua_error(state, "Field " + qual_field_name + " is not bound");
+        }
+
+        const auto &field = field_res.unwrap();
+
+        // can't assign a const field
+        if (field.m_type.is_const) {
+            return _set_lua_error(state, "Field " + qual_field_name + " is const and cannot be assigned");
         }
 
         // type should definitely be bound since the field is accessed through

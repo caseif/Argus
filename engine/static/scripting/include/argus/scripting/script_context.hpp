@@ -20,6 +20,7 @@
 
 #include "argus/lowlevel/result.hpp"
 
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
 
 #include <string>

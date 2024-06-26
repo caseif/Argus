@@ -22,8 +22,6 @@
 
 #include "argus/core/engine.hpp"
 
-#include "argus/scripting/error.hpp"
-
 #include <functional>
 #include <map>
 #include <memory>
@@ -64,6 +62,12 @@ namespace argus {
         MemberStatic,
         MemberInstance,
         Extension,
+    };
+
+    enum class SymbolType {
+        Type,
+        Field,
+        Function,
     };
 
     struct ScriptCallbackType;
@@ -143,6 +147,9 @@ namespace argus {
             return is_on_heap ? heap_ptr : value;
         }
     };
+
+    struct ReflectiveArgumentsError;
+    struct ScriptInvocationError;
 
     typedef std::function<Result<ObjectWrapper, ReflectiveArgumentsError>(const std::vector<ObjectWrapper> &)>
             ProxiedNativeFunction;

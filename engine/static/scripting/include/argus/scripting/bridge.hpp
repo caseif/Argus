@@ -26,7 +26,7 @@
 #include "argus/lowlevel/misc.hpp"
 #include "argus/lowlevel/result.hpp"
 
-#include "argus/scripting/exception.hpp"
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/object_type.hpp"
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/wrapper.hpp"
@@ -137,18 +137,18 @@ namespace argus {
         }
     }
 
-    const BoundFunctionDef &get_native_global_function(const std::string &name);
+    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_global_function(const std::string &name);
 
-    const BoundFunctionDef &get_native_member_instance_function(const std::string &type_name,
+    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_instance_function(const std::string &type_name,
             const std::string &fn_name);
 
-    const BoundFunctionDef &get_native_extension_function(const std::string &type_name,
+    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_extension_function(const std::string &type_name,
             const std::string &fn_name);
 
-    const BoundFunctionDef &get_native_member_static_function(const std::string &type_name,
+    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_static_function(const std::string &type_name,
             const std::string &fn_name);
 
-    const BoundFieldDef &get_native_member_field(const std::string &type_name, const std::string &field_name);
+    Result<const BoundFieldDef &, SymbolNotBoundError> get_native_member_field(const std::string &type_name, const std::string &field_name);
 
     Result<ObjectWrapper, ReflectiveArgumentsError> invoke_native_function(const BoundFunctionDef &def,
             const std::vector<ObjectWrapper> &params);

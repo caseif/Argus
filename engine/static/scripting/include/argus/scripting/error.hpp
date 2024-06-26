@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/scripting/types.hpp"
+
 #include <string>
 
 namespace argus {
@@ -46,6 +48,15 @@ namespace argus {
         std::string reason;
 
         ReflectiveArgumentsError(std::string reason);
+
+        std::string to_string(void) const;
+    };
+
+    struct SymbolNotBoundError {
+        SymbolType symbol_type;
+        std::string symbol_name;
+
+        SymbolNotBoundError(SymbolType symbol_type, std::string symbol_name);
 
         std::string to_string(void) const;
     };

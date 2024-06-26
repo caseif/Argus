@@ -26,7 +26,6 @@
 
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/error.hpp"
-#include "argus/scripting/exception.hpp"
 #include "argus/scripting/object_type.hpp"
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/wrapper.hpp"
