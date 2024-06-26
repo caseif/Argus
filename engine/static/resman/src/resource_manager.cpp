@@ -89,11 +89,11 @@ namespace argus {
         arp_free_extension_mappings(mappings);
     }
 
-    static Result<Resource &, ResourceError> make_ok_res(Resource &resource) {
+    [[nodiscard]] static Result<Resource &, ResourceError> make_ok_res(Resource &resource) {
         return ok<Resource &, ResourceError>(resource);
     }
 
-    static Result<Resource &, ResourceError> make_err_res(ResourceErrorReason reason, std::string uid,
+    [[nodiscard]] static Result<Resource &, ResourceError> make_err_res(ResourceErrorReason reason, std::string uid,
             std::string info = "") {
         return err<Resource &, ResourceError>(reason, uid, info);
     }
@@ -256,7 +256,8 @@ namespace argus {
         m_pimpl->extension_mappings.insert(mappings.begin(), mappings.end());
     }
 
-    static Result<Resource &, ResourceError> _acquire_resource(const ResourceManager &mgr, const std::string &uid, bool inc_refcount = true) {
+    [[nodiscard]] static Result<Resource &, ResourceError> _acquire_resource(const ResourceManager &mgr,
+            const std::string &uid, bool inc_refcount = true) {
         auto it = mgr.m_pimpl->loaded_resources.find(uid);
         if (it != mgr.m_pimpl->loaded_resources.cend()) {
             if (inc_refcount) {

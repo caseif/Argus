@@ -51,7 +51,11 @@ namespace argus {
         Logger::default_logger().debug("Releasing handle on resource %s (new refcount is %d)",
                 this->prototype.uid.c_str(), new_ref_count);
         if (new_ref_count == 0) {
-            m_pimpl->manager.unload_resource(prototype.uid);
+            auto res = m_pimpl->manager.unload_resource(prototype.uid);
+            if (res.is_err()) {
+                Logger::default_logger().warn("Failed to unload resource %s: %s (%d)", prototype.uid.c_str(),
+                        res.unwrap_err().info.c_str(), res.unwrap_err().reason);
+            }
         }
     }
 

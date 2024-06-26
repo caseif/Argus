@@ -101,7 +101,7 @@ namespace argus {
         }
     };
 
-    static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
+    [[nodiscard]] static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
             const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name = std::nullopt);
 
     struct LuaCallback {
@@ -882,7 +882,7 @@ namespace argus {
         }
     }
 
-    static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
+    [[nodiscard]] static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
             const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name) {
         int i = 1;
         try {
@@ -1385,7 +1385,7 @@ namespace argus {
         return uid;
     }
 
-    static Result<int, ScriptLoadError> _load_script(lua_State *state, const Resource &resource) {
+    [[nodiscard]] static Result<int, ScriptLoadError> _load_script(lua_State *state, const Resource &resource) {
         auto &loaded_script = resource.get<LoadedScript>();
 
         auto load_res = luaL_loadbuffer(state, loaded_script.source.c_str(), loaded_script.source.length(),

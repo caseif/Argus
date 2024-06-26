@@ -52,7 +52,7 @@ namespace argus {
             return this->m_media_types;
         }
 
-        Result<Resource &, ScriptLoadError> load_resource(const std::string &uid);
+        [[nodiscard]] Result<Resource &, ScriptLoadError> load_resource(const std::string &uid);
 
         void move_resource(const Resource &resource);
 

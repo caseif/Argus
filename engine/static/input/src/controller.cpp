@@ -68,7 +68,8 @@ namespace argus::input {
             crash("Controller already has associated gamepad");
         }
 
-        assoc_gamepad(id, this->get_name());
+        //TODO: figure out if we need to propagate this error
+        assoc_gamepad(id, this->get_name()).expect("Failed to associate gamepad");
         m_pimpl->attached_gamepad = id;
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",

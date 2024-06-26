@@ -33,9 +33,9 @@ namespace argus::input {
 
     void flush_gamepad_deltas(void);
 
-    Result<void, std::string> assoc_gamepad(HidDeviceId id, const std::string &controller_name);
+    [[nodiscard]] Result<void, std::string> assoc_gamepad(HidDeviceId id, const std::string &controller_name);
 
-    Result<HidDeviceId, std::string> assoc_first_available_gamepad(const std::string &controller_name);
+    [[nodiscard]] Result<HidDeviceId, std::string> assoc_first_available_gamepad(const std::string &controller_name);
 
     void unassoc_gamepad(HidDeviceId id);
 

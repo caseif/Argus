@@ -38,7 +38,8 @@ namespace argus {
 
         void destroy_context_data(void *data) override;
 
-        Result<void, ScriptLoadError> load_script(ScriptContext &context, const Resource &resource) override;
+        [[nodiscard]] Result<void, ScriptLoadError> load_script(ScriptContext &context,
+                const Resource &resource) override;
 
         void bind_type(ScriptContext &context, const BoundTypeDef &type) override;
 
@@ -50,7 +51,7 @@ namespace argus {
 
         void bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) override;
 
-        Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(ScriptContext &context,
+        [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(ScriptContext &context,
                 const std::string &name, const std::vector<ObjectWrapper> &params) override;
     };
 }

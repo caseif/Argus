@@ -45,11 +45,11 @@ namespace argus {
 
         ~ScriptContext(void);
 
-        Result<void, ScriptLoadError> load_script(const std::string &uid);
+        [[nodiscard]] Result<void, ScriptLoadError> load_script(const std::string &uid);
 
-        Result<void, ScriptLoadError> load_script(const Resource &resource);
+        [[nodiscard]] Result<void, ScriptLoadError> load_script(const Resource &resource);
 
-        Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(const std::string &fn_name,
+        [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(const std::string &fn_name,
                 const std::vector<ObjectWrapper> &params);
 
         void *get_plugin_data_ptr(void);
@@ -64,5 +64,5 @@ namespace argus {
 
     void destroy_script_context(ScriptContext &context);
 
-    Result<ScriptContext &, ScriptLoadError> load_script(const std::string &uid);
+    [[nodiscard]] Result<ScriptContext &, ScriptLoadError> load_script(const std::string &uid);
 }

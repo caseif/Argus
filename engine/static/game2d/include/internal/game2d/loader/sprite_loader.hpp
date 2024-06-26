@@ -28,10 +28,10 @@ namespace argus {
       public:
         SpriteLoader(void);
 
-        Result<void *, ResourceError> load(ResourceManager &manager, const ResourcePrototype &proto,
+        [[nodiscard]] Result<void *, ResourceError> load(ResourceManager &manager, const ResourcePrototype &proto,
                 std::istream &stream, size_t size) const override;
 
-        Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
+        [[nodiscard]] Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
                 void *src, std::type_index type) const override;
 
         void unload(void *data_ptr) const override;

@@ -66,7 +66,7 @@ namespace argus {
         /**
          * @brief Unloads the Resource with the given UID.
          */
-        Result<void, ResourceError> unload_resource(const std::string &uid);
+        [[nodiscard]] Result<void, ResourceError> unload_resource(const std::string &uid);
 
         /**
          * @brief Constructs a new ResourceManager.
@@ -78,8 +78,8 @@ namespace argus {
          */
         ~ResourceManager(void);
 
-        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
-                void *obj, std::type_index type);
+        [[nodiscard]] Result<Resource &, ResourceError> create_resource(const std::string &uid,
+                const std::string &media_type, void *obj, std::type_index type);
 
       public:
         /**
@@ -137,7 +137,7 @@ namespace argus {
          * @sa ResourceManager#get_resource_async
          * @sa ResourceManager#try_get_resource
          */
-        Result<Resource &, ResourceError> get_resource(const std::string &uid);
+        [[nodiscard]] Result<Resource &, ResourceError> get_resource(const std::string &uid);
 
         /**
          * @brief Attempts to get the Resource with the given UID without
@@ -157,7 +157,7 @@ namespace argus {
          *
          * @sa ResourceManager#get_resource
          */
-        Result<Resource &, ResourceError> get_resource_weak(const std::string &uid);
+        [[nodiscard]] Result<Resource &, ResourceError> get_resource_weak(const std::string &uid);
 
         /**
          * @brief Attempts to get the Resource with the given UID, failing
@@ -198,12 +198,12 @@ namespace argus {
          *
          * @return The created Resource.
          */
-        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
-                const void *data, size_t len);
+        [[nodiscard]] Result<Resource &, ResourceError> create_resource(const std::string &uid,
+                const std::string &media_type, const void *data, size_t len);
 
         template<typename T>
-        Result<Resource &, ResourceError> create_resource(const std::string &uid, const std::string &media_type,
-                T &&res_obj) {
+        [[nodiscard]] Result<Resource &, ResourceError> create_resource(const std::string &uid,
+                const std::string &media_type, T &&res_obj) {
             return create_resource(uid, media_type, &res_obj, std::type_index(typeid(res_obj)));
         }
     };

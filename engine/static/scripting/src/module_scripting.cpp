@@ -44,7 +44,7 @@ namespace argus {
     std::vector<ScriptContext *> g_script_contexts;
     std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
 
-    static Result<void, BindingError> _resolve_all_parameter_types(void) {
+    [[nodiscard]] static Result<void, BindingError> _resolve_all_parameter_types(void) {
         for (auto &[_, type] : g_bound_types) {
             auto res = resolve_parameter_types(type);
             if (res.is_err()) {
@@ -91,7 +91,8 @@ namespace argus {
             case LifecycleStage::PostInit: {
                 // parameter type resolution is deferred to ensure that all
                 // types have been registered first
-                _resolve_all_parameter_types();
+                _resolve_all_parameter_types().expect("Failed to resolve parameter types");
+
                 for (auto context : g_script_contexts) {
                     apply_bindings_to_context(*context).expect("Failed to apply bindings to script context");
                 }

@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace argus {
-    static Result<const BoundFunctionDef &, SymbolNotBoundError> _get_native_function(FunctionType fn_type,
+    [[nodiscard]] static Result<const BoundFunctionDef &, SymbolNotBoundError> _get_native_function(FunctionType fn_type,
             const std::string &type_name, const std::string &fn_name) {
         switch (fn_type) {
             case FunctionType::MemberInstance:
@@ -67,7 +67,7 @@ namespace argus {
         }
     }
 
-    static Result<const BoundFieldDef &, SymbolNotBoundError> _get_native_field(const std::string &type_name,
+    [[nodiscard]] static Result<const BoundFieldDef &, SymbolNotBoundError> _get_native_field(const std::string &type_name,
             const std::string &field_name) {
         auto type_it = g_bound_types.find(type_name);
         if (type_it == g_bound_types.cend()) {
@@ -88,8 +88,8 @@ namespace argus {
         return _get_native_function(FunctionType::Global, "", name);
     }
 
-    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_instance_function(const std::string &type_name,
-            const std::string &fn_name) {
+    Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_instance_function(
+            const std::string &type_name, const std::string &fn_name) {
         return _get_native_function(FunctionType::MemberInstance, type_name, fn_name);
     }
 

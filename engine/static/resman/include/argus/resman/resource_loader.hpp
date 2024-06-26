@@ -96,7 +96,7 @@ namespace argus {
          * @param dependencies A std::vector of UIDs of dependency
          *        \link Resource Resources \endlink.
          */
-        Result<std::map<std::string, const Resource *>, ResourceError> load_dependencies(ResourceManager &manager,
-                const std::vector<std::string> &dependencies) const;
+        [[nodiscard]] Result<std::map<std::string, const Resource *>, ResourceError> load_dependencies(
+                ResourceManager &manager, const std::vector<std::string> &dependencies) const;
     };
 }
