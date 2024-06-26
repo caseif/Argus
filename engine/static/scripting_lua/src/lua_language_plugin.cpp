@@ -1419,23 +1419,18 @@ namespace argus {
 
         auto uid = _convert_path_to_uid(path);
         if (!uid.empty()) {
-            try {
-                auto load_res = plugin.load_resource(uid);
-                if (load_res.is_ok()) {
-                    auto load_script_res = _load_script(state, load_res.unwrap());
-                    if (load_script_res.is_ok()) {
-                        return load_script_res.unwrap();
-                    } else {
-                        return luaL_error(state, "Unable to parse script %s passed to 'require': %s",
-                                path, load_script_res.unwrap_err().msg.c_str());
-                    }
+            auto load_res = plugin.load_resource(uid);
+            if (load_res.is_ok()) {
+                auto load_script_res = _load_script(state, load_res.unwrap());
+                if (load_script_res.is_ok()) {
+                    return load_script_res.unwrap();
                 } else {
-                    Logger::default_logger().debug("Unable to load resource for require path %s (%s)",
-                            path, load_res.unwrap_err().msg.c_str());
-                    // swallow
+                    return luaL_error(state, "Unable to parse script %s passed to 'require': %s",
+                            path, load_script_res.unwrap_err().msg.c_str());
                 }
-            } catch (const std::exception &ex) {
-                Logger::default_logger().debug("Unable to load resource for require path %s (%s)", path, ex.what());
+            } else {
+                Logger::default_logger().debug("Unable to load resource for require path %s (%s)",
+                        path, load_res.unwrap_err().msg.c_str());
                 // swallow
             }
         }

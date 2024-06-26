@@ -206,24 +206,27 @@ namespace argus {
     }
 
     void ResourceManager::discover_resources(void) {
-        try {
-            auto res_dir = std::filesystem::current_path() / RESOURCES_DIR;
-
-            Logger::default_logger().debug("Discovering ARP packages");
-
-            _discover_arp_packages(m_pimpl->package_set, res_dir);
-
-            Logger::default_logger().debug("Discovering loose resources from filesystem");
-
-            _discover_fs_resources_recursively(res_dir, "", m_pimpl->discovered_fs_protos,
-                    m_pimpl->extension_mappings);
-
-            Logger::default_logger().debug("Resource discovery completed");
-
-            m_pimpl->discovery_done = true;
-        } catch (std::exception &ex) {
-            crash("Failed to get executable directory: %s", ex.what());
+        std::filesystem::path cur_path;
+        std::error_code cur_path_err_code;
+        std::filesystem::current_path(cur_path, cur_path_err_code);
+        if (cur_path_err_code) {
+            crash("Failed to get executable directory (%d)", cur_path_err_code.value());
         }
+
+        auto res_dir = cur_path / RESOURCES_DIR;
+
+        Logger::default_logger().debug("Discovering ARP packages");
+
+        _discover_arp_packages(m_pimpl->package_set, res_dir);
+
+        Logger::default_logger().debug("Discovering loose resources from filesystem");
+
+        _discover_fs_resources_recursively(res_dir, "", m_pimpl->discovered_fs_protos,
+                m_pimpl->extension_mappings);
+
+        Logger::default_logger().debug("Resource discovery completed");
+
+        m_pimpl->discovery_done = true;
     }
 
     void ResourceManager::add_memory_package(const unsigned char *buf, size_t len) {

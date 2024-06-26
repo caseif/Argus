@@ -123,7 +123,7 @@ namespace argus {
     }
 
     template<typename T>
-    static std::vector<std::string> _topo_sort(const std::vector<T> nodes,
+    [[nodiscard]] static Result<std::vector<std::string>, std::string> _topo_sort(const std::vector<T> nodes,
             const std::vector<std::pair<T, T>> edges) {
         std::vector<T> sorted_nodes;
         std::deque<T> start_nodes;
@@ -172,10 +172,10 @@ namespace argus {
         }
 
         if (!remaining_edges.empty()) {
-            crash("Graph contains cycles");
+            return err<std::vector<std::string>, std::string>("Graph contains cycles");
         }
 
-        return sorted_nodes;
+        return ok<std::vector<std::string>, std::string>(sorted_nodes);
     }
 
     static std::vector<DynamicModule> _topo_sort_modules(const std::map<std::string, DynamicModule> &module_map) {
@@ -191,14 +191,14 @@ namespace argus {
             }
         }
 
-        std::vector<DynamicModule> sorted_modules;
-        try {
-            auto sorted_ids = _topo_sort(module_ids, edges);
-            for (auto &id : sorted_ids) {
-                sorted_modules.push_back(module_map.find(id)->second);
-            }
-        } catch (std::invalid_argument const &) {
+        auto sorted_ids_res = _topo_sort(module_ids, edges);
+        if (sorted_ids_res.is_err()) {
             crash("Circular dependency detected in dynamic modules, cannot proceed.");
+        }
+
+        std::vector<DynamicModule> sorted_modules;
+        for (auto &id : sorted_ids_res.unwrap()) {
+            sorted_modules.push_back(module_map.find(id)->second);
         }
 
         return sorted_modules;
