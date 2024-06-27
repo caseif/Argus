@@ -444,7 +444,7 @@ namespace argus {
     template<typename T, typename E, typename... Args>
     std::enable_if_t<!std::is_void_v<E> && std::is_constructible_v<decltype(T { std::declval<Args>()... })>,
             Result<T, E>> err(Args... args) {
-        return ok<T, E>(std::move(T { std::forward<Args>(args)... }));
+        return err<T, E>(std::move(T { std::forward<Args>(args)... }));
     }
 
     template<typename T, typename E>
