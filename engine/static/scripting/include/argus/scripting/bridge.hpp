@@ -50,25 +50,6 @@ namespace argus {
     struct BoundTypeDef;
     struct ObjectType;
 
-    class InvocationException : public std::exception {
-      private:
-        const std::string m_msg;
-
-      public:
-        InvocationException(std::string msg):
-            m_msg(std::move(msg)) {
-        }
-
-        /**
-         * @copydoc std::exception::what()
-         *
-         * @return The exception message.
-         */
-        [[nodiscard]] const char *what(void) const noexcept override {
-            return m_msg.c_str();
-        }
-    };
-
     template<typename T>
     void _destroy_ref_wrapped_obj(T &item) {
         if constexpr (is_reference_wrapper_v<std::decay<T>>) {
@@ -83,15 +64,15 @@ namespace argus {
     // the provided function, and directly returns the result to the caller
     template<typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
-    ReturnType invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
+    Result<ReturnType, ReflectiveArgumentsError> invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
         using ArgsTuple = typename function_traits<FuncType>::argument_types_wrapped;
 
         auto expected_param_count = std::tuple_size<ArgsTuple>::value
                 + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
         if (params.size() != expected_param_count) {
-            throw InvocationException("Wrong parameter count (expected " + std::to_string(expected_param_count)
-                    + " , actual " + std::to_string(params.size()) + ")");
+            return err<ReturnType, ReflectiveArgumentsError>("Wrong parameter count (expected "
+                    + std::to_string(expected_param_count) + " , actual " + std::to_string(params.size()) + ")");
         }
 
         auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
@@ -105,7 +86,7 @@ namespace argus {
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr
                     : instance_param.stored_ptr);
-            return std::apply([&](auto &&... args) -> ReturnType {
+            auto closure = [&](auto &&... args) -> ReturnType {
                 if constexpr (!std::is_void_v<ReturnType>) {
                     ReturnType retval = (instance->*fn)(std::forward<decltype(args)>(args)...);
                     // destroy parameters if needed
@@ -115,7 +96,14 @@ namespace argus {
                     (instance->*fn)(std::forward<decltype(args)>(args)...);
                     (_destroy_ref_wrapped_obj(args), ...);
                 }
-            }, args);
+            };
+
+            if constexpr (!std::is_void_v<ReturnType>) {
+                return ok<ReturnType, ReflectiveArgumentsError>(std::apply(closure, args));
+            } else {
+                std::apply(closure, args);
+                return ok<void, ReflectiveArgumentsError>();
+            }
         } else {
             //TODO: This fails statically before _make_tuple_from_params, which
             // is where the actually useful diagnostic messages are. Would be
@@ -124,7 +112,7 @@ namespace argus {
                 std::tuple_element_t<0, ArgsTuple> obj = std::get<0>(args);
                 UNUSED(obj);
             }
-            return std::apply([&](auto &&... args) -> ReturnType {
+            auto closure = [&](auto &&... args) -> ReturnType {
                 if constexpr (!std::is_void_v<ReturnType>) {
                     ReturnType retval = fn(args...);
                     (_destroy_ref_wrapped_obj(args), ...);
@@ -133,7 +121,13 @@ namespace argus {
                     fn(args...);
                     (_destroy_ref_wrapped_obj(args), ...);
                 }
-            }, args);
+            };
+            if constexpr (!std::is_void_v<ReturnType>) {
+                return ok<ReturnType, ReflectiveArgumentsError>(std::apply(closure, args));
+            } else {
+                std::apply(closure, args);
+                return ok<void, ReflectiveArgumentsError>();
+            }
         }
     }
 

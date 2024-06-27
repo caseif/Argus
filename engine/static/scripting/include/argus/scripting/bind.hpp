@@ -130,7 +130,11 @@ namespace argus {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
             return [fn](const std::vector<ObjectWrapper> &params) {
-                ReturnType ret = invoke_function(fn, params);
+                auto ret_res = invoke_function(fn, params);
+                if (ret_res.is_err()) {
+                    return err<ObjectWrapper, ReflectiveArgumentsError>(ret_res.unwrap_err());
+                }
+                ReturnType ret = ret_res.unwrap();
 
                 auto ret_obj_type = create_return_object_type<ReturnType>();
                 size_t ret_obj_size;
