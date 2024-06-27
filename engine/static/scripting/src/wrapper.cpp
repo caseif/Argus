@@ -79,7 +79,7 @@ namespace argus {
             }
         }
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr) {
@@ -129,7 +129,7 @@ namespace argus {
                 assert(false); // should have been caught during binding
         }
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_float_object_wrapper(const ObjectType &type, double val) {
@@ -151,7 +151,7 @@ namespace argus {
                 assert(false); // should have been caught during binding
         }
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(const ObjectType &type, bool val) {
@@ -161,7 +161,7 @@ namespace argus {
 
         *reinterpret_cast<bool *>(wrapper.get_ptr()) = val;
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_enum_object_wrapper(const ObjectType &type, int64_t val) {
@@ -269,7 +269,7 @@ namespace argus {
             }
         }
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &vec_type,
@@ -291,6 +291,6 @@ namespace argus {
 
         new(wrapper.get_ptr()) VectorWrapper(std::move(vec));
 
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 }
