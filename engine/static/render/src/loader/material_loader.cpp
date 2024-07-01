@@ -65,76 +65,99 @@ namespace argus {
         ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
     }
 
+    static Result<void *, ResourceError> _make_knf_err(const ResourcePrototype &proto,
+            const std::string &key) {
+        return err<void *, ResourceError>(ResourceError { ResourceErrorReason::InvalidContent, proto.uid,
+                "Material is missing required key '" + key + "'" });
+    }
+
+    template<typename T>
+    static bool _try_get_key(const nlohmann::json &root, const std::string &key, T &dest) {
+        if (root.contains(key)) {
+            dest = root.at(key);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     Result<void *, ResourceError> MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
             std::istream &stream, size_t size) const {
         UNUSED(proto);
         UNUSED(size);
         Logger::default_logger().debug("Loading material %s", proto.uid.c_str());
-        try {
-            nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, true);
 
-            std::string tex_uid = json_root.at(KEY_TEXTURE);
-            nlohmann::json::array_t shaders_arr = json_root.at(KEY_SHADERS);
-
-            std::map<ShaderStage, std::string> shader_map;
-            std::vector<std::string> shader_uids;
-            for (auto shader_obj : shaders_arr) {
-                std::string shader_type = shader_obj.at(KEY_SHADER_STAGE);
-                std::string shader_uid = shader_obj.at(KEY_SHADER_UID);
-
-                ShaderStage stage;
-                if (shader_type == SHADER_VERT) {
-                    stage = ShaderStage::Vertex;
-                } else if (shader_type == SHADER_FRAG) {
-                    stage = ShaderStage::Fragment;
-                } else {
-                    // we don't support any other shader stages right now
-                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
-                            "Invalid shader stage in material");
-                }
-
-                if (shader_map.find(stage) != shader_map.end()) {
-                    // only one shader can be specified per stage
-                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
-                            "Duplicate shader stage in material");
-                }
-
-                shader_map[stage] = shader_uid;
-                shader_uids.push_back(shader_uid);
-            }
-
-            std::vector<std::string> dep_uids;
-            dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
-
-            auto deps_res = load_dependencies(manager, dep_uids);
-            if (deps_res.is_err()) {
-                return err<void *, ResourceError>(deps_res.unwrap_err());
-            }
-            auto deps = deps_res.unwrap();
-
-            std::vector<const Shader *> shaders;
-            for (auto &[stage, shader_uid] : shader_map) {
-                const Shader &shader = deps[shader_uid]->get<const Shader>();
-                if (shader.get_stage() != stage) {
-                    // stage of loaded shader does not match stage specified by material
-                    return make_err_result(ResourceErrorReason::InvalidContent, proto,
-                            "Mismatched shader stage in material");
-                }
-
-                shaders.push_back(&shader);
-            }
-
-            Logger::default_logger().debug("Successfully loaded material %s", proto.uid.c_str());
-            return make_ok_result(new Material(tex_uid, shader_uids));
-        } catch (nlohmann::detail::parse_error &) {
+        nlohmann::json json_root = nlohmann::json::parse(stream, nullptr, false);
+        if (json_root.is_discarded()) {
             return make_err_result(ResourceErrorReason::MalformedContent, proto);
-        } catch (std::out_of_range &) {
-            return make_err_result(ResourceErrorReason::InvalidContent, proto, "Material is incomplete or malformed");
-        } catch (std::exception &ex) {
-            UNUSED(ex); // only gets used in debug mode
-            return make_err_result(ResourceErrorReason::InvalidContent, proto,
-                    "Unspecified exception while parsing material: " + std::string(ex.what()));
         }
+
+        std::string tex_uid;
+        if (!_try_get_key<std::string>(json_root, KEY_TEXTURE, tex_uid)) {
+            return _make_knf_err(proto, KEY_TEXTURE);
+        }
+        nlohmann::json::array_t shaders_arr;
+        if (!_try_get_key(json_root, KEY_SHADERS, shaders_arr)) {
+            return _make_knf_err(proto, KEY_SHADERS);
+        }
+
+        std::map<ShaderStage, std::string> shader_map;
+        std::vector<std::string> shader_uids;
+        for (auto shader_obj : shaders_arr) {
+            std::string shader_type;
+            if (!_try_get_key(shader_obj, KEY_SHADER_STAGE, shader_type)) {
+                return _make_knf_err(proto, KEY_SHADER_STAGE);
+            }
+            std::string shader_uid;
+            if (!_try_get_key(shader_obj, KEY_SHADER_UID, shader_uid)) {
+                return _make_knf_err(proto, KEY_SHADER_UID);
+            }
+
+            ShaderStage stage;
+            if (shader_type == SHADER_VERT) {
+                stage = ShaderStage::Vertex;
+            } else if (shader_type == SHADER_FRAG) {
+                stage = ShaderStage::Fragment;
+            } else {
+                // we don't support any other shader stages right now
+                return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                        "Invalid shader stage in material");
+            }
+
+            if (shader_map.find(stage) != shader_map.end()) {
+                // only one shader can be specified per stage
+                return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                        "Duplicate shader stage in material");
+            }
+
+            shader_map[stage] = shader_uid;
+            shader_uids.push_back(shader_uid);
+        }
+
+        std::vector<std::string> dep_uids;
+        dep_uids.insert(dep_uids.end(), shader_uids.begin(), shader_uids.end());
+
+        auto deps_res = load_dependencies(manager, dep_uids);
+        if (deps_res.is_err()) {
+            return err<void *, ResourceError>(deps_res.unwrap_err());
+        }
+        auto deps = deps_res.unwrap();
+
+        std::vector<const Shader *> shaders;
+        for (auto &[stage, shader_uid] : shader_map) {
+            const Shader &shader = deps[shader_uid]->get<const Shader>();
+            if (shader.get_stage() != stage) {
+                // stage of loaded shader does not match stage specified by material
+                return make_err_result(ResourceErrorReason::InvalidContent, proto,
+                        "Mismatched shader stage in material");
+            }
+
+            shaders.push_back(&shader);
+        }
+
+        Logger::default_logger().debug("Successfully loaded material %s", proto.uid.c_str());
+
+        return make_ok_result(new Material(tex_uid, shader_uids));
     }
 
     Result<void *, ResourceError> MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
