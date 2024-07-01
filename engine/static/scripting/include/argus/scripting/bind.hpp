@@ -304,7 +304,8 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> add_member_static_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> add_member_static_function(BoundTypeDef &type_def,
+            const BoundFunctionDef &fn_def);
 
     template<typename FuncType>
     [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>
@@ -315,7 +316,8 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def);
+    [[nodiscard]] Result<void, BindingError> bind_member_static_function(std::type_index type_index,
+            const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType>
     [[nodiscard]] std::enable_if_t<!std::is_member_function_pointer_v<FuncType>, Result<void, BindingError>>

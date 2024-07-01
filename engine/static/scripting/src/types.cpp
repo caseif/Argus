@@ -238,7 +238,7 @@ namespace argus {
         m_obj_type(type) {
     }
 
-    VectorObjectType VectorObject::get_object_type(void) {
+    VectorObjectType VectorObject::get_object_type(void) const {
         return m_obj_type;
     }
 
@@ -269,6 +269,10 @@ namespace argus {
     }
 
     void *ArrayBlob::data(void) {
+        return m_blob;
+    }
+
+    const void *ArrayBlob::data(void) const {
         return m_blob;
     }
 

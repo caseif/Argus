@@ -64,7 +64,8 @@ namespace argus {
     // the provided function, and directly returns the result to the caller
     template<typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
-    Result<ReturnType, ReflectiveArgumentsError> invoke_function(FuncType fn, const std::vector<ObjectWrapper> &params) {
+    Result<ReturnType, ReflectiveArgumentsError> invoke_function(FuncType fn,
+            const std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
         using ArgsTuple = typename function_traits<FuncType>::argument_types_wrapped;
 

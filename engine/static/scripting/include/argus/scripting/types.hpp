@@ -146,6 +146,10 @@ namespace argus {
         void *get_ptr(void) {
             return is_on_heap ? heap_ptr : value;
         }
+
+        const void *get_ptr(void) const {
+            return is_on_heap ? heap_ptr : value;
+        }
     };
 
     struct ReflectiveArgumentsError;
@@ -220,7 +224,7 @@ namespace argus {
         VectorObject(VectorObjectType type);
 
       public:
-        VectorObjectType get_object_type(void);
+        VectorObjectType get_object_type(void) const;
     };
 
     // disable non-standard extension warning for zero-sized array member
@@ -260,6 +264,8 @@ namespace argus {
         [[nodiscard]] size_t element_size(void) const;
 
         void *data(void);
+
+        const void *data(void) const;
 
         void *operator[](size_t index);
 

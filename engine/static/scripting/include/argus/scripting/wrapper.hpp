@@ -180,7 +180,7 @@ namespace argus {
     }
 
     template<typename T>
-    static T unwrap_param(ObjectWrapper &param, ScratchAllocator *scratch) {
+    static T unwrap_param(const ObjectWrapper &param, ScratchAllocator *scratch) {
         using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
         if constexpr (is_std_function_v<B>) {
             assert(param.type.type == IntegralType::Callback);
@@ -189,7 +189,7 @@ namespace argus {
             using ReturnType = typename function_traits<B>::return_type;
             using ArgsTuple = typename function_traits<B>::argument_types_wrapped;
 
-            auto proxied_fn = reinterpret_cast<ProxiedScriptCallback *>(param.get_ptr());
+            auto proxied_fn = reinterpret_cast<const ProxiedScriptCallback *>(param.get_ptr());
             auto fn_copy = std::make_shared<ProxiedScriptCallback>(*proxied_fn);
 
             auto param_types = param.type.callback_type.value()->params;
@@ -262,10 +262,10 @@ namespace argus {
         } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
             using E = typename std::remove_cv_t<remove_reference_wrapper_t<T>>::value_type;
 
-            VectorObject *obj = reinterpret_cast<VectorObject *>(param.get_ptr());
+            const VectorObject *obj = reinterpret_cast<const VectorObject *>(param.get_ptr());
 
             if (obj->get_object_type() == VectorObjectType::ArrayBlob) {
-                ArrayBlob *blob = reinterpret_cast<ArrayBlob *>(obj);
+                const ArrayBlob *blob = reinterpret_cast<const ArrayBlob *>(obj);
                 std::vector<E> vec;
                 vec.reserve(blob->size());
                 if constexpr (std::is_trivially_copyable_v<E>) {
@@ -283,7 +283,7 @@ namespace argus {
                     return vec;
                 }
             } else if (obj->get_object_type() == VectorObjectType::VectorWrapper) {
-                VectorWrapper *wrapper = reinterpret_cast<VectorWrapper *>(obj);
+                const VectorWrapper *wrapper = reinterpret_cast<const VectorWrapper *>(obj);
                 return wrapper->get_underlying_vector<E>();
             } else {
                 crash("Invalid vector object type magic");
@@ -303,19 +303,20 @@ namespace argus {
         } else {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
-            static_assert(std::is_copy_constructible_v<B>,
+            static_assert(std::is_move_constructible_v<B>,
                     "Types in bound functions must have a public move constructor if passed by value");
-            static_assert(std::is_copy_constructible_v<B>,
+            static_assert(std::is_destructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
 
-            return *reinterpret_cast<std::remove_reference_t<T> *>(param.is_on_heap ? param.heap_ptr : param.value);
+            return *reinterpret_cast<const std::remove_reference_t<T> *>(
+                    param.is_on_heap ? param.heap_ptr : param.value);
         }
     }
 
     template<typename ArgsTuple, size_t... Is>
-    ArgsTuple make_tuple_from_params(const std::vector<ObjectWrapper>::const_iterator &params_it,
+    ArgsTuple make_tuple_from_params(std::vector<ObjectWrapper>::const_iterator params_it,
             std::index_sequence<Is...>, ScratchAllocator &scratch) {
         return std::make_tuple(unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
-                const_cast<ObjectWrapper &>(*(params_it + Is)), &scratch)...);
+                *(params_it + Is), &scratch)...);
     }
 }
