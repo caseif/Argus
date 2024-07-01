@@ -206,11 +206,11 @@ namespace argus {
     }
 
     void ResourceManager::discover_resources(void) {
-        std::filesystem::path cur_path;
         std::error_code cur_path_err_code;
-        std::filesystem::current_path(cur_path, cur_path_err_code);
+        auto cur_path = std::filesystem::current_path(cur_path_err_code);
         if (cur_path_err_code) {
-            crash("Failed to get executable directory (%d)", cur_path_err_code.value());
+            crash("Failed to get executable directory (%d) (%s)",
+                    cur_path_err_code.value(), cur_path_err_code.message().c_str());
         }
 
         auto res_dir = cur_path / RESOURCES_DIR;
