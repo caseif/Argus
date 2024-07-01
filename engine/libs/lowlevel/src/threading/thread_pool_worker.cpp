@@ -29,7 +29,7 @@ namespace argus {
     static PoolAllocator g_task_pool(sizeof(ThreadPoolTask));
 
     ThreadPoolTask::ThreadPoolTask(void) :
-            ThreadPoolTask(nullptr) {
+        ThreadPoolTask(nullptr) {
     }
 
     ThreadPoolTask::ThreadPoolTask(ThreadPoolTask &&rhs) noexcept:
@@ -98,7 +98,7 @@ namespace argus {
         // sufficient as long as we don't start doing more initialization.
         // Ideally we'd use a bool member to track whether the pool is ready,
         // but we would need to put it in the ThreadPool object (and not the
-        // m_pimpl) and I'd rather have this small hack than bleed implementation
+        // pimpl) and I'd rather have this small hack than bleed implementation
         // details into the API.
         while (m_pool.m_pimpl == nullptr) {
             continue;
@@ -145,13 +145,8 @@ namespace argus {
                 }
             }
 
-            // this is self-explanatory
-            try {
-                void *rv = m_current_task->func();
-                m_current_task->promise.set_value(rv);
-            } catch (...) {
-                m_current_task->promise.set_exception(std::make_exception_ptr(std::current_exception));
-            }
+            void *rv = m_current_task->func();
+            m_current_task->promise.set_value(rv);
 
             g_task_pool.destroy(m_current_task);
             m_current_task = nullptr;

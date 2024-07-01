@@ -252,7 +252,7 @@ namespace argus {
         return ok<void, FileOpenError>();
     }
 
-    void FileHandle::read(off_t offset, size_t read_size, unsigned char *buf) const {
+    Result<void, int> FileHandle::read(off_t offset, size_t read_size, unsigned char *buf) const {
         validate_state(m_valid, "Non-valid FileHandle");
 
         validate_arg(read_size > 0, "Invalid size parameter");
@@ -265,10 +265,14 @@ namespace argus {
 
         size_t read_chunks = fread(buf, read_size, 1, static_cast<FILE *>(m_handle));
 
-        validate_syscall(read_chunks == 1, "fread");
+        if (read_chunks == 1) {
+            return ok<void, int>();
+        } else {
+            return err<void, int>(errno);
+        }
     }
 
-    void FileHandle::write(const off_t offset, const size_t write_size, unsigned char *const buf) {
+    Result<void, int> FileHandle::write(const off_t offset, const size_t write_size, unsigned char *const buf) {
         validate_state(m_valid, "Non-valid FileHandle");
 
         validate_arg(write_size > 0, "Invalid size parameter");
@@ -285,35 +289,52 @@ namespace argus {
         validate_syscall(write_chunks == 1, "fwrite");
 
         stat_t file_stat {};
-        validate_syscall(fstat(fileno(static_cast<FILE *>(m_handle)), &file_stat), "fstat");
+        if (fstat(fileno(static_cast<FILE *>(m_handle)), &file_stat) != 0) {
+            return err<void, int>(errno);
+        }
 
         assert(file_stat.st_size >= 0);
 
         this->m_size = size_t(file_stat.st_size);
+
+        return ok<void, int>();
     }
 
-    std::future<void> FileHandle::read_async(const off_t offset, const size_t read_size, unsigned char *const buf,
-            const std::function<void(FileHandle &)> &callback) {
-        validate_state(m_valid, "Non-valid FileHandle");
-
-        validate_arg(read_size > 0, "Invalid size parameter");
-
-        validate_arg(offset >= 0, "Read offset must be non-negative");
-
-        validate_arg(size_t(offset) +read_size <= this->m_size, "Invalid offset/size combintation");
-
-        return make_future([this, offset, buf] { read(offset, m_size, buf); }, [callback, this] { callback(*this); });
-    }
-
-    std::future<void> FileHandle::write_async(const off_t offset, const size_t write_size,
+    std::future<Result<void, int>> FileHandle::read_async(const off_t offset, const size_t read_size,
             unsigned char *const buf, const std::function<void(FileHandle &)> &callback) {
         validate_state(m_valid, "Non-valid FileHandle");
 
-        validate_arg(write_size > 0, "Invalid size parameter");
+        validate_arg(callback != nullptr, "Callback must be present");
+        validate_arg(read_size > 0, "Invalid size parameter");
+        validate_arg(offset >= 0, "Read offset must be non-negative");
+        validate_arg(size_t(offset) +read_size <= this->m_size, "Invalid offset/size combination");
 
+        return make_future<void, int>([this, offset, buf] {
+            return read(offset, m_size, buf);
+        }, [callback, this] (const auto &res) {
+            if (res.is_ok()) {
+                callback(*this);
+            } else {
+                crash_ll("Async read from file failed with error code %d", res.unwrap_err());
+            }
+        });
+    }
+
+    std::future<Result<void, int>> FileHandle::write_async(const off_t offset, const size_t write_size,
+            unsigned char *const buf, const std::function<void(FileHandle &)> &callback) {
+        validate_state(m_valid, "Non-valid FileHandle");
+
+        validate_arg(callback != nullptr, "Callback must be present");
+        validate_arg(write_size > 0, "Invalid size parameter");
         validate_arg(offset >= -1, "Invalid offset parameter");
 
-        return make_future([this, offset, write_size, buf] { write(offset, write_size, buf); },
-                [callback, this] { callback(*this); });
+        return make_future<void, int>([this, offset, write_size, buf] { return write(offset, write_size, buf); },
+                [callback, this] (const auto &res) {
+                    if (res.is_ok()) {
+                        callback(*this);
+                    } else {
+                        crash_ll("Async write to file failed with error code %d", res.unwrap_err());
+                    }
+                });
     }
 }

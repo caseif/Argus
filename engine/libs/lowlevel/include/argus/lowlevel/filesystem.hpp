@@ -169,7 +169,7 @@ namespace argus {
          *            at least `size` bytes in length to avoid a buffer
          *            overflow.
          */
-        void read(off_t offset, size_t read_size, unsigned char *buf) const;
+        Result<void, int> read(off_t offset, size_t read_size, unsigned char *buf) const;
 
         /**
          * @brief Writes data into the file referenced by the handle.
@@ -181,7 +181,7 @@ namespace argus {
          *            buffer _must_ be at least `size` bytes in length to
          *            avoid a buffer over-read.
          */
-        void write(off_t offset, size_t write_size, unsigned char *buf);
+        Result<void, int> write(off_t offset, size_t write_size, unsigned char *buf);
 
         /**
          * @brief Reads data from the file referenced by this handle
@@ -208,7 +208,7 @@ namespace argus {
          *
          * @sa FileHandle::read
          */
-        std::future<void> read_async(off_t offset, size_t read_size,
+        std::future<Result<void, int>> read_async(off_t offset, size_t read_size,
                 unsigned char *buf, const std::function<void(FileHandle &)> &callback);
 
         /**
@@ -237,7 +237,7 @@ namespace argus {
          *
          * @sa FileHandle::write
          */
-        std::future<void> write_async(off_t offset, size_t write_size,
+        std::future<Result<void, int>> write_async(off_t offset, size_t write_size,
                 unsigned char *buf, const std::function<void(FileHandle &)> &callback);
     };
 }

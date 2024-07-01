@@ -20,51 +20,50 @@
 
 #include "argus/lowlevel/crash.hpp"
 #include "argus/lowlevel/macros.hpp"
+#include "argus/lowlevel/result.hpp"
 
-#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
-#include <stdexcept>
 
 namespace argus {
     /**
-     * @brief Constructs a std::future with the given function as a supplier,
-     *        and optionally invoking the given callback upon completion.
+     * @brief Constructs a std::future with the given function as a supplier
+     *        and optionally a callback to be invoked upon completion.
      *
      * @param function A function containing a task which will supply the
      *                 returned std::future.
-     * @param callback The function to invoke after completion of the task.
-     *                 This callback must accept the supplied value and may be
-     *                 left absent if unneeded.
+     * @param callback The function to invoke after completion of the task. This
+     *        callback must accept the supplied value and may be left absent if
+     *        unneeded.
      *
-     * @tparam Out The type of value provided by the returned std::future.
+     * @tparam T The type of value provided by the returned std::future when the
+     *         operation succeeds.
+     * @tparam E The type of value provided by the returned std::future when the
+     *         operation fails.
      *
      * @return The created std::future.
      *
      * @attention The provided functions \em must be thread-safe, as they will
      *            be performed on a new thread.
      */
-    template<typename Out>
-    std::future<Out> make_future(const std::function<Out(void)> &function, const std::function<void(Out)> &callback) {
+    template<typename T, typename E>
+    std::future<Result<T, E>> make_future(const std::function<Result<T, E>(void)> &function,
+            const std::function<void(const Result<T, E> &)> &callback) {
         if (!function) {
             crash_ll("make_future: Function must be present");
         }
 
-        auto promise_ptr = std::make_shared<std::promise<Out>>();
-        std::future<Out> future = promise_ptr->get_future();
+        auto promise_ptr = std::make_shared<std::promise<Result<T, E>>>();
+        std::future<Result<T, E>> future = promise_ptr->get_future();
         std::thread thread(
                 [function, callback, promise_ptr](const auto user_data) -> void * {
                     UNUSED(user_data);
-                    try {
-                        Out res = function();
-                        promise_ptr->set_value_at_thread_exit(res);
+                    Result<T, E> res = function();
+                    promise_ptr->set_value_at_thread_exit(res);
 
-                        if (callback != nullptr) {
-                            callback(res);
-                        }
-                    } catch (...) {
-                        promise_ptr->set_exception(std::make_exception_ptr(std::current_exception()));
+                    if (callback != nullptr) {
+                        callback(res);
                     }
 
                     return nullptr;
@@ -88,5 +87,5 @@ namespace argus {
      *         `void` type has unique language semantics which require special
      *         handling.
      */
-    std::future<void> make_future(const std::function<void(void)> &function, const std::function<void(void)> &callback);
+    //std::future<void> make_future(const std::function<void(void)> &function, const std::function<void(void)> &callback);
 }

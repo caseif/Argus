@@ -391,7 +391,7 @@ namespace argus {
     }
 
     std::future<Result<Resource &, ResourceError>> ResourceManager::get_resource_async(const std::string &uid,
-            const std::function<void(Result<Resource &, ResourceError>)> &callback) {
+            const std::function<void(const Result<Resource &, ResourceError>)> &callback) {
         auto res = _acquire_resource(*this, uid);
         if (res.is_ok()) {
             auto promise_ptr = std::make_shared<std::promise<Result<Resource &, ResourceError>>>();
@@ -399,7 +399,7 @@ namespace argus {
             promise_ptr->set_value(res);
             return future;
         } else {
-            return make_future<Result<Resource &, ResourceError>>([this, uid](void) {
+            return make_future<Resource &, ResourceError>([this, uid](void) {
                 return get_resource(uid);
             }, callback);
         }
