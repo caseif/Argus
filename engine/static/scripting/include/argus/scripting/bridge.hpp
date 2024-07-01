@@ -76,13 +76,12 @@ namespace argus {
                     + std::to_string(expected_param_count) + " , actual " + std::to_string(params.size()) + ")");
         }
 
-        auto it = params.begin() + (std::is_member_function_pointer_v<FuncType> ? 1 : 0);
+        size_t params_off = std::is_member_function_pointer_v<FuncType> ? 1 : 0;
         ScratchAllocator scratch;
-        auto args = make_tuple_from_params<ArgsTuple>(it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {},
-                scratch);
+        auto args = make_tuple_from_params<ArgsTuple>(params, params_off,
+                std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {}, scratch);
 
         if constexpr (!std::is_void_v<ClassType>) {
-            ++it;
             auto &instance_param = params.front();
             ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
                     ? instance_param.heap_ptr

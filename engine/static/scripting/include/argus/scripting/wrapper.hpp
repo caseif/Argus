@@ -314,9 +314,9 @@ namespace argus {
     }
 
     template<typename ArgsTuple, size_t... Is>
-    ArgsTuple make_tuple_from_params(std::vector<ObjectWrapper>::const_iterator params_it,
+    ArgsTuple make_tuple_from_params(const std::vector<ObjectWrapper> &params, size_t params_off,
             std::index_sequence<Is...>, ScratchAllocator &scratch) {
         return std::make_tuple(unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
-                *(params_it + Is), &scratch)...);
+                params[Is + params_off], &scratch)...);
     }
 }
