@@ -5,14 +5,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2019, windows-2022, macos-12, macos-13, macos-14]
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2022, macos-12, macos-13, macos-14]
         compiler: [gcc, clang, msvc]
         configuration: [Release, Debug]
         exclude:
-          - os: windows-2019
-            compiler: gcc
-          - os: windows-2019
-            compiler: clang
           - os: windows-2022
             compiler: gcc
           - os: windows-2022
@@ -68,8 +64,7 @@ jobs:
     - name: Set env vars for Win32 CMake
       shell: pwsh
       run: |
-        $vs_version = if ("${{ matrix.os }}" -eq "windows-2019") { "16" } else { "17" }
-          echo "CMAKE_GENERATOR=Visual Studio $vs_version" >> "$env:GITHUB_ENV"
+        echo "CMAKE_GENERATOR=Visual Studio 17" >> "$env:GITHUB_ENV"
       if: startsWith(matrix.os, 'windows')
 
     - uses: actions/checkout@v4

@@ -85,15 +85,7 @@ namespace argus {
 
     template<typename T, typename E>
     struct ResultStorage {
-        #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-        // workaround for VS versions prior to 17.2 (2022) which require
-        // std::future's type parameter type to be default-constructible
-        std::optional<std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>>> val_or_err;
-
-        ResultStorage(void) = default;
-        #else
         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> val_or_err;
-        #endif
     };
 
     template<typename T>
@@ -149,25 +141,13 @@ namespace argus {
         }
 
       public:
-        // workaround for VS <=17.2, see comment in ResultStorage
-        // definition
-        #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-        Result(void) = default;
-        #endif
-
         Result(ResultStorage<T, E> storage):
             m_storage(std::move(storage)) {
         }
 
         [[nodiscard]] bool is_ok(void) const {
             if constexpr (!std::is_void_v<T> && !std::is_void_v<E>) {
-                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-                // workaround for VS <=17.2, see comment in ResultStorage
-                // definition
-                return m_storage.val_or_err.value().index() == 0;
-                #else
                 return m_storage.val_or_err.index() == 0;
-                #endif
             } else if constexpr (!std::is_void_v<T>) {
                 return m_storage.val.has_value();
             } else if constexpr (!std::is_void_v<E>) {
@@ -187,13 +167,7 @@ namespace argus {
                 crash_ll("Attempted to call unwrap() on error-typed Result (" + stringify_error() + ")");
             }
             if constexpr (!std::is_void_v<E>) {
-                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-                // workaround for VS <=17.2, see comment in ResultStorage
-                // definition
-                return std::get<0>(m_storage.val_or_err.value());
-                #else
                 return std::get<0>(m_storage.val_or_err);
-                #endif
             } else {
                 return m_storage.val.value();
             }
@@ -220,13 +194,7 @@ namespace argus {
                 crash_ll("Attempted to call unwrap_err() on value-typed Result");
             }
             if constexpr (!std::is_void_v<T>) {
-                #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-                // workaround for VS <=17.2, see comment in ResultStorage
-                // definition
-                return std::get<1>(m_storage.val_or_err.value());
-                #else
                 return std::get<1>(m_storage.val_or_err);
-                #endif
             } else {
                 return m_storage.err.value();
             }
@@ -392,24 +360,6 @@ namespace argus {
         static_assert(!std::is_void_v<T>);
 
         if constexpr (!std::is_void_v<E>) {
-            #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-            // workaround for VS <=17.2, see comment in ResultStorage
-            // definition
-            if constexpr (std::is_reference_v<T>) {
-                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
-                    std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                            std::in_place_index<0>, std::reference_wrapper<std::remove_reference_t<T>>(
-                                    std::forward<U>(value))
-                    }
-                ) });
-            } else {
-                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
-                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                                std::in_place_index<0>, std::forward<U>(value)
-                        }
-                ) });
-            }
-            #else
             if constexpr (std::is_reference_v<T>) {
                 return Result<T, E>(ResultStorage<T, E> {
                         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
@@ -424,7 +374,6 @@ namespace argus {
                         }
                 });
             }
-            #endif
         } else {
             if constexpr (std::is_reference_v<T>) {
                 return Result<T, E>(ResultStorage<T, E> {
@@ -461,22 +410,6 @@ namespace argus {
         static_assert(!std::is_void_v<E>);
 
         if constexpr (!std::is_void_v<T>) {
-            #if defined(_MSC_VER) && (_MSVC_STL_UPDATE < 202203L)
-            // workaround for VS <=17.2, see comment in ResultStorage
-            // definition
-            if constexpr (std::is_reference_v<E>) {
-                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
-                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                                std::in_place_index<1>, std::reference_wrapper<std::remove_reference_t<E>>(
-                                        std::forward<F>(error)) }) });
-            } else {
-                return Result<T, E>(ResultStorage<T, E> { std::make_optional(
-                        std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
-                                std::in_place_index<1>, std::forward<F>(error)
-                        }
-                ) });
-            }
-            #else
             if constexpr (std::is_reference_v<E>) {
                 return Result<T, E>(ResultStorage<T, E> {
                         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
@@ -491,7 +424,6 @@ namespace argus {
                         }
                 });
             }
-            #endif
         } else {
             if constexpr (std::is_reference_v<E>) {
                 return Result<T, E>(ResultStorage<T, E> {
