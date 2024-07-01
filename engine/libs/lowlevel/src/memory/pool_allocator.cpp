@@ -20,8 +20,6 @@
 #include "internal/lowlevel/crash.hpp"
 #include "internal/lowlevel/memory/util.hpp"
 
-#include <stdexcept>
-
 #include <cmath>
 #include <cstdlib>
 

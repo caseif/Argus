@@ -32,7 +32,6 @@
 #include "internal/render/pimpl/2d/scene_2d.hpp"
 #include "internal/render/module_render.hpp"
 
-#include <stdexcept>
 #include <string>
 #include <vector>
 #include <algorithm>

@@ -32,7 +32,6 @@
 #include "argus/scripting/wrapper.hpp"
 
 #include <functional>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <typeinfo>

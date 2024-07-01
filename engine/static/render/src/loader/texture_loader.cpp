@@ -31,7 +31,6 @@
 
 #include <fstream> // IWYU pragma: keep
 #include <istream>
-#include <stdexcept>
 #include <utility>
 
 #include <csetjmp>

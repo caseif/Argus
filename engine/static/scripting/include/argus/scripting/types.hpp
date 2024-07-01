@@ -33,7 +33,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <stdexcept>
 
 namespace argus {
     typedef void(*CopyCtorProxy)(void *, const void *);

@@ -21,7 +21,6 @@
 #include "argus/resman/resource_manager.hpp"
 #include "internal/resman/pimpl/resource_loader.hpp"
 
-#include <exception>
 #include <initializer_list>
 #include <map>
 #include <string>

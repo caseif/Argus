@@ -25,7 +25,6 @@
 
 #include <filesystem>
 #include <future>
-#include <stdexcept>
 
 #include <cerrno>
 #include <cstdio>

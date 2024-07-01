@@ -25,7 +25,6 @@
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/wrapper.hpp"
 
-#include <stdexcept>
 #include <string>
 
 #include <cstring>

@@ -23,7 +23,6 @@
 #include "internal/ecs/module_ecs.hpp"
 #include "internal/ecs/pimpl/system.hpp"
 
-#include <stdexcept>
 #include <utility>
 #include <vector>
 

@@ -33,7 +33,6 @@
 
 #include <algorithm>
 #include <map>
-#include <stdexcept>
 #include <vector>
 
 namespace argus {

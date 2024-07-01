@@ -25,7 +25,6 @@
 #include "glslang/Public/ShaderLang.h"
 
 #include <map>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>

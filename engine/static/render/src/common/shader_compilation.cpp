@@ -47,7 +47,6 @@
 #pragma GCC diagnostic pop
 
 #include <map>
-#include <stdexcept>
 #include <vector>
 
 namespace argus {

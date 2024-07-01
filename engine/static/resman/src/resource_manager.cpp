@@ -47,7 +47,6 @@
 #include <future>
 #include <map>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <vector>
 

@@ -37,11 +37,9 @@
 
 #pragma GCC diagnostic pop
 
-#include <exception>
 #include <fstream> // IWYU pragma: keep
 #include <istream>
 #include <map>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>

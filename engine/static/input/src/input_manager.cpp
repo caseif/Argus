@@ -26,8 +26,6 @@
 #include "internal/input/pimpl/input_manager.hpp"
 
 #include <algorithm>
-#include <exception>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
