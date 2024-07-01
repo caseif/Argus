@@ -242,22 +242,18 @@ namespace argus {
             is_const = function_traits<FnSig>::is_const::value;
         }
 
-        try {
-            BoundFunctionDef def {
-                    name,
-                    FnType,
-                    is_const,
-                    // Callback return values flow from the script VM to C++, so
-                    // we don't need to worry about invalidating any handles.
-                    tuple_to_object_types<ArgsTuple, DataFlowDirection::FromScript>(),
-                    create_return_object_type<ReturnType>(),
-                    create_function_wrapper(fn)
-            };
+        BoundFunctionDef def {
+                name,
+                FnType,
+                is_const,
+                // Callback return values flow from the script VM to C++, so
+                // we don't need to worry about invalidating any handles.
+                tuple_to_object_types<ArgsTuple, DataFlowDirection::FromScript>(),
+                create_return_object_type<ReturnType>(),
+                create_function_wrapper(fn)
+        };
 
-            return ok<BoundFunctionDef, BindingError>(def);
-        } catch (const std::exception &ex) {
-            return err<BoundFunctionDef, BindingError>(name, ex.what());
-        }
+        return ok<BoundFunctionDef, BindingError>(def);
     }
 
     template<typename FuncType>
@@ -377,71 +373,67 @@ namespace argus {
 
         using B = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<FieldType>>>;
 
-        try {
-            // field values are passed from the engine to the script VM
-            // if the field isn't refable it will always be copied by value, so
-            // we need to pretend it's a non-pointer when creating the object
-            // type and doing the relevant checks
-            ObjectType type;
-            if constexpr (!std::is_class_v<B> || std::is_base_of_v<AutoCleanupable, B>) {
-                type = create_object_type<FieldType, DataFlowDirection::ToScript>();
+        // field values are passed from the engine to the script VM
+        // if the field isn't refable it will always be copied by value, so
+        // we need to pretend it's a non-pointer when creating the object
+        // type and doing the relevant checks
+        ObjectType type;
+        if constexpr (!std::is_class_v<B> || std::is_base_of_v<AutoCleanupable, B>) {
+            type = create_object_type<FieldType, DataFlowDirection::ToScript>();
+        } else {
+            type = create_object_type<B, DataFlowDirection::ToScript>();
+        }
+        type.is_const = is_const;
+
+        BoundFieldDef def {};
+        def.m_name = name;
+        def.m_type = type;
+
+        def.m_access_proxy = [name, field](ObjectWrapper &inst, const ObjectType &field_type) {
+            ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
+                    ? inst.heap_ptr
+                    : inst.stored_ptr);
+
+            auto real_type = field_type;
+            if constexpr ((std::is_class_v<FieldType>
+                    || (std::is_class_v<B> && !std::is_base_of_v<AutoCleanupable, B>))
+                    && !std::is_same_v<B, std::string>
+                    && !is_std_vector_v<B>
+                    && !is_std_function_v<B>) {
+                assert(real_type.type == IntegralType::Struct);
+                if constexpr (std::is_base_of_v<AutoCleanupable, B>) {
+                    // return a pointer to the field so the script can modify its fields
+                    real_type.type = IntegralType::Pointer;
+                    real_type.size = sizeof(void *);
+                    return std::move(create_auto_object_wrapper(real_type, &(instance->*field))
+                            .expect("Failed to create object wrapper while accessing native field "
+                                    + name + " from Lua VM"));
+                } else {
+                    // return a copy of the field since we can't manage a reference to it
+                    real_type.is_const = true;
+                    return std::move(create_auto_object_wrapper(real_type, (instance->*field))
+                            .expect("Failed to create object wrapper while accessing native field "
+                                    + name + " from Lua VM"));
+                }
             } else {
-                type = create_object_type<B, DataFlowDirection::ToScript>();
+                // return the field by value
+                return std::move(create_auto_object_wrapper(real_type, instance->*field)
+                        .expect("Failed to create object wrapper while accessing native field "
+                                + name + " from Lua VM"));
             }
-            type.is_const = is_const;
+        };
 
-            BoundFieldDef def {};
-            def.m_name = name;
-            def.m_type = type;
-
-            def.m_access_proxy = [name, field](ObjectWrapper &inst, const ObjectType &field_type) {
+        if constexpr (!is_const) {
+            def.m_assign_proxy = [field](ObjectWrapper &inst, ObjectWrapper &val) {
                 ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
                         ? inst.heap_ptr
                         : inst.stored_ptr);
 
-                auto real_type = field_type;
-                if constexpr ((std::is_class_v<FieldType>
-                        || (std::is_class_v<B> && !std::is_base_of_v<AutoCleanupable, B>))
-                        && !std::is_same_v<B, std::string>
-                        && !is_std_vector_v<B>
-                        && !is_std_function_v<B>) {
-                    assert(real_type.type == IntegralType::Struct);
-                    if constexpr (std::is_base_of_v<AutoCleanupable, B>) {
-                        // return a pointer to the field so the script can modify its fields
-                        real_type.type = IntegralType::Pointer;
-                        real_type.size = sizeof(void *);
-                        return std::move(create_auto_object_wrapper(real_type, &(instance->*field))
-                                .expect("Failed to create object wrapper while accessing native field "
-                                        + name + " from Lua VM"));
-                    } else {
-                        // return a copy of the field since we can't manage a reference to it
-                        real_type.is_const = true;
-                        return std::move(create_auto_object_wrapper(real_type, (instance->*field))
-                                .expect("Failed to create object wrapper while accessing native field "
-                                        + name + " from Lua VM"));
-                    }
-                } else {
-                    // return the field by value
-                    return std::move(create_auto_object_wrapper(real_type, instance->*field)
-                            .expect("Failed to create object wrapper while accessing native field "
-                                    + name + " from Lua VM"));
-                }
+                instance->*field = unwrap_param<FieldType>(val, nullptr);
             };
-
-            if constexpr (!is_const) {
-                def.m_assign_proxy = [field](ObjectWrapper &inst, ObjectWrapper &val) {
-                    ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
-                            ? inst.heap_ptr
-                            : inst.stored_ptr);
-
-                    instance->*field = unwrap_param<FieldType>(val, nullptr);
-                };
-            }
-
-            return ok<BoundFieldDef, BindingError>(def);
-        } catch (const std::exception &ex) {
-            return err<BoundFieldDef, BindingError>(name, ex.what());
         }
+
+        return ok<BoundFieldDef, BindingError>(def);
     }
 
     [[nodiscard]] Result<void, BindingError> add_member_field(BoundTypeDef &type_def, const BoundFieldDef &field_def);

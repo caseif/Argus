@@ -884,15 +884,8 @@ namespace argus {
 
     [[nodiscard]] static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
             const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name) {
-        int i = 1;
-        try {
-            for (const auto &param : params) {
-                _push_value(state, param);
-                i++;
-            }
-        } catch (const std::exception &ex) {
-            return err<ObjectWrapper, ScriptInvocationError>(fn_name.value_or("callback"),
-                    "Bad value passed for parameter " + std::to_string(i) + ": " + ex.what());
+        for (const auto &param : params) {
+            _push_value(state, param);
         }
 
         if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
@@ -1027,29 +1020,18 @@ namespace argus {
             }
         }
 
-        std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> retval_res;
-        try {
-            retval_res = fn.handle(args);
-        } catch (const std::exception &ex) {
-            return luaL_error(state, "Function %s threw exception: %s", qual_fn_name.c_str(),
-                    ex.what());
-        }
+        auto retval_res = fn.handle(args);
 
-        if (retval_res->is_err()) {
+        if (retval_res.is_err()) {
             return _set_lua_error(state, "Bad arguments provided to function " + qual_fn_name
-                    + " (" + retval_res->unwrap_err().reason + ")");
+                    + " (" + retval_res.unwrap_err().reason + ")");
         }
 
-        auto retval = std::move(retval_res->unwrap());
+        auto retval = std::move(retval_res.unwrap());
 
         if (retval.type.type != IntegralType::Void) {
-            try {
-                _push_value(state, retval);
-                stack_guard.increment();
-            } catch (const std::exception &) {
-                //crash("Failed to push return type of bound function to Lua VM");
-                throw;
-            }
+            _push_value(state, retval);
+            stack_guard.increment();
 
             return 1;
         } else {
