@@ -59,10 +59,6 @@
 #define SHADER_TESS_EVAL "tess_evaluation"
 
 namespace argus {
-    MaterialLoader::MaterialLoader():
-        ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
-    }
-
     static Result<void *, ResourceError> _make_knf_err(const ResourcePrototype &proto,
             const std::string &key) {
         return err<void *, ResourceError>(ResourceError { ResourceErrorReason::InvalidContent, proto.uid,
@@ -72,11 +68,15 @@ namespace argus {
     template<typename T>
     static bool _try_get_key(const nlohmann::json &root, const std::string &key, T &dest) {
         if (root.contains(key)) {
-            dest = root.at(key);
+            dest = root.at(key).get<T>();
             return true;
         } else {
             return false;
         }
+    }
+
+    MaterialLoader::MaterialLoader():
+            ResourceLoader({ RESOURCE_TYPE_MATERIAL }) {
     }
 
     Result<void *, ResourceError> MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,

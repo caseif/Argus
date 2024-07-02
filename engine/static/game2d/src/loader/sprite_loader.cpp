@@ -64,7 +64,7 @@ namespace argus {
     template<typename T>
     static bool _try_get_key(const nlohmann::json &root, const std::string &key, T &dest) {
         if (root.contains(key)) {
-            dest = root.at(key);
+            dest = root.at(key).get<T>();
             return true;
         } else {
             return false;
