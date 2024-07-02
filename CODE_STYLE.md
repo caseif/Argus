@@ -266,8 +266,6 @@ exception, take the most appropriate action listed below:
 - If it's a serious issue that can't be handled in a reasonable way, or if it's something that would only result from
   programmer error, terminate the program with the `crash` function (or `crash_ll` if in the `lowlevel` module)
 
-Exceptions are allowed in tests and are currently used to intercept `crash` calls so that they can be seen by Catch2.
-
 ## Code Hygiene
 
 ### Pointers

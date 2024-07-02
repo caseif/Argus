@@ -16,32 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
-#define CATCH_CONFIG_MAIN
-#include "catch2/catch_all.hpp"
-
-#pragma GCC diagnostic pop
+#include "test_global.hpp"
 
 #include <csetjmp>
 
-extern std::jmp_buf g_jmpbuf;
-
-#define REQUIRE_CRASHES(expr) \
-    if (setjmp(g_jmpbuf) == 0) { \
-        (void)(expr); \
-        FAIL("expression did not trigger crash"); \
-    } else { \
-        SUCCEED("expression triggered crash"); \
-    }
-
-#define REQUIRE_NOCRASH(expr) \
-    if (setjmp(g_jmpbuf) == 0) { \
-        (void)(expr); \
-        SUCCEED("expression did not trigger crash"); \
-    } else { \
-        FAIL("expression triggered crash"); \
-    }
+std::jmp_buf g_jmpbuf;

@@ -16,28 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdarg>
 #include "test_global.hpp"
 
 #include "argus/lowlevel/crash.hpp"
 #include "argus/lowlevel/result.hpp"
 
-#define MSG_BUF_LEN 255
-
-static std::string format_str(const char *format, va_list args) {
-    char msg_buf[MSG_BUF_LEN];
-    snprintf(msg_buf, sizeof(msg_buf), format, args);
-    return msg_buf;
-}
-
-struct InterceptedCrash : std::runtime_error {
-    InterceptedCrash(const char *msg, va_list args):
-        std::runtime_error(format_str(msg, args)) {
-    }
-};
+#include <cstdarg>
 
 [[noreturn]] static void intercept_crash(const char *msg, va_list args) {
-    throw InterceptedCrash(msg, args);
+    (void)(msg);
+    (void)(args);
+    std::longjmp(g_jmpbuf, 1);
 }
 
 SCENARIO("Result class behaves correctly", "[Result]") {
@@ -63,11 +52,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("unwrap_err triggers crash") {
-            REQUIRE_THROWS(result.unwrap_err());
+            REQUIRE_CRASHES(result.unwrap_err());
         }
 
         THEN("expect_err triggers crash") {
-            REQUIRE_THROWS(result.expect_err("expect_err failed"));
+            REQUIRE_CRASHES(result.expect_err("expect_err failed"));
         }
 
         THEN("unwrap_or_default returns original value") {
@@ -152,11 +141,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("unwrap triggers crash") {
-            REQUIRE_THROWS(result.unwrap());
+            REQUIRE_CRASHES(result.unwrap());
         }
 
         THEN("expect triggers crash") {
-            REQUIRE_THROWS(result.expect("expect failed"));
+            REQUIRE_CRASHES(result.expect("expect failed"));
         }
 
         THEN("unwrap_err returns correct value") {
@@ -282,11 +271,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("unwrap_err triggers crash") {
-            REQUIRE_THROWS(result.unwrap_err());
+            REQUIRE_CRASHES(result.unwrap_err());
         }
 
         THEN("expect_err triggers crash") {
-            REQUIRE_THROWS(result.expect_err("expect_err failed"));
+            REQUIRE_CRASHES(result.expect_err("expect_err failed"));
         }
 
         THEN("unwrap_or_default returns original value") {
@@ -384,11 +373,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("unwrap triggers crash") {
-            REQUIRE_THROWS(result.unwrap());
+            REQUIRE_CRASHES(result.unwrap());
         }
 
         THEN("expect triggers crash") {
-            REQUIRE_THROWS(result.expect("expect failed"));
+            REQUIRE_CRASHES(result.expect("expect failed"));
         }
 
         THEN("unwrap_err returns correct value") {
@@ -514,15 +503,15 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect succeeds") {
-            REQUIRE_NOTHROW(result.expect("expect failed"));
+            REQUIRE_NOCRASH(result.expect("expect failed"));
         }
 
         THEN("unwrap_err triggers crash") {
-            REQUIRE_THROWS(result.unwrap_err());
+            REQUIRE_CRASHES(result.unwrap_err());
         }
 
         THEN("expect_err triggers crash") {
-            REQUIRE_THROWS(result.expect_err("expect_err failed"));
+            REQUIRE_CRASHES(result.expect_err("expect_err failed"));
         }
 
         THEN("map_err returns OK Result") {
@@ -574,7 +563,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect triggers crash") {
-            REQUIRE_THROWS(result.expect("expect failed"));
+            REQUIRE_CRASHES(result.expect("expect failed"));
         }
 
         THEN("unwrap_err returns correct value") {
@@ -648,7 +637,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect_err triggers crash") {
-            REQUIRE_THROWS(result.expect_err("expect_err failed"));
+            REQUIRE_CRASHES(result.expect_err("expect_err failed"));
         }
 
         THEN("unwrap_or_default returns original value") {
@@ -717,11 +706,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect triggers crash") {
-            REQUIRE_THROWS(result.expect("expect failed"));
+            REQUIRE_CRASHES(result.expect("expect failed"));
         }
 
         THEN("expect_err succeeds") {
-            REQUIRE_NOTHROW(result.expect_err("expect_err failed"));
+            REQUIRE_NOCRASH(result.expect_err("expect_err failed"));
         }
 
         THEN("unwrap_or_default returns default value") {
@@ -781,11 +770,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect succeeds") {
-            REQUIRE_NOTHROW(result.expect("expect failed"));
+            REQUIRE_NOCRASH(result.expect("expect failed"));
         }
 
         THEN("expect_err triggers crash") {
-            REQUIRE_THROWS(result.expect_err("expect_err failed"));
+            REQUIRE_CRASHES(result.expect_err("expect_err failed"));
         }
 
         THEN("or_else returns OK Result") {
@@ -829,11 +818,11 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("expect triggers crash") {
-            REQUIRE_THROWS(result.expect("expect failed"));
+            REQUIRE_CRASHES(result.expect("expect failed"));
         }
 
         THEN("expect_err succeeds") {
-            REQUIRE_NOTHROW(result.expect_err("expect_err failed"));
+            REQUIRE_NOCRASH(result.expect_err("expect_err failed"));
         }
 
         THEN("or_else returns OK Result") {

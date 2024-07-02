@@ -22,8 +22,6 @@
 #include "argus/lowlevel/math/matrix.hpp"
 #include "argus/lowlevel/math/vector.hpp"
 
-#include "catch2/catch_all.hpp"
-
 template <typename T>
 static constexpr unsigned int _get_vector_size(void) {
     if constexpr (argus::is_specialization_v<T, argus::Vector2>) {

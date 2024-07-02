@@ -47,9 +47,7 @@ function(_argus_set_compile_flags TARGET)
       "-Wconversion"
       "$<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>")
 
-    if(NOT "${TARGET}" MATCHES "(^test_(.+))|((.+)_tests$)")
-      target_compile_options("${TARGET}" PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>")
-    endif()
+    target_compile_options("${TARGET}" PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>")
 
     # -Wmismatched-tags is only available in Clang or GCC 10+
     if(CLANG OR (GCC AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
