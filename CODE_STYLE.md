@@ -257,9 +257,16 @@ built-in keywords.
 
 ## Exceptions
 
-Avoid using exceptions. Either print a warning and move on, return the error to the caller, or crash the program.
+The library is compiled with `-fno-exceptions` and exceptions are thus completely disabled. Instead of throwing an
+exception, take the most appropriate action listed below:
 
-The plan is to eventually compile with `-fno-exceptions` so that exceptions are completely disabled.
+- If it doesn't affect further execution of the program and doesn't need to be explicitly handled, log a warning and
+  move on
+- If it could be handled in a reasonable way depending on context, use a `Result` to return the error to the caller
+- If it's a serious issue that can't be handled in a reasonable way, or if it's something that would only result from
+  programmer error, terminate the program with the `crash` function (or `crash_ll` if in the `lowlevel` module)
+
+Exceptions are allowed in tests and are currently used to intercept `crash` calls so that they can be seen by Catch2.
 
 ## Code Hygiene
 

@@ -47,6 +47,10 @@ function(_argus_set_compile_flags TARGET)
       "-Wconversion"
       "$<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>")
 
+    if(NOT "${TARGET}" MATCHES "(^test_(.+))|((.+)_tests$)")
+      target_compile_options("${TARGET}" PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>")
+    endif()
+
     # -Wmismatched-tags is only available in Clang or GCC 10+
     if(CLANG OR (GCC AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10))
       target_compile_options("${TARGET}" PUBLIC
@@ -88,4 +92,6 @@ function(_argus_set_compile_flags TARGET)
       target_compile_options("${TARGET}" PUBLIC "-Wno-variadic-macros" "-Wno-error=unknown-pragmas")
     endif()
   endif()
+
+  target_compile_definitions("${TARGET}" PUBLIC "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS=1")
 endfunction()

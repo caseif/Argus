@@ -40,6 +40,7 @@ set(LIBARP_USER_MAPPINGS "${PROJECT_SOURCE_DIR}/res/arp_custom_mappings.csv" CAC
 # configure SPIRV-Cross
 set(SPIRV_CROSS_FORCE_PIC ON CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON CACHE BOOL "" FORCE)
 
 # include dir for generated headers which must be copied (configs)
 set(TMP_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include.tmp")

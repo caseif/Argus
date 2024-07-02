@@ -31,7 +31,6 @@ static std::string format_str(const char *format, va_list args) {
 }
 
 struct InterceptedCrash : std::runtime_error {
-
     InterceptedCrash(const char *msg, va_list args):
         std::runtime_error(format_str(msg, args)) {
     }
