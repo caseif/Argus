@@ -20,6 +20,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wparentheses"
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch_all.hpp"
