@@ -18,9 +18,16 @@
 
 #pragma once
 
+// this suppression needs to leak to work around a bug in GCC versions < 10
+#if defined(__GNUC__) && __GNUC__ < 10
+#pragma GCC diagnostic ignored "-Wparentheses"
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#if !defined(__GNUC__) || __GNUC__ >= 10
 #pragma GCC diagnostic ignored "-Wparentheses"
+#endif
 
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch_template_test_macros.hpp"
