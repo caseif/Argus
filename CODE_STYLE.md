@@ -274,7 +274,7 @@ Exceptions are allowed in tests and are currently used to intercept `crash` call
 
 Do not use pointers if at all avoidable. References should be used in almost all cases. The exceptions to this are when
 interfacing with a C ABI which uses pointers (like C strings), and in collections of dynamically allocated objects
-(since references cannot be used as template parameters).
+(since references generally cannot be used as element types).
 
 ### References
 
