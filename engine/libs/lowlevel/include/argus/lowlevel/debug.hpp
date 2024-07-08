@@ -35,7 +35,14 @@
 
 #ifdef assert
 #undef assert
+
+#define NDEBUG 1
+#ifdef __APPLE__
+#define NS_BLOCK_ASSERTIONS 1
 #endif
+
+#endif
+
 #ifdef _ARGUS_DEBUG_MODE
 #define _argus_assert(cond, file, line) ((cond) \
         ? void(0) \
@@ -47,6 +54,8 @@
         : ::argus::crash_ll("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
 #define assert_ll(...) _argus_assert_ll((__VA_ARGS__), __FILE__, __LINE__)
 #else
-#define assert(cond) ((cond) ? (void(0)) : (argus::crash("Assertion failed: " #cond)))
-#define assert_ll(cond) ((cond) ? (void(0)) : (argus::crash_ll("Assertion failed: " #cond)))
+#define _argus_assert(cond) ((cond) ? (void(0)) : (argus::crash("Assertion failed: " #cond)))
+#define assert(...) _argus_assert((__VA_ARGS__))
+#define _argus_assert_ll(cond) ((cond) ? (void(0)) : (argus::crash_ll("Assertion failed: " #cond)))
+#define assert_ll(...) _argus_assert_ll((__VA_ARGS__))
 #endif

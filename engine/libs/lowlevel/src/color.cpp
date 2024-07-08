@@ -17,11 +17,11 @@
  */
 
 #include "argus/lowlevel/color.hpp"
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/math/vector.hpp"
 
 #include <algorithm>
 
-#include <cassert>
 #include <cmath>
 
 namespace argus {
@@ -77,7 +77,7 @@ namespace argus {
         double g;
         double b;
 
-        assert(hprime >= -1);
+        assert_ll(hprime >= -1);
         if (hprime < 0) {
             r = max;
             g = min;
