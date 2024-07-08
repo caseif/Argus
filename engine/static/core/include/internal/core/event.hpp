@@ -25,7 +25,7 @@
 #include <cstdint>
 
 namespace argus {
-    template<typename T>
+    /*template<typename T>
     class RefCountable {
       public:
 
@@ -43,7 +43,7 @@ namespace argus {
         uint32_t release(uint32_t count = 1) {
             return refcount.fetch_sub(count) - count;
         }
-    };
+    };*/
 
     void process_event_queue(TargetThread target_thread);
 

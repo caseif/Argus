@@ -33,7 +33,7 @@ size_t string_array_get_count(StringArrayConst sa) {
 const char *string_array_get_element(StringArrayConst sa, size_t index) {
     const auto &vec = *reinterpret_cast<const StringArrayImpl *>(sa);
     if (index >= vec.size()) {
-        crash("Attempt to access invalid vector index %llu (vector size = %llu)", index, vec.size());
+        argus::crash("Attempt to access invalid vector index %llu (vector size = %llu)", index, vec.size());
     }
     return vec[index].c_str();
 }

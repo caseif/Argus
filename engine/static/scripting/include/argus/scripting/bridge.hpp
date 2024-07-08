@@ -63,8 +63,7 @@ namespace argus {
     // the provided function, and directly returns the result to the caller
     template<typename FuncType,
             typename ReturnType = typename function_traits<FuncType>::return_type>
-    Result<ReturnType, ReflectiveArgumentsError> invoke_function(FuncType fn,
-            const std::vector<ObjectWrapper> &params) {
+    Result<ReturnType, ReflectiveArgumentsError> invoke_function(FuncType fn, std::vector<ObjectWrapper> &params) {
         using ClassType = typename function_traits<FuncType>::class_type;
         using ArgsTuple = typename function_traits<FuncType>::argument_types_wrapped;
 
@@ -82,17 +81,15 @@ namespace argus {
 
         if constexpr (!std::is_void_v<ClassType>) {
             auto &instance_param = params.front();
-            ClassType *instance = reinterpret_cast<ClassType *>(instance_param.is_on_heap
-                    ? instance_param.heap_ptr
-                    : instance_param.stored_ptr);
+            ClassType &instance = instance_param.get_value<ClassType &>();
             auto closure = [&](auto &&... args) -> ReturnType {
                 if constexpr (!std::is_void_v<ReturnType>) {
-                    ReturnType retval = (instance->*fn)(std::forward<decltype(args)>(args)...);
+                    ReturnType retval = (instance.*fn)(std::forward<decltype(args)>(args)...);
                     // destroy parameters if needed
                     (_destroy_ref_wrapped_obj(args), ...);
                     return retval;
                 } else {
-                    (instance->*fn)(std::forward<decltype(args)>(args)...);
+                    (instance.*fn)(std::forward<decltype(args)>(args)...);
                     (_destroy_ref_wrapped_obj(args), ...);
                 }
             };
@@ -146,5 +143,5 @@ namespace argus {
             const std::string &type_name, const std::string &field_name);
 
     [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> invoke_native_function(const BoundFunctionDef &def,
-            const std::vector<ObjectWrapper> &params);
+            std::vector<ObjectWrapper> &params);
 }

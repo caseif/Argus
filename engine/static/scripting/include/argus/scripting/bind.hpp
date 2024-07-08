@@ -34,6 +34,8 @@
 #include <string>
 
 namespace argus {
+    class Transform2D;
+
     [[nodiscard]] Result<BoundTypeDef, BindingError> create_type_def(const std::string &name, size_t size,
             std::type_index type_index, bool is_refable,
             CopyCtorProxy copy_ctor,
@@ -65,7 +67,9 @@ namespace argus {
         }
 
         if constexpr (std::is_destructible_v<T>) {
-            dtor = [](void *obj) { reinterpret_cast<T *>(obj)->~T(); };
+            dtor = [](void *ptr) {
+                static_cast<T *>(ptr)->~T();
+            };
         }
 
         return create_type_def(name, sizeof(T), typeid(T), is_refable,
@@ -129,7 +133,7 @@ namespace argus {
     [[nodiscard]] ProxiedNativeFunction create_function_wrapper(FuncType fn) {
         using ReturnType = typename function_traits<FuncType>::return_type;
         if constexpr (!std::is_void_v<ReturnType>) {
-            return [fn](const std::vector<ObjectWrapper> &params) {
+            return [fn](std::vector<ObjectWrapper> &params) {
                 auto ret_res = invoke_function(fn, params);
                 if (ret_res.is_err()) {
                     return err<ObjectWrapper, ReflectiveArgumentsError>(ret_res.unwrap_err());
@@ -196,7 +200,6 @@ namespace argus {
                                     "unbound element enum type").name;
                 }
 
-                ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
                         std::remove_reference_t<ReturnType>>>, std::string>) {
                     return create_object_wrapper(ret_obj_type, ret.c_str(), ret.size());
@@ -210,17 +213,25 @@ namespace argus {
                         std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
                     return create_vector_object_wrapper_from_heap(ret_obj_type, ret);
                 } else if constexpr (std::is_reference_v<ReturnType>) {
-                    wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_reference_t<ReturnType>> *>(&ret);
+                    ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
+
+                    void *ptr = const_cast<void *>(reinterpret_cast<const void *>(&ret));
+                    wrapper.copy_value_from(&ptr, sizeof(void *));
+
                     return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
                 } else if constexpr (std::is_pointer_v<ReturnType>) {
-                    wrapper.stored_ptr = const_cast<std::remove_const_t<std::remove_pointer_t<ReturnType>> *>(ret);
+                    ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
+
+                    void *ptr = const_cast<void *>(reinterpret_cast<const void *>(ret));
+                    wrapper.copy_value_from(&ptr, sizeof(void *));
+
                     return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
                 } else {
                     return create_object_wrapper(ret_obj_type, &ret, sizeof(ReturnType));
                 }
             };
         } else {
-            return [fn](const std::vector<ObjectWrapper> &params) {
+            return [fn](std::vector<ObjectWrapper> &params) {
                 invoke_function(fn, params);
                 auto type = create_return_object_type<void>();
                 return ok<ObjectWrapper, ReflectiveArgumentsError>(ObjectWrapper(type, 0));
@@ -390,9 +401,7 @@ namespace argus {
         def.m_type = type;
 
         def.m_access_proxy = [name, field](ObjectWrapper &inst, const ObjectType &field_type) {
-            ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
-                    ? inst.heap_ptr
-                    : inst.stored_ptr);
+            ClassType &instance = inst.get_value<ClassType &>();
 
             auto real_type = field_type;
             if constexpr ((std::is_class_v<FieldType>
@@ -405,31 +414,29 @@ namespace argus {
                     // return a pointer to the field so the script can modify its fields
                     real_type.type = IntegralType::Pointer;
                     real_type.size = sizeof(void *);
-                    return std::move(create_auto_object_wrapper(real_type, &(instance->*field))
+                    return std::move(create_auto_object_wrapper(real_type, &(instance.*field))
                             .expect("Failed to create object wrapper while accessing native field "
-                                    + name + " from Lua VM"));
+                                    + name + " from script"));
                 } else {
                     // return a copy of the field since we can't manage a reference to it
                     real_type.is_const = true;
-                    return std::move(create_auto_object_wrapper(real_type, (instance->*field))
+                    return std::move(create_auto_object_wrapper(real_type, (instance.*field))
                             .expect("Failed to create object wrapper while accessing native field "
-                                    + name + " from Lua VM"));
+                                    + name + " from script"));
                 }
             } else {
                 // return the field by value
-                return std::move(create_auto_object_wrapper(real_type, instance->*field)
+                return std::move(create_auto_object_wrapper(real_type, instance.*field)
                         .expect("Failed to create object wrapper while accessing native field "
-                                + name + " from Lua VM"));
+                                + name + " from script"));
             }
         };
 
         if constexpr (!is_const) {
             def.m_assign_proxy = [field](ObjectWrapper &inst, ObjectWrapper &val) {
-                ClassType *instance = reinterpret_cast<ClassType *>(inst.is_on_heap
-                        ? inst.heap_ptr
-                        : inst.stored_ptr);
+                ClassType &instance = inst.get_value<ClassType &>();
 
-                instance->*field = unwrap_param<FieldType>(val, nullptr);
+                instance.*field = unwrap_param<FieldType>(val, nullptr);
             };
         }
 

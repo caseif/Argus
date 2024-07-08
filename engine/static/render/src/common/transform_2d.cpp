@@ -52,11 +52,11 @@ namespace argus {
     // for the move ctor, we just steal the m_pimpl
     Transform2D::Transform2D(Transform2D &&rhs) noexcept:
         m_pimpl(rhs.m_pimpl) {
-        rhs.m_pimpl = nullptr;
+        rhs.m_pimpl = reinterpret_cast<pimpl_Transform2D *>(0xDEADBEEF);
     }
 
     Transform2D::~Transform2D(void) {
-        if (m_pimpl != nullptr) {
+        if (m_pimpl != nullptr && m_pimpl != reinterpret_cast<pimpl_Transform2D *>(0xDEADBEEF)) {
             g_pimpl_pool.destroy(m_pimpl);
         }
     }

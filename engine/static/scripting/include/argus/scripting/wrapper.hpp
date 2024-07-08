@@ -116,9 +116,10 @@ namespace argus {
         using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
 
         // It's possible for a script to pass a vector literal to a bound
-        // function which expects a reference, and without forcing scripting
-        // plugins to detect this scenario and copy the vector to the heap,
-        // we can't automatically determine where the passed vector resides.
+        // function which expects a reference, so we need to force scripting
+        // plugins to detect this scenario and copy the vector to the heap since
+        // otherwise we can't automatically determine where the passed vector
+        // resides.
         // We could require that val _always_ be a reference to heap memory,
         // but that would force additional complexity in plugin code which is
         // undesirable.
@@ -141,9 +142,11 @@ namespace argus {
             return create_callback_object_wrapper(type, val);
         } else if constexpr (std::is_pointer_v<std::remove_cv_t<std::remove_reference_t<T>>>
                 || std::is_reference_v<T>) {
-            return create_object_wrapper(type, const_cast<B *>(val));
+            auto *ptr = const_cast<B *>(val);
+            return create_object_wrapper(type, ptr);
         } else if constexpr (is_reference_wrapper_v<std::remove_cv_t<std::remove_reference_t<T>>>) {
-            return create_object_wrapper(type, &const_cast<B &>(val.get()));
+            auto *ptr = &const_cast<B &>(val.get());
+            return create_object_wrapper(type, &ptr);
         } else {
             return create_object_wrapper(type, &val);
         }
@@ -180,8 +183,11 @@ namespace argus {
     }
 
     template<typename T>
-    static T unwrap_param(const ObjectWrapper &param, ScratchAllocator *scratch) {
+    static T unwrap_param(ObjectWrapper &param, ScratchAllocator *scratch) {
         using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
+
+        assert(param.is_initialized);
+
         if constexpr (is_std_function_v<B>) {
             assert(param.type.type == IntegralType::Callback);
             assert(param.type.callback_type.has_value());
@@ -189,8 +195,8 @@ namespace argus {
             using ReturnType = typename function_traits<B>::return_type;
             using ArgsTuple = typename function_traits<B>::argument_types_wrapped;
 
-            auto proxied_fn = reinterpret_cast<const ProxiedScriptCallback *>(param.get_ptr());
-            auto fn_copy = std::make_shared<ProxiedScriptCallback>(*proxied_fn);
+            auto &proxied_fn = param.get_value<ProxiedScriptCallback>();
+            auto fn_copy = std::make_shared<ProxiedScriptCallback>(proxied_fn);
 
             auto param_types = param.type.callback_type.value()->params;
             for (auto &subparam : param_types) {
@@ -244,35 +250,35 @@ namespace argus {
 
             if constexpr (std::is_same_v<std::remove_cv_t<T>, std::string>) {
                 if (scratch != nullptr) {
-                    return scratch->construct<std::string>(reinterpret_cast<const char *>(
-                            param.is_on_heap ? param.heap_ptr : param.value));
+                    return scratch->construct<std::string>(reinterpret_cast<const char *>(param.get_ptr0()));
                 } else {
-                    return std::string(reinterpret_cast<const char *>(param.is_on_heap ? param.heap_ptr : param.value));
+                    std::string str = param.get_value<const char *>();
+                    return str;
                 }
             } else {
                 assert(scratch != nullptr);
-                return scratch->construct<std::string>(reinterpret_cast<const char *>(
-                        param.is_on_heap ? param.heap_ptr : param.value));
+                std::string &str = scratch->construct<std::string>(reinterpret_cast<const char *>(param.get_ptr0()));
+                return str;
             }
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, std::string>) {
             assert(param.type.type == IntegralType::String);
             assert(scratch != nullptr);
-            return &scratch->construct<std::string>(reinterpret_cast<const char *>(
-                    param.is_on_heap ? param.heap_ptr : param.value));
+            std::string *str = &scratch->construct<std::string>(reinterpret_cast<const char *>(param.get_ptr0()));
+            return str;
         } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
             using E = typename std::remove_cv_t<remove_reference_wrapper_t<T>>::value_type;
 
-            const VectorObject *obj = reinterpret_cast<const VectorObject *>(param.get_ptr());
+            const auto &obj = param.get_value<VectorObject>();
 
-            if (obj->get_object_type() == VectorObjectType::ArrayBlob) {
-                const ArrayBlob *blob = reinterpret_cast<const ArrayBlob *>(obj);
+            if (obj.get_object_type() == VectorObjectType::ArrayBlob) {
+                const ArrayBlob &blob = reinterpret_cast<const ArrayBlob &>(obj);
                 std::vector<E> vec;
-                vec.reserve(blob->size());
+                vec.reserve(blob.size());
                 if constexpr (std::is_trivially_copyable_v<E>) {
-                    vec.insert(vec.end(), blob->data(), reinterpret_cast<E *>(blob->data()) + blob->size());
+                    vec.insert(vec.end(), blob.data(), reinterpret_cast<E *>(blob.data()) + blob.size());
                 } else {
-                    for (size_t i = 0; i < blob->size(); i++) {
-                        vec.push_back(blob->at<E>(i));
+                    for (size_t i = 0; i < blob.size(); i++) {
+                        vec.push_back(blob.at<E>(i));
                     }
                 }
 
@@ -282,24 +288,26 @@ namespace argus {
                 } else {
                     return vec;
                 }
-            } else if (obj->get_object_type() == VectorObjectType::VectorWrapper) {
-                const VectorWrapper *wrapper = reinterpret_cast<const VectorWrapper *>(obj);
-                return wrapper->get_underlying_vector<E>();
+            } else if (obj.get_object_type() == VectorObjectType::VectorWrapper) {
+                const auto &wrapper = reinterpret_cast<const VectorWrapper &>(obj);
+                return wrapper.get_underlying_vector<E>();
             } else {
                 crash("Invalid vector object type magic");
             }
         } else if constexpr (is_reference_wrapper_v<T>) {
             assert(param.type.type == IntegralType::Pointer);
-            return *reinterpret_cast<std::remove_reference_t<remove_reference_wrapper_t<T>> *>(
-                    param.is_on_heap ? param.heap_ptr : param.stored_ptr);
+            if constexpr (std::is_same_v<B, std::string>) {
+                return std::ref(param.get_value<const char *>());
+            } else {
+                return param.get_value<std::remove_reference_t<remove_reference_wrapper_t<T>>>();
+            }
         } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>) {
             assert(param.type.type == IntegralType::Pointer);
-            return reinterpret_cast<std::remove_pointer_t<std::remove_reference_t<T>> *>(
-                    param.is_on_heap
-                            ? param.heap_ptr
-                            : param.type.type == IntegralType::String
-                            ? param.value
-                            : param.stored_ptr);
+            if constexpr (std::is_same_v<B, std::string>) {
+                return param.get_value<const char *>();
+            } else {
+                return param.get_value<std::remove_pointer_t<std::remove_reference_t<T>>>();
+            }
         } else {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
@@ -314,9 +322,15 @@ namespace argus {
     }
 
     template<typename ArgsTuple, size_t... Is>
-    ArgsTuple make_tuple_from_params(const std::vector<ObjectWrapper> &params, size_t params_off,
+    ArgsTuple make_tuple_from_params(std::vector<ObjectWrapper> &params, size_t params_off,
             std::index_sequence<Is...>, ScratchAllocator &scratch) {
         return std::make_tuple(unwrap_param<std::tuple_element_t<Is, ArgsTuple>>(
                 params[Is + params_off], &scratch)...);
     }
+
+    void copy_wrapped_object(const ObjectType &obj_type, void *dst, const void *src, size_t max_len);
+
+    void move_wrapped_object(const ObjectType &obj_type, void *dst, void *src, size_t size);
+
+    void destruct_wrapped_object(const ObjectType &obj_type, void *ptr);
 }

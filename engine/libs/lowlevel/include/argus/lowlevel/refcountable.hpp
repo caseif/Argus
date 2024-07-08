@@ -18,32 +18,48 @@
 
 #pragma once
 
+#include "argus/lowlevel/crash.hpp"
+#include "argus/lowlevel/debug.hpp"
+
+#include <atomic>
 #include <utility>
 
 #include <cstddef>
 
 namespace argus {
-    template<typename T>
+    template<typename T, bool Atomic = false>
     struct RefCountable {
         T value;
-        size_t refcount;
+        std::conditional_t<Atomic, std::atomic_uint32_t, uint32_t> refcount;
 
         RefCountable(const T &value) :
-                value(value),
-                refcount(1) {
+            value(value),
+            refcount(1) {
         }
 
         RefCountable(T &&value) :
-                value(std::move(value)),
-                refcount(1) {
+            value(std::move(value)),
+            refcount(1) {
         }
 
-        void acquire(void) {
-            refcount++;
+        void acquire(uint32_t acquire_count = 1) {
+            if constexpr (Atomic) {
+                refcount.fetch_add(acquire_count);
+            } else {
+                refcount += acquire_count;
+            }
         }
 
-        size_t release(void) {
-            return --refcount;
+        size_t release(uint32_t release_count = 1) {
+            if constexpr (Atomic) {
+                auto prev_val = refcount.fetch_sub(release_count);
+                assert_ll(release_count <= prev_val);
+                return prev_val - release_count;
+            } else {
+                assert_ll(release_count <= refcount);
+                refcount -= release_count;
+                return refcount;
+            }
         }
 
         inline operator T(void) {
@@ -54,4 +70,7 @@ namespace argus {
             return &value;
         }
     };
+
+    template<typename T>
+    using AtomicRefCountable = RefCountable<T, true>;
 }

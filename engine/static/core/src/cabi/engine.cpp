@@ -18,9 +18,9 @@
 
 #include "argus/core/cabi/engine.h"
 
-#include "argus/core/engine.hpp"
+#include "argus/lowlevel/debug.hpp"
 
-#include <cassert>
+#include "argus/core/engine.hpp"
 
 static argus::DeltaCallback _wrap_delta_callback(delta_callback_t callback) {
     return [callback](auto dur) {

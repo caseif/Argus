@@ -343,7 +343,7 @@ namespace argus {
 
     [[noreturn]] void crash(const char *format, va_list args) {
         Logger::default_logger().log_error(g_log_level_fatal, format, args);
-        std::exit(1);
+        std::abort();
     }
 
     [[noreturn]] void _crash_va(const char *format, ...) {

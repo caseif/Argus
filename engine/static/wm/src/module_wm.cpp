@@ -20,6 +20,7 @@
 #include "argus/lowlevel/macros.hpp"
 #include "argus/lowlevel/time.hpp"
 
+#include "argus/core/client_properties.hpp"
 #include "argus/core/downstream_config.hpp"
 #include "argus/core/engine.hpp"
 #include "argus/core/event.hpp"
@@ -145,6 +146,9 @@ namespace argus {
             case LifecycleStage::Init: {
                 #if defined(SDL_HINT_VIDEODRIVER) && SDL_VIDEO_DRIVER_WAYLAND
                 SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11,wayland");
+                #endif
+                #if defined(SDL_HINT_APP_NAME)
+                SDL_SetHint(SDL_HINT_APP_NAME, get_client_name().c_str());
                 #endif
                 if (SDL_Init(k_sdl_subsystems) != 0) {
                     crash("SDL init failed (%s)", SDL_GetError());

@@ -18,18 +18,19 @@
 
 #pragma once
 
+#include "argus/lowlevel/crash.hpp"
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
 #ifdef _ARGUS_DEBUG_MODE
 #define _affirm_precond(cond, fmt, file, line)  ((cond) \
         ? void(0) \
-        : crash("Precondition failed: " file ":" STRINGIZE(line) ": " #cond " (" fmt ")"))
-#define affirm_precond(cond, fmt)  _affirm_precond(cond, fmt, __FILE__, __LINE__)
+        : ::argus::crash("Precondition failed: " file ":" STRINGIZE(line) ": " #cond " (" fmt ")"))
+#define affirm_precond(cond, fmt)  _affirm_precond((cond), fmt, __FILE__, __LINE__)
 #else
 #define affirm_precond(cond, fmt)  ((cond) \
         ? void(0) \
-        : crash("Precondition failed: " #cond " (" fmt ")"))
+        : argus::crash("Precondition failed: " #cond " (" fmt ")"))
 #endif
 
 #ifdef assert
@@ -38,8 +39,14 @@
 #ifdef _ARGUS_DEBUG_MODE
 #define _argus_assert(cond, file, line) ((cond) \
         ? void(0) \
-        : crash("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
-#define assert(cond) _argus_assert(cond, __FILE__, __LINE__)
+        : ::argus::crash("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
+#define assert(...) _argus_assert((__VA_ARGS__), __FILE__, __LINE__)
+
+#define _argus_assert_ll(cond, file, line) ((cond) \
+        ? void(0) \
+        : ::argus::crash_ll("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
+#define assert_ll(...) _argus_assert_ll((__VA_ARGS__), __FILE__, __LINE__)
 #else
-#define assert(cond) ((cond) ? (void(0)) : (crash("Assertion failed: " #cond)))
+#define assert(cond) ((cond) ? (void(0)) : (argus::crash("Assertion failed: " #cond)))
+#define assert_ll(cond) ((cond) ? (void(0)) : (argus::crash_ll("Assertion failed: " #cond)))
 #endif

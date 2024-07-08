@@ -30,53 +30,10 @@
 #include <cstring>
 
 namespace argus {
-    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr, size_t size) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr,
+            size_t size) {
         ObjectWrapper wrapper(type, size);
-
-        switch (type.type) {
-            case IntegralType::Vector:
-                crash("create_object_wrapper called for Vector type (use vector-specific function instead)");
-            case IntegralType::Pointer: {
-                // for pointer types we copy the pointer itself
-                memcpy(wrapper.get_ptr(), &ptr, wrapper.buffer_size);
-                break;
-            }
-            case IntegralType::Struct: {
-                // for complex value types we indirectly use the copy constructor
-                assert(type.type_index.has_value());
-
-                auto bound_type = get_bound_type(type.type_index.value())
-                        .expect("Tried to create ObjectWrapper with unbound struct type");
-                assert(bound_type.copy_ctor != nullptr);
-                bound_type.copy_ctor(wrapper.get_ptr(), ptr);
-                wrapper.copy_ctor = bound_type.copy_ctor;
-                wrapper.move_ctor = bound_type.move_ctor;
-                wrapper.dtor = bound_type.dtor;
-
-                break;
-            }
-            case IntegralType::Callback: {
-                // we use the copy constructor instead of doing a bitwise copy because
-                // std::function isn't trivially copyable
-                new(wrapper.get_ptr()) ProxiedScriptCallback(*reinterpret_cast<const ProxiedScriptCallback *>(ptr));
-                wrapper.copy_ctor = [](void *dst, const void *src) {
-                    new(dst) ProxiedScriptCallback(*reinterpret_cast<const ProxiedScriptCallback *>(src));
-                };
-                wrapper.move_ctor = [](void *dst, void *src) {
-                    new(dst) ProxiedScriptCallback(std::move(*reinterpret_cast<ProxiedScriptCallback *>(src)));
-                };
-                wrapper.dtor = [](void *rhs) { reinterpret_cast<ProxiedScriptCallback *>(rhs)->~ProxiedScriptCallback(); };
-
-                break;
-            }
-            default: {
-                // for everything else we bitwise-copy the value
-                // note that std::type_index is trivially copyable
-                memcpy(wrapper.get_ptr(), ptr, wrapper.buffer_size);
-
-                break;
-            }
-        }
+        wrapper.copy_value_from(ptr, size);
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
@@ -105,23 +62,19 @@ namespace argus {
 
         switch (type.size) {
             case 1: {
-                assert(wrapper.buffer_size >= sizeof(int8_t));
-                *reinterpret_cast<int8_t *>(wrapper.get_ptr()) = int8_t(val);
+                wrapper.store_value(int8_t(val));
                 break;
             }
             case 2: {
-                assert(wrapper.buffer_size >= sizeof(int16_t));
-                *reinterpret_cast<int16_t *>(wrapper.get_ptr()) = int16_t(val);
+                wrapper.store_value(int16_t(val));
                 break;
             }
             case 4: {
-                assert(wrapper.buffer_size >= sizeof(int32_t));
-                *reinterpret_cast<int32_t *>(wrapper.get_ptr()) = int32_t(val);
+                wrapper.store_value(int32_t(val));
                 break;
             }
             case 8: {
-                assert(wrapper.buffer_size >= sizeof(int64_t));
-                *reinterpret_cast<int64_t *>(wrapper.get_ptr()) = val;
+                wrapper.store_value(int64_t(val));
                 break;
             }
             default:
@@ -136,14 +89,11 @@ namespace argus {
 
         switch (type.size) {
             case 4: {
-                assert(wrapper.buffer_size >= sizeof(float));
-                auto val_f32 = float(val);
-                *reinterpret_cast<float *>(wrapper.get_ptr()) = val_f32;
+                wrapper.store_value(float(val));
                 break;
             }
             case 8: {
-                assert(wrapper.buffer_size >= sizeof(double));
-                *reinterpret_cast<double *>(wrapper.get_ptr()) = val;
+                wrapper.store_value(double(val));
                 break;
             }
             default:
@@ -158,7 +108,7 @@ namespace argus {
 
         ObjectWrapper wrapper(type, type.size);
 
-        *reinterpret_cast<bool *>(wrapper.get_ptr()) = val;
+        wrapper.store_value(val);
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
@@ -170,12 +120,13 @@ namespace argus {
     Result<ObjectWrapper, ReflectiveArgumentsError> create_string_object_wrapper(const ObjectType &type,
             const std::string &str) {
         affirm_precond(type.type == IntegralType::String, "Cannot create object wrapper (string-specific overload "
-                                                          "called for non-string-typed value");
+                "called for non-string-typed value");
 
         return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
 
-    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type, const ProxiedScriptCallback &fn) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type,
+            const ProxiedScriptCallback &fn) {
         affirm_precond(type.type == IntegralType::Callback,
                 "Cannot create object wrapper "
                 "(callback-specific overload called for non-callback-typed value)");
@@ -225,7 +176,7 @@ namespace argus {
         size_t blob_size = sizeof(ArrayBlob) + el_size * count;
 
         ObjectWrapper wrapper(vec_type, blob_size);
-        ArrayBlob &blob = *new(wrapper.get_ptr()) ArrayBlob(el_size, count,
+        ArrayBlob &blob = wrapper.emplace<ArrayBlob>(el_size, count,
                 el_type.type == IntegralType::String
                         ? +[](void *ptr) { reinterpret_cast<std::string *>(ptr)->~basic_string(); }
                         : nullptr);
@@ -288,8 +239,180 @@ namespace argus {
 
         ObjectWrapper wrapper(vec_type, sizeof(VectorWrapper));
 
-        new(wrapper.get_ptr()) VectorWrapper(std::move(vec));
+        wrapper.emplace<VectorWrapper>(std::move(vec));
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
+    }
+
+    template<bool is_move, typename T = std::conditional_t<is_move, ArrayBlob, const ArrayBlob>>
+    static void _copy_or_move_array_blob(const ObjectType &obj_type, void *dst, T &src, size_t max_len) {
+        auto el_size = src.element_size();
+        auto count = src.size();
+
+        ObjectType &el_type = *obj_type.element_type.value();
+
+        bool is_trivially_copyable = el_type.type != IntegralType::String
+                && !(el_type.type == IntegralType::Struct
+                        && get_bound_type(el_type.type_index.value())
+                                .expect("Tried to copy/move ArrayBlob with unbound element type").copy_ctor != nullptr);
+
+        size_t blob_size = sizeof(ArrayBlob) + src.element_size() * src.size();
+
+        affirm_precond(max_len >= blob_size, "Can't copy/move ArrayBlob: dest is too small");
+
+        ArrayBlob &new_blob = *new(dst) ArrayBlob(el_size, count, src.element_dtor());
+
+        if (is_trivially_copyable) {
+            // can just copy the whole thing in one go and avoid looping
+            memcpy(new_blob.data(), src.data(), el_size * count);
+        } else {
+            assert(count < SIZE_MAX);
+
+            auto bound_type_res = get_bound_type(el_type.type_index.value());
+            const BoundTypeDef &bound_type = bound_type_res
+                    .expect("Tried to copy/move ArrayBlob with unbound element type");
+            assert(bound_type.copy_ctor != nullptr);
+
+            for (size_t i = 0; i < count; i++) {
+                std::conditional_t<is_move, void *, const void *> src_ptr = src[i];
+                void *dst_ptr = new_blob[i];
+
+                if constexpr (is_move) {
+                    move_wrapped_object(el_type, dst_ptr, src_ptr, el_size);
+                } else {
+                    copy_wrapped_object(el_type, dst_ptr, src_ptr, el_size);
+                }
+            }
+        }
+    }
+
+    template<typename T, bool is_move, typename SrcPtr = std::conditional_t<is_move, void *, const void *>>
+    static void _copy_or_move_type(void *dst, SrcPtr src, size_t max_len) {
+        assert(max_len >= sizeof(T));
+        if constexpr (is_move) {
+            new(dst) T(std::move(*reinterpret_cast<T *>(src)));
+        } else {
+            new(dst) T(*reinterpret_cast<const T *>(src));
+        }
+    }
+
+    template<typename T>
+    static void _destruct_type(void *ptr) {
+        reinterpret_cast<T *>(ptr)->~T();
+    }
+
+    template<bool is_move, typename SrcPtr = std::conditional<is_move, void *, const void *>>
+    static void _copy_or_move_wrapped_object(const ObjectType &obj_type, void *dst, SrcPtr src, size_t size) {
+        if (obj_type.type != IntegralType::String) {
+            affirm_precond(size >= obj_type.size, "Can't copy wrapped object: dest size is too small");
+        }
+
+        switch (obj_type.type) {
+            case IntegralType::Void: {
+                // no-op
+
+                break;
+            }
+            case IntegralType::Struct: {
+                // for complex value types we indirectly use the copy/move
+                // constructors
+
+                assert(obj_type.type_index.has_value());
+
+                auto bound_type = get_bound_type(obj_type.type_index.value())
+                        .expect("Tried to copy/move wrapped object with unbound struct type");
+                if constexpr (is_move) {
+                    assert(bound_type.move_ctor != nullptr);
+                    bound_type.move_ctor(dst, src);
+                } else {
+                    assert(bound_type.copy_ctor != nullptr);
+                    bound_type.copy_ctor(dst, src);
+                }
+
+                break;
+            }
+            case IntegralType::Pointer: {
+                // copy the pointer itself
+
+                memcpy(dst, src, sizeof(void *));
+
+                break;
+            }
+            case IntegralType::Callback: {
+                // we use the copy constructor for callbacks instead of doing a
+                // bitwise copy because std::function isn't trivially copyable
+                _copy_or_move_type<ProxiedScriptCallback, is_move>(dst, src, size);
+
+                break;
+            }
+            case IntegralType::Vector: {
+                auto &src_blob = *reinterpret_cast<std::conditional_t<is_move, ArrayBlob, const ArrayBlob> *>(src);
+                _copy_or_move_array_blob<is_move>(obj_type, dst, src_blob, size);
+
+                break;
+            }
+            case IntegralType::VectorRef: {
+                _copy_or_move_type<VectorWrapper, is_move>(dst, src, size);
+
+                break;
+            }
+            default: {
+                // for everything else we bitwise-copy the value
+                // note that std::type_index is trivially copyable
+                memcpy(dst, src, size);
+
+                break;
+            }
+        }
+    }
+
+    void copy_wrapped_object(const ObjectType &obj_type, void *dst, const void *src, size_t size) {
+        _copy_or_move_wrapped_object<false>(obj_type, dst, src, size);
+    }
+
+    void move_wrapped_object(const ObjectType &obj_type, void *dst, void *src, size_t size) {
+        _copy_or_move_wrapped_object<true>(obj_type, dst, src, size);
+    }
+
+    void destruct_wrapped_object(const ObjectType &obj_type, void *ptr) {
+        switch (obj_type.type) {
+            case IntegralType::Void: {
+                // no-op
+
+                break;
+            }
+            case IntegralType::Struct: {
+                // for complex value types we indirectly use the copy/move
+                // constructors
+
+                assert(obj_type.type_index.has_value());
+
+                auto bound_type = get_bound_type(obj_type.type_index.value())
+                        .expect("Tried to destruct wrapped object with unbound struct type");
+                assert(bound_type.dtor != nullptr);
+                bound_type.dtor(ptr);
+
+                break;
+            }
+            case IntegralType::Callback: {
+                _destruct_type<ProxiedScriptCallback>(ptr);
+
+                break;
+            }
+            case IntegralType::Vector: {
+                // ArrayBlob destructor implicitly destructs its elements
+                _destruct_type<ArrayBlob>(ptr);
+
+                break;
+            }
+            case IntegralType::VectorRef: {
+                _destruct_type<VectorWrapper>(ptr);
+
+                break;
+            }
+            default: {
+                // no-op
+            }
+        }
     }
 }

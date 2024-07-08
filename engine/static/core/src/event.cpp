@@ -18,6 +18,7 @@
 
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/logging.hpp"
+#include "argus/lowlevel/refcountable.hpp"
 
 #include "argus/core/event.hpp"
 #include "internal/core/callback_util.hpp"
@@ -40,10 +41,10 @@ namespace argus {
     static CallbackList<ArgusEventHandler> g_update_event_listeners;
     static CallbackList<ArgusEventHandler> g_render_event_listeners;
 
-    static std::queue<RefCountable<ArgusEvent> *> g_update_event_queue;
+    static std::queue<AtomicRefCountable<ArgusEvent *> *> g_update_event_queue;
     static std::mutex g_update_event_queue_mutex;
 
-    static std::queue<RefCountable<ArgusEvent> *> g_render_event_queue;
+    static std::queue<AtomicRefCountable<ArgusEvent *> *> g_render_event_queue;
     static std::mutex g_render_event_queue_mutex;
 
     void process_event_queue(TargetThread target_thread) {
@@ -61,7 +62,7 @@ namespace argus {
         // re-lock the queue.
         mutex.lock();
         auto queue_copy = queue;
-        std::queue<RefCountable<ArgusEvent> *>().swap(queue); // clear queue
+        std::queue<AtomicRefCountable<ArgusEvent *> *>().swap(queue); // clear queue
         mutex.unlock();
 
         listeners.list_mutex.lock_shared();
@@ -72,15 +73,15 @@ namespace argus {
             auto listeners_copy = listeners.lists;
             for (auto ordering : ORDERINGS) {
                 for (auto &listener : listeners_copy[ordering]) {
-                    if (int(listener.value.type_id == event.ptr->type_id)) {
-                        listener.value.callback(*event.ptr, listener.value.data);
+                    if (int(listener.value.type_id == event.value->type_id)) {
+                        listener.value.callback(*event.value, listener.value.data);
                     }
                 }
             }
 
             auto rc = event.release();
             if (rc == 0) {
-                delete event.ptr;
+                delete event.value;
                 delete &event;
             }
 
@@ -164,7 +165,7 @@ namespace argus {
         // we push it to multiple queues so that each thread can pop its queue
         // without affecting the other
 
-        auto event_ref = new RefCountable<ArgusEvent>(&event);
+        auto event_ref = new AtomicRefCountable<ArgusEvent *>(&event);
 
         event_ref->acquire(2);
 

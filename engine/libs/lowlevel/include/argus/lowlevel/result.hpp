@@ -361,26 +361,28 @@ namespace argus {
 
         if constexpr (!std::is_void_v<E>) {
             if constexpr (std::is_reference_v<T>) {
-                return Result<T, E>(ResultStorage<T, E> {
+                return Result<T, E>(std::move(ResultStorage<T, E> {
                         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
                                 std::in_place_index<0>, std::move(std::reference_wrapper<std::remove_reference_t<T>>(
                                         std::forward<U>(value)))
                         }
-                });
+                }));
             } else {
-                return Result<T, E>(ResultStorage<T, E> {
+                return Result<T, E>(std::move(ResultStorage<T, E> {
                         std::variant<reference_wrapped_t<T>, reference_wrapped_t<E>> {
                                 std::in_place_index<0>, std::move(std::forward<U>(value))
                         }
-                });
+                }));
             }
         } else {
             if constexpr (std::is_reference_v<T>) {
-                return Result<T, E>(ResultStorage<T, E> {
-                        std::make_optional(std::reference_wrapper<std::remove_reference_t<T>>(std::forward<U>(value))) });
+                return Result<T, E>(std::move(ResultStorage<T, E> {
+                        std::make_optional(std::reference_wrapper<std::remove_reference_t<T>>(std::forward<U>(value)))
+                }));
             } else {
-                return Result<T, E>(ResultStorage<T, E> {
-                        std::make_optional(std::forward<U>(value)) });
+                return Result<T, E>(std::move(ResultStorage<T, E> {
+                        std::make_optional(std::forward<U>(value))
+                }));
             }
         }
     }

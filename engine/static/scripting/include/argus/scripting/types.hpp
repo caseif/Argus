@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/result.hpp"
 
 #include "argus/core/engine.hpp"
@@ -27,11 +28,11 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_set>
 #include <vector>
 
-#include <cassert>
 #include <cstdint>
 
 namespace argus {
@@ -109,106 +110,15 @@ namespace argus {
         ObjectType return_type;
     };
 
-    struct ObjectWrapper {
-        ObjectType type;
-        union {
-            // small values/structs can be stored directly in this struct
-            unsigned char value[64];
-            // alias for wrappers which wrap pointer or reference types
-            void *stored_ptr;
-            // larger structs must be allocated on the heap and accessed through this alias
-            void *heap_ptr;
-        };
-        bool is_on_heap;
-        size_t buffer_size;
-        CopyCtorProxy copy_ctor;
-        MoveCtorProxy move_ctor;
-        DtorProxy dtor;
-
-        ObjectWrapper(void);
-
-        ObjectWrapper(const ObjectType &type, size_t size);
-
-        // copying must be explicit, generally this type should only be moved
-        ObjectWrapper(const ObjectWrapper &rhs) = delete;
-
-        ObjectWrapper(ObjectWrapper &&rhs) noexcept;
-
-        ~ObjectWrapper(void);
-
-        ObjectWrapper &operator=(const ObjectWrapper &rhs) = delete;
-
-        ObjectWrapper &operator=(ObjectWrapper &&rhs) noexcept;
-
-        void copy_value(void *dest, size_t size) const;
-
-        void *get_ptr(void) {
-            return is_on_heap ? heap_ptr : value;
-        }
-
-        const void *get_ptr(void) const {
-            return is_on_heap ? heap_ptr : value;
-        }
-    };
-
+    struct ObjectWrapper;
     struct ReflectiveArgumentsError;
     struct ScriptInvocationError;
 
-    typedef std::function<Result<ObjectWrapper, ReflectiveArgumentsError>(const std::vector<ObjectWrapper> &)>
+    typedef std::function<Result<ObjectWrapper, ReflectiveArgumentsError>(std::vector<ObjectWrapper> &)>
             ProxiedNativeFunction;
 
     typedef std::function<Result<ObjectWrapper, ScriptInvocationError>(const std::vector<ObjectWrapper> &)>
             ProxiedScriptCallback;
-
-    struct BoundFunctionDef {
-        std::string name;
-        FunctionType type;
-        bool is_const;
-        std::vector<ObjectType> params;
-        ObjectType return_type;
-        ProxiedNativeFunction handle;
-    };
-
-    struct BoundFieldDef {
-        std::string m_name;
-        ObjectType m_type;
-        //TODO: we probably only need one function for getting the value
-        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_access_proxy;
-        std::optional<std::function<void(ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
-
-        ObjectWrapper get_value(ObjectWrapper &wrapper) const;
-
-        void set_value(ObjectWrapper &instance, ObjectWrapper &value) const;
-    };
-
-    struct BoundTypeDef {
-        std::string name;
-        size_t size;
-        std::type_index type_index;
-        // whether references to the type can be passed to scripts
-        // (i.e. whether the type derives from AutoCleanupable)
-        bool is_refable;
-        // the copy and move ctors and dtor are only used for struct value and callback types
-        CopyCtorProxy copy_ctor;
-        MoveCtorProxy move_ctor;
-        DtorProxy dtor;
-        std::map<std::string, BoundFunctionDef> instance_functions;
-        std::map<std::string, BoundFunctionDef> extension_functions;
-        std::map<std::string, BoundFunctionDef> static_functions;
-        std::map<std::string, BoundFieldDef> fields;
-    };
-
-    struct BoundEnumDef {
-        std::string name;
-        size_t width;
-        std::type_index type_index;
-        std::map<std::string, uint64_t> values;
-        std::unordered_set<uint64_t> all_ordinals;
-    };
-
-    struct free_deleter_t {
-        void operator()(void *ptr) { free(ptr); }
-    };
 
     enum class VectorObjectType {
         ArrayBlob,
@@ -237,15 +147,22 @@ namespace argus {
         const size_t m_element_size;
         const size_t m_count;
 
-        void (*m_element_dtor)(void *);
+        DtorProxy m_element_dtor;
 
         unsigned char m_blob[0];
 
       public:
-        ArrayBlob(size_t element_size, size_t count, void(*element_dtor)(void *));
+        ArrayBlob(size_t element_size, size_t count, DtorProxy element_dtor);
 
         template<typename E>
-        ArrayBlob(size_t count) : ArrayBlob(sizeof(E), count, [](void *ptr) { reinterpret_cast<E *>(ptr).~E(); }) {
+        ArrayBlob(size_t count):
+                ArrayBlob(
+                        sizeof(E),
+                        count,
+                        !std::is_trivially_destructible_v<E>
+                                ? [](void *ptr) { reinterpret_cast<E *>(ptr).~E(); }
+                                : nullptr
+                ) {
         }
 
         ArrayBlob(const ArrayBlob &) = delete;
@@ -262,9 +179,11 @@ namespace argus {
 
         [[nodiscard]] size_t element_size(void) const;
 
-        void *data(void);
+        [[nodiscard]] DtorProxy element_dtor(void) const;
 
-        const void *data(void) const;
+        [[nodiscard]] void *data(void);
+
+        [[nodiscard]] const void *data(void) const;
 
         void *operator[](size_t index);
 
@@ -377,6 +296,204 @@ namespace argus {
         [[nodiscard]] std::vector<E> &get_underlying_vector(void) {
             return *reinterpret_cast<std::vector<E> *>(m_underlying_vec);
         }
+    };
+
+    template<typename T>
+    static void _validate_value_type(const ObjectType &type) {
+        static_assert(!std::is_pointer_v<T>, "Use reference type instead of pointer");
+
+        if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
+                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef)) {
+            assert(type.size == sizeof(T));
+        }
+
+        switch (type.type) {
+            case IntegralType::Void: {
+                crash("Cannot get void value from ObjectWrapper");
+            }
+            case IntegralType::Integer: {
+                assert(std::is_integral_v<T>);
+                break;
+            }
+            case IntegralType::Float: {
+                assert(std::is_floating_point_v<T>);
+                break;
+            }
+            case IntegralType::Boolean: {
+                assert(std::is_integral_v<T>);
+                break;
+            }
+            case IntegralType::String: {
+                assert(false);
+            }
+            case IntegralType::Struct: {
+                assert(type.type_index.value() == typeid(T));
+                break;
+            }
+            case IntegralType::Pointer: {
+                assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                break;
+            }
+            case IntegralType::Enum: {
+                if constexpr (std::is_enum_v<T>) {
+                    assert(type.type_index.value() == typeid(T));
+                } else {
+                    assert(std::is_integral_v<T>);
+                }
+                break;
+            }
+            case IntegralType::Callback: {
+                assert(std::is_same_v<T, ProxiedNativeFunction> || std::is_same_v<T, ProxiedScriptCallback>);
+                break;
+            }
+            case IntegralType::Type: {
+                assert(std::is_same_v<T, std::type_index>);
+                break;
+            }
+            case IntegralType::Vector: {
+                assert(std::is_same_v<T, ArrayBlob>);
+                break;
+            }
+            case IntegralType::VectorRef: {
+                assert(std::is_same_v<T, VectorWrapper>);
+                break;
+            }
+            default: {
+                crash("Unhandled IntegralType ordinal %d", type.type);
+            }
+        }
+    }
+
+    struct ObjectWrapper {
+        ObjectType type;
+        union {
+            // small values/structs can be stored directly in this struct
+            unsigned char value[64];
+            // larger structs must be allocated on the heap and accessed through this alias
+            void *heap_ptr;
+        };
+        bool is_on_heap;
+        size_t buffer_size;
+        bool is_initialized;
+
+        ObjectWrapper(void);
+
+        ObjectWrapper(const ObjectType &type, size_t size);
+
+        // copying must be explicit, generally this type should only be moved
+        ObjectWrapper(const ObjectWrapper &rhs) = delete;
+
+        ObjectWrapper(ObjectWrapper &&rhs) noexcept;
+
+        ~ObjectWrapper(void);
+
+        ObjectWrapper &operator=(const ObjectWrapper &rhs) = delete;
+
+        ObjectWrapper &operator=(ObjectWrapper &&rhs) noexcept;
+
+        void *get_ptr0(void);
+
+        const void *get_ptr0(void) const;
+
+        template<typename T>
+        T &get_value(void) {
+            static_assert(!is_reference_wrapper_v<T>, "Use lvalue reference instead of reference_wrapper");
+            assert(is_initialized);
+
+            if constexpr (std::is_pointer_v<T> && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>) {
+                return reinterpret_cast<char *>(get_ptr0());
+            } else {
+                _validate_value_type<T>(type);
+
+                if (type.type == IntegralType::Pointer) {
+                    assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                    return **reinterpret_cast<std::remove_reference_t<T> **>(get_ptr0());
+                } else {
+                    return *reinterpret_cast<std::remove_reference_t<T> *>(get_ptr0());
+                }
+            }
+        }
+
+        template<typename T>
+        const T &get_value(void) const {
+            assert(is_initialized);
+
+            return reinterpret_cast<const T &>(get_value<T>());
+        }
+
+        template<typename T>
+        void store_value(T val) {
+            assert(!is_initialized);
+            assert(this->buffer_size == sizeof(T));
+            _validate_value_type<T>(type);
+
+            *reinterpret_cast<T *>(get_ptr0()) = val;
+            is_initialized = true;
+        }
+
+        template<typename T, typename... Args>
+        T &emplace(Args... args) {
+            assert(!is_initialized);
+            _validate_value_type<T>(type);
+
+            new(get_ptr0()) T(args...);
+            is_initialized = true;
+            return get_value<T>();
+        }
+
+        void copy_value_from(const void *src, size_t size);
+
+        void copy_value_into(void *dest, size_t size) const;
+    };
+
+    struct BoundFunctionDef {
+        std::string name;
+        FunctionType type;
+        bool is_const;
+        std::vector<ObjectType> params;
+        ObjectType return_type;
+        ProxiedNativeFunction handle;
+    };
+
+    struct BoundFieldDef {
+        std::string m_name;
+        ObjectType m_type;
+        //TODO: we probably only need one function for getting the value
+        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_access_proxy;
+        std::optional<std::function<void(ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
+
+        ObjectWrapper get_value(ObjectWrapper &wrapper) const;
+
+        void set_value(ObjectWrapper &instance, ObjectWrapper &value) const;
+    };
+
+    struct BoundTypeDef {
+        std::string name;
+        size_t size;
+        std::type_index type_index;
+        // whether references to the type can be passed to scripts
+        // (i.e. whether the type derives from AutoCleanupable)
+        bool is_refable;
+        // the copy and move ctors and dtor are only used for struct value and callback types
+        CopyCtorProxy copy_ctor;
+        MoveCtorProxy move_ctor;
+        DtorProxy dtor;
+        std::map<std::string, BoundFunctionDef> instance_functions;
+        std::map<std::string, BoundFunctionDef> extension_functions;
+        std::map<std::string, BoundFunctionDef> static_functions;
+        std::map<std::string, BoundFieldDef> fields;
+    };
+
+    struct BoundEnumDef {
+        std::string name;
+        size_t width;
+        std::type_index type_index;
+        std::map<std::string, uint64_t> values;
+        std::unordered_set<uint64_t> all_ordinals;
+    };
+
+    struct free_deleter_t {
+        void operator()(void *ptr) { free(ptr); }
     };
 
     enum class DataFlowDirection {

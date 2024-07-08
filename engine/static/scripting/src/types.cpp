@@ -21,11 +21,11 @@
 #include "argus/core/engine.hpp"
 
 #include "argus/scripting/types.hpp"
+#include "argus/scripting/wrapper.hpp"
 
 #include <new>
 #include <optional>
 
-#include <cassert>
 #include <cstring>
 
 namespace argus {
@@ -110,16 +110,12 @@ namespace argus {
         value(),
         is_on_heap(false),
         buffer_size(0),
-        copy_ctor(nullptr),
-        move_ctor(nullptr),
-        dtor(nullptr) {
+        is_initialized(false) {
     }
 
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size):
         type(type),
-        copy_ctor(nullptr),
-        move_ctor(nullptr),
-        dtor(nullptr) {
+        is_initialized(false) {
         assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
 
@@ -146,54 +142,28 @@ namespace argus {
         type(std::move(rhs.type)),
         is_on_heap(rhs.is_on_heap),
         buffer_size(rhs.buffer_size),
-        copy_ctor(rhs.copy_ctor),
-        move_ctor(rhs.move_ctor),
-        // dtor still needs to be able to run on the old object
-        dtor(rhs.dtor) {
+        is_initialized(rhs.is_initialized) {
 
-        if (this->type.type == IntegralType::Struct
-                || this->type.type == IntegralType::Callback) {
-            assert(this->move_ctor != nullptr);
-
-            void *src_ptr;
-            void *dst_ptr;
-            if (this->is_on_heap) {
-                this->heap_ptr = malloc(this->buffer_size);
-
-                src_ptr = rhs.heap_ptr;
-                dst_ptr = this->heap_ptr;
-            } else {
-                src_ptr = rhs.value;
-                dst_ptr = this->value;
-            }
-
-            this->move_ctor(dst_ptr, src_ptr);
-        } else if (this->is_on_heap) {
-            assert(this->move_ctor == nullptr);
-
-            this->is_on_heap = true;
+        if (this->is_on_heap) {
             this->heap_ptr = rhs.heap_ptr;
         } else {
-            assert(this->move_ctor == nullptr);
-            assert(this->buffer_size < sizeof(this->value));
-
-            memcpy(this->value, rhs.value, this->buffer_size);
+            if (rhs.is_initialized) {
+                move_wrapped_object(this->type, this->value, rhs.value, this->buffer_size);
+            }
         }
 
+        if (rhs.is_on_heap) {
+            rhs.heap_ptr = nullptr;
+        }
         rhs.buffer_size = 0;
-        rhs.is_on_heap = false;
-        rhs.heap_ptr = nullptr;
-        rhs.copy_ctor = nullptr;
-        rhs.move_ctor = nullptr;
-        rhs.dtor = nullptr;
     }
 
     ObjectWrapper::~ObjectWrapper(void) {
-        if (this->dtor != nullptr) {
-            this->dtor(this->get_ptr());
+        if (is_initialized && !(this->is_on_heap && this->heap_ptr == nullptr)) {
+            destruct_wrapped_object(this->type, this->get_ptr0());
         }
 
-        if (this->is_on_heap) {
+        if (this->is_on_heap && this->heap_ptr != nullptr) {
             free(this->heap_ptr);
         }
     }
@@ -204,25 +174,25 @@ namespace argus {
         return *this;
     }
 
-    // this function is only used with struct value types
-    void ObjectWrapper::copy_value(void *dest, size_t size) const {
+    void *ObjectWrapper::get_ptr0(void) {
+        return is_on_heap ? heap_ptr : value;
+    }
+
+    const void *ObjectWrapper::get_ptr0(void) const {
+        return is_on_heap ? heap_ptr : value;
+    }
+
+    void ObjectWrapper::copy_value_from(const void *src, size_t size) {
         assert(size == this->buffer_size);
+        copy_wrapped_object(this->type, this->get_ptr0(), src, size);
+        this->is_initialized = true;
+    }
 
-        const void *src_ptr;
-
-        if (this->is_on_heap) {
-            src_ptr = this->heap_ptr;
-        } else {
-            assert(this->buffer_size < sizeof(this->value));
-
-            src_ptr = this->value;
-        }
-
-        if (this->copy_ctor != nullptr) {
-            this->copy_ctor(dest, src_ptr);
-        } else {
-            memcpy(dest, src_ptr, size);
-        }
+    // this function is only used with struct value types
+    void ObjectWrapper::copy_value_into(void *dest, size_t size) const {
+        assert(size == this->buffer_size);
+        assert(this->is_initialized);
+        copy_wrapped_object(this->type, dest, this->get_ptr0(), size);
     }
 
     ObjectWrapper BoundFieldDef::get_value(ObjectWrapper &wrapper) const {
@@ -266,6 +236,10 @@ namespace argus {
 
     size_t ArrayBlob::element_size(void) const {
         return m_element_size;
+    }
+
+    DtorProxy ArrayBlob::element_dtor(void) const {
+        return m_element_dtor;
     }
 
     void *ArrayBlob::data(void) {

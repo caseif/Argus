@@ -198,7 +198,7 @@ namespace argus::input {
 
     template<typename T>
     static void _bind_thing(std::map<T, std::vector<std::string>> &to_map,
-            std::map<std::string, std::vector<T>> &from_map, T thing, const std::string action) {
+            std::map<std::string, std::vector<T>> &from_map, T thing, const std::string &action) {
         // we maintain two binding maps because actions and "things" have a
         // many-to-many relationship; i.e. each key may be bound to multiple
         // actions and each action may have multiple keys bound to it

@@ -20,7 +20,7 @@
 
 #include "argus/lowlevel/crash.hpp"
 
-#define crash ::argus::crash_ll
+#define crash crash_ll
 
 namespace argus {
 }

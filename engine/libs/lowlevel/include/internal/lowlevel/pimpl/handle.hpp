@@ -27,5 +27,11 @@
 namespace argus {
     struct pimpl_HandleTable {
         std::map<uint32_t, HandleTableChunk *> chunks;
+
+        ~pimpl_HandleTable(void) {
+            for (const auto [_, chunk] : chunks) {
+                delete chunk;
+            }
+        }
     };
 }

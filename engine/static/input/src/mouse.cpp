@@ -142,18 +142,18 @@ namespace argus::input {
     }
 
     static void _dispatch_axis_events(const Window &window, double x, double y, double dx, double dy) {
-        for (auto &[controller_index, controller] : InputManager::instance().m_pimpl->controllers) {
+        for (auto &[controller_name, controller] : InputManager::instance().m_pimpl->controllers) {
             auto it_x = controller->m_pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Horizontal);
             auto it_y = controller->m_pimpl->mouse_axis_to_action_bindings.find(MouseAxis::Vertical);
             if (it_x != controller->m_pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action : it_x->second) {
-                    dispatch_axis_event(&window, controller_index, action, x, dx);
+                    dispatch_axis_event(&window, controller_name, action, x, dx);
                 }
             }
 
-            if (it_y == controller->m_pimpl->mouse_axis_to_action_bindings.end()) {
+            if (it_y != controller->m_pimpl->mouse_axis_to_action_bindings.end()) {
                 for (auto &action : it_y->second) {
-                    dispatch_axis_event(&window, controller_index, action, y, dy);
+                    dispatch_axis_event(&window, controller_name, action, y, dy);
                 }
             }
         }

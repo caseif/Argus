@@ -55,7 +55,7 @@ namespace argus {
     #endif
     struct UserData {
         bool is_handle;
-        char data[0];
+        alignas(std::max_align_t) unsigned char data[0];
     };
     #ifdef _MSC_VER
     #pragma warning(pop)
@@ -210,7 +210,7 @@ namespace argus {
                 type_def.type_index,
                 type_def.name
         };
-        auto wrapper_res = create_object_wrapper(obj_type, ptr);
+        auto wrapper_res = create_object_wrapper(obj_type, &ptr);
         if (wrapper_res.is_err()) {
             return luaL_error(state, "Invalid arguments provided for function %s: %s",
                     qual_fn_name.c_str(), wrapper_res.unwrap_err().reason.c_str());
@@ -220,9 +220,9 @@ namespace argus {
     }
 
     template<typename T, typename U = T>
-    static int _wrap_prim_vector_param(lua_State *state, const ObjectType &param_def,
+    static Result<ObjectWrapper, std::string> _wrap_prim_vector_param(lua_State *state, const ObjectType &param_def,
             const std::function<int(lua_State *, int)> &check_fn, const std::function<U(lua_State *, int)> &read_fn,
-            const char *expected_type_name, int param_index, const std::string &qual_fn_name, ObjectWrapper *dest) {
+            const char *expected_type_name, int param_index, const std::string &qual_fn_name) {
         StackGuard stack_guard(state);
 
         // get number of indexed elements
@@ -238,11 +238,10 @@ namespace argus {
             lua_rawgeti(state, -1, index);
 
             if (!check_fn(state, -1)) {
-                int rv = _set_lua_error(state, "Incorrect element type in vector parameter "
+                lua_pop(state, 1);
+                return err<ObjectWrapper, std::string>("Incorrect element type in vector parameter "
                         + std::to_string(param_index) + " of function " + qual_fn_name
                         + " (expected " + expected_type_name + ", actual " + luaL_typename(state, -1) + ")");
-                lua_pop(state, 1);
-                return rv;
             }
 
             vec[i] = T(read_fn(state, -1));
@@ -253,17 +252,15 @@ namespace argus {
         auto wrapper_res = create_vector_object_wrapper_from_stack(param_def, vec);
 
         if (wrapper_res.is_err()) {
-            return luaL_error(state, "Expected array type for parameter %d of function %s",
-                    param_index, qual_fn_name.c_str());
+            return err<ObjectWrapper, std::string>("Expected array type for parameter "
+            + std::to_string(param_index) + " of function " + qual_fn_name);
         }
 
-        *dest = std::move(wrapper_res.unwrap());
-
-        return 0;
+        return ok<ObjectWrapper, std::string>(wrapper_res.unwrap());
     }
 
-    static int _read_vector_from_table(lua_State *state, const std::string &qual_fn_name,
-            int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
+    static Result<ObjectWrapper, std::string> _read_vector_from_table(lua_State *state,
+            const std::string &qual_fn_name, int param_index, const ObjectType &param_def) {
         const auto &element_type = *param_def.element_type.value();
 
         // for simplicity's sake we require contiguous indices
@@ -288,39 +285,37 @@ namespace argus {
                 switch (element_type.size) {
                     case 1:
                         return _wrap_prim_vector_param<int8_t, lua_Integer>(state, param_def, check_fn, read_fn,
-                                "integer", param_index, qual_fn_name, dest);
+                                "integer", param_index, qual_fn_name);
                     case 2:
                         return _wrap_prim_vector_param<int16_t, lua_Integer>(state, param_def, check_fn, read_fn,
-                                "integer", param_index, qual_fn_name, dest);
+                                "integer", param_index, qual_fn_name);
                     case 4:
                         return _wrap_prim_vector_param<int32_t, lua_Integer>(state, param_def, check_fn, read_fn,
-                                "integer", param_index, qual_fn_name, dest);
+                                "integer", param_index, qual_fn_name);
                     case 8:
                         return _wrap_prim_vector_param<int64_t, lua_Integer>(state, param_def, check_fn, read_fn,
-                                "integer", param_index, qual_fn_name, dest);
+                                "integer", param_index, qual_fn_name);
                     default:
                         crash("Unknown integer width %s", element_type.size);
                 }
-                break;
             }
             case IntegralType::Float: {
                 auto read_fn = [](auto *state, auto index) { return lua_tonumber(state, index); };
                 switch (element_type.size) {
                     case 4:
                         return _wrap_prim_vector_param<float, lua_Number>(state, param_def, lua_isnumber,
-                                read_fn, "number", param_index, qual_fn_name, dest);
+                                read_fn, "number", param_index, qual_fn_name);
                     case 8:
                         return _wrap_prim_vector_param<double, lua_Number>(state, param_def, lua_isnumber,
-                                read_fn, "number", param_index, qual_fn_name, dest);
+                                read_fn, "number", param_index, qual_fn_name);
                     default:
                         crash("Unknown floating-point width %s", element_type.size);
                 }
-                break;
             }
             case IntegralType::String:
                 return _wrap_prim_vector_param<std::string, const char *>(state, param_def, lua_isstring,
                         [](auto *state, auto index) { return lua_tostring(state, index); },
-                        "string", param_index, qual_fn_name, dest);
+                        "string", param_index, qual_fn_name);
             case IntegralType::Struct:
             case IntegralType::Pointer: {
                 // get number of indexed elements
@@ -328,17 +323,16 @@ namespace argus {
                 affirm_precond(len <= INT_MAX, "Too many table indices");
 
                 if (len == 0) {
-                    *dest = std::move(create_vector_object_wrapper(param_def, nullptr, 0)
+                    return ok<ObjectWrapper, std::string>(create_vector_object_wrapper(param_def, nullptr, 0)
                             .expect("Failed to create object wrapper while reading vector from Lua VM"));
-                    return 0;
                 }
 
                 auto bound_type = get_bound_type(element_type.type_name.value())
                         .expect("Encountered unbound element type when reading vector from Lua VM");
 
-                *dest = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
+                auto wrapper = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
 
-                auto &blob = *new(dest->get_ptr()) ArrayBlob(element_type.size, len, bound_type.dtor);
+                auto &blob = wrapper.emplace<ArrayBlob>(element_type.size, len, bound_type.dtor);
 
                 for (size_t i = 0; i < len; i++) {
                     auto index = int(i + 1);
@@ -357,7 +351,7 @@ namespace argus {
                     if (!(type_name == element_type.type_name.value()
                             || (element_type.is_const
                                     && type_name == k_const_prefix + param_def.type_name.value()))) {
-                        return _set_lua_error(state, "Incorrect userdata provided in parameter "
+                        return err<ObjectWrapper, std::string>("Incorrect userdata provided in parameter "
                                 + std::to_string(param_index) + ", index " + std::to_string(index)
                                 + " of function " + qual_fn_name
                                 + " (expected " + (param_def.is_const ? k_const_prefix : "")
@@ -373,14 +367,14 @@ namespace argus {
                                 element_type.type_index.value());
 
                         if (ptr == nullptr) {
-                            return _set_lua_error(state, "Invalid handle passed in parameter "
+                            return err<ObjectWrapper, std::string>("Invalid handle passed in parameter "
                                     + std::to_string(param_index) + ", index " + std::to_string(index)
                                     + " of function " + qual_fn_name);
                         }
                     } else {
                         if (element_type.type == IntegralType::Pointer) {
                             //TODO: should we support this?
-                            return _set_lua_error(state,
+                            return err<ObjectWrapper, std::string>(
                                     "Cannot pass value-typed struct as pointer in parameter "
                                             + std::to_string(param_index) + ", index " + std::to_string(index)
                                             + " of function " + qual_fn_name);
@@ -406,18 +400,16 @@ namespace argus {
                     lua_pop(state, 1);
                 }
 
-                break;
+                return ok<ObjectWrapper, std::string>(wrapper);
             }
             default:
                 crash("Unhandled element type ordinal "
                         + std::to_string(std::underlying_type_t<IntegralType>(element_type.type)));
         }
-
-        return 0;
     }
 
-    static int _wrap_param(const std::shared_ptr<ManagedLuaState> &managed_state, const std::string &qual_fn_name,
-            int param_index, const ObjectType &param_def, ObjectWrapper *dest) {
+    static Result<ObjectWrapper, std::string> _wrap_param(const std::shared_ptr<ManagedLuaState> &managed_state,
+            const std::string &qual_fn_name, int param_index, const ObjectType &param_def) {
         lua_State *state = *managed_state;
 
         std::optional<Result<ObjectWrapper, ReflectiveArgumentsError>> wrapper_res;
@@ -426,7 +418,7 @@ namespace argus {
             case IntegralType::Integer:
             case IntegralType::Enum: {
                 if (!lua_isinteger(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected integer " + (param_def.type == IntegralType::Enum ? "(enum) " : "")
                             + ", actual " + luaL_typename(state, param_index) + ")");
@@ -438,7 +430,7 @@ namespace argus {
             }
             case IntegralType::Float: {
                 if (!lua_isnumber(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected number, actual " + luaL_typename(state, param_index) + ")");
                 }
@@ -449,7 +441,7 @@ namespace argus {
             }
             case IntegralType::Boolean: {
                 if (!lua_isboolean(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
                 }
@@ -460,7 +452,7 @@ namespace argus {
             }
             case IntegralType::String: {
                 if (!lua_isstring(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected string, actual " + luaL_typename(state, param_index) + ")");
                 }
@@ -475,7 +467,7 @@ namespace argus {
                 assert(param_def.type_index.has_value());
 
                 if (!lua_isuserdata(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
@@ -484,7 +476,7 @@ namespace argus {
 
                 if (!(type_name == param_def.type_name.value()
                         || (param_def.is_const && type_name == k_const_prefix + param_def.type_name.value()))) {
-                    return _set_lua_error(state, "Incorrect userdata provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect userdata provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected " + (param_def.is_const ? k_const_prefix : "") +
                             param_def.type_name.value()
@@ -499,15 +491,22 @@ namespace argus {
                             param_def.type_index.value());
 
                     if (ptr == nullptr) {
-                        return _set_lua_error(state, "Invalid handle passed as parameter "
+                        return err<ObjectWrapper, std::string>("Invalid handle passed as parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name);
                     }
                 } else {
-                    // userdata is directly storing struct data
-                    ptr = static_cast<void *>(udata->data);
+                    ptr = udata->data;
                 }
 
-                wrapper_res = create_object_wrapper(param_def, ptr);
+                if (param_def.type == IntegralType::Struct) {
+                    // pass direct pointer so that the struct data is copied
+                    // into the ObjectWrapper
+                    wrapper_res = create_object_wrapper(param_def, ptr);
+                } else {
+                    // pass indirect pointer so that the pointer itself is
+                    // copied into the ObjectWrapper
+                    wrapper_res = create_object_wrapper(param_def, &ptr);
+                }
 
                 break;
             }
@@ -531,7 +530,7 @@ namespace argus {
             }
             case IntegralType::Type: {
                 if (!lua_istable(state, param_index)) {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected table, actual " + luaL_typename(state, param_index));
                 }
@@ -542,7 +541,7 @@ namespace argus {
 
                 if (!lua_isstring(state, -1)) {
                     lua_pop(state, 2); // pop type name and table
-                    return _set_lua_error(state, "Parameter " + std::to_string(param_index)
+                    return err<ObjectWrapper, std::string>("Parameter " + std::to_string(param_index)
                             + " does not represent type (missing field '" + k_lua_name + "')");
                 }
 
@@ -557,7 +556,7 @@ namespace argus {
 
                     break;
                 } else {
-                    return _set_lua_error(state, "Unknown type '" + std::string(type_name) + " passed as parameter "
+                    return err<ObjectWrapper, std::string>("Unknown type '" + std::string(type_name) + " passed as parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name);
                 }
             }
@@ -566,12 +565,12 @@ namespace argus {
                 assert(param_def.element_type.has_value());
 
                 if (lua_istable(state, param_index)) {
-                    return _read_vector_from_table(state, qual_fn_name, param_index, param_def, dest);
+                    return _read_vector_from_table(state, qual_fn_name, param_index, param_def);
                 } else if (lua_isuserdata(state, param_index)) {
                     auto type_name = _get_metatable_name(state, param_index);
 
                     if (type_name != k_mt_vector_ref) {
-                        return _set_lua_error(state, "Incorrect type provided for parameter "
+                        return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                                 + std::to_string(param_index) + " of function " + qual_fn_name
                                 + " (expected VectorWrapper, actual " + _string_or(type_name, k_empty_repl) + ")");
                     }
@@ -583,7 +582,7 @@ namespace argus {
 
                     break;
                 } else {
-                    return _set_lua_error(state, "Incorrect type provided for parameter "
+                    return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
                             + std::to_string(param_index) + " of function " + qual_fn_name
                             + " (expected table or userdata, actual " + luaL_typename(state, param_index) + ")");
                 }
@@ -593,13 +592,12 @@ namespace argus {
         }
 
         if (wrapper_res->is_err()) {
-            return _set_lua_error(state,
-                    "Invalid value passed to for parameter " + std::to_string(param_index)
-                            + " of function " + qual_fn_name + "(" + wrapper_res->unwrap_err().reason + ")");
+            return err<ObjectWrapper, std::string>("Invalid value passed to for parameter "
+                    + std::to_string(param_index) + " of function " + qual_fn_name
+                    + "(" + wrapper_res->unwrap_err().reason + ")");
         }
 
-        *dest = std::move(wrapper_res->unwrap());
-        return 0;
+        return ok<ObjectWrapper, std::string>(wrapper_res->unwrap());
     }
 
     static int64_t _unwrap_int_wrapper(const ObjectWrapper &wrapper) {
@@ -694,10 +692,12 @@ namespace argus {
             return _set_lua_error(state, "Index out of range for vector of size " + std::to_string(vec_size));
         }
 
-        ObjectWrapper wrapper;
-        _wrap_param(to_managed_state(state), "__newindex", -1, vec->element_type(), &wrapper);
+        auto wrapper_res = _wrap_param(to_managed_state(state), "__newindex", -1, vec->element_type());
+        if (wrapper_res.is_err()) {
+            return _set_lua_error(state, wrapper_res.unwrap_err());
+        }
 
-        vec->set(size_t(index) - 1, wrapper.get_ptr());
+        vec->set(size_t(index) - 1, wrapper_res.unwrap().get_ptr0());
 
         return 1;
     }
@@ -806,7 +806,7 @@ namespace argus {
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                         sizeof(UserData) + wrapper.type.size));
                 udata->is_handle = false;
-                wrapper.copy_value(udata->data, wrapper.type.size);
+                wrapper.copy_value_into(udata->data, wrapper.type.size);
                 _set_metatable(state, wrapper.type);
 
                 break;
@@ -815,7 +815,7 @@ namespace argus {
                 assert(wrapper.type.type_name.has_value());
                 assert(wrapper.type.type_index.has_value());
 
-                void *ptr = wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.stored_ptr;
+                void *ptr = *reinterpret_cast<void *const *>(wrapper.get_ptr0());
 
                 if (ptr != nullptr) {
                     auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
@@ -956,10 +956,8 @@ namespace argus {
                     break;
             }
 
-            luaL_error(state, "%s with name %s is not bound",
+            return luaL_error(state, "%s with name %s is not bound",
                     symbol_type_disp, fn_res->unwrap_err().symbol_name.c_str());
-
-            return LUA_ERRRUN;
         }
 
         const auto &fn = fn_res->unwrap();
@@ -978,8 +976,7 @@ namespace argus {
                 err_msg += " (did you forget to use the colon operator?)";
             }
 
-            _set_lua_error(state, err_msg);
-            return LUA_ERRRUN;
+            return _set_lua_error(state, err_msg);
         }
 
         // calls to instance member functions push the instance as the first "parameter"
@@ -999,25 +996,25 @@ namespace argus {
             // the case iff the function is non-const
             auto wrap_res = _wrap_instance_ref(state, qual_fn_name, 1, type_def, !fn.is_const, &wrapper);
             if (wrap_res == 0) {
-                args.push_back(std::move(wrapper));
+                args.emplace_back(std::move(wrapper));
             } else {
                 // some error occurred
-                // _wrap_instance_ref already sent error to lua state
+                // _wrap_instance_ref already sent error to Lua state
                 return wrap_res;
             }
         }
 
         for (int i = 0; i < (arg_count - first_param_index); i++) {
-            // Lua is 1-indexed, plus add offset to skip instance parameter if present
+            // Lua is 1-indexed, also add offset to skip instance parameter if present
             auto param_index = i + 1 + first_param_index;
             auto param_def = fn.params.at(size_t(i));
-            ObjectWrapper wrapper {};
-            auto wrap_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def, &wrapper);
-            if (wrap_res == 0) {
-                args.push_back(std::move(wrapper));
-            } else {
-                return wrap_res;
+
+            auto wrapper_res = _wrap_param(to_managed_state(state), qual_fn_name, param_index, param_def);
+            if (wrapper_res.is_err()) {
+                return _set_lua_error(state, wrapper_res.unwrap_err());
             }
+
+            args.emplace_back(std::move(wrapper_res.unwrap()));
         }
 
         auto retval_res = fn.handle(args);
@@ -1151,11 +1148,13 @@ namespace argus {
             return wrap_res;
         }
 
-        ObjectWrapper val_wrapper {};
-        _wrap_param(to_managed_state(state), qual_field_name, -1, field.m_type, &val_wrapper);
+        auto val_wrapper_res = _wrap_param(to_managed_state(state), qual_field_name, -1, field.m_type);
+        if (val_wrapper_res.is_err()) {
+            return _set_lua_error(state, val_wrapper_res.unwrap_err());
+        }
 
         assert(field.m_assign_proxy.has_value());
-        field.m_assign_proxy.value()(inst_wrapper, val_wrapper);
+        field.m_assign_proxy.value()(inst_wrapper, val_wrapper_res.unwrap());
 
         return 0;
     }

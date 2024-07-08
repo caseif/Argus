@@ -31,7 +31,7 @@ namespace argus::input {
 
     enum class MouseAxis {
         Horizontal,
-        Vertical
+        Vertical,
     };
 
     /**
