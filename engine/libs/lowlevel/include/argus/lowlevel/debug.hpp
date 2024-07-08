@@ -35,9 +35,7 @@
 
 // force assert.h to be included now to prevent it from being pulled in later and
 // overwriting our custom macro
-#ifndef assert
 #include <cassert>
-#endif
 #undef assert
 
 #ifdef _ARGUS_DEBUG_MODE
