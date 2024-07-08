@@ -26,6 +26,10 @@
 
 namespace argus {
     template<typename T>
+    constexpr std::false_type always_false {
+    };
+
+    template<typename T>
     struct reference_wrapped {
         using type = T;
     };

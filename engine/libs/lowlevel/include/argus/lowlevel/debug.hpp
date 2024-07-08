@@ -33,15 +33,12 @@
         : argus::crash("Precondition failed: " #cond " (" fmt ")"))
 #endif
 
-#ifdef assert
+// force assert.h to be included now to prevent it from being pulled in later and
+// overwriting our custom macro
+#ifndef assert
+#include <cassert>
+#endif
 #undef assert
-
-#define NDEBUG 1
-#ifdef __APPLE__
-#define NS_BLOCK_ASSERTIONS 1
-#endif
-
-#endif
 
 #ifdef _ARGUS_DEBUG_MODE
 #define _argus_assert(cond, file, line) ((cond) \
