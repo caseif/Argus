@@ -163,13 +163,12 @@ namespace argus {
                         } else if constexpr (std::is_same_v<B, char>) {
                             ret_obj_size = strlen(ret);
                         } else {
-                            // can't use static_assert because the enclosing block is checking runtime info
-                            assert(false);
+                            static_assert(always_false<FuncType>, "Unexpected pointer type for function return type");
                         }
                     } else if constexpr (std::is_same_v<std::remove_cv_t<ReturnType>, std::string>) {
                         ret_obj_size = ret.length();
                     } else {
-                        static_assert(always_false<FuncType>, "Unexpected return type for function");
+                        static_assert(always_false<FuncType>, "Unexpected type for function return type");
                     }
                 } else {
                     ret_obj_size = sizeof(ReturnType);
