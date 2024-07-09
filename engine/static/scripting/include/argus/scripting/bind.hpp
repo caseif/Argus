@@ -142,6 +142,13 @@ namespace argus {
 
                 auto ret_obj_type = create_return_object_type<ReturnType>();
                 size_t ret_obj_size;
+
+                // Older versions (<= 9) of GCC are too stupid to work out that
+                // this var doesn't need to be assigned in a branch that never
+                // returns to the parent scope, so we explicitly mark it unused
+                // here to prevent a compile error.
+                UNUSED(ret_obj_size);
+
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<
                         std::remove_pointer_t<ReturnType>>>, std::string>
                         || std::is_same_v<std::remove_cv_t<std::remove_reference_t<
@@ -163,19 +170,11 @@ namespace argus {
                         } else if constexpr (std::is_same_v<B, char>) {
                             ret_obj_size = strlen(ret);
                         } else {
-                            // GCC 9 is too stupid to work out that this var
-                            // doesn't need to be assigned in a branch that
-                            // never returns to the parent scope, so we
-                            // explicitly mark it unused here to prevent a
-                            // compile error
-                            UNUSED(ret_obj_type);
                             static_assert(always_false<FuncType>, "Unexpected pointer type for function return type");
                         }
                     } else if constexpr (std::is_same_v<std::remove_cv_t<ReturnType>, std::string>) {
                         ret_obj_size = ret.length();
                     } else {
-                        // same workaround as above for GCC
-                        UNUSED(ret_obj_type);
                         static_assert(always_false<FuncType>, "Unexpected type for function return type");
                     }
                 } else {
