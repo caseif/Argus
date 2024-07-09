@@ -57,13 +57,13 @@ namespace argus {
     }
 
     void BufferInfo::map_write() {
-        assert(valid);
+        argus_assert(valid);
 
         if (persistent) {
             return;
         }
 
-        assert(mapped == nullptr);
+        argus_assert(mapped == nullptr);
 
         glBindBuffer(target, handle);
         mapped = glMapBufferRange(target, 0, GLsizeiptr(size), GL_MAP_WRITE_BIT);
@@ -71,13 +71,13 @@ namespace argus {
     }
 
     void BufferInfo::unmap() {
-        assert(valid);
+        argus_assert(valid);
 
         if (persistent) {
             return;
         }
 
-        assert(mapped != nullptr);
+        argus_assert(mapped != nullptr);
 
         glBindBuffer(target, handle);
         glUnmapBuffer(target);
@@ -87,8 +87,8 @@ namespace argus {
     }
 
     void BufferInfo::write(void *src, size_t len, size_t offset) {
-        assert(valid);
-        assert(offset + len <= this->size);
+        argus_assert(valid);
+        argus_assert(offset + len <= this->size);
 
         if (mapped != nullptr) {
             memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);

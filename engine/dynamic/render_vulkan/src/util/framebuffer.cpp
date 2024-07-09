@@ -52,7 +52,7 @@ namespace argus {
 
     VkFramebuffer create_framebuffer(const LogicalDevice &device, VkRenderPass render_pass,
             const std::vector<ImageInfo> &images) {
-        assert(!images.empty());
+        argus_assert(!images.empty());
 
         std::vector<VkImageView> image_views;
         image_views.resize(images.size());

@@ -386,7 +386,7 @@ namespace argus {
                 continue;
             }
 
-            assert(rc == 0);
+            argus_assert(rc == 0);
 
             auto *res = arp_load_resource(&res_meta);
             if (res == nullptr) {

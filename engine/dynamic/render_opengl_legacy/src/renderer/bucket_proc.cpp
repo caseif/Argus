@@ -101,7 +101,7 @@ namespace argus {
             }
 
             auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
-            assert(program_it != scene_state.parent_state.linked_programs.cend());
+            argus_assert(program_it != scene_state.parent_state.linked_programs.cend());
 
             bool animated = program_it->second.reflection.has_uniform(SHADER_UBO_OBJ, SHADER_UNIFORM_OBJ_UV_STRIDE);
 

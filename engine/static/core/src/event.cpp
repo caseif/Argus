@@ -48,7 +48,7 @@ namespace argus {
     static std::mutex g_render_event_queue_mutex;
 
     void process_event_queue(TargetThread target_thread) {
-        assert(target_thread == TargetThread::Update || target_thread == TargetThread::Render);
+        argus_assert(target_thread == TargetThread::Update || target_thread == TargetThread::Render);
 
         auto render_thread = target_thread == TargetThread::Render;
 

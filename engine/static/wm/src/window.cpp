@@ -459,8 +459,8 @@ namespace argus {
                 if (custom_display_mode) {
                     SDL_DisplayMode cur_mode = unwrap_display_mode(display_mode);
                     SDL_GetClosestDisplayMode(target_display.m_pimpl->index, &cur_mode, &sdl_mode);
-                    assert(sdl_mode.w > 0);
-                    assert(sdl_mode.h > 0);
+                    argus_assert(sdl_mode.w > 0);
+                    argus_assert(sdl_mode.h > 0);
                     SDL_SetWindowDisplayMode(m_pimpl->handle, &sdl_mode);
                 } else {
                     SDL_GetDesktopDisplayMode(target_display.m_pimpl->index, &sdl_mode);

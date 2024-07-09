@@ -415,7 +415,7 @@ namespace argus {
                     && !std::is_same_v<B, std::string>
                     && !is_std_vector_v<B>
                     && !is_std_function_v<B>) {
-                assert(real_type.type == IntegralType::Struct);
+                argus_assert(real_type.type == IntegralType::Struct);
                 if constexpr (std::is_base_of_v<AutoCleanupable, B>) {
                     // return a pointer to the field so the script can modify its fields
                     real_type.type = IntegralType::Pointer;

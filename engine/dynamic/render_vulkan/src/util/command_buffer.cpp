@@ -111,7 +111,7 @@ namespace argus {
             const std::vector<VkSemaphore> &signal_semaphores) {
         UNUSED(device);
 
-        assert(wait_semaphores.size() == wait_stages.size());
+        argus_assert(wait_semaphores.size() == wait_stages.size());
 
         VkSubmitInfo submit_info {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

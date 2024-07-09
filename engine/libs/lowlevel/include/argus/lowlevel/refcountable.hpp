@@ -53,10 +53,10 @@ namespace argus {
         size_t release(uint32_t release_count = 1) {
             if constexpr (Atomic) {
                 auto prev_val = refcount.fetch_sub(release_count);
-                assert_ll(release_count <= prev_val);
+                argus_assert_ll(release_count <= prev_val);
                 return prev_val - release_count;
             } else {
-                assert_ll(release_count <= refcount);
+                argus_assert_ll(release_count <= refcount);
                 refcount -= release_count;
                 return refcount;
             }

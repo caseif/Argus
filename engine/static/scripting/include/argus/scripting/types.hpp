@@ -304,7 +304,7 @@ namespace argus {
 
         if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef)) {
-            assert(type.size == sizeof(T));
+            argus_assert(type.size == sizeof(T));
         }
 
         switch (type.type) {
@@ -312,50 +312,50 @@ namespace argus {
                 crash("Cannot get void value from ObjectWrapper");
             }
             case IntegralType::Integer: {
-                assert(std::is_integral_v<T>);
+                argus_assert(std::is_integral_v<T>);
                 break;
             }
             case IntegralType::Float: {
-                assert(std::is_floating_point_v<T>);
+                argus_assert(std::is_floating_point_v<T>);
                 break;
             }
             case IntegralType::Boolean: {
-                assert(std::is_integral_v<T>);
+                argus_assert(std::is_integral_v<T>);
                 break;
             }
             case IntegralType::String: {
-                assert(false);
+                argus_assert(false);
             }
             case IntegralType::Struct: {
-                assert(type.type_index.value() == typeid(T));
+                argus_assert(type.type_index.value() == typeid(T));
                 break;
             }
             case IntegralType::Pointer: {
-                assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                argus_assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
                 break;
             }
             case IntegralType::Enum: {
                 if constexpr (std::is_enum_v<T>) {
-                    assert(type.type_index.value() == typeid(T));
+                    argus_assert(type.type_index.value() == typeid(T));
                 } else {
-                    assert(std::is_integral_v<T>);
+                    argus_assert(std::is_integral_v<T>);
                 }
                 break;
             }
             case IntegralType::Callback: {
-                assert(std::is_same_v<T, ProxiedNativeFunction> || std::is_same_v<T, ProxiedScriptCallback>);
+                argus_assert(std::is_same_v<T, ProxiedNativeFunction> || std::is_same_v<T, ProxiedScriptCallback>);
                 break;
             }
             case IntegralType::Type: {
-                assert(std::is_same_v<T, std::type_index>);
+                argus_assert(std::is_same_v<T, std::type_index>);
                 break;
             }
             case IntegralType::Vector: {
-                assert(std::is_same_v<T, ArrayBlob>);
+                argus_assert(std::is_same_v<T, ArrayBlob>);
                 break;
             }
             case IntegralType::VectorRef: {
-                assert(std::is_same_v<T, VectorWrapper>);
+                argus_assert(std::is_same_v<T, VectorWrapper>);
                 break;
             }
             default: {
@@ -398,7 +398,7 @@ namespace argus {
         template<typename T>
         T &get_value(void) {
             static_assert(!is_reference_wrapper_v<T>, "Use lvalue reference instead of reference_wrapper");
-            assert(is_initialized);
+            argus_assert(is_initialized);
 
             if constexpr (std::is_pointer_v<T> && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>) {
                 return reinterpret_cast<char *>(get_ptr0());
@@ -406,7 +406,7 @@ namespace argus {
                 _validate_value_type<T>(type);
 
                 if (type.type == IntegralType::Pointer) {
-                    assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                    argus_assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
                     return **reinterpret_cast<std::remove_reference_t<T> **>(get_ptr0());
                 } else {
                     return *reinterpret_cast<std::remove_reference_t<T> *>(get_ptr0());
@@ -416,15 +416,15 @@ namespace argus {
 
         template<typename T>
         const T &get_value(void) const {
-            assert(is_initialized);
+            argus_assert(is_initialized);
 
             return reinterpret_cast<const T &>(get_value<T>());
         }
 
         template<typename T>
         void store_value(T val) {
-            assert(!is_initialized);
-            assert(this->buffer_size == sizeof(T));
+            argus_assert(!is_initialized);
+            argus_assert(this->buffer_size == sizeof(T));
             _validate_value_type<T>(type);
 
             *reinterpret_cast<T *>(get_ptr0()) = val;
@@ -433,7 +433,7 @@ namespace argus {
 
         template<typename T, typename... Args>
         T &emplace(Args... args) {
-            assert(!is_initialized);
+            argus_assert(!is_initialized);
             _validate_value_type<T>(type);
 
             new(get_ptr0()) T(args...);

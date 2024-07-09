@@ -120,7 +120,7 @@ namespace argus {
             return err<ObjectWrapper, ReflectiveArgumentsError>("Too many arguments provided");
         }
 
-        assert(params.size() == expected_param_count);
+        argus_assert(params.size() == expected_param_count);
 
         return def.handle(params);
     }

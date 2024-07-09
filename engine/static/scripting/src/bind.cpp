@@ -38,7 +38,7 @@
 namespace argus {
     [[nodiscard]] static Result<void, BindingError> _resolve_param(ObjectType &param_def, bool check_copyable = true) {
         if (param_def.type == IntegralType::Callback) {
-            assert(param_def.callback_type.has_value());
+            argus_assert(param_def.callback_type.has_value());
             auto &callback_type = *param_def.callback_type.value();
             for (auto &subparam : callback_type.params) {
                 auto sub_res = _resolve_param(subparam);
@@ -54,7 +54,7 @@ namespace argus {
 
             return ok<void, BindingError>();
         } else if (param_def.type == IntegralType::Vector || param_def.type == IntegralType::VectorRef) {
-            assert(param_def.element_type.has_value());
+            argus_assert(param_def.element_type.has_value());
             auto el_res = _resolve_param(*param_def.element_type.value(), false);
             if (el_res.is_err()) {
                 return el_res;
@@ -65,8 +65,8 @@ namespace argus {
             return ok<void, BindingError>();
         }
 
-        assert(param_def.type_index.has_value());
-        assert(!param_def.type_name.has_value());
+        argus_assert(param_def.type_index.has_value());
+        argus_assert(!param_def.type_name.has_value());
 
         std::string type_name;
         if (param_def.type == IntegralType::Enum) {
@@ -117,7 +117,7 @@ namespace argus {
 
     [[nodiscard]] static Result<void, BindingError> _resolve_field(ObjectType &field_def) {
         if (field_def.type == IntegralType::Vector || field_def.type == IntegralType::VectorRef) {
-            assert(field_def.element_type.has_value());
+            argus_assert(field_def.element_type.has_value());
             auto el_res = _resolve_field(*field_def.element_type.value());
             if (el_res.is_err()) {
                 return el_res;
@@ -128,8 +128,8 @@ namespace argus {
             return ok<void, BindingError>();
         }
 
-        assert(field_def.type_index.has_value());
-        assert(!field_def.type_name.has_value());
+        argus_assert(field_def.type_index.has_value());
+        argus_assert(!field_def.type_name.has_value());
 
         std::string type_name;
         if (field_def.type == IntegralType::Enum) {
@@ -263,7 +263,7 @@ namespace argus {
                       " is called after creating type definition)");
         }
         auto type_it = g_bound_types.find(index_it->second);
-        assert(type_it != g_bound_types.cend());
+        argus_assert(type_it != g_bound_types.cend());
         return ok<T &, BindingError>(const_cast<T &>(type_it->second));
     }
 
@@ -276,7 +276,7 @@ namespace argus {
                     "is called after creating type definition)");
         }
         auto enum_it = g_bound_enums.find(index_it->second);
-        assert(enum_it != g_bound_enums.cend());
+        argus_assert(enum_it != g_bound_enums.cend());
         return ok<T &, BindingError>(const_cast<T &>(enum_it->second));
     }
 

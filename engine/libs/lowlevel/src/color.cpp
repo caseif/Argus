@@ -77,7 +77,7 @@ namespace argus {
         double g;
         double b;
 
-        assert_ll(hprime >= -1);
+        argus_assert_ll(hprime >= -1);
         if (hprime < 0) {
             r = max;
             g = min;

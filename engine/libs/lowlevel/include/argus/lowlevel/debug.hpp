@@ -33,24 +33,19 @@
         : argus::crash("Precondition failed: " #cond " (" fmt ")"))
 #endif
 
-// force assert.h to be included now to prevent it from being pulled in later and
-// overwriting our custom macro
-#include <cassert>
-#undef assert
-
 #ifdef _ARGUS_DEBUG_MODE
 #define _argus_assert(cond, file, line) ((cond) \
         ? void(0) \
         : ::argus::crash("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
-#define assert(...) _argus_assert((__VA_ARGS__), __FILE__, __LINE__)
+#define argus_assert(...) _argus_assert((__VA_ARGS__), __FILE__, __LINE__)
 
 #define _argus_assert_ll(cond, file, line) ((cond) \
         ? void(0) \
         : ::argus::crash_ll("Assertion failed: " file ":" STRINGIZE(line) ": " #cond))
-#define assert_ll(...) _argus_assert_ll((__VA_ARGS__), __FILE__, __LINE__)
+#define argus_assert_ll(...) _argus_assert_ll((__VA_ARGS__), __FILE__, __LINE__)
 #else
 #define _argus_assert(cond) ((cond) ? (void(0)) : (argus::crash("Assertion failed: " #cond)))
-#define assert(...) _argus_assert((__VA_ARGS__))
+#define argus_assert(...) _argus_assert((__VA_ARGS__))
 #define _argus_assert_ll(cond) ((cond) ? (void(0)) : (argus::crash_ll("Assertion failed: " #cond)))
-#define assert_ll(...) _argus_assert_ll((__VA_ARGS__))
+#define argus_assert_ll(...) _argus_assert_ll((__VA_ARGS__))
 #endif

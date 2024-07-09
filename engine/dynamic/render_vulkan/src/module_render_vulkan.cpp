@@ -220,7 +220,7 @@ namespace argus {
                 }
 
                 auto it = g_renderer_map.find(&window);
-                assert(it != g_renderer_map.end());
+                argus_assert(it != g_renderer_map.end());
                 auto &renderer = it->second;
 
                 if (!renderer->m_is_initted) {
@@ -236,7 +236,7 @@ namespace argus {
                 }
 
                 auto it = g_renderer_map.find(&window);
-                assert(it != g_renderer_map.end());
+                argus_assert(it != g_renderer_map.end());
 
                 it->second->notify_window_resize(event.resolution);
                 break;

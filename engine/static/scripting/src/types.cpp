@@ -116,7 +116,7 @@ namespace argus {
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size):
         type(type),
         is_initialized(false) {
-        assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
+        argus_assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
 
         // override size for pointer type since we're only copying the pointer
@@ -183,15 +183,15 @@ namespace argus {
     }
 
     void ObjectWrapper::copy_value_from(const void *src, size_t size) {
-        assert(size == this->buffer_size);
+        argus_assert(size == this->buffer_size);
         copy_wrapped_object(this->type, this->get_ptr0(), src, size);
         this->is_initialized = true;
     }
 
     // this function is only used with struct value types
     void ObjectWrapper::copy_value_into(void *dest, size_t size) const {
-        assert(size == this->buffer_size);
-        assert(this->is_initialized);
+        argus_assert(size == this->buffer_size);
+        argus_assert(this->is_initialized);
         copy_wrapped_object(this->type, dest, this->get_ptr0(), size);
     }
 
@@ -200,7 +200,7 @@ namespace argus {
     }
 
     void BoundFieldDef::set_value(ObjectWrapper &instance, ObjectWrapper &value) const {
-        assert(m_assign_proxy.has_value());
+        argus_assert(m_assign_proxy.has_value());
         m_assign_proxy.value()(instance, value);
     }
 

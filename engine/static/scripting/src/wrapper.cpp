@@ -47,10 +47,10 @@ namespace argus {
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(const ObjectType &type, int64_t val) {
         ObjectWrapper wrapper(type, type.size);
-        assert(wrapper.buffer_size >= type.size);
+        argus_assert(wrapper.buffer_size >= type.size);
 
         if (type.type == IntegralType::Enum) {
-            assert(type.type_name.has_value());
+            argus_assert(type.type_name.has_value());
             auto enum_def = get_bound_enum(type.type_name.value())
                     .expect("Tried to create ObjectWrapper with unbound enum type");
             auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val));
@@ -78,7 +78,7 @@ namespace argus {
                 break;
             }
             default:
-                assert(false); // should have been caught during binding
+                argus_assert(false); // should have been caught during binding
         }
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
@@ -97,14 +97,14 @@ namespace argus {
                 break;
             }
             default:
-                assert(false); // should have been caught during binding
+                argus_assert(false); // should have been caught during binding
         }
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(const ObjectType &type, bool val) {
-        assert(type.size >= sizeof(bool));
+        argus_assert(type.size >= sizeof(bool));
 
         ObjectWrapper wrapper(type, type.size);
 
@@ -185,7 +185,7 @@ namespace argus {
             // can just copy the whole thing in one go and avoid looping
             memcpy(blob[0], data, el_size * count);
         } else {
-            assert(count < SIZE_MAX);
+            argus_assert(count < SIZE_MAX);
 
             if (el_type.type == IntegralType::String) {
                 // strings need to be handled specially because they're the only
@@ -202,12 +202,12 @@ namespace argus {
                     new(dst_ptr) std::string(src_str);
                 }
             } else {
-                assert(el_type.type == IntegralType::Struct);
+                argus_assert(el_type.type == IntegralType::Struct);
 
                 auto bound_type_res = get_bound_type(el_type.type_index.value());
                 const BoundTypeDef &bound_type = bound_type_res
                         .expect("Tried to create ObjectWrapper with unbound struct type");
-                assert(bound_type.copy_ctor != nullptr);
+                argus_assert(bound_type.copy_ctor != nullptr);
 
                 for (size_t i = 0; i < count; i++) {
                     void *src_ptr = reinterpret_cast<void *>(
@@ -266,12 +266,12 @@ namespace argus {
             // can just copy the whole thing in one go and avoid looping
             memcpy(new_blob.data(), src.data(), el_size * count);
         } else {
-            assert(count < SIZE_MAX);
+            argus_assert(count < SIZE_MAX);
 
             auto bound_type_res = get_bound_type(el_type.type_index.value());
             const BoundTypeDef &bound_type = bound_type_res
                     .expect("Tried to copy/move ArrayBlob with unbound element type");
-            assert(bound_type.copy_ctor != nullptr);
+            argus_assert(bound_type.copy_ctor != nullptr);
 
             for (size_t i = 0; i < count; i++) {
                 std::conditional_t<is_move, void *, const void *> src_ptr = src[i];
@@ -288,7 +288,7 @@ namespace argus {
 
     template<typename T, bool is_move, typename SrcPtr = std::conditional_t<is_move, void *, const void *>>
     static void _copy_or_move_type(void *dst, SrcPtr src, size_t max_len) {
-        assert(max_len >= sizeof(T));
+        argus_assert(max_len >= sizeof(T));
         if constexpr (is_move) {
             new(dst) T(std::move(*reinterpret_cast<T *>(src)));
         } else {
@@ -317,15 +317,15 @@ namespace argus {
                 // for complex value types we indirectly use the copy/move
                 // constructors
 
-                assert(obj_type.type_index.has_value());
+                argus_assert(obj_type.type_index.has_value());
 
                 auto bound_type = get_bound_type(obj_type.type_index.value())
                         .expect("Tried to copy/move wrapped object with unbound struct type");
                 if constexpr (is_move) {
-                    assert(bound_type.move_ctor != nullptr);
+                    argus_assert(bound_type.move_ctor != nullptr);
                     bound_type.move_ctor(dst, src);
                 } else {
-                    assert(bound_type.copy_ctor != nullptr);
+                    argus_assert(bound_type.copy_ctor != nullptr);
                     bound_type.copy_ctor(dst, src);
                 }
 
@@ -385,11 +385,11 @@ namespace argus {
                 // for complex value types we indirectly use the copy/move
                 // constructors
 
-                assert(obj_type.type_index.has_value());
+                argus_assert(obj_type.type_index.has_value());
 
                 auto bound_type = get_bound_type(obj_type.type_index.value())
                         .expect("Tried to destruct wrapped object with unbound struct type");
-                assert(bound_type.dtor != nullptr);
+                argus_assert(bound_type.dtor != nullptr);
                 bound_type.dtor(ptr);
 
                 break;

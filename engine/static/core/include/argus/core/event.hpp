@@ -119,7 +119,7 @@ namespace argus {
         return register_event_handler_with_type(EventType::get_event_type_id(),
                 [callback = std::move(callback)](const ArgusEvent &e, void *d) {
                     UNUSED(d);
-                    assert(e.type_id == EventType::get_event_type_id());
+                    argus_assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e));
                 },
                 target_thread, nullptr, ordering, nullptr);
@@ -147,7 +147,7 @@ namespace argus {
                 "Event class must contain static function get_event_type_id");
         return register_event_handler_with_type(EventType::get_event_type_id(),
                 [callback = std::move(callback)](const ArgusEvent &e, void *d) {
-                    assert(e.type_id == EventType::get_event_type_id());
+                    argus_assert(e.type_id == EventType::get_event_type_id());
                     callback(reinterpret_cast<const EventType &>(e), d);
                 },
                 target_thread, data, ordering, nullptr);

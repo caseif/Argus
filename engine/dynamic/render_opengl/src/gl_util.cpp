@@ -77,7 +77,7 @@ namespace argus {
 
     void set_attrib_pointer(array_handle_t array_obj, buffer_handle_t buffer_obj, binding_index_t binding_index,
             GLuint vertex_len, GLuint attr_len, GLuint attr_index, GLuint *attr_offset) {
-        assert(attr_len <= INT_MAX);
+        argus_assert(attr_len <= INT_MAX);
 
         if (AGLET_GL_ARB_direct_state_access) {
             glEnableVertexArrayAttrib(array_obj, attr_index);
@@ -85,7 +85,7 @@ namespace argus {
             glVertexArrayAttribBinding(array_obj, attr_index, binding_index);
         } else {
             auto stride = vertex_len * uint32_t(sizeof(GLfloat));
-            assert(stride <= INT_MAX);
+            argus_assert(stride <= INT_MAX);
 
             glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
             glEnableVertexAttribArray(attr_index);

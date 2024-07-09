@@ -169,7 +169,7 @@ namespace argus::input {
             return false;
         }
 
-        assert(sdl_button_it->second >= 0);
+        argus_assert(sdl_button_it->second >= 0);
 
         std::lock_guard<std::mutex> lock(InputManager::instance().m_pimpl->gamepad_states_mutex);
 
@@ -200,7 +200,7 @@ namespace argus::input {
         }
 
         auto axis_state = it->second.axis_state;
-        assert(size_t(axis) < axis_state.size());
+        argus_assert(size_t(axis) < axis_state.size());
 
         return axis_state[size_t(axis)];
     }
@@ -221,7 +221,7 @@ namespace argus::input {
         }
 
         auto deltas = it->second.axis_deltas;
-        assert(size_t(axis) < deltas.size());
+        argus_assert(size_t(axis) < deltas.size());
 
         return deltas[size_t(axis)];
     }
@@ -355,7 +355,7 @@ namespace argus::input {
                         auto d_deadzone_to_point = d_center - r_deadzone;
                         auto d_deadzone_to_boundary = d_boundary - r_deadzone;
 
-                        assert(d_deadzone_to_boundary > 0.0);
+                        argus_assert(d_deadzone_to_boundary > 0.0);
                         new_x = x * (d_deadzone_to_point / d_deadzone_to_boundary);
                         new_y = y * (d_deadzone_to_point / d_deadzone_to_boundary);
                     }
@@ -367,8 +367,8 @@ namespace argus::input {
                         new_x = 0;
                         new_y = 0;
                     } else {
-                        assert(radius_x < 1.0);
-                        assert(radius_y < 1.0);
+                        argus_assert(radius_x < 1.0);
+                        argus_assert(radius_y < 1.0);
                         auto r = std::max(std::abs(x), std::abs(y));
                         new_x = x * (r - radius_x) / (1.0 - radius_x);
                         new_y = y * (r - radius_y) / (1.0 - radius_y);
@@ -379,13 +379,13 @@ namespace argus::input {
                     if (std::abs(x) < radius_x) {
                         new_x = 0;
                     } else {
-                        assert(radius_x < 1.0);
+                        argus_assert(radius_x < 1.0);
                         new_x = x * (std::abs(x) - radius_x) / (1.0 - radius_x);
                     }
                     if (std::abs(y) < radius_y) {
                         new_y = 0;
                     } else {
-                        assert(radius_y < 1.0);
+                        argus_assert(radius_y < 1.0);
                         new_y = y * (std::abs(y) - radius_y) / (1.0 - radius_y);
                     }
                     break;

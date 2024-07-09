@@ -33,10 +33,10 @@ namespace argus {
 
     void set_attrib_pointer(buffer_handle_t buffer_obj, GLuint vertex_len, GLuint attr_len, GLuint attr_index,
             GLuint *attr_offset) {
-        assert(attr_len <= INT_MAX);
+        argus_assert(attr_len <= INT_MAX);
 
         auto stride = vertex_len * uint32_t(sizeof(GLfloat));
-        assert(stride <= INT_MAX);
+        argus_assert(stride <= INT_MAX);
 
         glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
         glEnableVertexAttribArray(attr_index);

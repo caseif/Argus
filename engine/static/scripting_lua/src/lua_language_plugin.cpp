@@ -79,7 +79,7 @@ namespace argus {
         ~StackGuard(void) {
             int cur = lua_gettop(m_state);
             if (cur != m_expected) {
-                assert(lua_gettop(m_state) == m_expected);
+                argus_assert(lua_gettop(m_state) == m_expected);
             }
         }
 
@@ -92,7 +92,7 @@ namespace argus {
         }
 
         void decrement(int count) {
-            assert(count <= m_expected);
+            argus_assert(count <= m_expected);
             increment(-count);
         }
 
@@ -387,7 +387,7 @@ namespace argus {
                     if (element_type.type == IntegralType::Pointer) {
                         blob.set<void *>(i, ptr);
                     } else {
-                        assert(element_type.type == IntegralType::Struct);
+                        argus_assert(element_type.type == IntegralType::Struct);
 
                         if (bound_type.copy_ctor != nullptr) {
                             bound_type.copy_ctor(blob[i], ptr);
@@ -463,8 +463,8 @@ namespace argus {
             }
             case IntegralType::Struct:
             case IntegralType::Pointer: {
-                assert(param_def.type_name.has_value());
-                assert(param_def.type_index.has_value());
+                argus_assert(param_def.type_name.has_value());
+                argus_assert(param_def.type_index.has_value());
 
                 if (!lua_isuserdata(state, param_index)) {
                     return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
@@ -562,7 +562,7 @@ namespace argus {
             }
             case IntegralType::Vector:
             case IntegralType::VectorRef: {
-                assert(param_def.element_type.has_value());
+                argus_assert(param_def.element_type.has_value());
 
                 if (lua_istable(state, param_index)) {
                     return _read_vector_from_table(state, qual_fn_name, param_index, param_def);
@@ -601,7 +601,7 @@ namespace argus {
     }
 
     static int64_t _unwrap_int_wrapper(const ObjectWrapper &wrapper) {
-        assert(wrapper.type.type == IntegralType::Integer
+        argus_assert(wrapper.type.type == IntegralType::Integer
                 || wrapper.type.type == IntegralType::Enum);
 
         switch (wrapper.type.size) {
@@ -620,7 +620,7 @@ namespace argus {
     }
 
     static double _unwrap_float_wrapper(const ObjectWrapper &wrapper) {
-        assert(wrapper.type.type == IntegralType::Float);
+        argus_assert(wrapper.type.type == IntegralType::Float);
 
         switch (wrapper.type.size) {
             case 4:
@@ -634,7 +634,7 @@ namespace argus {
     }
 
     static bool _unwrap_boolean_wrapper(const ObjectWrapper &wrapper) {
-        assert(wrapper.type.type == IntegralType::Boolean);
+        argus_assert(wrapper.type.type == IntegralType::Boolean);
 
         return *reinterpret_cast<const bool *>(wrapper.value);
     }
@@ -643,7 +643,7 @@ namespace argus {
         auto mt = luaL_getmetatable(state,
                 ((type.is_const ? k_const_prefix : "") + type.type_name.value()).c_str());
         UNUSED(mt);
-        assert(mt != 0); // binding should have failed if type wasn't bound
+        argus_assert(mt != 0); // binding should have failed if type wasn't bound
 
         lua_setmetatable(state, -2);
     }
@@ -703,7 +703,7 @@ namespace argus {
     }
 
     static void _push_vector_vals(lua_State *state, const ObjectType &element_type, const ArrayBlob &vec) {
-        assert(vec.size() < INT_MAX);
+        argus_assert(vec.size() < INT_MAX);
         for (size_t i = 0; i < vec.size(); i++) {
             // push index to stack
             lua_pushinteger(state, int(i + 1));
@@ -737,7 +737,7 @@ namespace argus {
                     lua_pushstring(state, vec.at<std::string>(i).c_str());
                     break;
                 case IntegralType::Struct: {
-                    assert(element_type.type_name.has_value());
+                    argus_assert(element_type.type_name.has_value());
 
                     auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                             sizeof(UserData) + element_type.size));
@@ -783,7 +783,7 @@ namespace argus {
     }
 
     static void _push_value(lua_State *state, const ObjectWrapper &wrapper) {
-        assert(wrapper.type.type != IntegralType::Void);
+        argus_assert(wrapper.type.type != IntegralType::Void);
 
         switch (wrapper.type.type) {
             case IntegralType::Integer:
@@ -801,7 +801,7 @@ namespace argus {
                         wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
                 break;
             case IntegralType::Struct: {
-                assert(wrapper.type.type_name.has_value());
+                argus_assert(wrapper.type.type_name.has_value());
 
                 auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                         sizeof(UserData) + wrapper.type.size));
@@ -812,8 +812,8 @@ namespace argus {
                 break;
             }
             case IntegralType::Pointer: {
-                assert(wrapper.type.type_name.has_value());
-                assert(wrapper.type.type_index.has_value());
+                argus_assert(wrapper.type.type_name.has_value());
+                argus_assert(wrapper.type.type_index.has_value());
 
                 void *ptr = *reinterpret_cast<void *const *>(wrapper.get_ptr0());
 
@@ -837,7 +837,7 @@ namespace argus {
                 // create table to return
                 lua_createtable(state, int(vec.size()), 0);
 
-                assert(wrapper.type.element_type.has_value());
+                argus_assert(wrapper.type.element_type.has_value());
                 _push_vector_vals(state, *wrapper.type.element_type.value(), vec);
 
                 // create metatable
@@ -878,7 +878,7 @@ namespace argus {
                 break;
             }
             default:
-                assert(false);
+                argus_assert(false);
         }
     }
 
@@ -1096,7 +1096,7 @@ namespace argus {
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -1);
 
-        assert(!type_name.empty());
+        argus_assert(!type_name.empty());
 
         if (_get_native_field_val(state, type_name, key)) {
             stack_guard.increment();
@@ -1153,7 +1153,7 @@ namespace argus {
             return _set_lua_error(state, val_wrapper_res.unwrap_err());
         }
 
-        assert(field.m_assign_proxy.has_value());
+        argus_assert(field.m_assign_proxy.has_value());
         field.m_assign_proxy.value()(inst_wrapper, val_wrapper_res.unwrap());
 
         return 0;
@@ -1165,7 +1165,7 @@ namespace argus {
         std::string type_name = _get_metatable_name(state, 1);
         std::string key = lua_tostring(state, -2);
 
-        assert(!type_name.empty());
+        argus_assert(!type_name.empty());
 
         auto res = _set_native_field(state, type_name, key);
 
@@ -1216,7 +1216,7 @@ namespace argus {
         stack_guard.increment();
         auto mt = luaL_getmetatable(state, type_def.name.c_str());
         UNUSED(mt);
-        assert(mt != 0); // binding should have failed if type wasn't bound
+        argus_assert(mt != 0); // binding should have failed if type wasn't bound
         lua_setmetatable(state, -2);
 
         type_def.copy_ctor(dest->data, src);
@@ -1314,7 +1314,7 @@ namespace argus {
     }
 
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
-        assert(fn.type == FunctionType::Global);
+        argus_assert(fn.type == FunctionType::Global);
 
         // put the namespace table on the stack
         luaL_getmetatable(state, k_engine_namespace);
@@ -1462,7 +1462,7 @@ namespace argus {
     }
 
     Result<void, ScriptLoadError> LuaLanguagePlugin::load_script(ScriptContext &context, const Resource &resource) {
-        assert(resource.prototype.media_type == k_resource_type_lua);
+        argus_assert(resource.prototype.media_type == k_resource_type_lua);
 
         auto *plugin_data = context.get_plugin_data<LuaContextData>();
         auto &state = plugin_data->m_state;

@@ -76,14 +76,14 @@ namespace argus {
     }
 
     void BufferInfo::map_write() {
-        assert(valid);
-        assert(allow_mapping);
+        argus_assert(valid);
+        argus_assert(allow_mapping);
 
         if (persistent) {
             return;
         }
 
-        assert(mapped == nullptr);
+        argus_assert(mapped == nullptr);
 
         if (AGLET_GL_ARB_direct_state_access) {
             mapped = glMapNamedBuffer(handle, GL_WRITE_ONLY);
@@ -95,14 +95,14 @@ namespace argus {
     }
 
     void BufferInfo::unmap() {
-        assert(valid);
-        assert(allow_mapping);
+        argus_assert(valid);
+        argus_assert(allow_mapping);
 
         if (persistent) {
             return;
         }
 
-        assert(mapped != nullptr);
+        argus_assert(mapped != nullptr);
 
         if (AGLET_GL_ARB_direct_state_access) {
             glUnmapNamedBuffer(handle);
@@ -116,8 +116,8 @@ namespace argus {
     }
 
     void BufferInfo::write(void *src, size_t len, size_t offset) {
-        assert(valid);
-        assert(offset + len <= this->size);
+        argus_assert(valid);
+        argus_assert(offset + len <= this->size);
 
         if (mapped != nullptr) {
             memcpy(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mapped) + offset), src, len);

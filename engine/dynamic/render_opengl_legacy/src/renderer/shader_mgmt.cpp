@@ -137,7 +137,7 @@ namespace argus {
             if (res == GL_FALSE) {
                 int log_len;
                 glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_len);
-                assert(log_len >= 0);
+                argus_assert(log_len >= 0);
                 char *log = new char[size_t(log_len) + 1];
                 log[0] = '\0';
                 glGetShaderInfoLog(shader_handle, log_len, nullptr, log);
@@ -227,7 +227,7 @@ namespace argus {
         if (res == GL_FALSE) {
             int log_len;
             glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
-            assert(log_len >= 0);
+            argus_assert(log_len >= 0);
             char *log = new char[size_t(log_len)];
             glGetProgramInfoLog(program_handle, GL_INFO_LOG_LENGTH, nullptr, log);
             crash("Failed to link program: %s", log);
@@ -237,7 +237,7 @@ namespace argus {
         GLint attrib_count;
 
         glGetProgramiv(program_handle, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attrib_max_len);
-        assert(attrib_max_len >= 0);
+        argus_assert(attrib_max_len >= 0);
         glGetProgramiv(program_handle, GL_ACTIVE_ATTRIBUTES, &attrib_count);
 
         GLsizei attrib_name_len;
@@ -248,9 +248,9 @@ namespace argus {
         for (int i = 0; i < attrib_count; i++) {
             glGetActiveAttrib(program_handle, uint32_t(i), attrib_max_len, &attrib_name_len,
                     &attrib_size, &attrib_type, attrib_name);
-            assert(attrib_name_len <= attrib_max_len);
+            argus_assert(attrib_name_len <= attrib_max_len);
             GLint attrib_loc = glGetAttribLocation(program_handle, attrib_name);
-            assert(attrib_loc >= 0);
+            argus_assert(attrib_loc >= 0);
             refl_info.attribute_locations[std::string(attrib_name)] = uint32_t(attrib_loc);
         }
 
@@ -258,7 +258,7 @@ namespace argus {
         GLint uniform_count;
 
         glGetProgramiv(program_handle, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniform_max_len);
-        assert(uniform_max_len >= 0);
+        argus_assert(uniform_max_len >= 0);
         glGetProgramiv(program_handle, GL_ACTIVE_UNIFORMS, &uniform_count);
 
         GLsizei uniform_name_len;
@@ -267,9 +267,9 @@ namespace argus {
         for (int i = 0; i < uniform_count; i++) {
             glGetActiveUniform(program_handle, uint32_t(i), uniform_max_len, &uniform_name_len,
                     nullptr, nullptr, uniform_name);
-            assert(uniform_name_len <= uniform_max_len);
+            argus_assert(uniform_name_len <= uniform_max_len);
             GLint uniform_loc = glGetUniformLocation(program_handle, uniform_name);
-            assert(uniform_loc >= 0);
+            argus_assert(uniform_loc >= 0);
             refl_info.uniform_variable_locations[std::string(uniform_name)] = uint32_t(uniform_loc);
         }
 

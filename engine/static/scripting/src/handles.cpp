@@ -39,7 +39,7 @@ namespace argus {
     ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type) {
         auto handle_it = g_ptr_to_handle_map.find(ptr);
         if (handle_it != g_ptr_to_handle_map.cend()) {
-            assert(handle_it->second.first == type);
+            argus_assert(handle_it->second.first == type);
             return handle_it->second.second;
         } else {
             if (g_next_handle == k_handle_max) {

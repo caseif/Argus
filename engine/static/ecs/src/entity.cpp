@@ -76,7 +76,7 @@ namespace argus {
     }
 
     void Entity::destroy(void) {
-        assert(ComponentTypeRegistry::instance().get_type_count() < UINT16_MAX);
+        argus_assert(ComponentTypeRegistry::instance().get_type_count() < UINT16_MAX);
         for (ComponentTypeId cmp_id = 0;
                 cmp_id < uint16_t(ComponentTypeRegistry::instance().get_type_count());
                 cmp_id++) {

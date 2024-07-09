@@ -200,7 +200,7 @@ namespace argus {
             return err<FileHandle, FileOpenError>(_map_file_error(errno), errno);
         }
 
-        assert(stat_buf.st_size >= 0);
+        argus_assert(stat_buf.st_size >= 0);
 
         return ok<FileHandle, FileOpenError>(
                 FileHandle(path, mode, size_t(stat_buf.st_size), static_cast<void *>(file)));
@@ -292,7 +292,7 @@ namespace argus {
             return err<void, int>(errno);
         }
 
-        assert(file_stat.st_size >= 0);
+        argus_assert(file_stat.st_size >= 0);
 
         this->m_size = size_t(file_stat.st_size);
 

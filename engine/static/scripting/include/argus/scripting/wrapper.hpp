@@ -82,7 +82,7 @@ namespace argus {
         static_assert(!std::is_same_v<E, bool>, "Vectors of booleans are not supported");
         static_assert(!std::is_same_v<std::remove_cv_t<std::remove_reference_t<E>>, char *>,
                 "Vectors of C-strings are not supported (use std::string instead)");
-        assert(type.element_type.has_value());
+        argus_assert(type.element_type.has_value());
 
         // ensure the vector reference will remain valid
         if (type.type == IntegralType::VectorRef && is_heap) {
@@ -90,7 +90,7 @@ namespace argus {
                     VectorWrapper(const_cast<std::remove_cv_t<V> &>(vec), *type.element_type.value()));
         } else {
             if (type.element_type.value()->type != IntegralType::String) {
-                assert(type.element_type.value()->size == sizeof(E));
+                argus_assert(type.element_type.value()->size == sizeof(E));
             }
 
             ObjectType real_type = type;
@@ -186,11 +186,11 @@ namespace argus {
     static T unwrap_param(ObjectWrapper &param, ScratchAllocator *scratch) {
         using B = std::remove_const_t<remove_reference_wrapper_t<T>>;
 
-        assert(param.is_initialized);
+        argus_assert(param.is_initialized);
 
         if constexpr (is_std_function_v<B>) {
-            assert(param.type.type == IntegralType::Callback);
-            assert(param.type.callback_type.has_value());
+            argus_assert(param.type.type == IntegralType::Callback);
+            argus_assert(param.type.callback_type.has_value());
 
             using ReturnType = typename function_traits<B>::return_type;
             using ArgsTuple = typename function_traits<B>::argument_types_wrapped;
@@ -202,11 +202,11 @@ namespace argus {
             for (auto &subparam : param_types) {
                 if (subparam.type == IntegralType::Pointer
                         || subparam.type == IntegralType::Struct) {
-                    assert(subparam.type_index.has_value());
+                    argus_assert(subparam.type_index.has_value());
                     subparam.type_name = get_bound_type(subparam.type_index.value())
                             .expect("Tried to unwrap callback param with unbound struct type").name;
                 } else if (subparam.type == IntegralType::Enum) {
-                    assert(subparam.type_index.has_value());
+                    argus_assert(subparam.type_index.has_value());
                     subparam.type_name = get_bound_enum(subparam.type_index.value())
                             .expect("Tried to unwrap callback param with unbound enum type").name;
                 }
@@ -246,7 +246,7 @@ namespace argus {
                 }
             };
         } else if constexpr (std::is_same_v<B, std::string>) {
-            assert(param.type.type == IntegralType::String);
+            argus_assert(param.type.type == IntegralType::String);
 
             if constexpr (std::is_same_v<std::remove_cv_t<T>, std::string>) {
                 if (scratch != nullptr) {
@@ -256,13 +256,13 @@ namespace argus {
                     return str;
                 }
             } else {
-                assert(scratch != nullptr);
+                argus_assert(scratch != nullptr);
                 std::string &str = scratch->construct<std::string>(reinterpret_cast<const char *>(param.get_ptr0()));
                 return str;
             }
         } else if constexpr (std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, std::string>) {
-            assert(param.type.type == IntegralType::String);
-            assert(scratch != nullptr);
+            argus_assert(param.type.type == IntegralType::String);
+            argus_assert(scratch != nullptr);
             std::string *str = &scratch->construct<std::string>(reinterpret_cast<const char *>(param.get_ptr0()));
             return str;
         } else if constexpr (is_std_vector_v<std::remove_cv_t<remove_reference_wrapper_t<T>>>) {
@@ -295,14 +295,14 @@ namespace argus {
                 crash("Invalid vector object type magic");
             }
         } else if constexpr (is_reference_wrapper_v<T>) {
-            assert(param.type.type == IntegralType::Pointer);
+            argus_assert(param.type.type == IntegralType::Pointer);
             if constexpr (std::is_same_v<B, std::string>) {
                 return std::ref(param.get_value<const char *>());
             } else {
                 return param.get_value<std::remove_reference_t<remove_reference_wrapper_t<T>>>();
             }
         } else if constexpr (std::is_pointer_v<std::remove_reference_t<T>>) {
-            assert(param.type.type == IntegralType::Pointer);
+            argus_assert(param.type.type == IntegralType::Pointer);
             if constexpr (std::is_same_v<B, std::string>) {
                 return param.get_value<const char *>();
             } else {
