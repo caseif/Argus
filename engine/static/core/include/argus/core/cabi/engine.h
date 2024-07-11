@@ -50,6 +50,8 @@ void argus_initialize_engine(void);
 
 ARGUS_NORETURN void argus_start_engine(delta_callback_t callback);
 
+ARGUS_NORETURN void argus_crash(const char *msg);
+
 LifecycleStage argus_get_current_lifecycle_stage(void);
 
 Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering);

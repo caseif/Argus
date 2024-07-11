@@ -42,6 +42,12 @@ pub fn initialize_engine() {
     }
 }
 
+pub fn crash(format: &str) -> ! {
+    unsafe {
+        argus_crash(string_to_cstring(format));
+    }
+}
+
 pub fn start_engine(callback: DeltaCallback) -> ! {
     unsafe {
         argus_start_engine(Some(callback));

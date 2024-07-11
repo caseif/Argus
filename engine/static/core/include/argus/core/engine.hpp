@@ -106,10 +106,11 @@ namespace argus {
     /**
      * @brief Crashes the engine with the given error message.
      *
-     * The message will be printed to stdout and may be displayed to the end
+     * The message will be printed to stderr and may be displayed to the end
      * user in some form, but this is not guaranteed.
      *
      * @param format The message to display.
+     * @param args The format arguments for the message.
      */
     [[noreturn]] void crash(const char *format, va_list args);
 

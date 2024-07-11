@@ -37,6 +37,10 @@ void argus_initialize_engine(void) {
     argus::start_engine(_wrap_delta_callback(callback));
 }
 
+[[noreturn]] void argus_crash(const char *msg) {
+    argus::crash(msg);
+}
+
 LifecycleStage argus_get_current_lifecycle_stage(void) {
     return static_cast<LifecycleStage>(argus::get_current_lifecycle_stage());
 }
