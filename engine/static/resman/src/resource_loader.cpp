@@ -45,7 +45,7 @@ namespace argus {
         for (auto it = dependencies.begin(); it < dependencies.end(); it++) {
             auto res = manager.get_resource(*it);
             if (res.is_ok()) {
-                acquired.insert({ res.unwrap().uid, &res.unwrap() });
+                acquired.insert({ res.unwrap().prototype.uid, &res.unwrap() });
             } else {
                 failed = true;
                 res_err = res.unwrap_err();

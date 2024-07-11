@@ -1674,14 +1674,14 @@ namespace argus {
                 resource.prototype.uid.c_str());
         if (load_res != LUA_OK) {
             const char *err_msg = lua_tostring(*state, -1);
-            return err<void, ScriptLoadError>(resource.uid, "Failed to parse script " + resource.prototype.uid
+            return err<void, ScriptLoadError>(resource.prototype.uid, "Failed to parse script " + resource.prototype.uid
                     + " (" + std::string(err_msg) + ")");
         }
 
         auto call_res = lua_pcall(*state, 0, 0, 0);
         if (call_res != LUA_OK) {
             //TODO: print detailed trace info from VM
-            return err<void, ScriptLoadError>(resource.uid, lua_tostring(*state, -1));
+            return err<void, ScriptLoadError>(resource.prototype.uid, lua_tostring(*state, -1));
         }
 
         return ok<void, ScriptLoadError>();

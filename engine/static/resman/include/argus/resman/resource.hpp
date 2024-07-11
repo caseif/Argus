@@ -110,60 +110,6 @@ namespace argus {
          */
         const ResourcePrototype prototype;
 
-        // the uid and media_type fields are inline structs which implement
-        // a std::string conversion operator so as to allow the fields of
-        // the same name from the underlying prototype to be used in a
-        // mostly-transparent manner
-
-        /**
-         * @brief The UID of this resource.
-         *
-         * @attention This is a proxy to the same field of the underlying
-         *            ResourcePrototype and has been implemented in a way
-         *            to allow a direct proxy while maintaining field
-         *            syntax.
-         */
-        const struct {
-            /**
-             * @brief The parent Resource to proxy for.
-             */
-            Resource &parent;
-
-            /**
-             * @brief Extracts the resource's UID from its
-             *        ResourcePrototype.
-             *
-             * @return The resource's UID.
-             */
-            inline operator std::string(void) const {
-                return parent.prototype.uid;
-            }
-        } uid { *this };
-        /**
-         * @brief The media type of this resource.
-         *
-         * @attention This is a proxy to the same field of the underlying
-         *            ResourcePrototype and has been implemented in a way
-         *            to allow a direct proxy while maintaining field
-         *            syntax.
-         */
-        const struct {
-            /**
-             * @brief The parent Resource to proxy to.
-             */
-            Resource &parent;
-
-            /**
-             * @brief Extracts the resource's media type from its
-             *        ResourcePrototype.
-             *
-             * @return The resource's media type.
-             */
-            inline operator std::string(void) const {
-                return parent.prototype.media_type;
-            }
-        } media_type { *this };
-
         Resource(Resource &res) = delete;
 
         Resource operator=(Resource &ref) = delete;

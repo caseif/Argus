@@ -100,7 +100,7 @@ namespace argus {
         VkSampler sampler;
         vkCreateSampler(device.logical_device, &sampler_info, nullptr, &sampler);
 
-        return { texture_res.uid, image, sampler, staging_buf };
+        return { texture_res.prototype.uid, image, sampler, staging_buf };
     }
 
     void get_or_load_texture(RendererState &state, const Resource &material_res) {
@@ -109,7 +109,7 @@ namespace argus {
         auto existing_it = state.prepared_textures.find(texture_uid);
         if (existing_it != state.prepared_textures.end()) {
             existing_it->second.acquire();
-            state.material_textures.insert({ material_res.uid, texture_uid });
+            state.material_textures.insert({ material_res.prototype.uid, texture_uid });
             return;
         }
 
@@ -121,7 +121,7 @@ namespace argus {
         texture_res.release();
 
         state.prepared_textures.insert({ texture_uid, prepared });
-        state.material_textures.insert({ material_res.uid, texture_uid });
+        state.material_textures.insert({ material_res.prototype.uid, texture_uid });
 
         state.texture_bufs_to_free.push_back(prepared.staging_buf);
     }

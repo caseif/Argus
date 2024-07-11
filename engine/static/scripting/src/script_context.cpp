@@ -53,9 +53,9 @@ namespace argus {
     }
 
     Result<void, ScriptLoadError> ScriptContext::load_script(const Resource &resource) {
-        auto lang_it = g_media_type_langs.find(resource.media_type);
+        auto lang_it = g_media_type_langs.find(resource.prototype.media_type);
         if (lang_it == g_media_type_langs.cend() || lang_it->second != m_pimpl->language) {
-            return err<void, ScriptLoadError>(resource.uid, "Resource with media type '" + resource.prototype.media_type
+            return err<void, ScriptLoadError>(resource.prototype.uid, "Resource with media type '" + resource.prototype.media_type
                     + "' cannot be loaded by plugin '" + m_pimpl->language + "'");
         }
 
@@ -106,7 +106,7 @@ namespace argus {
                     + (!res_err.info.empty() ? (": " + res_err.info) : "") + ")");
         }
 
-        auto lang_it = g_media_type_langs.find(res.unwrap().media_type);
+        auto lang_it = g_media_type_langs.find(res.unwrap().prototype.media_type);
         if (lang_it == g_media_type_langs.cend()) {
             return err<ScriptContext &, ScriptLoadError>(uid, "No plugin registered for media type '"
                     + res.unwrap().prototype.media_type + "'");

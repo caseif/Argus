@@ -45,7 +45,7 @@ namespace argus {
         auto existing_it = state.prepared_textures.find(texture_uid);
         if (existing_it != state.prepared_textures.end()) {
             existing_it->second.acquire();
-            state.material_textures.insert({ material_res.uid, texture_uid });
+            state.material_textures.insert({ material_res.prototype.uid, texture_uid });
             return;
         }
 
@@ -86,7 +86,7 @@ namespace argus {
         texture_res.release();
 
         state.prepared_textures.insert({ texture_uid, handle });
-        state.material_textures.insert({ material_res.uid, texture_uid });
+        state.material_textures.insert({ material_res.prototype.uid, texture_uid });
     }
 
     void deinit_texture(texture_handle_t texture) {

@@ -278,7 +278,7 @@ namespace argus {
     }
 
     void build_shaders(RendererState &state, const Resource &material_res) {
-        auto existing_program_it = state.linked_programs.find(material_res.uid);
+        auto existing_program_it = state.linked_programs.find(material_res.prototype.uid);
         if (existing_program_it != state.linked_programs.end()) {
             return;
         }
@@ -289,7 +289,7 @@ namespace argus {
 
         auto program = link_program(material.get_shader_uids());
 
-        state.linked_programs.insert({ material_res.uid, program });
+        state.linked_programs.insert({ material_res.prototype.uid, program });
     }
 
     void deinit_shader(shader_handle_t shader) {

@@ -371,7 +371,7 @@ namespace argus {
                     proto.media_type.c_str());
         }
 
-        m_pimpl->loaded_resources.insert({ res->uid, res });
+        m_pimpl->loaded_resources.insert({ res->prototype.uid, res });
 
         dispatch_event<ResourceEvent>(ResourceEventType::Load, res->prototype, res);
 
@@ -480,7 +480,7 @@ namespace argus {
 
         dispatch_event<ResourceEvent>(ResourceEventType::Unload, res->prototype, nullptr);
 
-        m_pimpl->loaded_resources.erase(res->uid);
+        m_pimpl->loaded_resources.erase(res->prototype.uid);
 
         res->m_pimpl->loader.unload(res->m_pimpl->data_ptr);
 

@@ -321,9 +321,9 @@ namespace argus {
             auto vertex_count = uint32_t(bucket->vertex_count);
 
             auto &mat = bucket->material_res;
-            auto &pipeline_info = state.material_pipelines.find(mat.uid)->second;
+            auto &pipeline_info = state.material_pipelines.find(mat.prototype.uid)->second;
 
-            auto &texture_uid = state.material_textures.find(mat.uid)->second;
+            auto &texture_uid = state.material_textures.find(mat.prototype.uid)->second;
             auto &texture = state.prepared_textures.find(texture_uid)->second;
 
             auto &shader_refl = pipeline_info.reflection;
@@ -331,7 +331,7 @@ namespace argus {
             //auto &texture_uid = mat.get<Material>().get_texture_uid();
             //auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
-            auto ds_it = frame_state.material_desc_sets.find(mat.uid);
+            auto ds_it = frame_state.material_desc_sets.find(mat.prototype.uid);
             std::vector<VkDescriptorSet> desc_sets;
             if (ds_it != frame_state.material_desc_sets.cend()) {
                 desc_sets = ds_it->second;
@@ -385,7 +385,7 @@ namespace argus {
                 vkUpdateDescriptorSets(state.device.logical_device, uint32_t(ds_writes.size()), ds_writes.data(),
                         0, nullptr);
 
-                frame_state.material_desc_sets.insert({ mat.uid, desc_sets });
+                frame_state.material_desc_sets.insert({ mat.prototype.uid, desc_sets });
             }
 
             auto current_ds = desc_sets[0];

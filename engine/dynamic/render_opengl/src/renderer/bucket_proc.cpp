@@ -58,7 +58,7 @@ namespace argus {
                 continue;
             }
 
-            auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.uid);
+            auto program_it = scene_state.parent_state.linked_programs.find(bucket->material_res.prototype.uid);
             argus_assert(program_it != scene_state.parent_state.linked_programs.cend());
 
             // the program should have been linked during object processing

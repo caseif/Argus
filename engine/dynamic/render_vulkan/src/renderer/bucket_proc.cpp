@@ -71,12 +71,13 @@ namespace argus {
                 continue;
             }
 
-            auto pipeline_it = scene_state.parent_state.material_pipelines.find(bucket->material_res.uid);
+            auto pipeline_it = scene_state.parent_state.material_pipelines.find(bucket->material_res.prototype.uid);
             affirm_precond(pipeline_it != scene_state.parent_state.material_pipelines.cend(),
                     "Cannot find material pipeline");
 
             // the pipeline should have been built during object processing
-            auto &pipeline = scene_state.parent_state.material_pipelines.find(bucket->material_res.uid)->second;
+            auto &pipeline = scene_state.parent_state.material_pipelines
+                    .find(bucket->material_res.prototype.uid)->second;
 
             auto attr_position_loc = pipeline.reflection.get_attr_loc(SHADER_ATTRIB_POSITION);
             auto attr_normal_loc = pipeline.reflection.get_attr_loc(SHADER_ATTRIB_NORMAL);

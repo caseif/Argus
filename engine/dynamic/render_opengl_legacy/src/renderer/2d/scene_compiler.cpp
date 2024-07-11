@@ -30,7 +30,7 @@
 
 namespace argus {
     static BucketKey _get_bucket_key(ProcessedRenderObject &processed_obj) {
-        return BucketKey { processed_obj.material_res.uid, processed_obj.atlas_stride, processed_obj.z_index };
+        return BucketKey { processed_obj.material_res.prototype.uid, processed_obj.atlas_stride, processed_obj.z_index };
     }
 
     static void _handle_new_obj(Scene2DState &scene_state, ProcessedRenderObject &processed_obj) {

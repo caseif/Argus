@@ -264,7 +264,7 @@ namespace argus {
 
         for (auto &[_, bucket] : scene_state.render_buckets) {
             auto &mat = bucket->material_res;
-            auto &program_info = state.linked_programs.find(mat.uid)->second;
+            auto &program_info = state.linked_programs.find(mat.prototype.uid)->second;
             auto &texture_uid = mat.get<Material>().get_texture_uid();
             auto tex_handle = state.prepared_textures.find(texture_uid)->second;
 
