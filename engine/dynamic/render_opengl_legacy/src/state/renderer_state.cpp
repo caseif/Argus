@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/common/scene.hpp"
 
 #include "internal/render_opengl_legacy/renderer/shader_mgmt.hpp"

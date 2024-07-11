@@ -19,9 +19,8 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/misc.hpp"
 #include "argus/lowlevel/time.hpp"
-
-#include "argus/scripting.hpp"
 
 #include "argus/core/event.hpp"
 

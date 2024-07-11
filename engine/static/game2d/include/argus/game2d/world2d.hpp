@@ -19,6 +19,7 @@
 #pragma once
 
 #include "argus/lowlevel/math.hpp"
+#include "argus/lowlevel/misc.hpp"
 #include "argus/lowlevel/result.hpp"
 
 #include "argus/render/2d/camera_2d.hpp"

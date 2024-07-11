@@ -47,50 +47,62 @@ namespace argus {
     template<typename T>
     [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr);
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(
+            const ObjectType &type, const void *ptr);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(const ObjectType &type, const void *ptr,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(
+            const ObjectType &type, const void *ptr,
             size_t size);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(const ObjectType &type, int64_t val);
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(
+            const ObjectType &type, int64_t val);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_float_object_wrapper(const ObjectType &type, double val);
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_float_object_wrapper(
+            const ObjectType &type, double val);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(const ObjectType &type, bool val);
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_bool_object_wrapper(
+            const ObjectType &type, bool val);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_enum_object_wrapper(const ObjectType &type, int64_t ordinal);
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_enum_object_wrapper(
+            const ObjectType &type, int64_t ordinal);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_string_object_wrapper(const ObjectType &type,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_string_object_wrapper(
+            const ObjectType &type,
             const std::string &str);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(
+            const ObjectType &type,
             const ProxiedScriptCallback &fn);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &type,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(
+            const ObjectType &type,
             const void *data, size_t count);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(const ObjectType &vec_type,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(
+            const ObjectType &vec_type,
             const VectorWrapper &vec);
 
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_ref_object_wrapper(const ObjectType &vec_type,
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_ref_object_wrapper(
+            const ObjectType &vec_type,
             VectorWrapper vec);
 
     template<typename V, typename E = typename std::remove_cv_t<V>::value_type, bool is_heap>
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> _create_vector_object_wrapper(const ObjectType &type, V &vec) {
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> _create_vector_object_wrapper(
+            const ObjectType &type, V &vec) {
         static_assert(!std::is_function_v<E> && !is_std_function_v<E>, "Vectors of callbacks are not supported");
         static_assert(!is_std_vector_v<E>, "Vectors of vectors are not supported");
         static_assert(!std::is_same_v<E, bool>, "Vectors of booleans are not supported");
         static_assert(!std::is_same_v<std::remove_cv_t<std::remove_reference_t<E>>, char *>,
                 "Vectors of C-strings are not supported (use std::string instead)");
-        argus_assert(type.element_type.has_value());
+        argus_assert(type.primary_type.has_value());
 
         // ensure the vector reference will remain valid
         if (type.type == IntegralType::VectorRef && is_heap) {
             return create_vector_ref_object_wrapper(type,
-                    VectorWrapper(const_cast<std::remove_cv_t<V> &>(vec), *type.element_type.value()));
+                    VectorWrapper(const_cast<std::remove_cv_t<V> &>(vec), *type.primary_type.value()));
         } else {
-            if (type.element_type.value()->type != IntegralType::String) {
-                argus_assert(type.element_type.value()->size == sizeof(E));
+            if (type.primary_type.value()->type != IntegralType::String) {
+                argus_assert(type.primary_type.value()->size == sizeof(E));
             }
 
             ObjectType real_type = type;
@@ -111,8 +123,26 @@ namespace argus {
         return _create_vector_object_wrapper<V, E, false>(type, vec);
     }
 
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_result_object_wrapper(const ObjectType &res_type,
+            bool is_ok, const ObjectType &resolved_type, size_t resolved_size, void *resolved_ptr);
+
+    template<typename T, typename E>
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_result_object_wrapper(
+            const ObjectType &res_type, Result<T, E> &result) {
+        return create_result_object_wrapper(
+                res_type,
+                result.is_ok(),
+                *(result.is_ok() ? res_type.primary_type : res_type.secondary_type).value(),
+                result.is_ok() ? sizeof(T) : sizeof(E),
+                result.is_ok()
+                        ? reinterpret_cast<void *>(&result.unwrap())
+                        : reinterpret_cast<void *>(&result.unwrap_err())
+        );
+    }
+
     template<typename T>
-    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_auto_object_wrapper(const ObjectType &type, T val) {
+    [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_auto_object_wrapper(
+            const ObjectType &type, T val) {
         using B = std::remove_cv_t<remove_reference_wrapper_t<std::remove_reference_t<std::remove_pointer_t<T>>>>;
 
         // It's possible for a script to pass a vector literal to a bound
@@ -153,8 +183,8 @@ namespace argus {
     }
 
     template<typename ArgsTuple, size_t... Is>
-    [[nodiscard]] static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple_impl(ArgsTuple &tuple,
-            const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
+    [[nodiscard]] static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple_impl(
+            ArgsTuple &tuple, const std::vector<ObjectType>::const_iterator &types_it, std::index_sequence<Is...>) {
         std::vector<Result<ObjectWrapper, ReflectiveArgumentsError>> results;
         (results.emplace_back(create_auto_object_wrapper<std::tuple_element_t<Is, ArgsTuple>>(*(types_it + Is),
                 std::get<Is>(tuple))), ...);
@@ -172,8 +202,8 @@ namespace argus {
     }
 
     template<typename ArgsTuple>
-    [[nodiscard]] static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple(ArgsTuple &tuple,
-            const std::vector<ObjectType>::const_iterator &types_it) {
+    [[nodiscard]] static Result<std::vector<ObjectWrapper>, ReflectiveArgumentsError> _make_params_from_tuple(
+            ArgsTuple &tuple, const std::vector<ObjectType>::const_iterator &types_it) {
         return _make_params_from_tuple_impl(tuple, types_it, std::make_index_sequence<std::tuple_size_v<ArgsTuple>> {});
     }
 
@@ -292,7 +322,8 @@ namespace argus {
                 const auto &wrapper = reinterpret_cast<const VectorWrapper &>(obj);
                 return wrapper.get_underlying_vector<E>();
             } else {
-                crash("Invalid vector object type magic");
+                crash("Invalid vector object type magic %d",
+                        std::underlying_type_t<VectorObjectType>(obj.get_object_type()));
             }
         } else if constexpr (is_reference_wrapper_v<T>) {
             argus_assert(param.type.type == IntegralType::Pointer);

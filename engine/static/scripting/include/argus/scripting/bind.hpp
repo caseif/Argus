@@ -183,26 +183,72 @@ namespace argus {
 
                 // _create_object_type is used to create function definitions
                 // too so it doesn't attempt to resolve the type name
-                if (ret_obj_type.type == IntegralType::Pointer
-                        || ret_obj_type.type == IntegralType::Struct) {
-                    ret_obj_type.type_name = get_bound_type<ReturnType>()
-                            .expect("Tried to create function wrapper with unbound return struct type").name;
-                } else if (ret_obj_type.type == IntegralType::Enum) {
-                    ret_obj_type.type_name = get_bound_enum<ReturnType>()
-                            .expect("Tried to create function wrapper with unbound return enum type").name;
-                } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
-                        && (ret_obj_type.element_type.value()->type == IntegralType::Struct
-                                || ret_obj_type.element_type.value()->type == IntegralType::Pointer)) {
-                    ret_obj_type.element_type.value()->type_name
-                            = get_bound_type(ret_obj_type.element_type.value()->type_index.value())
-                            .expect("Tried to create function wrapper with vector return type and "
-                                    "unbound element struct type").name;
-                } else if ((ret_obj_type.type == IntegralType::Vector || ret_obj_type.type == IntegralType::VectorRef)
-                        && ret_obj_type.element_type.value()->type == IntegralType::Enum) {
-                    ret_obj_type.element_type.value()->type_name
-                            = get_bound_enum(ret_obj_type.element_type.value()->type_index.value())
-                            .expect("Tried to create function wrapper with vector return type and "
-                                    "unbound element enum type").name;
+                //TODO: figure out if we can move this to the .cpp file
+                switch (ret_obj_type.type) {
+                    case IntegralType::Pointer:
+                    case IntegralType::Struct: {
+                        ret_obj_type.type_name = get_bound_type<ReturnType>()
+                                .expect("Tried to create function wrapper with unbound return struct type").name;
+
+                        break;
+                    }
+                    case IntegralType::Enum: {
+                        ret_obj_type.type_name = get_bound_enum<ReturnType>()
+                                .expect("Tried to create function wrapper with unbound return enum type").name;
+
+                        break;
+                    }
+                    case IntegralType::Vector:
+                    case IntegralType::VectorRef: {
+                        if (ret_obj_type.primary_type.value()->type == IntegralType::Struct
+                                || ret_obj_type.primary_type.value()->type == IntegralType::Pointer) {
+                            ret_obj_type.primary_type.value()->type_name
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                    .expect("Tried to create function wrapper with vector return type and "
+                                            "unbound element struct type").name;
+                        } else if (ret_obj_type.primary_type.value()->type == IntegralType::Enum) {
+                            ret_obj_type.primary_type.value()->type_name
+                                    = get_bound_enum(ret_obj_type.primary_type.value()->type_index.value())
+                                    .expect("Tried to create function wrapper with vector return type and "
+                                            "unbound element enum type").name;
+                        }
+
+                        break;
+                    }
+                    case IntegralType::Result: {
+                        argus_assert(ret_obj_type.primary_type.has_value());
+                        argus_assert(ret_obj_type.secondary_type.has_value());
+
+                        if (ret_obj_type.primary_type.value()->type == IntegralType::Struct
+                                || ret_obj_type.primary_type.value()->type == IntegralType::Pointer) {
+                            ret_obj_type.primary_type.value()->type_name
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                            .expect("Tried to create function wrapper with result return type and "
+                                                    "unbound value struct type").name;
+                        } else if (ret_obj_type.primary_type.value()->type == IntegralType::Enum) {
+                            ret_obj_type.primary_type.value()->type_name
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                            .expect("Tried to create function wrapper with result return type and "
+                                                    "unbound value enum type").name;
+                        }
+
+                        if (ret_obj_type.secondary_type.value()->type == IntegralType::Struct
+                                || ret_obj_type.secondary_type.value()->type == IntegralType::Pointer) {
+                            ret_obj_type.secondary_type.value()->type_name
+                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_index.value())
+                                            .expect("Tried to create function wrapper with result return type and "
+                                                    "unbound error struct type").name;
+                        } else if (ret_obj_type.secondary_type.value()->type == IntegralType::Enum) {
+                            ret_obj_type.secondary_type.value()->type_name
+                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_index.value())
+                                            .expect("Tried to create function wrapper with result return type and "
+                                                    "unbound error enum type").name;
+                        }
+
+                        break;
+                    }
+                    default:
+                        break; // nothing to do
                 }
 
                 if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<
@@ -217,6 +263,8 @@ namespace argus {
                 } else if constexpr (is_std_vector_v<std::remove_cv_t<
                         std::remove_reference_t<std::remove_pointer_t<ReturnType>>>>) {
                     return create_vector_object_wrapper_from_heap(ret_obj_type, ret);
+                } else if constexpr (is_result_v<std::remove_cv_t<ReturnType>>) {
+                    return create_result_object_wrapper(ret_obj_type, ret);
                 } else if constexpr (std::is_reference_v<ReturnType>) {
                     ObjectWrapper wrapper(ret_obj_type, ret_obj_size);
 

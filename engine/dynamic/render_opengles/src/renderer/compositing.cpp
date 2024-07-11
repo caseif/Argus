@@ -20,6 +20,8 @@
 #include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/math.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/resman/resource_manager.hpp"
 
 #include "argus/render/common/canvas.hpp"

@@ -27,6 +27,26 @@ namespace argus {
     template<typename T, typename E>
     class Result;
 
+    template<typename T>
+    struct is_result : std::false_type {
+    };
+
+    template<typename T, typename E>
+    struct is_result<Result<T, E>> : std::true_type {
+    };
+
+    template<typename T>
+    constexpr bool is_result_v = is_result<T>::value;
+
+    template<typename T>
+    struct result_traits;
+
+    template<typename T, typename E>
+    struct result_traits<Result<T, E>> {
+        using value_type = T;
+        using error_type = E;
+    };
+
     template<typename, typename T>
     struct has_to_string_fn : std::false_type {
     };

@@ -20,6 +20,8 @@
 #include "argus/lowlevel/logging.hpp"
 #include "argus/lowlevel/macros.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "internal/render_vulkan/module_render_vulkan.hpp"
 #include "internal/render_vulkan/setup/device.hpp"
 #include "internal/render_vulkan/setup/queues.hpp"

@@ -103,6 +103,13 @@ namespace argus {
             using E = typename B::value_type;
             return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B), std::nullopt, std::nullopt,
                     create_object_type<E, flow_dir, is_const>() };
+            } else if constexpr (is_result_v<std::remove_cv_t<T>>) {
+            static_assert(flow_dir == DataFlowDirection::ToScript,
+                    "Result types may not be passed or returned from scripts");
+            using V = typename result_traits<B>::value_type;
+            using E = typename result_traits<B>::error_type;
+            return { IntegralType::Result, sizeof(T), is_const, typeid(T), std::nullopt, std::nullopt,
+                    create_object_type<V, flow_dir, is_const>(), create_object_type<E, flow_dir, is_const>() };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
             return { IntegralType::Boolean, sizeof(bool), is_const };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
@@ -118,6 +125,8 @@ namespace argus {
         } else if constexpr (std::is_reference_v<T> || std::is_pointer_v<std::remove_reference_t<T>>) {
             // too much of a headache to worry about
             static_assert(std::is_class_v<B>, "Non-class reference params in bound functions are not supported");
+            // no real use case for these, might as well simplify our implementation
+            static_assert(!is_result_v<B>, "Result references in bound functions are not supported");
             // References passed to scripts must be invalidated when the
             // underlying object is destroyed, which is only possible if the
             // type derives from AutoCleanupable.

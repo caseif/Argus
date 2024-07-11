@@ -54,8 +54,18 @@ namespace argus {
 
             return ok<void, BindingError>();
         } else if (param_def.type == IntegralType::Vector || param_def.type == IntegralType::VectorRef) {
-            argus_assert(param_def.element_type.has_value());
-            auto el_res = _resolve_param(*param_def.element_type.value(), false);
+            argus_assert(param_def.primary_type.has_value());
+            auto el_res = _resolve_param(*param_def.primary_type.value(), false);
+            if (el_res.is_err()) {
+                return el_res;
+            }
+
+            return ok<void, BindingError>();
+        } else if (param_def.type == IntegralType::Result) {
+            argus_assert(param_def.primary_type.has_value());
+            argus_assert(param_def.secondary_type.has_value());
+            auto el_res = _resolve_param(*param_def.primary_type.value(), false)
+                    .collate(_resolve_param(*param_def.secondary_type.value(), false));
             if (el_res.is_err()) {
                 return el_res;
             }
@@ -117,8 +127,8 @@ namespace argus {
 
     [[nodiscard]] static Result<void, BindingError> _resolve_field(ObjectType &field_def) {
         if (field_def.type == IntegralType::Vector || field_def.type == IntegralType::VectorRef) {
-            argus_assert(field_def.element_type.has_value());
-            auto el_res = _resolve_field(*field_def.element_type.value());
+            argus_assert(field_def.primary_type.has_value());
+            auto el_res = _resolve_field(*field_def.primary_type.value());
             if (el_res.is_err()) {
                 return el_res;
             }
@@ -258,9 +268,8 @@ namespace argus {
     [[nodiscard]] Result<T &, BindingError> _get_bound_type(const std::type_index type_index) {
         auto index_it = g_bound_type_indices.find(std::type_index(type_index));
         if (index_it == g_bound_type_indices.cend()) {
-            crash("Type " + std::string(type_index.name())
-                    + " is not bound (check binding order and ensure bind_type"
-                      " is called after creating type definition)");
+            crash("Type %s is not bound (check binding order and ensure bind_type"
+                      " is called after creating type definition)", type_index.name());
         }
         auto type_it = g_bound_types.find(index_it->second);
         argus_assert(type_it != g_bound_types.cend());

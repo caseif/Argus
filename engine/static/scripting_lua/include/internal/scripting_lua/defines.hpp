@@ -32,10 +32,18 @@ namespace argus {
     constexpr const char *k_lua_require = "require";
     constexpr const char *k_lua_require_def = "default_require";
 
+    constexpr const char *k_result_is_ok_fn = "is_ok";
+    constexpr const char *k_result_is_err_fn = "is_err";
+    constexpr const char *k_result_unwrap_fn = "unwrap";
+    constexpr const char *k_result_unwrap_err_fn = "unwrap_err";
+    constexpr const char *k_result_expect_fn = "expect";
+    constexpr const char *k_result_expect_err_fn = "expect_err";
+
     constexpr const char *k_clone_fn = "clone";
 
     constexpr const char *k_mt_vector = "_internal_vector";
     constexpr const char *k_mt_vector_ref = "_internal_vectorref";
+    constexpr const char *k_mt_result = "_internal_result";
 
     constexpr const char *k_const_prefix = "const ";
 

@@ -20,8 +20,6 @@
 
 #include "argus/lowlevel/time.hpp"
 
-#include "argus/scripting/types.hpp"
-
 #include <cstdint>
 
 namespace argus {

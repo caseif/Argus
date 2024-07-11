@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/enum_ops.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 #include "internal/wm/pimpl/window.hpp"

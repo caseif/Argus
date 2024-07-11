@@ -261,7 +261,7 @@ namespace argus {
 
     static Result<ObjectWrapper, std::string> _read_vector_from_table(lua_State *state,
             const std::string &qual_fn_name, int param_index, const ObjectType &param_def) {
-        const auto &element_type = *param_def.element_type.value();
+        const auto &element_type = *param_def.primary_type.value();
 
         // for simplicity's sake we require contiguous indices
 
@@ -562,7 +562,7 @@ namespace argus {
             }
             case IntegralType::Vector:
             case IntegralType::VectorRef: {
-                argus_assert(param_def.element_type.has_value());
+                argus_assert(param_def.primary_type.has_value());
 
                 if (lua_istable(state, param_index)) {
                     return _read_vector_from_table(state, qual_fn_name, param_index, param_def);
@@ -702,6 +702,178 @@ namespace argus {
         return 1;
     }
 
+    static int _lua_result_is_ok_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        void *udata_ptr = lua_touserdata(state, -1);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        lua_pushboolean(state, res->is_ok());
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_is_err_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        void *udata_ptr = lua_touserdata(state, -1);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        lua_pushboolean(state, !res->is_ok());
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_unwrap_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        void *udata_ptr = lua_touserdata(state, -1);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        if (!res->is_ok()) {
+            int err_inc = luaL_error(state, "Cannot unwrap value from error-typed result");
+            stack_guard.increment(err_inc);
+            return err_inc;
+        }
+
+        _push_value(state,
+                res->to_object_wrapper().expect("Failed to create object wrapper while unwrapping result value"));
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_unwrap_err_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        void *udata_ptr = lua_touserdata(state, -1);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        if (res->is_ok()) {
+            int err_inc = luaL_error(state, "Cannot unwrap error from value-typed result");
+            stack_guard.increment(err_inc);
+            return err_inc;
+        }
+
+        _push_value(state,
+                res->to_object_wrapper().expect("Failed to create object wrapper while unwrapping result error"));
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_expect_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        auto arg_count = lua_gettop(state) - 1;
+
+        void *udata_ptr = lua_touserdata(state, -1 - arg_count);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        if (!res->is_ok()) {
+            int err_inc = luaL_error(state, arg_count > 0 ? lua_tostring(state, -1) : "Expectation failed");
+            stack_guard.increment(err_inc);
+            return err_inc;
+        }
+
+        _push_value(state,
+                res->to_object_wrapper().expect("Failed to create object wrapper while unwrapping result error"));
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_expect_err_handler(lua_State *state) {
+        StackGuard stack_guard(state);
+
+        auto arg_count = lua_gettop(state) - 1;
+
+        void *udata_ptr = lua_touserdata(state, -1 - arg_count);
+
+        if (udata_ptr == nullptr) {
+            return luaL_error(state, "Result methods may not be statically invoked (use the colon operator instead)");
+        }
+
+        const ResultWrapper *res = reinterpret_cast<const ResultWrapper *>(udata_ptr);
+
+        if (res->is_ok()) {
+            int err_inc = luaL_error(state, arg_count > 0 ? lua_tostring(state, -1) : "Expectation failed");
+            stack_guard.increment(err_inc);
+            return err_inc;
+        }
+
+        _push_value(state,
+                res->to_object_wrapper().expect("Failed to create object wrapper while unwrapping result error"));
+        stack_guard.increment();
+
+        return 1;
+    }
+
+    static int _lua_result_index_handler(lua_State *state) {
+        StackGuard guard(state);
+
+        const char *method_name = lua_tostring(state, -1);
+
+        if (strcmp(method_name, k_result_is_ok_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_is_ok_handler);
+            guard.increment();
+            return 1;
+        } else if (strcmp(method_name, k_result_is_err_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_is_err_handler);
+            guard.increment();
+            return 1;
+        } else if (strcmp(method_name, k_result_unwrap_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_unwrap_handler);
+            guard.increment();
+            return 1;
+        } else if (strcmp(method_name, k_result_unwrap_err_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_unwrap_err_handler);
+            guard.increment();
+            return 1;
+        } else if (strcmp(method_name, k_result_expect_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_expect_handler);
+            guard.increment();
+            return 1;
+        } else if (strcmp(method_name, k_result_expect_err_fn) == 0) {
+            lua_pushcfunction(state, _lua_result_expect_err_handler);
+            guard.increment();
+            return 1;
+        } else {
+            auto err_count = luaL_error(state,
+                    "Index '%s' does not exist in result type (make sure to unwrap the result before using it)",
+                    method_name);
+            guard.increment(err_count);
+            return err_count;
+        }
+    }
+
     static void _push_vector_vals(lua_State *state, const ObjectType &element_type, const ArrayBlob &vec) {
         argus_assert(vec.size() < INT_MAX);
         for (size_t i = 0; i < vec.size(); i++) {
@@ -782,6 +954,30 @@ namespace argus {
         }
     }
 
+    static void _push_result(lua_State *state, const ResultWrapper &result) {
+        // create userdata to return
+        ResultWrapper *udata = reinterpret_cast<ResultWrapper *>(
+                lua_newuserdata(state, sizeof(ResultWrapper) + result.get_size()));
+        new(udata) ResultWrapper(result);
+
+        // create metatable
+        luaL_newmetatable(state, k_mt_result);
+
+        // indexing is handled by a delgating function instead of a dispatch
+        // table so that we can display a nice error message when a script tries
+        // to use a result directly
+
+        // push index handler function
+        lua_pushcfunction(state, _lua_result_index_handler);
+        // bind handler to metatable
+        lua_setfield(state, -2, k_lua_index);
+
+        // bind metatable to userdata
+        lua_setmetatable(state, -2);
+
+        // table is now on top of stack
+    }
+
     static void _push_value(lua_State *state, const ObjectWrapper &wrapper) {
         argus_assert(wrapper.type.type != IntegralType::Void);
 
@@ -797,8 +993,7 @@ namespace argus {
                 lua_pushboolean(state, _unwrap_boolean_wrapper(wrapper));
                 break;
             case IntegralType::String:
-                lua_pushstring(state, reinterpret_cast<const char *>(
-                        wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value));
+                lua_pushstring(state, reinterpret_cast<const char *>(wrapper.get_ptr0()));
                 break;
             case IntegralType::Struct: {
                 argus_assert(wrapper.type.type_name.has_value());
@@ -812,8 +1007,8 @@ namespace argus {
                 break;
             }
             case IntegralType::Pointer: {
-                argus_assert(wrapper.type.type_name.has_value());
                 argus_assert(wrapper.type.type_index.has_value());
+                argus_assert(wrapper.type.type_name.has_value());
 
                 void *ptr = *reinterpret_cast<void *const *>(wrapper.get_ptr0());
 
@@ -831,14 +1026,14 @@ namespace argus {
                 break;
             }
             case IntegralType::Vector: {
-                auto &vec = *reinterpret_cast<const ArrayBlob *>(wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
+                auto &vec = wrapper.get_value<ArrayBlob>();
                 affirm_precond(vec.size() <= INT_MAX, "Vector is too big");
 
                 // create table to return
                 lua_createtable(state, int(vec.size()), 0);
 
-                argus_assert(wrapper.type.element_type.has_value());
-                _push_vector_vals(state, *wrapper.type.element_type.value(), vec);
+                argus_assert(wrapper.type.primary_type.has_value());
+                _push_vector_vals(state, *wrapper.type.primary_type.value(), vec);
 
                 // create metatable
                 luaL_newmetatable(state, k_mt_vector);
@@ -852,8 +1047,7 @@ namespace argus {
                 break;
             }
             case IntegralType::VectorRef: {
-                auto &vec = *reinterpret_cast<const VectorWrapper *>(
-                        wrapper.is_on_heap ? wrapper.heap_ptr : wrapper.value);
+                auto &vec = *reinterpret_cast<const VectorWrapper *>(wrapper.get_ptr0());
 
                 // create userdata to return
                 VectorWrapper *udata = reinterpret_cast<VectorWrapper *>(lua_newuserdata(state, sizeof(VectorWrapper)));
@@ -875,6 +1069,13 @@ namespace argus {
                 lua_setmetatable(state, -2);
 
                 // table is now on top of stack
+                break;
+            }
+            case IntegralType::Result: {
+                const auto &result = wrapper.get_value<ResultWrapper>();
+
+                _push_result(state, result);
+
                 break;
             }
             default:

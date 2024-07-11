@@ -23,8 +23,10 @@
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/wrapper.hpp"
 
+#include <functional>
 #include <new>
 #include <optional>
+#include <utility>
 
 #include <cstring>
 
@@ -35,17 +37,22 @@ namespace argus {
             std::optional<std::type_index> type_index,
             std::optional<std::string> type_name,
             std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type,
-            std::optional<ObjectType> element_type):
+            std::optional<ObjectType> primary_type,
+            std::optional<ObjectType> secondary_type):
         type(type),
         size(size),
         is_const(is_const),
         type_index(type_index),
         type_name(std::move(type_name)),
         callback_type(std::move(callback_type)),
-        element_type(element_type.has_value()
+        primary_type(primary_type.has_value()
                 ? std::make_optional<std::unique_ptr<ObjectType>>(
-                        std::make_unique<ObjectType>(std::move(element_type.value())))
-                : std::nullopt) {
+                        std::make_unique<ObjectType>(std::move(primary_type.value())))
+                : std::nullopt),
+        secondary_type(secondary_type.has_value()
+                ? std::make_optional<std::unique_ptr<ObjectType>>(
+                        std::make_unique<ObjectType>(std::move(secondary_type.value())))
+                : std::nullopt){
 
     }
 
@@ -59,9 +66,13 @@ namespace argus {
                 ? std::make_optional<std::unique_ptr<ScriptCallbackType>>(
                         std::make_unique<ScriptCallbackType>(*rhs.callback_type.value()))
                 : std::nullopt),
-        element_type(rhs.element_type.has_value()
+        primary_type(rhs.primary_type.has_value()
                 ? std::make_optional<std::unique_ptr<ObjectType>>(
-                        std::make_unique<ObjectType>(*rhs.element_type.value()))
+                        std::make_unique<ObjectType>(*rhs.primary_type.value()))
+                : std::nullopt),
+        secondary_type(rhs.secondary_type.has_value()
+                ? std::make_optional<std::unique_ptr<ObjectType>>(
+                        std::make_unique<ObjectType>(*rhs.secondary_type.value()))
                 : std::nullopt) {
     }
 
@@ -72,38 +83,18 @@ namespace argus {
         type_index(rhs.type_index),
         type_name(std::move(rhs.type_name)),
         callback_type(std::move(rhs.callback_type)),
-        element_type(std::move(rhs.element_type)) {
+        primary_type(std::move(rhs.primary_type)),
+        secondary_type(std::move(rhs.secondary_type)) {
     }
 
     ObjectType::~ObjectType(void) = default;
 
     ObjectType &ObjectType::operator=(const ObjectType &rhs) {
-        type = rhs.type;
-        size = rhs.size;
-        is_const = rhs.is_const;
-        type_index = rhs.type_index;
-        type_name = rhs.type_name;
-        callback_type = rhs.callback_type.has_value()
-                ? std::make_optional<std::unique_ptr<ScriptCallbackType>>(
-                        std::make_unique<ScriptCallbackType>(*rhs.callback_type.value()))
-                : std::nullopt;
-        element_type = rhs.element_type.has_value()
-                ? std::make_optional<std::unique_ptr<ObjectType>>(
-                        std::make_unique<ObjectType>(*rhs.element_type.value()))
-                : std::nullopt;
+        new(this) ObjectType(rhs);
         return *this;
     }
 
-    ObjectType &ObjectType::operator=(ObjectType &&rhs) noexcept {
-        type = rhs.type;
-        size = rhs.size;
-        is_const = rhs.is_const;
-        type_index = rhs.type_index;
-        type_name = rhs.type_name;
-        callback_type = std::move(rhs.callback_type);
-        element_type = std::move(rhs.element_type);
-        return *this;
-    }
+    ObjectType &ObjectType::operator=(ObjectType &&rhs) noexcept = default;
 
     ObjectWrapper::ObjectWrapper(void):
         type(ObjectType { IntegralType::Void, 0 }),
@@ -117,13 +108,16 @@ namespace argus {
         type(type),
         is_initialized(false) {
         argus_assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
-                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef || type.size == size);
+                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef
+                || type.type == IntegralType::Result || type.size == size);
 
         // override size for pointer type since we're only copying the pointer
         size_t copy_size = type.type == IntegralType::Pointer
                 ? sizeof(void *)
-                : type.type == IntegralType::String || type.type == IntegralType::Vector
+                : (type.type == IntegralType::String
+                        || type.type == IntegralType::Vector
                         || type.type == IntegralType::VectorRef
+                        || type.type == IntegralType::Result)
                         ? size
                         : type.size;
         this->buffer_size = copy_size;
@@ -183,7 +177,7 @@ namespace argus {
     }
 
     void ObjectWrapper::copy_value_from(const void *src, size_t size) {
-        argus_assert(size == this->buffer_size);
+        argus_assert(size >= this->buffer_size);
         copy_wrapped_object(this->type, this->get_ptr0(), src, size);
         this->is_initialized = true;
     }
@@ -331,5 +325,49 @@ namespace argus {
     void VectorWrapper::set(size_t index, void *val) {
         affirm_precond(!m_element_type.is_const, "Cannot mutate const vector via VectorWrapper");
         (*m_set_element_fn)(m_underlying_vec, index, val);
+    }
+
+    ResultWrapper::ResultWrapper(bool is_ok, size_t resolved_size, const ObjectType &resolved_type):
+        m_ok(is_ok),
+        m_size(resolved_size),
+        m_resolved_type(resolved_type) {
+    }
+
+    ResultWrapper::ResultWrapper(const ResultWrapper &rhs):
+        ResultWrapper(rhs.m_ok, rhs.m_size, rhs.m_resolved_type) {
+        copy_wrapped_object(rhs.m_resolved_type, this->m_blob, rhs.m_blob, rhs.m_size);
+    }
+
+    ResultWrapper::ResultWrapper(ResultWrapper &&rhs):
+        ResultWrapper(rhs.m_ok, rhs.m_size, rhs.m_resolved_type) {
+        move_wrapped_object(rhs.m_resolved_type, this->m_blob, rhs.m_blob, rhs.m_size);
+    }
+
+    bool ResultWrapper::is_ok(void) const {
+        return m_ok;
+    }
+
+    size_t ResultWrapper::get_size(void) const {
+        return m_size;
+    }
+
+    const ObjectType &ResultWrapper::get_value_or_error_type(void) const {
+        return m_resolved_type;
+    }
+
+    void *ResultWrapper::get_underlying_object_ptr(void) {
+        return reinterpret_cast<void *>(m_blob);
+    }
+
+    const void *ResultWrapper::get_underlying_object_ptr(void) const {
+        return reinterpret_cast<const void *>(m_blob);
+    }
+
+    Result<ObjectWrapper, ReflectiveArgumentsError> ResultWrapper::to_object_wrapper(void) const {
+        return create_object_wrapper(m_resolved_type, m_blob, m_size);
+    }
+
+    void ResultWrapper::copy_value_or_error_from(const void *src) {
+        copy_wrapped_object(m_resolved_type, m_blob, src, m_size);
     }
 }

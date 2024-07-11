@@ -27,7 +27,7 @@ namespace argus {
     static void _bind_world_symbols(void) {
         bind_type<World2D>("World2D").expect();
         bind_member_static_function<World2D>("create", &World2D::create).expect();
-        bind_member_static_function<World2D>("get", &World2D::get_or_crash).expect();
+        bind_member_static_function<World2D>("get", &World2D::get).expect();
         bind_member_instance_function("get_id", &World2D::get_id).expect();
         bind_member_instance_function("get_scale_factor", &World2D::get_scale_factor).expect();
         bind_member_instance_function("get_camera_transform", &World2D::get_camera_transform).expect();

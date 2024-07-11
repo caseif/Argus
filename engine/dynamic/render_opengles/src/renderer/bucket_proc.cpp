@@ -18,6 +18,8 @@
 
 #include "argus/lowlevel/debug.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/defines.hpp"
 
 #include "internal/render_opengles/defines.hpp"

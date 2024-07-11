@@ -54,7 +54,8 @@ namespace argus {
         Callback,
         Type,
         Vector,
-        VectorRef
+        VectorRef,
+        Result,
     };
 
     enum class FunctionType {
@@ -80,7 +81,8 @@ namespace argus {
         std::optional<std::type_index> type_index = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
         std::optional<std::unique_ptr<ScriptCallbackType>> callback_type = std::nullopt;
-        std::optional<std::unique_ptr<ObjectType>> element_type = std::nullopt;
+        std::optional<std::unique_ptr<ObjectType>> primary_type = std::nullopt;
+        std::optional<std::unique_ptr<ObjectType>> secondary_type = std::nullopt;
 
         ObjectType(void);
 
@@ -91,7 +93,8 @@ namespace argus {
                 std::optional<std::type_index> type_index = std::nullopt,
                 std::optional<std::string> type_name = std::nullopt,
                 std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type = std::nullopt,
-                std::optional<ObjectType> element_type = std::nullopt
+                std::optional<ObjectType> primary_type = std::nullopt,
+                std::optional<ObjectType> secondary_type = std::nullopt
         );
 
         ObjectType(const ObjectType &rhs);
@@ -298,12 +301,46 @@ namespace argus {
         }
     };
 
+    class ResultWrapper {
+      private:
+        size_t m_ok;
+        size_t m_size;
+        ObjectType m_resolved_type;
+        unsigned char m_blob[0];
+
+      public:
+        ResultWrapper(bool is_ok, size_t resolved_size, const ObjectType &resolved_type);
+
+        explicit ResultWrapper(const ResultWrapper &rhs);
+
+        explicit ResultWrapper(ResultWrapper &&rhs);
+
+        ResultWrapper &operator=(const ResultWrapper &rhs) = delete;
+
+        ResultWrapper &operator=(ResultWrapper &&rhs) = delete;
+
+        [[nodiscard]] bool is_ok(void) const;
+
+        [[nodiscard]] size_t get_size(void) const;
+
+        [[nodiscard]] const ObjectType &get_value_or_error_type(void) const;
+
+        [[nodiscard]] void *get_underlying_object_ptr(void);
+
+        [[nodiscard]] const void *get_underlying_object_ptr(void) const;
+
+        [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> to_object_wrapper(void) const;
+
+        void copy_value_or_error_from(const void *src);
+    };
+
     template<typename T>
     static void _validate_value_type(const ObjectType &type) {
         static_assert(!std::is_pointer_v<T>, "Use reference type instead of pointer");
 
         if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
-                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef)) {
+                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef
+                || type.type == IntegralType::Result)) {
             argus_assert(type.size == sizeof(T));
         }
 
@@ -356,6 +393,10 @@ namespace argus {
             }
             case IntegralType::VectorRef: {
                 argus_assert(std::is_same_v<T, VectorWrapper>);
+                break;
+            }
+            case IntegralType::Result: {
+                argus_assert(std::is_same_v<T, ResultWrapper>);
                 break;
             }
             default: {
@@ -418,7 +459,7 @@ namespace argus {
         const T &get_value(void) const {
             argus_assert(is_initialized);
 
-            return reinterpret_cast<const T &>(get_value<T>());
+            return reinterpret_cast<const T &>(const_cast<ObjectWrapper *>(this)->get_value<T>());
         }
 
         template<typename T>

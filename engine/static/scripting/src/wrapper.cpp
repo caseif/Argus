@@ -135,7 +135,7 @@ namespace argus {
     }
 
     static void _validate_vec_obj_type(ObjectType vec_type) {
-        ObjectType &el_type = *vec_type.element_type.value();
+        ObjectType &el_type = *vec_type.primary_type.value();
 
         if (el_type.type == IntegralType::Void) {
             crash("Vectors of void are not supported");
@@ -161,7 +161,7 @@ namespace argus {
         _validate_vec_obj_type(vec_type);
         affirm_precond(count < SIZE_MAX, "Too many vector elements");
 
-        ObjectType &el_type = *vec_type.element_type.value();
+        ObjectType &el_type = *vec_type.primary_type.value();
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
@@ -244,12 +244,31 @@ namespace argus {
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
     }
 
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_result_object_wrapper(const ObjectType &res_type,
+            bool is_ok, const ObjectType &resolved_type, size_t resolved_size, void *resolved_ptr) {
+        affirm_precond(res_type.type == IntegralType::Result,
+                "Cannot create object wrapper (result-specific overload called for non-result-typed value");
+
+        ObjectWrapper wrapper(res_type, sizeof(ResultWrapper) + resolved_size);
+        auto &res_wrapper = wrapper.emplace<ResultWrapper>(is_ok, resolved_size, resolved_type);
+
+        void *real_ptr;
+        if (resolved_type.type == IntegralType::Pointer) {
+            real_ptr = &resolved_ptr;
+        } else {
+            real_ptr = resolved_ptr;
+        }
+
+        res_wrapper.copy_value_or_error_from(real_ptr);
+        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
+    }
+
     template<bool is_move, typename T = std::conditional_t<is_move, ArrayBlob, const ArrayBlob>>
     static void _copy_or_move_array_blob(const ObjectType &obj_type, void *dst, T &src, size_t max_len) {
         auto el_size = src.element_size();
         auto count = src.size();
 
-        ObjectType &el_type = *obj_type.element_type.value();
+        ObjectType &el_type = *obj_type.primary_type.value();
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
@@ -283,6 +302,19 @@ namespace argus {
                     copy_wrapped_object(el_type, dst_ptr, src_ptr, el_size);
                 }
             }
+        }
+    }
+
+    template<bool is_move, typename T = std::conditional_t<is_move, ResultWrapper, const ResultWrapper>>
+    static void _copy_or_move_result_wrapper(void *dst, T &src, size_t max_len) {
+        auto &dst_res = *new(dst) ResultWrapper(src.is_ok(), src.get_size(), src.get_value_or_error_type());
+
+        if constexpr (is_move) {
+            move_wrapped_object(src.get_value_or_error_type(), dst_res.get_underlying_object_ptr(),
+                    src.get_underlying_object_ptr(), max_len);
+        } else {
+            copy_wrapped_object(src.get_value_or_error_type(), dst_res.get_underlying_object_ptr(),
+                    src.get_underlying_object_ptr(), max_len);
         }
     }
 
@@ -353,6 +385,12 @@ namespace argus {
             }
             case IntegralType::VectorRef: {
                 _copy_or_move_type<VectorWrapper, is_move>(dst, src, size);
+
+                break;
+            }
+            case IntegralType::Result: {
+                auto &src_res = *reinterpret_cast<std::conditional_t<is_move, ResultWrapper, const ResultWrapper> *>(src);
+                _copy_or_move_result_wrapper<is_move>(dst, src_res, size);
 
                 break;
             }
