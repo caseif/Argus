@@ -42,7 +42,7 @@ void argus_initialize_engine(void) {
 }
 
 LifecycleStage argus_get_current_lifecycle_stage(void) {
-    return static_cast<LifecycleStage>(argus::get_current_lifecycle_stage());
+    return LifecycleStage(argus::get_current_lifecycle_stage());
 }
 
 Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering) {
