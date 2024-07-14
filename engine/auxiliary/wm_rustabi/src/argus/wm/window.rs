@@ -17,14 +17,14 @@
  */
 
 use std::ffi::c_void;
-use std::ptr::{null, null_mut};
+use std::ptr::null_mut;
 use std::time::Duration;
+
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector2u};
 use lowlevel_rustabi::util::*;
 
-use crate::wm_cabi;
 use crate::wm_cabi::*;
 
 pub struct Window {
@@ -62,7 +62,7 @@ pub fn get_window(id: &str) -> Option<Window> {
 }
 
 pub fn get_window_handle(window: &mut Window) -> *mut c_void {
-    return window.get_mut_handle();
+    return window.get_handle_mut();
 }
 
 pub fn get_window_from_handle(handle: *const c_void) -> Option<Window> {
@@ -80,7 +80,7 @@ impl Window {
         return self.handle;
     }
 
-    pub(crate) fn get_mut_handle(&mut self) -> argus_window_t {
+    pub(crate) fn get_handle_mut(&mut self) -> argus_window_t {
         return self.handle;
     }
 
@@ -131,25 +131,25 @@ impl Window {
 
     pub fn create_child_window(&mut self, id: &str) -> Window {
         unsafe {
-            return Window::of(argus_window_create_child_window(self.get_mut_handle(), str_to_cstring(id).as_ptr()));
+            return Window::of(argus_window_create_child_window(self.get_handle_mut(), str_to_cstring(id).as_ptr()));
         }
     }
 
     pub fn remove_child(&mut self, child: &Window) {
         unsafe {
-            argus_window_remove_child(self.get_mut_handle(), child.handle);
+            argus_window_remove_child(self.get_handle_mut(), child.handle);
         }
     }
 
     pub fn update(&mut self, delta: Duration) {
         unsafe {
-            argus_window_update(self.get_mut_handle(), delta.as_micros() as u64);
+            argus_window_update(self.get_handle_mut(), delta.as_micros() as u64);
         }
     }
 
     pub fn set_title(&mut self, title: &str) {
         unsafe {
-            argus_window_set_title(self.get_mut_handle(), str_to_cstring(title).as_ptr());
+            argus_window_set_title(self.get_handle_mut(), str_to_cstring(title).as_ptr());
         }
     }
 
@@ -161,14 +161,14 @@ impl Window {
 
     pub fn set_fullscreen(&mut self, fullscreen: bool) {
         unsafe {
-            argus_window_set_fullscreen(self.get_mut_handle(), fullscreen);
+            argus_window_set_fullscreen(self.get_handle_mut(), fullscreen);
         }
     }
 
     pub fn get_resolution(&mut self) -> ValueAndDirtyFlag<Vector2u> {
         unsafe {
             let mut res: ValueAndDirtyFlag<Vector2u> = std::mem::zeroed();
-            argus_window_get_resolution(self.get_mut_handle(), &mut res.value, &mut res.dirty);
+            argus_window_get_resolution(self.get_handle_mut(), &mut res.value, &mut res.dirty);
             return res;
         }
     }
@@ -181,7 +181,7 @@ impl Window {
 
     pub fn set_windowed_resolution(&mut self, width: u32, height: u32) {
         unsafe {
-            argus_window_set_windowed_resolution(self.get_mut_handle(), width, height);
+            argus_window_set_windowed_resolution(self.get_handle_mut(), width, height);
         }
     }
 
@@ -189,20 +189,20 @@ impl Window {
     pub fn is_vsync_enabled(&mut self) -> ValueAndDirtyFlag<bool> {
         unsafe {
             let mut res: ValueAndDirtyFlag<bool> = std::mem::zeroed();
-            argus_window_is_vsync_enabled(self.get_mut_handle(), &mut res.value, &mut res.dirty);
+            argus_window_is_vsync_enabled(self.get_handle_mut(), &mut res.value, &mut res.dirty);
             return res;
         }
     }
 
     pub fn set_vsync_enabled(&mut self, enabled: bool) {
         unsafe {
-            argus_window_set_vsync_enabled(self.get_mut_handle(), enabled);
+            argus_window_set_vsync_enabled(self.get_handle_mut(), enabled);
         }
     }
 
     pub fn set_windowed_position(&mut self, x: i32, y: i32) {
         unsafe {
-            argus_window_set_windowed_position(self.get_mut_handle(), x, y);
+            argus_window_set_windowed_position(self.get_handle_mut(), x, y);
         }
     }
 
@@ -222,7 +222,7 @@ impl Window {
 
     pub fn set_mouse_captured(&mut self, captured: bool) {
         unsafe {
-            argus_window_set_mouse_captured(self.get_mut_handle(), captured);
+            argus_window_set_mouse_captured(self.get_handle_mut(), captured);
         }
     }
 
@@ -234,7 +234,7 @@ impl Window {
 
     pub fn set_mouse_visible(&mut self, visible: bool) {
         unsafe {
-            argus_window_set_mouse_visible(self.get_mut_handle(), visible);
+            argus_window_set_mouse_visible(self.get_handle_mut(), visible);
         }
     }
 
@@ -246,7 +246,7 @@ impl Window {
 
     pub fn set_mouse_raw_input(&mut self, raw_input: bool) {
         unsafe {
-            argus_window_set_mouse_raw_input(self.get_mut_handle(), raw_input);
+            argus_window_set_mouse_raw_input(self.get_handle_mut(), raw_input);
         }
     }
 
@@ -258,19 +258,19 @@ impl Window {
 
     pub fn set_close_callback(&mut self, callback: WindowCallback) {
         unsafe {
-            argus_window_set_close_callback(self.get_mut_handle(), callback);
+            argus_window_set_close_callback(self.get_handle_mut(), callback);
         }
     }
 
     pub fn commit(&mut self) {
         unsafe {
-            argus_window_commit(self.get_mut_handle());
+            argus_window_commit(self.get_handle_mut());
         }
     }
 
     pub fn request_close(&mut self) {
         unsafe {
-            argus_window_request_close(self.get_mut_handle());
+            argus_window_request_close(self.get_handle_mut());
         }
     }
 }

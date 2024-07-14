@@ -17,14 +17,12 @@
  */
 
 use std::ffi::{c_char, c_void};
-use std::mem;
 use std::ptr::null_mut;
 
 use lowlevel_rustabi::util::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::argus::wm::Window;
-use crate::wm_cabi;
 use crate::wm_cabi::*;
 
 pub struct GLContext {
@@ -54,7 +52,7 @@ impl VkSurface {
         return self.handle;
     }
 
-    pub unsafe fn get_mut_handle(&mut self) -> *mut c_void {
+    pub unsafe fn get_handle_mut(&mut self) -> *mut c_void {
         return self.handle;
     }
 }
@@ -85,7 +83,7 @@ pub fn gl_unload_library() {
 pub fn gl_create_context(window: &mut Window, version_major: i32, version_minor: i32, flags: GLContextFlags)
     -> GLContext {
     unsafe {
-        let handle = argus_gl_create_context(window.get_mut_handle(), version_major, version_minor, flags.into());
+        let handle = argus_gl_create_context(window.get_handle_mut(), version_major, version_minor, flags.into());
         return GLContext { handle };
     }
 }
@@ -104,7 +102,7 @@ pub fn gl_is_context_current(context: &GLContext) -> bool {
 
 pub fn gl_make_context_current(window: &mut Window, context: &GLContext) {
     unsafe {
-        argus_gl_make_context_current(window.get_mut_handle(), context.handle);
+        argus_gl_make_context_current(window.get_handle_mut(), context.handle);
     }
 }
 
@@ -120,7 +118,7 @@ pub fn gl_swap_interval(interval: i32) {
 
 pub fn gl_swap_buffers(window: &mut Window) {
     unsafe {
-        argus_gl_swap_buffers(window.get_mut_handle());
+        argus_gl_swap_buffers(window.get_handle_mut());
     }
 }
 
@@ -133,7 +131,7 @@ pub fn vk_is_supported() -> bool {
 pub fn vk_create_surface(window: &mut Window, instance: &VkInstance) -> VkSurface {
     unsafe {
         let mut surface: *mut c_void = null_mut();
-        argus_vk_create_surface(window.get_mut_handle(), instance.handle, &mut surface);
+        argus_vk_create_surface(window.get_handle_mut(), instance.handle, &mut surface);
         return VkSurface::of(surface);
     }
 }
@@ -141,10 +139,10 @@ pub fn vk_create_surface(window: &mut Window, instance: &VkInstance) -> VkSurfac
 pub fn vk_get_required_instance_extensions(window: &mut Window) -> Vec<String> {
     unsafe {
         let mut count: u32 = 0;
-        argus_vk_get_required_instance_extensions(window.get_mut_handle(), &mut count, null_mut());
+        argus_vk_get_required_instance_extensions(window.get_handle_mut(), &mut count, null_mut());
         let mut exts = Vec::<*const c_char>::new();
         exts.reserve(count as usize);
-        argus_vk_get_required_instance_extensions(window.get_mut_handle(), null_mut(), exts.as_mut_ptr());
+        argus_vk_get_required_instance_extensions(window.get_handle_mut(), null_mut(), exts.as_mut_ptr());
         return exts.into_iter().map(|s| cstr_to_string(s)).collect();
     }
 }

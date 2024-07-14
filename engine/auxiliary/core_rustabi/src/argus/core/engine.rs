@@ -20,6 +20,8 @@ use std::convert::TryFrom;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
+use lowlevel_rustabi::util::str_to_cstring;
+
 use crate::core_cabi;
 use crate::core_cabi::*;
 
@@ -44,7 +46,7 @@ pub fn initialize_engine() {
 
 pub fn crash(format: &str) -> ! {
     unsafe {
-        argus_crash(string_to_cstring(format));
+        argus_crash(str_to_cstring(format).as_ptr());
     }
 }
 
@@ -56,13 +58,17 @@ pub fn start_engine(callback: DeltaCallback) -> ! {
 
 pub fn get_current_lifecycle_stage() -> LifecycleStage {
     unsafe {
-        return LifecycleStage::try_from(argus_get_current_lifecycle_stage()).unwrap();
+        return LifecycleStage::try_from(argus_get_current_lifecycle_stage())
+            .expect("Invalid LifecycleStage ordinal");
     }
 }
 
 pub fn register_update_callback(update_callback: DeltaCallback, ordering: Ordering) -> Index {
     unsafe {
-        return argus_register_render_callback(Some(update_callback), ordering as bindings::Ordering);
+        return argus_register_render_callback(
+            Some(update_callback),
+            ordering as bindings::Ordering,
+        );
     }
 }
 
@@ -74,7 +80,10 @@ pub fn unregister_update_callback(id: Index) {
 
 pub fn register_render_callback(render_callback: DeltaCallback, ordering: Ordering) -> Index {
     unsafe {
-        return argus_register_render_callback(Some(render_callback), ordering as bindings::Ordering);
+        return argus_register_render_callback(
+            Some(render_callback),
+            ordering as bindings::Ordering,
+        );
     }
 }
 

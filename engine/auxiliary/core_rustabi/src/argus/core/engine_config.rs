@@ -17,7 +17,7 @@
  */
 
 use std::convert::TryFrom;
-use std::ffi::{CString, c_char};
+use std::ffi::{c_char, CString};
 use std::ptr::null_mut;
 
 use lowlevel_rustabi::util::*;
@@ -83,7 +83,8 @@ pub fn set_render_backend(name: &str) {
 
 pub fn get_screen_space_scale_mode() -> ScreenSpaceScaleMode {
     unsafe {
-        return ScreenSpaceScaleMode::try_from(core_cabi::get_screen_space_scale_mode()).unwrap();
+        return ScreenSpaceScaleMode::try_from(core_cabi::get_screen_space_scale_mode())
+            .expect("Invalid ScreenSpaceScaleMode ordinal");
     }
 }
 

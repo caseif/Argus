@@ -31,9 +31,11 @@ pub fn set_message_dispatcher(dispatcher: MessageDispatcher) {
     }
 }
 
-pub fn broadcast_message<T : Message>(message: &T) {
+pub fn broadcast_message<T: Message>(message: &T) {
     unsafe {
-        argus_broadcast_message(str_to_cstring(T::get_message_type_id()).as_ptr(),
-                &message as *const _ as *const std::ffi::c_void);
+        argus_broadcast_message(
+            str_to_cstring(T::get_message_type_id()).as_ptr(),
+            &message as *const _ as *const std::ffi::c_void,
+        );
     }
 }

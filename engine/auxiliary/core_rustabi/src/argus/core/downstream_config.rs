@@ -17,6 +17,7 @@
  */
 
 use std::ptr::null;
+
 use lowlevel_rustabi::argus::lowlevel::Vector2i;
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
 use lowlevel_rustabi::util::*;
@@ -55,7 +56,11 @@ pub fn set_scripting_parameters(params: &ScriptingParameters) {
     unsafe {
         argus_set_scripting_parameters(&argus_scripting_parameters_t {
             has_main: params.main.is_some(),
-            main: params.main.as_ref().map(|s| string_to_cstring(&s).as_ptr()).unwrap_or(null()),
+            main: params
+                .main
+                .as_ref()
+                .map(|s| string_to_cstring(&s).as_ptr())
+                .unwrap_or(null()),
         });
     }
 }
@@ -108,11 +113,23 @@ pub fn set_initial_window_parameters(params: &InitialWindowParameters) {
     unsafe {
         argus_set_initial_window_parameters(&argus_initial_window_parameters_t {
             has_id: params.id.is_some(),
-            id: params.id.as_ref().map(|s| string_to_cstring(&s).as_ptr()).unwrap_or(null()),
+            id: params
+                .id
+                .as_ref()
+                .map(|s| string_to_cstring(&s).as_ptr())
+                .unwrap_or(null()),
             has_title: params.title.is_some(),
-            title: params.title.as_ref().map(|s| string_to_cstring(&s).as_ptr()).unwrap_or(null()),
+            title: params
+                .title
+                .as_ref()
+                .map(|s| string_to_cstring(&s).as_ptr())
+                .unwrap_or(null()),
             has_mode: params.mode.is_some(),
-            mode: params.mode.as_ref().map(|s| string_to_cstring(&s).as_ptr()).unwrap_or(null()),
+            mode: params
+                .mode
+                .as_ref()
+                .map(|s| string_to_cstring(&s).as_ptr())
+                .unwrap_or(null()),
             has_vsync: params.vsync.is_some(),
             vsync: params.vsync.unwrap_or_default(),
             has_mouse_visible: params.mouse_visible.is_some(),

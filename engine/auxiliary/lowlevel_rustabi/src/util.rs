@@ -16,30 +16,50 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::{CStr, CString, c_char};
+use std::ffi::{c_char, CStr, CString};
 
 pub struct CStringArray {
     vec: Vec<CString>,
 }
 
+impl Into<*const *const c_char> for CStringArray {
+    fn into(self) -> *const *const c_char {
+        return self
+            .vec
+            .iter()
+            .map(|s| s.as_ptr())
+            .collect::<Vec<_>>()
+            .as_ptr();
+    }
+}
+
 impl Into<(*const *const c_char, usize)> for CStringArray {
     fn into(self) -> (*const *const c_char, usize) {
-        return (self.vec.iter().map(|s| s.as_ptr()).collect::<Vec<_>>().as_ptr(), self.vec.len());
+        let len = self.vec.len();
+        return (self.into(), len);
     }
 }
 
 pub fn string_to_cstring(s: &String) -> CString {
-    return CString::new(s.to_string()).unwrap();
+    CString::new(s.to_string()).unwrap()
 }
 
 pub fn str_to_cstring(s: &str) -> CString {
-    return string_to_cstring(&s.to_string());
+    string_to_cstring(&s.to_string())
 }
 
 pub unsafe fn cstr_to_string(s: *const c_char) -> String {
-    return CStr::from_ptr(s).to_str().unwrap().to_string();
+    CStr::from_ptr(s).to_str().unwrap().to_string()
+}
+
+pub unsafe fn cstr_to_str<'a>(s: *const c_char) -> &'a str {
+    CStr::from_ptr(s)
+        .to_str()
+        .expect("Failed to convert C string to Rust string")
 }
 
 pub unsafe fn string_vec_to_cstr_arr(v: Vec<String>) -> CStringArray {
-    return CStringArray { vec: v.iter().map(string_to_cstring).collect() };
+    CStringArray {
+        vec: v.iter().map(string_to_cstring).collect(),
+    }
 }

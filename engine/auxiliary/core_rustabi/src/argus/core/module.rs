@@ -45,10 +45,19 @@ pub fn lifecycle_stage_to_str(stage: LifecycleStage) -> String {
     }
 }
 
-pub fn register_dynamic_module(id: &str, lifecycle_callback: LifecycleUpdateCallback, dependencies: Vec<String>) {
+pub fn register_dynamic_module(
+    id: &str,
+    lifecycle_callback: LifecycleUpdateCallback,
+    dependencies: Vec<String>,
+) {
     unsafe {
         let (names, count) = string_vec_to_cstr_arr(dependencies).into();
-        argus_register_dynamic_module(str_to_cstring(id).as_ptr(), Some(lifecycle_callback), count, names);
+        argus_register_dynamic_module(
+            str_to_cstring(id).as_ptr(),
+            Some(lifecycle_callback),
+            count,
+            names,
+        );
     }
 }
 
@@ -58,11 +67,11 @@ pub fn enable_dynamic_module(module_id: &str) -> bool {
     }
 }
 
- pub fn get_present_dynamic_modules() -> Vec<String> {
-     unsafe {
-         let arr = argus_get_present_dynamic_modules();
-         let vec = argus::lowlevel::string_array_to_vec(arr);
-         argus::lowlevel::free_string_array(arr);
-         return vec;
-     }
- }
+pub fn get_present_dynamic_modules() -> Vec<String> {
+    unsafe {
+        let arr = argus_get_present_dynamic_modules();
+        let vec = argus::lowlevel::string_array_to_vec(arr);
+        argus::lowlevel::free_string_array(arr);
+        return vec;
+    }
+}

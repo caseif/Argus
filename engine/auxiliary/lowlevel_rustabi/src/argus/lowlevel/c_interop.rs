@@ -20,9 +20,9 @@ use std::ffi::CStr;
 
 use crate::lowlevel_cabi::*;
 
-pub use crate::lowlevel_cabi::StringArray as StringArray;
-pub use crate::lowlevel_cabi::StringArrayConst as StringArrayConst;
 use crate::lowlevel_cabi;
+pub use crate::lowlevel_cabi::StringArray;
+pub use crate::lowlevel_cabi::StringArrayConst;
 
 pub fn string_array_to_vec(sa: StringArray) -> Vec<String> {
     unsafe {

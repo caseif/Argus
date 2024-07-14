@@ -25,8 +25,8 @@ use crate::argus::core::Index;
 use crate::argus::core::Ordering;
 use crate::core_cabi;
 
-pub use crate::core_cabi::argus_event_t;
 pub use crate::core_cabi::argus_event_const_t;
+pub use crate::core_cabi::argus_event_t;
 
 #[repr(u32)]
 pub enum TargetThread {
@@ -35,7 +35,9 @@ pub enum TargetThread {
 }
 
 pub trait ArgusEvent {
-    fn of(handle: argus_event_t) -> Self where Self : Sized;
+    fn of(handle: argus_event_t) -> Self
+    where
+        Self: Sized;
 
     fn get_type_id(&self) -> String;
 
@@ -56,8 +58,13 @@ extern "C" fn clean_up_event_handler(_: Index, ctx: *mut c_void) {
     let _: Box<Box<dyn FnMut(argus_event_const_t)>> = unsafe { Box::from_raw(mem::transmute(ctx)) };
 }
 
-pub fn register_event_handler<E: ArgusEvent, D>(type_id: &str, handler: &EventHandler<E, D>,
-    target_thread: TargetThread, data: *mut D, ordering: Ordering) -> Index {
+pub fn register_event_handler<E: ArgusEvent, D>(
+    type_id: &str,
+    handler: &EventHandler<E, D>,
+    target_thread: TargetThread,
+    data: *mut D,
+    ordering: Ordering,
+) -> Index {
     unsafe {
         let closure = |handle: argus_event_const_t| {
             handler(&E::of(handle as argus_event_t), data);
@@ -71,7 +78,7 @@ pub fn register_event_handler<E: ArgusEvent, D>(type_id: &str, handler: &EventHa
             target_thread as core_cabi::TargetThread,
             Box::into_raw(ctx) as *mut c_void,
             ordering as core_cabi::Ordering,
-            Some(clean_up_event_handler)
+            Some(clean_up_event_handler),
         );
     }
 }

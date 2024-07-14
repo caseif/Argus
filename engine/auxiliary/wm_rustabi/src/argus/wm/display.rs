@@ -38,7 +38,7 @@ impl Display {
         return self.handle;
     }
 
-    fn get_mut_handle(&mut self) -> argus_display_t {
+    fn get_handle_mut(&mut self) -> argus_display_t {
         return self.handle;
     }
 
