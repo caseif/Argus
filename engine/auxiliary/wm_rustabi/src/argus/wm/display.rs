@@ -24,21 +24,17 @@ use lowlevel_rustabi::util::cstr_to_string;
 use crate::wm_cabi::*;
 
 pub struct Display {
-    handle: argus_display_t,
+    handle: argus_display_const_t,
 }
 
 pub type DisplayMode = argus_display_mode_t;
 
 impl Display {
-    fn of(handle: argus_display_t) -> Self {
+    pub(crate) fn of(handle: argus_display_const_t) -> Self {
         return Self { handle };
     }
 
-    fn get_handle(&self) -> argus_display_const_t {
-        return self.handle;
-    }
-
-    fn get_handle_mut(&mut self) -> argus_display_t {
+    pub(crate) fn get_handle(&self) -> argus_display_const_t {
         return self.handle;
     }
 

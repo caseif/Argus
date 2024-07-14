@@ -146,11 +146,11 @@ void argus_window_set_display_affinity(argus_window_t self, argus_display_const_
     _as_ref(self).set_display_affinity(*reinterpret_cast<const argus::Display *>(display));
 }
 
-argus_display_mode_t argus_get_display_mode(argus_window_const_t self) {
+argus_display_mode_t argus_window_get_display_mode(argus_window_const_t self) {
     return argus::as_c_display_mode(_as_ref(self).get_display_mode());
 }
 
-void argus_set_display_mode(argus_window_t self, argus_display_mode_t mode) {
+void argus_window_set_display_mode(argus_window_t self, argus_display_mode_t mode) {
     _as_ref(self).set_display_mode(argus::as_cpp_display_mode(mode));
 }
 

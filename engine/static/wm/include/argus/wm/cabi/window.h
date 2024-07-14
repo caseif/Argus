@@ -105,9 +105,9 @@ argus_display_const_t argus_window_get_display_affinity(argus_window_const_t sel
 
 void argus_window_set_display_affinity(argus_window_t self, argus_display_const_t display);
 
-argus_display_mode_t argus_get_display_mode(argus_window_const_t self);
+argus_display_mode_t argus_window_get_display_mode(argus_window_const_t self);
 
-void argus_set_display_mode(argus_window_t self, argus_display_mode_t mode);
+void argus_window_set_display_mode(argus_window_t self, argus_display_mode_t mode);
 
 bool argus_window_is_mouse_captured(argus_window_const_t self);
 

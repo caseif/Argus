@@ -103,8 +103,8 @@ extern "C" {
     pub fn argus_window_set_windowed_position(self_: argus_window_t, x: i32, y: i32);
     pub fn argus_window_get_display_affinity(self_: argus_window_const_t) -> argus_display_const_t;
     pub fn argus_window_set_display_affinity(self_: argus_window_t, display: argus_display_const_t);
-    pub fn argus_get_display_mode(self_: argus_window_const_t) -> argus_display_mode_t;
-    pub fn argus_set_display_mode(self_: argus_window_t, mode: argus_display_mode_t);
+    pub fn argus_window_get_display_mode(self_: argus_window_const_t) -> argus_display_mode_t;
+    pub fn argus_window_set_display_mode(self_: argus_window_t, mode: argus_display_mode_t);
     pub fn argus_window_is_mouse_captured(self_: argus_window_const_t) -> bool;
     pub fn argus_window_set_mouse_captured(self_: argus_window_t, captured: bool);
     pub fn argus_window_is_mouse_visible(self_: argus_window_const_t) -> bool;

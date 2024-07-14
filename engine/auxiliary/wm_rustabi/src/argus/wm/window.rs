@@ -24,7 +24,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector2u};
 use lowlevel_rustabi::util::*;
-
+use crate::argus::wm::{Display, DisplayMode};
 use crate::wm_cabi::*;
 
 pub struct Window {
@@ -201,29 +201,31 @@ impl Window {
     }
 
     pub fn set_windowed_position(&mut self, x: i32, y: i32) {
-        unsafe {
-            argus_window_set_windowed_position(self.get_handle_mut(), x, y);
-        }
+        unsafe { argus_window_set_windowed_position(self.get_handle_mut(), x, y); }
     }
 
-    //TODO: get_display_affinity
+    pub fn get_display_affinity(&self) -> Display {
+        unsafe { Display::of(argus_window_get_display_affinity(self.handle)) }
+    }
 
-    //TODO: set_display_affinity
+    pub fn set_display_affinity(&mut self, display: Display) {
+        unsafe { argus_window_set_display_affinity(self.handle, display.get_handle()); }
+    }
 
-    //TODO: get_display_mode
+    pub fn get_display_mode(&self) -> DisplayMode {
+        unsafe { DisplayMode::from(argus_window_get_display_mode(self.handle)) }
+    }
 
-    //TODO: set_display_mode
+    pub fn set_display_mode(&self, mode: DisplayMode) {
+        unsafe { argus_window_set_display_mode(self.handle, mode) }
+    }
 
     pub fn is_mouse_captured(&self) -> bool {
-        unsafe {
-            return argus_window_is_mouse_captured(self.get_handle());
-        }
+        unsafe { argus_window_is_mouse_captured(self.get_handle()) }
     }
 
     pub fn set_mouse_captured(&mut self, captured: bool) {
-        unsafe {
-            argus_window_set_mouse_captured(self.get_handle_mut(), captured);
-        }
+        unsafe { argus_window_set_mouse_captured(self.get_handle_mut(), captured); }
     }
 
     pub fn is_mouse_visible(&self) -> bool {
