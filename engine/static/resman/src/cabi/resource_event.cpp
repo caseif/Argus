@@ -30,17 +30,17 @@ static inline ResourceEvent &_as_ref(argus_resource_event_t ptr) {
     return *reinterpret_cast<ResourceEvent *>(ptr);
 }
 
-static inline const ResourceEvent &_as_ref(argus_resource_event_const_t ptr) {
+static inline const ResourceEvent &_as_ref_const(argus_resource_event_const_t ptr) {
     return *reinterpret_cast<const ResourceEvent *>(ptr);
 }
 
 ResourceEventType argus_resource_event_get_subtype(argus_resource_event_const_t event) {
-    return ResourceEventType(_as_ref(event).subtype);
+    return ResourceEventType(_as_ref_const(event).subtype);
 }
 
 const argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event) {
-    const auto &proto = _as_ref(event).prototype;
-    return argus_resource_prototype_t {
+    const auto &proto = _as_ref_const(event).prototype;
+    return {
         proto.uid.c_str(),
         proto.media_type.c_str(),
         proto.fs_path.c_str(),
