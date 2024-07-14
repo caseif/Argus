@@ -44,7 +44,7 @@ namespace argus {
          * @brief The ResourceLoader responsible for the handling of the loading
          *        and unloading of the Resource.
          */
-        const ResourceLoader &loader;
+        ResourceLoader &loader;
 
         /**
          * @brief The number of current handles to this Resource.
@@ -70,7 +70,7 @@ namespace argus {
          */
         arp_resource_t *arp_resource { nullptr };
 
-        pimpl_Resource(ResourceManager &manager, const ResourceLoader &loader, void *const data_ptr,
+        pimpl_Resource(ResourceManager &manager, ResourceLoader &loader, void *const data_ptr,
                 const std::vector<std::string> &dependencies, unsigned int ref_count = 1):
             manager(manager),
             loader(loader),

@@ -37,7 +37,7 @@ namespace argus {
     }
 
     Result<std::map<std::string, const Resource *>, ResourceError> ResourceLoader::load_dependencies(
-            ResourceManager &manager, const std::vector<std::string> &dependencies) const {
+            ResourceManager &manager, const std::vector<std::string> &dependencies) {
         std::map<std::string, const Resource *> acquired;
 
         bool failed = false;
@@ -68,6 +68,10 @@ namespace argus {
 
     ResourceLoader::ResourceLoader(std::initializer_list<std::string> media_types):
         m_pimpl(new pimpl_ResourceLoader(media_types)) {
+    }
+
+    ResourceLoader::ResourceLoader(std::vector<std::string> media_types):
+            m_pimpl(new pimpl_ResourceLoader(media_types)) {
     }
 
     ResourceLoader::~ResourceLoader(void) {

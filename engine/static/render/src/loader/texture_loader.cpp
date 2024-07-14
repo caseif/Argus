@@ -54,7 +54,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> PngTextureLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, size_t size) const {
+            std::istream &stream, size_t size) {
         UNUSED(manager);
         UNUSED(proto);
         UNUSED(size);
@@ -161,7 +161,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) const {
+            void *src, std::type_index type) {
         UNUSED(manager);
 
         if (type != std::type_index(typeid(TextureData))) {
@@ -173,7 +173,7 @@ namespace argus {
         return make_ok_result(new TextureData(std::move(*static_cast<TextureData *>(src))));
     }
 
-    void PngTextureLoader::unload(void *const data_buf) const {
+    void PngTextureLoader::unload(void *const data_buf) {
         delete static_cast<TextureData *>(data_buf);
     }
 

@@ -56,17 +56,17 @@ namespace argus {
          * @param size The size in bytes of the Resource data.
          */
         virtual Result<void *, ResourceError> load(ResourceManager &manager, const ResourcePrototype &proto,
-                std::istream &stream, size_t size) const = 0;
+                std::istream &stream, size_t size) = 0;
 
         virtual Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
-                void *src, std::type_index type) const = 0;
+                void *src, std::type_index type) = 0;
 
         /**
          * @brief Performs necessary deinitialization for loaded resource
          *        data.
          * @param data_ptr A pointer to the resource data to be deinitialized.
          */
-        virtual void unload(void *data_ptr) const = 0;
+        virtual void unload(void *data_ptr) = 0;
 
       protected:
         static Result<void *, ResourceError> make_ok_result(void *ptr);
@@ -80,6 +80,13 @@ namespace argus {
          * @param media_types The media types handled by this loader.
          */
         ResourceLoader(std::initializer_list<std::string> media_types);
+
+        /**
+         * @brief Constructs a new ResourceLoader.
+         *
+         * @param media_types The media types handled by this loader.
+         */
+        ResourceLoader(std::vector<std::string> media_types);
 
         /**
          * @brief Destroys the ResourceLoader.
@@ -97,6 +104,6 @@ namespace argus {
          *        \link Resource Resources \endlink.
          */
         [[nodiscard]] Result<std::map<std::string, const Resource *>, ResourceError> load_dependencies(
-                ResourceManager &manager, const std::vector<std::string> &dependencies) const;
+                ResourceManager &manager, const std::vector<std::string> &dependencies);
     };
 }

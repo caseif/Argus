@@ -44,7 +44,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> ShaderLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, size_t size) const {
+            std::istream &stream, size_t size) {
         UNUSED(manager);
         UNUSED(size);
         std::string type;
@@ -68,7 +68,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> ShaderLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) const {
+            void *src, std::type_index type) {
         UNUSED(manager);
 
         if (type != std::type_index(typeid(Shader))) {
@@ -80,7 +80,7 @@ namespace argus {
         return make_ok_result(new Shader(std::move(*static_cast<Shader *>(src))));
     }
 
-    void ShaderLoader::unload(void *const data_buf) const {
+    void ShaderLoader::unload(void *const data_buf) {
         delete static_cast<Shader *>(data_buf);
     }
 

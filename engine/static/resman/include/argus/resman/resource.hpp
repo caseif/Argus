@@ -94,7 +94,7 @@ namespace argus {
          * @param dependencies The UIDs of Resources the new one is
          *        dependent on.
          */
-        Resource(ResourceManager &manager, const ResourceLoader &loader, ResourcePrototype prototype,
+        Resource(ResourceManager &manager, ResourceLoader &loader, ResourcePrototype prototype,
                 void *data, const std::vector<std::string> &dependencies);
 
         /**

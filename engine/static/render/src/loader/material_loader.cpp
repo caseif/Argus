@@ -80,7 +80,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> MaterialLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, size_t size) const {
+            std::istream &stream, size_t size) {
         UNUSED(proto);
         UNUSED(size);
         Logger::default_logger().debug("Loading material %s", proto.uid.c_str());
@@ -159,7 +159,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) const {
+            void *src, std::type_index type) {
         if (type != std::type_index(typeid(Material))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
@@ -180,7 +180,7 @@ namespace argus {
         return make_ok_result(new Material(std::move(src_mat)));
     }
 
-    void MaterialLoader::unload(void *const data_buf) const {
+    void MaterialLoader::unload(void *const data_buf) {
         delete static_cast<Material *>(data_buf);
     }
 

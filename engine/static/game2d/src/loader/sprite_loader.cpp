@@ -76,7 +76,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> SpriteLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, size_t size) const {
+            std::istream &stream, size_t size) {
         UNUSED(manager);
         UNUSED(size);
 
@@ -306,7 +306,8 @@ namespace argus {
 
                 if (!anim_json.contains(k_key_anim_frames)) {
                     return make_err_result(ResourceErrorReason::InvalidContent, proto,
-                            "Sprite animation '" + anim_id + "' is missing required key '" + std::string(k_key_anim_frames) + "'");
+                            "Sprite animation '" + anim_id + "' is missing required key '"
+                            + std::string(k_key_anim_frames) + "'");
                 }
 
                 for (auto &frame_json : anim_json.at(k_key_anim_frames).get<nlohmann::json::array_t>()) {
@@ -364,7 +365,7 @@ namespace argus {
     }
 
     Result<void *, ResourceError> SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) const {
+            void *src, std::type_index type) {
         if (type == std::type_index(typeid(SpriteDef))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
@@ -383,7 +384,7 @@ namespace argus {
         return make_ok_result(new SpriteDef(std::move(src_sprite)));
     }
 
-    void SpriteLoader::unload(void *data_ptr) const {
+    void SpriteLoader::unload(void *data_ptr) {
         delete static_cast<SpriteDef *>(data_ptr);
     }
 }
