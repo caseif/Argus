@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{c_char, CStr, CString, OsString};
 
 pub struct CStringArray {
     vec: Vec<CString>,
@@ -53,6 +53,7 @@ pub unsafe fn cstr_to_string(s: *const c_char) -> String {
 }
 
 pub unsafe fn cstr_to_str<'a>(s: *const c_char) -> &'a str {
+    String::from_utf16()
     CStr::from_ptr(s)
         .to_str()
         .expect("Failed to convert C string to Rust string")
@@ -62,4 +63,16 @@ pub unsafe fn string_vec_to_cstr_arr(v: Vec<String>) -> CStringArray {
     CStringArray {
         vec: v.iter().map(string_to_cstring).collect(),
     }
+}
+
+#[cfg(windows)]
+pub unsafe fn os_string_to_string<T>(s: *const c_char) -> String {
+    let len = (0..).take_while(|&i| *s.offset(i) != 0).count();
+    let slice = std::slice::from_raw_parts(s, len);
+    OsString::from_wide(slice)
+}
+
+#[cfg(not(windows))]
+pub unsafe fn os_string_to_string<T>(s: *const c_char) -> String {
+    cstr_to_string(s)
 }

@@ -41,7 +41,7 @@ argus_resource_prototype_t argus_resource_get_prototype(argus_resource_const_t r
     argus_resource_prototype_t c_proto {
         cpp_proto.uid.c_str(),
         cpp_proto.media_type.c_str(),
-        cpp_proto.fs_path.c_str(),
+        reinterpret_cast<const char *>(cpp_proto.fs_path.c_str()),
     };
     return c_proto;
 }
