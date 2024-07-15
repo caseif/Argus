@@ -38,11 +38,12 @@ static inline ResourceError &_error_as_ref(argus_resource_error_t &error) {
 
 argus_resource_prototype_t argus_resource_get_prototype(argus_resource_const_t resource) {
     auto cpp_proto = _as_ref(resource).prototype;
-    return argus_resource_prototype_t {
+    argus_resource_prototype_t c_proto {
         cpp_proto.uid.c_str(),
         cpp_proto.media_type.c_str(),
         cpp_proto.fs_path.c_str(),
     };
+    return c_proto;
 }
 
 void argus_resource_release(argus_resource_const_t resource) {
