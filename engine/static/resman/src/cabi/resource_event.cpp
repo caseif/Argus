@@ -40,11 +40,12 @@ ResourceEventType argus_resource_event_get_subtype(argus_resource_event_const_t 
 
 const argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event) {
     const auto &proto = _as_ref_const(event).prototype;
-    return {
+    argus_resource_prototype_t wrapped_proto {
         proto.uid.c_str(),
         proto.media_type.c_str(),
         proto.fs_path.c_str(),
     };
+    return wrapped_proto;
 }
 
 argus_resource_t argus_resource_event_get_resource(argus_resource_event_t event) {
