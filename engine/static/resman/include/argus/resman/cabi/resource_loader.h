@@ -18,11 +18,14 @@
 
 #pragma once
 
-#include "argus/resman/cabi/resource_manager.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "argus/resman/cabi/resource_manager.h"
+
+#include <stdbool.h>
+#include <stddef.h>
 
 typedef void *argus_resource_loader_t;
 typedef const void *argus_resource_loader_const_t;

@@ -97,7 +97,7 @@ class ProxiedResourceLoader : public ResourceLoader {
         auto wrapped_proto = argus_resource_prototype_t {
             proto.uid.c_str(),
             proto.media_type.c_str(),
-            proto.fs_path.c_str(),
+            reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
         };
         return _unwrap_voidptr_result(m_load_fn(this, &manager, wrapped_proto, _read_callback, size,
                 m_user_data, &stream));
@@ -109,7 +109,7 @@ class ProxiedResourceLoader : public ResourceLoader {
         auto wrapped_proto = argus_resource_prototype_t {
                 proto.uid.c_str(),
                 proto.media_type.c_str(),
-                proto.fs_path.c_str(),
+                reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
         };
         return _unwrap_voidptr_result(m_copy_fn(this, &manager, wrapped_proto, src, m_user_data));
     }

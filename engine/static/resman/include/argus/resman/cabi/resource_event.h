@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-const char *k_event_type_resource = "resource";
+static const char *const k_event_type_resource = "resource";
 
 typedef enum ResourceEventType {
     RESOURCE_EVENT_TYPE_LOAD,
@@ -36,7 +36,7 @@ typedef const void *argus_resource_event_const_t;
 
 ResourceEventType argus_resource_event_get_subtype(argus_resource_event_const_t event);
 
-const argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event);
+argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event);
 
 argus_resource_t argus_resource_event_get_resource(argus_resource_event_t event);
 

@@ -38,12 +38,12 @@ ResourceEventType argus_resource_event_get_subtype(argus_resource_event_const_t 
     return ResourceEventType(_as_ref_const(event).subtype);
 }
 
-const argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event) {
+argus_resource_prototype_t argus_resource_event_get_prototype(argus_resource_event_const_t event) {
     const auto &proto = _as_ref_const(event).prototype;
     argus_resource_prototype_t wrapped_proto {
         proto.uid.c_str(),
         proto.media_type.c_str(),
-        proto.fs_path.c_str(),
+        reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
     };
     return wrapped_proto;
 }
