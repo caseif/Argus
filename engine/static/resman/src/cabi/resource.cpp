@@ -21,10 +21,6 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 using argus::Resource;
 using argus::ResourceError;
 
@@ -35,6 +31,10 @@ static inline const Resource &_as_ref(argus_resource_const_t ptr) {
 static inline ResourceError &_error_as_ref(argus_resource_error_t &error) {
     return *reinterpret_cast<ResourceError *>(error);
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 argus_resource_prototype_t argus_resource_get_prototype(argus_resource_const_t resource) {
     auto cpp_proto = _as_ref(resource).prototype;

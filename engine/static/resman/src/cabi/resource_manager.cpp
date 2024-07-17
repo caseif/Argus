@@ -23,10 +23,6 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 using argus::Result;
 
 using argus::Resource;
@@ -47,6 +43,10 @@ static inline const ResourceOrResourceError _wrap_result(const Result<Resource &
     }
     return wrapped;
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 argus_resource_manager_t argus_resource_manager_get_instance(void) {
     return &ResourceManager::instance();

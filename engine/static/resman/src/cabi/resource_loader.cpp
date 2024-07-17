@@ -24,10 +24,6 @@
 
 #include <algorithm>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 using argus::Resource;
 using argus::ResourceError;
 using argus::ResourceLoader;
@@ -120,6 +116,10 @@ class ProxiedResourceLoader : public ResourceLoader {
 
     using ResourceLoader::load_dependencies;
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 argus_resource_loader_t argus_resource_loader_new(
         const char *const *media_types,

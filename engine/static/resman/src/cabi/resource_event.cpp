@@ -20,10 +20,6 @@
 
 #include "argus/resman/resource_event.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 using argus::ResourceEvent;
 
 static inline ResourceEvent &_as_ref(argus_resource_event_t ptr) {
@@ -33,6 +29,10 @@ static inline ResourceEvent &_as_ref(argus_resource_event_t ptr) {
 static inline const ResourceEvent &_as_ref_const(argus_resource_event_const_t ptr) {
     return *reinterpret_cast<const ResourceEvent *>(ptr);
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 ResourceEventType argus_resource_event_get_subtype(argus_resource_event_const_t event) {
     return ResourceEventType(_as_ref_const(event).subtype);
