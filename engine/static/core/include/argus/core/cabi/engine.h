@@ -25,8 +25,8 @@ extern "C" {
 #include "callback.h"
 #include "module.h"
 
-#include "stdbool.h"
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #undef ARGUS_NORETURN
 #ifdef __cplusplus

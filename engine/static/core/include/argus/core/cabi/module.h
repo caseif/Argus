@@ -24,8 +24,8 @@ extern "C" {
 
 #include "argus/lowlevel/cabi/c_interop.h"
 
-#include "stdbool.h"
-#include "stddef.h"
+#include <stdbool.h>
+#include <stddef.h>
 
 #ifdef _WIN32
 #define ARGUS_EXPORT __declspec(dllexport)

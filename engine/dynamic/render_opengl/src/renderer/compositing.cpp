@@ -45,7 +45,7 @@
 #include <utility>
 
 #include <climits>
-#include <argus/render/2d/scene_2d.hpp>
+#include "argus/render/2d/scene_2d.hpp"
 
 #define BINDING_INDEX_VBO 0
 
