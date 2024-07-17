@@ -53,7 +53,6 @@ pub unsafe fn cstr_to_string(s: *const c_char) -> String {
 }
 
 pub unsafe fn cstr_to_str<'a>(s: *const c_char) -> &'a str {
-    String::from_utf16()
     CStr::from_ptr(s)
         .to_str()
         .expect("Failed to convert C string to Rust string")
