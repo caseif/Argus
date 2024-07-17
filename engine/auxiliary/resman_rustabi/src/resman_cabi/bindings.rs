@@ -141,8 +141,6 @@ extern "C" {
     );
     pub fn argus_resource_manager_register_loader(
         mgr: argus_resource_manager_t,
-        media_types: *const *const ::std::os::raw::c_char,
-        media_types_count: usize,
         loader: argus_resource_loader_t,
     );
     pub fn argus_resource_manager_get_resource(

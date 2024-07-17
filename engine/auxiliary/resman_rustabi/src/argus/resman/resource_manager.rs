@@ -82,8 +82,6 @@ impl ResourceManager {
             let wrapped_loader = wrap_loader(mt_cstr_arr.into(), mt_count, loader);
             argus_resource_manager_register_loader(
                 self.handle,
-                mt_cstr_arr,
-                mt_count,
                 wrapped_loader,
             );
 
