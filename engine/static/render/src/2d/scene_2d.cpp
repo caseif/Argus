@@ -82,7 +82,7 @@ namespace argus {
         return dynamic_cast<pimpl_Scene *>(m_pimpl);
     }
 
-    bool Scene2D::is_lighting_enabled(void) {
+    bool Scene2D::is_lighting_enabled(void) const {
         return m_pimpl->lighting_enabled;
     }
 

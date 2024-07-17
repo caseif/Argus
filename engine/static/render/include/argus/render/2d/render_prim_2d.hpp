@@ -24,6 +24,7 @@
 #include "argus/render/common/vertex.hpp"
 
 #include <atomic>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -61,6 +62,10 @@ namespace argus {
         RenderPrim2D(const RenderPrim2D &) noexcept;
 
         RenderPrim2D(RenderPrim2D &&) noexcept;
+
+        RenderPrim2D &operator=(const RenderPrim2D &);
+
+        RenderPrim2D &operator=(RenderPrim2D &&);
 
         ~RenderPrim2D(void);
 

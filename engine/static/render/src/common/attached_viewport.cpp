@@ -38,7 +38,7 @@ namespace argus {
         return get_pimpl()->z_index;
     }
 
-    std::vector<std::string> AttachedViewport::get_postprocessing_shaders(void) const {
+    const std::vector<std::string> &AttachedViewport::get_postprocessing_shaders(void) const {
         return get_pimpl()->postfx_shader_uids;
     }
 

@@ -128,7 +128,7 @@ namespace argus {
         m_pimpl->transform = transform;
     }
 
-    RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) {
+    RenderObject2D &RenderObject2D::copy(RenderGroup2D &parent) const {
         std::vector<RenderPrim2D> prims_copy;
         std::transform(m_pimpl->primitives.begin(), m_pimpl->primitives.end(), std::back_inserter(prims_copy),
                 [](auto &v) { return RenderPrim2D(v); });

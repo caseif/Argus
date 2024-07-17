@@ -194,6 +194,6 @@ namespace argus {
          */
         void set_transform(const Transform2D &transform);
 
-        RenderObject2D &copy(RenderGroup2D &parent);
+        RenderObject2D &copy(RenderGroup2D &parent) const;
     };
 }

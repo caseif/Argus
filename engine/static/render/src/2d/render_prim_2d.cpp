@@ -22,6 +22,7 @@
 #include "internal/render/pimpl/2d/render_prim_2d.hpp"
 
 #include <initializer_list>
+#include <iterator>
 #include <vector>
 
 #include <cstdlib>
@@ -47,6 +48,14 @@ namespace argus {
     RenderPrim2D::RenderPrim2D(RenderPrim2D &&rhs) noexcept:
         m_pimpl(rhs.m_pimpl) {
         rhs.m_pimpl = nullptr;
+    }
+
+    RenderPrim2D &RenderPrim2D::operator=(const RenderPrim2D &rhs) {
+        return *new(this) RenderPrim2D(rhs);
+    }
+
+    RenderPrim2D &RenderPrim2D::operator=(RenderPrim2D &&rhs) {
+        return *new(this) RenderPrim2D(rhs);
     }
 
     RenderPrim2D::~RenderPrim2D(void) {

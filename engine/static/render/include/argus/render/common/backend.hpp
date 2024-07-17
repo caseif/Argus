@@ -23,7 +23,7 @@
 #include <string>
 
 namespace argus {
-    typedef std::function<bool(void)> ActivateRenderBackendFn;
+    typedef bool(*ActivateRenderBackendFn)(void);
 
     void register_render_backend(const std::string &id, ActivateRenderBackendFn activate_fn);
 }

@@ -62,11 +62,15 @@ namespace argus {
 
         void get_attr_loc_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
+        void set_attr_loc(const std::string &name, uint32_t loc);
+
         [[nodiscard]] bool has_output(const std::string &name) const;
 
         [[nodiscard]] std::optional<uint32_t> get_output_loc(const std::string &name) const;
 
         void get_output_loc_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
+
+        void set_output_loc(const std::string &name, uint32_t loc);
 
         [[nodiscard]] bool has_uniform(const std::string &name) const;
 
@@ -81,13 +85,21 @@ namespace argus {
         void get_uniform_loc_and_then(const std::string &ubo, const std::string &name,
                 const std::function<void(uint32_t)>& fn) const;
 
+        void set_uniform_loc(const std::string &name, uint32_t loc);
+
+        void set_uniform_loc(const std::string &ubo, const std::string &name, uint32_t loc);
+
         [[nodiscard]] bool has_ubo(const std::string &name) const;
 
         [[nodiscard]] std::optional<uint32_t> get_ubo_binding(const std::string &name) const;
 
         void get_ubo_binding_and_then(const std::string &name, const std::function<void(uint32_t)>& fn) const;
 
-        [[nodiscard]] std::optional<std::string> get_ubo_instance_name(const std::string &name) const;
+        void set_ubo_binding(const std::string &name, uint32_t loc);
+
+        [[nodiscard]] std::optional<std::reference_wrapper<const std::string>> get_ubo_instance_name(const std::string &name) const;
+
+        void set_ubo_instance_name(const std::string &ubo_name, const std::string &instance_name);
     };
 
     /**

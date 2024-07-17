@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "argus/lowlevel/debug.hpp"
 #include "argus/lowlevel/memory.hpp"
+
+#include "argus/core/engine.hpp"
 
 #include "argus/render/common/shader.hpp"
 #include "internal/render/pimpl/common/shader.hpp"
@@ -101,6 +104,10 @@ namespace argus {
         }
     }
 
+    void ShaderReflectionInfo::set_attr_loc(const std::string &name, uint32_t loc) {
+        attribute_locations[name] = loc;
+    }
+
     bool ShaderReflectionInfo::has_output(const std::string &name) const {
         return output_locations.find(name) != output_locations.end();
     }
@@ -120,6 +127,10 @@ namespace argus {
         }
     }
 
+    void ShaderReflectionInfo::set_output_loc(const std::string &name, uint32_t loc) {
+        output_locations[name] = loc;
+    }
+
     bool ShaderReflectionInfo::has_uniform(const std::string &name) const {
         return uniform_variable_locations.find(name)
                 != uniform_variable_locations.end();
@@ -131,7 +142,7 @@ namespace argus {
             return false;
         }
 
-        auto joined_name = ubo_inst_name.value() + "." + name;
+        auto joined_name = ubo_inst_name.value().get() + "." + name;
         auto it = uniform_variable_locations.find(joined_name);
         return it != uniform_variable_locations.end();
     }
@@ -150,11 +161,8 @@ namespace argus {
             return std::nullopt;
         }
 
-        auto joined_name = ubo_inst_name.value() + "." + name;
-        auto it = uniform_variable_locations.find(joined_name);
-        return it != uniform_variable_locations.end()
-                ? std::make_optional(it->second)
-                : std::nullopt;
+        auto joined_name = ubo_inst_name.value().get() + "." + name;
+        return get_uniform_loc(joined_name);
     }
 
     void ShaderReflectionInfo::get_uniform_loc_and_then(const std::string &name,
@@ -171,6 +179,18 @@ namespace argus {
         if (loc.has_value()) {
             fn(loc.value());
         }
+    }
+
+    void ShaderReflectionInfo::set_uniform_loc(const std::string &name, uint32_t loc) {
+        uniform_variable_locations[name] = loc;
+    }
+
+    void ShaderReflectionInfo::set_uniform_loc(const std::string &ubo, const std::string &name, uint32_t loc) {
+        auto ubo_inst_name = get_ubo_instance_name(ubo);
+        argus_assert(ubo_inst_name.has_value(), "Tried to set location for uniform variable in non-existent buffer");
+
+        auto joined_name = ubo_inst_name.value().get() + "." + name;
+        set_uniform_loc(joined_name, loc);
     }
 
     bool ShaderReflectionInfo::has_ubo(const std::string &name) const {
@@ -192,11 +212,19 @@ namespace argus {
         }
     }
 
-    [[nodiscard]] std::optional<std::string> ShaderReflectionInfo::get_ubo_instance_name(
+    void ShaderReflectionInfo::set_ubo_binding(const std::string &name, uint32_t loc) {
+        ubo_bindings[name] = loc;
+    }
+
+    [[nodiscard]] std::optional<std::reference_wrapper<const std::string>> ShaderReflectionInfo::get_ubo_instance_name(
             const std::string &name) const {
         auto it = ubo_instance_names.find(name);
         return it != ubo_instance_names.end()
-                ? std::make_optional(it->second)
+                ? std::make_optional(std::reference_wrapper<const std::string>(it->second))
                 : std::nullopt;
+    }
+
+    void ShaderReflectionInfo::set_ubo_instance_name(const std::string &ubo_name, const std::string &instance_name) {
+        ubo_instance_names[ubo_name] = instance_name;
     }
 }

@@ -53,7 +53,7 @@ namespace argus {
 
         [[nodiscard]] uint32_t get_z_index(void) const;
 
-        [[nodiscard]] std::vector<std::string> get_postprocessing_shaders(void) const;
+        [[nodiscard]] const std::vector<std::string> &get_postprocessing_shaders(void) const;
 
         void add_postprocessing_shader(const std::string &shader_uid);
 

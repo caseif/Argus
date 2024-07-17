@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "argus/lowlevel/handle.hpp"
+
 #include "argus/render/common/transform.hpp"
 
 namespace argus {
