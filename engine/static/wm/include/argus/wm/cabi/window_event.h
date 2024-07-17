@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,7 +26,7 @@ extern "C" {
 
 #include "argus/wm/cabi/window.h"
 
-const char *k_event_type_window = "window";
+static const char *const k_event_type_window = "window";
 
 typedef enum WindowEventType {
     WINDOW_EVENT_TYPE_CREATE,
