@@ -19,7 +19,7 @@
 #include "argus/lowlevel/cabi/math/vector.h"
 #include "argus/lowlevel/math/vector.hpp"
 
-#if defined(__GNUC__) && (__GNUC__ >= 12)
+#ifdef __is_layout_compatible
 static_assert(__is_layout_compatible(argus_vector_2d_t, argus::Vector2d));
 static_assert(__is_layout_compatible(argus_vector_3d_t, argus::Vector3d));
 static_assert(__is_layout_compatible(argus_vector_4d_t, argus::Vector4d));
