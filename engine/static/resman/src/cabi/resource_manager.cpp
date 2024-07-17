@@ -17,11 +17,12 @@
  */
 
 #include "argus/resman/cabi/resource_manager.h"
-
-#include "argus/lowlevel/result.hpp"
+#include "internal/resman/cabi/resource_loader.hpp"
 
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
+
+#include "argus/lowlevel/result.hpp"
 
 using argus::Result;
 
@@ -60,7 +61,9 @@ void argus_resource_manager_add_memory_package(argus_resource_manager_t mgr, con
     _as_ref(mgr).add_memory_package(buf, len);
 }
 
-//TODO: register_loader
+void argus_resource_manager_register_loader(argus_resource_manager_t mgr, argus_resource_loader_t loader) {
+    _as_ref(mgr).register_loader(*reinterpret_cast<ProxiedResourceLoader *>(loader));
+}
 
 //TODO: register_extension_mappings
 

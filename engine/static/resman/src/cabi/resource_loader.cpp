@@ -17,12 +17,19 @@
  */
 
 #include "argus/resman/cabi/resource_loader.h"
+#include "internal/resman/cabi/resource_loader.hpp"
+
+#include "argus/resman/resource.hpp"
+#include "argus/resman/resource_loader.hpp"
+#include "argus/resman/resource_manager.hpp"
 
 #include "argus/lowlevel/macros.hpp"
 
-#include "argus/resman/resource_loader.hpp"
-
-#include <algorithm>
+#include <istream>
+#include <string>
+#include <typeindex>
+#include <utility>
+#include <vector>
 
 using argus::Resource;
 using argus::ResourceError;
@@ -69,53 +76,45 @@ static const LoadedDependencySetImpl &_lds_as_ref(argus_loaded_dependency_set_t 
     return *reinterpret_cast<const LoadedDependencySetImpl *>(ptr);
 }
 
-class ProxiedResourceLoader : public ResourceLoader {
-    argus_resource_load_fn_t m_load_fn;
-    argus_resource_copy_fn_t m_copy_fn;
-    argus_resource_unload_fn_t m_unload_fn;
-    void *m_user_data;
+ProxiedResourceLoader::ProxiedResourceLoader(
+        std::vector<std::string> media_types,
+        argus_resource_load_fn_t load_fn,
+        argus_resource_copy_fn_t copy_fn,
+        argus_resource_unload_fn_t unload_fn,
+        void *user_data
+):
+    ResourceLoader(std::move(media_types)),
+    m_load_fn(load_fn),
+    m_copy_fn(copy_fn),
+    m_unload_fn(unload_fn),
+    m_user_data(user_data) {
+}
 
-  public:
-    ProxiedResourceLoader(std::vector<std::string> media_types,
-            argus_resource_load_fn_t load_fn,
-            argus_resource_copy_fn_t copy_fn,
-            argus_resource_unload_fn_t unload_fn, void *user_data):
-        ResourceLoader(std::move(media_types)),
-        m_load_fn(load_fn),
-        m_copy_fn(copy_fn),
-        m_unload_fn(unload_fn),
-        m_user_data(user_data) {
-        //TODO
-    }
-
-    Result<void *, ResourceError> load(ResourceManager &manager, const ResourcePrototype &proto,
-            std::istream &stream, size_t size) override {
-        auto wrapped_proto = argus_resource_prototype_t {
+Result<void *, ResourceError> ProxiedResourceLoader::load(ResourceManager &manager, const ResourcePrototype &proto,
+        std::istream &stream, size_t size) {
+    auto wrapped_proto = argus_resource_prototype_t {
             proto.uid.c_str(),
             proto.media_type.c_str(),
             reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
-        };
-        return _unwrap_voidptr_result(m_load_fn(this, &manager, wrapped_proto, _read_callback, size,
-                m_user_data, &stream));
-    }
+    };
+    return _unwrap_voidptr_result(m_load_fn(this, &manager, wrapped_proto, _read_callback, size,
+            m_user_data, &stream));
+}
 
-    Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) override {
-        UNUSED(type);
-        auto wrapped_proto = argus_resource_prototype_t {
-                proto.uid.c_str(),
-                proto.media_type.c_str(),
-                reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
-        };
-        return _unwrap_voidptr_result(m_copy_fn(this, &manager, wrapped_proto, src, m_user_data));
-    }
+Result<void *, ResourceError> ProxiedResourceLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
+        void *src, std::type_index type) {
+    UNUSED(type);
+    auto wrapped_proto = argus_resource_prototype_t {
+            proto.uid.c_str(),
+            proto.media_type.c_str(),
+            reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
+    };
+    return _unwrap_voidptr_result(m_copy_fn(this, &manager, wrapped_proto, src, m_user_data));
+}
 
-    void unload(void *data_ptr) override {
-        m_unload_fn(this, data_ptr, m_user_data);
-    }
-
-    using ResourceLoader::load_dependencies;
-};
+void ProxiedResourceLoader::unload(void *data_ptr) {
+    m_unload_fn(this, data_ptr, m_user_data);
+}
 
 #ifdef __cplusplus
 extern "C" {

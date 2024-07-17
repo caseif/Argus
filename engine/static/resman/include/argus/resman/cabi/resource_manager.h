@@ -46,8 +46,7 @@ void argus_resource_manager_discover_resources(argus_resource_manager_t mgr);
 
 void argus_resource_manager_add_memory_package(argus_resource_manager_t mgr, const unsigned char *buf, size_t len);
 
-void argus_resource_manager_register_loader(argus_resource_manager_t mgr, const char *const *media_types,
-        size_t media_types_count, argus_resource_loader_t loader);
+void argus_resource_manager_register_loader(argus_resource_manager_t mgr, argus_resource_loader_t loader);
 
 //TODO: register_extension_mappings
 
