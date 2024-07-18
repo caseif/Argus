@@ -45,6 +45,7 @@ function(_argus_set_compile_flags TARGET)
       "-Wreturn-type"
       "-Wdeprecated"
       "-Wconversion"
+      "-Wno-strict-aliasing"
       "$<$<COMPILE_LANGUAGE:CXX>:-ftemplate-backtrace-limit=0>")
 
     target_compile_options("${TARGET}" PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>")
