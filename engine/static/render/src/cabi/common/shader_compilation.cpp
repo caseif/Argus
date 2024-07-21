@@ -32,9 +32,10 @@ using argus::ShaderReflectionInfo;
 
 extern "C" {
 
-void compile_glsl_to_spirv(argus_shader_const_t *glsl_sources, size_t glsl_sources_count, glslang_client_t client,
-        glslang_target_client_version_t client_version, glslang_target_language_version_t spirv_version,
-        argus_shader_t *out_shaders, argus_shader_refl_info_t *out_refl) {
+void argus_compile_glsl_to_spirv(const argus_shader_const_t *glsl_sources, size_t glsl_sources_count,
+        glslang_client_t client, glslang_target_client_version_t client_version,
+        glslang_target_language_version_t spirv_version, argus_shader_t *out_shaders,
+        argus_shader_refl_info_t *out_refl) {
     std::vector<Shader> glsl_sources_vec;
     glsl_sources_vec.reserve(glsl_sources_count);
     for (size_t i = 0; i < glsl_sources_count; i++) {

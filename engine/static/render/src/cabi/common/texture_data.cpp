@@ -20,21 +20,21 @@
 
 #include "argus/render/common/texture_data.hpp"
 
-static inline const argus::TextureData &_as_ref(argus_texture_data_const_t tex_data) {
+static inline const argus::TextureData &_as_ref(argus_texture_data_t tex_data) {
     return *reinterpret_cast<const argus::TextureData *>(tex_data);
 }
 
 extern "C" {
 
-uint32_t argus_texture_data_get_width(argus_texture_data_const_t tex_data) {
+uint32_t argus_texture_data_get_width(argus_texture_data_t tex_data) {
     return _as_ref(tex_data).m_width;
 }
 
-uint32_t argus_texture_data_get_height(argus_texture_data_const_t tex_data) {
+uint32_t argus_texture_data_get_height(argus_texture_data_t tex_data) {
     return _as_ref(tex_data).m_height;
 }
 
-const unsigned char *const *argus_texture_data_get_pixel_data(argus_texture_data_const_t tex_data) {
+const unsigned char *const *argus_texture_data_get_pixel_data(argus_texture_data_t tex_data) {
     return _as_ref(tex_data).get_pixel_data();
 }
 

@@ -41,13 +41,13 @@ static inline const AttachedViewport &_as_ref(argus_attached_viewport_const_t vi
 
 extern "C" {
 
-SceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t viewport) {
-    return SceneType(_as_ref(viewport).m_type);
+ArgusSceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t viewport) {
+    return ArgusSceneType(_as_ref(viewport).m_type);
 }
 
-Viewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport) {
+ArgusViewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport) {
     const auto real_viewport = _as_ref(viewport).get_viewport();
-    return *reinterpret_cast<const Viewport *>(&real_viewport);
+    return *reinterpret_cast<const ArgusViewport *>(&real_viewport);
 }
 
 uint32_t argus_attached_viewport_get_z_index(argus_attached_viewport_const_t viewport) {

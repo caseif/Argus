@@ -24,13 +24,13 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef const void *argus_texture_data_const_t;
+typedef const void *argus_texture_data_t;
 
-uint32_t argus_texture_data_get_width(argus_texture_data_const_t tex_data);
+uint32_t argus_texture_data_get_width(argus_texture_data_t tex_data);
 
-uint32_t argus_texture_data_get_height(argus_texture_data_const_t tex_data);
+uint32_t argus_texture_data_get_height(argus_texture_data_t tex_data);
 
-const unsigned char *const *argus_texture_data_get_pixel_data(argus_texture_data_const_t tex_data);
+const unsigned char *const *argus_texture_data_get_pixel_data(argus_texture_data_t tex_data);
 
 #ifdef __cplusplus
     }

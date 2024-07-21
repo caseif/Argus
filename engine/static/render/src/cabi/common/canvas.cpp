@@ -42,9 +42,9 @@ size_t argus_canvas_get_viewports_2d_count(argus_canvas_const_t canvas) {
     return _as_ref(canvas).get_viewports_2d().size();
 }
 
-void argus_canvas_get_viewports_2d(argus_canvas_const_t canvas, argus_attached_viewport_2d_const_t *dest,
+void argus_canvas_get_viewports_2d(argus_canvas_const_t canvas, argus_attached_viewport_2d_t *dest,
         size_t count) {
-    const auto viewports = _as_ref(canvas).get_viewports_2d();
+    auto viewports = _as_ref(canvas).get_viewports_2d();
     affirm_precond(count == viewports.size(), "Call to argus_canvas_get_viewports_2d with wrong count parameter");
 
     for (size_t i = 0; i < count; i++) {
@@ -61,8 +61,8 @@ argus_attached_viewport_2d_t argus_canvas_find_viewport(argus_canvas_const_t can
     }
 }
 
-argus_attached_viewport_2d_t argus_canvas_attach_viewport_2d(argus_canvas_t canvas, const char *id, Viewport viewport,
-        argus_camera_2d_t camera, uint32_t z_index) {
+argus_attached_viewport_2d_t argus_canvas_attach_viewport_2d(argus_canvas_t canvas, const char *id,
+        ArgusViewport viewport, argus_camera_2d_t camera, uint32_t z_index) {
     return &_as_ref(canvas).attach_viewport_2d(id, *reinterpret_cast<argus::Viewport *>(&viewport),
             *reinterpret_cast<argus::Camera2D *>(camera), z_index);
 }

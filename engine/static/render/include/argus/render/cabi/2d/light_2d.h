@@ -33,22 +33,22 @@ extern "C" {
 typedef void *argus_light_2d_t;
 typedef const void *argus_light_2d_const_t;
 
-typedef enum Light2dType {
-    Point = 0,
-} Light2dType;
+typedef enum ArgusLight2dType {
+    ARGUS_LIGHT_2D_TYPE_POINT = 0,
+} ArgusLight2dType;
 
-typedef struct LightParameters {
+typedef struct ArgusLight2dParameters {
     float intensity;
     uint32_t falloff_gradient;
     float falloff_multiplier;
     float falloff_buffer;
     uint32_t shadow_falloff_gradient;
     float shadow_falloff_multiplier;
-} LightParameters;
+} ArgusLight2dParameters;
 
 ArgusHandle argus_light_2d_get_handle(argus_light_2d_const_t light);
 
-Light2dType argus_light_2d_get_type(argus_light_2d_const_t light);
+ArgusLight2dType argus_light_2d_get_type(argus_light_2d_const_t light);
 
 bool argus_light_2d_is_occludable(argus_light_2d_const_t light);
 
@@ -56,13 +56,13 @@ argus_vector_3f_t argus_light_2d_get_color(argus_light_2d_const_t light);
 
 void argus_light_2d_set_color(argus_light_2d_t light, argus_vector_3f_t color);
 
-LightParameters argus_light_2d_get_parameters(argus_light_2d_const_t light);
+ArgusLight2dParameters argus_light_2d_get_parameters(argus_light_2d_const_t light);
 
-void argus_light_2d_set_parameters(argus_light_2d_t light, LightParameters params);
+void argus_light_2d_set_parameters(argus_light_2d_t light, ArgusLight2dParameters params);
 
 ArgusTransform2d argus_light_2d_get_transform(argus_light_2d_const_t light);
 
-void set_transform(argus_light_2d_t light, ArgusTransform2d transform);
+void argus_light_2d_set_transform(argus_light_2d_t light, ArgusTransform2d transform);
 
 #ifdef __cplusplus
 }

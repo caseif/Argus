@@ -53,7 +53,7 @@ argus_scene_2d_t argus_render_group_2d_get_scene(argus_render_group_2d_const_t g
     return &_as_ref(group).get_scene();
 }
 
-argus_render_group_2d_t get_parent(argus_render_group_2d_const_t group) {
+argus_render_group_2d_t argus_render_group_2d_get_parent(argus_render_group_2d_const_t group) {
     auto res = _as_ref(group).get_parent();
     if (res.has_value()) {
         return &res.value().get();
@@ -67,13 +67,13 @@ ArgusHandle argus_render_group_2d_add_group(argus_render_group_2d_t group, Argus
 }
 
 ArgusHandle argus_render_group_2d_add_object(argus_render_group_2d_t group, const char *material,
-        const RenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
+        const ArgusRenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
         argus_vector_2f_t atlas_stride, uint32_t z_index, float light_opacity, ArgusTransform2d transform) {
     std::vector<argus::RenderPrim2D> unwrapped_prims;
     std::transform(primitives, primitives + primitives_count, unwrapped_prims.end(), [](const auto &prim) {
         return argus::RenderPrim2D(std::vector<argus::Vertex2D>(
-                reinterpret_cast<argus::Vertex2D *>(prim.vertices),
-                reinterpret_cast<argus::Vertex2D *>(prim.vertices) + prim.vertex_count));
+                reinterpret_cast<const argus::Vertex2D *>(prim.vertices),
+                reinterpret_cast<const argus::Vertex2D *>(prim.vertices) + prim.vertex_count));
     });
 
     return wrap_handle(_as_ref(group).add_object(material, unwrapped_prims,

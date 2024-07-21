@@ -24,13 +24,6 @@
 #include "argus/render/2d/scene_2d.hpp"
 #include "argus/render/util/object_processor.hpp"
 
-#include "argus/resman/resource.hpp"
-
-#include "argus/core/engine.hpp"
-
-#include "argus/lowlevel/debug.hpp"
-
-#include <algorithm>
 #include <map>
 
 #include <cstddef>
@@ -58,7 +51,8 @@ void argus_process_objects_2d(argus_scene_2d_const_t scene, ArgusProcessedObject
                     const argus::Matrix4 &transform, bool is_transform_dirty, void *extra) -> void * {
                 argus_matrix_4x4_t mat;
                 memcpy(mat.cells, transform.data, sizeof(mat.cells));
-                return update_fn(&obj, proc_obj, mat, is_transform_dirty, extra);
+                update_fn(&obj, proc_obj, mat, is_transform_dirty, extra);
+                return proc_obj;
             },
             extra);
 

@@ -26,10 +26,10 @@ extern "C" {
 
 #include "argus/render/cabi/common/vertex.h"
 
-typedef struct RenderPrimitive2d {
-    ArgusVertex2d *vertices;
+typedef struct ArgusRenderPrimitive2d {
+    const ArgusVertex2d *vertices;
     size_t vertex_count;
-} RenderPrimitive2d;
+} ArgusRenderPrimitive2d;
 
 #ifdef __cplusplus
 }

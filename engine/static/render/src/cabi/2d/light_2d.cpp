@@ -28,7 +28,7 @@
 #include "argus/lowlevel/math/vector.hpp"
 
 #ifdef __is_layout_compatible
-static_assert(__is_layout_compatible(LightParameters, argus::LightParameters));
+static_assert(__is_layout_compatible(ArgusLight2dParameters, argus::ArgusLight2dParameters));
 #endif
 
 static inline argus::Light2D &_as_ref(argus_light_2d_t light) {
@@ -45,8 +45,8 @@ ArgusHandle argus_light_2d_get_handle(argus_light_2d_const_t light) {
     return wrap_handle(_as_ref(light).get_handle());
 }
 
-Light2dType argus_light_2d_get_type(argus_light_2d_const_t light) {
-    return Light2dType(_as_ref(light).get_type());
+ArgusLight2dType argus_light_2d_get_type(argus_light_2d_const_t light) {
+    return ArgusLight2dType(_as_ref(light).get_type());
 }
 
 bool argus_light_2d_is_occludable(argus_light_2d_const_t light) {
@@ -61,11 +61,11 @@ void argus_light_2d_set_color(argus_light_2d_t light, argus_vector_3f_t color) {
     _as_ref(light).set_color(*reinterpret_cast<argus::Vector3f *>(&color));
 }
 
-LightParameters argus_light_2d_get_parameters(argus_light_2d_const_t light) {
-    return *reinterpret_cast<const LightParameters *>(&_as_ref(light).get_parameters());
+ArgusLight2dParameters argus_light_2d_get_parameters(argus_light_2d_const_t light) {
+    return *reinterpret_cast<const ArgusLight2dParameters *>(&_as_ref(light).get_parameters());
 }
 
-void argus_light_2d_set_parameters(argus_light_2d_t light, LightParameters params) {
+void argus_light_2d_set_parameters(argus_light_2d_t light, ArgusLight2dParameters params) {
     _as_ref(light).set_parameters(*reinterpret_cast<argus::LightParameters *>(&params));
 }
 
@@ -73,7 +73,7 @@ ArgusTransform2d argus_light_2d_get_transform(argus_light_2d_const_t light) {
     return wrap_transform_2d(_as_ref(light).get_transform());
 }
 
-void set_transform(argus_light_2d_t light, ArgusTransform2d transform) {
+void argus_light_2d_set_transform(argus_light_2d_t light, ArgusTransform2d transform) {
     _as_ref(light).set_transform(unwrap_transform_2d(transform));
 }
 

@@ -45,12 +45,12 @@ ArgusHandle argus_render_group_2d_get_handle(argus_render_group_2d_const_t group
 
 argus_scene_2d_t argus_render_group_2d_get_scene(argus_render_group_2d_const_t group);
 
-argus_render_group_2d_t get_parent(argus_render_group_2d_const_t group);
+argus_render_group_2d_t argus_render_group_2d_get_parent(argus_render_group_2d_const_t group);
 
 ArgusHandle argus_render_group_2d_add_group(argus_render_group_2d_t group, ArgusTransform2d transform);
 
 ArgusHandle argus_render_group_2d_add_object(argus_render_group_2d_t group, const char *material,
-        const RenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
+        const ArgusRenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
         argus_vector_2f_t atlas_stride, uint32_t z_index, float light_opacity, ArgusTransform2d transform);
 
 void argus_render_group_2d_remove_group(argus_render_group_2d_t group, ArgusHandle handle);

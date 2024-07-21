@@ -31,9 +31,9 @@ extern "C" {
 typedef void *argus_attached_viewport_t;
 typedef const void *argus_attached_viewport_const_t;
 
-SceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t viewport);
+ArgusSceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t viewport);
 
-Viewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport);
+ArgusViewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport);
 
 uint32_t argus_attached_viewport_get_z_index(argus_attached_viewport_const_t viewport);
 

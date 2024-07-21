@@ -58,16 +58,16 @@ argus_vector_3f_t argus_scene_2d_get_ambient_light_color(argus_scene_2d_t scene,
 
 void argus_scene_2d_set_ambient_light_color(argus_scene_2d_t scene, argus_vector_3f_t color);
 
-size_t get_lights_count(argus_scene_2d_t scene);
+size_t argus_scene_2d_get_lights_count(argus_scene_2d_t scene);
 
-void get_lights(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count);
+void argus_scene_2d_get_lights(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count);
 
-size_t get_lights_count_for_render(argus_scene_2d_t scene);
+size_t argus_scene_2d_get_lights_count_for_render(argus_scene_2d_t scene);
 
-void get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count);
+void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count);
 
-ArgusHandle argus_scene_2d_add_light(argus_scene_2d_t scene, Light2dType type, bool is_occludable,
-        argus_vector_3f_t color, LightParameters params, ArgusTransform2d initial_transform);
+ArgusHandle argus_scene_2d_add_light(argus_scene_2d_t scene, ArgusLight2dType type, bool is_occludable,
+        argus_vector_3f_t color, ArgusLight2dParameters params, ArgusTransform2d initial_transform);
 
 argus_light_2d_t argus_scene_2d_get_light(argus_scene_2d_t scene, ArgusHandle handle);
 
@@ -79,7 +79,7 @@ argus_render_object_2d_t argus_scene_2d_get_object(argus_scene_2d_t scene, Argus
 
 ArgusHandle argus_scene_2d_add_group(argus_scene_2d_t scene, ArgusTransform2d transform);
 
-ArgusHandle argus_scene_2d_add_object(argus_scene_2d_t scene, const char *material, RenderPrimitive2d *primitives,
+ArgusHandle argus_scene_2d_add_object(argus_scene_2d_t scene, const char *material, const ArgusRenderPrimitive2d *primitives,
         size_t primitives_count, argus_vector_2f_t anchor_point, argus_vector_2f_t atlas_stride, uint32_t z_index,
         float light_opacity, ArgusTransform2d transform);
 
@@ -87,7 +87,7 @@ void argus_scene_2d_remove_group(argus_scene_2d_t scene, ArgusHandle handle);
 
 void argus_scene_2d_remove_object(argus_scene_2d_t scene, ArgusHandle handle);
 
-argus_camera_2d_t find_camera(argus_scene_2d_const_t scene, const char *id);
+argus_camera_2d_t argus_scene_2d_find_camera(argus_scene_2d_const_t scene, const char *id);
 
 argus_camera_2d_t argus_scene_2d_create_camera(argus_scene_2d_t scene, const char *id);
 

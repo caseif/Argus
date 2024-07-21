@@ -25,14 +25,14 @@ extern "C" {
 typedef void *argus_scene_t;
 typedef const void *argus_scene_const_t;
 
-typedef enum SceneType {
+typedef enum ArgusSceneType {
     ARGUS_SCENE_TYPE_TWO_D,
     ARGUS_SCENE_TYPE_THREE_D,
-} SceneType;
+} ArgusSceneType;
 
 argus_scene_t argus_scene_find(const char *id);
 
-SceneType argus_scene_get_type(argus_scene_const_t scene);
+ArgusSceneType argus_scene_get_type(argus_scene_const_t scene);
 
 #ifdef __cplusplus
 }

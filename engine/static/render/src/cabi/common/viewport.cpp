@@ -21,5 +21,5 @@
 #include "argus/render/common/viewport.hpp"
 
 #ifdef __is_layout_compatible
-static_assert(__is_layout_compatible(Viewport, argus::Viewport))
+static_assert(__is_layout_compatible(ArgusViewport, argus::ArgusViewport))
 #endif

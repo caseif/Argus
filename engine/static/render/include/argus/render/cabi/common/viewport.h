@@ -24,23 +24,23 @@ extern "C" {
 
 #include "argus/lowlevel/cabi/math/vector.h"
 
-typedef enum ViewportCoordinateSpaceMode {
+typedef enum ArgusViewportCoordinateSpaceMode {
     ARGUS_VCSM_INDIVIDUAL,
     ARGUS_VCSM_MIN_AXIS,
     ARGUS_VCSM_MAX_AXIS,
     ARGUS_VCSM_HORIZONTAL_AXIS,
     ARGUS_VCSM_VERTICAL_AXIS,
-} ViewportCoordinateSpaceMode;
+} ArgusViewportCoordinateSpaceMode;
 
-typedef struct Viewport {
+typedef struct ArgusViewport {
     float top;
     float bottom;
     float left;
     float right;
 
     argus_vector_2f_t scaling;
-    ViewportCoordinateSpaceMode mode;
-} Viewport;
+    ArgusViewportCoordinateSpaceMode mode;
+} ArgusViewport;
 
 #ifdef __cplusplus
 }

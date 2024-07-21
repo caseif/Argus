@@ -22,7 +22,15 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 
+typedef const void *argus_material_t;
+
+const char *argus_material_get_texture_uid(argus_material_t material);
+
+size_t argus_material_get_shader_uids_count(argus_material_t material);
+
+void argus_material_get_shader_uids(argus_material_t material, const char **out_uids, size_t count);
 
 #ifdef __cplusplus
 }

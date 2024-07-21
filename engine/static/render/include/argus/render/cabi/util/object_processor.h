@@ -38,16 +38,16 @@ typedef void *argus_processed_render_object_2d_t;
 typedef argus_processed_render_object_2d_t(*argus_process_render_obj_2d_fn_t)(argus_render_object_2d_const_t obj,
         argus_matrix_4x4_t transform, void *extra);
 
-typedef argus_processed_render_object_2d_t(*argus_update_render_obj_2d_fn_t)(argus_render_object_2d_const_t obj,
+typedef void(*argus_update_render_obj_2d_fn_t)(argus_render_object_2d_const_t obj,
         argus_processed_render_object_2d_t proc_obj, argus_matrix_4x4_t transform, bool is_transform_dirty,
         void *extra);
 
-struct ArgusProcessedObjectMap {
+typedef struct ArgusProcessedObjectMap {
     size_t count;
     size_t capacity;
     ArgusHandle *keys;
     argus_processed_render_object_2d_t *values;
-};
+} ArgusProcessedObjectMap;
 
 void argus_process_objects_2d(argus_scene_2d_const_t scene, ArgusProcessedObjectMap *obj_map,
         argus_process_render_obj_2d_fn_t process_new_fn, argus_update_render_obj_2d_fn_t update_fn, void *extra);

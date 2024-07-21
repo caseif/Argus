@@ -37,12 +37,12 @@ argus_window_t argus_canvas_get_window(argus_canvas_const_t canvas);
 
 size_t argus_canvas_get_viewports_2d_count(argus_canvas_const_t canvas);
 
-void argus_canvas_get_viewports_2d(argus_canvas_const_t canvas, argus_attached_viewport_2d_const_t *dest, size_t count);
+void argus_canvas_get_viewports_2d(argus_canvas_const_t canvas, argus_attached_viewport_2d_t *dest, size_t count);
 
 argus_attached_viewport_t argus_canvas_find_viewport(argus_canvas_const_t canvas, const char *id);
 
-argus_attached_viewport_2d_t argus_canvas_attach_viewport_2d(argus_canvas_t canvas, const char *id, Viewport viewport,
-        argus_camera_2d_t camera, uint32_t z_index);
+argus_attached_viewport_2d_t argus_canvas_attach_viewport_2d(argus_canvas_t canvas, const char *id,
+        ArgusViewport viewport, argus_camera_2d_t camera, uint32_t z_index);
 
 argus_attached_viewport_2d_t argus_canvas_attach_default_viewport_2d(argus_canvas_t canvas, const char *id,
         argus_camera_2d_t camera, uint32_t z_index);

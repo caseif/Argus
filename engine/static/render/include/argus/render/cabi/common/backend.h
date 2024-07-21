@@ -24,9 +24,9 @@ extern "C" {
 
 #include <stdbool.h>
 
-typedef bool (*ActivateRenderBackendFn)(void);
+typedef bool (*ArgusActivateRenderBackendFn)(void);
 
-void register_render_backend(const char *id, ActivateRenderBackendFn activate_fn);
+void argus_register_render_backend(const char *id, ArgusActivateRenderBackendFn activate_fn);
 
 #ifdef __cplusplus
 }

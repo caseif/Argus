@@ -91,28 +91,28 @@ void argus_scene_2d_set_ambient_light_color(argus_scene_2d_t scene, argus_vector
     _as_ref(scene).set_ambient_light_color(*reinterpret_cast<argus::Vector3f *>(&color));
 }
 
-size_t get_lights_count(argus_scene_2d_t scene) {
+size_t argus_scene_2d_get_lights_count(argus_scene_2d_t scene) {
     return _as_ref(scene).get_lights().size();
 }
 
-void get_lights(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count) {
+void argus_scene_2d_get_lights(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count) {
     const auto lights = _as_ref(scene).get_lights();
     affirm_precond(count == lights.size(), "argus_scene_2d_get_lights called with wrong count parameter");
     std::transform(lights.begin(), lights.end(), dest, [](auto light_ref) { return &light_ref.get(); });
 }
 
-size_t get_lights_count_for_render(argus_scene_2d_t scene) {
+size_t argus_scene_2d_get_lights_count_for_render(argus_scene_2d_t scene) {
     return _as_ref(scene).get_lights_for_render().size();
 }
 
-void get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count) {
+void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count) {
     const auto lights = _as_ref(scene).get_lights();
     affirm_precond(count == lights.size(), "argus_scene_2d_get_lights_for_render called with wrong count parameter");
     std::transform(lights.begin(), lights.end(), dest, [](auto light_ref) { return &light_ref.get(); });
 }
 
-ArgusHandle argus_scene_2d_add_light(argus_scene_2d_t scene, Light2dType type, bool is_occludable,
-        argus_vector_3f_t color, LightParameters params, ArgusTransform2d initial_transform) {
+ArgusHandle argus_scene_2d_add_light(argus_scene_2d_t scene, ArgusLight2dType type, bool is_occludable,
+        argus_vector_3f_t color, ArgusLight2dParameters params, ArgusTransform2d initial_transform) {
     return wrap_handle(_as_ref(scene).add_light(
             argus::Light2DType(type),
             is_occludable,
@@ -157,14 +157,14 @@ ArgusHandle argus_scene_2d_add_group(argus_scene_2d_t scene, ArgusTransform2d tr
     return wrap_handle(_as_ref(scene).add_group(unwrap_transform_2d(transform)));
 }
 
-ArgusHandle argus_scene_2d_add_object(argus_scene_2d_t scene, const char *material, RenderPrimitive2d *primitives,
-        size_t primitives_count, argus_vector_2f_t anchor_point, argus_vector_2f_t atlas_stride, uint32_t z_index,
-        float light_opacity, ArgusTransform2d transform) {
+ArgusHandle argus_scene_2d_add_object(argus_scene_2d_t scene, const char *material,
+        const ArgusRenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
+        argus_vector_2f_t atlas_stride, uint32_t z_index, float light_opacity, ArgusTransform2d transform) {
     std::vector<argus::RenderPrim2D> unwrapped_prims;
     std::transform(primitives, primitives + primitives_count, unwrapped_prims.end(), [](const auto &prim) {
         return argus::RenderPrim2D(std::vector<argus::Vertex2D>(
-                reinterpret_cast<argus::Vertex2D *>(prim.vertices),
-                reinterpret_cast<argus::Vertex2D *>(prim.vertices) + prim.vertex_count));
+                reinterpret_cast<const argus::Vertex2D *>(prim.vertices),
+                reinterpret_cast<const argus::Vertex2D *>(prim.vertices) + prim.vertex_count));
     });
     return wrap_handle(_as_ref(scene).add_object(
             material,
@@ -185,7 +185,7 @@ void argus_scene_2d_remove_object(argus_scene_2d_t scene, ArgusHandle handle) {
     _as_ref(scene).remove_object(unwrap_handle(handle));
 }
 
-argus_camera_2d_t find_camera(argus_scene_2d_const_t scene, const char *id) {
+argus_camera_2d_t argus_scene_2d_find_camera(argus_scene_2d_const_t scene, const char *id) {
     auto res = _as_ref(scene).find_camera(id);
     if (res.has_value()) {
         return &res.value().get();

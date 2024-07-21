@@ -73,7 +73,7 @@ bool argus_shader_refl_info_has_ubo(argus_shader_refl_info_const_t refl, const c
 
 uint32_t argus_shader_refl_info_get_ubo_binding(argus_shader_refl_info_const_t refl, const char *name, bool *out_found);
 
-void argus_shader_refl_info_set_ubo_binding(argus_shader_refl_info_t refl, const char *name, uint32_t loc);
+void argus_shader_refl_info_set_ubo_binding(argus_shader_refl_info_t refl, const char *name, uint32_t binding);
 
 const char *argus_shader_refl_info_get_ubo_instance_name(argus_shader_refl_info_const_t refl, const char *name,
         bool *out_found);

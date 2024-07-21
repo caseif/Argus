@@ -50,7 +50,7 @@ ArgusTransform2d argus_camera_2d_get_transform(argus_camera_2d_t camera, bool *o
 }
 
 void argus_camera_2d_set_transform(argus_camera_2d_t camera, ArgusTransform2d transform) {
-    _as_ref(camera).set_transform(unwrap_transform_2d(transform));
+    _as_ref(camera).set_transform(unwrap_transform_2d(std::move(transform)));
 }
 
 }

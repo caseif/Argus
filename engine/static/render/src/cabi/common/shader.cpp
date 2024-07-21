@@ -114,8 +114,8 @@ uint32_t argus_shader_refl_info_get_ubo_binding(argus_shader_refl_info_const_t r
     return res.value_or(0);
 }
 
-void argus_shader_refl_info_set_ubo_binding(argus_shader_refl_info_t refl, const char *name, uint32_t loc) {
-    _refl_as_ref(refl).set_ubo_binding(name, loc);
+void argus_shader_refl_info_set_ubo_binding(argus_shader_refl_info_t refl, const char *name, uint32_t binding) {
+    _refl_as_ref(refl).set_ubo_binding(name, binding);
 }
 
 const char *argus_shader_refl_info_get_ubo_instance_name(argus_shader_refl_info_const_t refl, const char *name,

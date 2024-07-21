@@ -22,7 +22,7 @@
 
 extern "C" {
 
-void register_render_backend(const char *id, ActivateRenderBackendFn activate_fn) {
+void argus_register_render_backend(const char *id, ArgusActivateRenderBackendFn activate_fn) {
     return argus::register_render_backend(id, activate_fn);
 }
 

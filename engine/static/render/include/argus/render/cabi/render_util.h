@@ -18,14 +18,4 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "argus/render/cabi/render_2d.h"
-#include "argus/render/cabi/render_common.h"
-#include "argus/render/cabi/render_util.h"
-
-#ifdef __cplusplus
-}
-#endif
+#include "argus/render/cabi/util/object_processor.h"

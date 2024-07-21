@@ -37,8 +37,8 @@ argus_scene_t argus_scene_find(const char *id) {
     }
 }
 
-SceneType argus_scene_get_type(argus_scene_const_t scene) {
-    return SceneType(_as_ref(scene).type);
+ArgusSceneType argus_scene_get_type(argus_scene_const_t scene) {
+    return ArgusSceneType(_as_ref(scene).type);
 }
 
 }
