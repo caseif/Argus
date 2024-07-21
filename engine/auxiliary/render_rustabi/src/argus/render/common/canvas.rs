@@ -1,0 +1,96 @@
+/*
+ * This file is a part of Argus.
+ * Copyright (c) 2019-2024, Max Roncace <mproncace@protonmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+use crate::argus::render::{AttachedViewport, AttachedViewport2d, Camera2d, Viewport};
+use crate::render_cabi::*;
+use lowlevel_rustabi::util::str_to_cstring;
+use wm_rustabi::argus::wm::Window;
+use wm_rustabi::wm_cabi::argus_canvas_t;
+
+pub struct Canvas {
+    handle: argus_canvas_t,
+}
+
+impl Canvas {
+    pub fn get_window(&self) -> Window {
+        unsafe { Window::of(argus_canvas_get_window(self.handle)) }
+    }
+
+    pub fn get_viewports_2d(&self) -> Vec<AttachedViewport2d> {
+        unsafe {
+            let count = argus_canvas_get_viewports_2d_count(self.handle);
+
+            let mut viewport_handles: Vec<argus_attached_viewport_2d_t> = Vec::with_capacity(count);
+            argus_canvas_get_viewports_2d(self.handle, viewport_handles.as_mut_ptr(), count);
+
+            viewport_handles
+                .iter()
+                .map(|handle| AttachedViewport2d::of(*handle))
+                .collect()
+        }
+    }
+
+    pub fn find_viewport(&self, id: &str) -> AttachedViewport {
+        unsafe {
+            AttachedViewport::of(argus_canvas_find_viewport(
+                self.handle,
+                str_to_cstring(id).as_ptr(),
+            ))
+        }
+    }
+
+    pub fn attach_viewport_2d(
+        &mut self,
+        id: &str,
+        viewport: Viewport,
+        camera: Camera2d,
+        z_index: u32,
+    ) -> AttachedViewport {
+        unsafe {
+            AttachedViewport::of(argus_canvas_attach_viewport_2d(
+                self.handle,
+                str_to_cstring(id).as_ptr(),
+                viewport.into(),
+                camera.get_handle(),
+                z_index,
+            ))
+        }
+    }
+
+    pub fn attach_default_viewport_2d(
+        &mut self,
+        id: &str,
+        camera: Camera2d,
+        z_index: u32,
+    ) -> AttachedViewport {
+        unsafe {
+            AttachedViewport::of(argus_canvas_attach_default_viewport_2d(
+                self.handle,
+                str_to_cstring(id).as_ptr(),
+                camera.get_handle(),
+                z_index,
+            ))
+        }
+    }
+
+    pub fn detach_viewport_2d(&mut self, id: &str) {
+        unsafe {
+            argus_canvas_detach_viewport_2d(self.handle, str_to_cstring(id).as_ptr());
+        }
+    }
+}

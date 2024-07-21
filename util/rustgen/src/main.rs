@@ -65,11 +65,12 @@ const PROP_LIB_DEPS: &str = "engine_library_deps";
 const PROP_STATIC_DEPS: &str = "engine_module_deps";
 const PROP_AUX_DEPS: &str = "engine_aux_deps";
 
-const MODULES: [(ModuleType, &'static str); 4] = [
+const MODULES: [(ModuleType, &'static str); 5] = [
     (ModuleType::Library, "lowlevel"),
     (ModuleType::Static, "core"),
     (ModuleType::Static, "wm"),
     (ModuleType::Static, "resman"),
+    (ModuleType::Static, "render"),
 ];
 
 fn get_bindings_path(module_name: &str) -> PathBuf {
@@ -189,7 +190,8 @@ fn gen_bindings((module_type, module_name): &(ModuleType, &'static str), dep_gra
             .merge_extern_blocks(true)
             .layout_tests(false)
             .allowlist_file(format!("^.*[/\\\\]argus[/\\\\]{}[/\\\\].*$", module_name))
-            .allowlist_file(format!("^.*[/\\\\]argus[/\\\\]{}.h(pp)?$", module_name))
+            .allowlist_file(format!("^.*[/\\\\]argus[/\\\\]{}\\.h(pp)?$", module_name))
+            .allowlist_file(format!("^.*[/\\\\]glslang[/\\\\](.+[/\\\\])*.+\\.h(pp)?$"))
             .allowlist_recursively(false)
             .clang_args(module_inc_dirs.iter().map(|s| format!("-I{}", s.to_str().unwrap())).collect::<Vec<String>>())
             .clang_arg("-std=c11")
