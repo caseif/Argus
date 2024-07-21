@@ -19,5 +19,6 @@
 #pragma once
 
 #include "argus/lowlevel/cabi/c_interop.h"
+#include "argus/lowlevel/cabi/handle.h"
 #include "argus/lowlevel/cabi/math.h"
 #include "argus/lowlevel/cabi/message.h"

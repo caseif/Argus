@@ -20,10 +20,12 @@
 
 mod c_interop;
 mod dirtiable;
+mod handle;
 mod math;
 mod message;
 
 pub use self::c_interop::*;
 pub use self::dirtiable::*;
+pub use self::handle::*;
 pub use self::math::*;
 pub use self::message::*;

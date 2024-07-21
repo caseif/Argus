@@ -6,6 +6,14 @@ pub type StringArray = *mut ::std::os::raw::c_void;
 pub type StringArrayConst = *const ::std::os::raw::c_void;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ArgusHandle {
+    pub index: u32,
+    pub uid: u32,
+}
+pub type argus_handle_table_t = *mut ::std::os::raw::c_void;
+pub type argus_handle_table_const_t = *const ::std::os::raw::c_void;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct argus_vector_2d_t {
     pub x: f64,
     pub y: f64,
@@ -266,6 +274,26 @@ extern "C" {
         index: usize,
     ) -> *const ::std::os::raw::c_char;
     pub fn string_array_free(sa: StringArray);
+    pub fn argus_handle_table_new() -> argus_handle_table_t;
+    pub fn argus_handle_table_delete(table: argus_handle_table_t);
+    pub fn argus_handle_table_create_handle(
+        table: argus_handle_table_t,
+        ptr: *mut ::std::os::raw::c_void,
+    ) -> ArgusHandle;
+    pub fn argus_handle_table_copy_handle(
+        table: argus_handle_table_t,
+        handle: ArgusHandle,
+    ) -> ArgusHandle;
+    pub fn argus_handle_table_update_handle(
+        table: argus_handle_table_t,
+        handle: ArgusHandle,
+        ptr: *mut ::std::os::raw::c_void,
+    ) -> bool;
+    pub fn argus_handle_table_release_handle(table: argus_handle_table_t, handle: ArgusHandle);
+    pub fn argus_handle_table_deref(
+        table: argus_handle_table_const_t,
+        handle: ArgusHandle,
+    ) -> *mut ::std::os::raw::c_void;
     pub fn argus_set_message_dispatcher(dispatcher: message_dispatcher_t);
     pub fn argus_broadcast_message(
         type_id: *const ::std::os::raw::c_char,
