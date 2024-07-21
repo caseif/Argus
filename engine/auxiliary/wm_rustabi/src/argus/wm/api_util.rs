@@ -80,10 +80,19 @@ pub fn gl_unload_library() {
     }
 }
 
-pub fn gl_create_context(window: &mut Window, version_major: i32, version_minor: i32, flags: GLContextFlags)
-    -> GLContext {
+pub fn gl_create_context(
+    window: &mut Window,
+    version_major: i32,
+    version_minor: i32,
+    flags: GLContextFlags,
+) -> GLContext {
     unsafe {
-        let handle = argus_gl_create_context(window.get_handle_mut(), version_major, version_minor, flags.into());
+        let handle = argus_gl_create_context(
+            window.get_handle_mut(),
+            version_major,
+            version_minor,
+            flags.into(),
+        );
         return GLContext { handle };
     }
 }
@@ -142,7 +151,11 @@ pub fn vk_get_required_instance_extensions(window: &mut Window) -> Vec<String> {
         argus_vk_get_required_instance_extensions(window.get_handle_mut(), &mut count, null_mut());
         let mut exts = Vec::<*const c_char>::new();
         exts.reserve(count as usize);
-        argus_vk_get_required_instance_extensions(window.get_handle_mut(), null_mut(), exts.as_mut_ptr());
+        argus_vk_get_required_instance_extensions(
+            window.get_handle_mut(),
+            null_mut(),
+            exts.as_mut_ptr(),
+        );
         return exts.into_iter().map(|s| cstr_to_string(s)).collect();
     }
 }

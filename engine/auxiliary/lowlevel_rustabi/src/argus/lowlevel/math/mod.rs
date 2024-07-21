@@ -16,6 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub mod vector;
+mod vector;
 
 pub use self::vector::*;

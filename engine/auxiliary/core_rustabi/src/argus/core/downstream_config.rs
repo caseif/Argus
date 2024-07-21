@@ -98,11 +98,11 @@ pub fn get_initial_window_parameters() -> InitialWindowParameters {
                 false => None,
             },
             position: match compat_params.has_position {
-                true => Some(compat_params.position),
+                true => Some(compat_params.position.into()),
                 false => None,
             },
             dimensions: match compat_params.has_dimensions {
-                true => Some(compat_params.dimensions),
+                true => Some(compat_params.dimensions.into()),
                 false => None,
             },
         };
@@ -139,9 +139,9 @@ pub fn set_initial_window_parameters(params: &InitialWindowParameters) {
             has_mouse_raw_input: params.mouse_raw_input.is_some(),
             mouse_raw_input: params.mouse_raw_input.unwrap_or_default(),
             has_position: params.position.is_some(),
-            position: params.position.unwrap_or(std::mem::zeroed()),
+            position: params.position.unwrap_or(std::mem::zeroed()).into(),
             has_dimensions: params.dimensions.is_some(),
-            dimensions: params.dimensions.unwrap_or(std::mem::zeroed()),
+            dimensions: params.dimensions.unwrap_or(std::mem::zeroed()).into(),
         });
     }
 }

@@ -22,10 +22,10 @@ use std::time::Duration;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector2u};
-use lowlevel_rustabi::util::*;
 use crate::argus::wm::{Display, DisplayMode};
 use crate::wm_cabi::*;
+use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector2u};
+use lowlevel_rustabi::util::*;
 
 pub struct Window {
     handle: argus_window_t,
@@ -57,31 +57,35 @@ pub fn set_window_create_flags(flags: WindowCreateFlags) {
 
 pub fn get_window(id: &str) -> Option<Window> {
     unsafe {
-        return argus_get_window(str_to_cstring(id).as_ptr()).as_mut().map(|ptr| Window::of(ptr));
+        argus_get_window(str_to_cstring(id).as_ptr())
+            .as_mut()
+            .map(|ptr| Window::of(ptr))
     }
 }
 
 pub fn get_window_handle(window: &mut Window) -> *mut c_void {
-    return window.get_handle_mut();
+    window.get_handle_mut()
 }
 
 pub fn get_window_from_handle(handle: *const c_void) -> Option<Window> {
     unsafe {
-        return argus_get_window_from_handle(handle).as_mut().map(|ptr| Window::of(ptr));
+        argus_get_window_from_handle(handle)
+            .as_mut()
+            .map(|ptr| Window::of(ptr))
     }
 }
 
 impl Window {
-    fn of(handle: argus_window_t) -> Self{
-        return Self { handle };
+    pub fn of(handle: argus_window_t) -> Self {
+        Self { handle }
     }
 
     pub(crate) fn get_handle(&self) -> argus_window_const_t {
-        return self.handle;
+        self.handle
     }
 
     pub(crate) fn get_handle_mut(&mut self) -> argus_window_t {
-        return self.handle;
+        self.handle
     }
 
     pub fn set_canvas_ctor_and_dtor(ctor: CanvasCtor, dtor: CanvasDtor) {
@@ -92,46 +96,42 @@ impl Window {
 
     pub fn create(id: &str, parent: Option<Window>) -> Self {
         unsafe {
-            return Window::of(argus_window_create(str_to_cstring(id).as_ptr(), match parent {
-                Some(v) => v.get_handle() as argus_window_t,
-                None => null_mut(),
-            }));
+            Window::of(argus_window_create(
+                str_to_cstring(id).as_ptr(),
+                match parent {
+                    Some(v) => v.get_handle() as argus_window_t,
+                    None => null_mut(),
+                },
+            ))
         }
     }
 
     pub fn get_id(&self) -> String {
-        unsafe {
-            return cstr_to_string(argus_window_get_id(self.get_handle()));
-        }
+        unsafe { cstr_to_string(argus_window_get_id(self.get_handle())) }
     }
 
     pub fn get_canvas(&self) -> CanvasPtr {
-        unsafe {
-            return argus_window_get_canvas(self.get_handle());
-        }
+        unsafe { argus_window_get_canvas(self.get_handle()) }
     }
 
     pub fn is_created(&self) -> bool {
-        unsafe {
-            return argus_window_is_created(self.get_handle());
-        }
+        unsafe { argus_window_is_created(self.get_handle()) }
     }
 
     pub fn is_ready(&self) -> bool {
-        unsafe {
-            return argus_window_is_ready(self.get_handle());
-        }
+        unsafe { argus_window_is_ready(self.get_handle()) }
     }
 
     pub fn is_closed(&self) -> bool {
-        unsafe {
-            return argus_window_is_closed(self.get_handle());
-        }
+        unsafe { argus_window_is_closed(self.get_handle()) }
     }
 
     pub fn create_child_window(&mut self, id: &str) -> Window {
         unsafe {
-            return Window::of(argus_window_create_child_window(self.get_handle_mut(), str_to_cstring(id).as_ptr()));
+            Window::of(argus_window_create_child_window(
+                self.get_handle_mut(),
+                str_to_cstring(id).as_ptr(),
+            ))
         }
     }
 
@@ -154,9 +154,7 @@ impl Window {
     }
 
     pub fn is_fullscreen(&self) -> bool {
-        unsafe {
-            return argus_window_is_fullscreen(self.get_handle());
-        }
+        unsafe { argus_window_is_fullscreen(self.get_handle()) }
     }
 
     pub fn set_fullscreen(&mut self, fullscreen: bool) {
@@ -168,15 +166,17 @@ impl Window {
     pub fn get_resolution(&mut self) -> ValueAndDirtyFlag<Vector2u> {
         unsafe {
             let mut res: ValueAndDirtyFlag<Vector2u> = std::mem::zeroed();
-            argus_window_get_resolution(self.get_handle_mut(), &mut res.value, &mut res.dirty);
+            argus_window_get_resolution(
+                self.get_handle_mut(),
+                &mut res.value.into(),
+                &mut res.dirty,
+            );
             return res;
         }
     }
 
     pub fn peek_resolution(&self) -> Vector2u {
-        unsafe {
-            return argus_window_peek_resolution(self.handle);
-        }
+        unsafe { argus_window_peek_resolution(self.handle).into() }
     }
 
     pub fn set_windowed_resolution(&mut self, width: u32, height: u32) {
@@ -201,7 +201,9 @@ impl Window {
     }
 
     pub fn set_windowed_position(&mut self, x: i32, y: i32) {
-        unsafe { argus_window_set_windowed_position(self.get_handle_mut(), x, y); }
+        unsafe {
+            argus_window_set_windowed_position(self.get_handle_mut(), x, y);
+        }
     }
 
     pub fn get_display_affinity(&self) -> Display {
@@ -209,7 +211,9 @@ impl Window {
     }
 
     pub fn set_display_affinity(&mut self, display: Display) {
-        unsafe { argus_window_set_display_affinity(self.handle, display.get_handle()); }
+        unsafe {
+            argus_window_set_display_affinity(self.handle, display.get_handle());
+        }
     }
 
     pub fn get_display_mode(&self) -> DisplayMode {
@@ -225,13 +229,13 @@ impl Window {
     }
 
     pub fn set_mouse_captured(&mut self, captured: bool) {
-        unsafe { argus_window_set_mouse_captured(self.get_handle_mut(), captured); }
+        unsafe {
+            argus_window_set_mouse_captured(self.get_handle_mut(), captured);
+        }
     }
 
     pub fn is_mouse_visible(&self) -> bool {
-        unsafe {
-            return argus_window_is_mouse_visible(self.get_handle());
-        }
+        unsafe { argus_window_is_mouse_visible(self.get_handle()) }
     }
 
     pub fn set_mouse_visible(&mut self, visible: bool) {
@@ -241,9 +245,7 @@ impl Window {
     }
 
     pub fn is_mouse_raw_input(&self) -> bool {
-        unsafe {
-            return argus_window_is_mouse_raw_input(self.get_handle());
-        }
+        unsafe { argus_window_is_mouse_raw_input(self.get_handle()) }
     }
 
     pub fn set_mouse_raw_input(&mut self, raw_input: bool) {
@@ -253,9 +255,7 @@ impl Window {
     }
 
     pub fn get_content_scale(&self) -> Vector2f {
-        unsafe {
-            return argus_window_get_content_scale(self.get_handle());
-        }
+        unsafe { argus_window_get_content_scale(self.get_handle()).into() }
     }
 
     pub fn set_close_callback(&mut self, callback: WindowCallback) {

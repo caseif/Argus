@@ -31,11 +31,11 @@ pub type DisplayMode = argus_display_mode_t;
 
 impl Display {
     pub(crate) fn of(handle: argus_display_const_t) -> Self {
-        return Self { handle };
+        Self { handle }
     }
 
     pub(crate) fn get_handle(&self) -> argus_display_const_t {
-        return self.handle;
+        self.handle
     }
 
     pub fn get_available_displays() -> Vec<Self> {
@@ -47,20 +47,19 @@ impl Display {
 
             argus_display_get_available_displays(null_mut(), displays.as_mut_ptr());
 
-            return displays.into_iter().map(|disp| Display::of(disp as argus_display_t)).collect();
+            displays
+                .into_iter()
+                .map(|disp| Display::of(disp as argus_display_t))
+                .collect()
         }
     }
 
     pub fn get_name(&self) -> String {
-        unsafe {
-            return cstr_to_string(argus_display_get_name(self.get_handle()));
-        }
+        unsafe { cstr_to_string(argus_display_get_name(self.get_handle())) }
     }
 
     pub fn get_position(&self) -> Vector2i {
-        unsafe {
-            return argus_display_get_position(self.get_handle());
-        }
+        unsafe { argus_display_get_position(self.get_handle()).into() }
     }
 
     pub fn get_display_modes(&self) -> Vec<DisplayMode> {

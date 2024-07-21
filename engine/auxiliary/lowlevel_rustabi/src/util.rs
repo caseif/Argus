@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::{c_char, CStr, CString, OsString};
+use std::ffi::{c_char, CStr, CString};
 
 pub struct CStringArray {
     vec: Vec<CString>,
@@ -68,7 +68,7 @@ pub unsafe fn string_vec_to_cstr_arr(v: Vec<String>) -> CStringArray {
 pub unsafe fn os_string_to_string<T>(s: *const c_char) -> String {
     let len = (0..).take_while(|&i| *s.offset(i) != 0).count();
     let slice = std::slice::from_raw_parts(s, len);
-    OsString::from_wide(slice)
+    std::ffi::OsString::from_wide(slice)
 }
 
 #[cfg(not(windows))]

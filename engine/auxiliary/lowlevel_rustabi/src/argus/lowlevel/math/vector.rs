@@ -16,20 +16,114 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_macros::ffi_repr;
+
 use crate::lowlevel_cabi::*;
 
-pub type Vector2d = argus_vector_2d_t;
-pub type Vector3d = argus_vector_3d_t;
-pub type Vector4d = argus_vector_4d_t;
+#[repr(C)]
+#[ffi_repr(argus_vector_2d_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector2d {
+    pub x: f64,
+    pub y: f64,
+}
 
-pub type Vector2f = argus_vector_2f_t;
-pub type Vector3f = argus_vector_3f_t;
-pub type Vector4f = argus_vector_4f_t;
+#[repr(C)]
+#[ffi_repr(argus_vector_3d_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector3d {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+}
 
-pub type Vector2i = argus_vector_2i_t;
-pub type Vector3i = argus_vector_3i_t;
-pub type Vector4i = argus_vector_4i_t;
+#[repr(C)]
+#[ffi_repr(argus_vector_4d_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector4d {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
+}
 
-pub type Vector2u = argus_vector_2u_t;
-pub type Vector3u = argus_vector_3u_t;
-pub type Vector4u = argus_vector_4u_t;
+#[repr(C)]
+#[ffi_repr(argus_vector_2f_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector2f {
+    pub x: f32,
+    pub y: f32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_3f_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector3f {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_4f_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector4f {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_2i_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector2i {
+    pub x: f32,
+    pub y: f32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_3i_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector3i {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_4i_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector4i {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+    pub w: i32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_2u_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector2u {
+    pub x: u32,
+    pub y: u32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_3u_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector3u {
+    pub x: u32,
+    pub y: u32,
+    pub z: u32,
+}
+
+#[repr(C)]
+#[ffi_repr(argus_vector_4u_t)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vector4u {
+    pub x: u32,
+    pub y: u32,
+    pub z: u32,
+    pub w: u32,
+}
