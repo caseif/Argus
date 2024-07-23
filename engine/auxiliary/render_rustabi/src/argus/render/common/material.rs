@@ -25,7 +25,7 @@ pub struct Material {
 }
 
 impl Material {
-    pub(crate) fn of(handle: argus_material_t) -> Self {
+    pub fn of(handle: argus_material_t) -> Self {
         Self { handle }
     }
 

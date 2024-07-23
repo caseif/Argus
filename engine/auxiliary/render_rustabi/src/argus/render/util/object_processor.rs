@@ -101,6 +101,8 @@ pub fn process_objects_2d(
             Some(update_object_proxy),
             ptr::addr_of_mut!(fns).cast(),
         );
+
+        obj_map.rebuild();
     }
 }
 

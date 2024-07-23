@@ -34,7 +34,7 @@ impl AttachedViewport {
         Self { handle }
     }
 
-    pub(crate) fn as_2d(&self) -> AttachedViewport2d {
+    pub fn as_2d(&self) -> AttachedViewport2d {
         AttachedViewport2d::of(self.handle)
     }
 
