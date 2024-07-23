@@ -36,13 +36,15 @@ pub fn finalize_process() {
 }
 
 pub struct Shader {
-    handle: ShaderHandle
+    handle: ShaderHandle,
 }
 
 impl Shader {
     pub fn create(input: &Input) -> Shader {
         unsafe {
-            return Shader { handle: glslang_shader_create(input) };
+            return Shader {
+                handle: glslang_shader_create(input),
+            };
         }
     }
 
@@ -84,19 +86,25 @@ impl Shader {
 
     pub fn get_preprocessed_code<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_shader_get_preprocessed_code(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_shader_get_preprocessed_code(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 
     pub fn get_info_log<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_shader_get_info_log(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_shader_get_info_log(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 
     pub fn get_info_debug_log<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_shader_get_info_debug_log(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_shader_get_info_debug_log(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 }
@@ -111,13 +119,16 @@ impl Drop for Shader {
 
 pub struct Program {
     handle: ProgramHandle,
-    shaders: Vec<Shader>
+    shaders: Vec<Shader>,
 }
 
 impl Program {
     pub fn create() -> Program {
         unsafe {
-            return Program { handle: glslang_program_create(), shaders: Vec::<Shader>::new() };
+            return Program {
+                handle: glslang_program_create(),
+                shaders: Vec::<Shader>::new(),
+            };
         }
     }
 
@@ -184,19 +195,25 @@ impl Program {
 
     pub fn spirv_get_messages<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_program_SPIRV_get_messages(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_program_SPIRV_get_messages(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 
     pub fn get_info_log<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_program_get_info_log(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_program_get_info_log(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 
     pub fn get_info_debug_log<'a>(&mut self) -> &'a str {
         unsafe {
-            return CStr::from_ptr(glslang_program_get_info_debug_log(self.handle)).to_str().unwrap();
+            return CStr::from_ptr(glslang_program_get_info_debug_log(self.handle))
+                .to_str()
+                .unwrap();
         }
     }
 }

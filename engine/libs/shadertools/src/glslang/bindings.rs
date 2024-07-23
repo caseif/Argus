@@ -52,7 +52,7 @@ bitmask! {
 pub enum Source {
     None,
     Glsl,
-    Hlsl
+    Hlsl,
 }
 
 /* EShClient counterpart */
@@ -61,7 +61,7 @@ pub enum Source {
 pub enum Client {
     None,
     Vulkan,
-    Opengl
+    Opengl,
 }
 
 /* EShTargetLanguage counterpart */
@@ -69,7 +69,7 @@ pub enum Client {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TargetLanguage {
     None,
-    Spv
+    Spv,
 }
 
 /* SH_TARGET_ClientVersion counterpart */
@@ -80,7 +80,7 @@ pub enum TargetClientVersion {
     Vulkan1_1 = (1 << 22) | (1 << 12),
     Vulkan1_2 = (1 << 22) | (2 << 12),
     Vulkan1_3 = (1 << 22) | (3 << 12),
-    Opengl450 = 450
+    Opengl450 = 450,
 }
 
 /* SH_TARGET_LanguageVersion counterpart */
@@ -93,7 +93,7 @@ pub enum TargetLanguageVersion {
     Spv1_3 = (1 << 16) | (3 << 8),
     Spv1_4 = (1 << 16) | (4 << 8),
     Spv1_5 = (1 << 16) | (5 << 8),
-    Spv1_6 = (1 << 16) | (6 << 8)
+    Spv1_6 = (1 << 16) | (6 << 8),
 }
 
 /* EShExecutable counterpart */
@@ -101,7 +101,7 @@ pub enum TargetLanguageVersion {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Executable {
     VertexFragment,
-    Fragment
+    Fragment,
 }
 
 // EShOptimizationLevel counterpart
@@ -113,7 +113,7 @@ pub enum OptimizationLevel {
     NoGeneration,
     None,
     Simple,
-    Full
+    Full,
 }
 
 /* EShTextureSamplerTransformMode counterpart */
@@ -121,7 +121,7 @@ pub enum OptimizationLevel {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TextureSamplerTransformMode {
     Keep,
-    UpgradeTextureRemoveSampler
+    UpgradeTextureRemoveSampler,
 }
 
 /* EShMessages counterpart */
@@ -193,7 +193,7 @@ pub enum ResourceType {
     Image,
     Ubo,
     Ssbo,
-    Uav
+    Uav,
 }
 
 /* /glslang_c_shader_types.h */
@@ -215,7 +215,7 @@ pub struct Limits {
     pub general_varying_indexing: bool,
     pub general_sampler_indexing: bool,
     pub general_variable_indexing: bool,
-    pub general_constant_matrix_vector_indexing: bool
+    pub general_constant_matrix_vector_indexing: bool,
 }
 
 /* TBuiltInResource counterpart */
@@ -325,7 +325,7 @@ pub struct Resource {
     pub max_mesh_view_count_ext: c_int,
     pub max_dual_source_draw_buffers_ext: c_int,
 
-    pub limits: Limits
+    pub limits: Limits,
 }
 
 #[repr(C)]
@@ -358,19 +358,28 @@ pub struct IncludeResult {
 
     /* Header contents or NULL */
     pub header_data: *const c_char,
-    pub header_length: usize
+    pub header_length: usize,
 }
 
 /* Callback for local file inclusion */
-pub type GlslIncludeLocalFunc = extern "C" fn (ctx: *mut c_void, header_name: *const c_char, includer_name: *const c_char,
-                                                        include_depth: usize) -> *mut IncludeResult;
+pub type GlslIncludeLocalFunc = extern "C" fn(
+    ctx: *mut c_void,
+    header_name: *const c_char,
+    includer_name: *const c_char,
+    include_depth: usize,
+) -> *mut IncludeResult;
 
 /* Callback for system file inclusion */
-pub type GlslIncludeSystemFunc = extern "C" fn (ctx: *mut c_void, header_name: *const c_char,
-                                   includer_name: *const c_char, include_depth: usize) -> *mut IncludeResult;
+pub type GlslIncludeSystemFunc = extern "C" fn(
+    ctx: *mut c_void,
+    header_name: *const c_char,
+    includer_name: *const c_char,
+    include_depth: usize,
+) -> *mut IncludeResult;
 
 /* Callback for include result destruction */
-pub type GlslFreeIncludeResultFunc = extern "C" fn (ctx: *mut c_void, result: *mut IncludeResult) -> c_int;
+pub type GlslFreeIncludeResultFunc =
+    extern "C" fn(ctx: *mut c_void, result: *mut IncludeResult) -> c_int;
 
 /* Collection of callbacks for GLSL preprocessor */
 #[repr(C)]
@@ -404,7 +413,12 @@ extern "C" {
     pub fn glslang_shader_delete(shader: ShaderHandle);
     pub fn glslang_shader_set_preamble(shader: ShaderHandle, s: *const c_char);
     pub fn glslang_shader_shift_binding(shader: ShaderHandle, res: ResourceType, base: c_uint);
-    pub fn glslang_shader_shift_binding_for_set(shader: ShaderHandle, res: ResourceType, base: c_uint, set: c_uint);
+    pub fn glslang_shader_shift_binding_for_set(
+        shader: ShaderHandle,
+        res: ResourceType,
+        base: c_uint,
+        set: c_uint,
+    );
     pub fn glslang_shader_set_options(shader: ShaderHandle, options: ShaderOptions); // glslang_shader_options_t
     pub fn glslang_shader_set_glsl_version(shader: ShaderHandle, version: c_int);
     pub fn glslang_shader_preprocess(shader: ShaderHandle, input: *const Input) -> c_int;
@@ -417,11 +431,24 @@ extern "C" {
     pub fn glslang_program_delete(program: ProgramHandle);
     pub fn glslang_program_add_shader(program: ProgramHandle, shader: ShaderHandle);
     pub fn glslang_program_link(program: ProgramHandle, messages: Messages) -> c_int; // glslang_messages_t
-    pub fn glslang_program_add_source_text(program: ProgramHandle, stage: Stage, text: *const c_char, len: usize);
-    pub fn glslang_program_set_source_file(program: ProgramHandle, stage: Stage, file: *const c_char);
+    pub fn glslang_program_add_source_text(
+        program: ProgramHandle,
+        stage: Stage,
+        text: *const c_char,
+        len: usize,
+    );
+    pub fn glslang_program_set_source_file(
+        program: ProgramHandle,
+        stage: Stage,
+        file: *const c_char,
+    );
     pub fn glslang_program_map_io(program: ProgramHandle) -> c_int;
     pub fn glslang_program_SPIRV_generate(program: ProgramHandle, stage: Stage);
-    pub fn glslang_program_SPIRV_generate_with_options(program: ProgramHandle, stage: Stage, spv_options: *mut SpvOptions);
+    pub fn glslang_program_SPIRV_generate_with_options(
+        program: ProgramHandle,
+        stage: Stage,
+        spv_options: *mut SpvOptions,
+    );
     pub fn glslang_program_SPIRV_get_size(program: ProgramHandle) -> usize;
     pub fn glslang_program_SPIRV_get(program: ProgramHandle, i: *mut c_uint);
     pub fn glslang_program_SPIRV_get_ptr(program: ProgramHandle) -> *mut c_uint;
@@ -547,7 +574,7 @@ pub const DEFAULT_BUILT_IN_RESOURCE: Resource = Resource {
         general_sampler_indexing: true,
         general_variable_indexing: true,
         general_constant_matrix_vector_indexing: true,
-    }
+    },
 };
 
 /* /default resources initialization */
