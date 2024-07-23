@@ -37,6 +37,7 @@ endif()
 file(MAKE_DIRECTORY "${GEN_SRC_DIR}")
 set(OPENGL_PROFILE_PATH "${MODULE_PROJECT_DIR}/tooling/aglet/opengl_profile.xml")
 execute_process(COMMAND "ruby" "${EXT_TOOLING_DIR}/aglet/aglet.rb"
+    "--lang=c"
     "-p" "${OPENGL_PROFILE_PATH}"
     "-o" "${MODULE_GENERATED_DIR}"
     WORKING_DIRECTORY "${ROOT_PROJECT_DIR}/external/tooling/aglet/"
