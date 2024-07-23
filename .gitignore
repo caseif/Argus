@@ -467,3 +467,6 @@ venv/
 
 /Cargo.lock
 /engine/auxiliary/*/Cargo.lock
+/engine/dynamic/*/Cargo.lock
+/engine/libs/*/Cargo.lock
+/engine/static/*/Cargo.lock
