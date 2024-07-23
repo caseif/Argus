@@ -35,8 +35,8 @@ static const WindowEvent &_as_ref(argus_window_event_const_t ptr) {
 extern "C" {
 #endif
 
-WindowEventType argus_window_event_get_subtype(argus_window_event_const_t self) {
-    return WindowEventType(_as_ref(self).subtype);
+ArgusWindowEventType argus_window_event_get_subtype(argus_window_event_const_t self) {
+    return ArgusWindowEventType(_as_ref(self).subtype);
 }
 
 argus_window_t argus_window_event_get_window(argus_window_event_const_t self) {

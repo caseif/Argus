@@ -15,3 +15,52 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
+
+use lowlevel_rustabi::argus::lowlevel::{Vector2i, Vector2u};
+
+use crate::argus::wm::Window;
+use crate::wm_cabi::*;
+
+#[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, UnsafeFromPrimitive)]
+#[repr(u32)]
+pub enum WindowEventType {
+    Create = ARGUS_WINDOW_EVENT_TYPE_CREATE,
+    Update = ARGUS_WINDOW_EVENT_TYPE_UPDATE,
+    RequestClose = ARGUS_WINDOW_EVENT_TYPE_REQUEST_CLOSE,
+    Minimize = ARGUS_WINDOW_EVENT_TYPE_MINIMIZE,
+    Restore = ARGUS_WINDOW_EVENT_TYPE_RESTORE,
+    Focus = ARGUS_WINDOW_EVENT_TYPE_FOCUS,
+    Unfocus = ARGUS_WINDOW_EVENT_TYPE_UNFOCUS,
+    Resize = ARGUS_WINDOW_EVENT_TYPE_RESIZE,
+    Move = ARGUS_WINDOW_EVENT_TYPE_MOVE,
+}
+
+pub struct WindowEvent {
+    handle: argus_window_event_t,
+}
+
+impl WindowEvent {
+    pub fn get_subtype(&self) -> WindowEventType {
+        unsafe {
+            WindowEventType::unchecked_transmute_from(argus_window_event_get_subtype(self.handle))
+        }
+    }
+
+    pub fn get_window(&self) -> Window {
+        unsafe { Window::of(argus_window_event_get_window(self.handle)) }
+    }
+
+    pub fn get_resolution(&self) -> Vector2u {
+        unsafe { argus_window_event_get_resolution(self.handle).into() }
+    }
+
+    pub fn get_position(&self) -> Vector2i {
+        unsafe { argus_window_event_get_position(self.handle).into() }
+    }
+
+    pub fn get_delta_us(&self) -> u64 {
+        unsafe { argus_window_event_get_delta_us(self.handle) }
+    }
+}

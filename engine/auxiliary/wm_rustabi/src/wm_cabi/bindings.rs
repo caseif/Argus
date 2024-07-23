@@ -37,16 +37,16 @@ pub const GL_CONTEXT_FLAG_DEBUG_CONTEXT: GLContextFlags = 256;
 pub const GL_CONTEXT_FLAG_PROFILE_MASK: GLContextFlags = 7;
 pub type GLContextFlags = ::std::os::raw::c_uint;
 pub const k_event_type_window: &[u8; 7] = b"window\0";
-pub const WINDOW_EVENT_TYPE_CREATE: WindowEventType = 0;
-pub const WINDOW_EVENT_TYPE_UPDATE: WindowEventType = 1;
-pub const WINDOW_EVENT_TYPE_REQUEST_CLOSE: WindowEventType = 2;
-pub const WINDOW_EVENT_TYPE_MINIMIZE: WindowEventType = 3;
-pub const WINDOW_EVENT_TYPE_RESTORE: WindowEventType = 4;
-pub const WINDOW_EVENT_TYPE_FOCUS: WindowEventType = 5;
-pub const WINDOW_EVENT_TYPE_UNFOCUS: WindowEventType = 6;
-pub const WINDOW_EVENT_TYPE_RESIZE: WindowEventType = 7;
-pub const WINDOW_EVENT_TYPE_MOVE: WindowEventType = 8;
-pub type WindowEventType = ::std::os::raw::c_uint;
+pub const ARGUS_WINDOW_EVENT_TYPE_CREATE: ArgusWindowEventType = 0;
+pub const ARGUS_WINDOW_EVENT_TYPE_UPDATE: ArgusWindowEventType = 1;
+pub const ARGUS_WINDOW_EVENT_TYPE_REQUEST_CLOSE: ArgusWindowEventType = 2;
+pub const ARGUS_WINDOW_EVENT_TYPE_MINIMIZE: ArgusWindowEventType = 3;
+pub const ARGUS_WINDOW_EVENT_TYPE_RESTORE: ArgusWindowEventType = 4;
+pub const ARGUS_WINDOW_EVENT_TYPE_FOCUS: ArgusWindowEventType = 5;
+pub const ARGUS_WINDOW_EVENT_TYPE_UNFOCUS: ArgusWindowEventType = 6;
+pub const ARGUS_WINDOW_EVENT_TYPE_RESIZE: ArgusWindowEventType = 7;
+pub const ARGUS_WINDOW_EVENT_TYPE_MOVE: ArgusWindowEventType = 8;
+pub type ArgusWindowEventType = ::std::os::raw::c_uint;
 pub type argus_window_event_t = *mut ::std::os::raw::c_void;
 pub type argus_window_event_const_t = *const ::std::os::raw::c_void;
 extern "C" {
@@ -146,7 +146,9 @@ extern "C" {
         out_count: *mut ::std::os::raw::c_uint,
         out_names: *mut *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
-    pub fn argus_window_event_get_subtype(self_: argus_window_event_const_t) -> WindowEventType;
+    pub fn argus_window_event_get_subtype(
+        self_: argus_window_event_const_t,
+    ) -> ArgusWindowEventType;
     pub fn argus_window_event_get_window(self_: argus_window_event_const_t) -> argus_window_t;
     pub fn argus_window_event_get_resolution(
         self_: argus_window_event_const_t,

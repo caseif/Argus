@@ -28,22 +28,22 @@ extern "C" {
 
 static const char *const k_event_type_window = "window";
 
-typedef enum WindowEventType {
-    WINDOW_EVENT_TYPE_CREATE,
-    WINDOW_EVENT_TYPE_UPDATE,
-    WINDOW_EVENT_TYPE_REQUEST_CLOSE,
-    WINDOW_EVENT_TYPE_MINIMIZE,
-    WINDOW_EVENT_TYPE_RESTORE,
-    WINDOW_EVENT_TYPE_FOCUS,
-    WINDOW_EVENT_TYPE_UNFOCUS,
-    WINDOW_EVENT_TYPE_RESIZE,
-    WINDOW_EVENT_TYPE_MOVE,
-} WindowEventType;
+typedef enum ArgusWindowEventType {
+    ARGUS_WINDOW_EVENT_TYPE_CREATE,
+    ARGUS_WINDOW_EVENT_TYPE_UPDATE,
+    ARGUS_WINDOW_EVENT_TYPE_REQUEST_CLOSE,
+    ARGUS_WINDOW_EVENT_TYPE_MINIMIZE,
+    ARGUS_WINDOW_EVENT_TYPE_RESTORE,
+    ARGUS_WINDOW_EVENT_TYPE_FOCUS,
+    ARGUS_WINDOW_EVENT_TYPE_UNFOCUS,
+    ARGUS_WINDOW_EVENT_TYPE_RESIZE,
+    ARGUS_WINDOW_EVENT_TYPE_MOVE,
+} ArgusWindowEventType;
 
 typedef void *argus_window_event_t;
 typedef const void *argus_window_event_const_t;
 
-WindowEventType argus_window_event_get_subtype(argus_window_event_const_t self);
+ArgusWindowEventType argus_window_event_get_subtype(argus_window_event_const_t self);
 
 argus_window_t argus_window_event_get_window(argus_window_event_const_t self);
 
