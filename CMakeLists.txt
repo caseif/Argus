@@ -130,7 +130,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
 
-set(CMAKE_MODULE_PROJECT_DIR ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(MODULE_PROJECT_DIR ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 include(ExternalProject)
 
@@ -206,7 +206,7 @@ endif()
 
 if(${BUILD_OPENGL_BACKEND})
   message("OpenGL support will be built")
-  list(APPEND DYNAMIC_MODULE_IDS "render_opengl")
+  list(APPEND DYNAMIC_MODULE_IDS "render_opengl;render_opengl_rust")
 else()
   message("OpenGL support will not be built")
 endif()

@@ -1,0 +1,17 @@
+[package]
+name = "render_opengl_rust"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "render_opengl_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+libc = "0.2"
+num_enum = "0.7"
+lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
+core_rustabi = { path = "../../auxiliary/core_rustabi" }
+wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
+resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+render_rustabi = { path = "../../auxiliary/render_rustabi" }
