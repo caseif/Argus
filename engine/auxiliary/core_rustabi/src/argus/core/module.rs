@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use num_enum::TryFromPrimitive;
+use num_enum::{UnsafeFromPrimitive};
 
 use lowlevel_rustabi::argus;
 use lowlevel_rustabi::util::*;
@@ -24,7 +24,7 @@ use lowlevel_rustabi::util::*;
 use crate::core_cabi;
 use crate::core_cabi::*;
 
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, UnsafeFromPrimitive)]
 #[repr(u32)]
 pub enum LifecycleStage {
     Load = LIFECYCLE_STAGE_LOAD as u32,
@@ -48,15 +48,16 @@ pub fn lifecycle_stage_to_str(stage: LifecycleStage) -> String {
 pub fn register_dynamic_module(
     id: &str,
     lifecycle_callback: LifecycleUpdateCallback,
-    dependencies: Vec<String>,
+    dependencies: Vec<&str>,
 ) {
     unsafe {
-        let (names, count) = string_vec_to_cstr_arr(dependencies).into();
+        let id_c = str_to_cstring(id);
+        let deps_c = str_vec_to_cstr_arr(&dependencies);
         argus_register_dynamic_module(
-            str_to_cstring(id).as_ptr(),
+            id_c.as_ptr(),
             Some(lifecycle_callback),
-            count,
-            names,
+            dependencies.len(),
+            deps_c.as_ptr(),
         );
     }
 }

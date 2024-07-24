@@ -85,7 +85,7 @@ pub fn gl_create_context(
     version_major: i32,
     version_minor: i32,
     flags: GLContextFlags,
-) -> GLContext {
+) -> Option<GLContext> {
     unsafe {
         let handle = argus_gl_create_context(
             window.get_handle_mut(),
@@ -93,7 +93,7 @@ pub fn gl_create_context(
             version_minor,
             flags.into(),
         );
-        return GLContext { handle };
+        handle.as_mut().map(|p| GLContext { handle: p })
     }
 }
 
@@ -109,15 +109,16 @@ pub fn gl_is_context_current(context: &GLContext) -> bool {
     }
 }
 
-pub fn gl_make_context_current(window: &mut Window, context: &GLContext) {
+pub fn gl_make_context_current(window: &mut Window, context: &GLContext) -> Result<(), i32> {
     unsafe {
-        argus_gl_make_context_current(window.get_handle_mut(), context.handle);
+        match argus_gl_make_context_current(window.get_handle_mut(), context.handle) {
+            0 => Ok(()),
+            rc => Err(rc),
+        }
     }
 }
 
-pub unsafe fn gl_load_proc(name: &str) -> *mut c_void {
-    return argus_gl_load_proc(str_to_cstring(name).as_ptr());
-}
+pub use crate::wm_cabi::argus_gl_load_proc as gl_load_proc;
 
 pub fn gl_swap_interval(interval: i32) {
     unsafe {

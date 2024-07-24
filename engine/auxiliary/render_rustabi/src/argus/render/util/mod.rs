@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+mod defines;
 mod object_processor;
 
+#[allow(unused_imports)]
+pub use defines::*;
 #[allow(unused_imports)]
 pub use object_processor::*;

@@ -19,26 +19,32 @@
 use std::ffi::{c_char, CStr, CString};
 
 pub struct CStringArray {
-    vec: Vec<CString>,
+    strs: Vec<CString>,
+    ptrs: Vec<*const c_char>,
 }
 
-impl Into<*const *const c_char> for CStringArray {
-    fn into(self) -> *const *const c_char {
-        return self
-            .vec
+impl CStringArray {
+    pub fn new(strs: Vec<CString>) -> Self {
+        let mut arr = Self { strs, ptrs: vec![] };
+        arr.ptrs = arr
+            .strs
             .iter()
             .map(|s| s.as_ptr())
-            .collect::<Vec<_>>()
-            .as_ptr();
+            .collect::<Vec<_>>();
+        arr
+    }
+
+    pub fn as_ptr(&self) -> *const *const c_char {
+        self.ptrs.as_ptr()
     }
 }
 
-impl Into<(*const *const c_char, usize)> for CStringArray {
-    fn into(self) -> (*const *const c_char, usize) {
+/*impl Into<(Vec<*const c_char>, usize)> for CStringArray {
+    fn into(self) -> (Vec<*const c_char>, usize) {
         let len = self.vec.len();
         return (self.into(), len);
     }
-}
+}*/
 
 pub fn string_to_cstring(s: &String) -> CString {
     CString::new(s.to_string()).unwrap()
@@ -58,10 +64,12 @@ pub unsafe fn cstr_to_str<'a>(s: *const c_char) -> &'a str {
         .expect("Failed to convert C string to Rust string")
 }
 
-pub unsafe fn string_vec_to_cstr_arr(v: Vec<String>) -> CStringArray {
-    CStringArray {
-        vec: v.iter().map(string_to_cstring).collect(),
-    }
+pub unsafe fn str_vec_to_cstr_arr(v: &Vec<&str>) -> CStringArray {
+    CStringArray::new(v.into_iter().map(|s| str_to_cstring(*s)).collect())
+}
+
+pub unsafe fn string_vec_to_cstr_arr(v: &Vec<String>) -> CStringArray {
+    CStringArray::new(v.iter().map(string_to_cstring).collect())
 }
 
 #[cfg(windows)]

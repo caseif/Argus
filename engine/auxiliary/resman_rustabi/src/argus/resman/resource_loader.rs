@@ -41,12 +41,12 @@ impl WrappedResourceLoader {
         dependencies: Vec<String>,
     ) -> Result<HashMap<String, Resource>, ResourceError> {
         unsafe {
-            let dep_count = dependencies.len();
+            let deps_c = string_vec_to_cstr_arr(&dependencies);
             let res = argus_resource_loader_load_dependencies(
                 self.handle,
                 manager.get_handle(),
-                string_vec_to_cstr_arr(dependencies).into(),
-                dep_count,
+                deps_c.as_ptr(),
+                dependencies.len(),
             );
 
             if res.is_ok {

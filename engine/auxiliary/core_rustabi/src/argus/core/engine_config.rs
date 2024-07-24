@@ -39,8 +39,8 @@ pub fn set_target_framerate(target_framerate: u32) {
 
 pub fn set_load_modules(module_names: Vec<String>) {
     unsafe {
-        let (names, count) = string_vec_to_cstr_arr(module_names).into();
-        core_cabi::set_load_modules(names, count);
+        let names_c = string_vec_to_cstr_arr(&module_names);
+        core_cabi::set_load_modules(names_c.as_ptr(), module_names.len());
     }
 }
 
@@ -64,8 +64,8 @@ pub fn get_preferred_render_backends() -> Vec<String> {
 
 pub fn set_render_backends(names: Vec<String>) {
     unsafe {
-        let (names, count) = string_vec_to_cstr_arr(names).into();
-        core_cabi::set_render_backends(names, count);
+        let names_c = string_vec_to_cstr_arr(&names);
+        core_cabi::set_render_backends(names_c.as_ptr(), names.len());
     }
 }
 

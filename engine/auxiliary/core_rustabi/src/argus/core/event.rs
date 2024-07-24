@@ -35,20 +35,20 @@ pub enum TargetThread {
 }
 
 pub trait ArgusEvent {
-    fn of(handle: argus_event_t) -> Self
-    where
-        Self: Sized;
+    fn get_type_id() -> &'static str
+    where Self: Sized;
 
-    fn get_type_id(&self) -> String;
+    fn of(handle: argus_event_t) -> Self
+    where Self: Sized;
 
     fn get_handle(&self) -> argus_event_t;
 }
 
-type EventHandler<E, D> = dyn Fn(&E, *mut D);
+type EventHandler<E> = dyn Fn(&E);
 
 extern "C" fn event_handler_trampoline(handle: argus_event_const_t, ctx: *mut c_void) {
     unsafe {
-        let closure_ref = &**(ctx as *const Box<dyn Fn(argus_event_const_t)>);
+        let closure_ref = (&mut *(ctx as *mut Box<dyn FnMut(argus_event_const_t)>)).as_mut();
         closure_ref(handle);
     }
 }
@@ -58,22 +58,20 @@ extern "C" fn clean_up_event_handler(_: Index, ctx: *mut c_void) {
     let _: Box<Box<dyn FnMut(argus_event_const_t)>> = unsafe { Box::from_raw(mem::transmute(ctx)) };
 }
 
-pub fn register_event_handler<E: ArgusEvent, D>(
-    type_id: &str,
-    handler: &EventHandler<E, D>,
+pub fn register_event_handler<E: ArgusEvent>(
+    handler: &EventHandler<E>,
     target_thread: TargetThread,
-    data: *mut D,
     ordering: Ordering,
 ) -> Index {
     unsafe {
         let closure = |handle: argus_event_const_t| {
-            handler(&E::of(handle as argus_event_t), data);
+            handler(&E::of(handle as argus_event_t));
         };
 
-        let ctx: Box<Box<dyn Fn(argus_event_const_t)>> = Box::new(Box::new(closure));
+        let ctx: Box<Box<dyn FnMut(argus_event_const_t)>> = Box::new(Box::new(closure));
 
         return core_cabi::argus_register_event_handler(
-            str_to_cstring(type_id).as_ptr(),
+            str_to_cstring(E::get_type_id()).as_ptr(),
             Some(event_handler_trampoline),
             target_thread as core_cabi::TargetThread,
             Box::into_raw(ctx) as *mut c_void,

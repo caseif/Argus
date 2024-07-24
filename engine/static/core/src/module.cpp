@@ -256,7 +256,8 @@ namespace argus {
 
         if (reg_fn == nullptr) {
             Logger::default_logger().warn(
-                    "Shared library %s does not provide a " ARGUS_PLUGIN_ENTRY_POINT " function and cannot be loaded",
+                    "Shared library %s does not provide a " ARGUS_PLUGIN_ENTRY_POINT
+                    " function and thus cannot be loaded",
                     soname.c_str());
             _log_dependent_chain(Logger::default_logger(), dependent_chain, true);
             return nullptr;

@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::time::Duration;
+use core_rustabi::argus::core::ArgusEvent;
+use core_rustabi::core_cabi::argus_event_t;
 use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
 
 use lowlevel_rustabi::argus::lowlevel::{Vector2i, Vector2u};
@@ -60,7 +62,23 @@ impl WindowEvent {
         unsafe { argus_window_event_get_position(self.handle).into() }
     }
 
-    pub fn get_delta_us(&self) -> u64 {
-        unsafe { argus_window_event_get_delta_us(self.handle) }
+    pub fn get_delta(&self) -> Duration {
+        unsafe { Duration::from_micros(argus_window_event_get_delta_us(self.handle)) }
+    }
+}
+
+impl ArgusEvent for WindowEvent {
+    fn get_type_id() -> &'static str {
+        "window"
+    }
+
+    fn of(handle: argus_event_t) -> Self
+    where Self: Sized
+    {
+        Self { handle }
+    }
+
+    fn get_handle(&self) -> argus_event_t {
+        self.handle
     }
 }

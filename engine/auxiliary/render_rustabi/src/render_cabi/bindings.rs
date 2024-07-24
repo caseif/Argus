@@ -2,6 +2,10 @@
 
 use super::*;
 
+pub const RESOURCE_TYPE_TEXTURE_PNG: &[u8; 10] = b"image/png\0";
+pub const RESOURCE_TYPE_MATERIAL: &[u8; 34] = b"application/x-argus-material+json\0";
+pub const RESOURCE_TYPE_SHADER_GLSL_VERT: &[u8; 19] = b"text/x-glsl-vertex\0";
+pub const RESOURCE_TYPE_SHADER_GLSL_FRAG: &[u8; 21] = b"text/x-glsl-fragment\0";
 pub type argus_scene_t = *mut ::std::os::raw::c_void;
 pub type argus_scene_const_t = *const ::std::os::raw::c_void;
 pub const ARGUS_SCENE_TYPE_TWO_D: ArgusSceneType = 0;

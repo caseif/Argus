@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use core_rustabi::argus::core::ArgusEvent;
+use core_rustabi::core_cabi::argus_event_t;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::argus::resman::{unwrap_resource_prototype, Resource, ResourcePrototype};
@@ -50,5 +51,21 @@ impl ResourceEvent {
 
     pub fn get_resource(&mut self) -> Resource {
         unsafe { Resource::of(argus_resource_event_get_resource(self.handle)) }
+    }
+}
+
+impl ArgusEvent for ResourceEvent {
+    fn get_type_id() -> &'static str {
+        "resource"
+    }
+
+    fn of(handle: argus_event_t) -> Self
+    where Self: Sized
+    {
+        Self { handle }
+    }
+
+    fn get_handle(&self) -> argus_event_t {
+        self.handle
     }
 }

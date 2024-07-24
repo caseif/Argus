@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "argus/render/cabi/util/defines.h"
-#include "argus/render/cabi/util/object_processor.h"
+#define RESOURCE_TYPE_TEXTURE_PNG "image/png"
+#define RESOURCE_TYPE_MATERIAL "application/x-argus-material+json"
+#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
+#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"

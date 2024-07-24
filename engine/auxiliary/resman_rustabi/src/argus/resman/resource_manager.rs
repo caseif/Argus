@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use lowlevel_rustabi::util::*;
-use std::ffi::c_char;
 
 use crate::argus::resman::{
     wrap_loader, Resource, ResourceError, ResourceErrorReason, ResourceLoader,
@@ -66,8 +65,8 @@ impl ResourceManager {
         }
     }
 
-    pub fn add_memory_package(&mut self, buf: *const u8, len: usize) {
-        unsafe { argus_resource_manager_add_memory_package(self.handle, buf, len) }
+    pub fn add_memory_package(&mut self, buf: &[u8]) {
+        unsafe { argus_resource_manager_add_memory_package(self.handle, buf.as_ptr(), buf.len()) }
     }
 
     pub fn register_loader(
@@ -77,9 +76,9 @@ impl ResourceManager {
     ) -> WrappedResourceLoader {
         unsafe {
             let mt_count = media_types.len();
-            let mt_cstr_arr: *const *const c_char = string_vec_to_cstr_arr(media_types).into();
+            let mt_cstr_arr = string_vec_to_cstr_arr(&media_types);
 
-            let wrapped_loader = wrap_loader(mt_cstr_arr.into(), mt_count, loader);
+            let wrapped_loader = wrap_loader(mt_cstr_arr.as_ptr(), mt_count, loader);
             argus_resource_manager_register_loader(
                 self.handle,
                 wrapped_loader,

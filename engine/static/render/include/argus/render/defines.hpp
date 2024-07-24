@@ -20,6 +20,8 @@
 
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
 #define RESOURCE_TYPE_MATERIAL "application/x-argus-material+json"
+#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
+#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
 
 #define LIGHTS_MAX 32U
 
@@ -71,9 +73,6 @@
 #define SHADER_UNIFORM_OBJ_UV_STRIDE_OFF 0U
 #define SHADER_UNIFORM_OBJ_LIGHT_OPACITY "LightOpacity"
 #define SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF 8U
-
-#define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
-#define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
 
 #define SHADER_STD_VERT "argus:render/shader/std_vert"
 #define SHADER_STD_FRAG "argus:render/shader/std_frag"
