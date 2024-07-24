@@ -122,6 +122,10 @@ impl Window {
         unsafe { argus_window_is_ready(self.get_handle()) }
     }
 
+    pub fn is_close_request_pending(&self) -> bool {
+        unsafe { argus_window_is_close_request_pending(self.get_handle()) }
+    }
+
     pub fn is_closed(&self) -> bool {
         unsafe { argus_window_is_closed(self.get_handle()) }
     }

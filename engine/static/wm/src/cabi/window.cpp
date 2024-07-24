@@ -81,6 +81,10 @@ bool argus_window_is_ready(argus_window_const_t self) {
     return _as_ref(self).is_ready();
 }
 
+bool argus_window_is_close_request_pending(argus_window_const_t self) {
+    return _as_ref(self).is_close_request_pending();
+}
+
 bool argus_window_is_closed(argus_window_const_t self) {
     return _as_ref(self).is_closed();
 }

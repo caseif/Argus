@@ -75,6 +75,8 @@ bool argus_window_is_created(argus_window_const_t self);
 
 bool argus_window_is_ready(argus_window_const_t self);
 
+bool argus_window_is_close_request_pending(argus_window_const_t self);
+
 bool argus_window_is_closed(argus_window_const_t self);
 
 argus_window_t argus_window_create_child_window(argus_window_t self, const char *id);

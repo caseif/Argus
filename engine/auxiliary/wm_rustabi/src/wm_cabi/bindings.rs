@@ -77,6 +77,7 @@ extern "C" {
     pub fn argus_window_get_canvas(self_: argus_window_const_t) -> argus_canvas_t;
     pub fn argus_window_is_created(self_: argus_window_const_t) -> bool;
     pub fn argus_window_is_ready(self_: argus_window_const_t) -> bool;
+    pub fn argus_window_is_close_request_pending(self_: argus_window_const_t) -> bool;
     pub fn argus_window_is_closed(self_: argus_window_const_t) -> bool;
     pub fn argus_window_create_child_window(
         self_: argus_window_t,
