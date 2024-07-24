@@ -1,40 +1,97 @@
+function (get_target_out_file_name OUT_FILE_NAME TARGET)
+  get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
+    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME)
+  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
+    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
+    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME)
+  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
+    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_DEBUG_POSTFIX "${TARGET}" DEBUG_POSTFIX)
+  if(TARGET_DEBUG_POSTFIX STREQUAL "TARGET_DEBUG_POSTFIX-NOTFOUND")
+    set(TARGET_DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+  endif()
+
+  get_target_property(TARGET_PREFIX "${TARGET}" PREFIX)
+  if(TARGET_PREFIX STREQUAL "TARGET_PREFIX-NOTFOUND")
+    set(TARGET_PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}")
+  endif()
+
+  get_target_property(TARGET_SUFFIX "${TARGET}" SUFFIX)
+  if(TARGET_SUFFIX STREQUAL "TARGET_SUFFIX-NOTFOUND")
+    set(TARGET_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  endif()
+
+  if(WIN32)
+    set(TARGET_VERSION_SUFFIX "")
+  else()
+    get_target_property(TARGET_VERSION "${TARGET}" VERSION)
+    if(TARGET_VERSION STREQUAL "TARGET_VERSION-NOTFOUND")
+      set(TARGET_VERSION_SUFFIX "")
+    else()
+      set(TARGET_VERSION_SUFFIX ".${TARGET_VERSION}")
+    endif()
+  endif()
+
+  if(APPLE)
+    set(FINAL_NAME "${TARGET_PREFIX}${TARGET}${TARGET_DEBUG_POSTFIX}${TARGET_VERSION_SUFFIX}${TARGET_SUFFIX}")
+  else()
+    set(FINAL_NAME "${TARGET_PREFIX}${TARGET}${TARGET_DEBUG_POSTFIX}${TARGET_SUFFIX}${TARGET_VERSION_SUFFIX}")
+  endif()
+
+  set(${OUT_FILE_NAME} "${FINAL_NAME}" PARENT_SCOPE)
+endfunction()
+
 function(add_file_action)
   # Parse arguments
-  set(sv_args TARGET ACTION SOURCE DEST DEPENDS GENERATED_TARGET)
+  set(sv_args TARGET ACTION SOURCE DEST GENERATED_TARGET)
   cmake_parse_arguments(PARSE_ARGV 0 ARG "${options}" "${sv_args}" "")
 
   if(NOT ARG_TARGET OR NOT ARG_ACTION OR NOT ARG_SOURCE OR NOT ARG_DEST)
     message(FATAL_ERROR "Missing required arguments")
   endif()
 
-  set(TIMESTAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/timestamps)
-
   string(MD5 DEST_HASH "${ARG_DEST}")
 
   get_filename_component(DEST_DIR "${ARG_DEST}" DIRECTORY)
-
-  set(TIMESTAMP_FILE "${TIMESTAMP_DIR}/${DEST_HASH}.timestamp")
-
-  set(BUILT_COMMAND "${CMAKE_COMMAND}" "-E" "${ARG_ACTION}" "${ARG_SOURCE}" "${ARG_DEST}")
-
-  set(DEPENDS_LIST "${ARG_TARGET}")
-  if(ARG_DEPENDS)
-    list(APPEND DEPENDS_LIST "${ARG_DEPENDS}")
+  if("${ARG_DEST}" MATCHES "\\/$")
+    get_filename_component(DEST_FILE "${ARG_SOURCE}" NAME)
+  else()
+    get_filename_component(DEST_FILE "${ARG_DEST}" NAME)
   endif()
-  if(TARGET "${ARG_SOURCE}")
-    list(APPEND DEPENDS_LIST "${ARG_SOURCE}")
-  endif()
-
-  add_custom_command(OUTPUT "${TIMESTAMP_FILE}"
-      DEPENDS ${DEPENDS_LIST}
-      COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${DEST_DIR}"
-      COMMAND ${BUILT_COMMAND}
-      COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${TIMESTAMP_DIR}"
-      COMMAND "${CMAKE_COMMAND}" "-E" "touch" "${TIMESTAMP_FILE}")
 
   set(GEN_TARGET_NAME "${ARG_ACTION}-${DEST_HASH}")
+  if("${DEST_FILE}" MATCHES "\\$<TARGET_FILE(_NAME)?:(.+)>")
+    get_target_out_file_name(TARGET_OUT_FILE_NAME "${ARG_TARGET}")
+  else()
+    set(TARGET_OUT_FILE_NAME "${DEST_FILE}")
+  endif()
+  set(FINAL_OUT_PATH "${DEST_DIR}/${TARGET_OUT_FILE_NAME}")
+  add_custom_command(
+      DEPENDS "${ARG_TARGET};${ARG_SOURCE}"
+      OUTPUT "${FINAL_OUT_PATH}"
+      COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${DEST_DIR}"
+      COMMAND "${CMAKE_COMMAND}" "-E" "${ARG_ACTION}" "${ARG_SOURCE}" "${ARG_DEST}"
+  )
   add_custom_target("${GEN_TARGET_NAME}" ALL
-      DEPENDS ${TIMESTAMP_FILE})
+      DEPENDS "${FINAL_OUT_PATH}")
+  add_dependencies("${GEN_TARGET_NAME}" "${ARG_TARGET}")
 
   if(GENERATED_TARGET)
     set("${GENERATED_TARGET}" "${GEN_TARGET_NAME}")
