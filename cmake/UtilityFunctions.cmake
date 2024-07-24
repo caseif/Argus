@@ -69,10 +69,13 @@ function(add_file_action)
 
   string(MD5 DEST_HASH "${ARG_DEST}")
 
-  get_filename_component(DEST_DIR "${ARG_DEST}" DIRECTORY)
   if("${ARG_DEST}" MATCHES "\\/$")
+    # no file name present, so nothing to strip
+    set(DEST_DIR "${ARG_DEST}")
+    # copy the source name
     get_filename_component(DEST_FILE "${ARG_SOURCE}" NAME)
   else()
+    get_filename_component(DEST_DIR "${ARG_DEST}" DIRECTORY)
     get_filename_component(DEST_FILE "${ARG_DEST}" NAME)
   endif()
 
@@ -186,7 +189,7 @@ function(_argus_copy_dep_output)
 
   set(QUAL_DEST_DIR "${ARG_DEST_DIR}/${ARG_PREFIX}")
   if(ARG_TARGET_FILE)
-    get_filename_component(target_file_name "${TARGET_FILE_NAME}" NAME)
+    get_filename_component(target_file_name "${ARG_TARGET_FILE}" NAME)
     set(LIB_FILE_DEST_PATH "${QUAL_DEST_DIR}/${target_file_name}")
   else()
     set(LIB_FILE_DEST_PATH "${QUAL_DEST_DIR}/$<TARGET_FILE_NAME:${ARG_TARGET}>")
