@@ -16,5 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) mod aglet;
-pub(crate) mod argus;
+use std::time::Duration;
+use wm_rustabi::argus::wm::Window;
+use lowlevel_rustabi::argus::lowlevel::Vector2u;
+
+pub(crate) struct GlRenderer {
+    window: Window,
+    //TODO
+}
+
+impl GlRenderer {
+    pub(crate) fn new(window: Window) -> Self {
+        Self { window }
+    }
+
+    pub(crate) fn render(&mut self, delta: Duration) {
+        //TODO
+    }
+
+    pub(crate) fn notify_window_resize(&mut self, new_size: Vector2u) {
+        //TODO
+    }
+}

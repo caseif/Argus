@@ -208,32 +208,32 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
 
-  # generated sources are not supported for external projects at the moment
-  if(NOT ${IS_EXTERNAL})
-    set(res_dir "${MODULE_PROJECT_DIR}/res")
-    set(res_pack_target "pack_resources_${PROJECT_NAME}")
-    set(res_gen_target "gen_resources_${PROJECT_NAME}")
-    if(EXISTS "${res_dir}")
-      set(arp_out_dir "${CMAKE_BINARY_DIR}/res/arp")
-      set(arp_out_name "resources_${PROJECT_NAME}")
-      set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
-      set(supp_mappings_path "${ROOT_PROJECT_DIR}/res/arp_custom_mappings.csv")
+  set(res_dir "${MODULE_PROJECT_DIR}/res")
+  set(res_pack_target "pack_resources_${PROJECT_NAME}")
+  set(res_gen_target "gen_resources_${PROJECT_NAME}")
+  if(EXISTS "${res_dir}")
+    set(arp_out_dir "${MODULE_GENERATED_DIR}/res/arp")
+    set(arp_out_name "resources_${PROJECT_NAME}")
+    set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
+    set(supp_mappings_path "${ROOT_PROJECT_DIR}/res/arp_custom_mappings.csv")
 
-      file(MAKE_DIRECTORY "${arp_out_dir}")
+    file(MAKE_DIRECTORY "${arp_out_dir}")
 
-      file(GLOB_RECURSE res_files "${res_dir}/*")
-      add_custom_command(OUTPUT "${arp_out_path}"
-              COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
-              "--namespace" "argus"
-              "--output" "${arp_out_dir}"
-              "--name" "${arp_out_name}"
-              "--compression" "deflate"
-              "--mappings" "${supp_mappings_path}"
-              "--quiet"
-              DEPENDS "${res_files}")
+    file(GLOB_RECURSE res_files "${res_dir}/*")
+    add_custom_command(OUTPUT "${arp_out_path}"
+            COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
+            "--namespace" "argus"
+            "--output" "${arp_out_dir}"
+            "--name" "${arp_out_name}"
+            "--compression" "deflate"
+            "--mappings" "${supp_mappings_path}"
+            "--quiet"
+            DEPENDS "${res_files}")
 
-      add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
+    add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
 
+    # generated sources are not supported for external projects at the moment
+    if(NOT ${IS_EXTERNAL})
       set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
       set(h_out_dir_base "${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
       set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
@@ -437,6 +437,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   endif()
 
+  if(TARGET ${res_gen_target})
+    add_dependencies("${PROJECT_NAME}" "${res_gen_target}")
+  elseif(TARGET ${res_pack_target})
+    add_dependencies("${PROJECT_NAME}" "${res_pack_target}")
+  endif()
+
   # todo: work out how to pass compile definitions to Rust projects
   if(${IS_EXTERNAL})
     # need to set global includes property for the module so dependent modules can pick it up
@@ -484,10 +490,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     endif()
     list(APPEND INCLUDE_DIRS "${PROJECT_INCLUDES}")
     target_include_directories("${PROJECT_NAME}" PUBLIC "${INCLUDE_DIRS}")
-
-    if(TARGET ${res_gen_target})
-      add_dependencies("${PROJECT_NAME}" "${res_gen_target}")
-    endif()
 
     # set the C standard
     set_target_properties(${PROJECT_NAME} PROPERTIES C_STANDARD "${C_STANDARD}")

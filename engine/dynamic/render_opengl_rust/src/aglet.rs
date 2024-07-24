@@ -16,5 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) mod aglet;
-pub(crate) mod argus;
+include!(concat!(env!("GENERATED_SOURCES_PATH"), "/src/aglet.rs"));

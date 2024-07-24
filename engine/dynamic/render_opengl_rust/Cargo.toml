@@ -15,3 +15,4 @@ core_rustabi = { path = "../../auxiliary/core_rustabi" }
 wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
 resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
 render_rustabi = { path = "../../auxiliary/render_rustabi" }
+lazy_static = "1.5.0"
