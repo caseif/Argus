@@ -46,7 +46,8 @@ pub fn set_load_modules(module_names: Vec<String>) {
 
 pub fn add_load_module(module_name: &str) {
     unsafe {
-        core_cabi::add_load_module(str_to_cstring(module_name).as_ptr());
+        let module_name_c = str_to_cstring(module_name);
+        core_cabi::add_load_module(module_name_c.as_ptr());
     }
 }
 
@@ -71,13 +72,15 @@ pub fn set_render_backends(names: Vec<String>) {
 
 pub fn add_render_backend(name: &str) {
     unsafe {
-        core_cabi::add_render_backend(str_to_cstring(name).as_ptr());
+        let name_c = str_to_cstring(name);
+        core_cabi::add_render_backend(name_c.as_ptr());
     }
 }
 
 pub fn set_render_backend(name: &str) {
     unsafe {
-        core_cabi::set_render_backend(str_to_cstring(name).as_ptr());
+        let name_c = str_to_cstring(name);
+        core_cabi::set_render_backend(name_c.as_ptr());
     }
 }
 

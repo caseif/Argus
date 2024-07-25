@@ -70,8 +70,10 @@ pub fn register_event_handler<E: ArgusEvent>(
 
         let ctx: Box<Box<dyn FnMut(argus_event_const_t)>> = Box::new(Box::new(closure));
 
+        let type_id_c = str_to_cstring(E::get_type_id());
+
         return core_cabi::argus_register_event_handler(
-            str_to_cstring(E::get_type_id()).as_ptr(),
+            type_id_c.as_ptr(),
             Some(event_handler_trampoline),
             target_thread as core_cabi::TargetThread,
             Box::into_raw(ctx) as *mut c_void,

@@ -46,7 +46,8 @@ pub fn initialize_engine() {
 
 pub fn crash(format: &str) -> ! {
     unsafe {
-        argus_crash(str_to_cstring(format).as_ptr());
+        let format_c = str_to_cstring(format);
+        argus_crash(format_c.as_ptr());
     }
 }
 

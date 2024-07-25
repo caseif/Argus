@@ -63,9 +63,16 @@ impl Resource {
     pub fn get_data_ptr(&self) -> *const u8 {
         unsafe { argus_resource_get_data_ptr(self.handle).cast() }
     }
+
+    pub fn get<'a, T>(&'a self) -> &'a T {
+        unsafe {
+            let t_ptr: *const T = argus_resource_get_data_ptr(self.handle).cast();
+            t_ptr.as_ref().unwrap()
+        }
+    }
 }
 
-#[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
 pub enum ResourceErrorReason {
     Generic = RESOURCE_ERROR_REASON_GENERIC,
@@ -80,6 +87,7 @@ pub enum ResourceErrorReason {
     UnexpectedReferenceType = RESOURCE_ERROR_REASON_UNEXPECTED_REFERENCE_TYPE,
 }
 
+#[derive(Debug)]
 pub struct ResourceError {
     pub reason: ResourceErrorReason,
     pub uid: String,
@@ -112,10 +120,13 @@ impl From<argus_resource_error_t> for ResourceError {
 impl Into<argus_resource_error_t> for ResourceError {
     fn into(self) -> argus_resource_error_t {
         unsafe {
+            let uid_c = string_to_cstring(&self.uid);
+            let info_c = string_to_cstring(&self.info);
+
             argus_resource_error_new(
                 self.reason.into(),
-                string_to_cstring(&self.uid).as_ptr(),
-                string_to_cstring(&self.info).as_ptr(),
+                uid_c.as_ptr(),
+                info_c.as_ptr(),
             )
         }
     }

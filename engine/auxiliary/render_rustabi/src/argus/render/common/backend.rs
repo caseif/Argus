@@ -23,5 +23,8 @@ use crate::render_cabi::*;
 pub type ActivateRenderBackendFn = ArgusActivateRenderBackendFn;
 
 pub fn register_render_backend(id: &str, activate_fn: ActivateRenderBackendFn) {
-    unsafe { argus_register_render_backend(str_to_cstring(id).as_ptr(), activate_fn) }
+    unsafe {
+        let id_c = str_to_cstring(id);
+        argus_register_render_backend(id_c.as_ptr(), activate_fn)
+    }
 }

@@ -60,7 +60,8 @@ pub fn set_window_create_flags(flags: WindowCreateFlags) {
 
 pub fn get_window(id: &str) -> Option<Window> {
     unsafe {
-        argus_get_window(str_to_cstring(id).as_ptr())
+        let id_c = str_to_cstring(id);
+        argus_get_window(id_c.as_ptr())
             .as_mut()
             .map(|ptr| Window::of(ptr))
     }
@@ -99,8 +100,10 @@ impl Window {
 
     pub fn create(id: &str, parent: Option<Window>) -> Self {
         unsafe {
+            let id_c = str_to_cstring(id);
+
             Window::of(argus_window_create(
-                str_to_cstring(id).as_ptr(),
+                id_c.as_ptr(),
                 match parent {
                     Some(v) => v.get_handle() as argus_window_t,
                     None => null_mut(),
@@ -135,9 +138,11 @@ impl Window {
 
     pub fn create_child_window(&mut self, id: &str) -> Window {
         unsafe {
+            let id_c = str_to_cstring(id);
+
             Window::of(argus_window_create_child_window(
                 self.handle,
-                str_to_cstring(id).as_ptr(),
+                id_c.as_ptr(),
             ))
         }
     }
@@ -156,7 +161,8 @@ impl Window {
 
     pub fn set_title(&mut self, title: &str) {
         unsafe {
-            argus_window_set_title(self.handle, str_to_cstring(title).as_ptr());
+            let title_c = str_to_cstring(title);
+            argus_window_set_title(self.handle, title_c.as_ptr());
         }
     }
 

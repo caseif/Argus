@@ -29,13 +29,16 @@ impl Scene2d {
     pub(crate) fn of(handle: argus_scene_2d_t) -> Self {
         Self { handle }
     }
-    
+
     pub(crate) fn get_ffi_handle(&self) -> argus_scene_2d_const_t {
         self.handle
     }
 
     pub fn create(id: &str) -> Self {
-        unsafe { Self::of(argus_scene_2d_create(str_to_cstring(id).as_ptr())) }
+        unsafe {
+            let id_c = str_to_cstring(id);
+            Self::of(argus_scene_2d_create(id_c.as_ptr()))
+        }
     }
 
     pub fn is_lighting_enabled(&self) -> bool {
@@ -166,9 +169,11 @@ impl Scene2d {
                 .map(|prim| prim.into())
                 .collect();
 
+            let material_c = str_to_cstring(material);
+            
             argus_scene_2d_add_object(
                 self.handle,
-                str_to_cstring(material).as_ptr(),
+                material_c.as_ptr(),
                 prims.as_ptr(),
                 prims_count,
                 anchor_point.into(),
@@ -190,18 +195,23 @@ impl Scene2d {
 
     pub fn find_camera(&self, id: &str) -> Camera2d {
         unsafe {
-            Camera2d::of(argus_scene_2d_find_camera(self.handle, str_to_cstring(id).as_ptr()))
+            let id_c = str_to_cstring(id);
+            Camera2d::of(argus_scene_2d_find_camera(self.handle, id_c.as_ptr()))
         }
     }
 
     pub fn create_camera(&mut self, id: &str) -> Camera2d {
         unsafe {
-            Camera2d::of(argus_scene_2d_create_camera(self.handle, str_to_cstring(id).as_ptr()))
+            let id_c = str_to_cstring(id);
+            Camera2d::of(argus_scene_2d_create_camera(self.handle, id_c.as_ptr()))
         }
     }
 
     pub fn destroy_camera(&mut self, id: &str) {
-        unsafe { argus_scene_2d_destroy_camera(self.handle, str_to_cstring(id).as_ptr()); }
+        unsafe {
+            let id_c = str_to_cstring(id);
+            argus_scene_2d_destroy_camera(self.handle, id_c.as_ptr());
+        }
     }
 
     pub fn lock_render_state(&mut self) {

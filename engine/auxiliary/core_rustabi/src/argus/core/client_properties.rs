@@ -27,7 +27,8 @@ pub fn get_client_id() -> String {
 
 pub fn set_client_id(id: &str) {
     unsafe {
-        argus_set_client_id(str_to_cstring(id).as_ptr());
+        let id_c = str_to_cstring(id);
+        argus_set_client_id(id_c.as_ptr());
     }
 }
 
@@ -39,7 +40,8 @@ pub fn get_client_name() -> String {
 
 pub fn set_client_name(id: &str) {
     unsafe {
-        argus_set_client_name(str_to_cstring(id).as_ptr());
+        let id_c = str_to_cstring(id);
+        argus_set_client_name(id_c.as_ptr());
     }
 }
 
@@ -51,6 +53,7 @@ pub fn get_client_version() -> String {
 
 pub fn set_client_version(id: &str) {
     unsafe {
-        argus_set_client_version(str_to_cstring(id).as_ptr());
+        let id_c = str_to_cstring(id);
+        argus_set_client_version(id_c.as_ptr());
     }
 }

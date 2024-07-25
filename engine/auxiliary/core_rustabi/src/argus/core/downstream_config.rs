@@ -54,13 +54,11 @@ pub fn get_scripting_parameters() -> ScriptingParameters {
 
 pub fn set_scripting_parameters(params: &ScriptingParameters) {
     unsafe {
+        let main_c = params.main.as_ref().map(|s| string_to_cstring(&s));
+
         argus_set_scripting_parameters(&argus_scripting_parameters_t {
             has_main: params.main.is_some(),
-            main: params
-                .main
-                .as_ref()
-                .map(|s| string_to_cstring(&s).as_ptr())
-                .unwrap_or(null()),
+            main: main_c.map(|s| s.as_ptr()).unwrap_or(null()),
         });
     }
 }
@@ -111,25 +109,17 @@ pub fn get_initial_window_parameters() -> InitialWindowParameters {
 
 pub fn set_initial_window_parameters(params: &InitialWindowParameters) {
     unsafe {
+        let id_c = params.id.as_ref().map(|s| string_to_cstring(&s));
+        let title_c = params.title.as_ref().map(|s| string_to_cstring(&s));
+        let mode_c = params.title.as_ref().map(|s| string_to_cstring(&s));
+
         argus_set_initial_window_parameters(&argus_initial_window_parameters_t {
             has_id: params.id.is_some(),
-            id: params
-                .id
-                .as_ref()
-                .map(|s| string_to_cstring(&s).as_ptr())
-                .unwrap_or(null()),
+            id: id_c.map(|s| s.as_ptr()).unwrap_or(null()),
             has_title: params.title.is_some(),
-            title: params
-                .title
-                .as_ref()
-                .map(|s| string_to_cstring(&s).as_ptr())
-                .unwrap_or(null()),
+            title: title_c.map(|s| s.as_ptr()).unwrap_or(null()),
             has_mode: params.mode.is_some(),
-            mode: params
-                .mode
-                .as_ref()
-                .map(|s| string_to_cstring(&s).as_ptr())
-                .unwrap_or(null()),
+            mode: mode_c.map(|s| s.as_ptr()).unwrap_or(null()),
             has_vsync: params.vsync.is_some(),
             vsync: params.vsync.unwrap_or_default(),
             has_mouse_visible: params.mouse_visible.is_some(),
@@ -152,9 +142,10 @@ pub fn get_default_bindings_resource_id() -> String {
     }
 }
 
-pub fn set_default_bindings_resource_id(resource_id: &String) {
+pub fn set_default_bindings_resource_id(resource_id: &str) {
     unsafe {
-        argus_set_default_bindings_resource_id(string_to_cstring(resource_id).as_ptr());
+        let resource_id_c = str_to_cstring(resource_id);
+        argus_set_default_bindings_resource_id(resource_id_c.as_ptr());
     }
 }
 

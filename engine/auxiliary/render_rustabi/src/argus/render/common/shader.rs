@@ -46,11 +46,13 @@ impl Shader {
         self.handle
     }
 
-    pub fn new(uid: &str, shader_type: &str, stage: ShaderStage, src: &Vec<u8>) -> Self {
+    pub fn new(uid: &str, shader_type: &str, stage: ShaderStage, src: &[u8]) -> Self {
         unsafe {
+            let uid_c = str_to_cstring(uid);
+            let shader_type_c = str_to_cstring(shader_type);
             Self::of(argus_shader_new(
-                str_to_cstring(uid).as_ptr(),
-                str_to_cstring(shader_type).as_ptr(),
+                uid_c.as_ptr(),
+                shader_type_c.as_ptr(),
                 stage as ArgusShaderStage,
                 src.as_ptr(),
                 src.len(),
@@ -102,15 +104,21 @@ impl ShaderReflectionInfo {
     }
 
     pub fn has_attr(&self, name: &str) -> bool {
-        unsafe { argus_shader_refl_info_has_attr(self.handle, str_to_cstring(name).as_ptr()) }
+        unsafe {
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_has_attr(self.handle, name_c.as_ptr())
+        }
     }
 
     pub fn get_attr_loc(&self, name: &str) -> Option<u32> {
         unsafe {
             let mut found = false;
+
+            let name_c = str_to_cstring(name);
+
             let loc = argus_shader_refl_info_get_attr_loc(
                 self.handle,
-                str_to_cstring(name).as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -124,20 +132,27 @@ impl ShaderReflectionInfo {
 
     pub fn set_attr_loc(&mut self, name: &str, loc: u32) {
         unsafe {
-            argus_shader_refl_info_set_attr_loc(self.handle, str_to_cstring(name).as_ptr(), loc);
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_set_attr_loc(self.handle, name_c.as_ptr(), loc);
         }
     }
 
     pub fn has_output(&self, name: &str) -> bool {
-        unsafe { argus_shader_refl_info_has_output(self.handle, str_to_cstring(name).as_ptr()) }
+        unsafe {
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_has_output(self.handle, name_c.as_ptr())
+        }
     }
 
     pub fn get_output_loc(&self, name: &str) -> Option<u32> {
         unsafe {
             let mut found = false;
+
+            let name_c = str_to_cstring(name);
+
             let loc = argus_shader_refl_info_get_output_loc(
                 self.handle,
-                str_to_cstring(name).as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -151,32 +166,36 @@ impl ShaderReflectionInfo {
 
     pub fn set_output_loc(&mut self, name: &str, loc: u32) {
         unsafe {
-            argus_shader_refl_info_set_output_loc(self.handle, str_to_cstring(name).as_ptr(), loc);
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_set_output_loc(self.handle, name_c.as_ptr(), loc);
         }
     }
 
     pub fn has_uniform_var(&self, name: &str) -> bool {
         unsafe {
-            argus_shader_refl_info_has_uniform_var(self.handle, str_to_cstring(name).as_ptr())
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_has_uniform_var(self.handle, name_c.as_ptr())
         }
     }
 
     pub fn has_uniform(&self, ubo: &str, name: &str) -> bool {
         unsafe {
-            argus_shader_refl_info_has_uniform(
-                self.handle,
-                str_to_cstring(ubo).as_ptr(),
-                str_to_cstring(name).as_ptr(),
-            )
+            let ubo_c = str_to_cstring(ubo);
+            let name_c = str_to_cstring(name);
+
+            argus_shader_refl_info_has_uniform(self.handle, ubo_c.as_ptr(), name_c.as_ptr())
         }
     }
 
     pub fn get_uniform_var_loc(&self, name: &str) -> Option<u32> {
         unsafe {
             let mut found = false;
+
+            let name_c = str_to_cstring(name);
+
             let loc = argus_shader_refl_info_get_uniform_var_loc(
                 self.handle,
-                str_to_cstring(name).as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -191,10 +210,14 @@ impl ShaderReflectionInfo {
     pub fn get_uniform_loc(&self, ubo: &str, name: &str) -> Option<u32> {
         unsafe {
             let mut found = false;
+
+            let ubo_c = str_to_cstring(ubo);
+            let name_c = str_to_cstring(name);
+
             let loc = argus_shader_refl_info_get_uniform_loc(
                 self.handle,
-                str_to_cstring(ubo).as_ptr(),
-                str_to_cstring(name).as_ptr(),
+                ubo_c.as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -208,35 +231,41 @@ impl ShaderReflectionInfo {
 
     pub fn set_uniform_var_loc(&mut self, name: &str, loc: u32) {
         unsafe {
-            argus_shader_refl_info_set_uniform_var_loc(
-                self.handle,
-                str_to_cstring(name).as_ptr(),
-                loc,
-            );
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_set_uniform_var_loc(self.handle,name_c.as_ptr(), loc);
         }
     }
 
     pub fn set_uniform_loc(&mut self, ubo: &str, name: &str, loc: u32) {
         unsafe {
+            let ubo_c = str_to_cstring(ubo);
+            let name_c = str_to_cstring(name);
+
             argus_shader_refl_info_set_uniform_loc(
                 self.handle,
-                str_to_cstring(ubo).as_ptr(),
-                str_to_cstring(name).as_ptr(),
+                ubo_c.as_ptr(),
+                name_c.as_ptr(),
                 loc,
             );
         }
     }
 
     pub fn has_ubo(&self, name: &str) -> bool {
-        unsafe { argus_shader_refl_info_has_ubo(self.handle, str_to_cstring(name).as_ptr()) }
+        unsafe {
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_has_ubo(self.handle, name_c.as_ptr())
+        }
     }
 
     pub fn get_ubo_binding(&self, name: &str) -> Option<u32> {
         unsafe {
             let mut found = false;
+
+            let name_c = str_to_cstring(name);
+
             let binding = argus_shader_refl_info_get_ubo_binding(
                 self.handle,
-                str_to_cstring(name).as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -250,20 +279,20 @@ impl ShaderReflectionInfo {
 
     pub fn set_ubo_binding(&mut self, name: &str, binding: u32) {
         unsafe {
-            argus_shader_refl_info_set_attr_loc(
-                self.handle,
-                str_to_cstring(name).as_ptr(),
-                binding,
-            );
+            let name_c = str_to_cstring(name);
+            argus_shader_refl_info_set_attr_loc(self.handle, name_c.as_ptr(), binding);
         }
     }
 
     pub fn get_ubo_instance_name(&self, name: &str) -> Option<String> {
         unsafe {
             let mut found = false;
+
+            let name_c = str_to_cstring(name);
+
             let inst_name = argus_shader_refl_info_get_ubo_instance_name(
                 self.handle,
-                str_to_cstring(name).as_ptr(),
+                name_c.as_ptr(),
                 ptr::addr_of_mut!(found),
             );
 
@@ -277,10 +306,13 @@ impl ShaderReflectionInfo {
 
     pub fn set_ubo_instance_name(&mut self, ubo_name: &str, instance_name: &str) {
         unsafe {
+            let ubo_name_c = str_to_cstring(ubo_name);
+            let instance_name_c = str_to_cstring(instance_name);
+
             argus_shader_refl_info_set_ubo_instance_name(
                 self.handle,
-                str_to_cstring(ubo_name).as_ptr(),
-                str_to_cstring(instance_name).as_ptr(),
+                ubo_name_c.as_ptr(),
+                instance_name_c.as_ptr(),
             );
         }
     }

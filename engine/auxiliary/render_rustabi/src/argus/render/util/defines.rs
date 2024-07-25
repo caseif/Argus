@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub const RESOURCE_TYPE_TEXTURE_PNG: &'static str = "image/png";
-pub const RESOURCE_TYPE_MATERIAL: &'static str = "application/x-argus-material+json";
-pub const RESOURCE_TYPE_SHADER_GLSL_VERT: &'static str = "text/x-glsl-vertex";
-pub const RESOURCE_TYPE_SHADER_GLSL_FRAG: &'static str = "text/x-glsl-fragment";
+pub const RESOURCE_TYPE_TEXTURE_PNG: &str = "image/png";
+pub const RESOURCE_TYPE_MATERIAL: &str = "application/x-argus-material+json";
+pub const RESOURCE_TYPE_SHADER_GLSL_VERT: &str = "text/x-glsl-vertex";
+pub const RESOURCE_TYPE_SHADER_GLSL_FRAG: &str = "text/x-glsl-fragment";
+
+pub const SHADER_TYPE_GLSL: &str = "glsl";

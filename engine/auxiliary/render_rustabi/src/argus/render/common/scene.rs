@@ -42,9 +42,8 @@ impl Scene {
 
     pub fn find(id: &str) -> Option<Self> {
         unsafe {
-            argus_scene_find(str_to_cstring(id).as_ptr())
-                .as_mut()
-                .map(|handle| Scene::of(handle))
+            let id_c = str_to_cstring(id);
+            argus_scene_find(id_c.as_ptr()).as_mut().map(|handle| Scene::of(handle))
         }
     }
 

@@ -70,9 +70,11 @@ impl RenderGroup2d {
                 .map(|prim| prim.into())
                 .collect();
 
+            let material_c = str_to_cstring(material);
+            
             argus_render_group_2d_add_object(
                 self.handle,
-                str_to_cstring(material).as_ptr(),
+                material_c.as_ptr(),
                 prims.as_ptr(),
                 prims_count,
                 anchor_point.into(),

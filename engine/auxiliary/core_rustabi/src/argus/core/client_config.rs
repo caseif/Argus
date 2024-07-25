@@ -24,6 +24,7 @@ use crate::core_cabi::*;
 
 pub fn load_client_config(config_namespace: &str) {
     unsafe {
-        argus_load_client_config(str_to_cstring(config_namespace).as_ptr());
+        let config_ns_c = str_to_cstring(config_namespace);
+        argus_load_client_config(config_ns_c.as_ptr());
     }
 }

@@ -67,19 +67,15 @@ impl AttachedViewport {
 
     pub fn add_postprocessing_shader(&mut self, shader_uid: &str) {
         unsafe {
-            argus_attached_viewport_add_postprocessing_shader(
-                self.handle,
-                str_to_cstring(shader_uid).as_ptr(),
-            )
+            let uid_c = str_to_cstring(shader_uid);
+            argus_attached_viewport_add_postprocessing_shader(self.handle, uid_c.as_ptr())
         }
     }
 
     pub fn remove_postprocessing_shader(&mut self, shader_uid: &str) {
         unsafe {
-            argus_attached_viewport_remove_postprocessing_shader(
-                self.handle,
-                str_to_cstring(shader_uid).as_ptr(),
-            )
+            let uid_c = str_to_cstring(shader_uid);
+            argus_attached_viewport_remove_postprocessing_shader(self.handle, uid_c.as_ptr())
         }
     }
 }

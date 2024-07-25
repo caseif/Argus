@@ -64,7 +64,8 @@ pub fn register_dynamic_module(
 
 pub fn enable_dynamic_module(module_id: &str) -> bool {
     unsafe {
-        return argus_enable_dynamic_module(str_to_cstring(module_id).as_ptr());
+        let module_id_c = str_to_cstring(module_id);
+        return argus_enable_dynamic_module(module_id_c.as_ptr());
     }
 }
 

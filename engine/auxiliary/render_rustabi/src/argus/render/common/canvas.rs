@@ -47,10 +47,8 @@ impl Canvas {
 
     pub fn find_viewport(&self, id: &str) -> AttachedViewport {
         unsafe {
-            AttachedViewport::of(argus_canvas_find_viewport(
-                self.handle,
-                str_to_cstring(id).as_ptr(),
-            ))
+            let id_c = str_to_cstring(id);
+            AttachedViewport::of(argus_canvas_find_viewport(self.handle, id_c.as_ptr()))
         }
     }
 
@@ -62,9 +60,11 @@ impl Canvas {
         z_index: u32,
     ) -> AttachedViewport {
         unsafe {
+            let id_c = str_to_cstring(id);
+
             AttachedViewport::of(argus_canvas_attach_viewport_2d(
                 self.handle,
-                str_to_cstring(id).as_ptr(),
+                id_c.as_ptr(),
                 viewport.into(),
                 camera.get_handle(),
                 z_index,
@@ -79,9 +79,11 @@ impl Canvas {
         z_index: u32,
     ) -> AttachedViewport {
         unsafe {
+            let id_c = str_to_cstring(id);
+
             AttachedViewport::of(argus_canvas_attach_default_viewport_2d(
                 self.handle,
-                str_to_cstring(id).as_ptr(),
+                id_c.as_ptr(),
                 camera.get_handle(),
                 z_index,
             ))
@@ -90,7 +92,8 @@ impl Canvas {
 
     pub fn detach_viewport_2d(&mut self, id: &str) {
         unsafe {
-            argus_canvas_detach_viewport_2d(self.handle, str_to_cstring(id).as_ptr());
+            let id_c = str_to_cstring(id);
+            argus_canvas_detach_viewport_2d(self.handle, id_c.as_ptr());
         }
     }
 }
