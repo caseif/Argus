@@ -177,7 +177,7 @@ namespace argus {
             return err<void *, ResourceError>(deps_res.unwrap_err());
         }
 
-        return make_ok_result(new Material(std::move(src_mat)));
+        return make_ok_result(new Material(src_mat));
     }
 
     void MaterialLoader::unload(void *const data_buf) {

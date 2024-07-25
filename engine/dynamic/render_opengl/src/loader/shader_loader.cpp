@@ -79,7 +79,7 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return make_ok_result(new Shader(std::move(*static_cast<Shader *>(src))));
+        return make_ok_result(new Shader(*static_cast<Shader *>(src)));
     }
 
     void ShaderLoader::unload(void *const data_buf) {

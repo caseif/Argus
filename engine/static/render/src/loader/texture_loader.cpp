@@ -170,7 +170,7 @@ namespace argus {
 
         // no dependencies to load so we can just do a blind copy
 
-        return make_ok_result(new TextureData(std::move(*static_cast<TextureData *>(src))));
+        return make_ok_result(new TextureData(*static_cast<TextureData *>(src)));
     }
 
     void PngTextureLoader::unload(void *const data_buf) {

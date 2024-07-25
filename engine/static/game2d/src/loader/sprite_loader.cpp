@@ -381,7 +381,7 @@ namespace argus {
                     static_cast<std::underlying_type_t<ResourceErrorReason>>(deps_res.unwrap_err().reason));
         }
 
-        return make_ok_result(new SpriteDef(std::move(src_sprite)));
+        return make_ok_result(new SpriteDef(src_sprite));
     }
 
     void SpriteLoader::unload(void *data_ptr) {
