@@ -84,6 +84,8 @@ void argus_shader_refl_info_set_ubo_instance_name(argus_shader_refl_info_t refl,
 argus_shader_t argus_shader_new(const char *uid, const char *type, ArgusShaderStage stage,
         const unsigned char *src, size_t src_len);
 
+argus_shader_t argus_shader_copy(argus_shader_const_t shader);
+
 void argus_shader_delete(argus_shader_t shader);
 
 const char *argus_shader_get_uid(argus_shader_const_t shader);

@@ -60,6 +60,10 @@ impl Shader {
         }
     }
 
+    pub fn copy(&self) -> Self {
+        unsafe { Self { handle: argus_shader_copy(self.handle) } }
+    }
+
     pub fn destroy(&mut self) {
         unsafe {
             argus_shader_delete(self.handle);

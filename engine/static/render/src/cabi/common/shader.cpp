@@ -139,6 +139,10 @@ argus_shader_t argus_shader_new(const char *uid, const char *type, ArgusShaderSt
     return new Shader(uid, type, argus::ShaderStage(stage), std::vector<uint8_t>(src, src + src_len));
 }
 
+argus_shader_t argus_shader_copy(argus_shader_const_t shader) {
+    return new argus::Shader(*reinterpret_cast<const argus::Shader *>(shader));
+}
+
 void argus_shader_delete(argus_shader_t shader) {
     delete reinterpret_cast<Shader *>(shader);
 }

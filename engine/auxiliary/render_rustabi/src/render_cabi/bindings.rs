@@ -662,6 +662,7 @@ extern "C" {
         src: *const ::std::os::raw::c_uchar,
         src_len: usize,
     ) -> argus_shader_t;
+    pub fn argus_shader_copy(shader: argus_shader_const_t) -> argus_shader_t;
     pub fn argus_shader_delete(shader: argus_shader_t);
     pub fn argus_shader_get_uid(shader: argus_shader_const_t) -> *const ::std::os::raw::c_char;
     pub fn argus_shader_get_type(shader: argus_shader_const_t) -> *const ::std::os::raw::c_char;
