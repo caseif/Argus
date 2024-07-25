@@ -39,13 +39,6 @@ impl CStringArray {
     }
 }
 
-/*impl Into<(Vec<*const c_char>, usize)> for CStringArray {
-    fn into(self) -> (Vec<*const c_char>, usize) {
-        let len = self.vec.len();
-        return (self.into(), len);
-    }
-}*/
-
 pub fn string_to_cstring(s: &String) -> CString {
     CString::new(s.to_string()).unwrap()
 }
@@ -70,16 +63,4 @@ pub unsafe fn str_vec_to_cstr_arr(v: &Vec<&str>) -> CStringArray {
 
 pub unsafe fn string_vec_to_cstr_arr(v: &Vec<String>) -> CStringArray {
     CStringArray::new(v.iter().map(string_to_cstring).collect())
-}
-
-#[cfg(windows)]
-pub unsafe fn os_string_to_string<T>(s: *const c_char) -> String {
-    let len = (0..).take_while(|&i| *s.offset(i) != 0).count();
-    let slice = std::slice::from_raw_parts(s, len);
-    std::ffi::OsString::from_wide(slice)
-}
-
-#[cfg(not(windows))]
-pub unsafe fn os_string_to_string<T>(s: *const c_char) -> String {
-    cstr_to_string(s)
 }
