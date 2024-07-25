@@ -16,4 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-mod render_opengl_rust;
+pub(crate) mod render_opengl_rust;

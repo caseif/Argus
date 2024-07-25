@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) mod gl_renderer;
-pub(crate) mod loader;
-pub(crate) mod module_init;
-pub(crate) mod resources;
+pub(crate) mod shader_loader;
+
+pub(crate) use shader_loader::*;

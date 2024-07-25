@@ -30,6 +30,7 @@ use wm_rustabi::argus::wm::*;
 
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
+use crate::argus::render_opengl_rust::loader::ShaderLoader;
 use crate::argus::render_opengl_rust::resources::RESOURCES_PACK;
 
 const MODULE_ID: &'static str = "render_opengl_rust";
@@ -168,7 +169,13 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 return;
             }
 
-            //TODO: register shader loader
+            ResourceManager::get_instance().register_loader(
+                vec![
+                    RESOURCE_TYPE_SHADER_GLSL_VERT.to_string(),
+                    RESOURCE_TYPE_SHADER_GLSL_FRAG.to_string(),
+                ],
+                ShaderLoader::new(),
+            );
 
             register_event_handler(
                 &window_event_handler,
