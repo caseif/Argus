@@ -1,27 +1,33 @@
+function (get_target_out_base_name OUT_BASE_NAME TARGET)
+  get_target_property(TARGET_BASE_NAME "${TARGET}" LIBRARY_OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+  if(NOT TARGET_BASE_NAME STREQUAL "TARGET_BASE_NAME-NOTFOUND")
+    set(${OUT_BASE_NAME} "${TARGET_BASE_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_BASE_NAME "${TARGET}" LIBRARY_OUTPUT_NAME)
+  if(NOT TARGET_BASE_NAME STREQUAL "TARGET_BASE_NAME-NOTFOUND")
+    set(${OUT_BASE_NAME} "${TARGET_BASE_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_BASE_NAME "${TARGET}" OUTPUT_NAME_${CMAKE_BUILD_TYPE})
+  if(NOT TARGET_BASE_NAME STREQUAL "TARGET_BASE_NAME-NOTFOUND")
+    set(${OUT_BASE_NAME} "${TARGET_BASE_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(TARGET_BASE_NAME "${TARGET}" OUTPUT_NAME)
+  if(NOT TARGET_BASE_NAME STREQUAL "TARGET_BASE_NAME-NOTFOUND")
+    set(${OUT_BASE_NAME} "${TARGET_BASE_NAME}" PARENT_SCOPE)
+    return()
+  endif()
+
+  set(${OUT_BASE_NAME} "${TARGET}" PARENT_SCOPE)
+endfunction()
+
 function (get_target_out_file_name OUT_FILE_NAME TARGET)
-  get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME_${CMAKE_BUILD_TYPE})
-  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
-    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
-    return()
-  endif()
-
-  get_target_property(TARGET_OUT_NAME "${TARGET}" LIBRARY_OUTPUT_NAME)
-  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
-    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
-    return()
-  endif()
-
-  get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME_${CMAKE_BUILD_TYPE})
-  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
-    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
-    return()
-  endif()
-
-  get_target_property(TARGET_OUT_NAME "${TARGET}" OUTPUT_NAME)
-  if(NOT TARGET_OUT_NAME STREQUAL "TARGET_OUT_NAME-NOTFOUND")
-    set(${OUT_FILE_NAME} "${TARGET_OUT_NAME}" PARENT_SCOPE)
-    return()
-  endif()
+  get_target_out_base_name(TARGET_BASE_NAME "${TARGET}")
 
   get_target_property(TARGET_DEBUG_POSTFIX "${TARGET}" DEBUG_POSTFIX)
   if(TARGET_DEBUG_POSTFIX STREQUAL "TARGET_DEBUG_POSTFIX-NOTFOUND")
@@ -50,10 +56,44 @@ function (get_target_out_file_name OUT_FILE_NAME TARGET)
   endif()
 
   if(APPLE)
-    set(FINAL_NAME "${TARGET_PREFIX}${TARGET}${TARGET_DEBUG_POSTFIX}${TARGET_VERSION_SUFFIX}${TARGET_SUFFIX}")
+    set(FINAL_NAME "${TARGET_PREFIX}${TARGET_BASE_NAME}${TARGET_DEBUG_POSTFIX}${TARGET_VERSION_SUFFIX}${TARGET_SUFFIX}")
   else()
-    set(FINAL_NAME "${TARGET_PREFIX}${TARGET}${TARGET_DEBUG_POSTFIX}${TARGET_SUFFIX}${TARGET_VERSION_SUFFIX}")
+    set(FINAL_NAME "${TARGET_PREFIX}${TARGET_BASE_NAME}${TARGET_DEBUG_POSTFIX}${TARGET_SUFFIX}${TARGET_VERSION_SUFFIX}")
   endif()
+
+  set(${OUT_FILE_NAME} "${FINAL_NAME}" PARENT_SCOPE)
+endfunction()
+
+function (get_target_out_linker_file_name OUT_FILE_NAME TARGET)
+  get_target_out_base_name(TARGET_BASE_NAME "${TARGET}")
+
+  get_target_property(TARGET_DEBUG_POSTFIX "${TARGET}" DEBUG_POSTFIX)
+  if(TARGET_DEBUG_POSTFIX STREQUAL "TARGET_DEBUG_POSTFIX-NOTFOUND")
+    set(TARGET_DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+  endif()
+
+  get_target_property(TARGET_PREFIX "${TARGET}" IMPORT_PREFIX)
+  if(TARGET_PREFIX STREQUAL "TARGET_PREFIX-NOTFOUND")
+    set(TARGET_PREFIX "${CMAKE_IMPORT_LIBRARY_PREFIX}")
+  endif()
+
+  get_target_property(TARGET_SUFFIX "${TARGET}" IMPORT_SUFFIX)
+  if(TARGET_SUFFIX STREQUAL "TARGET_SUFFIX-NOTFOUND")
+    set(TARGET_SUFFIX "${CMAKE_IMPORT_LIBRARY_SUFFIX}")
+  endif()
+
+  if(WIN32)
+    set(TARGET_VERSION_SUFFIX "")
+  else()
+    get_target_property(TARGET_VERSION "${TARGET}" VERSION)
+    if(TARGET_VERSION STREQUAL "TARGET_VERSION-NOTFOUND")
+      set(TARGET_VERSION_SUFFIX "")
+    else()
+      set(TARGET_VERSION_SUFFIX ".${TARGET_VERSION}")
+    endif()
+  endif()
+
+  set(FINAL_NAME "${TARGET_PREFIX}${TARGET}${TARGET_DEBUG_POSTFIX}${TARGET_SUFFIX}")
 
   set(${OUT_FILE_NAME} "${FINAL_NAME}" PARENT_SCOPE)
 endfunction()
@@ -82,6 +122,8 @@ function(add_file_action)
   set(GEN_TARGET_NAME "${ARG_ACTION}-${DEST_HASH}")
   if("${DEST_FILE}" MATCHES "\\$<TARGET_FILE(_NAME)?:(.+)>")
     get_target_out_file_name(TARGET_OUT_FILE_NAME "${ARG_TARGET}")
+  elseif("${DEST_FILE}" MATCHES "\\$<TARGET_LINKER_FILE(_NAME)?:(.+)>")
+    get_target_out_linker_file_name(TARGET_OUT_FILE_NAME "${ARG_TARGET}")
   else()
     set(TARGET_OUT_FILE_NAME "${DEST_FILE}")
   endif()
@@ -196,23 +238,37 @@ function(_argus_copy_dep_output)
   endif()
 
   if(ARG_TARGET_FILE)
-    add_file_action(TARGET "${ARG_TARGET}"
-        ACTION "copy_if_different"
-        SOURCE "${ARG_TARGET_FILE}"
-        DEST "${LIB_FILE_DEST_PATH}")
+    set(source_file "${ARG_TARGET_FILE}")
   else()
-    add_file_action(TARGET "${ARG_TARGET}"
-            ACTION "copy_if_different"
-            SOURCE "$<TARGET_FILE:${ARG_TARGET}>"
-            DEST "${LIB_FILE_DEST_PATH}")
+    set(source_file "$<TARGET_FILE:${ARG_TARGET}>")
   endif()
+
+  add_file_action(TARGET "${ARG_TARGET}"
+          ACTION "copy_if_different"
+          SOURCE "${source_file}"
+          DEST "${LIB_FILE_DEST_PATH}")
 
   if(target_type STREQUAL SHARED_LIBRARY)
     create_so_symlinks("${ARG_TARGET}" "${QUAL_DEST_DIR}")
   endif()
 
   if(WIN32 AND target_type STREQUAL SHARED_LIBRARY)
-    set(LINKER_FILE_DEST_PATH "${DIST_DIR}/lib/${ARG_PREFIX}/$<TARGET_LINKER_FILE_NAME:${ARG_TARGET}>")
+    if(ARG_TARGET_FILE)
+      get_filename_component(target_file_name "${ARG_TARGET_FILE}" NAME)
+      set(LINKER_FILE_DEST_PATH "${QUAL_DEST_DIR}/${target_file_name}")
+    else()
+      set(LINKER_FILE_DEST_PATH "${QUAL_DEST_DIR}/$<TARGET_LINKER_FILE_NAME:${ARG_TARGET}>")
+    endif()
+
+    if(ARG_TARGET_FILE)
+      get_filename_component(source_file_dir "${ARG_TARGET_FILE}" DIRECTORY)
+      get_target_out_linker_file_name(linker_file_name "${ARG_TARGET}")
+      set(linker_source_file "${source_file_dir}/${linker_file_name}")
+    else()
+      set(linker_source_file "$<TARGET_LINKER_FILE_NAME:${ARG_TARGET}")
+    endif()
+
+    set(LINKER_FILE_DEST_PATH "${LINKER_FILE_DEST_PATH}")
 
     add_file_action(TARGET "${ARG_TARGET}"
         ACTION "copy_if_different"
