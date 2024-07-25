@@ -18,7 +18,7 @@
 
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
-
+use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use lowlevel_rustabi::util::{cstr_to_string, string_vec_to_cstr_arr};
 
 use crate::argus::resman::{
@@ -82,7 +82,7 @@ pub trait ResourceLoader {
         handle: WrappedResourceLoader,
         manager: ResourceManager,
         prototype: &ResourcePrototype,
-        read_callback: Box<dyn Fn(*mut u8, usize) -> bool>,
+        read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
         size: usize,
     ) -> Result<*mut u8, ResourceError>;
 
@@ -91,7 +91,7 @@ pub trait ResourceLoader {
         handle: WrappedResourceLoader,
         manager: ResourceManager,
         prototype: &ResourcePrototype,
-        src_data: *const u8,
+        src_data: *mut u8,
     ) -> Result<*mut u8, ResourceError>;
 
     fn unload_resource(&mut self, handle: WrappedResourceLoader, ptr: *mut u8);
@@ -115,7 +115,8 @@ unsafe extern "C" fn load_resource_proxy(
         WrappedResourceLoader::of(loader),
         ResourceManager::of(manager),
         &unwrap_resource_prototype(&prototype),
-        Box::new(move |dst, len| read_callback_unwrapped(dst.cast(), len, engine_data)),
+        Box::new(move |dst, len|
+            read_callback_unwrapped(dst.as_mut_ptr().cast(), len, engine_data)),
         size,
     );
     VoidPtrOrResourceError {
@@ -132,6 +133,7 @@ unsafe extern "C" fn copy_resource_proxy(
     manager: argus_resource_manager_t,
     prototype: argus_resource_prototype_t,
     src: *mut c_void,
+    src_len: usize,
     user_data: *mut c_void,
 ) -> VoidPtrOrResourceError {
     let real_loader: &mut Box<dyn ResourceLoader> = std::mem::transmute(user_data);
@@ -141,6 +143,8 @@ unsafe extern "C" fn copy_resource_proxy(
         &unwrap_resource_prototype(&prototype),
         src.cast(),
     );
+    // re-wrap the loader
+    Box::into_raw(Box::new(real_loader));
     VoidPtrOrResourceError {
         is_ok: res.is_ok(),
         ve: match res {
@@ -153,15 +157,20 @@ unsafe extern "C" fn copy_resource_proxy(
 unsafe extern "C" fn unload_resource_proxy(
     loader: argus_resource_loader_t,
     ptr: *mut c_void,
+    len: usize,
     user_data: *mut c_void,
 ) {
     let real_loader: &mut Box<dyn ResourceLoader> = std::mem::transmute(user_data);
-    real_loader.unload_resource(WrappedResourceLoader::of(loader), ptr.cast());
+    real_loader.unload_resource(
+        WrappedResourceLoader::of(loader),
+        ptr.cast(),
+    );
 }
 
 pub(crate) unsafe fn wrap_loader(
     media_types: *const *const c_char,
     media_types_count: usize,
+    resource_len: usize,
     loader: Box<dyn ResourceLoader>,
 ) -> argus_resource_loader_t {
     let loader_boxed = Box::new(loader);
@@ -170,6 +179,7 @@ pub(crate) unsafe fn wrap_loader(
     argus_resource_loader_new(
         media_types,
         media_types_count,
+        resource_len,
         Some(load_resource_proxy),
         Some(copy_resource_proxy),
         Some(unload_resource_proxy),

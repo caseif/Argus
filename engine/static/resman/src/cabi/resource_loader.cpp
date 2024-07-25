@@ -66,10 +66,13 @@ static LoadedDependencySetOrResourceError _wrap_dep_result(
     return wrapped_res;
 }
 
-static bool _read_callback(void *dst, size_t len, void *engine_data) {
+static size_t _read_callback(void *dst, size_t len, void *engine_data) {
     auto &stream = *reinterpret_cast<std::istream *>(engine_data);
+    if (!stream.good()) {
+        return 0;
+    }
     stream.read(reinterpret_cast<char *>(dst), std::streamsize(len));
-    return stream.good();
+    return static_cast<size_t>(stream.gcount());
 }
 
 static const LoadedDependencySetImpl &_lds_as_ref(argus_loaded_dependency_set_t ptr) {
@@ -78,12 +81,14 @@ static const LoadedDependencySetImpl &_lds_as_ref(argus_loaded_dependency_set_t 
 
 ProxiedResourceLoader::ProxiedResourceLoader(
         std::vector<std::string> media_types,
+        size_t type_len,
         argus_resource_load_fn_t load_fn,
         argus_resource_copy_fn_t copy_fn,
         argus_resource_unload_fn_t unload_fn,
         void *user_data
 ):
     ResourceLoader(std::move(media_types)),
+    m_type_len(type_len),
     m_load_fn(load_fn),
     m_copy_fn(copy_fn),
     m_unload_fn(unload_fn),
@@ -109,11 +114,11 @@ Result<void *, ResourceError> ProxiedResourceLoader::copy(ResourceManager &manag
             proto.media_type.c_str(),
             reinterpret_cast<const char *>(proto.fs_path.c_str()), // workaround for MSVC
     };
-    return _unwrap_voidptr_result(m_copy_fn(this, &manager, wrapped_proto, src, m_user_data));
+    return _unwrap_voidptr_result(m_copy_fn(this, &manager, wrapped_proto, src, m_type_len, m_user_data));
 }
 
 void ProxiedResourceLoader::unload(void *data_ptr) {
-    m_unload_fn(this, data_ptr, m_user_data);
+    m_unload_fn(this, data_ptr, m_type_len, m_user_data);
 }
 
 #ifdef __cplusplus
@@ -123,13 +128,14 @@ extern "C" {
 argus_resource_loader_t argus_resource_loader_new(
         const char *const *media_types,
         size_t media_types_count,
+        size_t type_len,
         argus_resource_load_fn_t load_fn,
         argus_resource_copy_fn_t copy_fn,
         argus_resource_unload_fn_t unload_fn,
         void *user_data
 ) {
     return new ProxiedResourceLoader(std::vector<std::string>(media_types, media_types + media_types_count),
-            load_fn, copy_fn, unload_fn, user_data);
+            type_len, load_fn, copy_fn, unload_fn, user_data);
 }
 
 LoadedDependencySetOrResourceError argus_resource_loader_load_dependencies(argus_resource_loader_t loader,

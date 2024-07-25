@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use std::mem::size_of;
 use lowlevel_rustabi::util::*;
 
 use crate::argus::resman::{
@@ -69,16 +70,18 @@ impl ResourceManager {
         unsafe { argus_resource_manager_add_memory_package(self.handle, buf.as_ptr(), buf.len()) }
     }
 
-    pub fn register_loader(
+    pub fn register_loader<T>(
         &mut self,
         media_types: Vec<String>,
-        loader: Box<dyn ResourceLoader>,
-    ) -> WrappedResourceLoader {
+        loader: T,
+    ) -> WrappedResourceLoader
+    where T : 'static + ResourceLoader {
         unsafe {
             let mt_count = media_types.len();
             let mt_cstr_arr = string_vec_to_cstr_arr(&media_types);
 
-            let wrapped_loader = wrap_loader(mt_cstr_arr.as_ptr(), mt_count, loader);
+            let wrapped_loader
+                = wrap_loader(mt_cstr_arr.as_ptr(), mt_count, size_of::<T>(), Box::new(loader));
             argus_resource_manager_register_loader(
                 self.handle,
                 wrapped_loader,
@@ -90,27 +93,30 @@ impl ResourceManager {
 
     pub fn get_resource(&mut self, uid: &str) -> Result<Resource, ResourceError> {
         unsafe {
+            let uid_c = str_to_cstring(uid);
             _unwrap_result(argus_resource_manager_get_resource(
                 self.handle,
-                uid.as_ptr().cast(),
+                uid_c.as_ptr(),
             ))
         }
     }
 
     pub fn get_resource_weak(&mut self, uid: &str) -> Result<Resource, ResourceError> {
         unsafe {
+            let uid_c = str_to_cstring(uid);
             _unwrap_result(argus_resource_manager_get_resource_weak(
                 self.handle,
-                uid.as_ptr().cast(),
+                uid_c.as_ptr(),
             ))
         }
     }
 
     pub fn try_get_resource(&mut self, uid: &str) -> Result<Resource, ResourceError> {
         unsafe {
+            let uid_c = str_to_cstring(uid);
             _unwrap_result(argus_resource_manager_try_get_resource(
                 self.handle,
-                uid.as_ptr().cast(),
+                uid_c.as_ptr(),
             ))
         }
     }
@@ -124,10 +130,12 @@ impl ResourceManager {
         data: &[u8],
     ) -> Result<Resource, ResourceError> {
         unsafe {
+            let uid_c = str_to_cstring(uid);
+            let media_type_c = str_to_cstring(media_type);
             _unwrap_result(argus_resource_manager_create_resource(
                 self.handle,
-                uid.as_ptr().cast(),
-                media_type.as_ptr().cast(),
+                uid_c.as_ptr(),
+                media_type_c.as_ptr(),
                 data.as_ptr().cast(),
                 data.len(),
             ))

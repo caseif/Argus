@@ -75,7 +75,7 @@ pub type argus_resource_read_callback_t = ::std::option::Option<
         dst: *mut ::std::os::raw::c_void,
         len: usize,
         data: *mut ::std::os::raw::c_void,
-    ) -> bool,
+    ) -> usize,
 >;
 pub type argus_resource_load_fn_t = ::std::option::Option<
     unsafe extern "C" fn(
@@ -94,6 +94,7 @@ pub type argus_resource_copy_fn_t = ::std::option::Option<
         manager: argus_resource_manager_t,
         proto: argus_resource_prototype_t,
         src: *mut ::std::os::raw::c_void,
+        src_len: usize,
         data: *mut ::std::os::raw::c_void,
     ) -> VoidPtrOrResourceError,
 >;
@@ -101,6 +102,7 @@ pub type argus_resource_unload_fn_t = ::std::option::Option<
     unsafe extern "C" fn(
         loader: argus_resource_loader_t,
         ptr: *mut ::std::os::raw::c_void,
+        len: usize,
         user_data: *mut ::std::os::raw::c_void,
     ),
 >;
@@ -170,6 +172,7 @@ extern "C" {
     pub fn argus_resource_loader_new(
         media_types: *const *const ::std::os::raw::c_char,
         media_types_count: usize,
+        type_len: usize,
         load_fn: argus_resource_load_fn_t,
         copy_fn: argus_resource_copy_fn_t,
         unload_fn: argus_resource_unload_fn_t,

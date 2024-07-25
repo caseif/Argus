@@ -39,13 +39,14 @@ using argus::ResourcePrototype;
 using argus::Result;
 
 class ProxiedResourceLoader : public ResourceLoader {
+    size_t m_type_len;
     argus_resource_load_fn_t m_load_fn;
     argus_resource_copy_fn_t m_copy_fn;
     argus_resource_unload_fn_t m_unload_fn;
     void *m_user_data;
 
   public:
-    ProxiedResourceLoader(std::vector<std::string> media_types,
+    ProxiedResourceLoader(std::vector<std::string> media_types, size_t type_len,
             argus_resource_load_fn_t load_fn,
             argus_resource_copy_fn_t copy_fn,
             argus_resource_unload_fn_t unload_fn, void *user_data);

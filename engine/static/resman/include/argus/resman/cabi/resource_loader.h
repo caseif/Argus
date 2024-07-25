@@ -48,7 +48,7 @@ typedef struct LoadedDependencySetOrResourceError {
     } ve;
 } LoadedDependencySetOrResourceError;
 
-typedef bool (*argus_resource_read_callback_t)(void *dst, size_t len,
+typedef size_t (*argus_resource_read_callback_t)(void *dst, size_t len,
         void *data);
 
 typedef VoidPtrOrResourceError (*argus_resource_load_fn_t)(argus_resource_loader_t loader,
@@ -57,13 +57,14 @@ typedef VoidPtrOrResourceError (*argus_resource_load_fn_t)(argus_resource_loader
 
 typedef VoidPtrOrResourceError (*argus_resource_copy_fn_t)(argus_resource_loader_t loader,
         argus_resource_manager_t manager, argus_resource_prototype_t proto,
-        void *src, void *data);
+        void *src, size_t src_len, void *data);
 
-typedef void (*argus_resource_unload_fn_t)(argus_resource_loader_t loader, void *ptr, void *user_data);
+typedef void (*argus_resource_unload_fn_t)(argus_resource_loader_t loader, void *ptr, size_t len, void *user_data);
 
 argus_resource_loader_t argus_resource_loader_new(
         const char *const *media_types,
         size_t media_types_count,
+        size_t type_len,
         argus_resource_load_fn_t load_fn,
         argus_resource_copy_fn_t copy_fn,
         argus_resource_unload_fn_t unload_fn,
