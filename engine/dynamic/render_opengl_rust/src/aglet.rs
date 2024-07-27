@@ -16,4 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-include!(concat!(env!("GENERATED_SOURCES_PATH"), "/src/aglet.rs"));
+include!(concat!(env!("OUT_DIR"), "/generated/aglet/src/aglet.rs"));
