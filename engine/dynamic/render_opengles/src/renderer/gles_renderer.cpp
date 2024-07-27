@@ -31,7 +31,7 @@
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/transform.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_opengles/gl_util.hpp"
 #include "internal/render_opengles/renderer/2d/scene_compiler.hpp"

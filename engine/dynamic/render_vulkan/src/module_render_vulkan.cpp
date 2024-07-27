@@ -27,7 +27,7 @@
 
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/backend.hpp"
 
 #include "internal/render_vulkan/defines.hpp"

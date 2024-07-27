@@ -18,7 +18,7 @@
 
 #include "argus/lowlevel/debug.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/material.hpp"
 
 #include "internal/render_vulkan/defines.hpp"

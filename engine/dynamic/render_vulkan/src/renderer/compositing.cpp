@@ -21,7 +21,7 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/render/common/canvas.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_vulkan/renderer/compositing.hpp"
 #include "internal/render_vulkan/state/render_bucket.hpp"

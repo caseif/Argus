@@ -25,7 +25,7 @@
 #include "argus/wm/api_util.hpp"
 #include "argus/wm/window.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/canvas.hpp"
 
 #include "internal/render_vulkan/defines.hpp"

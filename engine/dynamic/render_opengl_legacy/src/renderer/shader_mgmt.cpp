@@ -25,7 +25,7 @@
 #include "argus/resman/resource.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/material.hpp"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"

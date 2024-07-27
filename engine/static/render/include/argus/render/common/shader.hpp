@@ -31,9 +31,6 @@ namespace argus {
     // forward declarations
     struct pimpl_Shader;
 
-    constexpr const char *SHADER_TYPE_GLSL = "glsl";
-    constexpr const char *SHADER_TYPE_SPIR_V = "spirv";
-
     /**
      * @brief Represents a stage corresponding to a step in the render pipeline.
      */

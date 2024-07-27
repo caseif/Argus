@@ -27,7 +27,7 @@
 #include "internal/render_opengles/state/processed_render_object.hpp"
 #include "internal/render_opengles/state/render_bucket.hpp"
 #include "internal/render_opengles/state/scene_state.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 namespace argus {
     static BucketKey _get_bucket_key(ProcessedRenderObject &processed_obj) {

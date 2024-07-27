@@ -18,12 +18,19 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RESOURCE_TYPE_TEXTURE_PNG "image/png"
 #define RESOURCE_TYPE_MATERIAL "application/x-argus-material+json"
 #define RESOURCE_TYPE_SHADER_GLSL_VERT "text/x-glsl-vertex"
 #define RESOURCE_TYPE_SHADER_GLSL_FRAG "text/x-glsl-fragment"
 
 #define LIGHTS_MAX 32U
+
+#define SHADER_TYPE_GLSL "glsl"
+#define SHADER_TYPE_SPIR_V "spirv"
 
 #define SHADER_STRUCT_LIGHT2D_LEN 64U
 #define SHADER_STRUCT_LIGHT2D_COLOR_OFF 0U
@@ -85,3 +92,7 @@
 
 #define SHADER_LIGHTMAP_COMPOSITE_VERT "argus:render/shader/lightmap_composite_vert"
 #define SHADER_LIGHTMAP_COMPOSITE_FRAG "argus:render/shader/lightmap_composite_frag"
+
+#ifdef __cplusplus
+}
+#endif

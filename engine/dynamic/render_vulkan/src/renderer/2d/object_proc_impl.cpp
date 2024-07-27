@@ -21,7 +21,7 @@
 
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"

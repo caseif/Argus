@@ -18,7 +18,7 @@
 
 #include "argus/lowlevel/collections.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/util/object_processor.hpp"
 #include "argus/render/2d/scene_2d.hpp"
 

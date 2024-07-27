@@ -20,7 +20,7 @@
 
 #include "argus/resman.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/shader_compilation.hpp"
 
 #include "internal/render_vulkan/renderer/shader_mgmt.hpp"

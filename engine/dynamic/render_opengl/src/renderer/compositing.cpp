@@ -26,7 +26,7 @@
 
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_opengl/defines.hpp"
 #include "internal/render_opengl/types.hpp"

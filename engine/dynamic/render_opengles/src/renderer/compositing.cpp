@@ -27,7 +27,7 @@
 #include "argus/render/common/canvas.hpp"
 #include "argus/render/common/material.hpp"
 #include "argus/render/2d/scene_2d.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/types.hpp"

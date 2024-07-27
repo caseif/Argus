@@ -22,7 +22,7 @@
 #include "argus/resman/resource_loader.hpp"
 #include "argus/resman/resource_manager.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 #include "argus/render/common/texture_data.hpp"
 #include "internal/render/loader/texture_loader.hpp"
 

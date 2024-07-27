@@ -18,7 +18,7 @@
 
 #include "argus/lowlevel/debug.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_vulkan/defines.hpp"
 #include "internal/render_vulkan/renderer/bucket_proc.hpp"

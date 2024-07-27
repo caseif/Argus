@@ -22,6 +22,7 @@
 
 #include "argus/core/engine.hpp"
 
+#include "argus/render/defines.h"
 #include "argus/render/common/shader.hpp"
 #include "argus/render/common/shader_compilation.hpp"
 

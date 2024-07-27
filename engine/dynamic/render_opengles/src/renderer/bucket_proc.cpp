@@ -20,7 +20,7 @@
 
 #include "argus/core/engine.hpp"
 
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_opengles/defines.hpp"
 #include "internal/render_opengles/gl_util.hpp"

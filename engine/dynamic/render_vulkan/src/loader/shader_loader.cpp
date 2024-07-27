@@ -23,7 +23,7 @@
 #include "argus/resman/resource_loader.hpp"
 
 #include "argus/render/common/shader.hpp"
-#include "argus/render/defines.hpp"
+#include "argus/render/defines.h"
 
 #include "internal/render_vulkan/loader/shader_loader.hpp"
 
