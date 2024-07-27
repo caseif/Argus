@@ -25,7 +25,10 @@ const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
 const FNV_PRIME: u64 = 0x100000001b3;
 
 const RUBY_EXE: &str = "ruby";
-const BUNDLER_EXE: &str = "bundle";
+#[cfg(windows)]
+const BUNDLER_EXES: &[&str] = &["bundle.bat", "bundle.cmd"];
+#[cfg(not(windows))]
+const BUNDLER_EXES: &[&str] = &["bundle"];
 
 const AGLET_SUBMODULE_PATH: &str = "../../../external/tooling/aglet/";
 const GL_PROFILE_PATH: &str = "tooling/aglet/opengl_profile.xml";
@@ -49,30 +52,10 @@ fn generate_opengl_bindings(profile_path: &Path) {
     // check if Ruby is installed
     match Command::new(RUBY_EXE).arg("-v").output() {
         Ok(_) => {}
-        Err(e) => panic!("Ruby must be installed and available on the path")
+        Err(_) => panic!("Ruby must be installed and available on the path")
     }
 
-    // check if Bundler is installed
-    match Command::new(BUNDLER_EXE)
-        .args(["config", "set", "--local", "path", "./vendor/cache"])
-        .current_dir(AGLET_SUBMODULE_PATH)
-        .output() {
-        Ok(res) => {
-            if !res.status.success() {
-                panic!(
-                    "Bundler exited with code {} ({})",
-                    res.status.to_string(),
-                    String::from_utf8(res.stderr).unwrap()
-                );
-            }
-        },
-        Err(_) => {
-            panic!(concat!(
-                "Bundler must be installed and available on the path ",
-                "(run `$ gem install bundler`)"
-            ));
-        }
-    }
+    run_bundler(AGLET_SUBMODULE_PATH);
 
     let output = Command::new(RUBY_EXE)
         .arg(format!("{AGLET_SUBMODULE_PATH}/aglet.rb"))
@@ -89,6 +72,27 @@ fn generate_opengl_bindings(profile_path: &Path) {
             String::from_utf8(output.stderr).unwrap(),
         );
     }
+}
+
+fn run_bundler(working_dir: &str) {
+    for bundler_exe in BUNDLER_EXES {
+        if let Ok(res) = Command::new(bundler_exe)
+            .args(["config", "set", "--local", "path", "./vendor/cache"])
+            .current_dir(working_dir)
+            .output() {
+            if !res.status.success() {
+                panic!(
+                    "Bundler exited with code {} ({})",
+                    res.status,
+                    String::from_utf8(res.stderr).unwrap()
+                );
+            }
+            return;
+        }
+    }
+
+    // if we get here then none of the exe names worked
+    panic!("Bundler must be installed and available on the path (run `$ gem install bundler`)");
 }
 
 fn fnv1a_hash(s: &str) -> u64 {
