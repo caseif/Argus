@@ -16,10 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) mod gl_renderer;
-pub(crate) mod loader;
-pub(crate) mod module_init;
-pub(crate) mod resources;
-pub(crate) mod shaders;
-pub(crate) mod state;
-pub(crate) mod util;
+use std::collections::HashMap;
+use render_rustabi::argus::render::Scene;
+use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
+use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
+
+pub(crate) struct Scene2dState {
+    scene: Scene,
+    ubo: Option<GlBuffer>,
+    //render_buckets: HashMap<BucketKey, RenderBucket>,
+}
+
+impl Scene2dState {
+    pub(crate) fn new(scene: Scene) -> Self {
+        Self { scene, ubo: None, /*HashMap::new()*/ }
+    }
+}

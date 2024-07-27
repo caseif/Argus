@@ -15,12 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Mutex};
 use std::time::Duration;
 
-use lazy_static::lazy_static;
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
@@ -33,19 +31,27 @@ use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
 use crate::argus::render_opengl_rust::loader::ShaderLoader;
 use crate::argus::render_opengl_rust::resources::RESOURCES_PACK;
 
-const MODULE_ID: &'static str = "render_opengl_rust";
-const BACKEND_ID: &'static str = "opengl_rust";
+const MODULE_ID: &str = "render_opengl_rust";
+const BACKEND_ID: &str = "opengl_rust";
 
-lazy_static! {
-    static ref g_is_backend_active: Mutex<bool> = Mutex::new(false);
-    static ref g_renderer_map: Mutex<HashMap<String, GlRenderer>>
-        = Mutex::new(HashMap::new());
+thread_local! {
+    static IS_BACKEND_ACTIVE: RefCell<bool> = RefCell::new(false);
+    static RENDERERS: RefCell<HashMap<String, GlRenderer>>
+        = RefCell::new(HashMap::new());
+}
+
+fn is_backend_active() -> bool {
+    IS_BACKEND_ACTIVE.with_borrow(|active| *active)
+}
+
+fn set_backend_active(active: bool) {
+    IS_BACKEND_ACTIVE.set(active);
 }
 
 fn test_opengl_support() -> Result<(), ()> {
     let mut window = Window::create("", None);
     window.update(Duration::from_secs(0));
-    let gl_context_opt = gl_create_context(&mut window, 3, 3, GLContextFlags::ProfileCore);
+    let gl_context_opt = gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore);
     if gl_context_opt.is_none() {
         //TODO: use proper logger
         eprintln!("Failed to create GL context");
@@ -93,7 +99,7 @@ extern "C" fn activate_opengl_backend() -> bool {
         return false;
     }
 
-    *g_is_backend_active.lock().unwrap() = true;
+    set_backend_active(true);
     return true;
 }
 
@@ -105,33 +111,38 @@ fn window_event_handler(event: &WindowEvent) {
             // don't create a context if the window was immediately closed
             if !window.is_close_request_pending() {
                 let renderer = GlRenderer::new(window.clone());
-                g_renderer_map.lock().unwrap().insert(window.get_id(), renderer);
+                RENDERERS.with_borrow_mut(|renderers| {
+                    renderers.insert(window.get_id(), renderer)
+                });
             }
         }
         WindowEventType::Update => {
             if window.is_ready() {
-                let mut renderer_map_guard = g_renderer_map.lock().unwrap();
-                let renderer = renderer_map_guard.get_mut(&window.get_id())
-                    .expect("Failed to get renderer");
-                renderer.render(event.get_delta());
+                RENDERERS.with_borrow_mut(|renderers| {
+                    let renderer = renderers.get_mut(&window.get_id())
+                        .expect("Failed to get renderer");
+                    renderer.render(event.get_delta());
+                });
             }
         }
         WindowEventType::Resize => {
             if window.is_ready() {
-                let mut renderer_map_guard = g_renderer_map.lock().unwrap();
-                let renderer = renderer_map_guard.get_mut(&window.get_id())
-                    .expect("Failed to get renderer");
-                renderer.notify_window_resize(event.get_resolution());
+                RENDERERS.with_borrow_mut(|renderers| {
+                    let renderer = renderers.get_mut(&window.get_id())
+                        .expect("Failed to get renderer");
+                    renderer.notify_window_resize(event.get_resolution());
+                });
            }
         }
         WindowEventType::RequestClose => {
-            let renderer_map_guard = g_renderer_map.lock().unwrap();
-            // This condition fails if the window received a close request
-            // immediately, before a context could be created. This is the
-            // case when creating a hidden window to probe GL capabilities.
-            if renderer_map_guard.contains_key(&window.get_id()) {
-                //TODO: delete renderer
-            }
+            RENDERERS.with_borrow_mut(|renderers| {
+                // This condition fails if the window received a close request
+                // immediately, before a context could be created. This is the
+                // case when creating a hidden window to probe GL capabilities.
+                if renderers.contains_key(&window.get_id()) {
+                    //TODO: delete renderer
+                }
+            });
         }
         _ => {}
     }
@@ -142,14 +153,16 @@ fn resource_event_handler(event: &ResourceEvent) {
         return;
     }
 
-    for (_, renderer) in g_renderer_map.lock().unwrap().iter() {
-        let mt = event.get_prototype().media_type;
-        if mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG {
-            //TODO: remove shader from state
-        } else if mt == RESOURCE_TYPE_MATERIAL {
-            //TODO: deinit material
+    RENDERERS.with_borrow_mut(|renderers| {
+        for (_, renderer) in &mut renderers.iter() {
+            let mt = event.get_prototype().media_type;
+            if mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG {
+                //TODO: remove shader from state
+            } else if mt == RESOURCE_TYPE_MATERIAL {
+                //TODO: deinit material
+            }
         }
-    }
+    });
 }
 
 #[no_mangle]
@@ -165,7 +178,7 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
         }
         LifecycleStage::Init => {
             println!("render_opengl_rust got Init event");
-            if !*g_is_backend_active.lock().unwrap() {
+            if !is_backend_active() {
                 return;
             }
 
@@ -189,7 +202,7 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
             );
         }
         LifecycleStage::PostInit => {
-            if !*g_is_backend_active.lock().unwrap() {
+            if !is_backend_active() {
                 return;
             }
 

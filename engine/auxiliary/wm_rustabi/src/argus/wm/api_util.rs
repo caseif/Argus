@@ -25,7 +25,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use crate::argus::wm::Window;
 use crate::wm_cabi::*;
 
-pub struct GLContext {
+pub struct GlContext {
     handle: gl_context_t,
 }
 
@@ -59,7 +59,7 @@ impl VkSurface {
 
 #[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
-pub enum GLContextFlags {
+pub enum GlContextFlags {
     None = GL_CONTEXT_FLAG_NONE,
     ProfileCore = GL_CONTEXT_FLAG_PROFILE_CORE,
     ProfileES = GL_CONTEXT_FLAG_PROFILE_ES,
@@ -84,8 +84,8 @@ pub fn gl_create_context(
     window: &mut Window,
     version_major: i32,
     version_minor: i32,
-    flags: GLContextFlags,
-) -> Option<GLContext> {
+    flags: GlContextFlags,
+) -> Option<GlContext> {
     unsafe {
         let handle = argus_gl_create_context(
             window.get_handle_mut(),
@@ -93,23 +93,23 @@ pub fn gl_create_context(
             version_minor,
             flags.into(),
         );
-        handle.as_mut().map(|p| GLContext { handle: p })
+        handle.as_mut().map(|p| GlContext { handle: p })
     }
 }
 
-pub fn gl_destroy_context(context: &GLContext) {
+pub fn gl_destroy_context(context: &GlContext) {
     unsafe {
         argus_gl_destroy_context(context.handle);
     }
 }
 
-pub fn gl_is_context_current(context: &GLContext) -> bool {
+pub fn gl_is_context_current(context: &GlContext) -> bool {
     unsafe {
         return argus_gl_is_context_current(context.handle);
     }
 }
 
-pub fn gl_make_context_current(window: &mut Window, context: &GLContext) -> Result<(), i32> {
+pub fn gl_make_context_current(window: &mut Window, context: &GlContext) -> Result<(), i32> {
     unsafe {
         match argus_gl_make_context_current(window.get_handle_mut(), context.handle) {
             0 => Ok(()),
