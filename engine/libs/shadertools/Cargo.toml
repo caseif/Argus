@@ -4,7 +4,7 @@ version = "0.0.1"
 
 [lib]
 name = "shadertools"
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 bitmask = "0.5"

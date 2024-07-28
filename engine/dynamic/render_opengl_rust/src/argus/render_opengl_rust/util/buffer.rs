@@ -18,6 +18,7 @@
 
 use crate::aglet::*;
 use crate::argus::render_opengl_rust::util::gl_util::*;
+
 use std::{mem, ptr, slice};
 
 pub(crate) struct GlBuffer {
@@ -31,7 +32,7 @@ pub(crate) struct GlBuffer {
 }
 
 impl GlBuffer {
-    pub(crate) fn create(
+    pub(crate) fn new(
         target: GLenum,
         size: usize,
         usage: GLenum,
@@ -78,7 +79,7 @@ impl GlBuffer {
             }
         }
 
-        return Self {
+        Self {
             valid: true,
             size,
             target,
@@ -86,7 +87,7 @@ impl GlBuffer {
             mapped,
             allow_mapping,
             persistent,
-        };
+        }
     }
 
     pub(crate) fn destroy(&mut self) {
@@ -99,6 +100,10 @@ impl GlBuffer {
 
         self.handle = 0;
         self.valid = false;
+    }
+
+    pub(crate) fn get_handle(&self) -> GlBufferHandle {
+        self.handle
     }
 
     pub(crate) fn map_write(&mut self) {
@@ -142,16 +147,14 @@ impl GlBuffer {
     }
 
     pub(crate) fn write_vals<T>(&self, src: &[T], offset: usize) {
-        let len = mem::size_of::<T>() * src.len();
+        let len = mem::size_of_val(src);
 
         assert!(self.valid);
         assert!(offset + len <= self.size);
 
         match self.mapped {
-            Some(mapped_ptr) => unsafe {
-                mapped_ptr
-                    .offset(offset as isize)
-                    .copy_from(src.as_ptr().cast(), len);
+            Some(mapped_ptr) => {
+                unsafe { mapped_ptr.add(offset).copy_from(src.as_ptr().cast(), len) };
             },
             None => {
                 if aglet_have_gl_arb_direct_state_access() {

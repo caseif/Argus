@@ -21,5 +21,6 @@ pub(crate) mod loader;
 pub(crate) mod module_init;
 pub(crate) mod resources;
 pub(crate) mod shaders;
+pub(crate) mod textures;
 pub(crate) mod state;
 pub(crate) mod util;

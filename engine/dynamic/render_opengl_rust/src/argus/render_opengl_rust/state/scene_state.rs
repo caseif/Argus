@@ -17,18 +17,21 @@
  */
 
 use std::collections::HashMap;
+
 use render_rustabi::argus::render::Scene;
+
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
+use crate::argus::render_opengl_rust::state::{RenderBucket, RenderBucketKey};
 use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
 
 pub(crate) struct Scene2dState {
     scene: Scene,
     ubo: Option<GlBuffer>,
-    //render_buckets: HashMap<BucketKey, RenderBucket>,
+    render_buckets: HashMap<RenderBucketKey, RenderBucket>,
 }
 
 impl Scene2dState {
     pub(crate) fn new(scene: Scene) -> Self {
-        Self { scene, ubo: None, /*HashMap::new()*/ }
+        Self { scene, ubo: None, render_buckets: HashMap::new() }
     }
 }

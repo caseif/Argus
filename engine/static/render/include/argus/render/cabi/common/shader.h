@@ -40,6 +40,8 @@ typedef enum ArgusShaderStage {
     ARGUS_SHADER_STAGE_FRAGMENT = 0x02,
 } ArgusShaderStage;
 
+argus_shader_refl_info_t argus_shader_refl_info_new(void);
+
 void argus_shader_refl_info_delete(argus_shader_refl_info_t refl);
 
 bool argus_shader_refl_info_has_attr(argus_shader_refl_info_const_t refl, const char *name);

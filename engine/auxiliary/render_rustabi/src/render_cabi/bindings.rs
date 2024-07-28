@@ -626,6 +626,7 @@ extern "C" {
         out_uids: *mut *const ::std::os::raw::c_char,
         count: usize,
     );
+    pub fn argus_shader_refl_info_new() -> argus_shader_refl_info_t;
     pub fn argus_shader_refl_info_delete(refl: argus_shader_refl_info_t);
     pub fn argus_shader_refl_info_has_attr(
         refl: argus_shader_refl_info_const_t,

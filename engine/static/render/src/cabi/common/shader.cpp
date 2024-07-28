@@ -40,6 +40,10 @@ static inline const ShaderReflectionInfo &_refl_as_ref(argus_shader_refl_info_co
 
 extern "C" {
 
+argus_shader_refl_info_t argus_shader_refl_info_new(void) {
+    return new ShaderReflectionInfo();
+}
+
 void argus_shader_refl_info_delete(argus_shader_refl_info_t refl) {
     delete reinterpret_cast<ShaderReflectionInfo *>(refl);
 }

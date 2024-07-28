@@ -101,6 +101,10 @@ impl ShaderReflectionInfo {
         Self { handle }
     }
 
+    pub fn new() -> Self {
+        unsafe { Self { handle: argus_shader_refl_info_new() } }
+    }
+
     pub fn destroy(&mut self) {
         unsafe {
             argus_shader_refl_info_delete(self.handle);
@@ -319,5 +323,11 @@ impl ShaderReflectionInfo {
                 instance_name_c.as_ptr(),
             );
         }
+    }
+}
+
+impl Default for ShaderReflectionInfo {
+    fn default() -> Self {
+        Self::new()
     }
 }

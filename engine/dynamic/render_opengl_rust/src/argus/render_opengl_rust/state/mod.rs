@@ -16,8 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+mod bucket;
+mod processed_object;
+mod renderer_state;
 mod scene_state;
 mod viewport_state;
 
+pub(crate) use bucket::*;
+pub(crate) use processed_object::*;
+pub(crate) use renderer_state::*;
 pub(crate) use scene_state::*;
 pub(crate) use viewport_state::*;

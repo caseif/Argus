@@ -23,7 +23,7 @@ use crate::render_cabi::*;
 
 #[repr(C)]
 #[ffi_repr(ArgusTransform2d)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Transform2d {
     translation: Vector2f,
     scale: Vector2f,
@@ -32,7 +32,7 @@ pub struct Transform2d {
 
 #[repr(C)]
 #[ffi_repr(argus_matrix_4x4_t)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Matrix4x4 {
     cells: [f32; 16],
 }
