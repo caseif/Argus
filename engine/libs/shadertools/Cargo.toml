@@ -10,3 +10,8 @@ crate-type = ["rlib", "staticlib"]
 bitmask = "0.5"
 glsl = "6.0"
 libc = "0.2"
+
+[features]
+default = ["all"]
+c_abi = []
+all = ["c_abi"]
