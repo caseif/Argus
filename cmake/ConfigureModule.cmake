@@ -20,7 +20,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   set(MODULE_PROP_LINKER_DEPS_WIN32 "linker_deps_win32")
   set(MODULE_PROP_LINKER_DEPS_LINUX "linker_deps_linux")
   set(MODULE_PROP_LINKER_DEPS_MACOS "linker_deps_macos")
-  set(MODULE_PROP_EXTERNAL_LINKER_DEPS "external_linker_static_deps")
   set(MODULE_PROP_REQUIRED_PACKAGES "required_packages")
   set(MODULE_PROP_OPTIONAL_PACKAGES "optional_packages")
   set(MODULE_PROP_DEFINITIONS "definitions")
@@ -125,9 +124,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
           string(REPLACE "," ";" cur_value "${cur_value}")
           list(APPEND MODULE_LINKER_DEPS "${cur_value}")
         endif()
-      elseif("${cur_key}" STREQUAL "${MODULE_PROP_EXTERNAL_LINKER_DEPS}")
-        string(REPLACE "," ";" cur_value "${cur_value}")
-        list(APPEND MODULE_EXTERNAL_LINKER_DEPS "${cur_value}")
       elseif("${cur_key}" STREQUAL "${MODULE_PROP_REQUIRED_PACKAGES}")
         string(REPLACE "," ";" cur_value "${cur_value}")
         list(APPEND MODULE_REQUIRED_PACKAGES "${cur_value}")
@@ -201,7 +197,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   string(CONFIGURE "${MODULE_ENGINE_LIB_DEPS}" MODULE_ENGINE_LIB_DEPS)
   string(CONFIGURE "${MODULE_ENGINE_AUX_DEPS}" MODULE_ENGINE_AUX_DEPS)
   string(CONFIGURE "${MODULE_LINKER_DEPS}" MODULE_LINKER_DEPS)
-  string(CONFIGURE "${MODULE_EXTERNAL_LINKER_DEPS}" MODULE_EXTERNAL_LINKER_DEPS)
 
   if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}" OR "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
     _argus_compute_dep_edges()
@@ -341,7 +336,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
               PREFIX "${DYN_MODULE_PREFIX}")
     else()
       get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
-      list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS};${MODULE_EXTERNAL_LINKER_DEPS}")
+      list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
       set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
 
       # compile in any requested static libraries which are not in the base library
@@ -413,7 +408,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
 
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
-    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS};${MODULE_EXTERNAL_LINKER_DEPS}")
+    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   else()
     if(${IS_EXTERNAL})
@@ -434,7 +429,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
 
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
-    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS};${MODULE_EXTERNAL_LINKER_DEPS}")
+    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   endif()
 
