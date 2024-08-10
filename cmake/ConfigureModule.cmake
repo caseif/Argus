@@ -326,6 +326,41 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
         corrosion_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
         set(LIB_OUT_DIR "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
         set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
+
+        # for some reason transitive linker dependencies don't get applied
+        # correctly specifically in MSVC debug builds, so we manually add them
+        # as dependencies here via Corrosion
+        if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+          set(seen_libs "")
+          set(dep_stack "${MODULE_LINKER_DEPS}")
+          while(NOT "${dep_stack}" STREQUAL "")
+            list(POP_FRONT dep_stack lib)
+            if("${lib}" STREQUAL "")
+              continue()
+            endif()
+
+            list(FIND seen_libs ${lib} seen_index)
+            if(NOT seen_index EQUAL -1)
+              continue()
+            endif()
+
+            list(APPEND seen_libs ${lib})
+
+            if(TARGET ${lib})
+              get_target_property(target_type ${lib} TYPE)
+              if(${target_type} STREQUAL "INTERFACE_LIBRARY")
+                get_target_property(lib_linker_libs ${lib} INTERFACE_LINK_LIBRARIES)
+              else()
+                get_target_property(lib_linker_libs ${lib} LINK_LIBRARIES)
+              endif()
+              if(NOT "${lib_linker_libs}" STREQUAL "lib_link_libs-NOTFOUND")
+                list(APPEND dep_stack ${lib_linker_libs})
+              endif()
+
+              corrosion_link_libraries(${PROJECT_NAME} ${lib})
+            endif()
+          endwhile()
+        endif()
       else()
         message(FATAL_ERROR "Only Rust projects are supported as external projects at this time")
       endif()
