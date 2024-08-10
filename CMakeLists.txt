@@ -154,11 +154,6 @@ configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR})
 # Compiler configuration
 ########################
 
-# force use of runtime CRT so that Rust <-> C++ linking doesn't fail
-if(MSVC)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-endif()
-
 include("${ROOT_PROJECT_DIR}/cmake/ConfigureCompileFlags.cmake")
 
 set(CMAKE_C_OUTPUT_EXTENSION_REPLACE 1)
