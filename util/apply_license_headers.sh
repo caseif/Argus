@@ -70,7 +70,7 @@ while read -r file; do
     output="${output:0:-1}"
     # finally, write it to disk!
     printf "$output" > $file
-done <<< $(find "./engine" "./test" "./util" -type f \( \( -iname "*.c" -or -iname "*.h" \
+done <<< $(find "./engine" "./external-bindings" "./test" "./util" -type f \( \( -iname "*.c" -or -iname "*.h" \
     -or -iname "*.cpp" -or -iname "*.hpp" -or -iname "*.rs" -and -not -iname "bindings.rs" \) \
     -and -not -path "*/target/*" \))
 

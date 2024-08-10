@@ -1,0 +1,13 @@
+[package]
+name = "spirv-cross-sys"
+version = "0.49.0"
+edition = "2021"
+
+[lib]
+name = "spirv_cross_sys"
+crate-type = ["rlib"]
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.69"
