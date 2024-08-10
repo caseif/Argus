@@ -22,11 +22,11 @@ use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{Resource, ResourceManager};
 use shadertools::glslang::bindings::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 use shadertools::shadertools::compile_glsl_to_spirv;
-use spirvcross::compiler::GlslCompiler;
-use spirvcross::Compiler;
+use spirv_cross_sys::*;
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::{mem, ptr};
+use std::{ffi, mem, ptr};
+use lowlevel_rustabi::util::cstr_to_str;
 
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
@@ -96,19 +96,19 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
 
     let have_gl_spirv = aglet_have_gl_version_4_1() && aglet_have_gl_arb_gl_spirv();
 
-    let (mut glsl_ver_major, mut glsl_ver_minor): (u32, u32) = (0, 0);
-
-    if !have_gl_spirv {
-        (glsl_ver_major, glsl_ver_minor) = if aglet_have_gl_version_4_6() {
-            (4, 6)
+    let glsl_ver = if !have_gl_spirv {
+        if aglet_have_gl_version_4_6() {
+            460
         } else if aglet_have_gl_version_4_3() {
-            (4, 3)
+            430
         } else if aglet_have_gl_version_4_1() {
-            (4, 1)
+            410
         } else {
-            (3, 3)
-        };
-    }
+            330
+        }
+    } else {
+        0
+    };
 
     for (stage, spirv_src) in spirv_shaders {
         //TODO
@@ -153,38 +153,87 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             //       "transpiling compiled SPIR-V to GLSL");
 
             let spv_words: &[u32] = unsafe { mem::transmute(spirv_src.as_slice()) };
-            let mut context = match spirvcross::Context::new() {
-                Ok(c) => c,
-                Err(e) => {
-                    panic!("Failed to create SPIRV-Cross GLSL compiler context: {e}");
-                }
-            };
-            let mut compiler = match GlslCompiler::new(&mut context, spv_words) {
-                Ok(c) => c,
-                Err(e) => {
-                    panic!("Failed to create SPIRV-Cross GLSL compiler: {e}");
-                }
-            };
+            let mut context: spvc_context = ptr::null_mut();
+            let ctx_res = unsafe { spvc_context_create(&mut context) };
+            if ctx_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to create SPIRV-Cross context: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) }
+                );
+            }
 
-            compiler = match compiler.version(glsl_ver_major, glsl_ver_minor) {
-                Ok(c) => c,
-                Err(e) => {
-                    panic!("Failed to configure version in SPIRV-Cross GLSL compiler");
-                }
+            let mut parsed_ir: spvc_parsed_ir = ptr::null_mut();
+            let parse_res = unsafe {
+                spvc_context_parse_spirv(
+                    context,
+                    spv_words.as_ptr(),
+                    spv_words.len(),
+                    &mut parsed_ir,
+                )
             };
+            if parse_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to parse SPIR-V words: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) }
+                );
+            }
 
-            let glsl_src_c = match compiler.raw_compile() {
-                Ok(s) => s,
-                Err(e) => {
-                    panic!("Failed to compile SPIR-V to GLSL: {e}")
-                }
+            let mut compiler: spvc_compiler = ptr::null_mut();
+            let compiler_res = unsafe {
+                spvc_context_create_compiler(
+                    context,
+                    SPVC_BACKEND_GLSL,
+                    parsed_ir,
+                    SPVC_CAPTURE_MODE_COPY,
+                    &mut compiler,
+                )
             };
+            if compiler_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to create SPIRV-Cross GLSL compiler: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
+                );
+            }
+
+            let mut compiler_options: spvc_compiler_options = ptr::null_mut();
+            let options_res = unsafe {
+                spvc_compiler_create_compiler_options(compiler, &mut compiler_options)
+            };
+            if options_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to create SPIRV-Cross compiler options: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
+                );
+            }
+
+            let set_ver_res = unsafe {
+                spvc_compiler_options_set_uint(
+                    compiler_options,
+                    SPVC_COMPILER_OPTION_GLSL_VERSION,
+                    glsl_ver,
+                )
+            };
+            if set_ver_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to set GLSL version for SPIRV-Cross compiler: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
+                );
+            }
+
+            let mut glsl_src_c: *const ffi::c_char = ptr::null_mut();
+            let compile_res = unsafe { spvc_compiler_compile(compiler, &mut glsl_src_c) };
+            if compile_res != SPVC_SUCCESS {
+                panic!(
+                    "Failed to transpile SPIR-V to GLSL: {}",
+                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
+                );
+            }
 
             //TODO
             //Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);
 
-            let glsl_src_len = glsl_src_c.to_bytes().len() as GLint;
-            glShaderSource(shader_handle, 1, &glsl_src_c.as_ptr(), &glsl_src_len);
+            let glsl_src_len = unsafe { ffi::CStr::from_ptr(glsl_src_c).count_bytes() as GLint };
+            glShaderSource(shader_handle, 1, &glsl_src_c, &glsl_src_len);
             glCompileShader(shader_handle);
         }
 
@@ -446,4 +495,9 @@ fn to_shadertools_stage(stage: ShaderStage) -> Stage {
         ShaderStage::Vertex => Stage::Vertex,
         ShaderStage::Fragment => Stage::Fragment,
     }
+}
+
+#[no_mangle]
+pub extern "C" fn link_program_2() {
+    link_program(&["asdf"]);
 }
