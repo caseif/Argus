@@ -323,9 +323,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
             MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
         )
         corrosion_set_env_vars("${PROJECT_NAME}" "GENERATED_SOURCES_PATH=${MODULE_GENERATED_DIR}")
-        if(MSVC AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-          corrosion_set_env_vars(${PROJECT_NAME} "CFLAGS=-MDd" "CXXFLAGS=-MDd")
-        endif()
         corrosion_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
         set(LIB_OUT_DIR "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
         set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
@@ -454,9 +451,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
         corrosion_import_crate(
             MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
         )
-        if(MSVC AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-          corrosion_set_env_vars(${PROJECT_NAME} "CFLAGS=-MDd" "CXXFLAGS=-MDd")
-        endif()
       else()
         message(FATAL_ERROR "Only Rust projects are supported as external projects at this time")
       endif()
