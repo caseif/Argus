@@ -16,9 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#[path = "./glslang/mod.rs"]
-mod glslang;
-
 use core::ptr;
 use libc::c_char;
 use std::alloc::{alloc, dealloc, Layout};
@@ -27,8 +24,7 @@ use std::convert::TryInto;
 use std::ffi::CStr;
 use std::mem::{size_of, size_of_val};
 use std::ptr::null;
-
-use glslang::bindings::*;
+use glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 
 #[repr(C)]
 struct SizedByteArray {
@@ -149,7 +145,7 @@ pub unsafe extern "C" fn transpile_glsl(
 ) -> *mut InteropShaderCompilationResult {
     let mut sources_map = HashMap::<Stage, String>::with_capacity(count.into());
     for i in 0..count {
-        let stage = *stages.offset(i as isize);
+        let stage: Stage = *stages.add(i);
         match CStr::from_ptr(*(glsl_sources.offset(i as isize) as *const *const c_char)).to_str() {
             Ok(src_str) => {
                 sources_map.insert(stage, src_str.to_owned());

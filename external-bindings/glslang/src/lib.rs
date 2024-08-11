@@ -16,13 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate bitmask;
-extern crate core;
-extern crate glsl;
-extern crate libc;
-pub extern crate glslang;
+pub mod bindings;
+pub mod wrapper;
 
-pub mod shadertools;
-
-#[cfg(feature = "c_abi")]
-pub mod c_wrapper;
+pub use wrapper::*;

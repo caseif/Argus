@@ -1,0 +1,13 @@
+[package]
+name = "glslang"
+version = "13.1.1"
+edition = "2021"
+
+[lib]
+name = "glslang"
+crate-type = ["rlib"]
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.69"

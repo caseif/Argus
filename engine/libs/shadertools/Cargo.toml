@@ -9,6 +9,7 @@ crate-type = ["rlib", "staticlib"]
 [dependencies]
 bitmask = "0.5"
 glsl = "6.0"
+glslang = { path = "../../../external-bindings/glslang" }
 libc = "0.2"
 
 [features]

@@ -20,13 +20,13 @@ use crate::argus::render_opengl_rust::state::RendererState;
 use crate::argus::render_opengl_rust::util::gl_util::*;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{Resource, ResourceManager};
-use shadertools::glslang::bindings::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 use shadertools::shadertools::compile_glsl_to_spirv;
-use spirv_cross_sys::*;
+use spirv_cross_sys::bindings::*;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
+use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
@@ -73,8 +73,8 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
                 (to_shadertools_stage(shader.get_stage()), shader.get_uid())
             })
             .collect(),
-        Client::Opengl,
-        TargetClientVersion::Opengl450,
+        Client::OpenGL,
+        TargetClientVersion::OpenGL450,
         TargetLanguageVersion::Spv1_0,
     ) {
         Ok(res) => res,

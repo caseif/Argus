@@ -16,9 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#[path = "./glslang/mod.rs"]
-mod glslang;
-
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ffi::CString;
@@ -26,7 +23,7 @@ use std::fmt;
 use std::fmt::Write;
 
 use glsl::{parser::*, syntax::*, visitor::*};
-use glslang::{bindings::*, *};
+use glslang::*;
 
 const LAYOUT_ID_LOCATION: &'static str = "location";
 const LAYOUT_ID_BINDING: &'static str = "binding";
@@ -144,9 +141,7 @@ pub fn compile_glsl_to_spirv(
     for glsl in &processed_glsl {
         let mut program = Program::create();
 
-        let src_c_str = CString::new(glsl.source.as_bytes()).unwrap();
-
-        let shader_messages = Messages::none();
+        let shader_messages = Messages::Default;
 
         glslang::initialize_process();
 
@@ -158,13 +153,13 @@ pub fn compile_glsl_to_spirv(
             target_language: TargetLanguage::Spv,
             target_language_version: spirv_version,
             /* Shader source code */
-            code: src_c_str.as_ptr(),
+            code: CString::new(glsl.source.as_bytes()).unwrap(),
             default_version: 0,
-            default_profile: ProfileBit::Core.into(),
+            default_profile: Profile::Core,
             force_default_version_and_profile: 0,
             forward_compatible: 0,
             messages: shader_messages,
-            resource: &DEFAULT_BUILT_IN_RESOURCE,
+            resource: DEFAULT_BUILT_IN_RESOURCE,
             callbacks: IncludeCallbacks {
                 include_system: None,
                 include_local: None,
@@ -195,7 +190,7 @@ pub fn compile_glsl_to_spirv(
 
         program.add_shader(shader);
 
-        let program_messages = Messages::none();
+        let program_messages = Messages::Default;
         program.map_io();
         if !program.link(program_messages) {
             println!("{}", program.get_info_log());
