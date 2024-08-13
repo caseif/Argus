@@ -328,8 +328,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
         set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
 
         # for some reason transitive linker dependencies don't get applied
-        # correctly specifically in MSVC debug builds, so we manually add them
-        # as dependencies here via Corrosion
+        # correctly specifically in MSVC builds, so we manually add them as
+        # dependencies here via Corrosion
         set(seen_libs "")
         set(dep_stack "${MODULE_LINKER_DEPS}")
         while(NOT "${dep_stack}" STREQUAL "")
@@ -346,6 +346,11 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
           list(APPEND seen_libs ${lib})
 
           if(TARGET ${lib})
+            get_target_property(target_imported ${lib} IMPORTED)
+            if(${target_imported})
+              continue()
+            endif()
+
             get_target_property(target_type ${lib} TYPE)
             if(${target_type} STREQUAL "INTERFACE_LIBRARY")
               get_target_property(lib_linker_libs ${lib} INTERFACE_LINK_LIBRARIES)
