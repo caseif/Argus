@@ -16,22 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::collections::HashMap;
+use lowlevel_rustabi::argus::lowlevel::Handle;
+use render_rustabi::argus::render::{ProcessedObjectMap, Scene2d};
+use std::collections::{BTreeMap, HashMap};
+use std::rc::Rc;
 
-use render_rustabi::argus::render::Scene;
-
-use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
-use crate::argus::render_opengl_rust::state::{RenderBucket, RenderBucketKey};
+use crate::argus::render_opengl_rust::state::{ProcessedObject, RenderBucket, RenderBucketKey};
 use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
 
 pub(crate) struct Scene2dState {
-    scene: Scene,
-    ubo: Option<GlBuffer>,
-    render_buckets: HashMap<RenderBucketKey, RenderBucket>,
+    pub(crate) scene: Scene2d,
+    pub(crate) ubo: Option<GlBuffer>,
+    pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket>,
+    pub(crate) processed_objs: ProcessedObjectMap<ProcessedObject>,
 }
 
-impl Scene2dState {
-    pub(crate) fn new(scene: Scene) -> Self {
-        Self { scene, ubo: None, render_buckets: HashMap::new() }
+impl<'a> Scene2dState {
+    pub(crate) fn new(scene: &Scene2d) -> Self {
+        Self {
+            scene: scene.clone(),
+            ubo: None,
+            render_buckets: BTreeMap::new(),
+            processed_objs: Default::default(),
+        }
     }
 }

@@ -26,6 +26,7 @@ use std::collections::HashMap;
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
+use render_rustabi::render_cabi::argus_material_t;
 use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 
 #[derive(Default)]
@@ -54,7 +55,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     let mut shader_uids: Vec<String> = Vec::new();
     let mut shader_sources: Vec<String> = Vec::new();
     for shader_res in shaders {
-        let shader = shader_res.get::<Shader>();
+        let shader: &Shader = shader_res.get();
         shader_uids.push(shader.get_uid());
         shader_sources.push(String::from_utf8_lossy(shader.get_source()).to_string());
     }
@@ -69,8 +70,11 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         &shaders
             .iter()
             .map(|shader_res| {
-                let shader = shader_res.get::<Shader>();
-                (to_shadertools_stage(shader.get_stage()), shader.get_uid())
+                let shader: &Shader = shader_res.get();
+                (
+                    to_shadertools_stage(shader.get_stage()),
+                    String::from_utf8(shader.get_source().to_vec()).unwrap(),
+                )
             })
             .collect(),
         Client::OpenGL,
@@ -280,12 +284,12 @@ pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
         let shader_res = match ResourceManager::get_instance().get_resource(shader_uid) {
             Ok(r) => r,
             Err(e) => {
-                panic!("Failed to load shader {shader_uid}");
+                panic!("Failed to load shader {shader_uid} ({:?})", e);
             }
         };
 
         shaders.push(shader_res);
-        let shader = shaders.last().unwrap().get::<Shader>();
+        let shader: &Shader = shaders.last().unwrap().get();
 
         if shader.get_stage() == ShaderStage::Vertex {
             have_vert = true;
@@ -435,14 +439,13 @@ pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
 }
 
 pub(crate) fn get_material_program<'a>(
-    state: &'a mut RendererState,
+    linked_programs: &'a mut HashMap<String, LinkedProgram>,
     material_res: &Resource,
 ) -> &'a LinkedProgram {
-    state
-        .linked_programs
+    linked_programs
         .entry(material_res.get_prototype().uid)
         .or_insert_with(|| {
-            let material = material_res.get::<Material>();
+            let material: Material = material_res.get_ffi();
             link_program(&material.get_shader_uids())
         })
 }
@@ -463,30 +466,21 @@ pub(crate) fn deinit_program(program: GlProgramHandle) {
     glDeleteProgram(program);
 }
 
-pub(crate) fn get_std_program(state: &mut RendererState) -> &LinkedProgram {
-    state
-        .std_program
-        .get_or_insert_with(|| link_program(&[SHADER_STD_VERT, SHADER_STD_FRAG]))
+pub(crate) fn get_std_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
+    storage.get_or_insert_with(|| link_program(&[SHADER_STD_VERT, SHADER_STD_FRAG]))
 }
 
-pub(crate) fn get_shadowmap_program(state: &mut RendererState) -> &LinkedProgram {
-    state
-        .shadowmap_program
-        .get_or_insert_with(|| link_program(&[SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG]))
+pub(crate) fn get_shadowmap_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
+    storage.get_or_insert_with(|| link_program(&[SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG]))
 }
 
-pub(crate) fn get_lighting_program(state: &mut RendererState) -> &LinkedProgram {
-    state
-        .lighting_program
-        .get_or_insert_with(|| link_program(&[SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG]))
+pub(crate) fn get_lighting_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
+    storage.get_or_insert_with(|| link_program(&[SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG]))
 }
 
-pub(crate) fn get_lightmap_composite_program(state: &mut RendererState) -> &LinkedProgram {
-    state.lighting_program.get_or_insert_with(|| {
-        link_program(&[
-            SHADER_LIGHTMAP_COMPOSITE_VERT,
-            SHADER_LIGHTMAP_COMPOSITE_FRAG,
-        ])
+pub(crate) fn get_lightmap_composite_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
+    storage.get_or_insert_with(|| {
+        link_program(&[SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG])
     })
 }
 

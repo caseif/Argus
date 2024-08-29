@@ -16,5 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) static RESOURCES_PACK: &[u8] = include_bytes!(
-    concat!(env!("GENERATED_SOURCES_PATH"), "/res/arp/resources_render_opengl_rust.arp"));
+pub(crate) mod object_proc_impl;
+pub(crate) mod scene_compiler;
+
+pub(crate) use object_proc_impl::*;
+pub(crate) use scene_compiler::*;

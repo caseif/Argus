@@ -17,33 +17,36 @@
  */
 
 use std::ffi;
-use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector2u};
+use lowlevel_rustabi::argus::lowlevel::{Handle, Vector2f, Vector2u};
 use resman_rustabi::argus::resman::Resource;
 use crate::argus::render_opengl_rust::util::gl_util::GlBufferHandle;
 
 pub(crate) struct ProcessedObject {
-    material_res: Resource,
-    atlas_stride: Vector2f,
-    z_index: u32,
-    light_opacity: f32,
+    pub(crate) obj_handle: Handle,
 
-    anim_frame: Vector2u,
+    pub(crate) material_res: Resource,
+    pub(crate) atlas_stride: Vector2f,
+    pub(crate) z_index: u32,
+    pub(crate) light_opacity: f32,
 
-    staging_buffer: GlBufferHandle,
-    staging_buffer_size: usize,
-    vertex_count: usize,
-    mapped_buffer: Option<*mut ffi::c_void>,
-    newly_created: bool,
-    visited: bool,
-    updated: bool,
-    anim_frame_updated: bool,
+    pub(crate) anim_frame: Vector2u,
+
+    pub(crate) staging_buffer: GlBufferHandle,
+    pub(crate) staging_buffer_size: usize,
+    pub(crate) vertex_count: usize,
+    pub(crate) mapped_buffer: Option<*mut ffi::c_void>,
+    pub(crate) newly_created: bool,
+    pub(crate) visited: bool,
+    pub(crate) updated: bool,
+    pub(crate) anim_frame_updated: bool,
 }
 
 impl ProcessedObject {
-    pub(crate) fn new(material_res: Resource, atlas_stride: Vector2f,
+    pub(crate) fn new(obj_handle: Handle, material_res: Resource, atlas_stride: Vector2f,
     z_index: u32, light_opacity: f32, staging_buffer: GlBufferHandle, staging_buffer_size: usize,
     vertex_count: usize, mapped_buffer: Option<*mut ffi::c_void>) -> Self {
         Self {
+            obj_handle,
             material_res,
             atlas_stride,
             z_index,

@@ -20,37 +20,37 @@ use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
 use crate::argus::render_opengl_rust::util::gl_util::{GlBufferHandle, GlTextureHandle};
 
 #[derive(Default)]
-struct ViewportBuffers {
-    ubo: Option<GlBuffer>,
+pub(crate) struct ViewportBuffers {
+    pub(crate) ubo: Option<GlBuffer>,
 
-    fb_primary: Option<GlBufferHandle>,
-    fb_secondary: Option<GlBufferHandle>,
-    fb_aux: Option<GlBufferHandle>,
-    fb_lightmap: Option<GlBufferHandle>,
+    pub(crate) fb_primary: Option<GlBufferHandle>,
+    pub(crate) fb_secondary: Option<GlBufferHandle>,
+    pub(crate) fb_aux: Option<GlBufferHandle>,
+    pub(crate) fb_lightmap: Option<GlBufferHandle>,
 
-    color_buf_primary: Option<GlTextureHandle>,
-    color_buf_secondary: Option<GlTextureHandle>,
+    pub(crate) color_buf_primary: Option<GlTextureHandle>,
+    pub(crate) color_buf_secondary: Option<GlTextureHandle>,
     // alias of either primary or secondary color buf depending on how many
     // ping-pongs took place
-    color_buf_front: Option<GlTextureHandle>,
+    pub(crate) color_buf_front: Option<GlTextureHandle>,
 
-    light_opac_map_buf: Option<GlTextureHandle>,
-    shadowmap_buffer: Option<GlBuffer>,
-    shadowmap_texture: Option<GlTextureHandle>,
-    lightmap_buf: Option<GlTextureHandle>,
+    pub(crate) light_opac_map_buf: Option<GlTextureHandle>,
+    pub(crate) shadowmap_buffer: Option<GlBuffer>,
+    pub(crate) shadowmap_texture: Option<GlTextureHandle>,
+    pub(crate) lightmap_buf: Option<GlTextureHandle>,
 }
 
 pub(crate) struct ViewportState {
-    viewport: AttachedViewport,
-    view_matrix: Matrix4x4,
-    view_matrix_dirty: bool,
-    buffers: ViewportBuffers,
+    pub(crate) viewport: AttachedViewport,
+    pub(crate) view_matrix: Matrix4x4,
+    pub(crate) view_matrix_dirty: bool,
+    pub(crate) buffers: ViewportBuffers,
 }
 
 impl ViewportState {
-    pub(crate) fn new(viewport: AttachedViewport) -> Self {
+    pub(crate) fn new(viewport: &AttachedViewport) -> Self {
         Self {
-            viewport,
+            viewport: viewport.clone(),
             view_matrix: Default::default(),
             view_matrix_dirty: true,
             buffers: Default::default(),

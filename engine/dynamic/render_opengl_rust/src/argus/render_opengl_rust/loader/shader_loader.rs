@@ -40,7 +40,6 @@ impl ResourceLoader for ShaderLoader {
         read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
         size: usize
     ) -> Result<*mut u8, ResourceError> {
-        println!("load_resource called!");
         let (shader_type, shader_stage) = match prototype.media_type.as_str() {
             RESOURCE_TYPE_SHADER_GLSL_VERT => (SHADER_TYPE_GLSL, ShaderStage::Vertex),
             RESOURCE_TYPE_SHADER_GLSL_FRAG => (SHADER_TYPE_GLSL, ShaderStage::Fragment),
@@ -70,13 +69,11 @@ impl ResourceLoader for ShaderLoader {
         prototype: ResourcePrototype,
         src_data: *mut u8,
     ) -> Result<*mut u8, ResourceError> {
-        println!("copy_resource called!");
         let shader: &Shader = unsafe { *src_data.cast() };
         Ok(Box::into_raw(Box::new(shader.copy())).cast())
     }
 
     fn unload_resource(&mut self, handle: WrappedResourceLoader, ptr: *mut u8) {
-        println!("unload_resource called!");
         unsafe { _ = Box::from_raw(ptr.cast::<Shader>()); }
     }
 }

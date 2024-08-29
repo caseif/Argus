@@ -26,7 +26,7 @@ use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
 use wm_rustabi::argus::wm::*;
 
-use crate::aglet::{AgletError, agletLoadCapabilities};
+use crate::aglet::{AgletError, agletLoad, agletLoadCapabilities};
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
 use crate::argus::render_opengl_rust::loader::ShaderLoader;
 use crate::argus::render_opengl_rust::resources::RESOURCES_PACK;
@@ -110,7 +110,7 @@ fn window_event_handler(event: &WindowEvent) {
         WindowEventType::Create => {
             // don't create a context if the window was immediately closed
             if !window.is_close_request_pending() {
-                let renderer = GlRenderer::new(window.clone());
+                let renderer = GlRenderer::new(&window);
                 RENDERERS.with_borrow_mut(|renderers| {
                     renderers.insert(window.get_id(), renderer)
                 });
@@ -130,7 +130,7 @@ fn window_event_handler(event: &WindowEvent) {
                 RENDERERS.with_borrow_mut(|renderers| {
                     let renderer = renderers.get_mut(&window.get_id())
                         .expect("Failed to get renderer");
-                    renderer.notify_window_resize(event.get_resolution());
+                    renderer.notify_window_resize(&event.get_resolution());
                 });
            }
         }
@@ -173,11 +173,9 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
 
     match stage {
         LifecycleStage::PreInit => {
-            println!("render_opengl_rust got PreInit event");
             register_render_backend(BACKEND_ID, Some(activate_opengl_backend));
         }
         LifecycleStage::Init => {
-            println!("render_opengl_rust got Init event");
             if !is_backend_active() {
                 return;
             }

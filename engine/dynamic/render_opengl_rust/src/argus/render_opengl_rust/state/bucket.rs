@@ -19,32 +19,53 @@
 use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
 use crate::argus::render_opengl_rust::util::gl_util::{GlArrayHandle, GlBufferHandle};
 
-use lowlevel_rustabi::argus::lowlevel::Vector2f;
+use lowlevel_rustabi::argus::lowlevel::{Handle, Vector2f, Vector2i};
 use resman_rustabi::argus::resman::Resource;
 
-use std::{ffi, ptr};
-use crate::argus::render_opengl_rust::state::ProcessedObject;
+use std::cmp::Ordering;
+use std::hash::Hash;
 
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub(crate) struct RenderBucketKey {
-    material_uid: String,
-    atlas_stride: Vector2f,
-    z_index: u32,
-    light_opacity: f32,
+    pub(crate) material_uid: String,
+    pub(crate) atlas_stride: Vector2i,
+    pub(crate) z_index: u32,
+    pub(crate) light_opacity: i32,
+}
+
+impl RenderBucketKey {
+    pub(crate) fn new(
+        material_uid: &str,
+        atlas_stride: &Vector2f,
+        z_index: u32,
+        light_opacity: f32
+    ) -> Self {
+        Self {
+            material_uid: material_uid.to_string(),
+            atlas_stride: Vector2i {
+                x: (atlas_stride.x * 1_000_000f32) as i32,
+                y: (atlas_stride.y * 1_000_000f32) as i32
+            },
+            z_index,
+            light_opacity: (light_opacity * 1_000_000f32) as i32,
+        }
+    }
 }
 
 pub(crate) struct RenderBucket {
-    material_res: Resource,
-    atlas_stride: Vector2f,
-    z_index: u32,
-    light_opacity: f32,
-    objects: Vec<ProcessedObject>,
-    vertex_buffer: Option<GlBufferHandle>,
-    anim_frame_buffer: Option<GlBufferHandle>,
-    anim_frame_buffer_staging: *mut ffi::c_void,
-    vertex_array: Option<GlArrayHandle>,
-    vertex_count: usize,
-    obj_ubo: Option<GlBuffer>,
-    needs_rebuild: bool,
+    pub(crate) material_uid: String,
+    pub(crate) material_res: Resource,
+    pub(crate) atlas_stride: Vector2f,
+    pub(crate) z_index: u32,
+    pub(crate) light_opacity: f32,
+    pub(crate) objects: Vec<Handle>,
+    pub(crate) vertex_buffer: Option<GlBufferHandle>,
+    pub(crate) anim_frame_buffer: Option<GlBufferHandle>,
+    pub(crate) anim_frame_buffer_staging: Vec<u8>,
+    pub(crate) vertex_array: Option<GlArrayHandle>,
+    pub(crate) vertex_count: usize,
+    pub(crate) obj_ubo: Option<GlBuffer>,
+    pub(crate) needs_rebuild: bool,
 }
 
 impl RenderBucket {
@@ -54,7 +75,10 @@ impl RenderBucket {
         z_index: u32,
         light_opacity: f32,
     ) -> Self {
+        let material_uid = material_res.get_prototype().uid;
+
         Self {
+            material_uid,
             material_res,
             atlas_stride,
             z_index,
@@ -62,11 +86,26 @@ impl RenderBucket {
             objects: Default::default(),
             vertex_buffer: Default::default(),
             anim_frame_buffer: Default::default(),
-            anim_frame_buffer_staging: ptr::null_mut(),
+            anim_frame_buffer_staging: Vec::new(),
             vertex_array: Default::default(),
             vertex_count: 0,
             obj_ubo: Default::default(),
             needs_rebuild: true,
         }
+    }
+}
+
+impl PartialOrd<Self> for RenderBucketKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for RenderBucketKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.z_index.cmp(&other.z_index)
+            .then(self.light_opacity.cmp(&other.light_opacity))
+            .then(self.atlas_stride.cmp(&other.atlas_stride))
+            .then(self.material_uid.cmp(&other.material_uid))
     }
 }

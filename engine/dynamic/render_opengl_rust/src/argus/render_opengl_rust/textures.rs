@@ -24,9 +24,10 @@ use crate::aglet::*;
 use crate::argus::render_opengl_rust::state::RendererState;
 use crate::argus::render_opengl_rust::util::gl_util::*;
 
-pub(crate) fn get_or_load_texture(mut state: RendererState, material_res: Resource)
-    -> Result<(), ResourceError>{
-    let texture_uid = material_res.get::<Material>().get_texture_uid();
+pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Resource)
+    -> Result<(), ResourceError> {
+    let mat: Material = material_res.get_ffi();
+    let texture_uid = mat.get_texture_uid();
 
     if let Some(tex) = state.prepared_textures.get(texture_uid) {
         state.material_textures.insert(
@@ -37,7 +38,7 @@ pub(crate) fn get_or_load_texture(mut state: RendererState, material_res: Resour
     }
 
     let texture_res = ResourceManager::get_instance().get_resource(texture_uid)?;
-    let texture = texture_res.get::<TextureData>();
+    let texture: TextureData = texture_res.get_ffi();
 
     let width = texture.get_width() as i32;
     let height = texture.get_height() as i32;

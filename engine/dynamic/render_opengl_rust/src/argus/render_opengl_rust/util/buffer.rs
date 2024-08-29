@@ -22,7 +22,6 @@ use crate::argus::render_opengl_rust::util::gl_util::*;
 use std::{mem, ptr, slice};
 
 pub(crate) struct GlBuffer {
-    valid: bool,
     size: usize,
     target: GLenum,
     handle: GlBufferHandle,
@@ -80,7 +79,6 @@ impl GlBuffer {
         }
 
         Self {
-            valid: true,
             size,
             target,
             handle,
@@ -90,24 +88,11 @@ impl GlBuffer {
         }
     }
 
-    pub(crate) fn destroy(&mut self) {
-        if !self.valid {
-            return;
-        }
-
-        self.unmap();
-        glDeleteBuffers(0, &self.handle);
-
-        self.handle = 0;
-        self.valid = false;
-    }
-
     pub(crate) fn get_handle(&self) -> GlBufferHandle {
         self.handle
     }
 
     pub(crate) fn map_write(&mut self) {
-        assert!(self.valid);
         assert!(self.allow_mapping);
 
         if self.persistent {
@@ -125,15 +110,14 @@ impl GlBuffer {
         }
     }
 
-    pub(crate) fn unmap(&mut self) {
-        assert!(self.valid);
+    pub(crate) fn unmap(&mut self, force: bool) {
         assert!(self.allow_mapping);
 
-        if self.persistent {
+        if self.persistent && !force {
             return;
         }
 
-        assert!(self.mapped.is_none());
+        assert!(self.mapped.is_some());
 
         if aglet_have_gl_arb_direct_state_access() {
             glUnmapNamedBuffer(self.handle);
@@ -149,7 +133,6 @@ impl GlBuffer {
     pub(crate) fn write_vals<T>(&self, src: &[T], offset: usize) {
         let len = mem::size_of_val(src);
 
-        assert!(self.valid);
         assert!(offset + len <= self.size);
 
         match self.mapped {
@@ -252,5 +235,17 @@ impl GlBuffer {
         if !aglet_have_gl_arb_direct_state_access() {
             glBindBuffer(self.target, 0);
         }
+    }
+}
+
+impl Drop for GlBuffer {
+    fn drop(&mut self) {
+        if self.allow_mapping {
+            self.unmap(true);
+        }
+
+        glDeleteBuffers(0, &self.handle);
+
+        self.handle = 0;
     }
 }
