@@ -42,6 +42,8 @@ typedef const void *argus_scene_2d_const_t;
 
 argus_scene_2d_t argus_scene_2d_create(const char *id);
 
+const char *argus_scene_2d_get_id(argus_scene_2d_const_t scene);
+
 bool argus_scene_2d_is_lighting_enabled(argus_scene_2d_const_t scene);
 
 void argus_scene_2d_set_lighting_enabled(argus_scene_2d_t scene, bool enabled);
@@ -64,7 +66,7 @@ void argus_scene_2d_get_lights(argus_scene_2d_t scene, argus_light_2d_t *dest, s
 
 size_t argus_scene_2d_get_lights_count_for_render(argus_scene_2d_t scene);
 
-void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count);
+void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_const_t *dest, size_t count);
 
 ArgusHandle argus_scene_2d_add_light(argus_scene_2d_t scene, ArgusLight2dType type, bool is_occludable,
         argus_vector_3f_t color, ArgusLight2dParameters params, ArgusTransform2d initial_transform);

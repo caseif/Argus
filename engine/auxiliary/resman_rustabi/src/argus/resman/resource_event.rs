@@ -46,7 +46,7 @@ impl ResourceEvent {
     }
 
     pub fn get_prototype(&self) -> ResourcePrototype {
-        unsafe { unwrap_resource_prototype(&argus_resource_event_get_prototype(self.handle)) }
+        unsafe { unwrap_resource_prototype(argus_resource_event_get_prototype(self.handle)) }
     }
 
     pub fn get_resource(&mut self) -> Resource {

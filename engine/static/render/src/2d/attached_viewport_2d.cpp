@@ -20,6 +20,7 @@
 
 #include "argus/render/2d/attached_viewport_2d.hpp"
 #include "argus/render/common/attached_viewport.hpp"
+#include "internal/render/common/attached_viewport.hpp"
 #include "internal/render/pimpl/2d/attached_viewport_2d.hpp"
 
 namespace argus {
@@ -27,7 +28,7 @@ namespace argus {
 
     AttachedViewport2D::AttachedViewport2D(const Viewport &viewport, Camera2D &camera, uint32_t z_index):
         AttachedViewport(SceneType::TwoD),
-        m_pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(viewport, camera, z_index)) {
+        m_pimpl(&g_pimpl_pool.construct<pimpl_AttachedViewport2D>(g_viewport_next_id++, viewport, camera, z_index)) {
     }
 
     AttachedViewport2D::AttachedViewport2D(AttachedViewport2D &&rhs) noexcept:

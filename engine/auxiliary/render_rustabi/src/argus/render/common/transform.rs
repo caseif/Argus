@@ -17,7 +17,7 @@
  */
 use std::ptr;
 use argus_macros::ffi_repr;
-use lowlevel_rustabi::argus::lowlevel::Vector2f;
+use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector4f};
 
 use crate::render_cabi::*;
 
@@ -25,16 +25,16 @@ use crate::render_cabi::*;
 #[ffi_repr(ArgusTransform2d)]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Transform2d {
-    translation: Vector2f,
-    scale: Vector2f,
-    rotation: f32,
+    pub translation: Vector2f,
+    pub scale: Vector2f,
+    pub rotation: f32,
 }
 
 #[repr(C)]
 #[ffi_repr(argus_matrix_4x4_t)]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Matrix4x4 {
-    cells: [f32; 16],
+    pub cells: [f32; 16],
 }
 
 impl Transform2d {
@@ -64,7 +64,57 @@ impl Transform2d {
 }
 
 impl Matrix4x4 {
-    pub fn at(&self, row: usize, col: usize) -> f32 {
+    pub fn from_row_major(vals: [f32; 16]) -> Self {
+        Self { cells: [
+            vals[0], vals[4], vals[8], vals[12],
+            vals[1], vals[5], vals[9], vals[13],
+            vals[2], vals[6], vals[10], vals[14],
+            vals[3], vals[7], vals[11], vals[15],
+        ] }
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> f32 {
         self.cells[col * 4 + row]
+    }
+
+    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut f32 {
+        &mut self.cells[col * 4 + row]
+    }
+
+    pub fn multiply_matrix(&self, other: Self) -> Self {
+        let mut res: [f32; 16] = Default::default();
+
+        // naive implementation
+        for i in 0..4 {
+            for j in 0..4 {
+                res[j * 4 + i] = 0.0;
+                for k in 0..4 {
+                    res[j * 4 + i] += self.get(i, k) * other.get(k, j);
+                }
+            }
+        }
+
+        Self { cells: res }
+    }
+
+    pub fn multiply_vector(&self, vector: Vector4f) -> Vector4f {
+        Vector4f {
+            x: self.get(0, 0) * vector.x +
+                self.get(0, 1) * vector.y +
+                self.get(0, 2) * vector.z +
+                self.get(0, 3) * vector.w,
+            y: self.get(1, 0) * vector.x +
+                self.get(1, 1) * vector.y +
+                self.get(1, 2) * vector.z +
+                self.get(1, 3) * vector.w,
+            z: self.get(2, 0) * vector.x +
+                self.get(2, 1) * vector.y +
+                self.get(2, 2) * vector.z +
+                self.get(2, 3) * vector.w,
+            w: self.get(3, 0) * vector.x +
+                self.get(3, 1) * vector.y +
+                self.get(3, 2) * vector.z +
+                self.get(3, 3) * vector.w
+        }
     }
 }

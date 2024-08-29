@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::ptr;
 use crate::argus::render::{AttachedViewport, AttachedViewport2d, Camera2d, Viewport};
 use crate::render_cabi::*;
 use lowlevel_rustabi::util::str_to_cstring;
@@ -27,6 +27,10 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    pub fn of(handle: argus_canvas_t) -> Self {
+        Self { handle }
+    }
+    
     pub fn get_window(&self) -> Window {
         unsafe { Window::of(argus_canvas_get_window(self.handle)) }
     }
@@ -36,6 +40,7 @@ impl Canvas {
             let count = argus_canvas_get_viewports_2d_count(self.handle);
 
             let mut viewport_handles: Vec<argus_attached_viewport_2d_t> = Vec::with_capacity(count);
+            viewport_handles.resize(count, ptr::null_mut());
             argus_canvas_get_viewports_2d(self.handle, viewport_handles.as_mut_ptr(), count);
 
             viewport_handles

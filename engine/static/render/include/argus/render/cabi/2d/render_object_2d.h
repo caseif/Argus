@@ -44,7 +44,8 @@ const char *argus_render_object_2d_get_material(argus_render_object_2d_const_t o
 
 size_t argus_render_object_2d_get_primitives_count(argus_render_object_2d_const_t obj);
 
-//TODO: get_primitives (it requires heap allocation and isn't used outside this module)
+void argus_render_object_2d_get_primitives(argus_render_object_2d_const_t obj,
+        ArgusRenderPrimitive2d *buf, size_t count);
 
 argus_vector_2f_t argus_render_object_2d_get_anchor_point(argus_render_object_2d_const_t obj);
 

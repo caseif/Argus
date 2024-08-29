@@ -28,12 +28,14 @@
 namespace argus {
     struct pimpl_AttachedViewport {
       protected:
-        pimpl_AttachedViewport(const Viewport &viewport, uint32_t z_index):
+        pimpl_AttachedViewport(uint32_t id, const Viewport &viewport, uint32_t z_index):
+            id(id),
             viewport(viewport),
             z_index(z_index) {
         }
 
       public:
+        const uint32_t id;
         const Viewport viewport;
         const uint32_t z_index;
 

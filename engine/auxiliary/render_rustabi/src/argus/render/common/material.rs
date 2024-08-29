@@ -17,18 +17,21 @@
  */
 use lowlevel_rustabi::util::cstr_to_str;
 use std::ffi::c_char;
-
+use std::ptr;
+use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::render_cabi::*;
 
 pub struct Material {
     handle: argus_material_t,
 }
 
-impl Material {
-    pub fn of(handle: argus_material_t) -> Self {
+impl FfiWrapper for Material {
+    fn of(handle: argus_material_t) -> Self {
         Self { handle }
     }
+}
 
+impl Material {
     pub fn get_texture_uid(&self) -> &str {
         unsafe { cstr_to_str(argus_material_get_texture_uid(self.handle)) }
     }
@@ -37,7 +40,8 @@ impl Material {
         unsafe {
             let count = argus_material_get_shader_uids_count(self.handle);
 
-            let mut cstrs: Vec<*const c_char> = Vec::new();
+            let mut cstrs: Vec<*const c_char> = Vec::with_capacity(count);
+            cstrs.resize(count, ptr::null());
             argus_material_get_shader_uids(self.handle, cstrs.as_mut_ptr(), count);
 
             cstrs.into_iter().map(|s| cstr_to_str(s)).collect()

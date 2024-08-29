@@ -25,43 +25,53 @@ use crate::render_cabi::*;
 
 type ProcessedRenderObject2d = argus_processed_render_object_2d_t;
 
-type ProcessRenderObject2dFn = fn(obj: RenderObject2d, transform: Matrix4x4) -> *mut u8;
+type ProcessRenderObject2dFn = fn(
+    obj: &mut RenderObject2d,
+    transform: &Matrix4x4,
+    extra: *mut c_void
+) -> argus_processed_render_object_2d_t;
 type UpdateRenderObject2dFn = fn(
-    obj: RenderObject2d,
+    obj: &mut RenderObject2d,
     proc_obj: ProcessedRenderObject2d,
-    transform: Matrix4x4,
+    transform: &Matrix4x4,
     is_transform_dirty: bool,
+    extra: *mut c_void,
 );
 
 #[repr(C)]
 #[ffi_repr(ArgusProcessedObjectMap)]
-struct FfiProcessedObjectMap {
+#[derive(Clone)]
+pub struct FfiProcessedObjectMap {
     count: usize,
     capacity: usize,
     keys: *const Handle,
     values: *const ProcessedRenderObject2d,
 }
 
-pub struct ProcessedObjectMap {
-    ffi_map: FfiProcessedObjectMap,
-    rust_map: HashMap<Handle, ProcessedRenderObject2d>,
+pub struct ProcessedObjectMap<T> {
+    pub ffi_map: FfiProcessedObjectMap,
+    pub rust_map: HashMap<Handle, *mut T>,
 }
 
-struct ObjProcFns {
+struct ObjProcContext {
     process_new_fn: ProcessRenderObject2dFn,
     update_fn: UpdateRenderObject2dFn,
+    extra: *mut c_void,
 }
 
 unsafe extern "C" fn process_object_proxy(
     obj: argus_render_object_2d_const_t,
     transform: argus_matrix_4x4_t,
-    extra: *mut c_void
+    context_ptr: *mut c_void
 ) -> argus_processed_render_object_2d_t {
-    let fns: &ObjProcFns = *extra.cast();
+    let context: &ObjProcContext = &*context_ptr.cast();
 
-    (fns.process_new_fn)(
-        RenderObject2d::of(obj.cast_mut()),
-        transform.into()
+    let mut obj = RenderObject2d::of(obj.cast_mut());
+    let mat = transform.into();
+    (context.process_new_fn)(
+        &mut obj,
+        &mat,
+        context.extra,
     ).cast()
 }
 
@@ -70,44 +80,55 @@ unsafe extern "C" fn update_object_proxy(
     proc_obj: argus_processed_render_object_2d_t,
     transform: argus_matrix_4x4_t,
     is_transform_dirty: bool,
-    extra: *mut c_void
+    context_ptr: *mut c_void,
 ) {
-    let fns: &ObjProcFns = *extra.cast();
+    let context: &ObjProcContext = &*context_ptr.cast();
 
-    (fns.update_fn)(
-        RenderObject2d::of(obj.cast_mut()),
-        proc_obj.into(),
-        transform.into(),
-        is_transform_dirty
+    let mut obj = RenderObject2d::of(obj.cast_mut());
+    let tfm = transform.into();
+    (context.update_fn)(
+        &mut obj,
+        proc_obj,
+        &tfm,
+        is_transform_dirty,
+        context.extra,
     );
 }
 
 pub fn process_objects_2d(
-    scene: Scene2d,
-    obj_map: &mut ProcessedObjectMap,
+    scene: &Scene2d,
+    obj_map: &mut FfiProcessedObjectMap,
     process_new_fn: ProcessRenderObject2dFn,
     update_fn: UpdateRenderObject2dFn,
+    extra: *mut c_void,
 ) {
     unsafe {
-        let mut fns = ObjProcFns {
+        let mut context = ObjProcContext {
             process_new_fn,
             update_fn,
+            extra,
         };
 
         argus_process_objects_2d(
             scene.get_ffi_handle(),
-            <&mut ArgusProcessedObjectMap>::from(&mut obj_map.ffi_map),
+            <&mut ArgusProcessedObjectMap>::from(obj_map),
             Some(process_object_proxy),
             Some(update_object_proxy),
-            ptr::addr_of_mut!(fns).cast(),
+            ptr::addr_of_mut!(context).cast(),
         );
-
-        obj_map.rebuild();
     }
 }
 
-impl ProcessedObjectMap {
-    fn rebuild(&mut self) {
+impl<'a, T> ProcessedObjectMap<T> {
+    pub fn get(&self, handle: &Handle) -> &'a T {
+        unsafe { &**self.rust_map.get(handle).unwrap() }
+    }
+
+    pub fn get_mut(&mut self, handle: &Handle) -> &'a mut T {
+        unsafe { &mut **self.rust_map.get_mut(handle).unwrap() }
+    }
+
+    pub fn rebuild(&mut self) {
         unsafe {
             self.rust_map.clear();
             if self.ffi_map.count > self.rust_map.capacity() {
@@ -118,12 +139,18 @@ impl ProcessedObjectMap {
                 let k = self.ffi_map.keys.add(i);
                 let v = self.ffi_map.values.add(i);
 
-                self.rust_map.insert(*k, *v);
+                self.rust_map.insert(*k, *v.cast());
             }
         }
     }
 
-    pub fn new() -> Self {
+    pub fn free(&mut self) {
+        unsafe { argus_processed_object_map_free(ptr::addr_of_mut!(self.ffi_map).cast()); }
+    }
+}
+
+impl<T> Default for ProcessedObjectMap<T> {
+    fn default() -> Self {
         ProcessedObjectMap {
             ffi_map: FfiProcessedObjectMap {
                 count: 0,
@@ -134,14 +161,16 @@ impl ProcessedObjectMap {
             rust_map: HashMap::new(),
         }
     }
+}
 
-    pub fn free(&mut self) {
-        unsafe { argus_processed_object_map_free(ptr::addr_of_mut!(self.ffi_map).cast()); }
+impl<'a, T> From<&'a ProcessedObjectMap<T>> for &'a HashMap<Handle, *mut T> {
+    fn from(value: &'a ProcessedObjectMap<T>) -> Self {
+        &value.rust_map
     }
 }
 
-impl<'a> Into<&'a HashMap<Handle, ProcessedRenderObject2d>> for &'a ProcessedObjectMap {
-    fn into(self) -> &'a HashMap<Handle, ProcessedRenderObject2d> {
-        &self.rust_map
+impl<'a, T> From<&'a mut ProcessedObjectMap<T>> for &'a mut HashMap<Handle, *mut T> {
+    fn from(value: &'a mut ProcessedObjectMap<T>) -> Self {
+        &mut value.rust_map
     }
 }

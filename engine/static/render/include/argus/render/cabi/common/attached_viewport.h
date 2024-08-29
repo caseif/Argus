@@ -33,6 +33,8 @@ typedef const void *argus_attached_viewport_const_t;
 
 ArgusSceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t viewport);
 
+uint32_t argus_attached_viewport_get_id(argus_attached_viewport_const_t viewport);
+
 ArgusViewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport);
 
 uint32_t argus_attached_viewport_get_z_index(argus_attached_viewport_const_t viewport);

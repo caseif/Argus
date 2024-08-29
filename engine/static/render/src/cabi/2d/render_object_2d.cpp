@@ -18,17 +18,23 @@
 
 #include "argus/render/cabi/2d/render_group_2d.h"
 #include "argus/render/cabi/2d/render_object_2d.h"
+#include "argus/render/cabi/2d/render_prim_2d.h"
 #include "internal/render/cabi/common/transform.hpp"
-
 
 #include "argus/lowlevel/cabi/handle.h"
 #include "argus/lowlevel/cabi/math/vector.h"
 #include "internal/lowlevel/cabi/handle.hpp"
 
+#include "argus/core/engine.hpp"
+
 #include "argus/render/2d/render_object_2d.hpp"
 #include "argus/render/2d/render_prim_2d.hpp"
 
 #include "argus/lowlevel/math/vector.hpp"
+
+#include <algorithm>
+
+#include <cstddef>
 
 static inline argus::RenderObject2D &_as_ref(argus_render_object_2d_t obj) {
     return *reinterpret_cast<argus::RenderObject2D *>(obj);
@@ -58,6 +64,18 @@ const char *argus_render_object_2d_get_material(argus_render_object_2d_const_t o
 
 size_t argus_render_object_2d_get_primitives_count(argus_render_object_2d_const_t obj) {
     return _as_ref(obj).get_primitives().size();
+}
+
+void argus_render_object_2d_get_primitives(argus_render_object_2d_const_t obj,
+        ArgusRenderPrimitive2d *buf, size_t count) {
+    auto &prims = _as_ref(obj).get_primitives();
+    affirm_precond(count == prims.size(), "argus_render_object_2d_get_primitives called with wrong count parameter");
+    std::transform(prims.begin(), prims.end(), buf, [](const auto &prim) {
+        return ArgusRenderPrimitive2d {
+            reinterpret_cast<const ArgusVertex2d *>(prim.get_vertices().data()),
+            prim.get_vertex_count()
+        };
+    });
 }
 
 argus_vector_2f_t argus_render_object_2d_get_anchor_point(argus_render_object_2d_const_t obj) {

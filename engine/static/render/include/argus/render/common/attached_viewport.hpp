@@ -22,6 +22,7 @@
 
 #include "argus/render/common/scene.hpp"
 #include "argus/render/common/viewport.hpp"
+#include "argus/lowlevel/handle.hpp"
 
 #include <string>
 #include <vector>
@@ -48,6 +49,8 @@ namespace argus {
         AttachedViewport(AttachedViewport &&) = delete;
 
         virtual ~AttachedViewport(void) = 0;
+
+        [[nodiscard]] uint32_t get_id(void) const;
 
         [[nodiscard]] Viewport get_viewport(void) const;
 

@@ -43,7 +43,11 @@ void main() {
 
     vec3 light_sum = vec3(scene.AmbientLightColor.rgb * scene.AmbientLightLevel);
 
-    for (int i = 0; i < scene.LightCount; i++) {
+    for (int i = 0; i < LIGHTS_MAX; i++) {
+        if (i >= scene.LightCount) {
+            break;
+        }
+
         Light2D light = scene.Lights[i];
         vec2 light_pos = light.position.xy;
 

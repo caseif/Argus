@@ -21,6 +21,7 @@ use std::{ptr, slice};
 use lowlevel_rustabi::util::{cstr_to_string, str_to_cstring};
 
 use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
+use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 
 pub struct Shader {
     handle: argus_shader_t,
@@ -37,11 +38,13 @@ pub enum ShaderStage {
     Fragment = ARGUS_SHADER_STAGE_FRAGMENT,
 }
 
-impl Shader {
-    pub(crate) fn of(handle: argus_shader_t) -> Self {
+impl FfiWrapper for Shader {
+    fn of(handle: argus_shader_t) -> Self {
         Self { handle }
     }
+}
 
+impl Shader {
     pub(crate) fn get_handle(&self) -> argus_shader_const_t {
         self.handle
     }
@@ -61,7 +64,7 @@ impl Shader {
     }
 
     pub fn copy(&self) -> Self {
-        unsafe { Self { handle: argus_shader_copy(self.handle) } }
+        unsafe { Self::of(argus_shader_copy(self.handle)) }
     }
 
     pub fn destroy(&mut self) {

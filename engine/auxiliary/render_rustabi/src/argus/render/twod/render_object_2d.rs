@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::mem;
+use std::{mem, slice};
 
 use lowlevel_rustabi::argus::lowlevel::{Handle, ValueAndDirtyFlag, Vector2f, Vector2u};
 use lowlevel_rustabi::util::cstr_to_str;
 
-use crate::argus::render::{RenderGroup2d, Scene2d};
+use crate::argus::render::{RenderGroup2d, RenderPrimitive2d, Scene2d};
 use crate::render_cabi::*;
 
 pub struct RenderObject2d {
@@ -49,8 +49,19 @@ impl RenderObject2d {
         unsafe { cstr_to_str(argus_render_object_2d_get_material(self.handle)) }
     }
 
-    pub fn get_primitives_count(&self) -> usize {
-        unsafe { argus_render_object_2d_get_primitives_count(self.handle) }
+    pub fn get_primitives(&self) -> Vec<RenderPrimitive2d> {
+        unsafe {
+            let count = argus_render_object_2d_get_primitives_count(self.handle);
+            let mut buf: Vec<ArgusRenderPrimitive2d> = Vec::with_capacity(count);
+            buf.resize(count, mem::zeroed());
+            argus_render_object_2d_get_primitives(self.handle, buf.as_mut_ptr(), count);
+            buf.into_iter()
+                .map(|prim| RenderPrimitive2d {
+                    vertices: slice::from_raw_parts(prim.vertices.cast(), prim.vertex_count)
+                        .to_vec(),
+                })
+                .collect()
+        }
     }
 
     pub fn get_anchor_point(&self) -> Vector2f {

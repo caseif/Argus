@@ -131,12 +131,7 @@ pub fn compile_glsl_to_spirv(
 ) -> Result<CompiledShaderSet, GlslCompileError> {
     let mut res = HashMap::<Stage, Vec<u8>>::with_capacity(glsl_sources.len());
 
-    let processed_glsl = match process_glsl(glsl_sources) {
-        Ok(v) => v,
-        Err(e) => {
-            return Err(e);
-        }
-    };
+    let processed_glsl = process_glsl(glsl_sources)?;
 
     for glsl in &processed_glsl {
         let mut program = Program::create();
@@ -145,7 +140,7 @@ pub fn compile_glsl_to_spirv(
 
         glslang::initialize_process();
 
-        let input = &Input {
+        let input = Input {
             language: Source::Glsl,
             stage: glsl.stage,
             client,
@@ -153,7 +148,7 @@ pub fn compile_glsl_to_spirv(
             target_language: TargetLanguage::Spv,
             target_language_version: spirv_version,
             /* Shader source code */
-            code: CString::new(glsl.source.as_bytes()).unwrap(),
+            code: glsl.source.clone(),
             default_version: 0,
             default_profile: Profile::Core,
             force_default_version_and_profile: 0,
@@ -170,21 +165,19 @@ pub fn compile_glsl_to_spirv(
 
         let mut shader = Shader::create(input);
 
-        if !shader.preprocess(input) {
+        if !shader.preprocess() {
             println!("{}", shader.get_info_log());
             println!("{}", shader.get_info_debug_log());
             return Err(GlslCompileError {
-                message: "Failed to preprocess shader for stage ".to_owned()
-                    + &(glsl.stage as i32).to_string(),
+                message: format!("Failed to preprocess shader for stage {:?}", glsl.stage),
             });
         }
 
-        if !shader.parse(input) {
+        if !shader.parse() {
             println!("{}", shader.get_info_log());
             println!("{}", shader.get_info_debug_log());
             return Err(GlslCompileError {
-                message: "Failed to parse shader for stage ".to_owned()
-                    + &(glsl.stage as i32).to_string(),
+                message: format!("Failed to parse shader for stage {:?}", glsl.stage),
             });
         }
 

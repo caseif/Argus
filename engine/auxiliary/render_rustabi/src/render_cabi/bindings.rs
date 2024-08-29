@@ -101,7 +101,7 @@ pub type argus_scene_2d_t = *mut ::std::os::raw::c_void;
 pub type argus_scene_2d_const_t = *const ::std::os::raw::c_void;
 pub type argus_attached_viewport_2d_t = *mut ::std::os::raw::c_void;
 pub type argus_attached_viewport_2d_const_t = *const ::std::os::raw::c_void;
-pub type argus_material_t = *const ::std::os::raw::c_void;
+pub type argus_material_t = *mut ::std::os::raw::c_void;
 pub const k_shader_type_glsl: &[u8; 5] = b"glsl\0";
 pub const k_shader_type_spirv: &[u8; 6] = b"spirv\0";
 pub type argus_shader_t = *mut ::std::os::raw::c_void;
@@ -468,7 +468,7 @@ pub struct glslang_spv_options_s {
     pub compile_only: bool,
 }
 pub type glslang_spv_options_t = glslang_spv_options_s;
-pub type argus_texture_data_t = *const ::std::os::raw::c_void;
+pub type argus_texture_data_t = *mut ::std::os::raw::c_void;
 #[repr(C)]
 pub struct ArgusVertex2d {
     pub position: argus_vector_2f_t,
@@ -538,6 +538,7 @@ extern "C" {
     pub fn argus_attached_viewport_get_type(
         viewport: argus_attached_viewport_const_t,
     ) -> ArgusSceneType;
+    pub fn argus_attached_viewport_get_id(viewport: argus_attached_viewport_const_t) -> u32;
     pub fn argus_attached_viewport_get_viewport(
         viewport: argus_attached_viewport_const_t,
     ) -> ArgusViewport;
@@ -874,6 +875,7 @@ extern "C" {
     );
     pub fn argus_render_group_2d_copy(group: argus_render_group_2d_t) -> argus_render_group_2d_t;
     pub fn argus_scene_2d_create(id: *const ::std::os::raw::c_char) -> argus_scene_2d_t;
+    pub fn argus_scene_2d_get_id(scene: argus_scene_2d_const_t) -> *const ::std::os::raw::c_char;
     pub fn argus_scene_2d_is_lighting_enabled(scene: argus_scene_2d_const_t) -> bool;
     pub fn argus_scene_2d_set_lighting_enabled(scene: argus_scene_2d_t, enabled: bool);
     pub fn argus_scene_2d_peek_ambient_light_level(scene: argus_scene_2d_const_t) -> f32;
@@ -970,6 +972,11 @@ extern "C" {
     pub fn argus_render_object_2d_get_primitives_count(
         obj: argus_render_object_2d_const_t,
     ) -> usize;
+    pub fn argus_render_object_2d_get_primitives(
+        obj: argus_render_object_2d_const_t,
+        buf: *mut ArgusRenderPrimitive2d,
+        count: usize,
+    );
     pub fn argus_render_object_2d_get_anchor_point(
         obj: argus_render_object_2d_const_t,
     ) -> argus_vector_2f_t;

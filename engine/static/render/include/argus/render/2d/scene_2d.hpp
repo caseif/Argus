@@ -74,6 +74,8 @@ namespace argus {
 
         [[nodiscard]] pimpl_Scene *get_pimpl(void) const override;
 
+        [[nodiscard]] const std::string &get_id(void) const;
+
         [[nodiscard]] bool is_lighting_enabled(void) const;
 
         void set_lighting_enabled(bool enabled);

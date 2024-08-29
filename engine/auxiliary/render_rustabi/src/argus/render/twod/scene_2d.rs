@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::ffi::CStr;
+use std::ptr;
 use lowlevel_rustabi::argus::lowlevel::{Handle, ValueAndDirtyFlag, Vector2f, Vector3f};
 use lowlevel_rustabi::util::str_to_cstring;
 use crate::argus::render::*;
 use crate::render_cabi::*;
 
+#[derive(Clone)]
 pub struct Scene2d {
     handle: argus_scene_2d_t,
 }
@@ -41,6 +43,10 @@ impl Scene2d {
         }
     }
 
+    pub fn get_id(&self) -> String {
+        unsafe { CStr::from_ptr(argus_scene_2d_get_id(self.handle)).to_string_lossy().to_string() }
+    }
+    
     pub fn is_lighting_enabled(&self) -> bool {
         unsafe { argus_scene_2d_is_lighting_enabled(self.handle) }
     }
@@ -85,9 +91,10 @@ impl Scene2d {
         unsafe {
             let count = argus_scene_2d_get_lights_count(self.handle);
             let mut lights: Vec<argus_light_2d_t> = Vec::with_capacity(count);
+            lights.resize(count, ptr::null_mut());
 
             argus_scene_2d_get_lights(self.handle, lights.as_mut_ptr(), count);
-            lights.into_iter().map(|ptr| Light2d::of(ptr)).collect()
+            lights.into_iter().map(Light2d::of).collect()
         }
     }
 
@@ -95,9 +102,10 @@ impl Scene2d {
         unsafe {
             let count = argus_scene_2d_get_lights_count_for_render(self.handle);
             let mut lights: Vec<argus_light_2d_t> = Vec::with_capacity(count);
+            lights.resize(count, ptr::null_mut());
 
             argus_scene_2d_get_lights_for_render(self.handle, lights.as_mut_ptr(), count);
-            lights.into_iter().map(|ptr| Light2d::of(ptr)).collect()
+            lights.into_iter().map(Light2d::of).collect()
         }
     }
 

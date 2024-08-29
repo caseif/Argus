@@ -22,7 +22,7 @@ use crate::lowlevel_cabi::*;
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2d_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector2d {
     pub x: f64,
     pub y: f64,
@@ -30,7 +30,7 @@ pub struct Vector2d {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3d_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector3d {
     pub x: f64,
     pub y: f64,
@@ -39,7 +39,7 @@ pub struct Vector3d {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4d_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector4d {
     pub x: f64,
     pub y: f64,
@@ -49,7 +49,7 @@ pub struct Vector4d {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2f_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector2f {
     pub x: f32,
     pub y: f32,
@@ -57,7 +57,7 @@ pub struct Vector2f {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3f_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector3f {
     pub x: f32,
     pub y: f32,
@@ -66,7 +66,7 @@ pub struct Vector3f {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4f_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Vector4f {
     pub x: f32,
     pub y: f32,
@@ -76,15 +76,15 @@ pub struct Vector4f {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2i_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector2i {
-    pub x: f32,
-    pub y: f32,
+    pub x: i32,
+    pub y: i32,
 }
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3i_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector3i {
     pub x: i32,
     pub y: i32,
@@ -93,7 +93,7 @@ pub struct Vector3i {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4i_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector4i {
     pub x: i32,
     pub y: i32,
@@ -103,7 +103,7 @@ pub struct Vector4i {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2u_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector2u {
     pub x: u32,
     pub y: u32,
@@ -111,7 +111,7 @@ pub struct Vector2u {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3u_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector3u {
     pub x: u32,
     pub y: u32,
@@ -120,7 +120,7 @@ pub struct Vector3u {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4u_t)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector4u {
     pub x: u32,
     pub y: u32,

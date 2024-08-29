@@ -55,6 +55,10 @@ argus_scene_2d_t argus_scene_2d_create(const char *id) {
     return &argus::Scene2D::create(id);
 }
 
+const char *argus_scene_2d_get_id(argus_scene_2d_const_t scene) {
+    return _as_ref(scene).get_id().c_str();
+}
+
 bool argus_scene_2d_is_lighting_enabled(argus_scene_2d_const_t scene) {
     return _as_ref(scene).is_lighting_enabled();
 }
@@ -105,8 +109,8 @@ size_t argus_scene_2d_get_lights_count_for_render(argus_scene_2d_t scene) {
     return _as_ref(scene).get_lights_for_render().size();
 }
 
-void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_t *dest, size_t count) {
-    const auto lights = _as_ref(scene).get_lights();
+void argus_scene_2d_get_lights_for_render(argus_scene_2d_t scene, argus_light_2d_const_t *dest, size_t count) {
+    const auto lights = _as_ref(scene).get_lights_for_render();
     affirm_precond(count == lights.size(), "argus_scene_2d_get_lights_for_render called with wrong count parameter");
     std::transform(lights.begin(), lights.end(), dest, [](auto light_ref) { return &light_ref.get(); });
 }

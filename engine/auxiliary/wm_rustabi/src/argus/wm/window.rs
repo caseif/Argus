@@ -18,6 +18,7 @@
 
 use std::ffi::c_void;
 use std::marker::PhantomData;
+use std::mem;
 use std::ptr::null_mut;
 use std::time::Duration;
 
@@ -181,7 +182,7 @@ impl Window {
             let mut res: ValueAndDirtyFlag<Vector2u> = std::mem::zeroed();
             argus_window_get_resolution(
                 self.handle,
-                &mut res.value.into(),
+                mem::transmute(&mut res.value),
                 &mut res.dirty,
             );
             return res;

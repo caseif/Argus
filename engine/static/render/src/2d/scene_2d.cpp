@@ -82,6 +82,10 @@ namespace argus {
         return dynamic_cast<pimpl_Scene *>(m_pimpl);
     }
 
+    const std::string &Scene2D::get_id(void) const {
+        return m_pimpl->id;
+    }
+
     bool Scene2D::is_lighting_enabled(void) const {
         return m_pimpl->lighting_enabled;
     }

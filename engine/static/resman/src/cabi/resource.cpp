@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 argus_resource_prototype_t argus_resource_get_prototype(argus_resource_const_t resource) {
-    auto cpp_proto = _as_ref(resource).prototype;
+    const auto &cpp_proto = _as_ref(resource).prototype;
     argus_resource_prototype_t c_proto {
         cpp_proto.uid.c_str(),
         cpp_proto.media_type.c_str(),

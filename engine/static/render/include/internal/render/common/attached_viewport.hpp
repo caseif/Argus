@@ -15,29 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use crate::argus::render::{AttachedViewport, Camera2d};
-use crate::render_cabi::*;
 
-pub struct AttachedViewport2d {
-    handle: argus_attached_viewport_2d_t,
-}
+#pragma once
 
-impl AttachedViewport2d {
-    pub(crate) fn of(handle: argus_attached_viewport_2d_t) -> Self {
-        Self { handle }
-    }
+#include <cstdint>
 
-    pub fn as_generic(&self) -> AttachedViewport {
-        AttachedViewport::of(self.handle)
-    }
-
-    pub fn get_camera(&self) -> Camera2d {
-        unsafe { Camera2d::of(argus_attached_viewport_2d_get_camera(self.handle)) }
-    }
-}
-
-impl Into<AttachedViewport> for AttachedViewport2d {
-    fn into(self) -> AttachedViewport {
-        AttachedViewport::of(self.handle)
-    }
+namespace argus {
+    extern uint32_t g_viewport_next_id;
 }

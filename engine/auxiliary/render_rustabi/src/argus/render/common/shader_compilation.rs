@@ -17,7 +17,7 @@
  */
 use std::ptr;
 use std::ptr::null_mut;
-
+use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::argus::render::{Shader, ShaderReflectionInfo};
 
 use crate::render_cabi::*;
@@ -48,7 +48,7 @@ pub fn compile_glsl_to_spirv(
         (
             compiled_shaders
                 .into_iter()
-                .map(|handle| Shader::of(handle))
+                .map(Shader::of)
                 .collect(),
             ShaderReflectionInfo::of(refl_info),
         )

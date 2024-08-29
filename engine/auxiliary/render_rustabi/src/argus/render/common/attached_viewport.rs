@@ -17,47 +17,53 @@
  */
 
 use std::ffi::c_char;
-
+use std::ptr;
 use num_enum::UnsafeFromPrimitive;
-
+use lowlevel_rustabi::argus::lowlevel::Handle;
 use lowlevel_rustabi::util::{cstr_to_string, str_to_cstring};
 
 use crate::argus::render::{AttachedViewport2d, SceneType, Viewport};
 use crate::render_cabi::*;
 
+#[derive(Clone)]
 pub struct AttachedViewport {
-    handle: argus_attached_viewport_t,
+    ffi_handle: argus_attached_viewport_t,
 }
 
 impl AttachedViewport {
     pub(crate) fn of(handle: argus_attached_viewport_t) -> Self {
-        Self { handle }
+        Self { ffi_handle: handle }
+    }
+    
+    pub fn as_2d(&self) -> AttachedViewport2d {
+        AttachedViewport2d::of(self.ffi_handle)
     }
 
-    pub fn as_2d(&self) -> AttachedViewport2d {
-        AttachedViewport2d::of(self.handle)
+    pub fn get_id(&self) -> u32 {
+        unsafe { argus_attached_viewport_get_id(self.ffi_handle) }
     }
 
     pub fn get_type(&self) -> SceneType {
         unsafe {
-            SceneType::unchecked_transmute_from(argus_attached_viewport_get_type(self.handle))
+            SceneType::unchecked_transmute_from(argus_attached_viewport_get_type(self.ffi_handle))
         }
     }
 
     pub fn get_viewport(&self) -> Viewport {
-        unsafe { argus_attached_viewport_get_viewport(self.handle).into() }
+        unsafe { argus_attached_viewport_get_viewport(self.ffi_handle).into() }
     }
 
     pub fn get_z_index(&self) -> u32 {
-        unsafe { argus_attached_viewport_get_z_index(self.handle) }
+        unsafe { argus_attached_viewport_get_z_index(self.ffi_handle) }
     }
 
     pub fn get_postprocessing_shaders(&self) -> Vec<String> {
         unsafe {
-            let count = argus_attached_viewport_get_postprocessing_shaders_count(self.handle);
-            let mut shader_uids: Vec<*const c_char> = Vec::new();
+            let count = argus_attached_viewport_get_postprocessing_shaders_count(self.ffi_handle);
+            let mut shader_uids: Vec<*const c_char> = Vec::with_capacity(count);
+            shader_uids.resize(count, ptr::null());
             argus_attached_viewport_get_postprocessing_shaders(
-                self.handle,
+                self.ffi_handle,
                 shader_uids.as_mut_ptr(),
                 count,
             );
@@ -68,14 +74,14 @@ impl AttachedViewport {
     pub fn add_postprocessing_shader(&mut self, shader_uid: &str) {
         unsafe {
             let uid_c = str_to_cstring(shader_uid);
-            argus_attached_viewport_add_postprocessing_shader(self.handle, uid_c.as_ptr())
+            argus_attached_viewport_add_postprocessing_shader(self.ffi_handle, uid_c.as_ptr())
         }
     }
 
     pub fn remove_postprocessing_shader(&mut self, shader_uid: &str) {
         unsafe {
             let uid_c = str_to_cstring(shader_uid);
-            argus_attached_viewport_remove_postprocessing_shader(self.handle, uid_c.as_ptr())
+            argus_attached_viewport_remove_postprocessing_shader(self.ffi_handle, uid_c.as_ptr())
         }
     }
 }

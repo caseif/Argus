@@ -35,8 +35,8 @@ static inline ResourceManager &_as_ref(argus_resource_manager_t ptr) {
 }
 
 static inline const ResourceOrResourceError _wrap_result(const Result<Resource &, ResourceError> &res) {
-        ResourceOrResourceError wrapped;
-        wrapped.is_ok = res.is_ok();
+    ResourceOrResourceError wrapped;
+    wrapped.is_ok = res.is_ok();
     if (res.is_ok()) {
         wrapped.ve.value = &res.unwrap();
     } else {

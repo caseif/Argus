@@ -17,11 +17,17 @@
  */
 
 use std::slice;
-
+use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::render_cabi::*;
 
 pub struct TextureData {
     handle: argus_texture_data_t,
+}
+
+impl FfiWrapper for TextureData {
+    fn of(handle: argus_texture_data_t) -> Self {
+        Self { handle }
+    }
 }
 
 impl TextureData {

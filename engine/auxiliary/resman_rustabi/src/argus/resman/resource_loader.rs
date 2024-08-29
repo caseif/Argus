@@ -81,7 +81,7 @@ pub trait ResourceLoader {
         &mut self,
         handle: WrappedResourceLoader,
         manager: ResourceManager,
-        prototype: &ResourcePrototype,
+        prototype: ResourcePrototype,
         read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
         size: usize,
     ) -> Result<*mut u8, ResourceError>;
@@ -90,7 +90,7 @@ pub trait ResourceLoader {
         &mut self,
         handle: WrappedResourceLoader,
         manager: ResourceManager,
-        prototype: &ResourcePrototype,
+        prototype: ResourcePrototype,
         src_data: *mut u8,
     ) -> Result<*mut u8, ResourceError>;
 
@@ -114,7 +114,7 @@ unsafe extern "C" fn load_resource_proxy(
     let res = real_loader.load_resource(
         WrappedResourceLoader::of(loader),
         ResourceManager::of(manager),
-        &unwrap_resource_prototype(&prototype),
+        unwrap_resource_prototype(prototype),
         Box::new(move |dst, len|
             read_callback_unwrapped(dst.as_mut_ptr().cast(), len, engine_data)),
         size,
@@ -140,7 +140,7 @@ unsafe extern "C" fn copy_resource_proxy(
     let res = real_loader.copy_resource(
         WrappedResourceLoader::of(loader),
         ResourceManager::of(manager),
-        &unwrap_resource_prototype(&prototype),
+        unwrap_resource_prototype(prototype),
         src.cast(),
     );
     // re-wrap the loader

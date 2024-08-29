@@ -48,7 +48,7 @@ void argus_canvas_get_viewports_2d(argus_canvas_const_t canvas, argus_attached_v
     affirm_precond(count == viewports.size(), "Call to argus_canvas_get_viewports_2d with wrong count parameter");
 
     for (size_t i = 0; i < count; i++) {
-        dest[i] = &viewports.at(i);
+        dest[i] = &viewports.at(i).get();
     }
 }
 

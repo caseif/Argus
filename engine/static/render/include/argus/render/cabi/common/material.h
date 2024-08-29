@@ -24,7 +24,7 @@ extern "C" {
 
 #include <stddef.h>
 
-typedef const void *argus_material_t;
+typedef void *argus_material_t;
 
 const char *argus_material_get_texture_uid(argus_material_t material);
 

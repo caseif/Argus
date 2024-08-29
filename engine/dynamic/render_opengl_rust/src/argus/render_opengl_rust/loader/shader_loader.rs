@@ -36,7 +36,7 @@ impl ResourceLoader for ShaderLoader {
         &mut self,
         handle: WrappedResourceLoader,
         manager: ResourceManager,
-        prototype: &ResourcePrototype,
+        prototype: ResourcePrototype,
         read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
         size: usize
     ) -> Result<*mut u8, ResourceError> {
@@ -67,7 +67,7 @@ impl ResourceLoader for ShaderLoader {
         &mut self,
         handle: WrappedResourceLoader,
         manager: ResourceManager,
-        prototype: &ResourcePrototype,
+        prototype: ResourcePrototype,
         src_data: *mut u8,
     ) -> Result<*mut u8, ResourceError> {
         println!("copy_resource called!");

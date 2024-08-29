@@ -17,6 +17,7 @@
  */
 
 #include "argus/render/common/attached_viewport.hpp"
+#include "internal/render/common/attached_viewport.hpp"
 #include "internal/render/pimpl/common/attached_viewport.hpp"
 
 #include <algorithm>
@@ -24,11 +25,17 @@
 #include <vector>
 
 namespace argus {
+    uint32_t g_viewport_next_id = 0;
+
     AttachedViewport::AttachedViewport(SceneType type):
         m_type(type) {
     }
 
     AttachedViewport::~AttachedViewport(void) = default;
+
+    uint32_t AttachedViewport::get_id(void) const {
+        return get_pimpl()->id;
+    }
 
     Viewport AttachedViewport::get_viewport(void) const {
         return get_pimpl()->viewport;

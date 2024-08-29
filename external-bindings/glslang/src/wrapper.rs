@@ -18,9 +18,11 @@
 
 #![allow(dead_code)]
 
-use std::{ffi, mem};
+use std::{ffi, mem, ptr};
+use std::ffi::CString;
 use crate::bindings::*;
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Stage {
     Vertex = GLSLANG_STAGE_VERTEX as isize,
@@ -39,6 +41,7 @@ pub enum Stage {
     Mesh = GLSLANG_STAGE_MESH as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum StageMask {
     Vertex = GLSLANG_STAGE_VERTEX_MASK as isize,
@@ -57,6 +60,7 @@ pub enum StageMask {
     Mesh = GLSLANG_STAGE_MESH_MASK as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Source {
     None = GLSLANG_SOURCE_NONE as isize,
@@ -64,6 +68,7 @@ pub enum Source {
     Hlsl = GLSLANG_SOURCE_HLSL as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Client {
     None = GLSLANG_CLIENT_NONE as isize,
@@ -71,12 +76,14 @@ pub enum Client {
     OpenGL = GLSLANG_CLIENT_OPENGL as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TargetLanguage {
     None = GLSLANG_TARGET_NONE as isize,
     Spv = GLSLANG_TARGET_SPV as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TargetClientVersion {
     Vulkan1_0 = GLSLANG_TARGET_VULKAN_1_0 as isize,
@@ -86,6 +93,7 @@ pub enum TargetClientVersion {
     OpenGL450 = GLSLANG_TARGET_OPENGL_450 as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TargetLanguageVersion {
     Spv1_0 = GLSLANG_TARGET_SPV_1_0 as isize,
@@ -97,12 +105,14 @@ pub enum TargetLanguageVersion {
     Spv1_6 = GLSLANG_TARGET_SPV_1_6 as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Executable {
     VertexFragment = GLSLANG_EX_VERTEX_FRAGMENT as isize,
     Fragment = GLSLANG_EX_FRAGMENT as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum OptimizationLevel {
     NoGeneration = GLSLANG_OPT_NO_GENERATION as isize,
@@ -111,12 +121,14 @@ pub enum OptimizationLevel {
     Full = GLSLANG_OPT_FULL as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TextureSamplerTransformMode {
     Keep = GLSLANG_TEX_SAMP_TRANS_KEEP as isize,
     RemoveSampler = GLSLANG_TEX_SAMP_TRANS_UPGRADE_TEXTURE_REMOVE_SAMPLER as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Messages {
     Default = GLSLANG_MSG_DEFAULT_BIT as isize,
@@ -138,6 +150,7 @@ pub enum Messages {
     Enhanced = GLSLANG_MSG_ENHANCED as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ReflectionOptions {
     Default = GLSLANG_REFLECTION_DEFAULT_BIT as isize,
@@ -152,6 +165,7 @@ pub enum ReflectionOptions {
     SharedStd140Ubo = GLSLANG_REFLECTION_SHARED_STD140_UBO_BIT as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Profile {
     Bad = GLSLANG_BAD_PROFILE as isize,
@@ -161,6 +175,7 @@ pub enum Profile {
     Es = GLSLANG_ES_PROFILE as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ShaderOptions {
     Default = GLSLANG_SHADER_DEFAULT_BIT as isize,
@@ -169,6 +184,7 @@ pub enum ShaderOptions {
     VulkanRulesRelaxed = GLSLANG_SHADER_VULKAN_RULES_RELAXED as isize,
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ResourceType {
     Sampler = GLSLANG_RESOURCE_TYPE_SAMPLER as isize,
@@ -330,7 +346,7 @@ pub struct Input {
     pub client_version: TargetClientVersion,
     pub target_language: TargetLanguage,
     pub target_language_version: TargetLanguageVersion,
-    pub code: ffi::CString,
+    pub code: String,
     pub default_version: i32,
     pub default_profile: Profile,
     pub force_default_version_and_profile: i32,
@@ -341,8 +357,8 @@ pub struct Input {
     pub callbacks_ctx: *mut ffi::c_void,
 }
 
-impl Into<glslang_input_t> for &Input {
-    fn into(self) -> glslang_input_t {
+impl Input {
+    fn to_ffi_repr(&self, code_storage: &CString) -> glslang_input_t {
         glslang_input_t {
             language: self.language as glslang_target_language_t,
             stage: self.stage as glslang_stage_t,
@@ -350,8 +366,8 @@ impl Into<glslang_input_t> for &Input {
             client_version: self.client_version as glslang_target_client_version_t,
             target_language: self.target_language as glslang_target_language_t,
             target_language_version:
-                self.target_language_version as glslang_target_language_version_t,
-            code: self.code.as_ptr(),
+            self.target_language_version as glslang_target_language_version_t,
+            code: code_storage.as_ptr(),
             default_version: self.default_version as ffi::c_int,
             default_profile: self.default_profile as glslang_profile_t,
             force_default_version_and_profile: self.force_default_version_and_profile as ffi::c_int,
@@ -376,14 +392,34 @@ pub fn finalize_process() {
 
 pub struct Shader {
     handle: *mut glslang_shader_t,
+    input: Box<Input>,
+    // glslang annoyingly stores a pointer to the C string (i.e. a char**), so
+    // we need the char pointer to live at a fixed (heap) address since keeping
+    // it on the stack would cause the glslang shader object to outlive the
+    // pointer when the wrapper Shader object gets moved to a different address.
+    // This also means that the CString needs to be on the heap so that the
+    // pointer doesn't end up pointing to invalid memory.
+    code: Box<ffi::CString>,
+    input_ffi: Box<glslang_input_t>,
+    //input: Box<glslang_input_t>,
+    //resource: Box<glslang_resource_t>,
 }
 
 impl Shader {
-    pub fn create(input: &Input) -> Shader {
-        unsafe {
-            Shader {
-                handle: glslang_shader_create(&input.into()),
-            }
+    pub fn create(input: Input) -> Shader {
+        let code_cstr = Box::new(
+            CString::new(input.code.as_bytes()).expect("Shader source string has bad encoding")
+        );
+        let code_ptr = Box::new(code_cstr.as_ptr());
+
+        let input_ffi = Box::new(input.to_ffi_repr(&*code_cstr));
+        let handle = unsafe { glslang_shader_create(&*input_ffi) };
+
+        Shader {
+            handle,
+            input: Box::new(input),
+            code: code_cstr,
+            input_ffi,
         }
     }
 
@@ -408,12 +444,12 @@ impl Shader {
         unsafe { glslang_shader_set_glsl_version(self.handle, version); }
     }
 
-    pub fn preprocess(&mut self, input: &Input) -> bool {
-        unsafe { glslang_shader_preprocess(self.handle, &input.into()) != 0 }
+    pub fn preprocess(&mut self) -> bool {
+        unsafe { glslang_shader_preprocess(self.handle, &*self.input_ffi) != 0 }
     }
 
-    pub fn parse(&mut self, input: &Input) -> bool {
-        unsafe { glslang_shader_parse(self.handle, &input.into()) != 0 }
+    pub fn parse(&mut self) -> bool {
+        unsafe { glslang_shader_parse(self.handle, &*self.input_ffi) != 0 }
     }
 
     pub fn get_preprocessed_code<'a>(&mut self) -> &'a str {
@@ -485,7 +521,7 @@ impl Program {
                 self.handle,
                 stage as glslang_stage_t,
                 c_str.as_ptr(),
-                len
+                len,
             );
         }
     }

@@ -24,7 +24,7 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef const void *argus_texture_data_t;
+typedef void *argus_texture_data_t;
 
 uint32_t argus_texture_data_get_width(argus_texture_data_t tex_data);
 

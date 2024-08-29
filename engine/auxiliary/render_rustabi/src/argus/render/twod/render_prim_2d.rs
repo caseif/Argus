@@ -20,14 +20,14 @@ use crate::argus::render::Vertex2d;
 use crate::render_cabi::*;
 
 pub struct RenderPrimitive2d {
-    vertices: Vec<Vertex2d>,
+    pub vertices: Vec<Vertex2d>,
 }
 
-impl Into<ArgusRenderPrimitive2d> for &RenderPrimitive2d {
-    fn into(self) -> ArgusRenderPrimitive2d {
+impl From<&RenderPrimitive2d> for ArgusRenderPrimitive2d {
+    fn from(value: &RenderPrimitive2d) -> Self {
         ArgusRenderPrimitive2d {
-            vertices: self.vertices.as_ptr().cast(),
-            vertex_count: self.vertices.len(),
+            vertices: value.vertices.as_ptr().cast(),
+            vertex_count: value.vertices.len(),
         }
     }
 }

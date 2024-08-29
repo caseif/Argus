@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::ffi;
 use std::ffi::CStr;
 
 use crate::lowlevel_cabi::*;
@@ -24,18 +24,21 @@ use crate::lowlevel_cabi;
 pub use crate::lowlevel_cabi::StringArray;
 pub use crate::lowlevel_cabi::StringArrayConst;
 
-pub fn string_array_to_vec(sa: StringArray) -> Vec<String> {
+pub trait FfiWrapper {
+    fn of(ptr: *mut ffi::c_void) -> Self;
+}
+
+pub unsafe fn string_array_to_vec(sa: StringArray) -> Vec<String> {
     unsafe {
         let count = string_array_get_count(sa);
-        let mut vec = Vec::<String>::new();
-        vec.reserve(count);
+        let mut vec = Vec::<String>::with_capacity(count);
 
         for i in 0..count {
             let s = string_array_get_element(sa, i);
             vec[i] = CStr::from_ptr(s).to_str().unwrap().to_string();
         }
 
-        return vec;
+        vec
     }
 }
 

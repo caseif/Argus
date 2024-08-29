@@ -110,14 +110,14 @@ namespace argus {
     }
 
     std::string Uuid::to_string(void) const {
-        std::string rendered(37, '\0');
-        snprintf(rendered.data(), rendered.size(), "%08x-%04x-%04x-%04x-%08x%04x",
+        char rendered[37];
+        snprintf(rendered, sizeof(rendered), "%08x-%04x-%04x-%04x-%08x%04x",
                 *reinterpret_cast<const uint32_t *>(&data[0]),
                 *reinterpret_cast<const uint16_t *>(&data[4]),
                 *reinterpret_cast<const uint16_t *>(&data[6]),
                 *reinterpret_cast<const uint16_t *>(&data[8]),
                 *reinterpret_cast<const uint32_t *>(&data[10]),
                 *reinterpret_cast<const uint16_t *>(&data[14]));
-        return rendered;
+        return std::string(rendered);
     }
 }

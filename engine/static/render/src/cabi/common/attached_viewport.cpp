@@ -45,6 +45,10 @@ ArgusSceneType argus_attached_viewport_get_type(argus_attached_viewport_const_t 
     return ArgusSceneType(_as_ref(viewport).m_type);
 }
 
+uint32_t argus_attached_viewport_get_id(argus_attached_viewport_const_t viewport) {
+    return _as_ref(viewport).get_id();
+}
+
 ArgusViewport argus_attached_viewport_get_viewport(argus_attached_viewport_const_t viewport) {
     const auto real_viewport = _as_ref(viewport).get_viewport();
     return *reinterpret_cast<const ArgusViewport *>(&real_viewport);

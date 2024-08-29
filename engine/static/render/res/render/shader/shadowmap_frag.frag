@@ -53,7 +53,11 @@ void main() {
 
     uint ray_count = 720;
 
-    for (uint i = 0; i < scene.LightCount; i++) {
+    for (int i = 0; i < LIGHTS_MAX; i++) {
+        if (i >= scene.LightCount) {
+            break;
+        }
+
         Light2D light = scene.Lights[i];
         vec2 light_pos = light.position.xy;
 

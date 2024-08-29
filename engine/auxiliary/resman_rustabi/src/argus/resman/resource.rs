@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::ffi;
+use std::fmt::Debug;
 use lowlevel_rustabi::util::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::path::PathBuf;
-
+use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::resman_cabi::*;
 
+#[derive(Clone)]
 pub struct Resource {
     handle: argus_resource_const_t,
 }
@@ -33,7 +35,7 @@ pub struct ResourcePrototype {
 }
 
 pub(crate) unsafe fn unwrap_resource_prototype(
-    proto: &argus_resource_prototype_t,
+    proto: argus_resource_prototype_t,
 ) -> ResourcePrototype {
     ResourcePrototype {
         uid: cstr_to_string(proto.uid),
@@ -53,7 +55,7 @@ impl Resource {
     }
 
     pub fn get_prototype(&self) -> ResourcePrototype {
-        unsafe { unwrap_resource_prototype(&argus_resource_get_prototype(self.handle)) }
+        unsafe { unwrap_resource_prototype(argus_resource_get_prototype(self.handle)) }
     }
 
     pub fn release(&self) -> () {
@@ -69,6 +71,11 @@ impl Resource {
             let t_ptr: *const T = argus_resource_get_data_ptr(self.handle).cast();
             t_ptr.as_ref().unwrap()
         }
+    }
+
+    pub fn get_ffi<T>(&self) -> T where T : FfiWrapper {
+        let p = unsafe { argus_resource_get_data_ptr(self.handle) };
+        unsafe { T::of(p.cast_mut()) }
     }
 }
 
