@@ -50,9 +50,9 @@ impl GlRenderer {
 
     fn init(&mut self) {
         #[cfg(debug_assertions)]
-        let context_flags = GlContextFlags::ProfileCore;
+        let context_flags = GlContextFlag::ProfileCore.into();
         #[cfg(not(debug_assertions))]
-        let context_flags = GlContextFlags::ProfileCore | GlContextFlags::DebugContext;
+        let context_flags = GlContextFlag::ProfileCore | GlContextFlag::DebugContext;
 
         self.state.gl_context =
             Some(gl_create_context(&mut self.window, 3, 3, context_flags).unwrap());
@@ -106,7 +106,7 @@ impl GlRenderer {
             .expect("Failed to make GL context current");
 
         let resolution = self.window.get_resolution();
-        
+
         if resolution.value.x == 0 {
             return;
         }

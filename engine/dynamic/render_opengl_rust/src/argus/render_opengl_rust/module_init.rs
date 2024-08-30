@@ -51,7 +51,7 @@ fn set_backend_active(active: bool) {
 fn test_opengl_support() -> Result<(), ()> {
     let mut window = Window::create("", None);
     window.update(Duration::from_secs(0));
-    let gl_context_opt = gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore);
+    let gl_context_opt = gl_create_context(&mut window, 3, 3, GlContextFlag::ProfileCore.into());
     if gl_context_opt.is_none() {
         //TODO: use proper logger
         eprintln!("Failed to create GL context");

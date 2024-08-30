@@ -18,7 +18,7 @@
 
 use std::ffi::{c_char, c_void};
 use std::ptr::null_mut;
-
+use bitmask::bitmask;
 use lowlevel_rustabi::util::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
@@ -57,15 +57,17 @@ impl VkSurface {
     }
 }
 
-#[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
-#[repr(u32)]
-pub enum GlContextFlags {
-    None = GL_CONTEXT_FLAG_NONE,
-    ProfileCore = GL_CONTEXT_FLAG_PROFILE_CORE,
-    ProfileES = GL_CONTEXT_FLAG_PROFILE_ES,
-    ProfileCompat = GL_CONTEXT_FLAG_PROFILE_COMPAT,
-    DebugContext = GL_CONTEXT_FLAG_DEBUG_CONTEXT,
-    ProfileMask = GL_CONTEXT_FLAG_PROFILE_MASK,
+bitmask! {
+    pub mask GlContextFlags: u32 where
+    #[derive(IntoPrimitive)]
+    flags GlContextFlag {
+        None = GL_CONTEXT_FLAG_NONE,
+        ProfileCore = GL_CONTEXT_FLAG_PROFILE_CORE,
+        ProfileES = GL_CONTEXT_FLAG_PROFILE_ES,
+        ProfileCompat = GL_CONTEXT_FLAG_PROFILE_COMPAT,
+        DebugContext = GL_CONTEXT_FLAG_DEBUG_CONTEXT,
+        ProfileMask = GL_CONTEXT_FLAG_PROFILE_MASK,
+    }
 }
 
 pub fn gl_load_library() -> i32 {
@@ -91,7 +93,7 @@ pub fn gl_create_context(
             window.get_handle_mut(),
             version_major,
             version_minor,
-            flags.into(),
+            flags.mask,
         );
         handle.as_mut().map(|p| GlContext { handle: p })
     }
