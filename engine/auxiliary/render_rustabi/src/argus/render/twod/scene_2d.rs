@@ -101,11 +101,11 @@ impl Scene2d {
     pub fn get_lights_for_render(&mut self) -> Vec<Light2d> {
         unsafe {
             let count = argus_scene_2d_get_lights_count_for_render(self.handle);
-            let mut lights: Vec<argus_light_2d_t> = Vec::with_capacity(count);
+            let mut lights: Vec<argus_light_2d_const_t> = Vec::with_capacity(count);
             lights.resize(count, ptr::null_mut());
 
             argus_scene_2d_get_lights_for_render(self.handle, lights.as_mut_ptr(), count);
-            lights.into_iter().map(Light2d::of).collect()
+            lights.into_iter().map(|l| Light2d::of(l as argus_light_2d_t)).collect()
         }
     }
 

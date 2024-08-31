@@ -48,7 +48,7 @@ impl Light2d {
     pub(crate) fn of(handle: argus_light_2d_t) -> Self {
         Self { ffi_handle: handle }
     }
-    
+
     pub fn get_handle(&self) -> Handle {
         unsafe { argus_light_2d_get_handle(self.ffi_handle).into() }
     }

@@ -904,7 +904,7 @@ extern "C" {
     pub fn argus_scene_2d_get_lights_count_for_render(scene: argus_scene_2d_t) -> usize;
     pub fn argus_scene_2d_get_lights_for_render(
         scene: argus_scene_2d_t,
-        dest: *mut argus_light_2d_t,
+        dest: *mut argus_light_2d_const_t,
         count: usize,
     );
     pub fn argus_scene_2d_add_light(
