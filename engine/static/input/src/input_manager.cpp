@@ -52,7 +52,7 @@ namespace argus::input {
         }
     }
 
-    Controller &InputManager::get_controller(const std::string &name) {
+    Controller &InputManager::get_controller(const std::string &name) const {
         auto res = std::find_if(m_pimpl->controllers.begin(), m_pimpl->controllers.end(),
                 [name](auto &pair) { return pair.second->get_name() == name; });
 
@@ -90,7 +90,7 @@ namespace argus::input {
         m_pimpl->controllers.erase(res);
     }
 
-    double InputManager::get_global_deadzone_radius(void) {
+    double InputManager::get_global_deadzone_radius(void) const {
         return m_pimpl->dz_radius;
     }
 
@@ -98,7 +98,7 @@ namespace argus::input {
         m_pimpl->dz_radius = std::min(std::max(radius, 0.0), 1.0);
     }
 
-    DeadzoneShape InputManager::get_global_deadzone_shape(void) {
+    DeadzoneShape InputManager::get_global_deadzone_shape(void) const {
         return m_pimpl->dz_shape;
     }
 
@@ -117,7 +117,7 @@ namespace argus::input {
         }
     }
 
-    double InputManager::get_global_axis_deadzone_radius(GamepadAxis axis) {
+    double InputManager::get_global_axis_deadzone_radius(GamepadAxis axis) const {
         _check_axis(axis);
         return m_pimpl->dz_axis_radii.at(size_t(axis)).value_or(m_pimpl->dz_radius);
     }
@@ -132,7 +132,7 @@ namespace argus::input {
         m_pimpl->dz_axis_radii.at(size_t(axis)).reset();
     }
 
-    DeadzoneShape InputManager::get_global_axis_deadzone_shape(GamepadAxis axis) {
+    DeadzoneShape InputManager::get_global_axis_deadzone_shape(GamepadAxis axis) const {
         _check_axis(axis);
         return m_pimpl->dz_axis_shapes.at(size_t(axis)).value_or(m_pimpl->dz_shape);
     }

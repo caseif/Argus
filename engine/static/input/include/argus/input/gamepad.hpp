@@ -70,7 +70,7 @@ namespace argus::input {
 
     uint8_t get_unattached_gamepad_count(void);
 
-    std::string get_gamepad_name(HidDeviceId gamepad);
+    const char *get_gamepad_name(HidDeviceId gamepad);
 
     bool is_gamepad_button_pressed(HidDeviceId gamepad, GamepadButton button);
 

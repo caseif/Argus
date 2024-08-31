@@ -38,7 +38,7 @@ namespace argus::input {
         this->activate();
     }
 
-    std::string TextInputContext::get_current_text(void) const {
+    const std::string &TextInputContext::get_current_text(void) const {
         return m_text;
     }
 

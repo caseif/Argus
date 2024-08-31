@@ -18,9 +18,11 @@
 
 #pragma once
 
-#include "argus/core/event.hpp"
-
 #include "argus/input/gamepad.hpp"
+
+#include "argus/wm/window.hpp"
+
+#include "argus/core/event.hpp"
 
 #include <string>
 
@@ -45,8 +47,8 @@ namespace argus::input {
         }
 
         const InputEventType input_type;
-        //TODO: replace with std::optional once we have proper binding support for it
-        const Window *window;
+        //TODO: replace with std::optional once we have proper binding support for itc
+        const Window *const window;
         const std::string controller_name;
         const std::string action;
         const double axis_value;

@@ -73,7 +73,7 @@ namespace argus::input {
         m_pimpl->attached_gamepad = id;
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
-                this->get_gamepad_name().c_str(), this->get_name().c_str());
+                this->get_gamepad_name(), this->get_name().c_str());
     }
 
     bool Controller::attach_first_available_gamepad(void) {
@@ -89,7 +89,7 @@ namespace argus::input {
         m_pimpl->attached_gamepad = id.unwrap();
 
         Logger::default_logger().info("Attached gamepad '%s' to controller '%s'",
-                this->get_gamepad_name().c_str(), this->get_name().c_str());
+                this->get_gamepad_name(), this->get_name().c_str());
 
         return true;
     }
@@ -105,7 +105,7 @@ namespace argus::input {
         m_pimpl->attached_gamepad = std::nullopt;
     }
 
-    std::string Controller::get_gamepad_name(void) {
+    const char *Controller::get_gamepad_name(void) const {
         if (!this->has_gamepad()) {
             crash("Controller does not have associated gamepad");
         }
@@ -113,7 +113,7 @@ namespace argus::input {
         return ::argus::input::get_gamepad_name(m_pimpl->attached_gamepad.value());
     }
 
-    double Controller::get_deadzone_radius(void) {
+    double Controller::get_deadzone_radius(void) const {
         return m_pimpl->dz_radius.value_or(InputManager::instance().get_global_deadzone_radius());
     }
 
@@ -125,7 +125,7 @@ namespace argus::input {
         m_pimpl->dz_radius.reset();
     }
 
-    DeadzoneShape Controller::get_deadzone_shape(void) {
+    DeadzoneShape Controller::get_deadzone_shape(void) const {
         return m_pimpl->dz_shape.value_or(InputManager::instance().get_global_deadzone_shape());
     }
 
@@ -148,7 +148,7 @@ namespace argus::input {
         }
     }
 
-    double Controller::get_axis_deadzone_radius(GamepadAxis axis) {
+    double Controller::get_axis_deadzone_radius(GamepadAxis axis) const {
         _check_axis(axis);
         return m_pimpl->dz_axis_radii.at(size_t(axis)).value_or(
                 m_pimpl->dz_radius.value_or(
@@ -165,7 +165,7 @@ namespace argus::input {
         m_pimpl->dz_axis_radii.at(size_t(axis)).reset();
     }
 
-    DeadzoneShape Controller::get_axis_deadzone_shape(GamepadAxis axis) {
+    DeadzoneShape Controller::get_axis_deadzone_shape(GamepadAxis axis) const {
         _check_axis(axis);
         return m_pimpl->dz_axis_shapes.at(size_t(axis)).value_or(
                 m_pimpl->dz_shape.value_or(
@@ -248,10 +248,14 @@ namespace argus::input {
         }
     }
 
-    std::vector<std::string> Controller::get_keyboard_key_bindings(KeyboardScancode key) const {
+    std::vector<std::reference_wrapper<const std::string>> Controller::get_keyboard_key_bindings(
+            KeyboardScancode key) const {
         auto it = m_pimpl->key_to_action_bindings.find(key);
         if (it != m_pimpl->key_to_action_bindings.end()) {
-            return it->second; // implicitly deep-copied
+            std::vector<std::reference_wrapper<const std::string>> ret;
+            std::transform(it->second.cbegin(), it->second.cend(), std::back_inserter(ret),
+                    [](const auto &str) { return std::reference_wrapper<const std::string>(str); });
+            return ret;
         }
 
         // no bindings so just return empty vector
@@ -332,7 +336,7 @@ namespace argus::input {
                 button, action);
     }
 
-    bool Controller::is_gamepad_button_pressed(GamepadButton button) {
+    bool Controller::is_gamepad_button_pressed(GamepadButton button) const {
         if (!has_gamepad()) {
             crash("Cannot query gamepad button state for controller: No gamepad is associated");
         }
@@ -340,7 +344,7 @@ namespace argus::input {
         return ::argus::input::is_gamepad_button_pressed(m_pimpl->attached_gamepad.value(), button);
     }
 
-    double Controller::get_gamepad_axis(GamepadAxis axis) {
+    double Controller::get_gamepad_axis(GamepadAxis axis) const {
         if (!has_gamepad()) {
             crash("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
@@ -348,7 +352,7 @@ namespace argus::input {
         return ::argus::input::get_gamepad_axis(m_pimpl->attached_gamepad.value(), axis);
     }
 
-    double Controller::get_gamepad_axis_delta(GamepadAxis axis) {
+    double Controller::get_gamepad_axis_delta(GamepadAxis axis) const {
         if (!has_gamepad()) {
             crash("Cannot query gamepad axis state for controller: No gamepad is associated");
         }
@@ -356,7 +360,7 @@ namespace argus::input {
         return ::argus::input::get_gamepad_axis_delta(m_pimpl->attached_gamepad.value(), axis);
     }
 
-    bool Controller::is_action_pressed(const std::string &action) {
+    bool Controller::is_action_pressed(const std::string &action) const {
         auto kb_it = m_pimpl->action_to_key_bindings.find(action);
         if (kb_it != m_pimpl->action_to_key_bindings.cend()) {
             for (auto key : kb_it->second) {
@@ -389,7 +393,7 @@ namespace argus::input {
         return false;
     }
 
-    double Controller::get_action_axis(const std::string &action) {
+    double Controller::get_action_axis(const std::string &action) const {
         if (this->has_gamepad()) {
             auto gamepad_it = m_pimpl->action_to_gamepad_axis_bindings.find(action);
             if (gamepad_it != m_pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {
@@ -405,7 +409,7 @@ namespace argus::input {
         return 0;
     }
 
-    double Controller::get_action_axis_delta(const std::string &action) {
+    double Controller::get_action_axis_delta(const std::string &action) const {
         if (this->has_gamepad()) {
             auto gamepad_it = m_pimpl->action_to_gamepad_axis_bindings.find(action);
             if (gamepad_it != m_pimpl->action_to_gamepad_axis_bindings.cend() && !gamepad_it->second.empty()) {

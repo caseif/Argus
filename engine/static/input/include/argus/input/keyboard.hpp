@@ -247,7 +247,7 @@ namespace argus::input {
      *
      * @return The name of the key.
      */
-    std::string get_key_name(KeyboardScancode scancode);
+    const char *get_key_name(KeyboardScancode scancode);
 
     /**
      * @brief Gets whether the key associated with a scancode is currently being

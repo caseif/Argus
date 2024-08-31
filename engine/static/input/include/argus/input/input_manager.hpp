@@ -42,7 +42,7 @@ namespace argus::input {
 
         static InputManager &instance(void);
 
-        Controller &get_controller(const std::string &name);
+        Controller &get_controller(const std::string &name) const;
 
         Controller &add_controller(const std::string &name);
 
@@ -50,21 +50,21 @@ namespace argus::input {
 
         void remove_controller(const std::string &name);
 
-        double get_global_deadzone_radius(void);
+        double get_global_deadzone_radius(void) const;
 
         void set_global_deadzone_radius(double radius);
 
-        DeadzoneShape get_global_deadzone_shape(void);
+        DeadzoneShape get_global_deadzone_shape(void) const;
 
         void set_global_deadzone_shape(DeadzoneShape shape);
 
-        double get_global_axis_deadzone_radius(GamepadAxis axis);
+        double get_global_axis_deadzone_radius(GamepadAxis axis) const;
 
         void set_global_axis_deadzone_radius(GamepadAxis axis, double radius);
 
         void clear_global_axis_deadzone_radius(GamepadAxis axis);
 
-        DeadzoneShape get_global_axis_deadzone_shape(GamepadAxis axis);
+        DeadzoneShape get_global_axis_deadzone_shape(GamepadAxis axis) const;
 
         void set_global_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
 

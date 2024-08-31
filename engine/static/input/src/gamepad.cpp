@@ -55,6 +55,9 @@
 namespace argus::input {
     typedef uint64_t GamepadButtonState;
 
+    constexpr const char *k_gamepad_name_invalid = "invalid";
+    constexpr const char *k_gamepad_name_unknown = "unknown";
+
     static std::unordered_map<SDL_GameControllerButton, GamepadButton> g_buttons_sdl_to_argus = {
             { SDL_CONTROLLER_BUTTON_INVALID, GamepadButton::Unknown },
             { SDL_CONTROLLER_BUTTON_A, GamepadButton::A },
@@ -146,15 +149,15 @@ namespace argus::input {
         return uint8_t(std::min(InputManager::instance().m_pimpl->available_gamepads.size(), size_t(UINT8_MAX)));
     }
 
-    std::string get_gamepad_name(HidDeviceId gamepad) {
+    const char *get_gamepad_name(HidDeviceId gamepad) {
         auto *controller = SDL_GameControllerFromInstanceID(gamepad);
         if (controller == nullptr) {
             Logger::default_logger().warn("Client queried unknown gamepad ID %d", gamepad);
-            return "invalid";
+            return k_gamepad_name_invalid;
         }
 
         const char *name = SDL_GameControllerName(controller);
-        return name != nullptr ? name : "unknown";
+        return name != nullptr ? name : k_gamepad_name_unknown;
     }
 
     bool is_gamepad_button_pressed(HidDeviceId gamepad, GamepadButton button) {

@@ -51,7 +51,7 @@ namespace argus::input {
         /**
          * @brief Returns the context's current text.
          */
-        [[nodiscard]] std::string get_current_text(void) const;
+        [[nodiscard]] const std::string &get_current_text(void) const;
 
         /**
          * @brief Resumes capturing text input to the context.

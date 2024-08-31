@@ -63,27 +63,27 @@ namespace argus::input {
 
         void detach_gamepad(void);
 
-        std::string get_gamepad_name(void);
+        const char *get_gamepad_name(void) const;
 
-        double get_deadzone_radius(void);
+        double get_deadzone_radius(void) const;
 
         void set_deadzone_radius(double radius);
 
         void clear_deadzone_radius(void);
 
-        DeadzoneShape get_deadzone_shape(void);
+        DeadzoneShape get_deadzone_shape(void) const;
 
         void set_deadzone_shape(DeadzoneShape shape);
 
         void clear_deadzone_shape(void);
 
-        double get_axis_deadzone_radius(GamepadAxis axis);
+        double get_axis_deadzone_radius(GamepadAxis axis) const;
 
         void set_axis_deadzone_radius(GamepadAxis axis, double radius);
 
         void clear_axis_deadzone_radius(GamepadAxis axis);
 
-        DeadzoneShape get_axis_deadzone_shape(GamepadAxis axis);
+        DeadzoneShape get_axis_deadzone_shape(GamepadAxis axis) const;
 
         void set_axis_deadzone_shape(GamepadAxis axis, DeadzoneShape shape);
 
@@ -91,7 +91,8 @@ namespace argus::input {
 
         void unbind_action(const std::string &action);
 
-        [[nodiscard]] std::vector<std::string> get_keyboard_key_bindings(KeyboardScancode key) const;
+        [[nodiscard]] std::vector<std::reference_wrapper<const std::string>> get_keyboard_key_bindings(
+                KeyboardScancode key) const;
 
         [[nodiscard]] std::vector<KeyboardScancode> get_keyboard_action_bindings(const std::string &action) const;
 
@@ -125,16 +126,16 @@ namespace argus::input {
 
         void unbind_gamepad_axis(GamepadAxis axis, const std::string &action);
 
-        bool is_gamepad_button_pressed(GamepadButton button);
+        bool is_gamepad_button_pressed(GamepadButton button) const;
 
-        double get_gamepad_axis(GamepadAxis axis);
+        double get_gamepad_axis(GamepadAxis axis) const;
 
-        double get_gamepad_axis_delta(GamepadAxis axis);
+        double get_gamepad_axis_delta(GamepadAxis axis) const;
 
-        bool is_action_pressed(const std::string &action);
+        bool is_action_pressed(const std::string &action) const;
 
-        double get_action_axis(const std::string &action);
+        double get_action_axis(const std::string &action) const;
 
-        double get_action_axis_delta(const std::string &action);
+        double get_action_axis_delta(const std::string &action) const;
     };
 }

@@ -258,7 +258,7 @@ namespace argus::input {
         UNUSED(window);
     }
 
-    std::string get_key_name(KeyboardScancode scancode) {
+    const char *get_key_name(KeyboardScancode scancode) {
         return SDL_GetKeyName(SDL_GetKeyFromScancode(_translate_argus_scancode(scancode)));
     }
 
