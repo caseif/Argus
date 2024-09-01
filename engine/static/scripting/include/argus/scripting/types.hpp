@@ -78,7 +78,7 @@ namespace argus {
         size_t size;
         bool is_const = false;
         bool is_refable = false;
-        std::optional<std::type_index> type_index = std::nullopt;
+        std::optional<std::string> type_id = std::nullopt;
         std::optional<std::string> type_name = std::nullopt;
         std::optional<std::unique_ptr<ScriptCallbackType>> callback_type = std::nullopt;
         std::optional<std::unique_ptr<ObjectType>> primary_type = std::nullopt;
@@ -90,7 +90,7 @@ namespace argus {
                 IntegralType type,
                 size_t size,
                 bool is_const = false,
-                std::optional<std::type_index> type_index = std::nullopt,
+                std::optional<std::string> type_id = std::nullopt,
                 std::optional<std::string> type_name = std::nullopt,
                 std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type = std::nullopt,
                 std::optional<ObjectType> primary_type = std::nullopt,
@@ -364,16 +364,16 @@ namespace argus {
                 argus_assert(false);
             }
             case IntegralType::Struct: {
-                argus_assert(type.type_index.value() == typeid(T));
+                argus_assert(type.type_id.value() == typeid(T).name());
                 break;
             }
             case IntegralType::Pointer: {
-                argus_assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                argus_assert(type.type_id.value() == typeid(std::remove_pointer_t<T>).name());
                 break;
             }
             case IntegralType::Enum: {
                 if constexpr (std::is_enum_v<T>) {
-                    argus_assert(type.type_index.value() == typeid(T));
+                    argus_assert(type.type_id.value() == typeid(T).name());
                 } else {
                     argus_assert(std::is_integral_v<T>);
                 }
@@ -447,7 +447,7 @@ namespace argus {
                 _validate_value_type<T>(type);
 
                 if (type.type == IntegralType::Pointer) {
-                    argus_assert(type.type_index.value() == typeid(std::remove_pointer_t<T>));
+                    argus_assert(type.type_id.value() == typeid(std::remove_pointer_t<T>).name());
                     return **reinterpret_cast<std::remove_reference_t<T> **>(get_ptr0());
                 } else {
                     return *reinterpret_cast<std::remove_reference_t<T> *>(get_ptr0());
@@ -511,7 +511,7 @@ namespace argus {
     struct BoundTypeDef {
         std::string name;
         size_t size;
-        std::type_index type_index;
+        std::string type_id;
         // whether references to the type can be passed to scripts
         // (i.e. whether the type derives from AutoCleanupable)
         bool is_refable;
@@ -528,7 +528,7 @@ namespace argus {
     struct BoundEnumDef {
         std::string name;
         size_t width;
-        std::type_index type_index;
+        std::string type_id;
         std::map<std::string, uint64_t> values;
         std::unordered_set<uint64_t> all_ordinals;
     };

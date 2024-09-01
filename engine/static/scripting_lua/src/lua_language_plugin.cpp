@@ -191,7 +191,7 @@ namespace argus {
         auto *udata = reinterpret_cast<UserData *>(lua_touserdata(state, param_index));
         void *ptr;
         if (udata->is_handle) {
-            ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data), type_def.type_index);
+            ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data), type_def.type_id);
 
             if (ptr == nullptr) {
                 return _set_lua_error(state, "Invalid handle passed as parameter " + std::to_string(param_index)
@@ -207,7 +207,7 @@ namespace argus {
                 IntegralType::Pointer,
                 sizeof(void *),
                 is_const,
-                type_def.type_index,
+                type_def.type_id,
                 type_def.name
         };
         auto wrapper_res = create_object_wrapper(obj_type, &ptr);
@@ -327,7 +327,7 @@ namespace argus {
                             .expect("Failed to create object wrapper while reading vector from Lua VM"));
                 }
 
-                auto bound_type = get_bound_type(element_type.type_name.value())
+                auto bound_type = get_bound_type(element_type.type_id.value())
                         .expect("Encountered unbound element type when reading vector from Lua VM");
 
                 auto wrapper = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
@@ -364,7 +364,7 @@ namespace argus {
                     if (udata->is_handle) {
                         // userdata is storing handle of pointer to struct data
                         ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
-                                element_type.type_index.value());
+                                element_type.type_id.value());
 
                         if (ptr == nullptr) {
                             return err<ObjectWrapper, std::string>("Invalid handle passed in parameter "
@@ -464,7 +464,7 @@ namespace argus {
             case IntegralType::Struct:
             case IntegralType::Pointer: {
                 argus_assert(param_def.type_name.has_value());
-                argus_assert(param_def.type_index.has_value());
+                argus_assert(param_def.type_id.has_value());
 
                 if (!lua_isuserdata(state, param_index)) {
                     return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
@@ -488,7 +488,7 @@ namespace argus {
                 if (udata->is_handle) {
                     // userdata is storing handle of pointer to struct data
                     ptr = deref_sv_handle(*reinterpret_cast<ScriptBindableHandle *>(udata->data),
-                            param_def.type_index.value());
+                            param_def.type_id.value());
 
                     if (ptr == nullptr) {
                         return err<ObjectWrapper, std::string>("Invalid handle passed as parameter "
@@ -549,9 +549,9 @@ namespace argus {
 
                 lua_pop(state, 2); // pop type name and table
 
-                auto bound_type_res = get_bound_type(type_name);
+                auto bound_type_res = get_bound_type_by_name(type_name);
                 if (bound_type_res.is_ok()) {
-                    auto bound_type_index = bound_type_res.unwrap().type_index;
+                    auto bound_type_index = bound_type_res.unwrap().type_id;
                     wrapper_res = create_object_wrapper(param_def, static_cast<const void *>(&bound_type_index));
 
                     break;
@@ -915,7 +915,7 @@ namespace argus {
                             sizeof(UserData) + element_type.size));
                     udata->is_handle = false;
 
-                    auto bound_type = get_bound_type(element_type.type_index.value())
+                    auto bound_type = get_bound_type(element_type.type_id.value())
                             .expect("Tried to wrap parameter of unbound struct type");
                     if (bound_type.copy_ctor != nullptr) {
                         bound_type.copy_ctor(udata->data, vec[i]);
@@ -929,7 +929,7 @@ namespace argus {
                 case IntegralType::Pointer: {
                     auto ptr = vec.at<void *>(i);
                     if (ptr != nullptr) {
-                        auto handle = get_or_create_sv_handle(ptr, element_type.type_index.value());
+                        auto handle = get_or_create_sv_handle(ptr, element_type.type_id.value());
                         auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                                 sizeof(UserData) + sizeof(ScriptBindableHandle)));
                         udata->is_handle = true;
@@ -1007,13 +1007,13 @@ namespace argus {
                 break;
             }
             case IntegralType::Pointer: {
-                argus_assert(wrapper.type.type_index.has_value());
+                argus_assert(wrapper.type.type_id.has_value());
                 argus_assert(wrapper.type.type_name.has_value());
 
                 void *ptr = *reinterpret_cast<void *const *>(wrapper.get_ptr0());
 
                 if (ptr != nullptr) {
-                    auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_index.value());
+                    auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_id.value());
                     auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                             sizeof(UserData) + sizeof(ScriptBindableHandle)));
                     udata->is_handle = true;
@@ -1188,7 +1188,7 @@ namespace argus {
         if (fn_type == FunctionType::MemberInstance) {
             // type should definitely be bound since the trampoline function
             // is accessed via the bound type's metatable
-            auto type_def = get_bound_type(type_name)
+            auto type_def = get_bound_type_by_name(type_name)
                     .expect("Failed to find bound type while handling bound instance function");
 
             //TODO: add safeguard to prevent invocation of functions on non-references
@@ -1271,7 +1271,7 @@ namespace argus {
 
         // type should definitely be bound since the field is accessed through
         // its associated metatable
-        auto type_def = get_bound_type(real_type_name)
+        auto type_def = get_bound_type_by_name(real_type_name)
                 .expect("Failed to find type while accessing field");
 
         ObjectWrapper inst_wrapper {};
@@ -1339,7 +1339,7 @@ namespace argus {
 
         // type should definitely be bound since the field is accessed through
         // its associated metatable
-        auto type_def = get_bound_type(type_name).expect("Failed to find bound type while setting field");
+        auto type_def = get_bound_type_by_name(type_name).expect("Failed to find bound type while setting field");
 
         ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def, true, &inst_wrapper);
@@ -1396,7 +1396,7 @@ namespace argus {
 
         // type should definitely be bound since we're getting it directly from
         // its associated metatable
-        auto type_def_res = get_bound_type(type_name);
+        auto type_def_res = get_bound_type_by_name(type_name);
         const auto &type_def = type_def_res.expect("Failed to find type while cloning object");
         if (type_def.copy_ctor == nullptr) {
             return _set_lua_error(state, type_name + " is not cloneable");
@@ -1407,7 +1407,7 @@ namespace argus {
         void *src;
         if (udata->is_handle) {
             auto handle = reinterpret_cast<ScriptBindableHandle *>(udata->data);
-            src = deref_sv_handle(*handle, type_def.type_index);
+            src = deref_sv_handle(*handle, type_def.type_id);
         } else {
             src = udata->data;
         }

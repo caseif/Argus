@@ -37,12 +37,12 @@
 namespace argus {
     struct BindingError;
 
-    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(std::type_index type_index);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_id);
 
     template<typename T>
     [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void);
 
-    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(std::type_index enum_type_index);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_type_id);
 
     template<typename T>
     [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void);
@@ -232,12 +232,12 @@ namespace argus {
             for (auto &subparam : param_types) {
                 if (subparam.type == IntegralType::Pointer
                         || subparam.type == IntegralType::Struct) {
-                    argus_assert(subparam.type_index.has_value());
-                    subparam.type_name = get_bound_type(subparam.type_index.value())
+                    argus_assert(subparam.type_id.has_value());
+                    subparam.type_name = get_bound_type(subparam.type_id.value())
                             .expect("Tried to unwrap callback param with unbound struct type").name;
                 } else if (subparam.type == IntegralType::Enum) {
-                    argus_assert(subparam.type_index.has_value());
-                    subparam.type_name = get_bound_enum(subparam.type_index.value())
+                    argus_assert(subparam.type_id.has_value());
+                    subparam.type_name = get_bound_enum(subparam.type_id.value())
                             .expect("Tried to unwrap callback param with unbound enum type").name;
                 }
             }

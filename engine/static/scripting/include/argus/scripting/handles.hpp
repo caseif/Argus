@@ -28,17 +28,17 @@ namespace argus {
     constexpr const ScriptBindableHandle k_null_handle = 0;
     constexpr const ScriptBindableHandle k_handle_max = UINT64_MAX;
 
-    [[nodiscard]] ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type);
+    [[nodiscard]] ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::string &type_id);
 
     template<typename T>
     [[nodiscard]] ScriptBindableHandle get_or_create_sv_handle(T &obj) {
         return get_or_create_handle(&obj, typeid(obj));
     }
 
-    [[nodiscard]] void *deref_sv_handle(ScriptBindableHandle handle, const std::type_index &expected_type);
+    [[nodiscard]] void *deref_sv_handle(ScriptBindableHandle handle, const std::string &expected_type_id);
 
     template<typename T>
     [[nodiscard]] T *deref_handle(ScriptBindableHandle handle) {
-        return deref_sv_handle(handle, typeid(T));
+        return deref_sv_handle(handle, typeid(T).name());
     }
 }

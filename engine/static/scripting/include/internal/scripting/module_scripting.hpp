@@ -32,9 +32,9 @@ namespace argus {
     extern std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
     extern std::map<std::string, std::string> g_media_type_langs;
     extern std::map<std::string, BoundTypeDef> g_bound_types;
-    extern std::map<std::type_index, std::string> g_bound_type_indices;
+    extern std::map<std::string, std::string> g_bound_type_ids;
     extern std::map<std::string, BoundEnumDef> g_bound_enums;
-    extern std::map<std::type_index, std::string> g_bound_enum_indices;
+    extern std::map<std::string, std::string> g_bound_enum_ids;
     extern std::map<std::string, BoundFunctionDef> g_bound_global_fns;
     extern std::vector<ScriptContext *> g_script_contexts;
     // key = language name, value = resources loaded by the corresponding plugin

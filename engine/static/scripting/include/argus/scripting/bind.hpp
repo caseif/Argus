@@ -37,7 +37,7 @@ namespace argus {
     class Transform2D;
 
     [[nodiscard]] Result<BoundTypeDef, BindingError> create_type_def(const std::string &name, size_t size,
-            std::type_index type_index, bool is_refable,
+            const std::string &type_id, bool is_refable,
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor);
@@ -72,7 +72,7 @@ namespace argus {
             };
         }
 
-        return create_type_def(name, sizeof(T), typeid(T), is_refable,
+        return create_type_def(name, sizeof(T), typeid(T).name(), is_refable,
                 copy_ctor,
                 move_ctor,
                 dtor);
@@ -93,13 +93,13 @@ namespace argus {
     [[nodiscard]] Result<void, BindingError> bind_enum(const BoundEnumDef &def);
 
     [[nodiscard]] Result<BoundEnumDef, BindingError> create_enum_def(const std::string &name, size_t width,
-            std::type_index type_index);
+            const std::string &type_id);
 
     template<typename E>
     [[nodiscard]] std::enable_if_t<std::is_enum_v<E>, Result<BoundEnumDef, BindingError>>
     create_enum_def(const std::string &name) {
         return create_enum_def(name, sizeof(std::underlying_type_t<E>),
-                typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>));
+                typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<E>>>).name());
     }
 
     template<typename T>
@@ -119,14 +119,13 @@ namespace argus {
         return add_enum_value(def, name, uint64_t(value));
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_enum_value(std::type_index enum_type, const std::string &name,
+    [[nodiscard]] Result<void, BindingError> bind_enum_value(const std::string &enum_type, const std::string &name,
             uint64_t value);
 
     template<typename T>
     [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>>
     bind_enum_value(const std::string &name, T value) {
-        std::type_index enum_type = typeid(T);
-        return bind_enum_value(enum_type, name, uint64_t(value));
+        return bind_enum_value(typeid(T).name(), name, uint64_t(value));
     }
 
     template<typename FuncType>
@@ -203,12 +202,12 @@ namespace argus {
                         if (ret_obj_type.primary_type.value()->type == IntegralType::Struct
                                 || ret_obj_type.primary_type.value()->type == IntegralType::Pointer) {
                             ret_obj_type.primary_type.value()->type_name
-                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_id.value())
                                     .expect("Tried to create function wrapper with vector return type and "
                                             "unbound element struct type").name;
                         } else if (ret_obj_type.primary_type.value()->type == IntegralType::Enum) {
                             ret_obj_type.primary_type.value()->type_name
-                                    = get_bound_enum(ret_obj_type.primary_type.value()->type_index.value())
+                                    = get_bound_enum(ret_obj_type.primary_type.value()->type_id.value())
                                     .expect("Tried to create function wrapper with vector return type and "
                                             "unbound element enum type").name;
                         }
@@ -222,12 +221,12 @@ namespace argus {
                         if (ret_obj_type.primary_type.value()->type == IntegralType::Struct
                                 || ret_obj_type.primary_type.value()->type == IntegralType::Pointer) {
                             ret_obj_type.primary_type.value()->type_name
-                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_id.value())
                                             .expect("Tried to create function wrapper with result return type and "
                                                     "unbound value struct type").name;
                         } else if (ret_obj_type.primary_type.value()->type == IntegralType::Enum) {
                             ret_obj_type.primary_type.value()->type_name
-                                    = get_bound_type(ret_obj_type.primary_type.value()->type_index.value())
+                                    = get_bound_type(ret_obj_type.primary_type.value()->type_id.value())
                                             .expect("Tried to create function wrapper with result return type and "
                                                     "unbound value enum type").name;
                         }
@@ -235,12 +234,12 @@ namespace argus {
                         if (ret_obj_type.secondary_type.value()->type == IntegralType::Struct
                                 || ret_obj_type.secondary_type.value()->type == IntegralType::Pointer) {
                             ret_obj_type.secondary_type.value()->type_name
-                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_index.value())
+                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_id.value())
                                             .expect("Tried to create function wrapper with result return type and "
                                                     "unbound error struct type").name;
                         } else if (ret_obj_type.secondary_type.value()->type == IntegralType::Enum) {
                             ret_obj_type.secondary_type.value()->type_name
-                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_index.value())
+                                    = get_bound_type(ret_obj_type.secondary_type.value()->type_id.value())
                                             .expect("Tried to create function wrapper with result return type and "
                                                     "unbound error enum type").name;
                         }
@@ -349,7 +348,7 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_member_instance_function(std::type_index type_index,
+    [[nodiscard]] Result<void, BindingError> bind_member_instance_function(const std::string &type_id,
             const BoundFunctionDef &fn_def);
 
     template<typename FuncType>
@@ -360,7 +359,7 @@ namespace argus {
 
         return _create_function_def<FunctionType::MemberInstance>(fn_name, fn)
                 .template and_then<void>([](const auto &fn_def) {
-                    return bind_member_instance_function(typeid(ClassType), fn_def);
+                    return bind_member_instance_function(typeid(ClassType).name(), fn_def);
                 });
     }
 
@@ -376,7 +375,7 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_member_static_function(std::type_index type_index,
+    [[nodiscard]] Result<void, BindingError> bind_member_static_function(const std::string &type_id,
             const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType>
@@ -384,7 +383,7 @@ namespace argus {
     bind_member_static_function(const std::string &fn_name, FuncType fn) {
         return _create_function_def<FunctionType::MemberStatic>(fn_name, fn)
                 .template and_then<void>([](const auto &fn_def) {
-                    return bind_member_static_function(typeid(ClassType), fn_def);
+                    return bind_member_static_function(typeid(ClassType).name(), fn_def);
                 });
     }
 
@@ -403,7 +402,7 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_extension_function(std::type_index type_index,
+    [[nodiscard]] Result<void, BindingError> bind_extension_function(const std::string &type_id,
             const BoundFunctionDef &fn_def);
 
     template<typename ClassType, typename FuncType,
@@ -415,7 +414,7 @@ namespace argus {
     bind_extension_function(const std::string &fn_name, FuncType fn) {
         return _create_function_def<FunctionType::Extension>(fn_name, fn)
                 .template and_then<void>([](const auto &fn_def) {
-                    return bind_extension_function(typeid(ClassType), fn_def);
+                    return bind_extension_function(typeid(ClassType).name(), fn_def);
                 });
     }
 
@@ -504,7 +503,7 @@ namespace argus {
         static_assert(!std::is_function_v<FieldType> && !is_std_function_v<FieldType>,
                 "Callback-typed fields are not supported");
 
-        affirm_precond(std::type_index(typeid(ClassType)) == type_def.type_index,
+        affirm_precond(typeid(ClassType).name() == type_def.type_id,
                 "Class of field reference does not match provided type definition");
 
         auto field_def = _create_field_def(field_name, field)
@@ -513,7 +512,7 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> bind_member_field(std::type_index type_index,
+    [[nodiscard]] Result<void, BindingError> bind_member_field(const std::string &type_id,
             const BoundFieldDef &field_def);
 
     template<typename FieldType, typename ClassType>
@@ -524,25 +523,25 @@ namespace argus {
 
         return _create_field_def(field_name, field)
                 .template and_then<void>([](const auto &field_def) {
-                    return bind_member_field(typeid(ClassType), field_def);
+                    return bind_member_field(typeid(ClassType).name(), field_def);
                 });
     }
 
-    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_name);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type_by_name(const std::string &type_name);
 
-    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::type_info &type_info);
+    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_id);
 
     template<typename T>
     [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void) {
-        return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>));
+        return get_bound_type(typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>).name());
     }
 
-    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_name);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum_by_name(const std::string &enum_name);
 
-    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::type_info &enum_type_info);
+    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_type_id);
 
     template<typename T>
     [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void) {
-        return get_bound_enum(typeid(std::remove_const_t<T>));
+        return get_bound_enum(typeid(std::remove_const_t<T>).name());
     }
 }

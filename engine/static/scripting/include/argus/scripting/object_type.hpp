@@ -93,7 +93,7 @@ namespace argus {
             return { IntegralType::Type, sizeof(std::type_index), is_const };
         } else if constexpr (is_std_vector_v<std::remove_cv_t<T>>) {
             using E = typename B::value_type;
-            return { IntegralType::Vector, sizeof(void *), is_const, typeid(std::remove_cv_t<T>),
+            return { IntegralType::Vector, sizeof(void *), is_const, typeid(std::remove_cv_t<T>).name(),
                     std::nullopt, std::nullopt, create_object_type<E, flow_dir>() };
         } else if constexpr (is_std_vector_v<B>) {
             // REALLY big headache, better to just not support it
@@ -101,14 +101,14 @@ namespace argus {
                             && !std::is_const_v<std::remove_reference_t<std::remove_pointer_t<T>>>),
                     "Non-const vector reference parameters are not supported");
             using E = typename B::value_type;
-            return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B), std::nullopt, std::nullopt,
+            return { IntegralType::VectorRef, sizeof(void *), is_const, typeid(B).name(), std::nullopt, std::nullopt,
                     create_object_type<E, flow_dir, is_const>() };
             } else if constexpr (is_result_v<std::remove_cv_t<T>>) {
             static_assert(flow_dir == DataFlowDirection::ToScript,
                     "Result types may not be passed or returned from scripts");
             using V = typename result_traits<B>::value_type;
             using E = typename result_traits<B>::error_type;
-            return { IntegralType::Result, sizeof(T), is_const, typeid(T), std::nullopt, std::nullopt,
+            return { IntegralType::Result, sizeof(T), is_const, typeid(T).name(), std::nullopt, std::nullopt,
                     create_object_type<V, flow_dir, is_const>(), create_object_type<E, flow_dir, is_const>() };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
             return { IntegralType::Boolean, sizeof(bool), is_const };
@@ -133,9 +133,9 @@ namespace argus {
             static_assert(!(flow_dir == DataFlowDirection::ToScript && !std::is_base_of_v<AutoCleanupable, B>),
                     "Reference types which flow from the engine to a script "
                     "(function return values and callback parameters) must derive from AutoCleanupable");
-            return { IntegralType::Pointer, sizeof(void *), is_const, typeid(B) };
+            return { IntegralType::Pointer, sizeof(void *), is_const, typeid(B).name() };
         } else if constexpr (std::is_enum_v<T>) {
-            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), is_const, typeid(B) };
+            return { IntegralType::Enum, sizeof(std::underlying_type_t<T>), is_const, typeid(B).name() };
         } else {
             static_assert(std::is_copy_constructible_v<B>,
                     "Types in bound functions must have a public copy constructor if passed by value");
@@ -147,7 +147,7 @@ namespace argus {
                     "Types in bound functions must have a public move assignment operator if passed by value");
             static_assert(std::is_destructible_v<B>,
                     "Types in bound functions must have a public destructor if passed by value");
-            return { IntegralType::Struct, sizeof(T), is_const, typeid(B) };
+            return { IntegralType::Struct, sizeof(T), is_const, typeid(B).name() };
         }
     }
 }

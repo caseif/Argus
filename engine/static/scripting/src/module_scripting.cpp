@@ -37,10 +37,10 @@ namespace argus {
     std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
     std::map<std::string, std::string> g_media_type_langs;
     std::map<std::string, BoundTypeDef> g_bound_types;
-    std::map<std::type_index, std::string> g_bound_type_indices;
+    std::map<std::string, std::string> g_bound_type_ids;
     std::map<std::string, BoundFunctionDef> g_bound_global_fns;
     std::map<std::string, BoundEnumDef> g_bound_enums;
-    std::map<std::type_index, std::string> g_bound_enum_indices;
+    std::map<std::string, std::string> g_bound_enum_ids;
     std::vector<ScriptContext *> g_script_contexts;
     std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
 

@@ -34,7 +34,7 @@ namespace argus {
     ObjectType::ObjectType(void) = default;
 
     ObjectType::ObjectType(IntegralType type, size_t size, bool is_const,
-            std::optional<std::type_index> type_index,
+            std::optional<std::string> type_id,
             std::optional<std::string> type_name,
             std::optional<std::unique_ptr<ScriptCallbackType>> &&callback_type,
             std::optional<ObjectType> primary_type,
@@ -42,7 +42,7 @@ namespace argus {
         type(type),
         size(size),
         is_const(is_const),
-        type_index(type_index),
+        type_id(type_id),
         type_name(std::move(type_name)),
         callback_type(std::move(callback_type)),
         primary_type(primary_type.has_value()
@@ -60,7 +60,7 @@ namespace argus {
         type(rhs.type),
         size(rhs.size),
         is_const(rhs.is_const),
-        type_index(rhs.type_index),
+        type_id(rhs.type_id),
         type_name(rhs.type_name),
         callback_type(rhs.callback_type.has_value()
                 ? std::make_optional<std::unique_ptr<ScriptCallbackType>>(
@@ -80,7 +80,7 @@ namespace argus {
         type(rhs.type),
         size(rhs.size),
         is_const(rhs.is_const),
-        type_index(rhs.type_index),
+        type_id(rhs.type_id),
         type_name(std::move(rhs.type_name)),
         callback_type(std::move(rhs.callback_type)),
         primary_type(std::move(rhs.primary_type)),

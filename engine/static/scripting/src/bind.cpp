@@ -75,21 +75,21 @@ namespace argus {
             return ok<void, BindingError>();
         }
 
-        argus_assert(param_def.type_index.has_value());
+        argus_assert(param_def.type_id.has_value());
         argus_assert(!param_def.type_name.has_value());
 
         std::string type_name;
         if (param_def.type == IntegralType::Enum) {
-            auto bound_enum_res = get_bound_enum(param_def.type_index.value());
+            auto bound_enum_res = get_bound_enum(param_def.type_id.value());
             if (bound_enum_res.is_err()) {
-                return err<void, BindingError>(param_def.type_index->name(),
+                return err<void, BindingError>(param_def.type_id.value(),
                         "Failed to get enum while resolving function parameter");
             }
             type_name = bound_enum_res.unwrap().name;
         } else {
-            auto bound_type_res = get_bound_type(param_def.type_index.value());
+            auto bound_type_res = get_bound_type(param_def.type_id.value());
             if (bound_type_res.is_err()) {
-                return err<void, BindingError>(param_def.type_index->name(),
+                return err<void, BindingError>(param_def.type_id.value(),
                         "Failed to get type while resolving function parameter");
             }
 
@@ -138,18 +138,18 @@ namespace argus {
             return ok<void, BindingError>();
         }
 
-        argus_assert(field_def.type_index.has_value());
+        argus_assert(field_def.type_id.has_value());
         argus_assert(!field_def.type_name.has_value());
 
         std::string type_name;
         if (field_def.type == IntegralType::Enum) {
-            auto bound_enum_res = get_bound_enum(field_def.type_index.value());
+            auto bound_enum_res = get_bound_enum(field_def.type_id.value());
             if (bound_enum_res.is_err()) {
                 return err<void, BindingError>(bound_enum_res.unwrap_err());
             }
             type_name = bound_enum_res.unwrap().name;
         } else {
-            auto bound_type_res = get_bound_type(field_def.type_index.value());
+            auto bound_type_res = get_bound_type(field_def.type_id.value());
             if (bound_type_res.is_err()) {
                 return err<void, BindingError>(bound_type_res.unwrap_err());
             }
@@ -264,24 +264,24 @@ namespace argus {
         });
     }
 
-    template<typename T>
-    [[nodiscard]] Result<T &, BindingError> _get_bound_type(const std::type_index type_index) {
-        auto index_it = g_bound_type_indices.find(std::type_index(type_index));
-        if (index_it == g_bound_type_indices.cend()) {
-            crash("Type %s is not bound (check binding order and ensure bind_type"
-                      " is called after creating type definition)", type_index.name());
+    template <typename T>
+    [[nodiscard]] static Result<T &, BindingError> _get_bound_type(const std::string &type_id) {
+        auto index_it = g_bound_type_ids.find(type_id);
+        if (index_it == g_bound_type_ids.cend()) {
+            return err<T &, BindingError>(type_id, "Type " + type_id + " is not bound (check binding order "
+                    "and ensure bind_type is called after creating type definition)");
         }
         auto type_it = g_bound_types.find(index_it->second);
         argus_assert(type_it != g_bound_types.cend());
         return ok<T &, BindingError>(const_cast<T &>(type_it->second));
     }
 
-    template<typename T>
-    Result<T &, BindingError> _get_bound_enum(std::type_index enum_type_index) {
-        auto index_it = g_bound_enum_indices.find(std::type_index(enum_type_index));
-        if (index_it == g_bound_enum_indices.cend()) {
-            return err<T &, BindingError>(enum_type_index.name(),
-                    "Enum is not bound (check binding order and ensure bind_type "
+    template <typename T>
+    [[nodiscard]] static Result<T &, BindingError> _get_bound_enum(const std::string &enum_type_id) {
+        auto index_it = g_bound_enum_ids.find(enum_type_id);
+        if (index_it == g_bound_enum_ids.cend()) {
+            return err<T &, BindingError>(enum_type_id,
+                    "Enum " + enum_type_id + " is not bound (check binding order and ensure bind_type "
                     "is called after creating type definition)");
         }
         auto enum_it = g_bound_enums.find(index_it->second);
@@ -289,7 +289,8 @@ namespace argus {
         return ok<T &, BindingError>(const_cast<T &>(enum_it->second));
     }
 
-    Result<BoundTypeDef, BindingError> create_type_def(const std::string &name, size_t size, std::type_index type_index, bool is_refable,
+    Result<BoundTypeDef, BindingError> create_type_def(const std::string &name, size_t size, const std::string &type_id,
+            bool is_refable,
             CopyCtorProxy copy_ctor,
             MoveCtorProxy move_ctor,
             DtorProxy dtor) {
@@ -300,7 +301,7 @@ namespace argus {
         BoundTypeDef def {
                 name,
                 size,
-                type_index,
+                type_id,
                 is_refable,
                 copy_ctor,
                 move_ctor,
@@ -351,7 +352,7 @@ namespace argus {
         }
 
         g_bound_types.insert({ def.name, def });
-        g_bound_type_indices.insert({ def.type_index, def.name });
+        g_bound_type_ids.insert({ def.type_id, def.name });
 
         return ok<void, BindingError>();
     }
@@ -380,13 +381,14 @@ namespace argus {
         }
 
         g_bound_enums.insert({ def.name, def });
-        g_bound_enum_indices.insert({ def.type_index, def.name });
+        g_bound_enum_ids.insert({ def.type_id, def.name });
 
         return ok<void, BindingError>();
     }
 
-    Result<BoundEnumDef, BindingError> create_enum_def(const std::string &name, size_t width, std::type_index type_index) {
-        return ok<BoundEnumDef, BindingError>(BoundEnumDef { name, width, type_index, {}, {} });
+    Result<BoundEnumDef, BindingError> create_enum_def(const std::string &name, size_t width,
+            const std::string &type_id) {
+        return ok<BoundEnumDef, BindingError>(BoundEnumDef { name, width, type_id, {}, {} });
     }
 
     Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value) {
@@ -405,8 +407,8 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_enum_value(std::type_index enum_type, const std::string &name, uint64_t value) {
-        auto enum_def = _get_bound_enum<BoundEnumDef>(enum_type);
+    Result<void, BindingError> bind_enum_value(const std::string &enum_type_id, const std::string &name, uint64_t value) {
+        auto enum_def = _get_bound_enum<BoundEnumDef>(enum_type_id);
         if (enum_def.is_err()) {
             return err<void, BindingError>(enum_def.unwrap_err());
         }
@@ -449,8 +451,9 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_member_instance_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
-        auto type_def = _get_bound_type<BoundTypeDef>(type_index);
+    Result<void, BindingError> bind_member_instance_function(const std::string &type_id,
+            const BoundFunctionDef &fn_def) {
+        auto type_def = _get_bound_type<BoundTypeDef>(type_id);
         if (type_def.is_err()) {
             return err<void, BindingError>(type_def.unwrap_err());
         }
@@ -468,8 +471,8 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_member_static_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
-        auto type_def = _get_bound_type<BoundTypeDef>(type_index);
+    Result<void, BindingError> bind_member_static_function(const std::string &type_id, const BoundFunctionDef &fn_def) {
+        auto type_def = _get_bound_type<BoundTypeDef>(type_id);
         if (type_def.is_err()) {
             return err<void, BindingError>(type_def.unwrap_err());
         }
@@ -479,7 +482,7 @@ namespace argus {
     Result<void, BindingError> add_extension_function(BoundTypeDef &type_def, const BoundFunctionDef &fn_def) {
         if (fn_def.params.empty()
                 || !(fn_def.params[0].type == IntegralType::Struct || fn_def.params[0].type == IntegralType::Pointer)
-                || fn_def.params[0].type_index != type_def.type_index) {
+                || fn_def.params[0].type_id != type_def.type_id) {
             auto qual_name = get_qualified_function_name(FunctionType::Extension, type_def.name, fn_def.name);
             return err<void, BindingError>(qual_name,
                     "First parameter of extension function must match extended type");
@@ -500,8 +503,8 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_extension_function(std::type_index type_index, const BoundFunctionDef &fn_def) {
-        auto type_def = _get_bound_type<BoundTypeDef>(type_index);
+    Result<void, BindingError> bind_extension_function(const std::string &type_id, const BoundFunctionDef &fn_def) {
+        auto type_def = _get_bound_type<BoundTypeDef>(type_id);
         if (type_def.is_err()) {
             return err<void, BindingError>(type_def.unwrap_err());
         }
@@ -524,15 +527,15 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_member_field(std::type_index type_index, const BoundFieldDef &field_def) {
-        auto type_def = _get_bound_type<BoundTypeDef>(type_index);
+    Result<void, BindingError> bind_member_field(const std::string &type_id, const BoundFieldDef &field_def) {
+        auto type_def = _get_bound_type<BoundTypeDef>(type_id);
         if (type_def.is_err()) {
             return err<void, BindingError>(type_def.unwrap_err());
         }
         return add_member_field(type_def.unwrap(), field_def);
     }
 
-    Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_name) {
+    Result<const BoundTypeDef &, BindingError> get_bound_type_by_name(const std::string &type_name) {
         auto it = g_bound_types.find(type_name);
         if (it == g_bound_types.cend()) {
             return err<const BoundTypeDef &, BindingError>(type_name,
@@ -542,15 +545,11 @@ namespace argus {
         return ok<const BoundTypeDef &, BindingError>(it->second);
     }
 
-    Result<const BoundTypeDef &, BindingError> get_bound_type(const std::type_info &type_info) {
-        return get_bound_type(std::type_index(type_info));
+    Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_id) {
+        return _get_bound_type<const BoundTypeDef>(type_id);
     }
 
-    Result<const BoundTypeDef &, BindingError> get_bound_type(std::type_index type_index) {
-        return _get_bound_type<const BoundTypeDef>(type_index);
-    }
-
-    Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_name) {
+    Result<const BoundEnumDef &, BindingError> get_bound_enum_by_name(const std::string &enum_name) {
         auto it = g_bound_enums.find(enum_name);
         if (it == g_bound_enums.cend()) {
             return err<const BoundEnumDef &, BindingError>(enum_name,
@@ -560,12 +559,8 @@ namespace argus {
         return ok<const BoundEnumDef &, BindingError>(it->second);
     }
 
-    Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::type_info &enum_type_info) {
-        return get_bound_enum(std::type_index(enum_type_info));
-    }
-
-    Result<const BoundEnumDef &, BindingError> get_bound_enum(std::type_index enum_type_index) {
-        return _get_bound_enum<const BoundEnumDef>(enum_type_index);
+    Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_type_id) {
+        return _get_bound_enum<const BoundEnumDef>(enum_type_id);
     }
 
     Result<void, BindingError> apply_bindings_to_context(ScriptContext &context) {

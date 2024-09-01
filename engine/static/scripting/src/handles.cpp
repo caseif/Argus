@@ -31,15 +31,15 @@
 #include <utility>
 
 namespace argus {
-    static std::unordered_map<ScriptBindableHandle, std::pair<std::type_index, void *>> g_handle_to_ptr_map;
-    static std::unordered_map<void *, std::pair<std::type_index, ScriptBindableHandle>> g_ptr_to_handle_map;
+    static std::unordered_map<ScriptBindableHandle, std::pair<std::string, void *>> g_handle_to_ptr_map;
+    static std::unordered_map<void *, std::pair<std::string, ScriptBindableHandle>> g_ptr_to_handle_map;
 
     static ScriptBindableHandle g_next_handle = 1;
 
-    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::type_index &type) {
+    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::string &type_id) {
         auto handle_it = g_ptr_to_handle_map.find(ptr);
         if (handle_it != g_ptr_to_handle_map.cend()) {
-            argus_assert(handle_it->second.first == type);
+            argus_assert(handle_it->second.first == type_id);
             return handle_it->second.second;
         } else {
             if (g_next_handle == k_handle_max) {
@@ -50,20 +50,20 @@ namespace argus {
             }
 
             auto handle = g_next_handle++;
-            g_handle_to_ptr_map.insert({ handle, { type, ptr }});
-            g_ptr_to_handle_map.insert({ ptr, { type, handle }});
+            g_handle_to_ptr_map.insert({ handle, { type_id, ptr }});
+            g_ptr_to_handle_map.insert({ ptr, { type_id, handle }});
 
             return handle;
         }
     }
 
-    void *deref_sv_handle(ScriptBindableHandle handle, const std::type_index &expected_type) {
+    void *deref_sv_handle(ScriptBindableHandle handle, const std::string &expected_type_id) {
         auto it = g_handle_to_ptr_map.find(handle);
         if (it == g_handle_to_ptr_map.cend()) {
             return nullptr;
         }
 
-        if (it->second.first != expected_type) {
+        if (it->second.first != expected_type_id) {
             // either memory corruption or someone is doing something nasty
             return nullptr;
         }
