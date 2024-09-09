@@ -2,14 +2,14 @@ include(CMakeDependentOption)
 
 set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman;"
-        "scripting;scripting_lua;"
+        "scripting;scripting_lua;scripting_rust_init;"
         #"scripting_angelscript;"
         "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
 set(AUX_MODULE_IDS "lowlevel_rustabi;core_rustabi;"
-    "wm_rustabi;input_rustabi;resman_rustabi;"
-    "render_rustabi")
+    "scripting_rustabi;wm_rustabi;input_rustabi;"
+    "resman_rustabi;render_rustabi")
 
 set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")

@@ -1,0 +1,14 @@
+[package]
+name = "scripting_rust_init"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "scripting_rust_init"
+crate-type = ["staticlib"]
+
+[dependencies]
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+core_rustabi = { path = "../../auxiliary/core_rustabi" }
+scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
+inventory = "0.3.15"
