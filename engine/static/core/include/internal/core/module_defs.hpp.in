@@ -18,6 +18,6 @@ namespace argus {
 
     const std::array<StaticModule, @MODULE_COUNT@>
     g_static_modules = {{
-            @STATIC_MODULE_DEFS@
+        @STATIC_MODULE_DEFS@
     }};
 }
