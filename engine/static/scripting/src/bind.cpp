@@ -359,7 +359,7 @@ namespace argus {
 
     Result<void, BindingError> bind_enum(const BoundEnumDef &def) {
         // check for consistency
-        std::unordered_set<uint64_t> ordinals;
+        std::unordered_set<int64_t> ordinals;
         ordinals.reserve(def.values.size());
         std::transform(def.values.cbegin(), def.values.cend(), std::inserter(ordinals, ordinals.end()),
                 [](const auto &kv) { return kv.second; });
@@ -391,7 +391,7 @@ namespace argus {
         return ok<BoundEnumDef, BindingError>(BoundEnumDef { name, width, type_id, {}, {} });
     }
 
-    Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value) {
+    Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, int64_t value) {
         if (def.values.find(name) != def.values.cend()) {
             return err<void, BindingError>(def.name + "::" + name, "Enum value with same name is already bound");
         }
@@ -407,7 +407,8 @@ namespace argus {
         return ok<void, BindingError>();
     }
 
-    Result<void, BindingError> bind_enum_value(const std::string &enum_type_id, const std::string &name, uint64_t value) {
+    Result<void, BindingError> bind_enum_value(const std::string &enum_type_id, const std::string &name,
+            int64_t value) {
         auto enum_def = _get_bound_enum<BoundEnumDef>(enum_type_id);
         if (enum_def.is_err()) {
             return err<void, BindingError>(enum_def.unwrap_err());

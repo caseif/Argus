@@ -53,7 +53,7 @@ namespace argus {
             argus_assert(type.type_name.has_value());
             auto enum_def = get_bound_enum(type.type_id.value())
                     .expect("Tried to create ObjectWrapper with unbound enum type");
-            auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<uint64_t *>(&val));
+            auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<int64_t *>(&val));
             if (enum_val_it == enum_def.all_ordinals.cend()) {
                 return err<ObjectWrapper, ReflectiveArgumentsError>("Unknown ordinal " + std::to_string(val)
                         + " for enum type " + enum_def.name);

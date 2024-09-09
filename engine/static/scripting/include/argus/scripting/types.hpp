@@ -529,8 +529,8 @@ namespace argus {
         std::string name;
         size_t width;
         std::string type_id;
-        std::map<std::string, uint64_t> values;
-        std::unordered_set<uint64_t> all_ordinals;
+        std::map<std::string, int64_t> values;
+        std::unordered_set<int64_t> all_ordinals;
     };
 
     struct free_deleter_t {

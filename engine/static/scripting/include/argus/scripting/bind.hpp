@@ -111,21 +111,21 @@ namespace argus {
                 });
     }
 
-    [[nodiscard]] Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, uint64_t value);
+    [[nodiscard]] Result<void, BindingError> add_enum_value(BoundEnumDef &def, const std::string &name, int64_t value);
 
     template<typename T>
     [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>>
     add_enum_value(BoundEnumDef &def, const std::string &name, T value) {
-        return add_enum_value(def, name, uint64_t(value));
+        return add_enum_value(def, name, int64_t(value));
     }
 
     [[nodiscard]] Result<void, BindingError> bind_enum_value(const std::string &enum_type, const std::string &name,
-            uint64_t value);
+            int64_t value);
 
     template<typename T>
     [[nodiscard]] std::enable_if_t<std::is_enum_v<T>, Result<void, BindingError>>
     bind_enum_value(const std::string &name, T value) {
-        return bind_enum_value(typeid(T).name(), name, uint64_t(value));
+        return bind_enum_value(typeid(T).name(), name, int64_t(value));
     }
 
     template<typename FuncType>
