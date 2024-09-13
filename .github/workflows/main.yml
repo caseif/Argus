@@ -166,7 +166,7 @@ jobs:
         } elseif ("$env:OS_NAME" -eq "linux") {
             cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ..
         } elseif ("$env:OS_NAME" -eq "macos") {
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DBUILD_VULKAN_BACKEND=OFF ..
+            cmake -G "Ninja" -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DBUILD_VULKAN_BACKEND=OFF ..
         }
 
     - name: Build
