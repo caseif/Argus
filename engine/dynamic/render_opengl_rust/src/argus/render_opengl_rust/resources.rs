@@ -17,4 +17,5 @@
  */
 
 pub(crate) static RESOURCES_PACK: &[u8] = include_bytes!(
-    concat!(env!("GENERATED_SOURCES_PATH"), "/res/arp/resources_render_opengl_rust.arp"));
+    concat!(env!("OUT_DIR"), "/generated/arp/resources.arp")
+);

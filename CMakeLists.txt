@@ -250,7 +250,7 @@ endif()
 message("Configuring arptool")
 set(arptool_wd "${CMAKE_BINARY_DIR}/tooling/arptool")
 
-set(arptool_exe_dir "${CMAKE_BINARY_DIR}/tooling/arptool")
+set(arptool_exe_dir "${CMAKE_BINARY_DIR}/tooling/bin")
 
 execute_process(COMMAND "${CMAKE_COMMAND}" -E make_directory "${arptool_wd}")
 execute_process(COMMAND "${CMAKE_COMMAND}" "-G" "${CMAKE_GENERATOR}"

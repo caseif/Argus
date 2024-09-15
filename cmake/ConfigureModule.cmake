@@ -206,7 +206,7 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   set(res_dir "${MODULE_PROJECT_DIR}/res")
   set(res_pack_target "pack_resources_${PROJECT_NAME}")
   set(res_gen_target "gen_resources_${PROJECT_NAME}")
-  if(EXISTS "${res_dir}")
+  if(EXISTS "${res_dir}" AND NOT ${IS_EXTERNAL})
     set(arp_out_dir "${MODULE_GENERATED_DIR}/res/arp")
     set(arp_out_name "resources_${PROJECT_NAME}")
     set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
@@ -319,10 +319,17 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_DYNAMIC}")
     if(${IS_EXTERNAL})
       if(${IS_RUST})
+        if(WIN32)
+          set(path_var_delim ":")
+        else()
+          set(path_var_delim ";")
+        endif()
+
         corrosion_import_crate(
             MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
         )
-        corrosion_set_env_vars("${PROJECT_NAME}" "GENERATED_SOURCES_PATH=${MODULE_GENERATED_DIR}")
+        corrosion_set_env_vars("${PROJECT_NAME}"
+            "PATH=$ENV{PATH}${PATH_VAR_DELIM}${CMAKE_BINARY_DIR}/tooling/bin")
         corrosion_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
         set(LIB_OUT_DIR "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")
         set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DYN_MODULE_PREFIX}")

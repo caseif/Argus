@@ -30,17 +30,30 @@ const BUNDLER_EXES: &[&str] = &["bundle.bat", "bundle.cmd"];
 #[cfg(not(windows))]
 const BUNDLER_EXES: &[&str] = &["bundle"];
 
+const ARPTOOL_EXE: &str = "arptool";
+
 const AGLET_SUBMODULE_PATH: &str = "../../../external/tooling/aglet/";
 const GL_PROFILE_PATH: &str = "tooling/aglet/opengl_profile.xml";
 
+const RES_SOURCES_PATH: &str = "res/";
+const RES_MAPPINGS_PATH: &str = "../../../res/arp_custom_mappings.csv";
+
 const GENERATED_OUT_PREFIX: &str = "generated/";
+
 const BINDINGS_OUT_PREFIX: &str = "aglet/";
+
+const ARP_OUT_PREFIX: &str = "arp/";
 
 fn main() {
     let crate_root = env::current_dir().expect("Failed to get current directory");
     let gl_profile_path = crate_root.join(GL_PROFILE_PATH);
     run_if_changed(&gl_profile_path, &|| {
         generate_opengl_bindings(&gl_profile_path)
+    });
+
+    let res_srcs_path = crate_root.join(RES_SOURCES_PATH);
+    run_if_changed(&res_srcs_path, &|| {
+        generate_resource_pack(&res_srcs_path);
     });
 }
 
@@ -93,6 +106,39 @@ fn run_bundler(working_dir: &str) {
 
     // if we get here then none of the exe names worked
     panic!("Bundler must be installed and available on the path (run `$ gem install bundler`)");
+}
+
+fn generate_resource_pack(srcs_path: &Path) {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let gen_dir = out_dir.join(GENERATED_OUT_PREFIX);
+    let pack_out_dir = gen_dir.join(ARP_OUT_PREFIX);
+    let out_name = "resources";
+
+    // check if arptool is available on path
+    match Command::new(ARPTOOL_EXE).arg("-v").output() {
+        Ok(_) => {}
+        Err(_) => panic!("arptool must be available on the path")
+    }
+
+    let output = Command::new(ARPTOOL_EXE)
+        .arg("pack")
+        .arg(srcs_path.to_str().unwrap())
+        .arg("--namespace=argus")
+        .arg(format!("--output={}", pack_out_dir.to_str().unwrap()))
+        .arg(format!("--name={out_name}"))
+        .arg("--compression=deflate")
+        .arg(format!("--mappings={RES_MAPPINGS_PATH}"))
+        .arg("--quiet")
+        .current_dir(AGLET_SUBMODULE_PATH)
+        .output()
+        .expect("arptool executable was present but isn't anymore??");
+    if !output.status.success() {
+        panic!(
+            "arptool exited with code {}\nstderr output:\n    {}",
+            output.status,
+            String::from_utf8(output.stderr).unwrap(),
+        );
+    }
 }
 
 fn fnv1a_hash(s: &str) -> u64 {
