@@ -138,6 +138,7 @@ jobs:
     - name: Install dependencies (macOS)
       run: |
         brew install \
+          ninja \
           sdl2 \
           lua \
           nlohmann-json \
