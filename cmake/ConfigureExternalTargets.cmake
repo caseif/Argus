@@ -132,7 +132,7 @@ set(MUST_BUILD_SPIRV_TOOLS 1)
 set(MUST_BUILD_GLSLANG ON)
 
 # glslang
-if(USE_SYSTEM_GLSLANG)
+if(USE_SYSTEM_GLSLANG AND NOT APPLE)
   # require version between 13.1.0 and 14.3.x since Khronos doesn't
   # care about breaking ABI compatibility between minor versions
   find_package(glslang "14.3.0...<14.4.0" QUIET)
