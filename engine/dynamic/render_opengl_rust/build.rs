@@ -31,6 +31,7 @@ const BUNDLER_EXES: &[&str] = &["bundle.bat", "bundle.cmd"];
 const BUNDLER_EXES: &[&str] = &["bundle"];
 
 const ARPTOOL_EXE: &str = "arptool";
+const ARPTOOL_PATH_ENV_VAR: &str = "ARPTOOL_PATH";
 
 const AGLET_SUBMODULE_PATH: &str = "../../../external/tooling/aglet/";
 const GL_PROFILE_PATH: &str = "tooling/aglet/opengl_profile.xml";
@@ -114,13 +115,15 @@ fn generate_resource_pack(srcs_path: &Path) {
     let pack_out_dir = gen_dir.join(ARP_OUT_PREFIX);
     let out_name = "resources";
 
+    let arptool_cmd = env::var(ARPTOOL_PATH_ENV_VAR).unwrap_or(ARPTOOL_EXE.to_string());
+
     // check if arptool is available on path
-    match Command::new(ARPTOOL_EXE).arg("-v").output() {
+    match Command::new(&arptool_cmd).arg("-v").output() {
         Ok(_) => {}
-        Err(_) => panic!("arptool must be available on the path")
+        Err(_) => panic!("ARPTOOL_PATH must be set or arptool must be available on the path")
     }
 
-    let output = Command::new(ARPTOOL_EXE)
+    let output = Command::new(&arptool_cmd)
         .arg("pack")
         .arg(srcs_path.to_str().unwrap())
         .arg("--namespace=argus")
