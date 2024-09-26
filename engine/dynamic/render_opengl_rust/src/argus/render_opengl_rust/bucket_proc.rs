@@ -16,14 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::collections::HashMap;
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::state::{RendererState, Scene2dState};
+use crate::argus::render_opengl_rust::state::RendererState;
 use crate::argus::render_opengl_rust::util::defines::*;
 use crate::argus::render_opengl_rust::util::gl_util::*;
 use render_rustabi::argus::render::*;
 use std::ptr;
-use crate::argus::render_opengl_rust::shaders::LinkedProgram;
 
 const BINDING_INDEX_VBO: u32 = 0;
 const BINDING_INDEX_ANIM_FRAME_BUF: u32 = 1;

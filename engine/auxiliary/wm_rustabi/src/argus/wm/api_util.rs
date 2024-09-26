@@ -20,7 +20,7 @@ use std::ffi::{c_char, c_void};
 use std::ptr::null_mut;
 use bitmask::bitmask;
 use lowlevel_rustabi::util::*;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use num_enum::IntoPrimitive;
 
 use crate::argus::wm::Window;
 use crate::wm_cabi::*;

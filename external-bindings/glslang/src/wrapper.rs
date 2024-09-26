@@ -18,7 +18,7 @@
 
 #![allow(dead_code)]
 
-use std::{ffi, mem, ptr};
+use std::{ffi, mem};
 use std::ffi::CString;
 use crate::bindings::*;
 
@@ -410,7 +410,6 @@ impl Shader {
         let code_cstr = Box::new(
             CString::new(input.code.as_bytes()).expect("Shader source string has bad encoding")
         );
-        let code_ptr = Box::new(code_cstr.as_ptr());
 
         let input_ffi = Box::new(input.to_ffi_repr(&*code_cstr));
         let handle = unsafe { glslang_shader_create(&*input_ffi) };

@@ -1,14 +1,15 @@
 [package]
-name = "scripting_rust_init"
+name = "scripting_rs"
 version = "0.0.1"
 edition = "2021"
 
 [lib]
-name = "scripting_rust_init"
+name = "scripting_rs"
 crate-type = ["staticlib"]
 
 [dependencies]
+inventory = "0.3.15"
+serde_json = "1.0.128"
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
 scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
-inventory = "0.3.15"

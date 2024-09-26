@@ -19,7 +19,6 @@
 use std::ffi::c_char;
 use std::ptr;
 use num_enum::UnsafeFromPrimitive;
-use lowlevel_rustabi::argus::lowlevel::Handle;
 use lowlevel_rustabi::util::{cstr_to_string, str_to_cstring};
 
 use crate::argus::render::{AttachedViewport2d, SceneType, Viewport};

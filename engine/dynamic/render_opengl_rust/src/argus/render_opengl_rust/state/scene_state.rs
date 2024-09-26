@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use lowlevel_rustabi::argus::lowlevel::Handle;
 use render_rustabi::argus::render::{ProcessedObjectMap, Scene2d};
-use std::collections::{BTreeMap, HashMap};
-use std::rc::Rc;
+use std::collections::BTreeMap;
 
 use crate::argus::render_opengl_rust::state::{ProcessedObject, RenderBucket, RenderBucketKey};
 use crate::argus::render_opengl_rust::util::buffer::GlBuffer;

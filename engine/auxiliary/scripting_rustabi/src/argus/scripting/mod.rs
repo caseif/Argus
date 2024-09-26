@@ -19,6 +19,7 @@
 pub mod bind;
 pub mod error;
 pub mod types;
+mod wrapper;
 
 pub use bind::*;
 pub use error::*;

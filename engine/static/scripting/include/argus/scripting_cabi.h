@@ -21,3 +21,4 @@
 #include "argus/scripting/cabi/bind.h"
 #include "argus/scripting/cabi/error.h"
 #include "argus/scripting/cabi/types.h"
+#include "argus/scripting/cabi/wrapper.h"

@@ -452,7 +452,7 @@ namespace argus {
         def.m_name = name;
         def.m_type = type;
 
-        def.m_access_proxy = [name, field](ObjectWrapper &inst, const ObjectType &field_type) {
+        def.m_access_proxy = [name, field](const ObjectWrapper &inst, const ObjectType &field_type) {
             ClassType &instance = inst.get_value<ClassType &>();
 
             auto real_type = field_type;

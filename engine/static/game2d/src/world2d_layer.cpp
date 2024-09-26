@@ -56,6 +56,8 @@ namespace argus {
         auto layer_id_str = LAYER_PREFIX + world.get_id() + "_" + layer_uuid;
         m_pimpl->scene = &Scene2D::create(layer_id_str);
         m_pimpl->scene->set_lighting_enabled(lighting_enabled);
+        m_pimpl->scene->add_light(Light2DType::Point, true, { 1, 0, 1 }, { 1, 1, 5, 0.5, 2, 3 }, { { 0.25, 0.5 }, 0, { 1, 1 }});
+        m_pimpl->scene->add_light(Light2DType::Point, true, { 0, 1, 1 }, { 1, 1, 5, 0.5, 2, 3 }, { { 0.75, 0.5 }, 0, { 1, 1 }});
         m_pimpl->render_camera = &m_pimpl->scene->create_camera(layer_id_str);
         world.m_pimpl->canvas.attach_default_viewport_2d(layer_id_str, *m_pimpl->render_camera, z_index);
     }

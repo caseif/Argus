@@ -16,7 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub use argus_scripting_bind_macros::*;
-pub use argus_scripting_types::*;
-pub use inventory;
-pub use syn;
+#pragma once
+
+#include "argus/scripting/cabi/types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object_type_const_t ty, void *ptr,
+        size_t size);
+
+void argus_copy_bound_type(const char *type_id, void *dst, const void *src);
+
+void argus_move_bound_type(const char *type_id, void *dst, void *src);
+
+#ifdef __cplusplus
+}
+#endif

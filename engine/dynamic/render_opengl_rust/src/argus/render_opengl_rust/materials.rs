@@ -17,7 +17,7 @@
  */
 
 use crate::argus::render_opengl_rust::shaders::deinit_program;
-use crate::argus::render_opengl_rust::state::{RenderBucketKey, RendererState};
+use crate::argus::render_opengl_rust::state::RendererState;
 use crate::argus::render_opengl_rust::textures::release_texture;
 use crate::argus::render_opengl_rust::util::gl_util::{try_delete_buffer, try_delete_vertex_array};
 

@@ -34,12 +34,20 @@ typedef struct ArgusMaybeBindingError {
     argus_binding_error_t error;
 } ArgusMaybeBindingError;
 
+typedef argus_object_wrapper_t (*ArgusFieldAccessor)(argus_object_wrapper_const_t inst, argus_object_type_const_t,
+        const void *state);
+typedef void (*ArgusFieldMutator)(argus_object_wrapper_t inst, argus_object_wrapper_t, const void *state);
+
 ArgusMaybeBindingError argus_bind_type(const char *name, size_t size, const char *type_id, bool is_refable,
         ArgusCopyCtorProxy copy_ctor, ArgusMoveCtorProxy move_ctor, ArgusDtorProxy dtor);
 
 ArgusMaybeBindingError argus_bind_enum(const char *name, size_t width, const char *type_id);
 
 ArgusMaybeBindingError argus_bind_enum_value(const char *enum_type_id, const char *name, int64_t value);
+
+ArgusMaybeBindingError argus_bind_member_field(const char *containing_type_id, const char *name,
+        argus_object_type_const_t field_type, ArgusFieldAccessor accessor, const void *accessor_state,
+        ArgusFieldMutator mutator, const void *mutator_state);
 
 ArgusMaybeBindingError argus_bind_global_function(const char *name, size_t params_count,
         const argus_object_type_const_t *params, argus_object_type_const_t ret_type,

@@ -26,7 +26,6 @@ use std::collections::HashMap;
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
-use render_rustabi::render_cabi::argus_material_t;
 use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 
 #[derive(Default)]
@@ -302,7 +301,7 @@ pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
         let shader_res = match ResourceManager::get_instance().get_resource(SHADER_STD_VERT) {
             Ok(r) => r,
             Err(e) => {
-                panic!("Failed to load built-in shader {SHADER_STD_VERT}");
+                panic!("Failed to load built-in shader {SHADER_STD_VERT}: {:?}", e);
             }
         };
 
@@ -312,7 +311,7 @@ pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
         let shader_res = match ResourceManager::get_instance().get_resource(SHADER_STD_FRAG) {
             Ok(r) => r,
             Err(e) => {
-                panic!("Failed to load built-in shader {SHADER_STD_FRAG}");
+                panic!("Failed to load built-in shader {SHADER_STD_FRAG}: {:?}", e);
             }
         };
 

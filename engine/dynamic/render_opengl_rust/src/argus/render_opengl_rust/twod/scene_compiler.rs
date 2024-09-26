@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::ptr;
 use render_rustabi::argus::render::*;
 use crate::aglet::*;

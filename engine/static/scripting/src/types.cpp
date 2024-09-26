@@ -176,6 +176,14 @@ namespace argus {
         return is_on_heap ? heap_ptr : value;
     }
 
+    void *ObjectWrapper::get_direct_ptr(void) {
+        return type.type == IntegralType::Pointer ? *reinterpret_cast<void *const *>(get_ptr0()) : get_ptr0();
+    }
+
+    const void *ObjectWrapper::get_direct_ptr(void) const {
+        return type.type == IntegralType::Pointer ? *reinterpret_cast<const void *const *>(get_ptr0()) : get_ptr0();
+    }
+
     void ObjectWrapper::copy_value_from(const void *src, size_t size) {
         argus_assert(size >= this->buffer_size);
         copy_wrapped_object(this->type, this->get_ptr0(), src, size);
@@ -189,8 +197,8 @@ namespace argus {
         copy_wrapped_object(this->type, dest, this->get_ptr0(), size);
     }
 
-    ObjectWrapper BoundFieldDef::get_value(ObjectWrapper &wrapper) const {
-        return m_access_proxy(wrapper, m_type);
+    ObjectWrapper BoundFieldDef::get_value(ObjectWrapper &instance) const {
+        return m_access_proxy(instance, m_type);
     }
 
     void BoundFieldDef::set_value(ObjectWrapper &instance, ObjectWrapper &value) const {

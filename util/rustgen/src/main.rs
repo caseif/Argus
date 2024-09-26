@@ -195,8 +195,13 @@ fn gen_bindings((module_type, module_name): &(ModuleType, &'static str), dep_gra
             .allowlist_file(format!("^.*[/\\\\]argus[/\\\\]{}\\.h(pp)?$", module_name))
             .allowlist_file(format!("^.*[/\\\\]glslang[/\\\\](.+[/\\\\])*.+\\.h(pp)?$"))
             .allowlist_recursively(false)
-            .clang_args(module_inc_dirs.iter().map(|s| format!("-I{}", s.to_str().unwrap())).collect::<Vec<String>>())
+            .clang_args(
+                module_inc_dirs.iter()
+                    .map(|s| format!("-I{}", s.to_str().unwrap()))
+                    .collect::<Vec<String>>()
+            )
             .clang_arg("-std=c11")
+            .raw_line("#![allow(non_camel_case_types, unused_imports, unused_qualifications)]")
             .raw_line("use super::*;")
             .generate()
             .expect("Failed to generate bindings");

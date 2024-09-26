@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::{c_void, CStr, CString};
+use std::ffi::{c_void, CStr};
 use std::ptr;
 use crate::aglet::*;
 

@@ -18,7 +18,6 @@
 
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
-use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use lowlevel_rustabi::util::{cstr_to_string, string_vec_to_cstr_arr};
 
 use crate::argus::resman::{

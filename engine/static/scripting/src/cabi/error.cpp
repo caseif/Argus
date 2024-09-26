@@ -49,12 +49,16 @@ void argus_binding_error_free(argus_binding_error_t err) {
     delete &_bind_err_as_ref(err);
 }
 
-const char *argus_reflective_args_error_get_reason(argus_reflective_args_error_const_t err) {
-    return _refl_args_err_as_ref(err).reason.c_str();
+argus_reflective_args_error_t argus_reflective_args_error_new(const char *reason) {
+    return new argus::ReflectiveArgumentsError(reason);
 }
 
 void argus_reflective_args_error_free(argus_reflective_args_error_t err) {
     delete &_refl_args_err_as_ref(err);
+}
+
+const char *argus_reflective_args_error_get_reason(argus_reflective_args_error_const_t err) {
+    return _refl_args_err_as_ref(err).reason.c_str();
 }
 
 }

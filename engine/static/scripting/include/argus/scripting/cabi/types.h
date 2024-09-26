@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#include "argus/scripting/cabi/error.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -74,11 +76,13 @@ struct ArgusScriptCallbackType;
 typedef struct ArgusObjectWrapperOrReflectiveArgsError {
     bool is_err;
     argus_object_wrapper_t val;
-    const char *err;
+    argus_reflective_args_error_t err;
 } ArgusObjectWrapperOrReflectiveArgsError;
 
 typedef ArgusObjectWrapperOrReflectiveArgsError(*ArgusProxiedNativeFunction)
-        (size_t params_count, const argus_object_wrapper_t *params, void *extra);
+        (size_t params_count, const argus_object_wrapper_t *params, const void *extra);
+
+void argus_object_wrapper_or_refl_args_err_delete(ArgusObjectWrapperOrReflectiveArgsError res);
 
 argus_object_type_t argus_object_type_new(ArgusIntegralType type, size_t size, bool is_const,
         bool is_refable, const char *type_id, const char *type_name,
@@ -111,6 +115,10 @@ void argus_script_callback_type_get_params(argus_script_callback_type_const_t ca
         argus_object_type_t *obj_types, size_t count);
 
 argus_object_type_t argus_script_callback_type_get_return_type(argus_script_callback_type_const_t callback_type);
+
+argus_object_wrapper_t argus_object_wrapper_new(argus_object_type_const_t obj_type, size_t size);
+
+void argus_object_wrapper_delete(argus_object_wrapper_t obj_wrapper);
 
 argus_object_type_const_t argus_object_wrapper_get_type(argus_object_wrapper_const_t obj_wrapper);
 

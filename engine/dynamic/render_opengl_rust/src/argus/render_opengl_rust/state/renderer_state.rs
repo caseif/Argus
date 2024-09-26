@@ -19,7 +19,6 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use wm_rustabi::argus::wm::GlContext;
-use lowlevel_rustabi::argus::lowlevel::Handle;
 use render_rustabi::argus::render::{AttachedViewport2d, Scene2d};
 use resman_rustabi::argus::resman::Resource;
 use crate::argus::render_opengl_rust::shaders::*;

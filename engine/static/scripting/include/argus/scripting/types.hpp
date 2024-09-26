@@ -436,20 +436,36 @@ namespace argus {
 
         const void *get_ptr0(void) const;
 
+        void *get_direct_ptr(void);
+
+        const void *get_direct_ptr(void) const;
+
         template<typename T>
         T &get_value(void) {
             static_assert(!is_reference_wrapper_v<T>, "Use lvalue reference instead of reference_wrapper");
             argus_assert(is_initialized);
 
             if constexpr (std::is_pointer_v<T> && std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>) {
+                // we're storing a char pointer and the caller wants a char pointer
+
+                // dereference the data pointer to get the stored char pointer, then
+                // return it as-is
                 return reinterpret_cast<char *>(get_ptr0());
             } else {
                 _validate_value_type<T>(type);
 
                 if (type.type == IntegralType::Pointer) {
                     argus_assert(type.type_id.value() == typeid(std::remove_pointer_t<T>).name());
+                    // we're storing a pointer and the caller wants a reference
+
+                    // dereference the data pointer to get the stored pointer,
+                    // then dereference the stored pointer to convert it to a
+                    // reference
                     return **reinterpret_cast<std::remove_reference_t<T> **>(get_ptr0());
                 } else {
+                    // we're storing a value and the caller wants a reference
+
+                    // dereference the data pointer to convert it to a reference
                     return *reinterpret_cast<std::remove_reference_t<T> *>(get_ptr0());
                 }
             }
@@ -500,10 +516,10 @@ namespace argus {
         std::string m_name;
         ObjectType m_type;
         //TODO: we probably only need one function for getting the value
-        std::function<ObjectWrapper(ObjectWrapper &, const ObjectType &)> m_access_proxy;
+        std::function<ObjectWrapper(const ObjectWrapper &, const ObjectType &)> m_access_proxy;
         std::optional<std::function<void(ObjectWrapper &, ObjectWrapper &)>> m_assign_proxy;
 
-        ObjectWrapper get_value(ObjectWrapper &wrapper) const;
+        ObjectWrapper get_value(ObjectWrapper &instance) const;
 
         void set_value(ObjectWrapper &instance, ObjectWrapper &value) const;
     };

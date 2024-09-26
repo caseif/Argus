@@ -18,10 +18,19 @@
 
 #include "argus/scripting/cabi/types.h"
 
+#include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
 
 static const argus::ObjectType &_obj_type_as_ref(argus_object_type_const_t handle) {
     return *reinterpret_cast<const argus::ObjectType *>(handle);
+}
+
+static argus::ObjectWrapper &_obj_wrapper_as_ref(argus_object_wrapper_t handle) {
+    return *reinterpret_cast<argus::ObjectWrapper *>(handle);
+}
+
+static const argus::ObjectWrapper &_obj_wrapper_as_ref(argus_object_wrapper_const_t handle) {
+    return *reinterpret_cast<const argus::ObjectWrapper *>(handle);
 }
 
 static const argus::ScriptCallbackType &_sc_type_as_ref(argus_script_callback_type_const_t handle) {
@@ -29,6 +38,14 @@ static const argus::ScriptCallbackType &_sc_type_as_ref(argus_script_callback_ty
 }
 
 extern "C" {
+
+void argus_object_wrapper_or_refl_args_err_delete(ArgusObjectWrapperOrReflectiveArgsError res) {
+    if (res.is_err) {
+        delete reinterpret_cast<argus::ReflectiveArgumentsError *>(res.err);
+    } else {
+        delete reinterpret_cast<argus::ObjectWrapper *>(res.val);
+    }
+}
 
 argus_object_type_t argus_object_type_new(ArgusIntegralType type, size_t size, bool is_const,
         bool is_refable, const char *type_id, const char *type_name,
@@ -92,6 +109,34 @@ argus_object_type_const_t argus_object_type_get_primary_type(argus_object_type_c
 argus_object_type_const_t argus_object_type_get_secondary_type(argus_object_type_const_t obj_type) {
     const auto &sec_type = _obj_type_as_ref(obj_type).secondary_type;
     return sec_type.has_value() ? sec_type.value().get() : nullptr;
+}
+
+argus_object_wrapper_t argus_object_wrapper_new(argus_object_type_const_t obj_type, size_t size) {
+    return new argus::ObjectWrapper(_obj_type_as_ref(obj_type), size);
+}
+
+void argus_object_wrapper_delete(argus_object_wrapper_t obj_wrapper) {
+    delete &_obj_wrapper_as_ref(obj_wrapper);
+}
+
+argus_object_type_const_t argus_object_wrapper_get_type(argus_object_wrapper_const_t obj_wrapper) {
+    return &_obj_wrapper_as_ref(obj_wrapper).type;
+}
+
+const void *argus_object_wrapper_get_value(argus_object_wrapper_const_t obj_wrapper) {
+    return _obj_wrapper_as_ref(obj_wrapper).get_ptr0();
+}
+
+void *argus_object_wrapper_get_value_mut(argus_object_wrapper_t obj_wrapper) {
+    return _obj_wrapper_as_ref(obj_wrapper).get_ptr0();
+}
+
+size_t argus_object_wrapper_get_buffer_size(argus_object_wrapper_const_t obj_wrapper) {
+    return _obj_wrapper_as_ref(obj_wrapper).buffer_size;
+}
+
+bool argus_object_wrapper_is_initialized(argus_object_wrapper_const_t obj_wrapper) {
+    return _obj_wrapper_as_ref(obj_wrapper).is_initialized;
 }
 
 }

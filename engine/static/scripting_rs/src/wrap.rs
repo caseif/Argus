@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub use argus_scripting_bind_macros::*;
-pub use argus_scripting_types::*;
-pub use inventory;
-pub use syn;
+use std::ptr;
+use scripting_rustabi::argus::scripting::{FfiObjectType, ObjectWrapper};
+
+pub(crate) fn wrap_object(ty: &FfiObjectType, data: *const ()) -> ObjectWrapper {
+    ObjectWrapper::of(ptr::null_mut())
+}

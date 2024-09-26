@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::ffi;
 use std::fmt::Debug;
 use lowlevel_rustabi::util::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
@@ -58,7 +57,7 @@ impl Resource {
         unsafe { unwrap_resource_prototype(argus_resource_get_prototype(self.handle)) }
     }
 
-    pub fn release(&self) -> () {
+    pub fn release(&self) {
         unsafe { argus_resource_release(self.handle) }
     }
 
@@ -66,7 +65,7 @@ impl Resource {
         unsafe { argus_resource_get_data_ptr(self.handle).cast() }
     }
 
-    pub fn get<'a, T>(&'a self) -> &'a T {
+    pub fn get<T>(&self) -> &T {
         unsafe {
             let t_ptr: *const T = argus_resource_get_data_ptr(self.handle).cast();
             t_ptr.as_ref().unwrap()
@@ -75,7 +74,7 @@ impl Resource {
 
     pub fn get_ffi<T>(&self) -> T where T : FfiWrapper {
         let p = unsafe { argus_resource_get_data_ptr(self.handle) };
-        unsafe { T::of(p.cast_mut()) }
+        T::of(p.cast_mut())
     }
 }
 

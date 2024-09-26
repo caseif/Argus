@@ -24,9 +24,10 @@ use num_enum::UnsafeFromPrimitive;
 use core_rustabi::argus::core::*;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
+use scripting_rustabi::argus::scripting::script_bind;
 use wm_rustabi::argus::wm::*;
 
-use crate::aglet::{AgletError, agletLoad, agletLoadCapabilities};
+use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
 use crate::argus::render_opengl_rust::loader::ShaderLoader;
 use crate::argus::render_opengl_rust::resources::RESOURCES_PACK;
@@ -163,6 +164,29 @@ fn resource_event_handler(event: &ResourceEvent) {
             }
         }
     });
+}
+
+#[script_bind]
+pub struct MyStruct {
+    pub foo: i32,
+}
+
+#[script_bind]
+pub enum MyEnum {
+    Foo,
+    Bar,
+    Baz = 4,
+    Qux,
+    Quux = 8 + 8,
+    Xyzzy,
+}
+
+#[script_bind]
+pub fn my_func(i: i32, u: u32, s: String) {
+    println!("i: {i}");
+    println!("u: {u}");
+    println!("string: {s}");
+    //println!("s: {s}");
 }
 
 #[no_mangle]

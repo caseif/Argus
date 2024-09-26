@@ -101,7 +101,7 @@ impl GlRenderer {
         setup_framebuffer(&mut self.state);
     }
 
-    pub(crate) fn render(&mut self, delta: Duration) {
+    pub(crate) fn render(&mut self, _delta: Duration) {
         gl_make_context_current(&mut self.window, self.state.gl_context.as_ref().unwrap())
             .expect("Failed to make GL context current");
 

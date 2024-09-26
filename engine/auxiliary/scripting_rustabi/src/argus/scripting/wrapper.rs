@@ -16,7 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub use argus_scripting_bind_macros::*;
-pub use argus_scripting_types::*;
-pub use inventory;
-pub use syn;
+use std::ffi::CStr;
+use crate::argus::scripting::{FfiObjectType, ObjectWrapper};
+use crate::scripting_cabi::*;
+
+fn unwrap_res(res: ArgusObjectWrapperOrReflectiveArgsError) -> Result<ObjectWrapper, String> {
+    if res.is_err {
+        let msg = unsafe {
+            CStr::from_ptr(argus_reflective_args_error_get_reason(res.err))
+                .to_string_lossy().to_string()
+        };
+        unsafe { argus_object_wrapper_or_refl_args_err_delete(res) };
+        Err(msg)
+    } else {
+        Ok(ObjectWrapper::of(res.val))
+    }
+}
+
+pub fn create_object_wrapper(ty: FfiObjectType, ptr: *mut (), size: usize)
+    -> Result<ObjectWrapper, String> {
+    unwrap_res(unsafe { argus_create_object_wrapper(ty.handle, ptr.cast(), size) })
+}

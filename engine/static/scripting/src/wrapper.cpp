@@ -179,7 +179,7 @@ namespace argus {
         ArrayBlob &blob = wrapper.emplace<ArrayBlob>(el_size, count,
                 el_type.type == IntegralType::String
                         ? +[](void *ptr) { reinterpret_cast<std::string *>(ptr)->~basic_string(); }
-                        : nullptr);
+                        : nullptr); 
 
         if (is_trivially_copyable) {
             // can just copy the whole thing in one go and avoid looping
