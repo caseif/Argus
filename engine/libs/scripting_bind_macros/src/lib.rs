@@ -31,7 +31,7 @@ pub fn script_bind(_attr: TokenStream, input: TokenStream) -> TokenStream {
         Item::Struct(ref s) => handle_struct(s),
         Item::Enum(ref s) => handle_enum(s),
         Item::Fn(ref f) => handle_fn(f),
-        _ => panic!("Invalid item"),    
+        _ => panic!("Invalid item"),
     };
 
     quote!(
@@ -156,8 +156,8 @@ fn handle_fn(f: &ItemFn) -> TokenStream2 {
     })
         .expect("Failed to serialize function return type");
 
-    let param_tokens: Vec<_> = (0..param_type_serials.len()).map(|i| {
-        quote! { params[#i].unwrap() }
+let param_tokens: Vec<_> = param_type_serials.iter().map(|i| {
+        quote! { params.remove(0).unwrap() }
     }).collect();
 
     quote!(
@@ -169,8 +169,8 @@ fn handle_fn(f: &ItemFn) -> TokenStream2 {
                     #(#param_type_serials),*
                 ],
                 return_type_serial: #ret_type_serial,
-                proxy: |params| {
-                    ::argus_scripting_bind::WrappedObject::from(
+                proxy: |mut params| {
+                    ::argus_scripting_bind::WrappedObject::wrap(
                         #fn_ident(
                             #(#param_tokens),*
                         )

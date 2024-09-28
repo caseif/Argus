@@ -18,7 +18,8 @@
 
 use std::any::TypeId;
 use std::{ffi, mem, ptr};
-use std::ffi::CString;
+use std::alloc::{alloc_zeroed, dealloc, Layout};
+use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use quote::{quote, ToTokens};
@@ -176,40 +177,45 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     type_id: None,
 };
 
-pub trait Wrappable<U : Into<Self> = Self> : Sized {
-    fn to_wrapped_object(&self) -> WrappedObject;
+pub trait Wrappable<'a, U : Into<Self> = Self> : Sized {
+    type InternalFormat;
 
-    fn from_wrapped_object(wrapped: &WrappedObject) -> U;
+    fn get_object_type() -> ObjectType;
+
+    fn unwrap_from(wrapper: WrappedObject) -> U;
+
+    fn wrap_into(self, wrapper: &mut WrappedObject);
+
+    fn get_required_buffer_size(&self) -> usize {
+        size_of::<Self>()
+    }
 }
 
 macro_rules! make_wrappable {
     ($ty:ty, $enum_var:ident) => (
-        impl Wrappable for $ty {
-            fn to_wrapped_object(&self) -> WrappedObject {
-                assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
+        impl<'a> Wrappable<'a> for $ty {
+            type InternalFormat = Self;
 
-                let mut wrapped = WrappedObject::new_uninitialized(
-                    ObjectType {
-                        ty: IntegralType::$enum_var,
-                        size: size_of::<Self>(),
-                        is_const: false,
-                        is_refable: None,
-                        primary_type: None,
-                        secondary_type: None,
-                        type_id: None,
-                    },
-                    size_of::<Self>(),
-                );
-
-                unsafe { wrapped.store_value(self); }
-
-                wrapped
+            fn get_object_type() -> ObjectType {
+                ObjectType {
+                    ty: IntegralType::$enum_var,
+                    size: size_of::<Self>(),
+                    is_const: false,
+                    is_refable: None,
+                    primary_type: None,
+                    secondary_type: None,
+                    type_id: None,
+                }
             }
 
-            fn from_wrapped_object(wrapped: &WrappedObject) -> Self {
-                assert_eq!(wrapped.ty.ty, IntegralType::$enum_var, "Wrong object type");
+            fn wrap_into(self, wrapper: &mut WrappedObject) {
+                unsafe { wrapper.store_value(self); }
+            }
 
-                unsafe { *wrapped.get_value() }
+            fn unwrap_from(wrapper: WrappedObject) -> Self {
+                assert_eq!(wrapper.ty.ty, IntegralType::$enum_var, "Wrong object type");
+
+                unsafe { *wrapper.get_ptr::<Self>() }
             }
         }
     )
@@ -228,42 +234,76 @@ make_wrappable!(f64, Float64);
 make_wrappable!(bool, Boolean);
 make_wrappable!((), Empty);
 
-impl Wrappable for String {
-    fn to_wrapped_object(&self) -> WrappedObject {
-        let cstr = CString::new(self.as_str()).unwrap();
-        let size = cstr.count_bytes() + 1;
+impl<'a> Wrappable<'a> for String {
+    type InternalFormat = &'a [u8];
 
-        let mut wrapped = WrappedObject::new_uninitialized(
-            ObjectType {
-                ty: IntegralType::String,
-                size: 0,
-                is_const: false,
-                is_refable: None,
-                primary_type: None,
-                secondary_type: None,
-                type_id: None,
-            },
-            size,
-        );
-        if self.len() > WrappedObject::BUFFER_CAPACITY {
-            let heap_ptr = Box::into_raw(Box::new(self.clone()));
-            wrapped.is_on_heap = true;
-            unsafe { wrapped.store_value(heap_ptr); }
+    fn get_object_type() -> ObjectType {
+        ObjectType {
+            ty: IntegralType::String,
+            size: 0,
+            is_const: false,
+            is_refable: None,
+            primary_type: None,
+            secondary_type: None,
+            type_id: None,
         }
-
-        unsafe {
-            wrapped.copy_from_slice(cstr.as_bytes());
-        }
-
-        wrapped.is_initialized = true;
-
-        wrapped
     }
 
-    fn from_wrapped_object(wrapped: &WrappedObject) -> Self {
-        assert_eq!(wrapped.ty.ty, IntegralType::String, "Wrong object type");
+    fn unwrap_from(mut wrapper: WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
 
-        unsafe { CString::from_vec_unchecked(wrapped.get_data_as_slice().into()).into_string().unwrap() }
+        unsafe {
+            CString::from(CStr::from_ptr((*wrapper.get_mut_ptr::<Self>()).as_ptr().cast()))
+                    .into_string().unwrap()
+        }
+    }
+
+    fn wrap_into(self, wrapped: &mut WrappedObject) {
+        let cstr = CString::new(self.as_str()).unwrap();
+
+        unsafe { wrapped.copy_from_slice(cstr.as_bytes_with_nul()); }
+
+        wrapped.is_initialized = true;
+    }
+
+    fn get_required_buffer_size(&self) -> usize {
+        CString::new(self.as_str()).unwrap().count_bytes() + 1
+    }
+}
+
+impl<'a> Wrappable<'a> for &'a str {
+    type InternalFormat = &'a [u8];
+
+    fn get_object_type() -> ObjectType {
+        ObjectType {
+            ty: IntegralType::String,
+            size: 0,
+            is_const: false,
+            is_refable: None,
+            primary_type: None,
+            secondary_type: None,
+            type_id: None,
+        }
+    }
+
+    fn unwrap_from(mut wrapper: WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
+
+        unsafe {
+            CStr::from_ptr((*wrapper.get_mut_ptr::<Self>()).as_ptr().cast()).to_str().unwrap()
+        }
+    }
+
+    fn wrap_into(self, wrapped: &mut WrappedObject) {
+        let cstr = CString::new(self).unwrap();
+
+        unsafe { wrapped.copy_from_slice(cstr.as_bytes_with_nul()); }
+
+        wrapped.is_initialized = true;
+    }
+
+    fn get_required_buffer_size(&self) -> usize {
+        CString::new(*self).unwrap().count_bytes() + 1
     }
 }
 
@@ -275,52 +315,74 @@ pub struct WrappedObject {
     pub is_on_heap: bool,
     pub buffer_size: usize,
     is_initialized: bool,
+    drop_fn: fn(&mut WrappedObject),
 }
 
-impl<T : Wrappable> From<T> for WrappedObject {
-    fn from(val: T) -> WrappedObject {
-        T::to_wrapped_object(&val)
+impl Drop for WrappedObject {
+    fn drop(&mut self) {
+        (self.drop_fn)(self);
+        if self.is_on_heap {
+            unsafe {
+                dealloc(
+                    self.get_raw_heap_ptr_mut(),
+                    Layout::from_size_align(self.buffer_size, 8).unwrap()
+                );
+            }
+        }
     }
 }
 
 impl WrappedObject {
     pub const BUFFER_CAPACITY: usize = WRAPPED_OBJ_BUF_CAP;
 
-    pub fn new_uninitialized(ty: ObjectType, size: usize) -> Self {
-        let mut wrapped = WrappedObject {
-            ty,
+    pub fn wrap<'a, T: Wrappable<'a>>(val: T) -> Self {
+        let size = val.get_required_buffer_size();
+
+        let mut wrapper = WrappedObject {
+            ty: T::get_object_type(),
             data: unsafe { mem::zeroed() },
             is_on_heap: false,
-            buffer_size: 0,
+            buffer_size: size,
             is_initialized: false,
+            drop_fn: |wrapper: &mut WrappedObject|
+                unsafe { ptr::drop_in_place::<T::InternalFormat>(wrapper.get_heap_ptr_mut::<T>()) },
         };
 
         if size > WrappedObject::BUFFER_CAPACITY {
-            let heap_ptr = Box::into_raw(Box::new(Vec::<u8>::with_capacity(size)));
-            wrapped.is_on_heap = true;
-            unsafe { wrapped.store_value(heap_ptr); }
+            let heap_ptr: *mut T::InternalFormat =
+                unsafe {
+                    alloc_zeroed(Layout::from_size_align(wrapper.buffer_size, 8).unwrap()).cast()
+                };
+            unsafe {
+                // copy pointer address to internal buffer
+                ptr::write(wrapper.data.as_mut_ptr().cast(), heap_ptr);
+            }
+            wrapper.is_on_heap = true;
         } else {
-            wrapped.is_on_heap = false;
+            wrapper.is_on_heap = false;
         }
 
-        wrapped
+        val.wrap_into(&mut wrapper);
+
+        wrapper
     }
 
-    pub fn unwrap<T : Wrappable>(&self) -> T {
-        T::from_wrapped_object(&self)
+    pub fn unwrap<'a, T : Wrappable<'a>>(self) -> T {
+        assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
+        T::unwrap_from(self)
     }
 
-    pub fn get_ptr<T>(&self) -> *const T {
+    pub fn get_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
         if self.is_on_heap {
-            self.get_heap_ptr()
+            self.get_heap_ptr::<T>()
         } else {
             self.data.as_ptr().cast()
         }
     }
 
-pub fn get_mut_ptr<T>(&mut self) -> *mut T {            
+    pub fn get_mut_ptr<'a, T : Wrappable<'a>>(&mut self) -> *mut T::InternalFormat {
         if self.is_on_heap {
-            self.get_heap_ptr_mut()
+            self.get_heap_ptr_mut::<T>()
         } else {
             self.data.as_mut_ptr().cast()
         }
@@ -334,49 +396,41 @@ pub fn get_mut_ptr<T>(&mut self) -> *mut T {
         unsafe { &mut *slice_from_raw_parts_mut(self.data.as_mut_ptr().cast(), self.buffer_size) }
     }
 
-    pub unsafe fn get_value<T>(&self) -> &T {
-        assert!(size_of::<T>() <= self.buffer_size);
-        &*self.get_ptr::<T>()
-    }
-
-    pub unsafe fn get_value_mut<T>(&mut self) -> &mut T {
-        assert!(size_of::<T>() <= self.buffer_size);
-        &mut *self.get_mut_ptr::<T>()
-    }
-
-    pub unsafe fn store_value<T>(&mut self, val: T) {
+    pub unsafe fn store_value<'a, T : Wrappable<'a>>(&mut self, val: T) {
         assert!(size_of::<T>() <= self.buffer_size);
 
-        *self.get_mut_ptr::<T>() = val;
+        val.wrap_into(self);
         self.is_initialized = true;
-    }
-
-    pub unsafe fn copy_from(&mut self, src: *const (), size: usize) {
-        assert!(size <= self.buffer_size);
-
-        ptr::copy_nonoverlapping(src, self.get_mut_ptr(), size);
     }
 
     pub unsafe fn copy_from_slice(&mut self, src: &[u8]) {
         self.copy_from(src.as_ptr().cast(), src.len());
     }
 
-    pub unsafe fn copy_to(&self, dest: *mut (), size: usize) {
+    unsafe fn copy_from(&mut self, src: *const (), size: usize) {
         assert!(size <= self.buffer_size);
 
-        ptr::copy_nonoverlapping(self.get_ptr(), dest, size);
+        ptr::copy_nonoverlapping(src, self.get_mut_ptr::<()>(), size);
     }
 
-    fn get_heap_ptr<T>(&self) -> *const T {
-        assert!(self.is_on_heap);
-        assert!(size_of::<*const T>() <= self.buffer_size);
-        unsafe { *self.data.as_ptr().cast::<*const T>() }
+    fn get_heap_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
+        assert!(size_of::<*const T::InternalFormat>() <= self.buffer_size);
+        self.get_raw_heap_ptr().cast()
     }
 
-    fn get_heap_ptr_mut<T>(&mut self) -> *mut T {
+    fn get_heap_ptr_mut<'a, T : Wrappable<'a>>(&mut self) -> *mut T::InternalFormat {
+        assert!(size_of::<*mut T::InternalFormat>() <= self.buffer_size);
+        self.get_raw_heap_ptr_mut().cast()
+    }
+
+    fn get_raw_heap_ptr(&self) -> *mut u8 {
         assert!(self.is_on_heap);
-        assert!(size_of::<*const T>() <= self.buffer_size);
-        unsafe { *self.data.as_ptr().cast::<*mut T>() }
+        unsafe { *self.data.as_ptr().cast() }
+    }
+
+    fn get_raw_heap_ptr_mut(&mut self) -> *mut u8 {
+        assert!(self.is_on_heap);
+        unsafe { *self.data.as_ptr().cast() }
     }
 }
 
