@@ -113,7 +113,11 @@ namespace argus {
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, bool>) {
             return { IntegralType::Boolean, sizeof(bool), is_const };
         } else if constexpr (std::is_integral_v<std::remove_cv_t<T>>) {
-            return { IntegralType::Integer, sizeof(T), is_const };
+            if constexpr (std::is_signed_v<std::remove_cv_t<T>>) {
+                return { IntegralType::Integer, sizeof(T), is_const };
+            } else {
+                return { IntegralType::UInteger, sizeof(T), is_const };
+            }
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, float>) {
             return { IntegralType::Float, sizeof(float), is_const };
         } else if constexpr (std::is_same_v<std::remove_cv_t<T>, double>) {

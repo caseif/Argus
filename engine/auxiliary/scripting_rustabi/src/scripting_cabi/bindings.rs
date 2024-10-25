@@ -17,17 +17,18 @@ pub type ArgusDtorProxy =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>;
 pub const INTEGRAL_TYPE_VOID: ArgusIntegralType = 0;
 pub const INTEGRAL_TYPE_INTEGER: ArgusIntegralType = 1;
-pub const INTEGRAL_TYPE_FLOAT: ArgusIntegralType = 2;
-pub const INTEGRAL_TYPE_BOOLEAN: ArgusIntegralType = 3;
-pub const INTEGRAL_TYPE_STRING: ArgusIntegralType = 4;
-pub const INTEGRAL_TYPE_STRUCT: ArgusIntegralType = 5;
-pub const INTEGRAL_TYPE_POINTER: ArgusIntegralType = 6;
-pub const INTEGRAL_TYPE_ENUM: ArgusIntegralType = 7;
-pub const INTEGRAL_TYPE_CALLBACK: ArgusIntegralType = 8;
-pub const INTEGRAL_TYPE_TYPE: ArgusIntegralType = 9;
-pub const INTEGRAL_TYPE_VECTOR: ArgusIntegralType = 10;
-pub const INTEGRAL_TYPE_VECTORREF: ArgusIntegralType = 11;
-pub const INTEGRAL_TYPE_RESULT: ArgusIntegralType = 12;
+pub const INTEGRAL_TYPE_UINTEGER: ArgusIntegralType = 2;
+pub const INTEGRAL_TYPE_FLOAT: ArgusIntegralType = 3;
+pub const INTEGRAL_TYPE_BOOLEAN: ArgusIntegralType = 4;
+pub const INTEGRAL_TYPE_STRING: ArgusIntegralType = 5;
+pub const INTEGRAL_TYPE_STRUCT: ArgusIntegralType = 6;
+pub const INTEGRAL_TYPE_POINTER: ArgusIntegralType = 7;
+pub const INTEGRAL_TYPE_ENUM: ArgusIntegralType = 8;
+pub const INTEGRAL_TYPE_CALLBACK: ArgusIntegralType = 9;
+pub const INTEGRAL_TYPE_TYPE: ArgusIntegralType = 10;
+pub const INTEGRAL_TYPE_VECTOR: ArgusIntegralType = 11;
+pub const INTEGRAL_TYPE_VECTORREF: ArgusIntegralType = 12;
+pub const INTEGRAL_TYPE_RESULT: ArgusIntegralType = 13;
 pub type ArgusIntegralType = ::std::os::raw::c_uint;
 pub const FUNCTION_TYPE_GLOBAL: ArgusFunctionType = 0;
 pub const FUNCTION_TYPE_MEMBER_STATIC: ArgusFunctionType = 1;
@@ -107,10 +108,9 @@ extern "C" {
         is_const: bool,
         is_refable: bool,
         type_id: *const ::std::os::raw::c_char,
-        type_name: *const ::std::os::raw::c_char,
-        script_callback_type: argus_script_callback_type_t,
-        primary_type: argus_object_type_t,
-        secondary_type: argus_object_type_t,
+        script_callback_type: argus_script_callback_type_const_t,
+        primary_type: argus_object_type_const_t,
+        secondary_type: argus_object_type_const_t,
     ) -> argus_object_type_t;
     pub fn argus_object_type_delete(obj_type: argus_object_type_t);
     pub fn argus_object_type_get_type(obj_type: argus_object_type_const_t) -> ArgusIntegralType;
@@ -218,7 +218,7 @@ extern "C" {
     ) -> ArgusMaybeBindingError;
     pub fn argus_create_object_wrapper(
         ty: argus_object_type_const_t,
-        ptr: *mut ::std::os::raw::c_void,
+        ptr: *const ::std::os::raw::c_void,
         size: usize,
     ) -> ArgusObjectWrapperOrReflectiveArgsError;
     pub fn argus_copy_bound_type(

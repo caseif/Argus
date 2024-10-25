@@ -20,6 +20,7 @@
 
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
+#include "argus/scripting/wrapper.hpp"
 
 static const argus::ObjectType &_obj_type_as_ref(argus_object_type_const_t handle) {
     return *reinterpret_cast<const argus::ObjectType *>(handle);
@@ -48,21 +49,32 @@ void argus_object_wrapper_or_refl_args_err_delete(ArgusObjectWrapperOrReflective
 }
 
 argus_object_type_t argus_object_type_new(ArgusIntegralType type, size_t size, bool is_const,
-        bool is_refable, const char *type_id, const char *type_name,
-        argus_script_callback_type_t script_callback_type, argus_object_type_t primary_type,
-        argus_object_type_t secondary_type) {
+        bool is_refable, const char *type_id,
+        argus_script_callback_type_const_t script_callback_type, argus_object_type_const_t primary_type,
+        argus_object_type_const_t secondary_type) {
     UNUSED(is_refable);
+    auto type_id_opt = type_id != nullptr ? std::make_optional<std::string>(type_id) : std::nullopt;
+    auto type_name_opt = type_id_opt.has_value()
+            ? std::make_optional(argus::get_bound_type(type_id_opt.value())
+                    .expect("Failed to look up bound type with ID " + type_id_opt.value()).name)
+            : std::nullopt;
     return new argus::ObjectType(
             static_cast<argus::IntegralType>(type),
             size,
             is_const,
-            std::make_optional<std::string>(type_id),
-            std::make_optional<std::string>(type_name),
-            std::make_optional<std::unique_ptr<argus::ScriptCallbackType>>(
-                    std::make_unique<argus::ScriptCallbackType>(_sc_type_as_ref(script_callback_type))
-            ),
-            std::make_optional<argus::ObjectType>(_obj_type_as_ref(primary_type)),
-            std::make_optional<argus::ObjectType>(_obj_type_as_ref(secondary_type))
+            type_id_opt,
+            type_name_opt,
+            script_callback_type != nullptr
+                    ? std::make_optional<std::unique_ptr<argus::ScriptCallbackType>>(
+                            std::make_unique<argus::ScriptCallbackType>(_sc_type_as_ref(script_callback_type))
+                    )
+                    : std::nullopt,
+            primary_type != nullptr
+                    ? std::make_optional<argus::ObjectType>(_obj_type_as_ref(primary_type))
+                    : std::nullopt,
+            secondary_type != nullptr
+                    ? std::make_optional<argus::ObjectType>(_obj_type_as_ref(secondary_type))
+                    : std::nullopt
     );
 }
 

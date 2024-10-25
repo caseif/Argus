@@ -42,7 +42,7 @@ static inline ArgusObjectWrapperOrReflectiveArgsError _wrap_res(
     }
 }
 
-ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object_type_const_t ty, void *ptr,
+ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object_type_const_t ty, const void *ptr,
         size_t size) {
     return _wrap_res(argus::create_object_wrapper(*reinterpret_cast<const argus::ObjectType *>(ty), ptr, size));
 }

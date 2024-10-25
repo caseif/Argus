@@ -16,21 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_scripting_bind::{ObjectType, ProxiedNativeFunction};
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use std::any::TypeId;
 use std::ptr::slice_from_raw_parts;
-use crate::argus::scripting::{BindingError, FfiObjectType, ObjectWrapper, ReflectiveArgumentsError};
+use crate::argus::scripting::{call_proxied_fn, BindingError, FfiObjectType, FfiObjectWrapper};
 use crate::scripting_cabi::*;
 
 pub use argus_scripting_bind;
-use argus_scripting_bind::ObjectType;
 pub use argus_scripting_bind::script_bind;
 
-type FieldAccessor = dyn Fn(*const (), FfiObjectType) -> ObjectWrapper;
-type FieldMutator = dyn Fn(*mut (), ObjectWrapper);
-type ProxiedNativeFunction =
-    dyn Fn(Vec<ObjectWrapper>) -> Result<ObjectWrapper, ReflectiveArgumentsError>;
+type FieldAccessor = dyn Fn(*const (), FfiObjectType) -> FfiObjectWrapper;
+type FieldMutator = dyn Fn(*mut (), FfiObjectWrapper);
 
 fn unwrap_bind_result(result: ArgusMaybeBindingError) -> Result<(), BindingError> {
     if result.is_err {
@@ -96,7 +94,7 @@ pub fn bind_enum_value(
     unwrap_bind_result(res)
 }
 
-fn create_object_type(ty: &ObjectType) -> FfiObjectType {
+fn create_object_type(_ty: &ObjectType) -> FfiObjectType {
     FfiObjectType::of(ptr::null_mut()) //TODO
 }
 
@@ -129,7 +127,7 @@ pub fn bind_member_field(
             state: *const ffi::c_void,
         ) {
             let f: &Box<FieldMutator> = &*state.cast();
-            f.as_ref()(inst.cast(), ObjectWrapper::of(obj2));
+            f.as_ref()(inst.cast(), FfiObjectWrapper::of(obj2));
         }
 
         argus_bind_member_field(
@@ -150,37 +148,21 @@ pub fn bind_global_function(
     name: &str,
     params: Vec<FfiObjectType>,
     ret_type: FfiObjectType,
-    fn_proxy: Box<ProxiedNativeFunction>,
+    fn_proxy: &ProxiedNativeFunction,
 ) -> Result<(), BindingError> {
     let name_c = CString::new(name).unwrap();
     let params_ffi: Vec<argus_object_type_const_t> =
-        params.iter().map(|p| p.handle.cast_const()).collect();
+        params.iter().map(|p| p.handle.cast()).collect();
     let res = unsafe {
         unsafe extern "C" fn delegate(
             params_count: usize,
             params: *const argus_object_wrapper_t,
             extra: *const ffi::c_void
         ) -> ArgusObjectWrapperOrReflectiveArgsError {
-            let params_vec = (&*slice_from_raw_parts(params, params_count)).iter()
-                .map(|p| ObjectWrapper::of(*p))
-                .collect();
+            let params_slice = &*slice_from_raw_parts(params, params_count);
 
             let f: &Box<ProxiedNativeFunction> = mem::transmute(extra);
-            match f.as_ref()(params_vec) {
-                Ok(retval) => ArgusObjectWrapperOrReflectiveArgsError {
-                    is_err: false,
-                    val: retval.handle,
-                    err: ptr::null_mut(),
-                },
-                Err(e) => {
-                    let reason_c = CString::new(e.reason).unwrap();
-                    ArgusObjectWrapperOrReflectiveArgsError {
-                        is_err: true,
-                        val: ptr::null_mut(),
-                        err: argus_reflective_args_error_new(reason_c.as_ptr()),
-                    }
-                }
-            }
+            call_proxied_fn(f, params_slice)
         }
 
         argus_bind_global_function(

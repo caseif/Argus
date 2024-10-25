@@ -267,6 +267,7 @@ namespace argus {
 
         switch (element_type.type) {
             case IntegralType::Integer:
+            case IntegralType::UInteger:
             case IntegralType::Enum: {
                 auto check_fn = [](auto *state, auto index) {
                     if (lua_isinteger(state, index)) {
@@ -416,6 +417,7 @@ namespace argus {
 
         switch (param_def.type) {
             case IntegralType::Integer:
+            case IntegralType::UInteger:
             case IntegralType::Enum: {
                 if (!lua_isinteger(state, param_index)) {
                     return err<ObjectWrapper, std::string>("Incorrect type provided for parameter "
@@ -602,6 +604,7 @@ namespace argus {
 
     static int64_t _unwrap_int_wrapper(const ObjectWrapper &wrapper) {
         argus_assert(wrapper.type.type == IntegralType::Integer
+                || wrapper.type.type == IntegralType::UInteger
                 || wrapper.type.type == IntegralType::Enum);
 
         switch (wrapper.type.size) {
@@ -881,6 +884,7 @@ namespace argus {
             lua_pushinteger(state, int(i + 1));
             switch (element_type.type) {
                 case IntegralType::Integer:
+                case IntegralType::UInteger:
                 case IntegralType::Enum:
                     switch (vec.element_size()) {
                         case 1:
@@ -983,6 +987,7 @@ namespace argus {
 
         switch (wrapper.type.type) {
             case IntegralType::Integer:
+            case IntegralType::UInteger:
             case IntegralType::Enum:
                 lua_pushinteger(state, _unwrap_int_wrapper(wrapper));
                 break;

@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object_type_const_t ty, void *ptr,
+ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object_type_const_t ty, const void *ptr,
         size_t size);
 
 void argus_copy_bound_type(const char *type_id, void *dst, const void *src);

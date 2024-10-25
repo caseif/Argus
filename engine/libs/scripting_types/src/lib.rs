@@ -17,7 +17,7 @@
  */
 
 use std::any::TypeId;
-use std::{ffi, mem, ptr};
+use std::{ffi, mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
@@ -26,7 +26,14 @@ use quote::{quote, ToTokens};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error, Visitor};
 
-pub type ProxiedNativeFunction = fn(params: Vec<WrappedObject>) -> WrappedObject;
+pub type IsRefableGetter = fn() -> bool;
+pub type TypeIdGetter = fn() -> TypeId;
+
+pub type ProxiedNativeFunction =
+
+    fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
+pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
+pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum IntegralType {
@@ -45,13 +52,14 @@ pub enum IntegralType {
     Float64,
     Boolean,
     String,
-    ConstReference,
+    Reference,
     MutReference,
-    ConstPointer,
+    Pointer,
     MutPointer,
-    Vector,
+    Vec,
     Result,
     Object,
+    Enum,
 }
 
 macro_rules! fn_wrapper {
@@ -130,8 +138,10 @@ macro_rules! fn_wrapper {
     }
 }
 
-fn_wrapper!(IsRefableGetter, fn() -> bool);
-fn_wrapper!(TypeIdGetter, fn() -> TypeId);
+fn_wrapper!(IsRefableGetterWrapper, IsRefableGetter);
+fn_wrapper!(TypeIdGetterWrapper, TypeIdGetter);
+fn_wrapper!(CopyCtorWrapper, FfiCopyCtor);
+fn_wrapper!(MoveCtorWrapper, FfiMoveCtor);
 
 #[derive(Clone, Copy, Debug)]
 pub enum FunctionType {
@@ -161,10 +171,27 @@ pub struct ObjectType {
     pub ty: IntegralType,
     pub size: usize,
     pub is_const: bool,
-    pub is_refable: Option<IsRefableGetter>,
+    pub is_refable: Option<bool>,
+    pub is_refable_getter: Option<IsRefableGetterWrapper>,
+    #[serde(skip)]
+    pub type_id: Option<TypeId>,
+    pub type_name: Option<String>,
     pub primary_type: Option<Box<ObjectType>>,
     pub secondary_type: Option<Box<ObjectType>>,
-    pub type_id: Option<TypeIdGetter>,
+    pub copy_ctor: Option<CopyCtorWrapper>,
+    pub move_ctor: Option<MoveCtorWrapper>,
+}
+
+impl ObjectType {
+    pub fn get_is_refable(&self) -> Option<bool> {
+        if let Some(refable) = self.is_refable {
+            Some(refable)
+        } else if let Some(getter) = self.is_refable_getter {
+            Some((getter.fn_ptr)())
+        } else {
+            None
+        }
+    }
 }
 
 pub const EMPTY_TYPE: ObjectType = ObjectType {
@@ -172,17 +199,21 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     size: 0,
     is_const: false,
     is_refable: None,
+    is_refable_getter: None,
+    type_id: None,
+    type_name: None,
     primary_type: None,
     secondary_type: None,
-    type_id: None,
+    copy_ctor: None,
+    move_ctor: None,
 };
 
-pub trait Wrappable<'a, U : Into<Self> = Self> : Sized {
-    type InternalFormat;
-
+pub trait ScriptBound : Sized {
     fn get_object_type() -> ObjectType;
+}
 
-    fn unwrap_from(wrapper: WrappedObject) -> U;
+pub trait Wrappable<'a> : ScriptBound {
+    type InternalFormat;
 
     fn wrap_into(self, wrapper: &mut WrappedObject);
 
@@ -191,31 +222,64 @@ pub trait Wrappable<'a, U : Into<Self> = Self> : Sized {
     }
 }
 
+pub trait DirectWrappable<'a> : Wrappable<'a> {
+    fn unwrap_from(wrapper: &'a WrappedObject) -> &'a Self;
+
+    fn unwrap_from_mut(wrapper: &'a mut WrappedObject) -> &'a mut Self;
+
+    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self
+        where Self : Clone + 'a {
+        Self::unwrap_from(wrapper).clone()
+    }
+}
+
+pub trait IndirectWrappable<'a> : Wrappable<'a> {
+    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self;
+}
+
 macro_rules! make_wrappable {
     ($ty:ty, $enum_var:ident) => (
-        impl<'a> Wrappable<'a> for $ty {
-            type InternalFormat = Self;
-
+        impl ScriptBound for $ty {
             fn get_object_type() -> ObjectType {
                 ObjectType {
                     ty: IntegralType::$enum_var,
                     size: size_of::<Self>(),
                     is_const: false,
                     is_refable: None,
+                    is_refable_getter: None,
+                    type_id: None,
+                    type_name: None,
                     primary_type: None,
                     secondary_type: None,
-                    type_id: None,
+                    copy_ctor: None,
+                    move_ctor: None,
                 }
             }
+        }
+
+        impl<'a> Wrappable<'a> for $ty {
+            type InternalFormat = Self;
 
             fn wrap_into(self, wrapper: &mut WrappedObject) {
-                unsafe { wrapper.store_value(self); }
+                if size_of::<Self>() > 0 {
+                    unsafe { wrapper.store_value(self) }
+                }
+            }
+        }
+
+        impl<'a> DirectWrappable<'a> for $ty {
+            fn unwrap_from(wrapper: &'a WrappedObject) -> &'a Self {
+                assert_eq!(wrapper.ty.ty, IntegralType::$enum_var, "Wrong object type");
+                assert!(wrapper.is_populated);
+
+                unsafe { &*wrapper.get_ptr::<Self>() }
             }
 
-            fn unwrap_from(wrapper: WrappedObject) -> Self {
+            fn unwrap_from_mut(wrapper: &'a mut WrappedObject) -> &'a mut Self {
                 assert_eq!(wrapper.ty.ty, IntegralType::$enum_var, "Wrong object type");
+                assert!(wrapper.is_populated);
 
-                unsafe { *wrapper.get_ptr::<Self>() }
+                unsafe { &mut *wrapper.get_mut_ptr::<Self>() }
             }
         }
     )
@@ -234,36 +298,44 @@ make_wrappable!(f64, Float64);
 make_wrappable!(bool, Boolean);
 make_wrappable!((), Empty);
 
-impl<'a> Wrappable<'a> for String {
-    type InternalFormat = &'a [u8];
+pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {
+    let len = CStr::from_ptr(src.cast()).count_bytes() + 1;
+    let src_slice = slice::from_raw_parts(src, len);
+    let dst_slice = slice::from_raw_parts_mut(dst, len);
+    dst_slice.copy_from_slice(src_slice);
+}
 
+pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
+    copy_string(dst, src);
+}
+
+impl ScriptBound for String {
     fn get_object_type() -> ObjectType {
         ObjectType {
             ty: IntegralType::String,
             size: 0,
             is_const: false,
             is_refable: None,
+            is_refable_getter: None,
+            type_id: None,
+            type_name: None,
             primary_type: None,
             secondary_type: None,
-            type_id: None,
+            copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
+            move_ctor: Some(MoveCtorWrapper::of(move_string)),
         }
     }
+}
 
-    fn unwrap_from(mut wrapper: WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
+impl<'a> Wrappable<'a> for String {
+    type InternalFormat = ffi::c_char;
 
-        unsafe {
-            CString::from(CStr::from_ptr((*wrapper.get_mut_ptr::<Self>()).as_ptr().cast()))
-                    .into_string().unwrap()
-        }
-    }
-
-    fn wrap_into(self, wrapped: &mut WrappedObject) {
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
         let cstr = CString::new(self.as_str()).unwrap();
 
-        unsafe { wrapped.copy_from_slice(cstr.as_bytes_with_nul()); }
+        unsafe { wrapper.copy_from_slice(cstr.as_bytes_with_nul()); }
 
-        wrapped.is_initialized = true;
+        wrapper.is_populated = true;
     }
 
     fn get_required_buffer_size(&self) -> usize {
@@ -271,39 +343,210 @@ impl<'a> Wrappable<'a> for String {
     }
 }
 
-impl<'a> Wrappable<'a> for &'a str {
-    type InternalFormat = &'a [u8];
+impl<'a> IndirectWrappable<'a> for String {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
+        assert!(wrapper.is_populated);
 
+        unsafe {
+            let char_ptr = wrapper.get_ptr::<Self>();
+            let c_str = CStr::from_ptr(char_ptr);
+            c_str.to_str().unwrap().to_string()
+        }
+    }
+}
+
+impl ScriptBound for &str {
     fn get_object_type() -> ObjectType {
         ObjectType {
             ty: IntegralType::String,
             size: 0,
             is_const: false,
             is_refable: None,
+            is_refable_getter: None,
+            type_id: None,
+            type_name: None,
             primary_type: None,
             secondary_type: None,
-            type_id: None,
+            copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
+            move_ctor: Some(MoveCtorWrapper::of(move_string)),
         }
     }
+}
 
-    fn unwrap_from(mut wrapper: WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
+impl<'a> Wrappable<'a> for &'a str {
+    type InternalFormat = ffi::c_char;
 
-        unsafe {
-            CStr::from_ptr((*wrapper.get_mut_ptr::<Self>()).as_ptr().cast()).to_str().unwrap()
-        }
-    }
-
-    fn wrap_into(self, wrapped: &mut WrappedObject) {
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
         let cstr = CString::new(self).unwrap();
 
-        unsafe { wrapped.copy_from_slice(cstr.as_bytes_with_nul()); }
+        unsafe { wrapper.copy_from_slice(cstr.as_bytes_with_nul()); }
 
-        wrapped.is_initialized = true;
+        wrapper.is_populated = true;
     }
 
     fn get_required_buffer_size(&self) -> usize {
         CString::new(*self).unwrap().count_bytes() + 1
+    }
+}
+
+impl<'a> IndirectWrappable<'a> for &'a str {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
+        assert!(wrapper.is_populated);
+
+        unsafe {
+            let char_ptr = wrapper.get_ptr::<Self>();
+            let c_str = CStr::from_ptr(char_ptr);
+            c_str.to_str().unwrap()
+        }
+    }
+}
+
+impl<T : ScriptBound> ScriptBound for Vec<T> {
+    fn get_object_type() -> ObjectType {
+        ObjectType {
+            ty: IntegralType::Vec,
+            size: 0,
+            is_const: true,
+            is_refable: None,
+            is_refable_getter: None,
+            type_id: None,
+            type_name: None,
+            primary_type: Some(Box::new(T::get_object_type())),
+            secondary_type: None,
+            copy_ctor: None,
+            move_ctor: None,
+        }
+    }
+}
+
+impl<'a, T : Wrappable<'a>> Wrappable<'a> for Vec<T> {
+    type InternalFormat = i32;
+
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
+        todo!()
+    }
+}
+
+impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for Vec<T> {
+    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self {
+        todo!()
+    }
+}
+
+impl<T : ScriptBound> ScriptBound for *const T {
+    fn get_object_type() -> ObjectType {
+        ObjectType {
+            ty: IntegralType::Pointer,
+            size: size_of::<*const ()>(),
+            is_const: true,
+            is_refable: None,
+            is_refable_getter: None,
+            type_id: None,
+            type_name: None,
+            primary_type: Some(Box::new(T::get_object_type())),
+            secondary_type: None,
+            copy_ctor: None,
+            move_ctor: None,
+        }
+    }
+}
+
+impl<'a, T : Wrappable<'a>> Wrappable<'a> for *const T {
+    type InternalFormat = *const T;
+
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
+        assert_eq!(wrapper.ty.ty, IntegralType::Pointer, "Wrong object type");
+
+        unsafe { wrapper.store_value(self); }
+    }
+}
+
+impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for *const T {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::Pointer, "Wrong object type");
+        assert!(wrapper.is_populated);
+
+        unsafe { *wrapper.get_ptr::<Self>().cast() }
+    }
+}
+
+impl<T : ScriptBound> ScriptBound for &T {
+    fn get_object_type() -> ObjectType {
+        let base_type = T::get_object_type();
+        ObjectType {
+            ty: IntegralType::Reference,
+            size: size_of::<*const ()>(),
+            is_const: false, //TODO: this totally breaks safety in bound functions
+            is_refable: None,
+            is_refable_getter: None,
+            type_id: base_type.type_id,
+            type_name: base_type.type_name,
+            primary_type: Some(Box::new(T::get_object_type())),
+            secondary_type: None,
+            copy_ctor: None,
+            move_ctor: None,
+        }
+    }
+}
+
+impl<'a, T : Wrappable<'a>> Wrappable<'a> for &T {
+    type InternalFormat = *const T;
+
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+
+        unsafe { *wrapper.get_mut_ptr::<*const T>() = self; }
+        wrapper.is_populated = true;
+    }
+}
+
+impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for &T {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+        assert!(wrapper.is_populated);
+
+        unsafe { &*wrapper.get_ptr::<Self>().cast::<T>() }
+    }
+}
+
+impl<T : ScriptBound> ScriptBound for &mut T {
+    fn get_object_type() -> ObjectType {
+        let base_type = T::get_object_type();
+        ObjectType {
+            ty: IntegralType::MutReference,
+            size: size_of::<*const ()>(),
+            is_const: false,
+            is_refable: None,
+            is_refable_getter: None,
+            type_id: base_type.type_id,
+            type_name: base_type.type_name,
+            primary_type: Some(Box::new(T::get_object_type())),
+            secondary_type: None,
+            copy_ctor: None,
+            move_ctor: None,
+        }
+    }
+}
+
+impl<'a, T : Wrappable<'a>> Wrappable<'a> for &mut T {
+    type InternalFormat = *mut T;
+
+    fn wrap_into(self, wrapper: &mut WrappedObject) {
+        assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
+
+        unsafe { *wrapper.get_mut_ptr::<*const T>() = self; }
+        wrapper.is_populated = true;
+    }
+}
+
+impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for &mut T {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+        assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
+        assert!(wrapper.is_populated);
+
+        unsafe { &mut **wrapper.get_ptr::<Self>() }
     }
 }
 
@@ -314,7 +557,7 @@ pub struct WrappedObject {
     pub data: [u8; WRAPPED_OBJ_BUF_CAP],
     pub is_on_heap: bool,
     pub buffer_size: usize,
-    is_initialized: bool,
+    is_populated: bool,
     drop_fn: fn(&mut WrappedObject),
 }
 
@@ -335,6 +578,27 @@ impl Drop for WrappedObject {
 impl WrappedObject {
     pub const BUFFER_CAPACITY: usize = WRAPPED_OBJ_BUF_CAP;
 
+    pub fn from_ptr(ty: &ObjectType, ffi_buf: &[u8]) -> Self {
+        let mut wrapper = Self {
+            ty: ty.clone(),
+            data: unsafe { mem::zeroed() },
+            is_on_heap: false,
+            buffer_size: ffi_buf.len(),
+            is_populated: false,
+            drop_fn: |_| {},
+        };
+
+        wrapper.initialize_buffer(ffi_buf.len());
+
+        if let Some(copy_ctor) = ty.copy_ctor {
+            unsafe { (copy_ctor.fn_ptr)(wrapper.get_mut_ptr::<()>(), ffi_buf.as_ptr().cast()) }
+        } else {
+            unsafe { wrapper.copy_from_slice(ffi_buf) }
+        }
+
+        wrapper
+    }
+
     pub fn wrap<'a, T: Wrappable<'a>>(val: T) -> Self {
         let size = val.get_required_buffer_size();
 
@@ -343,38 +607,81 @@ impl WrappedObject {
             data: unsafe { mem::zeroed() },
             is_on_heap: false,
             buffer_size: size,
-            is_initialized: false,
-            drop_fn: |wrapper: &mut WrappedObject|
-                unsafe { ptr::drop_in_place::<T::InternalFormat>(wrapper.get_heap_ptr_mut::<T>()) },
+            is_populated: false,
+            drop_fn: |wrapper: &mut WrappedObject| {
+                unsafe {
+                    if wrapper.is_populated {
+                        ptr::drop_in_place::<T::InternalFormat>(wrapper.get_mut_ptr::<T>())
+                    }
+                }
+            },
         };
 
-        if size > WrappedObject::BUFFER_CAPACITY {
-            let heap_ptr: *mut T::InternalFormat =
-                unsafe {
-                    alloc_zeroed(Layout::from_size_align(wrapper.buffer_size, 8).unwrap()).cast()
-                };
-            unsafe {
-                // copy pointer address to internal buffer
-                ptr::write(wrapper.data.as_mut_ptr().cast(), heap_ptr);
-            }
-            wrapper.is_on_heap = true;
-        } else {
-            wrapper.is_on_heap = false;
-        }
+        wrapper.initialize_buffer(size);
 
         val.wrap_into(&mut wrapper);
 
         wrapper
     }
 
-    pub fn unwrap<'a, T : Wrappable<'a>>(self) -> T {
+    pub fn new(ty: ObjectType) -> Self {
+        assert_ne!(ty.ty, IntegralType::String);
+
+        let size = ty.size;
+
+        let mut wrapper = WrappedObject {
+            ty,
+            data: unsafe { mem::zeroed() },
+            is_on_heap: false,
+            buffer_size: size,
+            is_populated: false,
+            drop_fn: |_| {},
+        };
+
+        wrapper.initialize_buffer(size);
+
+        wrapper
+    }
+
+    fn initialize_buffer(&mut self, size: usize) {
+        if size > WrappedObject::BUFFER_CAPACITY {
+            let heap_ptr: *mut u8 =
+                unsafe {
+                    alloc_zeroed(Layout::from_size_align(self.buffer_size, 8).unwrap()).cast()
+                };
+            unsafe {
+                // copy pointer address to internal buffer
+                *self.data.as_mut_ptr().cast() = heap_ptr;
+            }
+            self.is_on_heap = true;
+        } else {
+            self.is_on_heap = false;
+        }
+    }
+
+    pub fn unwrap_as_ref<'a, T : DirectWrappable<'a>>(&'a self) -> &'a T {
+        assert!(self.is_populated);
         assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
         T::unwrap_from(self)
+    }
+
+    pub fn unwrap_as_mut<'a, T : DirectWrappable<'a>>(&'a mut self) -> &'a mut T {
+        assert!(self.is_populated);
+        assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
+        T::unwrap_from_mut(self)
     }
 
     pub fn get_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
         if self.is_on_heap {
             self.get_heap_ptr::<T>()
+        } else {
+            self.data.as_ptr().cast()
+        }
+    }
+
+    pub fn get_raw_ptr(&self) -> *const () {
+        if self.is_on_heap {
+            self.get_raw_heap_ptr().cast()
         } else {
             self.data.as_ptr().cast()
         }
@@ -396,11 +703,10 @@ impl WrappedObject {
         unsafe { &mut *slice_from_raw_parts_mut(self.data.as_mut_ptr().cast(), self.buffer_size) }
     }
 
-    pub unsafe fn store_value<'a, T : Wrappable<'a>>(&mut self, val: T) {
-        assert!(size_of::<T>() <= self.buffer_size);
-
-        val.wrap_into(self);
-        self.is_initialized = true;
+    pub unsafe fn store_value<'a, T : Wrappable<'a> + Into<T::InternalFormat>>(&mut self, val: T) {
+         assert!(size_of::<T>() <= self.buffer_size);
+        *self.get_mut_ptr::<T>() = val.into();
+        self.is_populated = true;
     }
 
     pub unsafe fn copy_from_slice(&mut self, src: &[u8]) {
@@ -410,7 +716,10 @@ impl WrappedObject {
     unsafe fn copy_from(&mut self, src: *const (), size: usize) {
         assert!(size <= self.buffer_size);
 
-        ptr::copy_nonoverlapping(src, self.get_mut_ptr::<()>(), size);
+        let dst = self.get_mut_ptr::<u8>();
+        ptr::copy_nonoverlapping(src.cast(), dst, size);
+
+        self.is_populated = true;
     }
 
     fn get_heap_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
@@ -423,7 +732,7 @@ impl WrappedObject {
         self.get_raw_heap_ptr_mut().cast()
     }
 
-    fn get_raw_heap_ptr(&self) -> *mut u8 {
+    fn get_raw_heap_ptr(&self) -> *const u8 {
         assert!(self.is_on_heap);
         unsafe { *self.data.as_ptr().cast() }
     }
@@ -432,6 +741,11 @@ impl WrappedObject {
         assert!(self.is_on_heap);
         unsafe { *self.data.as_ptr().cast() }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct ReflectiveArgumentsError {
+    pub reason: String,
 }
 
 pub struct BoundStructInfo {
@@ -445,8 +759,8 @@ pub struct BoundFieldInfo {
     pub name: &'static str,
     pub type_serial: &'static str,
     pub size: usize,
-    pub accessor: unsafe fn(*mut ffi::c_void) -> *mut ffi::c_void,
-    pub mutator: unsafe fn(*mut ffi::c_void, *const ffi::c_void) -> (),
+    pub accessor: unsafe fn(*mut ()) -> WrappedObject,
+    pub mutator: unsafe fn(*mut (), *const ()) -> (),
 }
 
 pub struct BoundFunctionInfo {
@@ -454,7 +768,7 @@ pub struct BoundFunctionInfo {
     pub ty: FunctionType,
     pub param_type_serials: &'static [&'static str],
     pub return_type_serial: &'static str,
-    pub proxy: ProxiedNativeFunction,
+    pub proxy: &'static ProxiedNativeFunction,
 }
 
 pub struct BoundEnumInfo {
@@ -474,8 +788,3 @@ impl BoundEnumInfo {
         Self { name, type_id, width, values }
     }
 }
-
-inventory::collect!(BoundStructInfo);
-inventory::collect!(BoundFieldInfo);
-inventory::collect!(BoundFunctionInfo);
-inventory::collect!(BoundEnumInfo);

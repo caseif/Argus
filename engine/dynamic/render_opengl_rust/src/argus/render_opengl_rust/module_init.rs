@@ -22,11 +22,12 @@ use std::time::Duration;
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
+use lazy_static::lazy_static;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
+use scripting_rs::register_script_bindings;
 use scripting_rustabi::argus::scripting::script_bind;
 use wm_rustabi::argus::wm::*;
-
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
 use crate::argus::render_opengl_rust::loader::ShaderLoader;
@@ -155,6 +156,7 @@ fn resource_event_handler(event: &ResourceEvent) {
     }
 
     RENDERERS.with_borrow_mut(|renderers| {
+        #[allow(unused)]
         for (_, renderer) in &mut renderers.iter() {
             let mt = event.get_prototype().media_type;
             if mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG {
@@ -164,29 +166,6 @@ fn resource_event_handler(event: &ResourceEvent) {
             }
         }
     });
-}
-
-#[script_bind]
-pub struct MyStruct {
-    pub foo: i32,
-}
-
-#[script_bind]
-pub enum MyEnum {
-    Foo,
-    Bar,
-    Baz = 4,
-    Qux,
-    Quux = 8 + 8,
-    Xyzzy,
-}
-
-#[script_bind]
-pub fn my_func(i: i32, u: u32, s: String) {
-    println!("i: {i}");
-    println!("u: {u}");
-    println!("string: {s}");
-    //println!("s: {s}");
 }
 
 #[no_mangle]
@@ -222,6 +201,9 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 TargetThread::Render,
                 Ordering::Standard
             );
+
+            println!("Registering script bindings for render_opengl_rust");
+            register_script_bindings();
         }
         LifecycleStage::PostInit => {
             if !is_backend_active() {

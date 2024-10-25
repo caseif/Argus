@@ -76,7 +76,7 @@ namespace argus {
         }
 
         argus_assert(param_def.type_id.has_value());
-        argus_assert(!param_def.type_name.has_value());
+        //argus_assert(!param_def.type_name.has_value());
 
         std::string type_name;
         if (param_def.type == IntegralType::Enum) {
@@ -87,6 +87,7 @@ namespace argus {
             }
             type_name = bound_enum_res.unwrap().name;
         } else {
+            printf("TRYING TO RESOLVE PARAM: %s\n", param_def.type_id.value().c_str());
             auto bound_type_res = get_bound_type(param_def.type_id.value());
             if (bound_type_res.is_err()) {
                 return err<void, BindingError>(param_def.type_id.value(),
@@ -417,6 +418,12 @@ namespace argus {
     }
 
     Result<void, BindingError> bind_global_function(const BoundFunctionDef &def) {
+        if (def.return_type.primary_type.has_value()) {
+            if (def.return_type.primary_type.value()->type_id.has_value()) {
+                printf("BINDING GLOBAL FUNCTION WITH RETURN TYPE: %s\n",
+                        def.return_type.primary_type.value()->type_id.value().c_str());
+            }
+        }
         if (g_bound_global_fns.find(def.name) != g_bound_global_fns.cend()) {
             return err<void, BindingError>(def.name, "Global function with same name has already been bound");
         }

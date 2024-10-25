@@ -36,6 +36,7 @@ typedef void(*ArgusDtorProxy)(void *);
 typedef enum ArgusIntegralType {
     INTEGRAL_TYPE_VOID,
     INTEGRAL_TYPE_INTEGER,
+    INTEGRAL_TYPE_UINTEGER,
     INTEGRAL_TYPE_FLOAT,
     INTEGRAL_TYPE_BOOLEAN,
     INTEGRAL_TYPE_STRING,
@@ -85,9 +86,9 @@ typedef ArgusObjectWrapperOrReflectiveArgsError(*ArgusProxiedNativeFunction)
 void argus_object_wrapper_or_refl_args_err_delete(ArgusObjectWrapperOrReflectiveArgsError res);
 
 argus_object_type_t argus_object_type_new(ArgusIntegralType type, size_t size, bool is_const,
-        bool is_refable, const char *type_id, const char *type_name,
-        argus_script_callback_type_t script_callback_type, argus_object_type_t primary_type,
-        argus_object_type_t secondary_type);
+        bool is_refable, const char *type_id,
+        argus_script_callback_type_const_t script_callback_type, argus_object_type_const_t primary_type,
+        argus_object_type_const_t secondary_type);
 
 void argus_object_type_delete(argus_object_type_t obj_type);
 

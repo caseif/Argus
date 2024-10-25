@@ -17,6 +17,7 @@
  */
 
 use std::ffi::CStr;
+use argus_scripting_bind::ReflectiveArgumentsError;
 use crate::scripting_cabi::*;
 
 #[derive(Clone, Debug)]
@@ -42,22 +43,15 @@ impl From<argus_binding_error_t> for BindingError {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct ReflectiveArgumentsError {
-    pub reason: String,
-}
+pub fn translate_refl_args_err(err_ffi: argus_reflective_args_error_t) -> ReflectiveArgumentsError {
+    unsafe {
+        let error = ReflectiveArgumentsError {
+            reason: CStr::from_ptr(argus_reflective_args_error_get_reason(err_ffi))
+                .to_string_lossy().to_string(),
+        };
 
-impl ReflectiveArgumentsError {
-    pub fn from(err_ffi: argus_reflective_args_error_t) -> Self {
-        unsafe {
-            let error = Self {
-                reason: CStr::from_ptr(argus_reflective_args_error_get_reason(err_ffi))
-                    .to_string_lossy().to_string(),
-            };
+        argus_reflective_args_error_free(err_ffi);
 
-            argus_reflective_args_error_free(err_ffi);
-
-            error
-        }
+        error
     }
 }

@@ -46,6 +46,7 @@ namespace argus {
     }
 
     Result<ObjectWrapper, ReflectiveArgumentsError> create_int_object_wrapper(const ObjectType &type, int64_t val) {
+        auto is_signed = type.type == IntegralType::Integer || type.type == IntegralType::Enum;
         ObjectWrapper wrapper(type, type.size);
         argus_assert(wrapper.buffer_size >= type.size);
 
@@ -62,19 +63,35 @@ namespace argus {
 
         switch (type.size) {
             case 1: {
-                wrapper.store_value(int8_t(val));
+                if (is_signed) {
+                    wrapper.store_value(int8_t(val));
+                } else {
+                    wrapper.store_value(uint8_t(val));
+                }
                 break;
             }
             case 2: {
-                wrapper.store_value(int16_t(val));
+                if (is_signed) {
+                    wrapper.store_value(int16_t(val));
+                } else {
+                    wrapper.store_value(uint16_t(val));
+                }
                 break;
             }
             case 4: {
-                wrapper.store_value(int32_t(val));
+                if (is_signed) {
+                    wrapper.store_value(int32_t(val));
+                } else {
+                    wrapper.store_value(uint32_t(val));
+                }
                 break;
             }
             case 8: {
-                wrapper.store_value(int64_t(val));
+                if (is_signed) {
+                    wrapper.store_value(int64_t(val));
+                } else {
+                    wrapper.store_value(uint64_t(val));
+                }
                 break;
             }
             default:

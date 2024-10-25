@@ -11,12 +11,13 @@ crate-type = ["cdylib"]
 lazy_static = "1.5.0"
 libc = "0.2"
 num_enum = "0.7"
-spirv-cross-sys = { path = "../../../external-bindings/spirv-cross" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
-lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
-wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
-resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
 render_rustabi = { path = "../../auxiliary/render_rustabi" }
+resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+scripting_rs = { path = "../../static/scripting_rs" }
+scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
 shadertools = { path = "../../libs/shadertools", default-features = false }
+spirv-cross-sys = { path = "../../../external-bindings/spirv-cross" }
+wm_rustabi = { path = "../../auxiliary/wm_rustabi" }

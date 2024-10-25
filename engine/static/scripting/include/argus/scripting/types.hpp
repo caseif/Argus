@@ -45,6 +45,7 @@ namespace argus {
     enum class IntegralType {
         Void,
         Integer,
+        UInteger,
         Float,
         Boolean,
         String,
@@ -350,6 +351,12 @@ namespace argus {
             }
             case IntegralType::Integer: {
                 argus_assert(std::is_integral_v<T>);
+                argus_assert(std::is_signed_v<T>);
+                break;
+            }
+            case IntegralType::UInteger: {
+                argus_assert(std::is_integral_v<T>);
+                argus_assert(!std::is_signed_v<T>);
                 break;
             }
             case IntegralType::Float: {

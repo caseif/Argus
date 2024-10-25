@@ -33,7 +33,9 @@ static const argus::ObjectType _obj_type_as_ref(argus_object_type_const_t obj_ty
 static std::vector<argus::ObjectType> _unwrap_obj_type_list(size_t count, const argus_object_type_const_t *types) {
     std::vector<argus::ObjectType> vec;
     vec.reserve(count);
-    std::transform(types, types + count, vec.begin(), [](const auto &p) { return _obj_type_as_ref(p); });
+    for (size_t i = 0; i < count; i++) {
+        vec.emplace_back(_obj_type_as_ref(types[i]));
+    }
     return vec;
 }
 
@@ -74,12 +76,14 @@ static inline argus::Result<argus::ObjectWrapper, argus::ReflectiveArgumentsErro
     }
 }
 
-static argus::ProxiedNativeFunction _unwrap_proxied_native_fn(ArgusProxiedNativeFunction fn) {
-    return [fn](std::vector<argus::ObjectWrapper> &params) {
+static argus::ProxiedNativeFunction _unwrap_proxied_native_fn(ArgusProxiedNativeFunction fn, void *extra) {
+    return [fn, extra](std::vector<argus::ObjectWrapper> &params) {
         std::vector<argus_object_wrapper_t> ptr_vec;
         ptr_vec.reserve(params.size());
-        std::transform(params.begin(), params.end(), ptr_vec.begin(), [](auto &p) { return &p; });
-        return _unwrap_res(fn(ptr_vec.size(), ptr_vec.data(), nullptr));
+        for (auto &param : params) {
+            ptr_vec.push_back(static_cast<void *>(&param));
+        }
+        return _unwrap_res(fn(ptr_vec.size(), ptr_vec.data(), extra));
     };
 }
 
@@ -87,6 +91,7 @@ extern "C" {
 
 ArgusMaybeBindingError argus_bind_type(const char *name, size_t size, const char *type_id, bool is_refable,
         ArgusCopyCtorProxy copy_ctor, ArgusMoveCtorProxy move_ctor, ArgusDtorProxy dtor) {
+    printf("BINDING TYPE: %s\n", type_id);
     auto type_def = argus::BoundTypeDef {
         name,
         size,
@@ -124,12 +129,20 @@ ArgusMaybeBindingError argus_bind_member_field(const char *containing_type_id, c
     argus::BoundFieldDef def {};
     def.m_name = name;
     def.m_type = _obj_type_as_ref(field_type);
-    def.m_access_proxy = [&](const argus::ObjectWrapper &inst, const argus::ObjectType &obj_type) {
-        return std::move(_obj_wrapper_as_ref(accessor(&inst, &obj_type, accessor_state)));
+    def.m_access_proxy = [accessor, accessor_state](const argus::ObjectWrapper &inst, const argus::ObjectType &obj_type) {
+        return std::move(_obj_wrapper_as_ref(accessor(
+                reinterpret_cast<const void *>(inst.get_direct_ptr()),
+                &obj_type,
+                accessor_state
+        )));
     };
     def.m_assign_proxy = mutator != nullptr
-            ? std::make_optional([&](argus::ObjectWrapper &inst, argus::ObjectWrapper &val) {
-                mutator(&inst, &val, mutator_state);
+            ? std::make_optional([mutator, mutator_state](argus::ObjectWrapper &inst, argus::ObjectWrapper &val) {
+                mutator(
+                        reinterpret_cast<void *>(inst.get_direct_ptr()),
+                        &val,
+                        mutator_state
+                );
             })
             : std::nullopt;
 
@@ -146,7 +159,7 @@ ArgusMaybeBindingError argus_bind_global_function(const char *name, size_t param
         false,
         _unwrap_obj_type_list(params_count, params),
         _obj_type_as_ref(ret_type),
-        _unwrap_proxied_native_fn(proxied_fn)
+        _unwrap_proxied_native_fn(proxied_fn, extra)
     };
     return _wrap_res(argus::bind_global_function(fn_def));
 }
@@ -161,7 +174,7 @@ ArgusMaybeBindingError argus_bind_member_static_function(const char *type_id, co
             false,
             _unwrap_obj_type_list(params_count, params),
             _obj_type_as_ref(ret_type),
-            _unwrap_proxied_native_fn(proxied_fn),
+            _unwrap_proxied_native_fn(proxied_fn, extra),
     };
     return _wrap_res(argus::bind_member_static_function(type_id, fn_def));
 }
@@ -176,7 +189,7 @@ ArgusMaybeBindingError argus_bind_member_instance_function(const char *type_id, 
             is_const,
             _unwrap_obj_type_list(params_count, params),
             _obj_type_as_ref(ret_type),
-            _unwrap_proxied_native_fn(proxied_fn)
+            _unwrap_proxied_native_fn(proxied_fn, extra)
     };
     return _wrap_res(argus::bind_member_instance_function(type_id, fn_def));
 }

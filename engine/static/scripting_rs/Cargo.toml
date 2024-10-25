@@ -5,10 +5,10 @@ edition = "2021"
 
 [lib]
 name = "scripting_rs"
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
 
 [dependencies]
-inventory = "0.3.15"
+linkme = "0.3.28"
 serde_json = "1.0.128"
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }

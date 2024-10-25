@@ -16,10 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ptr;
+use std::{mem, ptr, slice};
 use std::any::TypeId;
 use std::ffi::{CStr, CString};
+use std::marker::PhantomData;
 use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
+use argus_scripting_bind::{FfiCopyCtor, FfiMoveCtor};
 use crate::scripting_cabi::*;
 
 #[repr(u32)]
@@ -27,6 +29,7 @@ use crate::scripting_cabi::*;
 pub enum FfiIntegralType {
     Void = INTEGRAL_TYPE_VOID,
     Integer = INTEGRAL_TYPE_INTEGER,
+    UInteger = INTEGRAL_TYPE_UINTEGER,
     Float = INTEGRAL_TYPE_FLOAT,
     Boolean = INTEGRAL_TYPE_BOOLEAN,
     String = INTEGRAL_TYPE_STRING,
@@ -57,14 +60,15 @@ pub enum FfiSymbolType {
     Function = SYMBOL_TYPE_FUNCTION,
 }
 
-pub struct FfiObjectType {
-    pub(crate) handle: argus_object_type_t,
+pub struct FfiObjectType<'a> {
+    pub handle: argus_object_type_const_t,
+    _handle_phantom: PhantomData<&'a ()>,
     must_free: bool,
 }
 
-impl FfiObjectType {
-    pub fn of(handle: argus_object_type_t) -> Self {
-        Self { handle, must_free: false }
+impl<'a> FfiObjectType<'a> {
+    pub fn of(handle: argus_object_type_const_t) -> Self {
+        Self { handle, _handle_phantom: PhantomData, must_free: false }
     }
 
     pub fn new(
@@ -72,27 +76,28 @@ impl FfiObjectType {
         size: usize,
         is_const: bool,
         is_refable: bool,
-        type_id: Option<TypeId>,
-        type_name: &str,
+        type_id: Option<String>,
         script_callback_type: Option<ScriptCallbackType>,
-        primary_type: Option<FfiObjectType>,
-        secondary_type: Option<FfiObjectType>
+        primary_type: Option<FfiObjectType<'a>>,
+        secondary_type: Option<FfiObjectType<'a>>,
+        copy_ctor: Option<FfiCopyCtor>,
+        move_ctor: Option<FfiMoveCtor>,
     ) -> Self {
-        let type_id_str = type_id.map(|id| format!("{:?}", id)).unwrap_or("".to_string());
-        let type_id_c = CString::new(type_id_str).unwrap();
-        let type_name_c = CString::new(type_name).unwrap();
+        let type_id_c = type_id.map(|id| CString::new(id).unwrap());
+        let type_id_c_ptr = type_id_c.as_ref().map(|id| id.as_ptr()).unwrap_or(ptr::null());
+
         Self {
             handle: unsafe { argus_object_type_new(
                 ty.into(),
                 size,
                 is_const,
                 is_refable,
-                type_id_c.as_ptr(),
-                type_name_c.as_ptr(),
+                type_id_c_ptr,
                 script_callback_type.map(|t| t.handle).unwrap_or(ptr::null_mut()),
-                primary_type.map(|t| t.handle).unwrap_or(ptr::null_mut()),
-                secondary_type.map(|t| t.handle).unwrap_or(ptr::null_mut()),
+                primary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut()),
+                secondary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut()),
             ) },
+            _handle_phantom: PhantomData,
             must_free: true,
         }
     }
@@ -119,10 +124,13 @@ impl FfiObjectType {
         }
     }
 
-    pub fn get_type_name(&self) -> String {
+    pub fn get_type_name(&self) -> Option<String> {
         unsafe {
-            CStr::from_ptr(argus_object_type_get_type_name(self.handle))
-                .to_string_lossy().to_string()
+            let name_c = argus_object_type_get_type_name(self.handle);
+            if name_c.is_null() {
+                return None;
+            }
+            Some(CStr::from_ptr(name_c).to_string_lossy().to_string())
         }
     }
 
@@ -148,10 +156,10 @@ impl FfiObjectType {
     }
 }
 
-impl Drop for FfiObjectType {
+impl<'a> Drop for FfiObjectType<'a> {
     fn drop(&mut self) {
         if self.must_free {
-            unsafe { argus_object_type_delete(self.handle); }
+            unsafe { argus_object_type_delete(self.handle.cast_mut()); }
         }
     }
 }
@@ -166,17 +174,17 @@ impl ScriptCallbackType {
     }
 }
 
-pub struct ObjectWrapper {
+pub struct FfiObjectWrapper {
     pub(crate) handle: argus_object_wrapper_t,
     must_free: bool,
 }
 
-impl ObjectWrapper {
+impl FfiObjectWrapper {
     pub fn of(handle: argus_object_wrapper_t) -> Self {
         Self { handle, must_free: false }
     }
 
-    pub fn new(ty: FfiObjectType, size: usize) -> Self {
+    pub fn new(ty: FfiObjectType, data: *const (), size: usize) -> Self {
         Self {
             handle: unsafe { argus_object_wrapper_new(ty.handle, size) },
             must_free: true,
@@ -190,9 +198,18 @@ impl ObjectWrapper {
     pub fn get_value_mut(&mut self) -> *mut () {
         unsafe { argus_object_wrapper_get_value_mut(self.handle).cast() }
     }
+
+    pub fn get_buffer<'a>(&'a self) -> &'a [u8] {
+        unsafe {
+            slice::from_raw_parts(
+                argus_object_wrapper_get_value(self.handle).cast(),
+                argus_object_wrapper_get_buffer_size(self.handle),
+            )
+        }
+    }
 }
 
-impl Drop for ObjectWrapper {
+impl Drop for FfiObjectWrapper {
     fn drop(&mut self) {
         if self.must_free {
             unsafe { argus_object_wrapper_delete(self.handle); }
