@@ -176,6 +176,7 @@ pub(crate) fn create_processed_object_2d(
     Box::into_raw(Box::new(processed_obj)).cast()
 }
 
+#[allow(unused_assignments)]
 pub(crate) fn update_processed_object_2d(
     object: &mut RenderObject2d,
     proc_obj_ptr: argus_processed_render_object_2d_t,

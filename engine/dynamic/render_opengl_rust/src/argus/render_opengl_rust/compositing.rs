@@ -839,6 +839,7 @@ fn compute_scene_2d_shadowmap(
     viewport_state: &ViewportState,
     program: &LinkedProgram,
     frame_vao: GlArrayHandle,
+    #[allow(unused)]
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
     viewport_state
@@ -896,6 +897,7 @@ fn draw_scene_2d_lightmap(
     viewport_state: &ViewportState,
     lighting_program: &LinkedProgram,
     frame_vao: GlArrayHandle,
+    #[allow(unused)]
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
     glBindFramebuffer(

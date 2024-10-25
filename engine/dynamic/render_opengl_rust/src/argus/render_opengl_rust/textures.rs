@@ -113,6 +113,7 @@ pub(crate) fn release_texture(state: &mut RendererState, texture_uid: &str) {
                 //debug("Released last handle on texture %s", texture_uid.c_str());
             },
             Err(rc) => {
+                #[allow(unused)]
                 let new_count = Rc::strong_count(&rc) - 1;
                 //TODO
                 //debug("Released handle on texture %s (new refcount = %lu)",
