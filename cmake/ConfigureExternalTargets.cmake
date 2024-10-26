@@ -133,17 +133,20 @@ set(MUST_BUILD_GLSLANG ON)
 
 # glslang
 if(USE_SYSTEM_GLSLANG AND NOT APPLE)
-  # require version between 13.1.0 and 14.3.x since Khronos doesn't
+  # require version between 13.1.0 and 15.0.x since Khronos doesn't
   # care about breaking ABI compatibility between minor versions
-  find_package(glslang "14.3.0...<14.4.0" QUIET)
+  find_package(glslang "15.0.0...<15.1.0" QUIET)
   if(NOT glslang_FOUND)
-    find_package(glslang "14.2.0...<14.3.0" QUIET)
+    find_package(glslang "14.3.0...<14.4.0" QUIET)
     if(NOT glslang_FOUND)
-      find_package(glslang "14.1.0...<14.2.0" QUIET)
+      find_package(glslang "14.2.0...<14.3.0" QUIET)
       if(NOT glslang_FOUND)
-        find_package(glslang "14.0.0...<14.1.0" QUIET)
+        find_package(glslang "14.1.0...<14.2.0" QUIET)
         if(NOT glslang_FOUND)
-          find_package(glslang "13.1.0...<13.2.0" QUIET)
+          find_package(glslang "14.0.0...<14.1.0" QUIET)
+          if(NOT glslang_FOUND)
+            find_package(glslang "13.1.0...<13.2.0" QUIET)
+          endif()
         endif()
       endif()
     endif()

@@ -91,7 +91,6 @@ extern "C" {
 
 ArgusMaybeBindingError argus_bind_type(const char *name, size_t size, const char *type_id, bool is_refable,
         ArgusCopyCtorProxy copy_ctor, ArgusMoveCtorProxy move_ctor, ArgusDtorProxy dtor) {
-    printf("BINDING TYPE: %s\n", type_id);
     auto type_def = argus::BoundTypeDef {
         name,
         size,

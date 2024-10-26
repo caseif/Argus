@@ -34,6 +34,7 @@ pub type ProxiedNativeFunction =
     fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
 pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
+pub type FfiDtor = unsafe extern "C" fn(target: *mut ());
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum IntegralType {
@@ -142,6 +143,7 @@ fn_wrapper!(IsRefableGetterWrapper, IsRefableGetter);
 fn_wrapper!(TypeIdGetterWrapper, TypeIdGetter);
 fn_wrapper!(CopyCtorWrapper, FfiCopyCtor);
 fn_wrapper!(MoveCtorWrapper, FfiMoveCtor);
+fn_wrapper!(DtorWrapper, FfiDtor);
 
 #[derive(Clone, Copy, Debug)]
 pub enum FunctionType {
@@ -180,6 +182,7 @@ pub struct ObjectType {
     pub secondary_type: Option<Box<ObjectType>>,
     pub copy_ctor: Option<CopyCtorWrapper>,
     pub move_ctor: Option<MoveCtorWrapper>,
+    pub dtor: Option<DtorWrapper>,
 }
 
 impl ObjectType {
@@ -206,6 +209,7 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     secondary_type: None,
     copy_ctor: None,
     move_ctor: None,
+    dtor: None,
 };
 
 pub trait ScriptBound : Sized {
@@ -253,6 +257,7 @@ macro_rules! make_wrappable {
                     secondary_type: None,
                     copy_ctor: None,
                     move_ctor: None,
+                    dtor: None,
                 }
             }
         }
@@ -309,6 +314,10 @@ pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
     copy_string(dst, src);
 }
 
+pub unsafe extern "C" fn drop_string(target: *mut ()) {
+    ptr::drop_in_place(target.cast::<String>());
+}
+
 impl ScriptBound for String {
     fn get_object_type() -> ObjectType {
         ObjectType {
@@ -323,6 +332,7 @@ impl ScriptBound for String {
             secondary_type: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             move_ctor: Some(MoveCtorWrapper::of(move_string)),
+            dtor: Some(DtorWrapper::of(drop_string)),
         }
     }
 }
@@ -370,6 +380,7 @@ impl ScriptBound for &str {
             secondary_type: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             move_ctor: Some(MoveCtorWrapper::of(move_string)),
+            dtor: None,
         }
     }
 }
@@ -417,6 +428,7 @@ impl<T : ScriptBound> ScriptBound for Vec<T> {
             secondary_type: None,
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         }
     }
 }
@@ -449,11 +461,12 @@ impl<T : ScriptBound> ScriptBound for *const T {
             secondary_type: None,
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         }
     }
 }
 
-impl<'a, T : Wrappable<'a>> Wrappable<'a> for *const T {
+impl<'a, T : ScriptBound> Wrappable<'a> for *const T {
     type InternalFormat = *const T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -463,7 +476,7 @@ impl<'a, T : Wrappable<'a>> Wrappable<'a> for *const T {
     }
 }
 
-impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for *const T {
+impl<'a, T : ScriptBound> IndirectWrappable<'a> for *const T {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::Pointer, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -487,11 +500,12 @@ impl<T : ScriptBound> ScriptBound for &T {
             secondary_type: None,
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         }
     }
 }
 
-impl<'a, T : Wrappable<'a>> Wrappable<'a> for &T {
+impl<'a, T : ScriptBound> Wrappable<'a> for &T {
     type InternalFormat = *const T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -502,7 +516,7 @@ impl<'a, T : Wrappable<'a>> Wrappable<'a> for &T {
     }
 }
 
-impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for &T {
+impl<'a, T : ScriptBound> IndirectWrappable<'a> for &T {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -526,11 +540,12 @@ impl<T : ScriptBound> ScriptBound for &mut T {
             secondary_type: None,
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         }
     }
 }
 
-impl<'a, T : Wrappable<'a>> Wrappable<'a> for &mut T {
+impl<'a, T : ScriptBound> Wrappable<'a> for &mut T {
     type InternalFormat = *mut T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -541,7 +556,7 @@ impl<'a, T : Wrappable<'a>> Wrappable<'a> for &mut T {
     }
 }
 
-impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for &mut T {
+impl<'a, T : ScriptBound> IndirectWrappable<'a> for &mut T {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -752,6 +767,9 @@ pub struct BoundStructInfo {
     pub name: &'static str,
     pub type_id: fn() -> TypeId,
     pub size: usize,
+    pub copy_ctor: Option<FfiCopyCtor>,
+    pub move_ctor: Option<FfiMoveCtor>,
+    pub dtor: Option<FfiDtor>,
 }
 
 pub struct BoundFieldInfo {

@@ -106,6 +106,7 @@ pub fn from_ffi_obj_type(ty: &FfiObjectType) -> ObjectType {
         secondary_type: ty.get_secondary_type().map(|st| Box::new(from_ffi_obj_type(&st))),
         copy_ctor: None,
         move_ctor: None,
+        dtor: None,
     }
 }
 

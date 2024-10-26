@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use std::any::TypeId;
+use std::mem;
 use argus_scripting_bind::*;
 use core_rustabi::core_cabi::{LifecycleStage, LIFECYCLE_STAGE_INIT};
 use scripting_rustabi::argus::scripting::*;
@@ -117,8 +118,15 @@ pub fn register_script_bindings() {
     for struct_info in BOUND_STRUCT_DEFS {
         println!("Processing struct {}", struct_info.name);
         let type_id = format!("{:?}", (struct_info.type_id)());
-        bind_type(struct_info.name, struct_info.size, type_id.as_str(),
-                  false, None, None, None)
+        bind_type(
+            struct_info.name,
+            struct_info.size,
+            type_id.as_str(),
+            false,
+            unsafe { mem::transmute(struct_info.copy_ctor) },
+            unsafe { mem::transmute(struct_info.move_ctor) },
+            unsafe { mem::transmute(struct_info.dtor) },
+        )  
             .expect("Failed to bind type");
     }
 

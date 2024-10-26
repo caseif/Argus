@@ -23,18 +23,30 @@ use quote::{format_ident, quote, quote_spanned};
 use syn::*;
 use core::result::Result;
 use argus_scripting_types::*;
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 
 use syn::Error as CompileError;
 
+const STRUCT_ARG_REF_ONLY: &'static str = "ref_only";
+
+#[derive(Default)]
+struct StructAttrArgs {
+    ref_only: bool,
+    ref_only_span: Option<Span2>,
+}
+
 #[proc_macro_attribute]
-pub fn script_bind(_attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn script_bind(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args_parsed = parse_macro_input!(args with Punctuated::<Meta, Token![,]>::parse_terminated);
+    let meta_list = args_parsed.iter().collect();
+
     let item = parse_macro_input!(input as Item);
 
     let generated = (match item {
-        Item::Struct(ref s) => handle_struct(s),
-        Item::Enum(ref s) => handle_enum(s),
-        Item::Fn(ref f) => handle_fn(f),
+        Item::Struct(ref s) => handle_struct(s, meta_list),
+        Item::Enum(ref s) => handle_enum(s, meta_list),
+        Item::Fn(ref f) => handle_fn(f, meta_list),
         _ => Err(CompileError::new(item.span(), "Attribute 'script_bound' is not allowed here")),
     })
         .unwrap_or_else(|e| { e.into_compile_error() });
@@ -45,9 +57,133 @@ pub fn script_bind(_attr: TokenStream, input: TokenStream) -> TokenStream {
     ).into()
 }
 
-fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, CompileError> {
+fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
+    let struct_args = parse_struct_args(&args)?;
+
+    let struct_span = item.span();
     let struct_ident = &item.ident;
     let struct_name = struct_ident.to_string();
+
+    let ctor_dtor_proxies_tokens = quote! {
+        unsafe extern "C" fn _copy_ctor(dst: *mut (), src: *const ()) {
+            ::std::ptr::write(
+                ::std::ptr::addr_of_mut!(*dst.cast::<#struct_ident>()),
+                ::std::clone::Clone::clone(&*src.cast::<#struct_ident>()),
+            );
+        }
+
+        unsafe extern "C" fn _move_ctor(dst: *mut (), src: *mut ()) {
+            _copy_ctor(dst, src);
+            _dtor(src);
+        }
+
+        unsafe extern "C" fn _dtor(target: *mut ()) {
+            ::std::ptr::drop_in_place(&mut *target.cast::<#struct_ident>());
+        }
+    };
+
+    let allow_clone = !struct_args.ref_only;
+
+    let struct_def_ctor_dtor_field_init_tokens = if allow_clone {
+        quote_spanned! {struct_span=>
+            copy_ctor: Some(_copy_ctor),
+            move_ctor: Some(_move_ctor),
+            dtor: Some(_dtor),
+        }
+    } else {
+        quote_spanned! {struct_span=>
+            copy_ctor: None,
+            move_ctor: None,
+            dtor: None,
+        }
+    };
+
+    let obj_type_ctor_dtor_field_init_tokens = if allow_clone {
+        quote_spanned! {struct_span=>
+            copy_ctor: Some(::argus_scripting_bind::CopyCtorWrapper::of(_copy_ctor)),
+            move_ctor: Some(::argus_scripting_bind::MoveCtorWrapper::of(_move_ctor)),
+            dtor: Some(::argus_scripting_bind::DtorWrapper::of(_dtor)),
+        }
+    } else {
+        quote_spanned! {struct_span=>
+            copy_ctor: None,
+            move_ctor: None,
+            dtor: None,
+        }
+    };
+
+    let script_bound_impl_tokens = quote_spanned! {struct_span=>
+        impl ::argus_scripting_bind::ScriptBound for #struct_ident {
+            fn get_object_type() -> ::argus_scripting_bind::ObjectType {
+                argus_scripting_bind::ObjectType {
+                    ty: ::argus_scripting_bind::IntegralType::Object,
+                    size: size_of::<#struct_ident>(),
+                    is_const: false,
+                    is_refable: None,
+                    is_refable_getter: None,
+                    type_id: Some(::std::any::TypeId::of::<#struct_ident>()),
+                    type_name: Some(#struct_name.to_string()),
+                    primary_type: None,
+                    secondary_type: None,
+                    #obj_type_ctor_dtor_field_init_tokens
+                }
+            }
+        }
+    };
+
+    let wrappable_impls_tokens = quote_spanned! {struct_span=>
+        impl<'a> ::argus_scripting_bind::Wrappable<'a> for #struct_ident {
+            type InternalFormat = #struct_ident;
+
+            fn wrap_into(self, wrapper: &mut argus_scripting_bind::WrappedObject) {
+                assert_eq!(
+                    wrapper.ty.ty,
+                    argus_scripting_bind::IntegralType::Object,
+                    "Wrong object type"
+                );
+
+                unsafe { wrapper.store_value::<Self>(self) }
+            }
+        }
+
+        impl<'a> ::argus_scripting_bind::DirectWrappable<'a> for #struct_ident
+            where #struct_ident : ::argus_scripting_bind::Wrappable<'a> {
+            fn unwrap_from(wrapper: &'a argus_scripting_bind::WrappedObject) -> &'a Self {
+                assert_eq!(
+                    wrapper.ty.ty,
+                    ::argus_scripting_bind::IntegralType::Object,
+                    "Wrong object type"
+                );
+
+                unsafe { &*wrapper.get_ptr::<&Self>().cast::<Self>() }
+            }
+            fn unwrap_from_mut(wrapper: &'a mut argus_scripting_bind::WrappedObject) ->
+                &'a mut Self {
+                assert_eq!(
+                    wrapper.ty.ty,
+                    ::argus_scripting_bind::IntegralType::Object,
+                    "Wrong object type"
+                );
+
+                unsafe { &mut *wrapper.get_mut_ptr::<&Self>().cast::<Self>() }
+            }
+        }
+    };
+
+    let struct_def_ident = format_ident!("_{struct_ident}_SCRIPT_BIND_DEFINITION");
+    let register_struct_tokens = quote_spanned! {struct_span=>
+        #[::argus_scripting_bind::linkme::distributed_slice(
+            ::argus_scripting_bind::BOUND_STRUCT_DEFS
+        )]
+        #[linkme(crate = ::argus_scripting_bind::linkme)]
+        static #struct_def_ident: ::argus_scripting_bind::BoundStructInfo =
+            ::argus_scripting_bind::BoundStructInfo {
+                name: #struct_name,
+                type_id: || { ::std::any::TypeId::of::<#struct_ident>() },
+                size: size_of::<#struct_ident>(),
+                #struct_def_ctor_dtor_field_init_tokens
+            };
+    };
 
     let mut field_regs: Vec<TokenStream2> = Vec::new();
 
@@ -55,7 +191,6 @@ fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, CompileError> {
         let Visibility::Public(_) = field.vis else { continue; };
 
         let field_span = field.span();
-        // not sure if this is even possible
         let field_ident = {
             match field.ident.as_ref() {
                 Some(ident) => ident,
@@ -136,88 +271,72 @@ fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, CompileError> {
         });
     }
 
-    let struct_def_ident = format_ident!("_{struct_ident}_SCRIPT_BIND_DEFINITION");
-
-    Ok(quote! {
-        impl ::argus_scripting_bind::ScriptBound for #struct_ident {
-            fn get_object_type() -> ::argus_scripting_bind::ObjectType {
-                unsafe extern "C" fn copy_ctor(dst: *mut (), src: *const ()) {
-                    (&*src.cast::<#struct_ident>()).clone_into(&mut &*dst.cast::<#struct_ident>())
-                }
-
-                unsafe extern "C" fn move_ctor(dst: *mut (), src: *mut ()) {
-                    copy_ctor(dst, src)
-                }
-
-                argus_scripting_bind::ObjectType {
-                    ty: ::argus_scripting_bind::IntegralType::Object,
-                    size: size_of::<#struct_ident>(),
-                    is_const: false,
-                    is_refable: None,
-                    is_refable_getter: None,
-                    type_id: Some(::std::any::TypeId::of::<#struct_ident>()),
-                    type_name: Some(#struct_name.to_string()),
-                    primary_type: None,
-                    secondary_type: None,
-                    copy_ctor: Some(::argus_scripting_bind::CopyCtorWrapper::of(copy_ctor)),
-                    move_ctor: Some(::argus_scripting_bind::MoveCtorWrapper::of(move_ctor)),
-                }
-            }
-        }
-
-        impl<'a> ::argus_scripting_bind::Wrappable<'a> for #struct_ident {
-            type InternalFormat = #struct_ident;
-
-            fn wrap_into(self, wrapper: &mut argus_scripting_bind::WrappedObject) {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
-
-                unsafe { wrapper.store_value::<Self>(self) }
-            }
-        }
-        impl<'a> ::argus_scripting_bind::DirectWrappable<'a> for #struct_ident
-            where #struct_ident : ::argus_scripting_bind::Wrappable<'a> {
-            fn unwrap_from(wrapper: &'a argus_scripting_bind::WrappedObject) -> &'a Self {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    ::argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
-
-                unsafe { &*wrapper.get_ptr::<&Self>().cast::<Self>() }
-            }
-            fn unwrap_from_mut(wrapper: &'a mut argus_scripting_bind::WrappedObject) ->
-                &'a mut Self {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    ::argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
-
-                unsafe { &mut *wrapper.get_mut_ptr::<&Self>().cast::<Self>() }
-            }
-        }
-
-        const _: () = {
-            #[::argus_scripting_bind::linkme::distributed_slice(
-                ::argus_scripting_bind::BOUND_STRUCT_DEFS
-            )]
-            #[linkme(crate = ::argus_scripting_bind::linkme)]
-            static #struct_def_ident: ::argus_scripting_bind::BoundStructInfo =
-                ::argus_scripting_bind::BoundStructInfo {
-                    name: #struct_name,
-                    type_id: || { ::std::any::TypeId::of::<#struct_ident>() },
-                    size: size_of::<#struct_ident>(),
-                };
-            #(#field_regs)*
-        };
-    })
+    if allow_clone {
+        Ok(quote! {
+            const _: () = {
+                use ::argus_scripting_bind::Wrappable;
+                #ctor_dtor_proxies_tokens
+                #script_bound_impl_tokens
+                #wrappable_impls_tokens
+                #register_struct_tokens
+                #(#field_regs)*
+            };
+        })
+    } else {
+        Ok(quote! {
+            const _: () = {
+                use ::argus_scripting_bind::Wrappable;
+                #script_bound_impl_tokens
+                #register_struct_tokens
+                #(#field_regs)*
+            };
+        })
+    }
 }
 
-fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, CompileError> {
+fn parse_struct_args(meta_list: &Vec<&Meta>) -> Result<StructAttrArgs, CompileError> {
+    let mut args_obj = StructAttrArgs::default();
+
+    for meta in meta_list {
+        match meta {
+            Meta::Path(path) => {
+                let attr_name = match path.segments.first() {
+                    Some(seg) => {
+                        if !seg.arguments.is_empty() {
+                            return Err(CompileError::new(
+                                seg.arguments.span(),
+                                "Unexpected path arguments"
+                            ));
+                        }
+
+                        seg.ident.to_string()
+                    },
+                    None => { return Err(CompileError::new(path.span(), "Unexpected path")) }
+                };
+
+                if attr_name == STRUCT_ARG_REF_ONLY {
+                    args_obj.ref_only = true;
+                    args_obj.ref_only_span = Some(path.span());
+                } else {
+                    return Err(CompileError::new(
+                        path.span(),
+                        format!("Invalid attribute argument '{}'", attr_name)
+                    ));
+                }
+            }
+            Meta::List(list) => {
+                return Err(CompileError::new(list.span(), "Unexpected list"));
+            }
+            Meta::NameValue(nv) => {
+                return Err(CompileError::new(nv.span(), "Unexpected name-value"));
+            }
+        }
+    }
+
+    Ok(args_obj)
+}
+
+fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
     let enum_ident = &item.ident;
     let enum_name = enum_ident.to_string();
 
@@ -265,7 +384,7 @@ fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, CompileError> {
     })
 }
 
-fn handle_fn(f: &ItemFn) -> Result<TokenStream2, CompileError> {
+fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
     let fn_ident = &f.sig.ident;
     let fn_name = fn_ident.to_string();
     let fn_type = FunctionType::Global; //TODO
@@ -510,12 +629,6 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
 
         // treat it as a generic bound type
 
-        if outer_type == OuterTypeType::None {
-            return Err(CompileError::new(
-                path.span(), "Value-typed struct types are not supported at this time"
-            ));
-        }
-
         let type_name = path.path.segments[path.path.segments.len() - 1].ident.to_string();
 
         Ok((
@@ -531,6 +644,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
                 secondary_type: None,
                 copy_ctor: None,
                 move_ctor: None,
+                dtor: None,
             },
            vec![ty.clone()],
        ))
@@ -578,6 +692,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
                 secondary_type: None,
                 copy_ctor: None,
                 move_ctor: None,
+                dtor: None,
             },
             inner_types,
         ))
@@ -598,6 +713,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
                     secondary_type: None,
                     copy_ctor: None,
                     move_ctor: None,
+                    dtor: None,
                 },
                 vec![],
             ))
@@ -640,6 +756,7 @@ macro_rules! resolve_basic_type {
                     secondary_type: None,
                     copy_ctor: None,
                     move_ctor: None,
+                    dtor: None,
                 }
             )
         }
@@ -677,6 +794,7 @@ fn resolve_string(ty: &TypePath) -> Option<ObjectType> {
         secondary_type: None,
         copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
         move_ctor: Some(MoveCtorWrapper::of(move_string)),
+        dtor: Some(DtorWrapper::of(drop_string)),
     })
 }
 
@@ -713,6 +831,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
             secondary_type: None,
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         },
         resolved_inner_types.first().cloned(),
     )))
@@ -763,6 +882,7 @@ fn resolve_result<'a>(ty: &'a TypePath, flow_direction: ValueFlowDirection)
             secondary_type: Some(Box::new(err_obj_type)),
             copy_ctor: None,
             move_ctor: None,
+            dtor: None,
         },
         resolved_val_types.first().cloned(),
         resolved_err_types.first().cloned(),
