@@ -25,19 +25,19 @@ use core::result::Result;
 use argus_scripting_types::*;
 use syn::spanned::Spanned;
 
+use syn::Error as CompileError;
+
 #[proc_macro_attribute]
 pub fn script_bind(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as Item);
 
-    let generated = match (match item {
+    let generated = (match item {
         Item::Struct(ref s) => handle_struct(s),
         Item::Enum(ref s) => handle_enum(s),
         Item::Fn(ref f) => handle_fn(f),
-        _ => Err("Attribute 'script_bound' is not allowed here"),
-    }) {
-        Ok(output) => output,
-        Err(e) => { panic!("{}", e); }
-    };
+        _ => Err(CompileError::new(item.span(), "Attribute 'script_bound' is not allowed here")),
+    })
+        .unwrap_or_else(|e| { e.into_compile_error() });
 
     quote!(
         #item
@@ -45,7 +45,7 @@ pub fn script_bind(_attr: TokenStream, input: TokenStream) -> TokenStream {
     ).into()
 }
 
-fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, &'static str> {
+fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, CompileError> {
     let struct_ident = &item.ident;
     let struct_name = struct_ident.to_string();
 
@@ -59,7 +59,12 @@ fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, &'static str> {
         let field_ident = {
             match field.ident.as_ref() {
                 Some(ident) => ident,
-                None => { return Err("script_bind attribute cannot be applied to tuple structs"); }
+                None => {
+                    return Err(CompileError::new(
+                        field.span(),
+                        "script_bind attribute cannot be applied to tuple structs",
+                    ));
+                }
             }
         };
         let field_name = field_ident.to_string();
@@ -212,7 +217,7 @@ fn handle_struct(item: &ItemStruct) -> Result<TokenStream2, &'static str> {
     })
 }
 
-fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, &'static str> {
+fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, CompileError> {
     let enum_ident = &item.ident;
     let enum_name = enum_ident.to_string();
 
@@ -234,7 +239,10 @@ fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, &'static str> {
                     (#var_name, (|| { (#cur_discrim) as i64 }) as fn() -> i64)
                 })
             } else {
-                return Err("Enums containing non-unit variants may not be bound");
+                return Err(CompileError::new(
+                    enum_var.span(),
+                    "Enums containing non-unit variants may not be bound",
+                ));
             }
         })
         .collect::<Result<_, _>>()?;
@@ -257,7 +265,7 @@ fn handle_enum(item: &ItemEnum) -> Result<TokenStream2, &'static str> {
     })
 }
 
-fn handle_fn(f: &ItemFn) -> Result<TokenStream2, &'static str> {
+fn handle_fn(f: &ItemFn) -> Result<TokenStream2, CompileError> {
     let fn_ident = &f.sig.ident;
     let fn_name = fn_ident.to_string();
     let fn_type = FunctionType::Global; //TODO
@@ -436,15 +444,15 @@ enum OuterTypeType {
 }
 
 fn parse_type<'a>(ty: &'a Type, flow_direction: ValueFlowDirection)
-    -> Result<(ObjectType, Vec<Type>), &'static str> {
+    -> Result<(ObjectType, Vec<Type>), CompileError> {
     parse_type_impl(ty, flow_direction, OuterTypeType::None)
 }
 
 fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_type: OuterTypeType)
-    -> Result<(ObjectType, Vec<Type>), &'static str> {
+    -> Result<(ObjectType, Vec<Type>), CompileError> {
     if let Type::Path(path) = ty {
         if path.path.segments.len() == 0 {
-            return Err("No segments in type path");
+            return Err(CompileError::new(path.span(), "Type path does not contain any segments"));
         }
 
         let parsed_opt = first_some!(
@@ -472,7 +480,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
             if outer_type != OuterTypeType::None &&
                 outer_type != OuterTypeType::Reference &&
                 outer_type != OuterTypeType::MutReference {
-                return Err("Vec may not be used as an inner type");
+                return Err(CompileError::new(path.span(), "Vec may not be used as an inner type"));
             }
 
             let resolved_inner_type = res.1.into_iter().collect();
@@ -483,9 +491,14 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
             if outer_type != OuterTypeType::None {
                 if outer_type == OuterTypeType::Reference ||
                     outer_type == OuterTypeType::MutReference {
-                    return Err("Result may not be passed as references in bound symbol");
+                    return Err(CompileError::new(
+                        path.span(),
+                        "Result may not be passed as references in bound symbol"
+                    ));
                 } else {
-                    return Err("Result may not be used as an inner type");
+                    return Err(CompileError::new(
+                        path.span(), "Result may not be used as an inner type"
+                    ));
                 }
             }
 
@@ -498,7 +511,9 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
         // treat it as a generic bound type
 
         if outer_type == OuterTypeType::None {
-            return Err("Value-typed struct types are not supported at this time");
+            return Err(CompileError::new(
+                path.span(), "Value-typed struct types are not supported at this time"
+            ));
         }
 
         let type_name = path.path.segments[path.path.segments.len() - 1].ident.to_string();
@@ -527,18 +542,27 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
         }
 
         if outer_type != OuterTypeType::None {
-            return Err("Non-top level reference is not allowed in bound symbol")
+            return Err(CompileError::new(
+                reference.span(),
+                "Non-top level reference is not allowed in bound symbol"
+            ));
         }
 
         if flow_direction == ValueFlowDirection::FromScript && reference.mutability.is_some() {
-            return Err("Mutable reference from script is not allowed in bound symbol");
+            return Err(CompileError::new(
+                reference.span(),
+                "Mutable reference from script is not allowed in bound symbol"
+            ));
         }
 
         let (inner_obj_type, inner_types) =
             parse_type_impl(&reference.elem, flow_direction, OuterTypeType::Reference)?;
 
         if inner_obj_type.ty != IntegralType::Object {
-            return Err("Non-struct reference type is not allowed in bound symbol");
+            return Err(CompileError::new(
+                reference.span(),
+                "Non-struct reference type is not allowed in bound symbol"
+            ));
         }
 
         Ok((
@@ -558,7 +582,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
             inner_types,
         ))
     } else if let Type::Ptr(_) = ty {
-        Err("Pointer is not allowed in bound symbol")
+        Err(CompileError::new(ty.span(), "Pointer is not allowed in bound symbol"))
     } else if let Type::Tuple(tuple) = ty {
         if tuple.elems.len() == 0 {
             Ok((
@@ -578,10 +602,10 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
                 vec![],
             ))
         } else {
-            Err("Tuple types are not supported")
+            Err(CompileError::new(tuple.span(), "Tuple types are not supported"))
         }
     } else {
-        Err("Unsupported type")
+        Err(CompileError::new(ty.span(), "Unsupported type"))
     }
 }
 
@@ -657,19 +681,19 @@ fn resolve_string(ty: &TypePath) -> Option<ObjectType> {
 }
 
 fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
-    -> Result<Option<(ObjectType, Option<Type>)>, &'static str> {
+    -> Result<Option<(ObjectType, Option<Type>)>, CompileError> {
     if !match_path(&ty.path, vec!["std", "collections", "Vec"]) {
         return Ok(None);
     }
 
     let PathArguments::AngleBracketed(el_ty) =
         &ty.path.segments[ty.path.segments.len() - 1].arguments
-    else { return Err("Invalid Vec argument syntax"); };
+    else { return Err(CompileError::new(ty.span(), "Invalid Vec argument syntax")); };
     let GenericArgument::Type(inner_type) = (match el_ty.args.first() {
         Some(ty) => ty,
-        None => { return Err("Invalid Vec argument syntax"); }
+        None => { return Err(CompileError::new(ty.span(), "Invalid Vec argument syntax")); }
     })
-    else { return Err("Invalid Vec argument syntax"); };
+    else { return Err(CompileError::new(ty.span(), "Invalid Vec argument syntax")); };
 
     let (inner_obj_type, resolved_inner_types) =
         parse_type_impl(&inner_type, flow_direction, OuterTypeType::Vec)?;
@@ -695,27 +719,27 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
 }
 
 fn resolve_result<'a>(ty: &'a TypePath, flow_direction: ValueFlowDirection)
-    -> Result<Option<(ObjectType, Option<Type>, Option<Type>)>, &'static str> {
+    -> Result<Option<(ObjectType, Option<Type>, Option<Type>)>, CompileError> {
     if !match_path(&ty.path, vec!["core", "Result"]) {
         return Ok(None);
     }
 
     let PathArguments::AngleBracketed(el_ty) =
         &ty.path.segments[ty.path.segments.len() - 1].arguments
-    else { return Err("Invalid Result argument syntax"); };
+    else { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); };
 
     let mut it = el_ty.args.iter();
 
     let GenericArgument::Type(val_type) = (match it.next() {
         Some(ty) => ty,
-        None => { return Err("Invalid Result argument syntax"); }
+        None => { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); }
     })
-    else { return Err("Invalid Result argument syntax"); };
+    else { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); };
     let GenericArgument::Type(err_type) = (match it.next() {
         Some(ty) => ty,
-        None => { return Err("Invalid Result argument syntax"); }
+        None => { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); }
     })
-    else { return Err("Invalid Result argument syntax"); };
+    else { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); };
 
     let (val_obj_type, resolved_val_types) =
         parse_type_impl(val_type, flow_direction, OuterTypeType::Result)?;
