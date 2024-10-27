@@ -55,7 +55,7 @@ impl InputEvent {
     }
 
     pub fn get_window(&self) -> Window {
-        Window::of(unsafe { argus_input_event_get_window(self.handle) })
+        Window::of(unsafe { argus_input_event_get_window(self.handle).cast_mut() })
     }
 
     pub fn get_controller_name(&self) -> String {

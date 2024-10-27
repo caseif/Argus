@@ -18,4 +18,11 @@
 
 pub mod bindings;
 
+#[allow(unused_imports)]
+use core_rustabi::core_cabi::*;
+#[allow(unused_imports)]
+use lowlevel_rustabi::lowlevel_cabi::*;
+#[allow(unused_imports)]
+use wm_rustabi::wm_cabi::*;
+
 pub use bindings::*;
