@@ -447,44 +447,6 @@ impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for Vec<T> {
     }
 }
 
-impl<T : ScriptBound> ScriptBound for *const T {
-    fn get_object_type() -> ObjectType {
-        ObjectType {
-            ty: IntegralType::Pointer,
-            size: size_of::<*const ()>(),
-            is_const: true,
-            is_refable: None,
-            is_refable_getter: None,
-            type_id: None,
-            type_name: None,
-            primary_type: Some(Box::new(T::get_object_type())),
-            secondary_type: None,
-            copy_ctor: None,
-            move_ctor: None,
-            dtor: None,
-        }
-    }
-}
-
-impl<'a, T : ScriptBound> Wrappable<'a> for *const T {
-    type InternalFormat = *const T;
-
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert_eq!(wrapper.ty.ty, IntegralType::Pointer, "Wrong object type");
-
-        unsafe { wrapper.store_value(self); }
-    }
-}
-
-impl<'a, T : ScriptBound> IndirectWrappable<'a> for *const T {
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::Pointer, "Wrong object type");
-        assert!(wrapper.is_populated);
-
-        unsafe { *wrapper.get_ptr::<Self>().cast() }
-    }
-}
-
 impl<T : ScriptBound> ScriptBound for &T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
@@ -511,7 +473,7 @@ impl<'a, T : ScriptBound> Wrappable<'a> for &T {
     fn wrap_into(self, wrapper: &mut WrappedObject) {
         assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
 
-        unsafe { *wrapper.get_mut_ptr::<*const T>() = self; }
+        unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
 }
@@ -551,7 +513,7 @@ impl<'a, T : ScriptBound> Wrappable<'a> for &mut T {
     fn wrap_into(self, wrapper: &mut WrappedObject) {
         assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
 
-        unsafe { *wrapper.get_mut_ptr::<*const T>() = self; }
+        unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
 }
