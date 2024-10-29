@@ -185,8 +185,8 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
 
             ResourceManager::get_instance().register_loader(
                 vec![
-                    RESOURCE_TYPE_SHADER_GLSL_VERT.to_string(),
-                    RESOURCE_TYPE_SHADER_GLSL_FRAG.to_string(),
+                    RESOURCE_TYPE_SHADER_GLSL_VERT,
+                    RESOURCE_TYPE_SHADER_GLSL_FRAG,
                 ],
                 ShaderLoader::new(),
             );

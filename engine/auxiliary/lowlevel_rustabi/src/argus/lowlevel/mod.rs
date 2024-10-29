@@ -23,9 +23,11 @@ mod dirtiable;
 mod handle;
 mod math;
 mod message;
+mod padding;
 
 pub use self::c_interop::*;
 pub use self::dirtiable::*;
 pub use self::handle::*;
 pub use self::math::*;
 pub use self::message::*;
+pub use self::padding::*;

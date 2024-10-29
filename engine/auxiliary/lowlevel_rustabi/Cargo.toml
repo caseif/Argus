@@ -11,3 +11,4 @@ crate-type = ["rlib"]
 libc = "0.2"
 num_enum = "0.7"
 argus_macros = { path = "../../libs/argus_macros" }
+serde = { version = "1.0.214", features = ["derive"] }

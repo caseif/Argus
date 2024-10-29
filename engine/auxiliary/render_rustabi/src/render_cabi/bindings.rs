@@ -222,7 +222,8 @@ pub const GLSLANG_MSG_HLSL_DX9_COMPATIBLE_BIT: glslang_messages_t = 8192;
 pub const GLSLANG_MSG_BUILTIN_SYMBOL_TABLE_BIT: glslang_messages_t = 16384;
 pub const GLSLANG_MSG_ENHANCED: glslang_messages_t = 32768;
 pub const GLSLANG_MSG_ABSOLUTE_PATH: glslang_messages_t = 65536;
-pub const GLSLANG_MSG_COUNT: glslang_messages_t = 65537;
+pub const GLSLANG_MSG_DISPLAY_ERROR_COLUMN: glslang_messages_t = 131072;
+pub const GLSLANG_MSG_COUNT: glslang_messages_t = 131073;
 pub type glslang_messages_t = ::std::os::raw::c_uint;
 pub const GLSLANG_REFLECTION_DEFAULT_BIT: glslang_reflection_options_t = 0;
 pub const GLSLANG_REFLECTION_STRICT_ARRAY_SUFFIX_BIT: glslang_reflection_options_t = 1;
@@ -269,6 +270,27 @@ pub struct glslang_program_s {
     _unused: [u8; 0],
 }
 pub type glslang_program_t = glslang_program_s;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct glslang_mapper_s {
+    _unused: [u8; 0],
+}
+pub type glslang_mapper_t = glslang_mapper_s;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct glslang_resolver_s {
+    _unused: [u8; 0],
+}
+pub type glslang_resolver_t = glslang_resolver_s;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct glslang_version_s {
+    pub major: ::std::os::raw::c_int,
+    pub minor: ::std::os::raw::c_int,
+    pub patch: ::std::os::raw::c_int,
+    pub flavor: *const ::std::os::raw::c_char,
+}
+pub type glslang_version_t = glslang_version_s;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct glslang_limits_s {
@@ -467,6 +489,7 @@ pub struct glslang_spv_options_s {
     pub emit_nonsemantic_shader_debug_info: bool,
     pub emit_nonsemantic_shader_debug_source: bool,
     pub compile_only: bool,
+    pub optimize_allow_expanded_id_bound: bool,
 }
 pub type glslang_spv_options_t = glslang_spv_options_s;
 pub type argus_texture_data_t = *mut ::std::os::raw::c_void;
@@ -619,6 +642,13 @@ extern "C" {
         canvas: argus_canvas_t,
         id: *const ::std::os::raw::c_char,
     );
+    pub fn argus_material_new(
+        texture_uid: *const ::std::os::raw::c_char,
+        shader_uids_count: usize,
+        shader_uids: *const *const ::std::os::raw::c_char,
+    ) -> argus_material_t;
+    pub fn argus_material_delete(material: argus_material_t);
+    pub fn argus_material_get_ffi_size() -> usize;
     pub fn argus_material_get_texture_uid(
         material: argus_material_t,
     ) -> *const ::std::os::raw::c_char;
@@ -730,6 +760,7 @@ extern "C" {
         out_ptr: *mut *const ::std::os::raw::c_uchar,
         out_len: *mut usize,
     );
+    pub fn glslang_get_version(version: *mut glslang_version_t);
     pub fn glslang_initialize_process() -> ::std::os::raw::c_int;
     pub fn glslang_finalize_process();
     pub fn glslang_shader_create(input: *const glslang_input_t) -> *mut glslang_shader_t;
@@ -757,6 +788,20 @@ extern "C" {
         shader: *mut glslang_shader_t,
         version: ::std::os::raw::c_int,
     );
+    pub fn glslang_shader_set_default_uniform_block_set_and_binding(
+        shader: *mut glslang_shader_t,
+        set: ::std::os::raw::c_uint,
+        binding: ::std::os::raw::c_uint,
+    );
+    pub fn glslang_shader_set_default_uniform_block_name(
+        shader: *mut glslang_shader_t,
+        name: *const ::std::os::raw::c_char,
+    );
+    pub fn glslang_shader_set_resource_set_binding(
+        shader: *mut glslang_shader_t,
+        bindings: *const *const ::std::os::raw::c_char,
+        num_bindings: ::std::os::raw::c_uint,
+    );
     pub fn glslang_shader_preprocess(
         shader: *mut glslang_shader_t,
         input: *const glslang_input_t,
@@ -768,6 +813,10 @@ extern "C" {
     pub fn glslang_shader_get_preprocessed_code(
         shader: *mut glslang_shader_t,
     ) -> *const ::std::os::raw::c_char;
+    pub fn glslang_shader_set_preprocessed_code(
+        shader: *mut glslang_shader_t,
+        code: *const ::std::os::raw::c_char,
+    );
     pub fn glslang_shader_get_info_log(
         shader: *mut glslang_shader_t,
     ) -> *const ::std::os::raw::c_char;
@@ -796,6 +845,11 @@ extern "C" {
         file: *const ::std::os::raw::c_char,
     );
     pub fn glslang_program_map_io(program: *mut glslang_program_t) -> ::std::os::raw::c_int;
+    pub fn glslang_program_map_io_with_resolver_and_mapper(
+        program: *mut glslang_program_t,
+        resolver: *mut glslang_resolver_t,
+        mapper: *mut glslang_mapper_t,
+    ) -> ::std::os::raw::c_int;
     pub fn glslang_program_SPIRV_generate(program: *mut glslang_program_t, stage: glslang_stage_t);
     pub fn glslang_program_SPIRV_generate_with_options(
         program: *mut glslang_program_t,
@@ -819,6 +873,13 @@ extern "C" {
     pub fn glslang_program_get_info_debug_log(
         program: *mut glslang_program_t,
     ) -> *const ::std::os::raw::c_char;
+    pub fn glslang_glsl_mapper_create() -> *mut glslang_mapper_t;
+    pub fn glslang_glsl_mapper_delete(mapper: *mut glslang_mapper_t);
+    pub fn glslang_glsl_resolver_create(
+        program: *mut glslang_program_t,
+        stage: glslang_stage_t,
+    ) -> *mut glslang_resolver_t;
+    pub fn glslang_glsl_resolver_delete(resolver: *mut glslang_resolver_t);
     pub fn argus_compile_glsl_to_spirv(
         glsl_sources: *const argus_shader_const_t,
         glsl_sources_count: usize,

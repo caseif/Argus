@@ -16,6 +16,67 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+pub struct Dirtiable<T> {
+    value: T,
+    dirty: bool,
+}
+
+impl<T> Dirtiable<T> {
+    pub fn new(value: T) -> Dirtiable<T> {
+        Self {
+            value,
+            dirty: false
+        }
+    }
+
+    pub fn read(&mut self) -> ValueAndDirtyFlag<T>
+    where T: Clone {
+        let res = ValueAndDirtyFlag::<T>::of(self.value.clone(), self.dirty);
+        self.dirty = false;
+        res
+    }
+
+    pub fn read_ref(&mut self) -> ValueAndDirtyFlag<&T> {
+        let res = ValueAndDirtyFlag::<&T>::of(&self.value, self.dirty);
+        self.dirty = false;
+        res
+    }
+
+    pub fn peek(&self) -> ValueAndDirtyFlag<T>
+    where T: Clone {
+        ValueAndDirtyFlag::<T>::of(self.value.clone(), self.dirty)
+    }
+
+    pub fn peek_ref(&self) -> ValueAndDirtyFlag<&T> {
+        ValueAndDirtyFlag::<&T>::of(&self.value, self.dirty)
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.dirty = true;
+    }
+
+    pub fn update<F: Fn(&T) -> T>(&mut self, func: F) {
+        self.value = func(&self.value);
+        self.dirty = true;
+    }
+}
+
+/*impl<T> From<T> for Dirtiable<T> {
+    fn from(value: T) -> Self {
+        Dirtiable::new(value)
+    }
+}*/
+
+impl<T: Default> Default for Dirtiable<T> {
+    fn default() -> Self {
+        Self {
+            value: T::default(),
+            dirty: false,
+        }
+    }
+}
+
 pub struct ValueAndDirtyFlag<T> {
     pub value: T,
     pub dirty: bool,
@@ -23,6 +84,10 @@ pub struct ValueAndDirtyFlag<T> {
 
 impl<T> ValueAndDirtyFlag<T> {
     pub fn of(value: T, dirty: bool) -> Self {
-        return ValueAndDirtyFlag { value, dirty };
+        ValueAndDirtyFlag { value, dirty }
+    }
+
+    pub fn as_ref(&self) -> ValueAndDirtyFlag<&T> {
+        ValueAndDirtyFlag { value: &self.value, dirty: self.dirty }
     }
 }

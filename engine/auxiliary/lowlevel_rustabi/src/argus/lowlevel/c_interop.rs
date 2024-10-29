@@ -28,6 +28,9 @@ pub trait FfiWrapper {
     fn of(ptr: *mut ffi::c_void) -> Self;
 }
 
+pub trait FfiRepr<C>: From<C> + Into<C> {
+}
+
 pub unsafe fn string_array_to_vec(sa: StringArray) -> Vec<String> {
     unsafe {
         let count = string_array_get_count(sa);

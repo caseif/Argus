@@ -63,3 +63,7 @@ impl Camera2d {
         unsafe { argus_camera_2d_set_transform(self.handle, transform.into()) }
     }
 }
+
+unsafe impl Send for Camera2d {}
+
+unsafe impl Sync for Camera2d {}

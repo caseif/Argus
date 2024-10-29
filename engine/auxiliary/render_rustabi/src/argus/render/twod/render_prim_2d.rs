@@ -23,6 +23,12 @@ pub struct RenderPrimitive2d {
     pub vertices: Vec<Vertex2d>,
 }
 
+impl RenderPrimitive2d {
+    pub fn new(vertices: Vec<Vertex2d>) -> Self {
+        Self { vertices }
+    }
+}
+
 impl From<&RenderPrimitive2d> for ArgusRenderPrimitive2d {
     fn from(value: &RenderPrimitive2d) -> Self {
         ArgusRenderPrimitive2d {

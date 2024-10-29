@@ -236,3 +236,7 @@ impl Into<Scene> for Scene2d {
         Scene::of(self.handle)
     }
 }
+
+unsafe impl Send for Scene2d {}
+
+unsafe impl Sync for Scene2d {}

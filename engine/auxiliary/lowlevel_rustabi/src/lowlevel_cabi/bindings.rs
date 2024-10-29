@@ -209,29 +209,11 @@ pub struct argus_vector_2u_t {
     pub y: u32,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct argus_vector_3u_t {
-    pub __bindgen_anon_1: argus_vector_3u_t__bindgen_ty_1,
-    pub __bindgen_anon_2: argus_vector_3u_t__bindgen_ty_2,
-    pub __bindgen_anon_3: argus_vector_3u_t__bindgen_ty_3,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union argus_vector_3u_t__bindgen_ty_1 {
     pub x: u32,
-    pub r: u32,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union argus_vector_3u_t__bindgen_ty_2 {
     pub y: u32,
-    pub g: u32,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union argus_vector_3u_t__bindgen_ty_3 {
     pub z: u32,
-    pub b: u32,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]

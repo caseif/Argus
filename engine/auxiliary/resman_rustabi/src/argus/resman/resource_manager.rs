@@ -72,13 +72,13 @@ impl ResourceManager {
 
     pub fn register_loader<T>(
         &mut self,
-        media_types: Vec<String>,
+        media_types: Vec<&str>,
         loader: T,
     ) -> WrappedResourceLoader
     where T : 'static + ResourceLoader {
         unsafe {
             let mt_count = media_types.len();
-            let mt_cstr_arr = string_vec_to_cstr_arr(&media_types);
+            let mt_cstr_arr = str_vec_to_cstr_arr(&media_types);
 
             let wrapped_loader
                 = wrap_loader(mt_cstr_arr.as_ptr(), mt_count, size_of::<T>(), Box::new(loader));

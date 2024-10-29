@@ -61,7 +61,7 @@ impl Canvas {
         &mut self,
         id: &str,
         viewport: Viewport,
-        camera: Camera2d,
+        camera: &Camera2d,
         z_index: u32,
     ) -> AttachedViewport {
         unsafe {
@@ -80,7 +80,7 @@ impl Canvas {
     pub fn attach_default_viewport_2d(
         &mut self,
         id: &str,
-        camera: Camera2d,
+        camera: &Camera2d,
         z_index: u32,
     ) -> AttachedViewport {
         unsafe {
@@ -102,3 +102,7 @@ impl Canvas {
         }
     }
 }
+
+unsafe impl Send for Canvas {}
+
+unsafe impl Sync for Canvas {}

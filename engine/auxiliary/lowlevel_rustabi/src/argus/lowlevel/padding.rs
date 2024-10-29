@@ -16,28 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stddef.h>
-
-typedef void *argus_material_t;
-
-argus_material_t argus_material_new(const char *texture_uid, size_t shader_uids_count, const char *const *shader_uids);
-
-void argus_material_delete(argus_material_t material);
-
-size_t argus_material_get_ffi_size(void);
-
-const char *argus_material_get_texture_uid(argus_material_t material);
-
-size_t argus_material_get_shader_uids_count(argus_material_t material);
-
-void argus_material_get_shader_uids(argus_material_t material, const char **out_uids, size_t count);
-
-#ifdef __cplusplus
+#[derive(Clone, Copy, Default)]
+pub struct Padding {
+    pub top: u32,
+    pub bottom: u32,
+    pub left: u32,
+    pub right: u32,
 }
-#endif

@@ -34,6 +34,10 @@ impl CStringArray {
         arr
     }
 
+    pub fn len(&self) -> usize {
+        self.ptrs.len()
+    }
+
     pub fn as_ptr(&self) -> *const *const c_char {
         self.ptrs.as_ptr()
     }

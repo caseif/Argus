@@ -30,6 +30,16 @@ pub struct Transform2d {
     pub rotation: f32,
 }
 
+impl Transform2d {
+    pub fn new(translation: Vector2f, scale: Vector2f, rotation: f32) -> Self {
+        Self {
+            translation,
+            scale,
+            rotation,
+        }
+    }
+}
+
 #[repr(C)]
 #[ffi_repr(argus_matrix_4x4_t)]
 #[derive(Clone, Copy, Debug, Default)]

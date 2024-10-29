@@ -34,6 +34,23 @@ static inline const argus::Material &_as_ref(argus_material_t material) {
 
 extern "C" {
 
+argus_material_t argus_material_new(const char *texture_uid, size_t shader_uids_count, const char *const *shader_uids) {
+    std::vector<std::string> shader_uids_vec;
+    shader_uids_vec.reserve(shader_uids_count);
+    for (size_t i = 0; i < shader_uids_count; i++) {
+        shader_uids_vec.push_back(shader_uids[i]);
+    }
+    return new argus::Material(texture_uid, shader_uids_vec);
+}
+
+void argus_material_delete(argus_material_t material) {
+    delete &_as_ref(material);
+}
+
+size_t argus_material_get_ffi_size(void) {
+    return sizeof(argus::Material);
+}
+
 const char *argus_material_get_texture_uid(argus_material_t material) {
     return _as_ref(material).get_texture_uid().c_str();
 }

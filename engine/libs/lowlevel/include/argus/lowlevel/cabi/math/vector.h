@@ -147,18 +147,9 @@ typedef struct argus_vector_2u_t {
 } argus_vector_2u_t;
 
 typedef struct argus_vector_3u_t {
-    union {
-        uint32_t x;
-        uint32_t r;
-    };
-    union {
-        uint32_t y;
-        uint32_t g;
-    };
-    union {
-        uint32_t z;
-        uint32_t b;
-    };
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
 } argus_vector_3u_t;
 
 typedef struct argus_vector_4u_t {
