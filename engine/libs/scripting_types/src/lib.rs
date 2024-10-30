@@ -20,7 +20,6 @@ use std::any::TypeId;
 use std::{ffi, mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};
-use std::fmt::Formatter;
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use quote::{quote, ToTokens};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -65,7 +64,7 @@ pub enum IntegralType {
 
 macro_rules! fn_wrapper {
     ($struct_name:ident, $fn_sig:ty) => {
-        #[derive(Clone, Copy)]
+        #[derive(::std::clone::Clone, ::std::marker::Copy)]
         pub struct $struct_name {
             pub fn_ptr: $fn_sig,
         }
@@ -76,35 +75,36 @@ macro_rules! fn_wrapper {
             }
         }
 
-        impl<'de> Deserialize<'de> for $struct_name {
+        impl<'de> ::serde::de::Deserialize<'de> for $struct_name {
             #[allow(clippy::needless_return)]
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
             where
-                D: Deserializer<'de>
+                D: ::serde::de::Deserializer<'de>
             {
                 struct FnPointerVisitor;
 
-                impl<'de> Visitor<'de> for FnPointerVisitor {
+                impl<'de> ::serde::de::Visitor<'de> for FnPointerVisitor {
                     type Value = $fn_sig;
 
-                    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+                    fn expecting(&self, formatter: &mut ::std::fmt::Formatter)
+                    -> ::std::fmt::Result {
                         formatter.write_str(stringify!($fn_sig))
                     }
 
                     #[cfg(target_pointer_width = "32")]
-                    fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
+                    fn visit_u32<E>(self, v: u32) -> ::std::result::Result<Self::Value, E>
                     where
-                        E: Error,
+                        E: ::serde::de::Error,
                     {
-                        Ok(unsafe { mem::transmute::<u32, $fn_sig>(v) })
+                        Ok(unsafe { ::std::mem::transmute::<u32, $fn_sig>(v) })
                     }
 
                     #[cfg(target_pointer_width = "64")]
-                    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+                    fn visit_u64<E>(self, v: u64) -> ::std::result::Result<Self::Value, E>
                     where
-                        E: Error,
+                        E: ::serde::de::Error,
                     {
-                        Ok(unsafe { mem::transmute::<u64, $fn_sig>(v) })
+                        Ok(unsafe { ::std::mem::transmute::<u64, $fn_sig>(v) })
                     }
                 }
 
@@ -212,42 +212,17 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     dtor: None,
 };
 
-pub trait ScriptBound : Sized {
+pub trait ScriptBound: Sized {
     fn get_object_type() -> ObjectType;
 }
 
-pub trait Wrappable<'a> : ScriptBound {
-    type InternalFormat;
-
-    fn wrap_into(self, wrapper: &mut WrappedObject);
-
-    fn get_required_buffer_size(&self) -> usize {
-        size_of::<Self>()
-    }
-}
-
-pub trait DirectWrappable<'a> : Wrappable<'a> {
-    fn unwrap_from(wrapper: &'a WrappedObject) -> &'a Self;
-
-    fn unwrap_from_mut(wrapper: &'a mut WrappedObject) -> &'a mut Self;
-
-    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self
-        where Self : Clone + 'a {
-        Self::unwrap_from(wrapper).clone()
-    }
-}
-
-pub trait IndirectWrappable<'a> : Wrappable<'a> {
-    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self;
-}
-
-macro_rules! make_wrappable {
+macro_rules! impl_wrappable {
     ($ty:ty, $enum_var:ident) => (
-        impl ScriptBound for $ty {
-            fn get_object_type() -> ObjectType {
+        impl $crate::ScriptBound for $ty {
+            fn get_object_type() -> $crate::ObjectType {
                 ObjectType {
-                    ty: IntegralType::$enum_var,
-                    size: size_of::<Self>(),
+                    ty: $crate::IntegralType::$enum_var,
+                    size: ::std::mem::size_of::<Self>(),
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
@@ -262,61 +237,58 @@ macro_rules! make_wrappable {
             }
         }
 
-        impl<'a> Wrappable<'a> for $ty {
+        impl Wrappable for $ty {
             type InternalFormat = Self;
 
-            fn wrap_into(self, wrapper: &mut WrappedObject) {
-                if size_of::<Self>() > 0 {
-                    unsafe { wrapper.store_value(self) }
+            fn wrap_into(self, wrapper: &mut $crate::WrappedObject)
+            where
+                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
+                if ::std::mem::size_of::<Self>() > 0 {
+                    unsafe { wrapper.store_value::<Self>(self) }
                 }
             }
-        }
 
-        impl<'a> DirectWrappable<'a> for $ty {
-            fn unwrap_from(wrapper: &'a WrappedObject) -> &'a Self {
-                assert_eq!(wrapper.ty.ty, IntegralType::$enum_var, "Wrong object type");
-                assert!(wrapper.is_populated);
-
-                unsafe { &*wrapper.get_ptr::<Self>() }
+            fn get_required_buffer_size(&self) -> usize
+            where
+                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
+                ::std::mem::size_of::<Self>()
             }
 
-            fn unwrap_from_mut(wrapper: &'a mut WrappedObject) -> &'a mut Self {
-                assert_eq!(wrapper.ty.ty, IntegralType::$enum_var, "Wrong object type");
-                assert!(wrapper.is_populated);
-
-                unsafe { &mut *wrapper.get_mut_ptr::<Self>() }
+            fn unwrap_as_value(wrapper: &$crate::WrappedObject) -> Self
+            where
+                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
+                // SAFETY: the implementation provided by this macro guarantees
+                //         that Self::InternalFormat == Self
+                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
             }
         }
     )
 }
 
-make_wrappable!(i8, Int8);
-make_wrappable!(i16, Int16);
-make_wrappable!(i32, Int32);
-make_wrappable!(i64, Int64);
-make_wrappable!(u8, Uint8);
-make_wrappable!(u16, Uint16);
-make_wrappable!(u32, Uint32);
-make_wrappable!(u64, Uint64);
-make_wrappable!(f32, Float32);
-make_wrappable!(f64, Float64);
-make_wrappable!(bool, Boolean);
-make_wrappable!((), Empty);
+pub trait Wrappable : ScriptBound {
+    type InternalFormat;
 
-pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {
-    let len = CStr::from_ptr(src.cast()).count_bytes() + 1;
-    let src_slice = slice::from_raw_parts(src, len);
-    let dst_slice = slice::from_raw_parts_mut(dst, len);
-    dst_slice.copy_from_slice(src_slice);
+    fn wrap_into(self, wrapper: &mut WrappedObject);
+
+    fn get_required_buffer_size(&self) -> usize {
+        size_of::<Self::InternalFormat>()
+    }
+
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self;
 }
 
-pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
-    copy_string(dst, src);
-}
-
-pub unsafe extern "C" fn drop_string(target: *mut ()) {
-    ptr::drop_in_place(target.cast::<String>());
-}
+impl_wrappable!(i8, Int8);
+impl_wrappable!(i16, Int16);
+impl_wrappable!(i32, Int32);
+impl_wrappable!(i64, Int64);
+impl_wrappable!(u8, Uint8);
+impl_wrappable!(u16, Uint16);
+impl_wrappable!(u32, Uint32);
+impl_wrappable!(u64, Uint64);
+impl_wrappable!(f32, Float32);
+impl_wrappable!(f64, Float64);
+impl_wrappable!(bool, Boolean);
+impl_wrappable!((), Empty);
 
 impl ScriptBound for String {
     fn get_object_type() -> ObjectType {
@@ -337,7 +309,7 @@ impl ScriptBound for String {
     }
 }
 
-impl<'a> Wrappable<'a> for String {
+impl Wrappable for String {
     type InternalFormat = ffi::c_char;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -351,9 +323,7 @@ impl<'a> Wrappable<'a> for String {
     fn get_required_buffer_size(&self) -> usize {
         CString::new(self.as_str()).unwrap().count_bytes() + 1
     }
-}
 
-impl<'a> IndirectWrappable<'a> for String {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -366,7 +336,7 @@ impl<'a> IndirectWrappable<'a> for String {
     }
 }
 
-impl ScriptBound for &str {
+impl<'a> ScriptBound for &'a str {
     fn get_object_type() -> ObjectType {
         ObjectType {
             ty: IntegralType::String,
@@ -385,7 +355,7 @@ impl ScriptBound for &str {
     }
 }
 
-impl<'a> Wrappable<'a> for &'a str {
+impl<'a> Wrappable for &'a str {
     type InternalFormat = ffi::c_char;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -399,9 +369,7 @@ impl<'a> Wrappable<'a> for &'a str {
     fn get_required_buffer_size(&self) -> usize {
         CString::new(*self).unwrap().count_bytes() + 1
     }
-}
 
-impl<'a> IndirectWrappable<'a> for &'a str {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -414,7 +382,7 @@ impl<'a> IndirectWrappable<'a> for &'a str {
     }
 }
 
-impl<T : ScriptBound> ScriptBound for Vec<T> {
+impl<T: ScriptBound> ScriptBound for Vec<T> {
     fn get_object_type() -> ObjectType {
         ObjectType {
             ty: IntegralType::Vec,
@@ -433,21 +401,19 @@ impl<T : ScriptBound> ScriptBound for Vec<T> {
     }
 }
 
-impl<'a, T : Wrappable<'a>> Wrappable<'a> for Vec<T> {
+impl<T: Wrappable> Wrappable for Vec<T> {
     type InternalFormat = i32;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
         todo!()
     }
-}
 
-impl<'a, T : Wrappable<'a>> IndirectWrappable<'a> for Vec<T> {
-    fn unwrap_as_value(wrapper: &'a WrappedObject) -> Self {
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         todo!()
     }
 }
 
-impl<T : ScriptBound> ScriptBound for &T {
+impl<T: ScriptBound> ScriptBound for &T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
         ObjectType {
@@ -467,7 +433,7 @@ impl<T : ScriptBound> ScriptBound for &T {
     }
 }
 
-impl<'a, T : ScriptBound> Wrappable<'a> for &T {
+impl<T: ScriptBound> Wrappable for &T {
     type InternalFormat = *const T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -476,9 +442,7 @@ impl<'a, T : ScriptBound> Wrappable<'a> for &T {
         unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
-}
 
-impl<'a, T : ScriptBound> IndirectWrappable<'a> for &T {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -487,7 +451,7 @@ impl<'a, T : ScriptBound> IndirectWrappable<'a> for &T {
     }
 }
 
-impl<T : ScriptBound> ScriptBound for &mut T {
+impl<T: ScriptBound> ScriptBound for &mut T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
         ObjectType {
@@ -507,7 +471,7 @@ impl<T : ScriptBound> ScriptBound for &mut T {
     }
 }
 
-impl<'a, T : ScriptBound> Wrappable<'a> for &mut T {
+impl<T: ScriptBound> Wrappable for &mut T {
     type InternalFormat = *mut T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -516,9 +480,7 @@ impl<'a, T : ScriptBound> Wrappable<'a> for &mut T {
         unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
-}
 
-impl<'a, T : ScriptBound> IndirectWrappable<'a> for &mut T {
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
         assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
         assert!(wrapper.is_populated);
@@ -576,7 +538,7 @@ impl WrappedObject {
         wrapper
     }
 
-    pub fn wrap<'a, T: Wrappable<'a>>(val: T) -> Self {
+    pub fn wrap<T: Wrappable>(val: T) -> Self {
         let size = val.get_required_buffer_size();
 
         let mut wrapper = WrappedObject {
@@ -620,6 +582,10 @@ impl WrappedObject {
         wrapper
     }
 
+    pub fn unwrap<T: Wrappable>(&self) -> T {
+        <T as Wrappable>::unwrap_as_value(&self)
+    }
+
     fn initialize_buffer(&mut self, size: usize) {
         if size > WrappedObject::BUFFER_CAPACITY {
             let heap_ptr: *mut u8 =
@@ -636,19 +602,7 @@ impl WrappedObject {
         }
     }
 
-    pub fn unwrap_as_ref<'a, T : DirectWrappable<'a>>(&'a self) -> &'a T {
-        assert!(self.is_populated);
-        assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
-        T::unwrap_from(self)
-    }
-
-    pub fn unwrap_as_mut<'a, T : DirectWrappable<'a>>(&'a mut self) -> &'a mut T {
-        assert!(self.is_populated);
-        assert!(size_of::<Self>() <= WrappedObject::BUFFER_CAPACITY);
-        T::unwrap_from_mut(self)
-    }
-
-    pub fn get_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
+    pub fn get_ptr<T: Wrappable>(&self) -> *const T::InternalFormat {
         if self.is_on_heap {
             self.get_heap_ptr::<T>()
         } else {
@@ -664,7 +618,7 @@ impl WrappedObject {
         }
     }
 
-    pub fn get_mut_ptr<'a, T : Wrappable<'a>>(&mut self) -> *mut T::InternalFormat {
+    pub fn get_mut_ptr<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
         if self.is_on_heap {
             self.get_heap_ptr_mut::<T>()
         } else {
@@ -680,7 +634,7 @@ impl WrappedObject {
         unsafe { &mut *slice_from_raw_parts_mut(self.data.as_mut_ptr().cast(), self.buffer_size) }
     }
 
-    pub unsafe fn store_value<'a, T : Wrappable<'a> + Into<T::InternalFormat>>(&mut self, val: T) {
+    pub unsafe fn store_value<T: Wrappable + Into<T::InternalFormat>>(&mut self, val: T) {
          assert!(size_of::<T>() <= self.buffer_size);
         *self.get_mut_ptr::<T>() = val.into();
         self.is_populated = true;
@@ -699,12 +653,12 @@ impl WrappedObject {
         self.is_populated = true;
     }
 
-    fn get_heap_ptr<'a, T : Wrappable<'a>>(&self) -> *const T::InternalFormat {
+    fn get_heap_ptr<T: Wrappable>(&self) -> *const T::InternalFormat {
         assert!(size_of::<*const T::InternalFormat>() <= self.buffer_size);
         self.get_raw_heap_ptr().cast()
     }
 
-    fn get_heap_ptr_mut<'a, T : Wrappable<'a>>(&mut self) -> *mut T::InternalFormat {
+    fn get_heap_ptr_mut<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
         assert!(size_of::<*mut T::InternalFormat>() <= self.buffer_size);
         self.get_raw_heap_ptr_mut().cast()
     }
@@ -767,4 +721,19 @@ impl BoundEnumInfo {
     ) -> Self {
         Self { name, type_id, width, values }
     }
+}
+
+pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {
+    let len = CStr::from_ptr(src.cast()).count_bytes() + 1;
+    let src_slice = slice::from_raw_parts(src, len);
+    let dst_slice = slice::from_raw_parts_mut(dst, len);
+    dst_slice.copy_from_slice(src_slice);
+}
+
+pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
+    copy_string(dst, src);
+}
+
+pub unsafe extern "C" fn drop_string(target: *mut ()) {
+    ptr::drop_in_place(target.cast::<String>());
 }

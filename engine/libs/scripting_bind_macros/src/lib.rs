@@ -115,7 +115,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
     let script_bound_impl_tokens = quote_spanned! {struct_span=>
         impl ::argus_scripting_bind::ScriptBound for #struct_ident {
             fn get_object_type() -> ::argus_scripting_bind::ObjectType {
-                argus_scripting_bind::ObjectType {
+                ::argus_scripting_bind::ObjectType {
                     ty: ::argus_scripting_bind::IntegralType::Object,
                     size: size_of::<#struct_ident>(),
                     is_const: false,
@@ -131,41 +131,33 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         }
     };
 
-    let wrappable_impls_tokens = quote_spanned! {struct_span=>
-        impl<'a> ::argus_scripting_bind::Wrappable<'a> for #struct_ident {
-            type InternalFormat = #struct_ident;
+    let wrappable_impl_tokens = quote_spanned! {struct_span=>
+        impl Wrappable for #struct_ident {
+            type InternalFormat = Self;
 
-            fn wrap_into(self, wrapper: &mut argus_scripting_bind::WrappedObject) {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
-
-                unsafe { wrapper.store_value::<Self>(self) }
+            fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::clone::Clone {
+                if ::std::mem::size_of::<Self>() > 0 {
+                    unsafe { wrapper.store_value::<Self>(self) }
+                }
             }
-        }
 
-        impl<'a> ::argus_scripting_bind::DirectWrappable<'a> for #struct_ident
-            where #struct_ident : ::argus_scripting_bind::Wrappable<'a> {
-            fn unwrap_from(wrapper: &'a argus_scripting_bind::WrappedObject) -> &'a Self {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    ::argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
-
-                unsafe { &*wrapper.get_ptr::<&Self>().cast::<Self>() }
+            fn get_required_buffer_size(&self) -> usize
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::clone::Clone {
+                ::std::mem::size_of::<Self>()
             }
-            fn unwrap_from_mut(wrapper: &'a mut argus_scripting_bind::WrappedObject) ->
-                &'a mut Self {
-                assert_eq!(
-                    wrapper.ty.ty,
-                    ::argus_scripting_bind::IntegralType::Object,
-                    "Wrong object type"
-                );
 
-                unsafe { &mut *wrapper.get_mut_ptr::<&Self>().cast::<Self>() }
+            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::clone::Clone {
+                // SAFETY: the implementation provided by this macro guarantees
+                //         that Self::InternalFormat == Self
+                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
             }
         }
     };
@@ -277,7 +269,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                 use ::argus_scripting_bind::Wrappable;
                 #ctor_dtor_proxies_tokens
                 #script_bound_impl_tokens
-                #wrappable_impls_tokens
+                #wrappable_impl_tokens
                 #register_struct_tokens
                 #(#field_regs)*
             };
@@ -431,7 +423,7 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
         };
         let param_type_span = param_type.span();
         quote_spanned! {param_type_span=>
-            <#param_type>::unwrap_as_value(&params[#param_index])
+            (&params[#param_index]).unwrap()
         }
     }).collect();
 
@@ -456,7 +448,7 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
                 .map(|ty| {
                     let ty_span = ty.span();
                     quote_spanned! {ty_span=>
-                        Some(|| { ::std::any::TypeId::of::<#ty>() })
+                        || { ::std::any::TypeId::of::<#ty>() }
                     }
                 })
                 .collect();
@@ -468,8 +460,6 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
 
     Ok(quote! {
         const _: () = {
-            use ::argus_scripting_bind::{DirectWrappable, IndirectWrappable};
-
             fn #proxy_ident(params: &[::argus_scripting_bind::WrappedObject]) ->
                 ::std::result::Result<
                     ::argus_scripting_bind::WrappedObject,
