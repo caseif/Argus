@@ -17,7 +17,7 @@
  */
 
 use proc_macro::TokenStream;
-use proc_macro2::Span as Span2;
+use proc_macro2::{Span as Span2, Span};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote, quote_spanned};
 use syn::*;
@@ -27,8 +27,12 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 
 use syn::Error as CompileError;
+use syn::parse::Parser;
 
-const STRUCT_ARG_REF_ONLY: &'static str = "ref_only";
+const ATTR_SCRIPT_BIND: &str = "script_bind";
+const UNIV_ARG_IGNORE: &str = "ignore";
+const STRUCT_ARG_REF_ONLY: &str = "ref_only";
+const FN_ARG_ASSOC_TYPE: &str = "assoc_type";
 
 #[derive(Default)]
 struct StructAttrArgs {
@@ -36,23 +40,44 @@ struct StructAttrArgs {
     ref_only_span: Option<Span2>,
 }
 
+#[derive(Default)]
+struct FnAttrArgs {
+    assoc_type: Option<Path>,
+    assoc_type_span: Option<Span2>,
+}
+
 #[proc_macro_attribute]
 pub fn script_bind(args: TokenStream, input: TokenStream) -> TokenStream {
     let args_parsed = parse_macro_input!(args with Punctuated::<Meta, Token![,]>::parse_terminated);
-    let meta_list = args_parsed.iter().collect();
+    let meta_list: Vec<_> = args_parsed.iter().collect();
+
+    // check for ignored tag on attribute
+    if meta_list.iter().any(|meta| match meta {
+        Meta::Path(path) => {
+            path.segments.len() == 1 &&
+                path.segments.first().unwrap().ident.to_string() == UNIV_ARG_IGNORE
+        }
+        _ => false,
+    }) {
+        // return input token stream unchanged
+        return input;
+    }
 
     let item = parse_macro_input!(input as Item);
 
     let generated = (match item {
         Item::Struct(ref s) => handle_struct(s, meta_list),
         Item::Enum(ref s) => handle_enum(s, meta_list),
-        Item::Fn(ref f) => handle_fn(f, meta_list),
-        _ => Err(CompileError::new(item.span(), "Attribute 'script_bound' is not allowed here")),
+        Item::Fn(ref f) => handle_bare_fn(f, meta_list),
+        Item::Impl(ref i) => handle_impl(i, meta_list),
+        _ => Err(CompileError::new(
+            item.span(),
+            format!("Attribute '{ATTR_SCRIPT_BIND}' is not allowed here")
+        )),
     })
         .unwrap_or_else(|e| { e.into_compile_error() });
 
     quote!(
-        #item
         #generated
     ).into()
 }
@@ -189,7 +214,9 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                 None => {
                     return Err(CompileError::new(
                         field.span(),
-                        "script_bind attribute cannot be applied to tuple structs",
+                        format!(
+                            "Attribute '{ATTR_SCRIPT_BIND}' cannot be applied to tuple structs"
+                        ),
                     ));
                 }
             }
@@ -241,7 +268,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                 static #field_def_ident:
                 (
                     ::argus_scripting_bind::BoundFieldInfo,
-                    &'static [fn () -> ::std::any::TypeId]
+                    &[fn () -> ::std::any::TypeId]
                 ) =
                     (
                         ::argus_scripting_bind::BoundFieldInfo {
@@ -265,6 +292,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
     if allow_clone {
         Ok(quote! {
+            #item
             const _: () = {
                 use ::argus_scripting_bind::Wrappable;
                 #ctor_dtor_proxies_tokens
@@ -276,6 +304,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         })
     } else {
         Ok(quote! {
+            #item
             const _: () = {
                 use ::argus_scripting_bind::Wrappable;
                 #script_bound_impl_tokens
@@ -360,6 +389,7 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
 
     let enum_def_ident = format_ident!("_{enum_ident}_SCRIPT_BIND_DEFINITION");
     Ok(quote! {
+        #item
         const _: () = {
             #[::argus_scripting_bind::linkme::distributed_slice(
                 ::argus_scripting_bind::BOUND_ENUM_DEFS
@@ -376,39 +406,60 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
     })
 }
 
-fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
-    let fn_ident = &f.sig.ident;
-    let fn_name = fn_ident.to_string();
-    let fn_type = FunctionType::Global; //TODO
-    let fn_args = &f.sig.inputs;
+fn handle_bare_fn(item: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
+    let binding_code = gen_fn_binding_code(&item.sig, args, None)?;
+    Ok(quote! {
+        #item
+        #binding_code
+    })
+}
 
-    let param_types: Vec<_> = fn_args.iter()
+fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&TypePath>)
+    -> Result<TokenStream2, CompileError> {
+    let _fn_args = parse_fn_args(args)?;
+
+    let fn_ident = &sig.ident;
+    let fn_name = fn_ident.to_string();
+    let fn_params = &sig.inputs;
+    let fn_type = if assoc_type.is_some() {
+        if let Some(FnArg::Receiver(_)) = fn_params.first() {
+            FunctionType::MemberInstance
+        } else {
+            FunctionType::MemberStatic
+            }
+    } else {
+        FunctionType::Global
+    };
+
+    let param_types: Vec<_> = fn_params.iter()
         .map(|input| {
             match input {
-                FnArg::Receiver(r) => r.ty.as_ref(),
-                FnArg::Typed(ty) => ty.ty.as_ref(),
+                FnArg::Receiver(_) => {
+                    Type::Path(assoc_type.expect("Associated type was missing").clone())
+                },
+                FnArg::Typed(ty) => ty.ty.as_ref().clone(),
             }
         })
         .collect();
 
-    let param_types:
+    let param_obj_types:
         Vec<(ObjectType, Vec<Type>)> =
         param_types.iter()
             .map(|ty| {
-                parse_type(ty, ValueFlowDirection::FromScript)
+                parse_type(&ty, ValueFlowDirection::FromScript)
             })
             .collect::<Result<_, _>>()?;
 
-    let param_type_serials: Vec<_> = param_types.iter()
+    let param_type_serials: Vec<_> = param_obj_types.iter()
         .map(|p| serde_json::to_string(&p.0).expect("Failed to serialize function parameter type"))
         .collect();
 
-    let (ret_obj_type, ret_syn_types) = match &f.sig.output {
+    let (ret_obj_type, ret_syn_types) = match &sig.output {
         ReturnType::Default => (EMPTY_TYPE.clone(), vec![]),
         ReturnType::Type(_, ty) => parse_type(ty.as_ref(), ValueFlowDirection::ToScript)?,
     };
 
-    let invocation_span = match &f.sig.output {
+    let invocation_span = match &sig.output {
         ReturnType::Default => Span2::call_site(),
         ReturnType::Type(_, ty) => ty.span(),
     };
@@ -416,22 +467,29 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
     let ret_type_serial = serde_json::to_string(&ret_obj_type)
         .expect("Failed to serialize function return type");
 
-    let param_tokens: Vec<_> = fn_args.iter().enumerate().map(|(param_index, fn_arg)| {
-        let param_type = match fn_arg {
-            FnArg::Receiver(ty) => ty.ty.as_ref(),
-            FnArg::Typed(ty) => ty.ty.as_ref(),
-        };
+    let param_tokens: Vec<_> = param_types.iter().enumerate().map(|(param_index, param_type)| {
         let param_type_span = param_type.span();
         quote_spanned! {param_type_span=>
-            (&params[#param_index]).unwrap()
+            params[#param_index].unwrap::<#param_type>()
         }
     }).collect();
 
-    let proxy_ident = format_ident!("_{fn_ident}_proxied");
-    let fn_def_ident = format_ident!("_{fn_ident}_SCRIPT_BIND_DEFINITION");
-
-    let wrap_invoke_tokens = quote_spanned! {invocation_span=>
-        ::argus_scripting_bind::WrappedObject::wrap
+    let (proxy_ident, fn_def_ident) = match assoc_type {
+        Some(ty) => {
+            let ty_ident = &ty.path.segments.last()
+                .expect("Associated type had no path segments")
+                .ident;
+            (
+                format_ident!("_{ty_ident}_{fn_ident}_proxied"),
+                format_ident!("_{ty_ident}_{fn_ident}_SCRIPT_BIND_DEFINITION"),
+            )
+        }
+        None => {
+            (
+                format_ident!("_{fn_ident}_proxied"),
+                format_ident!("_{fn_ident}_SCRIPT_BIND_DEFINITION"),
+            )
+        }
     };
 
     let ret_type_id_getter_tokens: Vec<TokenStream2> = ret_syn_types.into_iter()
@@ -442,7 +500,7 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
             }
         })
         .collect();
-    let param_type_id_getters_tokens: Vec<TokenStream2> = param_types.into_iter()
+    let param_type_id_getters_tokens: Vec<TokenStream2> = param_obj_types.into_iter()
         .map(|(param_obj_type, param_syn_types)| {
             let getters: Vec<_> = param_syn_types.iter()
                 .map(|ty| {
@@ -458,6 +516,44 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
         })
         .collect();
 
+    let fn_call = match fn_type {
+        FunctionType::MemberInstance => {
+            assert!(!param_tokens.is_empty(), "Instance param was missing");
+            let instance_tokens = &param_tokens[0];
+            let remaining_tokens = &param_tokens[1..];
+            quote! {
+                (#instance_tokens).#fn_ident(
+                    #(#remaining_tokens),*
+                )
+            }
+        }
+        FunctionType::MemberStatic => {
+            let ty = assoc_type.expect("Associated type was missing");
+            quote! {
+                <#ty>::#fn_ident(
+                    #(#param_tokens),*
+                )
+            }
+        }
+        FunctionType::Global => {
+            quote! {
+                #fn_ident(
+                    #(#param_tokens),*
+                )
+            }
+        }
+        FunctionType::Extension => {
+            return Err(CompileError::new(
+                Span::call_site(),
+                "Extension function bindings are not yet supported"
+            ));
+        }
+    };
+
+    let wrap_invoke_tokens = quote_spanned! {invocation_span=>
+        ::argus_scripting_bind::WrappedObject::wrap
+    };
+
     Ok(quote! {
         const _: () = {
             fn #proxy_ident(params: &[::argus_scripting_bind::WrappedObject]) ->
@@ -465,11 +561,7 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
                     ::argus_scripting_bind::WrappedObject,
                     ::argus_scripting_bind::ReflectiveArgumentsError
                 > {
-                Ok(#wrap_invoke_tokens(
-                    #fn_ident(
-                        #(#param_tokens),*
-                    )
-                ))
+                Ok(#wrap_invoke_tokens(#fn_call))
             }
 
             #[::argus_scripting_bind::linkme::distributed_slice(
@@ -479,7 +571,7 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
             static #fn_def_ident:
             (
                 ::argus_scripting_bind::BoundFunctionInfo,
-                &'static [&'static [fn () -> ::std::any::TypeId]],
+                &[&[fn () -> ::std::any::TypeId]],
             ) = (
                 ::argus_scripting_bind::BoundFunctionInfo {
                     name: #fn_name,
@@ -497,6 +589,119 @@ fn handle_fn(f: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError>
             );
         };
     })
+}
+
+fn parse_fn_args(meta_list: Vec<&Meta>) -> Result<FnAttrArgs, CompileError> {
+    let mut args_obj = FnAttrArgs::default();
+
+    for meta in meta_list {
+        match meta {
+            Meta::Path(path) => {
+                return Err(CompileError::new(path.span(), "Unexpected path"));
+            }
+            Meta::List(list) => {
+                return Err(CompileError::new(list.span(), "Unexpected list"));
+            }
+            Meta::NameValue(nv) => {
+                return Err(CompileError::new(nv.span(), "Unexpected name/value pair"));
+            }
+        }
+    }
+
+    Ok(args_obj)
+}
+
+fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
+    let Type::Path(ty) = impl_block.self_ty.as_ref()
+    else {
+        return Err(CompileError::new(
+            impl_block.self_ty.span(),
+            format!("Only primitive and struct types are supported by {ATTR_SCRIPT_BIND}"),
+        ));
+    };
+
+    let mut fns_to_bind = Vec::<(&ImplItemFn, Meta)>::new();
+
+    let mut transformed_items = Vec::new();
+    for item in &impl_block.items {
+        let new_item = match item {
+            ImplItem::Fn(ref f) => {
+                if let Some(pos) = f.attrs.iter().position(|attr| {
+                    if attr.path().segments.len() != 1 { return false; }
+                    let seg = attr.path().segments.first().expect("First path segment was missing");
+                    seg.ident.to_string() == ATTR_SCRIPT_BIND
+                }) {
+                    fns_to_bind.push((&f, f.attrs[pos].meta.clone()));
+                    let mut f_clone = f.clone();
+                    // remove script_bind attribute since it's being handled as
+                    // part of the impl block
+                    let new_list = match &f_clone.attrs[pos].meta {
+                        Meta::Path(path) => {
+                            MetaList {
+                                path: path.clone(),
+                                delimiter: MacroDelimiter::Paren(token::Paren::default()),
+                                tokens: quote! { ignore },
+                            }
+                        }
+                        Meta::List(list) => {
+                            let list_tokens = &list.tokens;
+                            MetaList {
+                                path: list.path.clone(),
+                                delimiter: MacroDelimiter::Paren(token::Paren::default()),
+                                tokens: if !list_tokens.is_empty() {
+                                    quote! { #list_tokens, ignore }
+                                } else {
+                                    quote! { ignore }
+                                },
+                            }
+                        }
+                        Meta::NameValue(nv) => {
+                            return Err(CompileError::new(nv.span(), "Unexpected name/value pair"));
+                        }
+                    };
+                    // avoid getting rid of the macro outright so we don't confuse IDEs
+                    f_clone.attrs[pos].meta = Meta::List(new_list);
+                    ImplItem::Fn(f_clone)
+                } else {
+                    item.clone()
+                }
+            }
+            _ => {
+                item.clone()
+            }
+        };
+        transformed_items.push(new_item);
+    }
+
+    let mut transformed_block = impl_block.clone();
+    transformed_block.items = transformed_items;
+
+    let mut binding_code = Vec::new();
+    for (f, args) in fns_to_bind {
+        binding_code.push(handle_impl_fn(ty, f, args)?)
+    }
+
+    Ok(quote! {
+        #transformed_block
+        #(#binding_code)*
+    })
+}
+
+fn handle_impl_fn(ty: &TypePath, f: &ImplItemFn, args: Meta) -> Result<TokenStream2, CompileError> {
+    let meta_list = match args {
+        Meta::List(meta_list) => {
+            let args_tokens = TokenStream::from(meta_list.tokens);
+            let args_parsed =
+                Parser::parse(Punctuated::<Meta, Token![,]>::parse_terminated, args_tokens)?;
+            args_parsed.into_iter().collect()
+        }
+        Meta::Path(_) => vec![],
+        Meta::NameValue(nv) => {
+            return Err(CompileError::new(nv.span(), "Unexpected name/value pair"));
+        }
+    };
+    let meta_list_ref = meta_list.iter().collect();
+    gen_fn_binding_code(&f.sig, meta_list_ref, Some(ty))
 }
 
 fn build_wrappable_assertion(ty: &Type) -> TokenStream2 {
@@ -554,10 +759,14 @@ enum OuterTypeType {
 
 fn parse_type<'a>(ty: &'a Type, flow_direction: ValueFlowDirection)
     -> Result<(ObjectType, Vec<Type>), CompileError> {
-    parse_type_impl(ty, flow_direction, OuterTypeType::None)
+    parse_type_internal(ty, flow_direction, OuterTypeType::None)
 }
 
-fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_type: OuterTypeType)
+fn parse_type_internal<'a>(
+    ty: &'a Type,
+    flow_direction: ValueFlowDirection,
+    outer_type: OuterTypeType
+)
     -> Result<(ObjectType, Vec<Type>), CompileError> {
     if let Type::Path(path) = ty {
         if path.path.segments.len() == 0 {
@@ -660,7 +869,7 @@ fn parse_type_impl<'a>(ty: &'a Type, flow_direction: ValueFlowDirection, outer_t
         }
 
         let (inner_obj_type, inner_types) =
-            parse_type_impl(&reference.elem, flow_direction, OuterTypeType::Reference)?;
+            parse_type_internal(&reference.elem, flow_direction, OuterTypeType::Reference)?;
 
         if inner_obj_type.ty != IntegralType::Object {
             return Err(CompileError::new(
@@ -804,7 +1013,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
     else { return Err(CompileError::new(ty.span(), "Invalid Vec argument syntax")); };
 
     let (inner_obj_type, resolved_inner_types) =
-        parse_type_impl(&inner_type, flow_direction, OuterTypeType::Vec)?;
+        parse_type_internal(&inner_type, flow_direction, OuterTypeType::Vec)?;
     assert!(resolved_inner_types.len() <= 1,
             "Parsing Vec type returned too many resolved types for inner type");
 
@@ -851,11 +1060,11 @@ fn resolve_result<'a>(ty: &'a TypePath, flow_direction: ValueFlowDirection)
     else { return Err(CompileError::new(ty.span(), "Invalid Result argument syntax")); };
 
     let (val_obj_type, resolved_val_types) =
-        parse_type_impl(val_type, flow_direction, OuterTypeType::Result)?;
+        parse_type_internal(val_type, flow_direction, OuterTypeType::Result)?;
     assert!(resolved_val_types.len() <= 1,
             "Parsing Result type returned too many resolved types for inner value type");
     let (err_obj_type, resolved_err_types) =
-        parse_type_impl(err_type, flow_direction, OuterTypeType::Result)?;
+        parse_type_internal(err_type, flow_direction, OuterTypeType::Result)?;
     assert!(resolved_err_types.len() <= 1,
             "Parsing Result type returned too many resolved types for inner error type");
 

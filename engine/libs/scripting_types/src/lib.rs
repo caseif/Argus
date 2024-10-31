@@ -145,7 +145,7 @@ fn_wrapper!(CopyCtorWrapper, FfiCopyCtor);
 fn_wrapper!(MoveCtorWrapper, FfiMoveCtor);
 fn_wrapper!(DtorWrapper, FfiDtor);
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum FunctionType {
     Global,
     MemberStatic,
