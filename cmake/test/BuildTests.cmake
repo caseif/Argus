@@ -87,9 +87,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS "${PROJECT_CXX_E
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 
 _argus_set_compile_flags("${PROJECT_NAME}")
-target_compile_options("${PROJECT_NAME}" PRIVATE
-    "$<$<CXX_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>"
-    "-Wno-c++20-extensions")
+target_compile_options("${PROJECT_NAME}" PRIVATE "$<$<CXX_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>")
+if((CLANG AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 10) OR
+  (GCC AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 12))
+  target_compile_options("${PROJECT_NAME}" PRIVATE
+      "$<$<COMPILE_LANGUAGE:CXX>:-Wno-c++20-extensions>")
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${TEST_BINARY_DEST}"
