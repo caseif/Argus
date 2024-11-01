@@ -72,8 +72,8 @@ namespace argus {
         }
 
         Dirtiable(const Dirtiable<ValueType> &rhs) :
-            value(rhs.m_value),
-            dirty(rhs.m_dirty) {
+            value(rhs.value),
+            dirty(rhs.dirty) {
         }
 
         Dirtiable(Dirtiable<ValueType> &&rhs) noexcept:
