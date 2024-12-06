@@ -94,7 +94,7 @@ pub type argus_resource_copy_fn_t = ::std::option::Option<
         loader: argus_resource_loader_t,
         manager: argus_resource_manager_t,
         proto: argus_resource_prototype_t,
-        src: *mut ::std::os::raw::c_void,
+        src: *const ::std::os::raw::c_void,
         src_len: usize,
         data: *mut ::std::os::raw::c_void,
     ) -> VoidPtrOrResourceError,
@@ -167,8 +167,7 @@ extern "C" {
         mgr: argus_resource_manager_t,
         uid: *const ::std::os::raw::c_char,
         media_type: *const ::std::os::raw::c_char,
-        data: *const ::std::os::raw::c_void,
-        len: usize,
+        handle: *const ::std::os::raw::c_void,
     ) -> ResourceOrResourceError;
     pub fn argus_resource_loader_new(
         media_types: *const *const ::std::os::raw::c_char,

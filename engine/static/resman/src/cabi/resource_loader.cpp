@@ -107,7 +107,7 @@ Result<void *, ResourceError> ProxiedResourceLoader::load(ResourceManager &manag
 }
 
 Result<void *, ResourceError> ProxiedResourceLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-        void *src, std::type_index type) {
+        const void *src, std::optional<std::type_index> type) {
     UNUSED(type);
     auto wrapped_proto = argus_resource_prototype_t {
             proto.uid.c_str(),

@@ -27,7 +27,7 @@ namespace argus {
                 std::istream &stream, size_t size) override;
 
         Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
-                void *src, std::type_index type) override;
+                const void *src, std::optional<std::type_index> type) override;
 
         void unload(void *data_ptr) override;
 

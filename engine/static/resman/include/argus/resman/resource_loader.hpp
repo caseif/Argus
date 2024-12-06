@@ -59,7 +59,7 @@ namespace argus {
                 std::istream &stream, size_t size) = 0;
 
         virtual Result<void *, ResourceError> copy(ResourceManager &manager, const ResourcePrototype &proto,
-                void *src, std::type_index type) = 0;
+                const void *src, std::optional<std::type_index> type) = 0;
 
         /**
          * @brief Performs necessary deinitialization for loaded resource

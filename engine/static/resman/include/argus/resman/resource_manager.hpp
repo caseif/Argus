@@ -189,17 +189,16 @@ namespace argus {
 
         /**
          * @brief Creates a Resource with the given UID from data presently
-         *        in memory.
+         *        in memory without validating the source object type.
          *
          * @param uid The UID of the new Resource.
          * @param media_type The media type of the Resource.
-         * @param data The in-memory data of the Resource.
-         * @param len The size of the Resource in bytes.
+         * @param handle A handle to the object in memory to be copied.
          *
          * @return The created Resource.
          */
-        [[nodiscard]] Result<Resource &, ResourceError> create_resource(const std::string &uid,
-                const std::string &media_type, const void *data, size_t len);
+        [[nodiscard]] Result<Resource &, ResourceError> create_resource_unchecked(const std::string &uid,
+                const std::string &media_type, const void *handle);
 
         template<typename T>
         [[nodiscard]] Result<Resource &, ResourceError> create_resource(const std::string &uid,

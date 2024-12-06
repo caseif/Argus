@@ -60,7 +60,7 @@ void argus_resource_manager_get_resource_async(argus_resource_manager_t mgr, con
         void(*callback)(ResourceOrResourceError));
 
 ResourceOrResourceError argus_resource_manager_create_resource(argus_resource_manager_t mgr, const char *uid,
-        const char *media_type, const void *data, size_t len);
+        const char *media_type, const void *handle);
 
 #ifdef __cplusplus
 }

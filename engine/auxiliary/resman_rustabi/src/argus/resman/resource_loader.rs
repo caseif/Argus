@@ -90,7 +90,7 @@ pub trait ResourceLoader {
         handle: WrappedResourceLoader,
         manager: ResourceManager,
         prototype: ResourcePrototype,
-        src_data: *mut u8,
+        src_data: *const u8,
     ) -> Result<*mut u8, ResourceError>;
 
     fn unload_resource(&mut self, handle: WrappedResourceLoader, ptr: *mut u8);
@@ -131,7 +131,7 @@ unsafe extern "C" fn copy_resource_proxy(
     loader: argus_resource_loader_t,
     manager: argus_resource_manager_t,
     prototype: argus_resource_prototype_t,
-    src: *mut c_void,
+    src: *const c_void,
     src_len: usize,
     user_data: *mut c_void,
 ) -> VoidPtrOrResourceError {

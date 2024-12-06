@@ -365,12 +365,12 @@ namespace argus {
     }
 
     Result<void *, ResourceError> SpriteLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) {
-        if (type == std::type_index(typeid(SpriteDef))) {
+            const void *src, std::optional<std::type_index> type) {
+        if (type.has_value() && type.value() == std::type_index(typeid(SpriteDef))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
 
-        auto &src_sprite = *static_cast<SpriteDef *>(src);
+        auto &src_sprite = *static_cast<const SpriteDef *>(src);
 
         std::vector<std::string> dep_uids;
 

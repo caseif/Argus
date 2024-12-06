@@ -159,12 +159,12 @@ namespace argus {
     }
 
     Result<void *, ResourceError> MaterialLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) {
-        if (type != std::type_index(typeid(Material))) {
+            const void *src, std::optional<std::type_index> type) {
+        if (type.has_value() && type.value() != std::type_index(typeid(Material))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
 
-        auto &src_mat = *reinterpret_cast<Material *>(src);
+        auto &src_mat = *reinterpret_cast<const Material *>(src);
 
         // need to load shaders as dependencies before doing a copy
 
