@@ -289,7 +289,7 @@ impl World2dLayer {
             .create_resource(
                 mat_uid.as_str(),
                 RESOURCE_TYPE_MATERIAL,
-                mat.as_slice(),
+                unsafe { slice::from_raw_parts(mat.handle.cast(), argus_material_len()) },
             )
             .expect("Failed to create material resource");
         // leak the material so it stays valid after this function finishes executing

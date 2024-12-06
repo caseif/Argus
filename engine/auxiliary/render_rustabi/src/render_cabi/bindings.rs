@@ -642,6 +642,7 @@ extern "C" {
         canvas: argus_canvas_t,
         id: *const ::std::os::raw::c_char,
     );
+    pub fn argus_material_len() -> usize;
     pub fn argus_material_new(
         texture_uid: *const ::std::os::raw::c_char,
         shader_uids_count: usize,

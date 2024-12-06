@@ -34,6 +34,10 @@ static inline const argus::Material &_as_ref(argus_material_t material) {
 
 extern "C" {
 
+size_t argus_material_len(void) {
+    return sizeof(argus::Material);
+}
+
 argus_material_t argus_material_new(const char *texture_uid, size_t shader_uids_count, const char *const *shader_uids) {
     std::vector<std::string> shader_uids_vec;
     shader_uids_vec.reserve(shader_uids_count);
