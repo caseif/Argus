@@ -67,7 +67,7 @@ impl ResourceLoader for ShaderLoader {
         _handle: WrappedResourceLoader,
         _manager: ResourceManager,
         _prototype: ResourcePrototype,
-        src_data: *mut u8,
+        src_data: *const u8,
     ) -> Result<*mut u8, ResourceError> {
         let shader: &Shader = unsafe { *src_data.cast() };
         Ok(Box::into_raw(Box::new(shader.copy())).cast())

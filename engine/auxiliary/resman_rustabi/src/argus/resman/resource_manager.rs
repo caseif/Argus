@@ -137,7 +137,6 @@ impl ResourceManager {
                 uid_c.as_ptr(),
                 media_type_c.as_ptr(),
                 data.as_ptr().cast(),
-                data.len(),
             ))
         }
     }

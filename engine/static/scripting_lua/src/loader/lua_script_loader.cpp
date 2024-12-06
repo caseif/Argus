@@ -43,12 +43,12 @@ namespace argus {
     }
 
     Result<void *, ResourceError> LuaScriptLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) {
+            const void *src, std::optional<std::type_index> type) {
         UNUSED(manager);
         UNUSED(proto);
         UNUSED(type);
 
-        auto *loaded_script = reinterpret_cast<LoadedScript *>(src);
+        auto *loaded_script = reinterpret_cast<const LoadedScript *>(src);
         return make_ok_result(new LoadedScript(loaded_script->source));
     }
 

@@ -161,16 +161,16 @@ namespace argus {
     }
 
     Result<void *, ResourceError> PngTextureLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) {
+            const void *src, std::optional<std::type_index> type) {
         UNUSED(manager);
 
-        if (type != std::type_index(typeid(TextureData))) {
+        if (type.has_value() && type.value() != std::type_index(typeid(TextureData))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
 
         // no dependencies to load so we can just do a blind copy
 
-        return make_ok_result(new TextureData(*static_cast<TextureData *>(src)));
+        return make_ok_result(new TextureData(*static_cast<const TextureData *>(src)));
     }
 
     void PngTextureLoader::unload(void *const data_buf) {

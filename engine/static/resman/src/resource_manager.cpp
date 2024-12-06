@@ -404,9 +404,9 @@ namespace argus {
         }
     }
 
-    Result<Resource &, ResourceError> ResourceManager::create_resource(const std::string &uid,
-            const std::string &media_type, const void *data, size_t len) {
-        Logger::default_logger().debug("Creating ad hoc resource %s (%zu bytes)", uid.c_str(), len);
+    Result<Resource &, ResourceError> ResourceManager::create_resource_unchecked(const std::string &uid,
+            const std::string &media_type, const void *data) {
+        Logger::default_logger().debug("Creating ad hoc resource %s", uid.c_str());
 
         if (m_pimpl->loaded_resources.find(uid) != m_pimpl->loaded_resources.cend()) {
             return make_err_res(ResourceErrorReason::AlreadyLoaded, uid);
@@ -417,13 +417,11 @@ namespace argus {
             return make_err_res(ResourceErrorReason::NoLoader, media_type);
         }
 
-        IMemStream stream(data, len);
-
         ResourcePrototype proto = { uid, media_type, "" };
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
-        auto load_res = loader.load(*this, proto, stream, len);
+        auto load_res = loader.copy(*this, proto, data, std::nullopt);
 
         if (load_res.is_err()) {
             return err<Resource &, ResourceError>(load_res.unwrap_err());
@@ -454,7 +452,7 @@ namespace argus {
 
         auto &loader = *loader_it->second;
         loader.m_pimpl->last_dependencies = {};
-        auto load_res = loader.copy(*this, proto, obj, type);
+        auto load_res = loader.copy(*this, proto, obj, std::make_optional(type));
 
         if (load_res.is_err()) {
             return err<Resource &, ResourceError>(load_res.unwrap_err());

@@ -57,7 +57,7 @@ typedef VoidPtrOrResourceError (*argus_resource_load_fn_t)(argus_resource_loader
 
 typedef VoidPtrOrResourceError (*argus_resource_copy_fn_t)(argus_resource_loader_t loader,
         argus_resource_manager_t manager, argus_resource_prototype_t proto,
-        void *src, size_t src_len, void *data);
+        const void *src, size_t src_len, void *data);
 
 typedef void (*argus_resource_unload_fn_t)(argus_resource_loader_t loader, void *ptr, size_t len, void *user_data);
 

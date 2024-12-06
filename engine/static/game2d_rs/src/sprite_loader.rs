@@ -84,7 +84,7 @@ impl ResourceLoader for SpriteLoader {
         _handle: WrappedResourceLoader,
         _manager: ResourceManager,
         _prototype: ResourcePrototype,
-        src_data: *mut u8,
+        src_data: *const u8,
     ) -> Result<*mut u8, ResourceError> {
         let defn: &SpriteDefinition = unsafe { *src_data.cast() };
         Ok(Box::into_raw(Box::new(defn.clone())).cast())

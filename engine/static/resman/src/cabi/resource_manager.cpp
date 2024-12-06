@@ -86,8 +86,8 @@ void argus_resource_manager_get_resource_async(argus_resource_manager_t mgr, con
 }
 
 ResourceOrResourceError argus_resource_manager_create_resource(argus_resource_manager_t mgr, const char *uid,
-        const char *media_type, const void *data, size_t len) {
-    return _wrap_result(_as_ref(mgr).create_resource(uid, media_type, data, len));
+        const char *media_type, const void *handle) {
+    return _wrap_result(_as_ref(mgr).create_resource_unchecked(uid, media_type, handle));
 }
 
 #ifdef __cplusplus

@@ -69,16 +69,16 @@ namespace argus {
     }
 
     Result<void *, ResourceError> ShaderLoader::copy(ResourceManager &manager, const ResourcePrototype &proto,
-            void *src, std::type_index type) {
+            const void *src, std::optional<std::type_index> type) {
         UNUSED(manager);
 
-        if (type != std::type_index(typeid(Shader))) {
+        if (type.has_value() && type.value() != std::type_index(typeid(Shader))) {
             return make_err_result(ResourceErrorReason::UnexpectedReferenceType, proto);
         }
 
         // no dependencies to load so we can just do a blind copy
 
-        return make_ok_result(new Shader(*static_cast<Shader *>(src)));
+        return make_ok_result(new Shader(*static_cast<const Shader *>(src)));
     }
 
     void ShaderLoader::unload(void *const data_buf) {
