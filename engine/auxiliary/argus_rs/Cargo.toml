@@ -1,0 +1,12 @@
+[package]
+name = "argus_rs"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+shadertools = { path = "../../libs/shadertools" }
+game2d_rs = { path = "../../static/game2d_rs" }
+scripting_rs = { path = "../../static/scripting_rs" }

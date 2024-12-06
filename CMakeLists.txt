@@ -7,9 +7,7 @@ set(STATIC_MODULE_IDS "core;ecs;resman;"
         "wm;input;render;ui;sound;game2d")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
-set(AUX_MODULE_IDS "lowlevel_rustabi;core_rustabi;"
-    "scripting_rustabi;wm_rustabi;input_rustabi;"
-    "resman_rustabi;render_rustabi")
+set(AUX_MODULE_IDS "argus_rs")
 
 set(ARGUS_ROOT_DIR "${CMAKE_SOURCE_DIR}")
 set(ENGINE_SRC_PATH "${CMAKE_SOURCE_DIR}/engine")
@@ -353,6 +351,7 @@ foreach(id ${EXE_MODULE_IDS})
 endforeach()
 
 foreach(id ${AUX_MODULE_IDS})
+  message("configuring aux module ${id}")
   _argus_configure_module("${AUX_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
           "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
           "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
@@ -399,10 +398,6 @@ foreach(lib ${STATIC_MODULE_LIBS})
   get_property(lib_is_external TARGET "${lib}" PROPERTY IS_EXTERNAL)
   if(${lib_is_external})
     get_property(lib_is_rust TARGET "${lib}" PROPERTY IS_RUST)
-
-    if(${lib_is_rust})
-      list(APPEND RUST_LIBS_FOR_LINKING_STATIC "${lib}")
-    endif()
   else()
     list(APPEND STATIC_MODULE_LIB_OBJS "$<TARGET_OBJECTS:${lib}>")
   endif()
@@ -432,9 +427,12 @@ list(REMOVE_DUPLICATES COMBINED_TARGET_LINKER_DEPS)
 target_link_libraries(${ARGUS_LIBRARY} "${COMBINED_TARGET_LINKER_DEPS}")
 
 target_link_libraries(${ARGUS_LIBRARY} ${RUST_LIBS_FOR_LINKING_STATIC})
-if(MINGW AND NOT "${RUST_LIBS_FOR_LINKING_STATIC}" STREQUAL "")
+if(MINGW)
   target_link_libraries(${ARGUS_LIBRARY} "bcrypt" "ntdll" "Userenv" "ws2_32")
 endif()
+
+# special case for Rust super-crate
+target_link_libraries(${ARGUS_LIBRARY} "argus_rs")
 
 # add global include list
 get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)

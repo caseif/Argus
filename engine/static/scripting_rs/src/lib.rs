@@ -106,7 +106,7 @@ fn map_object_type<'a>(
 }
 
 #[no_mangle]
-extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
+pub extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
     if stage == LIFECYCLE_STAGE_INIT {
         println!("Running init");
         register_script_bindings();

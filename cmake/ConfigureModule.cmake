@@ -282,7 +282,8 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
   endif()
 
   if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_STATIC}" OR
-          "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}")
+      "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}" OR
+      "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
     get_property(COMBINED_TARGET_INCLUDES GLOBAL PROPERTY COMBINED_TARGET_INCLUDES)
     list(APPEND COMBINED_TARGET_INCLUDES "${MODULE_INCLUDES}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_INCLUDES "${COMBINED_TARGET_INCLUDES}")
@@ -445,22 +446,18 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
     _argus_copy_dep_output(DEST_DIR "${DIST_DIR}" TARGET "${PROJECT_NAME}" PREFIX "${BIN_PREFIX}")
-  elseif("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
-    add_library(${PROJECT_NAME} INTERFACE)
-
-    set_property(TARGET ${PROJECT_NAME} PROPERTY IS_EXTERNAL ${IS_EXTERNAL})
-    set_property(TARGET ${PROJECT_NAME} PROPERTY IS_RUST ${IS_RUST})
-
-    get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
-    list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
-    set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
   else()
     if(${IS_EXTERNAL})
       if(${IS_RUST})
-        corrosion_import_crate(
-            MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
-        )
-        corrosion_set_env_vars("${PROJECT_NAME}" "ARPTOOL_PATH=${ARPTOOL_EXE_PATH}")
+        if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}" OR
+            "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
+          corrosion_import_crate(
+              MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
+          )
+          corrosion_set_env_vars("${PROJECT_NAME}" "ARPTOOL_PATH=${ARPTOOL_EXE_PATH}")
+        else()
+          add_library("${PROJECT_NAME}" INTERFACE)
+        endif()
       else()
         message(FATAL_ERROR "Only Rust projects are supported as external projects at this time")
       endif()
