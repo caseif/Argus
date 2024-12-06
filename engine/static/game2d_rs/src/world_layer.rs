@@ -19,10 +19,12 @@
 use crate::actor::Actor2d;
 use crate::world::World2d;
 use lowlevel_rustabi::argus::lowlevel::{Handle, ValueAndDirtyFlag, Vector2f, Vector3f};
-use render_rustabi::argus::render::{Camera2d, Light2dParameters, Light2dType, Material, RenderPrimitive2d, Scene, Scene2d, SceneType, TextureData, Transform2d, Vertex2d, RESOURCE_TYPE_MATERIAL};
+use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::ResourceManager;
 use std::collections::HashMap;
+use std::slice;
 use uuid::Uuid;
+use render_rustabi::render_cabi::argus_material_len;
 use crate::sprite::Sprite;
 use crate::static_object::StaticObject2d;
 
@@ -289,7 +291,7 @@ impl World2dLayer {
             .create_resource(
                 mat_uid.as_str(),
                 RESOURCE_TYPE_MATERIAL,
-                mat.as_slice(),
+                unsafe { slice::from_raw_parts(mat.handle.cast(), argus_material_len()) },
             )
             .expect("Failed to create material resource");
         // leak the material so it stays valid after this function finishes executing

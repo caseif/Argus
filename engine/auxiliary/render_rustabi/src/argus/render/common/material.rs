@@ -22,7 +22,8 @@ use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::render_cabi::*;
 
 pub struct Material {
-    handle: argus_material_t,
+    pub handle: argus_material_t,
+    pub len: usize,
     must_delete: bool,
 }
 
@@ -30,6 +31,7 @@ impl FfiWrapper for Material {
     fn of(handle: argus_material_t) -> Self {
         Self {
             handle,
+            len: unsafe { argus_material_len() },
             must_delete: false,
         }
     }
@@ -49,6 +51,7 @@ impl Material {
             );
             Self {
                 handle,
+                len: argus_material_len(),
                 must_delete: true,
             }
         }

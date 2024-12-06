@@ -26,6 +26,8 @@ extern "C" {
 
 typedef void *argus_material_t;
 
+size_t argus_material_len(void);
+
 argus_material_t argus_material_new(const char *texture_uid, size_t shader_uids_count, const char *const *shader_uids);
 
 void argus_material_delete(argus_material_t material);
