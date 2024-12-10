@@ -25,8 +25,6 @@ use core_rustabi::argus::core::*;
 use lazy_static::lazy_static;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
-use scripting_rs::register_script_bindings;
-use scripting_rustabi::argus::scripting::script_bind;
 use wm_rustabi::argus::wm::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
@@ -201,9 +199,6 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 TargetThread::Render,
                 Ordering::Standard
             );
-
-            println!("Registering script bindings for render_opengl_rust");
-            register_script_bindings();
         }
         LifecycleStage::PostInit => {
             if !is_backend_active() {

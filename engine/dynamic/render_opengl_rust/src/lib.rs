@@ -16,5 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+extern crate glslang;
+
 pub(crate) mod aglet;
 pub(crate) mod argus;
