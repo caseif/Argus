@@ -165,11 +165,18 @@ ArgusHandle argus_scene_2d_add_object(argus_scene_2d_t scene, const char *materi
         const ArgusRenderPrimitive2d *primitives, size_t primitives_count, argus_vector_2f_t anchor_point,
         argus_vector_2f_t atlas_stride, uint32_t z_index, float light_opacity, ArgusTransform2d transform) {
     std::vector<argus::RenderPrim2D> unwrapped_prims;
-    std::transform(primitives, primitives + primitives_count, unwrapped_prims.end(), [](const auto &prim) {
-        return argus::RenderPrim2D(std::vector<argus::Vertex2D>(
-                reinterpret_cast<const argus::Vertex2D *>(prim.vertices),
-                reinterpret_cast<const argus::Vertex2D *>(prim.vertices) + prim.vertex_count));
-    });
+    unwrapped_prims.reserve(primitives_count);
+
+    for (size_t i = 0; i < primitives_count; i++) {
+        auto &prim = primitives[i];
+        std::vector<argus::Vertex2D> vertices;
+        vertices.reserve(prim.vertex_count);
+        for (size_t j = 0; j < prim.vertex_count; j++) {
+            vertices.push_back(reinterpret_cast<const argus::Vertex2D &>(prim.vertices[j]));
+        }
+        unwrapped_prims.push_back(argus::RenderPrim2D(vertices));
+    }
+
     return wrap_handle(_as_ref(scene).add_object(
             material,
             unwrapped_prims,
