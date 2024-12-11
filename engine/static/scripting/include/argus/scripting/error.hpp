@@ -23,7 +23,17 @@
 #include <string>
 
 namespace argus {
+    enum class BindingErrorType {
+        DuplicateName,
+        ConflictingName,
+        InvalidDefinition,
+        InvalidMembers,
+        UnknownParent,
+        Other,
+    };
+
     struct BindingError {
+        BindingErrorType type;
         std::string bound_name;
         std::string msg;
 

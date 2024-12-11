@@ -17,19 +17,33 @@
  */
 
 use std::ffi::CStr;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_scripting_bind::ReflectiveArgumentsError;
 use crate::scripting_cabi::*;
 
 #[derive(Clone, Debug)]
 pub struct BindingError {
+    pub ty: BindingErrorType,
     pub bound_name: String,
     pub msg: String,
+}
+
+#[derive(Clone, Debug, PartialEq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u32)]
+pub enum BindingErrorType {
+    DuplicateName = BINDING_ERROR_TYPE_DUPLICATE_NAME,
+    ConflictingName = BINDING_ERROR_TYPE_CONFLICTING_NAME,
+    InvalidDefinition = BINDING_ERROR_TYPE_INVALID_DEFINITION,
+    InvalidMembers = BINDING_ERROR_TYPE_INVALID_MEMBERS,
+    UnknownParent = BINDING_ERROR_TYPE_UNKNOWN_PARENT,
+    Other = BINDING_ERROR_TYPE_OTHER,
 }
 
 impl From<argus_binding_error_t> for BindingError {
     fn from(err_ffi: argus_binding_error_t) -> Self {
         unsafe {
             let error = Self {
+                ty: BindingErrorType::try_from(argus_binding_error_get_type(err_ffi)).unwrap(),
                 bound_name: CStr::from_ptr(argus_binding_error_get_bound_name(err_ffi))
                     .to_string_lossy().to_string(),
                 msg: CStr::from_ptr(argus_binding_error_get_msg(err_ffi))

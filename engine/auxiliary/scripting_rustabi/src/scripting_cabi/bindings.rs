@@ -5,6 +5,13 @@ use super::*;
 
 pub type argus_binding_error_t = *mut ::std::os::raw::c_void;
 pub type argus_binding_error_const_t = *const ::std::os::raw::c_void;
+pub const BINDING_ERROR_TYPE_DUPLICATE_NAME: ArgusBindingErrorType = 0;
+pub const BINDING_ERROR_TYPE_CONFLICTING_NAME: ArgusBindingErrorType = 1;
+pub const BINDING_ERROR_TYPE_INVALID_DEFINITION: ArgusBindingErrorType = 2;
+pub const BINDING_ERROR_TYPE_INVALID_MEMBERS: ArgusBindingErrorType = 3;
+pub const BINDING_ERROR_TYPE_UNKNOWN_PARENT: ArgusBindingErrorType = 4;
+pub const BINDING_ERROR_TYPE_OTHER: ArgusBindingErrorType = 5;
+pub type ArgusBindingErrorType = ::std::os::raw::c_uint;
 pub type argus_reflective_args_error_t = *mut ::std::os::raw::c_void;
 pub type argus_reflective_args_error_const_t = *const ::std::os::raw::c_void;
 pub type ArgusCopyCtorProxy = ::std::option::Option<
@@ -86,6 +93,7 @@ pub type ArgusFieldMutator = ::std::option::Option<
 >;
 extern "C" {
     pub fn argus_binding_error_free(err: argus_binding_error_t);
+    pub fn argus_binding_error_get_type(err: argus_binding_error_const_t) -> ArgusBindingErrorType;
     pub fn argus_binding_error_get_bound_name(
         err: argus_binding_error_const_t,
     ) -> *const ::std::os::raw::c_char;

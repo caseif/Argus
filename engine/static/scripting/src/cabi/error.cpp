@@ -37,6 +37,10 @@ static const argus::ReflectiveArgumentsError &_refl_args_err_as_ref(argus_reflec
 
 extern "C" {
 
+ArgusBindingErrorType argus_binding_error_get_type(argus_binding_error_const_t err) {
+    return ArgusBindingErrorType(_bind_err_as_ref(err).type);
+}
+
 const char *argus_binding_error_get_bound_name(argus_binding_error_const_t err) {
     return _bind_err_as_ref(err).bound_name.c_str();
 }

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,7 +27,18 @@ extern "C" {
 typedef void *argus_binding_error_t;
 typedef const void *argus_binding_error_const_t;
 
+typedef enum {
+    BINDING_ERROR_TYPE_DUPLICATE_NAME,
+    BINDING_ERROR_TYPE_CONFLICTING_NAME,
+    BINDING_ERROR_TYPE_INVALID_DEFINITION,
+    BINDING_ERROR_TYPE_INVALID_MEMBERS,
+    BINDING_ERROR_TYPE_UNKNOWN_PARENT,
+    BINDING_ERROR_TYPE_OTHER,
+} ArgusBindingErrorType;
+
 void argus_binding_error_free(argus_binding_error_t err);
+
+ArgusBindingErrorType argus_binding_error_get_type(argus_binding_error_const_t err);
 
 const char *argus_binding_error_get_bound_name(argus_binding_error_const_t err);
 
