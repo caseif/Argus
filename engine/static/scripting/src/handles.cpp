@@ -38,8 +38,9 @@ namespace argus {
 
     ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::string &type_id) {
         auto handle_it = g_ptr_to_handle_map.find(ptr);
-        if (handle_it != g_ptr_to_handle_map.cend()) {
-            argus_assert(handle_it->second.first == type_id);
+        // an object can end up sharing the same address as its first member,
+        // so we need to match by both ID _and_ type
+        if (handle_it != g_ptr_to_handle_map.cend() && handle_it->second.first == type_id) {
             return handle_it->second.second;
         } else {
             if (g_next_handle == k_handle_max) {
