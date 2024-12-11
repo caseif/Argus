@@ -933,7 +933,7 @@ namespace argus {
                 case IntegralType::Pointer: {
                     auto ptr = vec.at<void *>(i);
                     if (ptr != nullptr) {
-                        auto handle = get_or_create_sv_handle(ptr, element_type.type_id.value());
+                        auto handle = get_or_create_sv_handle(element_type.type_id.value(), ptr);
                         auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                                 sizeof(UserData) + sizeof(ScriptBindableHandle)));
                         udata->is_handle = true;
@@ -1018,7 +1018,7 @@ namespace argus {
                 void *ptr = *reinterpret_cast<void *const *>(wrapper.get_ptr0());
 
                 if (ptr != nullptr) {
-                    auto handle = get_or_create_sv_handle(ptr, wrapper.type.type_id.value());
+                    auto handle = get_or_create_sv_handle(wrapper.type.type_id.value(), ptr);
                     auto *udata = reinterpret_cast<UserData *>(lua_newuserdata(state,
                             sizeof(UserData) + sizeof(ScriptBindableHandle)));
                     udata->is_handle = true;

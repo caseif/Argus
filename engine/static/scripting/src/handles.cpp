@@ -32,30 +32,31 @@
 
 namespace argus {
     static std::unordered_map<ScriptBindableHandle, std::pair<std::string, void *>> g_handle_to_ptr_map;
-    static std::unordered_map<void *, std::pair<std::string, ScriptBindableHandle>> g_ptr_to_handle_map;
+    static std::unordered_map<std::string, std::unordered_map<void *, ScriptBindableHandle>> g_ptr_to_handle_maps;
 
     static ScriptBindableHandle g_next_handle = 1;
 
-    ScriptBindableHandle get_or_create_sv_handle(void *ptr, const std::string &type_id) {
-        auto handle_it = g_ptr_to_handle_map.find(ptr);
-        // an object can end up sharing the same address as its first member,
-        // so we need to match by both ID _and_ type
-        if (handle_it != g_ptr_to_handle_map.cend() && handle_it->second.first == type_id) {
-            return handle_it->second.second;
-        } else {
-            if (g_next_handle == k_handle_max) {
-                // should virtually never happen, even if we assign a billion
-                // handles per second it would take around 600 years to get to
-                // this point
-                crash("Exhausted script object handles");
+    ScriptBindableHandle get_or_create_sv_handle(const std::string &type_id, void *ptr) {
+        auto handle_map_it = g_ptr_to_handle_maps.find(type_id);
+        if (handle_map_it != g_ptr_to_handle_maps.cend()) {
+            auto handle_it = handle_map_it->second.find(ptr);
+            if (handle_it != handle_map_it->second.cend()) {
+                return handle_it->second;
             }
-
-            auto handle = g_next_handle++;
-            g_handle_to_ptr_map.insert({ handle, { type_id, ptr }});
-            g_ptr_to_handle_map.insert({ ptr, { type_id, handle }});
-
-            return handle;
         }
+
+        if (g_next_handle == k_handle_max) {
+            // should virtually never happen, even if we assign a billion
+            // handles per second it would take around 600 years to get to
+            // this point
+            crash("Exhausted script object handles");
+        }
+
+        auto handle = g_next_handle++;
+        g_handle_to_ptr_map.insert({ handle, { type_id, ptr }});
+        g_ptr_to_handle_maps[type_id].insert({ ptr, handle });
+
+        return handle;
     }
 
     void *deref_sv_handle(ScriptBindableHandle handle, const std::string &expected_type_id) {
@@ -72,14 +73,19 @@ namespace argus {
         return it->second.second;
     }
 
-    void invalidate_sv_handle(void *ptr) {
-        auto it = g_ptr_to_handle_map.find(ptr);
-        if (it == g_ptr_to_handle_map.cend()) {
+    void invalidate_sv_handle(const std::string &type_id, void *ptr) {
+        auto it_1 = g_ptr_to_handle_maps.find(type_id);
+        if (it_1 == g_ptr_to_handle_maps.cend()) {
             return;
         }
 
-        g_handle_to_ptr_map.erase(it->second.second);
-        g_ptr_to_handle_map.erase(it);
+        auto it_2 = it_1->second.find(ptr);
+        if (it_2 == it_1->second.cend()) {
+            return;
+        }
+
+        g_handle_to_ptr_map.erase(it_2->second);
+        it_1->second.erase(it_2);
     }
 
     static void _on_object_destroyed(const ObjectDestroyedMessage &message) {
@@ -87,7 +93,7 @@ namespace argus {
             return;
         }
 
-        invalidate_sv_handle(message.m_ptr);
+        invalidate_sv_handle(message.m_type_id.name(), message.m_ptr);
     }
 
     void register_object_destroyed_performer(void) {

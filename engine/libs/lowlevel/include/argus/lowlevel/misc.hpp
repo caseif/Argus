@@ -29,9 +29,10 @@ namespace argus {
             return MESSAGE_TYPE_OBJECT_DESTROYED;
         }
 
+        std::type_index m_type_id;
         void *m_ptr;
 
-        ObjectDestroyedMessage(void *ptr);
+        ObjectDestroyedMessage(std::type_index type_id, void *ptr);
     };
 
     class AutoCleanupable {

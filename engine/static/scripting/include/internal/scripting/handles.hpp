@@ -19,7 +19,7 @@
 #pragma once
 
 namespace argus {
-    void invalidate_sv_handle(void *ptr);
+    void invalidate_sv_handle(const std::string &type_id, void *ptr);
 
     void register_object_destroyed_performer(void);
 }
