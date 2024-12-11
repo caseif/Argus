@@ -52,7 +52,7 @@ namespace argus {
         return this->data[c * 4 + r];
     }
 
-    std::string Matrix4::to_string(void) {
+    std::string Matrix4::to_string(void) const {
         std::string text;
         text.reserve(36 * 6);
 

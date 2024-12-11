@@ -64,7 +64,7 @@ namespace argus {
 
         float &operator()(int r, int c);
 
-        std::string to_string(void);
+        std::string to_string(void) const;
 
         void transpose(void);
     };
