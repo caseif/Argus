@@ -271,8 +271,16 @@ namespace argus {
                     return unwrap_param<ReturnType>(retval.unwrap(), &scratch);
                 } else {
                     UNUSED(scratch);
-                    (*fn_copy)(wrapped_params.unwrap());
-                    return ok<void, ScriptInvocationError>();
+                    auto res = ((*fn_copy)(wrapped_params.unwrap()));
+                    if (res.is_ok()) {
+                        return ok<void, ScriptInvocationError>();
+                    } else {
+                        //TODO: handle this further down in the stack, ideally in the core module
+                        crash("Error occurred while invoking script callback '%s': %s",
+                                res.unwrap_err().function_name.c_str(),
+                                res.unwrap_err().msg.c_str());
+                        //return err<void, ScriptInvocationError>(res.unwrap_err());
+                    }
                 }
             };
         } else if constexpr (std::is_same_v<B, std::string>) {
