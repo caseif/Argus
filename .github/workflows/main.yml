@@ -5,7 +5,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2022, macos-12, macos-13, macos-14]
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2022, macos-13, macos-14]
         compiler: [gcc, clang, msvc]
         configuration: [Release, Debug]
         exclude:
@@ -19,10 +19,6 @@ jobs:
             compiler: msvc
           - os: ubuntu-24.04
             compiler: msvc
-          - os: macos-12
-            compiler: msvc
-          - os: macos-12
-            compiler: gcc
           - os: macos-13
             compiler: msvc
           - os: macos-13
