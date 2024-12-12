@@ -177,7 +177,7 @@ pub fn register_script_bindings() {
             fn_info.name,
             param_ffi_types,
             ret_ffi_type,
-            fn_info.proxy,
+            &fn_info.proxy,
         ).expect("Failed to bind global function");
     }
 }

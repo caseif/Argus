@@ -30,7 +30,7 @@ pub type TypeIdGetter = fn() -> TypeId;
 
 pub type ProxiedNativeFunction =
 
-    fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
+fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
 pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
 pub type FfiDtor = unsafe extern "C" fn(target: *mut ());
@@ -435,17 +435,25 @@ impl<T: ScriptBound> Wrappable for &T {
     type InternalFormat = *const T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+        assert!(
+            wrapper.ty.ty == IntegralType::Reference ||
+                wrapper.ty.ty == IntegralType::MutReference,
+            "Wrong object type"
+        );
 
         unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
 
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+        assert!(
+            wrapper.ty.ty == IntegralType::Reference ||
+                wrapper.ty.ty == IntegralType::MutReference,
+            "Wrong object type"
+        );
         assert!(wrapper.is_populated);
 
-        unsafe { &*wrapper.get_ptr::<Self>().cast::<T>() }
+        unsafe { &**wrapper.get_ptr::<Self>() }
     }
 }
 
@@ -633,7 +641,7 @@ impl WrappedObject {
     }
 
     pub unsafe fn store_value<T: Wrappable + Into<T::InternalFormat>>(&mut self, val: T) {
-         assert!(size_of::<T>() <= self.buffer_size);
+        assert!(size_of::<T>() <= self.buffer_size);
         *self.get_mut_ptr::<T>() = val.into();
         self.is_populated = true;
     }
@@ -698,9 +706,11 @@ pub struct BoundFieldInfo {
 pub struct BoundFunctionInfo {
     pub name: &'static str,
     pub ty: FunctionType,
+    pub is_const: bool,
     pub param_type_serials: &'static [&'static str],
     pub return_type_serial: &'static str,
-    pub proxy: &'static ProxiedNativeFunction,
+    pub assoc_type: Option<TypeIdGetter>,
+    pub proxy: ProxiedNativeFunction,
 }
 
 pub struct BoundEnumInfo {
@@ -708,17 +718,6 @@ pub struct BoundEnumInfo {
     pub type_id: fn() -> TypeId,
     pub width: usize,
     pub values: &'static [(&'static str, fn() -> i64)],
-}
-
-impl BoundEnumInfo {
-    pub const fn new(
-        name: &'static str,
-        type_id: fn() -> TypeId,
-        width: usize,
-        values: &'static [(&'static str, fn() -> i64)],
-    ) -> Self {
-        Self { name, type_id, width, values }
-    }
 }
 
 pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {
