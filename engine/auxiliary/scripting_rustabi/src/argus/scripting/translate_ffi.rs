@@ -40,9 +40,7 @@ fn to_ffi_integral_type(ty: IntegralType) -> FfiIntegralType {
         IntegralType::Boolean => FfiIntegralType::Boolean,
         IntegralType::String => FfiIntegralType::String,
         IntegralType::Reference |
-        IntegralType::MutReference |
-        IntegralType::Pointer |
-        IntegralType::MutPointer => FfiIntegralType::Pointer,
+        IntegralType::MutReference => FfiIntegralType::Pointer,
         IntegralType::Vec => FfiIntegralType::Vector,
         IntegralType::Result => FfiIntegralType::Result,
         IntegralType::Object => FfiIntegralType::Struct,
@@ -79,9 +77,9 @@ fn from_ffi_integral_type(ty: FfiIntegralType, size: usize, is_const: bool) -> I
         FfiIntegralType::String => IntegralType::String,
         FfiIntegralType::Struct => IntegralType::Object,
         FfiIntegralType::Pointer => if is_const {
-            IntegralType::Pointer
+            IntegralType::Reference
         } else {
-            IntegralType::MutPointer
+            IntegralType::MutReference
         },
         FfiIntegralType::Callback => todo!(),
         FfiIntegralType::Type => todo!(),

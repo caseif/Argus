@@ -54,8 +54,6 @@ pub enum IntegralType {
     String,
     Reference,
     MutReference,
-    Pointer,
-    MutPointer,
     Vec,
     Result,
     Object,

@@ -39,9 +39,7 @@ fn map_integral_type(ty: IntegralType) -> FfiIntegralType {
         IntegralType::Boolean => FfiIntegralType::Boolean,
         IntegralType::String => FfiIntegralType::String,
         IntegralType::Reference |
-        IntegralType::MutReference |
-        IntegralType::Pointer |
-        IntegralType::MutPointer => FfiIntegralType::Pointer,
+        IntegralType::MutReference => FfiIntegralType::Pointer,
         IntegralType::Vec => FfiIntegralType::Vector,
         IntegralType::Result => FfiIntegralType::Result,
         IntegralType::Object => FfiIntegralType::Struct,
@@ -83,9 +81,7 @@ fn map_object_type<'a>(
 
     let mut type_id_opt = type_id_opt;
     if ty.ty == IntegralType::Reference ||
-        ty.ty == IntegralType::MutReference ||
-        ty.ty == IntegralType::Pointer ||
-        ty.ty == IntegralType::MutPointer {
+        ty.ty == IntegralType::MutReference {
         assert!(prim_type_mapped_opt.is_some());
         type_id_opt = Some(prim_type_mapped_opt.as_ref().unwrap().get_type_id());
     }
