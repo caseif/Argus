@@ -153,7 +153,7 @@ fn from_ffi_obj_wrapper(obj: FfiObjectWrapper) -> WrappedObject {
 }
 
 pub fn call_proxied_fn(
-    f: &Box<ProxiedNativeFunction>,
+    f: &ProxiedNativeFunction,
     params: &[argus_object_wrapper_t]
 ) -> ArgusObjectWrapperOrReflectiveArgsError {
     let params_vec =
@@ -161,7 +161,8 @@ pub fn call_proxied_fn(
             .map(|p| from_ffi_obj_wrapper(FfiObjectWrapper::of(*p)))
             .collect::<Vec<_>>();
 
-    match f.as_ref()(&params_vec) {
+    let retval_opt = f(&params_vec);
+    match retval_opt {
         Ok(retval) => {
             match to_ffi_obj_wrapper(retval) {
                 Ok(retval_ffi) => {
