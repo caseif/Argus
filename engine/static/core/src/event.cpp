@@ -167,7 +167,8 @@ namespace argus {
 
         auto event_ref = new AtomicRefCountable<ArgusEvent *>(&event);
 
-        event_ref->acquire(2);
+        // RC starts at 1, add 1 more since we're pushing to two queues
+        event_ref->acquire(1);
 
         g_update_event_queue_mutex.lock();
         g_update_event_queue.push(event_ref);
