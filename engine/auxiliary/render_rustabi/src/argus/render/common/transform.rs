@@ -52,6 +52,14 @@ impl Transform2d {
         ptr::from_ref(self.into())
     }
 
+    pub fn add_translation(&mut self, x: f32, y: f32) {
+        self.translation += (x, y);
+    }
+
+    pub fn add_rotation(&mut self, rads: f32) {
+        self.rotation += rads;
+    }
+
     pub fn as_matrix(&self, anchor_x: f32, anchor_y: f32) -> Matrix4x4 {
         unsafe { argus_transform_2d_as_matrix(self.as_ptr(), anchor_x, anchor_y).into() }
     }
