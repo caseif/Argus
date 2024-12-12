@@ -378,6 +378,11 @@ impl World2dLayer {
                 let mut scene = self.get_scene();
                 let size = actor.get_size();
                 let z_index = actor.get_z_index();
+                let render_transform = self.get_render_transform(
+                    &actor.get_transform(),
+                    scale_factor,
+                    false
+                );
                 // upgrade reference
                 let actor = self.actors.get_mut(id).expect("Actor was missing");
                 let can_occlude_light = actor.can_occlude_light.read().value;
@@ -393,6 +398,10 @@ impl World2dLayer {
                     scale_factor,
                 );
                 actor.render_obj = Some(new_obj_handle);
+
+                let mut new_obj = scene.get_object(new_obj_handle)
+                    .expect("Render object was missing for static object");
+                new_obj.set_transform(render_transform.into());
 
                 new_obj_handle
             }
