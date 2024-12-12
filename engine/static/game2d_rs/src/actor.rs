@@ -15,11 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Handle, Vector2f};
 use render_rustabi::argus::render::Transform2d;
 use resman_rustabi::argus::resman::Resource;
 use crate::sprite::Sprite;
 
+#[script_bind(ref_only)]
 pub struct Actor2d {
     size: Vector2f,
     z_index: u32,
@@ -31,8 +33,9 @@ pub struct Actor2d {
     pub(crate) render_obj: Option<Handle>,
 }
 
+#[script_bind]
 impl Actor2d {
-    pub fn new(
+    pub(crate) fn new(
         sprite_defn_res: Resource,
         size: Vector2f,
         z_index: u32,
@@ -51,34 +54,42 @@ impl Actor2d {
         }
     }
 
+    #[script_bind]
     pub fn get_size(&self) -> Vector2f {
         self.size
     }
 
+    #[script_bind]
     pub fn get_z_index(&self) -> u32 {
         self.z_index
     }
 
+    #[script_bind]
     pub fn can_occlude_light(&self) -> bool {
         self.can_occlude_light.peek().value
     }
 
+    #[script_bind]
     pub fn set_can_occlude_light(&mut self, can_occlude: bool) {
         self.can_occlude_light.set(can_occlude);
     }
 
+    #[script_bind]
     pub fn get_transform(&self) -> Transform2d {
         self.transform.peek().value
     }
 
+    #[script_bind]
     pub fn set_transform(&mut self, transform: Transform2d) {
         self.transform.set(transform);
     }
 
+    #[script_bind]
     pub fn get_sprite(&self) -> &Sprite {
         &self.sprite
     }
 
+    #[script_bind]
     pub fn get_sprite_mut(&mut self) -> &mut Sprite {
         &mut self.sprite
     }

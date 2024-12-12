@@ -18,17 +18,19 @@
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Padding, Vector2u};
 use render_rustabi::argus::render::RenderObject2d;
 use resman_rustabi::argus::resman::Resource;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct SpriteAnimationFrame {
     pub(crate) offset: Vector2u,
     pub(crate) duration: f32,
 }
 
-#[derive(Clone)]
+#[script_bind]
+#[derive(Clone, Debug)]
 pub(crate) struct SpriteAnimation {
     pub(crate) id: String,
 
@@ -45,7 +47,7 @@ impl SpriteAnimation {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct SpriteDefinition {
     pub(crate) def_anim: String,
     pub(crate) def_speed: f32,
@@ -55,6 +57,8 @@ pub(crate) struct SpriteDefinition {
     pub(crate) animations: HashMap<String, SpriteAnimation>,
 }
 
+#[derive(Debug)]
+#[script_bind(ref_only)]
 pub struct Sprite {
     definition: SpriteDefinition,
 
@@ -69,6 +73,7 @@ pub struct Sprite {
     pub(crate) pending_reset: bool,
 }
 
+#[script_bind]
 impl Sprite {
     pub fn new(defn_res: Resource) -> Self {
         let defn = defn_res.get::<SpriteDefinition>();
@@ -100,10 +105,12 @@ impl Sprite {
         &mut self.anim_start_offsets
     }
 
+    #[script_bind]
     pub fn get_animation_speed(&self) -> f32 {
         self.speed
     }
 
+    #[script_bind]
     pub fn set_animation_speed(&mut self, speed: f32) {
         self.speed = speed;
     }
@@ -112,6 +119,7 @@ impl Sprite {
         self.definition.animations.keys().cloned().collect()
     }
 
+    #[script_bind]
     pub fn get_current_animation_id(&self) -> &str {
         self.cur_anim_id.as_str()
     }
@@ -120,22 +128,31 @@ impl Sprite {
         self.definition.animations.get(&self.cur_anim_id).expect("Sprite animation is missing")
     }
 
-    pub(crate) fn set_current_animation(&mut self, animation_id: String) -> Result<(), &'static str> {
+    pub(crate) fn set_current_animation(&mut self, animation_id: String)
+        -> Result<(), &'static str> {
         match self.definition.animations.get(&animation_id) {
             Some(_) => {
                 self.cur_anim_id = animation_id;
-                self.cur_frame = Dirtiable::new(self.anim_start_offsets.get(&self.cur_anim_id).cloned()
-                        .expect("Sprite animation start offset is missing"));
+                self.cur_frame =
+                    Dirtiable::new(self.anim_start_offsets.get(&self.cur_anim_id).cloned()
+                        .unwrap_or_default());
                 Ok(())
             }
             None => Err("Animation not found by ID")
         }
     }
 
+    #[script_bind(rename = "set_current_animation")]
+    pub(crate) fn set_current_animation_or_die(&mut self, animation_id: String) {
+        self.set_current_animation(animation_id).expect("Failed to set sprite animation");
+    }
+
+    #[script_bind]
     pub fn does_current_animation_loop(&self) -> bool {
         self.get_current_animation().does_loop
     }
 
+    #[script_bind]
     pub fn is_current_animation_static(&self) -> bool {
         self.get_current_animation().frames.len() == 1
     }
@@ -144,14 +161,17 @@ impl Sprite {
         self.get_current_animation().padding
     }
 
+    #[script_bind]
     pub fn pause_animation(&mut self) {
         self.paused = false;
     }
 
+    #[script_bind]
     pub fn resume_animation(&mut self) {
         self.paused = true;
     }
 
+    #[script_bind]
     pub fn reset_animation(&mut self) {
         self.pending_reset = true;
     }

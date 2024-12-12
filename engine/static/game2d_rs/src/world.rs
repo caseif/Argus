@@ -21,9 +21,12 @@ use lazy_static::lazy_static;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Vector2f, Vector3f};
 use render_rustabi::argus::render::{Canvas, Transform2d};
 use std::collections::HashMap;
+use std::ptr;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use argus_scripting_bind::script_bind;
 use uuid::Uuid;
+use wm_rustabi::argus::wm::get_window;
 use crate::static_object::StaticObject2d;
 
 const MAX_BACKGROUND_LAYERS: u32 = 16;
@@ -35,6 +38,7 @@ lazy_static! {
         Arc::new(RwLock::new(HashMap::new()));
 }
 
+#[script_bind(ref_only)]
 pub struct World2d {
     id: String,
     pub(crate) canvas: Canvas,
@@ -49,6 +53,7 @@ pub struct World2d {
     abstract_camera: Dirtiable<Transform2d>,
 }
 
+#[script_bind]
 impl World2d {
     pub fn create(id: String, mut canvas: Canvas, scale_factor: f32) -> Arc<RwLock<World2d>> {
         let world = Self {
@@ -75,11 +80,26 @@ impl World2d {
         g_worlds.read().unwrap().get(&id).unwrap().clone()
     }
 
+    #[script_bind(rename = "create")]
+    pub fn create_unsafe<'a>(id: String, window_id: &str, scale_factor: f32) -> &'a mut World2d {
+        let window = get_window(window_id).unwrap();
+        let arc = Self::create(id, Canvas::of(window.get_canvas()), scale_factor);
+        let mut guard = arc.write();
+        unsafe { &mut *ptr::from_mut(guard.as_deref_mut().unwrap()) }
+    }
+
     pub fn get(id: &str) -> Result<Arc<RwLock<World2d>>, &'static str> {
         match g_worlds.read().expect("Failed to acquire lock for worlds list").get(id) {
             Some(world) => Ok(world.clone()),
             None => Err("Unknown world ID"),
         }
+    }
+
+    #[script_bind(rename = "get")]
+    pub fn get_unsafe<'a>(id: &str) -> &'a mut World2d {
+        let arc = Self::get(id).unwrap();
+        let mut guard = arc.write();
+        unsafe { &mut *ptr::from_mut(guard.as_deref_mut().unwrap()) }
     }
 
     pub fn get_or_crash(id: &str) -> Arc<RwLock<World2d>> {
@@ -97,26 +117,33 @@ impl World2d {
         self.scale_factor
     }
 
+    #[script_bind]
     pub fn get_camera_transform(&self) -> Transform2d {
-        self.abstract_camera.peek().value
+        let val = self.abstract_camera.peek().value;
+        val
     }
 
+    #[script_bind]
     pub fn set_camera_transform(&mut self, transform: Transform2d) {
         self.abstract_camera.set(transform);
     }
 
+    #[script_bind]
     pub fn get_ambient_light_level(&self) -> f32 {
         self.al_level.peek().value
     }
 
+    #[script_bind]
     pub fn set_ambient_light_level(&mut self, level: f32) {
         self.al_level.set(level);
     }
 
+    #[script_bind]
     pub fn get_ambient_light_color(&self) -> Vector3f {
         self.al_color.peek().value
     }
 
+    #[script_bind]
     pub fn set_ambient_light_color(&mut self, color: Vector3f) {
         self.al_color.set(color);
     }
@@ -156,6 +183,14 @@ impl World2d {
         self.bg_layers_count += 1;
 
         Ok(self.bg_layers[bg_index as usize].as_mut().expect("Background layer is missing"))
+    }
+
+    #[script_bind(rename = "add_background_layer")]
+    pub fn add_background_layer_unsafe(
+        &mut self,
+        parallax_coeff: f32,
+    ) -> &mut World2dLayer {
+        self.add_background_layer(parallax_coeff, None).unwrap()
     }
 
     fn render(&mut self) {
@@ -216,6 +251,19 @@ impl World2d {
         )
     }
 
+    #[script_bind(rename = "create_static_object")]
+    pub fn create_static_object_unsafe(
+        &mut self,
+        sprite: String,
+        size: Vector2f,
+        z_index: u32,
+        can_occlude_light: bool,
+        transform: Transform2d,
+    ) -> String {
+        self.create_static_object(sprite, size, z_index, can_occlude_light, transform).unwrap()
+            .to_string()
+    }
+
     pub fn delete_static_object(&mut self, id: &Uuid) -> Result<(), &'static str> {
         self.get_foreground_layer_mut().delete_static_object(id)
     }
@@ -226,6 +274,11 @@ impl World2d {
 
     pub fn get_actor_mut(&mut self, id: &Uuid) -> Result<&mut Actor2d, &'static str> {
         self.get_foreground_layer_mut().get_actor_mut(id)
+    }
+
+    #[script_bind(rename = "get_actor_mut")]
+    pub fn get_actor_mut_unsafe(&mut self, id: &str) -> &mut Actor2d {
+        self.get_actor_mut(&Uuid::parse_str(id).unwrap()).unwrap()
     }
 
     pub fn create_actor(
@@ -243,6 +296,25 @@ impl World2d {
             can_occlude_light,
             transform,
         )
+    }
+
+    #[script_bind(rename = "create_actor")]
+    pub fn create_actor_unsafe(
+        &mut self,
+        sprite: String,
+        size: Vector2f,
+        z_index: u32,
+        can_occlude_light: bool,
+        transform: Transform2d,
+    ) -> String {
+        self.create_actor(
+            sprite,
+            size,
+            z_index,
+            can_occlude_light,
+            transform,
+        ).unwrap()
+            .to_string()
     }
 
     pub fn delete_actor(&mut self, id: &Uuid) -> Result<(), &'static str> {

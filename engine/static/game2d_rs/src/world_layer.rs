@@ -30,6 +30,7 @@ use crate::static_object::StaticObject2d;
 
 const LAYER_PREFIX: &str = "_worldlayer_";
 
+#[script_bind(ref_only)]
 pub struct World2dLayer {
     id: String,
     world_id: String,
@@ -45,6 +46,7 @@ pub struct World2dLayer {
     actors: HashMap<Uuid, Actor2d>,
 }
 
+#[script_bind]
 impl World2dLayer {
     pub(crate) fn new(
         world_id: String,
@@ -117,6 +119,7 @@ impl World2dLayer {
         self.get_scene().find_camera(self.render_camera_id.as_str())
     }
 
+    #[script_bind]
     pub fn get_world_id(&self) -> &str {
         self.world_id.as_str()
     }
