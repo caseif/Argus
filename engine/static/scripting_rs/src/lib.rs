@@ -112,7 +112,7 @@ pub extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
 pub fn register_script_bindings() {
     println!("Struct def count: {}", BOUND_STRUCT_DEFS.len());
     for struct_info in BOUND_STRUCT_DEFS {
-        println!("Processing struct {}", struct_info.name);
+        println!("Processing struct {} with type {:?}", struct_info.name, (struct_info.type_id)());
         let type_id = format!("{:?}", (struct_info.type_id)());
         bind_type(
             struct_info.name,
@@ -122,7 +122,7 @@ pub fn register_script_bindings() {
             unsafe { mem::transmute(struct_info.copy_ctor) },
             unsafe { mem::transmute(struct_info.move_ctor) },
             unsafe { mem::transmute(struct_info.dtor) },
-        )  
+        )
             .expect("Failed to bind type");
     }
 
@@ -169,15 +169,54 @@ pub fn register_script_bindings() {
         // first getter is for return type, param type getters start at index 1
         let param_ffi_types: Vec<_> = param_parsed_types.iter()
             .enumerate()
-            .map(|(i, p)| map_object_type(p, type_getters_arr[i], &mut 0))
+            .map(|(i, p)| map_object_type(p, type_getters_arr[i + 1], &mut 0))
             .collect();
         let ret_ffi_type = map_object_type(&ret_parsed_type, type_getters_arr[0], &mut 0);
 
-        bind_global_function(
-            fn_info.name,
-            param_ffi_types,
-            ret_ffi_type,
-            &fn_info.proxy,
-        ).expect("Failed to bind global function");
+        match fn_info.ty {
+            FunctionType::Global => {
+                bind_global_function(
+                        fn_info.name,
+                        param_ffi_types,
+                        ret_ffi_type,
+                        fn_info.proxy,
+                    )
+                    .expect("Failed to bind global function")
+            }
+            FunctionType::MemberStatic => {
+                let assoc_type_id = format!(
+                    "{:?}",
+                    fn_info.assoc_type
+                        .expect("Associated type was missing for member static function")()
+                );
+                bind_member_static_function(
+                    assoc_type_id.as_str(),
+                    fn_info.name,
+                    param_ffi_types,
+                    ret_ffi_type,
+                    fn_info.proxy,
+                )
+                    .expect("Failed to bind static member function");
+            }
+            FunctionType::MemberInstance => {
+                let assoc_type_id = format!(
+                    "{:?}",
+                    fn_info.assoc_type
+                        .expect("Associated type was missing for member instance function")()
+                );
+                bind_member_instance_function(
+                    assoc_type_id.as_str(),
+                    fn_info.name,
+                    fn_info.is_const,
+                    param_ffi_types,
+                    ret_ffi_type,
+                    fn_info.proxy,
+                )
+                    .expect("Failed to bind instance member function")
+            }
+            FunctionType::Extension => {
+                panic!("Binding extension functions is not supported at this time");
+            }
+        }
     }
 }

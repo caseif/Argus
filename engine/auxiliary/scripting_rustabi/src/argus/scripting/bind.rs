@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use argus_scripting_bind::{ObjectType, ProxiedNativeFunction};
+use argus_scripting_bind::{FunctionType, ObjectType, ProxiedNativeFunction};
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use std::any::TypeId;
@@ -144,12 +144,16 @@ pub fn bind_member_field(
     unwrap_bind_result(res)
 }
 
-pub fn bind_global_function(
+fn bind_function(
+    ty: FunctionType,
     name: &str,
-    params: Vec<FfiObjectType>,
+    params: &[FfiObjectType],
     ret_type: FfiObjectType,
-    fn_proxy: &ProxiedNativeFunction,
-) -> Result<(), BindingError> {
+    fn_proxy: ProxiedNativeFunction,
+    is_const: bool,
+    assoc_type_id: Option<&str>,
+)
+    -> Result<(), BindingError>{
     let name_c = CString::new(name).unwrap();
     let params_ffi: Vec<argus_object_type_const_t> =
         params.iter().map(|p| p.handle.cast()).collect();
@@ -161,32 +165,98 @@ pub fn bind_global_function(
         ) -> ArgusObjectWrapperOrReflectiveArgsError {
             let params_slice = &*slice_from_raw_parts(params, params_count);
 
-            let f: &Box<ProxiedNativeFunction> = mem::transmute(extra);
+            let f: &ProxiedNativeFunction = mem::transmute(extra);
             call_proxied_fn(f, params_slice)
         }
 
-        argus_bind_global_function(
-            name_c.as_ptr(),
-            params.len(),
-            params_ffi.as_ptr(),
-            ret_type.handle,
-            Some(delegate),
-            mem::transmute(Box::into_raw(Box::new(fn_proxy))),
-        )
+        match ty {
+            FunctionType::Global => {
+                argus_bind_global_function(
+                    name_c.as_ptr(),
+                    params.len(),
+                    params_ffi.as_ptr(),
+                    ret_type.handle,
+                    Some(delegate),
+                    mem::transmute(Box::into_raw(Box::new(fn_proxy))),
+                )
+            }
+            FunctionType::MemberStatic => {
+                let type_id_c = CString::new(
+                    assoc_type_id
+                        .expect("Associated type ID was missing for static member function")
+                )
+                    .unwrap();
+
+                argus_bind_member_static_function(
+                    type_id_c.as_ptr(),
+                    name_c.as_ptr(),
+                    params.len(),
+                    params_ffi.as_ptr(),
+                    ret_type.handle,
+                    Some(delegate),
+                    mem::transmute(Box::into_raw(Box::new(fn_proxy))),
+                )
+            }
+            FunctionType::MemberInstance => {
+                let type_id_c = CString::new(
+                    assoc_type_id
+                        .expect("Associated type ID was missing for instance member function")
+                )
+                    .unwrap();
+
+                argus_bind_member_instance_function(
+                    type_id_c.as_ptr(),
+                    name_c.as_ptr(),
+                    is_const,
+                    params.len(),
+                    params_ffi.as_ptr(),
+                    ret_type.handle,
+                    Some(delegate),
+                    mem::transmute(Box::into_raw(Box::new(fn_proxy))),
+                )
+            }
+            FunctionType::Extension => {
+                panic!("Binding extension functions is not supported at this time");
+            }
+        }
     };
 
     unwrap_bind_result(res)
 }
 
+pub fn bind_global_function(
+    name: &str,
+    params: Vec<FfiObjectType>,
+    ret_type: FfiObjectType,
+    fn_proxy: ProxiedNativeFunction,
+) -> Result<(), BindingError> {
+    bind_function(
+        FunctionType::Global,
+        name,
+        params.as_slice(),
+        ret_type,
+        fn_proxy,
+        false,
+        None
+    )
+}
+
 pub fn bind_member_static_function(
     type_id: &str,
     name: &str,
-    params_count: usize,
     params: Vec<FfiObjectType>,
     ret_type: FfiObjectType,
-    proxied_fn: Box<ProxiedNativeFunction>,
+    fn_proxy: ProxiedNativeFunction,
 ) -> Result<(), BindingError> {
-    Ok(()) //TODO
+    bind_function(
+        FunctionType::MemberStatic,
+        name,
+        params.as_slice(),
+        ret_type,
+        fn_proxy,
+        false,
+        Some(type_id),
+    )
 }
 
 pub fn bind_member_instance_function(
@@ -195,7 +265,15 @@ pub fn bind_member_instance_function(
     is_const: bool,
     params: Vec<FfiObjectType>,
     ret_type: FfiObjectType,
-    proxied_fn: Box<ProxiedNativeFunction>,
+    fn_proxy: ProxiedNativeFunction,
 ) -> Result<(), BindingError> {
-    Ok(()) //TODO
+    bind_function(
+        FunctionType::MemberInstance,
+        name,
+        &params[1..],
+        ret_type,
+        fn_proxy,
+        is_const,
+        Some(type_id),
+    )
 }
