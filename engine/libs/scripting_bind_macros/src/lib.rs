@@ -19,7 +19,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Span as Span2, Span};
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote, quote_spanned};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::*;
 use core::result::Result;
 use argus_scripting_types::*;
@@ -441,15 +441,23 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
 }
 
 fn handle_bare_fn(item: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
-    let binding_code = gen_fn_binding_code(&item.sig, args, None)?;
+    let binding_code = gen_fn_binding_code(&item.sig, args, false, None, None)?;
     Ok(quote! {
         #item
         #binding_code
     })
 }
 
-fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&TypePath>)
+fn gen_fn_binding_code(
+    sig: &Signature,
+    args: Vec<&Meta>,
+    is_const: bool,
+    assoc_type: Option<&TypePath>,
+    attr_span: Option<Span>,
+)
     -> Result<TokenStream2, CompileError> {
+    let call_site_span = attr_span.unwrap_or(Span::call_site());
+
     let fn_args = parse_fn_args(args)?;
 
     let fn_ident = &sig.ident;
@@ -468,13 +476,30 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
     let param_types: Vec<_> = fn_params.iter()
         .map(|input| {
             match input {
-                FnArg::Receiver(_) => {
-                    Type::Path(assoc_type.expect("Associated type was missing").clone())
+                FnArg::Receiver(self_type) => {
+                    if assoc_type.is_none() {
+                        return Err(CompileError::new(
+                            call_site_span,
+                            "Enclosing impl block must be annotated with #[script_bind]"
+                        ));
+                    }
+
+                    let assoc_type_path =
+                        Type::Path(assoc_type.expect("Associated type was missing").clone());
+                    match &self_type.reference {
+                        Some((and_token, lifetime)) => Ok(Type::Reference(TypeReference {
+                            and_token: and_token.clone(),
+                            lifetime: lifetime.clone(),
+                            mutability: self_type.mutability.clone(),
+                            elem: Box::new(assoc_type_path),
+                        })),
+                        None => Ok(assoc_type_path),
+                    }
                 },
-                FnArg::Typed(ty) => ty.ty.as_ref().clone(),
+                FnArg::Typed(ty) => Ok(ty.ty.as_ref().clone()),
             }
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     let param_obj_types:
         Vec<(ObjectType, Vec<Type>)> =
@@ -490,11 +515,28 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
 
     let (ret_obj_type, ret_syn_types) = match &sig.output {
         ReturnType::Default => (EMPTY_TYPE.clone(), vec![]),
-        ReturnType::Type(_, ty) => parse_type(ty.as_ref(), ValueFlowDirection::ToScript)?,
+        ReturnType::Type(_, ty) => {
+            let mut effective_type = None;
+            if let Type::Path(path) = ty.as_ref() {
+                if path.qself.is_none() && path.path.segments.len() == 1 {
+                    let seg = path.path.segments.get(0).expect("Path segment was missing");
+                    if seg.ident == "Self" && matches!(seg.arguments, PathArguments::None) {
+                        effective_type = Some(
+                            Type::Path(assoc_type.expect("Associated type is missing").clone())
+                        );
+                    }
+                }
+            }
+
+            parse_type(
+                effective_type.as_ref().unwrap_or(ty.as_ref()),
+                ValueFlowDirection::ToScript
+            )?
+        },
     };
 
     let invocation_span = match &sig.output {
-        ReturnType::Default => Span2::call_site(),
+        ReturnType::Default => call_site_span,
         ReturnType::Type(_, ty) => ty.span(),
     };
 
@@ -551,26 +593,16 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
         .collect();
 
     let fn_call = match fn_type {
-        FunctionType::MemberInstance => {
-            assert!(!param_tokens.is_empty(), "Instance param was missing");
-            let instance_tokens = &param_tokens[0];
-            let remaining_tokens = &param_tokens[1..];
-            quote! {
-                (#instance_tokens).#fn_ident(
-                    #(#remaining_tokens),*
-                )
-            }
-        }
-        FunctionType::MemberStatic => {
+        FunctionType::MemberInstance | FunctionType::MemberStatic => {
             let ty = assoc_type.expect("Associated type was missing");
-            quote! {
+            quote_spanned! {invocation_span=>
                 <#ty>::#fn_ident(
                     #(#param_tokens),*
                 )
             }
         }
         FunctionType::Global => {
-            quote! {
+            quote_spanned! {invocation_span=>
                 #fn_ident(
                     #(#param_tokens),*
                 )
@@ -578,7 +610,7 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
         }
         FunctionType::Extension => {
             return Err(CompileError::new(
-                Span::call_site(),
+                call_site_span,
                 "Extension function bindings are not yet supported"
             ));
         }
@@ -586,6 +618,11 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
 
     let wrap_invoke_tokens = quote_spanned! {invocation_span=>
         ::argus_scripting_bind::WrappedObject::wrap
+    };
+
+    let assoc_type_getter_tokens = match assoc_type {
+        Some(ty) => quote! { Some(|| { ::std::any::TypeId::of::<#ty>() }) },
+        None => quote! { None },
     };
 
     Ok(quote! {
@@ -610,11 +647,13 @@ fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&Ty
                 ::argus_scripting_bind::BoundFunctionInfo {
                     name: #fn_name,
                     ty: #fn_type,
+                    is_const: #is_const,
                     param_type_serials: &[
                         #(#param_type_serials),*
                     ],
                     return_type_serial: #ret_type_serial,
-                    proxy: &(#proxy_ident as ::argus_scripting_bind::ProxiedNativeFunction),
+                    assoc_type: #assoc_type_getter_tokens,
+                    proxy: #proxy_ident as ::argus_scripting_bind::ProxiedNativeFunction,
                 },
                 &[
                     &[#(#ret_type_id_getter_tokens),*],
@@ -740,18 +779,25 @@ fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2,
     let mut transformed_block = impl_block.clone();
     transformed_block.items = transformed_items;
 
-    let mut binding_code = Vec::new();
+    let mut output = TokenStream2::new();
+
+    transformed_block.to_tokens(&mut output);
+
     for (f, args) in fns_to_bind {
-        binding_code.push(handle_impl_fn(ty, f, args)?)
+        let attr_span = args.span();
+        let section_tokens = handle_impl_fn(ty, f, args)?;
+        // re-quote the emitted tokens so that any errors in a function appear
+        // on that function's attribute (instead of the attribute on the whole
+        // impl block)
+        let spanned_tokens = quote_spanned! {attr_span=> #section_tokens };
+        spanned_tokens.to_tokens(&mut output)
     }
 
-    Ok(quote! {
-        #transformed_block
-        #(#binding_code)*
-    })
+    Ok(output)
 }
 
 fn handle_impl_fn(ty: &TypePath, f: &ImplItemFn, args: Meta) -> Result<TokenStream2, CompileError> {
+    let fn_attr_span = args.span().clone();
     let meta_list = match args {
         Meta::List(meta_list) => {
             let args_tokens = TokenStream::from(meta_list.tokens);
@@ -765,7 +811,13 @@ fn handle_impl_fn(ty: &TypePath, f: &ImplItemFn, args: Meta) -> Result<TokenStre
         }
     };
     let meta_list_ref = meta_list.iter().collect();
-    gen_fn_binding_code(&f.sig, meta_list_ref, Some(ty))
+
+    let is_const = match f.sig.inputs.first() {
+        Some(FnArg::Receiver(recv)) => recv.mutability.is_none(),
+        _ => false,
+    };
+
+    gen_fn_binding_code(&f.sig, meta_list_ref, is_const, Some(ty), Some(fn_attr_span))
 }
 
 fn build_wrappable_assertion(ty: &Type) -> TokenStream2 {
@@ -793,7 +845,7 @@ fn build_wrappable_assertion(ty: &Type) -> TokenStream2 {
         struct _AssertWrappable<#lifetime>
         where #transformed_type:
             ::argus_scripting_bind::ScriptBound +
-            ::argus_scripting_bind::Wrappable<#lifetime> {
+            ::argus_scripting_bind::Wrappable {
             _marker: ::std::marker::PhantomData<&#lifetime ()>,
         }
     }
