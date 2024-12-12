@@ -25,6 +25,8 @@ use serde_json::error::Category;
 use serde_valid::Validate;
 use crate::sprite::{SpriteAnimation, SpriteAnimationFrame, SpriteDefinition};
 
+const MAGIC_ANIM_STATIC: &str = "_static";
+
 pub(crate) struct SpriteLoader;
 
 impl ResourceLoader for SpriteLoader {
@@ -47,8 +49,6 @@ impl ResourceLoader for SpriteLoader {
 
             data.append(&mut buf[0..read_bytes].to_vec());
         }
-
-        println!("Loading sprite {}", prototype.uid);
 
         let sprite_json = match String::from_utf8(data) {
             Ok(json) => json,
@@ -73,7 +73,7 @@ impl ResourceLoader for SpriteLoader {
                 Err(ResourceError::new(
                     reason,
                     prototype.uid.as_str(),
-                    "Sprite definition is not valid UTF-8",
+                    format!("Sprite definition '{}' is not valid: {:?}", prototype.uid, e).as_str(),
                 ))
             },
         }
@@ -98,16 +98,33 @@ impl ResourceLoader for SpriteLoader {
 }
 
 fn parse_sprite_defn(json_str: String) -> Result<SpriteDefinition, serde_json::Error> {
-    let raw_defn = serde_json::from_str::<SpriteResourceModel>(json_str.as_str())?;
+    let mut raw_defn = serde_json::from_str::<SpriteResourceModel>(json_str.as_str())?;
+    if raw_defn.animations.is_empty() {
+        let static_anim = SpriteResourceAnimationModel {
+            frame_duration: 1.0,
+            does_loop: false,
+            frames: vec![SpriteResourceAnimationFrameModel {
+                x: 0,
+                y: 0,
+                duration: 1.0,
+            }],
+            padding: Default::default(),
+        };
+        raw_defn.animations.insert(MAGIC_ANIM_STATIC.to_string(), static_anim);
+        raw_defn.default_animation = MAGIC_ANIM_STATIC.to_string();
+    }
     Ok(raw_defn.into())
 }
 
 #[derive(Clone, Deserialize, Serialize, Validate)]
 struct SpriteResourceModel {
+    #[serde(default)]
     #[validate(exclusive_minimum = 0.0)]
     width: f32,
+    #[serde(default)]
     #[validate(exclusive_minimum = 0.0)]
     height: f32,
+    #[serde(default)]
     default_animation: String,
     #[serde(default)]
     #[validate(exclusive_minimum = 0.0)]
@@ -120,6 +137,7 @@ struct SpriteResourceModel {
     #[validate(minimum = 1)]
     #[serde(default)]
     tile_height: u32,
+    #[serde(default)]
     animations: HashMap<String, SpriteResourceAnimationModel>
 }
 
