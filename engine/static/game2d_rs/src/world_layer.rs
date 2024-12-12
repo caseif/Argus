@@ -271,12 +271,13 @@ impl World2dLayer {
             color: Default::default(),
         };
 
-        let anim_tex = ResourceManager::get_instance()
+        let anim_tex_res = ResourceManager::get_instance()
             .get_resource(&sprite_def.atlas)
-            .expect(format!("Failed to load sprite atlas '{}'", sprite_def.atlas).as_str());
-        let atlas_w = anim_tex.get::<TextureData>().get_width();
-        let atlas_h = anim_tex.get::<TextureData>().get_height();
-        anim_tex.release();
+            .expect("Failed to load sprite atlas");
+        let anim_tex = anim_tex_res.get_ffi::<TextureData>();
+        let atlas_w = anim_tex.get_width();
+        let atlas_h = anim_tex.get_height();
+        anim_tex_res.release();
 
         let mut frame_off = 0;
         for anim in sprite_def.animations.values() {
