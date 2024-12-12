@@ -925,12 +925,12 @@ fn parse_type_internal<'a>(
             ));
         }
 
-        if flow_direction == ValueFlowDirection::FromScript && reference.mutability.is_some() {
+        /*if flow_direction == ValueFlowDirection::FromScript && reference.mutability.is_some() {
             return Err(CompileError::new(
                 reference.span(),
                 "Mutable reference from script is not allowed in bound symbol"
             ));
-        }
+        }*/
 
         let (inner_obj_type, inner_types) =
             parse_type_internal(&reference.elem, flow_direction, OuterTypeType::Reference)?;
