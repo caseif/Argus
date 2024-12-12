@@ -28,10 +28,22 @@ macro_rules! create_vector2_ops {
             fn add(self, rhs: Self) -> Self::Output { Self { x: self.x + rhs.x, y: self.y + rhs.y } }
         }
 
+        impl std::ops::Add<($el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn add(self, rhs: ($el_type, $el_type)) -> Self::Output { Self { x: self.x + rhs.0, y: self.y + rhs.1 } }
+        }
+
         impl std::ops::Sub<Self> for $vec_type {
             type Output = Self;
 
             fn sub(self, rhs: Self) -> Self::Output { Self { x: self.x - rhs.x, y: self.y - rhs.y } }
+        }
+
+        impl std::ops::Sub<($el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn sub(self, rhs: ($el_type, $el_type)) -> Self::Output { Self { x: self.x - rhs.0, y: self.y - rhs.1 } }
         }
 
         impl std::ops::Mul<$el_type> for $vec_type {
@@ -45,6 +57,48 @@ macro_rules! create_vector2_ops {
 
             fn div(self, rhs: $el_type) -> Self::Output { Self { x: self.x / rhs, y: self.y / rhs } }
         }
+
+        impl std::ops::AddAssign<Self> for $vec_type {
+            fn add_assign(&mut self, rhs: Self) {
+                self.x += rhs.x;
+                self.y += rhs.y;
+            }
+        }
+
+        impl std::ops::AddAssign<($el_type, $el_type)> for $vec_type {
+            fn add_assign(&mut self, rhs: ($el_type, $el_type)) {
+                self.x += rhs.0;
+                self.y += rhs.1;
+            }
+        }
+
+        impl std::ops::SubAssign<Self> for $vec_type {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.x -= rhs.x;
+                self.y -= rhs.y;
+            }
+        }
+
+        impl std::ops::SubAssign<($el_type, $el_type)> for $vec_type {
+            fn sub_assign(&mut self, rhs: ($el_type, $el_type)) {
+                self.x -= rhs.0;
+                self.y -= rhs.1;
+            }
+        }
+
+        impl std::ops::MulAssign<$el_type> for $vec_type {
+            fn mul_assign(&mut self, rhs: $el_type) {
+                self.x *= rhs;
+                self.y *= rhs;
+            }
+        }
+
+        impl std::ops::DivAssign<$el_type> for $vec_type {
+            fn div_assign(&mut self, rhs: $el_type) {
+                self.x /= rhs;
+                self.y /= rhs;
+            }
+        }
     }
 }
 
@@ -53,13 +107,33 @@ macro_rules! create_vector3_ops {
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
-            fn add(self, rhs: Self) -> Self::Output { Self { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z } }
+            fn add(self, rhs: Self) -> Self::Output {
+                Self { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
+            }
+        }
+
+        impl std::ops::Add<($el_type, $el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn add(self, rhs: ($el_type, $el_type, $el_type)) -> Self::Output {
+                Self { x: self.x + rhs.0, y: self.y + rhs.1, z: self.z + rhs.2 }
+            }
         }
 
         impl std::ops::Sub<Self> for $vec_type {
             type Output = Self;
 
-            fn sub(self, rhs: Self) -> Self::Output { Self { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z } }
+            fn sub(self, rhs: Self) -> Self::Output {
+                Self { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
+            }
+        }
+
+        impl std::ops::Sub<($el_type, $el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn sub(self, rhs: ($el_type, $el_type, $el_type)) -> Self::Output {
+                Self { x: self.x - rhs.0, y: self.y - rhs.1, z: self.z - rhs.2 }
+            }
         }
 
         impl std::ops::Mul<$el_type> for $vec_type {
@@ -72,6 +146,54 @@ macro_rules! create_vector3_ops {
             type Output = Self;
 
             fn div(self, rhs: $el_type) -> Self::Output { Self { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs } }
+        }
+
+        impl std::ops::AddAssign<Self> for $vec_type {
+            fn add_assign(&mut self, rhs: Self) {
+                self.x += rhs.x;
+                self.y += rhs.y;
+                self.z += rhs.z;
+            }
+        }
+
+        impl std::ops::AddAssign<($el_type, $el_type, $el_type)> for $vec_type {
+            fn add_assign(&mut self, rhs: ($el_type, $el_type, $el_type)) {
+                self.x += rhs.0;
+                self.y += rhs.1;
+                self.z += rhs.2;
+            }
+        }
+
+        impl std::ops::SubAssign<Self> for $vec_type {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.x -= rhs.x;
+                self.y -= rhs.y;
+                self.z -= rhs.z;
+            }
+        }
+
+        impl std::ops::SubAssign<($el_type, $el_type, $el_type)> for $vec_type {
+            fn sub_assign(&mut self, rhs: ($el_type, $el_type, $el_type)) {
+                self.x -= rhs.0;
+                self.y -= rhs.1;
+                self.z -= rhs.2;
+            }
+        }
+
+        impl std::ops::MulAssign<$el_type> for $vec_type {
+            fn mul_assign(&mut self, rhs: $el_type) {
+                self.x *= rhs;
+                self.y *= rhs;
+                self.z *= rhs;
+            }
+        }
+
+        impl std::ops::DivAssign<$el_type> for $vec_type {
+            fn div_assign(&mut self, rhs: $el_type) {
+                self.x /= rhs;
+                self.y /= rhs;
+                self.z /= rhs;
+            }
         }
     }
 }
@@ -91,6 +213,19 @@ macro_rules! create_vector4_ops {
             }
         }
 
+        impl std::ops::Add<($el_type, $el_type, $el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn add(self, rhs: ($el_type, $el_type, $el_type, $el_type)) -> Self::Output {
+                Self {
+                    x: self.x + rhs.0,
+                    y: self.y + rhs.1,
+                    z: self.z + rhs.2,
+                    w: self.w + rhs.3,
+                }
+            }
+        }
+
         impl std::ops::Sub<Self> for $vec_type {
             type Output = Self;
 
@@ -100,6 +235,19 @@ macro_rules! create_vector4_ops {
                     y: self.y - rhs.y,
                     z: self.z - rhs.z,
                     w: self.w - rhs.w,
+                }
+            }
+        }
+
+        impl std::ops::Sub<($el_type, $el_type, $el_type, $el_type)> for $vec_type {
+            type Output = Self;
+
+            fn sub(self, rhs: ($el_type, $el_type, $el_type, $el_type)) -> Self::Output {
+                Self {
+                    x: self.x - rhs.0,
+                    y: self.y - rhs.1,
+                    z: self.z - rhs.2,
+                    w: self.w - rhs.3,
                 }
             }
         }
@@ -129,6 +277,60 @@ macro_rules! create_vector4_ops {
                 }
             }
         }
+
+        impl std::ops::AddAssign<Self> for $vec_type {
+            fn add_assign(&mut self, rhs: Self) {
+                self.x += rhs.x;
+                self.y += rhs.y;
+                self.z += rhs.z;
+                self.w += rhs.w;
+            }
+        }
+
+        impl std::ops::AddAssign<($el_type, $el_type, $el_type, $el_type)> for $vec_type {
+            fn add_assign(&mut self, rhs: ($el_type, $el_type, $el_type, $el_type)) {
+                self.x += rhs.0;
+                self.y += rhs.1;
+                self.z += rhs.2;
+                self.w += rhs.3;
+            }
+        }
+
+        impl std::ops::SubAssign<Self> for $vec_type {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.x -= rhs.x;
+                self.y -= rhs.y;
+                self.z -= rhs.z;
+                self.w -= rhs.w;
+            }
+        }
+
+        impl std::ops::SubAssign<($el_type, $el_type, $el_type, $el_type)> for $vec_type {
+            fn sub_assign(&mut self, rhs: ($el_type, $el_type, $el_type, $el_type)) {
+                self.x -= rhs.0;
+                self.y -= rhs.1;
+                self.z -= rhs.2;
+                self.w -= rhs.3;
+            }
+        }
+
+        impl std::ops::MulAssign<$el_type> for $vec_type {
+            fn mul_assign(&mut self, rhs: $el_type) {
+                self.x *= rhs;
+                self.y *= rhs;
+                self.z *= rhs;
+                self.w *= rhs;
+            }
+        }
+
+        impl std::ops::DivAssign<$el_type> for $vec_type {
+            fn div_assign(&mut self, rhs: $el_type) {
+                self.x /= rhs;
+                self.y /= rhs;
+                self.z /= rhs;
+                self.w /= rhs;
+            }
+        }
     }
 }
 
@@ -141,7 +343,7 @@ pub struct Vector2d {
 }
 
 impl Vector2d {
-    pub fn new(x: f64, y: f64) -> Self { Self { x, y } }
+        pub fn new(x: f64, y: f64) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2d, f64);
@@ -156,7 +358,7 @@ pub struct Vector3d {
 }
 
 impl Vector3d {
-    pub fn new(x: f64, y: f64, z: f64) -> Self { Self { x, y, z } }
+        pub fn new(x: f64, y: f64, z: f64) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3d, f64);
@@ -172,7 +374,7 @@ pub struct Vector4d {
 }
 
 impl Vector4d {
-    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self { Self { x, y, z, w } }
+        pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4d, f64);
@@ -186,7 +388,7 @@ pub struct Vector2f {
 }
 
 impl Vector2f {
-    pub fn new(x: f32, y: f32) -> Self { Self { x, y } }
+        pub fn new(x: f32, y: f32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2f, f32);
@@ -201,7 +403,7 @@ pub struct Vector3f {
 }
 
 impl Vector3f {
-    pub fn new(x: f32, y: f32, z: f32) -> Self { Self { x, y, z } }
+        pub fn new(x: f32, y: f32, z: f32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3f, f32);
@@ -217,7 +419,7 @@ pub struct Vector4f {
 }
 
 impl Vector4f {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self { Self { x, y, z, w } }
+        pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4f, f32);
@@ -231,7 +433,7 @@ pub struct Vector2i {
 }
 
 impl Vector2i {
-    pub fn new(x: i32, y: i32) -> Self { Self { x, y } }
+        pub fn new(x: i32, y: i32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2i, i32);
@@ -246,7 +448,7 @@ pub struct Vector3i {
 }
 
 impl Vector3i {
-    pub fn new(x: i32, y: i32, z: i32) -> Self { Self { x, y, z } }
+        pub fn new(x: i32, y: i32, z: i32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3i, i32);
@@ -262,7 +464,7 @@ pub struct Vector4i {
 }
 
 impl Vector4i {
-    pub fn new(x: i32, y: i32, z: i32, w: i32) -> Self { Self { x, y, z, w } }
+        pub fn new(x: i32, y: i32, z: i32, w: i32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4i, i32);
@@ -276,7 +478,7 @@ pub struct Vector2u {
 }
 
 impl Vector2u {
-    pub fn new(x: u32, y: u32) -> Self { Self { x, y } }
+        pub fn new(x: u32, y: u32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2u, u32);
@@ -291,7 +493,7 @@ pub struct Vector3u {
 }
 
 impl Vector3u {
-    pub fn new(x: u32, y: u32, z: u32) -> Self { Self { x, y, z } }
+        pub fn new(x: u32, y: u32, z: u32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3u, u32);
@@ -307,7 +509,7 @@ pub struct Vector4u {
 }
 
 impl Vector4u {
-    pub fn new(x: u32, y: u32, z: u32, w: u32) -> Self { Self { x, y, z, w } }
+        pub fn new(x: u32, y: u32, z: u32, w: u32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4u, u32);
