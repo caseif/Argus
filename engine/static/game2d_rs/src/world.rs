@@ -178,6 +178,11 @@ impl World2d {
         }
     }
 
+    #[no_mangle]
+    pub(crate) extern "C" fn render_worlds_c(_delta_us: u64) {
+        Self::render_worlds(Duration::from_micros(_delta_us));
+    }
+
     fn get_foreground_layer(&self) -> &World2dLayer {
         &self.fg_layer
     }

@@ -16,11 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core_rustabi::argus::core::LifecycleStage;
+use core_rustabi::argus::core::{register_update_callback, LifecycleStage, Ordering};
 use num_enum::UnsafeFromPrimitive;
 use resman_rustabi::argus::resman::ResourceManager;
 use crate::constants::RESOURCE_TYPE_SPRITE;
 use crate::sprite_loader::SpriteLoader;
+use crate::world::World2d;
 
 pub mod actor;
 pub mod sprite;
@@ -31,7 +32,7 @@ pub mod world_layer;
 mod constants;
 mod sprite_loader;
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub unsafe extern "C" fn update_lifecycle_game2d_rs(stage_ffi: core_rustabi::core_cabi::LifecycleStage) {
     let stage = unsafe { LifecycleStage::unchecked_transmute_from(stage_ffi) };
 
@@ -40,6 +41,7 @@ pub unsafe extern "C" fn update_lifecycle_game2d_rs(stage_ffi: core_rustabi::cor
         LifecycleStage::PreInit => {}
         LifecycleStage::Init => {
             ResourceManager::get_instance().register_loader(vec![RESOURCE_TYPE_SPRITE], SpriteLoader {});
+            register_update_callback(World2d::render_worlds_c, Ordering::Standard);
         }
         LifecycleStage::PostInit => {}
         LifecycleStage::Running => {}
