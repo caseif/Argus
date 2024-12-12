@@ -17,18 +17,18 @@
  */
 
 use crate::actor::Actor2d;
-use crate::world::World2d;
-use lowlevel_rustabi::argus::lowlevel::{Handle, ValueAndDirtyFlag, Vector2f, Vector3f};
+use lowlevel_rustabi::argus::lowlevel::{FfiWrapper, Handle, ValueAndDirtyFlag, Vector2f, Vector3f};
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::ResourceManager;
 use std::collections::HashMap;
 use std::slice;
 use uuid::Uuid;
+use argus_scripting_bind::script_bind;
 use render_rustabi::render_cabi::argus_material_len;
 use crate::sprite::Sprite;
 use crate::static_object::StaticObject2d;
 
-const LAYER_PREFIX: &'static str = "_worldlayer_";
+const LAYER_PREFIX: &str = "_worldlayer_";
 
 pub struct World2dLayer {
     id: String,
@@ -53,6 +53,7 @@ impl World2dLayer {
         parallax_coeff: f32,
         repeat_interval: Option<Vector2f>,
         lighting_enabled: bool,
+        canvas: &mut Canvas,
     ) -> World2dLayer {
         let layer_uuid = Uuid::new_v4().to_string();
         let layer_id_str = format!("{}{}_{}", LAYER_PREFIX, world_id, layer_uuid);
@@ -89,9 +90,7 @@ impl World2dLayer {
         );
 
         let render_camera = scene.create_camera(layer_id_str.as_str());
-        World2d::get(&world_id).expect("World was missing while creating layer").write().unwrap()
-            .canvas
-            .attach_default_viewport_2d(layer_id_str.as_str(), &render_camera, z_index);
+        canvas.attach_default_viewport_2d(layer_id_str.as_str(), &render_camera, z_index);
 
         let layer = World2dLayer {
             world_id,
@@ -174,15 +173,22 @@ impl World2dLayer {
         }
     }
 
+    pub fn get_actor_mut(&mut self, id: &Uuid) -> Result<&mut Actor2d, &'static str> {
+        match self.actors.get_mut(id) {
+            Some(actor) => Ok(actor),
+            None => Err("No such actor exists for world layer (in get_actor_mut)")
+        }
+    }
+
     pub fn create_actor(
         &mut self,
-        sprite_uid: &String,
+        sprite_uid: String,
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
     ) -> Result<Uuid, String> {
-        let sprite_defn_res = match ResourceManager::get_instance().get_resource(sprite_uid) {
+        let sprite_defn_res = match ResourceManager::get_instance().get_resource(&sprite_uid) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
@@ -209,6 +215,7 @@ impl World2dLayer {
     fn get_render_transform(
         &self,
         world_transform: &Transform2d,
+        world_scale_factor: f32,
         include_parallax: bool,
     ) -> Transform2d {
         let parallax_coeff = if include_parallax {
@@ -216,9 +223,6 @@ impl World2dLayer {
         } else {
             1.0
         };
-
-        let world_scale_factor = World2d::get(self.get_world_id()).expect("World is missing")
-                    .read().expect("World lock was poisoned").get_scale_factor();
 
         Transform2d::new(
             world_transform.translation * parallax_coeff / world_scale_factor,
@@ -234,14 +238,13 @@ impl World2dLayer {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        scale_factor: f32,
     ) -> Handle {
         let sprite_def = sprite.get_definition().clone();
 
         let mut prims: Vec<RenderPrimitive2d> = Vec::new();
 
-        let world_scale_factor = World2d::get(&world_id).expect("World is missing")
-            .read().expect("World lock was poisoned").get_scale_factor();
-        let scaled_size = size / world_scale_factor;
+        let scaled_size = size / scale_factor;
 
         let v1 = Vertex2d {
             position: Vector2f::new(0.0, 0.0),
@@ -276,7 +279,7 @@ impl World2dLayer {
         anim_tex.release();
 
         let mut frame_off = 0;
-        for (_, anim) in &sprite_def.animations {
+        for anim in sprite_def.animations.values() {
             sprite.get_animation_start_offsets_mut().insert(anim.get_id().to_string(), frame_off);
             frame_off += anim.frames.len();
         }
@@ -318,11 +321,12 @@ impl World2dLayer {
         )
     }
 
-    fn render_static_object(&mut self, id: &Uuid) {
+    fn render_static_object(&mut self, id: &Uuid, scale_factor: f32) {
         let static_obj = self.static_objects.get(id).expect("Static object was missing");
         let mut render_obj = match static_obj.render_obj {
             Some(obj_id) => {
-                self.get_scene().get_object(obj_id).expect("Render object was missing for static object")
+                self.get_scene().get_object(obj_id)
+                    .expect("Render object was missing for static object")
             }
             None => {
                 let world_id = self.get_world_id().to_string();
@@ -330,20 +334,28 @@ impl World2dLayer {
                 let size = static_obj.get_size();
                 let z_index = static_obj.get_z_index();
                 let can_occlude_light = static_obj.get_can_occlude_light();
-                let render_transform = self.get_render_transform(&static_obj.get_transform(), false);
+                let render_transform = self.get_render_transform(
+                    &static_obj.get_transform(),
+                    scale_factor,
+                    false
+                );
                 // upgrade reference
-                let static_obj = self.static_objects.get_mut(id).expect("Static object was missing");
+                let static_obj = self.static_objects.get_mut(id)
+                    .expect("Static object was missing");
                 let sprite = static_obj.get_sprite_mut();
 
-                let new_obj_id = Self::create_render_object(
+                let new_obj_handle = Self::create_render_object(
                     world_id,
                     &mut scene,
                     sprite,
                     size,
                     z_index,
                     can_occlude_light,
+                    scale_factor,
                 );
-                let mut new_obj = scene.get_object(new_obj_id)
+                static_obj.render_obj = Some(new_obj_handle);
+
+                let mut new_obj = scene.get_object(new_obj_handle)
                     .expect("Render object was missing for static object");
                 new_obj.set_transform(render_transform.into());
 
@@ -356,7 +368,7 @@ impl World2dLayer {
         static_obj.get_sprite_mut().update_current_frame(&mut render_obj);
     }
 
-    fn render_actor(&mut self, id: &Uuid) {
+    fn render_actor(&mut self, id: &Uuid, scale_factor: f32) {
         let actor = self.actors.get(id).expect("Actor was missing");
 
         let render_obj_handle = match actor.render_obj {
@@ -371,17 +383,18 @@ impl World2dLayer {
                 let can_occlude_light = actor.can_occlude_light.read().value;
                 let sprite = actor.get_sprite_mut();
 
-                let handle = Self::create_render_object(
+                let new_obj_handle = Self::create_render_object(
                     world_id,
                     &mut scene,
                     sprite,
                     size,
                     z_index,
                     can_occlude_light,
+                    scale_factor,
                 );
-                actor.render_obj = Some(handle);
+                actor.render_obj = Some(new_obj_handle);
 
-                handle
+                new_obj_handle
             }
         };
 
@@ -402,7 +415,12 @@ impl World2dLayer {
         }
 
         if read_transform.dirty {
-            render_obj.set_transform(self.get_render_transform(&read_transform.value, false).into());
+            render_obj.set_transform(self
+                .get_render_transform(
+                    &read_transform.value,
+                    scale_factor,
+                    false
+                ).into());
         }
 
         // upgrade reference
@@ -410,15 +428,22 @@ impl World2dLayer {
         actor.get_sprite_mut().update_current_frame(&mut render_obj);
     }
 
-    pub fn render(
+    pub(crate) fn render(
         &mut self,
+        scale_factor: f32,
         camera_transform: &ValueAndDirtyFlag<Transform2d>,
         al_level: &ValueAndDirtyFlag<f32>,
         al_color: &ValueAndDirtyFlag<Vector3f>,
     ) {
         if camera_transform.dirty {
             self.get_render_camera()
-                .set_transform(self.get_render_transform(&camera_transform.value, true));
+                .set_transform(self
+                    .get_render_transform(
+                        &camera_transform.value,
+                        scale_factor,
+                        true,
+                    )
+                );
         }
 
         let mut scene = self.get_scene();
@@ -438,7 +463,7 @@ impl World2dLayer {
         }
         let objs_to_render = self.static_objects.keys().cloned().collect::<Vec<_>>();
         for obj_id in objs_to_render {
-            self.render_static_object(&obj_id);
+            self.render_static_object(&obj_id, scale_factor);
         }
 
         for actor in self.actors.values_mut() {
@@ -448,7 +473,7 @@ impl World2dLayer {
         }
         let actors_to_render = self.actors.keys().cloned().collect::<Vec<_>>();
         for actor_id in actors_to_render {
-            self.render_actor(&actor_id);
+            self.render_actor(&actor_id, scale_factor);
         }
     }
 }

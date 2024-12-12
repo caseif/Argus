@@ -22,13 +22,13 @@ use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Vector2f, Vector3f};
 use render_rustabi::argus::render::{Canvas, Transform2d};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use argus_scripting_bind::script_bind;
+use std::time::Duration;
 use uuid::Uuid;
 use crate::static_object::StaticObject2d;
 
 const MAX_BACKGROUND_LAYERS: u32 = 16;
-const FG_LAYER_ID: &'static str = "_foreground";
-const BG_LAYER_ID_PREFIX: &'static str = "_background_";
+const FG_LAYER_ID: &str = "_foreground";
+const BG_LAYER_ID_PREFIX: &str = "_background_";
 
 lazy_static! {
     static ref g_worlds: Arc<RwLock<HashMap<String, Arc<RwLock<World2d>>>>> =
@@ -50,10 +50,9 @@ pub struct World2d {
 }
 
 impl World2d {
-    pub fn create(id: String, canvas: Canvas, scale_factor: f32) -> Arc<RwLock<World2d>> {
+    pub fn create(id: String, mut canvas: Canvas, scale_factor: f32) -> Arc<RwLock<World2d>> {
         let world = Self {
             id: id.clone(),
-            canvas,
             scale_factor,
             al_level: Default::default(),
             al_color: Default::default(),
@@ -64,13 +63,16 @@ impl World2d {
                 1.0,
                 None,
                 true,
+                &mut canvas,
             ),
+            canvas,
             bg_layers: Default::default(),
             bg_layers_count: 0,
             abstract_camera: Default::default(),
         };
 
-        g_worlds.write().unwrap().insert(id, Arc::new(RwLock::new(world))).unwrap()
+        g_worlds.write().unwrap().insert(id.clone(), Arc::new(RwLock::new(world)));
+        g_worlds.read().unwrap().get(&id).unwrap().clone()
     }
 
     pub fn get(id: &str) -> Result<Arc<RwLock<World2d>>, &'static str> {
@@ -146,6 +148,7 @@ impl World2d {
             parallax_coeff,
             repeat_interval,
             false,
+            &mut self.canvas,
         );
 
         assert!(self.bg_layers[bg_index as usize].is_none());
@@ -156,19 +159,20 @@ impl World2d {
     }
 
     fn render(&mut self) {
+        let scale_factor = self.get_scale_factor();
         let camera_transform = self.abstract_camera.read();
         let al_level = self.al_level.read();
         let al_color = self.al_color.read();
 
         for i in 0..self.bg_layers_count {
             self.bg_layers[i as usize].as_mut().expect("Background layer is missing")
-                    .render(&camera_transform, &al_level, &al_color);
+                    .render(scale_factor, &camera_transform, &al_level, &al_color);
         }
 
-        self.fg_layer.render(&camera_transform, &al_level, &al_color);
+        self.fg_layer.render(scale_factor, &camera_transform, &al_level, &al_color);
     }
 
-    pub fn render_worlds(_delta: std::time::Duration) {
+    pub(crate) fn render_worlds(_delta: Duration) {
         for (_, world) in g_worlds.read().expect("World list lock was poisoned").iter() {
             world.write().expect("World lock was poisoned").render();
         }
@@ -215,9 +219,13 @@ impl World2d {
         self.get_foreground_layer().get_actor(id)
     }
 
+    pub fn get_actor_mut(&mut self, id: &Uuid) -> Result<&mut Actor2d, &'static str> {
+        self.get_foreground_layer_mut().get_actor_mut(id)
+    }
+
     pub fn create_actor(
         &mut self,
-        sprite: &String,
+        sprite: String,
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
