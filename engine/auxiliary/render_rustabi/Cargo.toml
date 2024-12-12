@@ -15,3 +15,4 @@ wm_rustabi = { path = "../wm_rustabi" }
 core_rustabi = { path = "../core_rustabi" }
 lowlevel_rustabi = { path = "../lowlevel_rustabi" }
 argus_macros = { path = "../../libs/argus_macros" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }

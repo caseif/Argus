@@ -15,28 +15,41 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::ptr;
+use argus_scripting_bind::script_bind;
 use argus_macros::ffi_repr;
 use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector4f};
+use std::ptr;
 
 use crate::render_cabi::*;
 
 #[repr(C)]
 #[ffi_repr(ArgusTransform2d)]
-#[derive(Clone, Copy, Debug, Default)]
+#[script_bind(rename = "RsTransform2d")]
+#[derive(Clone, Copy, Debug)]
 pub struct Transform2d {
     pub translation: Vector2f,
     pub scale: Vector2f,
     pub rotation: f32,
 }
 
+#[script_bind]
 impl Transform2d {
+    #[script_bind]
     pub fn new(translation: Vector2f, scale: Vector2f, rotation: f32) -> Self {
         Self {
             translation,
             scale,
             rotation,
         }
+    }
+
+    #[script_bind(rename = "default")]
+    pub fn default2() -> Self {
+        Self::new(
+            Vector2f { x: 0.0, y: 0.0 },
+            Vector2f { x: 1.0, y: 1.0 },
+            0.0,
+        )
     }
 }
 
@@ -47,15 +60,34 @@ pub struct Matrix4x4 {
     pub cells: [f32; 16],
 }
 
+impl Default for Transform2d {
+    fn default() -> Self {
+        Self::default2()
+    }
+}
+
+#[script_bind]
 impl Transform2d {
     fn as_ptr(&self) -> *const ArgusTransform2d {
         ptr::from_ref(self.into())
     }
 
+    #[script_bind]
     pub fn add_translation(&mut self, x: f32, y: f32) {
         self.translation += (x, y);
     }
 
+    #[script_bind]
+    pub fn get_scale(&self) -> Vector2f {
+        self.scale
+    }
+
+    #[script_bind]
+    pub fn set_scale(&mut self, x: f32, y: f32) {
+        self.scale = Vector2f { x, y };
+    }
+
+    #[script_bind]
     pub fn add_rotation(&mut self, rads: f32) {
         self.rotation += rads;
     }

@@ -178,7 +178,7 @@ impl Scene2d {
                 .collect();
 
             let material_c = str_to_cstring(material);
-            
+
             argus_scene_2d_add_object(
                 self.handle,
                 material_c.as_ptr(),
