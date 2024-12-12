@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_scripting_bind::script_bind;
 use argus_macros::ffi_repr;
 use serde::{Deserialize, Serialize};
 use crate::lowlevel_cabi::*;
@@ -336,20 +337,24 @@ macro_rules! create_vector4_ops {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2d_t)]
+#[script_bind(rename = "RsVector2d")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector2d {
     pub x: f64,
     pub y: f64,
 }
 
+#[script_bind]
 impl Vector2d {
-        pub fn new(x: f64, y: f64) -> Self { Self { x, y } }
+    #[script_bind]
+    pub fn new(x: f64, y: f64) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3d_t)]
+#[script_bind(rename = "RsVector3d")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector3d {
     pub x: f64,
@@ -357,14 +362,17 @@ pub struct Vector3d {
     pub z: f64,
 }
 
+#[script_bind]
 impl Vector3d {
-        pub fn new(x: f64, y: f64, z: f64) -> Self { Self { x, y, z } }
+    #[script_bind]
+    pub fn new(x: f64, y: f64, z: f64) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4d_t)]
+#[script_bind(rename = "RsVector4d")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector4d {
     pub x: f64,
@@ -373,28 +381,34 @@ pub struct Vector4d {
     pub w: f64,
 }
 
+#[script_bind]
 impl Vector4d {
-        pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self { Self { x, y, z, w } }
+    #[script_bind]
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2f_t)]
+#[script_bind(rename = "RsVector2f")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector2f {
     pub x: f32,
     pub y: f32,
 }
 
+#[script_bind]
 impl Vector2f {
-        pub fn new(x: f32, y: f32) -> Self { Self { x, y } }
+    #[script_bind]
+    pub fn new(x: f32, y: f32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3f_t)]
+#[script_bind(rename = "RsVector3f")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector3f {
     pub x: f32,
@@ -402,14 +416,17 @@ pub struct Vector3f {
     pub z: f32,
 }
 
+#[script_bind]
 impl Vector3f {
-        pub fn new(x: f32, y: f32, z: f32) -> Self { Self { x, y, z } }
+    #[script_bind]
+    pub fn new(x: f32, y: f32, z: f32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4f_t)]
+#[script_bind(rename = "RsVector4f")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector4f {
     pub x: f32,
@@ -418,28 +435,34 @@ pub struct Vector4f {
     pub w: f32,
 }
 
+#[script_bind]
 impl Vector4f {
-        pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self { Self { x, y, z, w } }
+    #[script_bind]
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2i_t)]
+#[script_bind(rename = "RsVector2i")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector2i {
     pub x: i32,
     pub y: i32,
 }
 
+#[script_bind]
 impl Vector2i {
-        pub fn new(x: i32, y: i32) -> Self { Self { x, y } }
+    #[script_bind]
+    pub fn new(x: i32, y: i32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3i_t)]
+#[script_bind(rename = "RsVector3i")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector3i {
     pub x: i32,
@@ -447,14 +470,17 @@ pub struct Vector3i {
     pub z: i32,
 }
 
+#[script_bind]
 impl Vector3i {
-        pub fn new(x: i32, y: i32, z: i32) -> Self { Self { x, y, z } }
+    #[script_bind]
+    pub fn new(x: i32, y: i32, z: i32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4i_t)]
+#[script_bind(rename = "RsVector4i")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector4i {
     pub x: i32,
@@ -463,28 +489,34 @@ pub struct Vector4i {
     pub w: i32,
 }
 
+#[script_bind]
 impl Vector4i {
-        pub fn new(x: i32, y: i32, z: i32, w: i32) -> Self { Self { x, y, z, w } }
+    #[script_bind]
+    pub fn new(x: i32, y: i32, z: i32, w: i32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2u_t)]
+#[script_bind(rename = "RsVector2u")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector2u {
     pub x: u32,
     pub y: u32,
 }
 
+#[script_bind]
 impl Vector2u {
-        pub fn new(x: u32, y: u32) -> Self { Self { x, y } }
+    #[script_bind]
+    pub fn new(x: u32, y: u32) -> Self { Self { x, y } }
 }
 
 create_vector2_ops!(Vector2u, u32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3u_t)]
+#[script_bind(rename = "RsVector3u")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector3u {
     pub x: u32,
@@ -492,14 +524,17 @@ pub struct Vector3u {
     pub z: u32,
 }
 
+#[script_bind]
 impl Vector3u {
-        pub fn new(x: u32, y: u32, z: u32) -> Self { Self { x, y, z } }
+    #[script_bind]
+    pub fn new(x: u32, y: u32, z: u32) -> Self { Self { x, y, z } }
 }
 
 create_vector3_ops!(Vector3u, u32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4u_t)]
+#[script_bind(rename = "RsVector4u")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector4u {
     pub x: u32,
@@ -508,8 +543,10 @@ pub struct Vector4u {
     pub w: u32,
 }
 
+#[script_bind]
 impl Vector4u {
-        pub fn new(x: u32, y: u32, z: u32, w: u32) -> Self { Self { x, y, z, w } }
+    #[script_bind]
+    pub fn new(x: u32, y: u32, z: u32, w: u32) -> Self { Self { x, y, z, w } }
 }
 
 create_vector4_ops!(Vector4u, u32);
