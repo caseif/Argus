@@ -31,11 +31,14 @@ use syn::parse::Parser;
 
 const ATTR_SCRIPT_BIND: &str = "script_bind";
 const UNIV_ARG_IGNORE: &str = "ignore";
+const STRUCT_ARG_RENAME: &str = "rename";
 const STRUCT_ARG_REF_ONLY: &str = "ref_only";
 const FN_ARG_ASSOC_TYPE: &str = "assoc_type";
+const FN_ARG_RENAME: &str = "rename";
 
 #[derive(Default)]
 struct StructAttrArgs {
+    name: Option<String>,
     ref_only: bool,
     ref_only_span: Option<Span2>,
 }
@@ -44,6 +47,7 @@ struct StructAttrArgs {
 struct FnAttrArgs {
     assoc_type: Option<Path>,
     assoc_type_span: Option<Span2>,
+    name: Option<String>,
 }
 
 #[proc_macro_attribute]
@@ -87,7 +91,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
     let struct_span = item.span();
     let struct_ident = &item.ident;
-    let struct_name = struct_ident.to_string();
+    let struct_name = struct_args.name.unwrap_or(struct_ident.to_string());
 
     let ctor_dtor_proxies_tokens = quote! {
         unsafe extern "C" fn _copy_ctor(dst: *mut (), src: *const ()) {
@@ -349,7 +353,37 @@ fn parse_struct_args(meta_list: &Vec<&Meta>) -> Result<StructAttrArgs, CompileEr
                 return Err(CompileError::new(list.span(), "Unexpected list"));
             }
             Meta::NameValue(nv) => {
-                return Err(CompileError::new(nv.span(), "Unexpected name-value"));
+                let attr_name = match nv.path.segments.first() {
+                    Some(seg) => {
+                        if !seg.arguments.is_empty() {
+                            return Err(CompileError::new(
+                                seg.arguments.span(),
+                                "Unexpected path arguments"
+                            ));
+                        }
+
+                        seg.ident.to_string()
+                    },
+                    None => { return Err(CompileError::new(nv.path.span(), "Unexpected path")) }
+                };
+
+                if attr_name == STRUCT_ARG_RENAME {
+                    args_obj.name = match &nv.value {
+                        Expr::Lit(ExprLit { lit: Lit::Str(str_literal), .. }) =>
+                            Some(str_literal.value()),
+                        _ => {
+                            return Err(CompileError::new(
+                                nv.value.span(),
+                                "Rename argument must be a string literal",
+                            ));
+                        }
+                    };
+                } else {
+                    return Err(CompileError::new(
+                        nv.span(),
+                        format!("Invalid attribute argument '{}'", attr_name)
+                    ));
+                }
             }
         }
     }
@@ -416,17 +450,17 @@ fn handle_bare_fn(item: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, Compi
 
 fn gen_fn_binding_code(sig: &Signature, args: Vec<&Meta>, assoc_type: Option<&TypePath>)
     -> Result<TokenStream2, CompileError> {
-    let _fn_args = parse_fn_args(args)?;
+    let fn_args = parse_fn_args(args)?;
 
     let fn_ident = &sig.ident;
-    let fn_name = fn_ident.to_string();
+    let fn_name = fn_args.name.unwrap_or(fn_ident.to_string());
     let fn_params = &sig.inputs;
     let fn_type = if assoc_type.is_some() {
         if let Some(FnArg::Receiver(_)) = fn_params.first() {
             FunctionType::MemberInstance
         } else {
             FunctionType::MemberStatic
-            }
+        }
     } else {
         FunctionType::Global
     };
@@ -603,7 +637,37 @@ fn parse_fn_args(meta_list: Vec<&Meta>) -> Result<FnAttrArgs, CompileError> {
                 return Err(CompileError::new(list.span(), "Unexpected list"));
             }
             Meta::NameValue(nv) => {
-                return Err(CompileError::new(nv.span(), "Unexpected name/value pair"));
+                let attr_name = match nv.path.segments.first() {
+                    Some(seg) => {
+                        if !seg.arguments.is_empty() {
+                            return Err(CompileError::new(
+                                seg.arguments.span(),
+                                "Unexpected path arguments"
+                            ));
+                        }
+
+                        seg.ident.to_string()
+                    },
+                    None => { return Err(CompileError::new(nv.path.span(), "Unexpected path")) }
+                };
+
+                if attr_name == STRUCT_ARG_RENAME {
+                    args_obj.name = match &nv.value {
+                        Expr::Lit(ExprLit { lit: Lit::Str(str_literal), .. }) =>
+                            Some(str_literal.value()),
+                        _ => {
+                            return Err(CompileError::new(
+                                nv.value.span(),
+                                "Rename argument must be a string literal",
+                            ));
+                        }
+                    };
+                } else {
+                    return Err(CompileError::new(
+                        nv.span(),
+                        format!("Invalid attribute argument '{}'", attr_name)
+                    ));
+                }
             }
         }
     }
@@ -845,8 +909,8 @@ fn parse_type_internal<'a>(
                 move_ctor: None,
                 dtor: None,
             },
-           vec![ty.clone()],
-       ))
+            vec![ty.clone()],
+        ))
     } else if let Type::Reference(reference) = ty {
         if let Type::Path(path) = reference.elem.as_ref() {
             if let Some(res) = resolve_string(path) {
