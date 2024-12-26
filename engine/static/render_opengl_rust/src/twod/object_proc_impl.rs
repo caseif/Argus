@@ -17,9 +17,9 @@
  */
 
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::shaders::get_material_program;
-use crate::argus::render_opengl_rust::state::{ProcessedObject, RendererState};
-use crate::argus::render_opengl_rust::util::defines::*;
+use crate::shaders::get_material_program;
+use crate::state::{ProcessedObject, RendererState};
+use crate::util::defines::*;
 use lowlevel_rustabi::argus::lowlevel::Vector4f;
 use render_rustabi::argus::render::*;
 use render_rustabi::render_cabi::argus_processed_render_object_2d_t;

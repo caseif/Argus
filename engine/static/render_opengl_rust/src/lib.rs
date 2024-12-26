@@ -15,6 +15,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+pub(crate) mod loader;
+pub(crate) mod state;
+pub(crate) mod twod;
+pub(crate) mod util;
+pub(crate) mod aglet;
+pub(crate) mod bucket_proc;
+pub(crate) mod gl_renderer;
+pub(crate) mod materials;
+pub(crate) mod resources;
+pub(crate) mod shaders;
+pub(crate) mod textures;
+mod compositing;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -22,14 +35,13 @@ use std::time::Duration;
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
-use lazy_static::lazy_static;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
 use wm_rustabi::argus::wm::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
-use crate::argus::render_opengl_rust::gl_renderer::GlRenderer;
-use crate::argus::render_opengl_rust::loader::ShaderLoader;
-use crate::argus::render_opengl_rust::resources::RESOURCES_PACK;
+use crate::gl_renderer::GlRenderer;
+use crate::loader::ShaderLoader;
+use crate::resources::RESOURCES_PACK;
 
 const MODULE_ID: &str = "render_opengl_rust";
 const BACKEND_ID: &str = "opengl_rust";
@@ -212,13 +224,4 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
         }
         _ => {}
     }
-}
-
-#[no_mangle]
-pub extern "C" fn register_plugin() {
-    register_dynamic_module(
-        MODULE_ID,
-        update_lifecycle_render_opengl_rust,
-        vec![],
-    );
 }

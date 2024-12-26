@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::state::RendererState;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::state::RendererState;
+use crate::util::gl_util::*;
 use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{Resource, ResourceManager};
 use shadertools::shadertools::compile_glsl_to_spirv;

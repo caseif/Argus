@@ -41,7 +41,7 @@ pub type LifecycleUpdateCallback = extern "C" fn(bindings::LifecycleStage);
 
 pub fn lifecycle_stage_to_str(stage: LifecycleStage) -> String {
     unsafe {
-        return cstr_to_string(argus_lifecycle_stage_to_str(stage as u32));
+        cstr_to_string(argus_lifecycle_stage_to_str(stage as u32))
     }
 }
 
@@ -65,7 +65,7 @@ pub fn register_dynamic_module(
 pub fn enable_dynamic_module(module_id: &str) -> bool {
     unsafe {
         let module_id_c = str_to_cstring(module_id);
-        return argus_enable_dynamic_module(module_id_c.as_ptr());
+        argus_enable_dynamic_module(module_id_c.as_ptr())
     }
 }
 
@@ -74,6 +74,15 @@ pub fn get_present_dynamic_modules() -> Vec<String> {
         let arr = argus_get_present_dynamic_modules();
         let vec = argus::lowlevel::string_array_to_vec(arr);
         argus::lowlevel::free_string_array(arr);
-        return vec;
+        vec
+    }
+}
+
+pub fn get_present_static_modules() -> Vec<String> {
+    unsafe {
+        let arr = argus_get_present_static_modules();
+        let vec = argus::lowlevel::string_array_to_vec(arr);
+        argus::lowlevel::free_string_array(arr);
+        vec
     }
 }

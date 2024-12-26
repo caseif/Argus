@@ -20,9 +20,9 @@ use std::collections::BTreeMap;
 use std::ptr;
 use render_rustabi::argus::render::*;
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::state::*;
-use crate::argus::render_opengl_rust::twod::{create_processed_object_2d, deinit_object_2d, update_processed_object_2d};
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
+use crate::state::*;
+use crate::twod::{create_processed_object_2d, deinit_object_2d, update_processed_object_2d};
+use crate::util::buffer::GlBuffer;
 
 fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
     RenderBucketKey::new(

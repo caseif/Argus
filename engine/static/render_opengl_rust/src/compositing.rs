@@ -17,11 +17,11 @@
  */
 
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::shaders::*;
-use crate::argus::render_opengl_rust::state::*;
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
-use crate::argus::render_opengl_rust::util::defines::*;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::shaders::*;
+use crate::state::*;
+use crate::util::buffer::GlBuffer;
+use crate::util::defines::*;
+use crate::util::gl_util::*;
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2u};
 use render_rustabi::argus::render::*;
 use std::cmp::{max, min};

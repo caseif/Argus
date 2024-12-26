@@ -17,7 +17,7 @@
  */
 
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::util::gl_util::*;
 
 use std::{mem, ptr, slice};
 

@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::bucket_proc::fill_buckets_2d;
-use crate::argus::render_opengl_rust::compositing::*;
-use crate::argus::render_opengl_rust::shaders::get_material_program;
-use crate::argus::render_opengl_rust::state::*;
-use crate::argus::render_opengl_rust::textures::get_or_load_texture;
-use crate::argus::render_opengl_rust::twod::compile_scene_2d;
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
+use crate::bucket_proc::fill_buckets_2d;
+use crate::compositing::*;
+use crate::shaders::get_material_program;
+use crate::state::*;
+use crate::textures::get_or_load_texture;
+use crate::twod::compile_scene_2d;
+use crate::util::buffer::GlBuffer;
 use core_rustabi::argus::core::{get_screen_space_scale_mode, ScreenSpaceScaleMode};
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
 use render_rustabi::argus::render::*;
@@ -31,7 +31,7 @@ use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use wm_rustabi::argus::wm::*;
-use crate::argus::render_opengl_rust::util::gl_util::gl_debug_callback;
+use crate::util::gl_util::gl_debug_callback;
 
 pub(crate) struct GlRenderer {
     window: Window,

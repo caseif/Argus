@@ -17,9 +17,9 @@
  */
 
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::state::RendererState;
-use crate::argus::render_opengl_rust::util::defines::*;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::state::RendererState;
+use crate::util::defines::*;
+use crate::util::gl_util::*;
 use render_rustabi::argus::render::*;
 use std::ptr;
 

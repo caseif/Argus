@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
-use crate::argus::render_opengl_rust::util::gl_util::{GlArrayHandle, GlBufferHandle};
+use crate::util::buffer::GlBuffer;
+use crate::util::gl_util::{GlArrayHandle, GlBufferHandle};
 
 use lowlevel_rustabi::argus::lowlevel::{Handle, Vector2f, Vector2i};
 use resman_rustabi::argus::resman::Resource;

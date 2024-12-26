@@ -121,6 +121,10 @@ namespace argus {
         return modules;
     }
 
+    std::vector<std::string> get_present_static_modules(void) {
+        return std::vector<std::string>(g_static_module_ids.cbegin(), g_static_module_ids.cend());
+    }
+
     template<typename T>
     [[nodiscard]] static Result<std::vector<std::string>, std::string> _topo_sort(const std::vector<T> nodes,
             const std::vector<std::pair<T, T>> edges) {

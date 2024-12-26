@@ -121,6 +121,13 @@ namespace argus {
                 count++;
             }
         }
+        for (const auto &module_id : get_present_static_modules()) {
+            if (module_id.rfind(RENDER_BACKEND_MODULE_PREFIX, 0) == 0) {
+                //TODO: fail gracefully
+                add_load_module(module_id);
+                count++;
+            }
+        }
         Logger::default_logger().debug("Loaded %lu graphics backend modules", count);
     }
 

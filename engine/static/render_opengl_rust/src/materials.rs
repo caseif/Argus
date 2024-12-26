@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use crate::argus::render_opengl_rust::shaders::deinit_program;
-use crate::argus::render_opengl_rust::state::RendererState;
-use crate::argus::render_opengl_rust::textures::release_texture;
-use crate::argus::render_opengl_rust::util::gl_util::{try_delete_buffer, try_delete_vertex_array};
+use crate::shaders::deinit_program;
+use crate::state::RendererState;
+use crate::textures::release_texture;
+use crate::util::gl_util::{try_delete_buffer, try_delete_vertex_array};
 
 pub(crate) fn deinit_material(state: &mut RendererState, material: &str) {
     println!("De-initializing material {material}"); //TODO

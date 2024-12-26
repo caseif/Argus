@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use render_rustabi::argus::render::{AttachedViewport, Matrix4x4};
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
-use crate::argus::render_opengl_rust::util::gl_util::{GlBufferHandle, GlTextureHandle};
+use crate::util::buffer::GlBuffer;
+use crate::util::gl_util::{GlBufferHandle, GlTextureHandle};
 
 #[derive(Default)]
 pub(crate) struct ViewportBuffers {

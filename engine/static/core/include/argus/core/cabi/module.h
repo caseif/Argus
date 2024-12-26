@@ -63,6 +63,8 @@ bool argus_enable_dynamic_module(const char *module_id);
 
 StringArray argus_get_present_dynamic_modules(void);
 
+StringArray argus_get_present_static_modules(void);
+
 #ifdef __cplusplus
 }
 #endif

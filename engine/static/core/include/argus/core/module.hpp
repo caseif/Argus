@@ -219,4 +219,6 @@ namespace argus {
      * @return A list of IDs of present dynamic modules.
      */
     std::vector<std::string> get_present_dynamic_modules(void);
+
+    std::vector<std::string> get_present_static_modules(void);
 }

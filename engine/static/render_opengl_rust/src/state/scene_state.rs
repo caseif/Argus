@@ -19,8 +19,8 @@
 use render_rustabi::argus::render::{ProcessedObjectMap, Scene2d};
 use std::collections::BTreeMap;
 
-use crate::argus::render_opengl_rust::state::{ProcessedObject, RenderBucket, RenderBucketKey};
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
+use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey};
+use crate::util::buffer::GlBuffer;
 
 pub(crate) struct Scene2dState {
     pub(crate) scene: Scene2d,

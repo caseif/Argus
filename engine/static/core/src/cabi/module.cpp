@@ -46,3 +46,7 @@ bool argus_enable_dynamic_module(const char *module_id) {
 StringArray argus_get_present_dynamic_modules(void) {
     return new std::vector<std::string>(argus::get_present_dynamic_modules());
 }
+
+StringArray argus_get_present_static_modules(void) {
+    return new std::vector<std::string>(argus::get_present_static_modules());
+}

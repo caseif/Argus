@@ -451,8 +451,12 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
       if(${IS_RUST})
         if("${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_LIBRARY}" OR
             "${MODULE_TYPE}" STREQUAL "${MODULE_TYPE_AUX}")
+          if("${PROJECT_NAME}" STREQUAL "argus_rs")
+            set(crate_features "${RUST_SUPERCRATE_FEATURES}")
+          endif()
           corrosion_import_crate(
               MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
+              FEATURES "${crate_features}"
           )
           corrosion_set_env_vars("${PROJECT_NAME}" "ARPTOOL_PATH=${ARPTOOL_EXE_PATH}")
         else()

@@ -21,10 +21,10 @@ use std::rc::Rc;
 use wm_rustabi::argus::wm::GlContext;
 use render_rustabi::argus::render::{AttachedViewport2d, Scene2d};
 use resman_rustabi::argus::resman::Resource;
-use crate::argus::render_opengl_rust::shaders::*;
-use crate::argus::render_opengl_rust::state::*;
-use crate::argus::render_opengl_rust::util::buffer::GlBuffer;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::shaders::*;
+use crate::state::*;
+use crate::util::buffer::GlBuffer;
+use crate::util::gl_util::*;
 
 #[derive(Default)]
 pub(crate) struct RendererState {

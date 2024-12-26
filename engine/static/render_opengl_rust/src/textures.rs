@@ -21,8 +21,8 @@ use std::rc::Rc;
 use render_rustabi::argus::render::{Material, TextureData};
 use resman_rustabi::argus::resman::{Resource, ResourceError, ResourceManager};
 use crate::aglet::*;
-use crate::argus::render_opengl_rust::state::RendererState;
-use crate::argus::render_opengl_rust::util::gl_util::*;
+use crate::state::RendererState;
+use crate::util::gl_util::*;
 
 pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Resource)
     -> Result<(), ResourceError> {
