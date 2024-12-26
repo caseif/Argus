@@ -17,15 +17,17 @@
  */
 
 use crate::aglet::*;
-use crate::shaders::get_material_program;
-use crate::state::{ProcessedObject, RendererState};
+use crate::shaders::{get_material_program, LinkedProgram};
+use crate::state::{ProcessedObject, RendererState, Scene2dState};
 use crate::util::defines::*;
 use lowlevel_rustabi::argus::lowlevel::Vector4f;
-use render_rustabi::argus::render::*;
-use render_rustabi::render_cabi::argus_processed_render_object_2d_t;
 use resman_rustabi::argus::resman::ResourceManager;
-use std::ffi::c_void;
 use std::{ptr, slice};
+use std::ops::Deref;
+use lowlevel_rs::Handle;
+use render_rs::common::Matrix4x4;
+use render_rs::constants::*;
+use render_rs::twod::{get_render_context_2d, RenderObject2d};
 
 fn count_vertices(obj: &RenderObject2d) -> usize {
     obj.get_primitives()
@@ -34,13 +36,45 @@ fn count_vertices(obj: &RenderObject2d) -> usize {
         .sum()
 }
 
-pub(crate) fn create_processed_object_2d(
+pub(crate) fn process_object(
+    scene_id: &str,
+    object_handle: Handle,
+    transform: &Matrix4x4,
+    is_transform_dirty: bool,
+    state: &mut RendererState,
+) {
+    let mut object = get_render_context_2d().get_object_mut(object_handle).unwrap();
+
+    let existing_obj = {
+        let scene_state = state.scene_states_2d.entry(scene_id.to_string()).or_insert_with(|| {
+            Scene2dState {
+                scene_id: scene_id.to_string(),
+                ubo: None,
+                render_buckets: Default::default(),
+                processed_objs: Default::default(),
+            }
+        });
+        scene_state.processed_objs.get_mut(&object_handle)
+    };
+
+    if let Some(proc_obj) = existing_obj {
+        // program should be linked by now
+        let program = &state.linked_programs[object.get_material()];
+        update_processed_object_2d(&mut object, proc_obj, transform, is_transform_dirty, program);
+    } else {
+        let new_proc_obj = create_processed_object_2d(state, &mut object, transform);
+        state.scene_states_2d.get_mut(&scene_id.to_string()).unwrap().processed_objs.insert(
+            object_handle.clone(),
+            new_proc_obj,
+        );
+    }
+}
+
+fn create_processed_object_2d(
+    state: &mut RendererState,
     object: &mut RenderObject2d,
     transform: &Matrix4x4,
-    state_ptr: *mut c_void,
-) -> argus_processed_render_object_2d_t {
-    let state: &mut RendererState = unsafe { &mut *state_ptr.cast() };
-
+) -> ProcessedObject {
     let vertex_count = count_vertices(object);
 
     let mat_res = ResourceManager::get_instance()
@@ -113,7 +147,7 @@ pub(crate) fn create_processed_object_2d(
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
-        for vertex in prim.vertices {
+        for vertex in &prim.vertices {
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;
 
@@ -124,7 +158,7 @@ pub(crate) fn create_processed_object_2d(
                     z: 0.0,
                     w: 1.0,
                 };
-                let transformed_pos = transform.multiply_vector(pos_vec);
+                let transformed_pos = transform * pos_vec;
                 mapped_buffer[major_off + minor_off + 0] = transformed_pos.x;
                 mapped_buffer[major_off + minor_off + 1] = transformed_pos.y;
                 minor_off += 2;
@@ -157,11 +191,11 @@ pub(crate) fn create_processed_object_2d(
     }
 
     let mut processed_obj = ProcessedObject::new(
-        object.get_handle(),
+        object.get_handle().unwrap(),
         mat_res,
         object.get_atlas_stride(),
         object.get_z_index(),
-        object.get_light_opacity(),
+        object.peek_light_opacity(),
         vertex_buffer,
         buffer_size,
         count_vertices(object),
@@ -173,23 +207,16 @@ pub(crate) fn create_processed_object_2d(
     processed_obj.visited = true;
     processed_obj.newly_created = true;
 
-    Box::into_raw(Box::new(processed_obj)).cast()
+    processed_obj
 }
 
-#[allow(unused_assignments)]
-pub(crate) fn update_processed_object_2d(
+fn update_processed_object_2d(
     object: &mut RenderObject2d,
-    proc_obj_ptr: argus_processed_render_object_2d_t,
+    proc_obj: &mut ProcessedObject,
     transform: &Matrix4x4,
     is_transform_dirty: bool,
-    state_ptr: *mut c_void,
+    program: &LinkedProgram,
 ) {
-    let state: &mut RendererState = unsafe { &mut *state_ptr.cast() };
-
-    // program should be linked by now
-    let program = &state.linked_programs[object.get_material()];
-
-    let proc_obj: &mut ProcessedObject = unsafe { &mut *proc_obj_ptr.cast() };
 
     // if a parent group or the object itself has had its transform updated
     proc_obj.updated = is_transform_dirty;
@@ -215,14 +242,14 @@ pub(crate) fn update_processed_object_2d(
         .map(|_| SHADER_ATTRIB_POSITION_LEN)
         .unwrap_or(0)
         + attr_normal_loc
-            .map(|_| SHADER_ATTRIB_NORMAL_LEN)
-            .unwrap_or(0)
+        .map(|_| SHADER_ATTRIB_NORMAL_LEN)
+        .unwrap_or(0)
         + attr_color_loc.map(|_| SHADER_ATTRIB_COLOR_LEN).unwrap_or(0)
         + attr_texcoord_loc
-            .map(|_| SHADER_ATTRIB_TEXCOORD_LEN)
-            .unwrap_or(0)) as GLuint;
+        .map(|_| SHADER_ATTRIB_TEXCOORD_LEN)
+        .unwrap_or(0)) as GLuint;
 
-    let vertex_count = count_vertices(object);
+    let vertex_count = count_vertices(object.deref());
     let buffer_word_count = vertex_count * vertex_len as usize;
 
     let mapped_buffer_ptr: *mut GLfloat = proc_obj
@@ -241,7 +268,7 @@ pub(crate) fn update_processed_object_2d(
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
-        for vertex in prim.vertices {
+        for vertex in &prim.vertices {
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;
 
@@ -251,7 +278,7 @@ pub(crate) fn update_processed_object_2d(
                 z: 0.0,
                 w: 1.0,
             };
-            let transformed_pos = transform.multiply_vector(pos_vec);
+            let transformed_pos = transform * pos_vec;
             mapped_buffer[major_off + minor_off + 0] = transformed_pos.x;
             mapped_buffer[major_off + minor_off + 1] = transformed_pos.y;
             minor_off += 2;

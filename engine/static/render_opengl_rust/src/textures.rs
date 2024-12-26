@@ -18,15 +18,15 @@
 
 use std::ptr;
 use std::rc::Rc;
-use render_rustabi::argus::render::{Material, TextureData};
 use resman_rustabi::argus::resman::{Resource, ResourceError, ResourceManager};
+use render_rs::common::{Material, TextureData};
 use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::gl_util::*;
 
 pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Resource)
     -> Result<(), ResourceError> {
-    let mat: Material = material_res.get_ffi();
+    let mat: &Material = material_res.get();
     let texture_uid = mat.get_texture_uid();
 
     if let Some(tex) = state.prepared_textures.get(texture_uid) {
@@ -38,7 +38,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
     }
 
     let texture_res = ResourceManager::get_instance().get_resource(texture_uid)?;
-    let texture: TextureData = texture_res.get_ffi();
+    let texture: &TextureData = texture_res.get();
 
     let width = texture.get_width() as i32;
     let height = texture.get_height() as i32;
@@ -73,14 +73,12 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
                 0, GL_RGBA, GL_UNSIGNED_BYTE, ptr::null());
     }
 
-    for y in 0..height as usize {
-        if aglet_have_gl_arb_direct_state_access() {
-            glTextureSubImage2D(handle, 0, 0, y as GLint, width as GLsizei, 1, GL_RGBA,
-                    GL_UNSIGNED_BYTE, texture.get_pixel_data()[y].as_ptr().cast());
-        } else {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y as GLint, width as GLsizei, 1, GL_RGBA,
-                    GL_UNSIGNED_BYTE, texture.get_pixel_data()[y].as_ptr().cast());
-        }
+    if aglet_have_gl_arb_direct_state_access() {
+        glTextureSubImage2D(handle, 0, 0, 0, width as GLsizei, height as GLsizei,
+            GL_RGBA, GL_UNSIGNED_BYTE, texture.get_pixel_data().as_ptr().cast());
+    } else {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width as GLsizei, height as GLsizei,
+            GL_RGBA, GL_UNSIGNED_BYTE, texture.get_pixel_data().as_ptr().cast());
     }
 
     if !aglet_have_gl_arb_direct_state_access() {

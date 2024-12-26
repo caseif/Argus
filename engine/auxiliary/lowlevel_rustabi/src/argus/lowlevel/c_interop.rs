@@ -35,10 +35,11 @@ pub unsafe fn string_array_to_vec(sa: StringArray) -> Vec<String> {
     unsafe {
         let count = string_array_get_count(sa);
         let mut vec = Vec::<String>::with_capacity(count);
+        vec.resize(count, String::new());
 
-        for i in 0..count {
+        for (i, el) in vec.iter_mut().enumerate() {
             let s = string_array_get_element(sa, i);
-            vec[i] = CStr::from_ptr(s).to_str().unwrap().to_string();
+            *el = CStr::from_ptr(s).to_str().unwrap().to_string();
         }
 
         vec

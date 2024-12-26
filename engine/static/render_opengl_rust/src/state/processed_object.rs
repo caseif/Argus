@@ -17,7 +17,8 @@
  */
 
 use std::ffi;
-use lowlevel_rustabi::argus::lowlevel::{Handle, Vector2f, Vector2u};
+use lowlevel_rs::Handle;
+use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector2u};
 use resman_rustabi::argus::resman::Resource;
 use crate::util::gl_util::GlBufferHandle;
 

@@ -15,11 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+extern crate glslang;
+
+pub(crate) mod aglet;
+
 pub(crate) mod loader;
 pub(crate) mod state;
 pub(crate) mod twod;
 pub(crate) mod util;
-pub(crate) mod aglet;
 pub(crate) mod bucket_proc;
 pub(crate) mod gl_renderer;
 pub(crate) mod materials;
@@ -35,7 +39,8 @@ use std::time::Duration;
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
-use render_rustabi::argus::render::*;
+use render_rs::common::register_render_backend;
+use render_rs::constants::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
 use wm_rustabi::argus::wm::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
@@ -96,7 +101,7 @@ fn test_opengl_support() -> Result<(), ()> {
     return Ok(());
 }
 
-extern "C" fn activate_opengl_backend() -> bool {
+fn activate_opengl_backend() -> bool {
     set_window_create_flags(WindowCreateFlags::OpenGL);
 
     if gl_load_library() != 0 {
@@ -112,7 +117,7 @@ extern "C" fn activate_opengl_backend() -> bool {
     }
 
     set_backend_active(true);
-    return true;
+    true
 }
 
 fn window_event_handler(event: &WindowEvent) {
@@ -144,7 +149,7 @@ fn window_event_handler(event: &WindowEvent) {
                         .expect("Failed to get renderer");
                     renderer.notify_window_resize(&event.get_resolution());
                 });
-           }
+            }
         }
         WindowEventType::RequestClose => {
             RENDERERS.with_borrow_mut(|renderers| {
@@ -186,7 +191,7 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
 
     match stage {
         LifecycleStage::PreInit => {
-            register_render_backend(BACKEND_ID, Some(activate_opengl_backend));
+            register_render_backend(BACKEND_ID, activate_opengl_backend);
         }
         LifecycleStage::Init => {
             if !is_backend_active() {

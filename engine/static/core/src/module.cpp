@@ -122,7 +122,8 @@ namespace argus {
     }
 
     std::vector<std::string> get_present_static_modules(void) {
-        return std::vector<std::string>(g_static_module_ids.cbegin(), g_static_module_ids.cend());
+        auto vec = std::vector<std::string>(g_static_module_ids.cbegin(), g_static_module_ids.cend());
+        return vec;
     }
 
     template<typename T>

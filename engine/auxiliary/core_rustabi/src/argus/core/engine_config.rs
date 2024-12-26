@@ -56,7 +56,8 @@ pub fn get_preferred_render_backends() -> Vec<String> {
         let mut count: usize = 0;
         core_cabi::get_preferred_render_backends(&mut count, null_mut());
 
-        let mut names = Vec::<*const c_char>::new();
+        let mut names = Vec::<*const c_char>::with_capacity(count);
+        names.resize(count, null_mut());
         core_cabi::get_preferred_render_backends(null_mut(), names.as_mut_ptr());
 
         return names.iter().map(|s| cstr_to_string(*s)).collect();

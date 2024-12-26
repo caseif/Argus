@@ -17,8 +17,10 @@
  */
 
 use std::ffi::c_void;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::mem;
+use std::ops::DerefMut;
 use std::ptr::null_mut;
 use std::time::Duration;
 
@@ -29,7 +31,7 @@ use crate::wm_cabi::*;
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector2u};
 use lowlevel_rustabi::util::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Window {
     handle: argus_window_t,
     _marker: PhantomData<argus_window_t>,
@@ -117,8 +119,8 @@ impl Window {
         unsafe { cstr_to_string(argus_window_get_id(self.handle)) }
     }
 
-    pub fn get_canvas(&self) -> CanvasPtr {
-        unsafe { argus_window_get_canvas(self.handle) }
+    pub unsafe fn get_canvas<T>(&self) -> &mut T {
+        argus_window_get_canvas(self.handle).cast::<T>().as_mut().unwrap()
     }
 
     pub fn is_created(&self) -> bool {

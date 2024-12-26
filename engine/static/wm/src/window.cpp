@@ -238,6 +238,7 @@ namespace argus {
 
         if (g_canvas_ctor != nullptr) {
             m_pimpl->canvas = &g_canvas_ctor(*this);
+            printf("Set canvas to %p\n", reinterpret_cast<void *>(m_pimpl->canvas));
         } else {
             Logger::default_logger().warn("No canvas callbacks were set - new window will not have associated canvas!");
         }

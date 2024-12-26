@@ -1,0 +1,12 @@
+[package]
+name = "lowlevel_rs"
+version = "0.0.1"
+
+[lib]
+name = "lowlevel_rs"
+crate-type = ["rlib"]
+edition = "2021"
+
+[dependencies]
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+lazy_static = "1.5.0"

@@ -1,0 +1,25 @@
+[package]
+name = "render_rs"
+version = "0.0.1"
+
+[lib]
+name = "render_rs"
+crate-type = ["rlib"]
+edition = "2021"
+
+[dependencies]
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+lowlevel_rs = { path = "../../libs/lowlevel_rs" }
+lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
+core_rustabi = { path = "../../auxiliary/core_rustabi" }
+resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
+dashmap = "6.1.0"
+lazy_static = "1.5.0"
+lodepng = "3.10.7"
+num_enum = "0.7.3"
+parking_lot = "0.12.3"
+rgb = "0.8.50"
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
+uuid = { version = "1.11.0", features = ["v4"] }

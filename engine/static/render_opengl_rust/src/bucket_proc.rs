@@ -20,15 +20,15 @@ use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::defines::*;
 use crate::util::gl_util::*;
-use render_rustabi::argus::render::*;
+use render_rs::constants::*;
 use std::ptr;
 
 const BINDING_INDEX_VBO: u32 = 0;
 const BINDING_INDEX_ANIM_FRAME_BUF: u32 = 1;
 
-pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene: &Scene2d) {
-    _ = renderer_state.get_or_create_scene_2d_state(scene);
-    let scene_state = renderer_state.scene_states_2d.get_mut(&scene.get_id()).unwrap();
+pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl AsRef<str>) {
+    _ = renderer_state.get_or_create_scene_2d_state(scene_id.as_ref());
+    let scene_state = renderer_state.scene_states_2d.get_mut(scene_id.as_ref()).unwrap();
     scene_state.render_buckets.retain(|_, bucket| {
         if bucket.objects.is_empty() {
             bucket
@@ -73,7 +73,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene: &Scene2
         if bucket.needs_rebuild {
             let mut buffer_len = 0;
             for obj_handle in &bucket.objects {
-                let obj = scene_state.processed_objs.get(obj_handle);
+                let obj = scene_state.processed_objs.get(obj_handle).unwrap(); //TODO
                 buffer_len += obj.staging_buffer_size;
                 anim_frame_buf_len +=
                     obj.vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * size_of::<GLfloat>();
@@ -257,7 +257,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene: &Scene2
         let mut offset = 0;
         let mut anim_frame_off = 0;
         for obj_handle in &mut bucket.objects {
-            let processed = scene_state.processed_objs.get_mut(obj_handle);
+            let processed = scene_state.processed_objs.get_mut(obj_handle).unwrap(); //TODO
 
             if bucket.needs_rebuild || processed.updated {
                 if aglet_have_gl_arb_direct_state_access() {

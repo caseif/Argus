@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use render_rustabi::argus::render::{AttachedViewport, Matrix4x4};
+use render_rs::common::{AttachedViewport, Matrix4x4};
 use crate::util::buffer::GlBuffer;
 use crate::util::gl_util::{GlBufferHandle, GlTextureHandle};
 
@@ -41,16 +41,16 @@ pub(crate) struct ViewportBuffers {
 }
 
 pub(crate) struct ViewportState {
-    pub(crate) viewport: AttachedViewport,
+    pub(crate) viewport_id: u32,
     pub(crate) view_matrix: Matrix4x4,
     pub(crate) view_matrix_dirty: bool,
     pub(crate) buffers: ViewportBuffers,
 }
 
 impl ViewportState {
-    pub(crate) fn new(viewport: &AttachedViewport) -> Self {
+    pub(crate) fn new(viewport_id: u32) -> Self {
         Self {
-            viewport: viewport.clone(),
+            viewport_id,
             view_matrix: Default::default(),
             view_matrix_dirty: true,
             buffers: Default::default(),

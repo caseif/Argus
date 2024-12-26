@@ -103,6 +103,17 @@ macro_rules! create_vector2_ops {
     }
 }
 
+macro_rules! create_vector2_signed_ops {
+    ($vec_type: ty, $el_type: ty) => {
+        impl std::ops::Neg for $vec_type {
+            type Output = Self;
+            fn neg(self) -> Self::Output {
+                Self { x: -self.x, y: -self.y }
+            }
+        }
+    }
+}
+
 macro_rules! create_vector3_ops {
     ($vec_type: ty, $el_type: ty) => {
         impl std::ops::Add<Self> for $vec_type {
@@ -194,6 +205,17 @@ macro_rules! create_vector3_ops {
                 self.x /= rhs;
                 self.y /= rhs;
                 self.z /= rhs;
+            }
+        }
+    }
+}
+
+macro_rules! create_vector3_signed_ops {
+    ($vec_type: ty, $el_type: ty) => {
+        impl std::ops::Neg for $vec_type {
+            type Output = Self;
+            fn neg(self) -> Self::Output {
+                Self { x: -self.x, y: -self.y, z: -self.z }
             }
         }
     }
@@ -335,6 +357,17 @@ macro_rules! create_vector4_ops {
     }
 }
 
+macro_rules! create_vector4_signed_ops {
+    ($vec_type: ty, $el_type: ty) => {
+        impl std::ops::Neg for $vec_type {
+            type Output = Self;
+            fn neg(self) -> Self::Output {
+                Self { x: -self.x, y: -self.y, z: -self.z, w: -self.w }
+            }
+        }
+    }
+}
+
 #[repr(C)]
 #[ffi_repr(argus_vector_2d_t)]
 #[script_bind(rename = "RsVector2d")]
@@ -351,6 +384,7 @@ impl Vector2d {
 }
 
 create_vector2_ops!(Vector2d, f64);
+create_vector2_signed_ops!(Vector2d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3d_t)]
@@ -369,6 +403,7 @@ impl Vector3d {
 }
 
 create_vector3_ops!(Vector3d, f64);
+create_vector3_signed_ops!(Vector3d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4d_t)]
@@ -388,6 +423,7 @@ impl Vector4d {
 }
 
 create_vector4_ops!(Vector4d, f64);
+create_vector4_signed_ops!(Vector4d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2f_t)]
@@ -405,6 +441,7 @@ impl Vector2f {
 }
 
 create_vector2_ops!(Vector2f, f32);
+create_vector2_signed_ops!(Vector2f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3f_t)]
@@ -423,6 +460,7 @@ impl Vector3f {
 }
 
 create_vector3_ops!(Vector3f, f32);
+create_vector3_signed_ops!(Vector3f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4f_t)]
@@ -442,6 +480,7 @@ impl Vector4f {
 }
 
 create_vector4_ops!(Vector4f, f32);
+create_vector4_signed_ops!(Vector4f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2i_t)]
@@ -459,6 +498,7 @@ impl Vector2i {
 }
 
 create_vector2_ops!(Vector2i, i32);
+create_vector2_signed_ops!(Vector2i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3i_t)]
@@ -477,6 +517,7 @@ impl Vector3i {
 }
 
 create_vector3_ops!(Vector3i, i32);
+create_vector3_signed_ops!(Vector3i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4i_t)]
@@ -496,6 +537,7 @@ impl Vector4i {
 }
 
 create_vector4_ops!(Vector4i, i32);
+create_vector4_signed_ops!(Vector4i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2u_t)]

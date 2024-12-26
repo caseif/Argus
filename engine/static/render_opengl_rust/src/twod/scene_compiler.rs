@@ -17,11 +17,11 @@
  */
 
 use std::collections::BTreeMap;
-use std::ptr;
-use render_rustabi::argus::render::*;
+use render_rs::constants::*;
+use render_rs::util::process_objects_2d;
 use crate::aglet::*;
 use crate::state::*;
-use crate::twod::{create_processed_object_2d, deinit_object_2d, update_processed_object_2d};
+use crate::twod::{deinit_object_2d, process_object};
 use crate::util::buffer::GlBuffer;
 
 fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
@@ -34,7 +34,9 @@ fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
 }
 
 fn create_obj_ubo(bucket: &mut RenderBucket) {
-    bucket.obj_ubo = Some(GlBuffer::new(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN as usize, GL_STATIC_DRAW, true, false));
+    bucket.obj_ubo = Some(
+        GlBuffer::new(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN as usize, GL_STATIC_DRAW, true, false)
+    );
     let ubo = &bucket.obj_ubo.as_ref().unwrap();
 
     // we assume that these values will never change
@@ -77,29 +79,30 @@ fn handle_stale_obj(
 
     // we need to remove it from its containing bucket and flag the bucket for a rebuild
     let bucket = render_buckets.get_mut(&get_bucket_key(processed_obj)).unwrap();
-    bucket.objects.remove(bucket.objects.iter().position(|h| h == &processed_obj.obj_handle).unwrap());
+    bucket.objects
+        .remove(bucket.objects.iter().position(|h| h == &processed_obj.obj_handle).unwrap());
     bucket.needs_rebuild = true;
 }
 
-pub(crate) fn compile_scene_2d(renderer_state: &mut RendererState, scene: &Scene2d) {
-    // not elegant, but processed_objs will only be updated from one thread at a time
-    let mut ffi_map = renderer_state.get_or_create_scene_2d_state(scene)
-        .processed_objs.ffi_map.clone();
+pub(crate) fn compile_scene_2d(renderer_state: &mut RendererState, scene_id: impl AsRef<str>) {
     process_objects_2d(
-        scene,
-        &mut ffi_map,
-        create_processed_object_2d,
-        update_processed_object_2d,
-        ptr::from_mut(renderer_state).cast(),
+        scene_id.as_ref(),
+        process_object,
+        renderer_state,
     );
 
-    let scene_state = renderer_state.scene_states_2d.get_mut(&scene.get_id()).unwrap();
+    let scene_state = renderer_state.scene_states_2d
+        .entry(scene_id.as_ref().to_string())
+        .or_insert_with(|| {
+            Scene2dState {
+                scene_id: scene_id.as_ref().to_string(),
+                ubo: None,
+                render_buckets: Default::default(),
+                processed_objs: Default::default(),
+            }
+        });
 
-    scene_state.processed_objs.ffi_map = ffi_map;
-    scene_state.processed_objs.rebuild();
-
-    scene_state.processed_objs.rust_map.retain(|_, obj_ptr| {
-        let obj = unsafe { obj_ptr.cast::<ProcessedObject>().as_mut().unwrap() };
+    scene_state.processed_objs.retain(|_, obj| {
         if obj.newly_created {
             handle_new_obj(&mut scene_state.render_buckets, obj);
         } else if !obj.visited {

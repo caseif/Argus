@@ -20,8 +20,8 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Padding, Vector2u};
-use render_rustabi::argus::render::RenderObject2d;
 use resman_rustabi::argus::resman::Resource;
+use render_rs::twod::RenderObject2d;
 
 #[derive(Clone, Debug)]
 pub(crate) struct SpriteAnimationFrame {

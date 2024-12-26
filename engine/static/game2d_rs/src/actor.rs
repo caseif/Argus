@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use argus_scripting_bind::script_bind;
-use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Handle, Vector2f};
-use render_rustabi::argus::render::Transform2d;
+use lowlevel_rs::Handle;
+use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Vector2f};
 use resman_rustabi::argus::resman::Resource;
+use render_rs::common::Transform2d;
 use crate::sprite::Sprite;
 
 #[script_bind(ref_only)]

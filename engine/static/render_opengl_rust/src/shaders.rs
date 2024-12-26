@@ -18,7 +18,6 @@
 use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::gl_util::*;
-use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::{Resource, ResourceManager};
 use shadertools::shadertools::compile_glsl_to_spirv;
 use spirv_cross_sys::bindings::*;
@@ -27,6 +26,8 @@ use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
 use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
+use render_rs::common::{Material, Shader, ShaderStage};
+use render_rs::constants::*;
 
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
@@ -55,7 +56,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     let mut shader_sources: Vec<String> = Vec::new();
     for shader_res in shaders {
         let shader: &Shader = shader_res.get();
-        shader_uids.push(shader.get_uid());
+        shader_uids.push(shader.get_uid().to_string());
         shader_sources.push(String::from_utf8_lossy(shader.get_source()).to_string());
     }
 
@@ -270,7 +271,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     (compiled_handles, refl_info)
 }
 
-pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
+pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>>) -> LinkedProgram {
     let program_handle = glCreateProgram();
     if glIsProgram(program_handle) == GL_FALSE as u8 {
         panic!("Failed to create program: {}", glGetError());
@@ -280,10 +281,10 @@ pub(crate) fn link_program(shader_uids: &[&str]) -> LinkedProgram {
     let mut have_vert = false;
     let mut have_frag = false;
     for shader_uid in shader_uids {
-        let shader_res = match ResourceManager::get_instance().get_resource(shader_uid) {
+        let shader_res = match ResourceManager::get_instance().get_resource(shader_uid.as_ref()) {
             Ok(r) => r,
             Err(e) => {
-                panic!("Failed to load shader {shader_uid} ({:?})", e);
+                panic!("Failed to load shader {} ({:?})", shader_uid.as_ref(), e);
             }
         };
 
@@ -444,8 +445,8 @@ pub(crate) fn get_material_program<'a>(
     linked_programs
         .entry(material_res.get_prototype().uid)
         .or_insert_with(|| {
-            let material: Material = material_res.get_ffi();
-            link_program(&material.get_shader_uids())
+            let material: &Material = material_res.get();
+            link_program(material.get_shader_uids())
         })
 }
 

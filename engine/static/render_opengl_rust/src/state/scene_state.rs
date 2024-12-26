@@ -16,23 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use render_rustabi::argus::render::{ProcessedObjectMap, Scene2d};
-use std::collections::BTreeMap;
-
+use std::collections::{BTreeMap, HashMap};
+use lowlevel_rs::Handle;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey};
 use crate::util::buffer::GlBuffer;
 
 pub(crate) struct Scene2dState {
-    pub(crate) scene: Scene2d,
+    pub(crate) scene_id: String,
     pub(crate) ubo: Option<GlBuffer>,
     pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket>,
-    pub(crate) processed_objs: ProcessedObjectMap<ProcessedObject>,
+    pub(crate) processed_objs: HashMap<Handle, ProcessedObject>,
 }
 
 impl<'a> Scene2dState {
-    pub(crate) fn new(scene: &Scene2d) -> Self {
+    pub(crate) fn new(scene_id: impl Into<String>) -> Self {
         Self {
-            scene: scene.clone(),
+            scene_id: scene_id.into(),
             ubo: None,
             render_buckets: BTreeMap::new(),
             processed_objs: Default::default(),

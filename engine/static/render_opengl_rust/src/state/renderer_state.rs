@@ -19,7 +19,6 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use wm_rustabi::argus::wm::GlContext;
-use render_rustabi::argus::render::{AttachedViewport2d, Scene2d};
 use resman_rustabi::argus::resman::Resource;
 use crate::shaders::*;
 use crate::state::*;
@@ -49,27 +48,32 @@ pub(crate) struct RendererState {
 }
 
 impl<'a> RendererState {
-    pub fn get_scene_2d_state(&'a self, scene: &Scene2d) -> &'a Scene2dState {
-        self.scene_states_2d.get(&scene.get_id()).expect("Scene state is missing")
+    pub fn get_scene_2d_state(&'a self, scene_id: impl AsRef<str>) -> &'a Scene2dState {
+        self.scene_states_2d.get(scene_id.as_ref()).expect("Scene state is missing")
     }
 
-    pub fn get_scene_2d_state_mut(&'a mut self, scene: &Scene2d) -> &'a mut Scene2dState {
-        self.scene_states_2d.get_mut(&scene.get_id()).expect("Scene state is missing")
+    pub fn get_scene_2d_state_mut(&'a mut self, scene_id: impl AsRef<str>) -> &'a mut Scene2dState {
+        self.scene_states_2d.get_mut(scene_id.as_ref()).expect("Scene state is missing")
     }
 
-    pub fn get_or_create_scene_2d_state(&'a mut self, scene: &Scene2d) -> &'a mut Scene2dState {
-        self.scene_states_2d.entry(scene.get_id()).or_insert_with(|| Scene2dState::new(scene))
+    pub fn get_or_create_scene_2d_state(&'a mut self, scene_id: impl AsRef<str>)
+        -> &'a mut Scene2dState {
+        self.scene_states_2d.entry(scene_id.as_ref().to_string())
+            .or_insert_with_key(|id| Scene2dState::new(id.clone()))
     }
 
-    pub fn get_viewport_2d_state(&'a self, viewport: &AttachedViewport2d) -> &'a ViewportState {
-        self.viewport_states_2d.get(&viewport.as_generic().get_id()).expect("Viewport state is missing")
+    pub fn get_viewport_2d_state(&'a self, viewport_id: u32) -> &'a ViewportState {
+        self.viewport_states_2d.get(&viewport_id)
+            .expect("Viewport state is missing")
     }
 
-    pub fn get_viewport_2d_state_mut(&'a mut self, viewport: &AttachedViewport2d) -> &'a mut ViewportState {
-        self.viewport_states_2d.get_mut(&viewport.as_generic().get_id()).expect("Viewport state is missing")
+    pub fn get_viewport_2d_state_mut(&'a mut self, viewport_id: u32) -> &'a mut ViewportState {
+        self.viewport_states_2d.get_mut(&viewport_id)
+            .expect("Viewport state is missing")
     }
 
-    pub fn get_or_create_viewport_2d_state(&'a mut self, viewport: &AttachedViewport2d) -> &'a mut ViewportState {
-        self.viewport_states_2d.entry(viewport.as_generic().get_id()).or_insert_with(|| ViewportState::new(&viewport.as_generic()))
+    pub fn get_or_create_viewport_2d_state(&'a mut self, viewport_id: u32) -> &'a mut ViewportState {
+        self.viewport_states_2d.entry(viewport_id)
+            .or_insert_with(|| ViewportState::new(viewport_id))
     }
 }

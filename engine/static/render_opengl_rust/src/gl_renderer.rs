@@ -25,12 +25,15 @@ use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
 use core_rustabi::argus::core::{get_screen_space_scale_mode, ScreenSpaceScaleMode};
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
-use render_rustabi::argus::render::*;
+use render_rs::common::{AttachedViewport, Canvas, Matrix4x4, Transform2d, Viewport};
 use resman_rustabi::argus::resman::Resource;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use wm_rustabi::argus::wm::*;
+use render_rs::constants::*;
+use render_rs::twod::get_render_context_2d;
+use uuid::Uuid;
 use crate::util::gl_util::gl_debug_callback;
 
 pub(crate) struct GlRenderer {
@@ -143,14 +146,15 @@ impl GlRenderer {
 
         glDisable(GL_CULL_FACE);
 
-        let canvas = Canvas::of(self.window.get_canvas());
+        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
+        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
 
         let viewports = &mut canvas.get_viewports_2d();
-        viewports.sort_by_key(|vp| vp.as_generic().get_z_index());
+        viewports.sort_by_key(|vp| vp.get_z_index());
 
         for viewport in &*viewports {
-            let scene = viewport.get_camera().get_scene();
-            draw_scene_2d_to_framebuffer(&mut self.state, &scene, viewport, &resolution);
+            let scene_id = viewport.get_scene_id();
+            draw_scene_2d_to_framebuffer(&mut self.state, &scene_id, viewport, &resolution);
         }
 
         // set up state for drawing framebuffers to screen
@@ -164,10 +168,11 @@ impl GlRenderer {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         for viewport in &*viewports {
-            let viewport_state = self.state.get_viewport_2d_state(viewport);
+            let viewport_state = self.state.get_viewport_2d_state(viewport.get_id());
 
             draw_framebuffer_to_screen(
                 viewport_state,
+                viewport.get_viewport(),
                 self.state.frame_program.as_ref().unwrap(),
                 self.state.frame_vao.unwrap(),
                 &resolution,
@@ -177,18 +182,29 @@ impl GlRenderer {
         gl_swap_buffers(&mut canvas.get_window());
     }
 
-    pub(crate) fn notify_window_resize(&mut self, resolution: &Vector2u) {
+    pub(crate) fn notify_window_resize(
+        &mut self,
+        resolution: &Vector2u
+    ) {
         self.update_view_matrix(resolution);
     }
 
-    pub(crate) fn update_view_matrix(&mut self, resolution: &Vector2u) {
-        let canvas = Canvas::of(self.window.get_canvas());
+    pub(crate) fn update_view_matrix(
+        &mut self,
+        resolution: &Vector2u
+    ) {
+        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
+        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
 
         for viewport in &canvas.get_viewports_2d() {
-            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport);
-            let camera_transform = viewport.get_camera().peek_transform();
+            let camera_transform = {
+                let scene = get_render_context_2d().get_scene(viewport.get_scene_id()).unwrap();
+                scene.get_camera(viewport.get_camera_id()).unwrap()
+                    .peek_transform()
+            };
+            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport.get_id());
             recompute_2d_viewport_view_matrix(
-                &viewport_state.viewport.get_viewport(),
+                &viewport.get_viewport(),
                 &camera_transform.inverse(),
                 resolution,
                 &mut viewport_state.view_matrix,
@@ -198,15 +214,21 @@ impl GlRenderer {
     }
 
     fn rebuild_scene(&mut self) {
-        let canvas = Canvas::of(self.window.get_canvas());
+        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
+        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
 
         for viewport in &canvas.get_viewports_2d() {
-            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport);
-            let camera_transform = viewport.get_camera().get_transform();
+            let camera_transform = {
+                let mut scene = get_render_context_2d()
+                    .get_scene_mut(viewport.get_scene_id())
+                    .unwrap();
+                scene.get_camera_mut(viewport.get_camera_id()).unwrap().get_transform()
+            };
+            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport.get_id());
 
             if camera_transform.dirty {
                 recompute_2d_viewport_view_matrix(
-                    &viewport_state.viewport.get_viewport(),
+                    &viewport.get_viewport(),
                     &camera_transform.value.inverse(),
                     &self.window.peek_resolution(),
                     &mut viewport_state.view_matrix,
@@ -214,14 +236,17 @@ impl GlRenderer {
             }
         }
 
-        for scene in canvas.get_viewports_2d().iter().map(|vp| vp.get_camera().get_scene()) {
-            compile_scene_2d(&mut self.state, &scene);
+        let scene_ids = canvas.get_viewports_2d().iter()
+            .map(|vp| vp.get_scene_id())
+            .collect::<Vec<_>>();
+        for scene_id in scene_ids {
+            compile_scene_2d(&mut self.state, &scene_id);
 
-            fill_buckets_2d(&mut self.state, &scene);
+            fill_buckets_2d(&mut self.state, &scene_id);
 
             let mats: Vec<Resource> = self
                 .state
-                .get_scene_2d_state(&scene)
+                .get_scene_2d_state(scene_id)
                 .render_buckets
                 .values()
                 .map(|rb| &rb.material_res)
@@ -366,11 +391,12 @@ fn recompute_2d_viewport_view_matrix(
         1.0,
     ]);
 
-    let view_mat = transform.get_translation_matrix()
-        .multiply_matrix(anchor_mat_2)
-        .multiply_matrix(transform.get_rotation_matrix())
-        .multiply_matrix(transform.get_scale_matrix())
-        .multiply_matrix(anchor_mat_1);
+    let view_mat =
+        transform.get_translation_matrix() *
+        anchor_mat_2 *
+        transform.get_rotation_matrix() *
+        transform.get_scale_matrix() *
+        anchor_mat_1;
 
-    *dest = compute_proj_matrix(resolution.x, resolution.y).multiply_matrix(view_mat);
+    *dest = compute_proj_matrix(resolution.x, resolution.y) * view_mat;
 }

@@ -15,8 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-use render_rustabi::argus::render::LIGHTS_MAX;
+use render_rs::constants::LIGHTS_MAX;
 use crate::aglet::GLfloat;
 
 pub(crate) const BACKEND_ID: &str = "opengl";

@@ -18,8 +18,9 @@
 
 use std::ops::Deref;
 
-use render_rustabi::argus::render::*;
 use resman_rustabi::argus::resman::*;
+use render_rs::common::{Shader, ShaderStage};
+use render_rs::constants::*;
 
 pub(crate) struct ShaderLoader {
     //TODO
@@ -58,7 +59,7 @@ impl ResourceLoader for ShaderLoader {
             data.append(&mut buf[0..read_bytes].to_vec());
         }
 
-        let shader = Shader::new(prototype.uid.as_str(), shader_type, shader_stage, &data);
+        let shader = Shader::new(prototype.uid.as_str(), shader_type, shader_stage, data);
         Ok(Box::into_raw(Box::new(shader)).cast())
     }
 
@@ -70,7 +71,7 @@ impl ResourceLoader for ShaderLoader {
         src_data: *const u8,
     ) -> Result<*mut u8, ResourceError> {
         let shader: &Shader = unsafe { *src_data.cast() };
-        Ok(Box::into_raw(Box::new(shader.copy())).cast())
+        Ok(Box::into_raw(Box::new(shader)).cast())
     }
 
     fn unload_resource(&mut self, _handle: WrappedResourceLoader, ptr: *mut u8) {

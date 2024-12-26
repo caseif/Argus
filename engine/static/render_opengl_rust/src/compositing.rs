@@ -23,10 +23,12 @@ use crate::util::buffer::GlBuffer;
 use crate::util::defines::*;
 use crate::util::gl_util::*;
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2u};
-use render_rustabi::argus::render::*;
 use std::cmp::{max, min};
 use std::mem::swap;
 use std::ptr;
+use render_rs::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
+use render_rs::constants::*;
+use render_rs::twod::{get_render_context_2d, AttachedViewport2d, RenderContext2d};
 
 const BINDING_INDEX_VBO: u32 = 0;
 
@@ -121,9 +123,6 @@ fn transform_viewport_to_pixels(viewport: &Viewport, resolution: &Vector2u) -> T
 }
 
 fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
-    let al_level = scene_state.scene.get_ambient_light_level();
-    let al_color = scene_state.scene.get_ambient_light_color();
-
     let mut must_update = false;
 
     let ubo = scene_state.ubo.get_or_insert_with(|| {
@@ -137,6 +136,14 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
         )
     });
 
+    let (al_level, al_color) = {
+        let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
+        (
+            scene.get_ambient_light_level(),
+            scene.get_ambient_light_color(),
+        )
+    };
+
     if must_update || al_level.dirty {
         ubo.write_val::<f32>(&al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as usize);
     }
@@ -148,12 +155,15 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
 
     let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
 
-    scene_state.scene.lock_render_state();
+    //scene_state.scene.lock_render_state();
 
-    let lights = scene_state.scene.get_lights_for_render();
-    let lights_count = lights.len();
+    let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
+    let light_handles = scene.get_light_handles().clone();
+    let lights_count = light_handles.len();
 
-    for (i, light) in lights.into_iter().enumerate() {
+    for (i, light_handle) in light_handles.into_iter().enumerate() {
+        let light = scene.get_light_mut(light_handle).unwrap();
+
         let color = light.get_color();
         let pos = &light.get_transform().translation;
         shader_lights_arr[i] = Std140Light2D {
@@ -175,7 +185,7 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
         SHADER_UNIFORM_SCENE_LIGHT_COUNT_OFF as usize,
     );
 
-    scene_state.scene.unlock_render_state();
+    //scene_state.scene.unlock_render_state();
 
     ubo.write_val(&shader_lights_arr, SHADER_UNIFORM_SCENE_LIGHTS_OFF as usize);
 }
@@ -236,11 +246,11 @@ fn create_textures(target: GLenum, n: GLsizei) -> Vec<GlTextureHandle> {
 
 pub(crate) fn draw_scene_2d_to_framebuffer(
     renderer_state: &mut RendererState,
-    scene: &Scene2d,
+    scene_id: impl AsRef<str>,
     att_viewport: &AttachedViewport2d,
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
-    let viewport = att_viewport.as_generic().get_viewport();
+    let viewport = att_viewport.get_viewport();
     let viewport_px = transform_viewport_to_pixels(&viewport, &resolution.value);
 
     let fb_width = (viewport_px.right - viewport_px.left).abs();
@@ -251,30 +261,32 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         || aglet_have_gl_amd_draw_buffers_blend();
 
     // set scene uniforms
-    update_scene_ubo_2d(renderer_state.scene_states_2d.get_mut(&scene.get_id()).unwrap());
+    update_scene_ubo_2d(
+        renderer_state.scene_states_2d.get_mut(scene_id.as_ref()).unwrap()
+    );
 
     //let viewport_state = renderer_state.viewport_states_2d
-    //    .get_mut(&att_viewport.as_generic().get_id()).unwrap();
+    //    .get_mut(&att_viewport.get_id()).unwrap();
     // set viewport uniforms
     update_viewport_ubo(renderer_state.viewport_states_2d
-        .get_mut(&att_viewport.as_generic().get_id()).unwrap());
+        .get_mut(&att_viewport.get_id()).unwrap());
 
-    let scene_state = renderer_state.scene_states_2d.get(&scene.get_id()).unwrap();
+    let scene_state = renderer_state.scene_states_2d.get(scene_id.as_ref()).unwrap();
 
     init_viewport_buffers(
-        renderer_state.viewport_states_2d.get_mut(&att_viewport.as_generic().get_id()).unwrap(),
+        renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
         resolution,
         fb_width,
         fb_height,
     );
 
     let fb_prim = renderer_state.viewport_states_2d
-        .get(&att_viewport.as_generic().get_id()).unwrap().buffers.fb_primary.unwrap();
+        .get(&att_viewport.get_id()).unwrap().buffers.fb_primary.unwrap();
     let fb_sec = renderer_state.viewport_states_2d
-        .get(&att_viewport.as_generic().get_id()).unwrap().buffers.fb_secondary.unwrap();
+        .get(&att_viewport.get_id()).unwrap().buffers.fb_secondary.unwrap();
 
     let viewport_state = renderer_state.viewport_states_2d
-        .get_mut(&att_viewport.as_generic().get_id()).unwrap();
+        .get_mut(&att_viewport.get_id()).unwrap();
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_prim);
 
@@ -295,7 +307,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     let mut non_std_buckets = Vec::<RenderBucketKey>::new();
 
     for (key, bucket) in &scene_state.render_buckets {
-        let mat: Material = bucket.material_res.get_ffi();
+        let mat: &Material = bucket.material_res.get();
         let program_info = renderer_state
             .linked_programs
             .get(&bucket.material_res.get_prototype().uid)
@@ -360,7 +372,8 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         bind_texture(0, 0);
     }
 
-    if scene_state.scene.is_lighting_enabled() {
+    let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
+    if scene.is_lighting_enabled() {
         // generate shadowmap
         let shadowmap_program = get_shadowmap_program(&mut renderer_state.shadowmap_program);
         compute_scene_2d_shadowmap(scene_state, viewport_state, shadowmap_program, renderer_state.frame_vao.unwrap(), &resolution);
@@ -396,11 +409,11 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     let mut color_buf_front = viewport_state.buffers.color_buf_primary.unwrap();
     let mut color_buf_back = viewport_state.buffers.color_buf_secondary.unwrap();
 
-    for postfx in viewport_state.viewport.get_postprocessing_shaders() {
+    for postfx in att_viewport.get_postprocessing_shaders() {
         let postfx_programs = &mut renderer_state.postfx_programs;
 
         let postfx_program = postfx_programs
-            .entry(postfx)
+            .entry(postfx.clone())
             .or_insert_with_key(|postfx| link_program(&[FB_SHADER_VERT_PATH, postfx.as_str()]));
 
         swap(&mut fb_front, &mut fb_back);
@@ -490,10 +503,10 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
                 bucket.obj_ubo.as_ref().unwrap(),
             );
 
-            let mat: Material = bucket.material_res.get_ffi();
+            let mat: &Material = bucket.material_res.get();
             let texture_uid = mat.get_texture_uid();
 
-            if texture_uid != last_tex {
+            if texture_uid != &last_tex {
                 let tex_handle = renderer_state.prepared_textures.get(texture_uid).unwrap();
                 bind_texture(0, *tex_handle.as_ref());
                 last_tex = texture_uid.to_string();
@@ -933,12 +946,13 @@ fn draw_scene_2d_lightmap(
 
 pub(crate) fn draw_framebuffer_to_screen(
     viewport_state: &ViewportState,
+    viewport: &Viewport,
     frame_program: &LinkedProgram,
     frame_vao: GlArrayHandle,
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
     let viewport_px =
-        transform_viewport_to_pixels(&viewport_state.viewport.get_viewport(), &resolution.value);
+        transform_viewport_to_pixels(&viewport, &resolution.value);
     let viewport_width_px = (viewport_px.right - viewport_px.left).abs();
     let viewport_height_px = (viewport_px.bottom - viewport_px.top).abs();
 

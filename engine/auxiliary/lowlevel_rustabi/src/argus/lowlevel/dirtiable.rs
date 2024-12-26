@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct Dirtiable<T> {
@@ -90,5 +91,19 @@ impl<T> ValueAndDirtyFlag<T> {
 
     pub fn as_ref(&self) -> ValueAndDirtyFlag<&T> {
         ValueAndDirtyFlag { value: &self.value, dirty: self.dirty }
+    }
+}
+
+impl<T: Clone> Clone for ValueAndDirtyFlag<T> {
+    fn clone(&self) -> Self {
+        Self { value: self.value.clone(), dirty: self.dirty }
+    }
+}
+
+impl<T: Copy> Copy for ValueAndDirtyFlag<T> {}
+
+impl<T> Into<(T, bool)> for ValueAndDirtyFlag<T> {
+    fn into(self) -> (T, bool) {
+        (self.value, self.dirty)
     }
 }

@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-use lowlevel_rustabi::argus::lowlevel::{Handle, Vector2f};
-use render_rustabi::argus::render::Transform2d;
+use lowlevel_rs::Handle;
+use lowlevel_rustabi::argus::lowlevel::{Vector2f};
 use resman_rustabi::argus::resman::Resource;
+use render_rs::common::Transform2d;
 use crate::sprite::Sprite;
 
 pub struct StaticObject2d {
@@ -62,7 +62,7 @@ impl StaticObject2d {
     }
 
     pub fn get_transform(&self) -> Transform2d {
-        self.transform
+        self.transform.clone()
     }
 
     pub fn get_sprite(&self) -> &Sprite {
