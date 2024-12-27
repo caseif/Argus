@@ -101,7 +101,9 @@ impl Scene2d {
         // That's, uh... God. I was quoting God.
         let light = Light2d::new(ty, is_occludable, color, params, initial_transform);
         let context = get_render_context_2d();
-        context.add_light(light)
+        let handle = context.add_light(light);
+        self.lights.push(handle);
+        handle
     }
 
     pub fn get_light<'a>(
