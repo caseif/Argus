@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::ops::{Deref, Mul, MulAssign};
 use std::sync::Arc;
-use std::sync::atomic::AtomicU16;
+use std::sync::atomic::{AtomicU16, Ordering};
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector4f};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard};
@@ -13,7 +13,7 @@ pub struct Transform2d {
     pub scale: Vector2f,
     pub rotation: f32,
 
-    version_ptr: Option<Arc<AtomicU16>>,
+    version: Option<Arc<AtomicU16>>,
     matrices: RwLock<Option<TransformMatrixCache>>,
 }
 
@@ -31,9 +31,17 @@ impl Clone for Transform2d {
             translation: self.translation,
             scale: self.scale,
             rotation: self.rotation,
-            version_ptr: None,
-            matrices: Default::default(),
+            version: self.version.clone(),
+            matrices: RwLock::new(self.matrices.read().clone()),
         }
+    }
+}
+
+impl PartialEq for Transform2d {
+    fn eq(&self, other: &Self) -> bool {
+        self.translation == other.translation &&
+            self.scale == other.scale &&
+            self.rotation == other.rotation
     }
 }
 
@@ -45,7 +53,7 @@ impl Transform2d {
             translation,
             scale,
             rotation,
-            version_ptr: None,
+            version: None,
             matrices: Default::default(),
         }
     }
@@ -93,6 +101,7 @@ impl Transform2d {
     pub fn add_translation(&mut self, x: f32, y: f32) {
         self.translation += (x, y);
         *self.matrices.write() = None;
+        self.bump_version();
     }
 
     #[must_use]
@@ -105,6 +114,7 @@ impl Transform2d {
     pub fn set_scale(&mut self, x: f32, y: f32) {
         self.scale = Vector2f { x, y };
         *self.matrices.write() = None;
+        self.bump_version();
     }
 
     #[must_use]
@@ -117,6 +127,7 @@ impl Transform2d {
     pub fn add_rotation(&mut self, rads: f32) {
         self.rotation += rads;
         *self.matrices.write() = None;
+        self.bump_version();
     }
 
     #[must_use]
@@ -150,10 +161,10 @@ impl Transform2d {
         guard.expect("Transform matrix cache is missing").scale_matrix
     }
 
-    // this allows the transform to automatically increment the version of an
-    // enclosing object
-    pub fn set_version_ref(&mut self, version_ref: Arc<AtomicU16>) {
-        self.version_ptr = Some(version_ref.clone());
+    fn bump_version(&mut self) {
+        if let Some(version) = &self.version {
+            version.fetch_add(1, Ordering::Relaxed);
+        }
     }
 
     fn compute_aux_matrices(&self) -> RwLockReadGuard<Option<TransformMatrixCache>> {
@@ -202,7 +213,7 @@ impl Transform2d {
     fn compute_transform_matrix<'a>(
         &self,
         anchor_point: Vector2f,
-        guard: RwLockWriteGuard<'a, Option<TransformMatrixCache>>
+        mut guard: RwLockWriteGuard<'a, Option<TransformMatrixCache>>
     ) -> RwLockWriteGuard<'a, Option<TransformMatrixCache>> {
         //auto cur_translation = transform.get_translation();
 
@@ -219,17 +230,17 @@ impl Transform2d {
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0,
         ]);
-        let cache = &mut guard.expect("Transform matrix was computed before aux matrices");
-        cache.full_matrix = Some(
-            (
-                anchor_point,
-                cache.translation_matrix *
-                    anchor_mat_2 *
-                    cache.rotation_matrix *
-                    cache.scale_matrix *
-                    anchor_mat_1,
-            )
-        );
+        guard.as_mut().expect("Transform matrix was computed before aux matrices").full_matrix =
+            Some(
+                (
+                    anchor_point,
+                    guard.unwrap().translation_matrix *
+                        anchor_mat_2 *
+                        guard.unwrap().rotation_matrix *
+                        guard.unwrap().scale_matrix *
+                        anchor_mat_1,
+                )
+            );
         guard
     }
 

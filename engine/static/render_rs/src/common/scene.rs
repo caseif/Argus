@@ -7,3 +7,9 @@ pub enum SceneType {
     TwoDim,
     ThreeDim,
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) enum SceneItemType {
+    Group,
+    Object,
+}

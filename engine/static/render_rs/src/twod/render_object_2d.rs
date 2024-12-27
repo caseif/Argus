@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU16, Ordering};
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, ValueAndDirtyFlag, Vector2f, Vector2u};
 use crate::common::Transform2d;
@@ -14,7 +16,7 @@ pub struct RenderObject2d {
     light_opacity: Dirtiable<f32>,
     transform: Dirtiable<Transform2d>,
     active_frame: Dirtiable<Vector2u>,
-    pub(crate) version: u16,
+    pub(crate) version: Arc<AtomicU16>,
 }
 
 impl RenderObject2d {
@@ -40,14 +42,14 @@ impl RenderObject2d {
             light_opacity: Dirtiable::new(light_opacity),
             transform: Dirtiable::new(transform),
             active_frame: Default::default(),
-            version: 0,
+            version: Arc::new(AtomicU16::new(0)),
         }
     }
-    
+
     pub fn get_handle(&self) -> Option<Handle> {
         self.handle
     }
-    
+
     /// Gets the parent group of this object.
     #[must_use]
     pub fn get_parent(&self) -> Handle {
@@ -156,10 +158,14 @@ impl RenderObject2d {
 
     /// Sets the local Transform of this object.
     ///
-    /// The object's transform is local and doe snot necessarily reflect its
+    /// The object's transform is local and does not necessarily reflect its
     /// absolute transform with respect to the scene containing it.
     pub fn set_transform(&mut self, transform: Transform2d) {
+        if transform == self.transform.peek().value {
+            return;
+        }
         self.transform.set(transform);
+        self.version.fetch_add(1, Ordering::Relaxed);
     }
 
     #[must_use]

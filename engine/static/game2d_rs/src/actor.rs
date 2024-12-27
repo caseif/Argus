@@ -82,6 +82,9 @@ impl Actor2d {
 
     #[script_bind]
     pub fn set_transform(&mut self, transform: Transform2d) {
+        if transform == self.transform.peek().value {
+            return;
+        }
         self.transform.set(transform);
     }
 

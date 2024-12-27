@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU16, Ordering};
 use lazy_static::lazy_static;
 use crate::common::Transform2d;
 use crate::twod::{RenderContext2d, RenderObject2d, RenderPrimitive2d};
@@ -20,7 +21,7 @@ pub struct RenderGroup2d {
     parent_group: Option<Handle>,
     pub(crate) child_groups: Vec<Handle>,
     pub(crate) child_objects: Vec<Handle>,
-    pub(crate) version: u16,
+    pub(crate) version: Arc<AtomicU16>,
 }
 
 impl RenderGroup2d {
@@ -33,7 +34,7 @@ impl RenderGroup2d {
             parent_group,
             child_groups: Vec::new(),
             child_objects: Vec::new(),
-            version: 0,
+            version: Arc::new(AtomicU16::new(0)),
         }
     }
 
@@ -139,7 +140,11 @@ impl RenderGroup2d {
     /// transform with respect to its containing scene, which is computed from
     /// the full hierarchy of groups.
     pub fn set_transform(&mut self, transform: Transform2d) {
+        if transform == self.transform.peek().value {
+            return;
+        }
         self.transform.set(transform);
+        self.version.fetch_add(1, Ordering::Relaxed);
     }
 
     #[must_use]

@@ -79,6 +79,7 @@ impl<T: Default> Default for Dirtiable<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct ValueAndDirtyFlag<T> {
     pub value: T,
     pub dirty: bool,

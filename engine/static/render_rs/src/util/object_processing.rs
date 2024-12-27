@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::Vector2f;
-use crate::common::Matrix4x4;
+use crate::common::{Matrix4x4, SceneItemType};
 use crate::twod::{get_render_context_2d, RenderContext2d};
 
 pub fn process_objects_2d<S>(
@@ -9,7 +10,7 @@ pub fn process_objects_2d<S>(
     update_fn: fn(&str, Handle, &Matrix4x4, bool, &mut S),
     state: &mut S,
 ) {
-    let mut new_version_map: HashMap<Handle, u16> = HashMap::new();
+    let mut new_version_map: HashMap<(SceneItemType, Handle), u16> = HashMap::new();
 
     let root_group_handle = {
         let scene = get_render_context_2d().get_scene(scene_id.as_ref()).unwrap();
@@ -54,7 +55,7 @@ fn process_render_group_2d<S>(
     group_handle: Handle,
     recompute_transform: bool,
     running_transform: Matrix4x4,
-    new_version_map: &mut HashMap<Handle, u16>,
+    new_version_map: &mut HashMap<(SceneItemType, Handle), u16>,
     update_fn: fn(&str, Handle, &Matrix4x4, bool, &mut S),
     state: &mut S,
 ) {
@@ -63,7 +64,7 @@ fn process_render_group_2d<S>(
     let (group_version, child_groups, child_objects, group_transform) = {
         let mut group = context.get_group_mut(group_handle).unwrap();
         (
-            group.version,
+            group.version.load(Ordering::Relaxed),
             group.child_groups.clone(),
             group.child_objects.clone(),
             group.get_transform(),
@@ -75,7 +76,7 @@ fn process_render_group_2d<S>(
         scene.last_rendered_versions.clone()
     };
 
-    new_version_map.insert(group_handle, group_version);
+    new_version_map.insert((SceneItemType::Group, group_handle), group_version);
 
     let mut cur_transform = Matrix4x4::identity();
     let mut recompute_child_transform = recompute_transform;
@@ -84,7 +85,8 @@ fn process_render_group_2d<S>(
         // branch since a parent was dirty
         cur_transform = group_transform.value.as_matrix(Vector2f::new(0.0, 0.0)) *
             running_transform;
-    } else if group_version != *cur_version_map.get(&group_handle).unwrap_or(&0) {
+    } else if group_version !=
+        *cur_version_map.get(&(SceneItemType::Group, group_handle)).unwrap_or(&0) {
         cur_transform = compute_abs_group_transform(context, group_handle);
         recompute_child_transform = true;
     }
@@ -98,13 +100,14 @@ fn process_render_group_2d<S>(
             (
                 child_object.get_transform().value,
                 child_object.get_anchor_point(),
-                child_object.version,
+                child_object.version.load(Ordering::Relaxed),
             )
         };
 
-        let is_obj_dirty = child_version != *cur_version_map.get(&child_obj_handle).unwrap_or(&0);
+        let is_obj_dirty = child_version !=
+            *cur_version_map.get(&(SceneItemType::Object, child_obj_handle)).unwrap_or(&0);
 
-        new_version_map.insert(child_obj_handle, child_version);
+        new_version_map.insert((SceneItemType::Object, child_obj_handle), child_version);
 
         let final_obj_transform = if recompute_child_transform {
             cur_transform * obj_transform.as_matrix(obj_anchor)
@@ -115,7 +118,8 @@ fn process_render_group_2d<S>(
         } else {
             Matrix4x4::identity()
         };
-        // don't need to compute anything otherwise, update function will just mark the object as visited
+        // don't need to compute anything otherwise, update function will just
+        // mark the object as visited
 
         let dirty_transform = recompute_child_transform || is_obj_dirty;
 

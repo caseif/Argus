@@ -14,7 +14,7 @@ pub struct Scene2d {
     pub(crate) root_group_write: Option<Handle>,
     pub(crate) lights: Vec<Handle>,
     cameras: HashMap<String, Camera2d>,
-    pub(crate) last_rendered_versions: HashMap<Handle, u16>,
+    pub(crate) last_rendered_versions: HashMap<(SceneItemType, Handle), u16>,
 }
 
 impl Scene for Scene2d {

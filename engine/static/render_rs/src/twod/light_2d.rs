@@ -30,7 +30,6 @@ pub struct Light2d {
     color: Vector3f,
     params: Light2dParameters,
     transform: Transform2d,
-    version: u16,
 }
 
 impl Light2d {
@@ -48,7 +47,6 @@ impl Light2d {
             color,
             params,
             transform,
-            version: 0,
         }
     }
 
@@ -86,6 +84,9 @@ impl Light2d {
     }
 
     pub fn set_transform(&mut self, transform: Transform2d) {
+        if transform == self.transform {
+            return;
+        }
         self.transform = transform;
     }
 }
