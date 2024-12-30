@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub use game2d_rs::update_lifecycle_game2d_rs;
-pub use input_rs::update_lifecycle_input_rs;
-pub use render_rs::update_lifecycle_render_rs;
-pub use scripting_rs::update_lifecycle_scripting_rs;
-pub use shadertools::c_wrapper::*;
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(unused)]
 
-#[cfg(feature = "opengl")]
-pub use render_opengl_rust::update_lifecycle_render_opengl_rust;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

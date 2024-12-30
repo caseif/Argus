@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use std::time::Duration;
-use core_rustabi::argus::core::ArgusEvent;
+use core_rustabi::argus::core::ArgusFfiEvent;
 use core_rustabi::core_cabi::argus_event_t;
 use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
 
@@ -67,14 +67,12 @@ impl WindowEvent {
     }
 }
 
-impl ArgusEvent for WindowEvent {
+impl ArgusFfiEvent for WindowEvent {
     fn get_type_id() -> &'static str {
         "window"
     }
 
-    fn of(handle: argus_event_t) -> Self
-    where Self: Sized
-    {
+    fn of(handle: argus_event_t) -> Self {
         Self { handle }
     }
 

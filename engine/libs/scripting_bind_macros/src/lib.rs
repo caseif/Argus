@@ -256,7 +256,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         } else {
             quote! {
                 ::argus_scripting_bind::WrappedObject::wrap(
-                    (&*inst.cast::<#struct_ident>()).#field_ident
+                    (&*inst.cast::<#struct_ident>()).#field_ident.clone()
                 )
             }
         };
@@ -285,7 +285,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                             },
                             mutator: |inst, val| unsafe {
                                 (&mut *inst.cast::<#struct_ident>()).#field_ident =
-                                    (*val.cast::<#field_type>())
+                                    (val.cast::<#field_type>()).clone()
                             },
                         },
                         &[#(#type_id_getter_tokens),*],
@@ -394,10 +394,11 @@ fn parse_struct_args(meta_list: &Vec<&Meta>) -> Result<StructAttrArgs, CompileEr
 fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
     let enum_ident = &item.ident;
     let enum_name = enum_ident.to_string();
+    let enum_span = item.span();
 
     let mut last_discrim = quote!(0);
     let mut cur_offset = 0;
-    let vals: Vec<TokenStream2> = item.variants.iter()
+    let vals_tokens: Vec<TokenStream2> = item.variants.iter()
         .map(|enum_var| {
             if let Fields::Unit = &enum_var.fields {
                 let cur_discrim = if let Some((_, explicit_discrim)) = &enum_var.discriminant {
@@ -421,21 +422,78 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
         })
         .collect::<Result<_, _>>()?;
 
+    let script_bound_impl_tokens = quote_spanned! {enum_span=>
+        impl ::argus_scripting_bind::ScriptBound for #enum_ident {
+            fn get_object_type() -> ::argus_scripting_bind::ObjectType {
+                ::argus_scripting_bind::ObjectType {
+                    ty: ::argus_scripting_bind::IntegralType::Enum,
+                    size: size_of::<#enum_ident>(),
+                    is_const: false,
+                    is_refable: None,
+                    is_refable_getter: None,
+                    type_id: Some(::std::any::TypeId::of::<#enum_ident>()),
+                    type_name: Some(#enum_name.to_string()),
+                    primary_type: None,
+                    secondary_type: None,
+                    copy_ctor: None,
+                    move_ctor: None,
+                    dtor: None,
+                }
+            }
+        }
+    };
+
+    let wrappable_impl_tokens = quote_spanned! {enum_span=>
+        impl Wrappable for #enum_ident {
+            type InternalFormat = Self;
+
+            fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                if ::std::mem::size_of::<Self>() > 0 {
+                    unsafe { wrapper.store_value::<Self>(self) }
+                }
+            }
+
+            fn get_required_buffer_size(&self) -> usize
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                ::std::mem::size_of::<Self>()
+            }
+
+            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                // SAFETY: the implementation provided by this macro guarantees
+                //         that Self::InternalFormat == Self
+                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
+            }
+        }
+    };
+
     let enum_def_ident = format_ident!("_{enum_ident}_SCRIPT_BIND_DEFINITION");
     Ok(quote! {
         #item
         const _: () = {
-            #[::argus_scripting_bind::linkme::distributed_slice(
-                ::argus_scripting_bind::BOUND_ENUM_DEFS
-            )]
-            #[linkme(crate = ::argus_scripting_bind::linkme)]
-            static #enum_def_ident: ::argus_scripting_bind::BoundEnumInfo =
-                ::argus_scripting_bind::BoundEnumInfo {
-                    name: #enum_name,
-                    type_id: || { ::std::any::TypeId::of::<#enum_ident>() },
-                    width: size_of::<#enum_ident>(),
-                    values: &[#(#vals),*],
-                };
+            use ::argus_scripting_bind::Wrappable;
+            #script_bound_impl_tokens
+            #wrappable_impl_tokens
+            const _: () = {
+                #[::argus_scripting_bind::linkme::distributed_slice(
+                    ::argus_scripting_bind::BOUND_ENUM_DEFS
+                )]
+                #[linkme(crate = ::argus_scripting_bind::linkme)]
+                static #enum_def_ident: ::argus_scripting_bind::BoundEnumInfo =
+                    ::argus_scripting_bind::BoundEnumInfo {
+                        name: #enum_name,
+                        type_id: || { ::std::any::TypeId::of::<#enum_ident>() },
+                        width: size_of::<#enum_ident>(),
+                        values: &[#(#vals_tokens),*],
+                    };
+            };
         };
     })
 }
@@ -873,13 +931,13 @@ enum OuterTypeType {
     Result,
 }
 
-fn parse_type<'a>(ty: &'a Type, flow_direction: ValueFlowDirection)
+fn parse_type(ty: &Type, flow_direction: ValueFlowDirection)
     -> Result<(ObjectType, Vec<Type>), CompileError> {
     parse_type_internal(ty, flow_direction, OuterTypeType::None)
 }
 
-fn parse_type_internal<'a>(
-    ty: &'a Type,
+fn parse_type_internal(
+    ty: &Type,
     flow_direction: ValueFlowDirection,
     outer_type: OuterTypeType
 )
@@ -957,6 +1015,7 @@ fn parse_type_internal<'a>(
                 type_name: Some(type_name),
                 primary_type: None,
                 secondary_type: None,
+                callback_info: None,
                 copy_ctor: None,
                 move_ctor: None,
                 dtor: None,
@@ -1005,6 +1064,7 @@ fn parse_type_internal<'a>(
                 type_name: None,
                 primary_type: Some(Box::new(inner_obj_type)),
                 secondary_type: None,
+                callback_info: None,
                 copy_ctor: None,
                 move_ctor: None,
                 dtor: None,
@@ -1016,25 +1076,51 @@ fn parse_type_internal<'a>(
     } else if let Type::Tuple(tuple) = ty {
         if tuple.elems.len() == 0 {
             Ok((
-                ObjectType {
-                    ty: IntegralType::Empty,
-                    size: 0,
-                    is_const: false,
-                    is_refable: None,
-                    is_refable_getter: None,
-                    type_id: None,
-                    type_name: None,
-                    primary_type: None,
-                    secondary_type: None,
-                    copy_ctor: None,
-                    move_ctor: None,
-                    dtor: None,
-                },
+                ObjectType::empty(),
                 vec![],
             ))
         } else {
             Err(CompileError::new(tuple.span(), "Tuple types are not supported"))
         }
+    } else if let Type::BareFn(f) = ty {
+        let arg_flow_dir = match flow_direction {
+            ValueFlowDirection::ToScript => ValueFlowDirection::FromScript,
+            ValueFlowDirection::FromScript => ValueFlowDirection::ToScript,
+        };
+        let in_types = f.inputs.iter()
+            .map(|arg| {
+                parse_type_internal(&arg.ty, arg_flow_dir, OuterTypeType::None).map(|(ty, _)| ty)
+            })
+                .collect()?;
+        let out_type = match &f.output {
+            ReturnType::Type(_, ty) => {
+                parse_type_internal(&ty, flow_direction, OuterTypeType::None)
+                    .map(|(ty, _)| ty)?
+            },
+            ReturnType::Default => ObjectType::empty(),
+        };
+
+        Ok((
+            ObjectType {
+                ty: IntegralType::Callback,
+                size: 0,
+                is_const: false,
+                is_refable: None,
+                is_refable_getter: None,
+                type_id: None,
+                type_name: None,
+                primary_type: None,
+                secondary_type: None,
+                callback_info: Some(Box::new(CallbackInfo {
+                    param_types: in_types,
+                    return_type: out_type,
+                })),
+                copy_ctor: None,
+                move_ctor: None,
+                dtor: None,
+            },
+            inner_types,
+        ))
     } else {
         Err(CompileError::new(ty.span(), "Unsupported type"))
     }
@@ -1069,6 +1155,7 @@ macro_rules! resolve_basic_type {
                     type_name: None,
                     primary_type: None,
                     secondary_type: None,
+                    callback_info: None,
                     copy_ctor: None,
                     move_ctor: None,
                     dtor: None,
@@ -1144,6 +1231,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
             type_name: None,
             primary_type: Some(Box::new(inner_obj_type)),
             secondary_type: None,
+            callback_info: None,
             copy_ctor: None,
             move_ctor: None,
             dtor: None,
@@ -1195,6 +1283,7 @@ fn resolve_result<'a>(ty: &'a TypePath, flow_direction: ValueFlowDirection)
             type_name: None,
             primary_type: Some(Box::new(val_obj_type)),
             secondary_type: Some(Box::new(err_obj_type)),
+            callback_info: None,
             copy_ctor: None,
             move_ctor: None,
             dtor: None,

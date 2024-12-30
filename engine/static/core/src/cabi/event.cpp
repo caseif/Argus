@@ -19,6 +19,37 @@
 #include "argus/core/cabi/event.h"
 #include "argus/core/event.hpp"
 
+//TODO: need to figure out how to make this work with scripts
+class WrappedEvent : argus::ArgusEvent {
+  private:
+    void *m_handle;
+    void(*m_destructor)(void *);
+
+  public:
+    WrappedEvent(const char *type_id, void *handle, void(*destructor)(void *)):
+        argus::ArgusEvent(type_id),
+        m_handle(handle),
+        m_destructor(destructor) {
+    }
+
+    ~WrappedEvent() override {
+        m_destructor(this);
+    }
+
+    WrappedEvent(WrappedEvent &) = delete;
+    WrappedEvent(WrappedEvent &&) = delete;
+    WrappedEvent &operator=(WrappedEvent &) = delete;
+    WrappedEvent &&operator=(WrappedEvent &&) = delete;
+
+    const void *get_handle() const {
+        return m_handle;
+    }
+
+    void *get_handle() {
+        return m_handle;
+    }
+};
+
 extern "C" {
 
 const char *argus_event_get_type_id(argus_event_const_t event) {
@@ -39,8 +70,17 @@ void argus_unregister_event_handler(Index index) {
     argus::unregister_event_handler(index);
 }
 
-void argus_dispatch_event(argus_event_t event) {
-    argus::_dispatch_event_ptr(*reinterpret_cast<argus::ArgusEvent *>(event));
+void argus_dispatch_event(const char *type_id, argus_event_t event, void(*destructor)(void *)) {
+    auto *wrapped = new WrappedEvent(type_id, event, destructor);
+    argus::_dispatch_event_ptr(*reinterpret_cast<argus::ArgusEvent *>(wrapped));
+}
+
+const void *argus_unwrap_event(const void *event) {
+    return reinterpret_cast<const WrappedEvent *>(event)->get_handle();
+}
+
+void *argus_unwrap_event_mut(void *event) {
+    return reinterpret_cast<WrappedEvent *>(event)->get_handle();
 }
 
 }

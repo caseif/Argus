@@ -13,6 +13,7 @@ opengl = ["dep:render_opengl_rust"]
 [dependencies]
 shadertools = { path = "../../libs/shadertools" }
 game2d_rs = { path = "../../static/game2d_rs" }
+input_rs = { path = "../../static/input_rs" }
 render_rs = { path = "../../static/render_rs" }
 render_opengl_rust = { path = "../../static/render_opengl_rust", optional = true }
 scripting_rs = { path = "../../static/scripting_rs" }
