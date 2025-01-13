@@ -27,7 +27,7 @@ namespace argus {
 
     void broadcast_message(const std::string &type_id, const void *message) {
         if (g_dispatcher != nullptr) {
-            g_dispatcher(type_id.c_str(), &message);
+            g_dispatcher(type_id.c_str(), message);
         } else {
             // this is super spammy when running tests
             //Logger::default_logger().warn("Message will not be broadcast (no dispatcher is set)");
