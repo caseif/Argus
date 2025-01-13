@@ -285,7 +285,7 @@ namespace argus {
             return is_ok() ? map_fn(unwrap()) : def;
         }
 
-        template<typename U, typename V, typename D, typename F>
+        template<typename U, typename D, typename F>
         [[nodiscard]] std::enable_if_t<!std::is_void_v<T> && !std::is_void_v<E>, U> map_or_else(
                 D map_err_fn, F map_fn) const {
             return is_ok() ? map_fn(unwrap()) : map_err_fn(unwrap_err());

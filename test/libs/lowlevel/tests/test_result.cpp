@@ -84,7 +84,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("map_or_else returns correct mapped value") {
-            REQUIRE(result.map_or_else<int, int>([](auto) { return 1337; },
+            REQUIRE(result.map_or_else<int>([](auto) { return 1337; },
                     [](auto val) { return val + 1; }) == 43);
         }
 
@@ -181,7 +181,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("map_or_else returns correct mapped value") {
-            REQUIRE(result.map_or_else<int, int>([](auto err) { return err + 1; },
+            REQUIRE(result.map_or_else<int>([](auto err) { return err + 1; },
                     [](auto) { return 1337; }) == 43);
         }
 
@@ -309,7 +309,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         THEN("map_or_else returns correct mapped value") {
             int other = 1337;
             int other_2 = 1338;
-            REQUIRE(result.map_or_else<int &, int &>([&other](auto) -> int & { return other; },
+            REQUIRE(result.map_or_else<int &>([&other](auto) -> int & { return other; },
                     [&other_2](auto) -> int & { return other_2; }) == 1338);
         }
 
@@ -441,7 +441,7 @@ SCENARIO("Result class behaves correctly", "[Result]") {
         }
 
         THEN("map_or_else returns correct mapped value") {
-            REQUIRE(result.map_or_else<int, int>([](auto err) { return err + 1; },
+            REQUIRE(result.map_or_else<int>([](auto err) { return err + 1; },
                     [](auto) { return 1337; }) == 43);
         }
 
