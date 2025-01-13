@@ -71,15 +71,18 @@ pub fn get_unattached_gamepad_count() -> u8 {
     unsafe { argus_get_unattached_gamepad_count() }
 }
 
-pub fn get_gamepad_name(gamepad: HidDeviceId) -> String {
+//TODO: gamepad arg should be HidDeviceId
+pub fn get_gamepad_name(gamepad: i32) -> String {
     unsafe { CStr::from_ptr(argus_get_gamepad_name(gamepad)).to_string_lossy().to_string() }
 }
 
-pub fn is_gamepad_button_pressed(gamepad: HidDeviceId, button: GamepadButton) -> bool {
+//TODO: gamepad arg should be HidDeviceId
+pub fn is_gamepad_button_pressed(gamepad: i32, button: GamepadButton) -> bool {
     unsafe { argus_is_gamepad_button_pressed(gamepad, button.into()) }
 }
 
-pub fn get_gamepad_axis(gamepad: HidDeviceId, axis: GamepadAxis) -> f64 {
+//TODO: gamepad arg should be HidDeviceId
+pub fn get_gamepad_axis(gamepad: i32, axis: GamepadAxis) -> f64 {
     unsafe { argus_get_gamepad_axis(gamepad, axis.into()) }
 }
 

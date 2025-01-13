@@ -19,7 +19,7 @@
 use std::convert::TryFrom;
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-
+use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::util::str_to_cstring;
 
 use crate::core_cabi;
@@ -28,8 +28,9 @@ use crate::core_cabi::*;
 pub type NullaryCallback = extern "C" fn();
 pub type DeltaCallback = extern "C" fn(u64);
 
-#[derive(Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
+#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
+#[script_bind(rename = "RsOrdering")]
 pub enum Ordering {
     First = ORDERING_FIRST as u32,
     Early = ORDERING_EARLY as u32,

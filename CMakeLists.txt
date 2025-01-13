@@ -4,7 +4,7 @@ set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
 set(STATIC_MODULE_IDS "core;ecs;resman"
         "scripting;scripting_lua;scripting_rs"
         #"scripting_angelscript"
-        "wm;input;render;render_rs;ui;sound;game2d;game2d_rs")
+        "wm;input;input_rs;render;render_rs;ui;sound;game2d;game2d_rs")
 set(DYNAMIC_MODULE_IDS "")
 set(EXE_MODULE_IDS "bootstrap")
 set(AUX_MODULE_IDS "argus_rs")
@@ -361,7 +361,6 @@ foreach(id ${EXE_MODULE_IDS})
 endforeach()
 
 foreach(id ${AUX_MODULE_IDS})
-  message("configuring aux module ${id}")
   _argus_configure_module("${AUX_MODULES_SRC_DIR}/${id}" "${ROOT_PROJECT_DIR}"
           "${PROJECT_C_VERSION}" "${PROJECT_C_EXTENSIONS}"
           "${PROJECT_CXX_VERSION}" "${PROJECT_CXX_EXTENSIONS}"
