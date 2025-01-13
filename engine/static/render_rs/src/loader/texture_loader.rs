@@ -57,7 +57,7 @@ impl ResourceLoader for TextureLoader {
         Ok(Box::into_raw(Box::new(texture.clone())).cast())
     }
 
-    fn unload_resource(&mut self, handle: WrappedResourceLoader, ptr: *mut u8) {
+    fn unload_resource(&mut self, _handle: WrappedResourceLoader, ptr: *mut u8) {
         unsafe {
             _ = Box::from_raw(ptr.cast::<TextureData>());
         }

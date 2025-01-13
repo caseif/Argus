@@ -148,7 +148,7 @@ impl RenderGroup2d {
     }
 
     #[must_use]
-    pub fn duplicate(&self, context: &mut RenderContext2d) -> RenderGroup2d {
+    pub fn duplicate(&self, _context: &mut RenderContext2d) -> RenderGroup2d {
         todo!()
     }
 }

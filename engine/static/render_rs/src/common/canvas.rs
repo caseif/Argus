@@ -24,7 +24,7 @@ impl Canvas {
     pub fn get_id(&self) -> Uuid {
         self.id
     }
-    
+
     #[must_use]
     pub fn get_window(&self) -> Window {
         self.window

@@ -1,5 +1,4 @@
 use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
 use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
 use lazy_static::lazy_static;

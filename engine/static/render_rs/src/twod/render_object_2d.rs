@@ -169,7 +169,7 @@ impl RenderObject2d {
     }
 
     #[must_use]
-    pub fn duplicate(&self, parent: Handle) -> Handle {
+    pub fn duplicate(&self, _parent: Handle) -> Handle {
         todo!()
     }
 }

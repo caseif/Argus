@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::ops::{Deref, Mul, MulAssign};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
