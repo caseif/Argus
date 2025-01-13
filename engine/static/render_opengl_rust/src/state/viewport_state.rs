@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use render_rs::common::{AttachedViewport, Matrix4x4};
+use render_rs::common::Matrix4x4;
 use crate::util::buffer::GlBuffer;
 use crate::util::gl_util::{GlBufferHandle, GlTextureHandle};
 

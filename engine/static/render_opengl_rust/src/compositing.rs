@@ -28,7 +28,7 @@ use std::mem::swap;
 use std::ptr;
 use render_rs::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
 use render_rs::constants::*;
-use render_rs::twod::{get_render_context_2d, AttachedViewport2d, RenderContext2d};
+use render_rs::twod::{get_render_context_2d, AttachedViewport2d};
 
 const BINDING_INDEX_VBO: u32 = 0;
 

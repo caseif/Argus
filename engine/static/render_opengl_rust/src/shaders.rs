@@ -325,8 +325,10 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         glAttachShader(program_handle, *handle);
     }
 
-    glBindFragDataLocation(program_handle, 0, SHADER_OUT_COLOR.as_ptr().cast());
-    glBindFragDataLocation(program_handle, 1, SHADER_OUT_LIGHT_OPACITY.as_ptr().cast());
+    let out_color_name_c = CString::new(SHADER_OUT_COLOR).unwrap();
+    let out_light_opac_name_c = CString::new(SHADER_OUT_LIGHT_OPACITY).unwrap();
+    glBindFragDataLocation(program_handle, 0, out_color_name_c.as_ptr());
+    glBindFragDataLocation(program_handle, 1, out_light_opac_name_c.as_ptr());
 
     glLinkProgram(program_handle);
 

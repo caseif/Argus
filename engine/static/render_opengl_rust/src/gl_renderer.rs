@@ -25,7 +25,7 @@ use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
 use core_rustabi::argus::core::{get_screen_space_scale_mode, ScreenSpaceScaleMode};
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
-use render_rs::common::{AttachedViewport, Canvas, Matrix4x4, Transform2d, Viewport};
+use render_rs::common::{AttachedViewport, Matrix4x4, Transform2d, Viewport};
 use resman_rustabi::argus::resman::Resource;
 use std::ffi::CStr;
 use std::ptr;
