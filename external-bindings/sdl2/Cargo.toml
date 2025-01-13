@@ -1,0 +1,15 @@
+[package]
+name = "sdl2"
+version = "2.28.4"
+edition = "2021"
+links = "SDL2"
+
+[lib]
+name = "sdl2"
+crate-type = ["rlib"]
+
+[dependencies]
+num_enum = "0.7.3"
+
+[build-dependencies]
+bindgen = "0.71"
