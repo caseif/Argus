@@ -33,6 +33,7 @@ const ATTR_SCRIPT_BIND: &str = "script_bind";
 const UNIV_ARG_IGNORE: &str = "ignore";
 const STRUCT_ARG_RENAME: &str = "rename";
 const STRUCT_ARG_REF_ONLY: &str = "ref_only";
+const ENUM_ARG_RENAME: &str = "rename";
 const FN_ARG_ASSOC_TYPE: &str = "assoc_type";
 const FN_ARG_RENAME: &str = "rename";
 
@@ -41,6 +42,16 @@ struct StructAttrArgs {
     name: Option<String>,
     ref_only: bool,
     ref_only_span: Option<Span2>,
+}
+
+#[derive(Default)]
+struct EnumAttrArgs {
+    name: Option<String>,
+}
+
+#[derive(Default)]
+struct FieldAttrArgs {
+    underlying_type: Option<Path>,
 }
 
 #[derive(Default)]
@@ -152,9 +163,9 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                     is_refable_getter: None,
                     type_id: Some(::std::any::TypeId::of::<#struct_ident>()),
                     type_name: Some(#struct_name.to_string()),
+                    callback_info: None,
                     primary_type: None,
                     secondary_type: None,
-                    callback_info: None,
                     #obj_type_ctor_dtor_field_init_tokens
                 }
             }
@@ -162,7 +173,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
     };
 
     let wrappable_impl_tokens = quote_spanned! {struct_span=>
-        impl Wrappable for #struct_ident {
+        impl ::argus_scripting_bind::Wrappable for #struct_ident {
             type InternalFormat = Self;
 
             fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
@@ -228,6 +239,9 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         };
         let field_name = field_ident.to_string();
         let field_type = &field.ty;
+        if let Type::Reference(_) = field_type {
+            panic!("field is reference type");
+        }
 
         let (field_obj_type, field_type_resolved_types) =
             parse_type(&field.ty, ValueFlowDirection::ToScript)?;
@@ -248,16 +262,15 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         let field_def_ident =
             format_ident!("_{struct_ident}_FIELD_{field_ident}_SCRIPT_BIND_DEFINITION");
 
-        let wrap_field_val_tokens = if field_obj_type.ty == IntegralType::Object {
-            quote! {
+        let wrap_field_val_tokens = quote! {
+            if <#field_type as ::argus_scripting_bind::ScriptBound>::get_object_type().ty ==
+            ::argus_scripting_bind::IntegralType::Object {
                 ::argus_scripting_bind::WrappedObject::wrap(
                     &((&*inst.cast::<#struct_ident>()).#field_ident)
                 )
-            }
-        } else {
-            quote! {
+            } else {
                 ::argus_scripting_bind::WrappedObject::wrap(
-                    (&*inst.cast::<#struct_ident>()).#field_ident
+                    (&*inst.cast::<#struct_ident>()).#field_ident.clone()
                 )
             }
         };
@@ -284,9 +297,10 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                             accessor: |inst| unsafe {
                                 #wrap_field_val_tokens
                             },
+                            #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
                             mutator: |inst, val| unsafe {
                                 (&mut *inst.cast::<#struct_ident>()).#field_ident =
-                                    (*val.cast::<#field_type>())
+                                    (*val.cast::<#field_type>()).clone()
                             },
                         },
                         &[#(#type_id_getter_tokens),*],
@@ -393,12 +407,15 @@ fn parse_struct_args(meta_list: &Vec<&Meta>) -> Result<StructAttrArgs, CompileEr
 }
 
 fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
+    let enum_args = parse_enum_args(&args)?;
+
     let enum_ident = &item.ident;
-    let enum_name = enum_ident.to_string();
+    let enum_name = enum_args.name.unwrap_or(enum_ident.to_string());
+    let enum_span = item.span();
 
     let mut last_discrim = quote!(0);
     let mut cur_offset = 0;
-    let vals: Vec<TokenStream2> = item.variants.iter()
+    let vals_tokens: Vec<TokenStream2> = item.variants.iter()
         .map(|enum_var| {
             if let Fields::Unit = &enum_var.fields {
                 let cur_discrim = if let Some((_, explicit_discrim)) = &enum_var.discriminant {
@@ -422,23 +439,148 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
         })
         .collect::<Result<_, _>>()?;
 
+    let script_bound_impl_tokens = quote_spanned! {enum_span=>
+        impl ::argus_scripting_bind::ScriptBound for #enum_ident {
+            fn get_object_type() -> ::argus_scripting_bind::ObjectType {
+                ::argus_scripting_bind::ObjectType {
+                    ty: ::argus_scripting_bind::IntegralType::Enum,
+                    size: size_of::<#enum_ident>(),
+                    is_const: false,
+                    is_refable: None,
+                    is_refable_getter: None,
+                    type_id: Some(::std::any::TypeId::of::<#enum_ident>()),
+                    type_name: Some(#enum_name.to_string()),
+                    primary_type: None,
+                    secondary_type: None,
+                    callback_info: None,
+                    copy_ctor: None,
+                    move_ctor: None,
+                    dtor: None,
+                }
+            }
+        }
+    };
+
+    let wrappable_impl_tokens = quote_spanned! {enum_span=>
+        impl ::argus_scripting_bind::Wrappable for #enum_ident {
+            type InternalFormat = Self;
+
+            fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                if ::std::mem::size_of::<Self>() > 0 {
+                    unsafe { wrapper.store_value::<Self>(self) }
+                }
+            }
+
+            fn get_required_buffer_size(&self) -> usize
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                ::std::mem::size_of::<Self>()
+            }
+
+            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self
+            where
+                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                    ::std::marker::Copy {
+                // SAFETY: the implementation provided by this macro guarantees
+                //         that Self::InternalFormat == Self
+                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
+            }
+        }
+    };
+
     let enum_def_ident = format_ident!("_{enum_ident}_SCRIPT_BIND_DEFINITION");
     Ok(quote! {
         #item
         const _: () = {
-            #[::argus_scripting_bind::linkme::distributed_slice(
-                ::argus_scripting_bind::BOUND_ENUM_DEFS
-            )]
-            #[linkme(crate = ::argus_scripting_bind::linkme)]
-            static #enum_def_ident: ::argus_scripting_bind::BoundEnumInfo =
-                ::argus_scripting_bind::BoundEnumInfo {
-                    name: #enum_name,
-                    type_id: || { ::std::any::TypeId::of::<#enum_ident>() },
-                    width: size_of::<#enum_ident>(),
-                    values: &[#(#vals),*],
-                };
+            use ::argus_scripting_bind::Wrappable;
+            #script_bound_impl_tokens
+            #wrappable_impl_tokens
+            const _: () = {
+                #[::argus_scripting_bind::linkme::distributed_slice(
+                    ::argus_scripting_bind::BOUND_ENUM_DEFS
+                )]
+                #[linkme(crate = ::argus_scripting_bind::linkme)]
+                static #enum_def_ident: ::argus_scripting_bind::BoundEnumInfo =
+                    ::argus_scripting_bind::BoundEnumInfo {
+                        name: #enum_name,
+                        type_id: || { ::std::any::TypeId::of::<#enum_ident>() },
+                        width: size_of::<#enum_ident>(),
+                        values: &[#(#vals_tokens),*],
+                    };
+            };
         };
     })
+}
+
+fn parse_enum_args(meta_list: &Vec<&Meta>) -> Result<EnumAttrArgs, CompileError> {
+    let mut args_obj = EnumAttrArgs::default();
+
+    for meta in meta_list {
+        match meta {
+            Meta::Path(path) => {
+                let attr_name = match path.segments.first() {
+                    Some(seg) => {
+                        if !seg.arguments.is_empty() {
+                            return Err(CompileError::new(
+                                seg.arguments.span(),
+                                "Unexpected path arguments"
+                            ));
+                        }
+
+                        seg.ident.to_string()
+                    },
+                    None => { return Err(CompileError::new(path.span(), "Unexpected path")) }
+                };
+
+                return Err(CompileError::new(
+                    path.span(),
+                    format!("Invalid attribute argument '{}'", attr_name)
+                ));
+            }
+            Meta::List(list) => {
+                return Err(CompileError::new(list.span(), "Unexpected list"));
+            }
+            Meta::NameValue(nv) => {
+                let attr_name = match nv.path.segments.first() {
+                    Some(seg) => {
+                        if !seg.arguments.is_empty() {
+                            return Err(CompileError::new(
+                                seg.arguments.span(),
+                                "Unexpected path arguments"
+                            ));
+                        }
+
+                        seg.ident.to_string()
+                    },
+                    None => { return Err(CompileError::new(nv.path.span(), "Unexpected path")) }
+                };
+
+                if attr_name == ENUM_ARG_RENAME {
+                    args_obj.name = match &nv.value {
+                        Expr::Lit(ExprLit { lit: Lit::Str(str_literal), .. }) =>
+                            Some(str_literal.value()),
+                        _ => {
+                            return Err(CompileError::new(
+                                nv.value.span(),
+                                "Rename argument must be a string literal",
+                            ));
+                        }
+                    };
+                } else {
+                    return Err(CompileError::new(
+                        nv.span(),
+                        format!("Invalid attribute argument '{}'", attr_name)
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok(args_obj)
 }
 
 fn handle_bare_fn(item: &ItemFn, args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
@@ -536,6 +678,165 @@ fn gen_fn_binding_code(
         },
     };
 
+    let mut param_type_each_tokens = Vec::new();
+    let mut callback_impls_tokens = Vec::new();
+    for i in 0..param_obj_types.len() {
+        let syn_type = &param_types[i];
+        let param_type_tokens: TokenStream2;
+        let boxed_trait_obj_opt = try_as_boxed_trait_object(&syn_type);
+        if let Some(trait_obj) = boxed_trait_obj_opt {
+            //TODO: only allow 1 bound (?)
+            let Some(paren_args) = trait_obj.bounds.iter().find_map(|bound| match bound {
+                TypeParamBound::Trait(t) => {
+                    if match_path(&t.path, vec!["std", "ops", "function", "Fn"]) {
+                        match &t.path.segments.last().unwrap().arguments {
+                            PathArguments::Parenthesized(paren_args) => Some(paren_args),
+                            _ => None,
+                        }
+                    } else {
+                        None
+                    }
+                }
+                _ => None
+            }) else {
+                return Err(
+                    CompileError::new(syn_type.span(),"Trait object type is not supported")
+                );
+            };
+
+            let (cb_param_type_tokens, cb_param_obj_type_tokens): (Vec<_>, Vec<_>) = paren_args
+                .inputs
+                .iter()
+                .map(|ty| {
+                    (
+                        quote_spanned! {ty.span()=>
+                            #ty
+                        },
+                        quote_spanned! {ty.span()=>
+                            <#ty as ::argus_scripting_bind::ScriptBound>::get_object_type()
+                        },
+                    )
+                })
+                .unzip();
+            let (cb_ret_type_tokens, cb_ret_obj_type_tokens) = match &paren_args.output {
+                ReturnType::Default => {
+                    (
+                        quote! { () },
+                        quote! {
+                            <() as ::argus_scripting_bind::ScriptBound>::get_object_type()
+                        },
+                    )
+                },
+                ReturnType::Type(_, ty) => {
+                    (
+                        ty.to_token_stream(),
+                        quote_spanned! {ty.span()=>
+                            <#ty as ::argus_scripting_bind::ScriptBound>::get_object_type()
+                        },
+                    )
+                },
+            };
+
+            let (proxy_signature_param_tokens, callback_invoke_tokens): (Vec<_>, Vec<_>) =
+                cb_param_type_tokens.iter().enumerate()
+                    .map(|(i, type_tokens)| {
+                        let param_ident = format_ident!("param_{i}");
+                        (
+                            quote_spanned! {type_tokens.span()=>
+                                #param_ident: #type_tokens
+                            },
+                            quote_spanned! {type_tokens.span()=>
+                                ::argus_scripting_bind::WrappedObject::wrap(#param_ident)
+                            },
+                        )
+                    })
+                    .unzip();
+
+            let wrappable_type_ident = format_ident!("__script_bind_{fn_name}_param_{i}_wrapper");
+
+            callback_impls_tokens.push(quote_spanned! {call_site_span=>
+                #[derive(::std::clone::Clone, ::std::marker::Copy)]
+                struct #wrappable_type_ident {
+                    bare_fn: ::argus_scripting_bind::FfiBareProxiedScriptCallback,
+                    data: *const ::std::ffi::c_void,
+                }
+
+                impl ::std::convert::Into<#syn_type> for #wrappable_type_ident {
+                    fn into(self) -> #syn_type {
+
+                        Box::new(move |#(#proxy_signature_param_tokens),*| {
+                            let params_wrapped = vec![#(#callback_invoke_tokens),*];
+                            <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
+                            unwrap_as_value(
+                                unsafe {
+                                    &::argus_scripting_bind::call_proxied_callback(
+                                        self.bare_fn,
+                                        self.data,
+                                        params_wrapped
+                                    ).expect("Failed to invoke script callback")
+                                }
+                            )
+                        })
+                    }
+                }
+
+                impl ::argus_scripting_bind::ScriptBound for #wrappable_type_ident {
+                    fn get_object_type() -> ::argus_scripting_bind::ObjectType {
+                        ::argus_scripting_bind::ObjectType {
+                            ty: ::argus_scripting_bind::IntegralType::Callback,
+                            size: ::std::mem::size_of::<#wrappable_type_ident>(),
+                            is_const: false,
+                            is_refable: None,
+                            is_refable_getter: None,
+                            type_id: Some(::std::any::TypeId::of::<#syn_type>()),
+                            type_name: None,
+                            primary_type: None,
+                            secondary_type: None,
+                            callback_info: Some(Box::new(::argus_scripting_bind::CallbackInfo {
+                                param_types: vec![#(#cb_param_obj_type_tokens),*],
+                                return_type: #cb_ret_obj_type_tokens,
+                            })),
+                            copy_ctor: None,
+                            move_ctor: None,
+                            dtor: None,
+                        }
+                    }
+                }
+
+                impl ::argus_scripting_bind::Wrappable for #wrappable_type_ident {
+                    type InternalFormat = ::argus_scripting_bind::FfiProxiedScriptCallback;
+
+                    fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject) {
+                        panic!("Cannot wrap callback");
+                    }
+
+                    fn get_required_buffer_size(&self) -> usize {
+                        ::std::mem::size_of::<#wrappable_type_ident>()
+                    }
+
+                    fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self {
+                        assert!(
+                            wrapper.ty.ty == ::argus_scripting_bind::IntegralType::Callback,
+                            "Wrong object type"
+                        );
+                        unsafe {
+                            let proxied = unsafe { *wrapper.get_ptr::<Self>() };
+                            #wrappable_type_ident {
+                                bare_fn: proxied.bare_fn.unwrap(),
+                                data: proxied.data
+                            }.into()
+                        }
+                    }
+                }
+            });
+            param_type_tokens = wrappable_type_ident.into_token_stream();
+        } else {
+            param_type_tokens = syn_type.to_token_stream();
+        }
+
+        param_type_each_tokens.push(param_type_tokens);
+    }
+
     let invocation_span = match &sig.output {
         ReturnType::Default => call_site_span,
         ReturnType::Type(_, ty) => ty.span(),
@@ -545,9 +846,10 @@ fn gen_fn_binding_code(
         .expect("Failed to serialize function return type");
 
     let param_tokens: Vec<_> = param_types.iter().enumerate().map(|(param_index, param_type)| {
+        let param_type_tokens = &param_type_each_tokens[param_index];
         let param_type_span = param_type.span();
         quote_spanned! {param_type_span=>
-            params[#param_index].unwrap::<#param_type>()
+            params[#param_index].unwrap::<#param_type_tokens>().into()
         }
     }).collect();
 
@@ -578,7 +880,7 @@ fn gen_fn_binding_code(
         })
         .collect();
     let param_type_id_getters_tokens: Vec<TokenStream2> = param_obj_types.into_iter()
-        .map(|(param_obj_type, param_syn_types)| {
+        .map(|(_param_obj_type, param_syn_types)| {
             let getters: Vec<_> = param_syn_types.iter()
                 .map(|ty| {
                     let ty_span = ty.span();
@@ -631,7 +933,7 @@ fn gen_fn_binding_code(
             fn #proxy_ident(params: &[::argus_scripting_bind::WrappedObject]) ->
                 ::std::result::Result<
                     ::argus_scripting_bind::WrappedObject,
-                    ::argus_scripting_bind::ReflectiveArgumentsError
+                    ::argus_scripting_bind::ReflectiveArgumentsError,
                 > {
                 Ok(#wrap_invoke_tokens(#fn_call))
             }
@@ -661,6 +963,8 @@ fn gen_fn_binding_code(
                     #(#param_type_id_getters_tokens),*
                 ],
             );
+
+            #(#callback_impls_tokens)*
         };
     })
 }
@@ -870,22 +1174,105 @@ enum OuterTypeType {
     None,
     Reference,
     MutReference,
+    Box,
     Vec,
     Result,
 }
 
-fn parse_type<'a>(ty: &'a Type, flow_direction: ValueFlowDirection)
+fn try_as_boxed_trait_object(ty: &Type) -> Option<&TypeTraitObject> {
+    let Type::Path(TypePath { path, .. }) = ty else { return None; };
+    if !match_path(path, vec!["std", "boxed", "Box"]) {
+        return None;
+    }
+    let PathArguments::AngleBracketed(angle_args) = &path.segments.last().unwrap().arguments
+    else { return None; };
+    let arg = angle_args.args.first()?;
+    match arg {
+        GenericArgument::Type(Type::TraitObject(trait_obj)) => Some(trait_obj),
+        _ => None,
+    }
+}
+
+fn parse_type(ty: &Type, flow_direction: ValueFlowDirection)
     -> Result<(ObjectType, Vec<Type>), CompileError> {
     parse_type_internal(ty, flow_direction, OuterTypeType::None)
 }
 
-fn parse_type_internal<'a>(
-    ty: &'a Type,
+fn parse_type_internal(
+    ty: &Type,
     flow_direction: ValueFlowDirection,
     outer_type: OuterTypeType
 )
     -> Result<(ObjectType, Vec<Type>), CompileError> {
-    if let Type::Path(path) = ty {
+    if let Some(trait_obj) = try_as_boxed_trait_object(ty) {
+        if outer_type != OuterTypeType::None {
+            return Err(CompileError::new(
+                ty.span(), "Boxed callback may not be used as an inner type"
+            ));
+        }
+
+        //TODO: only allow 1 bound (?)
+        let Some(paren_args) = trait_obj.bounds.iter().find_map(|bound| match bound {
+            TypeParamBound::Trait(t) => {
+                if match_path(&t.path, vec!["std", "ops", "function", "Fn"]) {
+                    match &t.path.segments.last().unwrap().arguments {
+                        PathArguments::Parenthesized(paren_args) => Some(paren_args),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None
+        }) else {
+            return Err(
+                CompileError::new(ty.span(),"Trait object type is not supported")
+            );
+        };
+
+        let arg_flow_dir = match flow_direction {
+            ValueFlowDirection::ToScript => ValueFlowDirection::FromScript,
+            ValueFlowDirection::FromScript => ValueFlowDirection::ToScript,
+        };
+        let (out_type, out_syn_types) = match &paren_args.output {
+            ReturnType::Type(_, ty) => {
+                parse_type_internal(&ty, flow_direction, OuterTypeType::None)?
+            },
+            ReturnType::Default => (ObjectType::empty(), vec![]),
+        };
+        let (in_types, in_syn_types) = paren_args.inputs.iter()
+            .map(|arg| {
+                parse_type_internal(arg, arg_flow_dir, OuterTypeType::None)
+            })
+            .collect::<Result<(_, Vec<_>), _>>()?;
+        let in_syn_types = in_syn_types.into_iter().flatten().collect::<Vec<_>>();
+
+        let mut all_syn_types = Vec::with_capacity(out_syn_types.len() + in_syn_types.len());
+        all_syn_types.extend(out_syn_types);
+        all_syn_types.extend(in_syn_types);
+
+        Ok((
+            ObjectType {
+                ty: IntegralType::Callback,
+                size: 16, //TODO: don't hardcode
+                is_const: false,
+                is_refable: None,
+                is_refable_getter: None,
+                type_id: None,
+                type_name: None,
+                primary_type: None,
+                secondary_type: None,
+                callback_info: Some(Box::new(CallbackInfo {
+                    param_types: in_types,
+                    return_type: out_type,
+                })),
+                copy_ctor: None,
+                move_ctor: None,
+                dtor: None,
+            },
+            all_syn_types,
+        ))
+    } else if let Type::Path(path) = ty {
         if path.path.segments.len() == 0 {
             return Err(CompileError::new(path.span(), "Type path does not contain any segments"));
         }
@@ -989,11 +1376,16 @@ fn parse_type_internal<'a>(
         let (inner_obj_type, inner_types) =
             parse_type_internal(&reference.elem, flow_direction, OuterTypeType::Reference)?;
 
-        if inner_obj_type.ty != IntegralType::Object {
+        if inner_obj_type.ty != IntegralType::Object &&
+            inner_obj_type.ty != IntegralType::Callback {
             return Err(CompileError::new(
                 reference.span(),
-                "Non-struct reference type is not allowed in bound symbol"
+                "Only struct or callback reference types are allowed in bound symbols"
             ));
+        }
+
+        if inner_obj_type.ty == IntegralType::Callback {
+            return Ok((inner_obj_type, inner_types));
         }
 
         Ok((
@@ -1019,28 +1411,14 @@ fn parse_type_internal<'a>(
     } else if let Type::Tuple(tuple) = ty {
         if tuple.elems.len() == 0 {
             Ok((
-                ObjectType {
-                    ty: IntegralType::Empty,
-                    size: 0,
-                    is_const: false,
-                    is_refable: None,
-                    is_refable_getter: None,
-                    type_id: None,
-                    type_name: None,
-                    primary_type: None,
-                    secondary_type: None,
-                    callback_info: None,
-                    copy_ctor: None,
-                    move_ctor: None,
-                    dtor: None,
-                },
+                ObjectType::empty(),
                 vec![],
             ))
         } else {
             Err(CompileError::new(tuple.span(), "Tuple types are not supported"))
         }
     } else {
-        Err(CompileError::new(ty.span(), "Unsupported type"))
+        Err(CompileError::new(ty.span(), "Unsupported type for script binding"))
     }
 }
 
@@ -1159,7 +1537,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
     )))
 }
 
-fn resolve_result<'a>(ty: &'a TypePath, flow_direction: ValueFlowDirection)
+fn resolve_result(ty: &TypePath, flow_direction: ValueFlowDirection)
     -> Result<Option<(ObjectType, Option<Type>, Option<Type>)>, CompileError> {
     if !match_path(&ty.path, vec!["core", "Result"]) {
         return Ok(None);
