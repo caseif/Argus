@@ -16,16 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::{mem, ptr, slice};
-use std::any::TypeId;
+use std::{ptr, slice};
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use num_enum::{IntoPrimitive, UnsafeFromPrimitive};
-use argus_scripting_bind::{FfiCopyCtor, FfiMoveCtor};
+use argus_scripting_types::{FfiCopyCtor, FfiMoveCtor, ObjectType};
+use crate::argus::scripting::{from_ffi_obj_type, to_ffi_obj_type};
 use crate::scripting_cabi::*;
 
 #[repr(u32)]
-#[derive(IntoPrimitive, UnsafeFromPrimitive)]
+#[derive(Clone, Copy, Debug, IntoPrimitive, UnsafeFromPrimitive)]
 pub enum FfiIntegralType {
     Void = INTEGRAL_TYPE_VOID,
     Integer = INTEGRAL_TYPE_INTEGER,
@@ -80,26 +80,34 @@ impl<'a> FfiObjectType<'a> {
         script_callback_type: Option<ScriptCallbackType>,
         primary_type: Option<FfiObjectType<'a>>,
         secondary_type: Option<FfiObjectType<'a>>,
-        copy_ctor: Option<FfiCopyCtor>,
-        move_ctor: Option<FfiMoveCtor>,
+        _copy_ctor: Option<FfiCopyCtor>,
+        _move_ctor: Option<FfiMoveCtor>,
     ) -> Self {
         let type_id_c = type_id.map(|id| CString::new(id).unwrap());
         let type_id_c_ptr = type_id_c.as_ref().map(|id| id.as_ptr()).unwrap_or(ptr::null());
 
+        let script_cb_type = script_callback_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut());
+        let prim_type = primary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut());
+        let sec_type = secondary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut());
+        let integ_type: ArgusIntegralType = ty.into();
         Self {
             handle: unsafe { argus_object_type_new(
-                ty.into(),
+                integ_type,
                 size,
                 is_const,
                 is_refable,
                 type_id_c_ptr,
-                script_callback_type.map(|t| t.handle).unwrap_or(ptr::null_mut()),
-                primary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut()),
-                secondary_type.as_ref().map(|t| t.handle).unwrap_or(ptr::null_mut()),
+                script_cb_type,
+                prim_type,
+                sec_type,
             ) },
             _handle_phantom: PhantomData,
             must_free: true,
         }
+    }
+
+    pub fn get_handle(&self) -> argus_object_type_const_t {
+        self.handle
     }
 
     pub fn get_type(&self) -> FfiIntegralType {
@@ -166,11 +174,63 @@ impl<'a> Drop for FfiObjectType<'a> {
 
 pub struct ScriptCallbackType {
     handle: argus_script_callback_type_t,
+    must_free: bool,
+}
+
+impl Drop for ScriptCallbackType {
+    fn drop(&mut self) {
+        if self.must_free {
+            unsafe { argus_script_callback_type_delete(self.handle); }
+        }
+    }
 }
 
 impl ScriptCallbackType {
     pub fn of(handle: argus_script_callback_type_t) -> Self {
-        Self { handle }
+        Self { handle, must_free: false }
+    }
+    
+    pub fn new(param_types: &[FfiObjectType], ret_type: &FfiObjectType) -> Self {
+        let param_type_ptrs = param_types.iter().map(|ty| ty.handle).collect::<Vec<_>>();
+        Self {
+            handle: unsafe {
+                argus_script_callback_type_new(
+                    param_types.len(),
+                    param_type_ptrs.as_ptr(),
+                    ret_type.get_handle(),
+                )
+            },
+            must_free: true,
+        }
+    }
+
+    pub fn from(param_types: &[ObjectType], return_type: &ObjectType) -> Self {
+        let ffi_param_types = param_types.iter()
+            .map(|ty| {
+                to_ffi_obj_type(ty)
+            })
+            .collect::<Vec<_>>();
+
+        let ffi_ret_type = to_ffi_obj_type(return_type);
+        Self::new(&ffi_param_types, &ffi_ret_type)
+    }
+
+    pub fn get_param_types(&self) -> Vec<ObjectType> {
+        unsafe {
+            let count = argus_script_callback_type_get_param_count(self.handle.cast());
+            let mut ty_ptrs = Vec::with_capacity(count);
+            ty_ptrs.resize(count, ptr::null_mut());
+            argus_script_callback_type_get_params(self.handle.cast(), ty_ptrs.as_mut_ptr(), count);
+            ty_ptrs.iter().map(|ty| from_ffi_obj_type(&FfiObjectType::of(*ty))).collect()
+        }
+    }
+
+    pub fn get_return_type(&self) -> ObjectType {
+        unsafe {
+            from_ffi_obj_type(&FfiObjectType::of(
+                argus_script_callback_type_get_return_type(self.handle.cast())
+            ))
+        }
     }
 }
 
@@ -184,7 +244,7 @@ impl FfiObjectWrapper {
         Self { handle, must_free: false }
     }
 
-    pub fn new(ty: FfiObjectType, data: *const (), size: usize) -> Self {
+    pub fn new(ty: FfiObjectType, size: usize) -> Self {
         Self {
             handle: unsafe { argus_object_wrapper_new(ty.handle, size) },
             must_free: true,

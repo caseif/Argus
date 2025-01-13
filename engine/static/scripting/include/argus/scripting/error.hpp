@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "argus/scripting/types.hpp"
-
 #include <string>
 
 namespace argus {
@@ -51,6 +49,8 @@ namespace argus {
         std::string function_name;
         std::string msg;
 
+        ScriptInvocationError(std::string fn_name, std::string message);
+
         std::string to_string(void) const;
     };
 
@@ -60,6 +60,12 @@ namespace argus {
         ReflectiveArgumentsError(std::string reason);
 
         std::string to_string(void) const;
+    };
+
+    enum class SymbolType {
+        Type,
+        Field,
+        Function,
     };
 
     struct SymbolNotBoundError {

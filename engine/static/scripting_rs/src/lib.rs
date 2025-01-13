@@ -44,6 +44,7 @@ fn map_integral_type(ty: IntegralType) -> FfiIntegralType {
         IntegralType::Result => FfiIntegralType::Result,
         IntegralType::Object => FfiIntegralType::Struct,
         IntegralType::Enum => FfiIntegralType::Enum,
+        IntegralType::Callback => FfiIntegralType::Callback,
     }
 }
 
@@ -78,6 +79,8 @@ fn map_object_type<'a>(
         .map(|inner| map_object_type(inner, type_id_getters, next_type_id_index));
     let sec_type_mapped_opt = ty.secondary_type.as_ref()
         .map(|inner| map_object_type(inner, type_id_getters, next_type_id_index));
+    let callback_info_mapped_opt = ty.callback_info.as_ref()
+        .map(|inner| map_script_callback_type(inner, type_id_getters, next_type_id_index));
 
     let mut type_id_opt = type_id_opt;
     if ty.ty == IntegralType::Reference ||
@@ -93,12 +96,24 @@ fn map_object_type<'a>(
         ty.is_const,
         ty.get_is_refable().unwrap_or(false),
         type_id_opt,
-        None,
+        callback_info_mapped_opt,
         prim_type_mapped_opt,
         sec_type_mapped_opt,
         ty.copy_ctor.map(|getter| getter.fn_ptr),
         ty.move_ctor.map(|getter| getter.fn_ptr),
     )
+}
+
+fn map_script_callback_type(
+    ty: &CallbackInfo,
+    type_id_getters: &[fn () -> TypeId],
+    next_type_id_index: &mut usize,
+) -> ScriptCallbackType {
+    let ffi_param_types = ty.param_types.iter()
+        .map(|param_type| map_object_type(param_type, type_id_getters, next_type_id_index))
+        .collect::<Vec<_>>();
+    let ffi_ret_type = map_object_type(&ty.return_type, type_id_getters, next_type_id_index);
+    ScriptCallbackType::new(ffi_param_types.as_slice(), &ffi_ret_type)
 }
 
 #[no_mangle]
@@ -127,6 +142,7 @@ pub fn register_script_bindings() {
     }
 
     for enum_info in BOUND_ENUM_DEFS {
+        println!("Processing enum {} with type {:?}", enum_info.name, (enum_info.type_id)());
         let type_id = format!("{:?}", (enum_info.type_id)());
         bind_enum_type(enum_info.name, enum_info.width, type_id.as_str())
             .expect("Failed to bind enum type");

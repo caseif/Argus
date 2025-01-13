@@ -14,6 +14,8 @@ pub const BINDING_ERROR_TYPE_OTHER: ArgusBindingErrorType = 5;
 pub type ArgusBindingErrorType = ::std::os::raw::c_uint;
 pub type argus_reflective_args_error_t = *mut ::std::os::raw::c_void;
 pub type argus_reflective_args_error_const_t = *const ::std::os::raw::c_void;
+pub type argus_script_invocation_error_t = *mut ::std::os::raw::c_void;
+pub type argus_script_invocation_error_const_t = *const ::std::os::raw::c_void;
 pub type ArgusCopyCtorProxy = ::std::option::Option<
     unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: *const ::std::os::raw::c_void),
 >;
@@ -64,6 +66,15 @@ pub struct ArgusObjectWrapperOrReflectiveArgsError {
     pub val: argus_object_wrapper_t,
     pub err: argus_reflective_args_error_t,
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ArgusObjectWrapperOrScriptInvocationError {
+    pub is_err: bool,
+    pub val: argus_object_wrapper_t,
+    pub err: argus_script_invocation_error_t,
+}
+pub type argus_script_callback_result_t = *mut ::std::os::raw::c_void;
+pub type argus_script_callback_result_const_t = *const ::std::os::raw::c_void;
 pub type ArgusProxiedNativeFunction = ::std::option::Option<
     unsafe extern "C" fn(
         params_count: usize,
@@ -71,6 +82,20 @@ pub type ArgusProxiedNativeFunction = ::std::option::Option<
         extra: *const ::std::os::raw::c_void,
     ) -> ArgusObjectWrapperOrReflectiveArgsError,
 >;
+pub type ArgusBareProxiedScriptCallback = ::std::option::Option<
+    unsafe extern "C" fn(
+        params_count: usize,
+        params: *mut argus_object_wrapper_t,
+        data: *const ::std::os::raw::c_void,
+        out_result: argus_script_callback_result_t,
+    ),
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ArgusProxiedScriptCallback {
+    pub bare_fn: ArgusBareProxiedScriptCallback,
+    pub data: *const ::std::os::raw::c_void,
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ArgusMaybeBindingError {
@@ -107,6 +132,17 @@ extern "C" {
     pub fn argus_reflective_args_error_get_reason(
         err: argus_reflective_args_error_const_t,
     ) -> *const ::std::os::raw::c_char;
+    pub fn argus_script_invocation_error_new(
+        fn_name: *const ::std::os::raw::c_char,
+        reason: *const ::std::os::raw::c_char,
+    ) -> argus_script_invocation_error_t;
+    pub fn argus_script_invocation_error_free(err: argus_script_invocation_error_t);
+    pub fn argus_script_invocation_error_get_function_name(
+        err: argus_script_invocation_error_const_t,
+    ) -> *const ::std::os::raw::c_char;
+    pub fn argus_script_invocation_error_get_message(
+        err: argus_script_invocation_error_const_t,
+    ) -> *const ::std::os::raw::c_char;
     pub fn argus_object_wrapper_or_refl_args_err_delete(
         res: ArgusObjectWrapperOrReflectiveArgsError,
     );
@@ -140,17 +176,37 @@ extern "C" {
     pub fn argus_object_type_get_secondary_type(
         obj_type: argus_object_type_const_t,
     ) -> argus_object_type_const_t;
+    pub fn argus_script_callback_type_new(
+        param_count: usize,
+        param_types: *const argus_object_type_const_t,
+        return_type: argus_object_type_const_t,
+    ) -> argus_script_callback_type_t;
+    pub fn argus_script_callback_type_delete(callback_type: argus_script_callback_type_t);
     pub fn argus_script_callback_type_get_param_count(
         callback_type: argus_script_callback_type_const_t,
     ) -> usize;
     pub fn argus_script_callback_type_get_params(
-        callback_type: argus_script_callback_type_const_t,
+        callback_type: argus_script_callback_type_t,
         obj_types: *mut argus_object_type_t,
         count: usize,
     );
     pub fn argus_script_callback_type_get_return_type(
-        callback_type: argus_script_callback_type_const_t,
+        callback_type: argus_script_callback_type_t,
     ) -> argus_object_type_t;
+    pub fn argus_script_callback_result_new() -> argus_script_callback_result_t;
+    pub fn argus_script_callback_result_delete(result: argus_script_callback_result_t);
+    pub fn argus_script_callback_result_emplace(
+        dest: argus_script_callback_result_t,
+        value: argus_object_wrapper_t,
+        error: argus_script_invocation_error_t,
+    );
+    pub fn argus_script_callback_result_is_ok(result: argus_script_callback_result_t) -> bool;
+    pub fn argus_script_callback_result_get_value(
+        result: argus_script_callback_result_t,
+    ) -> argus_object_wrapper_t;
+    pub fn argus_script_callback_result_get_error(
+        result: argus_script_callback_result_t,
+    ) -> argus_script_invocation_error_const_t;
     pub fn argus_object_wrapper_new(
         obj_type: argus_object_type_const_t,
         size: usize,

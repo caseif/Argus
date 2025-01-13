@@ -107,9 +107,11 @@ namespace argus {
     ObjectWrapper::ObjectWrapper(const ObjectType &type, size_t size):
         type(type),
         is_initialized(false) {
-        argus_assert(type.type == IntegralType::String || type.type == IntegralType::Pointer
+        if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
                 || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef
-                || type.type == IntegralType::Result || type.size == size);
+                || type.type == IntegralType::Result || type.size == size)) {
+            argus_assert(false);
+        }
 
         // override size for pointer type since we're only copying the pointer
         size_t copy_size = type.type == IntegralType::Pointer

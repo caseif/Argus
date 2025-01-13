@@ -23,6 +23,8 @@
 
 #include "argus/core/engine.hpp"
 
+#include "argus/scripting/error.hpp"
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -64,12 +66,6 @@ namespace argus {
         MemberStatic,
         MemberInstance,
         Extension,
-    };
-
-    enum class SymbolType {
-        Type,
-        Field,
-        Function,
     };
 
     struct ScriptCallbackType;
@@ -120,9 +116,6 @@ namespace argus {
 
     typedef std::function<Result<ObjectWrapper, ReflectiveArgumentsError>(std::vector<ObjectWrapper> &)>
             ProxiedNativeFunction;
-
-    typedef std::function<Result<ObjectWrapper, ScriptInvocationError>(const std::vector<ObjectWrapper> &)>
-            ProxiedScriptCallback;
 
     enum class VectorObjectType {
         ArrayBlob,
@@ -336,81 +329,7 @@ namespace argus {
     };
 
     template<typename T>
-    static void _validate_value_type(const ObjectType &type) {
-        static_assert(!std::is_pointer_v<T>, "Use reference type instead of pointer");
-
-        if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
-                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef
-                || type.type == IntegralType::Result)) {
-            argus_assert(type.size == sizeof(T));
-        }
-
-        switch (type.type) {
-            case IntegralType::Void: {
-                crash("Cannot get void value from ObjectWrapper");
-            }
-            case IntegralType::Integer: {
-                argus_assert(std::is_integral_v<T>);
-                argus_assert(std::is_signed_v<T>);
-                break;
-            }
-            case IntegralType::UInteger: {
-                argus_assert(std::is_integral_v<T>);
-                argus_assert(!std::is_signed_v<T>);
-                break;
-            }
-            case IntegralType::Float: {
-                argus_assert(std::is_floating_point_v<T>);
-                break;
-            }
-            case IntegralType::Boolean: {
-                argus_assert(std::is_integral_v<T>);
-                break;
-            }
-            case IntegralType::String: {
-                argus_assert(false);
-            }
-            case IntegralType::Struct: {
-                argus_assert(type.type_id.value() == typeid(T).name());
-                break;
-            }
-            case IntegralType::Pointer: {
-                argus_assert(type.type_id.value() == typeid(std::remove_pointer_t<T>).name());
-                break;
-            }
-            case IntegralType::Enum: {
-                if constexpr (std::is_enum_v<T>) {
-                    argus_assert(type.type_id.value() == typeid(T).name());
-                } else {
-                    argus_assert(std::is_integral_v<T>);
-                }
-                break;
-            }
-            case IntegralType::Callback: {
-                argus_assert(std::is_same_v<T, ProxiedNativeFunction> || std::is_same_v<T, ProxiedScriptCallback>);
-                break;
-            }
-            case IntegralType::Type: {
-                argus_assert(std::is_same_v<T, std::type_index>);
-                break;
-            }
-            case IntegralType::Vector: {
-                argus_assert(std::is_same_v<T, ArrayBlob>);
-                break;
-            }
-            case IntegralType::VectorRef: {
-                argus_assert(std::is_same_v<T, VectorWrapper>);
-                break;
-            }
-            case IntegralType::Result: {
-                argus_assert(std::is_same_v<T, ResultWrapper>);
-                break;
-            }
-            default: {
-                crash("Unhandled IntegralType ordinal %d", type.type);
-            }
-        }
-    }
+    static void _validate_value_type(const ObjectType &type);
 
     struct ObjectWrapper {
         ObjectType type;
@@ -509,6 +428,97 @@ namespace argus {
 
         void copy_value_into(void *dest, size_t size) const;
     };
+
+    struct ScriptCallbackResult {
+        bool is_ok;
+        std::optional<ObjectWrapper> value;
+        std::optional<ScriptInvocationError> error;
+    };
+
+    typedef void(*BareProxiedScriptCallback)(size_t params_count, ObjectWrapper **params, const void *data,
+            ScriptCallbackResult *out_result);
+
+    typedef struct ProxiedScriptCallback {
+        BareProxiedScriptCallback bare_fn;
+        const void *data;
+    } ProxiedScriptCallback;
+
+    template<typename T>
+    static void _validate_value_type(const ObjectType &type) {
+        static_assert(!std::is_pointer_v<T>, "Use reference type instead of pointer");
+
+        if (!(type.type == IntegralType::String || type.type == IntegralType::Pointer
+                || type.type == IntegralType::Vector || type.type == IntegralType::VectorRef
+                || type.type == IntegralType::Result)) {
+            argus_assert(type.size == sizeof(T));
+        }
+
+        switch (type.type) {
+            case IntegralType::Void: {
+                crash("Cannot get void value from ObjectWrapper");
+            }
+            case IntegralType::Integer: {
+                argus_assert(std::is_integral_v<T>);
+                argus_assert(std::is_signed_v<T>);
+                break;
+            }
+            case IntegralType::UInteger: {
+                argus_assert(std::is_integral_v<T>);
+                argus_assert(!std::is_signed_v<T>);
+                break;
+            }
+            case IntegralType::Float: {
+                argus_assert(std::is_floating_point_v<T>);
+                break;
+            }
+            case IntegralType::Boolean: {
+                argus_assert(std::is_integral_v<T>);
+                break;
+            }
+            case IntegralType::String: {
+                argus_assert(false);
+            }
+            case IntegralType::Struct: {
+                argus_assert(type.type_id.value() == typeid(T).name());
+                break;
+            }
+            case IntegralType::Pointer: {
+                argus_assert(type.type_id.value() == typeid(std::remove_pointer_t<T>).name());
+                break;
+            }
+            case IntegralType::Enum: {
+                if constexpr (std::is_enum_v<T>) {
+                    argus_assert(type.type_id.value() == typeid(T).name());
+                } else {
+                    argus_assert(std::is_integral_v<T>);
+                }
+                break;
+            }
+            case IntegralType::Callback: {
+                argus_assert(std::is_same_v<T, ProxiedNativeFunction> || std::is_same_v<T, ProxiedScriptCallback>);
+                break;
+            }
+            case IntegralType::Type: {
+                argus_assert(std::is_same_v<T, std::type_index>);
+                break;
+            }
+            case IntegralType::Vector: {
+                argus_assert(std::is_same_v<T, ArrayBlob>);
+                break;
+            }
+            case IntegralType::VectorRef: {
+                argus_assert(std::is_same_v<T, VectorWrapper>);
+                break;
+            }
+            case IntegralType::Result: {
+                argus_assert(std::is_same_v<T, ResultWrapper>);
+                break;
+            }
+            default: {
+                crash("Unhandled IntegralType ordinal %d", type.type);
+            }
+        }
+    }
 
     struct BoundFunctionDef {
         std::string name;

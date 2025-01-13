@@ -41,6 +41,11 @@ namespace argus {
                 + "\" }";
     }
 
+    ScriptInvocationError::ScriptInvocationError(std::string fn_name, std::string message):
+        function_name(fn_name),
+        msg(message) {
+    }
+
     std::string ScriptInvocationError::to_string(void) const {
         return "ScriptInvocationError { "
                 "function_name = \""

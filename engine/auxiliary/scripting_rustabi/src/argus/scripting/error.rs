@@ -16,9 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
+use std::ptr;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use argus_scripting_bind::ReflectiveArgumentsError;
+use argus_scripting_types::{ReflectiveArgumentsError, ScriptInvocationError, WrappedObject};
+use crate::argus::scripting::to_ffi_obj_wrapper;
 use crate::scripting_cabi::*;
 
 #[derive(Clone, Debug)]
@@ -67,5 +69,24 @@ pub fn translate_refl_args_err(err_ffi: argus_reflective_args_error_t) -> Reflec
         argus_reflective_args_error_free(err_ffi);
 
         error
+    }
+}
+
+pub fn emplace_callback_result_ok(dest: argus_script_callback_result_t, object: WrappedObject) {
+    unsafe {
+        let ffi_obj = to_ffi_obj_wrapper(object).unwrap();
+        argus_script_callback_result_emplace(dest, ffi_obj.handle, ptr::null_mut());
+    }
+}
+
+pub fn emplace_callback_result_err(
+    dest: argus_script_callback_result_t,
+    err: ScriptInvocationError
+) {
+    unsafe {
+        let fn_name_c = CString::new(err.fn_name).unwrap();
+        let message_c = CString::new(err.message).unwrap();
+        let ffi_err = argus_script_invocation_error_new(fn_name_c.as_ptr(), message_c.as_ptr());
+        argus_script_callback_result_emplace(dest, ptr::null_mut(), ffi_err);
     }
 }

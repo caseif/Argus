@@ -16,16 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use argus_scripting_bind::{FunctionType, ObjectType, ProxiedNativeFunction};
+use argus_scripting_types::{FunctionType, ObjectType, ProxiedNativeFunction};
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use std::any::TypeId;
 use std::ptr::slice_from_raw_parts;
 use crate::argus::scripting::{call_proxied_fn, BindingError, FfiObjectType, FfiObjectWrapper};
 use crate::scripting_cabi::*;
-
-pub use argus_scripting_bind;
-pub use argus_scripting_bind::script_bind;
 
 type FieldAccessor = dyn Fn(*const (), FfiObjectType) -> FfiObjectWrapper;
 type FieldMutator = dyn Fn(*mut (), FfiObjectWrapper);

@@ -17,10 +17,16 @@
  */
 
 use std::ffi::{CStr, CString};
-use std::ptr;
-use argus_scripting_bind::*;
+use std::{ffi, ptr};
+use argus_scripting_types::*;
 use crate::argus::scripting::*;
 use crate::scripting_cabi::*;
+pub type FfiBareProxiedScriptCallback = unsafe extern "C" fn(
+    params_count: usize,
+    params: *mut argus_object_wrapper_t,
+    data: *const ffi::c_void,
+    out_result: argus_script_callback_result_t,
+);
 
 fn to_ffi_integral_type(ty: IntegralType) -> FfiIntegralType {
     match ty {
@@ -45,6 +51,7 @@ fn to_ffi_integral_type(ty: IntegralType) -> FfiIntegralType {
         IntegralType::Result => FfiIntegralType::Result,
         IntegralType::Object => FfiIntegralType::Struct,
         IntegralType::Enum => FfiIntegralType::Enum,
+        IntegralType::Callback => FfiIntegralType::Callback,
     }
 }
 
@@ -81,7 +88,7 @@ fn from_ffi_integral_type(ty: FfiIntegralType, size: usize, is_const: bool) -> I
         } else {
             IntegralType::MutReference
         },
-        FfiIntegralType::Callback => todo!(),
+        FfiIntegralType::Callback => IntegralType::Callback,
         FfiIntegralType::Type => todo!(),
         FfiIntegralType::Vector => IntegralType::Vec,
         FfiIntegralType::Vectorref => IntegralType::Vec,
@@ -92,6 +99,12 @@ fn from_ffi_integral_type(ty: FfiIntegralType, size: usize, is_const: bool) -> I
 pub fn to_ffi_obj_type(ty: &ObjectType) -> FfiObjectType {
     let prim_type = ty.primary_type.as_ref().map(|prim| to_ffi_obj_type(prim));
     let sec_type = ty.secondary_type.as_ref().map(|sec| to_ffi_obj_type(sec));
+    let callback_type = ty.callback_info.as_ref().map(|info| {
+        ScriptCallbackType::from(
+            &info.param_types,
+            &info.return_type,
+        )
+    });
 
     FfiObjectType::new(
         to_ffi_integral_type(ty.ty),
@@ -99,7 +112,7 @@ pub fn to_ffi_obj_type(ty: &ObjectType) -> FfiObjectType {
         ty.is_const,
         ty.get_is_refable().unwrap_or(false),
         ty.type_id.map(|id| format!("{:?}", id)),
-        None, //TODO
+        callback_type,
         prim_type,
         sec_type,
         ty.copy_ctor.map(|getter| getter.fn_ptr),
@@ -120,6 +133,12 @@ pub fn from_ffi_obj_type(ty: &FfiObjectType) -> ObjectType {
         type_name: ty.get_type_name(),
         primary_type: ty.get_primary_type().map(|pt| Box::new(from_ffi_obj_type(&pt))),
         secondary_type: ty.get_secondary_type().map(|st| Box::new(from_ffi_obj_type(&st))),
+        callback_info: ty.get_callback_type().map(|ct| {
+            Box::new(CallbackInfo {
+                param_types: ct.get_param_types(),
+                return_type: ct.get_return_type(),
+            })
+        }),
         copy_ctor: None,
         move_ctor: None,
         dtor: None,
@@ -193,4 +212,42 @@ pub fn call_proxied_fn(
             }
         }
     }
+}
+
+pub unsafe fn call_proxied_callback(
+    bare: FfiBareProxiedScriptCallback,
+    data: *const ffi::c_void,
+    params: Vec<WrappedObject>,
+) -> Result<WrappedObject, ScriptInvocationError> {
+    let ffi_objs = params.into_iter().map(to_ffi_obj_wrapper)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| ScriptInvocationError {
+            fn_name: "(callback)".to_string(),
+            message: e.reason
+        })?;
+    let mut ffi_obj_ptrs = ffi_objs.iter().map(|obj| obj.handle).collect::<Vec<_>>();
+
+    let result = argus_script_callback_result_new();
+    bare(
+        ffi_obj_ptrs.len(),
+        ffi_obj_ptrs.as_mut_ptr(),
+        data.cast(),
+        result,
+    );
+    let mapped_res = if argus_script_callback_result_is_ok(result) {
+        let val = argus_script_callback_result_get_value(result);
+        let res = from_ffi_obj_wrapper(FfiObjectWrapper::of(val));
+        Ok(res)
+    } else {
+        let err = argus_script_callback_result_get_error(result);
+        let res = ScriptInvocationError {
+            fn_name: CStr::from_ptr(argus_script_invocation_error_get_function_name(err))
+                .to_str().unwrap().to_string(),
+            message: CStr::from_ptr(argus_script_invocation_error_get_message(err))
+                .to_str().unwrap().to_string(),
+        };
+        Err(res)
+    };
+    argus_script_callback_result_delete(result);
+    mapped_res
 }

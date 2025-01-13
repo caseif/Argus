@@ -35,6 +35,14 @@ static const argus::ReflectiveArgumentsError &_refl_args_err_as_ref(argus_reflec
     return *reinterpret_cast<const argus::ReflectiveArgumentsError *>(err);
 }
 
+static argus::ScriptInvocationError &_invoke_err_as_ref(argus_script_invocation_error_t err) {
+    return *reinterpret_cast<argus::ScriptInvocationError *>(err);
+}
+
+static const argus::ScriptInvocationError &_invoke_err_as_ref(argus_script_invocation_error_const_t err) {
+    return *reinterpret_cast<const argus::ScriptInvocationError *>(err);
+}
+
 extern "C" {
 
 ArgusBindingErrorType argus_binding_error_get_type(argus_binding_error_const_t err) {
@@ -63,6 +71,22 @@ void argus_reflective_args_error_free(argus_reflective_args_error_t err) {
 
 const char *argus_reflective_args_error_get_reason(argus_reflective_args_error_const_t err) {
     return _refl_args_err_as_ref(err).reason.c_str();
+}
+
+argus_script_invocation_error_t argus_script_invocation_error_new(const char *fn_name, const char *reason) {
+    return new argus::ScriptInvocationError(fn_name, reason);
+}
+
+void argus_script_invocation_error_free(argus_script_invocation_error_t err) {
+    delete &_invoke_err_as_ref(err);
+}
+
+const char *argus_script_invocation_error_get_function_name(argus_script_invocation_error_const_t err) {
+    return _invoke_err_as_ref(err).function_name.c_str();
+}
+
+const char *argus_script_invocation_error_get_message(argus_script_invocation_error_const_t err) {
+    return _invoke_err_as_ref(err).msg.c_str();
 }
 
 }

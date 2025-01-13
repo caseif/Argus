@@ -53,6 +53,17 @@ void argus_reflective_args_error_free(argus_reflective_args_error_t err);
 
 const char *argus_reflective_args_error_get_reason(argus_reflective_args_error_const_t err);
 
+typedef void *argus_script_invocation_error_t;
+typedef const void *argus_script_invocation_error_const_t;
+
+argus_script_invocation_error_t argus_script_invocation_error_new(const char *fn_name, const char *reason);
+
+void argus_script_invocation_error_free(argus_script_invocation_error_t err);
+
+const char *argus_script_invocation_error_get_function_name(argus_script_invocation_error_const_t err);
+
+const char *argus_script_invocation_error_get_message(argus_script_invocation_error_const_t err);
+
 #ifdef __cplusplus
 }
 #endif

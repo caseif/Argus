@@ -26,6 +26,7 @@
 
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/types.hpp"
+#include "argus/scripting/cabi/types.h"
 
 #include <algorithm>
 #include <string>
@@ -72,7 +73,8 @@ namespace argus {
 
     [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(
             const ObjectType &type,
-            const ProxiedScriptCallback &fn);
+            const ProxiedScriptCallback &fn
+    );
 
     [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_vector_object_wrapper(
             const ObjectType &type,
@@ -263,22 +265,32 @@ namespace argus {
                     return err<ReturnType, ScriptInvocationError>("(callback)", wrapped_params.unwrap_err().reason);
                 }
 
+                std::vector<ObjectWrapper *> wrapped_params_ptrs;
+                for (size_t i = 0; i < wrapped_params.unwrap().size(); i++) {
+                    wrapped_params_ptrs.push_back(&wrapped_params.unwrap()[i]);
+                }
+
                 if constexpr (!std::is_void_v<ReturnType>) {
-                    auto retval = (*fn_copy)(wrapped_params.unwrap());
-                    if (retval.is_err()) {
-                        return err<ReturnType, ScriptInvocationError>(retval.unwrap_err());
+                    ScriptCallbackResult retval;
+                    (*fn_copy->bare_fn)(wrapped_params_ptrs.size(), wrapped_params_ptrs.data(),
+                            fn_copy->data, &retval);
+                    if (!retval.is_ok) {
+                        return err<ReturnType, ScriptInvocationError>(retval.error.value());
                     }
-                    return unwrap_param<ReturnType>(retval.unwrap(), &scratch);
+                    return unwrap_param<ReturnType>(retval.value.value(), &scratch);
                 } else {
                     UNUSED(scratch);
-                    auto res = ((*fn_copy)(wrapped_params.unwrap()));
-                    if (res.is_ok()) {
+                    ScriptCallbackResult res;
+                    (*fn_copy->bare_fn)(wrapped_params_ptrs.size(), wrapped_params_ptrs.data(),
+                            fn_copy->data, &res);
+                    if (res.is_ok) {
                         return ok<void, ScriptInvocationError>();
                     } else {
                         //TODO: handle this further down in the stack, ideally in the core module
-                        crash("Error occurred while invoking script callback '%s': %s",
-                                res.unwrap_err().function_name.c_str(),
-                                res.unwrap_err().msg.c_str());
+                        printf("Error occurred while invoking script callback '%s': %s\n",
+                                res.error.value().function_name.c_str(),
+                                res.error.value().msg.c_str());
+                        crash("");
                         //return err<void, ScriptInvocationError>(res.unwrap_err());
                     }
                 }

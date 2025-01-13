@@ -52,6 +52,6 @@ namespace argus {
         void bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) override;
 
         [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(ScriptContext &context,
-                const std::string &name, const std::vector<ObjectWrapper> &params) override;
+                const std::string &name, const std::vector<ObjectWrapper *> &params) override;
     };
 }

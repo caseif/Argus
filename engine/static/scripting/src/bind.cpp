@@ -88,38 +88,46 @@ namespace argus {
             type_name = bound_enum_res.unwrap().name;
         } else {
             auto bound_type_res = get_bound_type(param_def.type_id.value());
-            if (bound_type_res.is_err()) {
-                return err<void, BindingError>(BindingErrorType::UnknownParent, param_def.type_id.value(),
-                        "Failed to get type while resolving function parameter");
-            }
+            if (bound_type_res.is_ok()) {
+                auto &bound_type = bound_type_res.unwrap();
 
-            auto &bound_type = bound_type_res.unwrap();
+                if (param_def.type == IntegralType::Struct) {
+                    if (check_copyable) {
+                        if (bound_type.copy_ctor == nullptr) {
+                            return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                    "Class-typed parameter passed by value with type "
+                                            + bound_type.name + " is not copy-constructible");
+                        }
 
-            if (param_def.type == IntegralType::Struct) {
-                if (check_copyable) {
-                    if (bound_type.copy_ctor == nullptr) {
-                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                                "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not copy-constructible");
+                        if (bound_type.move_ctor == nullptr) {
+                            return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                    "Class-typed parameter passed by value with type "
+                                            + bound_type.name + " is not move-constructible");
+                        }
+
+                        if (bound_type.dtor == nullptr) {
+                            return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                    "Class-typed parameter passed by value with type "
+                                            + bound_type.name + " is not destructible");
+                        }
                     }
 
-                    if (bound_type.move_ctor == nullptr) {
-                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                                "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not move-constructible");
-                    }
-
-                    if (bound_type.dtor == nullptr) {
-                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                                "Class-typed parameter passed by value with type "
-                                        + bound_type.name + " is not destructible");
-                    }
+                    param_def.size = bound_type.size;
                 }
 
-                param_def.size = bound_type.size;
+                type_name = bound_type.name;
+            } else {
+                auto bound_enum_res = get_bound_enum(param_def.type_id.value());
+                if (bound_enum_res.is_ok()) {
+                    auto &bound_enum = bound_enum_res.unwrap();
+                    type_name = bound_enum.name;
+                    param_def.type = IntegralType::Enum;
+                    param_def.size = bound_enum.width;
+                } else {
+                    return err<void, BindingError>(BindingErrorType::UnknownParent, param_def.type_id.value(),
+                            "Failed to get type while resolving function parameter");
+                }
             }
-
-            type_name = bound_type.name;
         }
 
         param_def.type_name = type_name;
@@ -152,35 +160,43 @@ namespace argus {
             type_name = bound_enum_res.unwrap().name;
         } else {
             auto bound_type_res = get_bound_type(field_def.type_id.value());
-            if (bound_type_res.is_err()) {
-                return err<void, BindingError>(bound_type_res.unwrap_err());
+            if (bound_type_res.is_ok()) {
+                auto &bound_type = bound_type_res.unwrap();
+
+                field_def.is_refable = bound_type.is_refable;
+
+                if (!bound_type.is_refable) {
+                    if (bound_type.copy_ctor == nullptr) {
+                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                        + " is not copy-constructible");
+                    }
+
+                    if (bound_type.move_ctor == nullptr) {
+                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                        + " is not move-constructible");
+                    }
+
+                    if (bound_type.dtor == nullptr) {
+                        return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
+                                "Class-typed field with non-AutoCleanupable type " + bound_type.name
+                                        + " is not destructible");
+                    }
+                }
+
+                type_name = bound_type.name;
+            } else {
+                auto bound_enum_res = get_bound_enum(field_def.type_id.value());
+                if (bound_enum_res.is_ok()) {
+                    auto &bound_enum = bound_enum_res.unwrap();
+                    type_name = bound_enum.name;
+                    field_def.type = IntegralType::Enum;
+                    field_def.size = bound_enum.width;
+                } else {
+                    return err<void, BindingError>(bound_type_res.unwrap_err());
+                }
             }
-
-            auto &bound_type = bound_type_res.unwrap();
-
-            field_def.is_refable = bound_type.is_refable;
-
-            if (!bound_type.is_refable) {
-                if (bound_type.copy_ctor == nullptr) {
-                    return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not copy-constructible");
-                }
-
-                if (bound_type.move_ctor == nullptr) {
-                    return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not move-constructible");
-                }
-
-                if (bound_type.dtor == nullptr) {
-                    return err<void, BindingError>(BindingErrorType::Other, bound_type.name,
-                            "Class-typed field with non-AutoCleanupable type " + bound_type.name
-                                    + " is not destructible");
-                }
-            }
-
-            type_name = bound_type.name;
         }
 
         field_def.type_name = type_name;

@@ -50,7 +50,7 @@ namespace argus {
         [[nodiscard]] Result<void, ScriptLoadError> load_script(const Resource &resource);
 
         [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(const std::string &fn_name,
-                const std::vector<ObjectWrapper> &params);
+                const std::vector<ObjectWrapper *> &params);
 
         void *get_plugin_data_ptr(void);
 

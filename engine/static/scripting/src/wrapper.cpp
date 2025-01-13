@@ -142,8 +142,10 @@ namespace argus {
         return create_object_wrapper(type, str.c_str(), str.length() + 1);
     }
 
-    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(const ObjectType &type,
-            const ProxiedScriptCallback &fn) {
+    Result<ObjectWrapper, ReflectiveArgumentsError> create_callback_object_wrapper(
+            const ObjectType &type,
+            const ProxiedScriptCallback &fn
+    ) {
         affirm_precond(type.type == IntegralType::Callback,
                 "Cannot create object wrapper "
                 "(callback-specific overload called for non-callback-typed value)");

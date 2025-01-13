@@ -22,15 +22,23 @@ use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use quote::{quote, ToTokens};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::{Error, Visitor};
+use serde::{Deserialize, Serialize, Serializer};
 
 pub type IsRefableGetter = fn() -> bool;
 pub type TypeIdGetter = fn() -> TypeId;
 
 pub type ProxiedNativeFunction =
+    fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
+//pub type ProxiedScriptCallback =
+//    fn(&[WrappedObject], *const ()) -> Result<WrappedObject, ScriptInvocationError>;
+//pub type BareProxiedScriptCallback =
+//    unsafe extern "C" fn(
+//        params_count: usize,
+//        params: *mut ffi::c_void,
+//        data: *const ffi::c_void,
+//        out_result: *mut ffi::c_void,
+//    );
 
-fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
 pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
 pub type FfiDtor = unsafe extern "C" fn(target: *mut ());
@@ -58,11 +66,12 @@ pub enum IntegralType {
     Result,
     Object,
     Enum,
+    Callback,
 }
 
 macro_rules! fn_wrapper {
     ($struct_name:ident, $fn_sig:ty) => {
-        #[derive(::std::clone::Clone, ::std::marker::Copy)]
+        #[derive(::std::clone::Clone, ::std::marker::Copy, ::std::fmt::Debug)]
         pub struct $struct_name {
             pub fn_ptr: $fn_sig,
         }
@@ -166,7 +175,7 @@ impl ToTokens for FunctionType {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectType {
     pub ty: IntegralType,
     pub size: usize,
@@ -178,12 +187,37 @@ pub struct ObjectType {
     pub type_name: Option<String>,
     pub primary_type: Option<Box<ObjectType>>,
     pub secondary_type: Option<Box<ObjectType>>,
+    pub callback_info: Option<Box<CallbackInfo>>,
     pub copy_ctor: Option<CopyCtorWrapper>,
     pub move_ctor: Option<MoveCtorWrapper>,
     pub dtor: Option<DtorWrapper>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CallbackInfo {
+    pub param_types: Vec<ObjectType>,
+    pub return_type: ObjectType,
+}
+
 impl ObjectType {
+    pub fn empty() -> Self {
+        Self {
+            ty: IntegralType::Empty,
+            size: 0,
+            is_const: false,
+            is_refable: None,
+            is_refable_getter: None,
+            type_id: None,
+            type_name: None,
+            primary_type: None,
+            secondary_type: None,
+            callback_info: None,
+            copy_ctor: None,
+            move_ctor: None,
+            dtor: None,
+        }
+    }
+
     pub fn get_is_refable(&self) -> Option<bool> {
         if let Some(refable) = self.is_refable {
             Some(refable)
@@ -205,6 +239,7 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     type_name: None,
     primary_type: None,
     secondary_type: None,
+    callback_info: None,
     copy_ctor: None,
     move_ctor: None,
     dtor: None,
@@ -228,6 +263,7 @@ macro_rules! impl_wrappable {
                     type_name: None,
                     primary_type: None,
                     secondary_type: None,
+                    callback_info: None,
                     copy_ctor: None,
                     move_ctor: None,
                     dtor: None,
@@ -300,6 +336,7 @@ impl ScriptBound for String {
             type_name: None,
             primary_type: None,
             secondary_type: None,
+            callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             move_ctor: Some(MoveCtorWrapper::of(move_string)),
             dtor: Some(DtorWrapper::of(drop_string)),
@@ -346,6 +383,7 @@ impl<'a> ScriptBound for &'a str {
             type_name: None,
             primary_type: None,
             secondary_type: None,
+            callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             move_ctor: Some(MoveCtorWrapper::of(move_string)),
             dtor: None,
@@ -392,6 +430,7 @@ impl<T: ScriptBound> ScriptBound for Vec<T> {
             type_name: None,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            callback_info: None,
             copy_ctor: None,
             move_ctor: None,
             dtor: None,
@@ -402,11 +441,11 @@ impl<T: ScriptBound> ScriptBound for Vec<T> {
 impl<T: Wrappable> Wrappable for Vec<T> {
     type InternalFormat = i32;
 
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
+    fn wrap_into(self, _wrapper: &mut WrappedObject) {
         todo!()
     }
 
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
+    fn unwrap_as_value(_wrapper: &WrappedObject) -> Self {
         todo!()
     }
 }
@@ -424,6 +463,7 @@ impl<T: ScriptBound> ScriptBound for &T {
             type_name: base_type.type_name,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            callback_info: None,
             copy_ctor: None,
             move_ctor: None,
             dtor: None,
@@ -470,6 +510,7 @@ impl<T: ScriptBound> ScriptBound for &mut T {
             type_name: base_type.type_name,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            callback_info: None,
             copy_ctor: None,
             move_ctor: None,
             dtor: None,
@@ -683,6 +724,12 @@ impl WrappedObject {
 #[derive(Clone, Debug)]
 pub struct ReflectiveArgumentsError {
     pub reason: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ScriptInvocationError {
+    pub fn_name: String,
+    pub message: String,
 }
 
 pub struct BoundStructInfo {

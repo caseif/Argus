@@ -64,7 +64,7 @@ namespace argus {
     }
 
     Result<ObjectWrapper, ScriptInvocationError> ScriptContext::invoke_script_function(const std::string &fn_name,
-            const std::vector<ObjectWrapper> &params) {
+            const std::vector<ObjectWrapper *> &params) {
         return m_pimpl->plugin->invoke_script_function(*this, fn_name, params);
     }
 

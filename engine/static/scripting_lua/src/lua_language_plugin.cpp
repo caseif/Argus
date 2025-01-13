@@ -101,8 +101,11 @@ namespace argus {
         }
     };
 
-    [[nodiscard]] static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
-            const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name = std::nullopt);
+    [[nodiscard]] static ScriptCallbackResult _invoke_lua_function(
+            lua_State *state,
+            const std::vector<ObjectWrapper *> &params,
+            const std::optional<std::string> &fn_name = std::nullopt
+    );
 
     struct LuaCallback {
         std::weak_ptr<ManagedLuaState> m_state;
@@ -129,8 +132,8 @@ namespace argus {
             luaL_unref(*state, LUA_REGISTRYINDEX, m_ref_key);
         }
 
-        [[nodiscard]] Result<ObjectWrapper, ScriptInvocationError> call(
-                const std::vector<ObjectWrapper> &params) const {
+        [[nodiscard]] ScriptCallbackResult call(
+                const std::vector<ObjectWrapper *> &params) const {
             auto state = m_state.lock();
 
             if (!state) {
@@ -520,13 +523,21 @@ namespace argus {
                                                  + luaL_typename(state, param_index) + ")");
                 }*/
 
-                auto handle = std::make_shared<LuaCallback>(managed_state, param_index);
+                auto handle = new LuaCallback(managed_state, param_index);
 
-                ProxiedScriptCallback fn = [handle = std::move(handle)](const std::vector<ObjectWrapper> &params) {
-                    return handle->call(params);
+                BareProxiedScriptCallback fn = [](
+                        size_t params_count,
+                        ObjectWrapper **params,
+                        const void *data,
+                        ScriptCallbackResult *out_result
+                ) {
+                    std::vector<ObjectWrapper *> params_vec(params, params + params_count);
+                    *out_result = ScriptCallbackResult(
+                            reinterpret_cast<const LuaCallback *>(data)->call(params_vec)
+                    );
                 };
 
-                wrapper_res = create_callback_object_wrapper(param_def, fn);
+                wrapper_res = create_callback_object_wrapper(param_def, ProxiedScriptCallback { fn, handle });
 
                 break;
             }
@@ -1088,23 +1099,31 @@ namespace argus {
         }
     }
 
-    [[nodiscard]] static Result<ObjectWrapper, ScriptInvocationError> _invoke_lua_function(lua_State *state,
-            const std::vector<ObjectWrapper> &params, const std::optional<std::string> &fn_name) {
-        for (const auto &param : params) {
-            _push_value(state, param);
+    [[nodiscard]] static ScriptCallbackResult _invoke_lua_function(lua_State *state,
+            const std::vector<ObjectWrapper *> &params, const std::optional<std::string> &fn_name) {
+        for (const auto *param : params) {
+            _push_value(state, *param);
         }
 
         if (lua_pcall(state, int(params.size()), 0, 0) != LUA_OK) {
             auto err_msg = lua_tostring(state, -1);
             lua_pop(state, 1); // pop error message
-            return err<ObjectWrapper, ScriptInvocationError>(fn_name.value_or("callback"), err_msg);
+            return ScriptCallbackResult {
+                false,
+                std::nullopt,
+                ScriptInvocationError { fn_name.value_or("callback"), err_msg }
+            };
         }
 
         ObjectType type {
                 IntegralType::Void,
                 0
         };
-        return ok<ObjectWrapper, ScriptInvocationError>(ObjectWrapper { type, 0 }); //TODO
+        return ScriptCallbackResult {
+                true,
+                ObjectWrapper { type, 0 },
+                std::nullopt
+        };
     }
 
     static int _lua_trampoline(lua_State *state) {
@@ -1734,7 +1753,7 @@ namespace argus {
     }
 
     Result<ObjectWrapper, ScriptInvocationError> LuaLanguagePlugin::invoke_script_function(ScriptContext &context,
-            const std::string &name, const std::vector<ObjectWrapper> &params) {
+            const std::string &name, const std::vector<ObjectWrapper *> &params) {
         if (params.size() > INT32_MAX) {
             return err<ObjectWrapper, ScriptInvocationError>(name, "Too many params");
         }
@@ -1746,6 +1765,10 @@ namespace argus {
         lua_getglobal(*state, name.c_str());
 
         auto retval = _invoke_lua_function(*state, params, name);
-        return retval;
+        if (retval.is_ok) {
+            return ok<ObjectWrapper, ScriptInvocationError>(retval.value.value());
+        } else {
+            return err<ObjectWrapper, ScriptInvocationError>(retval.error.value());
+        }
     }
 }
