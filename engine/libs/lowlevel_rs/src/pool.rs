@@ -5,8 +5,6 @@ use std::marker::PhantomData;
 use std::ptr;
 use std::mem::MaybeUninit;
 
-type HandleVersion = u32;
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Handle {
     index: u32,
