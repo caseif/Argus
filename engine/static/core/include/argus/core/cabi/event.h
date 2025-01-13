@@ -45,7 +45,11 @@ Index argus_register_event_handler(const char *type_id, argus_event_handler_t ha
 
 void argus_unregister_event_handler(Index index);
 
-void argus_dispatch_event(argus_event_t event);
+void argus_dispatch_event(const char *type_id, argus_event_t event, void(*destructor)(void *));
+
+const void *argus_unwrap_event(const void *event);
+
+void *argus_unwrap_event_mut(void *event);
 
 #ifdef __cplusplus
 }

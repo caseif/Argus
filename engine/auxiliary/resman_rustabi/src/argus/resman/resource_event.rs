@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use core_rustabi::argus::core::ArgusEvent;
+use core_rustabi::argus::core::ArgusFfiEvent;
 use core_rustabi::core_cabi::argus_event_t;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
@@ -54,14 +54,12 @@ impl ResourceEvent {
     }
 }
 
-impl ArgusEvent for ResourceEvent {
+impl ArgusFfiEvent for ResourceEvent {
     fn get_type_id() -> &'static str {
         "resource"
     }
 
-    fn of(handle: argus_event_t) -> Self
-    where Self: Sized
-    {
+    fn of(handle: argus_event_t) -> Self {
         Self { handle }
     }
 

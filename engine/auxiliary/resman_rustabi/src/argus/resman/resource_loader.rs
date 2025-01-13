@@ -132,7 +132,7 @@ unsafe extern "C" fn copy_resource_proxy(
     manager: argus_resource_manager_t,
     prototype: argus_resource_prototype_t,
     src: *const c_void,
-    src_len: usize,
+    _src_len: usize,
     user_data: *mut c_void,
 ) -> VoidPtrOrResourceError {
     let real_loader: &mut Box<dyn ResourceLoader> = std::mem::transmute(user_data);

@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi::c_void;
-use std::mem;
+use std::ffi::CString;
+use std::{ffi, mem};
 
 use lowlevel_rustabi::util::*;
 
@@ -27,6 +27,7 @@ use crate::core_cabi;
 
 pub use crate::core_cabi::argus_event_const_t;
 pub use crate::core_cabi::argus_event_t;
+use crate::core_cabi::argus_unwrap_event;
 
 #[repr(u32)]
 pub enum TargetThread {
@@ -34,31 +35,33 @@ pub enum TargetThread {
     Render = core_cabi::TARGET_THREAD_RENDER,
 }
 
-pub trait ArgusEvent {
-    fn get_type_id() -> &'static str
-    where Self: Sized;
+pub trait ArgusFfiEvent: Sized {
+    fn get_type_id() -> &'static str;
 
-    fn of(handle: argus_event_t) -> Self
-    where Self: Sized;
+    fn of(handle: argus_event_t) -> Self;
 
     fn get_handle(&self) -> argus_event_t;
 }
 
+pub trait ArgusEvent: Sized {
+    fn get_type_id() -> &'static str;
+}
+
 type EventHandler<E> = dyn Fn(&E);
 
-extern "C" fn event_handler_trampoline(handle: argus_event_const_t, ctx: *mut c_void) {
+extern "C" fn event_handler_trampoline(handle: argus_event_const_t, ctx: *mut ffi::c_void) {
     unsafe {
-        let closure_ref = (&mut *(ctx as *mut Box<dyn FnMut(argus_event_const_t)>)).as_mut();
+        let closure_ref = (&mut *(ctx as *mut Box<dyn Fn(argus_event_const_t)>)).as_mut();
         closure_ref(handle);
     }
 }
 
-extern "C" fn clean_up_event_handler(_: Index, ctx: *mut c_void) {
+extern "C" fn clean_up_event_handler(_: Index, ctx: *mut ffi::c_void) {
     // drop the closure
     let _: Box<Box<dyn FnMut(argus_event_const_t)>> = unsafe { Box::from_raw(mem::transmute(ctx)) };
 }
 
-pub fn register_event_handler<E: ArgusEvent>(
+pub fn register_ffi_event_handler<E: ArgusFfiEvent>(
     handler: &EventHandler<E>,
     target_thread: TargetThread,
     ordering: Ordering,
@@ -68,18 +71,50 @@ pub fn register_event_handler<E: ArgusEvent>(
             handler(&E::of(handle as argus_event_t));
         };
 
-        let ctx: Box<Box<dyn FnMut(argus_event_const_t)>> = Box::new(Box::new(closure));
+        let ctx: Box<Box<dyn Fn(argus_event_const_t)>> = Box::new(Box::new(closure));
 
         let type_id_c = str_to_cstring(E::get_type_id());
 
-        return core_cabi::argus_register_event_handler(
+        core_cabi::argus_register_event_handler(
             type_id_c.as_ptr(),
             Some(event_handler_trampoline),
             target_thread as core_cabi::TargetThread,
-            Box::into_raw(ctx) as *mut c_void,
+            Box::into_raw(ctx) as *mut ffi::c_void,
             ordering as core_cabi::Ordering,
             Some(clean_up_event_handler),
-        );
+        )
+    }
+}
+
+pub fn register_event_handler<E: ArgusEvent>(
+    handler: Box<EventHandler<E>>,
+    target_thread: TargetThread,
+    ordering: Ordering,
+) -> Index {
+    unsafe {
+        // we move the handler closure into this wrapper closure so it assumes
+        // ownership so that 1) the handler closure sticks around after this
+        // function returns, and 2) we can later clean everything up in one
+        // swoop
+        let closure = move |handle: argus_event_const_t| {
+            let real_handle = argus_unwrap_event(handle);
+            let event = &*real_handle.cast::<E>();
+            handler(event);
+        };
+
+        let ctx_inner: Box<dyn Fn(argus_event_const_t)> = Box::new(closure);
+        let ctx = Box::new(ctx_inner);
+
+        let type_id_c = str_to_cstring(E::get_type_id());
+
+        core_cabi::argus_register_event_handler(
+            type_id_c.as_ptr(),
+            Some(event_handler_trampoline),
+            target_thread as core_cabi::TargetThread,
+            Box::into_raw(ctx) as *mut ffi::c_void,
+            ordering as core_cabi::Ordering,
+            Some(clean_up_event_handler),
+        )
     }
 }
 
@@ -89,8 +124,18 @@ pub fn unregister_event_handler(index: Index) {
     }
 }
 
-pub fn dispatch_event(event: &dyn ArgusEvent) {
+pub fn dispatch_event<T: ArgusEvent>(event: T) {
     unsafe {
-        core_cabi::argus_dispatch_event(event.get_handle());
+         unsafe extern "C" fn destructor<T>(event_ptr: *mut ffi::c_void) {
+             _ = Box::from_raw(event_ptr.cast::<T>());
+         }
+
+        let event_ptr = Box::into_raw(Box::new(event)).cast();
+        let type_id_c = CString::new(T::get_type_id()).unwrap();
+        core_cabi::argus_dispatch_event(
+            type_id_c.as_ptr(),
+            event_ptr,
+            Some(destructor::<T>),
+        );
     }
 }

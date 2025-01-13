@@ -206,12 +206,12 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 ShaderLoader::new(),
             );
 
-            register_event_handler(
+            register_ffi_event_handler(
                 &window_event_handler,
                 TargetThread::Render,
                 Ordering::Standard
             );
-            register_event_handler(
+            register_ffi_event_handler(
                 &resource_event_handler,
                 TargetThread::Render,
                 Ordering::Standard

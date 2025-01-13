@@ -145,7 +145,17 @@ extern "C" {
         unregister_callback: argus_event_handler_unregister_callback_t,
     ) -> Index;
     pub fn argus_unregister_event_handler(index: Index);
-    pub fn argus_dispatch_event(event: argus_event_t);
+    pub fn argus_dispatch_event(
+        type_id: *const ::std::os::raw::c_char,
+        event: argus_event_t,
+        destructor: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
+    );
+    pub fn argus_unwrap_event(
+        event: *const ::std::os::raw::c_void,
+    ) -> *const ::std::os::raw::c_void;
+    pub fn argus_unwrap_event_mut(
+        event: *mut ::std::os::raw::c_void,
+    ) -> *mut ::std::os::raw::c_void;
     pub fn argus_register_message_performer(
         type_id: *const ::std::os::raw::c_char,
         performer: message_performer_t,

@@ -20,7 +20,6 @@ use std::ffi::c_void;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::mem;
-use std::ops::DerefMut;
 use std::ptr::null_mut;
 use std::time::Duration;
 
