@@ -96,6 +96,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install \
+          libclang-dev \
           libgl1-mesa-dev \
           libgl1-mesa-glx \
           libxrandr-dev \
@@ -108,6 +109,8 @@ jobs:
           nlohmann-json3-dev \
           glslang-dev \
           spirv-tools
+        sudo apt-get remove \
+          libclang1-15
       if: matrix.os == 'ubuntu-22.04'
 
     - name: Install dependencies (Ubuntu Noble)
@@ -140,6 +143,7 @@ jobs:
           nlohmann-json \
           glslang \
           spirv-tools
+        brew remove llvm@15
       if: startsWith(matrix.os, 'macos')
 
     - name: Setup Vulkan SDK (Windows)
