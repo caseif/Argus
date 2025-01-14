@@ -38,7 +38,7 @@ pub fn main() {
     let bindings = bindgen::builder()
         .header(sdl_header_path.to_string_lossy().to_string())
         .allowlist_type("wchar_t")
-        .blocklist_type("__va_list_tag")
+        //.blocklist_type("__va_list_tag")
         .blocklist_function("SDL_.+printf")
         .blocklist_function("SDL_.+scanf")
         .blocklist_function("SDL_LogMessageV")
@@ -47,7 +47,7 @@ pub fn main() {
         .layout_tests(false)
         .allowlist_file("^.*[/\\\\]SDL_.+\\.h?$")
         .allowlist_file("^.*[/\\\\](begin|end)_code\\.h$")
-        .allowlist_recursively(false)
+        .allowlist_recursively(true)
         .clang_arg("-std=c11")
         .generate()
         .expect("Failed to generate bindings");
