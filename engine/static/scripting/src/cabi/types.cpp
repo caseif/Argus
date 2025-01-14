@@ -197,7 +197,7 @@ void argus_script_callback_result_emplace(
         argus_object_wrapper_t value,
         argus_script_invocation_error_t error
 ) {
-    argus_assert(value != nullptr ^ error != nullptr);
+    argus_assert((value != nullptr) ^ (error != nullptr));
 
     if (value != nullptr) {
         auto &orig_val = _obj_wrapper_as_ref(value);
