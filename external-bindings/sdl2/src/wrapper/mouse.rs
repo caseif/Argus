@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ptr::addr_of_mut;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use crate::bindings::*;
+use crate::error::{sdl_get_error, SdlError};
 
 #[allow(clippy::unnecessary_cast)]
 #[derive(Clone, Copy, Debug, Eq, Hash, IntoPrimitive, PartialEq, TryFromPrimitive)]
@@ -57,4 +58,20 @@ pub fn sdl_get_mouse_state() -> SdlMouseState {
         position_y: pos_y,
         pressed_buttons,
     }
+}
+
+pub fn sdl_set_relative_mouse_mode(enabled: bool) -> Result<(), SdlError> {
+    let rc = unsafe { SDL_SetRelativeMouseMode(if enabled { SDL_TRUE } else { SDL_FALSE }) };
+    if rc != 0 {
+        return Err(sdl_get_error());
+    }
+    Ok(())
+}
+
+pub fn sdl_show_cursor(toggle: bool) -> Result<(), SdlError> {
+    let rc = unsafe { SDL_ShowCursor((if toggle { SDL_TRUE } else { SDL_FALSE }) as i32) };
+    if rc < 0 {
+        return Err(sdl_get_error());
+    }
+    Ok(())
 }

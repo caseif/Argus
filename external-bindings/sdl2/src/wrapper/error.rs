@@ -3,8 +3,8 @@ use std::{ffi, ptr};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use crate::bindings::*;
-use crate::util;
-use crate::util::c_str_to_string_lossy;
+use crate::internal::util;
+use crate::internal::util::c_str_to_string_lossy;
 
 #[derive(Clone, Debug)]
 pub struct SdlError {

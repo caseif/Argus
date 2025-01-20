@@ -24,7 +24,7 @@ pub fn main() {
     let bindings_path = out_dir.join("bindings.rs");
 
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let sdl_header_path: PathBuf = [
+    let sdl_header_dir: PathBuf = [
         manifest_dir.as_str(),
         "..",
         "..",
@@ -32,11 +32,14 @@ pub fn main() {
         "libs",
         "sdl2",
         "include",
-        "SDL.h",
     ].into_iter().collect();
 
+    let sdl_main_header_path = sdl_header_dir.join("SDL.h");
+    let sdl_vk_header_path = sdl_header_dir.join("SDL_vulkan.h");
+
     let bindings = bindgen::builder()
-        .header(sdl_header_path.to_string_lossy().to_string())
+        .header(sdl_main_header_path.to_string_lossy().to_string())
+        .header(sdl_vk_header_path.to_string_lossy().to_string())
         .allowlist_type("wchar_t")
         //.blocklist_type("__va_list_tag")
         .blocklist_function("SDL_.+printf")
@@ -45,7 +48,7 @@ pub fn main() {
         .prepend_enum_name(false)
         .merge_extern_blocks(true)
         .layout_tests(false)
-        .allowlist_file("^.*[/\\\\]SDL_.+\\.h?$")
+        .allowlist_file("^.*[/\\\\]SDL(_.+)?\\.h?$")
         .allowlist_file("^.*[/\\\\](begin|end)_code\\.h$")
         .allowlist_recursively(true)
         .clang_arg("-std=c11")

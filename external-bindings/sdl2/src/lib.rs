@@ -17,7 +17,7 @@
  */
 
 pub(crate) mod bindings;
-pub(crate) mod util;
+pub(crate) mod internal;
 mod wrapper;
 
 #[allow(unused)]

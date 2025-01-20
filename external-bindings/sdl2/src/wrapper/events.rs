@@ -1,172 +1,175 @@
 use std::ffi;
 use std::mem::MaybeUninit;
+use std::ops::Deref;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use crate::bindings::*;
 use crate::gamecontroller::{SdlGameControllerAxis, SdlGameControllerButton};
+use crate::internal::util::c_str_to_string_lossy;
 use crate::joystick::SdlJoystickPowerLevel;
 use crate::keyboard::{SdlKeyCode, SdlKeySym, SdlScancode};
 use crate::mouse::SdlMouseButton;
-use crate::util::c_str_to_string_lossy;
 use crate::wrapper::mouse::SdlMouseWheelDirection;
+
+pub type SdlEventFilter = dyn Fn(&SdlEvent) -> i32;
 
 #[allow(clippy::unnecessary_cast)]
 #[derive(Clone, Copy, Debug, Eq, Hash, IntoPrimitive, PartialEq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum SdlEventType {
-    Unknown = SDL_FIRSTEVENT as u32,
+    Unknown = SDL_FIRSTEVENT,
 
     /* Application events */
     /// User-requested quit
-    Quit = SDL_QUIT as u32,
+    Quit = SDL_QUIT,
 
     /* These application events have special meaning on iOS, see README-ios.md for details */
     /// The application is being terminated by the OS
     /// * Called on iOS in applicationWillTerminate()
     /// * Called on Android in onDestroy()
-    AppTerminating = SDL_APP_TERMINATING as u32,
+    AppTerminating = SDL_APP_TERMINATING,
     /// The application is low on memory, free memory if possible.
     /// * Called on iOS in applicationDidReceiveMemoryWarning()
     /// * Called on Android in onLowMemory()
-    AppLowMemory = SDL_APP_LOWMEMORY as u32,
+    AppLowMemory = SDL_APP_LOWMEMORY,
     /// The application is about to enter the background
     // * Called on iOS in applicationWillResignActive()
     // * Called on Android in onPause()
-    AppWillEnterBackground = SDL_APP_WILLENTERBACKGROUND as u32,
+    AppWillEnterBackground = SDL_APP_WILLENTERBACKGROUND,
     /// The application did enter the background and may not get CPU for some time
     /// * Called on iOS in applicationDidEnterBackground()
     /// * Called on Android in onPause()
-    AppDidEnterBackground = SDL_APP_DIDENTERBACKGROUND as u32,
+    AppDidEnterBackground = SDL_APP_DIDENTERBACKGROUND,
     /// The application is about to enter the foreground
     /// * Called on iOS in applicationWillEnterForeground()
     /// * Called on Android in onResume()
-    AppWillEnterForeground = SDL_APP_WILLENTERFOREGROUND as u32,
+    AppWillEnterForeground = SDL_APP_WILLENTERFOREGROUND,
     /// The application is now interactive
     /// * Called on iOS in applicationDidBecomeActive()
     /// * Called on Android in onResume()
-    AppDidEnterForeground = SDL_APP_DIDENTERFOREGROUND as u32,
+    AppDidEnterForeground = SDL_APP_DIDENTERFOREGROUND,
 
     /// The user's locale preferences have changed.
-    LocaleChanged = SDL_LOCALECHANGED as u32,
+    LocaleChanged = SDL_LOCALECHANGED,
 
     /* Display events */
     /// Display state change
-    DisplayEvent = SDL_DISPLAYEVENT as u32,
+    DisplayEvent = SDL_DISPLAYEVENT,
 
     /* Window events */
     /// Window state change
-    WindowEvent = SDL_WINDOWEVENT as u32,
+    WindowEvent = SDL_WINDOWEVENT,
     /// System specific event
-    SysWmEvent = SDL_SYSWMEVENT as u32,
+    SysWmEvent = SDL_SYSWMEVENT,
 
     /* Keyboard events */
     /// Key pressed
-    KeyDown = SDL_KEYDOWN as u32,
+    KeyDown = SDL_KEYDOWN,
     /// Key released
-    KeyUp = SDL_KEYUP as u32,
+    KeyUp = SDL_KEYUP,
     /// Keyboard text editing (composition)
-    TextEditing = SDL_TEXTEDITING as u32,
+    TextEditing = SDL_TEXTEDITING,
     /// Keyboard text input
-    TextInput = SDL_TEXTINPUT as u32,
+    TextInput = SDL_TEXTINPUT,
     /// Keymap changed due to a system event such as an
     /// input language or keyboard layout change.
-    KeymapChanged = SDL_KEYMAPCHANGED as u32,
+    KeymapChanged = SDL_KEYMAPCHANGED,
     /// Extended keyboard text editing (composition)
-    TextEditingExt = SDL_TEXTEDITING_EXT as u32,
+    TextEditingExt = SDL_TEXTEDITING_EXT,
 
     /* Mouse events */
     /// Mouse moved
-    MouseMotion = SDL_MOUSEMOTION as u32,
+    MouseMotion = SDL_MOUSEMOTION,
     /// Mouse button pressed
-    MouseButtonDown = SDL_MOUSEBUTTONDOWN as u32,
+    MouseButtonDown = SDL_MOUSEBUTTONDOWN,
     /// Mouse button released
-    MouseButtonUp = SDL_MOUSEBUTTONUP as u32,
+    MouseButtonUp = SDL_MOUSEBUTTONUP,
     /// Mouse wheel motion
-    MouseWheel = SDL_MOUSEWHEEL as u32,
+    MouseWheel = SDL_MOUSEWHEEL,
 
     /* Joystick events */
     /// Joystick axis motion
-    JoyAxisMotion = SDL_JOYAXISMOTION as u32,
+    JoyAxisMotion = SDL_JOYAXISMOTION,
     /// Joystick trackball motion
-    JoyBallMotion = SDL_JOYBALLMOTION as u32,
+    JoyBallMotion = SDL_JOYBALLMOTION,
     /// Joystick hat position change
-    JoyHatMotion = SDL_JOYHATMOTION as u32,
+    JoyHatMotion = SDL_JOYHATMOTION,
     /// Joystick button pressed
-    JoyButtonDown = SDL_JOYBUTTONDOWN as u32,
+    JoyButtonDown = SDL_JOYBUTTONDOWN,
     /// Joystick button released
-    JoyButtonUp = SDL_JOYBUTTONUP as u32,
+    JoyButtonUp = SDL_JOYBUTTONUP,
     /// A new joystick has been inserted into the system
-    JoyDeviceAdded = SDL_JOYDEVICEADDED as u32,
+    JoyDeviceAdded = SDL_JOYDEVICEADDED,
     /// An opened joystick has been removed
-    JoyDeviceRemoved = SDL_JOYDEVICEREMOVED as u32,
+    JoyDeviceRemoved = SDL_JOYDEVICEREMOVED,
     /// Joystick battery level change
-    JoyBatteryUpdated = SDL_JOYBATTERYUPDATED as u32,
+    JoyBatteryUpdated = SDL_JOYBATTERYUPDATED,
 
     /* Game controller events */
     /// Game controller axis motion
-    ControllerAxisMotion = SDL_CONTROLLERAXISMOTION as u32,
+    ControllerAxisMotion = SDL_CONTROLLERAXISMOTION,
     /// Game controller button pressed
-    ControllerButtonDown = SDL_CONTROLLERBUTTONDOWN as u32,
+    ControllerButtonDown = SDL_CONTROLLERBUTTONDOWN,
     /// Game controller button released
-    ControllerButtonUp = SDL_CONTROLLERBUTTONUP as u32,
+    ControllerButtonUp = SDL_CONTROLLERBUTTONUP,
     /// A new Game controller has been inserted into the system
-    ControllerDeviceAdded = SDL_CONTROLLERDEVICEADDED as u32,
+    ControllerDeviceAdded = SDL_CONTROLLERDEVICEADDED,
     /// An opened Game controller has been removed
-    ControllerDeviceRemoved = SDL_CONTROLLERDEVICEREMOVED as u32,
+    ControllerDeviceRemoved = SDL_CONTROLLERDEVICEREMOVED,
     /// The controller mapping was updated
-    ControllerDeviceRemapped = SDL_CONTROLLERDEVICEREMAPPED as u32,
+    ControllerDeviceRemapped = SDL_CONTROLLERDEVICEREMAPPED,
     /// Game controller touchpad was touched
-    ControllerTouchpadDown = SDL_CONTROLLERTOUCHPADDOWN as u32,
+    ControllerTouchpadDown = SDL_CONTROLLERTOUCHPADDOWN,
     /// Game controller touchpad finger was moved
-    ControllerTouchpadMotion = SDL_CONTROLLERTOUCHPADMOTION as u32,
+    ControllerTouchpadMotion = SDL_CONTROLLERTOUCHPADMOTION,
     /// Game controller touchpad finger was lifted
-    ControllerTouchpadUp = SDL_CONTROLLERTOUCHPADUP as u32,
+    ControllerTouchpadUp = SDL_CONTROLLERTOUCHPADUP,
     /// Game controller sensor was updated
-    ControllerSensorUpdate = SDL_CONTROLLERSENSORUPDATE as u32,
+    ControllerSensorUpdate = SDL_CONTROLLERSENSORUPDATE,
 
     /* Touch events */
-    FingerDown = SDL_FINGERDOWN as u32,
-    FingerUp = SDL_FINGERUP as u32,
-    FingerMotion = SDL_FINGERMOTION as u32,
+    FingerDown = SDL_FINGERDOWN,
+    FingerUp = SDL_FINGERUP,
+    FingerMotion = SDL_FINGERMOTION,
 
     /* Gesture events */
-    DollarGesture = SDL_DOLLARGESTURE as u32,
-    DollarReccord = SDL_DOLLARRECORD as u32,
-    MultiGesture = SDL_MULTIGESTURE as u32,
+    DollarGesture = SDL_DOLLARGESTURE,
+    DollarReccord = SDL_DOLLARRECORD,
+    MultiGesture = SDL_MULTIGESTURE,
 
     /* Clipboard events */
     /// The clipboard or primary selection changed
-    ClipboardUpdate = SDL_CLIPBOARDUPDATE as u32,
+    ClipboardUpdate = SDL_CLIPBOARDUPDATE,
 
     /* Drag and drop events */
     /// The system requests a file open
-    DropFile = SDL_DROPFILE as u32,
+    DropFile = SDL_DROPFILE,
     /// text/plain drag-and-drop event
-    DropText = SDL_DROPTEXT as u32,
+    DropText = SDL_DROPTEXT,
     /// A new set of drops is beginning (NULL filename)
-    DropBegin = SDL_DROPBEGIN as u32,
+    DropBegin = SDL_DROPBEGIN,
     /// Current set of drops is now complete (NULL filename)
-    DropComplete = SDL_DROPCOMPLETE as u32,
+    DropComplete = SDL_DROPCOMPLETE,
 
     /* Audio hotplug events */
     /// A new audio device is available
-    AudioDeviceAdded = SDL_AUDIODEVICEADDED as u32,
+    AudioDeviceAdded = SDL_AUDIODEVICEADDED,
     /// An audio device has been removed.
-    AudioDeviceRemoved = SDL_AUDIODEVICEREMOVED as u32,
+    AudioDeviceRemoved = SDL_AUDIODEVICEREMOVED,
 
     /* Sensor events */
     /// A sensor was updated
-    SensorUpdate = SDL_SENSORUPDATE as u32,
+    SensorUpdate = SDL_SENSORUPDATE,
 
     /* Render events */
     /// The render targets have been reset and their contents need to be updated
-    RenderTargetsReset = SDL_RENDER_TARGETS_RESET as u32,
+    RenderTargetsReset = SDL_RENDER_TARGETS_RESET,
     /// The device has been reset and all textures need to be recreated
-    RenderDeviceReset = SDL_RENDER_DEVICE_RESET as u32,
+    RenderDeviceReset = SDL_RENDER_DEVICE_RESET,
 
     /// Events `UserEvent` through `LastEvent` are for your use,
     /// and should be allocated with RegisterEvents()
-    UserEvent = SDL_USEREVENT as u32,
-    LastEvent = SDL_LASTEVENT as u32,
+    UserEvent = SDL_USEREVENT,
+    LastEvent = SDL_LASTEVENT,
 }
 
 pub struct SdlEvent {
@@ -648,21 +651,21 @@ pub enum SdlButtonState {
 #[repr(i32)]
 pub enum SdlSensorType {
     /// Returned for an invalid sensor
-    Invalid = SDL_SENSOR_INVALID as i32,
+    Invalid = SDL_SENSOR_INVALID,
     /// Unknown sensor type
-    Unknown = SDL_SENSOR_UNKNOWN as i32,
+    Unknown = SDL_SENSOR_UNKNOWN,
     /// Accelerometer
-    Accel = SDL_SENSOR_ACCEL as i32,
+    Accel = SDL_SENSOR_ACCEL,
     /// Gyroscope
-    Gyro = SDL_SENSOR_GYRO as i32,
+    Gyro = SDL_SENSOR_GYRO,
     /// Accelerometer for left Joy-Con controller and Wii nunchuk
-    AccelL = SDL_SENSOR_ACCEL_L as i32,
+    AccelL = SDL_SENSOR_ACCEL_L,
     /// Gyroscope for left Joy-Con controller
-    GyroL = SDL_SENSOR_GYRO_L as i32,
+    GyroL = SDL_SENSOR_GYRO_L,
     /// Accelerometer for right Joy-Con controller
-    AccelR = SDL_SENSOR_ACCEL_R as i32,
+    AccelR = SDL_SENSOR_ACCEL_R,
     /// Gyroscope for right Joy-Con controller
-    GyroR = SDL_SENSOR_GYRO_R as i32,
+    GyroR = SDL_SENSOR_GYRO_R,
 }
 
 fn convert_sdl_event(event: &SDL_Event) -> SdlEvent {
@@ -898,4 +901,29 @@ pub fn sdl_peek_events(min_type: SdlEventType, max_type: SdlEventType) -> Vec<Sd
 
 pub fn sdl_get_events(min_type: SdlEventType, max_type: SdlEventType) -> Vec<SdlEvent> {
     peep_events(SDL_GETEVENT, min_type, max_type)
+}
+
+extern "C" fn event_filter(
+    userdata: *mut ffi::c_void,
+    event: *mut SDL_Event
+) -> ffi::c_int {
+    let fn_ref = unsafe { (*(userdata as *mut Box<dyn Fn(&SdlEvent) -> i32>)).as_mut() };
+    let retval = fn_ref(&convert_sdl_event(unsafe { &*event }));
+    retval as ffi::c_int
+}
+
+pub fn sdl_add_event_watch<F: Fn(&SdlEvent) -> i32>(f: F) {
+    let boxed_fn: Box<dyn Fn(&SdlEvent) -> i32> = Box::new(f);
+    let dbl_boxed_fn = Box::new(boxed_fn);
+    let userdata = Box::into_raw(dbl_boxed_fn) as *mut ffi::c_void;
+    unsafe {
+        SDL_AddEventWatch(
+            Some(event_filter),
+            userdata,
+        );
+    }
+}
+
+pub fn sdl_pump_events() {
+    unsafe { SDL_PumpEvents() };
 }

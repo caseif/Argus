@@ -9,6 +9,7 @@ name = "sdl2"
 crate-type = ["rlib"]
 
 [dependencies]
+bitflags = "2.8.0"
 num_enum = "0.7.3"
 
 [build-dependencies]
