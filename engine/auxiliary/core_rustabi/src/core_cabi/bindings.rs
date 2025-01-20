@@ -108,6 +108,7 @@ extern "C" {
     pub fn argus_get_present_static_modules() -> StringArray;
     pub fn argus_initialize_engine();
     pub fn argus_start_engine(callback: delta_callback_t) -> !;
+    pub fn argus_stop_engine();
     pub fn argus_crash(msg: *const ::std::os::raw::c_char) -> !;
     pub fn argus_get_current_lifecycle_stage() -> LifecycleStage;
     pub fn argus_register_update_callback(

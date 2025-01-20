@@ -58,19 +58,25 @@ pub fn start_engine(callback: DeltaCallback) -> ! {
     }
 }
 
-pub fn get_current_lifecycle_stage() -> LifecycleStage {
+pub fn stop_engine() {
     unsafe {
-        return LifecycleStage::try_from(argus_get_current_lifecycle_stage())
-            .expect("Invalid LifecycleStage ordinal");
+        argus_stop_engine();
+    }
+}
+
+pub fn get_current_lifecycle_stage() -> crate::argus::core::LifecycleStage {
+    unsafe {
+        crate::argus::core::LifecycleStage::try_from_primitive(argus_get_current_lifecycle_stage())
+            .expect("Invalid LifecycleStage ordinal")
     }
 }
 
 pub fn register_update_callback(update_callback: DeltaCallback, ordering: Ordering) -> Index {
     unsafe {
-        return argus_register_render_callback(
+        argus_register_render_callback(
             Some(update_callback),
             ordering as bindings::Ordering,
-        );
+        )
     }
 }
 
@@ -82,10 +88,10 @@ pub fn unregister_update_callback(id: Index) {
 
 pub fn register_render_callback(render_callback: DeltaCallback, ordering: Ordering) -> Index {
     unsafe {
-        return argus_register_render_callback(
+        argus_register_render_callback(
             Some(render_callback),
             ordering as bindings::Ordering,
-        );
+        )
     }
 }
 
@@ -97,12 +103,12 @@ pub fn unregister_render_callback(id: Index) {
 
 pub fn run_on_game_thread(callback: NullaryCallback) {
     unsafe {
-        return argus_run_on_game_thread(Some(callback));
+        argus_run_on_game_thread(Some(callback))
     }
 }
 
 pub fn is_current_thread_update_thread() -> bool {
     unsafe {
-        return argus_is_current_thread_update_thread();
+        argus_is_current_thread_update_thread()
     }
 }

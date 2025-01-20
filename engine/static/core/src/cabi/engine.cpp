@@ -37,6 +37,10 @@ void argus_initialize_engine(void) {
     argus::start_engine(_wrap_delta_callback(callback));
 }
 
+void argus_stop_engine(void) {
+    argus::stop_engine();
+}
+
 [[noreturn]] void argus_crash(const char *msg) {
     argus::crash(msg);
 }
