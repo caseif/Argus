@@ -18,7 +18,7 @@ core_rustabi = { path = "../../auxiliary/core_rustabi" }
 lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
 lowlevel_rs = { path = "../../libs/lowlevel_rs" }
 render_rs = { path = "../render_rs" }
+wm_rs = { path = "../wm_rs" }
 resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
 shadertools = { path = "../../libs/shadertools", default-features = false }
-wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
 uuid = { version = "1.11.0", features = ["v4"] }

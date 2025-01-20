@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use num_enum::{UnsafeFromPrimitive};
+use num_enum::{TryFromPrimitive, UnsafeFromPrimitive};
 
 use lowlevel_rustabi::argus;
 use lowlevel_rustabi::util::*;
@@ -24,7 +24,7 @@ use lowlevel_rustabi::util::*;
 use crate::core_cabi;
 use crate::core_cabi::*;
 
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, UnsafeFromPrimitive)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, TryFromPrimitive, UnsafeFromPrimitive)]
 #[repr(u32)]
 pub enum LifecycleStage {
     Load = LIFECYCLE_STAGE_LOAD as u32,

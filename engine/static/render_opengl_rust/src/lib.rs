@@ -34,6 +34,7 @@ mod compositing;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::ops::DerefMut;
 use std::time::Duration;
 
 use num_enum::UnsafeFromPrimitive;
@@ -42,7 +43,7 @@ use core_rustabi::argus::core::*;
 use render_rs::common::register_render_backend;
 use render_rs::constants::*;
 use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
-use wm_rustabi::argus::wm::*;
+use wm_rs::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::gl_renderer::GlRenderer;
 use crate::loader::ShaderLoader;
@@ -66,16 +67,17 @@ fn set_backend_active(active: bool) {
 }
 
 fn test_opengl_support() -> Result<(), ()> {
-    let mut window = Window::create("", None);
+    let mut window = WindowManager::instance().create_window("", None);
     window.update(Duration::from_secs(0));
-    let gl_context_opt = gl_create_context(&mut window, 3, 3, GlContextFlag::ProfileCore.into());
-    if gl_context_opt.is_none() {
-        //TODO: use proper logger
-        eprintln!("Failed to create GL context");
-        return Err(());
-    }
-
-    let gl_context = gl_context_opt.unwrap();
+    let gl_context =
+        match gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore.into()) {
+            Ok(ctx) => ctx,
+            Err(e) => {
+                //TODO: use proper logger
+                eprintln!("Failed to create GL context: {e}");
+                return Err(());
+            }
+        };
 
     if let Err(rc) = gl_make_context_current(&mut window, &gl_context) {
         //TODO: use proper logger
@@ -83,7 +85,7 @@ fn test_opengl_support() -> Result<(), ()> {
         return Err(());
     }
 
-    if let Err(e) = agletLoadCapabilities(gl_load_proc) {
+    if let Err(e) = agletLoadCapabilities(gl_load_proc_ffi) {
         let err_msg = match e {
             AgletError::Unspecified => "Aglet failed to load OpenGL bindings (unspecified error)",
             AgletError::ProcLoad => "Aglet failed to load required OpenGL procs",
@@ -98,56 +100,73 @@ fn test_opengl_support() -> Result<(), ()> {
 
     window.request_close();
 
-    return Ok(());
+    Ok(())
 }
 
 fn activate_opengl_backend() -> bool {
-    set_window_create_flags(WindowCreateFlags::OpenGL);
+    let mgr = WindowManager::instance();
 
-    if gl_load_library() != 0 {
+    let std_flags = WindowCreationFlags::OpenGL;
+    let transient_flags = std_flags | WindowCreationFlags::Transient;
+
+    mgr.set_window_creation_flags(transient_flags);
+
+    if gl_load_library().is_err() {
         //Logger::default_logger().warn("Failed to load OpenGL library");
-        set_window_create_flags(WindowCreateFlags::None);
+        mgr.set_window_creation_flags(WindowCreationFlags::None);
         return false;
     }
 
     if test_opengl_support().is_err() {
         gl_unload_library();
-        set_window_create_flags(WindowCreateFlags::None);
+        mgr.set_window_creation_flags(WindowCreationFlags::None);
         return false;
     }
+
+    mgr.set_window_creation_flags(std_flags);
 
     set_backend_active(true);
     true
 }
 
 fn window_event_handler(event: &WindowEvent) {
-    let window = event.get_window();
+    let window_id = &event.window;
+    let Some(mut window) = WindowManager::instance().get_window_mut(window_id) else {
+        println!("Received window event with unknown window ID!");
+        return;
+    };
 
-    match event.get_subtype() {
+    match event.subtype {
         WindowEventType::Create => {
             // don't create a context if the window was immediately closed
             if !window.is_close_request_pending() {
-                let renderer = GlRenderer::new(&window);
+                let renderer = GlRenderer::new(&mut *window);
                 RENDERERS.with_borrow_mut(|renderers| {
-                    renderers.insert(window.get_id(), renderer)
+                    renderers.insert(window_id.clone(), renderer)
                 });
             }
         }
         WindowEventType::Update => {
             if window.is_ready() {
                 RENDERERS.with_borrow_mut(|renderers| {
-                    let renderer = renderers.get_mut(&window.get_id())
+                    let renderer = renderers.get_mut(window_id)
                         .expect("Failed to get renderer");
-                    renderer.render(event.get_delta());
+                    renderer.render(
+                        window.deref_mut(),
+                        event.delta.expect("Window update event did not have delta")
+                    );
                 });
             }
         }
         WindowEventType::Resize => {
             if window.is_ready() {
                 RENDERERS.with_borrow_mut(|renderers| {
-                    let renderer = renderers.get_mut(&window.get_id())
+                    let renderer = renderers.get_mut(window_id)
                         .expect("Failed to get renderer");
-                    renderer.notify_window_resize(&event.get_resolution());
+                    renderer.notify_window_resize(
+                        window.deref_mut(),
+                        &event.resolution.expect("Window resize event did not have resolution")
+                    );
                 });
             }
         }
@@ -156,7 +175,7 @@ fn window_event_handler(event: &WindowEvent) {
                 // This condition fails if the window received a close request
                 // immediately, before a context could be created. This is the
                 // case when creating a hidden window to probe GL capabilities.
-                if renderers.contains_key(&window.get_id()) {
+                if renderers.contains_key(window_id) {
                     //TODO: delete renderer
                 }
             });
@@ -206,8 +225,8 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 ShaderLoader::new(),
             );
 
-            register_ffi_event_handler(
-                &window_event_handler,
+            register_event_handler(
+                Box::new(window_event_handler),
                 TargetThread::Render,
                 Ordering::Standard
             );

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use lazy_static::lazy_static;
-use wm_rustabi::argus::wm::{get_window_from_handle, Window};
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::Vector2d;
 use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType};
 use sdl2::mouse::{sdl_get_mouse_state, SdlMouseButton};
 use sdl2::video::SdlWindow;
+use wm_rs::{Window, WindowManager};
 use crate::input_event::{dispatch_axis_event, dispatch_button_event};
 use crate::InputManager;
 
@@ -111,7 +111,12 @@ fn dispatch_mouse_button_event(
         };
 
         for action in actions {
-            dispatch_button_event(Some(window), controller_name.clone(), action, release);
+            dispatch_button_event(
+                Some(window.get_id().to_string()),
+                controller_name.clone(),
+                action,
+                release,
+            );
         }
     }
 }
@@ -122,13 +127,25 @@ fn dispatch_mouse_axis_events(window: &Window, x: f64, y: f64, dx: f64, dy: f64)
         let controller = item.value();
         if let Some(actions_h) = controller.get_mouse_axis_actions(&MouseAxis::Horizontal) {
             for action in actions_h {
-                dispatch_axis_event(Some(&window), controller_name.clone(), action, x, dx);
+                dispatch_axis_event(
+                    Some(window.get_id().to_string()),
+                    controller_name.clone(),
+                    action,
+                    x,
+                    dx,
+                );
             }
         }
 
         if let Some(actions_v) = controller.get_mouse_axis_actions(&MouseAxis::Vertical) {
             for action in actions_v {
-                dispatch_axis_event(Some(&window), controller_name.clone(), action, y, dy);
+                dispatch_axis_event(
+                    Some(window.get_id().to_string()),
+                    controller_name.clone(),
+                    action,
+                    y,
+                    dy,
+                );
             }
         }
     }
@@ -139,7 +156,8 @@ fn handle_mouse_events() {
         match event.data {
             SdlEventData::MouseMotion(data) => {
                 let Some(window) = (match SdlWindow::from_id(data.window_id) {
-                    Ok(sdl_window) => get_window_from_handle(sdl_window.get_handle()),
+                    Ok(sdl_window) =>
+                        WindowManager::instance().get_window_from_handle(sdl_window),
                     Err(_) => None,
                 }) else { continue; };
                 dispatch_mouse_axis_events(
@@ -156,7 +174,8 @@ fn handle_mouse_events() {
                     return;
                 };
                 let Some(window) = (match SdlWindow::from_id(data.window_id) {
-                    Ok(sdl_window) => get_window_from_handle(sdl_window.get_handle()),
+                    Ok(sdl_window) =>
+                        WindowManager::instance().get_window_from_handle(sdl_window),
                     Err(_) => None,
                 }) else { continue; };
                 dispatch_mouse_button_event(

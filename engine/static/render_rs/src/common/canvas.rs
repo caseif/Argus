@@ -1,23 +1,38 @@
+use std::any::Any;
 use std::collections::HashMap;
 use lowlevel_rs::{ArgumentError, arg_error, validate_arg};
 use lowlevel_rustabi::argus::lowlevel::Vector2f;
-use wm_rustabi::argus::wm::Window;
 use uuid::Uuid;
+use wm_rs::{Canvas, Window};
 use crate::common::{Viewport, ViewportCoordinateSpaceMode};
 use crate::twod::AttachedViewport2d;
 
 #[derive(Debug)]
-pub struct Canvas {
+pub struct RenderCanvas {
     id: Uuid,
-    window: Window,
+    window_id: String,
     viewports_2d: HashMap<String, AttachedViewport2d>,
 }
 
-impl Canvas {
+impl Canvas for RenderCanvas {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+}
+
+impl RenderCanvas {
     #[must_use]
-    pub(crate) fn new(window: Window) -> Self {
+    pub(crate) fn new(window: &Window) -> Self {
         //TODO: validate window
-        Self { id: Uuid::new_v4(), window, viewports_2d: HashMap::new() }
+        Self {
+            id: Uuid::new_v4(),
+            window_id: window.get_id().to_string(),
+            viewports_2d: HashMap::new()
+        }
     }
 
     #[must_use]
@@ -26,8 +41,8 @@ impl Canvas {
     }
 
     #[must_use]
-    pub fn get_window(&self) -> Window {
-        self.window
+    pub fn get_window_id(&self) -> &str {
+        self.window_id.as_str()
     }
 
     #[must_use]

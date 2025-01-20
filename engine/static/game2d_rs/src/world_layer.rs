@@ -25,7 +25,7 @@ use std::slice;
 use uuid::Uuid;
 use argus_scripting_bind::script_bind;
 use lowlevel_rs::Handle;
-use render_rs::common::{Canvas, Material, Scene, SceneType, TextureData, Transform2d, Vertex2d};
+use render_rs::common::{RenderCanvas, Material, Scene, SceneType, TextureData, Transform2d, Vertex2d};
 use render_rs::constants::*;
 use render_rs::twod::{get_render_context_2d, Camera2d, Light2dParameters, Light2dType, RenderPrimitive2d, Scene2d};
 use crate::sprite::Sprite;
@@ -58,7 +58,7 @@ impl World2dLayer {
         parallax_coeff: f32,
         repeat_interval: Option<Vector2f>,
         lighting_enabled: bool,
-        canvas: &mut Canvas,
+        canvas: &mut RenderCanvas,
     ) -> World2dLayer {
         let layer_uuid = Uuid::new_v4().to_string();
         let layer_id_str = format!("{}{}_{}", LAYER_PREFIX, world_id, layer_uuid);

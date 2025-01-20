@@ -11,11 +11,11 @@ edition = "2021"
 sdl2 = { path = "../../../external-bindings/sdl2"}
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 lowlevel_rs = { path = "../../libs/lowlevel_rs" }
+wm_rs = { path = "../wm_rs" }
 lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
 resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
 scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
-wm_rustabi = { path = "../../auxiliary/wm_rustabi" }
 bitmask = "0.5.0"
 dashmap = "6.1.0"
 lazy_static = "1.5.0"

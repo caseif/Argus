@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use bitmask::bitmask;
 use lazy_static::lazy_static;
-use wm_rustabi::argus::wm::{get_window_from_handle, Window};
 use argus_scripting_bind::script_bind;
 use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType};
 use sdl2::keyboard::{sdl_get_keyboard_state, SdlKeyCode, SdlScancode};
 use sdl2::video::SdlWindow;
+use wm_rs::{Window, WindowManager};
 use crate::input_event::dispatch_button_event;
 use crate::InputManager;
 
@@ -376,7 +376,12 @@ fn dispatch_events(window: &Window, key: KeyboardScancode, release: bool) {
 
         let Some(actions) = controller.get_keyboard_key_bindings(key) else { continue; };
         for action in actions {
-            dispatch_button_event(Some(window), controller_name.clone(), action, release);
+            dispatch_button_event(
+                Some(window.get_id().to_string()),
+                controller_name.clone(),
+                action,
+                release,
+            );
         }
     }
 }
@@ -389,7 +394,8 @@ fn handle_keyboard_events() {
             continue;
         }
         let sdl_window = SdlWindow::from_id(data.window_id).unwrap();
-        let Some(window) = get_window_from_handle(sdl_window.get_handle()) else { return; };
+        let Some(window) = WindowManager::instance().get_window_from_handle(sdl_window)
+        else { return; };
 
         let key = translate_sdl_scancode(&data.keysym.scancode);
         dispatch_events(&window, key, event.ty == SdlEventType::KeyUp);

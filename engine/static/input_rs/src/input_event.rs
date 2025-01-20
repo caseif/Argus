@@ -3,7 +3,6 @@ use argus_scripting_bind::script_bind;
 use core_rustabi::argus::core::{
     dispatch_event, register_event_handler, ArgusEvent, Ordering, TargetThread,
 };
-use wm_rustabi::argus::wm::Window;
 
 const EVENT_TYPE_INPUT: &str = "input";
 const EVENT_TYPE_INPUT_DEVICE: &str = "input_device";
@@ -44,7 +43,7 @@ impl ArgusEvent for InputEvent {
 impl InputEvent {
     pub fn new(
         ty: InputEventType,
-        window_id: impl Into<String>,
+        window_id: Option<String>,
         controller_name: impl Into<String>,
         action: impl Into<String>,
         axis_value: f64,
@@ -52,7 +51,7 @@ impl InputEvent {
     ) -> Self {
         Self {
             input_type: ty,
-            window_id: window_id.into(),
+            window_id: window_id.unwrap_or_default(),
             controller_name: controller_name.into(),
             action: action.into(),
             axis_value,
@@ -95,7 +94,7 @@ impl ArgusEvent for InputDeviceEvent {
 }
 
 pub(crate) fn dispatch_button_event(
-    window: Option<&Window>,
+    window_id: Option<String>,
     controller_name: impl Into<String>,
     action: impl Into<String>,
     release: bool,
@@ -107,7 +106,7 @@ pub(crate) fn dispatch_button_event(
     };
     dispatch_event::<InputEvent>(InputEvent::new(
         event_type,
-        window.map(|w| w.get_id()).unwrap_or_default(),
+        window_id,
         controller_name.into(),
         action.into(),
         0.0,
@@ -116,7 +115,7 @@ pub(crate) fn dispatch_button_event(
 }
 
 pub(crate) fn dispatch_axis_event(
-    window: Option<&Window>,
+    window_id: Option<String>,
     controller_name: impl Into<String>,
     action: impl Into<String>,
     value: f64,
@@ -124,7 +123,7 @@ pub(crate) fn dispatch_axis_event(
 ) {
     dispatch_event::<InputEvent>(InputEvent::new(
         InputEventType::AxisChanged,
-        window.map(|w| w.get_id()).unwrap_or_default(),
+        window_id,
         controller_name,
         action,
         value,

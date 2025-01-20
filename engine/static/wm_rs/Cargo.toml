@@ -1,0 +1,19 @@
+[package]
+name = "wm_rs"
+version = "0.0.1"
+
+[lib]
+name = "wm_rs"
+crate-type = ["rlib"]
+edition = "2021"
+
+[dependencies]
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
+core_rustabi = { path = "../../auxiliary/core_rustabi" }
+#scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
+bitflags = "2.8.0"
+dashmap = "6.1.0"
+fragile = "2.0.0"
+num_enum = "0.7.3"
+sdl2 = { path = "../../../external-bindings/sdl2" }

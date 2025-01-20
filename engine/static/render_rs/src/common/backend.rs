@@ -59,49 +59,49 @@ fn try_backends(
 ) -> bool {
     for backend in backends.into_iter() {
         let backend_str = backend.into();
-        
+
         if attempted_backends.contains(&backend_str) {
             println!("Skipping graphics \"{}\" because we already tried it", backend_str);
             continue;
         }
-        
+
         let Some(activate_fn) = get_render_backend_activate_fn(&backend_str) else {
             println!("Skipping unknown graphics backend \"{}\"", backend_str);
             attempted_backends.push(backend_str.clone());
             continue;
         };
-    
+
         let activate_res = activate_fn();
         if !activate_res {
             println!("Unable to select graphics backend \"{}\"", backend_str);
             attempted_backends.push(backend_str.clone());
             continue;
         }
-    
+
         println!("Successfully activated graphics backend \"{}\"", backend_str);
-    
+
         set_active_render_backend(backend_str);
-    
+
         return true;
     }
-    
+
     false
 }
 
 pub(crate) fn activate_backend() {
     let backends = get_preferred_render_backends();
-    
+
     let mut attempted_backends = Vec::new();
-    
+
     if try_backends(&backends, &mut attempted_backends) {
         return;
     }
-    
+
     println!("Failed to select graphics backend from preference list, falling back to platform default");
-    
+
     if try_backends(DEFAULT_BACKENDS.to_owned(), &mut attempted_backends) {
         return;
     }
-    
+
     panic!("Failed to select graphics backend");
 }

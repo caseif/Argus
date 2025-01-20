@@ -25,44 +25,46 @@ use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
 use core_rustabi::argus::core::{get_screen_space_scale_mode, ScreenSpaceScaleMode};
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
-use render_rs::common::{AttachedViewport, Matrix4x4, Transform2d, Viewport};
+use render_rs::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2d, Viewport};
 use resman_rustabi::argus::resman::Resource;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use wm_rustabi::argus::wm::*;
 use render_rs::constants::*;
 use render_rs::twod::get_render_context_2d;
-use uuid::Uuid;
+use wm_rs::*;
 use crate::util::gl_util::gl_debug_callback;
 
 pub(crate) struct GlRenderer {
-    window: Window,
+    window_id: String,
     state: RendererState,
 }
 
 impl GlRenderer {
-    pub(crate) fn new(window: &Window) -> Self {
+    pub(crate) fn new(window: &mut Window) -> Self {
         let mut renderer = Self {
-            window: window.clone(),
+            window_id: window.get_id().to_string(),
             state: Default::default(),
         };
-        renderer.init();
+        renderer.init(window);
         renderer
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, window: &mut Window) {
         #[cfg(debug_assertions)]
-        let context_flags = GlContextFlag::ProfileCore.into();
+        let context_flags = GlContextFlags::ProfileCore.into();
         #[cfg(not(debug_assertions))]
-        let context_flags = GlContextFlag::ProfileCore | GlContextFlag::DebugContext;
+        let context_flags = GlContextFlags::ProfileCore | GlContextFlags::DebugContext;
 
         self.state.gl_context =
-            Some(gl_create_context(&mut self.window, 3, 3, context_flags).unwrap());
-        gl_make_context_current(&mut self.window, self.state.gl_context.as_ref().unwrap())
+            Some(gl_create_context(window, 3, 3, context_flags).unwrap());
+        gl_make_context_current(
+            window,
+            self.state.gl_context.as_ref().unwrap()
+        )
             .expect("Failed to make GL context current");
 
-        if let Err(e) = agletLoad(gl_load_proc) {
+        if let Err(e) = agletLoad(gl_load_proc_ffi) {
             panic!(
                 "Failed to load OpenGL bindings (Aglet returned error {:?})",
                 e
@@ -104,29 +106,29 @@ impl GlRenderer {
         setup_framebuffer(&mut self.state);
     }
 
-    pub(crate) fn render(&mut self, _delta: Duration) {
-        gl_make_context_current(&mut self.window, self.state.gl_context.as_ref().unwrap())
+    pub(crate) fn render(&mut self, window: &mut Window, _delta: Duration) {
+        gl_make_context_current(window, self.state.gl_context.as_ref().unwrap())
             .expect("Failed to make GL context current");
 
-        let resolution = self.window.get_resolution();
+        let resolution = window.get_resolution();
 
         if resolution.value.x == 0 {
             return;
         }
 
         if !self.state.are_viewports_initialized {
-            self.update_view_matrix(&resolution.value);
+            self.update_view_matrix(window, &resolution.value);
             self.state.are_viewports_initialized = true;
         }
 
-        let vsync = self.window.is_vsync_enabled();
+        let vsync = window.is_vsync_enabled();
         if vsync.dirty {
             gl_swap_interval(vsync.value.then_some(1).unwrap_or(0));
         }
 
         self.update_global_ubo();
 
-        self.rebuild_scene();
+        self.rebuild_scene(window);
 
         // set up state for drawing scene to framebuffers
         glEnable(GL_DEPTH_TEST);
@@ -146,8 +148,11 @@ impl GlRenderer {
 
         glDisable(GL_CULL_FACE);
 
-        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
-        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
+        let canvas = window.get_canvas_mut()
+            .expect("Window does not have associated canvas")
+            .as_any_mut()
+            .downcast_mut::<RenderCanvas>()
+            .expect("Canvas object from window was unexpected type!");
 
         let viewports = &mut canvas.get_viewports_2d();
         viewports.sort_by_key(|vp| vp.get_z_index());
@@ -179,22 +184,27 @@ impl GlRenderer {
             );
         }
 
-        gl_swap_buffers(&mut canvas.get_window());
+        gl_swap_buffers(&window);
     }
 
     pub(crate) fn notify_window_resize(
         &mut self,
+        window: &mut Window,
         resolution: &Vector2u
     ) {
-        self.update_view_matrix(resolution);
+        self.update_view_matrix(window, resolution);
     }
 
     pub(crate) fn update_view_matrix(
         &mut self,
+        window: &mut Window,
         resolution: &Vector2u
     ) {
-        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
-        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
+        let canvas = window.get_canvas_mut()
+            .expect("Window does not have associated canvas")
+            .as_any_mut()
+            .downcast_mut::<RenderCanvas>()
+            .expect("Canvas object from window was unexpected type!");
 
         for viewport in &canvas.get_viewports_2d() {
             let camera_transform = {
@@ -213,9 +223,12 @@ impl GlRenderer {
         }
     }
 
-    fn rebuild_scene(&mut self) {
-        let canvas_id = unsafe { self.window.get_canvas::<Uuid>() };
-        let canvas = get_render_context_2d().get_canvas_mut(&canvas_id).unwrap();
+    fn rebuild_scene(&mut self, window: &Window) {
+        let canvas = window.get_canvas()
+            .expect("Window does not have associated canvas")
+            .as_any()
+            .downcast_ref::<RenderCanvas>()
+            .expect("Canvas object from window was unexpected type!");
 
         for viewport in &canvas.get_viewports_2d() {
             let camera_transform = {
@@ -230,7 +243,7 @@ impl GlRenderer {
                 recompute_2d_viewport_view_matrix(
                     &viewport.get_viewport(),
                     &camera_transform.value.inverse(),
-                    &self.window.peek_resolution(),
+                    &window.peek_resolution(),
                     &mut viewport_state.view_matrix,
                 );
             }
@@ -286,10 +299,9 @@ impl GlRenderer {
 
 impl Drop for GlRenderer {
     fn drop(&mut self) {
-        self.state
-            .gl_context
-            .as_mut()
-            .inspect(|ctx| gl_destroy_context(ctx));
+        if let Some(ctx) = self.state.gl_context.take() {
+            gl_destroy_context(ctx);
+        }
     }
 }
 

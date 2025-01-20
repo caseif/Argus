@@ -12,7 +12,7 @@ pub use input_event::*;
 pub use input_manager::*;
 
 use core_rustabi::argus::core::*;
-use wm_rustabi::argus::wm::{Window, WindowEvent, WindowEventType};
+use wm_rs::{Window, WindowEvent, WindowEventType, WindowManager};
 use crate::controller::ack_gamepad_disconnects;
 use crate::gamepad::{deinit_gamepads, flush_gamepad_deltas, update_gamepads};
 use crate::keyboard::{init_keyboard, update_keyboard};
@@ -24,10 +24,19 @@ fn init_window_input(window: &Window) {
 }
 
 fn on_window_event(event: &WindowEvent) {
-    if event.get_subtype() == WindowEventType::Create {
-        init_window_input(&event.get_window());
-    } else if event.get_subtype() == WindowEventType::Focus {
-        //TODO: figure out how to move cursor inside window boundary
+    match event.subtype {
+        WindowEventType::Create => {
+            let Some(window) = WindowManager::instance().get_window(&event.window)
+            else {
+                println!("Received window event with unknown window ID!");
+                return;
+            };
+            init_window_input(window.value());
+        }
+        WindowEventType::Focus => {
+            //TODO: figure out how to move cursor inside window boundary
+        }
+        _ => {}
     }
 }
 
@@ -56,8 +65,8 @@ pub unsafe extern "C" fn update_lifecycle_input_rs(
             register_update_callback(on_update_early, Ordering::Early);
             register_update_callback(on_update_late, Ordering::Late);
             register_render_callback(on_render, Ordering::Early);
-            register_ffi_event_handler::<WindowEvent>(
-                &on_window_event,
+            register_event_handler::<WindowEvent>(
+                Box::new(on_window_event),
                 TargetThread::Render,
                 Ordering::Standard
             );

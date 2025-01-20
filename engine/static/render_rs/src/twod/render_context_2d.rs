@@ -5,8 +5,7 @@ use lazy_static::lazy_static;
 use lowlevel_rs::{Handle, ValuePool};
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use uuid::Uuid;
-use wm_rustabi::argus::wm::Window;
-use crate::common::{Canvas, Transform2d};
+use crate::common::{RenderCanvas, Transform2d};
 use crate::twod::{Light2d, RenderGroup2d, RenderObject2d, Scene2d};
 
 lazy_static! {
@@ -15,7 +14,7 @@ lazy_static! {
 
 #[derive(Default)]
 pub struct RenderContext2d {
-    canvases: DashMap<Uuid, Canvas>,
+    canvases: DashMap<Uuid, RenderCanvas>,
     scenes: DashMap<String, Scene2d>,
     group_pool: RwLock<ValuePool<RenderGroup2d>>,
     object_pool: RwLock<ValuePool<RenderObject2d>>,
@@ -131,22 +130,22 @@ impl RenderContext2d {
         }
     }
 
-    pub fn get_canvas(&self, id: &Uuid) -> Option<Ref<Uuid, Canvas>> {
+    /*pub fn get_canvas(&self, id: &Uuid) -> Option<Ref<Uuid, RenderCanvas>> {
         self.canvases.get(id)
     }
 
-    pub fn get_canvas_mut(&self, id: &Uuid) -> Option<RefMut<Uuid, Canvas>> {
+    pub fn get_canvas_mut(&self, id: &Uuid) -> Option<RefMut<Uuid, RenderCanvas>> {
         self.canvases.get_mut(id)
     }
 
-    pub fn create_canvas(&self, window: Window) -> RefMut<Uuid, Canvas> {
-        let canvas = Canvas::new(window);
+    pub fn create_canvas(&self, window: &Window) -> RefMut<Uuid, RenderCanvas> {
+        let canvas = RenderCanvas::new(window);
         self.canvases.entry(canvas.get_id()).or_insert(canvas)
     }
 
     pub fn remove_canvas(&self, id: &Uuid) -> bool {
         self.canvases.remove(id).is_some()
-    }
+    }*/
 
     pub fn get_scene(&self, scene_id: impl AsRef<str>) -> Option<Ref<String, Scene2d>> {
         self.scenes.get(scene_id.as_ref())

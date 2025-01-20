@@ -58,6 +58,10 @@ impl<T> Dirtiable<T> {
         self.dirty = true;
     }
 
+    pub fn set_quietly(&mut self, value: T) {
+        self.value = value;
+    }
+
     pub fn update<F: Fn(&T) -> T>(&mut self, func: F) {
         self.value = func(&self.value);
         self.dirty = true;

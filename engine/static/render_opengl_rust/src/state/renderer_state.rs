@@ -18,8 +18,8 @@
 
 use std::collections::HashMap;
 use std::rc::Rc;
-use wm_rustabi::argus::wm::GlContext;
 use resman_rustabi::argus::resman::Resource;
+use wm_rs::GlContext;
 use crate::shaders::*;
 use crate::state::*;
 use crate::util::buffer::GlBuffer;

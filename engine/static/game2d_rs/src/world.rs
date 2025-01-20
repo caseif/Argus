@@ -20,15 +20,13 @@ use crate::world_layer::World2dLayer;
 use lazy_static::lazy_static;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Vector2f, Vector3f};
 use std::collections::HashMap;
-use std::ops::DerefMut;
 use std::ptr;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use argus_scripting_bind::script_bind;
 use uuid::Uuid;
-use wm_rustabi::argus::wm::get_window;
-use render_rs::common::{Canvas, Transform2d};
-use render_rs::twod::get_render_context_2d;
+use render_rs::common::{RenderCanvas, Transform2d};
+use wm_rs::WindowManager;
 use crate::static_object::StaticObject2d;
 
 const MAX_BACKGROUND_LAYERS: u32 = 16;
@@ -43,7 +41,7 @@ lazy_static! {
 #[script_bind(ref_only)]
 pub struct World2d {
     id: String,
-    pub(crate) canvas_id: Uuid,
+    pub(crate) window_id: String,
     scale_factor: f32,
     al_level: Dirtiable<f32>,
     al_color: Dirtiable<Vector3f>,
@@ -57,7 +55,7 @@ pub struct World2d {
 
 #[script_bind]
 impl World2d {
-    pub fn create(id: String, canvas: &mut Canvas, scale_factor: f32) -> Arc<RwLock<World2d>> {
+    pub fn create(id: String, canvas: &mut RenderCanvas, scale_factor: f32) -> Arc<RwLock<World2d>> {
         let world = Self {
             id: id.clone(),
             scale_factor,
@@ -72,7 +70,7 @@ impl World2d {
                 true,
                 canvas,
             ),
-            canvas_id: canvas.get_id(),
+            window_id: canvas.get_window_id().to_string(),
             bg_layers: Default::default(),
             bg_layers_count: 0,
             abstract_camera: Default::default(),
@@ -84,12 +82,13 @@ impl World2d {
 
     #[script_bind(rename = "create")]
     pub fn create_unsafe<'a>(id: String, window_id: &str, scale_factor: f32) -> &'a mut World2d {
-        let window = get_window(window_id).unwrap();
-        let canvas_id = unsafe { window.get_canvas::<Uuid>() };
+        let mut window = WindowManager::instance().get_window_mut(window_id).unwrap();
+        let canvas = window.get_canvas_mut().expect("Window does not have associated canvas");
         let arc = Self::create(
             id,
-            get_render_context_2d().get_canvas_mut(canvas_id).unwrap().deref_mut(),
-            scale_factor
+            canvas.as_any_mut().downcast_mut::<RenderCanvas>()
+                .expect("Canvas object from window was unexpected type!"),
+            scale_factor,
         );
         let mut guard = arc.write();
         unsafe { &mut *ptr::from_mut(guard.as_deref_mut().unwrap()) }
@@ -175,6 +174,9 @@ impl World2d {
 
         let layer_id = format!("{}{}", BG_LAYER_ID_PREFIX, bg_index);
 
+        let mut window = WindowManager::instance().get_window_mut(&self.window_id).unwrap();
+        let canvas = window.get_canvas_mut().expect("Window does not have associated canvas");
+
         let layer = World2dLayer::new(
             self.id.clone(),
             layer_id,
@@ -182,7 +184,8 @@ impl World2d {
             parallax_coeff,
             repeat_interval,
             false,
-            get_render_context_2d().get_canvas_mut(&self.canvas_id).unwrap().deref_mut(),
+            canvas.as_any_mut().downcast_mut::<RenderCanvas>()
+                .expect("Canvas object from window was unexpected type!"),
         );
 
         assert!(self.bg_layers[bg_index as usize].is_none());
@@ -208,7 +211,7 @@ impl World2d {
 
         for i in 0..self.bg_layers_count {
             self.bg_layers[i as usize].as_mut().expect("Background layer is missing")
-                    .render(scale_factor, &camera_transform, &al_level, &al_color);
+                .render(scale_factor, &camera_transform, &al_level, &al_color);
         }
 
         self.fg_layer.render(scale_factor, &camera_transform, &al_level, &al_color);

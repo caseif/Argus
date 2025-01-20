@@ -29,15 +29,15 @@ pub struct ScriptingParameters {
 }
 
 pub struct InitialWindowParameters {
-    id: Option<String>,
-    title: Option<String>,
-    mode: Option<String>,
-    vsync: Option<bool>,
-    mouse_visible: Option<bool>,
-    mouse_captured: Option<bool>,
-    mouse_raw_input: Option<bool>,
-    position: Option<Vector2i>,
-    dimensions: Option<Vector2u>,
+    pub id: Option<String>,
+    pub title: Option<String>,
+    pub mode: Option<String>,
+    pub vsync: Option<bool>,
+    pub mouse_visible: Option<bool>,
+    pub mouse_captured: Option<bool>,
+    pub mouse_raw_input: Option<bool>,
+    pub position: Option<Vector2i>,
+    pub dimensions: Option<Vector2u>,
 }
 
 pub fn get_scripting_parameters() -> ScriptingParameters {
