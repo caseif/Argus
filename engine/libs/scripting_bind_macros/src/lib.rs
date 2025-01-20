@@ -929,6 +929,7 @@ fn gen_fn_binding_code(
     };
 
     Ok(quote! {
+        #[allow(clippy::useless_conversion)]
         const _: () = {
             fn #proxy_ident(params: &[::argus_scripting_bind::WrappedObject]) ->
                 ::std::result::Result<
