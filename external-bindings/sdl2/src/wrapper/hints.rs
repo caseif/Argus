@@ -531,7 +531,7 @@ pub const SDL_HINT_TRACKPAD_IS_TOUCH_ONLY: &str =
     unsafe { from_c_define(crate::bindings::SDL_HINT_TRACKPAD_IS_TOUCH_ONLY) };
 
 pub fn sdl_set_hint(hint: impl AsRef<str>, value: impl AsRef<str>) {
-    let hint_c = CString::from_str(hint.as_ref()).unwrap();
-    let value_c = CString::from_str(value.as_ref()).unwrap();
+    let hint_c = CString::new(hint.as_ref()).unwrap();
+    let value_c = CString::new(value.as_ref()).unwrap();
     unsafe { SDL_SetHint(hint_c.as_ptr(), value_c.as_ptr()) };
 }
