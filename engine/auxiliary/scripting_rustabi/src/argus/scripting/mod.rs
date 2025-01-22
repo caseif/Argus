@@ -18,11 +18,13 @@
 
 pub mod bind;
 pub mod error;
+pub mod manager;
 pub mod translate_ffi;
 pub mod types;
 //mod wrapper;
 
 pub use bind::*;
 pub use error::*;
+pub use manager::*;
 pub use translate_ffi::*;
 pub use types::*;

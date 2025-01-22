@@ -20,47 +20,15 @@
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
-#include "internal/scripting/bind.hpp"
 #include "internal/scripting/core_bindings.hpp"
 #include "internal/scripting/handles.hpp"
 #include "internal/scripting/module_scripting.hpp"
-#include "internal/scripting/pimpl/script_context.hpp"
 
 #include <string>
-#include <typeindex>
-#include <unordered_set>
 #include <vector>
 
 namespace argus {
     static constexpr const char *k_init_fn_name = "init";
-
-    std::map<std::string, ScriptingLanguagePlugin *> g_lang_plugins;
-    std::map<std::string, std::string> g_media_type_langs;
-    std::map<std::string, BoundTypeDef> g_bound_types;
-    std::map<std::string, std::string> g_bound_type_ids;
-    std::map<std::string, BoundFunctionDef> g_bound_global_fns;
-    std::map<std::string, BoundEnumDef> g_bound_enums;
-    std::map<std::string, std::string> g_bound_enum_ids;
-    std::vector<ScriptContext *> g_script_contexts;
-    std::map<std::string, std::unordered_set<const Resource *>> g_loaded_resources;
-
-    [[nodiscard]] static Result<void, BindingError> _resolve_all_parameter_types(void) {
-        for (auto &[_, type] : g_bound_types) {
-            auto res = resolve_parameter_types(type);
-            if (res.is_err()) {
-                return res;
-            }
-        }
-
-        for (auto &[_, fn] : g_bound_global_fns) {
-            auto res = resolve_parameter_types(fn);
-            if (res.is_err()) {
-                return res;
-            }
-        }
-
-        return ok<void, BindingError>();
-    }
 
     static void _run_init_script(const std::string &uid) {
         auto context_res = load_script(uid);
@@ -87,11 +55,11 @@ namespace argus {
             case LifecycleStage::PostInit: {
                 // parameter type resolution is deferred to ensure that all
                 // types have been registered first
-                _resolve_all_parameter_types().expect("Failed to resolve parameter types");
+                ScriptManager::instance().resolve_types()
+                        .expect("Failed to resolve parameter types");
 
-                for (auto context : g_script_contexts) {
-                    apply_bindings_to_context(*context).expect("Failed to apply bindings to script context");
-                }
+                    ScriptManager::instance().apply_bindings_to_all_contexts()
+                            .expect("Failed to apply bindings to script contexts");
 
                 const auto &scripting_params = get_scripting_parameters();
                 if (scripting_params.main.has_value()) {
@@ -103,17 +71,7 @@ namespace argus {
                 break;
             }
             case LifecycleStage::Deinit: {
-                for (auto context : g_script_contexts) {
-                    auto &plugin = *context->m_pimpl->plugin;
-                    auto *data = context->m_pimpl->plugin_data;
-                    if (data != nullptr) {
-                        plugin.destroy_context_data(data);
-                    }
-                }
-
-                for (const auto &[_, plugin] : g_lang_plugins) {
-                    delete plugin;
-                }
+                ScriptManager::instance().perform_deinit();
                 break;
             }
             default:

@@ -12,6 +12,12 @@ pub const BINDING_ERROR_TYPE_INVALID_MEMBERS: ArgusBindingErrorType = 3;
 pub const BINDING_ERROR_TYPE_UNKNOWN_PARENT: ArgusBindingErrorType = 4;
 pub const BINDING_ERROR_TYPE_OTHER: ArgusBindingErrorType = 5;
 pub type ArgusBindingErrorType = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ArgusMaybeBindingError {
+    pub is_err: bool,
+    pub error: argus_binding_error_t,
+}
 pub type argus_reflective_args_error_t = *mut ::std::os::raw::c_void;
 pub type argus_reflective_args_error_const_t = *const ::std::os::raw::c_void;
 pub type argus_script_invocation_error_t = *mut ::std::os::raw::c_void;
@@ -96,12 +102,12 @@ pub struct ArgusProxiedScriptCallback {
     pub bare_fn: ArgusBareProxiedScriptCallback,
     pub data: *const ::std::os::raw::c_void,
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ArgusMaybeBindingError {
-    pub is_err: bool,
-    pub error: argus_binding_error_t,
-}
+pub type argus_bound_type_def_t = *mut ::std::os::raw::c_void;
+pub type argus_bound_type_def_const_t = *const ::std::os::raw::c_void;
+pub type argus_bound_enum_def_t = *mut ::std::os::raw::c_void;
+pub type argus_bound_enum_def_const_t = *const ::std::os::raw::c_void;
+pub type argus_bound_function_def_t = *mut ::std::os::raw::c_void;
+pub type argus_bound_function_def_const_t = *const ::std::os::raw::c_void;
 pub type ArgusFieldAccessor = ::std::option::Option<
     unsafe extern "C" fn(
         inst: argus_object_wrapper_const_t,
@@ -116,6 +122,8 @@ pub type ArgusFieldMutator = ::std::option::Option<
         state: *const ::std::os::raw::c_void,
     ),
 >;
+pub type argus_script_manager_t = *mut ::std::os::raw::c_void;
+pub type argus_script_manager_const_t = *const ::std::os::raw::c_void;
 extern "C" {
     pub fn argus_binding_error_free(err: argus_binding_error_t);
     pub fn argus_binding_error_get_type(err: argus_binding_error_const_t) -> ArgusBindingErrorType;
@@ -225,7 +233,7 @@ extern "C" {
     pub fn argus_object_wrapper_get_buffer_size(obj_wrapper: argus_object_wrapper_const_t)
         -> usize;
     pub fn argus_object_wrapper_is_initialized(obj_wrapper: argus_object_wrapper_const_t) -> bool;
-    pub fn argus_bind_type(
+    pub fn argus_create_type_def(
         name: *const ::std::os::raw::c_char,
         size: usize,
         type_id: *const ::std::os::raw::c_char,
@@ -233,19 +241,19 @@ extern "C" {
         copy_ctor: ArgusCopyCtorProxy,
         move_ctor: ArgusMoveCtorProxy,
         dtor: ArgusDtorProxy,
-    ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_enum(
+    ) -> argus_bound_type_def_t;
+    pub fn argus_create_enum_def(
         name: *const ::std::os::raw::c_char,
         width: usize,
         type_id: *const ::std::os::raw::c_char,
-    ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_enum_value(
-        enum_type_id: *const ::std::os::raw::c_char,
+    ) -> argus_bound_enum_def_t;
+    pub fn argus_add_enum_value(
+        def: argus_bound_enum_def_t,
         name: *const ::std::os::raw::c_char,
         value: i64,
     ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_member_field(
-        containing_type_id: *const ::std::os::raw::c_char,
+    pub fn argus_add_member_field(
+        arg1: argus_bound_type_def_t,
         name: *const ::std::os::raw::c_char,
         field_type: argus_object_type_const_t,
         accessor: ArgusFieldAccessor,
@@ -253,16 +261,8 @@ extern "C" {
         mutator: ArgusFieldMutator,
         mutator_state: *const ::std::os::raw::c_void,
     ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_global_function(
-        name: *const ::std::os::raw::c_char,
-        params_count: usize,
-        params: *const argus_object_type_const_t,
-        ret_type: argus_object_type_const_t,
-        fn_proxy: ArgusProxiedNativeFunction,
-        extra: *mut ::std::os::raw::c_void,
-    ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_member_static_function(
-        type_id: *const ::std::os::raw::c_char,
+    pub fn argus_add_member_static_function(
+        def: argus_bound_type_def_t,
         name: *const ::std::os::raw::c_char,
         params_count: usize,
         params: *const argus_object_type_const_t,
@@ -270,8 +270,8 @@ extern "C" {
         proxied_fn: ArgusProxiedNativeFunction,
         extra: *mut ::std::os::raw::c_void,
     ) -> ArgusMaybeBindingError;
-    pub fn argus_bind_member_instance_function(
-        type_id: *const ::std::os::raw::c_char,
+    pub fn argus_add_member_instance_function(
+        def: argus_bound_type_def_t,
         name: *const ::std::os::raw::c_char,
         is_const: bool,
         params_count: usize,
@@ -279,6 +279,31 @@ extern "C" {
         ret_type: argus_object_type_const_t,
         proxied_fn: ArgusProxiedNativeFunction,
         extra: *mut ::std::os::raw::c_void,
+    ) -> ArgusMaybeBindingError;
+    pub fn argus_create_global_function_def(
+        name: *const ::std::os::raw::c_char,
+        is_const: bool,
+        params_count: usize,
+        params: *const argus_object_type_const_t,
+        ret_type: argus_object_type_const_t,
+        fn_proxy: ArgusProxiedNativeFunction,
+        extra: *mut ::std::os::raw::c_void,
+    ) -> argus_bound_function_def_t;
+    pub fn argus_bound_type_def_delete(def: argus_bound_type_def_t);
+    pub fn argus_bound_enum_def_delete(def: argus_bound_enum_def_t);
+    pub fn argus_bound_function_def_delete(def: argus_bound_function_def_t);
+    pub fn argus_script_manager_instance() -> argus_script_manager_t;
+    pub fn argus_script_manager_bind_type(
+        manager: argus_script_manager_t,
+        def: argus_bound_type_def_t,
+    ) -> ArgusMaybeBindingError;
+    pub fn argus_script_manager_bind_enum(
+        manager: argus_script_manager_t,
+        def: argus_bound_enum_def_t,
+    ) -> ArgusMaybeBindingError;
+    pub fn argus_script_manager_bind_global_function(
+        manager: argus_script_manager_t,
+        def: argus_bound_function_def_t,
     ) -> ArgusMaybeBindingError;
     pub fn argus_create_object_wrapper(
         ty: argus_object_type_const_t,

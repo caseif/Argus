@@ -22,6 +22,7 @@
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/handles.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/script_context.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/types.hpp"

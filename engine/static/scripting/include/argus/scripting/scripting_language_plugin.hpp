@@ -22,41 +22,25 @@
 
 #include "argus/resman/resource.hpp"
 
-#include "argus/scripting/bridge.hpp"
 #include "argus/scripting/script_context.hpp"
 
-#include <initializer_list>
 #include <string>
 #include <vector>
 
 namespace argus {
     class ScriptingLanguagePlugin {
-      private:
-        std::string m_lang_name;
-        std::vector<std::string> m_media_types;
-
       public:
-        ScriptingLanguagePlugin(std::string lang_name, const std::initializer_list<std::string> &media_types);
+        ScriptingLanguagePlugin(void) = default;
 
         ScriptingLanguagePlugin(const ScriptingLanguagePlugin &) = delete;
 
         ScriptingLanguagePlugin(ScriptingLanguagePlugin &&) = delete;
 
-        virtual ~ScriptingLanguagePlugin(void) = 0;
+        virtual ~ScriptingLanguagePlugin(void) = default;
 
-        const std::string &get_language_name(void) {
-            return this->m_lang_name;
-        }
+        virtual const char *get_language_name(void) const = 0;
 
-        const std::vector<std::string> &get_media_types(void) {
-            return this->m_media_types;
-        }
-
-        [[nodiscard]] Result<Resource &, ScriptLoadError> load_resource(const std::string &uid);
-
-        void move_resource(const Resource &resource);
-
-        void release_resource(const Resource &resource);
+        virtual const std::vector<std::string> &get_media_types(void) const = 0;
 
         virtual void *create_context_data(void) = 0;
 
@@ -79,6 +63,4 @@ namespace argus {
         virtual Result<ObjectWrapper, ScriptInvocationError> invoke_script_function(ScriptContext &context,
                 const std::string &name, const std::vector<ObjectWrapper *> &params) = 0;
     };
-
-    void register_scripting_language(ScriptingLanguagePlugin &plugin);
 }

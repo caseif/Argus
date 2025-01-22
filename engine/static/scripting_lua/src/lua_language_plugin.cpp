@@ -28,6 +28,7 @@
 #include "argus/scripting/bridge.hpp"
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/handles.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
 #include "argus/scripting/wrapper.hpp"
@@ -36,6 +37,7 @@
 #include "internal/scripting_lua/defines.hpp"
 #include "internal/scripting_lua/loaded_script.hpp"
 #include "internal/scripting_lua/lua_language_plugin.hpp"
+
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 
 extern "C" {
@@ -48,6 +50,8 @@ extern "C" {
 #include <string>
 
 namespace argus {
+    const std::vector<std::string> k_plugin_resource_types = { k_resource_type_lua };
+
     // disable non-standard extension warning for zero-sized array member
     #ifdef _MSC_VER
     #pragma warning(push)
@@ -331,7 +335,7 @@ namespace argus {
                             .expect("Failed to create object wrapper while reading vector from Lua VM"));
                 }
 
-                auto bound_type = get_bound_type(element_type.type_id.value())
+                auto bound_type = ScriptManager::instance().get_bound_type_by_type_id(element_type.type_id.value())
                         .expect("Encountered unbound element type when reading vector from Lua VM");
 
                 auto wrapper = ObjectWrapper(param_def, sizeof(ArrayBlob) + len * bound_type.size);
@@ -562,7 +566,7 @@ namespace argus {
 
                 lua_pop(state, 2); // pop type name and table
 
-                auto bound_type_res = get_bound_type_by_name(type_name);
+                auto bound_type_res = ScriptManager::instance().get_bound_type_by_name(type_name);
                 if (bound_type_res.is_ok()) {
                     auto bound_type_index = bound_type_res.unwrap().type_id;
                     wrapper_res = create_object_wrapper(param_def, static_cast<const void *>(&bound_type_index));
@@ -930,7 +934,7 @@ namespace argus {
                             sizeof(UserData) + element_type.size));
                     udata->is_handle = false;
 
-                    auto bound_type = get_bound_type(element_type.type_id.value())
+                    auto bound_type = ScriptManager::instance().get_bound_type_by_type_id(element_type.type_id.value())
                             .expect("Tried to wrap parameter of unbound struct type");
                     if (bound_type.copy_ctor != nullptr) {
                         bound_type.copy_ctor(udata->data, vec[i]);
@@ -1146,19 +1150,21 @@ namespace argus {
 
         auto qual_fn_name = get_qualified_function_name(fn_type, type_name, fn_name);
 
+        auto &mgr = ScriptManager::instance();
+
         std::optional<Result<const BoundFunctionDef &, SymbolNotBoundError>> fn_res;
         switch (fn_type) {
             case FunctionType::Global:
-                fn_res = get_native_global_function(fn_name);
+                fn_res = mgr.get_native_global_function(fn_name);
                 break;
             case FunctionType::MemberInstance:
-                fn_res = get_native_member_instance_function(type_name, fn_name);
+                fn_res = mgr.get_native_member_instance_function(type_name, fn_name);
                 break;
             case FunctionType::Extension:
-                fn_res = get_native_extension_function(type_name, fn_name);
+                fn_res = mgr.get_native_extension_function(type_name, fn_name);
                 break;
             case FunctionType::MemberStatic:
-                fn_res = get_native_member_static_function(type_name, fn_name);
+                fn_res = mgr.get_native_member_static_function(type_name, fn_name);
                 break;
             default:
                 crash("Unknown function type ordinal %d", fn_type);
@@ -1212,7 +1218,7 @@ namespace argus {
         if (fn_type == FunctionType::MemberInstance) {
             // type should definitely be bound since the trampoline function
             // is accessed via the bound type's metatable
-            auto type_def = get_bound_type_by_name(type_name)
+            auto type_def = ScriptManager::instance().get_bound_type_by_name(type_name)
                     .expect("Failed to find bound type while handling bound instance function");
 
             //TODO: add safeguard to prevent invocation of functions on non-references
@@ -1284,7 +1290,7 @@ namespace argus {
                 ? type_name.substr(strlen(k_const_prefix))
                 : type_name;
 
-        auto field_res = get_native_member_field(real_type_name, field_name);
+        auto field_res = ScriptManager::instance().get_native_member_field(real_type_name, field_name);
         if (field_res.is_err()) {
             return false;
         }
@@ -1295,7 +1301,7 @@ namespace argus {
 
         // type should definitely be bound since the field is accessed through
         // its associated metatable
-        auto type_def = get_bound_type_by_name(real_type_name)
+        auto type_def = ScriptManager::instance().get_bound_type_by_name(real_type_name)
                 .expect("Failed to find type while accessing field");
 
         ObjectWrapper inst_wrapper {};
@@ -1349,7 +1355,7 @@ namespace argus {
             return _set_lua_error(state, "Field " + qual_field_name + " in a const object cannot be assigned");
         }
 
-        auto field_res = get_native_member_field(type_name, field_name);
+        auto field_res = ScriptManager::instance().get_native_member_field(type_name, field_name);
         if (field_res.is_err()) {
             return _set_lua_error(state, "Field " + qual_field_name + " is not bound");
         }
@@ -1363,7 +1369,7 @@ namespace argus {
 
         // type should definitely be bound since the field is accessed through
         // its associated metatable
-        auto type_def = get_bound_type_by_name(type_name).expect("Failed to find bound type while setting field");
+        auto type_def = ScriptManager::instance().get_bound_type_by_name(type_name).expect("Failed to find bound type while setting field");
 
         ObjectWrapper inst_wrapper {};
         auto wrap_res = _wrap_instance_ref(state, qual_field_name, 1, type_def, true, &inst_wrapper);
@@ -1420,7 +1426,7 @@ namespace argus {
 
         // type should definitely be bound since we're getting it directly from
         // its associated metatable
-        auto type_def_res = get_bound_type_by_name(type_name);
+        auto type_def_res = ScriptManager::instance().get_bound_type_by_name(type_name);
         const auto &type_def = type_def_res.expect("Failed to find type while cloning object");
         if (type_def.copy_ctor == nullptr) {
             return _set_lua_error(state, type_name + " is not cloneable");
@@ -1616,8 +1622,6 @@ namespace argus {
     }
 
     static int _require_override(lua_State *state) {
-        auto &plugin = *get_plugin_from_state(state);
-
         const char *path = lua_tostring(state, 1);
         if (path == nullptr) {
             return luaL_error(state, "Incorrect arguments to function 'require'");
@@ -1625,7 +1629,7 @@ namespace argus {
 
         auto uid = _convert_path_to_uid(path);
         if (!uid.empty()) {
-            auto load_res = plugin.load_resource(uid);
+            auto load_res = ScriptManager::instance().load_resource(k_plugin_lang_name, uid);
             if (load_res.is_ok()) {
                 auto load_script_res = _load_script(state, load_res.unwrap());
                 if (load_script_res.is_ok()) {
@@ -1654,11 +1658,18 @@ namespace argus {
         return 1;
     }
 
-    LuaLanguagePlugin::LuaLanguagePlugin(void):
-        ScriptingLanguagePlugin(k_plugin_lang_name, { k_resource_type_lua }) {
+    LuaLanguagePlugin::LuaLanguagePlugin(void) {
     }
 
     LuaLanguagePlugin::~LuaLanguagePlugin(void) = default;
+
+    const char *LuaLanguagePlugin::get_language_name(void) const {
+        return k_plugin_lang_name;
+    }
+
+    const std::vector<std::string> &LuaLanguagePlugin::get_media_types(void) const {
+        return k_plugin_resource_types;
+    }
 
     void *LuaLanguagePlugin::create_context_data() {
         // Lua state is implicitly created by LuaContextData's

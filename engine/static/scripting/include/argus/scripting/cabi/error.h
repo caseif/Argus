@@ -18,11 +18,12 @@
 
 #pragma once
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef void *argus_binding_error_t;
 typedef const void *argus_binding_error_const_t;
@@ -35,6 +36,11 @@ typedef enum {
     BINDING_ERROR_TYPE_UNKNOWN_PARENT,
     BINDING_ERROR_TYPE_OTHER,
 } ArgusBindingErrorType;
+
+typedef struct ArgusMaybeBindingError {
+    bool is_err;
+    argus_binding_error_t error;
+} ArgusMaybeBindingError;
 
 void argus_binding_error_free(argus_binding_error_t err);
 

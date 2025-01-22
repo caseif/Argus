@@ -65,14 +65,11 @@ const PROP_LIB_DEPS: &str = "engine_library_deps";
 const PROP_STATIC_DEPS: &str = "engine_module_deps";
 const PROP_AUX_DEPS: &str = "engine_aux_deps";
 
-const MODULES: [(ModuleType, &'static str); 7] = [
+const MODULES: [(ModuleType, &'static str); 4] = [
     (ModuleType::Library, "lowlevel"),
     (ModuleType::Static, "core"),
     (ModuleType::Static, "scripting"),
-    (ModuleType::Static, "wm"),
-    (ModuleType::Static, "input"),
     (ModuleType::Static, "resman"),
-    (ModuleType::Static, "render"),
 ];
 
 fn get_bindings_path(module_name: &str) -> PathBuf {

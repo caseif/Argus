@@ -20,6 +20,8 @@
 
 #include "argus/resman.hpp"
 
+#include "argus/scripting/manager.hpp"
+
 #include "internal/scripting_lua/lua_language_plugin.hpp"
 #include "internal/scripting_lua/module_scripting_lua.hpp"
 #include "internal/scripting_lua/loader/lua_script_loader.hpp"
@@ -32,7 +34,7 @@ namespace argus {
         switch (stage) {
             case LifecycleStage::PreInit: {
                 g_plugin = new LuaLanguagePlugin();
-                register_scripting_language(*g_plugin);
+                ScriptManager::instance().register_language_plugin(*g_plugin);
                 break;
             }
             case LifecycleStage::Init: {

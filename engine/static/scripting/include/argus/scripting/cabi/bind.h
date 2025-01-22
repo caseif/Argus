@@ -29,37 +29,47 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct ArgusMaybeBindingError {
-    bool is_err;
-    argus_binding_error_t error;
-} ArgusMaybeBindingError;
+typedef void *argus_bound_type_def_t;
+typedef const void *argus_bound_type_def_const_t;
+
+typedef void *argus_bound_enum_def_t;
+typedef const void *argus_bound_enum_def_const_t;
+
+typedef void *argus_bound_function_def_t;
+typedef const void *argus_bound_function_def_const_t;
 
 typedef argus_object_wrapper_t (*ArgusFieldAccessor)(argus_object_wrapper_const_t inst, argus_object_type_const_t,
         const void *state);
 typedef void (*ArgusFieldMutator)(argus_object_wrapper_t inst, argus_object_wrapper_t, const void *state);
 
-ArgusMaybeBindingError argus_bind_type(const char *name, size_t size, const char *type_id, bool is_refable,
+argus_bound_type_def_t argus_create_type_def(const char *name, size_t size, const char *type_id, bool is_refable,
         ArgusCopyCtorProxy copy_ctor, ArgusMoveCtorProxy move_ctor, ArgusDtorProxy dtor);
 
-ArgusMaybeBindingError argus_bind_enum(const char *name, size_t width, const char *type_id);
+argus_bound_enum_def_t argus_create_enum_def(const char *name, size_t width, const char *type_id);
 
-ArgusMaybeBindingError argus_bind_enum_value(const char *enum_type_id, const char *name, int64_t value);
+ArgusMaybeBindingError argus_add_enum_value(argus_bound_enum_def_t def, const char *name, int64_t value);
 
-ArgusMaybeBindingError argus_bind_member_field(const char *containing_type_id, const char *name,
+ArgusMaybeBindingError argus_add_member_field(argus_bound_type_def_t, const char *name,
         argus_object_type_const_t field_type, ArgusFieldAccessor accessor, const void *accessor_state,
         ArgusFieldMutator mutator, const void *mutator_state);
 
-ArgusMaybeBindingError argus_bind_global_function(const char *name, size_t params_count,
-        const argus_object_type_const_t *params, argus_object_type_const_t ret_type,
-        ArgusProxiedNativeFunction fn_proxy, void *extra);
+ArgusMaybeBindingError argus_add_member_static_function(argus_bound_type_def_t def,
+        const char *name, size_t params_count, const argus_object_type_const_t *params,
+        argus_object_type_const_t ret_type, ArgusProxiedNativeFunction proxied_fn, void *extra);
 
-ArgusMaybeBindingError argus_bind_member_static_function(const char *type_id, const char *name, size_t params_count,
+ArgusMaybeBindingError argus_add_member_instance_function(argus_bound_type_def_t def,
+        const char *name, bool is_const, size_t params_count, const argus_object_type_const_t *params,
+        argus_object_type_const_t ret_type, ArgusProxiedNativeFunction proxied_fn, void *extra);
+
+argus_bound_function_def_t argus_create_global_function_def(const char *name, bool is_const, size_t params_count,
         const argus_object_type_const_t *params, argus_object_type_const_t ret_type,
         ArgusProxiedNativeFunction proxied_fn, void *extra);
 
-ArgusMaybeBindingError argus_bind_member_instance_function(const char *type_id, const char *name, bool is_const,
-        size_t params_count, const argus_object_type_const_t *params, argus_object_type_const_t ret_type,
-        ArgusProxiedNativeFunction proxied_fn, void *extra);
+void argus_bound_type_def_delete(argus_bound_type_def_t def);
+
+void argus_bound_enum_def_delete(argus_bound_enum_def_t def);
+
+void argus_bound_function_def_delete(argus_bound_function_def_t def);
 
 #ifdef __cplusplus
 }

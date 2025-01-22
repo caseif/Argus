@@ -52,7 +52,7 @@ namespace argus {
 
         if (type.type == IntegralType::Enum) {
             argus_assert(type.type_name.has_value());
-            auto enum_def = get_bound_enum(type.type_id.value())
+            auto enum_def = ScriptManager::instance().get_bound_enum_by_type_id(type.type_id.value())
                     .expect("Tried to create ObjectWrapper with unbound enum type");
             auto enum_val_it = enum_def.all_ordinals.find(*reinterpret_cast<int64_t *>(&val));
             if (enum_val_it == enum_def.all_ordinals.cend()) {
@@ -184,7 +184,7 @@ namespace argus {
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
-                        && get_bound_type(el_type.type_id.value())
+                        && ScriptManager::instance().get_bound_type_by_type_id(el_type.type_id.value())
                                 .expect("Tried to create ObjectWrapper with unbound type").copy_ctor != nullptr);
 
         size_t el_size = el_type.size;
@@ -223,7 +223,7 @@ namespace argus {
             } else {
                 argus_assert(el_type.type == IntegralType::Struct);
 
-                auto bound_type_res = get_bound_type(el_type.type_id.value());
+                auto bound_type_res = ScriptManager::instance().get_bound_type_by_type_id(el_type.type_id.value());
                 const BoundTypeDef &bound_type = bound_type_res
                         .expect("Tried to create ObjectWrapper with unbound struct type");
                 argus_assert(bound_type.copy_ctor != nullptr);
@@ -291,7 +291,7 @@ namespace argus {
 
         bool is_trivially_copyable = el_type.type != IntegralType::String
                 && !(el_type.type == IntegralType::Struct
-                        && get_bound_type(el_type.type_id.value())
+                        && ScriptManager::instance().get_bound_type_by_type_id(el_type.type_id.value())
                                 .expect("Tried to copy/move ArrayBlob with unbound element type").copy_ctor != nullptr);
 
         size_t blob_size = sizeof(ArrayBlob) + src.element_size() * src.size();
@@ -306,7 +306,7 @@ namespace argus {
         } else {
             argus_assert(count < SIZE_MAX);
 
-            auto bound_type_res = get_bound_type(el_type.type_id.value());
+            auto bound_type_res = ScriptManager::instance().get_bound_type_by_type_id(el_type.type_id.value());
             const BoundTypeDef &bound_type = bound_type_res
                     .expect("Tried to copy/move ArrayBlob with unbound element type");
             argus_assert(bound_type.copy_ctor != nullptr);
@@ -370,7 +370,7 @@ namespace argus {
 
                 argus_assert(obj_type.type_id.has_value());
 
-                auto bound_type = get_bound_type(obj_type.type_id.value())
+                auto bound_type = ScriptManager::instance().get_bound_type_by_type_id(obj_type.type_id.value())
                         .expect("Tried to copy/move wrapped object with unbound struct type");
                 if constexpr (is_move) {
                     argus_assert(bound_type.move_ctor != nullptr);
@@ -444,7 +444,7 @@ namespace argus {
 
                 argus_assert(obj_type.type_id.has_value());
 
-                auto bound_type = get_bound_type(obj_type.type_id.value())
+                auto bound_type = ScriptManager::instance().get_bound_type_by_type_id(obj_type.type_id.value())
                         .expect("Tried to destruct wrapped object with unbound struct type");
                 argus_assert(bound_type.dtor != nullptr);
                 bound_type.dtor(ptr);

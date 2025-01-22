@@ -127,21 +127,6 @@ namespace argus {
         }
     }
 
-    [[nodiscard]] Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_global_function(
-            const std::string &name);
-
-    [[nodiscard]] Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_instance_function(
-            const std::string &type_name, const std::string &fn_name);
-
-    [[nodiscard]] Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_extension_function(
-            const std::string &type_name, const std::string &fn_name);
-
-    [[nodiscard]] Result<const BoundFunctionDef &, SymbolNotBoundError> get_native_member_static_function(
-            const std::string &type_name, const std::string &fn_name);
-
-    [[nodiscard]] Result<const BoundFieldDef &, SymbolNotBoundError> get_native_member_field(
-            const std::string &type_name, const std::string &field_name);
-
     [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> invoke_native_function(const BoundFunctionDef &def,
             std::vector<ObjectWrapper> &params);
 }

@@ -34,6 +34,10 @@ namespace argus {
 
         ~LuaLanguagePlugin() override;
 
+        const char *get_language_name(void) const override;
+
+        const std::vector<std::string> &get_media_types(void) const override;
+
         void *create_context_data(void) override;
 
         void destroy_context_data(void *data) override;

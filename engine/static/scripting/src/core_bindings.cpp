@@ -19,6 +19,7 @@
 #include "argus/core/event.hpp"
 
 #include "argus/scripting/bind.hpp"
+#include "argus/scripting/manager.hpp"
 #include "internal/scripting/core_bindings.hpp"
 
 namespace argus {
@@ -30,20 +31,27 @@ namespace argus {
     }
 
     static void _bind_engine_types(void) {
-        bind_enum<TargetThread>("TargetThread").expect();
-        bind_enum_value("Update", TargetThread::Update).expect();
-        bind_enum_value("Render", TargetThread::Render).expect();
+        auto &mgr = ScriptManager::instance();
 
-        bind_enum<Ordering>("Ordering").expect();
-        bind_enum_value("First", Ordering::First).expect();
-        bind_enum_value("Early", Ordering::Early).expect();
-        bind_enum_value("Standard", Ordering::Standard).expect();
-        bind_enum_value("Late", Ordering::Late).expect();
-        bind_enum_value("Last", Ordering::Last).expect();
+        auto tt_enum_def = create_enum_def<TargetThread>("TargetThread").expect();
+        add_enum_value(tt_enum_def, "Update", TargetThread::Update).expect();
+        add_enum_value(tt_enum_def, "Render", TargetThread::Render).expect();
+        mgr.bind_enum(tt_enum_def).expect();
+
+        auto ordering_enum_def = create_enum_def<Ordering>("Ordering").expect();
+        add_enum_value(ordering_enum_def, "First", Ordering::First).expect();
+        add_enum_value(ordering_enum_def, "Early", Ordering::Early).expect();
+        add_enum_value(ordering_enum_def, "Standard", Ordering::Standard).expect();
+        add_enum_value(ordering_enum_def, "Late", Ordering::Late).expect();
+        add_enum_value(ordering_enum_def, "Last", Ordering::Last).expect();
+        mgr.bind_enum(ordering_enum_def).expect();
     }
 
     static void _bind_engine_functions(void) {
-        bind_global_function("register_update_callback", _script_register_update_callback).expect();
+        ScriptManager::instance().bind_global_function(create_global_function_def(
+                "register_update_callback",
+                _script_register_update_callback
+        ).expect()).expect();
     }
 
     void register_core_bindings(void) {

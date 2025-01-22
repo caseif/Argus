@@ -48,7 +48,7 @@ ArgusObjectWrapperOrReflectiveArgsError argus_create_object_wrapper(argus_object
 }
 
 void argus_copy_bound_type(const char *type_id, void *dst, const void *src) {
-    auto copy_ctor = argus::get_bound_type(type_id)
+    auto copy_ctor = argus::ScriptManager::instance().get_bound_type_by_type_id(type_id)
         .expect("Tried to copy wrapped object with unbound struct type")
         .copy_ctor;
     argus_assert(copy_ctor != nullptr);
@@ -56,7 +56,7 @@ void argus_copy_bound_type(const char *type_id, void *dst, const void *src) {
 }
 
 void argus_move_bound_type(const char *type_id, void *dst, void *src) {
-    auto move_ctor = argus::get_bound_type(type_id)
+    auto move_ctor = argus::ScriptManager::instance().get_bound_type_by_type_id(type_id)
             .expect("Tried to move wrapped object with unbound struct type")
             .move_ctor;
     argus_assert(move_ctor != nullptr);

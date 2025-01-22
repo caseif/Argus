@@ -70,15 +70,13 @@ argus_object_type_t argus_object_type_new(ArgusIntegralType type, size_t size, b
     auto type_id_opt = type_id != nullptr ? std::make_optional<std::string>(type_id) : std::nullopt;
     std::optional<std::string> type_name_opt;
     if (type_id_opt.has_value()) {
-        auto type_res = argus::get_bound_type(type_id_opt.value());
+        auto type_res = argus::ScriptManager::instance().get_bound_type_by_type_id(type_id_opt.value());
         if (type_res.is_ok()) {
             type_name_opt = std::make_optional(type_res.unwrap().name);
         } else {
-            auto enum_res = argus::get_bound_enum(type_id_opt.value());
+            auto enum_res = argus::ScriptManager::instance().get_bound_enum_by_type_id(type_id_opt.value());
             if (enum_res.is_ok()) {
                 type_name_opt = enum_res.unwrap().name;
-            } else {
-                argus::crash("Failed to look up bound type with ID %s", type_id_opt.value().c_str());
             }
         }
     } else {

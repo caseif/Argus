@@ -25,6 +25,7 @@
 #include "argus/core/engine.hpp"
 
 #include "argus/scripting/error.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/types.hpp"
 #include "argus/scripting/cabi/types.h"
 
@@ -37,16 +38,6 @@
 
 namespace argus {
     struct BindingError;
-
-    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(const std::string &type_id);
-
-    template<typename T>
-    [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void);
-
-    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(const std::string &enum_type_id);
-
-    template<typename T>
-    [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void);
 
     [[nodiscard]] Result<ObjectWrapper, ReflectiveArgumentsError> create_object_wrapper(
             const ObjectType &type, const void *ptr);
@@ -230,16 +221,18 @@ namespace argus {
             auto &proxied_fn = param.get_value<ProxiedScriptCallback>();
             auto fn_copy = std::make_shared<ProxiedScriptCallback>(proxied_fn);
 
+            auto &mgr = ScriptManager::instance();
+
             auto param_types = param.type.callback_type.value()->params;
             for (auto &subparam : param_types) {
                 if (subparam.type == IntegralType::Pointer
                         || subparam.type == IntegralType::Struct) {
                     argus_assert(subparam.type_id.has_value());
-                    subparam.type_name = get_bound_type(subparam.type_id.value())
+                    subparam.type_name = mgr.get_bound_type_by_type_id(subparam.type_id.value())
                             .expect("Tried to unwrap callback param with unbound struct type").name;
                 } else if (subparam.type == IntegralType::Enum) {
                     argus_assert(subparam.type_id.has_value());
-                    subparam.type_name = get_bound_enum(subparam.type_id.value())
+                    subparam.type_name = mgr.get_bound_enum_by_type_id(subparam.type_id.value())
                             .expect("Tried to unwrap callback param with unbound enum type").name;
                 }
             }
@@ -247,10 +240,10 @@ namespace argus {
             auto ret_type = param.type.callback_type.value()->return_type;
             if (ret_type.type == IntegralType::Pointer
                     || ret_type.type == IntegralType::Struct) {
-                ret_type.type_name = get_bound_type<ReturnType>()
+                ret_type.type_name = mgr.get_bound_type<ReturnType>()
                         .expect("Tried to unwrap callback return type with unbound struct type").name;
             } else if (ret_type.type == IntegralType::Enum) {
-                ret_type.type_name = get_bound_enum<ReturnType>()
+                ret_type.type_name = mgr.get_bound_enum<ReturnType>()
                         .expect("Tried to unwrap callback return type with unbound enum type").name;
             }
 

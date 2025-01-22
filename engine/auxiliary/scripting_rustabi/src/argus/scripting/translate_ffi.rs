@@ -164,7 +164,7 @@ pub fn to_ffi_obj_wrapper(obj: WrappedObject) ->
     }
 }
 
-fn from_ffi_obj_wrapper(obj: FfiObjectWrapper) -> WrappedObject {
+pub fn from_ffi_obj_wrapper(obj: FfiObjectWrapper) -> WrappedObject {
     unsafe {
         let ty = from_ffi_obj_type(&FfiObjectType::of(argus_object_wrapper_get_type(obj.handle)));
         WrappedObject::from_ptr(&ty, obj.get_buffer())

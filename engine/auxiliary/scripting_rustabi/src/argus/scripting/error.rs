@@ -59,6 +59,16 @@ impl From<argus_binding_error_t> for BindingError {
     }
 }
 
+impl From<ArgusMaybeBindingError> for Result<(), BindingError> {
+    fn from(maybe: ArgusMaybeBindingError) -> Self {
+        if maybe.is_err {
+            Err(maybe.error.into())
+        } else {
+            Ok(())
+        }
+    }
+}
+
 pub fn translate_refl_args_err(err_ffi: argus_reflective_args_error_t) -> ReflectiveArgumentsError {
     unsafe {
         let error = ReflectiveArgumentsError {

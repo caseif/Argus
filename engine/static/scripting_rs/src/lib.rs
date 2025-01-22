@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use std::any::TypeId;
+use std::collections::HashMap;
 use std::mem;
 use argus_scripting_bind::*;
 use core_rustabi::core_cabi::{LifecycleStage, LIFECYCLE_STAGE_INIT};
@@ -126,10 +127,14 @@ pub extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
 
 pub fn register_script_bindings() {
     println!("Struct def count: {}", BOUND_STRUCT_DEFS.len());
+
+    let mut type_defs = HashMap::new();
+    let mut enum_defs = HashMap::new();
+
     for struct_info in BOUND_STRUCT_DEFS {
         println!("Processing struct {} with type {:?}", struct_info.name, (struct_info.type_id)());
         let type_id = format!("{:?}", (struct_info.type_id)());
-        bind_type(
+        let type_def = create_type_def(
             struct_info.name,
             struct_info.size,
             type_id.as_str(),
@@ -139,18 +144,22 @@ pub fn register_script_bindings() {
             unsafe { mem::transmute(struct_info.dtor) },
         )
             .expect("Failed to bind type");
+
+        type_defs.insert(type_id, type_def);
     }
 
     for enum_info in BOUND_ENUM_DEFS {
         println!("Processing enum {} with type {:?}", enum_info.name, (enum_info.type_id)());
         let type_id = format!("{:?}", (enum_info.type_id)());
-        bind_enum_type(enum_info.name, enum_info.width, type_id.as_str())
+        let enum_def = create_enum_def(enum_info.name, enum_info.width, type_id.as_str())
             .expect("Failed to bind enum type");
 
         for (val_name, val_fn) in enum_info.values {
-            bind_enum_value(type_id.as_str(), val_name, (val_fn)())
+            add_enum_value(&enum_def, val_name, (val_fn)())
                 .expect("Failed to bind enum value");
         }
+
+        enum_defs.insert(type_id, enum_def);
     }
 
     for (field_info, type_getters) in BOUND_FIELD_DEFS {
@@ -159,8 +168,10 @@ pub fn register_script_bindings() {
             .expect("Invalid field type serial");
 
         let field_ffi_type = map_object_type(&field_parsed_type, type_getters, &mut 0);
-        bind_member_field(
-            (field_info.containing_type)(),
+        let containing_type_id = format!("{:?}", (field_info.containing_type)());
+        let type_def = type_defs.get(&containing_type_id).unwrap();
+        add_member_field(
+            type_def,
             field_info.name,
             &field_ffi_type,
             Box::new(|inst, _ty_param| {
@@ -205,8 +216,9 @@ pub fn register_script_bindings() {
                     fn_info.assoc_type
                         .expect("Associated type was missing for member static function")()
                 );
-                bind_member_static_function(
-                    assoc_type_id.as_str(),
+                let type_def = type_defs.get(&assoc_type_id).unwrap();
+                add_member_static_function(
+                    type_def,
                     fn_info.name,
                     param_ffi_types,
                     ret_ffi_type,
@@ -220,8 +232,9 @@ pub fn register_script_bindings() {
                     fn_info.assoc_type
                         .expect("Associated type was missing for member instance function")()
                 );
-                bind_member_instance_function(
-                    assoc_type_id.as_str(),
+                let type_def = type_defs.get(&assoc_type_id).unwrap();
+                add_member_instance_function(
+                    type_def,
                     fn_info.name,
                     fn_info.is_const,
                     param_ffi_types,
@@ -234,5 +247,13 @@ pub fn register_script_bindings() {
                 panic!("Binding extension functions is not supported at this time");
             }
         }
+    }
+
+    for (_, type_def) in type_defs {
+        ScriptManager::instance().bind_type(type_def);
+    }
+
+    for (_, enum_def) in enum_defs {
+        ScriptManager::instance().bind_enum(enum_def);
     }
 }

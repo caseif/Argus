@@ -20,6 +20,7 @@
 #include "argus/lowlevel/math.hpp"
 
 #include "argus/scripting/bind.hpp"
+#include "argus/scripting/manager.hpp"
 #include "internal/scripting/core_bindings.hpp"
 
 #include <chrono>
@@ -40,47 +41,52 @@ namespace argus {
     }
 
     static void _bind_time_symbols(void) {
-        bind_type<TimeDelta>("TimeDelta").expect();
-        bind_member_instance_function("nanos", &TimeDelta::count).expect();
-        bind_extension_function<TimeDelta>("micros", &_nanos_to_micros).expect();
-        bind_extension_function<TimeDelta>("millis", &_nanos_to_millis).expect();
-        bind_extension_function<TimeDelta>("seconds", &_nanos_to_seconds).expect();
+        auto td_type_def = create_type_def<TimeDelta>("TimeDelta").expect();
+        add_member_instance_function(td_type_def, "nanos", &TimeDelta::count).expect();
+        add_extension_function<TimeDelta>(td_type_def, "micros", &_nanos_to_micros).expect();
+        add_extension_function<TimeDelta>(td_type_def, "millis", &_nanos_to_millis).expect();
+        add_extension_function<TimeDelta>(td_type_def, "seconds", &_nanos_to_seconds).expect();
+        ScriptManager::instance().bind_type(td_type_def).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector2(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name).expect();
-        bind_member_field("x", &V::x).expect();
-        bind_member_field("y", &V::y).expect();
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
-        bind_member_static_function<V>("of", +[](E x, E y) -> V { return V(x, y); }).expect();
+        auto vec_type_def = create_type_def<V>(name).expect();
+        add_member_field(vec_type_def, "x", &V::x).expect();
+        add_member_field(vec_type_def, "y", &V::y).expect();
+        add_member_static_function(vec_type_def, "new", +[](void) -> V { return V(); }).expect();
+        add_member_static_function(vec_type_def, "of", +[](E x, E y) -> V { return V(x, y); }).expect();
+        ScriptManager::instance().bind_type(vec_type_def).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector3(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name).expect();
-        bind_member_field("x", &V::x).expect();
-        bind_member_field("y", &V::y).expect();
-        bind_member_field("z", &V::z).expect();
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
-        bind_member_static_function<V>("of", +[](E x, E y, E z) -> V { return V(x, y, z); }).expect();
+        auto vec_type_def = create_type_def<V>(name).expect();
+        add_member_field(vec_type_def, "x", &V::x).expect();
+        add_member_field(vec_type_def, "y", &V::y).expect();
+        add_member_field(vec_type_def, "z", &V::z).expect();
+        add_member_static_function(vec_type_def, "new", +[](void) -> V { return V(); }).expect();
+        add_member_static_function(vec_type_def, "of", +[](E x, E y, E z) -> V { return V(x, y, z); }).expect();
+        ScriptManager::instance().bind_type(vec_type_def).expect();
     }
 
     template<typename V>
     static std::enable_if_t<std::is_arithmetic_v<typename V::element_type>, void>
     _bind_vector4(const std::string &name) {
         using E = typename V::element_type;
-        bind_type<V>(name).expect();
-        bind_member_field("x", &V::x).expect();
-        bind_member_field("y", &V::y).expect();
-        bind_member_field("z", &V::z).expect();
-        bind_member_field("w", &V::w).expect();
-        bind_member_static_function<V>("new", +[](void) -> V { return V(); }).expect();
-        bind_member_static_function<V>("of", +[](E x, E y, E z, E w) -> V { return V(x, y, z, w); }).expect();
+        auto vec_type_def = create_type_def<V>(name).expect();
+        add_member_field(vec_type_def, "x", &V::x).expect();
+        add_member_field(vec_type_def, "y", &V::y).expect();
+        add_member_field(vec_type_def, "z", &V::z).expect();
+        add_member_field(vec_type_def, "w", &V::w).expect();
+        add_member_static_function(vec_type_def, "new", +[](void) -> V { return V(); }).expect();
+        add_member_static_function(vec_type_def, "of", +[](E x, E y, E z, E w) -> V { return V(x, y, z, w); })
+                .expect();
+        ScriptManager::instance().bind_type(vec_type_def).expect();
     }
 
     static void _bind_math_symbols(void) {
@@ -97,15 +103,17 @@ namespace argus {
         _bind_vector4<Vector4i>("Vector4i");
         _bind_vector4<Vector4u>("Vector4u");
 
-        bind_type<Padding>("Padding").expect();
-        bind_member_field("top", &Padding::top).expect();
-        bind_member_field("bottom", &Padding::bottom).expect();
-        bind_member_field("left", &Padding::left).expect();
-        bind_member_field("right", &Padding::right).expect();
+        auto padding_type_def = create_type_def<Padding>("Padding").expect();
+        add_member_field(padding_type_def, "top", &Padding::top).expect();
+        add_member_field(padding_type_def, "bottom", &Padding::bottom).expect();
+        add_member_field(padding_type_def, "left", &Padding::left).expect();
+        add_member_field(padding_type_def, "right", &Padding::right).expect();
+        ScriptManager::instance().bind_type(padding_type_def).expect();
     }
 
     static void _bind_handle_symbols(void) {
-        bind_type<Handle>("Handle").expect();
+        auto handle_type_def = create_type_def<Handle>("Handle").expect();
+        ScriptManager::instance().bind_type(handle_type_def).expect();
     }
 
     void register_lowlevel_bindings(void) {
