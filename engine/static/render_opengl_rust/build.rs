@@ -98,9 +98,21 @@ fn run_bundler(working_dir: &str) {
                 panic!(
                     "Bundler exited with code {} ({})",
                     res.status,
-                    String::from_utf8(res.stderr).unwrap()
+                    String::from_utf8(res.stderr).unwrap(),
                 );
             }
+            let res_2 = Command::new(bundler_exe)
+                .current_dir(working_dir)
+                .output()
+                .expect("Bundler executable disappeared!");
+            if !res_2.status.success() {
+                panic!(
+                    "Bundler exited with code {} ({})",
+                    res_2.status,
+                    String::from_utf8(res_2.stderr).unwrap(),
+                );
+            }
+
             return;
         }
     }
