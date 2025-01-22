@@ -1,4 +1,4 @@
-use std::{ffi, ptr};
+use std::{ffi, mem, ptr};
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 use bitflags::bitflags;
@@ -26,9 +26,9 @@ impl SdlWindow {
     pub fn as_mut_ptr(&mut self) -> *mut () {
         self.handle.cast()
     }
-    
+
     pub fn as_addr(&self) -> usize {
-        self.handle.addr()
+        self.handle.cast::<()>() as usize
     }
 
     pub fn get_flags(&self) -> SdlWindowFlags {
