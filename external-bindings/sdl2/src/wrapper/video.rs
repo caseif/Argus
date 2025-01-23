@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_cast)]
+
 use std::{ffi, mem, ptr};
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
@@ -114,29 +116,29 @@ impl SdlWindow {
 bitflags! {
     pub struct SdlWindowFlags: u32 {
         const Empty = 0;
-        const Fullscreen = SDL_WINDOW_FULLSCREEN;
-        const OpenGL = SDL_WINDOW_OPENGL;
-        const Shown = SDL_WINDOW_SHOWN;
-        const Hidden = SDL_WINDOW_HIDDEN;
-        const Borderless = SDL_WINDOW_BORDERLESS;
-        const Resizable = SDL_WINDOW_RESIZABLE;
-        const Minimized = SDL_WINDOW_MINIMIZED;
-        const Maximized = SDL_WINDOW_MAXIMIZED;
-        const MouseGrabbed = SDL_WINDOW_MOUSE_GRABBED;
-        const InputFocus = SDL_WINDOW_INPUT_FOCUS;
-        const MouseFocus = SDL_WINDOW_MOUSE_FOCUS;
-        const FullscreenDesktop = SDL_WINDOW_FULLSCREEN_DESKTOP;
-        const Foreign = SDL_WINDOW_FOREIGN;
-        const AllowHighdpi = SDL_WINDOW_ALLOW_HIGHDPI;
-        const MouseCapture = SDL_WINDOW_MOUSE_CAPTURE;
-        const AlwaysOnTop = SDL_WINDOW_ALWAYS_ON_TOP;
-        const SkipTaskbar = SDL_WINDOW_SKIP_TASKBAR;
-        const Utility = SDL_WINDOW_UTILITY;
-        const Tooltip = SDL_WINDOW_TOOLTIP;
-        const PopupMenu = SDL_WINDOW_POPUP_MENU;
-        const KeyboardGrabbed = SDL_WINDOW_KEYBOARD_GRABBED;
-        const Vulkan = SDL_WINDOW_VULKAN;
-        const Metal = SDL_WINDOW_METAL;
+        const Fullscreen = SDL_WINDOW_FULLSCREEN as u32;
+        const OpenGL = SDL_WINDOW_OPENGL as u32;
+        const Shown = SDL_WINDOW_SHOWN as u32;
+        const Hidden = SDL_WINDOW_HIDDEN as u32;
+        const Borderless = SDL_WINDOW_BORDERLESS as u32;
+        const Resizable = SDL_WINDOW_RESIZABLE as u32;
+        const Minimized = SDL_WINDOW_MINIMIZED as u32;
+        const Maximized = SDL_WINDOW_MAXIMIZED as u32;
+        const MouseGrabbed = SDL_WINDOW_MOUSE_GRABBED as u32;
+        const InputFocus = SDL_WINDOW_INPUT_FOCUS as u32;
+        const MouseFocus = SDL_WINDOW_MOUSE_FOCUS as u32;
+        const FullscreenDesktop = SDL_WINDOW_FULLSCREEN_DESKTOP as u32;
+        const Foreign = SDL_WINDOW_FOREIGN as u32;
+        const AllowHighdpi = SDL_WINDOW_ALLOW_HIGHDPI as u32;
+        const MouseCapture = SDL_WINDOW_MOUSE_CAPTURE as u32;
+        const AlwaysOnTop = SDL_WINDOW_ALWAYS_ON_TOP as u32;
+        const SkipTaskbar = SDL_WINDOW_SKIP_TASKBAR as u32;
+        const Utility = SDL_WINDOW_UTILITY as u32;
+        const Tooltip = SDL_WINDOW_TOOLTIP as u32;
+        const PopupMenu = SDL_WINDOW_POPUP_MENU as u32;
+        const KeyboardGrabbed = SDL_WINDOW_KEYBOARD_GRABBED as u32;
+        const Vulkan = SDL_WINDOW_VULKAN as u32;
+        const Metal = SDL_WINDOW_METAL as u32;
     }
 }
 
@@ -147,50 +149,50 @@ pub struct SdlGlContext {
 
 #[repr(u32)]
 pub enum SdlGlAttribute {
-    RedSize = SDL_GL_RED_SIZE,
-    GreenSize = SDL_GL_GREEN_SIZE,
-    BlueSize = SDL_GL_BLUE_SIZE,
-    AlphaSize = SDL_GL_ALPHA_SIZE,
-    BufferSize = SDL_GL_BUFFER_SIZE,
-    DoubleBuffer = SDL_GL_DOUBLEBUFFER,
-    DepthSize = SDL_GL_DEPTH_SIZE,
-    StencilSize = SDL_GL_STENCIL_SIZE,
-    AccumRedSize = SDL_GL_ACCUM_RED_SIZE,
-    AccumGreenSize = SDL_GL_ACCUM_GREEN_SIZE,
-    AccumBlueSize = SDL_GL_ACCUM_BLUE_SIZE,
-    AccumAlphaSize = SDL_GL_ACCUM_ALPHA_SIZE,
-    Stereo = SDL_GL_STEREO,
-    MultisampleBuffers = SDL_GL_MULTISAMPLEBUFFERS,
-    Multisamplesamples = SDL_GL_MULTISAMPLESAMPLES,
-    AcceleratedVisual = SDL_GL_ACCELERATED_VISUAL,
-    RetainedBacking = SDL_GL_RETAINED_BACKING,
-    ContextMajorVersion = SDL_GL_CONTEXT_MAJOR_VERSION,
-    ContextMinorVersion = SDL_GL_CONTEXT_MINOR_VERSION,
-    ContextEgl = SDL_GL_CONTEXT_EGL,
-    ContextFlags = SDL_GL_CONTEXT_FLAGS,
-    ContextProfileMask = SDL_GL_CONTEXT_PROFILE_MASK,
-    ShareWithCurrentContext = SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
-    FramebufferSrgbCapable = SDL_GL_FRAMEBUFFER_SRGB_CAPABLE,
-    ContextReleaseBehavior = SDL_GL_CONTEXT_RELEASE_BEHAVIOR,
-    ContextResetNotification = SDL_GL_CONTEXT_RESET_NOTIFICATION,
-    ContextNoError = SDL_GL_CONTEXT_NO_ERROR,
-    Floatbuffers = SDL_GL_FLOATBUFFERS,
+    RedSize = SDL_GL_RED_SIZE as u32,
+    GreenSize = SDL_GL_GREEN_SIZE as u32,
+    BlueSize = SDL_GL_BLUE_SIZE as u32,
+    AlphaSize = SDL_GL_ALPHA_SIZE as u32,
+    BufferSize = SDL_GL_BUFFER_SIZE as u32,
+    DoubleBuffer = SDL_GL_DOUBLEBUFFER as u32,
+    DepthSize = SDL_GL_DEPTH_SIZE as u32,
+    StencilSize = SDL_GL_STENCIL_SIZE as u32,
+    AccumRedSize = SDL_GL_ACCUM_RED_SIZE as u32,
+    AccumGreenSize = SDL_GL_ACCUM_GREEN_SIZE as u32,
+    AccumBlueSize = SDL_GL_ACCUM_BLUE_SIZE as u32,
+    AccumAlphaSize = SDL_GL_ACCUM_ALPHA_SIZE as u32,
+    Stereo = SDL_GL_STEREO as u32,
+    MultisampleBuffers = SDL_GL_MULTISAMPLEBUFFERS as u32,
+    Multisamplesamples = SDL_GL_MULTISAMPLESAMPLES as u32,
+    AcceleratedVisual = SDL_GL_ACCELERATED_VISUAL as u32,
+    RetainedBacking = SDL_GL_RETAINED_BACKING as u32,
+    ContextMajorVersion = SDL_GL_CONTEXT_MAJOR_VERSION as u32,
+    ContextMinorVersion = SDL_GL_CONTEXT_MINOR_VERSION as u32,
+    ContextEgl = SDL_GL_CONTEXT_EGL as u32,
+    ContextFlags = SDL_GL_CONTEXT_FLAGS as u32,
+    ContextProfileMask = SDL_GL_CONTEXT_PROFILE_MASK as u32,
+    ShareWithCurrentContext = SDL_GL_SHARE_WITH_CURRENT_CONTEXT as u32,
+    FramebufferSrgbCapable = SDL_GL_FRAMEBUFFER_SRGB_CAPABLE as u32,
+    ContextReleaseBehavior = SDL_GL_CONTEXT_RELEASE_BEHAVIOR as u32,
+    ContextResetNotification = SDL_GL_CONTEXT_RESET_NOTIFICATION as u32,
+    ContextNoError = SDL_GL_CONTEXT_NO_ERROR as u32,
+    Floatbuffers = SDL_GL_FLOATBUFFERS as u32,
 }
 
 #[repr(u32)]
 pub enum SdlGlProfile {
-    Core = SDL_GL_CONTEXT_PROFILE_CORE,
-    Compatibility = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY,
-    Es = SDL_GL_CONTEXT_PROFILE_ES,
+    Core = SDL_GL_CONTEXT_PROFILE_CORE as u32,
+    Compatibility = SDL_GL_CONTEXT_PROFILE_COMPATIBILITY as u32,
+    Es = SDL_GL_CONTEXT_PROFILE_ES as u32,
 }
 
 #[repr(u32)]
 pub enum SdlGlContextFlags {
     None = 0,
-    Debug = SDL_GL_CONTEXT_DEBUG_FLAG,
-    ForwardCompatible = SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG,
-    RobustAccess = SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG,
-    ResetIsolation = SDL_GL_CONTEXT_RESET_ISOLATION_FLAG,
+    Debug = SDL_GL_CONTEXT_DEBUG_FLAG as u32,
+    ForwardCompatible = SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG as u32,
+    RobustAccess = SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG as u32,
+    ResetIsolation = SDL_GL_CONTEXT_RESET_ISOLATION_FLAG as u32,
 }
 
 pub fn sdl_gl_load_library(path: impl AsRef<str>) -> Result<(), SdlError> {
@@ -331,46 +333,46 @@ pub fn sdl_vulkan_get_instance_extensions(window: &SdlWindow) -> Result<Vec<Stri
 #[derive(Clone, Copy, Debug, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
 pub enum SdlPixelFormat {
-    Unknown = SDL_PIXELFORMAT_UNKNOWN,
-    Index1Lsb = SDL_PIXELFORMAT_INDEX1LSB,
-    Index1Msb = SDL_PIXELFORMAT_INDEX1MSB,
-    Index4Lsb = SDL_PIXELFORMAT_INDEX4LSB,
-    Index4Msb = SDL_PIXELFORMAT_INDEX4MSB,
-    Index8 = SDL_PIXELFORMAT_INDEX8,
-    RGB332 = SDL_PIXELFORMAT_RGB332,
-    RGB444 = SDL_PIXELFORMAT_RGB444,
-    BGR444 = SDL_PIXELFORMAT_BGR444,
-    RGB555 = SDL_PIXELFORMAT_RGB555,
-    BGR555 = SDL_PIXELFORMAT_BGR555,
-    ARGB4444 = SDL_PIXELFORMAT_ARGB4444,
-    RGBA4444 = SDL_PIXELFORMAT_RGBA4444,
-    ABGR4444 = SDL_PIXELFORMAT_ABGR4444,
-    BGRA4444 = SDL_PIXELFORMAT_BGRA4444,
-    ARGB1555 = SDL_PIXELFORMAT_ARGB1555,
-    RGBA5551 = SDL_PIXELFORMAT_RGBA5551,
-    ABGR1555 = SDL_PIXELFORMAT_ABGR1555,
-    BGRA5551 = SDL_PIXELFORMAT_BGRA5551,
-    RGB565 = SDL_PIXELFORMAT_RGB565,
-    BGR565 = SDL_PIXELFORMAT_BGR565,
-    RGB24 = SDL_PIXELFORMAT_RGB24,
-    BGR24 = SDL_PIXELFORMAT_BGR24,
-    RGB888 = SDL_PIXELFORMAT_RGB888,
-    RGBX8888 = SDL_PIXELFORMAT_RGBX8888,
-    BGR888 = SDL_PIXELFORMAT_BGR888,
-    BGRX8888 = SDL_PIXELFORMAT_BGRX8888,
-    ARGB2101010 = SDL_PIXELFORMAT_ARGB2101010,
-    RGBA32 = SDL_PIXELFORMAT_RGBA32,
-    ARGB32 = SDL_PIXELFORMAT_ARGB32,
-    BGRA32 = SDL_PIXELFORMAT_BGRA32,
-    ABGR32 = SDL_PIXELFORMAT_ABGR32,
-    YV12 = SDL_PIXELFORMAT_YV12,
-    IYUV = SDL_PIXELFORMAT_IYUV,
-    YUY2 = SDL_PIXELFORMAT_YUY2,
-    UYVY = SDL_PIXELFORMAT_UYVY,
-    YVYU = SDL_PIXELFORMAT_YVYU,
-    NV12 = SDL_PIXELFORMAT_NV12,
-    NV21 = SDL_PIXELFORMAT_NV21,
-    ExternalOes = SDL_PIXELFORMAT_EXTERNAL_OES,
+    Unknown = SDL_PIXELFORMAT_UNKNOWN as u32,
+    Index1Lsb = SDL_PIXELFORMAT_INDEX1LSB as u32,
+    Index1Msb = SDL_PIXELFORMAT_INDEX1MSB as u32,
+    Index4Lsb = SDL_PIXELFORMAT_INDEX4LSB as u32,
+    Index4Msb = SDL_PIXELFORMAT_INDEX4MSB as u32,
+    Index8 = SDL_PIXELFORMAT_INDEX8 as u32,
+    RGB332 = SDL_PIXELFORMAT_RGB332 as u32,
+    RGB444 = SDL_PIXELFORMAT_RGB444 as u32,
+    BGR444 = SDL_PIXELFORMAT_BGR444 as u32,
+    RGB555 = SDL_PIXELFORMAT_RGB555 as u32,
+    BGR555 = SDL_PIXELFORMAT_BGR555 as u32,
+    ARGB4444 = SDL_PIXELFORMAT_ARGB4444 as u32,
+    RGBA4444 = SDL_PIXELFORMAT_RGBA4444 as u32,
+    ABGR4444 = SDL_PIXELFORMAT_ABGR4444 as u32,
+    BGRA4444 = SDL_PIXELFORMAT_BGRA4444 as u32,
+    ARGB1555 = SDL_PIXELFORMAT_ARGB1555 as u32,
+    RGBA5551 = SDL_PIXELFORMAT_RGBA5551 as u32,
+    ABGR1555 = SDL_PIXELFORMAT_ABGR1555 as u32,
+    BGRA5551 = SDL_PIXELFORMAT_BGRA5551 as u32,
+    RGB565 = SDL_PIXELFORMAT_RGB565 as u32,
+    BGR565 = SDL_PIXELFORMAT_BGR565 as u32,
+    RGB24 = SDL_PIXELFORMAT_RGB24 as u32,
+    BGR24 = SDL_PIXELFORMAT_BGR24 as u32,
+    RGB888 = SDL_PIXELFORMAT_RGB888 as u32,
+    RGBX8888 = SDL_PIXELFORMAT_RGBX8888 as u32,
+    BGR888 = SDL_PIXELFORMAT_BGR888 as u32,
+    BGRX8888 = SDL_PIXELFORMAT_BGRX8888 as u32,
+    ARGB2101010 = SDL_PIXELFORMAT_ARGB2101010 as u32,
+    RGBA32 = SDL_PIXELFORMAT_RGBA32 as u32,
+    ARGB32 = SDL_PIXELFORMAT_ARGB32 as u32,
+    BGRA32 = SDL_PIXELFORMAT_BGRA32 as u32,
+    ABGR32 = SDL_PIXELFORMAT_ABGR32 as u32,
+    YV12 = SDL_PIXELFORMAT_YV12 as u32,
+    IYUV = SDL_PIXELFORMAT_IYUV as u32,
+    YUY2 = SDL_PIXELFORMAT_YUY2 as u32,
+    UYVY = SDL_PIXELFORMAT_UYVY as u32,
+    YVYU = SDL_PIXELFORMAT_YVYU as u32,
+    NV12 = SDL_PIXELFORMAT_NV12 as u32,
+    NV21 = SDL_PIXELFORMAT_NV21 as u32,
+    ExternalOes = SDL_PIXELFORMAT_EXTERNAL_OES as u32,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
