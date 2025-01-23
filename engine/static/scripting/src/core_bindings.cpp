@@ -47,15 +47,7 @@ namespace argus {
         mgr.bind_enum(ordering_enum_def).expect();
     }
 
-    static void _bind_engine_functions(void) {
-        ScriptManager::instance().bind_global_function(create_global_function_def(
-                "register_update_callback",
-                _script_register_update_callback
-        ).expect()).expect();
-    }
-
     void register_core_bindings(void) {
         _bind_engine_types();
-        _bind_engine_functions();
     }
 }

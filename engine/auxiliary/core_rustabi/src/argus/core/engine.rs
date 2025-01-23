@@ -94,6 +94,15 @@ pub fn register_update_callback(update_callback: Box<DeltaCallback>, ordering: O
     }
 }
 
+#[script_bind(rename = "register_update_callback")]
+pub fn register_update_callback_bindable(update_callback: Box<dyn Fn(u64)>)
+    -> u64 {
+    register_update_callback(
+        Box::new(move |delta| { println!("delta micros: {}", delta.as_micros() as u64); update_callback(delta.as_micros() as u64); }),
+        Ordering::Standard,
+    )
+}
+
 pub fn unregister_update_callback(id: Index) {
     unsafe {
         argus_unregister_update_callback(id);
