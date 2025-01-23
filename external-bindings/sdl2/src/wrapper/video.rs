@@ -105,7 +105,7 @@ impl SdlWindow {
     }
 
     pub fn set_mouse_grab(&mut self, grabbed: bool) {
-        unsafe { SDL_SetWindowMouseGrab(self.handle, if grabbed { SDL_TRUE } else { SDL_FALSE }) };
+        unsafe { SDL_SetWindowGrab(self.handle, if grabbed { SDL_TRUE } else { SDL_FALSE }) };
     }
 
     pub fn show(&mut self) {
