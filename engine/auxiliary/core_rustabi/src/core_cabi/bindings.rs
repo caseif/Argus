@@ -46,8 +46,10 @@ pub const LIFECYCLE_STAGE_POSTDEINIT: LifecycleStage = 7;
 pub type LifecycleStage = ::std::os::raw::c_uint;
 pub type lifecycle_update_callback_t =
     ::std::option::Option<unsafe extern "C" fn(arg1: LifecycleStage)>;
-pub type nullary_callback_t = ::std::option::Option<unsafe extern "C" fn()>;
-pub type delta_callback_t = ::std::option::Option<unsafe extern "C" fn(arg1: u64)>;
+pub type nullary_callback_t =
+    ::std::option::Option<unsafe extern "C" fn(data: *mut ::std::os::raw::c_void)>;
+pub type delta_callback_t =
+    ::std::option::Option<unsafe extern "C" fn(arg1: u64, data: *mut ::std::os::raw::c_void)>;
 pub const ORDERING_FIRST: Ordering = 0;
 pub const ORDERING_EARLY: Ordering = 1;
 pub const ORDERING_STANDARD: Ordering = 2;
@@ -107,21 +109,26 @@ extern "C" {
     pub fn argus_get_present_dynamic_modules() -> StringArray;
     pub fn argus_get_present_static_modules() -> StringArray;
     pub fn argus_initialize_engine();
-    pub fn argus_start_engine(callback: delta_callback_t) -> !;
+    pub fn argus_start_engine(callback: delta_callback_t, data: *mut ::std::os::raw::c_void) -> !;
     pub fn argus_stop_engine();
     pub fn argus_crash(msg: *const ::std::os::raw::c_char) -> !;
     pub fn argus_get_current_lifecycle_stage() -> LifecycleStage;
     pub fn argus_register_update_callback(
         update_callback: delta_callback_t,
         ordering: Ordering,
+        data: *mut ::std::os::raw::c_void,
     ) -> Index;
     pub fn argus_unregister_update_callback(id: Index);
     pub fn argus_register_render_callback(
         render_callback: delta_callback_t,
         ordering: Ordering,
+        data: *mut ::std::os::raw::c_void,
     ) -> Index;
     pub fn argus_unregister_render_callback(id: Index);
-    pub fn argus_run_on_game_thread(callback: nullary_callback_t);
+    pub fn argus_run_on_game_thread(
+        callback: nullary_callback_t,
+        data: *mut ::std::os::raw::c_void,
+    );
     pub fn argus_is_current_thread_update_thread() -> bool;
     pub fn set_target_tickrate(target_tickrate: ::std::os::raw::c_uint);
     pub fn set_target_framerate(target_framerate: ::std::os::raw::c_uint);

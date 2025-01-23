@@ -492,8 +492,3 @@ fn to_shadertools_stage(stage: ShaderStage) -> Stage {
         ShaderStage::Fragment => Stage::Fragment,
     }
 }
-
-#[no_mangle]
-pub extern "C" fn link_program_2() {
-    link_program(&["asdf"]);
-}

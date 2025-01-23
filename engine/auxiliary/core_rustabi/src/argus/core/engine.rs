@@ -17,7 +17,8 @@
  */
 
 use std::convert::TryFrom;
-
+use std::ffi;
+use std::time::Duration;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::util::str_to_cstring;
@@ -25,8 +26,8 @@ use lowlevel_rustabi::util::str_to_cstring;
 use crate::core_cabi;
 use crate::core_cabi::*;
 
-pub type NullaryCallback = extern "C" fn();
-pub type DeltaCallback = extern "C" fn(u64);
+pub type NullaryCallback = dyn Fn();
+pub type DeltaCallback = dyn Fn(Duration);
 
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
@@ -52,9 +53,20 @@ pub fn crash(format: &str) -> ! {
     }
 }
 
-pub fn start_engine(callback: DeltaCallback) -> ! {
+unsafe extern "C" fn delta_callback_proxy(delta_us: u64, data: *mut ffi::c_void) {
+    let dbl_boxed: *const Box<DeltaCallback> = data.cast();
+    (**dbl_boxed)(Duration::from_micros(delta_us));
+}
+
+unsafe extern "C" fn nullary_callback_proxy(data: *mut ffi::c_void) {
+    let dbl_boxed: *const Box<NullaryCallback> = data.cast();
+    (**dbl_boxed)();
+}
+
+pub fn start_engine(callback: Box<DeltaCallback>) -> ! {
     unsafe {
-        argus_start_engine(Some(callback));
+        let dbl_boxed = Box::new(callback);
+        argus_start_engine(Some(delta_callback_proxy), unsafe { Box::into_raw(dbl_boxed).cast() });
     }
 }
 
@@ -71,11 +83,13 @@ pub fn get_current_lifecycle_stage() -> crate::argus::core::LifecycleStage {
     }
 }
 
-pub fn register_update_callback(update_callback: DeltaCallback, ordering: Ordering) -> Index {
+pub fn register_update_callback(update_callback: Box<DeltaCallback>, ordering: Ordering) -> Index {
     unsafe {
-        argus_register_render_callback(
-            Some(update_callback),
+        let dbl_boxed = Box::new(update_callback);
+        argus_register_update_callback(
+            Some(delta_callback_proxy),
             ordering as bindings::Ordering,
+            Box::into_raw(dbl_boxed).cast(),
         )
     }
 }
@@ -86,11 +100,16 @@ pub fn unregister_update_callback(id: Index) {
     }
 }
 
-pub fn register_render_callback(render_callback: DeltaCallback, ordering: Ordering) -> Index {
+pub fn register_render_callback(
+    render_callback: Box<DeltaCallback>,
+    ordering: Ordering,
+) -> Index {
     unsafe {
+        let dbl_boxed = Box::new(render_callback);
         argus_register_render_callback(
-            Some(render_callback),
+            Some(delta_callback_proxy),
             ordering as bindings::Ordering,
+            Box::into_raw(dbl_boxed).cast(),
         )
     }
 }
@@ -101,9 +120,10 @@ pub fn unregister_render_callback(id: Index) {
     }
 }
 
-pub fn run_on_game_thread(callback: NullaryCallback) {
+pub fn run_on_game_thread(callback: Box<NullaryCallback>) {
     unsafe {
-        argus_run_on_game_thread(Some(callback))
+        let dbl_boxed = Box::new(callback);
+        argus_run_on_game_thread(Some(nullary_callback_proxy), Box::into_raw(dbl_boxed).cast())
     }
 }
 

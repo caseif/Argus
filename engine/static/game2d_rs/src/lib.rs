@@ -41,7 +41,7 @@ pub unsafe extern "C" fn update_lifecycle_game2d_rs(stage_ffi: core_rustabi::cor
         LifecycleStage::PreInit => {}
         LifecycleStage::Init => {
             ResourceManager::get_instance().register_loader(vec![RESOURCE_TYPE_SPRITE], SpriteLoader {});
-            register_update_callback(World2d::render_worlds_c, Ordering::Standard);
+            register_update_callback(Box::new(World2d::render_worlds), Ordering::Standard);
         }
         LifecycleStage::PostInit => {}
         LifecycleStage::Running => {}

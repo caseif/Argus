@@ -1,3 +1,4 @@
+use std::time::Duration;
 use num_enum::UnsafeFromPrimitive;
 mod controller;
 mod gamepad;
@@ -40,16 +41,16 @@ fn on_window_event(event: &WindowEvent) {
     }
 }
 
-extern "C" fn on_update_early(_delta_us: u64) {
+fn on_update_early(_delta: Duration) {
     ack_gamepad_disconnects();
 }
 
-extern "C" fn on_update_late(_delta_us: u64) {
+fn on_update_late(_delta: Duration) {
     flush_mouse_delta();
     flush_gamepad_deltas();
 }
 
-extern "C" fn on_render(_delta_us: u64) {
+fn on_render(_delta: Duration) {
     update_keyboard();
     update_mouse();
     update_gamepads();
@@ -62,9 +63,9 @@ pub unsafe extern "C" fn update_lifecycle_input_rs(
     let stage = unsafe { LifecycleStage::unchecked_transmute_from(stage_ffi) };
     match stage {
         LifecycleStage::Init => {
-            register_update_callback(on_update_early, Ordering::Early);
-            register_update_callback(on_update_late, Ordering::Late);
-            register_render_callback(on_render, Ordering::Early);
+            register_update_callback(Box::new(on_update_early), Ordering::Early);
+            register_update_callback(Box::new(on_update_late), Ordering::Late);
+            register_render_callback(Box::new(on_render), Ordering::Early);
             register_event_handler::<WindowEvent>(
                 Box::new(on_window_event),
                 TargetThread::Render,

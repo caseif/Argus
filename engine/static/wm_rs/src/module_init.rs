@@ -36,13 +36,12 @@ fn poll_events() {
     WindowManager::instance().handle_sdl_window_events();
 }
 
-extern "C" fn do_window_loop(delta_us: u64) {
-    let delta = Duration::from_micros(delta_us);
+fn do_window_loop(delta: Duration) {
     WindowManager::instance().update_windows(delta);
     poll_events();
 }
 
-extern "C" fn create_initial_window() {
+fn create_initial_window() {
     let params = get_initial_window_parameters();
     let Some(id) = params.id else { return; };
     if id.is_empty() {
@@ -92,16 +91,12 @@ extern "C" fn create_initial_window() {
     window.commit();
 }
 
-extern "C" fn stop_engine_wrapper() {
-    stop_engine();
-}
-
-extern "C" fn check_window_count(_delta_us: u64) {
+fn check_window_count(_delta: Duration) {
     //TODO: make this behavior configurable
     let window_count = WindowManager::instance().get_window_count();
     if window_count == 0 && !g_did_request_stop.replace(true) {
         g_did_request_stop.set(true);
-        run_on_game_thread(stop_engine_wrapper);
+        run_on_game_thread(Box::new(stop_engine));
     }
 }
 
@@ -118,8 +113,8 @@ pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
             }
             println!("SDL initialized successfully");
 
-            register_update_callback(check_window_count, Ordering::Standard);
-            register_render_callback(do_window_loop, Ordering::Standard);
+            register_update_callback(Box::new(check_window_count), Ordering::Standard);
+            register_render_callback(Box::new(do_window_loop), Ordering::Standard);
             register_event_handler::<WindowEvent>(
                 Box::new(|event| WindowManager::instance().handle_engine_window_event(event)),
                 TargetThread::Render,

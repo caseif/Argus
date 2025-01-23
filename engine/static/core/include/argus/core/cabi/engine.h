@@ -35,8 +35,8 @@ extern "C" {
 #define ARGUS_NORETURN _Noreturn
 #endif
 
-typedef void(*nullary_callback_t)(void);
-typedef void(*delta_callback_t)(uint64_t);
+typedef void(*nullary_callback_t)(void *data);
+typedef void(*delta_callback_t)(uint64_t, void *data);
 
 typedef enum Ordering {
     ORDERING_FIRST,
@@ -48,7 +48,7 @@ typedef enum Ordering {
 
 void argus_initialize_engine(void);
 
-ARGUS_NORETURN void argus_start_engine(delta_callback_t callback);
+ARGUS_NORETURN void argus_start_engine(delta_callback_t callback, void *data);
 
 void argus_stop_engine(void);
 
@@ -56,15 +56,15 @@ ARGUS_NORETURN void argus_crash(const char *msg);
 
 LifecycleStage argus_get_current_lifecycle_stage(void);
 
-Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering);
+Index argus_register_update_callback(delta_callback_t update_callback, Ordering ordering, void *data);
 
 void argus_unregister_update_callback(Index id);
 
-Index argus_register_render_callback(delta_callback_t render_callback, Ordering ordering);
+Index argus_register_render_callback(delta_callback_t render_callback, Ordering ordering, void *data);
 
 void argus_unregister_render_callback(Index id);
 
-void argus_run_on_game_thread(nullary_callback_t callback);
+void argus_run_on_game_thread(nullary_callback_t callback, void *data);
 
 bool argus_is_current_thread_update_thread(void);
 
