@@ -370,7 +370,7 @@ macro_rules! create_vector4_signed_ops {
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2d_t)]
-#[script_bind(rename = "RsVector2d")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector2d {
     pub x: f64,
@@ -388,7 +388,7 @@ create_vector2_signed_ops!(Vector2d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3d_t)]
-#[script_bind(rename = "RsVector3d")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector3d {
     pub x: f64,
@@ -407,7 +407,7 @@ create_vector3_signed_ops!(Vector3d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4d_t)]
-#[script_bind(rename = "RsVector4d")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector4d {
     pub x: f64,
@@ -427,7 +427,7 @@ create_vector4_signed_ops!(Vector4d, f64);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2f_t)]
-#[script_bind(rename = "RsVector2f")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector2f {
     pub x: f32,
@@ -445,7 +445,7 @@ create_vector2_signed_ops!(Vector2f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3f_t)]
-#[script_bind(rename = "RsVector3f")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector3f {
     pub x: f32,
@@ -464,7 +464,7 @@ create_vector3_signed_ops!(Vector3f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4f_t)]
-#[script_bind(rename = "RsVector4f")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Vector4f {
     pub x: f32,
@@ -484,7 +484,7 @@ create_vector4_signed_ops!(Vector4f, f32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2i_t)]
-#[script_bind(rename = "RsVector2i")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector2i {
     pub x: i32,
@@ -502,7 +502,7 @@ create_vector2_signed_ops!(Vector2i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3i_t)]
-#[script_bind(rename = "RsVector3i")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector3i {
     pub x: i32,
@@ -521,7 +521,7 @@ create_vector3_signed_ops!(Vector3i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4i_t)]
-#[script_bind(rename = "RsVector4i")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector4i {
     pub x: i32,
@@ -541,7 +541,7 @@ create_vector4_signed_ops!(Vector4i, i32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_2u_t)]
-#[script_bind(rename = "RsVector2u")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector2u {
     pub x: u32,
@@ -558,7 +558,7 @@ create_vector2_ops!(Vector2u, u32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_3u_t)]
-#[script_bind(rename = "RsVector3u")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector3u {
     pub x: u32,
@@ -576,7 +576,7 @@ create_vector3_ops!(Vector3u, u32);
 
 #[repr(C)]
 #[ffi_repr(argus_vector_4u_t)]
-#[script_bind(rename = "RsVector4u")]
+#[script_bind]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Vector4u {
     pub x: u32,

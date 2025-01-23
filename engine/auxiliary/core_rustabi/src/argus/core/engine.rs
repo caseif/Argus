@@ -31,7 +31,7 @@ pub type DeltaCallback = dyn Fn(Duration);
 
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive)]
 #[repr(u32)]
-#[script_bind(rename = "RsOrdering")]
+#[script_bind]
 pub enum Ordering {
     First = ORDERING_FIRST as u32,
     Early = ORDERING_EARLY as u32,

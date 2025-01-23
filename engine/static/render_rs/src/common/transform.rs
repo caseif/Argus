@@ -6,7 +6,7 @@ use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector4f};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard};
 
 #[derive(Debug)]
-#[script_bind(rename = "RsTransform2d")]
+#[script_bind]
 pub struct Transform2d {
     pub translation: Vector2f,
     pub scale: Vector2f,
