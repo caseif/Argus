@@ -57,7 +57,7 @@ pub fn sdl_quit_subsystem(flags: SdlInitFlags) {
     unsafe { SDL_QuitSubSystem(flags.bits()) };
 }
 pub fn sdl_was_init(flags: SdlInitFlags) -> bool {
-    unsafe { SDL_WasInit(flags.bits()) == SDL_TRUE.into() }
+    unsafe { SDL_WasInit(flags.bits()) == SDL_TRUE as u32 }
 }
 pub fn sdl_quit() {
     unsafe { SDL_Quit() };

@@ -584,7 +584,7 @@ pub enum SdlKeyCode {
 impl SdlKeyCode {
     pub fn from_scancode(scancode: SdlScancode) -> SdlKeyCode {
         unsafe {
-            SdlKeyCode::try_from_primitive(SDL_GetKeyFromScancode((scancode as u32).into()))
+            SdlKeyCode::try_from_primitive(SDL_GetKeyFromScancode(scancode as SDL_Scancode))
                 .unwrap()
         }
     }
