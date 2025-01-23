@@ -1469,6 +1469,37 @@ namespace argus {
         lua_setfield(state, -2, fn.name.c_str());
     }
 
+    static void _add_type_function_to_mt(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn,
+            bool is_const) {
+        luaL_getmetatable(state, ((is_const ? k_const_prefix : "") + type_name).c_str());
+
+        if (fn.type == FunctionType::MemberInstance || fn.type == FunctionType::Extension) {
+            // get the dispatch table for the type
+            lua_getmetatable(state, -1);
+
+            _bind_fn(state, fn, type_name);
+
+            // pop the dispatch table and metatable
+            lua_pop(state, 2);
+        } else {
+            _bind_fn(state, fn, type_name);
+            // pop the metatable
+            lua_pop(state, 1);
+        }
+    }
+
+    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
+        _add_type_function_to_mt(state, type_name, fn, false);
+        _add_type_function_to_mt(state, type_name, fn, true);
+    }
+
+    static void _bind_type_field(lua_State *state, const std::string &type_name, const BoundFieldDef &field) {
+        UNUSED(state);
+        UNUSED(type_name);
+        UNUSED(field);
+        //TODO
+    }
+
     static void _create_type_metatable(lua_State *state, const BoundTypeDef &type, bool is_const) {
         // create metatable for type
         luaL_newmetatable(state, ((is_const ? k_const_prefix : "") + type.name).c_str());
@@ -1508,37 +1539,22 @@ namespace argus {
     static void _bind_type(lua_State *state, const BoundTypeDef &type) {
         _create_type_metatable(state, type, false);
         _create_type_metatable(state, type, true);
-    }
 
-    static void _add_type_function_to_mt(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn,
-            bool is_const) {
-        luaL_getmetatable(state, ((is_const ? k_const_prefix : "") + type_name).c_str());
-
-        if (fn.type == FunctionType::MemberInstance || fn.type == FunctionType::Extension) {
-            // get the dispatch table for the type
-            lua_getmetatable(state, -1);
-
-            _bind_fn(state, fn, type_name);
-
-            // pop the dispatch table and metatable
-            lua_pop(state, 2);
-        } else {
-            _bind_fn(state, fn, type_name);
-            // pop the metatable
-            lua_pop(state, 1);
+        for (auto &[_, field] : type.fields) {
+            _bind_type_field(state, type.name, field);
         }
-    }
 
-    static void _bind_type_function(lua_State *state, const std::string &type_name, const BoundFunctionDef &fn) {
-        _add_type_function_to_mt(state, type_name, fn, false);
-        _add_type_function_to_mt(state, type_name, fn, true);
-    }
+        for (auto &[_, fn] : type.static_functions) {
+            _bind_type_function(state, type.name, fn);
+        }
 
-    static void _bind_type_field(lua_State *state, const std::string &type_name, const BoundFieldDef &field) {
-        UNUSED(state);
-        UNUSED(type_name);
-        UNUSED(field);
-        //TODO
+        for (auto &[_, fn] : type.instance_functions) {
+            _bind_type_function(state, type.name, fn);
+        }
+
+        for (auto &[_, fn] : type.extension_functions) {
+            _bind_type_function(state, type.name, fn);
+        }
     }
 
     static void _bind_global_fn(lua_State *state, const BoundFunctionDef &fn) {
@@ -1725,23 +1741,6 @@ namespace argus {
         StackGuard stack_guard(*state);
 
         _bind_type(*state, type);
-    }
-
-    void LuaLanguagePlugin::bind_type_function(ScriptContext &context, const BoundTypeDef &type,
-            const BoundFunctionDef &fn) {
-        auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto &state = plugin_state->m_state;
-        StackGuard stack_guard(*state);
-
-        _bind_type_function(*state, type.name, fn);
-    }
-
-    void LuaLanguagePlugin::bind_type_field(ScriptContext &context, const BoundTypeDef &type, const BoundFieldDef &fn) {
-        auto *plugin_state = context.get_plugin_data<LuaContextData>();
-        auto &state = plugin_state->m_state;
-        StackGuard stack_guard(*state);
-
-        _bind_type_field(*state, type.name, fn);
     }
 
     void LuaLanguagePlugin::bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) {

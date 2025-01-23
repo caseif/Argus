@@ -291,58 +291,7 @@ namespace argus {
         }
 
         for (const auto &[_, type] : this->bound_types) {
-            Logger::default_logger().debug("Binding functions for type %s", type.name.c_str());
-
-            for (const auto &[_2, type_fn] : type.instance_functions) {
-                Logger::default_logger().debug("Binding instance function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-
-                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
-
-                Logger::default_logger().debug("Bound instance function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-            }
-
-            for (const auto &[_2, type_fn] : type.extension_functions) {
-                Logger::default_logger().debug("Binding extension function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-
-                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
-
-                Logger::default_logger().debug("Bound extension function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-            }
-
-            for (const auto &[_2, type_fn] : type.static_functions) {
-                Logger::default_logger().debug("Binding static function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-
-                context.m_pimpl->plugin->bind_type_function(context, type, type_fn);
-
-                Logger::default_logger().debug("Bound static function %s::%s",
-                        type.name.c_str(), type_fn.name.c_str());
-            }
-
-            Logger::default_logger().debug("Bound %zu instance, %zu extension, and %zu static functions for type %s",
-                    type.instance_functions.size(), type.extension_functions.size(),
-                    type.static_functions.size(), type.name.c_str());
-        }
-
-        for (const auto &[_, type] : this->bound_types) {
             Logger::default_logger().debug("Binding fields for type %s", type.name.c_str());
-
-            for (const auto &[_2, type_field] : type.fields) {
-                Logger::default_logger().debug("Binding field %s::%s",
-                        type.name.c_str(), type_field.m_name.c_str());
-
-                context.m_pimpl->plugin->bind_type_field(context, type, type_field);
-
-                Logger::default_logger().debug("Bound field %s::%s",
-                        type.name.c_str(), type_field.m_name.c_str());
-            }
-
-            Logger::default_logger().debug("Bound %zu fields for type %s",
-                    type.fields.size(), type.name.c_str());
         }
 
         for (const auto &[_, enum_def] : this->bound_enums) {

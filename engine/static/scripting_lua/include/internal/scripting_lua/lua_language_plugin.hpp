@@ -47,10 +47,6 @@ namespace argus {
 
         void bind_type(ScriptContext &context, const BoundTypeDef &type) override;
 
-        void bind_type_function(ScriptContext &context, const BoundTypeDef &type, const BoundFunctionDef &fn) override;
-
-        void bind_type_field(ScriptContext &context, const BoundTypeDef &type, const BoundFieldDef &field) override;
-
         void bind_global_function(ScriptContext &context, const BoundFunctionDef &fn) override;
 
         void bind_enum(ScriptContext &context, const BoundEnumDef &enum_def) override;
