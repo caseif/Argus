@@ -98,7 +98,7 @@ pub fn register_update_callback(update_callback: Box<DeltaCallback>, ordering: O
 pub fn register_update_callback_bindable(update_callback: Box<dyn Fn(u64)>)
     -> u64 {
     register_update_callback(
-        Box::new(move |delta| { println!("delta micros: {}", delta.as_micros() as u64); update_callback(delta.as_micros() as u64); }),
+        Box::new(move |delta| update_callback(delta.as_micros() as u64)),
         Ordering::Standard,
     )
 }
