@@ -2,7 +2,6 @@
 
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/scripting_language_plugin.hpp"
-#include "internal/scripting/core_bindings.hpp"
 
 #include "argus/resman/resource.hpp"
 
@@ -25,8 +24,6 @@ namespace argus {
         std::vector<ScriptContext *> script_contexts;
         // key = language name, value = resources loaded by the corresponding plugin
         std::map<std::string, std::vector<const Resource *>> loaded_resources;
-        std::vector<ScriptDeltaCallback> update_callbacks;
-        std::vector<ScriptDeltaCallback> render_callbacks;
 
       public:
         [[nodiscard]] static ScriptManager &instance(void);

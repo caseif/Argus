@@ -20,12 +20,12 @@
 #include "argus/core/engine.hpp"
 #include "argus/core/module.hpp"
 
-#include "internal/scripting/core_bindings.hpp"
+#include "argus/scripting/manager.hpp"
+#include "argus/scripting/script_context.hpp"
 #include "internal/scripting/handles.hpp"
 #include "internal/scripting/module_scripting.hpp"
 
 #include <string>
-#include <vector>
 
 namespace argus {
     static constexpr const char *k_init_fn_name = "init";
@@ -45,9 +45,6 @@ namespace argus {
     extern "C" void update_lifecycle_scripting(LifecycleStage stage) {
         switch (stage) {
             case LifecycleStage::Init: {
-                register_lowlevel_bindings();
-                register_core_bindings();
-
                 register_object_destroyed_performer();
 
                 break;

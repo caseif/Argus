@@ -286,7 +286,7 @@ extern "C" {
         params_count: usize,
         params: *const argus_object_type_const_t,
         ret_type: argus_object_type_const_t,
-        fn_proxy: ArgusProxiedNativeFunction,
+        proxied_fn: ArgusProxiedNativeFunction,
         extra: *mut ::std::os::raw::c_void,
     ) -> argus_bound_function_def_t;
     pub fn argus_bound_type_def_delete(def: argus_bound_type_def_t);
