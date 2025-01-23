@@ -583,7 +583,10 @@ pub enum SdlKeyCode {
 
 impl SdlKeyCode {
     pub fn from_scancode(scancode: SdlScancode) -> SdlKeyCode {
-        unsafe { SdlKeyCode::try_from_primitive(SDL_GetKeyFromScancode(scancode.into())).unwrap() }
+        unsafe {
+            SdlKeyCode::try_from_primitive(SDL_GetKeyFromScancode((scancode as u32).into()))
+                .unwrap()
+        }
     }
 
     pub fn get_name(self) -> String {

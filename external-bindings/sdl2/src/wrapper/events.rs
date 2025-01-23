@@ -17,7 +17,7 @@ pub type SdlEventFilter = dyn Fn(&SdlEvent) -> i32;
     UnsafeFromPrimitive)]
 #[repr(u32)]
 pub enum SdlEventType {
-    Unknown = SDL_FIRSTEVENT,
+    Unknown = SDL_FIRSTEVENT as u32,
 
     /* Application events */
     /// User-requested quit
@@ -691,7 +691,8 @@ fn convert_sdl_event(event: &SDL_Event) -> SdlEvent {
                 state: event.key.state,
                 repeat: event.key.repeat,
                 keysym: SdlKeySym {
-                    scancode: SdlScancode::try_from_primitive(event.key.keysym.scancode).unwrap(),
+                    scancode: SdlScancode::try_from_primitive(event.key.keysym.scancode as u32)
+                        .unwrap(),
                     sym: SdlKeyCode::try_from_primitive(event.key.keysym.sym).unwrap(),
                     modifiers: event.key.keysym.mod_,
                 },

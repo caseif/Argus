@@ -210,7 +210,7 @@ pub fn sdl_gl_unload_library() {
 }
 
 pub fn sdl_gl_set_attribute(attr: SdlGlAttribute, value: i32) -> Result<(), SdlError> {
-    let rc = unsafe { SDL_GL_SetAttribute(attr as ffi::c_uint, value) };
+    let rc = unsafe { SDL_GL_SetAttribute(attr as SDL_GLattr, value) };
     if rc != 0 {
         return Err(sdl_get_error());
     }
