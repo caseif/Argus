@@ -69,23 +69,11 @@ namespace argus {
         [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type_by_type_id(
                 const std::string &type_id) const;
 
-        template<typename T>
-        [[nodiscard]] Result<const BoundTypeDef &, BindingError> get_bound_type(void) const {
-            return get_bound_type_by_type_id(
-                typeid(std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>).name()
-            );
-        }
-
         [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum_by_name(
                 const std::string &enum_name) const;
 
         [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum_by_type_id(
                 const std::string &enum_type_id) const;
-
-        template<typename T>
-        [[nodiscard]] Result<const BoundEnumDef &, BindingError> get_bound_enum(void) const {
-            return get_bound_enum_by_type_id(typeid(std::remove_const_t<T>).name());
-        }
 
         [[nodiscard]] Result<void, BindingError> apply_bindings_to_context(ScriptContext &context) const;
 

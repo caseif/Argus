@@ -21,8 +21,8 @@
 
 #include "argus/core/engine.hpp"
 
-#include "argus/scripting/bind.hpp"
 #include "argus/scripting/error.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/wrapper.hpp"
 
 #include <string>
@@ -261,25 +261,6 @@ namespace argus {
         wrapper.emplace<VectorWrapper>(std::move(vec));
 
         return ok<ObjectWrapper, ReflectiveArgumentsError>(std::move(wrapper));
-    }
-
-    Result<ObjectWrapper, ReflectiveArgumentsError> create_result_object_wrapper(const ObjectType &res_type,
-            bool is_ok, const ObjectType &resolved_type, size_t resolved_size, void *resolved_ptr) {
-        affirm_precond(res_type.type == IntegralType::Result,
-                "Cannot create object wrapper (result-specific overload called for non-result-typed value");
-
-        ObjectWrapper wrapper(res_type, sizeof(ResultWrapper) + resolved_size);
-        auto &res_wrapper = wrapper.emplace<ResultWrapper>(is_ok, resolved_size, resolved_type);
-
-        void *real_ptr;
-        if (resolved_type.type == IntegralType::Pointer) {
-            real_ptr = &resolved_ptr;
-        } else {
-            real_ptr = resolved_ptr;
-        }
-
-        res_wrapper.copy_value_or_error_from(real_ptr);
-        return ok<ObjectWrapper, ReflectiveArgumentsError>(wrapper);
     }
 
     template<bool is_move, typename T = std::conditional_t<is_move, ArrayBlob, const ArrayBlob>>

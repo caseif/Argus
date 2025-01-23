@@ -18,6 +18,7 @@
 
 #include "argus/scripting/cabi/wrapper.h"
 #include "argus/scripting/error.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/wrapper.hpp"
 
 extern "C" {

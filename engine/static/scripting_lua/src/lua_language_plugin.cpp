@@ -24,12 +24,9 @@
 
 #include "argus/resman.hpp"
 
-#include "argus/scripting/bind.hpp"
-#include "argus/scripting/bridge.hpp"
 #include "argus/scripting/error.hpp"
 #include "argus/scripting/handles.hpp"
 #include "argus/scripting/manager.hpp"
-#include "argus/scripting/scripting_language_plugin.hpp"
 #include "argus/scripting/util.hpp"
 #include "argus/scripting/wrapper.hpp"
 
@@ -433,7 +430,7 @@ namespace argus {
                             + ", actual " + luaL_typename(state, param_index) + ")");
                 }
 
-                wrapper_res = create_auto_object_wrapper(param_def, lua_tointeger(state, param_index));
+                wrapper_res = create_int_object_wrapper(param_def, lua_tointeger(state, param_index));
 
                 break;
             }
@@ -444,7 +441,7 @@ namespace argus {
                             + " (expected number, actual " + luaL_typename(state, param_index) + ")");
                 }
 
-                wrapper_res = create_auto_object_wrapper(param_def, lua_tonumber(state, param_index));
+                wrapper_res = create_float_object_wrapper(param_def, lua_tonumber(state, param_index));
 
                 break;
             }
@@ -455,7 +452,7 @@ namespace argus {
                             + " (expected boolean, actual " + luaL_typename(state, param_index) + ")");
                 }
 
-                wrapper_res = create_auto_object_wrapper(param_def, lua_toboolean(state, param_index));
+                wrapper_res = create_bool_object_wrapper(param_def, lua_toboolean(state, param_index));
 
                 break;
             }
@@ -466,7 +463,7 @@ namespace argus {
                             + " (expected string, actual " + luaL_typename(state, param_index) + ")");
                 }
 
-                wrapper_res = create_auto_object_wrapper(param_def, lua_tostring(state, param_index));
+                wrapper_res = create_string_object_wrapper(param_def, lua_tostring(state, param_index));
 
                 break;
             }

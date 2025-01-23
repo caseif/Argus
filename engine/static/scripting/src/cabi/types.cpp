@@ -19,8 +19,8 @@
 #include "argus/scripting/cabi/types.h"
 
 #include "argus/scripting/error.hpp"
+#include "argus/scripting/manager.hpp"
 #include "argus/scripting/types.hpp"
-#include "argus/scripting/wrapper.hpp"
 
 #include <algorithm>
 #include <optional>

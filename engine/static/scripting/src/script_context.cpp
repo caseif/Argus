@@ -31,8 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "../../scripting_lua/include/internal/scripting_lua/defines.hpp"
-
 namespace argus {
     ScriptContext::ScriptContext(std::string language, void *plugin_data) {
         auto plugin_opt = ScriptManager::instance().get_language_plugin(language);
@@ -50,7 +48,7 @@ namespace argus {
     }
 
     Result<void, ScriptLoadError> ScriptContext::load_script(const std::string &uid) {
-        return ScriptManager::instance().load_resource(k_plugin_lang_name, uid)
+        return ScriptManager::instance().load_resource(m_pimpl->language, uid)
                 .and_then<void>([this](const auto &res) { return this->load_script(res); });
     }
 
