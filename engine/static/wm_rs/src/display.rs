@@ -1,9 +1,10 @@
 use std::ptr;
 use std::sync::{Arc, LazyLock, Mutex};
+use argus_logging::warn;
 use lowlevel_rustabi::argus::lowlevel::{Vector2i, Vector2u, Vector4u};
 use sdl2::events::*;
 use sdl2::video::*;
-use crate::WindowManager;
+use crate::{WindowManager, LOGGER};
 
 #[allow(non_upper_case_globals)]
 static g_displays: LazyLock<Arc<Mutex<Vec<Display>>> >=
@@ -148,11 +149,12 @@ fn add_display(display_index: i32) -> Result<Display, String> {
         let mode = match sdl_get_display_mode(display_index, mode_index) {
             Ok(mode) => mode,
             Err(err) => {
-                println!(
+                warn!(
+                    LOGGER,
                     "Failed to query display mode {} for display {}, skipping ({})",
                     mode_index,
                     display_index,
-                    err.get_message()
+                    err.get_message(),
                 );
                 continue;
             }

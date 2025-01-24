@@ -9,6 +9,7 @@ edition = "2021"
 
 [dependencies]
 sdl2 = { path = "../../../external-bindings/sdl2"}
+argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 lowlevel_rs = { path = "../../libs/lowlevel_rs" }
 wm_rs = { path = "../wm_rs" }

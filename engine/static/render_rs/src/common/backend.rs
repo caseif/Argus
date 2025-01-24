@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
+use argus_logging::{debug, info, warn};
 use core_rustabi::argus::core::get_preferred_render_backends;
 use lazy_static::lazy_static;
+use crate::LOGGER;
 
 type ActivateRenderBackendFn = fn() -> bool;
 
@@ -31,7 +33,7 @@ pub fn register_render_backend(id: impl AsRef<str>, activate_fn: ActivateRenderB
     if BACKEND_REGISTRY.lock().unwrap().insert(id.as_ref().to_string(), activate_fn).is_some() {
         panic!("Render backend is already registered for provided ID")
     }
-    println!("Successfully registered render backend with ID {}", id.as_ref());
+    info!(LOGGER, "Successfully registered render backend with ID {}", id.as_ref());
 }
 
 #[allow(unused)]
@@ -61,24 +63,24 @@ fn try_backends(
         let backend_str = backend.into();
 
         if attempted_backends.contains(&backend_str) {
-            println!("Skipping graphics \"{}\" because we already tried it", backend_str);
+            debug!(LOGGER, "Skipping graphics \"{}\" because we already tried it", backend_str);
             continue;
         }
 
         let Some(activate_fn) = get_render_backend_activate_fn(&backend_str) else {
-            println!("Skipping unknown graphics backend \"{}\"", backend_str);
+            info!(LOGGER, "Skipping unknown graphics backend \"{}\"", backend_str);
             attempted_backends.push(backend_str.clone());
             continue;
         };
 
         let activate_res = activate_fn();
         if !activate_res {
-            println!("Unable to select graphics backend \"{}\"", backend_str);
+            info!(LOGGER, "Unable to select graphics backend \"{}\"", backend_str);
             attempted_backends.push(backend_str.clone());
             continue;
         }
 
-        println!("Successfully activated graphics backend \"{}\"", backend_str);
+        info!(LOGGER, "Successfully activated graphics backend \"{}\"", backend_str);
 
         set_active_render_backend(backend_str);
 
@@ -97,7 +99,10 @@ pub(crate) fn activate_backend() {
         return;
     }
 
-    println!("Failed to select graphics backend from preference list, falling back to platform default");
+    warn!(
+        LOGGER,
+        "Failed to select graphics backend from preference list, falling back to platform default"
+    );
 
     if try_backends(DEFAULT_BACKENDS.to_owned(), &mut attempted_backends) {
         return;

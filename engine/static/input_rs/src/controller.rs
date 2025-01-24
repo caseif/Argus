@@ -17,8 +17,9 @@
 */
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use argus_logging::info;
 use argus_scripting_bind::script_bind;
-use crate::{DeadzoneConfig, InputManager};
+use crate::{DeadzoneConfig, InputManager, LOGGER};
 use crate::gamepad::*;
 use crate::keyboard::{is_key_pressed, KeyboardScancode};
 use crate::mouse::*;
@@ -94,7 +95,8 @@ impl Controller {
         assoc_gamepad(id, self.get_name()).expect("Failed to associate gamepad");
         self.attached_gamepad = Some(id);
 
-        println!(
+        info!(
+            LOGGER,
             "Attached gamepad '{}' to controller '{}'",
             self.get_gamepad_name(),
             self.get_name());
@@ -110,7 +112,8 @@ impl Controller {
 
         self.attached_gamepad = Some(id);
 
-        println!(
+        info!(
+            LOGGER,
             "Attached gamepad '{}' to controller '{}'",
             self.get_gamepad_name(),
             self.get_name()

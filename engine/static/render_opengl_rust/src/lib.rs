@@ -36,7 +36,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
-
+use argus_logging::{crate_logger, warn};
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
@@ -51,6 +51,9 @@ use crate::resources::RESOURCES_PACK;
 
 const MODULE_ID: &str = "render_opengl_rust";
 const BACKEND_ID: &str = "opengl_rust";
+
+crate_logger!(LOGGER, "argus/render_opengl");
+crate_logger!(GL_LOGGER, "GL");
 
 thread_local! {
     static IS_BACKEND_ACTIVE: RefCell<bool> = RefCell::new(false);
@@ -73,15 +76,13 @@ fn test_opengl_support() -> Result<(), ()> {
         match gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore.into()) {
             Ok(ctx) => ctx,
             Err(e) => {
-                //TODO: use proper logger
-                eprintln!("Failed to create GL context: {e}");
+                warn!(GL_LOGGER, "Failed to create GL context: {e}");
                 return Err(());
             }
         };
 
     if let Err(rc) = gl_make_context_current(&mut window, &gl_context) {
-        //TODO: use proper logger
-        eprintln!("Failed to make GL context current ({rc})");
+        warn!(GL_LOGGER, "Failed to make GL context current ({rc})");
         return Err(());
     }
 
@@ -94,8 +95,8 @@ fn test_opengl_support() -> Result<(), ()> {
             AgletError::MissingExtension => "Required OpenGL extensions are not available",
         };
         //TODO: use proper logger
-        eprintln!("{}", err_msg);
-        return Err(())
+        warn!(GL_LOGGER, err_msg);
+        return Err(());
     }
 
     window.request_close();
@@ -112,7 +113,7 @@ fn activate_opengl_backend() -> bool {
     mgr.set_window_creation_flags(transient_flags);
 
     if gl_load_library().is_err() {
-        //Logger::default_logger().warn("Failed to load OpenGL library");
+        warn!(LOGGER, "Failed to load OpenGL library");
         mgr.set_window_creation_flags(WindowCreationFlags::None);
         return false;
     }
@@ -132,7 +133,7 @@ fn activate_opengl_backend() -> bool {
 fn window_event_handler(event: &WindowEvent) {
     let window_id = &event.window;
     let Some(mut window) = WindowManager::instance().get_window_mut(window_id) else {
-        println!("Received window event with unknown window ID!");
+        warn!(LOGGER, "Received window event with unknown window ID!");
         return;
     };
 

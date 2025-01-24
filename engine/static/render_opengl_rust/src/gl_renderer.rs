@@ -30,9 +30,11 @@ use resman_rustabi::argus::resman::Resource;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use argus_logging::info;
 use render_rs::constants::*;
 use render_rs::twod::get_render_context_2d;
 use wm_rs::*;
+use crate::LOGGER;
 use crate::util::gl_util::gl_debug_callback;
 
 pub(crate) struct GlRenderer {
@@ -88,8 +90,8 @@ impl GlRenderer {
             );
         }
 
-        //TODO
-        println!(
+        info!(
+            LOGGER,
             "Obtained OpenGL {}.{} context ({})",
             gl_major, gl_minor, gl_version_str
         );
@@ -97,7 +99,6 @@ impl GlRenderer {
         gl_swap_interval(0);
 
         if aglet_have_gl_khr_debug() {
-            //TODO
             glDebugMessageCallback(gl_debug_callback, ptr::null());
         }
 

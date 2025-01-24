@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use argus_logging::warn;
 use lazy_static::lazy_static;
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::Vector2d;
@@ -7,7 +8,7 @@ use sdl2::mouse::{sdl_get_mouse_state, SdlMouseButton};
 use sdl2::video::SdlWindow;
 use wm_rs::{Window, WindowManager};
 use crate::input_event::{dispatch_axis_event, dispatch_button_event};
-use crate::InputManager;
+use crate::{InputManager, LOGGER};
 
 lazy_static! {
     static ref MOUSE_BUTTON_MAP_ARGUS_TO_SDL: HashMap<MouseButton, SdlMouseButton> = HashMap::from([
@@ -170,7 +171,7 @@ fn handle_mouse_events() {
             }
             SdlEventData::MouseButton(data) => {
                 let Some(button) = MOUSE_BUTTON_MAP_SDL_TO_ARGUS.get(&data.button) else {
-                    println!("Ignoring unrecognized mouse button {:?}", data.button);
+                    warn!(LOGGER, "Ignoring unrecognized mouse button {:?}", data.button);
                     return;
                 };
                 let Some(window) = (match SdlWindow::from_id(data.window_id) {

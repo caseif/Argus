@@ -18,8 +18,9 @@
 
 use std::ffi::{c_void, CStr};
 use std::ptr;
+use argus_logging::LogLevel;
 use crate::aglet::*;
-
+use crate::GL_LOGGER;
 // all types here serve purely to provide semantic information to declarations
 
 pub(crate) type GlBufferHandle = GLuint;
@@ -46,21 +47,15 @@ pub(crate) unsafe extern "C" fn gl_debug_callback(
         return;
     }
 
-    let (level, is_error) = match severity {
-        GL_DEBUG_SEVERITY_HIGH => ("SEVERE", true),
-        GL_DEBUG_SEVERITY_MEDIUM => ("WARN", true),
-        GL_DEBUG_SEVERITY_LOW => ("INFO", false),
-        GL_DEBUG_SEVERITY_NOTIFICATION => ("TRACE", false),
-        _ => ("UNKNOWN", true), // shouldn't happen
+    let level = match severity {
+        GL_DEBUG_SEVERITY_HIGH => LogLevel::Severe,
+        GL_DEBUG_SEVERITY_MEDIUM => LogLevel::Warning,
+        GL_DEBUG_SEVERITY_LOW => LogLevel::Info,
+        GL_DEBUG_SEVERITY_NOTIFICATION => LogLevel::Debug,
+        _ => LogLevel::Debug, // shouldn't happen
     };
 
-    if is_error {
-        //TODO
-        eprintln!("[GL][{}] {}", level, CStr::from_ptr(message).to_string_lossy().to_string());
-    } else {
-        //TODO
-        println!("[GL][{}] {}", level, CStr::from_ptr(message).to_string_lossy().to_string());
-    }
+    GL_LOGGER.log(level, CStr::from_ptr(message).to_string_lossy());
 }
 
 pub(crate) fn set_attrib_pointer(

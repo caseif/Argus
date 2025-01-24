@@ -6,12 +6,15 @@ use sdl2::error::sdl_get_error;
 use sdl2::events::sdl_pump_events;
 use sdl2::hints::{sdl_set_hint, SDL_HINT_APP_NAME, SDL_HINT_VIDEODRIVER};
 use sdl2::{sdl_init, sdl_quit, sdl_quit_subsystem, SdlInitFlags};
+use argus_logging::{crate_logger, debug, info, LogLevel, LogManager, LogSettings, Logger, PreludeComponent};
 use crate::display::init_display;
 use crate::{WindowEvent, WindowManager};
 
 pub const WINDOWING_MODE_WINDOWED: &str = "windowed";
 pub const WINDOWING_MODE_BORDERLESS: &str = "borderless";
 pub const WINDOWING_MODE_FULLSCREEN: &str = "fullscreen";
+
+crate_logger!(LOGGER, "argus/wm");
 
 static ENGINE_SDL_INIT_FLAGS: LazyLock<SdlInitFlags> =
     LazyLock::new(|| SdlInitFlags::Events |
@@ -103,6 +106,14 @@ fn check_window_count(_delta: Duration) {
 #[no_mangle]
 pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
     match stage {
+        LifecycleStage::Load => {
+            // For now we init the log manager from the wm module since it's the
+            // first Rust module to be brought up. Eventually this will happen
+            // in core (or whatever the Rust version will be called).
+            let mut log_settings = LogSettings::default();
+            log_settings.prelude = vec![PreludeComponent::Channel, PreludeComponent::Level];
+            LogManager::initialize(log_settings).expect("Failed to initialize logging");
+        }
         LifecycleStage::Init => {
             if cfg!(target_os = "linux") {
                 sdl_set_hint(SDL_HINT_VIDEODRIVER, "x11,wayland");
@@ -111,7 +122,7 @@ pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
             if sdl_init(*ENGINE_SDL_INIT_FLAGS) != 0 {
                 panic!("SDL init failed: {}", sdl_get_error().get_message());
             }
-            println!("SDL initialized successfully");
+            info!(LOGGER, "SDL initialized successfully");
 
             register_update_callback(Box::new(check_window_count), Ordering::Standard);
             register_render_callback(Box::new(do_window_loop), Ordering::Standard);
@@ -134,7 +145,7 @@ pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
         LifecycleStage::Deinit => {
             clean_up();
 
-            println!("Finished deinitializing wm");
+            debug!(LOGGER, "Finished deinitializing wm");
         }
         _ => {}
     }

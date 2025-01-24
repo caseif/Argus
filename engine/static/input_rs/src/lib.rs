@@ -1,4 +1,5 @@
 use std::time::Duration;
+use argus_logging::{crate_logger, warn};
 use num_enum::UnsafeFromPrimitive;
 mod controller;
 mod gamepad;
@@ -19,6 +20,8 @@ use crate::gamepad::{deinit_gamepads, flush_gamepad_deltas, update_gamepads};
 use crate::keyboard::{init_keyboard, update_keyboard};
 use crate::mouse::{flush_mouse_delta, init_mouse, update_mouse};
 
+crate_logger!(LOGGER, "argus/input");
+
 fn init_window_input(window: &Window) {
     init_keyboard(window);
     init_mouse(window);
@@ -29,7 +32,7 @@ fn on_window_event(event: &WindowEvent) {
         WindowEventType::Create => {
             let Some(window) = WindowManager::instance().get_window(&event.window)
             else {
-                println!("Received window event with unknown window ID!");
+                warn!(LOGGER, "Received window event with unknown window ID!");
                 return;
             };
             init_window_input(window.value());

@@ -67,11 +67,7 @@ void argus_unregister_render_callback(Index id) {
 }
 
 void argus_run_on_game_thread(nullary_callback_t callback, void *data) {
-    printf("callback 1: %p\n", reinterpret_cast<void *>(callback));
-    printf("data 1: %p\n", data);
     argus::run_on_game_thread([callback = std::move(callback), data = std::move(data)]() mutable {
-        printf("callback 2: %p\n", reinterpret_cast<void *>(callback));
-        printf("data 2: %p\n", data);
         callback(data);
     });
 }

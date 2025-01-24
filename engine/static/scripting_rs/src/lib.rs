@@ -18,9 +18,12 @@
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::mem;
+use argus_logging::{crate_logger, debug};
 use argus_scripting_bind::*;
 use core_rustabi::core_cabi::{LifecycleStage, LIFECYCLE_STAGE_INIT};
 use scripting_rustabi::argus::scripting::*;
+
+crate_logger!(LOGGER, "argus/scripting_rs");
 
 fn map_integral_type(ty: IntegralType) -> FfiIntegralType {
     match ty {
@@ -120,19 +123,24 @@ fn map_script_callback_type(
 #[no_mangle]
 pub extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
     if stage == LIFECYCLE_STAGE_INIT {
-        println!("Running init");
+        debug!(LOGGER, "Initializing scripting_rs");
         register_script_bindings();
     }
 }
 
 pub fn register_script_bindings() {
-    println!("Struct def count: {}", BOUND_STRUCT_DEFS.len());
+    debug!(LOGGER, "Struct def count: {}", BOUND_STRUCT_DEFS.len());
 
     let mut type_defs = HashMap::new();
     let mut enum_defs = HashMap::new();
 
     for struct_info in BOUND_STRUCT_DEFS {
-        println!("Processing struct {} with type {:?}", struct_info.name, (struct_info.type_id)());
+        debug!(
+            LOGGER,
+            "Processing struct {} with type {:?}",
+            struct_info.name,
+            (struct_info.type_id)(),
+        );
         let type_id = format!("{:?}", (struct_info.type_id)());
         let type_def = create_type_def(
             struct_info.name,
@@ -149,7 +157,12 @@ pub fn register_script_bindings() {
     }
 
     for enum_info in BOUND_ENUM_DEFS {
-        println!("Processing enum {} with type {:?}", enum_info.name, (enum_info.type_id)());
+        debug!(
+            LOGGER,
+            "Processing enum {} with type {:?}",
+            enum_info.name,
+            (enum_info.type_id)(),
+        );
         let type_id = format!("{:?}", (enum_info.type_id)());
         let enum_def = create_enum_def(enum_info.name, enum_info.width, type_id.as_str())
             .expect("Failed to bind enum type");
@@ -163,7 +176,7 @@ pub fn register_script_bindings() {
     }
 
     for (field_info, type_getters) in BOUND_FIELD_DEFS {
-        println!("Processing field {}", field_info.name);
+        debug!(LOGGER, "Processing field {}", field_info.name);
         let field_parsed_type = serde_json::from_str::<ObjectType>(field_info.type_serial)
             .expect("Invalid field type serial");
 
@@ -186,7 +199,7 @@ pub fn register_script_bindings() {
     }
 
     for (fn_info, type_getters_arr) in BOUND_FUNCTION_DEFS {
-        println!("Processing function {}", fn_info.name);
+        debug!(LOGGER, "Processing function {}", fn_info.name);
         let param_parsed_types = fn_info.param_type_serials.iter()
             .map(|serial| serde_json::from_str::<ObjectType>(serial).unwrap())
             .collect::<Vec<_>>();

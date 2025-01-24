@@ -181,7 +181,6 @@ ArgusMaybeBindingError argus_add_member_instance_function(argus_bound_type_def_t
 argus_bound_function_def_t argus_create_global_function_def(const char *name, bool is_const, size_t params_count,
         const argus_object_type_const_t *params, argus_object_type_const_t ret_type,
         ArgusProxiedNativeFunction proxied_fn, void *extra) {
-    printf("fn_proxy for %s: %p\n", name, reinterpret_cast<const void *>(proxied_fn));
     std::vector<argus::ObjectType> params_vec;
     params_vec.reserve(params_count);
     for (size_t i = 0; i < params_count; i++) {

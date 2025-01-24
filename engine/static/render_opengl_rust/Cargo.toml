@@ -13,6 +13,7 @@ libc = "0.2"
 num_enum = "0.7"
 glslang = { path = "../../../external-bindings/glslang" }
 spirv-cross-sys = { path = "../../../external-bindings/spirv-cross" }
+argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
 lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }

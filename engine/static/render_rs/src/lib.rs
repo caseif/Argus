@@ -6,17 +6,18 @@ pub mod util;
 mod resources;
 mod loader;
 
+use argus_logging::{crate_logger, debug, info, warn};
 use num_enum::UnsafeFromPrimitive;
 use core_rustabi::argus::core::{add_load_module, enable_dynamic_module, get_present_dynamic_modules, get_present_static_modules, LifecycleStage};
 use resman_rustabi::argus::resman::ResourceManager;
-use wm_rs::{Window, WindowManager};
+use wm_rs::WindowManager;
 use crate::common::{activate_backend, RenderCanvas};
 use crate::constants::{RESOURCE_TYPE_MATERIAL, RESOURCE_TYPE_TEXTURE_PNG};
 use crate::loader::material_loader::MaterialLoader;
 use crate::loader::texture_loader::TextureLoader;
 use crate::resources::RESOURCES_PACK;
-use crate::twod::get_render_context_2d;
 
+crate_logger!(LOGGER, "argus/render");
 
 const RENDER_BACKEND_MODULE_PREFIX: &str = "render_";
 
@@ -54,13 +55,13 @@ pub unsafe extern "C" fn update_lifecycle_render_rs(
 }
 
 fn load_backend_modules() {
-    println!("Loading graphics backend modules");
+    debug!(LOGGER, "Loading graphics backend modules");
     let mut count = 0;
     for module_id in get_present_dynamic_modules() {
         if module_id.rfind(RENDER_BACKEND_MODULE_PREFIX) == Some(0) {
             //TODO: fail gracefully
             if !enable_dynamic_module(&module_id) {
-                println!("Failed to load render backend \"{}\"", module_id);
+                warn!(LOGGER, "Failed to load render backend \"{}\"", module_id);
             }
             count += 1;
         }
@@ -72,5 +73,5 @@ fn load_backend_modules() {
             count += 1;
         }
     }
-    println!("Loaded {} graphics backend modules", count);
+    info!(LOGGER, "Loaded {} graphics backend modules", count);
 }

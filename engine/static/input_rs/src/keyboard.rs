@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use argus_logging::warn;
 use bitmask::bitmask;
 use lazy_static::lazy_static;
 use argus_scripting_bind::script_bind;
@@ -7,7 +8,7 @@ use sdl2::keyboard::{sdl_get_keyboard_state, SdlKeyCode, SdlScancode};
 use sdl2::video::SdlWindow;
 use wm_rs::{Window, WindowManager};
 use crate::input_event::dispatch_button_event;
-use crate::InputManager;
+use crate::{InputManager, LOGGER};
 
 lazy_static! {
     static ref SCANCODE_MAP_ARGUS_TO_SDL:
@@ -318,7 +319,7 @@ pub(crate) fn translate_sdl_scancode(sdl_scancode: &SdlScancode) -> KeyboardScan
     match SCANCODE_MAP_SDL_TO_ARGUS.get(sdl_scancode) {
         Some(&argus_scancode) => argus_scancode,
         None => {
-            println!("Received unknown keyboard scancode {:?}", sdl_scancode);
+            warn!(LOGGER, "Received unknown keyboard scancode {:?}", sdl_scancode);
             KeyboardScancode::Unknown
         }
     }
@@ -328,7 +329,7 @@ pub(crate) fn translate_argus_scancode(argus_scancode: &KeyboardScancode) -> Sdl
     match SCANCODE_MAP_ARGUS_TO_SDL.get(argus_scancode) {
         Some(&sdl_scancode) => sdl_scancode,
         None => {
-            println!("Saw unknown Argus scancode {:?}", argus_scancode);
+            warn!(LOGGER, "Saw unknown Argus scancode {:?}", argus_scancode);
             SdlScancode::Unknown
         }
     }

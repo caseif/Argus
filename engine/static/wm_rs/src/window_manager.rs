@@ -3,6 +3,7 @@ use std::ptr;
 use std::sync::{LazyLock, Mutex, OnceLock};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Duration;
+use argus_logging::warn;
 use bitflags::bitflags;
 use core_rustabi::argus::core::{dispatch_event, get_current_lifecycle_stage, LifecycleStage};
 use dashmap::DashMap;
@@ -11,7 +12,7 @@ use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector2i, Vector2u};
 use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType, SdlWindowEventData, SdlWindowEventType};
 use sdl2::video::{SdlWindow, SdlWindowFlags};
-use crate::{is_wm_module_initialized, Canvas, Display, Window, WindowEvent, WindowEventType, WindowStateFlags};
+use crate::{is_wm_module_initialized, Canvas, Display, Window, WindowEvent, WindowEventType, WindowStateFlags, LOGGER};
 use crate::window::dispatch_window_event;
 
 static INSTANCE: LazyLock<WindowManager> = LazyLock::new(WindowManager::new);
@@ -145,8 +146,9 @@ impl WindowManager {
         window.canvas = match self.canvas_ctor.get() {
             Some(ctor) => Some(ctor(&mut window)),
             None => {
-                println!(
-                    "No canvas callbacks were set - new window will not have associated canvas!"
+                warn!(
+                    LOGGER,
+                    "No canvas callbacks were set - new window will not have associated canvas!",
                 );
                 None
             }
@@ -214,7 +216,8 @@ impl WindowManager {
                 window.handle.as_ref().unwrap().get().get_display_index().unwrap();
             if new_disp_index < 0 ||
                 new_disp_index >= Display::get_available_displays().len() as i32 {
-                println!(
+                warn!(
+                    LOGGER,
                     "Failed to query new display of window ID {}, things might not work correctly!",
                     window.get_id(),
                 );
