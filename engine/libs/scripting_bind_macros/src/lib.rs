@@ -161,7 +161,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: Some(::std::any::TypeId::of::<#struct_ident>()),
+                    type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#struct_ident>())),
                     type_name: Some(#struct_name.to_string()),
                     callback_info: None,
                     primary_type: None,
@@ -259,21 +259,29 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
         let field_type_assertion = build_wrappable_assertion(&field.ty);
 
-        let field_def_ident =
-            format_ident!("_{struct_ident}_FIELD_{field_ident}_SCRIPT_BIND_DEFINITION");
-
-        let wrap_field_val_tokens = quote! {
-            if <#field_type as ::argus_scripting_bind::ScriptBound>::get_object_type().ty ==
-            ::argus_scripting_bind::IntegralType::Object {
-                ::argus_scripting_bind::WrappedObject::wrap(
-                    &((&*inst.cast::<#struct_ident>()).#field_ident)
-                )
-            } else {
-                ::argus_scripting_bind::WrappedObject::wrap(
-                    (&*inst.cast::<#struct_ident>()).#field_ident.clone()
-                )
+        let field_accessor_tokens = quote_spanned! {field_span=>
+            |inst, ty| {
+                if ty.ty == ::argus_scripting_bind::IntegralType::Object {
+                    ::argus_scripting_bind::WrappedObject::wrap(
+                        &(unsafe { &**inst.get::<&#struct_ident>() }).#field_ident
+                    )
+                } else {
+                    ::argus_scripting_bind::WrappedObject::wrap(
+                        (unsafe { &**inst.get::<&#struct_ident>() }).#field_ident.clone()
+                    )
+                }
             }
         };
+        let field_mutator_tokens = quote_spanned! {field_span=>
+            |inst, val| {
+                unsafe {
+                    (&mut *inst.get_mut::<&#struct_ident>().cast_mut())
+                }.#field_ident = val.unwrap::<#field_type>().clone();
+            }
+        };
+
+        let field_def_ident =
+            format_ident!("_{struct_ident}_FIELD_{field_ident}_SCRIPT_BIND_DEFINITION");
 
         field_regs.push(quote_spanned! {field_span=>
             const _: () = {
@@ -287,24 +295,18 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                 (
                     ::argus_scripting_bind::BoundFieldInfo,
                     &[fn () -> ::std::any::TypeId]
-                ) =
-                    (
-                        ::argus_scripting_bind::BoundFieldInfo {
-                            containing_type: || { ::std::any::TypeId::of::<#struct_ident>() },
-                            name: #field_name,
-                            type_serial: #field_type_serial,
-                            size: size_of::<#field_type>(),
-                            accessor: |inst| unsafe {
-                                #wrap_field_val_tokens
-                            },
-                            #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
-                            mutator: |inst, val| unsafe {
-                                (&mut *inst.cast::<#struct_ident>()).#field_ident =
-                                    (*val.cast::<#field_type>()).clone()
-                            },
-                        },
-                        &[#(#type_id_getter_tokens),*],
-                    );
+                ) = (
+                    ::argus_scripting_bind::BoundFieldInfo {
+                        containing_type: || { ::std::any::TypeId::of::<#struct_ident>() },
+                        name: #field_name,
+                        type_serial: #field_type_serial,
+                        size: size_of::<#field_type>(),
+                        accessor: #field_accessor_tokens,
+                        #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
+                        mutator: #field_mutator_tokens,
+                    },
+                    &[#(#type_id_getter_tokens),*],
+                );
             };
         });
     }
@@ -448,7 +450,7 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: Some(::std::any::TypeId::of::<#enum_ident>()),
+                    type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#enum_ident>())),
                     type_name: Some(#enum_name.to_string()),
                     primary_type: None,
                     secondary_type: None,
@@ -757,8 +759,8 @@ fn gen_fn_binding_code(
             callback_impls_tokens.push(quote_spanned! {call_site_span=>
                 #[derive(::std::clone::Clone, ::std::marker::Copy)]
                 struct #wrappable_type_ident {
-                    bare_fn: ::argus_scripting_bind::FfiBareProxiedScriptCallback,
-                    data: *const ::std::ffi::c_void,
+                    entry_point: ::argus_scripting_bind::ScriptCallbackEntryPoint,
+                    userdata: *const (),
                 }
 
                 impl ::std::convert::Into<#syn_type> for #wrappable_type_ident {
@@ -769,11 +771,8 @@ fn gen_fn_binding_code(
                             <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
                             unwrap_as_value(
                                 unsafe {
-                                    &::argus_scripting_bind::call_proxied_callback(
-                                        self.bare_fn,
-                                        self.data,
-                                        params_wrapped
-                                    ).expect("Failed to invoke script callback")
+                                    &(self.entry_point)(params_wrapped, self.userdata)
+                                        .expect("Failed to invoke script callback")
                                 }
                             )
                         })
@@ -788,7 +787,7 @@ fn gen_fn_binding_code(
                             is_const: false,
                             is_refable: None,
                             is_refable_getter: None,
-                            type_id: Some(::std::any::TypeId::of::<#syn_type>()),
+                            type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#syn_type>())),
                             type_name: None,
                             primary_type: None,
                             secondary_type: None,
@@ -804,7 +803,7 @@ fn gen_fn_binding_code(
                 }
 
                 impl ::argus_scripting_bind::Wrappable for #wrappable_type_ident {
-                    type InternalFormat = ::argus_scripting_bind::FfiProxiedScriptCallback;
+                    type InternalFormat = ::argus_scripting_bind::WrappedScriptCallback;
 
                     fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject) {
                         panic!("Cannot wrap callback");
@@ -822,8 +821,8 @@ fn gen_fn_binding_code(
                         unsafe {
                             let proxied = unsafe { *wrapper.get_ptr::<Self>() };
                             #wrappable_type_ident {
-                                bare_fn: proxied.bare_fn.unwrap(),
-                                data: proxied.data
+                                entry_point: proxied.entry_point,
+                                userdata: proxied.userdata,
                             }.into()
                         }
                     }
@@ -931,7 +930,7 @@ fn gen_fn_binding_code(
     Ok(quote! {
         #[allow(clippy::useless_conversion)]
         const _: () = {
-            fn #proxy_ident(params: &[::argus_scripting_bind::WrappedObject]) ->
+            fn #proxy_ident(params: Vec<::argus_scripting_bind::WrappedObject>) ->
                 ::std::result::Result<
                     ::argus_scripting_bind::WrappedObject,
                     ::argus_scripting_bind::ReflectiveArgumentsError,
@@ -957,7 +956,7 @@ fn gen_fn_binding_code(
                     ],
                     return_type_serial: #ret_type_serial,
                     assoc_type: #assoc_type_getter_tokens,
-                    proxy: #proxy_ident as ::argus_scripting_bind::ProxiedNativeFunction,
+                    proxy: #proxy_ident,
                 },
                 &[
                     &[#(#ret_type_id_getter_tokens),*],
@@ -1174,7 +1173,6 @@ enum ValueFlowDirection {
 enum OuterTypeType {
     None,
     Reference,
-    MutReference,
     Box,
     Vec,
     Result,
@@ -1301,8 +1299,7 @@ fn parse_type_internal(
 
         if let Some(res) = resolve_vec(&path, flow_direction)? {
             if outer_type != OuterTypeType::None &&
-                outer_type != OuterTypeType::Reference &&
-                outer_type != OuterTypeType::MutReference {
+                outer_type != OuterTypeType::Reference {
                 return Err(CompileError::new(path.span(), "Vec may not be used as an inner type"));
             }
 
@@ -1312,8 +1309,7 @@ fn parse_type_internal(
 
         if let Some(res) = resolve_result(&path, flow_direction)? {
             if outer_type != OuterTypeType::None {
-                if outer_type == OuterTypeType::Reference ||
-                    outer_type == OuterTypeType::MutReference {
+                if outer_type == OuterTypeType::Reference {
                     return Err(CompileError::new(
                         path.span(),
                         "Result may not be passed as references in bound symbol"

@@ -12,7 +12,6 @@ argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-#scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
 resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
 input_rs = { path = "../input_rs" }
 lowlevel_rs = { path = "../../libs/lowlevel_rs" }

@@ -8,9 +8,13 @@ name = "scripting_rs"
 crate-type = ["rlib"]
 
 [dependencies]
+dashmap = "6.1.0"
+fragile = "2.0.0"
 linkme = "0.3.28"
+num_enum = "0.7.3"
+parking_lot = "0.12.3"
 serde_json = "1.0.128"
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-scripting_rustabi = { path = "../../auxiliary/scripting_rustabi" }
+resman_rustabi = { path = "../../auxiliary/resman_rustabi" }

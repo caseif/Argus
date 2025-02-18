@@ -20,9 +20,6 @@ pub use argus_scripting_bind_macros::*;
 pub use argus_scripting_types::*;
 pub use linkme;
 use linkme::distributed_slice;
-pub use scripting_rustabi::argus::scripting::translate_ffi::FfiBareProxiedScriptCallback;
-pub use scripting_rustabi::argus::scripting::translate_ffi::call_proxied_callback;
-pub use scripting_rustabi::scripting_cabi::ArgusProxiedScriptCallback as FfiProxiedScriptCallback;
 pub use syn;
 
 #[distributed_slice]

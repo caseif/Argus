@@ -8,6 +8,7 @@ name = "argus_scripting_types"
 crate-type = ["rlib"]
 
 [dependencies]
+num_enum = "0.7.3"
 quote = "1.0.37"
 proc-macro2 = "1.0.86"
 serde = { version = "1.0.210", features = ["derive"] }

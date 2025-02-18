@@ -1,20 +1,18 @@
 [package]
-name = "wm_rs"
+name = "scripting_lua_rs"
 version = "0.0.1"
+edition = "2021"
 
 [lib]
-name = "wm_rs"
+name = "scripting_lua_rs"
 crate-type = ["rlib"]
-edition = "2021"
 
 [dependencies]
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
-lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
+scripting_rs = { path = "../../static/scripting_rs" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-bitflags = "2.8.0"
-dashmap = "6.1.0"
-fragile = "2.0.0"
+resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+lua = { path = "../../../external-bindings/lua" }
 num_enum = "0.7.3"
-sdl2 = { path = "../../../external-bindings/sdl2" }
-log = "0.4.25"
+parking_lot = "0.12.3"

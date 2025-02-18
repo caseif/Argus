@@ -25,7 +25,7 @@ use lowlevel_rustabi::util::*;
 use crate::core_cabi::*;
 
 pub struct ScriptingParameters {
-    main: Option<String>,
+    pub main: Option<String>,
 }
 
 pub struct InitialWindowParameters {

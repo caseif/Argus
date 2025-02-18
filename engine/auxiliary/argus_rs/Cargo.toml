@@ -17,5 +17,6 @@ input_rs = { path = "../../static/input_rs" }
 render_rs = { path = "../../static/render_rs" }
 render_opengl_rust = { path = "../../static/render_opengl_rust", optional = true }
 scripting_rs = { path = "../../static/scripting_rs" }
-#scripting_lua_rs = { path = "../../static/scripting_lua_rs" }
+scripting_lua_rs = { path = "../../static/scripting_lua_rs" }
+#scripting_rhai = { path = "../../static/scripting_rhai" }
 wm_rs = { path = "../../static/wm_rs" }

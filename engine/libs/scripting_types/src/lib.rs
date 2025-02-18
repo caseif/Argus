@@ -21,6 +21,7 @@ use std::{ffi, mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use quote::{quote, ToTokens};
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -28,16 +29,17 @@ pub type IsRefableGetter = fn() -> bool;
 pub type TypeIdGetter = fn() -> TypeId;
 
 pub type ProxiedNativeFunction =
-    fn(&[WrappedObject]) -> Result<WrappedObject, ReflectiveArgumentsError>;
-//pub type ProxiedScriptCallback =
-//    fn(&[WrappedObject], *const ()) -> Result<WrappedObject, ScriptInvocationError>;
-//pub type BareProxiedScriptCallback =
-//    unsafe extern "C" fn(
-//        params_count: usize,
-//        params: *mut ffi::c_void,
-//        data: *const ffi::c_void,
-//        out_result: *mut ffi::c_void,
-//    );
+    fn(Vec<WrappedObject>) -> Result<WrappedObject, ReflectiveArgumentsError>;
+
+pub type ScriptCallbackEntryPoint = fn(
+    params: Vec<WrappedObject>,
+    userdata: *const (),
+) -> Result<WrappedObject, ScriptInvocationError>;
+#[derive(Clone, Copy)]
+pub struct WrappedScriptCallback {
+    pub entry_point: ScriptCallbackEntryPoint,
+    pub userdata: *const (),
+}
 
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
 pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
@@ -61,12 +63,41 @@ pub enum IntegralType {
     Boolean,
     String,
     Reference,
-    MutReference,
     Vec,
+    VecRef,
     Result,
     Object,
     Enum,
     Callback,
+}
+
+impl IntegralType {
+    pub fn is_int(&self) -> bool {
+        self == &IntegralType::Int8 ||
+        self == &IntegralType::Int16 ||
+        self == &IntegralType::Int32 ||
+        self == &IntegralType::Int64 ||
+        self == &IntegralType::Int128
+    }
+
+    pub fn is_uint(&self) -> bool {
+        self == &IntegralType::Uint8 ||
+            self == &IntegralType::Uint16 ||
+            self == &IntegralType::Uint32 ||
+            self == &IntegralType::Uint64 ||
+            self == &IntegralType::Uint128
+    }
+
+    pub fn is_float(&self) -> bool {
+        self == &IntegralType::Float32 ||
+            self == &IntegralType::Float64
+    }
+
+    pub fn is_integral(&self) -> bool {
+        self.is_int() ||
+            self.is_uint() ||
+            self == &IntegralType::Enum
+    }
 }
 
 macro_rules! fn_wrapper {
@@ -152,7 +183,8 @@ fn_wrapper!(CopyCtorWrapper, FfiCopyCtor);
 fn_wrapper!(MoveCtorWrapper, FfiMoveCtor);
 fn_wrapper!(DtorWrapper, FfiDtor);
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, IntoPrimitive, PartialEq, PartialOrd, TryFromPrimitive)]
+#[repr(u32)]
 pub enum FunctionType {
     Global,
     MemberStatic,
@@ -183,7 +215,7 @@ pub struct ObjectType {
     pub is_refable: Option<bool>,
     pub is_refable_getter: Option<IsRefableGetterWrapper>,
     #[serde(skip)]
-    pub type_id: Option<TypeId>,
+    pub type_id: Option<String>,
     pub type_name: Option<String>,
     pub primary_type: Option<Box<ObjectType>>,
     pub secondary_type: Option<Box<ObjectType>>,
@@ -475,22 +507,14 @@ impl<T: ScriptBound> Wrappable for &T {
     type InternalFormat = *const T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert!(
-            wrapper.ty.ty == IntegralType::Reference ||
-                wrapper.ty.ty == IntegralType::MutReference,
-            "Wrong object type"
-        );
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
 
         unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
 
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert!(
-            wrapper.ty.ty == IntegralType::Reference ||
-                wrapper.ty.ty == IntegralType::MutReference,
-            "Wrong object type"
-        );
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
         assert!(wrapper.is_populated);
 
         unsafe { &**wrapper.get_ptr::<Self>() }
@@ -501,7 +525,7 @@ impl<T: ScriptBound> ScriptBound for &mut T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
         ObjectType {
-            ty: IntegralType::MutReference,
+            ty: IntegralType::Reference,
             size: size_of::<*const ()>(),
             is_const: false,
             is_refable: None,
@@ -522,14 +546,16 @@ impl<T: ScriptBound> Wrappable for &mut T {
     type InternalFormat = *mut T;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+        assert!(!wrapper.ty.is_const);
 
         unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
         wrapper.is_populated = true;
     }
 
     fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::MutReference, "Wrong object type");
+        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
+        assert!(!wrapper.ty.is_const);
         assert!(wrapper.is_populated);
 
         unsafe { &mut **wrapper.get_ptr::<Self>() }
@@ -610,11 +636,7 @@ impl WrappedObject {
         wrapper
     }
 
-    pub fn new(ty: ObjectType) -> Self {
-        assert_ne!(ty.ty, IntegralType::String);
-
-        let size = ty.size;
-
+    pub fn new(ty: ObjectType, size: usize) -> Self {
         let mut wrapper = WrappedObject {
             ty,
             data: unsafe { mem::zeroed() },
@@ -649,11 +671,27 @@ impl WrappedObject {
         }
     }
 
+    pub fn get<T: Wrappable>(&self) -> &T::InternalFormat {
+        unsafe { &*self.get_ptr::<T>() }
+    }
+
+    pub fn get_mut<T: Wrappable>(&mut self) -> &mut T::InternalFormat {
+        unsafe { &mut *self.get_mut_ptr::<T>() }
+    }
+
     pub fn get_ptr<T: Wrappable>(&self) -> *const T::InternalFormat {
         if self.is_on_heap {
             self.get_heap_ptr::<T>()
         } else {
             self.data.as_ptr().cast()
+        }
+    }
+
+    pub fn get_mut_ptr<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
+        if self.is_on_heap {
+            self.get_heap_ptr_mut::<T>()
+        } else {
+            self.data.as_mut_ptr().cast()
         }
     }
 
@@ -665,9 +703,9 @@ impl WrappedObject {
         }
     }
 
-    pub fn get_mut_ptr<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
+    pub fn get_raw_mut_ptr(&mut self) -> *mut () {
         if self.is_on_heap {
-            self.get_heap_ptr_mut::<T>()
+            self.get_raw_heap_ptr_mut().cast()
         } else {
             self.data.as_mut_ptr().cast()
         }
@@ -684,6 +722,12 @@ impl WrappedObject {
     pub unsafe fn store_value<T: Wrappable + Into<T::InternalFormat>>(&mut self, val: T) {
         assert!(size_of::<T>() <= self.buffer_size);
         *self.get_mut_ptr::<T>() = val.into();
+        self.is_populated = true;
+    }
+
+    pub unsafe fn store_internal<T>(&mut self, val: T) {
+        assert!(size_of::<T>() <= self.buffer_size);
+        *self.get_raw_mut_ptr().cast() = val;
         self.is_populated = true;
     }
 
@@ -726,6 +770,12 @@ pub struct ReflectiveArgumentsError {
     pub reason: String,
 }
 
+impl ReflectiveArgumentsError {
+    pub fn new(reason: impl Into<String>) -> Self {
+        Self { reason: reason.into() }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ScriptInvocationError {
     pub fn_name: String,
@@ -746,8 +796,8 @@ pub struct BoundFieldInfo {
     pub name: &'static str,
     pub type_serial: &'static str,
     pub size: usize,
-    pub accessor: unsafe fn(*mut ()) -> WrappedObject,
-    pub mutator: unsafe fn(*mut (), *const ()) -> (),
+    pub accessor: fn(&WrappedObject, &ObjectType) -> WrappedObject,
+    pub mutator: fn(&mut WrappedObject, &WrappedObject) -> (),
 }
 
 pub struct BoundFunctionInfo {
@@ -780,4 +830,16 @@ pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
 
 pub unsafe extern "C" fn drop_string(target: *mut ()) {
     ptr::drop_in_place(target.cast::<String>());
+}
+
+impl WrappedScriptCallback {
+    pub unsafe fn call(
+        callback: WrappedScriptCallback,
+        params: Vec<WrappedObject>,
+    ) -> Result<WrappedObject, ScriptInvocationError> {
+        (callback.entry_point)(
+            params,
+            callback.userdata,
+        )
+    }
 }

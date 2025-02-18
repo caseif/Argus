@@ -22,7 +22,7 @@ use std::path::PathBuf;
 use lowlevel_rustabi::argus::lowlevel::FfiWrapper;
 use crate::resman_cabi::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Resource {
     handle: argus_resource_const_t,
 }
