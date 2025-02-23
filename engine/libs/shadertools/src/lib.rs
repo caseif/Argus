@@ -23,6 +23,3 @@ extern crate libc;
 pub extern crate glslang;
 
 pub mod shadertools;
-
-#[cfg(feature = "c_abi")]
-pub mod c_wrapper;

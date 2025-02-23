@@ -1,6 +1,6 @@
 include(CMakeDependentOption)
 
-set(ENGINE_LIBRARY_IDS "lowlevel;shadertools")
+set(ENGINE_LIBRARY_IDS "lowlevel")
 set(STATIC_MODULE_IDS "core;ecs;resman"
         "scripting_rs;scripting_lua_rs"
         "wm_rs;input_rs;render_rs;ui;sound;game2d_rs")

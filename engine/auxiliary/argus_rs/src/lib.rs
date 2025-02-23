@@ -22,7 +22,6 @@ pub use render_rs::update_lifecycle_render_rs;
 pub use scripting_lua_rs::update_lifecycle_scripting_lua_rs;
 pub use scripting_rs::update_lifecycle_scripting_rs;
 pub use wm_rs::update_lifecycle_wm_rs;
-pub use shadertools::c_wrapper::*;
 
 #[cfg(feature = "opengl")]
 pub use render_opengl_rust::update_lifecycle_render_opengl_rust;
