@@ -23,4 +23,7 @@ parking_lot = "0.12.3"
 rgb = "0.8.50"
 serde = { version = "1.0.214", features = ["derive"] }
 serde_json = "1.0.132"
-uuid = { version = "1.11.0", features = ["v4"] }
+uuid = { version = "1.14.0", features = ["v4"] }
+
+[build-dependencies]
+arp = { git = "https://github.com/caseif/libarp-rs", rev = "78fed15", default-features = false }

@@ -10,9 +10,6 @@
 [submodule "external/tooling/aglet"]
 	path = external/tooling/aglet
 	url = git@github.com:caseif/Aglet.git
-[submodule "external/tooling/arptool"]
-	path = external/tooling/arptool
-	url = git@github.com:caseif/arptool.git
 [submodule "external/tooling/abacus"]
 	path = external/tooling/abacus
 	url = git@github.com:caseif/Abacus

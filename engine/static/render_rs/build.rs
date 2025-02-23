@@ -18,14 +18,11 @@
 
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::{env, fs};
+use arp::{create_arp_from_fs, PackingOptions};
 
 const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
 const FNV_PRIME: u64 = 0x100000001b3;
-
-const ARPTOOL_EXE: &str = "arptool";
-const ARPTOOL_PATH_ENV_VAR: &str = "ARPTOOL_PATH";
 
 const RES_SOURCES_PATH: &str = "res/";
 const RES_MAPPINGS_PATH: &str = "../../../res/arp_custom_mappings.csv";
@@ -45,37 +42,21 @@ fn main() {
 fn generate_resource_pack(srcs_path: &Path) {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let gen_dir = out_dir.join(GENERATED_OUT_PREFIX);
+    if !gen_dir.exists() {
+        fs::create_dir(&gen_dir).expect("Failed to created directory for generated sources");
+    }
     let pack_out_dir = gen_dir.join(ARP_OUT_PREFIX);
     let out_name = "resources";
 
-    let arptool_cmd = env::var(ARPTOOL_PATH_ENV_VAR).unwrap_or(ARPTOOL_EXE.to_string());
-
-    // check if arptool is available on path
-    match Command::new(&arptool_cmd).arg("-v").output() {
-        Ok(_) => {}
-        Err(_) => panic!("ARPTOOL_PATH must be set or arptool must be available on the path")
-    }
-
-    //panic!("{}", pack_out_dir.to_str().unwrap());
-    fs::create_dir_all(&pack_out_dir).expect("Failed to create pack output directory");
-    let output = Command::new(&arptool_cmd)
-        .arg("pack")
-        .arg(srcs_path.to_str().unwrap())
-        .arg("--namespace=argus")
-        .arg(format!("--output={}", pack_out_dir.to_str().unwrap()))
-        .arg(format!("--name={out_name}"))
-        .arg("--compression=deflate")
-        .arg(format!("--mappings={RES_MAPPINGS_PATH}"))
-        .arg("--quiet")
-        .output()
-        .expect("arptool executable was present but isn't anymore??");
-    if !output.status.success() {
-        panic!(
-            "arptool exited with code {}\nstderr output:\n    {}",
-            output.status,
-            String::from_utf8(output.stderr).unwrap(),
-        );
-    }
+    let opts = PackingOptions::new_v1(
+        out_name,
+        "argus",
+        None, // max part size
+        Some("deflate"), // compression
+        Some(RES_MAPPINGS_PATH),
+    )
+        .expect("Failed to build ARP packing options");
+    create_arp_from_fs(srcs_path, pack_out_dir, opts).expect("Failed to build ARP package");
 }
 
 fn fnv1a_hash(s: &str) -> u64 {

@@ -93,7 +93,6 @@ Additionally, the following tools are required as part of the build script tooli
 
 - [Abacus](https://github.com/caseif/Abacus)
 - [Aglet](https://github.com/caseif/Aglet)
-- [arptool](https://github.com/caseif/arptool)
 
 These library and tool dependencies are included as Git submodules and built/configured automatically by the build
 script. The respective shared libraries (where applicable) will be generated as part of the distribution alongside

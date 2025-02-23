@@ -3,8 +3,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/UtilityFunctions.cmake")
 
 function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
         C_STANDARD C_EXTENSIONS
-        CXX_STANDARD CXX_EXTENSIONS
-        ARPTOOL_EXE_PATH)
+        CXX_STANDARD CXX_EXTENSIONS)
   ###########################
   # Module property constants
   ###########################
@@ -203,67 +202,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     set(MODULE_${MODULE_NAME}_DEPS ${MODULE_ENGINE_MOD_DEPS} CACHE STRING "")
   endif()
 
-  set(res_dir "${MODULE_PROJECT_DIR}/res")
-  set(res_pack_target "pack_resources_${PROJECT_NAME}")
-  set(res_gen_target "gen_resources_${PROJECT_NAME}")
-  if(EXISTS "${res_dir}")
-    set(has_resources 1)
-    # Rust crates handle their own codegen, just add arptool as a dependency
-    # to ensure proper build ordering
-    if(NOT ${IS_EXTERNAL})
-      set(arp_out_dir "${MODULE_GENERATED_DIR}/res/arp")
-      set(arp_out_name "resources_${PROJECT_NAME}")
-      set(arp_out_path "${arp_out_dir}/${arp_out_name}.arp")
-      set(supp_mappings_path "${ROOT_PROJECT_DIR}/res/arp_custom_mappings.csv")
-
-      file(MAKE_DIRECTORY "${arp_out_dir}")
-
-      file(GLOB_RECURSE res_files "${res_dir}/*")
-      add_custom_command(OUTPUT "${arp_out_path}"
-              COMMAND "${ARPTOOL_EXE_PATH}" "pack" "${res_dir}"
-              "--namespace" "argus"
-              "--output" "${arp_out_dir}"
-              "--name" "${arp_out_name}"
-              "--compression" "deflate"
-              "--mappings" "${supp_mappings_path}"
-              "--quiet"
-              DEPENDS "${res_files}")
-
-      add_custom_target("${res_pack_target}" DEPENDS "arptool" "${arp_out_path}")
-
-      set(abacus_out_dir "${CMAKE_BINARY_DIR}/res/abacus")
-      set(h_out_dir_base "${MODULE_GENERATED_DIR}/${INCLUDE_DIR_NAME}")
-      set(h_out_dir "${h_out_dir_base}/internal/${PROJECT_NAME}")
-      set(c_out_dir_base "${MODULE_GENERATED_DIR}/${SOURCE_DIR_NAME}")
-      set(c_out_dir "${c_out_dir_base}/res")
-
-      file(MAKE_DIRECTORY "${h_out_dir}")
-      file(MAKE_DIRECTORY "${c_out_dir}")
-
-      set(arp_file_name "${arp_out_name}.arp")
-      set(h_out_path "${h_out_dir}/resources.h")
-      set(c_out_path "${c_out_dir}/${arp_out_name}.arp.c")
-      add_custom_command(OUTPUT "${c_out_path}"
-              COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
-              "-i" "${arp_out_path}"
-              "-n" "${arp_file_name}"
-              "-s" "${c_out_path}"
-              DEPENDS "${res_pack_target}" "${arp_out_path}")
-
-      execute_process(COMMAND "ruby" "${CMAKE_SOURCE_DIR}/external/tooling/abacus/abacus.rb"
-              "-n" "${arp_out_name}.arp"
-              "-h" "${h_out_path}"
-              RESULT_VARIABLE CMD_RES)
-      if(CMD_RES)
-        message(FATAL_ERROR "    abacus.rb: ${CMD_RES}")
-      endif()
-
-      add_custom_target("${res_gen_target}" DEPENDS "${res_pack_target}" "${h_out_path}" "${c_out_path}")
-
-      _argus_add_source_file(C_FILES CPP_FILES "${c_out_path}")
-    endif()
-  endif()
-
   # basic source files
   _argus_add_header_files(INCLUDE_DIRS "${MODULE_PROJECT_DIR}/${INCLUDE_DIR_NAME}")
   if(NOT ${IS_EXTERNAL})
@@ -331,7 +269,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
         corrosion_import_crate(
             MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
         )
-        corrosion_set_env_vars("${PROJECT_NAME}" "ARPTOOL_PATH=${ARPTOOL_EXE_PATH}")
         corrosion_link_libraries(${PROJECT_NAME} ${ARGUS_LIBRARY})
         if("${USE_ASAN}")
           corrosion_add_target_rustflags("${PROJECT_NAME}"
@@ -464,7 +401,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
               MANIFEST_PATH "${MODULE_PROJECT_DIR}/Cargo.toml"
               FEATURES "${crate_features}"
           )
-          corrosion_set_env_vars("${PROJECT_NAME}" "ARPTOOL_PATH=${ARPTOOL_EXE_PATH}")
           if("${USE_ASAN}")
             corrosion_add_target_rustflags("${PROJECT_NAME}"
                 "-Zsanitizer=address")
@@ -487,18 +423,6 @@ function(_argus_configure_module MODULE_PROJECT_DIR ROOT_DIR
     get_property(COMBINED_TARGET_LINKER_DEPS GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS)
     list(APPEND COMBINED_TARGET_LINKER_DEPS "${MODULE_LINKER_DEPS}")
     set_property(GLOBAL PROPERTY COMBINED_TARGET_LINKER_DEPS "${COMBINED_TARGET_LINKER_DEPS}")
-  endif()
-
-  if(${IS_EXTERNAL})
-    if(${has_resources})
-      add_dependencies("${PROJECT_NAME}" "arptool")
-    endif()
-  else()
-    if(TARGET ${res_gen_target})
-      add_dependencies("${PROJECT_NAME}" "${res_gen_target}")
-    elseif(TARGET ${res_pack_target})
-      add_dependencies("${PROJECT_NAME}" "${res_pack_target}")
-    endif()
   endif()
 
   # todo: work out how to pass compile definitions to Rust projects

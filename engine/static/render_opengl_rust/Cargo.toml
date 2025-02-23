@@ -22,4 +22,7 @@ render_rs = { path = "../render_rs" }
 wm_rs = { path = "../wm_rs" }
 resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
 shadertools = { path = "../../libs/shadertools", default-features = false }
-uuid = { version = "1.11.0", features = ["v4"] }
+uuid = { version = "1.14.0", features = ["v4"] }
+
+[build-dependencies]
+arp = { git = "https://github.com/caseif/libarp-rs", rev = "78fed15", default-features = false }
