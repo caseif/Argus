@@ -142,6 +142,11 @@ jobs:
         echo "VULKAN_SDK=C:\VulkanSDK\" >> "$env:GITHUB_ENV"
       if: startsWith(matrix.os, 'windows')
 
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: 3.4
+
     - name: Configure
       shell: pwsh
       run: |
