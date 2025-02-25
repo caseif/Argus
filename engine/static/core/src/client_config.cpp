@@ -355,16 +355,17 @@ namespace argus {
         }
 
         for (const auto &candidate : candidate_packages) {
-            auto filename = candidate.filename().c_str();
+            auto filename = candidate.filename();
 
-            Logger::default_logger().debug("Searching for client config in package %s (namespace matches)", filename);
+            Logger::default_logger().debug("Searching for client config in package %s (namespace matches)",
+                    filename.c_str());
 
             ArpPackage pack;
             auto rc = arp_load_from_file(candidate.string().c_str(), nullptr, &pack);
             if (rc != 0) {
                 Logger::default_logger().warn(
                         "Failed to load package at %s while searching for config (libarp says: %s)",
-                        filename, arp_get_error());
+                        filename.c_str(), arp_get_error());
                 continue;
             }
 
@@ -374,7 +375,7 @@ namespace argus {
                 Logger::default_logger().debug("Did not find config in package %s", candidate.filename().c_str());
                 continue;
             } else if (rc != 0) {
-                Logger::default_logger().warn("Failed to find config in package %s (libarp says: %s)", filename,
+                Logger::default_logger().warn("Failed to find config in package %s (libarp says: %s)", filename.c_str(),
                         arp_get_error());
                 continue;
             }
@@ -382,7 +383,7 @@ namespace argus {
             if (strcmp(res_meta.media_type, CONFIG_MEDIA_TYPE) != 0) {
                 Logger::default_logger().warn(
                         "File \"%s\" in package %s has unexpected media type %s, cannot load as client config",
-                        CONFIG_BASE_NAME, filename, res_meta.media_type);
+                        CONFIG_BASE_NAME, filename.c_str(), res_meta.media_type);
                 continue;
             }
 
@@ -390,15 +391,15 @@ namespace argus {
 
             auto *res = arp_load_resource(&res_meta);
             if (res == nullptr) {
-                Logger::default_logger().warn("Failed to load config from package %s (libarp says: %s)", filename,
-                        arp_get_error());
+                Logger::default_logger().warn("Failed to load config from package %s (libarp says: %s)",
+                        filename.c_str(), arp_get_error());
                 continue;
             }
 
             IMemStream stream(res->data, res->meta.size);
             _ingest_config_content(stream);
 
-            Logger::default_logger().info("Successfully loaded config from package at %s", filename);
+            Logger::default_logger().info("Successfully loaded config from package at %s", filename.c_str());
             return true;
         }
 
