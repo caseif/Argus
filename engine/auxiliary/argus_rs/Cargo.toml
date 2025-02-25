@@ -19,5 +19,6 @@ render_opengl_rust = { path = "../../static/render_opengl_rust", optional = true
 resman_rs = { path = "../../static/resman_rs" }
 scripting_rs = { path = "../../static/scripting_rs" }
 scripting_lua_rs = { path = "../../static/scripting_lua_rs" }
-#scripting_rhai = { path = "../../static/scripting_rhai" }
+sound_rs = { path = "../../static/sound_rs" }
+ui_rs = { path = "../../static/ui_rs" }
 wm_rs = { path = "../../static/wm_rs" }

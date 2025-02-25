@@ -22,6 +22,8 @@ pub use render_rs::update_lifecycle_render_rs;
 pub use resman_rs::update_lifecycle_resman_rs;
 pub use scripting_lua_rs::update_lifecycle_scripting_lua_rs;
 pub use scripting_rs::update_lifecycle_scripting_rs;
+pub use sound_rs::update_lifecycle_sound_rs;
+pub use ui_rs::update_lifecycle_ui_rs;
 pub use wm_rs::update_lifecycle_wm_rs;
 
 #[cfg(feature = "opengl")]
