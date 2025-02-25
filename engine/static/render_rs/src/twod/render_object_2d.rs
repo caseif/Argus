@@ -2,13 +2,14 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, ValueAndDirtyFlag, Vector2f, Vector2u};
+use resman_rs::{Resource, WeakResource};
 use crate::common::Transform2d;
 use crate::twod::RenderPrimitive2d;
 
 pub struct RenderObject2d {
     pub(crate) handle: Option<Handle>,
     parent_group: Handle,
-    material: String,
+    material: Resource,
     primitives: Vec<RenderPrimitive2d>,
     anchor_point: Vector2f,
     atlas_stride: Vector2f,
@@ -23,7 +24,7 @@ impl RenderObject2d {
     #[must_use]
     pub(crate) fn new(
         parent_group: Handle,
-        material: impl Into<String>,
+        material: Resource,
         primitives: Vec<RenderPrimitive2d>,
         anchor_point: Vector2f,
         atlas_stride: Vector2f,
@@ -34,7 +35,7 @@ impl RenderObject2d {
         Self {
             handle: None,
             parent_group,
-            material: material.into(),
+            material,
             primitives,
             anchor_point,
             atlas_stride,
@@ -56,10 +57,10 @@ impl RenderObject2d {
         self.parent_group
     }
 
-    /// Gets the UID of the Material used by the object.
+    /// Gets the material used by the object.
     #[must_use]
-    pub fn get_material(&self) -> &str {
-        self.material.as_str()
+    pub fn get_material(&self) -> WeakResource {
+        self.material.downgrade()
     }
 
     /// Gets the list of [primitives](RenderPrimitive2d) comprising this object.

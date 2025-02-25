@@ -21,10 +21,10 @@ use crate::shaders::{get_material_program, LinkedProgram};
 use crate::state::{ProcessedObject, RendererState, Scene2dState};
 use crate::util::defines::*;
 use lowlevel_rustabi::argus::lowlevel::Vector4f;
-use resman_rustabi::argus::resman::ResourceManager;
 use std::{ptr, slice};
 use std::ops::Deref;
 use lowlevel_rs::Handle;
+use resman_rs::ResourceManager;
 use render_rs::common::Matrix4x4;
 use render_rs::constants::*;
 use render_rs::twod::{get_render_context_2d, RenderObject2d};
@@ -59,7 +59,7 @@ pub(crate) fn process_object(
 
     if let Some(proc_obj) = existing_obj {
         // program should be linked by now
-        let program = &state.linked_programs[object.get_material()];
+        let program = &state.linked_programs[&object.get_material().get_prototype().uid];
         update_processed_object_2d(&mut object, proc_obj, transform, is_transform_dirty, program);
     } else {
         let new_proc_obj = create_processed_object_2d(state, &mut object, transform);
@@ -77,9 +77,8 @@ fn create_processed_object_2d(
 ) -> ProcessedObject {
     let vertex_count = count_vertices(object);
 
-    let mat_res = ResourceManager::get_instance()
-        .get_resource(object.get_material())
-        .expect("Resource for RenderObject2D material must be available");
+    let mat_res = object.get_material().upgrade()
+        .expect("Resource for RenderObject2D material was unloaded!");
 
     let program = get_material_program(&mut state.linked_programs, &mat_res);
 

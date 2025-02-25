@@ -2,11 +2,10 @@ use crate::bind::{BoundEnumDef, BoundFunctionDef, BoundTypeDef};
 use crate::context::ScriptContext;
 use crate::error::ScriptLoadError;
 use argus_scripting_bind::{ScriptInvocationError, WrappedObject};
-use resman_rustabi::argus::resman::Resource;
 use std::any::Any;
 use std::rc::Rc;
-use std::sync::Mutex;
 use parking_lot::ReentrantMutex;
+use resman_rs::Resource;
 
 pub trait ScriptLanguagePlugin: Send + Sync {
     fn get_language_name() -> &'static str

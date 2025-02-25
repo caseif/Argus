@@ -19,7 +19,7 @@
 use std::ffi;
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector2u};
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::Resource;
 use crate::util::gl_util::GlBufferHandle;
 
 pub(crate) struct ProcessedObject {

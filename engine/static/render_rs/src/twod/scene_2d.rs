@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, ValueAndDirtyFlag, Vector2f, Vector3f};
+use resman_rs::Resource;
 use crate::common::*;
 use crate::twod::*;
 
@@ -217,7 +218,7 @@ impl Scene2d {
     /// * `transform` The local transform of the new object.
     pub fn add_object(
         &mut self,
-        material: impl Into<String>,
+        material: Resource,
         primitives: Vec<RenderPrimitive2d>,
         anchor_point: Vector2f,
         atlas_stride: Vector2f,
@@ -227,7 +228,7 @@ impl Scene2d {
     ) -> Handle {
         let new_object = RenderObject2d::new(
             self.root_group_write.unwrap(),
-            material.into(),
+            material,
             primitives,
             anchor_point,
             atlas_stride,

@@ -26,7 +26,7 @@ use crate::util::buffer::GlBuffer;
 
 fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
     RenderBucketKey::new(
-        &processed_obj.material_res.get_prototype().uid,
+        processed_obj.material_res.get_prototype().uid.clone(),
         &processed_obj.atlas_stride,
         processed_obj.z_index,
         processed_obj.light_opacity

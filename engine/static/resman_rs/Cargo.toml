@@ -1,18 +1,15 @@
 [package]
-name = "scripting_lua_rs"
+name = "resman_rs"
 version = "0.0.1"
 edition = "2021"
 
 [lib]
-name = "scripting_lua_rs"
+name = "resman_rs"
 crate-type = ["rlib"]
 
 [dependencies]
+arp = { git = "https://github.com/caseif/libarp-rs", rev = "52e8e02" }
+dashmap = "6.1.0"
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
-resman_rs = { path = "../../static/resman_rs" }
-scripting_rs = { path = "../../static/scripting_rs" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-lua = { path = "../../../external-bindings/lua" }
-num_enum = "0.7.3"
-parking_lot = "0.12.3"

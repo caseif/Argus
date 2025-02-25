@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
 use std::ptr::{addr_of, copy_nonoverlapping};
@@ -8,7 +8,7 @@ use argus_scripting_bind::*;
 use lua::bindings::*;
 use num_enum::TryFromPrimitive;
 use parking_lot::ReentrantMutex;
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::Resource;
 use scripting_rs::*;
 use crate::context::ManagedLuaState;
 use crate::constants::{LUA_LANG_NAME, LUA_MEDIA_TYPES};
@@ -1287,12 +1287,13 @@ unsafe fn convert_path_to_uid(path: &str) -> Result<String, ()> {
     Ok(format!("{}:{}", ns, rel_uid))
 }
 
-unsafe fn load_script(state: impl Into<*mut lua_State>, resource: Resource) -> Result<i32, ScriptLoadError> {
+unsafe fn load_script(state: impl Into<*mut lua_State>, resource: Resource)
+    -> Result<i32, ScriptLoadError> {
     let state = state.into();
-    let loaded_script = resource.get::<LoadedScript>();
+    let loaded_script = resource.get::<LoadedScript>().unwrap();
 
     let src_c = CString::new(loaded_script.source.as_str()).unwrap();
-    let uid = resource.get_prototype().uid;
+    let uid = resource.get_prototype().uid.to_string();
     let uid_c = CString::new(uid.as_str()).unwrap();
     let load_res = luaL_loadbuffer(
         state,
@@ -1302,7 +1303,6 @@ unsafe fn load_script(state: impl Into<*mut lua_State>, resource: Resource) -> R
     );
     if load_res != LUA_OK as i32 {
         let err_msg = lua_tostring(state, -1).unwrap();
-        resource.release();
         return Err(ScriptLoadError::new(
             uid,
             format!("Failed to parse script: {}", err_msg),
@@ -1312,7 +1312,6 @@ unsafe fn load_script(state: impl Into<*mut lua_State>, resource: Resource) -> R
     let call_res = lua_pcall(state, 0, 1, 0);
     if call_res != LUA_OK as i32 {
         //TODO: print detailed trace info from VM
-        resource.release();
         return Err(ScriptLoadError::new(uid, lua_tostring(state, -1).unwrap()));
     }
 

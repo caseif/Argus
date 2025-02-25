@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Padding, Vector2u};
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::Resource;
 use render_rs::twod::RenderObject2d;
 
 #[derive(Clone, Debug)]
@@ -76,7 +76,7 @@ pub struct Sprite {
 #[script_bind]
 impl Sprite {
     pub fn new(defn_res: Resource) -> Self {
-        let defn = defn_res.get::<SpriteDefinition>();
+        let defn = defn_res.get::<SpriteDefinition>().unwrap();
         let mut sprite = Self {
             definition: defn.clone(),
             anim_start_offsets: HashMap::new(),

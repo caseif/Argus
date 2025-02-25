@@ -18,7 +18,7 @@
 
 use core_rustabi::argus::core::{register_update_callback, LifecycleStage, Ordering};
 use num_enum::UnsafeFromPrimitive;
-use resman_rustabi::argus::resman::ResourceManager;
+use resman_rs::ResourceManager;
 use crate::constants::RESOURCE_TYPE_SPRITE;
 use crate::sprite_loader::SpriteLoader;
 use crate::world::World2d;
@@ -40,7 +40,7 @@ pub unsafe extern "C" fn update_lifecycle_game2d_rs(stage_ffi: core_rustabi::cor
         LifecycleStage::Load => {}
         LifecycleStage::PreInit => {}
         LifecycleStage::Init => {
-            ResourceManager::get_instance().register_loader(vec![RESOURCE_TYPE_SPRITE], SpriteLoader {});
+            ResourceManager::instance().register_loader(vec![RESOURCE_TYPE_SPRITE], SpriteLoader {});
             register_update_callback(Box::new(World2d::render_worlds), Ordering::Standard);
         }
         LifecycleStage::PostInit => {}

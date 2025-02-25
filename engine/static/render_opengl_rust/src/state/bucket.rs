@@ -20,15 +20,15 @@ use crate::util::buffer::GlBuffer;
 use crate::util::gl_util::{GlArrayHandle, GlBufferHandle};
 
 use lowlevel_rustabi::argus::lowlevel::{Vector2f, Vector2i};
-use resman_rustabi::argus::resman::Resource;
 
 use std::cmp::Ordering;
 use std::hash::Hash;
 use lowlevel_rs::Handle;
+use resman_rs::{Resource, ResourceIdentifier};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub(crate) struct RenderBucketKey {
-    pub(crate) material_uid: String,
+    pub(crate) material_uid: ResourceIdentifier,
     pub(crate) atlas_stride: Vector2i,
     pub(crate) z_index: u32,
     pub(crate) light_opacity: i32,
@@ -36,13 +36,13 @@ pub(crate) struct RenderBucketKey {
 
 impl RenderBucketKey {
     pub(crate) fn new(
-        material_uid: &str,
+        material_uid: ResourceIdentifier,
         atlas_stride: &Vector2f,
         z_index: u32,
         light_opacity: f32
     ) -> Self {
         Self {
-            material_uid: material_uid.to_string(),
+            material_uid,
             atlas_stride: Vector2i {
                 x: (atlas_stride.x * 1_000_000.0) as i32,
                 y: (atlas_stride.y * 1_000_000.0) as i32
@@ -76,7 +76,7 @@ impl RenderBucket {
         z_index: u32,
         light_opacity: f32,
     ) -> Self {
-        let material_uid = material_res.get_prototype().uid;
+        let material_uid = material_res.get_prototype().uid.to_string();
 
         Self {
             material_uid,

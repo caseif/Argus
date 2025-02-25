@@ -1,5 +1,6 @@
-use std::ops::Deref;
-use resman_rustabi::argus::resman::{ResourceError, ResourceErrorReason, ResourceLoader, ResourceManager, ResourcePrototype, WrappedResourceLoader};
+use std::any::Any;
+use std::io::Read;
+use resman_rs::*;
 use serde::Deserialize;
 use serde_json::error::Category;
 use crate::common::Material;
@@ -9,18 +10,22 @@ pub(crate) struct MaterialLoader {
 
 impl ResourceLoader for MaterialLoader {
     fn load_resource(
-        &mut self,
-        mut handle: WrappedResourceLoader,
-        mut manager: ResourceManager,
-        prototype: ResourcePrototype,
-        read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
-        _size: usize
-    ) -> Result<*mut u8, ResourceError> {
+        &self,
+        _manager: &ResourceManager,
+        prototype: &ResourcePrototype,
+        reader: &mut dyn Read,
+        _size: u64
+    ) -> Result<Box<dyn Any + Send + Sync>, ResourceError> {
         const BUF_LEN: usize = 1024;
         let mut buf = [0u8; BUF_LEN];
         let mut data: Vec<u8> = Vec::with_capacity(BUF_LEN);
         loop {
-            let read_bytes = read_callback.deref()(buf.as_mut_slice(), BUF_LEN);
+            let read_bytes = reader.read(buf.as_mut_slice())
+                .map_err(|err| ResourceError::new(
+                    ResourceErrorReason::LoadFailed,
+                    prototype.uid.to_string(),
+                    err.to_string()
+                ))?;
             if read_bytes == 0 {
                 break;
             }
@@ -33,7 +38,7 @@ impl ResourceLoader for MaterialLoader {
             Err(_) => {
                 return Err(ResourceError::new(
                     ResourceErrorReason::MalformedContent,
-                    prototype.uid.as_str(),
+                    prototype.uid.to_string(),
                     "Sprite definition is not valid UTF-8",
                 ))
             }
@@ -50,7 +55,7 @@ impl ResourceLoader for MaterialLoader {
                 };
                 return Err(ResourceError::new(
                     reason,
-                    prototype.uid.as_str(),
+                    prototype.uid.to_string(),
                     "Sprite definition structure is invalid"
                 ));
             }
@@ -58,26 +63,9 @@ impl ResourceLoader for MaterialLoader {
         let mut dependencies = Vec::with_capacity(material.shader_uids.len() + 1);
         dependencies.push(material.texture_uid.clone());
         dependencies.extend(material.shader_uids.clone());
-        handle.load_dependencies(&mut manager, dependencies)?;
+        //handle.load_dependencies(&mut manager, dependencies)?;
 
-        Ok(Box::into_raw(Box::new(material)).cast())
-    }
-
-    fn copy_resource(
-        &mut self,
-        _handle: WrappedResourceLoader,
-        _manager: ResourceManager,
-        _prototype: ResourcePrototype,
-        src_data: *const u8
-    ) -> Result<*mut u8, ResourceError> {
-        let material: &Material = unsafe { src_data.cast::<Material>().as_ref().unwrap() };
-        Ok(Box::into_raw(Box::new(material.clone())).cast())
-    }
-
-    fn unload_resource(&mut self, _handle: WrappedResourceLoader, ptr: *mut u8) {
-        unsafe {
-            _ = Box::from_raw(ptr.cast::<Material>());
-        }
+        Ok(Box::new(material))
     }
 }
 

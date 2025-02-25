@@ -17,7 +17,7 @@
  */
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Vector2f};
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::Resource;
 use render_rs::common::Transform2d;
 use crate::sprite::Sprite;
 

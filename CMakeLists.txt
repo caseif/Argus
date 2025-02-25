@@ -1,7 +1,7 @@
 include(CMakeDependentOption)
 
 set(ENGINE_LIBRARY_IDS "lowlevel")
-set(STATIC_MODULE_IDS "core;ecs;resman"
+set(STATIC_MODULE_IDS "core;ecs;resman_rs"
         "scripting_rs;scripting_lua_rs"
         "wm_rs;input_rs;render_rs;ui;sound;game2d_rs")
 set(DYNAMIC_MODULE_IDS "")

@@ -9,7 +9,7 @@ mod loader;
 use argus_logging::{crate_logger, debug, info, warn};
 use num_enum::UnsafeFromPrimitive;
 use core_rustabi::argus::core::{add_load_module, enable_dynamic_module, get_present_dynamic_modules, get_present_static_modules, LifecycleStage};
-use resman_rustabi::argus::resman::ResourceManager;
+use resman_rs::ResourceManager;
 use wm_rs::WindowManager;
 use crate::common::{activate_backend, RenderCanvas};
 use crate::constants::{RESOURCE_TYPE_MATERIAL, RESOURCE_TYPE_TEXTURE_PNG};
@@ -39,13 +39,14 @@ pub unsafe extern "C" fn update_lifecycle_render_rs(
 
             activate_backend();
 
-            ResourceManager::get_instance()
+            ResourceManager::instance()
                 .register_loader(vec![RESOURCE_TYPE_MATERIAL], MaterialLoader {});
-            ResourceManager::get_instance()
+            ResourceManager::instance()
                 .register_loader(vec![RESOURCE_TYPE_TEXTURE_PNG], TextureLoader {});
         }
         LifecycleStage::PostInit => {
-            ResourceManager::get_instance().add_memory_package(RESOURCES_PACK);
+            ResourceManager::instance().add_memory_package(RESOURCES_PACK)
+                .expect("Failed to load in-memory resources for render_rs");
         }
         LifecycleStage::Running => {}
         LifecycleStage::PreDeinit => {}

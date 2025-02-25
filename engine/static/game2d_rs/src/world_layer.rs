@@ -18,16 +18,16 @@
 
 use crate::actor::Actor2d;
 use lowlevel_rustabi::argus::lowlevel::{ValueAndDirtyFlag, Vector2f, Vector3f};
-use resman_rustabi::argus::resman::ResourceManager;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::slice;
 use uuid::Uuid;
 use argus_scripting_bind::script_bind;
 use lowlevel_rs::Handle;
-use render_rs::common::{RenderCanvas, Material, Scene, SceneType, TextureData, Transform2d, Vertex2d};
+use resman_rs::ResourceManager;
+use render_rs::common::{RenderCanvas, Material, TextureData, Transform2d, Vertex2d};
 use render_rs::constants::*;
-use render_rs::twod::{get_render_context_2d, Camera2d, Light2dParameters, Light2dType, RenderPrimitive2d, Scene2d};
+use render_rs::twod::{get_render_context_2d, Light2dParameters, Light2dType, RenderPrimitive2d, Scene2d};
 use crate::sprite::Sprite;
 use crate::static_object::StaticObject2d;
 
@@ -154,7 +154,7 @@ impl World2dLayer {
         can_occlude_light: bool,
         transform: Transform2d,
     ) -> Result<Uuid, String> {
-        let sprite_defn_res = match ResourceManager::get_instance().get_resource(sprite) {
+        let sprite_defn_res = match ResourceManager::instance().get_resource(sprite) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
@@ -200,7 +200,7 @@ impl World2dLayer {
         can_occlude_light: bool,
         transform: Transform2d,
     ) -> Result<Uuid, String> {
-        let sprite_defn_res = match ResourceManager::get_instance().get_resource(&sprite_uid) {
+        let sprite_defn_res = match ResourceManager::instance().get_resource(&sprite_uid) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
@@ -284,13 +284,12 @@ impl World2dLayer {
             color: Default::default(),
         };
 
-        let anim_tex_res = ResourceManager::get_instance()
+        let anim_tex_res = ResourceManager::instance()
             .get_resource(&sprite_def.atlas)
             .expect("Failed to load sprite atlas");
-        let anim_tex = anim_tex_res.get::<TextureData>();
+        let anim_tex = anim_tex_res.get::<TextureData>().unwrap();
         let atlas_w = anim_tex.get_width();
         let atlas_h = anim_tex.get_height();
-        anim_tex_res.release();
 
         let mut frame_off = 0;
         for anim in sprite_def.animations.values() {
@@ -304,15 +303,12 @@ impl World2dLayer {
         //TODO: make this reusable
         let mat_uid = format!("internal:game2d/material/sprite_mat_{}", Uuid::new_v4().to_string());
         let mat = Material::new(sprite_def.atlas.clone(), vec![]);
-        ResourceManager::get_instance()
+        _ = ResourceManager::instance().create_resource("asdf:eargjds;fljzifd", RESOURCE_TYPE_MATERIAL, Box::new(mat.clone())).unwrap();
+        let mat_resource = ResourceManager::instance()
             .create_resource(
                 mat_uid.as_str(),
                 RESOURCE_TYPE_MATERIAL,
-                unsafe {
-                    slice::from_raw_parts(
-                        Box::into_raw(Box::new(mat)).cast(), size_of::<Material>()
-                    )
-                },
+                Box::new(mat),
             )
             .expect("Failed to create material resource");
 
@@ -326,7 +322,7 @@ impl World2dLayer {
         };
 
         scene.add_object(
-            mat_uid.as_str(),
+            mat_resource,
             prims,
             scaled_size / 2.0,
             Vector2f::new(atlas_stride_x, atlas_stride_y),

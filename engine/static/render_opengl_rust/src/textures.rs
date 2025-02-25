@@ -18,7 +18,7 @@
 
 use std::ptr;
 use std::rc::Rc;
-use resman_rustabi::argus::resman::{Resource, ResourceError, ResourceManager};
+use resman_rs::{Resource, ResourceError, ResourceManager};
 use render_rs::common::{Material, TextureData};
 use crate::aglet::*;
 use crate::state::RendererState;
@@ -26,19 +26,19 @@ use crate::util::gl_util::*;
 
 pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Resource)
     -> Result<(), ResourceError> {
-    let mat: &Material = material_res.get();
+    let mat: &Material = material_res.get().unwrap();
     let texture_uid = mat.get_texture_uid();
 
     if let Some(tex) = state.prepared_textures.get(texture_uid) {
         state.material_textures.insert(
-            material_res.get_prototype().uid,
-            (texture_uid.to_string(), Rc::clone(tex))
+            material_res.get_prototype().uid.clone(),
+            (texture_uid.to_string(), Rc::clone(tex)),
         );
         return Ok(());
     }
 
-    let texture_res = ResourceManager::get_instance().get_resource(texture_uid)?;
-    let texture: &TextureData = texture_res.get();
+    let texture_res = ResourceManager::instance().get_resource(texture_uid)?;
+    let texture: &TextureData = texture_res.get().unwrap();
 
     let width = texture.get_width() as i32;
     let height = texture.get_height() as i32;
@@ -85,12 +85,10 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
         bind_texture(0, 0);
     }
 
-    texture_res.release();
-
     let tex_rc = Rc::new(handle);
     state.prepared_textures.insert(texture_uid.to_string(), Rc::clone(&tex_rc));
     state.material_textures.insert(
-        material_res.get_prototype().uid,
+        material_res.get_prototype().uid.clone(),
         (texture_uid.to_string(), Rc::clone(&tex_rc))
     );
 

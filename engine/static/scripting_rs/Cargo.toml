@@ -17,4 +17,4 @@ serde_json = "1.0.128"
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
 core_rustabi = { path = "../../auxiliary/core_rustabi" }
-resman_rustabi = { path = "../../auxiliary/resman_rustabi" }
+resman_rs = { path = "../../static/resman_rs" }

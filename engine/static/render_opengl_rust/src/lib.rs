@@ -40,9 +40,9 @@ use argus_logging::{crate_logger, warn};
 use num_enum::UnsafeFromPrimitive;
 
 use core_rustabi::argus::core::*;
+use resman_rs::{ResourceEvent, ResourceEventType, ResourceManager};
 use render_rs::common::register_render_backend;
 use render_rs::constants::*;
-use resman_rustabi::argus::resman::{ResourceEvent, ResourceEventType, ResourceManager};
 use wm_rs::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::gl_renderer::GlRenderer;
@@ -193,7 +193,7 @@ fn resource_event_handler(event: &ResourceEvent) {
     RENDERERS.with_borrow_mut(|renderers| {
         #[allow(unused)]
         for (_, renderer) in &mut renderers.iter() {
-            let mt = event.get_prototype().media_type;
+            let mt = &event.get_prototype().media_type;
             if mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG {
                 //TODO: remove shader from state
             } else if mt == RESOURCE_TYPE_MATERIAL {
@@ -218,7 +218,7 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 return;
             }
 
-            ResourceManager::get_instance().register_loader(
+            ResourceManager::instance().register_loader(
                 vec![
                     RESOURCE_TYPE_SHADER_GLSL_VERT,
                     RESOURCE_TYPE_SHADER_GLSL_FRAG,
@@ -231,8 +231,8 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 TargetThread::Render,
                 Ordering::Standard
             );
-            register_ffi_event_handler(
-                &resource_event_handler,
+            register_event_handler(
+                Box::new(resource_event_handler),
                 TargetThread::Render,
                 Ordering::Standard
             );
@@ -242,7 +242,8 @@ pub extern "C" fn update_lifecycle_render_opengl_rust(
                 return;
             }
 
-            ResourceManager::get_instance().add_memory_package(RESOURCES_PACK);
+            ResourceManager::instance().add_memory_package(RESOURCES_PACK)
+                .expect("Failed to load in-memory resources for render_opengl_rust");
         }
         LifecycleStage::PostDeinit => {
             gl_unload_library();

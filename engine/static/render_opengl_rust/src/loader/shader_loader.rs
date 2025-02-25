@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-use std::ops::Deref;
-
-use resman_rustabi::argus::resman::*;
+use std::any::Any;
+use std::io::Read;
+use resman_rs::*;
 use render_rs::common::{Shader, ShaderStage};
 use render_rs::constants::*;
 
@@ -34,13 +33,12 @@ impl ShaderLoader {
 
 impl ResourceLoader for ShaderLoader {
     fn load_resource(
-        &mut self,
-        _handle: WrappedResourceLoader,
-        _manager: ResourceManager,
-        prototype: ResourcePrototype,
-        read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
-        _size: usize
-    ) -> Result<*mut u8, ResourceError> {
+        &self,
+        _manager: &ResourceManager,
+        prototype: &ResourcePrototype,
+        reader: &mut dyn Read,
+        _size: u64
+    ) -> Result<Box<dyn Any + Send + Sync>, ResourceError> {
         let (shader_type, shader_stage) = match prototype.media_type.as_str() {
             RESOURCE_TYPE_SHADER_GLSL_VERT => (SHADER_TYPE_GLSL, ShaderStage::Vertex),
             RESOURCE_TYPE_SHADER_GLSL_FRAG => (SHADER_TYPE_GLSL, ShaderStage::Fragment),
@@ -51,7 +49,12 @@ impl ResourceLoader for ShaderLoader {
         let mut buf = [0u8; BUF_LEN];
         let mut data: Vec<u8> = Vec::with_capacity(BUF_LEN);
         loop {
-            let read_bytes = read_callback.deref()(buf.as_mut_slice(), BUF_LEN);
+            let read_bytes = reader.read(buf.as_mut_slice())
+                .map_err(|err| ResourceError::new(
+                    ResourceErrorReason::LoadFailed,
+                    prototype.uid.to_string(),
+                    err.to_string()
+                ))?;
             if read_bytes == 0 {
                 break;
             }
@@ -59,22 +62,7 @@ impl ResourceLoader for ShaderLoader {
             data.append(&mut buf[0..read_bytes].to_vec());
         }
 
-        let shader = Shader::new(prototype.uid.as_str(), shader_type, shader_stage, data);
-        Ok(Box::into_raw(Box::new(shader)).cast())
-    }
-
-    fn copy_resource(
-        &mut self,
-        _handle: WrappedResourceLoader,
-        _manager: ResourceManager,
-        _prototype: ResourcePrototype,
-        src_data: *const u8,
-    ) -> Result<*mut u8, ResourceError> {
-        let shader: &Shader = unsafe { *src_data.cast() };
-        Ok(Box::into_raw(Box::new(shader)).cast())
-    }
-
-    fn unload_resource(&mut self, _handle: WrappedResourceLoader, ptr: *mut u8) {
-        unsafe { _ = Box::from_raw(ptr.cast::<Shader>()); }
+        let shader = Shader::new(prototype.uid.to_string(), shader_type, shader_stage, data);
+        Ok(Box::new(shader))
     }
 }

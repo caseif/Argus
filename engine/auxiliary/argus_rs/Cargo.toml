@@ -16,6 +16,7 @@ game2d_rs = { path = "../../static/game2d_rs" }
 input_rs = { path = "../../static/input_rs" }
 render_rs = { path = "../../static/render_rs" }
 render_opengl_rust = { path = "../../static/render_opengl_rust", optional = true }
+resman_rs = { path = "../../static/resman_rs" }
 scripting_rs = { path = "../../static/scripting_rs" }
 scripting_lua_rs = { path = "../../static/scripting_lua_rs" }
 #scripting_rhai = { path = "../../static/scripting_rhai" }

@@ -18,7 +18,7 @@
 
 use std::collections::HashMap;
 use std::rc::Rc;
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::{Resource, ResourceIdentifier};
 use wm_rs::GlContext;
 use crate::shaders::*;
 use crate::state::*;
@@ -33,9 +33,9 @@ pub(crate) struct RendererState {
     pub viewport_states_2d: HashMap<u32, ViewportState>,
     pub are_viewports_initialized: bool,
     pub prepared_textures: HashMap<String, Rc<GlTextureHandle>>,
-    pub material_textures: HashMap<String, (String, Rc<GlTextureHandle>)>,
+    pub material_textures: HashMap<ResourceIdentifier, (String, Rc<GlTextureHandle>)>,
     pub compiled_shaders: HashMap<String, GlShaderHandle>,
-    pub linked_programs: HashMap<String, LinkedProgram>,
+    pub linked_programs: HashMap<ResourceIdentifier, LinkedProgram>,
     pub std_program: Option<LinkedProgram>,
     pub shadowmap_program: Option<LinkedProgram>,
     pub lighting_program: Option<LinkedProgram>,

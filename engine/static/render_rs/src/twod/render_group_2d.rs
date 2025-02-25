@@ -5,6 +5,7 @@ use crate::common::Transform2d;
 use crate::twod::{RenderContext2d, RenderObject2d, RenderPrimitive2d};
 use lowlevel_rs::{Handle, ValuePool};
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, ValueAndDirtyFlag, Vector2f};
+use resman_rs::Resource;
 
 lazy_static! {
     pub(crate) static ref RENDER_GROUP_POOL: Arc<Mutex<ValuePool<RenderGroup2d>>> =
@@ -74,7 +75,7 @@ impl RenderGroup2d {
     pub fn add_object(
         &mut self,
         context: &mut RenderContext2d,
-        material: impl AsRef<str>,
+        material: Resource,
         primitives: Vec<RenderPrimitive2d>,
         anchor_point: Vector2f,
         atlas_stride: Vector2f,
@@ -84,7 +85,7 @@ impl RenderGroup2d {
     ) -> Handle {
         let object = RenderObject2d::new(
             self.handle.unwrap(),
-            material.as_ref(),
+            material,
             primitives,
             anchor_point,
             atlas_stride,

@@ -1,5 +1,6 @@
-use std::ops::Deref;
-use resman_rustabi::argus::resman::*;
+use std::any::Any;
+use std::io::Read;
+use resman_rs::*;
 use rgb::ComponentBytes;
 use crate::common::TextureData;
 
@@ -7,18 +8,22 @@ pub(crate) struct TextureLoader {}
 
 impl ResourceLoader for TextureLoader {
     fn load_resource(
-        &mut self,
-        _handle: WrappedResourceLoader,
-        _manager: ResourceManager,
-        prototype: ResourcePrototype,
-        read_callback: Box<dyn Fn(&mut [u8], usize) -> usize>,
-        _size: usize
-    ) -> Result<*mut u8, ResourceError> {
+        &self,
+        _manager: &ResourceManager,
+        prototype: &ResourcePrototype,
+        reader: &mut dyn Read,
+        _size: u64
+    ) -> Result<Box<dyn Any + Send + Sync>, ResourceError> {
         const BUF_LEN: usize = 1024;
         let mut buf = [0u8; BUF_LEN];
         let mut data: Vec<u8> = Vec::with_capacity(BUF_LEN);
         loop {
-            let read_bytes = read_callback.deref()(buf.as_mut_slice(), BUF_LEN);
+            let read_bytes = reader.read(buf.as_mut_slice())
+                .map_err(|err| ResourceError::new(
+                    ResourceErrorReason::LoadFailed,
+                    prototype.uid.to_string(),
+                    err.to_string()
+                ))?;
             if read_bytes == 0 {
                 break;
             }
@@ -31,7 +36,7 @@ impl ResourceLoader for TextureLoader {
             Err(e) => {
                 return Err(ResourceError::new(
                     ResourceErrorReason::MalformedContent,
-                    prototype.uid.as_str(),
+                    prototype.uid.to_string(),
                     e.to_string().as_str(),
                 ))
             }
@@ -43,23 +48,6 @@ impl ResourceLoader for TextureLoader {
             4, // BPP
             image.buffer.as_bytes().into()
         );
-        Ok(Box::into_raw(Box::new(texture)).cast())
-    }
-
-    fn copy_resource(
-        &mut self,
-        _handle: WrappedResourceLoader,
-        _manager: ResourceManager,
-        _prototype: ResourcePrototype,
-        src_data: *const u8
-    ) -> Result<*mut u8, ResourceError> {
-        let texture: &TextureData = unsafe { *src_data.cast() };
-        Ok(Box::into_raw(Box::new(texture.clone())).cast())
-    }
-
-    fn unload_resource(&mut self, _handle: WrappedResourceLoader, ptr: *mut u8) {
-        unsafe {
-            _ = Box::from_raw(ptr.cast::<TextureData>());
-        }
+        Ok(Box::new(texture))
     }
 }

@@ -307,7 +307,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     let mut non_std_buckets = Vec::<RenderBucketKey>::new();
 
     for (key, bucket) in &scene_state.render_buckets {
-        let mat: &Material = bucket.material_res.get();
+        let mat: &Material = bucket.material_res.get().unwrap();
         let program_info = renderer_state
             .linked_programs
             .get(&bucket.material_res.get_prototype().uid)
@@ -503,7 +503,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
                 bucket.obj_ubo.as_ref().unwrap(),
             );
 
-            let mat: &Material = bucket.material_res.get();
+            let mat: &Material = bucket.material_res.get().unwrap();
             let texture_uid = mat.get_texture_uid();
 
             if texture_uid != &last_tex {

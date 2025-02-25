@@ -1,9 +1,8 @@
 use std::any::Any;
 use std::rc::Rc;
-use std::sync::{Mutex, MutexGuard};
 use argus_scripting_bind::{ScriptInvocationError, WrappedObject};
 use parking_lot::{ReentrantMutex, ReentrantMutexGuard};
-use resman_rustabi::argus::resman::{Resource, ResourceManager};
+use resman_rs::{Resource, ResourceManager};
 use crate::error::ScriptLoadError;
 use crate::manager::ScriptManager;
 
@@ -35,7 +34,7 @@ impl ScriptContext {
         if mgr.get_media_type_language(&resource.get_prototype().media_type).as_ref() !=
             Some(&self.language) {
             return Err(ScriptLoadError::new(
-                resource.get_prototype().uid,
+                &resource.get_prototype().uid.to_string(),
                 format!(
                     "Resource with media type '{}' cannot be loaded by plugin '{}'",
                     resource.get_prototype().media_type,
@@ -78,7 +77,7 @@ pub fn create_script_context(language: impl Into<String>) -> ScriptContext {
 
 pub fn load_script_with_new_context(uid: impl AsRef<str>)
     -> Result<ScriptContextHandle, ScriptLoadError> {
-    let resource = ResourceManager::get_instance().get_resource(uid.as_ref())
+    let resource = ResourceManager::instance().get_resource(uid.as_ref())
         .map_err(|err| {
             ScriptLoadError::new(
                 uid.as_ref(),
@@ -89,7 +88,7 @@ pub fn load_script_with_new_context(uid: impl AsRef<str>)
             )
         })?;
 
-    let media_type = resource.get_prototype().media_type;
+    let media_type = &resource.get_prototype().media_type;
     let Some(lang) = ScriptManager::instance().get_media_type_language(media_type)
         .map(|s| s.to_owned())
     else {

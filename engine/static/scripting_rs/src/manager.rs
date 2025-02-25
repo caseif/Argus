@@ -8,13 +8,13 @@ use argus_logging::debug;
 use argus_scripting_bind::{FunctionType, IntegralType, ObjectType};
 use core_rustabi::argus::core::{get_current_lifecycle_stage, LifecycleStage};
 use fragile::Fragile;
-use resman_rustabi::argus::resman::{Resource, ResourceErrorReason, ResourceManager};
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex, MutexGuard};
 use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
+use resman_rs::{Resource, ResourceErrorReason, ResourceManager};
 
 static INSTANCE: LazyLock<ScriptManager> = LazyLock::new(|| ScriptManager::new());
 
@@ -110,11 +110,7 @@ impl ScriptManager {
     }
 
     pub fn unregister_language_plugin<P: ScriptLanguagePlugin>(&self) {
-        if let Some((_, loaded_resources)) = self.loaded_resources.remove(P::get_language_name()) {
-            for res in loaded_resources {
-                res.get().release();
-            }
-        }
+        self.loaded_resources.remove(P::get_language_name());
     }
 
     pub fn get_bindings(&self) -> MutexGuard<ScriptBindings> {
@@ -126,7 +122,7 @@ impl ScriptManager {
         lang_name: impl AsRef<str>,
         uid: impl AsRef<str>,
     ) -> Result<Resource, ScriptLoadError> {
-        let res = ResourceManager::get_instance().get_resource(uid.as_ref())
+        let res = ResourceManager::instance().get_resource(uid.as_ref())
             .map_err(|err| {
                 //TODO: return error result
                 let msg = if err.reason == ResourceErrorReason::NotFound {
@@ -156,7 +152,6 @@ impl ScriptManager {
     }
 
     pub fn release_resource(&self, lang_name: impl AsRef<str>, resource: Resource) {
-        resource.release();
         self.loaded_resources
             .get_mut(lang_name.as_ref())
             .unwrap()

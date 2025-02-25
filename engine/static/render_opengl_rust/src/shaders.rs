@@ -18,13 +18,13 @@
 use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::gl_util::*;
-use resman_rustabi::argus::resman::{Resource, ResourceManager};
 use shadertools::shadertools::compile_glsl_to_spirv;
 use spirv_cross_sys::bindings::*;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
+use resman_rs::{Resource, ResourceIdentifier, ResourceManager};
 use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
 use render_rs::common::{Material, Shader, ShaderStage};
 use render_rs::constants::*;
@@ -55,7 +55,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     let mut shader_uids: Vec<String> = Vec::new();
     let mut shader_sources: Vec<String> = Vec::new();
     for shader_res in shaders {
-        let shader: &Shader = shader_res.get();
+        let shader: &Shader = shader_res.get().unwrap();
         shader_uids.push(shader.get_uid().to_string());
         shader_sources.push(String::from_utf8_lossy(shader.get_source()).to_string());
     }
@@ -70,7 +70,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         &shaders
             .iter()
             .map(|shader_res| {
-                let shader: &Shader = shader_res.get();
+                let shader: &Shader = shader_res.get().unwrap();
                 (
                     to_shadertools_stage(shader.get_stage()),
                     String::from_utf8(shader.get_source().to_vec()).unwrap(),
@@ -281,7 +281,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
     let mut have_vert = false;
     let mut have_frag = false;
     for shader_uid in shader_uids {
-        let shader_res = match ResourceManager::get_instance().get_resource(shader_uid.as_ref()) {
+        let shader_res = match ResourceManager::instance().get_resource(shader_uid.as_ref()) {
             Ok(r) => r,
             Err(e) => {
                 panic!("Failed to load shader {} ({:?})", shader_uid.as_ref(), e);
@@ -289,7 +289,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         };
 
         shaders.push(shader_res);
-        let shader: &Shader = shaders.last().unwrap().get();
+        let shader: &Shader = shaders.last().unwrap().get().unwrap();
 
         if shader.get_stage() == ShaderStage::Vertex {
             have_vert = true;
@@ -299,7 +299,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
     }
 
     if !have_vert {
-        let shader_res = match ResourceManager::get_instance().get_resource(SHADER_STD_VERT) {
+        let shader_res = match ResourceManager::instance().get_resource(SHADER_STD_VERT) {
             Ok(r) => r,
             Err(e) => {
                 panic!("Failed to load built-in shader {SHADER_STD_VERT}: {:?}", e);
@@ -309,7 +309,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         shaders.push(shader_res);
     }
     if !have_frag {
-        let shader_res = match ResourceManager::get_instance().get_resource(SHADER_STD_FRAG) {
+        let shader_res = match ResourceManager::instance().get_resource(SHADER_STD_FRAG) {
             Ok(r) => r,
             Err(e) => {
                 panic!("Failed to load built-in shader {SHADER_STD_FRAG}: {:?}", e);
@@ -334,10 +334,6 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
 
     for handle in &compiled_shaders {
         glDetachShader(program_handle, *handle);
-    }
-
-    for shader_res in shaders {
-        shader_res.release();
     }
 
     let mut res: i32 = 0;
@@ -441,13 +437,13 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
 }
 
 pub(crate) fn get_material_program<'a>(
-    linked_programs: &'a mut HashMap<String, LinkedProgram>,
+    linked_programs: &'a mut HashMap<ResourceIdentifier, LinkedProgram>,
     material_res: &Resource,
 ) -> &'a LinkedProgram {
     linked_programs
-        .entry(material_res.get_prototype().uid)
+        .entry(material_res.get_prototype().uid.clone())
         .or_insert_with(|| {
-            let material: &Material = material_res.get();
+            let material: &Material = material_res.get().unwrap();
             link_program(material.get_shader_uids())
         })
 }

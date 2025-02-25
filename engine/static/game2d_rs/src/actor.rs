@@ -18,7 +18,7 @@
 use argus_scripting_bind::script_bind;
 use lowlevel_rs::Handle;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, Vector2f};
-use resman_rustabi::argus::resman::Resource;
+use resman_rs::Resource;
 use render_rs::common::Transform2d;
 use crate::sprite::Sprite;
 

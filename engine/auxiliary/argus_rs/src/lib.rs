@@ -19,6 +19,7 @@
 pub use game2d_rs::update_lifecycle_game2d_rs;
 pub use input_rs::update_lifecycle_input_rs;
 pub use render_rs::update_lifecycle_render_rs;
+pub use resman_rs::update_lifecycle_resman_rs;
 pub use scripting_lua_rs::update_lifecycle_scripting_lua_rs;
 pub use scripting_rs::update_lifecycle_scripting_rs;
 pub use wm_rs::update_lifecycle_wm_rs;
