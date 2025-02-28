@@ -9,5 +9,5 @@ crate-type = ["rlib"]
 
 [dependencies]
 argus_logging = { path = "../../libs/logging" }
-core_rustabi = { path = "../../auxiliary/core_rustabi" }
+core_rs = { path = "../../static/core_rs" }
 wm_rs = { path = "../wm_rs" }

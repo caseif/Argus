@@ -1,8 +1,7 @@
+use std::any::Any;
 use std::time::Duration;
-use core_rustabi::argus::core::ArgusEvent;
 use lowlevel_rustabi::argus::lowlevel::{Vector2i, Vector2u};
-
-pub const EVENT_TYPE_WINDOW: &str = "window";
+use core_rs::ArgusEvent;
 
 /// @brief A type of WindowEvent.
 ///
@@ -47,8 +46,8 @@ pub struct WindowEvent {
 }
 
 impl ArgusEvent for WindowEvent {
-    fn get_type_id() -> &'static str {
-        EVENT_TYPE_WINDOW
+    fn as_any_ref(&self) -> &dyn Any {
+        self
     }
 }
 

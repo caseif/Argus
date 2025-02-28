@@ -4,14 +4,14 @@ version = "0.0.1"
 edition = "2021"
 
 [lib]
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
 
 [features]
 default = []
 opengl = ["dep:render_opengl_rust"]
 
 [dependencies]
-shadertools = { path = "../../libs/shadertools" }
+core_rs = { path = "../../static/core_rs" }
 game2d_rs = { path = "../../static/game2d_rs" }
 input_rs = { path = "../../static/input_rs" }
 render_rs = { path = "../../static/render_rs" }

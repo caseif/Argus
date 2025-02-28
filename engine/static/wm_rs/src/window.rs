@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::time::Duration;
 use bitflags::bitflags;
-use core_rustabi::argus::core::{dispatch_event, get_client_name};
+use core_rs::{dispatch_event, get_client_name, EngineManager};
 use fragile::Fragile;
 use argus_scripting_bind::script_bind;
 use lowlevel_rustabi::argus::lowlevel::{Dirtiable, ValueAndDirtyFlag, Vector2f, Vector2i, Vector2u};

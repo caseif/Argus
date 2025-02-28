@@ -16,11 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::{ffi, mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
+use std::sync::{Arc, Mutex};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use quote::{quote, ToTokens};
 use serde::{Deserialize, Serialize, Serializer};
@@ -28,17 +29,23 @@ use serde::{Deserialize, Serialize, Serializer};
 pub type IsRefableGetter = fn() -> bool;
 pub type TypeIdGetter = fn() -> TypeId;
 
+pub trait ScriptCallbackRef: Send {
+    fn call(&self, params: Vec<WrappedObject>) -> Result<WrappedObject, ScriptInvocationError>;
+}
+
 pub type ProxiedNativeFunction =
     fn(Vec<WrappedObject>) -> Result<WrappedObject, ReflectiveArgumentsError>;
 
 pub type ScriptCallbackEntryPoint = fn(
     params: Vec<WrappedObject>,
-    userdata: *const (),
+    userdata: Arc<Mutex<dyn ScriptCallbackRef>>,
 ) -> Result<WrappedObject, ScriptInvocationError>;
-#[derive(Clone, Copy)]
+
+//#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct WrappedScriptCallback {
     pub entry_point: ScriptCallbackEntryPoint,
-    pub userdata: *const (),
+    pub userdata: Arc<Mutex<dyn ScriptCallbackRef>>,
 }
 
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
@@ -727,7 +734,11 @@ impl WrappedObject {
 
     pub unsafe fn store_internal<T>(&mut self, val: T) {
         assert!(size_of::<T>() <= self.buffer_size);
-        *self.get_raw_mut_ptr().cast() = val;
+        if self.is_populated {
+            *self.get_raw_mut_ptr().cast() = val;
+        } else {
+            ptr::write(self.get_raw_mut_ptr().cast(), val);
+        }
         self.is_populated = true;
     }
 

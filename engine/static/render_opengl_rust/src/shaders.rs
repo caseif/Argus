@@ -19,13 +19,17 @@ use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::gl_util::*;
 use shadertools::shadertools::compile_glsl_to_spirv;
-use spirv_cross_sys::bindings::*;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::{ffi, mem, ptr};
 use lowlevel_rustabi::util::cstr_to_str;
 use resman_rs::{Resource, ResourceIdentifier, ResourceManager};
 use shadertools::glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
+use spirv_cross2::{Compiler, Module};
+use spirv_cross2::compile::CompilableTarget;
+use spirv_cross2::compile::glsl::GlslVersion;
+use spirv_cross2::reflect::ResourceType;
+use spirv_cross2::targets::Glsl;
 use render_rs::common::{Material, Shader, ShaderStage};
 use render_rs::constants::*;
 
@@ -101,17 +105,19 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     let have_gl_spirv = aglet_have_gl_version_4_1() && aglet_have_gl_arb_gl_spirv();
 
     let glsl_ver = if !have_gl_spirv {
-        if aglet_have_gl_version_4_6() {
-            460
-        } else if aglet_have_gl_version_4_3() {
-            430
-        } else if aglet_have_gl_version_4_1() {
-            410
-        } else {
-            330
-        }
+        Some(
+            if aglet_have_gl_version_4_6() {
+                GlslVersion::Glsl460
+            } else if aglet_have_gl_version_4_3() {
+                GlslVersion::Glsl430
+            } else if aglet_have_gl_version_4_1() {
+                GlslVersion::Glsl410
+            } else {
+                GlslVersion::Glsl330
+            }
+        )
     } else {
-        0
+        None
     };
 
     for (stage, spirv_src) in spirv_shaders {
@@ -156,88 +162,25 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             //Logger::default_logger().debug("GL 4.1 profile and/or ARB_gl_spirv is not available, "
             //       "transpiling compiled SPIR-V to GLSL");
 
-            let spv_words: &[u32] = unsafe { mem::transmute(spirv_src.as_slice()) };
-            let mut context: spvc_context = ptr::null_mut();
-            let ctx_res = unsafe { spvc_context_create(&mut context) };
-            if ctx_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to create SPIRV-Cross context: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) }
-                );
-            }
+            let words = spirv_src
+                .chunks(size_of::<u32>())
+                .map(|c| u32::from_ne_bytes(c.try_into().unwrap()))
+                .collect::<Vec<_>>();
+            let module = Module::from_words(words.as_slice());
+            let compiler = Compiler::<Glsl>::new(module).expect("Failed to create SPIR-V context");
 
-            let mut parsed_ir: spvc_parsed_ir = ptr::null_mut();
-            let parse_res = unsafe {
-                spvc_context_parse_spirv(
-                    context,
-                    spv_words.as_ptr(),
-                    spv_words.len(),
-                    &mut parsed_ir,
-                )
-            };
-            if parse_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to parse SPIR-V words: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) }
-                );
-            }
-
-            let mut compiler: spvc_compiler = ptr::null_mut();
-            let compiler_res = unsafe {
-                spvc_context_create_compiler(
-                    context,
-                    SPVC_BACKEND_GLSL,
-                    parsed_ir,
-                    SPVC_CAPTURE_MODE_COPY,
-                    &mut compiler,
-                )
-            };
-            if compiler_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to create SPIRV-Cross GLSL compiler: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
-                );
-            }
-
-            let mut compiler_options: spvc_compiler_options = ptr::null_mut();
-            let options_res = unsafe {
-                spvc_compiler_create_compiler_options(compiler, &mut compiler_options)
-            };
-            if options_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to create SPIRV-Cross compiler options: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
-                );
-            }
-
-            let set_ver_res = unsafe {
-                spvc_compiler_options_set_uint(
-                    compiler_options,
-                    SPVC_COMPILER_OPTION_GLSL_VERSION,
-                    glsl_ver,
-                )
-            };
-            if set_ver_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to set GLSL version for SPIRV-Cross compiler: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
-                );
-            }
-
-            let mut glsl_src_c: *const ffi::c_char = ptr::null_mut();
-            let compile_res = unsafe { spvc_compiler_compile(compiler, &mut glsl_src_c) };
-            if compile_res != SPVC_SUCCESS {
-                panic!(
-                    "Failed to transpile SPIR-V to GLSL: {}",
-                    unsafe { cstr_to_str(spvc_context_get_last_error_string(context)) },
-                );
-            }
+            let mut options = Glsl::options();
+            options.version = glsl_ver.unwrap();
+            
+            let compile_res = compiler.compile(&options).expect("Failed to transpile SPIR-V");
+            let glsl_src: &str = compile_res.as_ref();
+            let glsl_src_c = CString::new(glsl_src).unwrap();
 
             //TODO
             //Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);
 
-            let glsl_src_len = unsafe { ffi::CStr::from_ptr(glsl_src_c).count_bytes() as GLint };
-            glShaderSource(shader_handle, 1, &glsl_src_c, &glsl_src_len);
+            let glsl_src_len = glsl_src.len() as GLint;
+            glShaderSource(shader_handle, 1, &glsl_src_c.as_ptr(), &glsl_src_len);
             glCompileShader(shader_handle);
         }
 

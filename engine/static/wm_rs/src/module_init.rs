@@ -1,12 +1,13 @@
 use std::cell::{RefCell};
 use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
-use core_rustabi::argus::core::*;
+use core_rs::*;
 use sdl2::error::sdl_get_error;
 use sdl2::events::sdl_pump_events;
 use sdl2::hints::{sdl_set_hint, SDL_HINT_APP_NAME, SDL_HINT_VIDEODRIVER};
 use sdl2::{sdl_init, sdl_quit, sdl_quit_subsystem, SdlInitFlags};
 use argus_logging::{crate_logger, debug, info, LogLevel, LogManager, LogSettings, Logger, PreludeComponent};
+use core_rs::register_module;
 use crate::display::init_display;
 use crate::{WindowEvent, WindowManager};
 
@@ -103,16 +104,10 @@ fn check_window_count(_delta: Duration) {
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
+#[register_module(id = "wm", depends(core, scripting))]
+pub fn update_lifecycle_wm_rs(stage: LifecycleStage) {
     match stage {
         LifecycleStage::Load => {
-            // For now we init the log manager from the wm module since it's the
-            // first Rust module to be brought up. Eventually this will happen
-            // in core (or whatever the Rust version will be called).
-            let mut log_settings = LogSettings::default();
-            log_settings.prelude = vec![PreludeComponent::Channel, PreludeComponent::Level];
-            LogManager::initialize(log_settings).expect("Failed to initialize logging");
         }
         LifecycleStage::Init => {
             if cfg!(target_os = "linux") {
@@ -127,7 +122,7 @@ pub unsafe extern "C" fn update_lifecycle_wm_rs(stage: LifecycleStage) {
             register_update_callback(Box::new(check_window_count), Ordering::Standard);
             register_render_callback(Box::new(do_window_loop), Ordering::Standard);
             register_event_handler::<WindowEvent>(
-                Box::new(|event| WindowManager::instance().handle_engine_window_event(event)),
+                |event| WindowManager::instance().handle_engine_window_event(event),
                 TargetThread::Render,
                 Ordering::Standard,
             );

@@ -3,7 +3,9 @@ use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
 use std::ptr::{addr_of, copy_nonoverlapping};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use argus_logging::{debug, warn};
+use fragile::Fragile;
 use argus_scripting_bind::*;
 use lua::bindings::*;
 use num_enum::TryFromPrimitive;
@@ -102,9 +104,28 @@ struct UserData {
     data: UserDataBlob,
 }
 
+#[derive(Clone)]
 struct LuaCallback {
-    state: *mut lua_State,
+    state: Fragile<*mut lua_State>,
     ref_key: i32,
+}
+
+impl ScriptCallbackRef for LuaCallback {
+    fn call(&self, params: Vec<WrappedObject>)
+        -> Result<WrappedObject, ScriptInvocationError> {
+        let state = *self.state.get();
+        let _guard = stack_guard!(state);
+
+        unsafe {
+            lua_rawgeti(state, LUA_REGISTRYINDEX, self.ref_key.into());
+        }
+
+        let state_mutex = to_managed_state(state);
+        let state = state_mutex.lock();
+        unsafe {
+            invoke_lua_function_from_stack(state.deref(), params, None)
+        }
+    }
 }
 
 impl LuaCallback {
@@ -113,26 +134,15 @@ impl LuaCallback {
         // found it
         lua_pushvalue(state.state, index);
         LuaCallback {
-            state: state.state,
+            state: Fragile::new(state.state),
             ref_key: luaL_ref(state.state, LUA_REGISTRYINDEX),
         }
-    }
-
-    unsafe fn call(&self, params: Vec<WrappedObject>)
-        -> Result<WrappedObject, ScriptInvocationError> {
-        let _guard = stack_guard!(self.state);
-
-        lua_rawgeti(self.state, LUA_REGISTRYINDEX, self.ref_key.into());
-
-        let state_mutex = to_managed_state(self.state);
-        let state = state_mutex.lock();
-        invoke_lua_function_from_stack(state.deref(), params, None)
     }
 }
 
 impl Drop for LuaCallback {
     fn drop(&mut self) {
-        unsafe { luaL_unref(self.state, LUA_REGISTRYINDEX, self.ref_key) };
+        unsafe { luaL_unref(*self.state.get(), LUA_REGISTRYINDEX, self.ref_key) };
     }
 }
 
@@ -534,18 +544,18 @@ unsafe fn wrap_param(
                                                  + luaL_typename(state, param_index) + ")");
                 }*/
 
-                let handle = Box::new(LuaCallback::new(state, param_index));
+                let handle = Arc::new(Mutex::new(LuaCallback::new(state, param_index)));
 
                 let f = |
                     params: Vec<WrappedObject>,
-                    data: *const (),
+                    data: Arc<Mutex<dyn ScriptCallbackRef>>,
                 | {
-                    (&*data.cast::<LuaCallback>()).call(params)
+                    (data.lock().unwrap()).call(params)
                 };
 
                 create_callback_object_wrapper(
                     param_def,
-                    WrappedScriptCallback { entry_point: f, userdata: Box::into_raw(handle).cast() }
+                    WrappedScriptCallback { entry_point: f, userdata: handle }
                 )
             }
             IntegralType::Vec |

@@ -23,7 +23,7 @@ use crate::state::*;
 use crate::textures::get_or_load_texture;
 use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
-use core_rustabi::argus::core::{get_screen_space_scale_mode, ScreenSpaceScaleMode};
+use core_rs::{EngineManager, ScreenSpaceScaleMode};
 use lowlevel_rustabi::argus::lowlevel::Vector2u;
 use render_rs::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2d, Viewport};
 use std::ffi::CStr;
@@ -316,15 +316,16 @@ fn compute_proj_matrix(res_hor: u32, res_ver: u32) -> Matrix4x4 {
     let res_hor_f = res_hor as f32;
     let res_ver_f = res_ver as f32;
 
-    let (hor_scale, ver_scale) = match get_screen_space_scale_mode() {
-        ScreenSpaceScaleMode::NormalizeMinDim => {
+    let mode = EngineManager::instance().get_config().screen_scale_mode;
+    let (hor_scale, ver_scale) = match mode {
+        ScreenSpaceScaleMode::NormalizeMinDimension => {
             if res_hor > res_ver {
                 (res_hor_f / res_ver_f, 1.0)
             } else {
                 (1.0, res_ver_f / res_hor_f)
             }
         }
-        ScreenSpaceScaleMode::NormalizeMaxDim => {
+        ScreenSpaceScaleMode::NormalizeMaxDimension => {
             if res_hor > res_ver {
                 (1.0, res_ver_f / res_hor_f)
             } else {

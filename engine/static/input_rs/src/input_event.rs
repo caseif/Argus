@@ -1,11 +1,7 @@
+use std::any::Any;
 use crate::gamepad::HidDeviceInstanceId;
 use argus_scripting_bind::script_bind;
-use core_rustabi::argus::core::{
-    dispatch_event, register_event_handler, ArgusEvent, Ordering, TargetThread,
-};
-
-const EVENT_TYPE_INPUT: &str = "input";
-const EVENT_TYPE_INPUT_DEVICE: &str = "input_device";
+use core_rs::{dispatch_event, register_boxed_event_handler, ArgusEvent, Ordering, TargetThread};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[script_bind]
@@ -34,8 +30,8 @@ pub struct InputEvent {
 }
 
 impl ArgusEvent for InputEvent {
-    fn get_type_id() -> &'static str {
-        EVENT_TYPE_INPUT
+    fn as_any_ref(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -88,8 +84,8 @@ impl InputDeviceEvent {
 }
 
 impl ArgusEvent for InputDeviceEvent {
-    fn get_type_id() -> &'static str {
-        EVENT_TYPE_INPUT_DEVICE
+    fn as_any_ref(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -132,14 +128,17 @@ pub(crate) fn dispatch_axis_event(
 }
 
 #[script_bind]
-pub fn register_input_handler(callback: Box<dyn Fn(&InputEvent)>, ordering: Ordering) {
-    register_event_handler(callback, TargetThread::Update, ordering);
+pub fn register_input_handler(
+    callback: Box<dyn 'static + Send + Fn(&InputEvent)>,
+    ordering: Ordering
+) {
+    register_boxed_event_handler(callback, TargetThread::Update, ordering);
 }
 
 #[script_bind]
 pub fn register_input_device_event_handler(
-    callback: Box<dyn Fn(&InputDeviceEvent)>,
+    callback: Box<dyn 'static + Send + Fn(&InputDeviceEvent)>,
     ordering: Ordering,
 ) {
-    register_event_handler(callback, TargetThread::Update, ordering);
+    register_boxed_event_handler(callback, TargetThread::Update, ordering);
 }

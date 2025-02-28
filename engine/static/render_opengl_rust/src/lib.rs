@@ -39,7 +39,7 @@ use std::time::Duration;
 use argus_logging::{crate_logger, warn};
 use num_enum::UnsafeFromPrimitive;
 
-use core_rustabi::argus::core::*;
+use core_rs::*;
 use resman_rs::{ResourceEvent, ResourceEventType, ResourceManager};
 use render_rs::common::register_render_backend;
 use render_rs::constants::*;
@@ -49,8 +49,8 @@ use crate::gl_renderer::GlRenderer;
 use crate::loader::ShaderLoader;
 use crate::resources::RESOURCES_PACK;
 
-const MODULE_ID: &str = "render_opengl_rust";
-const BACKEND_ID: &str = "opengl_rust";
+const MODULE_ID: &str = "render_opengl";
+const BACKEND_ID: &str = "opengl";
 
 crate_logger!(LOGGER, "argus/render_opengl");
 crate_logger!(GL_LOGGER, "GL");
@@ -203,12 +203,8 @@ fn resource_event_handler(event: &ResourceEvent) {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn update_lifecycle_render_opengl_rust(
-    stage_c: core_rustabi::core_cabi::LifecycleStage
-) {
-    let stage = unsafe { LifecycleStage::unchecked_transmute_from(stage_c) };
-
+#[register_module(id = "render_opengl", depends(core, render, resman, scripting, wm))]
+pub fn update_lifecycle_render_opengl_rust(stage: LifecycleStage) {
     match stage {
         LifecycleStage::PreInit => {
             register_render_backend(BACKEND_ID, activate_opengl_backend);

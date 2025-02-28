@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::mem;
 use argus_logging::debug;
 use argus_scripting_bind::*;
-use core_rustabi::argus::core::{get_scripting_parameters, run_on_game_thread, LifecycleStage};
+use core_rs::{get_scripting_parameters, register_module, run_on_game_thread, LifecycleStage};
 use crate::*;
 
 const INIT_FN_NAME: &str = "init";
@@ -48,8 +48,8 @@ fn apply_type_ids(
     }
 }
 
-#[no_mangle]
-pub extern "C" fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
+#[register_module(id = "scripting", depends(core))]
+pub fn update_lifecycle_scripting_rs(stage: LifecycleStage) {
     match stage {
         LifecycleStage::Init => {
             debug!(LOGGER, "Initializing scripting_rs");

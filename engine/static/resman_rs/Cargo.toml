@@ -12,4 +12,4 @@ arp = { git = "https://github.com/caseif/libarp-rs", rev = "52e8e02" }
 dashmap = "6.1.0"
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
-core_rustabi = { path = "../../auxiliary/core_rustabi" }
+core_rs = { path = "../../static/core_rs" }

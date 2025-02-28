@@ -13,7 +13,7 @@ mod deadzones;
 pub use input_event::*;
 pub use input_manager::*;
 
-use core_rustabi::argus::core::*;
+use core_rs::*;
 use wm_rs::{Window, WindowEvent, WindowEventType, WindowManager};
 use crate::controller::ack_gamepad_disconnects;
 use crate::gamepad::{deinit_gamepads, flush_gamepad_deltas, update_gamepads};
@@ -59,11 +59,8 @@ fn on_render(_delta: Duration) {
     update_gamepads();
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn update_lifecycle_input_rs(
-    stage_ffi: core_rustabi::core_cabi::LifecycleStage
-) {
-    let stage = unsafe { LifecycleStage::unchecked_transmute_from(stage_ffi) };
+#[register_module(id = "input", depends(core, scripting, wm))]
+pub fn update_lifecycle_input_rs(stage: LifecycleStage) {
     match stage {
         LifecycleStage::Init => {
             register_update_callback(Box::new(on_update_early), Ordering::Early);

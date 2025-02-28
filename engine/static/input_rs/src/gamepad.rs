@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::collections::HashMap;
 use argus_logging::{debug, info, warn};
-use core_rustabi::argus::core::dispatch_event;
+use core_rs::dispatch_event;
 use lazy_static::lazy_static;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_scripting_bind::script_bind;
@@ -410,10 +410,12 @@ fn dispatch_gamepad_disconnect_event(
 }
 
 fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
-    for event in sdl_get_events(
+    let events = sdl_get_events(
         SdlEventType::ControllerAxisMotion,
         SdlEventType::ControllerDeviceRemoved
-    ) {
+    )
+        .expect("Failed to get SDL controller events");
+    for event in events {
         match event.data {
             SdlEventData::ControllerButton(data) => {
                 let Some(sdl_button) = BUTTON_MAP_SDL_TO_ARGUS.get(&data.button) else {

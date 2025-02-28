@@ -1,11 +1,11 @@
 use std::collections::{BTreeMap, HashMap};
 use std::io::{stderr, stdout, Write};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::OnceLock;
+use std::sync::{Arc, Barrier, Condvar, Mutex, OnceLock};
 use std::thread;
 use std::thread::JoinHandle;
-use std::time::{Instant, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 use chrono::{DateTime, Local};
 use crate::{LogLevel, LogSettings, PreludeComponent};
 use crate::settings::validate_settings;
@@ -15,8 +15,11 @@ static MANAGER: OnceLock<LogManager> = OnceLock::new();
 pub struct LogManager {
     settings: LogSettings,
     sender: Sender<LoggerCommandWrapper>,
+    join_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
+    flush_signal: Arc<(Mutex<bool>, Condvar)>,
     startup_time: Instant,
     counter: AtomicU64,
+    is_dead: AtomicBool,
 }
 
 impl LogManager {
@@ -24,31 +27,74 @@ impl LogManager {
         &MANAGER.get().unwrap()
     }
 
-    pub fn initialize(settings: LogSettings) -> Result<JoinHandle<()>, ()> {
+    pub fn initialize(settings: LogSettings) -> Result<(), ()> {
         let real_settings = validate_settings(settings);
 
         let (tx, rx) = channel();
 
+        let barrier_main = Arc::new(Barrier::new(2));
+        let barrier_worker = Arc::clone(&barrier_main);
+
+        let join_handle = thread::spawn(move || {
+            barrier_worker.wait();
+            drop(barrier_worker);
+            do_logging_loop(rx, MANAGER.get().unwrap());
+        });
+
+        let startup_time = Instant::now();
         let mgr = LogManager {
             settings: real_settings,
             sender: tx,
-            startup_time: Instant::now(),
+            join_handle: Arc::new(Mutex::new(Some(join_handle))),
+            flush_signal: Arc::new((Mutex::new(false), Condvar::new())),
+            startup_time,
             counter: AtomicU64::new(0),
+            is_dead: AtomicBool::new(false),
         };
         MANAGER.set(mgr).map_err(|_| ())?;
+        barrier_main.wait();
 
-        let join_handle = thread::spawn(move || {
-            do_logging_loop(rx, MANAGER.get().unwrap());
-        });
-        Ok(join_handle)
+        Ok(())
     }
 
-    pub fn deinitialize(&self) -> Result<(), ()> {
-        self.request_halt()
+    pub fn flush(&self, timeout: Duration) -> Result<(), String> {
+        if self.is_dead.load(Ordering::Relaxed) {
+            panic!("LogManager was already killed");
+        }
+
+        let (lock, cv) = &*Arc::clone(&self.flush_signal);
+        let mut flush_pending = lock.lock().unwrap();
+        *flush_pending = true;
+        let request_time = Instant::now();
+        loop {
+            let result = cv.wait_timeout(flush_pending, Duration::from_millis(10)).unwrap();
+            flush_pending = result.0;
+            if !*flush_pending {
+                return Ok(());
+            }
+
+            let cur_time = Instant::now();
+            if cur_time - request_time > timeout {
+                return Err("Timed out while waiting for log manager to perform flush".to_owned());
+            }
+        }
+    }
+
+    pub fn join(&self) -> Result<(), ()> {
+        if self.is_dead.swap(true, Ordering::Relaxed) {
+            panic!("LogManager was already killed");
+        }
+
+        self.request_halt()?;
+        self.join_handle.lock().map_err(|_| ())?.take().unwrap().join().map_err(|_| ())
     }
 
     pub(crate) fn stage_message(&self, channel: String, level: LogLevel, message: String)
                      -> Result<(), StagedMessage> {
+        if self.is_dead.load(Ordering::Relaxed) {
+            panic!("LogManager was already killed");
+        }
+
         if level < self.settings.min_level {
             return Ok(());
         }
@@ -76,21 +122,26 @@ impl LogManager {
             command: LoggerCommand::Halt,
             ordinal: self.next_ordinal(),
         };
-        self.sender.send(cmd).map_err(|_| ())
+        self.sender.send(cmd).map_err(|_| ())?;
+        self.join_handle
+            .lock().unwrap()
+            .take().unwrap()
+            .join()
+            .map_err(|_| ())?;
+        Ok(())
     }
 }
 
 impl Drop for LogManager {
     fn drop(&mut self) {
         // don't care if it was already deinitialized
-        _ = self.deinitialize();
+        //_ = self.join();
     }
 }
 
 pub(crate) fn get_log_manager() -> Option<&'static LogManager> {
     MANAGER.get()
 }
-
 
 #[derive(Clone, Debug)]
 pub(crate) struct StagedMessage {
@@ -198,9 +249,24 @@ fn do_logging_loop(receiver: Receiver<LoggerCommandWrapper>, mgr: &'static LogMa
             }
             next_ordinal += 1;
         }
+
+        let (flushed_time_mutex, flush_cv) = &*Arc::clone(&mgr.flush_signal);
+        let mut flush_pending = flushed_time_mutex.lock().unwrap();
+        if *flush_pending {
+            // flush all buffered messages
+            let sorted_buffer = buffered_cmds.into_iter().collect::<BTreeMap<_, _>>();
+            buffered_cmds = HashMap::new();
+            for (_, cmd) in sorted_buffer.into_iter() {
+                if let LoggerCommand::EmitMessage(msg) = cmd {
+                    emit_log_entry(mgr, msg);
+                }
+            }
+            *flush_pending = false;
+            flush_cv.notify_all();
+        }
     }
 
-    // flush remaining buffered message
+    // flush remaining buffered messages
     for (_, cmd) in buffered_cmds.into_iter().collect::<BTreeMap<_, _>>() {
         if let LoggerCommand::EmitMessage(msg) = cmd {
             emit_log_entry(mgr, msg);

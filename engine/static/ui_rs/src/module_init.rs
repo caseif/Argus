@@ -1,6 +1,6 @@
-use core_rustabi::argus::core::LifecycleStage;
+use core_rs::{register_module, LifecycleStage};
 
-#[no_mangle]
-pub extern "C" fn update_lifecycle_ui_rs(stage: LifecycleStage) {
+#[register_module(id = "ui", depends(core, input, render, resman, wm))]
+pub fn update_lifecycle_ui_rs(stage: LifecycleStage) {
     //TODO
 }

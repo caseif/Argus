@@ -3,6 +3,7 @@ use std::mem::MaybeUninit;
 use std::ops::Deref;
 use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use crate::bindings::*;
+use crate::error::{sdl_get_error, SdlError};
 use crate::gamecontroller::{SdlGameControllerAxis, SdlGameControllerButton};
 use crate::internal::util::c_str_to_string_lossy;
 use crate::joystick::SdlJoystickPowerLevel;
@@ -872,7 +873,7 @@ fn convert_sdl_event(event: &SDL_Event) -> SdlEvent {
 }
 
 fn peep_events(action: SDL_eventaction, min_type: SdlEventType, max_type: SdlEventType)
-    -> Vec<SdlEvent> {
+    -> Result<Vec<SdlEvent>, SdlError> {
     unsafe {
         let mut event_vec = Vec::new();
         let mut buffer: MaybeUninit<[SDL_Event; 8]> = MaybeUninit::zeroed();
@@ -884,6 +885,9 @@ fn peep_events(action: SDL_eventaction, min_type: SdlEventType, max_type: SdlEve
                 u32::from(min_type),
                 u32::from(max_type),
             );
+            if count < 0 {
+                return Err(sdl_get_error());
+            }
             if count == 0 {
                 break;
             }
@@ -893,15 +897,17 @@ fn peep_events(action: SDL_eventaction, min_type: SdlEventType, max_type: SdlEve
                     .map(convert_sdl_event)
             );
         }
-        event_vec
+        Ok(event_vec)
     }
 }
 
-pub fn sdl_peek_events(min_type: SdlEventType, max_type: SdlEventType) -> Vec<SdlEvent> {
+pub fn sdl_peek_events(min_type: SdlEventType, max_type: SdlEventType)
+    -> Result<Vec<SdlEvent>, SdlError> {
     peep_events(SDL_PEEKEVENT, min_type, max_type)
 }
 
-pub fn sdl_get_events(min_type: SdlEventType, max_type: SdlEventType) -> Vec<SdlEvent> {
+pub fn sdl_get_events(min_type: SdlEventType, max_type: SdlEventType)
+    -> Result<Vec<SdlEvent>, SdlError> {
     peep_events(SDL_GETEVENT, min_type, max_type)
 }
 

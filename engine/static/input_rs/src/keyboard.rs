@@ -388,7 +388,8 @@ fn dispatch_events(window: &Window, key: KeyboardScancode, release: bool) {
 }
 
 fn handle_keyboard_events() {
-    let events = sdl_get_events(SdlEventType::KeyDown, SdlEventType::KeyUp);
+    let events = sdl_get_events(SdlEventType::KeyDown, SdlEventType::KeyUp)
+        .expect("Failed to get SDL key events");
     for event in events {
         let SdlEventData::Keyboard(data) = event.data else { continue; };
         if data.repeat != 0 {

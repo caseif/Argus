@@ -1,4 +1,5 @@
-use core_rustabi::argus::core::ArgusEvent;
+use std::any::Any;
+use core_rs::ArgusEvent;
 use crate::{Resource, ResourcePrototype};
 
 pub struct ResourceEvent {
@@ -14,8 +15,8 @@ pub enum ResourceEventType {
 }
 
 impl ArgusEvent for ResourceEvent {
-    fn get_type_id() -> &'static str {
-        "resource"
+    fn as_any_ref(&self) -> &dyn Any {
+        self
     }
 }
 

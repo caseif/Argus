@@ -10,11 +10,11 @@ crate-type = ["rlib"]
 [dependencies]
 argus_logging = { path = "../../libs/logging" }
 argus_scripting_bind = { path = "../../libs/scripting_bind" }
+core_rs = { path = "../../static/core_rs" }
 lowlevel_rs = { path = "../../libs/lowlevel_rs" }
 resman_rs = { path = "../../static/resman_rs" }
 wm_rs = { path = "../wm_rs" }
 lowlevel_rustabi = { path = "../../auxiliary/lowlevel_rustabi" }
-core_rustabi = { path = "../../auxiliary/core_rustabi" }
 dashmap = "6.1.0"
 lazy_static = "1.5.0"
 lodepng = "3.10.7"

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Duration;
 use argus_logging::warn;
 use bitflags::bitflags;
-use core_rustabi::argus::core::{dispatch_event, get_current_lifecycle_stage, LifecycleStage};
+use core_rs::{dispatch_event, get_current_lifecycle_stage, LifecycleStage};
 use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
 use argus_scripting_bind::script_bind;
@@ -294,7 +294,9 @@ impl WindowManager {
     }
 
     pub(crate) fn handle_sdl_window_events(&self) {
-        for event in sdl_get_events(SdlEventType::WindowEvent, SdlEventType::WindowEvent) {
+        let events = sdl_get_events(SdlEventType::WindowEvent, SdlEventType::WindowEvent)
+            .expect("Failed to get SDL window events");
+        for event in events {
             let SdlEventData::Window(event_data) = event.data
             else { panic!("Event data mismatch for window event") };
             self.handle_sdl_window_event(&event_data);

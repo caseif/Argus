@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 use argus_logging::{debug, info, warn};
-use core_rustabi::argus::core::get_preferred_render_backends;
+use core_rs::EngineManager;
 use lazy_static::lazy_static;
 use crate::LOGGER;
 
@@ -91,11 +91,11 @@ fn try_backends(
 }
 
 pub(crate) fn activate_backend() {
-    let backends = get_preferred_render_backends();
+    let backends = &EngineManager::instance().get_config().preferred_render_backends;
 
     let mut attempted_backends = Vec::new();
 
-    if try_backends(&backends, &mut attempted_backends) {
+    if try_backends(backends, &mut attempted_backends) {
         return;
     }
 

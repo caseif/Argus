@@ -126,7 +126,7 @@ impl ResourceManager {
 
         let resource_obj = loader.load_resource(self, &prototype, &mut reader, size)?;
 
-        debug!(LOGGER, "Loaded loose resource {}", uid);
+        debug!(LOGGER, "Loaded resource {}", uid);
 
         Ok(Resource::of(prototype, resource_obj))
     }
@@ -340,11 +340,12 @@ impl ResourceManager {
                         warn!(
                             LOGGER,
                             "Discovered filesystem resource {} with unknown extension {}, ignoring",
-                            cur_uid,
+                            new_uid,
                             ext,
                         );
                         continue;
                     };
+                    debug!(LOGGER, "Discovered filesystem resource {}", new_uid);
                     self.fs_resources.insert(new_uid, (child_path.clone(), media_type.to_owned()));
                 } else if child_path.is_dir() {
                     let dir_name_os = child.file_name();

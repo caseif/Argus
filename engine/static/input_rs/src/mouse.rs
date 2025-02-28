@@ -153,7 +153,9 @@ fn dispatch_mouse_axis_events(window: &Window, x: f64, y: f64, dx: f64, dy: f64)
 }
 
 fn handle_mouse_events() {
-    for event in sdl_get_events(SdlEventType::MouseMotion, SdlEventType::MouseButtonUp) {
+    let events = sdl_get_events(SdlEventType::MouseMotion, SdlEventType::MouseButtonUp)
+        .expect("Failed to get SDL mouse events");
+    for event in events {
         match event.data {
             SdlEventData::MouseMotion(data) => {
                 let Some(window) = (match SdlWindow::from_id(data.window_id) {

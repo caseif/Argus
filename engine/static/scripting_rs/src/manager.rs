@@ -6,7 +6,7 @@ use crate::util::{get_qualified_field_name, get_qualified_function_name, is_boun
 use crate::LOGGER;
 use argus_logging::debug;
 use argus_scripting_bind::{FunctionType, IntegralType, ObjectType};
-use core_rustabi::argus::core::{get_current_lifecycle_stage, LifecycleStage};
+use core_rs::{get_current_lifecycle_stage, LifecycleStage};
 use fragile::Fragile;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;

@@ -1,0 +1,15 @@
+[package]
+name = "argus_bootstrap_rs"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "argus_bootstrap_rs"
+path = "src/bin.rs"
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_rs = { path = "../../auxiliary/argus_rs" }
+core_rs = { path = "../../static/core_rs" }
+clap = { version = "4.5.31", features = ["derive"] }
+ctrlc = "3.4.5"

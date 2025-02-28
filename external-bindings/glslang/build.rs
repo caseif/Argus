@@ -48,4 +48,13 @@ pub fn main() {
         .expect("Failed to generate bindings");
 
     bindings.write_to_file(bindings_path).expect("Failed to write bindings");
+
+    println!("cargo:rustc-link-lib=stdc++");
+    println!("cargo:rustc-link-lib=glslang");
+    println!("cargo:rustc-link-lib=SPIRV-Tools");
+    println!("cargo:rustc-link-lib=SPIRV-Tools-diff");
+    println!("cargo:rustc-link-lib=SPIRV-Tools-lint");
+    println!("cargo:rustc-link-lib=SPIRV-Tools-opt");
+    println!("cargo:rustc-link-lib=SPIRV-Tools-reduce");
+    println!("cargo:rustc-link-lib=SPIRV-Tools-shared");
 }

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use core_rustabi::argus::core::{register_update_callback, LifecycleStage, Ordering};
+use core_rs::{register_module, register_update_callback, LifecycleStage, Ordering};
 use num_enum::UnsafeFromPrimitive;
 use resman_rs::ResourceManager;
 use crate::constants::RESOURCE_TYPE_SPRITE;
@@ -32,10 +32,8 @@ pub mod world_layer;
 mod constants;
 mod sprite_loader;
 
-#[no_mangle]
-pub unsafe extern "C" fn update_lifecycle_game2d_rs(stage_ffi: core_rustabi::core_cabi::LifecycleStage) {
-    let stage = unsafe { LifecycleStage::unchecked_transmute_from(stage_ffi) };
-
+#[register_module(id = "game2d", depends(core, resman, scripting, wm, input, render))]
+pub fn update_lifecycle_game2d_rs(stage: LifecycleStage) {
     match stage {
         LifecycleStage::Load => {}
         LifecycleStage::PreInit => {}

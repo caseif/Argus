@@ -52,4 +52,6 @@ pub fn main() {
         .expect("Failed to generate bindings");
 
     bindings.write_to_file(bindings_path).expect("Failed to write bindings");
+
+    println!("cargo:rustc-link-lib=lua");
 }

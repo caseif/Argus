@@ -757,21 +757,24 @@ fn gen_fn_binding_code(
             let wrappable_type_ident = format_ident!("__script_bind_{fn_name}_param_{i}_wrapper");
 
             callback_impls_tokens.push(quote_spanned! {call_site_span=>
-                #[derive(::std::clone::Clone, ::std::marker::Copy)]
+                //#[derive(::std::clone::Clone, ::std::marker::Copy)]
+                #[derive(::std::clone::Clone)]
                 struct #wrappable_type_ident {
                     entry_point: ::argus_scripting_bind::ScriptCallbackEntryPoint,
-                    userdata: *const (),
+                    userdata: ::std::sync::Arc<::std::sync::Mutex<dyn ::argus_scripting_bind::ScriptCallbackRef>>,
                 }
 
                 impl ::std::convert::Into<#syn_type> for #wrappable_type_ident {
                     fn into(self) -> #syn_type {
-
                         Box::new(move |#(#proxy_signature_param_tokens),*| {
                             let params_wrapped = vec![#(#callback_invoke_tokens),*];
                             <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
                             unwrap_as_value(
                                 unsafe {
-                                    &(self.entry_point)(params_wrapped, self.userdata)
+                                    &(self.entry_point)(
+                                        params_wrapped,
+                                        ::std::sync::Arc::clone(&self.userdata)
+                                    )
                                         .expect("Failed to invoke script callback")
                                 }
                             )
@@ -819,7 +822,13 @@ fn gen_fn_binding_code(
                             "Wrong object type"
                         );
                         unsafe {
-                            let proxied = unsafe { *wrapper.get_ptr::<Self>() };
+                            let proxied = unsafe {
+                                <
+                                    ::argus_scripting_bind::WrappedScriptCallback
+                                    as
+                                    ::std::clone::Clone
+                                >::clone(&*wrapper.get_ptr::<Self>())
+                            };
                             #wrappable_type_ident {
                                 entry_point: proxied.entry_point,
                                 userdata: proxied.userdata,
