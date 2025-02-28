@@ -49,12 +49,12 @@ pub fn main() {
 
     bindings.write_to_file(bindings_path).expect("Failed to write bindings");
 
+    #[cfg(all(target_family = "unix", not(target_os = "macos")))]
     println!("cargo:rustc-link-lib=stdc++");
+
     println!("cargo:rustc-link-lib=glslang");
     println!("cargo:rustc-link-lib=SPIRV-Tools");
-    println!("cargo:rustc-link-lib=SPIRV-Tools-diff");
     println!("cargo:rustc-link-lib=SPIRV-Tools-lint");
     println!("cargo:rustc-link-lib=SPIRV-Tools-opt");
     println!("cargo:rustc-link-lib=SPIRV-Tools-reduce");
-    println!("cargo:rustc-link-lib=SPIRV-Tools-shared");
 }

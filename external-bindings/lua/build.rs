@@ -53,5 +53,22 @@ pub fn main() {
 
     bindings.write_to_file(bindings_path).expect("Failed to write bindings");
 
-    println!("cargo:rustc-link-lib=lua");
+    let liblua_name = get_lua_lib_name();
+    println!("cargo:rustc-link-lib=dylib={}", liblua_name);
+}
+
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
+fn get_lua_lib_name() -> String {
+    if let Ok(lib) = pkg_config::probe_library("lua") {
+        lib.libs[0].clone()
+    } else if pkg_config::probe_library("lua5.4").is_ok() {
+        "lua5.4".to_owned()
+    } else {
+        panic!("Lua library could not be found");
+    }
+}
+
+#[cfg(not(all(target_family = "unix", not(target_os = "macos"))))]
+fn get_lua_lib_name() -> String {
+    "lua5.4".to_owned()
 }
