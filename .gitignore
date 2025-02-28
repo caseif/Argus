@@ -465,8 +465,5 @@ zconf.h.included
 cmake-build-*/
 venv/
 
-/Cargo.lock
-/engine/auxiliary/*/Cargo.lock
-/engine/dynamic/*/Cargo.lock
-/engine/libs/*/Cargo.lock
-/engine/static/*/Cargo.lock
+Cargo.lock
+!/bootstrap/Cargo.lock
