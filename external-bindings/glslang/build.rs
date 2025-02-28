@@ -41,7 +41,7 @@ pub fn main() {
         .prepend_enum_name(false)
         .merge_extern_blocks(true)
         .layout_tests(false)
-        .allowlist_file(format!("^.*[/\\\\]glslang[/\\\\](.+[/\\\\])*.+\\.h(pp)?$"))
+        .allowlist_file("^.*[/\\\\]glslang[/\\\\](.+[/\\\\])*.+\\.h(pp)?$")
         .allowlist_recursively(false)
         .clang_arg("-std=c11")
         .generate()

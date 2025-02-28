@@ -1,0 +1,25 @@
+[package]
+name = "argus_input"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_input"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+argus_util = { path = "../../libs/argus_util" }
+
+argus_core = { path = "../core" }
+argus_resman = { path = "../resman" }
+argus_wm = { path = "../wm" }
+
+sdl2 = { path = "../../../external-bindings/sdl2" }
+
+bitmask = { workspace = true }
+dashmap = { workspace = true }
+lazy_static = { workspace = true }
+num_enum = { workspace = true }
+parking_lot = { workspace = true }

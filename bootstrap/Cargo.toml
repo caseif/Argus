@@ -1,0 +1,17 @@
+[package]
+name = "argus_bootstrap"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "argus_bootstrap"
+path = "src/bin.rs"
+
+[dependencies]
+argus_logging = { path = "../engine/libs/logging" }
+
+argus = { path = "../engine" }
+argus_core = { path = "../engine/modules/core" }
+
+clap = { workspace = true, features = ["derive"] }
+ctrlc = { workspace = true }

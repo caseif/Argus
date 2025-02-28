@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+    "bootstrap",
+    "engine",
+    "engine/libs/*",
+    "engine/modules/*",
+    "external-bindings/*",
+]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+
+[workspace.dependencies]
+arp = { git = "https://github.com/caseif/libarp-rs", rev = "52e8e02" }
+bindgen = "0.71.1"
+bitflags = "2.8.0"
+bitmask = "0.5.0"
+chrono = "0.4.39"
+clap = "4.5.31"
+ctrlc = "3.4.5"
+dashmap = "6.1.0"
+fragile = "2.0.0"
+glsl = "6.0"
+itertools = "0.14.0"
+lazy_static = "1.5.0"
+libc = "0.2"
+linkme = "0.3.31"
+lodepng = "3.11.0"
+num_enum = "0.7.3"
+parking_lot = "0.12.3"
+quote = "1.0.38"
+proc-macro2 = "1.0.93"
+rgb = "0.8.50"
+serde = "1.0.213"
+serde_json = "1.0.132"
+serde_valid = "1.0.5"
+spirv-cross2 = "0.4.6"
+syn = "2.0.98"
+uuid = "1.15.1"

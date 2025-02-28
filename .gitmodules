@@ -1,21 +1,9 @@
-[submodule "external/libs/libpng"]
-	path = external/libs/libpng
-	url = git@github.com:glennrp/libpng.git
-[submodule "external/libs/zlib"]
-	path = external/libs/zlib
-	url = git@github.com:madler/zlib.git
-[submodule "external/libs/libarp"]
-	path = external/libs/libarp
-	url = git@github.com:caseif/libarp.git
 [submodule "external/tooling/aglet"]
 	path = external/tooling/aglet
 	url = git@github.com:caseif/Aglet.git
 [submodule "external/tooling/abacus"]
 	path = external/tooling/abacus
 	url = git@github.com:caseif/Abacus
-[submodule "external/libs/json"]
-	path = external/libs/json
-	url = git@github.com:nlohmann/json.git
 [submodule "external/libs/Vulkan-Headers"]
 	path = external/libs/Vulkan-Headers
 	url = git@github.com:KhronosGroup/Vulkan-Headers.git
@@ -25,15 +13,9 @@
 [submodule "external/libs/glslang"]
 	path = external/libs/glslang
 	url = git@github.com:KhronosGroup/glslang.git
-[submodule "external/libs/angelscript"]
-	path = external/libs/angelscript
-	url = git@github.com:codecat/angelscript-mirror.git
 [submodule "external/libs/lua"]
 	path = external/libs/lua
 	url = git@github.com:lua/lua.git
-[submodule "external/test/libs/catch2"]
-	path = external/test/libs/catch2
-	url = https://github.com/catchorg/Catch2.git
 [submodule "external/libs/sdl2"]
 	path = external/libs/sdl2
 	url = https://github.com/libsdl-org/SDL.git
@@ -43,6 +25,3 @@
 [submodule "external/libs/SPIRV-Headers"]
 	path = external/libs/SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
-[submodule "external/tooling/corrosion"]
-	path = external/tooling/corrosion
-	url = https://github.com/corrosion-rs/corrosion.git

@@ -1,0 +1,17 @@
+[package]
+name = "argus_resman"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_resman"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+
+argus_core = { path = "../core" }
+
+arp = { workspace = true }
+dashmap = { workspace = true }

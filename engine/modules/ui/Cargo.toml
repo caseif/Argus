@@ -1,0 +1,17 @@
+[package]
+name = "argus_ui"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_ui"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+
+argus_core = { path = "../core" }
+argus_input = { path = "../input" }
+argus_render = { path = "../render" }
+argus_resman = { path = "../resman" }
+argus_wm = { path = "../wm" }

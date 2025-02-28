@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#![feature(used_with_arg)]
+
 use std::any::TypeId;
 pub use argus_scripting_bind_macros::*;
 pub use argus_scripting_types::*;

@@ -1,0 +1,14 @@
+[package]
+name = "argus_sound"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_sound"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+
+argus_core = { path = "../core" }
+argus_wm = { path = "../wm" }

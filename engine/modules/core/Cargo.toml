@@ -1,0 +1,21 @@
+[package]
+name = "argus_core"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_core"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_core_macros = { path = "../../libs/argus_core_macros" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+argus_util = { path = "../../libs/argus_util" }
+
+arp = { workspace = true }
+fragile = { workspace = true }
+itertools = { workspace = true }
+linkme = { workspace = true, features = ["used_linker"] }
+num_enum = { workspace = true }
+parking_lot = { workspace = true }

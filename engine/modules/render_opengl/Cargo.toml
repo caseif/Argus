@@ -1,0 +1,30 @@
+[package]
+name = "argus_render_opengl"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_render_opengl"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+argus_shadertools = { path = "../../libs/shadertools", default-features = false }
+argus_util = { path = "../../libs/argus_util" }
+
+argus_core = { path = "../core" }
+argus_render = { path = "../render" }
+argus_resman = { path = "../resman" }
+argus_wm = { path = "../wm" }
+
+glslang = { path = "../../../external-bindings/glslang" }
+
+lazy_static = { workspace = true }
+libc = { workspace = true }
+num_enum = { workspace = true }
+spirv-cross2 = { workspace = true, features = ["glsl"] }
+uuid = { workspace = true, features = ["v4"] }
+
+[build-dependencies]
+arp = { workspace = true, default-features = false }

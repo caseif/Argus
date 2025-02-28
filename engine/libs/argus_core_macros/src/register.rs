@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
-use quote::{format_ident, quote, quote_spanned};
+use quote::{format_ident, quote};
 use syn::{parse_macro_input, parse_quote, ItemFn, LitStr, Path};
 
 const ARG_CRATE: &str = "crate";
@@ -10,7 +10,7 @@ const ARG_DEPENDS_ON: &str = "depends";
 pub(crate) fn register_module(args: TokenStream, input: TokenStream) -> TokenStream {
     let target = parse_macro_input!(input as ItemFn);
 
-    let mut core_path_custom: Option<Path> = Some(parse_quote! { ::core_rs });
+    let mut core_path_custom: Option<Path> = Some(parse_quote! { ::argus_core });
     let mut args_obj = RegisterArgs::default();
     let args_parser = syn::meta::parser(|meta| {
         if meta.path.is_ident(ARG_CRATE) {

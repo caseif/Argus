@@ -1,0 +1,13 @@
+[package]
+name = "argus_util"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_util"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_scripting_bind = { path = "../scripting_bind" }
+
+serde = { workspace = true, features = ["derive"] }

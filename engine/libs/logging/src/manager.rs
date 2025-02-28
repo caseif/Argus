@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::io::{stderr, stdout, Write};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Barrier, Condvar, Mutex, OnceLock};
+use std::sync::{Arc, Barrier, Condvar, Mutex, OnceLock, RwLock};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime};
@@ -15,11 +15,10 @@ static MANAGER: OnceLock<LogManager> = OnceLock::new();
 pub struct LogManager {
     settings: LogSettings,
     sender: Sender<LoggerCommandWrapper>,
-    join_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
+    join_handle: Arc<RwLock<Option<JoinHandle<()>>>>,
     flush_signal: Arc<(Mutex<bool>, Condvar)>,
     startup_time: Instant,
     counter: AtomicU64,
-    is_dead: AtomicBool,
 }
 
 impl LogManager {
@@ -45,11 +44,10 @@ impl LogManager {
         let mgr = LogManager {
             settings: real_settings,
             sender: tx,
-            join_handle: Arc::new(Mutex::new(Some(join_handle))),
+            join_handle: Arc::new(RwLock::new(Some(join_handle))),
             flush_signal: Arc::new((Mutex::new(false), Condvar::new())),
             startup_time,
             counter: AtomicU64::new(0),
-            is_dead: AtomicBool::new(false),
         };
         MANAGER.set(mgr).map_err(|_| ())?;
         barrier_main.wait();
@@ -58,9 +56,11 @@ impl LogManager {
     }
 
     pub fn flush(&self, timeout: Duration) -> Result<(), String> {
-        if self.is_dead.load(Ordering::Relaxed) {
-            panic!("LogManager was already killed");
-        }
+        // by holding onto this reference we prevent the thread from being
+        // joined until this function finishes executing
+        let Some(_handle) = self.join_handle.read().unwrap().as_ref() else {
+            panic!("LogManager thread was already halted");
+        };
 
         let (lock, cv) = &*Arc::clone(&self.flush_signal);
         let mut flush_pending = lock.lock().unwrap();
@@ -81,19 +81,21 @@ impl LogManager {
     }
 
     pub fn join(&self) -> Result<(), ()> {
-        if self.is_dead.swap(true, Ordering::Relaxed) {
-            panic!("LogManager was already killed");
-        }
+        let Some(handle) = self.join_handle.write().unwrap().take() else {
+            panic!("Log manager thread was already halted");
+        };
 
         self.request_halt()?;
-        self.join_handle.lock().map_err(|_| ())?.take().unwrap().join().map_err(|_| ())
+        handle.join().map_err(|_| ())
     }
 
     pub(crate) fn stage_message(&self, channel: String, level: LogLevel, message: String)
-                     -> Result<(), StagedMessage> {
-        if self.is_dead.load(Ordering::Relaxed) {
-            panic!("LogManager was already killed");
-        }
+        -> Result<(), StagedMessage> {
+        // by holding onto this reference we prevent the thread from being
+        // joined until this function finishes executing
+        let Some(_handle) = self.join_handle.read().unwrap().as_ref() else {
+            panic!("Log manager thread was already halted");
+        };
 
         if level < self.settings.min_level {
             return Ok(());
@@ -123,11 +125,6 @@ impl LogManager {
             ordinal: self.next_ordinal(),
         };
         self.sender.send(cmd).map_err(|_| ())?;
-        self.join_handle
-            .lock().unwrap()
-            .take().unwrap()
-            .join()
-            .map_err(|_| ())?;
         Ok(())
     }
 }

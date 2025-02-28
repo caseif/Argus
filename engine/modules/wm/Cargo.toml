@@ -1,0 +1,22 @@
+[package]
+name = "argus_wm"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "argus_wm"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_scripting_bind = { path = "../../libs/scripting_bind" }
+argus_util = { path = "../../libs/argus_util" }
+
+argus_core = { path = "../core" }
+
+sdl2 = { path = "../../../external-bindings/sdl2" }
+
+bitflags = { workspace = true }
+dashmap = { workspace = true }
+fragile = { workspace = true }
+num_enum = { workspace = true }
