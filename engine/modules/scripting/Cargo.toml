@@ -17,6 +17,5 @@ argus_resman = { path = "../resman" }
 dashmap = { workspace = true }
 fragile = { workspace = true }
 linkme = { workspace = true }
-num_enum = { workspace = true }
 parking_lot = { workspace = true }
 serde_json = { workspace = true }

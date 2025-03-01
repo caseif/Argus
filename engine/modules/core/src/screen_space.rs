@@ -1,8 +1,8 @@
 pub struct ScreenSpace {
-    left: f32,
-    right: f32,
-    top: f32,
-    bottom: f32,
+    pub left: f32,
+    pub right: f32,
+    pub top: f32,
+    pub bottom: f32,
 }
 
 /// Controls how the screen space is scaled with respect to window

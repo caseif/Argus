@@ -18,8 +18,6 @@
 
 #![feature(used_with_arg)]
 
-extern crate glslang;
-
 pub(crate) mod aglet;
 
 pub(crate) mod loader;
@@ -39,7 +37,6 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 use argus_logging::{crate_logger, warn};
-use num_enum::UnsafeFromPrimitive;
 use argus_core::{register_event_handler, register_module, LifecycleStage, Ordering, TargetThread};
 use argus_render::common::register_render_backend;
 use argus_render::constants::{RESOURCE_TYPE_MATERIAL, RESOURCE_TYPE_SHADER_GLSL_FRAG, RESOURCE_TYPE_SHADER_GLSL_VERT};
@@ -50,7 +47,6 @@ use crate::gl_renderer::GlRenderer;
 use crate::loader::ShaderLoader;
 use crate::resources::RESOURCES_PACK;
 
-const MODULE_ID: &str = "render_opengl";
 const BACKEND_ID: &str = "opengl";
 
 crate_logger!(LOGGER, "argus/render_opengl");
@@ -77,13 +73,13 @@ fn test_opengl_support() -> Result<(), ()> {
         match gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore.into()) {
             Ok(ctx) => ctx,
             Err(e) => {
-                warn!(GL_LOGGER, "Failed to create GL context: {e}");
+                warn!(LOGGER, "Failed to create GL context: {e}");
                 return Err(());
             }
         };
 
     if let Err(rc) = gl_make_context_current(&mut window, &gl_context) {
-        warn!(GL_LOGGER, "Failed to make GL context current ({rc})");
+        warn!(LOGGER, "Failed to make GL context current ({rc})");
         return Err(());
     }
 
@@ -95,8 +91,7 @@ fn test_opengl_support() -> Result<(), ()> {
             AgletError::MinVersion => "Argus requires support for OpenGL 3.3 or higher",
             AgletError::MissingExtension => "Required OpenGL extensions are not available",
         };
-        //TODO: use proper logger
-        warn!(GL_LOGGER, err_msg);
+        warn!(LOGGER, "{err_msg}");
         return Err(());
     }
 
@@ -205,7 +200,7 @@ fn resource_event_handler(event: &ResourceEvent) {
 }
 
 #[register_module(id = "render_opengl", depends(core, render, resman, scripting, wm))]
-pub fn update_lifecycle_render_opengl_rust(stage: LifecycleStage) {
+pub fn update_lifecycle_render_opengl(stage: LifecycleStage) {
     match stage {
         LifecycleStage::PreInit => {
             register_render_backend(BACKEND_ID, activate_opengl_backend);
@@ -240,7 +235,7 @@ pub fn update_lifecycle_render_opengl_rust(stage: LifecycleStage) {
             }
 
             ResourceManager::instance().add_memory_package(RESOURCES_PACK)
-                .expect("Failed to load in-memory resources for render_opengl_rust");
+                .expect("Failed to load in-memory resources for render_opengl");
         }
         LifecycleStage::PostDeinit => {
             gl_unload_library();

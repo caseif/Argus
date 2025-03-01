@@ -9,7 +9,6 @@ mod resources;
 mod loader;
 
 use argus_logging::{debug, info, warn};
-use num_enum::UnsafeFromPrimitive;
 use argus_core::*;
 use argus_resman::ResourceManager;
 use argus_wm::WindowManager;

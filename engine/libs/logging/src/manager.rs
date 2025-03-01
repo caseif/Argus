@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::io::{stderr, stdout, Write};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Barrier, Condvar, Mutex, OnceLock, RwLock};
 use std::thread;

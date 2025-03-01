@@ -5,7 +5,7 @@ edition.workspace = true
 
 [lib]
 name = "argus_core_macros"
-crate-type = ["proc-macro"]
+proc-macro = true
 
 [dependencies]
 proc-macro2 = { workspace = true }

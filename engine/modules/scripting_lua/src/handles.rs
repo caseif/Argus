@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 pub type ScriptBindableHandle = u64;
 
-const NULL_HANDLE: ScriptBindableHandle = 0;
 const MAX_HANDLE: ScriptBindableHandle = u64::MAX;
 
 pub struct HandleMap {

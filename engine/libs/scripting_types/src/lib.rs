@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::{ffi, mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ffi::{CStr, CString};

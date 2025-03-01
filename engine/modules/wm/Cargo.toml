@@ -19,4 +19,3 @@ sdl2 = { path = "../../../external-bindings/sdl2" }
 bitflags = { workspace = true }
 dashmap = { workspace = true }
 fragile = { workspace = true }
-num_enum = { workspace = true }

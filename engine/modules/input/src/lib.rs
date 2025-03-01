@@ -2,7 +2,6 @@
 
 use std::time::Duration;
 use argus_logging::{crate_logger, warn};
-use num_enum::UnsafeFromPrimitive;
 use argus_core::{register_event_handler, register_module, register_render_callback, register_update_callback, LifecycleStage, Ordering, TargetThread};
 use argus_wm::{Window, WindowEvent, WindowEventType, WindowManager};
 

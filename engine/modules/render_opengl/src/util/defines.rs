@@ -15,10 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#![allow(unused)]
+
 use argus_render::constants::LIGHTS_MAX;
 use crate::aglet::GLfloat;
-
-pub(crate) const BACKEND_ID: &str = "opengl";
 
 pub(crate) const VERTEX_POSITION_LEN: usize = 2;
 pub(crate) const VERTEX_NORMAL_LEN: usize = 2;
@@ -42,5 +43,5 @@ pub(crate) const SHADOW_RAYS_COUNT: usize = 720;
 
 pub(crate) const SHADER_IMAGE_SHADOWMAP_LEN: usize = SHADOW_RAYS_COUNT * LIGHTS_MAX as usize * 4;
 
-pub(crate) const FB_SHADER_VERT_PATH: &str = "argus:shader/gl_rust/framebuffer_vert";
-pub(crate) const FB_SHADER_FRAG_PATH: &str = "argus:shader/gl_rust/framebuffer_frag";
+pub(crate) const FB_SHADER_VERT_PATH: &str = "argus:shader/opengl/framebuffer_vert";
+pub(crate) const FB_SHADER_FRAG_PATH: &str = "argus:shader/opengl/framebuffer_frag";

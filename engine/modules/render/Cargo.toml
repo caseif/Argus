@@ -19,7 +19,6 @@ argus_wm = { path = "../wm" }
 dashmap = { workspace = true }
 lazy_static = { workspace = true }
 lodepng = { workspace = true }
-num_enum = { workspace = true }
 parking_lot = { workspace = true }
 rgb = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -27,4 +26,4 @@ serde_json = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
-arp = { workspace = true, default-features = false }
+arp = { workspace = true }

@@ -11,8 +11,6 @@ pub trait ArgusEvent: 'static + Send + Sync {
     fn as_any_ref(&self) -> &dyn Any;
 }
 
-type EventHandler<E> = dyn Fn(&E);
-
 pub fn register_event_handler<T: ArgusEvent>(
     handler: impl 'static + Send + Fn(&T),
     target_thread: TargetThread,

@@ -5,7 +5,7 @@ edition.workspace = true
 
 [lib]
 name = "argus_scripting_bind_macros"
-crate-type = ["proc-macro"]
+proc-macro = true
 
 [dependencies]
 argus_scripting_types = { path = "../scripting_types" }

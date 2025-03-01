@@ -5,7 +5,7 @@ macro_rules! log_internal {
         $crate::Logger::$method(::std::ops::Deref::deref(&$logger), format!($format, $($arg)*))
     };
     ($method:ident, $logger:expr, $message:expr) => {
-        $crate::Logger::$method(::std::ops::Deref::deref(&$logger), $message)
+        $crate::Logger::$method(::std::ops::Deref::deref(&$logger), format!($message))
     };
 }
 

@@ -38,7 +38,7 @@ pub(crate) fn register_module(args: TokenStream, input: TokenStream) -> TokenStr
             .into();
     }
 
-    let core_path = core_path_custom.unwrap_or(parse_quote! { ::core_rs });
+    let core_path = core_path_custom.unwrap_or(parse_quote! { ::core });
 
     let module_id = args_obj.id;
     let module_depends_on: Vec<_> = args_obj.depends.into_iter()

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
+use bitflags::bitflags;
 use argus_logging::warn;
-use bitmask::bitmask;
 use lazy_static::lazy_static;
 use argus_scripting_bind::script_bind;
 use argus_wm::{Window, WindowManager};
@@ -249,6 +249,7 @@ pub enum KeyboardScancode {
 /// character nor a key modifier.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[script_bind]
+#[allow(dead_code)]
 pub enum KeyboardCommand {
     Escape,
     F1,
@@ -287,18 +288,18 @@ pub enum KeyboardCommand {
     Super,
 }
 
-bitmask! {
+bitflags! {
     /// Represents a modifier enabled by a key press.
     ///
     /// Modifier keys are defined as the left and right shift, alt, and control
     /// keys, the Super key, and the num lock, caps lock, and scroll lock
     /// toggles.
-    pub mask KeyboardModifiers : u16 where flags KeyboardModifier {
-        None = 0x00,
-        Shift = 0x01,
-        Control = 0x02,
-        Super = 0x04,
-        Alt = 0x08
+    pub struct KeyboardModifiers : u16 {
+        const None = 0x00;
+        const Shift = 0x01;
+        const Control = 0x02;
+        const Super = 0x04;
+        const Alt = 0x08;
     }
 }
 

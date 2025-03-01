@@ -209,24 +209,6 @@ impl<V> ValuePool<V> {
             }
         })
     }
-
-    fn get_slot_ptr(&self, index: u32) -> Option<*const Slot<V>> {
-        let chunk_index = index as usize / self.slots_per_chunk;
-        if chunk_index >= self.storage.chunks.len() {
-            return None;
-        }
-        let chunk = &self.storage.chunks[chunk_index];
-
-        let index_in_chunk = index as usize % self.slots_per_chunk;
-        let offset_in_chunk = index_in_chunk * self.slot_interval;
-        assert!(offset_in_chunk <= isize::MAX as usize);
-        // SAFETY: The chunk index can't be more than slots_per_chunk - 1,
-        //         and the block of memory is only ever addressed with offsets
-        //         that are multiples of slot_interval.
-        unsafe {
-            Some(chunk.as_ptr().offset(offset_in_chunk as isize).cast())
-        }
-    }
 }
 
 #[must_use]

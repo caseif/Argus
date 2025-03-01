@@ -155,12 +155,12 @@ pub fn register_script_bindings() {
         match fn_info.ty {
             FunctionType::Global => {
                 let fn_def = BoundFunctionDef::new(
-                    fn_info.name.clone(),
+                    fn_info.name,
                     FunctionType::Global,
                     false,
                     param_parsed_types,
                     ret_parsed_type,
-                    fn_info.proxy.clone(),
+                    fn_info.proxy,
                 );
                 ScriptManager::instance().get_bindings().bind_global_function(fn_def)
                     .expect("Failed to bind global function");

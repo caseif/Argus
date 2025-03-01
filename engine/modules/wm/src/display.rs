@@ -163,12 +163,7 @@ fn add_display(display_index: i32) -> Result<Display, String> {
         modes.push(mode.try_into()?);
     }
 
-    Ok(Display {
-        index: display_index,
-        name: display_name,
-        position: Vector2i::new(bounds.x, bounds.y),
-        modes,
-    })
+    Ok(Display::new(display_index, display_name, Vector2i::new(bounds.x, bounds.y), modes))
 }
 
 fn enumerate_displays() -> Vec<Display> {

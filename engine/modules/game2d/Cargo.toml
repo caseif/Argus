@@ -19,7 +19,6 @@ argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
 lazy_static = { workspace = true }
-num_enum = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_valid = { workspace = true }

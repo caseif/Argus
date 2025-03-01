@@ -28,6 +28,7 @@ pub struct BoundTypeDef {
 
 impl Debug for BoundTypeDef {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        #[allow(dead_code)]
         #[derive(Debug)]
         struct BoundTypeDef<'a> {
             pub name: &'a String,

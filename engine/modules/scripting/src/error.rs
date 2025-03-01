@@ -1,6 +1,5 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[derive(Clone, Copy, Debug)]
 pub enum SymbolType {
@@ -29,7 +28,7 @@ impl BindingError {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, IntoPrimitive, TryFromPrimitive)]
+#[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
 pub enum BindingErrorType {
     DuplicateName,

@@ -20,12 +20,6 @@ impl Display for SdlError {
 impl Error for SdlError {}
 
 impl SdlError {
-    pub(crate) fn new(message: impl Into<String>) -> SdlError {
-        Self {
-            message: message.into(),
-        }
-    }
-
     pub fn get_message(&self) -> &str {
         self.message.as_str()
     }

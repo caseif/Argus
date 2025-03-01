@@ -34,7 +34,9 @@ const UNIV_ARG_IGNORE: &str = "ignore";
 const STRUCT_ARG_RENAME: &str = "rename";
 const STRUCT_ARG_REF_ONLY: &str = "ref_only";
 const ENUM_ARG_RENAME: &str = "rename";
+#[allow(unused)]
 const FN_ARG_ASSOC_TYPE: &str = "assoc_type";
+#[allow(unused)]
 const FN_ARG_RENAME: &str = "rename";
 
 #[derive(Default)]
@@ -50,14 +52,7 @@ struct EnumAttrArgs {
 }
 
 #[derive(Default)]
-struct FieldAttrArgs {
-    underlying_type: Option<Path>,
-}
-
-#[derive(Default)]
 struct FnAttrArgs {
-    assoc_type: Option<Path>,
-    assoc_type_span: Option<Span2>,
     name: Option<String>,
 }
 

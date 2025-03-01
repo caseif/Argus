@@ -6,7 +6,7 @@ use sdl2::error::sdl_get_error;
 use sdl2::events::sdl_pump_events;
 use sdl2::hints::{sdl_set_hint, SDL_HINT_APP_NAME, SDL_HINT_VIDEODRIVER};
 use sdl2::{sdl_init, sdl_quit, sdl_quit_subsystem, SdlInitFlags};
-use argus_logging::{crate_logger, debug, info, LogLevel, LogManager, LogSettings, Logger, PreludeComponent};
+use argus_logging::{crate_logger, debug, info};
 use crate::display::init_display;
 use crate::{WindowEvent, WindowManager};
 

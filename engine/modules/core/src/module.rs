@@ -24,14 +24,14 @@ pub enum LifecycleStage {
 // dynamic modules aren't supported post-Rust rewrite, at least for now
 
 pub fn register_dynamic_module(
-    id: &str,
-    lifecycle_callback: fn(LifecycleStage),
-    dependencies: Vec<&str>,
+    _id: &str,
+    _lifecycle_callback: fn(LifecycleStage),
+    _dependencies: Vec<&str>,
 ) {
     panic!("Dynamic modules are not currently supported");
 }
 
-pub fn enable_dynamic_module(module_id: &str) -> bool {
+pub fn enable_dynamic_module(_module_id: &str) -> bool {
     false
 }
 

@@ -18,7 +18,6 @@
 
 #![feature(used_with_arg)]
 
-use num_enum::UnsafeFromPrimitive;
 use argus_core::{register_module, register_update_callback, LifecycleStage, Ordering};
 use argus_resman::ResourceManager;
 use crate::constants::RESOURCE_TYPE_SPRITE;

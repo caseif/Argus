@@ -5,10 +5,9 @@ use std::ffi::CStr;
 use std::rc::Rc;
 use parking_lot::ReentrantMutex;
 
-const REG_KEY_PLUGIN_PTR: &CStr = c"argus_plugin";
 const REG_KEY_CONTEXT_DATA_PTR: &CStr = c"argus_context_data";
 
-pub(crate) unsafe fn create_lua_state(plugin: &LuaLanguagePlugin)
+pub(crate) unsafe fn create_lua_state(_plugin: &LuaLanguagePlugin)
     -> *mut lua_State {
     let state = luaL_newstate();
     if state.is_null() {

@@ -89,10 +89,6 @@ impl Window {
         self.handle.as_ref().map(|handle| handle.get())
     }
 
-    pub(crate) fn get_handle_mut(&mut self) -> Option<&mut SdlWindow> {
-        self.handle.as_mut().map(|handle| handle.get_mut())
-    }
-
     /// @brief Gets the unique identifier of the Window.
     ///
     /// @return The unique identifier of the Window.

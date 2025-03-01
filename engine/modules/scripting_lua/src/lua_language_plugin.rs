@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::{Any};
 use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
 use std::ptr::{addr_of, copy_nonoverlapping};
@@ -1220,27 +1220,6 @@ unsafe fn create_type_metatable(lua: &ManagedLuaState, def: &BoundTypeDef, is_co
     }
 }
 
-unsafe fn bind_type(context: &ManagedLuaState, ty: BoundTypeDef) {
-    create_type_metatable(context, &ty, false);
-    create_type_metatable(context, &ty, true);
-
-    for field_def in ty.fields.values() {
-        bind_type_field(context, &ty.name, field_def);
-    }
-
-    for fn_def in ty.static_functions.values() {
-        bind_type_function(context, &ty.name, fn_def);
-    }
-
-    for fn_def in ty.instance_functions.values() {
-        bind_type_function(context, &ty.name, fn_def);
-    }
-
-    for fn_def in ty.extension_functions.values() {
-        bind_type_function(context, &ty.name, fn_def);
-    }
-}
-
 unsafe fn bind_global_fn(context: &ManagedLuaState, f: &BoundFunctionDef) {
     assert_eq!(f.ty, FunctionType::Global);
 
@@ -1334,7 +1313,7 @@ unsafe extern "C" fn require_override(state: *mut lua_State) -> i32 {
     };
 
     if let Ok(uid) = convert_path_to_uid(&path) {
-        let mut mgr = ScriptManager::instance();
+        let mgr = ScriptManager::instance();
         let load_res = mgr.load_resource(LUA_LANG_NAME, uid);
         if load_res.is_ok() {
             let load_script_res = load_script(state, load_res.unwrap());

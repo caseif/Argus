@@ -145,6 +145,7 @@ fn create_processed_object_2d(
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
+        #[allow(unused_assignments)]
         for vertex in &prim.vertices {
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;
@@ -266,6 +267,7 @@ fn update_processed_object_2d(
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
+        #[allow(unused_assignments)]
         for vertex in &prim.vertices {
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;

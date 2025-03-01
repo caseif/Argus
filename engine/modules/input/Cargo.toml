@@ -18,7 +18,7 @@ argus_wm = { path = "../wm" }
 
 sdl2 = { path = "../../../external-bindings/sdl2" }
 
-bitmask = { workspace = true }
+bitflags = { workspace = true }
 dashmap = { workspace = true }
 lazy_static = { workspace = true }
 num_enum = { workspace = true }

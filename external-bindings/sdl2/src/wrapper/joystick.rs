@@ -24,20 +24,6 @@ impl SdlJoystick {
         })
     }
 
-    fn from_handle(handle: *mut SDL_Joystick) -> Result<Self, SdlError> {
-        assert!(!handle.is_null());
-        let instance_id = unsafe { SDL_JoystickInstanceID(handle) };
-        if instance_id < 0 {
-            return Err(sdl_get_error());
-        }
-
-        Ok(Self {
-            instance_id,
-            device_index: None,
-            handle: Some(handle),
-        })
-    }
-
     pub fn get_all_joysticks() -> Result<Iter, SdlError> {
         let count = unsafe { SDL_NumJoysticks() };
         if count < 0 {
