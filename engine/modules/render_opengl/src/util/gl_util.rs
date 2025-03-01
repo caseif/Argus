@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#![allow(unused)]
+
 use std::ffi::{c_void, CStr};
+use std::fmt::{Display, Formatter};
 use std::ptr;
 use argus_logging::LogLevel;
 use crate::aglet::*;
@@ -31,6 +34,34 @@ pub(crate) type GlShaderHandle = GLuint;
 pub(crate) type GlProgramHandle = GLuint;
 pub(crate) type GlAttributeLocation = GLint;
 pub(crate) type GlUniformLocation = GLint;
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) enum GlError {
+    Unknown,
+    InvalidEnum,
+    InvalidValue,
+    InvalidOperation,
+    StackOverflow,
+    StackUnderflow,
+    OutOfMemory,
+    InvalidFramebufferOperation,
+}
+
+impl Display for GlError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let gl_enum_name = match self {
+            GlError::Unknown => "(unknown",
+            GlError::InvalidEnum => "GL_INVALID_ENUM",
+            GlError::InvalidValue => "GL_INVALID_VALUE",
+            GlError::InvalidOperation => "GL_INVALID_OPERATION",
+            GlError::StackOverflow => "GL_STACK_OVERFLOW",
+            GlError::StackUnderflow => "GL_STACK_UNDERFLOW",
+            GlError::OutOfMemory => "GL_OUT_OF_MEMORY",
+            GlError::InvalidFramebufferOperation => "GL_INVALID_FRAMEBUFFER_OPERATION",
+        };
+        write!(f, "{}", gl_enum_name)
+    }
+}
 
 #[no_mangle]
 pub(crate) unsafe extern "C" fn gl_debug_callback(
@@ -124,8 +155,6 @@ pub(crate) fn bind_texture(unit: GLuint, texture: GlTextureHandle) {
     }
 }
 
-//TODO: get_gl_logger
-
 pub(crate) fn restore_gl_blend_params() {
     if aglet_have_gl_version_4_0() {
         return;
@@ -133,4 +162,19 @@ pub(crate) fn restore_gl_blend_params() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
+}
+
+pub(crate) fn get_gl_error() -> Option<GlError> {
+    let err_code = glGetError();
+    match err_code {
+        GL_NO_ERROR => None,
+        GL_INVALID_ENUM => Some(GlError::InvalidEnum),
+        GL_INVALID_VALUE => Some(GlError::InvalidValue),
+        GL_INVALID_OPERATION => Some(GlError::InvalidOperation),
+        GL_STACK_OVERFLOW => Some(GlError::StackOverflow),
+        GL_STACK_UNDERFLOW => Some(GlError::StackUnderflow),
+        GL_OUT_OF_MEMORY => Some(GlError::OutOfMemory),
+        GL_INVALID_FRAMEBUFFER_OPERATION => Some(GlError::InvalidFramebufferOperation),
+        _ => Some(GlError::Unknown),
+    }
 }

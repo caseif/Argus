@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate bitmask;
 extern crate core;
 extern crate glsl;
 extern crate libc;

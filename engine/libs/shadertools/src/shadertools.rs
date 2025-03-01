@@ -17,7 +17,7 @@
  */
 
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::Write;
 
@@ -30,7 +30,7 @@ const LAYOUT_ID_STD140: &'static str = "std140";
 const LAYOUT_ID_STD430: &'static str = "std430";
 
 pub struct ProcessedGlslShader {
-    stage: Stage,
+    stage: glslang::ShaderStage,
     source: String,
     inputs: HashMap<String, u32>,
     outputs: HashMap<String, u32>,
@@ -113,7 +113,7 @@ impl Write for StringWriter {
 
 #[derive(Debug)]
 pub struct CompiledShaderSet {
-    pub bytecode: HashMap<Stage, Vec<u8>>,
+    pub bytecode: HashMap<glslang::ShaderStage, Vec<u32>>,
     pub inputs: HashMap<String, u32>,
     pub outputs: HashMap<String, u32>,
     pub uniforms: HashMap<String, u32>,
@@ -123,101 +123,53 @@ pub struct CompiledShaderSet {
 }
 
 pub fn compile_glsl_to_spirv(
-    glsl_sources: &HashMap<Stage, String>,
-    client: Client,
-    client_version: TargetClientVersion,
-    spirv_version: TargetLanguageVersion,
+    glsl_sources: &HashMap<glslang::ShaderStage, String>,
+    client: Target,
+    client_version: i32,
 ) -> Result<CompiledShaderSet, GlslCompileError> {
-    let mut res = HashMap::<Stage, Vec<u8>>::with_capacity(glsl_sources.len());
+    let mut res = HashMap::<glslang::ShaderStage, Vec<u32>>::with_capacity(glsl_sources.len());
+
+    let compiler = Compiler::acquire().unwrap();
 
     let processed_glsl = process_glsl(glsl_sources)?;
 
+    let options = CompilerOptions {
+        source_language: SourceLanguage::GLSL,
+        target: client,
+        version_profile: Some((client_version, GlslProfile::Core)),
+        messages: ShaderMessage::empty(),
+    };
+
     for glsl in &processed_glsl {
-        let mut program = Program::create();
+        let source = ShaderSource::try_from(glsl.source.as_str()).unwrap();
 
-        let shader_messages = Messages::Default;
+        let input = ShaderInput::new(
+            &source,
+            glsl.stage,
+            &options,
+            None,
+            None,
+        ).unwrap();
 
-        glslang::initialize_process();
+        let shader = Shader::new(compiler, input).unwrap();
 
-        let input = Input {
-            language: Source::Glsl,
-            stage: glsl.stage,
-            client,
-            client_version,
-            target_language: TargetLanguage::Spv,
-            target_language_version: spirv_version,
-            /* Shader source code */
-            code: glsl.source.clone(),
-            default_version: 0,
-            default_profile: Profile::Core,
-            force_default_version_and_profile: 0,
-            forward_compatible: 0,
-            messages: shader_messages,
-            resource: DEFAULT_BUILT_IN_RESOURCE,
-            callbacks: IncludeCallbacks {
-                include_system: None,
-                include_local: None,
-                free_include_result: None,
-            },
-            callbacks_ctx: std::ptr::null_mut(),
-        };
+        let mut program = Program::new(compiler);
+        program.add_shader(&shader);
 
-        let mut shader = Shader::create(input);
-
-        if !shader.preprocess() {
-            println!("{}", shader.get_info_log());
-            println!("{}", shader.get_info_debug_log());
-            return Err(GlslCompileError {
-                message: format!("Failed to preprocess shader for stage {:?}", glsl.stage),
-            });
-        }
-
-        if !shader.parse() {
-            println!("{}", shader.get_info_log());
-            println!("{}", shader.get_info_debug_log());
-            return Err(GlslCompileError {
-                message: format!("Failed to parse shader for stage {:?}", glsl.stage),
-            });
-        }
-
-        program.add_shader(shader);
-
-        let program_messages = Messages::Default;
-        program.map_io();
-        if !program.link(program_messages) {
-            println!("{}", program.get_info_log());
-            println!("{}", program.get_info_debug_log());
-            return Err(GlslCompileError {
-                message: "Failed to link shader program".to_owned(),
-            });
-        }
-
-        let spirv_options = SpvOptions {
-            // this flag absolutely must not be true or it'll cause glSpecializeShader to fail
-            generate_debug_info: false,
-            strip_debug_info: false,
-            disable_optimizer: true,
-            optimize_size: false,
-            disassemble: false,
-            validate: false,
-            emit_nonsemantic_shader_debug_info: false,
-            emit_nonsemantic_shader_debug_source: false,
-            compile_only: false,
-        };
-
-        program.spirv_generate_with_options(glsl.stage, &spirv_options);
-        res.insert(glsl.stage, program.spirv_get());
+        let code = program.compile(glsl.stage)
+            .expect("Failed to compile GLSL shader");
+        res.insert(glsl.stage, code);
     }
 
     let program_attrs = processed_glsl
         .iter()
-        .find(|glsl| glsl.stage == Stage::Vertex)
+        .find(|glsl| glsl.stage == glslang::ShaderStage::Vertex)
         .map(|glsl| glsl.inputs.clone())
         .unwrap_or(HashMap::new());
 
     let program_outputs = processed_glsl
         .iter()
-        .find(|glsl| glsl.stage == Stage::Fragment)
+        .find(|glsl| glsl.stage == glslang::ShaderStage::Fragment)
         .map(|glsl| glsl.outputs.clone())
         .unwrap_or(HashMap::new());
 
@@ -340,36 +292,36 @@ fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32
 }
 
 fn process_glsl(
-    glsl_sources: &HashMap<Stage, String>,
+    glsl_sources: &HashMap<glslang::ShaderStage, String>,
 ) -> Result<Vec<ProcessedGlslShader>, GlslCompileError> {
     let mut processed_sources = Vec::<ProcessedGlslShader>::with_capacity(glsl_sources.len());
 
-    let mut sorted_sources: Vec<(Stage, String)> = glsl_sources
+    let mut sorted_sources: Vec<(glslang::ShaderStage, String)> = glsl_sources
         .iter()
         .map(|kv| (kv.0.to_owned(), kv.1.to_owned()))
         .collect();
     sorted_sources.sort_by_key(|entry| entry.0 as u32);
 
-    let mut struct_sizes = HashMap::<Stage, HashMap<String, Option<u32>>>::new();
+    let mut struct_sizes = HashMap::<glslang::ShaderStage, HashMap<String, Option<u32>>>::new();
 
-    let mut pending_asts = HashMap::<Stage, TranslationUnit>::new();
+    let mut pending_asts = HashMap::<glslang::ShaderStage, TranslationUnit>::new();
 
-    let mut inputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
-    let mut outputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut inputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
+    let mut outputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
     let mut uniforms = HashMap::<String, DeclarationInfo>::new();
-    let mut buffers = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut buffers = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
     let mut ubos = HashMap::<String, BlockInfo>::new();
 
     // first pass: enumerate declarations of all shaders
     let mut i = 0;
     for kv in &sorted_sources {
-        let stage = kv.0.clone();
+        let stage = kv.0;
         let source = &kv.1;
 
-        let ast_res = ShaderStage::parse(source);
+        let ast_res = glsl::syntax::ShaderStage::parse(source);
         if ast_res.is_err() {
             return Err(GlslCompileError {
-                message: "Failed to parse GLSL: ".to_owned() + &ast_res.unwrap_err().info,
+                message: format!("Failed to parse GLSL: {}", ast_res.unwrap_err().info),
             });
         }
 
@@ -453,9 +405,9 @@ fn process_glsl(
         i += 1;
     }
 
-    let mut all_assigned_inputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
-    let mut all_assigned_outputs = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
-    let mut all_assigned_buffers = HashMap::<Stage, HashMap<String, DeclarationInfo>>::new();
+    let mut all_assigned_inputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
+    let mut all_assigned_outputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
+    let mut all_assigned_buffers = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
 
     i = 0;
     for stage in sorted_sources.iter().map(|kv| kv.0) {
@@ -779,7 +731,7 @@ impl Visitor for StructDefVisitor {
                 } else {
                     self.fail_condition = true;
                     self.fail_message =
-                        Some("Unknown type name ".to_string() + &tn.0 + " referenced in struct");
+                        Some(format!("Unknown type name {} referenced in struct", tn.0));
                     0u32
                 }
             } else {

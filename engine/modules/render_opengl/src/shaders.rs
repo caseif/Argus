@@ -21,15 +21,18 @@ use crate::util::gl_util::*;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::ptr;
+use glslang::{OpenGlVersion, SpirvVersion};
 use spirv_cross2::{Compiler, Module};
 use spirv_cross2::compile::CompilableTarget;
 use spirv_cross2::compile::glsl::GlslVersion;
 use spirv_cross2::targets::Glsl;
+use argus_logging::debug;
 use argus_render::common::{Material, Shader, ShaderStage};
 use argus_render::constants::*;
 use argus_resman::{Resource, ResourceIdentifier, ResourceManager};
+use argus_shadertools::glslang::Target;
 use argus_shadertools::shadertools::compile_glsl_to_spirv;
-use glslang::{Client, Stage, TargetClientVersion, TargetLanguageVersion};
+use crate::LOGGER;
 
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
@@ -62,11 +65,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         shader_sources.push(String::from_utf8_lossy(shader.get_source()).to_string());
     }
 
-    //TODO
-    /*Logger::default_logger().debug(
-        "Compiling SPIR-V from shader set [%s]",
-        shader_uids.join(", ")
-    );*/
+    debug!(LOGGER, "Compiling SPIR-V from shader set [{}]", shader_uids.join(", "));
 
     let compile_res = match compile_glsl_to_spirv(
         &shaders
@@ -79,9 +78,11 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
                 )
             })
             .collect(),
-        Client::OpenGL,
-        TargetClientVersion::OpenGL450,
-        TargetLanguageVersion::Spv1_0,
+        Target::OpenGL {
+            version: OpenGlVersion::OpenGL4_5,
+            spirv_version: Some(SpirvVersion::SPIRV1_0),
+        },
+        450,
     ) {
         Ok(res) => res,
         Err(e) => {
@@ -118,13 +119,12 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         None
     };
 
-    for (stage, spirv_src) in spirv_shaders {
-        //TODO
-        //Logger::default_logger().debug("Creating shader %s", shader.get_uid().c_str());
+    for (i, (stage, spirv_src)) in spirv_shaders.iter().enumerate() {
+        debug!(LOGGER, "Building shader {}", shader_uids[i]);
 
         let gl_shader_stage: GLuint = match stage {
-            Stage::Vertex => GL_VERTEX_SHADER,
-            Stage::Fragment => GL_FRAGMENT_SHADER,
+            glslang::ShaderStage::Vertex => GL_VERTEX_SHADER,
+            glslang::ShaderStage::Fragment => GL_FRAGMENT_SHADER,
             _ => {
                 panic!("Unrecognized shader stage ordinal {:?}", stage);
             }
@@ -136,17 +136,25 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         }
 
         if have_gl_spirv {
-            //TODO
-            //Logger::default_logger().debug("GL 4.1 profile and ARB_gl_spirv are available, "
-            //        "passing compiled SPIR-V directly to OpenGL via glShaderBinary");
+            debug!(
+                LOGGER,
+                "GL 4.1 profile and ARB_gl_spirv are available, \
+                 passing compiled SPIR-V directly to OpenGL via glShaderBinary",
+            );
 
+            _ = glGetError(); // clear error
             glShaderBinary(
                 1,
                 &shader_handle,
                 GL_SHADER_BINARY_FORMAT_SPIR_V_ARB,
                 spirv_src.as_ptr().cast(),
-                spirv_src.len() as GLsizei,
+                (spirv_src.len() * size_of::<u32>()) as GLsizei,
             );
+
+            if let Some(gl_err) = get_gl_error() {
+                panic!("glShaderBinary failed with error {gl_err}");
+            }
+
             let entry_point_c = CString::new("main").unwrap();
             glSpecializeShaderARB(
                 shader_handle,
@@ -156,15 +164,9 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
                 ptr::null(),
             );
         } else {
-            //TODO
-            //Logger::default_logger().debug("GL 4.1 profile and/or ARB_gl_spirv is not available, "
-            //       "transpiling compiled SPIR-V to GLSL");
+            debug!(LOGGER, "GL 4.1 profile and/or ARB_gl_spirv is not available, transpiling compiled SPIR-V to GLSL");
 
-            let words = spirv_src
-                .chunks(size_of::<u32>())
-                .map(|c| u32::from_ne_bytes(c.try_into().unwrap()))
-                .collect::<Vec<_>>();
-            let module = Module::from_words(words.as_slice());
+            let module = Module::from_words(spirv_src.as_slice());
             let compiler = Compiler::<Glsl>::new(module).expect("Failed to create SPIR-V context");
 
             let mut options = Glsl::options();
@@ -174,8 +176,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             let glsl_src: &str = compile_res.as_ref();
             let glsl_src_c = CString::new(glsl_src).unwrap();
 
-            //TODO
-            //Logger::default_logger().debug("GLSL source:\n%s", glsl_src_c);
+            debug!(LOGGER, "GLSL source:\n{}", glsl_src);
 
             let glsl_src_len = glsl_src.len() as GLint;
             glShaderSource(shader_handle, 1, &glsl_src_c.as_ptr(), &glsl_src_len);
@@ -196,8 +197,8 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
                 log_buf.as_mut_ptr().cast(),
             );
             let stage_str = match stage {
-                Stage::Vertex => "vertex",
-                Stage::Fragment => "fragment",
+                glslang::ShaderStage::Vertex => "vertex",
+                glslang::ShaderStage::Fragment => "fragment",
                 _ => "unknown",
             };
 
@@ -395,8 +396,7 @@ pub(crate) fn deinit_shader(shader: GlShaderHandle) {
 }
 
 pub(crate) fn remove_shader(state: &mut RendererState, shader_uid: &str) {
-    //TODO
-    //Logger::default_logger().debug("De-initializing shader {shader_uid}");
+    debug!(LOGGER, "De-initializing shader {shader_uid}");
     if let Some(shader) = state.compiled_shaders.remove(shader_uid) {
         deinit_shader(shader);
     }
@@ -424,9 +424,9 @@ pub(crate) fn get_lightmap_composite_program(storage: &mut Option<LinkedProgram>
     })
 }
 
-fn to_shadertools_stage(stage: ShaderStage) -> Stage {
+fn to_shadertools_stage(stage: ShaderStage) -> glslang::ShaderStage {
     match stage {
-        ShaderStage::Vertex => Stage::Vertex,
-        ShaderStage::Fragment => Stage::Fragment,
+        ShaderStage::Vertex => glslang::ShaderStage::Vertex,
+        ShaderStage::Fragment => glslang::ShaderStage::Fragment,
     }
 }

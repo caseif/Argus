@@ -1,16 +1,15 @@
 [package]
 name = "argus_shadertools"
 version.workspace = true
+edition.workspace = true
 
 [lib]
 name = "argus_shadertools"
 crate-type = ["rlib"]
 
 [dependencies]
-glslang = { path = "../../../external-bindings/glslang" }
-
-bitmask = { workspace = true }
 glsl = { workspace = true }
+glslang = "0.6.2"
 libc = { workspace = true }
 
 [features]
