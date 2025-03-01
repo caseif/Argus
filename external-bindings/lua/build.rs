@@ -57,7 +57,7 @@ pub fn main() {
     println!("cargo:rustc-link-lib=dylib={}", liblua_name);
 }
 
-#[cfg(all(target_family = "unix", not(target_os = "macos")))]
+#[cfg(all(target_family = "unix"))]
 fn get_lua_lib_name() -> String {
     if let Ok(lib) = pkg_config::probe_library("lua") {
         lib.libs[0].clone()
@@ -68,7 +68,7 @@ fn get_lua_lib_name() -> String {
     }
 }
 
-#[cfg(not(all(target_family = "unix", not(target_os = "macos"))))]
+#[cfg(not(all(target_family = "unix")))]
 fn get_lua_lib_name() -> String {
     "lua5.4".to_owned()
 }
