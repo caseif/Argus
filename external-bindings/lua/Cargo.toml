@@ -12,6 +12,4 @@ crate-type = ["rlib"]
 
 [build-dependencies]
 bindgen = { workspace = true }
-
-[target.'cfg(unix)'.build-dependencies]
-pkg-config = "0.3.31"
+cc = {  version = "1.2.16", features = ["parallel"] }

@@ -18,20 +18,21 @@
 
 use std::env;
 use std::path::PathBuf;
+use bindgen::RustEdition;
+
+const PATH_TO_LUA_SUBMODULE: &str = "./lua";
 
 pub fn main() {
+    println!("cargo:rerun-if-changed={PATH_TO_LUA_SUBMODULE}");
+    generate_bindings();
+    build_lua_lib();
+}
+
+fn generate_bindings() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let bindings_path = out_dir.join("bindings.rs");
 
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let lua_header_dir: PathBuf = [
-        manifest_dir.as_str(),
-        "..",
-        "..",
-        "external",
-        "libs",
-        "lua",
-    ].into_iter().collect();
+    let lua_header_dir = PathBuf::from(PATH_TO_LUA_SUBMODULE);
 
     let lua_main_header_path = lua_header_dir.join("lua.h");
     let lualib_header_path = lua_header_dir.join("lualib.h");
@@ -48,27 +49,31 @@ pub fn main() {
         .allowlist_file("^.*[/\\\\](lua|lauxlib|lualib)\\.h?$")
         .allowlist_recursively(true)
         .clang_arg("-std=c11")
+        .rust_edition(RustEdition::Edition2021)
         .generate()
         .expect("Failed to generate bindings");
 
     bindings.write_to_file(bindings_path).expect("Failed to write bindings");
-
-    let liblua_name = get_lua_lib_name();
-    println!("cargo:rustc-link-lib=dylib={}", liblua_name);
 }
 
-#[cfg(all(target_family = "unix"))]
-fn get_lua_lib_name() -> String {
-    if let Ok(lib) = pkg_config::probe_library("lua") {
-        lib.libs[0].clone()
-    } else if pkg_config::probe_library("lua5.4").is_ok() {
-        "lua5.4".to_owned()
-    } else {
-        panic!("Lua library could not be found");
+fn build_lua_lib() {
+    let mut lua_build = cc::Build::new();
+    let path = PathBuf::from(PATH_TO_LUA_SUBMODULE);
+    lua_build
+        .std("c11")
+        .shared_flag(false)
+        .static_flag(true)
+        .include(PATH_TO_LUA_SUBMODULE);
+    for entry in path.read_dir().unwrap() {
+        let entry_path = entry.unwrap().path();
+        #[allow(clippy::nonminimal_bool)]
+        if !entry_path.file_stem().is_some_and(|stem| stem == "onelua") &&
+            entry_path.extension().is_some_and(|ext| ext.to_string_lossy() == "c") {
+            lua_build.file(entry_path);
+        }
     }
-}
 
-#[cfg(not(all(target_family = "unix")))]
-fn get_lua_lib_name() -> String {
-    "lua5.4".to_owned()
+    let lib_name = "lua";
+    lua_build.compile(lib_name);
+    println!("cargo:rustc-link-lib=static={}", lib_name);
 }

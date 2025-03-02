@@ -2,7 +2,7 @@
 	path = external/tooling/aglet
 	url = git@github.com:caseif/Aglet.git
 [submodule "external/libs/lua"]
-	path = external/libs/lua
+	path = external-bindings/lua/lua
 	url = git@github.com:lua/lua.git
 [submodule "external/libs/sdl2"]
 	path = external/libs/sdl2
