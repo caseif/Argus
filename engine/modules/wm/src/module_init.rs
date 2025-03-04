@@ -1,6 +1,6 @@
 use std::cell::{RefCell};
 use std::sync::{LazyLock, OnceLock};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use argus_core::*;
 use sdl2::error::sdl_get_error;
 use sdl2::events::sdl_pump_events;
@@ -111,6 +111,9 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
     match stage {
         LifecycleStage::Load => {
         }
+        LifecycleStage::PreInit => {
+            set_render_loop(render_loop).expect("Failed to set engine render loop");
+        }
         LifecycleStage::Init => {
             if cfg!(target_os = "linux") {
                 sdl_set_hint(SDL_HINT_VIDEODRIVER, "x11,wayland");
@@ -122,7 +125,7 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
             info!(LOGGER, "SDL initialized successfully");
 
             register_update_callback(Box::new(check_window_count), Ordering::Standard);
-            register_render_callback(Box::new(do_window_loop), Ordering::Standard);
+            //register_render_callback(Box::new(do_window_loop), Ordering::Standard);
             register_event_handler::<WindowEvent>(
                 |event| WindowManager::instance().handle_engine_window_event(event),
                 TargetThread::Render,
@@ -145,6 +148,24 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
             debug!(LOGGER, "Finished deinitializing wm");
         }
         _ => {}
+    }
+}
+
+fn render_loop(params: RenderLoopParams) {
+    let mut last_time = Instant::now();
+    
+    loop {
+        if let Ok(shutdown_callback) = params.shutdown_notifier.try_recv() {
+            shutdown_callback();
+            return;
+        }
+        
+        let cur_time = Instant::now();
+        let delta = cur_time - last_time;
+        last_time = cur_time;
+
+        (params.core_render_callback)(delta);
+        do_window_loop(delta);
     }
 }
 

@@ -1,7 +1,8 @@
 use std::convert::Infallible;
 use std::{process, thread};
-use std::sync::{atomic, Condvar, Mutex};
+use std::sync::{atomic, mpsc, Condvar, Mutex};
 use std::sync::atomic::AtomicBool;
+use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 use argus_logging::{debug, LogManager, LogSettings};
 use itertools::Itertools;
@@ -27,6 +28,11 @@ const DEINIT_STAGES: &[LifecycleStage] = &[
 static IS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
 static STOP_ACK_UPDATE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static STOP_ACK_RENDER: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
+
+pub struct RenderLoopParams {
+    pub core_render_callback: fn(Duration),
+    pub shutdown_notifier: Receiver<fn()>,
+}
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[script_bind]
@@ -80,10 +86,28 @@ pub fn initialize_engine() -> Result<(), EngineError> {
     Ok(())
 }
 
+pub fn set_render_loop(entry_point: fn(RenderLoopParams)) -> Result<(), EngineError> {
+    let mgr = EngineManager::instance();
+    mgr.set_render_loop(entry_point)
+}
+
 pub fn start_engine() -> Result<Infallible, EngineError> {
-    let render_thread = thread::spawn(|| {
-        do_render_loop();
-    });
+    let render_thread = {
+        let mgr = EngineManager::instance();
+
+        let (render_shutdown_tx, render_shutdown_rx) = mpsc::channel();
+        mgr.render_shutdown_tx.set(render_shutdown_tx)
+            .expect("Failed to store shutdown notifier for render thread");
+
+        let render_loop = mgr.get_render_loop().expect("Render loop is not set");
+
+        thread::spawn(|| {
+            render_loop(RenderLoopParams {
+                core_render_callback: do_render_callbacks,
+                shutdown_notifier: render_shutdown_rx,
+            });
+        })
+    };
 
     do_update_loop();
 
@@ -127,8 +151,10 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
         }
     }
 
-    debug!(LOGGER, "Waiting for render thread to halt...");
-    render_thread.join().unwrap();
+    if !render_thread.is_finished() {
+        debug!(LOGGER, "Waiting for render thread to halt...");
+        render_thread.join().unwrap();
+    }
 
     debug!(LOGGER, "Engine stopped");
 
@@ -140,6 +166,10 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
 pub fn stop_engine() {
     debug!(LOGGER, "Engine stop requested");
     IS_STOP_REQUESTED.store(true, atomic::Ordering::Relaxed);
+    if let Some(tx) = EngineManager::instance().render_shutdown_tx.get() {
+        tx.send(render_shutdown_callback)
+            .expect("Failed to notify render thread of engine shutdown");
+    }
 }
 
 pub fn get_current_lifecycle_stage() -> LifecycleStage {
@@ -221,42 +251,36 @@ fn do_update_loop() {
     }
 }
 
-fn do_render_loop() {
-    let mut last_update = Instant::now();
+fn do_render_callbacks(delta: Duration) {
+    for (_, callback) in EngineManager::instance().render_one_off_callbacks.drain() {
+        callback();
+    }
 
-    while !IS_STOP_REQUESTED.load(atomic::Ordering::Relaxed) {
-        let cur_instant = Instant::now();
-        let delta = cur_instant.duration_since(last_update);
-        last_update = cur_instant;
-
-        for (_, callback) in EngineManager::instance().render_one_off_callbacks.drain() {
-            callback();
-        }
-
-        {
-            let event_handlers = EngineManager::instance().render_event_handlers.items();
-            let queued_events = EngineManager::instance().render_event_queue.lock()
-                .drain(..)
-                .collect::<Vec<_>>();
-            for (event, event_type) in queued_events {
-                for (handler, handler_type) in event_handlers.values() {
-                    if *handler_type == event_type {
-                        (*handler.f)(&event);
-                    }
+    {
+        let event_handlers = EngineManager::instance().render_event_handlers.items();
+        let queued_events = EngineManager::instance().render_event_queue.lock()
+            .drain(..)
+            .collect::<Vec<_>>();
+        for (event, event_type) in queued_events {
+            for (handler, handler_type) in event_handlers.values() {
+                if *handler_type == event_type {
+                    (*handler.f)(&event);
                 }
             }
         }
-
-        EngineManager::instance().render_one_off_callbacks.flush_queues();
-        EngineManager::instance().render_event_handlers.flush_queues();
-        EngineManager::instance().render_callbacks.flush_queues();
-
-        for callback in EngineManager::instance().render_callbacks.items().values()
-            .sorted_by_key(|callback| callback.ordering) {
-            (callback.f)(delta);
-        }
     }
 
+    EngineManager::instance().render_one_off_callbacks.flush_queues();
+    EngineManager::instance().render_event_handlers.flush_queues();
+    EngineManager::instance().render_callbacks.flush_queues();
+
+    for callback in EngineManager::instance().render_callbacks.items().values()
+        .sorted_by_key(|callback| callback.ordering) {
+        (callback.f)(delta);
+    }
+}
+
+fn render_shutdown_callback() {
     debug!(LOGGER, "Render thread observed halt request");
 
     *STOP_ACK_RENDER.0.lock().unwrap() = true;

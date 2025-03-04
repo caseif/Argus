@@ -2,11 +2,12 @@ use std::any::TypeId;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU32, AtomicU64};
 use std::sync::{atomic, Arc, OnceLock};
+use std::sync::mpsc::Sender;
 use std::thread::ThreadId;
 use std::time::Duration;
 use fragile::Fragile;
 use parking_lot::{Mutex, MutexGuard};
-use crate::{LifecycleStage, ScreenSpaceScaleMode, TargetThread};
+use crate::{EngineError, LifecycleStage, RenderLoopParams, ScreenSpaceScaleMode, TargetThread};
 use crate::buffered_map::BufferedMap;
 use crate::{ArgusEvent, Ordering};
 
@@ -33,8 +34,10 @@ pub struct EngineManager {
 
     engine_config_staging: Fragile<Mutex<EngineConfig>>,
     engine_config: OnceLock<EngineConfig>,
-
-    update_thread_id: OnceLock<ThreadId>,
+    
+    pub(crate) render_loop: OnceLock<fn(RenderLoopParams)>,
+    pub(crate) render_shutdown_tx: OnceLock<Sender<fn()>>,
+    pub(crate) update_thread_id: OnceLock<ThreadId>,
 
     next_callback_index: AtomicU64,
     pub(crate) update_callbacks: BufferedMap<u64, EngineCallback<dyn Send + Fn(Duration)>>,
@@ -73,6 +76,8 @@ impl EngineManager {
             engine_config_staging: Fragile::default(),
             engine_config: OnceLock::new(),
 
+            render_loop: OnceLock::new(),
+            render_shutdown_tx: OnceLock::new(),
             update_thread_id: OnceLock::new(),
 
             next_callback_index: AtomicU64::new(1),
@@ -131,6 +136,15 @@ impl EngineManager {
     pub(crate) fn commit_config(&self) {
         self.engine_config.set(self.engine_config_staging.get().lock().clone())
             .expect("Engine config was already committed");
+    }
+
+    pub fn get_render_loop(&self) -> Option<&fn(RenderLoopParams)> {
+        self.render_loop.get()
+    }
+    
+    pub fn set_render_loop(&self, f: fn(RenderLoopParams)) -> Result<(), EngineError> {
+        self.render_loop.set(f)
+            .map_err(|_| EngineError::new("Render loop was already registered"))
     }
 
     pub fn is_current_thread_update_thread(&self) -> bool {
