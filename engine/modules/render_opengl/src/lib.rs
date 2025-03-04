@@ -237,6 +237,9 @@ pub fn update_lifecycle_render_opengl(stage: LifecycleStage) {
             ResourceManager::instance().add_memory_package(RESOURCES_PACK)
                 .expect("Failed to load in-memory resources for render_opengl");
         }
+        LifecycleStage::Deinit => {
+            RENDERERS.with_borrow_mut(|renderers| renderers.clear() );
+        }
         LifecycleStage::PostDeinit => {
             gl_unload_library();
         }

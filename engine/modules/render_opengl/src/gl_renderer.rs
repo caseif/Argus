@@ -301,9 +301,6 @@ impl GlRenderer {
 
 impl Drop for GlRenderer {
     fn drop(&mut self) {
-        if let Some(ctx) = self.state.gl_context.take() {
-            //gl_destroy_context(ctx);
-        }
     }
 }
 
