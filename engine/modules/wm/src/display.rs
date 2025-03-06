@@ -2,100 +2,48 @@ use std::ptr;
 use std::sync::{Arc, LazyLock, Mutex};
 use argus_logging::warn;
 use argus_util::math::{Vector2i, Vector2u, Vector4u};
-use sdl2::events::*;
-use sdl2::video::*;
+use sdl3::event::EventWatchCallback;
+use sdl3::{VideoSubsystem};
 use crate::{WindowManager, LOGGER};
+
+use sdl3::event::DisplayEvent as SdlDisplayEvent;
+use sdl3::event::Event as SdlEvent;
+use sdl3::pixels::PixelFormat;
+use sdl3::video::Display as SdlDisplay;
+use sdl3::video::DisplayMode as SdlDisplayMode;
 
 #[allow(non_upper_case_globals)]
 static g_displays: LazyLock<Arc<Mutex<Vec<Display>>> >=
     LazyLock::new(|| Arc::new(Mutex::new(Vec::new())));
 
-#[derive(Clone, Copy, Debug)]
-pub struct DisplayMode {
-    pub format: u32,
-    pub resolution: Vector2u,
-    pub refresh_rate: u16,
-    pub color_depth: Vector4u,
-}
-
 #[derive(Clone, Debug)]
 pub struct Display {
-    index: i32,
-
     name: String,
     position: Vector2i,
 
     modes: Vec<DisplayMode>,
-}
 
-impl TryFrom<SdlDisplayMode> for DisplayMode {
-    type Error = String;
-
-    fn try_from(mode: SdlDisplayMode) -> Result<DisplayMode, String> {
-        if mode.width <= 0 || mode.height <= 0 {
-            return Err("Display mode dimensions must be greater than 0".to_string());
-        }
-
-        let masks = mode.format.get_masks()
-            .map_err(|err| {
-                format!("Failed to query color channels modes for display mode: {}", err)
-            })?;
-
-        Ok(DisplayMode {
-            resolution: Vector2u::new(mode.width as u32, mode.height as u32),
-            refresh_rate: mode.refresh_rate as u16,
-            color_depth: Vector4u::new(
-                masks.red.count_ones(),
-                masks.green.count_ones(),
-                masks.blue.count_ones(),
-                masks.alpha.count_ones(),
-            ),
-            format: 0,
-        })
-    }
-}
-
-impl TryFrom<DisplayMode> for SdlDisplayMode {
-    type Error = String;
-
-    fn try_from(mode: DisplayMode) -> Result<SdlDisplayMode, String> {
-        Ok(SdlDisplayMode {
-            format: SdlPixelFormat::try_from(mode.format).map_err(|err| err.to_string())?,
-            width: mode.resolution.x as i32,
-            height: mode.resolution.y as i32,
-            refresh_rate: mode.refresh_rate as i32,
-            driverdata: ptr::null_mut(),
-        })
-    }
+    handle: SdlDisplay,
 }
 
 impl Display {
     pub(crate) fn new(
-        index: i32,
         name: impl Into<String>,
         position: Vector2i,
-        modes: impl Into<Vec<DisplayMode>>
+        modes: impl Into<Vec<DisplayMode>>,
+        handle: SdlDisplay,
     ) -> Self {
         Self {
-            index,
             name: name.into(),
             position,
             modes: modes.into(),
+            handle,
         }
     }
 
     #[must_use]
     pub fn get_available_displays() -> Vec<Display> {
         g_displays.lock().unwrap().clone()
-    }
-
-    pub(crate) fn get_from_index(index: i32) -> Option<Display> {
-        g_displays.lock().unwrap().get(index as usize).cloned()
-    }
-
-    #[must_use]
-    pub fn get_index(&self) -> i32 {
-        self.index
     }
 
     #[must_use]
@@ -113,91 +61,142 @@ impl Display {
         self.modes.as_slice()
     }
 
-    pub(crate) fn get_desktop_display_mode(&self) -> DisplayMode {
-        sdl_get_desktop_display_mode(self.index).unwrap().try_into().unwrap()
+    pub(crate) fn get_desktop_display_mode(&self) -> SdlDisplayMode {
+        self.handle.get_mode().unwrap().try_into().unwrap()
+    }
+
+    pub(crate) fn get_closest_display_mode(&self, mode: &DisplayMode)
+        -> Result<SdlDisplayMode, String> {
+        let sdl_mode = SdlDisplayMode::new(
+            self.handle,
+            // SAFETY: This parameter is unused by get_closest_display_mode.
+            // The function simply initializes an instance of the struct with
+            // the value SDL_PixelFormat::UNKNOWN which is not unsafe in and
+            // of itself.
+            unsafe { PixelFormat::unknown() },
+            mode.resolution.x as i32,
+            mode.resolution.y as i32,
+            0.0, // unused
+            mode.refresh_rate,
+            0, // unused
+            0, // unused
+            ptr::null_mut::<>(),
+        );
+        self.handle.get_closest_display_mode(&sdl_mode, false)
+            .map_err(|err| format!("Unable to get closest SDL display mode: {}", err.to_string()))
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DisplayMode {
+    pub format: u32,
+    pub resolution: Vector2u,
+    pub refresh_rate: f32,
+    pub color_depth: Vector4u,
+}
+
+impl TryFrom<SdlDisplayMode> for DisplayMode {
+    type Error = String;
+
+    fn try_from(mode: SdlDisplayMode) -> Result<DisplayMode, String> {
+        if mode.w <= 0 || mode.h <= 0 {
+            return Err("Display mode dimensions must be greater than 0".to_string());
+        }
+
+        let masks = mode.format.into_masks()
+            .map_err(|err| {
+                format!("Failed to query color channels modes for display mode: {}", err)
+            })?;
+
+        Ok(DisplayMode {
+            resolution: Vector2u::new(mode.w as u32, mode.h as u32),
+            refresh_rate: mode.refresh_rate,
+            color_depth: Vector4u::new(
+                masks.rmask.count_ones(),
+                masks.gmask.count_ones(),
+                masks.bmask.count_ones(),
+                masks.amask.count_ones(),
+            ),
+            format: 0,
+        })
     }
 }
 
 pub(crate) fn init_display() {
-    *g_displays.lock().unwrap() = enumerate_displays();
-
-    sdl_add_event_watch(display_callback);
+    *g_displays.lock().unwrap() =
+        enumerate_displays(WindowManager::instance().get_sdl_video_ss().unwrap());
+    WindowManager::instance().get_sdl_event_ss().unwrap()
+        .add_event_watch(DisplayCallback {});
 }
 
-fn add_display(display_index: i32) -> Result<Display, String> {
-    let display_name = sdl_get_display_name(display_index)
-        .map_err(|err| {
-            format!("Failed to query name of display {} ({})", display_index, err.get_message())
-        })?;
+impl TryInto<Display> for SdlDisplay {
+    type Error = String;
+    fn try_into(self) -> Result<Display, Self::Error> {
+        let display_name = self.get_name()
+            .map_err(|err| {
+                format!("Failed to query name of display: {}", err.to_string())
+            })?;
 
-    let bounds = sdl_get_display_bounds(display_index)
-        .map_err(|err| {
-            format!("Failed to query bounds of display {} ({})", display_index, err.get_message())
-        })?;
+        let bounds = self.get_bounds()
+            .map_err(|err| {
+                format!("Failed to query bounds of display {}: {}", display_name, err.to_string())
+            })?;
 
-    let mode_count = sdl_get_num_display_modes(display_index)
-        .map_err(|err| {
-            format!(
-                "Failed to query display modes for display {} ({})",
-                display_index,
-                err.get_message()
-            )
-        })?;
+        let modes: Vec<DisplayMode> = self.get_fullscreen_modes()
+            .map_err(|err| {
+                format!(
+                    "Failed to query display modes for display {}: {}",
+                    display_name,
+                    err.to_string(),
+                )
+            })?
+            .into_iter()
+            .filter_map(|mode| match mode.try_into() {
+                Ok(mode) => Some::<DisplayMode>(mode),
+                Err(err) => {
+                    warn!(
+                        LOGGER,
+                        "Failed to process mode {}x{}@{} for display {}, skipping ({})",
+                        mode.w,
+                        mode.h,
+                        mode.refresh_rate,
+                        display_name,
+                        err,
+                    );
+                    None
+                }
+            })
+            .collect();
 
-    let mut modes = Vec::<DisplayMode>::new();
-    for mode_index in 0..mode_count {
-        let mode = match sdl_get_display_mode(display_index, mode_index) {
-            Ok(mode) => mode,
-            Err(err) => {
-                warn!(
-                    LOGGER,
-                    "Failed to query display mode {} for display {}, skipping ({})",
-                    mode_index,
-                    display_index,
-                    err.get_message(),
-                );
-                continue;
-            }
-        };
-
-        modes.push(mode.try_into()?);
+        Ok(Display::new(display_name, Vector2i::new(bounds.x, bounds.y), modes, self))
     }
-
-    Ok(Display::new(display_index, display_name, Vector2i::new(bounds.x, bounds.y), modes))
 }
 
-fn enumerate_displays() -> Vec<Display> {
-    let Ok(count) = sdl_get_num_video_displays()
-    else { panic!("Failed to enumerate displays"); };
-
-    let mut displays: Vec<Display> = Vec::with_capacity(count as usize);
-    for i in 0..count {
-        displays.push(add_display(i).unwrap());
-    }
-
-    displays
+fn enumerate_displays(video: &VideoSubsystem) -> Vec<Display> {
+    video.displays().unwrap().into_iter().map(|disp| disp.try_into().unwrap()).collect()
 }
 
 fn update_displays() {
-    let new_displays: Vec<Display> = enumerate_displays();
+    let video = WindowManager::instance().get_sdl_video_ss().unwrap();
+
+    let new_displays: Vec<Display> = enumerate_displays(&video);
 
     WindowManager::instance().reset_window_displays();
 
     *g_displays.lock().unwrap() = new_displays;
 }
 
-fn display_callback(event: &SdlEvent) -> i32 {
-    if event.ty != SdlEventType::DisplayEvent {
-        return 0;
+struct DisplayCallback {}
+impl EventWatchCallback for DisplayCallback {
+    fn callback(&mut self, event: SdlEvent) {
+        let SdlEvent::Display { display_event, .. } = event else { return; };
+        match display_event {
+            SdlDisplayEvent::Added |
+            SdlDisplayEvent::Removed => {
+                update_displays();
+            }
+            _ => {}
+        }
     }
-
-    let SdlEventData::Display(disp_event) = &event.data
-    else { panic!("Display event data not found") };
-
-    if disp_event.ty == SdlDisplayEventType::Connected ||
-        disp_event.ty == SdlDisplayEventType::Disconnected {
-        update_displays();
-    }
-
-    0
 }
+

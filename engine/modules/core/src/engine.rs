@@ -25,6 +25,7 @@ const DEINIT_STAGES: &[LifecycleStage] = &[
     LifecycleStage::PostDeinit
 ];
 
+static IS_RENDER_INITTED: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static IS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
 static STOP_ACK_UPDATE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static STOP_ACK_RENDER: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
@@ -37,11 +38,11 @@ pub struct RenderLoopParams {
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[script_bind]
 pub enum Ordering {
-    First,
+    Earliest,
     Early,
     Standard,
     Late,
-    Last,
+    Latest,
 }
 
 pub fn init_logger(settings: LogSettings) {
@@ -102,6 +103,21 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
         let render_loop = mgr.get_render_loop().expect("Render loop is not set");
 
         thread::spawn(|| {
+            debug!(LOGGER, "Running render initialization callbacks");
+
+            mgr.render_init_callbacks.flush_queues();
+            let mut callbacks = mgr.render_init_callbacks.drain();
+            callbacks.sort_by_key(|(_, (_, ordering))| *ordering);
+            for (_, (callback, _)) in callbacks {
+                callback();
+            }
+
+            debug!(LOGGER, "Render thread is fully initialized");
+            
+            *IS_RENDER_INITTED.0.lock().unwrap() = true;
+            IS_RENDER_INITTED.1.notify_all();
+            debug!(LOGGER, "Render thread notified update thread that it can proceed");
+            
             render_loop(RenderLoopParams {
                 core_render_callback: do_render_callbacks,
                 shutdown_notifier: render_shutdown_rx,
@@ -206,8 +222,12 @@ pub fn unregister_render_callback(id: u64) {
     EngineManager::instance().remove_update_callback(id);
 }
 
-pub fn run_on_game_thread<F: 'static + Send + FnOnce()>(callback: F) {
-    EngineManager::instance().add_one_off_update_callback(callback);
+pub fn run_on_update_thread<F: 'static + Send + FnOnce()>(callback: F, ordering: Ordering) {
+    EngineManager::instance().add_one_off_update_callback(callback, ordering);
+}
+
+pub fn run_on_render_thread<F: 'static + Send + FnOnce()>(callback: F, ordering: Ordering) {
+    EngineManager::instance().add_one_off_render_callback(callback, ordering);
 }
 
 pub fn is_current_thread_update_thread() -> bool {
@@ -215,6 +235,28 @@ pub fn is_current_thread_update_thread() -> bool {
 }
 
 fn do_update_loop() {
+    let (update_ack_lock, update_ack_cv) = &IS_RENDER_INITTED;
+    let mut should_start = update_ack_lock.lock().unwrap();
+    if !*should_start {
+        loop {
+            let result = update_ack_cv
+                .wait_timeout(should_start, Duration::from_millis(10)).unwrap();
+            should_start = result.0;
+            if *should_start {
+                debug!(
+                    LOGGER,
+                    "Render thread is now fully initialized, update loop can start",
+                );
+                break;
+            }
+        }
+    } else {
+        debug!(
+            LOGGER,
+            "Render thread was already initialized - update loop can start immediately",
+        );
+    }
+    
     let mut last_update = Instant::now();
 
     while !IS_STOP_REQUESTED.load(atomic::Ordering::Relaxed) {
@@ -222,11 +264,17 @@ fn do_update_loop() {
         let delta = cur_instant.duration_since(last_update);
         last_update = cur_instant;
 
-        for (_, callback) in EngineManager::instance().update_one_off_callbacks.drain() {
+        EngineManager::instance().update_one_off_callbacks.flush_queues();
+
+        let mut once_callbacks = EngineManager::instance().update_one_off_callbacks.drain();
+        once_callbacks.sort_by_key(|(_, (_, ordering))| *ordering);
+        for (_, (callback, _)) in once_callbacks {
             callback();
         }
 
         {
+            EngineManager::instance().update_event_handlers.flush_queues();
+
             let event_handlers = EngineManager::instance().update_event_handlers.items();
             let queued_events = EngineManager::instance().update_event_queue.lock()
                 .drain(..)
@@ -240,8 +288,6 @@ fn do_update_loop() {
             }
         }
 
-        EngineManager::instance().update_one_off_callbacks.flush_queues();
-        EngineManager::instance().update_event_handlers.flush_queues();
         EngineManager::instance().update_callbacks.flush_queues();
 
         for callback in EngineManager::instance().update_callbacks.items().values()
@@ -252,11 +298,17 @@ fn do_update_loop() {
 }
 
 fn do_render_callbacks(delta: Duration) {
-    for (_, callback) in EngineManager::instance().render_one_off_callbacks.drain() {
+    EngineManager::instance().render_one_off_callbacks.flush_queues();
+
+    let mut once_callbacks = EngineManager::instance().render_one_off_callbacks.drain();
+    once_callbacks.sort_by_key(|(_, (_, ordering))| *ordering);
+    for (_, (callback, _)) in once_callbacks {
         callback();
     }
 
     {
+        EngineManager::instance().render_event_handlers.flush_queues();
+
         let event_handlers = EngineManager::instance().render_event_handlers.items();
         let queued_events = EngineManager::instance().render_event_queue.lock()
             .drain(..)
@@ -270,8 +322,6 @@ fn do_render_callbacks(delta: Duration) {
         }
     }
 
-    EngineManager::instance().render_one_off_callbacks.flush_queues();
-    EngineManager::instance().render_event_handlers.flush_queues();
     EngineManager::instance().render_callbacks.flush_queues();
 
     for callback in EngineManager::instance().render_callbacks.items().values()

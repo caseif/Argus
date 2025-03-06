@@ -42,8 +42,9 @@ pub struct EngineManager {
     next_callback_index: AtomicU64,
     pub(crate) update_callbacks: BufferedMap<u64, EngineCallback<dyn Send + Fn(Duration)>>,
     pub(crate) render_callbacks: BufferedMap<u64, EngineCallback<dyn Send + Fn(Duration)>>,
-    pub(crate) update_one_off_callbacks: BufferedMap<u64, Box<dyn Send + FnOnce()>>,
-    pub(crate) render_one_off_callbacks: BufferedMap<u64, Box<dyn Send + FnOnce()>>,
+    pub(crate) update_one_off_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
+    pub(crate) render_one_off_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
+    pub(crate) render_init_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
 
     pub(crate) update_event_handlers: BufferedMap<u64, (EngineCallback<dyn Send + Fn(&Arc<dyn ArgusEvent>)>, TypeId)>,
     pub(crate) render_event_handlers: BufferedMap<u64, (EngineCallback<dyn Send + Fn(&Arc<dyn ArgusEvent>)>, TypeId)>,
@@ -85,6 +86,7 @@ impl EngineManager {
             render_callbacks: BufferedMap::new(),
             update_one_off_callbacks: BufferedMap::new(),
             render_one_off_callbacks: BufferedMap::new(),
+            render_init_callbacks: BufferedMap::new(),
 
             update_event_handlers: BufferedMap::new(),
             render_event_handlers: BufferedMap::new(),
@@ -180,15 +182,32 @@ impl EngineManager {
         self.render_callbacks.remove(index);
     }
 
-    pub fn add_one_off_update_callback<F: 'static + Send + FnOnce()>(&self, f: F) -> u64 {
+    pub fn add_one_off_update_callback<F: 'static + Send + FnOnce()>(
+        &self, f: F,
+        ordering: Ordering,
+    ) -> u64 {
         let index = self.next_index();
-        self.update_one_off_callbacks.insert(index, Box::new(f,));
+        self.update_one_off_callbacks.insert(index, (Box::new(f), ordering));
         index
     }
 
-    pub fn add_one_off_render_callback<F: 'static + Send + FnOnce()>(&self, f: F) -> u64 {
+    pub fn add_one_off_render_callback<F: 'static + Send + FnOnce()>(
+        &self,
+        f: F,
+        ordering: Ordering,
+    ) -> u64 {
         let index = self.next_index();
-        self.render_one_off_callbacks.insert(index, Box::new(f));
+        self.render_one_off_callbacks.insert(index, (Box::new(f), ordering));
+        index
+    }
+
+    pub fn add_render_init_callback<F: 'static + Send + FnOnce()>(
+        &self,
+        f: F,
+        ordering: Ordering,
+    ) -> u64 {
+        let index = self.next_index();
+        self.render_init_callbacks.insert(index, (Box::new(f), ordering));
         index
     }
 

@@ -4,15 +4,17 @@ use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::time::Duration;
 use bitflags::bitflags;
 use fragile::Fragile;
+use sdl3::Sdl;
+use sdl3::video::{FullscreenType, WindowPos};
 use argus_core::{dispatch_event, get_client_name};
 use argus_logging::{debug, info};
 use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector2i, Vector2u};
-use sdl2::hints::{sdl_set_hint, SDL_HINT_MOUSE_RELATIVE_MODE_WARP};
-use sdl2::mouse::{sdl_set_relative_mouse_mode, sdl_show_cursor};
-use sdl2::video::*;
 use crate::*;
+
+use sdl3::video::DisplayMode as SdlDisplayMode;
+use sdl3::video::Window as SdlWindow;
 
 const DEF_WINDOW_DIM: u32 = 300;
 
@@ -64,7 +66,7 @@ pub struct Window {
     pub(crate) state: Mutex<WindowStateFlags>,
     pub(crate) is_close_request_pending: AtomicBool,
     pub(crate) cur_resolution: RwLock<Dirtiable<Vector2u>>,
-    pub(crate) cur_refresh_rate: u16,
+    pub(crate) cur_refresh_rate: f32,
     pub(crate) refcount: AtomicI32,
     pub(crate) create_flags: WindowCreationFlags,
 }
@@ -227,16 +229,14 @@ impl Window {
         if !state.contains(WindowStateFlags::Created) {
             debug!(LOGGER, "Window '{}' still needs to be created", self.id);
 
-            let sdl_flags = engine_create_flags_to_sdl_flags(self.create_flags);
-
             self.handle = Some(Fragile::new(
-                SdlWindow::create(
+                WindowManager::instance().create_platform_window(
+                    &self.id,
                     get_client_name(),
-                    SDL_WINDOWPOS_CENTERED as i32,
-                    SDL_WINDOWPOS_CENTERED as i32,
-                    DEF_WINDOW_DIM as i32,
-                    DEF_WINDOW_DIM as i32,
-                    sdl_flags,
+                    DEF_WINDOW_DIM,
+                    DEF_WINDOW_DIM,
+                    None,
+                    self.create_flags,
                 )
                     .expect("Failed to create SDL window")
             ));
@@ -277,7 +277,7 @@ impl Window {
         let mouse_raw_input = props.mouse_raw_input.read();
 
         if title.dirty {
-            self.handle.as_mut().unwrap().get_mut().set_title(title.value);
+            self.handle.as_mut().unwrap().get_mut().set_title(&title.value).unwrap();
         }
 
         if fullscreen.dirty
@@ -291,33 +291,32 @@ impl Window {
                 let handle = self.handle.as_mut().unwrap().get_mut();
 
                 let disp_off = target_display.get_position();
-                handle.set_position(disp_off.x, disp_off.y);
-                handle.set_fullscreen(SdlWindowFlags::Fullscreen);
-                let sdl_mode = match display_mode.value {
+                handle.set_position(
+                    WindowPos::Positioned(disp_off.x),
+                    WindowPos::Positioned(disp_off.y),
+                );
+                handle.set_fullscreen(true).unwrap();
+                let new_mode = match display_mode.value {
                     Some(mode) => {
-                        let cur_mode: SdlDisplayMode = mode.try_into().unwrap();
-                        sdl_get_closest_display_mode(
-                            target_display.get_index(),
-                            &cur_mode,
-                        )
+                        let cur_mode = mode.try_into().unwrap();
+                        target_display.get_closest_display_mode(&cur_mode)
                             .expect("Failed to get closest display mode for display")
                     }
                     None => {
-                        sdl_get_desktop_display_mode(target_display.get_index())
-                            .expect("Failed to get desktop display mode")
+                        target_display.get_desktop_display_mode()
                     }
                 };
 
-                assert!(sdl_mode.width > 0);
-                assert!(sdl_mode.height > 0);
+                assert!(new_mode.w > 0);
+                assert!(new_mode.h > 0);
 
-                handle.set_display_mode(&sdl_mode).expect("Failed to set window display mode");
+                handle.set_display_mode(new_mode).expect("Failed to set window display mode");
 
-                assert!(sdl_mode.refresh_rate <= u16::MAX as i32, "Refresh rate is too big");
+                assert!(new_mode.refresh_rate <= u16::MAX as f32, "Refresh rate is too big");
                 self.cur_resolution.write().unwrap().set(
-                    Vector2u::new(sdl_mode.width as u32, sdl_mode.height as u32)
+                    Vector2u::new(new_mode.w as u32, new_mode.h as u32)
                 );
-                self.cur_refresh_rate = sdl_mode.refresh_rate as u16;
+                self.cur_refresh_rate = new_mode.refresh_rate;
             } else {
                 assert!(
                     windowed_res.value.x <= i32::MAX as u32 &&
@@ -325,15 +324,8 @@ impl Window {
                    "Current windowed resolution is too large"
                 );
 
-                let target_disp = display.value
-                    .expect("Window does not have preferred display");
-                let pos_x: i32 = target_disp.get_position().x + position.value.x;
-                let pos_y: i32 = target_disp.get_position().y + position.value.y;
-
                 let handle = self.handle.as_mut().unwrap().get_mut();
-                handle.set_fullscreen(SdlWindowFlags::Empty);
-                handle.set_position(pos_x, pos_y);
-                handle.set_size(windowed_res.value.x as i32, windowed_res.value.y as i32);
+                handle.set_fullscreen(false).unwrap();
 
                 self.cur_resolution.write().unwrap().set(windowed_res.value);
             }
@@ -349,7 +341,7 @@ impl Window {
 
                 let handle = self.handle.as_mut().unwrap().get_mut();
 
-                handle.set_size(windowed_res.value.x as i32, windowed_res.value.y as i32);
+                handle.set_size(windowed_res.value.x, windowed_res.value.y).unwrap();
 
                 self.cur_resolution.write().unwrap().set(windowed_res.value);
             }
@@ -358,23 +350,28 @@ impl Window {
                 let target_disp = display.value.expect("Window does not have preferred display");
                 let pos_x: i32 = target_disp.get_position().x + position.value.x;
                 let pos_y: i32 = target_disp.get_position().y + position.value.y;
-                self.handle.as_mut().unwrap().get_mut().set_position(pos_x, pos_y);
+                self.handle.as_mut().unwrap().get_mut()
+                    .set_position(WindowPos::Positioned(pos_x), WindowPos::Positioned(pos_y));
             }
         }
 
         if mouse_capture.dirty || mouse_visible.dirty {
             if mouse_capture.value && !mouse_visible.value {
                 if mouse_raw_input.dirty {
-                    sdl_set_hint(
-                        SDL_HINT_MOUSE_RELATIVE_MODE_WARP,
-                        if mouse_raw_input.value { "0" } else { "1" }
+                    sdl3::hint::set(
+                        sdl3::hint::names::MOUSE_EMULATE_WARP_WITH_RELATIVE,
+                        if mouse_raw_input.value { "0" } else { "1" },
                     );
                 }
-                sdl_set_relative_mouse_mode(true).expect("Failed to set relative mouse mode");
+                WindowManager::instance().get_sdl().unwrap()
+                    .mouse()
+                    .set_relative_mouse_mode(self.handle.as_ref().unwrap().get(), true);
             } else {
                 self.handle.as_mut().unwrap().get_mut().set_mouse_grab(mouse_capture.value);
                 //TODO: not great, would be better to set it per window somehow
-                sdl_show_cursor(mouse_visible.value).expect("Failed to set mouse visibile toggle");
+                WindowManager::instance().get_sdl().unwrap()
+                    .mouse()
+                    .show_cursor(mouse_visible.value);
             }
         }
 
@@ -544,7 +541,10 @@ impl Window {
     pub fn get_display_mode(&self) -> DisplayMode {
         match self.properties.read().unwrap().display_mode.peek().value {
             Some(mode) => mode,
-            None => self.get_display_affinity().unwrap().get_desktop_display_mode(),
+            None => {
+                self.get_display_affinity().unwrap().get_desktop_display_mode()
+                    .try_into().unwrap()
+            },
         }
     }
 
@@ -664,33 +664,4 @@ pub(crate) fn dispatch_window_event(window_id: impl Into<String>, ty: WindowEven
         position: None,
         delta: None,
     });
-}
-
-fn engine_create_flags_to_sdl_flags(engine_flags: WindowCreationFlags) -> SdlWindowFlags {
-    let mut sdl_flags = SdlWindowFlags::Resizable |
-        SdlWindowFlags::InputFocus |
-        SdlWindowFlags::Hidden;
-
-    let gfx_api_bits = engine_flags & WindowCreationFlags::GraphicsApiMask;
-    if gfx_api_bits.bits().count_ones() > 1 {
-        panic!("Only one graphics API may be set during window creation");
-    }
-
-    if engine_flags.contains(WindowCreationFlags::OpenGL) {
-        sdl_flags.set(SdlWindowFlags::OpenGL, true);
-    } else if engine_flags.contains(WindowCreationFlags::Vulkan) {
-        sdl_flags.set(SdlWindowFlags::Vulkan, true);
-    } else if engine_flags.contains(WindowCreationFlags::Metal) {
-        if cfg!(any(target_os = "macos", target_os = "ios")) {
-            sdl_flags.set(SdlWindowFlags::Metal, true);
-        } else {
-            panic!("Metal contexts are not supported on non-Apple platforms");
-        }
-    } else if engine_flags.contains(WindowCreationFlags::DirectX) {
-        panic!("DirectX contexts are not supported at this time");
-    } else if engine_flags.contains(WindowCreationFlags::WebGPU) {
-        panic!("WebGPU contexts are not supported at this time");
-    }
-
-    sdl_flags
 }

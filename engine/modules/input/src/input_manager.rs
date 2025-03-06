@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 use std::ptr;
+use std::sync::OnceLock;
 use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
+use fragile::Fragile;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
+use sdl3::{GamepadSubsystem, JoystickSubsystem};
 use argus_scripting_bind::script_bind;
 use argus_util::math::Vector2d;
+use argus_wm::WindowManager;
 use crate::controller::Controller;
 use crate::gamepad::{DeadzoneShape, GamepadAxis, HidDeviceInstanceId};
+use crate::mouse::MouseButtonMask;
 
 const MAX_CONTROLLERS: u32 = 8;
 const DEF_DZ_RADIUS: f64 = 0.2;
@@ -21,6 +26,8 @@ lazy_static! {
         gamepad_devices_state: Default::default(),
         gamepad_states: DashMap::new(),
         deadzone_config: Default::default(),
+        sdl_joystick_ss: Default::default(),
+        sdl_gamepad_ss: Default::default(),
     };
 }
 
@@ -33,7 +40,7 @@ pub(crate) struct KeyboardState {
 pub(crate) struct MouseState {
     pub(crate) last_pos: Option<Vector2d>,
     pub(crate) delta: Vector2d,
-    pub(crate) button_state: u32,
+    pub(crate) button_state: MouseButtonMask,
 }
 
 #[derive(Default)]
@@ -76,6 +83,8 @@ pub struct InputManager {
     pub(crate) gamepad_devices_state: RwLock<GamepadDevicesState>,
     pub(crate) gamepad_states: DashMap<HidDeviceInstanceId, GamepadState>,
     pub(crate) deadzone_config: RwLock<DeadzoneConfig>,
+    pub(crate) sdl_joystick_ss: OnceLock<Fragile<JoystickSubsystem>>,
+    pub(crate) sdl_gamepad_ss: OnceLock<Fragile<GamepadSubsystem>>,
 }
 
 #[script_bind]
@@ -87,6 +96,32 @@ pub fn get_input_manager() -> &'static InputManager {
 impl InputManager {
     pub fn instance() -> &'static Self {
         &*INPUT_MANAGER_INSTANCE
+    }
+    
+    pub(crate) fn init_sdl(&self) {
+        let sdl = WindowManager::instance().get_sdl().unwrap();
+        self.sdl_joystick_ss.set(Fragile::new(sdl.joystick().unwrap())).unwrap();
+        self.sdl_gamepad_ss.set(Fragile::new(sdl.gamepad().unwrap())).unwrap();
+    }
+
+    pub(crate) fn get_sdl_joystick_ss(&self) -> Result<&JoystickSubsystem, String> {
+        self.sdl_joystick_ss.get()
+            .ok_or_else(|| "SDL was not initialized!".to_owned())
+            .and_then(|event| {
+                event.try_get().map_err(|_| {
+                    "SDL may only be accessed by the thread which initialized it".to_owned()
+                })
+            })
+    }
+
+    pub(crate) fn get_sdl_gamepad_ss(&self) -> Result<&GamepadSubsystem, String> {
+        self.sdl_gamepad_ss.get()
+            .ok_or_else(|| "SDL was not initialized!".to_owned())
+            .and_then(|event| {
+                event.try_get().map_err(|_| {
+                    "SDL may only be accessed by the thread which initialized it".to_owned()
+                })
+            })
     }
 
     pub fn get_controller(&self, name: impl AsRef<str>) -> Ref<String, Controller> {

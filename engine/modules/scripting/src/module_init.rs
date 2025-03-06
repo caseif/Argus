@@ -1,7 +1,7 @@
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::mem;
-use argus_core::{get_scripting_parameters, register_module, run_on_game_thread, LifecycleStage};
+use argus_core::{get_scripting_parameters, register_module, run_on_update_thread, LifecycleStage, Ordering};
 use argus_logging::debug;
 use argus_scripting_bind::*;
 use crate::*;
@@ -67,7 +67,10 @@ pub fn update_lifecycle_scripting(stage: LifecycleStage) {
             let scripting_params = get_scripting_parameters();
             if let Some(init_script_uid) = scripting_params.main {
                 // run it during the first iteration of the update loop
-                run_on_game_thread(Box::new(move || { run_init_script(init_script_uid.clone()); }));
+                run_on_update_thread(
+                    Box::new(move || { run_init_script(init_script_uid.clone()); }),
+                    Ordering::Standard,
+                );
             }
         }
         LifecycleStage::Deinit => {

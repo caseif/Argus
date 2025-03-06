@@ -66,7 +66,7 @@ pub struct InputDeviceEvent {
     pub device_event: InputDeviceEventType,
     pub controller_name: String,
     //TODO: should be HidDeviceId, script_bind macro needs work to support this though
-    pub device_id: i32,
+    pub device_id: u32,
 }
 
 impl InputDeviceEvent {

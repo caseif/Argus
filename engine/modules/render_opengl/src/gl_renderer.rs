@@ -34,7 +34,6 @@ use argus_render::twod::get_render_context_2d;
 use argus_resman::Resource;
 use argus_util::math::Vector2u;
 use argus_wm::*;
-use argus_wm::gl_destroy_context;
 use crate::LOGGER;
 use crate::util::gl_util::gl_debug_callback;
 
@@ -59,15 +58,15 @@ impl GlRenderer {
         #[cfg(not(debug_assertions))]
         let context_flags = GlContextFlags::ProfileCore | GlContextFlags::DebugContext;
 
+        let gl_mgr = WindowManager::instance().get_gl_manager()
+            .expect("Failed to get OpenGL manager");
+        
         self.state.gl_context =
-            Some(gl_create_context(window, 3, 3, context_flags).unwrap());
-        gl_make_context_current(
-            window,
-            self.state.gl_context.as_ref().unwrap()
-        )
+            Some(gl_mgr.create_context(window, 3, 3, context_flags).unwrap());
+        self.state.gl_context.as_ref().unwrap().make_current(window)
             .expect("Failed to make GL context current");
 
-        if let Err(e) = agletLoad(gl_load_proc_ffi) {
+        if let Err(e) = agletLoad(GlManager::load_proc_ffi) {
             panic!(
                 "Failed to load OpenGL bindings (Aglet returned error {:?})",
                 e
@@ -97,7 +96,7 @@ impl GlRenderer {
             gl_major, gl_minor, gl_version_str
         );
 
-        gl_swap_interval(0);
+        gl_mgr.set_swap_interval(0);
 
         if aglet_have_gl_khr_debug() {
             glDebugMessageCallback(gl_debug_callback, ptr::null());
@@ -109,7 +108,7 @@ impl GlRenderer {
     }
 
     pub(crate) fn render(&mut self, window: &mut Window, _delta: Duration) {
-        gl_make_context_current(window, self.state.gl_context.as_ref().unwrap())
+        self.state.gl_context.as_ref().unwrap().make_current(window)
             .expect("Failed to make GL context current");
 
         let resolution = window.get_resolution();
@@ -125,7 +124,8 @@ impl GlRenderer {
 
         let vsync = window.is_vsync_enabled();
         if vsync.dirty {
-            gl_swap_interval(vsync.value.then_some(1).unwrap_or(0));
+            WindowManager::instance().get_gl_manager().unwrap()
+                .set_swap_interval(vsync.value.then_some(1).unwrap_or(0));
         }
 
         self.update_global_ubo();
@@ -186,7 +186,8 @@ impl GlRenderer {
             );
         }
 
-        gl_swap_buffers(&window);
+        WindowManager::instance().get_gl_manager().unwrap().swap_buffers(&window)
+            .expect("Failed to swap buffers");
     }
 
     pub(crate) fn notify_window_resize(

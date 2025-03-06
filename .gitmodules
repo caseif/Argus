@@ -4,6 +4,3 @@
 [submodule "external/libs/lua"]
 	path = external-bindings/lua/lua
 	url = git@github.com:lua/lua.git
-[submodule "external/libs/sdl2"]
-	path = external/libs/sdl2
-	url = https://github.com/libsdl-org/SDL.git

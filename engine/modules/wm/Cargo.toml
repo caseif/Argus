@@ -14,8 +14,7 @@ argus_util = { path = "../../libs/argus_util" }
 
 argus_core = { path = "../core" }
 
-sdl2 = { path = "../../../external-bindings/sdl2" }
-
 bitflags = { workspace = true }
 dashmap = { workspace = true }
 fragile = { workspace = true }
+sdl3 = { workspace = true, features = ["build-from-source-static"] }

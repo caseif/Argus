@@ -2,10 +2,6 @@ use std::cell::{RefCell};
 use std::sync::{LazyLock, OnceLock};
 use std::time::{Duration, Instant};
 use argus_core::*;
-use sdl2::error::sdl_get_error;
-use sdl2::events::sdl_pump_events;
-use sdl2::hints::{sdl_set_hint, SDL_HINT_APP_NAME, SDL_HINT_VIDEODRIVER};
-use sdl2::{sdl_init, sdl_quit, sdl_quit_subsystem, SdlInitFlags};
 use argus_logging::{crate_logger, debug, info};
 use crate::display::init_display;
 use crate::{WindowEvent, WindowManager};
@@ -16,11 +12,6 @@ pub const WINDOWING_MODE_FULLSCREEN: &str = "fullscreen";
 
 crate_logger!(LOGGER, "argus/wm");
 
-static ENGINE_SDL_INIT_FLAGS: LazyLock<SdlInitFlags> =
-    LazyLock::new(|| SdlInitFlags::Events |
-        SdlInitFlags::Video |
-        SdlInitFlags::GameController);
-
 #[allow(non_upper_case_globals)]
 static g_is_wm_module_initialized: OnceLock<bool> = OnceLock::new();
 thread_local! {
@@ -29,14 +20,12 @@ thread_local! {
 }
 
 fn clean_up() {
-    sdl_quit_subsystem(*ENGINE_SDL_INIT_FLAGS);
-    sdl_quit();
+    //sdl_quit_subsystem(*ENGINE_SDL_INIT_FLAGS);
+    //sdl_quit();
 }
 
 fn poll_events() {
-    sdl_pump_events();
-
-    WindowManager::instance().handle_sdl_window_events();
+    WindowManager::instance().handle_sdl_window_events().expect("Failed to poll SDL events");
 }
 
 fn do_window_loop(delta: Duration) {
@@ -53,7 +42,8 @@ fn create_initial_window() {
         return;
     }
 
-    let mut window = WindowManager::instance().create_window(&id, None);
+    let mut window = WindowManager::instance().create_window(&id, None)
+        .expect("Failed to create initial window");
 
     if let Some(title) = params.title {
         window.set_title(title);
@@ -102,7 +92,7 @@ fn check_window_count(_delta: Duration) {
     let window_count = WindowManager::instance().get_window_count();
     if window_count == 0 && !g_did_request_stop.replace(true) {
         g_did_request_stop.set(true);
-        run_on_game_thread(Box::new(stop_engine));
+        run_on_update_thread(Box::new(stop_engine), Ordering::Standard);
     }
 }
 
@@ -115,14 +105,16 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
             set_render_loop(render_loop).expect("Failed to set engine render loop");
         }
         LifecycleStage::Init => {
-            if cfg!(target_os = "linux") {
-                sdl_set_hint(SDL_HINT_VIDEODRIVER, "x11,wayland");
-            }
-            sdl_set_hint(SDL_HINT_APP_NAME, get_client_name());
-            if sdl_init(*ENGINE_SDL_INIT_FLAGS) != 0 {
-                panic!("SDL init failed: {}", sdl_get_error().get_message());
-            }
-            info!(LOGGER, "SDL initialized successfully");
+            EngineManager::instance().add_render_init_callback(|| {
+                if cfg!(target_os = "linux") {
+                    sdl3::hint::set(sdl3::hint::names::VIDEO_DRIVER, "wayland,x11");
+                }
+                sdl3::hint::set(sdl3::hint::names::APP_NAME, &get_client_name());
+                WindowManager::instance().init_sdl().expect("Failed to initialize SDL");
+                info!(LOGGER, "SDL initialized successfully");
+
+                init_display();
+            }, Ordering::Earliest);
 
             register_update_callback(Box::new(check_window_count), Ordering::Standard);
             //register_render_callback(Box::new(do_window_loop), Ordering::Standard);
@@ -132,15 +124,16 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
                 Ordering::Standard,
             );
 
-            init_display();
-
             g_is_wm_module_initialized.set(true).unwrap();
         }
         LifecycleStage::PostInit => {
             // reap any windows created during render module init
             WindowManager::instance().reap_windows();
 
-            create_initial_window();
+            EngineManager::instance().add_render_init_callback(
+                create_initial_window,
+                Ordering::Late,
+            );
         }
         LifecycleStage::Deinit => {
             clean_up();

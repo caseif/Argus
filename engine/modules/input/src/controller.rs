@@ -27,7 +27,7 @@ use crate::mouse::*;
 #[script_bind(ref_only)]
 pub struct Controller {
     name: String,
-    attached_gamepad: Option<i32>,
+    attached_gamepad: Option<u32>,
     pub(crate) was_gamepad_disconnected: bool,
 
     deadzones: DeadzoneConfig,
@@ -86,7 +86,7 @@ impl Controller {
 
     #[script_bind]
     //TODO: id should be HidDeviceInstanceId
-    pub fn attach_gamepad(&mut self, id: i32) {
+    pub fn attach_gamepad(&mut self, id: u32) {
         if self.attached_gamepad.is_some() {
             panic!("Controller already has associated gamepad");
         }

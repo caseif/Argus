@@ -1,21 +1,28 @@
+use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
-use std::ptr;
+use std::{cell, ptr};
 use std::sync::{LazyLock, Mutex, OnceLock};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Duration;
-use argus_logging::warn;
 use bitflags::bitflags;
 use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
+use fragile::Fragile;
+use sdl3::{EventPump, EventSubsystem, Sdl, VideoSubsystem};
 use argus_core::{dispatch_event, get_current_lifecycle_stage, LifecycleStage};
 use argus_scripting_bind::script_bind;
 use argus_util::math::{Vector2f, Vector2i, Vector2u};
-use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType, SdlWindowEventData, SdlWindowEventType};
-use sdl2::video::{SdlWindow, SdlWindowFlags};
 use crate::{is_wm_module_initialized, Canvas, Display, Window, WindowEvent, WindowEventType, WindowStateFlags, LOGGER};
+use crate::gl_manager::GlManager;
 use crate::window::dispatch_window_event;
 
-static INSTANCE: LazyLock<WindowManager> = LazyLock::new(WindowManager::new);
+use sdl3::event::Event as SdlEvent;
+use sdl3::event::WindowEvent as SdlWindowEvent;
+use sdl3::sys::video::SDL_WINDOW_INPUT_FOCUS;
+use sdl3::video::{FullscreenType, Window as SdlWindow, WindowBuilder};
+use argus_logging::warn;
+
+static INSTANCE: LazyLock<WindowManager> = LazyLock::new(|| WindowManager::new());
 
 /// @brief A callback which constructs a Canvas associated with a given
 ///        Window.
@@ -23,11 +30,17 @@ pub type CanvasCtor = dyn Fn(&mut Window) -> Box<dyn Canvas> + Send + Sync;
 
 #[script_bind(ref_only)]
 pub struct WindowManager {
+    sdl: OnceLock<Fragile<Sdl>>,
+    sdl_video_ss: OnceLock<Fragile<VideoSubsystem>>,
+    sdl_event_ss: OnceLock<Fragile<EventSubsystem>>,
+    sdl_event_pump: OnceLock<Fragile<RefCell<EventPump>>>,
+    gl_manager: OnceLock<Fragile<GlManager>>,
+
     canvas_ctor: OnceLock<Box<CanvasCtor>>,
     window_create_flags: AtomicU32,
 
     windows: DashMap<String, Window>,
-    window_handle_map: DashMap<usize, String>,
+    window_handle_map: DashMap<u32, String>,
 }
 
 bitflags! {
@@ -48,6 +61,11 @@ bitflags! {
 impl WindowManager {
     pub(crate) fn new() -> WindowManager {
         Self {
+            sdl: OnceLock::new(),
+            sdl_video_ss: OnceLock::new(),
+            sdl_event_ss: OnceLock::new(),
+            sdl_event_pump: OnceLock::new(),
+            gl_manager: OnceLock::new(),
             canvas_ctor: OnceLock::new(),
             window_create_flags: AtomicU32::new(WindowCreationFlags::None.bits()),
             windows: DashMap::new(),
@@ -58,6 +76,77 @@ impl WindowManager {
     #[script_bind]
     pub fn instance() -> &'static WindowManager {
         INSTANCE.deref()
+    }
+
+    pub(crate) fn init_sdl(&self) -> Result<&Sdl, String> {
+        let sdl = sdl3::init().map_err(|err| format!("Failed to initialize SDL: {:?}", err))?;
+        self.sdl.set(Fragile::new(sdl)).map_err(|_| "SDL was already initialized!".to_owned())?;
+        self.sdl_video_ss.set(Fragile::new(self.get_sdl()?.video().unwrap()))
+            .expect("SDL video subsystem was already initialized");
+        self.sdl_event_ss.set(Fragile::new(self.get_sdl()?.event().unwrap()))
+            .expect("SDL event subsystem was already initialized");
+        self.sdl_event_pump.set(Fragile::new(RefCell::new(self.get_sdl()?.event_pump().unwrap())))
+            .unwrap_or_else(|_| panic!("SDL event pump was already initialized"));
+        self.gl_manager.set(Fragile::new(
+            GlManager::new(self.sdl_video_ss.get().unwrap().get().clone())
+        ))
+            .unwrap_or_else(|_| panic!("OpenGL manager was already initialized"));
+        Ok(&self.sdl.get().unwrap().get())
+    }
+
+    pub fn get_sdl(&self) -> Result<&Sdl, String> {
+        self.sdl.get().ok_or_else(|| "SDL was not initialized!".to_owned()).and_then(|sdl| {
+            sdl.try_get().map_err(|_| {
+                "SDL may only be accessed by the thread which initialized it".to_owned()
+            })
+        })
+    }
+
+    pub(crate) fn get_sdl_video_ss(&self) -> Result<&VideoSubsystem, String> {
+        self.sdl_video_ss.get().ok_or_else(|| "SDL was not initialized!".to_owned()).and_then(|video| {
+            video.try_get().map_err(|_| {
+                "SDL may only be accessed by the thread which initialized it".to_owned()
+            })
+        })
+    }
+
+    pub fn get_sdl_event_ss(&self) -> Result<&EventSubsystem, String> {
+        self.sdl_event_ss.get().ok_or_else(|| "SDL was not initialized!".to_owned()).and_then(|event| {
+            event.try_get().map_err(|_| {
+                "SDL may only be accessed by the thread which initialized it".to_owned()
+            })
+        })
+    }
+
+    pub fn get_sdl_event_pump(&self) -> Result<cell::Ref<EventPump>, String> {
+        self.sdl_event_pump.get().ok_or_else(|| "SDL was not initialized!".to_owned())
+            .and_then(|pump| {
+                pump.try_get().map_err(|_| {
+                    "SDL may only be accessed by the thread which initialized it".to_owned()
+                })
+            })
+            .map(|pump| {
+                pump.borrow()
+            })
+    }
+
+    pub fn get_sdl_event_pump_mut(&self) -> Result<cell::RefMut<EventPump>, String> {
+        self.sdl_event_pump.get().ok_or_else(|| "SDL was not initialized!".to_owned())
+            .and_then(|pump| {
+                pump.try_get().map_err(|_| {
+                    "SDL may only be accessed by the thread which initialized it".to_owned()
+                })
+            })
+            .map(|pump| {
+                pump.borrow_mut()
+            })
+    }
+
+    pub fn get_gl_manager(&self) -> Result<&GlManager, String> {
+        let Some(mgr) = self.gl_manager.get() else {
+            return Err("Cannot get GL interface: SDL is not yet initialized".to_owned());
+        };
+        Ok(mgr.get())
     }
 
     /// @brief Sets the callbacks used to construct and destroy a Canvas
@@ -102,20 +191,19 @@ impl WindowManager {
     /// @remark A Canvas will be implicitly created during construction
     ///         of a Window.
     pub fn create_window(&self, id: impl Into<String>, parent: Option<String>) ->
-        RefMut<String, Window> {
-        assert!(
-            is_wm_module_initialized(),
-            "Cannot create window before wm module is initialized.",
-        );
+        Result<RefMut<String, Window>, String> {
+        if !is_wm_module_initialized() {
+            return Err("Cannot create window before wm module is initialized.".to_owned());
+        }
 
         let create_flags = WindowCreationFlags::from_bits_truncate(
             self.window_create_flags.load(Ordering::Relaxed)
         );
 
-        if create_flags.contains(WindowCreationFlags::Transient) &&
-            get_current_lifecycle_stage() > LifecycleStage::Init {
-            panic!("Transient window may not be created after Init stage");
-        }
+        //if create_flags.contains(WindowCreationFlags::Transient) &&
+        //    get_current_lifecycle_stage() > LifecycleStage::Init {
+        //    return Err("Transient window may not be created after Init stage".to_owned());
+        //}
 
         let id_str: String = id.into();
 
@@ -135,13 +223,14 @@ impl WindowManager {
             state: Mutex::new(state),
             is_close_request_pending: AtomicBool::new(false),
             cur_resolution: Default::default(),
-            cur_refresh_rate: 0,
+            cur_refresh_rate: 0.0,
             refcount: Default::default(),
             create_flags: WindowCreationFlags::from_bits_truncate(
                 self.window_create_flags.load(Ordering::Relaxed)
             ),
         };
-        window.set_display_affinity(Display::get_from_index(0).unwrap());
+        let prim_disp = self.get_sdl_video_ss()?.get_primary_display().map_err(|err| err.to_string())?;
+        window.set_display_affinity(prim_disp.try_into()?);
 
         window.canvas = match self.canvas_ctor.get() {
             Some(ctor) => Some(ctor(&mut window)),
@@ -156,11 +245,63 @@ impl WindowManager {
 
         self.windows.insert(id_str.clone(), window);
 
-        self.windows.get_mut(&id_str).unwrap()
+        Ok(self.windows.get_mut(&id_str).unwrap())
+    }
+
+    pub(crate) fn create_platform_window(
+        &self,
+        id: impl AsRef<str>,
+        title: impl AsRef<str>,
+        width: u32,
+        height: u32,
+        position: Option<Vector2i>,
+        flags: WindowCreationFlags,
+    ) -> Result<SdlWindow, String> {
+        let mut builder = WindowBuilder::new(
+            self.get_sdl_video_ss()?,
+            title.as_ref(),
+            width,
+            height,
+        );
+        if let Some(pos) = position {
+            builder.position(pos.x, pos.y);
+        } else {
+            builder.position_centered();
+        }
+        builder
+            .set_window_flags(SDL_WINDOW_INPUT_FOCUS as u32)
+            .resizable()
+            .hidden();
+
+        let gfx_api_bits = flags & WindowCreationFlags::GraphicsApiMask;
+        if gfx_api_bits.bits().count_ones() > 1 {
+            panic!("Only one graphics API may be set during window creation");
+        }
+
+        if flags.contains(WindowCreationFlags::OpenGL) {
+            builder.opengl();
+        } else if flags.contains(WindowCreationFlags::Vulkan) {
+            builder.vulkan();
+        } else if flags.contains(WindowCreationFlags::Metal) {
+            if cfg!(any(target_os = "macos", target_os = "ios")) {
+                builder.metal_view();
+            } else {
+                panic!("Metal contexts are not supported on non-Apple platforms");
+            }
+        } else if flags.contains(WindowCreationFlags::DirectX) {
+            panic!("DirectX contexts are not supported at this time");
+        } else if flags.contains(WindowCreationFlags::WebGPU) {
+            panic!("WebGPU contexts are not supported at this time");
+        }
+
+        let window = builder.build()
+            .map_err(|err| format!("Failed to create platform window: {:?}", err))?;
+        self.window_handle_map.insert(window.id(), id.as_ref().to_owned());
+        Ok(window)
     }
 
     pub fn register_handle(&self, window_id: impl Into<String>, handle: &SdlWindow) {
-        self.window_handle_map.insert(handle.as_addr(), window_id.into());
+        self.window_handle_map.insert(handle.id(), window_id.into());
     }
 
     pub fn get_window_count(&self) -> usize {
@@ -195,13 +336,18 @@ impl WindowManager {
     /// @return The Window with the provided handle, or None if the handle
     ///         pointer is not known to the engine.
     pub fn get_window_from_handle(&self, handle: SdlWindow) -> Option<Ref<String, Window>> {
-        let id = self.window_handle_map.get(&handle.as_addr())?;
+        let id = self.window_handle_map.get(&handle.id())?;
         self.windows.get(id.value())
     }
 
     pub fn get_window_from_handle_mut(&self, handle: SdlWindow) -> Option<RefMut<String, Window>> {
-        let id = self.window_handle_map.get(&handle.as_addr())?;
+        let id = self.window_handle_map.get(&handle.id())?;
         self.windows.get_mut(id.value())
+    }
+
+    pub fn get_window_from_handle_id(&self, id: u32) -> Option<Ref<String, Window>> {
+        let id = self.window_handle_map.get(&id)?;
+        self.windows.get(id.value())
     }
 
     pub(crate) fn reset_window_displays(&self) {
@@ -212,75 +358,62 @@ impl WindowManager {
                 continue;
             }
 
-            let new_disp_index =
-                window.handle.as_ref().unwrap().get().get_display_index().unwrap();
-            if new_disp_index < 0 ||
-                new_disp_index >= Display::get_available_displays().len() as i32 {
-                warn!(
-                    LOGGER,
-                    "Failed to query new display of window ID {}, things might not work correctly!",
-                    window.get_id(),
-                );
-                continue;
-            }
+            let new_disp =
+                window.handle.as_ref().unwrap().get().get_display().unwrap();
             let mut props = window.properties.write().unwrap();
-            let disp = Display::get_from_index(new_disp_index)
-                .expect("Could not get display from index");
-            props.display.set_quietly(Some(disp));
+            props.display.set_quietly(Some(new_disp.try_into().unwrap()));
         }
     }
 
-    fn handle_sdl_window_event(&self, event: &SdlWindowEventData) {
-        let handle = SdlWindow::from_id(event.window_id).expect("Could not get SDL window from ID");
-        /*if (SDL_GetWindowID(handle) != event->window.windowID) {
-            return 0;
-        }*/
+    fn handle_sdl_window_event(&self, window_id: u32, event: &SdlWindowEvent) {
+        let Some(window_id_ref) = self.window_handle_map.get(&window_id) else {
+            warn!(LOGGER, "Saw event for unknown window ID {}", window_id);
+            return;
+        };
 
-        let Some(window_id_ref) = self.window_handle_map.get(&handle.as_addr())
-        else { return; };
-        let window_id = window_id_ref.value();
-        let window_ref = self.windows.get(window_id).expect("Window was missing for handle");
+        let window_ref = self.windows.get(window_id_ref.value())
+            .expect("Window was missing for handle");
         let window = window_ref.value();
 
         if window.is_closed() {
             return;
         }
 
-        match event.ty {
-            SdlWindowEventType::Moved => {
+        match event {
+            SdlWindowEvent::Moved(x, y) => {
                 dispatch_event(WindowEvent {
                     subtype: WindowEventType::Move,
-                    window: window_id.clone(),
+                    window: window.id.clone(),
                     resolution: None,
-                    position: Some(Vector2i::new(event.data_1, event.data_2)),
+                    position: Some(Vector2i::new(*x, *y)),
                     delta: Default::default(),
                 });
             }
-            SdlWindowEventType::Resized => {
+            SdlWindowEvent::Resized(width, height) => {
                 dispatch_event(WindowEvent {
                     subtype: WindowEventType::Resize,
-                    window: window_id.clone(),
-                    resolution: Some(Vector2u::new(event.data_1 as u32, event.data_2 as u32)),
+                    window: window.id.clone(),
+                    resolution: Some(Vector2u::new(*width as u32, *height as u32)),
                     position: None,
                     delta: None,
                 });
             }
-            SdlWindowEventType::Minimized => {
-                dispatch_window_event(window_id, WindowEventType::Minimize);
+            SdlWindowEvent::Minimized => {
+                dispatch_window_event(&window.id, WindowEventType::Minimize);
             }
-            SdlWindowEventType::Restored => {
-                dispatch_window_event(window_id, WindowEventType::Restore);
+            SdlWindowEvent::Restored => {
+                dispatch_window_event(&window.id, WindowEventType::Restore);
             }
-            SdlWindowEventType::FocusGained => {
-                dispatch_window_event(window_id, WindowEventType::Focus);
+            SdlWindowEvent::FocusGained => {
+                dispatch_window_event(&window.id, WindowEventType::Focus);
             }
-            SdlWindowEventType::FocusLost => {
-                dispatch_window_event(window_id, WindowEventType::Unfocus);
+            SdlWindowEvent::FocusLost => {
+                dispatch_window_event(&window.id, WindowEventType::Unfocus);
             }
-            SdlWindowEventType::Close => {
-                dispatch_window_event(window_id, WindowEventType::RequestClose);
+            SdlWindowEvent::CloseRequested => {
+                dispatch_window_event(&window.id, WindowEventType::RequestClose);
             }
-            //TODO: handle display scale changed event when we move to SDL 3
+            //TODO: handle display scale changed event
             _ => {}
         }
     }
@@ -293,14 +426,19 @@ impl WindowManager {
         self.reap_windows();
     }
 
-    pub(crate) fn handle_sdl_window_events(&self) {
-        let events = sdl_get_events(SdlEventType::WindowEvent, SdlEventType::WindowEvent)
-            .expect("Failed to get SDL window events");
+    pub(crate) fn handle_sdl_window_events(&self) -> Result<(), String> {
+        self.get_sdl_event_ss()?.flush_events(0, u32::MAX);
+        self.get_sdl_event_pump_mut()?.pump_events();
+
+        let events: Vec<SdlEvent> = self.get_sdl_event_ss()
+            .map_err(|err| err.to_string())?
+            .peek_events(1024);
         for event in events {
-            let SdlEventData::Window(event_data) = event.data
-            else { panic!("Event data mismatch for window event") };
-            self.handle_sdl_window_event(&event_data);
+            let SdlEvent::Window { window_id, win_event, .. } = event else { continue };
+            self.handle_sdl_window_event(window_id, &win_event);
         }
+
+        Ok(())
     }
 
     pub(crate) fn handle_engine_window_event(&self, event: &WindowEvent) {
@@ -324,8 +462,8 @@ impl WindowManager {
             WindowEventType::Move => {
                 let pos = event.position.expect("Position missing from window move event");
                 let Some(handle) = window.handle.as_ref() else { return; };
-                if !handle.get().get_flags().contains(SdlWindowFlags::Fullscreen) {
-                // if not in fullscreen mode
+                if handle.get().fullscreen_state() == FullscreenType::Off {
+                    // if not in fullscreen mode
                     window.properties.write().unwrap().position.set_quietly(pos);
                 }
             }

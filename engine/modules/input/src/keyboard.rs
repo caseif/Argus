@@ -4,11 +4,13 @@ use argus_logging::warn;
 use lazy_static::lazy_static;
 use argus_scripting_bind::script_bind;
 use argus_wm::{Window, WindowManager};
-use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType};
-use sdl2::keyboard::{sdl_get_keyboard_state, SdlKeyCode, SdlScancode};
-use sdl2::video::SdlWindow;
 use crate::input_event::dispatch_button_event;
 use crate::{InputManager, LOGGER};
+
+use sdl3::event::Event as SdlEvent;
+use sdl3::keyboard::Keycode as SdlKeycode;
+use sdl3::keyboard::Scancode as SdlScancode;
+use sdl3::sys::keycode::SDL_KMOD_NONE;
 
 lazy_static! {
     static ref SCANCODE_MAP_ARGUS_TO_SDL:
@@ -40,16 +42,16 @@ lazy_static! {
         (KeyboardScancode::X, SdlScancode::X),
         (KeyboardScancode::Y, SdlScancode::Y),
         (KeyboardScancode::Z, SdlScancode::Z),
-        (KeyboardScancode::Number1, SdlScancode::Number1),
-        (KeyboardScancode::Number2, SdlScancode::Number2),
-        (KeyboardScancode::Number3, SdlScancode::Number3),
-        (KeyboardScancode::Number4, SdlScancode::Number4),
-        (KeyboardScancode::Number5, SdlScancode::Number5),
-        (KeyboardScancode::Number6, SdlScancode::Number6),
-        (KeyboardScancode::Number7, SdlScancode::Number7),
-        (KeyboardScancode::Number8, SdlScancode::Number8),
-        (KeyboardScancode::Number9, SdlScancode::Number9),
-        (KeyboardScancode::Number0, SdlScancode::Number0),
+        (KeyboardScancode::Number1, SdlScancode::_1),
+        (KeyboardScancode::Number2, SdlScancode::_2),
+        (KeyboardScancode::Number3, SdlScancode::_3),
+        (KeyboardScancode::Number4, SdlScancode::_4),
+        (KeyboardScancode::Number5, SdlScancode::_5),
+        (KeyboardScancode::Number6, SdlScancode::_6),
+        (KeyboardScancode::Number7, SdlScancode::_7),
+        (KeyboardScancode::Number8, SdlScancode::_8),
+        (KeyboardScancode::Number9, SdlScancode::_9),
+        (KeyboardScancode::Number0, SdlScancode::_0),
         (KeyboardScancode::Enter, SdlScancode::Return),
         (KeyboardScancode::Escape, SdlScancode::Escape),
         (KeyboardScancode::Backspace, SdlScancode::Backspace),
@@ -311,8 +313,12 @@ impl KeyboardScancode {
 }
 
 impl KeyboardScancode {
-    pub fn get_name(&self) -> String {
-        SdlKeyCode::from_scancode(translate_argus_scancode(self)).get_name()
+    pub fn get_name(&self) -> Option<String> {
+        SdlKeycode::from_scancode(
+            translate_argus_scancode(self),
+            SDL_KMOD_NONE,
+            false,
+        ).map(|kc| kc.name())
     }
 }
 
@@ -350,7 +356,7 @@ pub fn is_key_pressed(scancode: KeyboardScancode) -> bool {
     }
 
     let sdl_scancode = translate_argus_scancode(&scancode);
-    let key_index = u32::from(sdl_scancode) as usize;
+    let key_index = sdl_scancode.to_i32() as usize;
 
     if sdl_scancode == SdlScancode::Unknown {
         return false;
@@ -361,12 +367,6 @@ pub fn is_key_pressed(scancode: KeyboardScancode) -> bool {
     }
 
     kbd_state.key_states[key_index] != 0
-}
-
-//TODO: pretty sure this isn't needed - the returned array is updated by SDL_PumpEvents
-fn poll_keyboard_state() {
-    let mut kbd_state = InputManager::instance().keyboard_state.write();
-    kbd_state.key_states = sdl_get_keyboard_state();
 }
 
 fn dispatch_events(window: &Window, key: KeyboardScancode, release: bool) {
@@ -389,23 +389,30 @@ fn dispatch_events(window: &Window, key: KeyboardScancode, release: bool) {
 }
 
 fn handle_keyboard_events() {
-    let events = sdl_get_events(SdlEventType::KeyDown, SdlEventType::KeyUp)
-        .expect("Failed to get SDL key events");
+    let event_ss = WindowManager::instance().get_sdl_event_ss()
+        .expect("SDL is not yet initialized");
+    let events: Vec<SdlEvent> = event_ss.peek_events::<Vec<SdlEvent>>(1024);
     for event in events {
-        let SdlEventData::Keyboard(data) = event.data else { continue; };
-        if data.repeat != 0 {
+        let (keyup, window_id, _keycode, scancode, _keymod, repeat) = match event {
+            SdlEvent::KeyDown { window_id, keycode, scancode, keymod, repeat, .. } =>
+                (false, window_id, keycode, scancode, keymod, repeat),
+            SdlEvent::KeyUp { window_id, keycode, scancode, keymod, repeat, .. } =>
+                (true, window_id, keycode, scancode, keymod, repeat),
+            _ => { continue; }
+        };
+
+        if repeat {
             continue;
         }
-        let sdl_window = SdlWindow::from_id(data.window_id).unwrap();
-        let Some(window) = WindowManager::instance().get_window_from_handle(sdl_window)
+        let Some(window) = WindowManager::instance().get_window_from_handle_id(window_id)
         else { return; };
 
-        let key = translate_sdl_scancode(&data.keysym.scancode);
-        dispatch_events(&window, key, event.ty == SdlEventType::KeyUp);
+        let Some(scancode) = scancode else { continue; };
+        let key = translate_sdl_scancode(&scancode);
+        dispatch_events(&window, key, keyup);
     }
 }
 
 pub(crate) fn update_keyboard() {
-    poll_keyboard_state();
     handle_keyboard_events();
 }

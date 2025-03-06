@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 use argus_logging::{crate_logger, warn};
-use argus_core::{register_event_handler, register_module, LifecycleStage, Ordering, TargetThread};
+use argus_core::{register_event_handler, register_module, EngineManager, LifecycleStage, Ordering, TargetThread};
 use argus_render::common::register_render_backend;
 use argus_render::constants::{RESOURCE_TYPE_MATERIAL, RESOURCE_TYPE_SHADER_GLSL_FRAG, RESOURCE_TYPE_SHADER_GLSL_VERT};
 use argus_resman::{ResourceEvent, ResourceEventType, ResourceManager};
@@ -67,10 +67,12 @@ fn set_backend_active(active: bool) {
 }
 
 fn test_opengl_support() -> Result<(), ()> {
-    let mut window = WindowManager::instance().create_window("", None);
+    let mut window = WindowManager::instance().create_window("gl_probe", None)
+        .expect("Failed to create window for OpenGL probe");
     window.update(Duration::from_secs(0));
+    let gl_mgr = WindowManager::instance().get_gl_manager().expect("Failed to get OpenGL manager");
     let gl_context =
-        match gl_create_context(&mut window, 3, 3, GlContextFlags::ProfileCore.into()) {
+        match gl_mgr.create_context(&window, 3, 3, GlContextFlags::ProfileCore.into()) {
             Ok(ctx) => ctx,
             Err(e) => {
                 warn!(LOGGER, "Failed to create GL context: {e}");
@@ -78,12 +80,12 @@ fn test_opengl_support() -> Result<(), ()> {
             }
         };
 
-    if let Err(rc) = gl_make_context_current(&mut window, &gl_context) {
+    if let Err(rc) = gl_context.make_current(&window) {
         warn!(LOGGER, "Failed to make GL context current ({rc})");
         return Err(());
     }
 
-    if let Err(e) = agletLoadCapabilities(gl_load_proc_ffi) {
+    if let Err(e) = agletLoadCapabilities(GlManager::load_proc_ffi) {
         let err_msg = match e {
             AgletError::Unspecified => "Aglet failed to load OpenGL bindings (unspecified error)",
             AgletError::ProcLoad => "Aglet failed to load required OpenGL procs",
@@ -108,14 +110,16 @@ fn activate_opengl_backend() -> bool {
 
     mgr.set_window_creation_flags(transient_flags);
 
-    if gl_load_library().is_err() {
-        warn!(LOGGER, "Failed to load OpenGL library");
+    let gl_mgr = mgr.get_gl_manager().expect("Failed to get OpenGL manager");
+    
+    if let Err(err) = gl_mgr.load_library() {
+        warn!(LOGGER, "Failed to load OpenGL library: {}", err);
         mgr.set_window_creation_flags(WindowCreationFlags::None);
         return false;
     }
 
     if test_opengl_support().is_err() {
-        gl_unload_library();
+        gl_mgr.unload_library();
         mgr.set_window_creation_flags(WindowCreationFlags::None);
         return false;
     }
@@ -206,43 +210,44 @@ pub fn update_lifecycle_render_opengl(stage: LifecycleStage) {
             register_render_backend(BACKEND_ID, activate_opengl_backend);
         }
         LifecycleStage::Init => {
-            if !is_backend_active() {
-                return;
-            }
-
-            ResourceManager::instance().register_loader(
-                vec![
-                    RESOURCE_TYPE_SHADER_GLSL_VERT,
-                    RESOURCE_TYPE_SHADER_GLSL_FRAG,
-                ],
-                ShaderLoader::new(),
-            );
-
-            register_event_handler(
-                Box::new(window_event_handler),
-                TargetThread::Render,
-                Ordering::Standard
-            );
-            register_event_handler(
-                Box::new(resource_event_handler),
-                TargetThread::Render,
-                Ordering::Standard
-            );
+            EngineManager::instance().add_render_init_callback(on_render_init, Ordering::Standard);
         }
         LifecycleStage::PostInit => {
-            if !is_backend_active() {
-                return;
-            }
-
-            ResourceManager::instance().add_memory_package(RESOURCES_PACK)
-                .expect("Failed to load in-memory resources for render_opengl");
         }
         LifecycleStage::Deinit => {
             RENDERERS.with_borrow_mut(|renderers| renderers.clear() );
         }
         LifecycleStage::PostDeinit => {
-            gl_unload_library();
+            //WindowManager::instance().get_gl_manager().unwrap().unload_library();
         }
         _ => {}
     }
+}
+
+fn on_render_init() {
+    if !is_backend_active() {
+        return;
+    }
+
+    ResourceManager::instance().register_loader(
+        vec![
+            RESOURCE_TYPE_SHADER_GLSL_VERT,
+            RESOURCE_TYPE_SHADER_GLSL_FRAG,
+        ],
+        ShaderLoader::new(),
+    );
+
+    register_event_handler(
+        Box::new(window_event_handler),
+        TargetThread::Render,
+        Ordering::Standard
+    );
+    register_event_handler(
+        Box::new(resource_event_handler),
+        TargetThread::Render,
+        Ordering::Standard
+    );
+
+    ResourceManager::instance().add_memory_package(RESOURCES_PACK)
+        .expect("Failed to load in-memory resources for render_opengl");
 }

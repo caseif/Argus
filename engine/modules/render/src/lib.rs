@@ -34,7 +34,10 @@ pub fn update_lifecycle_render(stage: LifecycleStage) {
                 Box::new(|window| Box::new(RenderCanvas::new(window)))
             );
 
-            activate_backend();
+            EngineManager::instance().add_render_init_callback(
+                || activate_backend(),
+                Ordering::Early,
+            );
 
             ResourceManager::instance()
                 .register_loader(vec![RESOURCE_TYPE_MATERIAL], MaterialLoader {});

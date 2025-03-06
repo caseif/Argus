@@ -2,6 +2,7 @@ use std::any::Any;
 use crate::manager::EngineManager;
 use crate::Ordering;
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TargetThread {
     Update,
     Render,

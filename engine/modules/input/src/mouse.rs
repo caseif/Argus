@@ -1,14 +1,17 @@
 use std::collections::HashMap;
+use std::ops::Deref;
+use bitflags::bitflags;
 use argus_logging::warn;
 use lazy_static::lazy_static;
 use argus_scripting_bind::script_bind;
 use argus_util::math::Vector2d;
 use argus_wm::{Window, WindowManager};
-use sdl2::events::{sdl_get_events, SdlEventData, SdlEventType};
-use sdl2::mouse::{sdl_get_mouse_state, SdlMouseButton};
-use sdl2::video::SdlWindow;
 use crate::input_event::{dispatch_axis_event, dispatch_button_event};
 use crate::{InputManager, LOGGER};
+
+use sdl3::event::Event as SdlEvent;
+use sdl3::mouse::MouseButton as SdlMouseButton;
+use sdl3::mouse::MouseState as SdlMouseState;
 
 lazy_static! {
     static ref MOUSE_BUTTON_MAP_ARGUS_TO_SDL: HashMap<MouseButton, SdlMouseButton> = HashMap::from([
@@ -30,6 +33,53 @@ pub enum MouseButton {
     Middle = 3,
     Back = 4,
     Forward = 5,
+}
+
+impl MouseButton {
+    pub(crate) fn mask(&self) -> MouseButtonMask {
+        match self {
+            MouseButton::Primary => MouseButtonMask::Primary,
+            MouseButton::Secondary => MouseButtonMask::Secondary,
+            MouseButton::Middle => MouseButtonMask::Middle,
+            MouseButton::Back => MouseButtonMask::Back,
+            MouseButton::Forward => MouseButtonMask::Forward,
+        }
+    }
+}
+
+bitflags! {
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    pub struct MouseButtonMask: u32 {
+        const Primary = 0b0000_0001;
+        const Secondary = 0b0000_0010;
+        const Middle = 0b0000_0100;
+        const Back = 0b0000_1000;
+        const Forward = 0b0001_0000;
+    }
+}
+
+impl From<SdlMouseState> for MouseButtonMask {
+    fn from(value: SdlMouseState) -> Self {
+        let mut mask = MouseButtonMask::empty();
+
+        if value.left() {
+            mask.set(MouseButtonMask::Primary, true);
+        }
+        if value.right() {
+            mask.set(MouseButtonMask::Secondary, true);
+        }
+        if value.middle() {
+            mask.set(MouseButtonMask::Middle, true);
+        }
+        if value.x1() {
+            mask.set(MouseButtonMask::Back, true);
+        }
+        if value.x2() {
+            mask.set(MouseButtonMask::Forward, true);
+        }
+
+        mask
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -76,19 +126,17 @@ pub fn get_mouse_axis_delta(axis: MouseAxis) -> f64 {
 /// Gets whether a mouse button is currently being pressed.
 #[script_bind]
 pub fn is_mouse_button_pressed(button: MouseButton) -> bool {
-    let Some(sdl_button) = MOUSE_BUTTON_MAP_ARGUS_TO_SDL.get(&button) else {
-        panic!("Invalid mouse button {:?}", button);
-    };
     let mouse_state = InputManager::instance().mouse_state.read();
-    (mouse_state.button_state & sdl_button.get_mask() as u32) != 0
+    mouse_state.button_state.contains(button.mask())
 }
 
 fn poll_mouse() {
     let mut mouse_state = InputManager::instance().mouse_state.write();
 
-    let new_state = sdl_get_mouse_state();
-    let new_x = new_state.position_x;
-    let new_y = new_state.position_y;
+    let new_state =
+        SdlMouseState::new(WindowManager::instance().get_sdl_event_pump().unwrap().deref());
+    let new_x = new_state.x();
+    let new_y = new_state.y();
 
     if let Some(last_pos) = mouse_state.last_pos {
         mouse_state.delta.x += new_x as f64 - last_pos.x;
@@ -153,38 +201,46 @@ fn dispatch_mouse_axis_events(window: &Window, x: f64, y: f64, dx: f64, dy: f64)
 }
 
 fn handle_mouse_events() {
-    let events = sdl_get_events(SdlEventType::MouseMotion, SdlEventType::MouseButtonUp)
-        .expect("Failed to get SDL mouse events");
+    let event_ss = WindowManager::instance().get_sdl_event_ss()
+        .expect("SDL is not yet initialized");
+    let events: Vec<SdlEvent> = event_ss.peek_events::<Vec<SdlEvent>>(1024);
     for event in events {
-        match event.data {
-            SdlEventData::MouseMotion(data) => {
-                let Some(window) = (match SdlWindow::from_id(data.window_id) {
-                    Ok(sdl_window) =>
-                        WindowManager::instance().get_window_from_handle(sdl_window),
-                    Err(_) => None,
-                }) else { continue; };
+        match event {
+            SdlEvent::MouseMotion { window_id, x, y, xrel, yrel, .. } => {
+                let Some(window) = WindowManager::instance()
+                    .get_window_from_handle_id(window_id) else { continue; };
                 dispatch_mouse_axis_events(
                     &window,
-                    data.x as f64,
-                    data.y as f64,
-                    data.x_rel as f64,
-                    data.y_rel as f64,
+                    x as f64,
+                    y as f64,
+                    xrel as f64,
+                    yrel as f64,
                 );
             }
-            SdlEventData::MouseButton(data) => {
-                let Some(button) = MOUSE_BUTTON_MAP_SDL_TO_ARGUS.get(&data.button) else {
-                    warn!(LOGGER, "Ignoring unrecognized mouse button {:?}", data.button);
+            SdlEvent::MouseButtonDown { window_id, mouse_btn, .. } => {
+                let Some(button) = MOUSE_BUTTON_MAP_SDL_TO_ARGUS.get(&mouse_btn) else {
+                    warn!(LOGGER, "Ignoring unrecognized mouse button {:?}", mouse_btn);
                     return;
                 };
-                let Some(window) = (match SdlWindow::from_id(data.window_id) {
-                    Ok(sdl_window) =>
-                        WindowManager::instance().get_window_from_handle(sdl_window),
-                    Err(_) => None,
-                }) else { continue; };
+                let Some(window) = WindowManager::instance()
+                    .get_window_from_handle_id(window_id) else { continue; };
                 dispatch_mouse_button_event(
                     &window,
                     button,
-                    event.ty == SdlEventType::MouseButtonUp,
+                    false,
+                );
+            }
+            SdlEvent::MouseButtonUp { window_id, mouse_btn, .. } => {
+                let Some(button) = MOUSE_BUTTON_MAP_SDL_TO_ARGUS.get(&mouse_btn) else {
+                    warn!(LOGGER, "Ignoring unrecognized mouse button {:?}", mouse_btn);
+                    return;
+                };
+                let Some(window) = WindowManager::instance()
+                    .get_window_from_handle_id(window_id) else { continue; };
+                dispatch_mouse_button_event(
+                    &window,
+                    button,
+                    true,
                 );
             }
             _ => {}

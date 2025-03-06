@@ -16,10 +16,10 @@ argus_core = { path = "../core" }
 argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
-sdl2 = { path = "../../../external-bindings/sdl2" }
-
 bitflags = { workspace = true }
 dashmap = { workspace = true }
+fragile = { workspace = true }
 lazy_static = { workspace = true }
 num_enum = { workspace = true }
 parking_lot = { workspace = true }
+sdl3 = { workspace = true, features = ["build-from-source-static"] }

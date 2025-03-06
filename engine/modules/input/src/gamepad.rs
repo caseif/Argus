@@ -5,17 +5,21 @@ use lazy_static::lazy_static;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_core::dispatch_event;
 use argus_scripting_bind::script_bind;
-use sdl2::events::{sdl_get_events, SdlButtonState, SdlEventData, SdlEventType};
-use sdl2::gamecontroller::*;
-use sdl2::joystick::*;
 use crate::input_event::{dispatch_axis_event, dispatch_button_event};
 use crate::{InputDeviceEvent, InputDeviceEventType, InputManager, LOGGER};
 use crate::input_manager::GamepadDevicesState;
 
+use sdl3::event::Event as SdlEvent;
+use sdl3::gamepad::Axis as SdlGamepadAxis;
+use sdl3::gamepad::Button as SdlGamepadButton;
+use sdl3::gamepad::Gamepad as SdlGamepad;
+use sdl3::joystick::Joystick as SdlJoystick;
+use argus_wm::WindowManager;
+
 const GAMEPAD_NAME_INVALID: &str = "invalid";
 const GAMEPAD_NAME_UNKNOWN: &str = "unknown";
 
-pub type HidDeviceInstanceId = i32;
+pub type HidDeviceInstanceId = u32;
 
 type GamepadButtonState = u64;
 
@@ -27,43 +31,41 @@ static AXIS_PAIRS: [(GamepadAxis, GamepadAxis); 3] = [
 
 lazy_static! {
     static ref BUTTON_MAP_ARGUS_TO_SDL:
-    HashMap<GamepadButton, SdlGameControllerButton> = HashMap::from([
-        (GamepadButton::A, SdlGameControllerButton::A),
-        (GamepadButton::B, SdlGameControllerButton::B),
-        (GamepadButton::X, SdlGameControllerButton::X),
-        (GamepadButton::Y, SdlGameControllerButton::Y),
-        (GamepadButton::DpadUp, SdlGameControllerButton::DpadUp),
-        (GamepadButton::DpadDown, SdlGameControllerButton::DpadDown),
-        (GamepadButton::DpadLeft, SdlGameControllerButton::DpadLeft),
-        (GamepadButton::DpadRight, SdlGameControllerButton::DpadRight),
-        (GamepadButton::LBumper, SdlGameControllerButton::LeftShoulder),
-        (GamepadButton::RBumper, SdlGameControllerButton::RightShoulder),
-        (GamepadButton::LStick, SdlGameControllerButton::LeftStick),
-        (GamepadButton::RStick, SdlGameControllerButton::RightStick),
-        (GamepadButton::L4, SdlGameControllerButton::Paddle1),
-        (GamepadButton::R4, SdlGameControllerButton::Paddle2),
-        (GamepadButton::L5, SdlGameControllerButton::Paddle3),
-        (GamepadButton::R5, SdlGameControllerButton::Paddle4),
-        (GamepadButton::Start, SdlGameControllerButton::Start),
-        (GamepadButton::Back, SdlGameControllerButton::Back),
-        (GamepadButton::Guide, SdlGameControllerButton::Guide),
-        (GamepadButton::Misc1, SdlGameControllerButton::Misc1),
+    HashMap<GamepadButton, SdlGamepadButton> = HashMap::from([
+        (GamepadButton::A, SdlGamepadButton::South),
+        (GamepadButton::B, SdlGamepadButton::East),
+        (GamepadButton::X, SdlGamepadButton::West),
+        (GamepadButton::Y, SdlGamepadButton::North),
+        (GamepadButton::DpadUp, SdlGamepadButton::DPadUp),
+        (GamepadButton::DpadDown, SdlGamepadButton::DPadDown),
+        (GamepadButton::DpadLeft, SdlGamepadButton::DPadLeft),
+        (GamepadButton::DpadRight, SdlGamepadButton::DPadRight),
+        (GamepadButton::LBumper, SdlGamepadButton::LeftShoulder),
+        (GamepadButton::RBumper, SdlGamepadButton::RightShoulder),
+        (GamepadButton::LStick, SdlGamepadButton::LeftStick),
+        (GamepadButton::RStick, SdlGamepadButton::RightStick),
+        (GamepadButton::L4, SdlGamepadButton::LeftPaddle1),
+        (GamepadButton::R4, SdlGamepadButton::RightPaddle1),
+        (GamepadButton::L5, SdlGamepadButton::LeftPaddle2),
+        (GamepadButton::R5, SdlGamepadButton::RightPaddle2),
+        (GamepadButton::Start, SdlGamepadButton::Start),
+        (GamepadButton::Back, SdlGamepadButton::Back),
+        (GamepadButton::Guide, SdlGamepadButton::Guide),
+        (GamepadButton::Misc1, SdlGamepadButton::Misc1),
     ]);
-    static ref BUTTON_MAP_SDL_TO_ARGUS: HashMap<SdlGameControllerButton, GamepadButton> =
+    static ref BUTTON_MAP_SDL_TO_ARGUS: HashMap<SdlGamepadButton, GamepadButton> =
         BUTTON_MAP_ARGUS_TO_SDL.iter().map(|(k, v)| (*v, *k)).collect();
 
     static ref AXIS_MAP_ARGUS_TO_SDL:
-    HashMap<GamepadAxis, SdlGameControllerAxis> = HashMap::from([
-        (GamepadAxis::Unknown, SdlGameControllerAxis::Invalid),
-        (GamepadAxis::LeftX, SdlGameControllerAxis::LeftX),
-        (GamepadAxis::LeftY, SdlGameControllerAxis::LeftY),
-        (GamepadAxis::RightX, SdlGameControllerAxis::RightX),
-        (GamepadAxis::RightY, SdlGameControllerAxis::RightY),
-        (GamepadAxis::LTrigger, SdlGameControllerAxis::TriggerLeft),
-        (GamepadAxis::RTrigger, SdlGameControllerAxis::TriggerRight),
-        (GamepadAxis::MaxValue, SdlGameControllerAxis::MaxValue),
+    HashMap<GamepadAxis, SdlGamepadAxis> = HashMap::from([
+        (GamepadAxis::LeftX, SdlGamepadAxis::LeftX),
+        (GamepadAxis::LeftY, SdlGamepadAxis::LeftY),
+        (GamepadAxis::RightX, SdlGamepadAxis::RightX),
+        (GamepadAxis::RightY, SdlGamepadAxis::RightY),
+        (GamepadAxis::LTrigger, SdlGamepadAxis::TriggerLeft),
+        (GamepadAxis::RTrigger, SdlGamepadAxis::TriggerRight),
     ]);
-    static ref AXIS_MAP_SDL_TO_ARGUS: HashMap<SdlGameControllerAxis, GamepadAxis> =
+    static ref AXIS_MAP_SDL_TO_ARGUS: HashMap<SdlGamepadAxis, GamepadAxis> =
         AXIS_MAP_ARGUS_TO_SDL.iter().map(|(k, v)| (*v, *k)).collect();
 }
 
@@ -93,7 +95,36 @@ pub enum GamepadButton {
     Back,
     Guide,
     Misc1,
-    MaxValue,
+}
+
+impl GamepadButton {
+    pub fn values() -> &'static [GamepadButton] {
+        &[
+            Self::Unknown,
+            Self::A,
+            Self::B,
+            Self::X,
+            Self::Y,
+            Self::DpadUp,
+            Self::DpadDown,
+            Self::DpadLeft,
+            Self::DpadRight,
+            Self::LBumper,
+            Self::RBumper,
+            Self::LTrigger,
+            Self::RTrigger,
+            Self::LStick,
+            Self::RStick,
+            Self::L4,
+            Self::R4,
+            Self::L5,
+            Self::R5,
+            Self::Start,
+            Self::Back,
+            Self::Guide,
+            Self::Misc1,
+        ]
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, IntoPrimitive, PartialEq)]
@@ -136,22 +167,18 @@ pub fn get_unattached_gamepad_count() -> u8 {
 
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
-pub fn get_gamepad_name(gamepad: i32) -> String {
-    let Ok(controller) = SdlGameController::from_instance_id(gamepad) else {
+pub fn get_gamepad_name(gamepad: u32) -> String {
+    let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(gamepad) else {
         warn!(LOGGER, "Client queried unknown gamepad ID {}", gamepad);
         return GAMEPAD_NAME_INVALID.to_string();
     };
 
-    let Ok(name) = controller.get_name() else {
-        warn!(LOGGER, "Failed to query gamepad name");
-        return GAMEPAD_NAME_UNKNOWN.to_string();
-    };
-    name
+    controller.name()
 }
 
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
-pub fn is_gamepad_button_pressed(gamepad: i32, button: GamepadButton) -> bool {
+pub fn is_gamepad_button_pressed(gamepad: u32, button: GamepadButton) -> bool {
     let Some(sdl_button) = BUTTON_MAP_ARGUS_TO_SDL.get(&button) else {
         warn!(LOGGER, "Client polled unknown gamepad button {:?}", button);
         return false;
@@ -162,14 +189,14 @@ pub fn is_gamepad_button_pressed(gamepad: i32, button: GamepadButton) -> bool {
         return false;
     };
 
-    let sdl_button_ordinal: i32 = (*sdl_button).into();
+    let sdl_button_ordinal: i32 = sdl_button.to_ll().0 as i32;
     assert!(sdl_button_ordinal < 64);
     (gamepad_state.button_state & (1 << sdl_button_ordinal as u8)) != 0
 }
 
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
-pub fn get_gamepad_axis(gamepad: i32, axis: &GamepadAxis) -> f64 {
+pub fn get_gamepad_axis(gamepad: u32, axis: &GamepadAxis) -> f64 {
     let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return 0.0;
@@ -180,7 +207,7 @@ pub fn get_gamepad_axis(gamepad: i32, axis: &GamepadAxis) -> f64 {
 
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
-pub fn get_gamepad_axis_delta(gamepad: i32, axis: GamepadAxis) -> f64 {
+pub fn get_gamepad_axis_delta(gamepad: u32, axis: GamepadAxis) -> f64 {
     let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return 0.0;
@@ -190,16 +217,18 @@ pub fn get_gamepad_axis_delta(gamepad: i32, axis: GamepadAxis) -> f64 {
 }
 
 fn init_gamepads(devices_state: &mut GamepadDevicesState) {
-    for joystick in SdlJoystick::get_all_joysticks().expect("Failed to enumerate joysticks") {
-        let name = joystick.get_name().expect("Failed to get joystick name");
-        if joystick.is_game_controller() {
-            info!(LOGGER, "Opening joystick '{}' as a gamepad", name);
-            SdlGameController::from_instance_id(joystick.get_instance_id())
-                .expect("Failed to open joystick as game controller");
-            devices_state.available_gamepads.push(joystick.get_instance_id());
-        } else {
-            debug!(LOGGER, "Joystick '{}' is not reported as a gamepad, ignoring", name);
-        }
+    for joystick in InputManager::instance().get_sdl_joystick_ss().unwrap().joysticks()
+        .expect("Failed to enumerate joysticks") {
+        let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap()
+            .open(joystick.id) else {
+            debug!(LOGGER, "Joystick {} is not reported as a gamepad, ignoring", joystick.id);
+            continue;
+        };
+        let name = gamepad.name();
+        info!(LOGGER, "Opening joystick '{}' as a gamepad", name);
+        InputManager::instance().get_sdl_gamepad_ss().unwrap().open(gamepad.instance_id())
+            .expect("Failed to open joystick as game controller");
+        devices_state.available_gamepads.push(gamepad.instance_id());
     }
 
     let gamepad_count = devices_state.available_gamepads.len();
@@ -226,7 +255,7 @@ fn normalize_axis(val: i16) -> f64 {
 }
 
 fn poll_gamepad(devices_state: &mut GamepadDevicesState, id: HidDeviceInstanceId) {
-    let Ok(gamepad) = SdlGameController::from_instance_id(id) else {
+    let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
         warn!(LOGGER, "Failed to get SDL controller from instance ID {}", id);
         return;
     };
@@ -235,17 +264,19 @@ fn poll_gamepad(devices_state: &mut GamepadDevicesState, id: HidDeviceInstanceId
         .map(|name| InputManager::instance().get_controller(name));
 
     let mut new_button_state: GamepadButtonState = 0;
-    for i in 0..SdlGameControllerButton::MaxValue.into() {
-        let ordinal = SdlGameControllerButton::try_from_primitive(i);
-        let bit = if gamepad.is_button_pressed(ordinal.unwrap()) { 1 } else { 0 };
+    let mut i = 0;
+    for button in GamepadButton::values() {
+        let sdl_button = BUTTON_MAP_ARGUS_TO_SDL.get(&button).unwrap();
+        let bit = if gamepad.button(*sdl_button) { 1 } else { 0 };
         new_button_state |= bit << i;
+        i += 1;
     }
 
     let mut new_axis_state = HashMap::new();
 
     for (axis_1, axis_2) in AXIS_PAIRS {
-        let axis_1_val = normalize_axis(gamepad.get_axis_value(AXIS_MAP_ARGUS_TO_SDL[&axis_1]));
-        let axis_2_val = normalize_axis(gamepad.get_axis_value(AXIS_MAP_ARGUS_TO_SDL[&axis_2]));
+        let axis_1_val = normalize_axis(gamepad.axis(AXIS_MAP_ARGUS_TO_SDL[&axis_1]));
+        let axis_2_val = normalize_axis(gamepad.axis(AXIS_MAP_ARGUS_TO_SDL[&axis_2]));
 
         let (shape, radius_x, radius_y) = match &controller_opt {
             Some(controller) => (
@@ -410,105 +441,100 @@ fn dispatch_gamepad_disconnect_event(
 }
 
 fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
-    let events = sdl_get_events(
-        SdlEventType::ControllerAxisMotion,
-        SdlEventType::ControllerDeviceRemoved
-    )
-        .expect("Failed to get SDL controller events");
+    let event_ss = WindowManager::instance().get_sdl_event_ss()
+        .expect("SDL is not yet initialized");
+    let events: Vec<SdlEvent> = event_ss.peek_events::<Vec<SdlEvent>>(1024);
     for event in events {
-        match event.data {
-            SdlEventData::ControllerButton(data) => {
-                let Some(sdl_button) = BUTTON_MAP_SDL_TO_ARGUS.get(&data.button) else {
-                    warn!(LOGGER, "Ignoring event for unknown gamepad button {:?}", data.button);
+        match event {
+            SdlEvent::ControllerButtonDown { button, .. } => {
+                let Some(engine_button) = BUTTON_MAP_SDL_TO_ARGUS.get(&button) else {
+                    warn!(LOGGER, "Ignoring event for unknown gamepad button {:?}", button);
                     continue;
                 };
-                dispatch_button_events(sdl_button, data.state == SdlButtonState::Released);
+                dispatch_button_events(engine_button, false);
             }
-            SdlEventData::ControllerAxis(data) => {
-                let Some(sdl_axis) = AXIS_MAP_SDL_TO_ARGUS.get(&data.axis) else {
-                    warn!(LOGGER, "Ignoring event for unknown gamepad axis {:?}", data.axis);
+            SdlEvent::ControllerButtonUp { button, .. } => {
+                let Some(engine_button) = BUTTON_MAP_SDL_TO_ARGUS.get(&button) else {
+                    warn!(LOGGER, "Ignoring event for unknown gamepad button {:?}", button);
+                    continue;
+                };
+                dispatch_button_events(engine_button, true);
+            }
+            SdlEvent::ControllerAxisMotion { axis, value, .. } => {
+                let Some(sdl_axis) = AXIS_MAP_SDL_TO_ARGUS.get(&axis) else {
+                    warn!(LOGGER, "Ignoring event for unknown gamepad axis {:?}", axis);
                     continue;
                 };
                 //TODO: figure out what to do about the delta
-                dispatch_axis_events(sdl_axis, normalize_axis(data.value), 0.0);
+                dispatch_axis_events(sdl_axis, normalize_axis(value), 0.0);
             }
-            SdlEventData::ControllerDevice(data) => {
-                match event.ty {
-                    SdlEventType::ControllerDeviceAdded => {
-                        let device_index = data.which;
+            SdlEvent::ControllerDeviceAdded { which, .. } => {
+                let device_index = which;
 
-                        let gamepad = SdlGameController::open(device_index).unwrap();
+                let gamepad = InputManager::instance().get_sdl_gamepad_ss().unwrap()
+                    .open(device_index).unwrap();
+                let instance_id = gamepad.instance_id();
 
-                        let Ok(instance_id) = gamepad.get_instance_id() else {
-                            warn!(LOGGER, "Failed to get device instance ID of newly connected gamepad");
-                            continue;
-                        };
+                if devices_state.mapped_gamepads.contains_key(&instance_id) ||
+                    devices_state.available_gamepads.contains(&instance_id) {
+                    warn!(
+                        LOGGER,
+                        "Ignoring connect event for previously opened gamepad
+                            with instance ID {}",
+                        instance_id);
+                    continue;
+                }
 
-                        if devices_state.mapped_gamepads.contains_key(&instance_id) ||
-                            devices_state.available_gamepads.contains(&instance_id) {
-                            warn!(
+                devices_state.available_gamepads.push(instance_id);
+
+                let name = gamepad.name();
+                warn!(
+                    LOGGER,
+                    "Gamepad '{}' with instance ID {} was connected",
+                    name,
+                    instance_id
+                );
+
+                dispatch_gamepad_connect_event(instance_id);
+            }
+            SdlEvent::ControllerDeviceRemoved { which, .. } => {
+                let instance_id = which as HidDeviceInstanceId;
+
+                let mut devices_state =
+                    InputManager::instance().gamepad_devices_state.write();
+                if let Some(controller_name) =
+                    devices_state.mapped_gamepads.get(&instance_id) {
+                    match InputManager::instance().controllers.get_mut(controller_name) {
+                        Some(mut controller) => {
+                            info!(
                                 LOGGER,
-                                "Ignoring connect event for previously opened gamepad
-                                    with instance ID {}",
-                                instance_id);
-                            // this just decrements the ref count
-                            gamepad.close();
-                            continue;
-                        }
-
-                        devices_state.available_gamepads.push(instance_id);
-
-                        let name = gamepad.get_name().unwrap();
-                        warn!(
-                            LOGGER,
-                            "Gamepad '{}' with instance ID {} was connected",
-                            name,
-                            instance_id
-                        );
-
-                        dispatch_gamepad_connect_event(instance_id);
-                    }
-                    SdlEventType::ControllerDeviceRemoved => {
-                        let instance_id = data.which as HidDeviceInstanceId;
-
-                        let mut devices_state =
-                            InputManager::instance().gamepad_devices_state.write();
-                        if let Some(controller_name) =
-                            devices_state.mapped_gamepads.get(&instance_id) {
-                            match InputManager::instance().controllers.get_mut(controller_name) {
-                                Some(mut controller) => {
-                                    info!(
-                                        LOGGER,
-                                        "Gamepad attached to controller '{}' was disconnected",
-                                        controller_name,
-                                    );
-                                    controller.was_gamepad_disconnected = true;
-
-                                    dispatch_gamepad_disconnect_event(controller_name, instance_id);
-                                }
-                                None => {
-                                    // shouldn't happen
-
-                                    devices_state.mapped_gamepads.remove(&instance_id);
-
-                                    dispatch_gamepad_disconnect_event("", instance_id);
-                                }
-                            }
-                        } else {
-                            let mut devices_state =
-                                InputManager::instance().gamepad_devices_state.write();
-                            devices_state.available_gamepads.retain(|id| id != &instance_id);
-
-                            debug!(
-                                LOGGER,
-                                "Gamepad with instance ID {} was disconnected",
-                                instance_id
+                                "Gamepad attached to controller '{}' was disconnected",
+                                controller_name,
                             );
+                            controller.was_gamepad_disconnected = true;
+
+                            dispatch_gamepad_disconnect_event(controller_name, instance_id);
+                        }
+                        None => {
+                            // shouldn't happen
+
+                            devices_state.mapped_gamepads.remove(&instance_id);
 
                             dispatch_gamepad_disconnect_event("", instance_id);
                         }
                     }
-                    _ => { continue; }
+                } else {
+                    let mut devices_state =
+                        InputManager::instance().gamepad_devices_state.write();
+                    devices_state.available_gamepads.retain(|id| id != &instance_id);
+
+                    debug!(
+                        LOGGER,
+                        "Gamepad with instance ID {} was disconnected",
+                        instance_id
+                    );
+
+                    dispatch_gamepad_disconnect_event("", instance_id);
                 }
             }
             _ => { continue; }
@@ -585,7 +611,8 @@ pub(crate) fn unassoc_gamepad(id: HidDeviceInstanceId) {
 }
 
 fn close_gamepad(id: HidDeviceInstanceId) {
-    let Ok(controller) = SdlGameController::from_instance_id(id) else {
+    //TODO
+    /*let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
         warn!(
             LOGGER,
             "Failed to get SDL gamepad with instance ID {} while deinitializing gamepads",
@@ -593,7 +620,7 @@ fn close_gamepad(id: HidDeviceInstanceId) {
         );
         return;
     };
-    controller.close();
+    controller.close();*/
 }
 
 pub(crate) fn deinit_gamepads() {
