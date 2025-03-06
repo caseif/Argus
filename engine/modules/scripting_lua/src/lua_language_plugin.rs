@@ -379,7 +379,6 @@ unsafe fn wrap_instance_ref(
         secondary_type: None,
         callback_info: None,
         copy_ctor: None,
-        move_ctor: None,
         dtor: None,
     };
     let wrapper_res = create_object_wrapper(obj_type, addr_of!(instance_ptr).cast());
@@ -742,7 +741,6 @@ unsafe fn invoke_lua_function_from_stack(
         secondary_type: None,
         callback_info: None,
         copy_ctor: None,
-        move_ctor: None,
         dtor: None,
     };
     Ok(WrappedObject::new(ty, 0))

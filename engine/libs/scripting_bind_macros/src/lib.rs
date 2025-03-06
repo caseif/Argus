@@ -107,11 +107,6 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
             );
         }
 
-        unsafe extern "C" fn _move_ctor(dst: *mut (), src: *mut ()) {
-            _copy_ctor(dst, src);
-            _dtor(src);
-        }
-
         unsafe extern "C" fn _dtor(target: *mut ()) {
             ::std::ptr::drop_in_place(&mut *target.cast::<#struct_ident>());
         }
@@ -122,13 +117,11 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
     let struct_def_ctor_dtor_field_init_tokens = if allow_clone {
         quote_spanned! {struct_span=>
             copy_ctor: Some(_copy_ctor),
-            move_ctor: Some(_move_ctor),
             dtor: Some(_dtor),
         }
     } else {
         quote_spanned! {struct_span=>
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     };
@@ -136,13 +129,11 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
     let obj_type_ctor_dtor_field_init_tokens = if allow_clone {
         quote_spanned! {struct_span=>
             copy_ctor: Some(::argus_scripting_bind::CopyCtorWrapper::of(_copy_ctor)),
-            move_ctor: Some(::argus_scripting_bind::MoveCtorWrapper::of(_move_ctor)),
             dtor: Some(::argus_scripting_bind::DtorWrapper::of(_dtor)),
         }
     } else {
         quote_spanned! {struct_span=>
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     };
@@ -451,7 +442,6 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
                     secondary_type: None,
                     callback_info: None,
                     copy_ctor: None,
-                    move_ctor: None,
                     dtor: None,
                 }
             }
@@ -794,7 +784,6 @@ fn gen_fn_binding_code(
                                 return_type: #cb_ret_obj_type_tokens,
                             })),
                             copy_ctor: None,
-                            move_ctor: None,
                             dtor: None,
                         }
                     }
@@ -1270,7 +1259,6 @@ fn parse_type_internal(
                     return_type: out_type,
                 })),
                 copy_ctor: None,
-                move_ctor: None,
                 dtor: None,
             },
             all_syn_types,
@@ -1348,7 +1336,6 @@ fn parse_type_internal(
                 secondary_type: None,
                 callback_info: None,
                 copy_ctor: None,
-                move_ctor: None,
                 dtor: None,
             },
             vec![ty.clone()],
@@ -1402,7 +1389,6 @@ fn parse_type_internal(
                 secondary_type: None,
                 callback_info: None,
                 copy_ctor: None,
-                move_ctor: None,
                 dtor: None,
             },
             inner_types,
@@ -1454,7 +1440,6 @@ macro_rules! resolve_basic_type {
                     secondary_type: None,
                     callback_info: None,
                     copy_ctor: None,
-                    move_ctor: None,
                     dtor: None,
                 }
             )
@@ -1493,7 +1478,6 @@ fn resolve_string(ty: &TypePath) -> Option<ObjectType> {
         secondary_type: None,
         callback_info: None,
         copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
-        move_ctor: Some(MoveCtorWrapper::of(move_string)),
         dtor: Some(DtorWrapper::of(drop_string)),
     })
 }
@@ -1531,7 +1515,6 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
             secondary_type: None,
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         },
         resolved_inner_types.first().cloned(),
@@ -1583,7 +1566,6 @@ fn resolve_result(ty: &TypePath, flow_direction: ValueFlowDirection)
             secondary_type: Some(Box::new(err_obj_type)),
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         },
         resolved_val_types.first().cloned(),

@@ -49,7 +49,6 @@ pub struct WrappedScriptCallback {
 }
 
 pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
-pub type FfiMoveCtor = unsafe extern "C" fn(dst: *mut (), src: *mut ());
 pub type FfiDtor = unsafe extern "C" fn(target: *mut ());
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
@@ -187,7 +186,6 @@ macro_rules! fn_wrapper {
 fn_wrapper!(IsRefableGetterWrapper, IsRefableGetter);
 fn_wrapper!(TypeIdGetterWrapper, TypeIdGetter);
 fn_wrapper!(CopyCtorWrapper, FfiCopyCtor);
-fn_wrapper!(MoveCtorWrapper, FfiMoveCtor);
 fn_wrapper!(DtorWrapper, FfiDtor);
 
 #[derive(Clone, Copy, Debug, IntoPrimitive, PartialEq, PartialOrd, TryFromPrimitive)]
@@ -228,7 +226,6 @@ pub struct ObjectType {
     pub secondary_type: Option<Box<ObjectType>>,
     pub callback_info: Option<Box<CallbackInfo>>,
     pub copy_ctor: Option<CopyCtorWrapper>,
-    pub move_ctor: Option<MoveCtorWrapper>,
     pub dtor: Option<DtorWrapper>,
 }
 
@@ -252,7 +249,6 @@ impl ObjectType {
             secondary_type: None,
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     }
@@ -280,7 +276,6 @@ pub const EMPTY_TYPE: ObjectType = ObjectType {
     secondary_type: None,
     callback_info: None,
     copy_ctor: None,
-    move_ctor: None,
     dtor: None,
 };
 
@@ -304,7 +299,6 @@ macro_rules! impl_wrappable {
                     secondary_type: None,
                     callback_info: None,
                     copy_ctor: None,
-                    move_ctor: None,
                     dtor: None,
                 }
             }
@@ -377,7 +371,6 @@ impl ScriptBound for String {
             secondary_type: None,
             callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
-            move_ctor: Some(MoveCtorWrapper::of(move_string)),
             dtor: Some(DtorWrapper::of(drop_string)),
         }
     }
@@ -424,7 +417,6 @@ impl<'a> ScriptBound for &'a str {
             secondary_type: None,
             callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
-            move_ctor: Some(MoveCtorWrapper::of(move_string)),
             dtor: None,
         }
     }
@@ -471,7 +463,6 @@ impl<T: ScriptBound> ScriptBound for Vec<T> {
             secondary_type: None,
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     }
@@ -504,7 +495,6 @@ impl<T: ScriptBound> ScriptBound for &T {
             secondary_type: None,
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     }
@@ -543,7 +533,6 @@ impl<T: ScriptBound> ScriptBound for &mut T {
             secondary_type: None,
             callback_info: None,
             copy_ctor: None,
-            move_ctor: None,
             dtor: None,
         }
     }
@@ -798,7 +787,6 @@ pub struct BoundStructInfo {
     pub type_id: fn() -> TypeId,
     pub size: usize,
     pub copy_ctor: Option<FfiCopyCtor>,
-    pub move_ctor: Option<FfiMoveCtor>,
     pub dtor: Option<FfiDtor>,
 }
 
