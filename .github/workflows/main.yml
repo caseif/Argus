@@ -19,8 +19,12 @@ jobs:
         $runner_name = "${{ matrix.os }}".Replace("-", "").Replace(".", "").ToLower()
         echo "RUNNER_NAME=$runner_name" >> "$env:GITHUB_ENV"
 
-        $config_name = "${{ matrix.profile }}".ToLower()
-        echo "CONFIG_NAME=$config_name" >> $env:GITHUB_ENV
+        $profile_name = "${{ matrix.profile }}".ToLower()
+        $config_name = if ($profile_name -eq "dev") { "debug" } else { "release" }
+        echo "CONFIG_NAME=$config_name" >> "$env:GITHUB_ENV"
+        $profile_name = "${{ matrix.profile }}".ToLower()
+        $config_name = if ($profile_name -eq "dev") { "debug" } else { "release" }
+        echo "CONFIG_NAME=$config_name" >> "$env:GITHUB_ENV"
 
     - uses: actions/checkout@v4
       with:
@@ -53,7 +57,6 @@ jobs:
     - name: Install dependencies (macOS)
       run: |
         brew install \
-          sdl2 \
           glslang \
           spirv-tools
       if: matrix.os == 'macos-13' || matrix.os == 'macos-14' || matrix.os == 'macos-15'
