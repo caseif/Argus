@@ -1,6 +1,6 @@
 use crate::common::{get_next_viewport_id, AttachedViewport, Viewport};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AttachedViewport2d {
     id: u32,
     scene_id: String,

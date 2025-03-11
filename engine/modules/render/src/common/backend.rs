@@ -11,17 +11,17 @@ type ActivateRenderBackendFn = fn() -> bool;
     target_os = "linux",
     target_os = "android"
 ))]
-const DEFAULT_BACKENDS: &[&str] = &["opengl", "opengl_es"];
+const DEFAULT_BACKENDS: &[&str] = &["opengl", "vulkan"];
 #[cfg(
     target_os = "windows"
 )]
-const DEFAULT_BACKENDS: &[&str] = &["opengl", "opengl_es"];
+const DEFAULT_BACKENDS: &[&str] = &["opengl", "vulkan"];
 #[cfg(not(any(
     target_os = "linux",
     target_os = "android",
     target_os = "windows"
 )))]
-const DEFAULT_BACKENDS: &[&str] = &["opengl"];
+const DEFAULT_BACKENDS: &[&str] = &["opengl", "vulkan"];
 
 lazy_static! {
     static ref BACKEND_REGISTRY: Mutex<HashMap<String, ActivateRenderBackendFn>> =

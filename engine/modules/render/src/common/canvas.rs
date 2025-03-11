@@ -3,16 +3,15 @@ use std::collections::HashMap;
 use uuid::Uuid;
 use argus_util::error::ArgumentError;
 use argus_util::math::Vector2f;
-use argus_util::validate_arg;
 use argus_wm::{Canvas, Window};
-use crate::common::{Viewport, ViewportCoordinateSpaceMode};
+use crate::common::{AttachedViewport, Viewport, ViewportCoordinateSpaceMode};
 use crate::twod::AttachedViewport2d;
 
 #[derive(Debug)]
 pub struct RenderCanvas {
     id: Uuid,
     window_id: String,
-    viewports_2d: HashMap<String, AttachedViewport2d>,
+    viewports_2d: HashMap<u32, AttachedViewport2d>,
 }
 
 impl Canvas for RenderCanvas {
@@ -52,30 +51,23 @@ impl RenderCanvas {
     }
 
     #[must_use]
-    pub fn get_viewport(&self, id: impl AsRef<str>) -> Option<&AttachedViewport2d> {
-        self.viewports_2d.get(id.as_ref())
+    pub fn get_viewport(&self, id: u32) -> Option<&AttachedViewport2d> {
+        self.viewports_2d.get(&id)
     }
 
     pub fn add_viewport_2d(
         &mut self,
-        id: impl AsRef<str>,
         scene_id: impl AsRef<str>,
         camera_id: impl AsRef<str>,
         viewport: Viewport,
         z_index: u32
     ) -> Result<&AttachedViewport2d, ArgumentError> {
-        validate_arg!(
-            id,
-            !self.viewports_2d.contains_key(id.as_ref()),
-            "Viewport with same ID is already attached"
-        );
         //TODO: validate camera arg
-
-        self.viewports_2d.insert(
-            id.as_ref().to_string(),
-            AttachedViewport2d::new(scene_id.as_ref(), camera_id.as_ref(), viewport, z_index)
-        );
-        Ok(self.viewports_2d.get(id.as_ref()).unwrap())
+        let viewport =
+            AttachedViewport2d::new(scene_id.as_ref(), camera_id.as_ref(), viewport, z_index);
+        let id = viewport.get_id();
+        self.viewports_2d.insert(id, viewport);
+        Ok(self.viewports_2d.get(&id).unwrap())
     }
 
     pub fn add_default_viewport_2d(
@@ -93,10 +85,10 @@ impl RenderCanvas {
             scaling: Vector2f::new(1.0, 1.0),
             mode: ViewportCoordinateSpaceMode::Individual,
         };
-        self.add_viewport_2d(id, scene_id.as_ref(), camera_id.as_ref(), viewport, z_index)
+        self.add_viewport_2d(scene_id.as_ref(), camera_id.as_ref(), viewport, z_index)
     }
 
-    pub fn remove_viewport_2d(&mut self, id: impl AsRef<str>) -> bool {
-        self.viewports_2d.remove(id.as_ref()).is_some()
+    pub fn remove_viewport_2d(&mut self, id: u32) -> bool {
+        self.viewports_2d.remove(&id).is_some()
     }
 }

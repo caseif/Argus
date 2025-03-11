@@ -29,3 +29,6 @@ extern crate argus_wm;
 
 #[cfg(feature = "opengl")]
 extern crate argus_render_opengl;
+
+#[cfg(feature = "vulkan")]
+extern crate argus_render_vulkan;

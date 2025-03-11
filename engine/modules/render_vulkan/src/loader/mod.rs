@@ -16,11 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#![feature(used_with_arg)]
+pub(crate) mod shader_loader;
 
-pub mod dirtiable;
-pub mod error;
-pub mod math;
-pub mod padding;
-pub mod pool;
-pub mod semaphore;
+pub(crate) use shader_loader::*;

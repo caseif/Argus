@@ -3,6 +3,7 @@ pub trait Scene {
     fn get_type(&self) -> SceneType;
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SceneType {
     TwoDim,
     ThreeDim,

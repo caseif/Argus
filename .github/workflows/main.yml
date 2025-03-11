@@ -82,7 +82,7 @@ jobs:
         ruby-version: 3.4
 
     - name: Build
-      run: cargo build --profile ${{ matrix.profile }} --features argus/opengl
+      run: cargo build --profile ${{ matrix.profile }} --features argus/opengl,argus/vulkan
 
     - name: Archive
       uses: actions/upload-artifact@v4

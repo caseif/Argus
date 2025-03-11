@@ -27,8 +27,14 @@ pub struct VkInstance {
 }
 
 impl VkInstance {
-    pub fn as_ptr(&self) -> *mut ffi::c_void {
-        self.underlying.get().cast()
+    pub fn from_raw(handle: u64) -> Self {
+        Self {
+            underlying: Fragile::new(handle as SdlVkInstance),
+        }
+    }
+    
+    pub fn as_raw(&self) -> u64 {
+        self.underlying.get().addr() as u64
     }
 }
 
@@ -37,8 +43,8 @@ pub struct VkSurfaceKHR {
 }
 
 impl VkSurfaceKHR {
-    pub fn as_ptr(&self) -> *mut ffi::c_void {
-        self.underlying.cast()
+    pub fn as_raw(&self) -> u64 {
+        self.underlying.addr() as u64
     }
 }
 
