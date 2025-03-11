@@ -67,7 +67,7 @@ impl LogManager {
         *flush_pending = true;
         let request_time = Instant::now();
         loop {
-            let result = cv.wait_timeout(flush_pending, Duration::from_millis(10)).unwrap();
+            let result = cv.wait_timeout(flush_pending, Duration::from_micros(1000)).unwrap();
             flush_pending = result.0;
             if !*flush_pending {
                 return Ok(());
