@@ -4,8 +4,7 @@ use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::time::Duration;
 use bitflags::bitflags;
 use fragile::Fragile;
-use sdl3::Sdl;
-use sdl3::video::{FullscreenType, WindowPos};
+use sdl3::video::WindowPos;
 use argus_core::{dispatch_event, get_client_name};
 use argus_logging::{debug, info};
 use argus_scripting_bind::script_bind;
@@ -13,7 +12,6 @@ use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector2i, Vector2u};
 use crate::*;
 
-use sdl3::video::DisplayMode as SdlDisplayMode;
 use sdl3::video::Window as SdlWindow;
 
 const DEF_WINDOW_DIM: u32 = 300;
@@ -247,6 +245,9 @@ impl Window {
 
             //TODO: figure out how to handle content scale
             self.content_scale = Vector2f::new(1.0, 1.0);
+            
+            self.cur_resolution.write().unwrap()
+                .set(Vector2u::new(DEF_WINDOW_DIM, DEF_WINDOW_DIM));
 
             info!(LOGGER, "Window '{}' was created", self.id);
 
