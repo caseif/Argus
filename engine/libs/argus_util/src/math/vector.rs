@@ -21,6 +21,12 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! create_vector2_ops {
     ($vec_type: ty, $el_type: ty) => {
+        impl Into<[$el_type; 2]> for $vec_type {
+            fn into(self) -> [$el_type; 2] {
+                [self.x, self.y]
+            }
+        }
+
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
@@ -114,6 +120,12 @@ macro_rules! create_vector2_signed_ops {
 
 macro_rules! create_vector3_ops {
     ($vec_type: ty, $el_type: ty) => {
+        impl Into<[$el_type; 3]> for $vec_type {
+            fn into(self) -> [$el_type; 3] {
+                [self.x, self.y, self.z]
+            }
+        }
+
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
@@ -221,6 +233,12 @@ macro_rules! create_vector3_signed_ops {
 
 macro_rules! create_vector4_ops {
     ($vec_type: ty, $el_type: ty) => {
+        impl Into<[$el_type; 4]> for $vec_type {
+            fn into(self) -> [$el_type; 4] {
+                [self.x, self.y, self.z, self.w]
+            }
+        }
+
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
