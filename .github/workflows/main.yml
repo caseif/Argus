@@ -26,10 +26,17 @@ jobs:
         $config_name = if ($profile_name -eq "dev") { "debug" } else { "release" }
         echo "CONFIG_NAME=$config_name" >> "$env:GITHUB_ENV"
 
+        $exe_ext = if ($os_name -eq "windows") { ".exe" } else { "" }
+        echo "EXE_EXT=$exe_ext" >> "$env:GITHUB_ENV"
+
+        # windows-2022 runner has broken header detection with MSBuild
+        if ("${{ matrix.os }}" -eq "windows-2022") {
+            echo "CMAKE_GENERATOR=Ninja" >> "$env:GITHUB_ENV"
+        }
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-
 
     - name: Install dependencies (Ubuntu Jammy)
       run: |
@@ -59,11 +66,12 @@ jobs:
         brew install \
           glslang \
           spirv-tools
-      if: matrix.os == 'macos-13' || matrix.os == 'macos-14' || matrix.os == 'macos-15'
-    - name: Remove llvm@15 (macOS 13/14)
+      if: startsWith(matrix.os, 'macos-')
+
+    - name: Install dependencies (Windows)
       run: |
-        brew remove llvm@15
-      if: matrix.os == 'macos-13' || matrix.os == 'macos-14'
+        choco install ninja
+      if: startsWith(matrix.os, 'windows-')
 
     - name: Setup Vulkan SDK (Windows)
       run: |
