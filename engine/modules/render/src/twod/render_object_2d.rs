@@ -106,6 +106,11 @@ impl RenderObject2d {
         self.light_opacity.peek().value
     }
 
+    #[must_use]
+    pub fn get_light_opacity(&mut self) -> ValueAndDirtyFlag<f32> {
+        self.light_opacity.read()
+    }
+
     /// Sets the opacity of the object with respect to lighting.
     ///
     /// 0.0 indicates an object which light will fully pass through while 1.0
