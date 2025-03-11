@@ -1,9 +1,9 @@
 use std::collections::HashMap;
+use std::slice;
 
 #[derive(Clone, Debug)]
 pub struct Shader {
     uid: String,
-    ty: String,
     stage: ShaderStage,
     src: Vec<u8>,
 }
@@ -12,11 +12,10 @@ impl Shader {
     #[must_use]
     pub fn new(
         uid: impl Into<String>,
-        shader_type: impl Into<String>,
         stage: ShaderStage,
-        src: impl Into<Vec<u8>>
+        src: impl Into<Vec<u8>>,
     ) -> Self {
-        Self { uid: uid.into(), ty: shader_type.into(), stage, src: src.into() }
+        Self { uid: uid.into(), stage, src: src.into() }
     }
 
     #[must_use]
@@ -25,18 +24,23 @@ impl Shader {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> &str {
-        self.ty.as_str()
-    }
-
-    #[must_use]
     pub fn get_stage(&self) -> ShaderStage {
         self.stage
     }
 
     #[must_use]
-    pub fn get_source(&self) -> &Vec<u8> {
+    pub fn get_source(&self) -> &[u8] {
         &self.src
+    }
+
+    #[must_use]
+    pub fn get_source_u32(&self) -> &[u32] {
+        unsafe {
+            slice::from_raw_parts(
+                self.src.as_ptr().cast::<u32>(),
+                self.src.len() / size_of::<u32>(),
+            )
+        }
     }
 }
 
@@ -46,16 +50,15 @@ pub enum ShaderStage {
     Fragment = 0x02
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 #[must_use]
 pub struct ShaderReflectionInfo {
-    attribute_locations: HashMap<String, u32>,
-    output_locations: HashMap<String, u32>,
-    uniform_variable_locations: HashMap<String, u32>,
-    #[allow(unused)]
-    buffer_locations: HashMap<String, u32>,
-    ubo_bindings: HashMap<String, u32>,
-    ubo_instance_names: HashMap<String, String>,
+    pub attribute_locations: HashMap<String, u32>,
+    pub output_locations: HashMap<String, u32>,
+    pub uniform_variable_locations: HashMap<String, u32>,
+    pub buffer_locations: HashMap<String, u32>,
+    pub ubo_bindings: HashMap<String, u32>,
+    pub ubo_instance_names: HashMap<String, String>,
 }
 
 impl ShaderReflectionInfo {
@@ -69,7 +72,7 @@ impl ShaderReflectionInfo {
         self.attribute_locations.get(name.as_ref()).copied()
     }
 
-    pub fn get_attr_loc_and_then<F: Fn(u32)>(&self, name: impl AsRef<str>, f: F) {
+    pub fn get_attr_loc_and_then<F: FnOnce(u32)>(&self, name: impl AsRef<str>, f: F) {
         if let Some(&loc) = self.attribute_locations.get(name.as_ref()) {
             f(loc)
         }
@@ -89,7 +92,7 @@ impl ShaderReflectionInfo {
         self.output_locations.get(name.as_ref()).copied()
     }
 
-    pub fn get_output_loc_and_then<F: Fn(u32)>(&self, name: impl AsRef<str>, f: F) {
+    pub fn get_output_loc_and_then<F: FnOnce(u32)>(&self, name: impl AsRef<str>, f: F) {
         if let Some(&loc) = self.output_locations.get(name.as_ref()) {
             f(loc)
         }
@@ -127,7 +130,7 @@ impl ShaderReflectionInfo {
         self.uniform_variable_locations.get(name.as_ref()).copied()
     }
 
-    pub fn get_uniform_loc_and_then<F: Fn(u32)>(
+    pub fn get_uniform_loc_and_then<F: FnOnce(u32)>(
         &self,
         ubo: impl AsRef<str>,
         name: impl AsRef<str>,
@@ -141,7 +144,7 @@ impl ShaderReflectionInfo {
         }
     }
 
-    pub fn get_uniform_var_loc_and_then<F: Fn(u32)>(&self, name: impl AsRef<str>, f: F) {
+    pub fn get_uniform_var_loc_and_then<F: FnOnce(u32)>(&self, name: impl AsRef<str>, f: F) {
         if let Some(&loc) = self.uniform_variable_locations.get(name.as_ref()) {
             f(loc)
         }
@@ -166,13 +169,18 @@ impl ShaderReflectionInfo {
     pub fn has_ubo(&self, name: impl AsRef<str>) -> bool {
         self.ubo_bindings.contains_key(name.as_ref())
     }
+    
+    #[must_use]
+    pub fn get_ubo_bindings(&self) -> &HashMap<String, u32> {
+        &self.ubo_bindings
+    }
 
     #[must_use]
     pub fn get_ubo_binding(&self, name: impl AsRef<str>) -> Option<u32> {
         self.ubo_bindings.get(name.as_ref()).copied()
     }
 
-    pub fn get_ubo_binding_and_then<F: Fn(u32)>(&self, name: impl AsRef<str>, f: F) {
+    pub fn get_ubo_binding_and_then<F: FnOnce(u32)>(&self, name: impl AsRef<str>, f: F) {
         if let Some(&loc) = self.ubo_bindings.get(name.as_ref()) {
             f(loc);
         }

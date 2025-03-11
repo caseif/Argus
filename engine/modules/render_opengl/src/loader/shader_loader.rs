@@ -62,7 +62,7 @@ impl ResourceLoader for ShaderLoader {
             data.append(&mut buf[0..read_bytes].to_vec());
         }
 
-        let shader = Shader::new(prototype.uid.to_string(), shader_type, shader_stage, data);
+        let shader = Shader::new(prototype.uid.to_string(), shader_stage, data);
         Ok(Box::new(shader))
     }
 }
