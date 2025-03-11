@@ -93,6 +93,8 @@ impl ResourceManager {
 
         let (data, media_type) = if let Some(fs_ref) = self.fs_resources.get(uid)
             .filter(|fs_ref| fs_ref.value().0.is_file()) {
+            debug!(LOGGER, "Attempting to load resource {} from bare filesystem", uid);
+            
             let (path, media_type) = fs_ref.value();
             let data = self.load_fs_resource(uid, path)?;
 
@@ -100,6 +102,8 @@ impl ResourceManager {
 
             (data, media_type.clone())
         } else {
+            debug!(LOGGER, "Attempting to load resource {} from ARP package", uid);
+
             let res = self.load_arp_resource(uid)?;
 
             debug!(LOGGER, "Discovered resource {} in ARP package", uid);
