@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use ash::{ext, khr, vk, Instance};
 use konst::unwrap_ctx;
 use konst::primitive::parse_u32;
-use argus_core::get_client_name;
+use argus_core::{ClientConfig, EngineManager};
 use argus_logging::{debug, warn};
 use argus_wm::{vk_get_required_instance_extensions, Window};
 use crate::setup::LOGGER;
@@ -58,7 +58,10 @@ impl VulkanInstance {
             return Err("Required Vulkan extensions for engine are not available".to_owned());
         }
 
-        let app_name = CString::new(get_client_name()).unwrap();
+        let client_name = EngineManager::instance().get_config()
+            .get_section::<ClientConfig>().as_ref().unwrap()
+            .name.clone();
+        let app_name = CString::new(client_name).unwrap();
 
         let ext_names = all_exts.iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
         let layers_c = all_layers.iter().map(|layer| CString::new(*layer).unwrap()).collect::<Vec<_>>();

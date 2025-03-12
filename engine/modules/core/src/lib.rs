@@ -2,8 +2,6 @@
 
 // public modules
 mod buffered_map;
-mod client_properties;
-mod downstream_config;
 mod engine;
 mod error;
 mod event;
@@ -12,8 +10,6 @@ mod module;
 mod screen_space;
 
 pub use buffered_map::*;
-pub use client_properties::*;
-pub use downstream_config::*;
 pub use engine::*;
 pub use error::*;
 pub use event::*;

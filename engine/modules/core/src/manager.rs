@@ -1,15 +1,31 @@
-use std::any::TypeId;
-use std::collections::HashSet;
+use std::any::{Any, TypeId};
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::{env, fs};
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicU32, AtomicU64};
-use std::sync::{atomic, Arc, OnceLock};
+use std::sync::{atomic, Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::sync::mpsc::Sender;
 use std::thread::ThreadId;
 use std::time::Duration;
+use arp::ResourceIdentifier;
 use fragile::Fragile;
 use parking_lot::{Mutex, MutexGuard};
-use crate::{EngineError, LifecycleStage, RenderLoopParams, ScreenSpaceScaleMode, TargetThread};
+use serde::de::DeserializeOwned;
+use serde::Deserialize;
+use argus_logging::{debug, info, warn};
+use crate::{EngineError, LifecycleStage, RenderLoopParams, ScreenSpaceScaleMode, TargetThread, LOGGER};
 use crate::buffered_map::BufferedMap;
 use crate::{ArgusEvent, Ordering};
+
+const ARP_FILE_EXTENSION: &str = "arp";
+const CONFIG_BASE_NAME: &str = "client";
+const CONFIG_FILE_NAME: &str = "client.json";
+const CONFIG_FILE_MEDIA_TYPE: &str = "application/json";
 
 static INSTANCE: OnceLock<EngineManager> = OnceLock::new();
 
@@ -32,9 +48,10 @@ pub struct EngineManager {
     render_backends: Arc<Mutex<HashSet<String>>>,
     active_render_backend: OnceLock<String>,
 
-    engine_config_staging: Fragile<Mutex<EngineConfig>>,
-    engine_config: OnceLock<EngineConfig>,
-    
+    config: Arc<RwLock<EngineConfig>>,
+    config_deserializers: Fragile<RefCell<HashMap<String, (TypeId, Box<dyn Fn(&str) -> serde_json::error::Result<Box<dyn Any + Send + Sync>>>)>>>,
+    primary_namespace: OnceLock<String>,
+
     pub(crate) render_loop: OnceLock<fn(RenderLoopParams)>,
     pub(crate) render_shutdown_tx: OnceLock<Sender<fn()>>,
     pub(crate) update_thread_id: OnceLock<ThreadId>,
@@ -52,14 +69,25 @@ pub struct EngineManager {
     pub(crate) render_event_queue: Arc<Mutex<Vec<(Arc<dyn ArgusEvent>, TypeId)>>>,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct EngineConfig {
-    pub target_tickrate: Option<u32>,
-    pub target_framerate: Option<u32>,
-    pub load_modules: Vec<String>,
-    pub preferred_render_backends: Vec<String>,
-    pub screen_scale_mode: ScreenSpaceScaleMode,
+pub trait EngineConfigSection: Any + Send + Sync {
 }
+
+#[derive(Debug, Default)]
+pub struct EngineConfig {
+    sections: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+}
+
+impl EngineConfig {
+    pub fn get_section<T: 'static>(&self) -> Option<&T> {
+        self.sections.get(&TypeId::of::<T>())?.as_ref().downcast_ref::<T>()
+    }
+
+    pub fn get_section_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        self.sections.get_mut(&TypeId::of::<T>())?.as_mut().downcast_mut::<T>()
+    }
+}
+
+pub type ConfigDeserializer = fn(section: &str) -> Box<dyn Any + Send + Sync>;
 
 impl EngineManager {
     pub fn instance() -> &'static Self {
@@ -74,8 +102,9 @@ impl EngineManager {
             render_backends: Arc::default(),
             active_render_backend: OnceLock::default(),
 
-            engine_config_staging: Fragile::default(),
-            engine_config: OnceLock::new(),
+            config: Arc::default(),
+            config_deserializers: Default::default(),
+            primary_namespace: OnceLock::default(),
 
             render_loop: OnceLock::new(),
             render_shutdown_tx: OnceLock::new(),
@@ -121,23 +150,84 @@ impl EngineManager {
             .expect("Active render backend may only be set once");
     }
 
-    pub fn get_config(&self) -> &EngineConfig {
-        self.engine_config.get().expect("Engine config is not yet committed")
+    /// Adds a deserializer to be applied when the engine config is loaded.
+    ///
+    /// This should be called during [LifecycleStage::PreInit].
+    pub fn add_config_deserializer<T: 'static + DeserializeOwned + Send + Sync>(
+        &self,
+        section_key: impl AsRef<str>,
+    ) {
+        self.config_deserializers.get().borrow_mut().insert(
+            section_key.as_ref().to_string(),
+            (
+                TypeId::of::<T>(),
+                Box::new(move |s| {
+                    serde_json::de::from_reader::<_, T>(BufReader::new(s.as_bytes()))
+                        .map(|obj| Box::new(obj) as Box<dyn Any + Send + Sync>)
+                })
+            )
+        );
     }
 
-    pub fn get_config_mut(&self) -> MutexGuard<EngineConfig> {
+    pub(crate) fn set_primary_namespace(&self, namespace: impl Into<String>) {
+        self.primary_namespace.set(namespace.into())
+            .expect("Cannot set primary namespace more than once");
+    }
+
+    pub(crate) fn load_config(&self, resources_path: Option<&str>)
+        -> Result<(), String> {
+        let mut config = self.config.write().unwrap();
+
+        let real_resources_path = match resources_path {
+            Some(path) => PathBuf::from_str(path).map_err(|err| err.to_string())?,
+            None => {
+                let mut wd = env::current_dir().map_err(|err| err.to_string())?;
+                wd.push("resources");
+                wd
+            }
+        };
+
+        let namespace = self.primary_namespace.get()
+            .expect("Primary namespace was not set");
+        let Some(config_str) = try_load_config_contents_from_file(&real_resources_path, namespace)
+            .or_else(|| try_load_config_contents_from_arp(&real_resources_path, namespace)) else {
+
+
+            return Err("Unable to locate engine config!".to_owned());
+        };
+
+        let config_root: serde_json::value::Value =
+            serde_json::from_str(&config_str).map_err(|e| e.to_string())?;
+        let serde_json::value::Value::Object(root_map) = config_root else {
+            return Err("Root value of config JSON is not an object".to_owned());
+        };
+
+        let deserializers = self.config_deserializers.get().borrow();
+        for (key, val) in root_map {
+            let Some((type_id, deserializer)) = deserializers.get(&key) else {
+                info!(LOGGER, "Ignoring unknown key '{}' in config root", key);
+                continue;
+            };
+            debug!(LOGGER, "Attempting to deserialize config section '{}'", key);
+            let val_raw = serde_json::value::to_raw_value(&val).map_err(|e| e.to_string())?;
+            let section_obj = deserializer(val_raw.get()).map_err(|e| e.to_string())?;
+            debug!(LOGGER, "Successfully deserialized config section '{}'", key);
+
+            config.sections.insert(*type_id, section_obj);
+        }
+
+        Ok(())
+    }
+
+    pub fn get_config(&self) -> RwLockReadGuard<EngineConfig> {
+        self.config.read().unwrap()
+    }
+
+    pub fn get_config_mut(&self) -> RwLockWriteGuard<EngineConfig> {
         if !self.is_current_thread_update_thread() {
             panic!("Engine config cannot be updated outside of update thread");
         }
-        if self.engine_config.get().is_some() {
-            panic!("Engine config was already committed");
-        }
-        self.engine_config_staging.get().lock()
-    }
-
-    pub(crate) fn commit_config(&self) {
-        self.engine_config.set(self.engine_config_staging.get().lock().clone())
-            .expect("Engine config was already committed");
+        self.config.write().unwrap()
     }
 
     pub fn get_render_loop(&self) -> Option<&fn(RenderLoopParams)> {
@@ -292,4 +382,173 @@ impl EngineManager {
             queue.push((event_arc, TypeId::of::<T>()));
         }
     }
+}
+
+fn try_load_config_contents_from_file(search_path: &Path, namespace: &str) -> Option<String> {
+    let config_path = search_path.join(namespace).join(CONFIG_FILE_NAME);
+
+    if !config_path.is_file() {
+        return None;
+    }
+
+    let mut file = match File::open(&config_path) {
+        Ok(file) => file,
+        Err(err) => {
+            warn!(
+                LOGGER,
+                "Failed to open file {} while attempting to load engine config: {}",
+                config_path.display(),
+                err,
+            );
+            return None;
+        }
+    };
+    let mut file_contents = if let Ok(file_metadata) = file.metadata() {
+        String::with_capacity(file_metadata.len() as usize)
+    } else {
+        String::new()
+    };
+
+    match file.read_to_string(&mut file_contents) {
+        Ok(_) => {}
+        Err(err) => {
+            warn!(
+                LOGGER,
+                "Failed to read file {} while attempting to load engine config: {}",
+                config_path.display(),
+                err,
+            );
+            return None;
+        }
+    };
+
+    info!(LOGGER, "Found engine config at {}", config_path.display());
+
+    Some(file_contents)
+}
+
+fn try_load_config_contents_from_arp(search_path: &Path, namespace: &str) -> Option<String> {
+    if !search_path.is_dir() {
+        warn!(LOGGER, "Failed to open resources directory: {}", search_path.display());
+        return None;
+    }
+
+    let mut candidate_packages: Vec<PathBuf> = Vec::new();
+
+    let Ok(dir_iter) = fs::read_dir(search_path) else {
+        warn!(LOGGER, "Failed to read resources directory: {}", search_path.display());
+        return None;
+    };
+    for child in dir_iter {
+        let child_path = match &child {
+            Ok(child) => child.path(),
+            Err(err) => {
+                warn!(LOGGER, "Failed to read resources directory child {:?}: {}", child, err);
+                return None;
+            }
+        };
+        if child_path.extension()?.to_str().is_none_or(|ext| ext != ARP_FILE_EXTENSION) {
+            continue;
+        }
+
+        if !arp::Package::is_base_archive(&child_path).unwrap_or(false) {
+            continue;
+        }
+
+        let package_meta = match arp::Package::load_meta_from_file(&child_path) {
+            Ok(meta) => meta,
+            Err(err) => {
+                warn!(
+                    LOGGER,
+                    "Failed to load package {} while searching for config: {}",
+                    child_path.display(),
+                    err,
+                );
+                continue;
+            }
+        };
+
+        if package_meta.namespace == namespace {
+            candidate_packages.push(child_path);
+        }
+    }
+
+    for candidate in candidate_packages {
+        let Some(file_name) = candidate.file_name() else {
+            continue;
+        };
+
+        debug!(
+            LOGGER,
+            "Searching for client config in package {} (namespace matches)",
+            file_name.to_string_lossy(),
+        );
+
+        let package = match arp::Package::load_from_file(&candidate) {
+            Ok(package) => package,
+            Err(err) => {
+                warn!(
+                    LOGGER,
+                    "Failed to load package at {} while searching for config: {}",
+                    file_name.to_string_lossy(),
+                    err,
+                );
+                continue;
+            }
+        };
+
+        let res_meta = match package.find_resource(
+            &ResourceIdentifier::new(namespace, [CONFIG_BASE_NAME.to_owned()])
+        ) {
+            Ok(meta) => meta,
+            Err(err) => {
+                debug!(
+                    LOGGER,
+                    "Did not find config in package {}: {}",
+                    file_name.to_string_lossy(),
+                    err,
+                );
+                continue;
+            }
+        };
+
+        if res_meta.media_type != CONFIG_FILE_MEDIA_TYPE {
+            warn!(
+                LOGGER,
+                "File '{}' in package {} has unexpected media type {}, \
+                cannot load as client config",
+                CONFIG_BASE_NAME,
+                file_name.to_string_lossy(),
+                res_meta.media_type,
+            );
+            continue;
+        }
+
+        let res_contents = match res_meta.load() {
+            Ok(contents) => contents,
+            Err(err) => {
+                warn!(
+                    LOGGER,
+                    "Failed to load engine config from package {}: {}",
+                    file_name.to_string_lossy(),
+                    err,
+                );
+                continue;
+            }
+        };
+
+        let res_contents_str = match String::from_utf8(res_contents) {
+            Ok(contents) => contents,
+            Err(err) => {
+                warn!(LOGGER, "Engine config in package {} was not valid UTF-8", err);
+                continue;
+            }
+        };
+
+        info!(LOGGER, "Found engine config in package at {}", file_name.to_string_lossy());
+
+        return Some(res_contents_str);
+    }
+
+    None
 }

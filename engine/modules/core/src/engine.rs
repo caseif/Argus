@@ -4,8 +4,9 @@ use std::sync::{atomic, mpsc, Condvar, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
-use argus_logging::{debug, LogManager, LogSettings};
 use itertools::Itertools;
+use serde::Deserialize;
+use argus_logging::{debug, LogManager, LogSettings};
 use argus_scripting_bind::script_bind;
 use argus_util::math::Vector2u;
 use crate::*;
@@ -25,10 +26,33 @@ const DEINIT_STAGES: &[LifecycleStage] = &[
     LifecycleStage::PostDeinit
 ];
 
+const DEF_RESOURCES_DIR_NAME: &str = "resources";
+
 static IS_RENDER_INITTED: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static IS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
 static STOP_ACK_UPDATE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static STOP_ACK_RENDER: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
+
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct ClientConfig {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct CoreConfig {
+    pub modules: Vec<String>,
+    #[serde(default)]
+    pub render_backends: Vec<String>,
+    #[serde(default)]
+    pub screen_scale_mode: ScreenSpaceScaleMode,
+    #[serde(default)]
+    pub target_tickrate: Option<u32>,
+    #[serde(default)]
+    pub target_framerate: Option<u32>,
+}
 
 pub struct RenderLoopParams {
     pub core_render_callback: fn(Duration),
@@ -50,21 +74,7 @@ pub fn init_logger(settings: LogSettings) {
 }
 
 pub fn load_client_config(namespace: impl AsRef<str>) -> Result<(), EngineError> {
-    //TODO
-    set_initial_window_parameters(InitialWindowParameters {
-        id: Some("default".to_owned()),
-        title: Some("Dummy".to_owned()),
-        mode: None,
-        vsync: None,
-        mouse_visible: None,
-        mouse_captured: None,
-        mouse_raw_input: None,
-        position: None,
-        dimensions: Some(Vector2u::new(600, 600)),
-    });
-    set_scripting_parameters(ScriptingParameters {
-        main: Some(format!("{}:scripts/lua/init", namespace.as_ref())),
-    });
+    EngineManager::instance().set_primary_namespace(namespace.as_ref());
     Ok(())
 }
 

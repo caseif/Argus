@@ -13,7 +13,7 @@ version = "0.0.1"
 edition = "2021"
 
 [workspace.dependencies]
-arp = { git = "https://github.com/caseif/libarp-rs", rev = "52e8e02", default-features = false }
+arp = { git = "https://github.com/caseif/libarp-rs", rev = "e435b0e", default-features = false }
 bindgen = "0.71.1"
 bitflags = "2.8.0"
 chrono = "0.4.39"

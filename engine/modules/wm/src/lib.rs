@@ -7,6 +7,7 @@ mod module_init;
 mod window;
 mod window_event;
 mod window_manager;
+mod config;
 
 pub use api_util::*;
 pub use display::*;

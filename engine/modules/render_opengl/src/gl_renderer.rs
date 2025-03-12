@@ -315,7 +315,9 @@ fn compute_proj_matrix(res_hor: u32, res_ver: u32) -> Matrix4x4 {
     let res_hor_f = res_hor as f32;
     let res_ver_f = res_ver as f32;
 
-    let mode = EngineManager::instance().get_config().screen_scale_mode;
+    //let mode = EngineManager::instance().get_config().get_section::<>().screen_scale_mode;
+    //TODO
+    let mode = ScreenSpaceScaleMode::NormalizeMinDimension;
     let (hor_scale, ver_scale) = match mode {
         ScreenSpaceScaleMode::NormalizeMinDimension => {
             if res_hor > res_ver {

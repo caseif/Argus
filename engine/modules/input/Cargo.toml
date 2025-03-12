@@ -23,3 +23,4 @@ lazy_static = { workspace = true }
 num_enum = { workspace = true }
 parking_lot = { workspace = true }
 sdl3 = { workspace = true, features = ["build-from-source-static"] }
+serde = { version = "1.0.218", features = ["derive"] }

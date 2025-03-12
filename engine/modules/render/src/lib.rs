@@ -70,7 +70,7 @@ fn load_backend_modules() {
     for module_id in get_present_static_modules() {
         if module_id.rfind(RENDER_BACKEND_MODULE_PREFIX) == Some(0) {
             //TODO: this is currently non-functional
-            EngineManager::instance().get_config_mut().load_modules.push(module_id);
+            //EngineManager::instance().get_config_mut().load_modules.push(module_id);
             count += 1;
         }
     }

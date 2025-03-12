@@ -1,10 +1,12 @@
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::mem;
-use argus_core::{get_scripting_parameters, register_module, run_on_update_thread, LifecycleStage, Ordering};
+use argus_core::{register_module, run_on_update_thread, EngineManager, LifecycleStage, Ordering};
 use argus_logging::debug;
 use argus_scripting_bind::*;
 use crate::*;
+
+const CONFIG_KEY_SCRIPTING: &str = "scripting";
 
 const INIT_FN_NAME: &str = "init";
 
@@ -51,6 +53,10 @@ fn apply_type_ids(
 #[register_module(id = "scripting", depends(core))]
 pub fn update_lifecycle_scripting(stage: LifecycleStage) {
     match stage {
+        LifecycleStage::PreInit => {
+            EngineManager::instance()
+                .add_config_deserializer::<ScriptingConfig>(CONFIG_KEY_SCRIPTING);
+        }
         LifecycleStage::Init => {
             debug!(LOGGER, "Initializing scripting");
             register_script_bindings();
@@ -64,8 +70,11 @@ pub fn update_lifecycle_scripting(stage: LifecycleStage) {
             ScriptManager::instance().apply_bindings_to_all_contexts()
                 .expect("Failed to apply bindings to script contexts");
 
-            let scripting_params = get_scripting_parameters();
-            if let Some(init_script_uid) = scripting_params.main {
+            let config = EngineManager::instance().get_config();
+            let main = config.get_section::<ScriptingConfig>()
+                .and_then(|sec| sec.main.as_ref())
+                .cloned();
+            if let Some(init_script_uid) = main.clone() {
                 // run it during the first iteration of the update loop
                 run_on_update_thread(
                     Box::new(move || { run_init_script(init_script_uid.clone()); }),

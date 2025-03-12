@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 pub struct ScreenSpace {
     pub left: f32,
     pub right: f32,
@@ -14,7 +16,7 @@ pub struct ScreenSpace {
 /// space configuration, while the other will have its bounds changed such
 /// that the aspect ratio of the screen space matches that of the window.
 /// If the window is resized, the screen space will be updated in tandem.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
 pub enum ScreenSpaceScaleMode {
     /// Normalizes the screen space dimension with the minimum range.
     ///

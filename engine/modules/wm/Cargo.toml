@@ -18,3 +18,4 @@ bitflags = { workspace = true }
 dashmap = { workspace = true }
 fragile = { workspace = true }
 sdl3 = { workspace = true, features = ["build-from-source-static"] }
+serde = { workspace = true, features = ["derive"] }

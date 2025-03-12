@@ -13,16 +13,19 @@ mod keyboard;
 mod mouse;
 mod text_input_context;
 mod deadzones;
+mod config;
 
 pub use input_event::*;
 pub use input_manager::*;
-
+use crate::config::BindingsConfig;
 use crate::controller::ack_gamepad_disconnects;
 use crate::gamepad::{deinit_gamepads, flush_gamepad_deltas, update_gamepads};
 use crate::keyboard::{init_keyboard, update_keyboard};
 use crate::mouse::{flush_mouse_delta, init_mouse, update_mouse};
 
 crate_logger!(LOGGER, "argus/input");
+
+const CONFIG_KEY_BINDINGS: &str = "bindings";
 
 fn init_window_input(window: &Window) {
     init_keyboard(window);
@@ -64,6 +67,10 @@ fn on_render(_delta: Duration) {
 #[register_module(id = "input", depends(core, scripting, wm))]
 pub fn update_lifecycle_input(stage: LifecycleStage) {
     match stage {
+        LifecycleStage::PreInit => {
+            EngineManager::instance()
+                .add_config_deserializer::<BindingsConfig>(CONFIG_KEY_BINDINGS);
+        }
         LifecycleStage::Init => {
             register_update_callback(Box::new(on_update_early), Ordering::Early);
             register_update_callback(Box::new(on_update_late), Ordering::Late);

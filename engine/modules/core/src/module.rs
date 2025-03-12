@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_scripting_bind::script_bind;
-use crate::EngineError;
+use crate::{EngineError, EngineManager};
 use crate::internal::register::{ModuleRegistration, REGISTERED_MODULES};
 
 #[derive(
@@ -11,13 +11,38 @@ use crate::internal::register::{ModuleRegistration, REGISTERED_MODULES};
 #[repr(u32)]
 #[script_bind]
 pub enum LifecycleStage {
+    /// The very first lifecycle stage, intended to be used for loading other
+    /// modules dynamically.
     Load,
+    /// The first initialization stage, intended to be used for initializing
+    /// values which need to be seen by a dependency during regular
+    /// initialization.
     PreInit,
+    /// The main initialization stage, suitable for most module bring-up tasks.
     Init,
+    /// The final initialization stage, intended for use with tasks which must
+    /// be reasonably sure that most engine initialization is already completed.
     PostInit,
+    /// The active stage for most of the engine's lifetime.
+    ///
+    /// This is never sent to modules via callback; rather it is returned by
+    /// [EngineManager::get_current_lifecycle_stage] between engine
+    /// initialization and deinitialization.
     Running,
+    /// The first deinitialization stage, intended to be used by tasks which
+    /// should run as soon as possible after the decision to stop the engine
+    /// has been made (e.g. saving the current game state).
     PreDeinit,
+    /// The main deinitialization stage, suitable for most module tear-down
+    /// tasks.
     Deinit,
+    /// The final deinitialization (and overall) stage, intended for use with
+    /// tasks which might otherwise interfere with dependencies.
+    /// 
+    /// This is an uncommon scenario since modules are implicitly brought down
+    /// before their dependencies, so any state downstream from a given module
+    /// should already be deinitialized by the time [LifecycleStage::Deinit] is
+    /// sent.
     PostDeinit,
 }
 

@@ -1,14 +1,17 @@
 use std::cell::{RefCell};
-use std::sync::{LazyLock, OnceLock};
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 use argus_core::*;
 use argus_logging::{crate_logger, debug, info};
 use crate::display::init_display;
 use crate::{WindowEvent, WindowManager};
+use crate::config::WindowConfig;
 
 pub const WINDOWING_MODE_WINDOWED: &str = "windowed";
 pub const WINDOWING_MODE_BORDERLESS: &str = "borderless";
 pub const WINDOWING_MODE_FULLSCREEN: &str = "fullscreen";
+
+const CONFIG_KEY_WINDOW: &str = "window";
 
 crate_logger!(LOGGER, "argus/wm");
 
@@ -36,20 +39,22 @@ fn do_window_loop(delta: Duration) {
 fn create_initial_window() {
     debug!(LOGGER, "Creating initial window");
 
-    let params = get_initial_window_parameters();
-    let Some(id) = params.id else { return; };
+    let config = EngineManager::instance().get_config();
+    let params = config.get_section::<WindowConfig>().unwrap();
+    //let params = get_initial_window_parameters();
+    let Some(id) = &params.id else { return; };
     if id.is_empty() {
         return;
     }
 
-    let mut window = WindowManager::instance().create_window(&id, None)
+    let mut window = WindowManager::instance().create_window(id, None)
         .expect("Failed to create initial window");
 
-    if let Some(title) = params.title {
+    if let Some(title) = &params.title {
         window.set_title(title);
     }
 
-    if let Some(mode) = params.mode {
+    if let Some(mode) = &params.mode {
         if mode == WINDOWING_MODE_WINDOWED {
             window.set_fullscreen(false);
         } else if mode == WINDOWING_MODE_BORDERLESS {
@@ -75,13 +80,13 @@ fn create_initial_window() {
         window.set_mouse_raw_input(mouse_raw_input);
     }
 
-    if let Some(position) = params.position {
+    let position = params.position;
+    if let Some(position) = position {
         window.set_windowed_position(position.x, position.y);
     }
 
-    if let Some(dimensions) = params.dimensions {
-        window.set_windowed_resolution(dimensions.x, dimensions.y);
-    }
+    let dimensions = params.dimensions;
+    window.set_windowed_resolution(dimensions.x, dimensions.y);
 
     debug!(LOGGER, "Committing initial window '{}'", window.get_id());
     window.commit();
@@ -102,6 +107,8 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
         LifecycleStage::Load => {
         }
         LifecycleStage::PreInit => {
+            EngineManager::instance()
+                .add_config_deserializer::<WindowConfig>(CONFIG_KEY_WINDOW);
             set_render_loop(render_loop).expect("Failed to set engine render loop");
         }
         LifecycleStage::Init => {
@@ -109,7 +116,12 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
                 if cfg!(target_os = "linux") {
                     sdl3::hint::set(sdl3::hint::names::VIDEO_DRIVER, "wayland,x11");
                 }
-                sdl3::hint::set(sdl3::hint::names::APP_NAME, &get_client_name());
+                let client_name = EngineManager::instance().get_config()
+                    .get_section::<ClientConfig>().unwrap().name.clone();
+                sdl3::hint::set(
+                    sdl3::hint::names::APP_NAME,
+                    &client_name,
+                );
                 WindowManager::instance().init_sdl().expect("Failed to initialize SDL");
                 info!(LOGGER, "SDL initialized successfully");
 

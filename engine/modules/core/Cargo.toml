@@ -19,3 +19,5 @@ itertools = { workspace = true }
 linkme = { workspace = true, features = ["used_linker"] }
 num_enum = { workspace = true }
 parking_lot = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["raw_value"] }

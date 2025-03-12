@@ -1,3 +1,4 @@
+use argus_core::ClientConfig;
 use std::any::Any;
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
@@ -5,7 +6,7 @@ use std::time::Duration;
 use bitflags::bitflags;
 use fragile::Fragile;
 use sdl3::video::WindowPos;
-use argus_core::{dispatch_event, get_client_name};
+use argus_core::{dispatch_event, EngineManager};
 use argus_logging::{debug, info};
 use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
@@ -230,7 +231,9 @@ impl Window {
             self.handle = Some(Fragile::new(
                 WindowManager::instance().create_platform_window(
                     &self.id,
-                    get_client_name(),
+                    &EngineManager::instance().get_config()
+                        .get_section::<ClientConfig>().as_ref().unwrap()
+                        .name,
                     DEF_WINDOW_DIM,
                     DEF_WINDOW_DIM,
                     None,

@@ -20,6 +20,7 @@
 use argus_logging::crate_logger;
 
 mod bind;
+mod config;
 mod context;
 mod error;
 mod manager;
@@ -29,6 +30,7 @@ mod util;
 mod wrap;
 
 pub use bind::*;
+pub use config::*;
 pub use context::*;
 pub use error::*;
 pub use manager::*;

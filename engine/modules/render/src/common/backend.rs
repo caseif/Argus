@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use argus_logging::{debug, info, warn};
 use lazy_static::lazy_static;
-use argus_core::EngineManager;
+use argus_core::{CoreConfig, EngineManager};
 use crate::LOGGER;
 
 type ActivateRenderBackendFn = fn() -> bool;
@@ -11,7 +11,7 @@ type ActivateRenderBackendFn = fn() -> bool;
     target_os = "linux",
     target_os = "android"
 ))]
-const DEFAULT_BACKENDS: &[&str] = &["opengl", "vulkan"];
+const DEFAULT_BACKENDS: &[&str] = &["vulkan", "opengl", "vulkan"];
 #[cfg(
     target_os = "windows"
 )]
@@ -91,7 +91,9 @@ fn try_backends(
 }
 
 pub(crate) fn activate_backend() {
-    let backends = &EngineManager::instance().get_config().preferred_render_backends;
+    let config = EngineManager::instance().get_config();
+    let section_opt = config.get_section::<CoreConfig>();
+    let backends = &section_opt.unwrap().render_backends;
 
     let mut attempted_backends = Vec::new();
 
