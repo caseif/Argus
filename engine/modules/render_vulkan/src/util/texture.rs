@@ -136,4 +136,5 @@ pub(crate) fn prepare_texture(
 pub(crate) fn destroy_texture(device: &VulkanDevice, texture: PreparedTexture) {
     unsafe { device.logical_device.destroy_sampler(texture.sampler, None) };
     texture.image.destroy(device);
+    texture.staging_buf.destroy(device);
 }

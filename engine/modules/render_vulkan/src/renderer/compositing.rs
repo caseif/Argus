@@ -267,6 +267,7 @@ fn create_framebuffers(
                 .expect("Failed to create framebuffer sampler")
         };
 
+        assert!(frame_state.composite_desc_sets.is_empty());
         frame_state.composite_desc_sets = create_descriptor_sets(
             device,
             desc_pool,
@@ -294,12 +295,14 @@ fn create_framebuffers(
             device.logical_device.update_descriptor_sets(&ds_writes, &[]);
         }
 
-        frame_state.front_fb.replace(FramebufferGrouping {
+        assert!(frame_state.front_fb.is_none());
+        assert!(frame_state.back_fb.is_none());
+        frame_state.front_fb = Some(FramebufferGrouping {
             handle: front_handle,
             images: front_images,
             sampler: Some(front_sampler),
         });
-        frame_state.back_fb.replace(FramebufferGrouping {
+        frame_state.back_fb = Some(FramebufferGrouping {
             handle: back_handle,
             images: back_images,
             sampler: None,
@@ -332,6 +335,15 @@ pub(crate) fn draw_scene_to_framebuffer(
 
     // framebuffer setup
     if resolution.dirty {
+        let _submit_lock = state.submit_mutex.lock().unwrap();
+        let _gfx_queue_lock = device.queue_mutexes.graphics_family.lock().unwrap();
+        let _present_queue_lock = if device.queues.present_family != device.queues.graphics_family {
+            Some(device.queue_mutexes.present_family.lock().unwrap())
+        } else {
+            None
+        };
+
+        unsafe { device.logical_device.queue_wait_idle(device.queues.graphics_family).unwrap() };
         for frame_state in &mut viewport_state.per_frame {
             if let Some(front_fb) = frame_state.front_fb.take() {
                 // delete framebuffers
@@ -632,6 +644,7 @@ pub(crate) fn draw_scene_to_framebuffer(
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
         cur_frame_state.command_buf.clone().unwrap(),
+        state.swapchain.as_ref().unwrap(),
         device.queues.graphics_family,
         vec![cur_frame_state.rebuild_semaphore],
         vec![vk::PipelineStageFlags::ALL_COMMANDS],

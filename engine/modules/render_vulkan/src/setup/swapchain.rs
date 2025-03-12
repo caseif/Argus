@@ -1,3 +1,4 @@
+use std::sync::MutexGuard;
 use ash::vk;
 use ash::prelude::VkResult;
 use argus_util::math::Vector2u;
@@ -222,11 +223,12 @@ pub(crate) fn create_swapchain(
 pub(crate) unsafe fn recreate_swapchain(
     instance: &VulkanInstance,
     device: &VulkanDevice,
-    new_resolution: Vector2u,
     swapchain: VulkanSwapchain,
+    new_resolution: Vector2u,
+    _submit_lock: MutexGuard<()>,
+    _gfx_lock: MutexGuard<()>,
+    _present_lock: Option<MutexGuard<()>>,
 ) -> Result<VulkanSwapchain, String> {
-    let _lock = device.queue_mutexes.graphics_family.lock().unwrap();
-
     let surface = *&swapchain.surface;
 
     device.logical_device.device_wait_idle()
@@ -244,7 +246,7 @@ pub(crate) unsafe fn destroy_swapchain(
     swapchain: VulkanSwapchain,
 ) -> VkResult<()> {
     for i in 0..MAX_FRAMES_IN_FLIGHT {
-        device.logical_device.wait_for_fences(&[swapchain.in_flight_fence[i]], true, u64::MAX)?;
+        //device.logical_device.wait_for_fences(&[swapchain.in_flight_fence[i]], true, u64::MAX)?;
 
         device.logical_device.destroy_semaphore(swapchain.image_avail_sem[i], None);
         device.logical_device.destroy_semaphore(swapchain.render_done_sem[i], None);

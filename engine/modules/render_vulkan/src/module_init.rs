@@ -252,9 +252,10 @@ fn window_event_handler(event: &WindowEvent) {
                 // This condition fails if the window received a close request
                 // immediately, before a context could be created. This is the
                 // case when creating a hidden window to probe GL capabilities.
-                if renderers.contains_key(window_id) {
-                    //TODO: delete renderer
-                }
+                let Some(renderer) = renderers.remove(window_id) else {
+                    return;
+                };
+                renderer.destroy();
             });
         }
         _ => {}

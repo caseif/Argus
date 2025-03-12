@@ -14,10 +14,14 @@ use crate::util::defines::MAX_FRAMES_IN_FLIGHT;
 pub(crate) enum SubmitMessage {
     SubmitCommandBuffer(SubmitCommandBufferParams),
     PresentImage(PresentImageParams),
+    NotifyCreatedSwapchain(NotifyCreatedSwapchainParams),
+    NotifyDestroyedSwapchain(NotifyDestroyedSwapchainParams),
+    NotifyHalting(NotifyHaltingParams),
 }
 
 pub(crate) struct SubmitCommandBufferParams {
     pub(crate) buffer: CommandBufferInfo,
+    pub(crate) swapchain: vk::SwapchainKHR,
     pub(crate) queue: vk::Queue,
     pub(crate) wait_sems: Vec<vk::Semaphore>,
     pub(crate) wait_stages: Vec<vk::PipelineStageFlags>,
@@ -31,6 +35,19 @@ pub(crate) struct PresentImageParams {
     pub(crate) wait_sems: Vec<vk::Semaphore>,
     pub(crate) present_image_index: u32,
     pub(crate) present_sem: Semaphore,
+}
+
+pub(crate) struct NotifyCreatedSwapchainParams {
+    pub(crate) swapchain: vk::SwapchainKHR,
+}
+
+pub(crate) struct NotifyDestroyedSwapchainParams {
+    pub(crate) swapchain: vk::SwapchainKHR,
+    pub(crate) ack_sem: Semaphore,
+}
+
+pub(crate) struct NotifyHaltingParams {
+    pub(crate) ack_sem: Semaphore,
 }
 
 #[derive(Default)]

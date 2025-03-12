@@ -4,6 +4,7 @@ use argus_util::semaphore::Semaphore;
 use ash::vk;
 use std::sync::{mpsc, Mutex};
 use std::sync::mpsc::SendError;
+use crate::setup::swapchain::VulkanSwapchain;
 
 #[derive(Clone)]
 pub(crate) struct CommandBufferInfo {
@@ -123,6 +124,7 @@ pub(crate) fn queue_command_buffer_submit(
     sender: &mpsc::Sender<SubmitMessage>,
     submit_mutex: &Mutex<()>,
     buffer: CommandBufferInfo,
+    swapchain: &VulkanSwapchain,
     queue: vk::Queue,
     wait_semaphores: Vec<vk::Semaphore>,
     wait_stages: Vec<vk::PipelineStageFlags>,
@@ -134,6 +136,7 @@ pub(crate) fn queue_command_buffer_submit(
     let params = {
         SubmitCommandBufferParams {
             buffer,
+            swapchain: unsafe { swapchain.get_handle() },
             queue,
             wait_sems: wait_semaphores,
             wait_stages,

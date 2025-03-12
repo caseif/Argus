@@ -15,15 +15,15 @@ use argus_render::twod::{get_render_context_2d, AttachedViewport2d};
 use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
-use argus_wm::{vk_create_surface, VkInstance, Window, WindowManager};
+use argus_wm::{vk_create_surface, VkInstance, Window};
 use crate::renderer::bucket_proc::fill_buckets;
 use crate::renderer::compositing::{draw_framebuffer_to_swapchain, draw_scene_to_framebuffer};
 use crate::renderer::scene_compiler::compile_scene_2d;
 use crate::setup::device::VulkanDevice;
 use crate::setup::instance::VulkanInstance;
 use crate::setup::LOGGER;
-use crate::setup::swapchain::{create_swapchain, destroy_swapchain, recreate_swapchain};
-use crate::state::{PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
+use crate::setup::swapchain::{create_swapchain, destroy_swapchain, recreate_swapchain, VulkanSwapchain};
+use crate::state::{NotifyCreatedSwapchainParams, NotifyDestroyedSwapchainParams, NotifyHaltingParams, PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
 use crate::util::defines::*;
 use crate::util::*;
 
@@ -55,84 +55,6 @@ impl VulkanRenderer {
         };
         renderer.init(window);
         renderer
-    }
-
-    fn destroy(mut self) {
-        let device: &VulkanDevice = &self.vk_device;
-
-        if !self.is_initted {
-            return;
-        }
-
-        self.state.submit_halt = true;
-        if let Some(submit_thread) = self.state.submit_thread.take() {
-            self.state.submit_halt_acked.wait();
-            submit_thread.join().unwrap();
-        }
-
-        {
-            for sem in &self.state.present_submitted_sem {
-                sem.wait();
-            }
-            let _queue_lock = self.vk_device.queue_mutexes.graphics_family.lock().unwrap();
-            unsafe {
-                device.logical_device.queue_wait_idle(device.queues.graphics_family).unwrap();
-            }
-        }
-
-        for (_, viewport_state) in self.state.viewport_states_2d.drain() {
-            destroy_viewport(&self.vk_device, self.state.desc_pool.unwrap(), viewport_state);
-        }
-
-        for (_, scene_state) in self.state.scene_states_2d.drain() {
-            destroy_scene(&self.vk_device, scene_state);
-        }
-
-        for cb in self.state.copy_cmd_buf {
-           if let Some(cb) = cb {
-                destroy_command_buffer(device, cb);
-            }
-        }
-
-        for (_, (comp_cmd_buf, _)) in self.state.composite_cmd_bufs {
-            destroy_command_buffer(device, comp_cmd_buf);
-        }
-
-       if let Some(pool) = self.state.desc_pool {
-            destroy_descriptor_pool(device, pool);
-        }
-
-        if let Some(pipeline) = self.state.composite_pipeline {
-            destroy_pipeline(device, pipeline);
-        }
-
-        for (_, pipeline) in self.state.material_pipelines {
-            destroy_pipeline(device, pipeline);
-        }
-
-       if let Some(pass) = self.state.fb_render_pass {
-            destroy_render_pass(device, pass);
-        }
-
-       if let Some(pool) = self.state.graphics_command_pool {
-            destroy_command_pool(device, pool);
-        }
-
-        for (_, texture) in self.state.prepared_textures {
-            destroy_texture(device, texture);
-        }
-
-        if let Some(swapchain) = self.state.swapchain {
-            unsafe {
-                destroy_swapchain(device, swapchain).unwrap();
-            }
-        }
-
-        if let Some(surface) = self.state.surface {
-            unsafe {
-                self.vk_instance.khr_surface().destroy_surface(surface, None);
-            }
-        }
     }
 
     pub(crate) fn is_initialized(&self) -> bool {
@@ -195,13 +117,21 @@ impl VulkanRenderer {
         let swapchain = self.state.swapchain.as_ref().unwrap();
 
         let (submit_tx, submit_rx) = mpsc::channel();
+        let present_queue_mutex_opt =
+            if self.vk_device.queues.present_family != self.vk_device.queues.graphics_family {
+                Some(self.vk_device.queue_mutexes.present_family.clone())
+            } else {
+                None
+            };
 
         let submit_thread_handle = start_submit_queues_thread(
             self.vk_device.logical_device.clone(),
             self.vk_device.ext_khr_swapchain.clone(),
+            swapchain,
             self.state.submit_mutex.clone(),
             self.vk_device.queues.graphics_family,
             self.vk_device.queue_mutexes.graphics_family.clone(),
+            present_queue_mutex_opt,
             submit_rx,
         );
         self.state.submit_thread = Some(submit_thread_handle);
@@ -248,6 +178,99 @@ impl VulkanRenderer {
         }
 
         self.is_initted = true;
+    }
+
+    pub(crate) fn destroy(mut self) {
+        let device: &VulkanDevice = &self.vk_device;
+
+        if !self.is_initted {
+            return;
+        }
+
+        self.state.submit_halt = true;
+        if let Some(submit_thread) = self.state.submit_thread.take() {
+            self.state.submit_sender.unwrap().send(
+                SubmitMessage::NotifyHalting(
+                    NotifyHaltingParams {
+                        ack_sem: self.state.submit_halt_acked.clone()
+                    }
+                )
+            ).unwrap();
+            self.state.submit_halt_acked.wait();
+            submit_thread.join().unwrap();
+        }
+
+        {
+            for sem in &self.state.present_submitted_sem {
+                sem.wait();
+            }
+            let _queue_lock = self.vk_device.queue_mutexes.graphics_family.lock().unwrap();
+            unsafe {
+                device.logical_device.queue_wait_idle(device.queues.graphics_family).unwrap();
+            }
+        }
+
+        for (_, viewport_state) in self.state.viewport_states_2d.drain() {
+            destroy_viewport(&self.vk_device, self.state.desc_pool.unwrap(), viewport_state);
+        }
+
+        for (_, scene_state) in self.state.scene_states_2d.drain() {
+            destroy_scene(&self.vk_device, scene_state);
+        }
+
+        for cb in self.state.copy_cmd_buf {
+            if let Some(cb) = cb {
+                destroy_command_buffer(device, cb);
+            }
+        }
+
+        for (_, (comp_cmd_buf, _)) in self.state.composite_cmd_bufs {
+            destroy_command_buffer(device, comp_cmd_buf);
+        }
+
+        if let Some(pool) = self.state.desc_pool {
+            destroy_descriptor_pool(device, pool);
+        }
+
+        if let Some(vbo) = self.state.composite_vbo {
+            vbo.destroy(device);
+        }
+
+        if let Some(pipeline) = self.state.composite_pipeline {
+            destroy_pipeline(device, pipeline);
+        }
+
+        for (_, pipeline) in self.state.material_pipelines {
+            destroy_pipeline(device, pipeline);
+        }
+
+        if let Some(pass) = self.state.fb_render_pass {
+            destroy_render_pass(device, pass);
+        }
+
+        if let Some(pool) = self.state.graphics_command_pool {
+            destroy_command_pool(device, pool);
+        }
+
+        for (_, texture) in self.state.prepared_textures {
+            destroy_texture(device, texture);
+        }
+
+        if let Some(swapchain) = self.state.swapchain {
+            unsafe {
+                destroy_swapchain(device, swapchain).unwrap();
+            }
+        }
+
+        if let Some(ubo) = self.state.global_ubo {
+            ubo.destroy(device);
+        }
+
+        if let Some(surface) = self.state.surface {
+            unsafe {
+                self.vk_instance.khr_surface().destroy_surface(surface, None);
+            }
+        }
     }
 
     pub(crate) fn render(&mut self, window: &mut Window, _delta: Duration) {
@@ -382,15 +405,41 @@ impl VulkanRenderer {
 
     pub(crate) fn notify_window_resize(&mut self, window: &Window, resolution: Vector2u) {
         update_view_matrix(window, &mut self.state, &resolution);
+
+        let submit_ack_sem = Semaphore::default();
+        self.state.submit_sender.as_ref().unwrap().send(
+            SubmitMessage::NotifyDestroyedSwapchain(NotifyDestroyedSwapchainParams {
+                swapchain: unsafe { self.state.swapchain.as_ref().unwrap().get_handle() },
+                ack_sem: submit_ack_sem.clone(),
+            })
+        ).unwrap();
+        submit_ack_sem.wait();
+
+        let _submit_lock = self.state.submit_mutex.lock().unwrap();
+        let _gfx_queue_lock = self.vk_device.queue_mutexes.graphics_family.lock().unwrap();
+        let _present_queue_lock = if self.vk_device.queues.present_family != self.vk_device.queues.graphics_family {
+            Some(self.vk_device.queue_mutexes.present_family.lock().unwrap())
+        } else {
+            None
+        };
+
         unsafe {
             self.state.swapchain = Some(
                 recreate_swapchain(
                     &self.vk_instance,
                     &self.vk_device,
-                    resolution,
                     self.state.swapchain.take().unwrap(),
+                    resolution,
+                    _submit_lock,
+                    _gfx_queue_lock,
+                    _present_queue_lock,
                 ).unwrap()
             );
+            self.state.submit_sender.as_ref().unwrap().send(
+                SubmitMessage::NotifyCreatedSwapchain(NotifyCreatedSwapchainParams {
+                    swapchain: self.state.swapchain.as_ref().unwrap().get_handle()
+                })
+            ).unwrap();
         }
     }
 }
@@ -565,8 +614,12 @@ fn destroy_viewport(device: &VulkanDevice, desc_pool: vk::DescriptorPool, viewpo
             }
         }
 
-        // buffer is implicitly destroyed on drop
-        _ = frame_state.viewport_ubo;
+        if let Some(buf) = frame_state.viewport_ubo {
+            buf.destroy(device);
+        }
+        if let Some(buf) = frame_state.scene_ubo {
+            buf.destroy(device);
+        }
 
         destroy_descriptor_sets(device, desc_pool, &frame_state.composite_desc_sets).unwrap();
         for (_, ds) in frame_state.material_desc_sets {
@@ -580,6 +633,10 @@ fn destroy_viewport(device: &VulkanDevice, desc_pool: vk::DescriptorPool, viewpo
 fn destroy_scene(device: &VulkanDevice, scene_state: Scene2dState) {
     for (_, bucket) in scene_state.render_buckets {
         bucket.destroy(device);
+    }
+
+    for (_, obj) in scene_state.processed_objs {
+        obj.destroy(device);
     }
 
     if let Some(buf) = scene_state.ubo {
@@ -792,6 +849,7 @@ fn submit_scene_rebuild(device: &VulkanDevice, state: &mut RendererState, cur_fr
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
         state.copy_cmd_buf[cur_frame].as_ref().unwrap().clone(),
+        state.swapchain.as_ref().unwrap(),
         device.queues.graphics_family,
         vec![],
         vec![],
@@ -829,7 +887,7 @@ fn get_next_image(device: &VulkanDevice, state: &mut RendererState, cur_frame: u
     let (image_index, _) = unsafe {
         device.khr_swapchain().acquire_next_image(
             swapchain.get_handle(),
-            Duration::from_secs(1).as_nanos() as u64,
+            u64::MAX,
             swapchain.image_avail_sem[cur_frame],
             vk::Fence::null(),
         ).expect("vkAcquireNextImageKHR failed")
@@ -961,6 +1019,7 @@ fn submit_composite(
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
         state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.clone(),
+        state.swapchain.as_ref().unwrap(),
         device.queues.graphics_family,
         wait_sems,
         wait_stages,
@@ -986,53 +1045,84 @@ fn present_image(state: &mut RendererState, image_index: u32, cur_frame: usize) 
 fn start_submit_queues_thread(
     device: ash::Device,
     ext_khr_swapchain: khr::swapchain::Device,
-    submit_lock: Arc<Mutex<()>>,
+    initial_swapchain: &VulkanSwapchain,
+    submit_mutex: Arc<Mutex<()>>,
     graphics_queue: vk::Queue,
-    graphics_queue_lock: Arc<Mutex<()>>,
+    graphics_queue_mutex: Arc<Mutex<()>>,
+    present_queue_mutex: Option<Arc<Mutex<()>>>,
     receiver: mpsc::Receiver<SubmitMessage>,
 ) -> JoinHandle<()> {
+    let initial_swapchain_handle = unsafe { initial_swapchain.get_handle() };
     thread::spawn(move || {
-        while let Ok(message) = receiver.recv() {
-            //TODO
-            /*if state.submit_halt {
-                state.submit_halt_acked.notify();
-                return;
-            }*/
+        // We track which swapchain is currently active based on notifications
+        // sent from the main thread. This allows ignoring submit/present
+        // requests associated with a stale swapchain.
+        let mut cur_swapchain = Some(initial_swapchain_handle);
 
-            let _submit_guard = submit_lock.lock().unwrap();
-            let _queue_guard = graphics_queue_lock.lock().unwrap();
+        'outer: loop {
 
-            match message {
-                SubmitMessage::PresentImage(present_params) => {
-                    let swapchains = [present_params.swapchain];
-                    let image_indices = [present_params.present_image_index];
+            while let Ok(message) = receiver.recv() {
+                let _submit_lock = submit_mutex.lock().unwrap();
+                let _gfx_queue_lock = graphics_queue_mutex.lock().unwrap();
+                let _present_queue_lock = if let Some(present_queue_mutex) = present_queue_mutex.as_ref() {
+                    Some(present_queue_mutex.lock().unwrap())
+                } else {
+                    None
+                };
 
-                    let present_info = vk::PresentInfoKHR::default()
-                        .wait_semaphores(&present_params.wait_sems)
-                        .swapchains(&swapchains)
-                        .image_indices(&image_indices);
+                match message {
+                    SubmitMessage::PresentImage(present_params) => {
+                        if !cur_swapchain.is_some_and(|sc| sc == present_params.swapchain) {
+                            continue;
+                        }
 
-                    unsafe {
-                        ext_khr_swapchain
-                            .queue_present(graphics_queue, &present_info)
-                            .unwrap();
+                        let swapchains = [present_params.swapchain];
+                        let image_indices = [present_params.present_image_index];
+
+                        let present_info = vk::PresentInfoKHR::default()
+                            .wait_semaphores(&present_params.wait_sems)
+                            .swapchains(&swapchains)
+                            .image_indices(&image_indices);
+
+                        unsafe {
+                            ext_khr_swapchain
+                                .queue_present(graphics_queue, &present_info)
+                                .unwrap();
+                        }
+
+                        present_params.present_sem.notify();
                     }
+                    SubmitMessage::SubmitCommandBuffer(buf_params) => {
+                        if !cur_swapchain.is_some_and(|sc| sc == buf_params.swapchain) {
+                            continue;
+                        }
 
-                    present_params.present_sem.notify();
-                }
-                SubmitMessage::SubmitCommandBuffer(buf_params) => {
-                    submit_command_buffer(
-                        &device,
-                        &buf_params.buffer,
-                        buf_params.queue,
-                        buf_params.fence.unwrap_or(vk::Fence::null()),
-                        buf_params.wait_sems,
-                        buf_params.wait_stages,
-                        buf_params.signal_sems,
-                    );
+                        submit_command_buffer(
+                            &device,
+                            &buf_params.buffer,
+                            buf_params.queue,
+                            buf_params.fence.unwrap_or(vk::Fence::null()),
+                            buf_params.wait_sems,
+                            buf_params.wait_stages,
+                            buf_params.signal_sems,
+                        );
 
-                    if let Some(submit_sem) = buf_params.in_flight_sem {
-                        submit_sem.notify();
+                        if let Some(submit_sem) = buf_params.in_flight_sem {
+                            submit_sem.notify();
+                        }
+                    }
+                    SubmitMessage::NotifyCreatedSwapchain(sc_params) => {
+                        assert!(cur_swapchain.is_none());
+                        cur_swapchain = Some(sc_params.swapchain);
+                    }
+                    SubmitMessage::NotifyDestroyedSwapchain(sc_params) => {
+                        assert!(cur_swapchain.is_some_and(|sc| sc == sc_params.swapchain));
+                        cur_swapchain = None;
+                        sc_params.ack_sem.notify();
+                    }
+                    SubmitMessage::NotifyHalting(halting_params) => {
+                        halting_params.ack_sem.notify();
+                        break 'outer;
                     }
                 }
             }

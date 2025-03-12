@@ -7,6 +7,7 @@ use crate::util::{find_memory_type, CommandBufferInfo, MEM_CLASS_DEVICE_RO};
 pub(crate) struct VulkanImage {
     size: Vector2u,
     format: vk::Format,
+    vk_mem: vk::DeviceMemory,
     vk_image: vk::Image,
     vk_view: vk::ImageView,
     is_destroyed: bool,
@@ -22,11 +23,12 @@ impl VulkanImage {
         aspect_mask: vk::ImageAspectFlags
     ) -> Result<VulkanImage, String> {
         unsafe {
-            let vk_image = create_vk_image(instance, device, format, &size, usage)?;
+            let (vk_image, vk_mem) = create_vk_image(instance, device, format, &size, usage)?;
             let vk_view = create_vk_image_view(device, vk_image, format, aspect_mask)?;
             let image_info = VulkanImage {
                 size,
                 format,
+                vk_mem,
                 vk_image,
                 vk_view,
                 is_destroyed: false,
@@ -51,6 +53,7 @@ impl VulkanImage {
         unsafe {
             destroy_vk_image_view(device, self.vk_view);
             destroy_vk_image(device, self.vk_image);
+            device.logical_device.free_memory(self.vk_mem, None);
         }
         self.is_destroyed = true;
     }
@@ -96,7 +99,7 @@ pub(crate) unsafe fn create_vk_image(
     format: vk::Format,
     size: &Vector2u,
     usage: vk::ImageUsageFlags
-) -> Result<vk::Image, String> {
+) -> Result<(vk::Image, vk::DeviceMemory), String> {
     let extent = vk::Extent3D { width: size.x, height: size.y, depth: 1 };
     let qf_indices = vec![device.queue_indices.graphics_family];
 
@@ -141,7 +144,7 @@ pub(crate) unsafe fn create_vk_image(
     device.logical_device.bind_image_memory(image, image_memory, 0)
         .map_err(|err| err.to_string())?;
 
-    Ok(image)
+    Ok((image, image_memory))
 }
 
 pub(crate) unsafe fn create_vk_image_view(
