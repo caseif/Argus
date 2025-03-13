@@ -258,8 +258,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     let fb_height = (viewport_px.bottom - viewport_px.top).abs();
 
     let have_draw_buffers_blend = aglet_have_gl_version_4_0()
-        || aglet_have_gl_arb_draw_buffers_blend()
-        || aglet_have_gl_amd_draw_buffers_blend();
+        || aglet_have_gl_arb_draw_buffers_blend();
 
     // set scene uniforms
     update_scene_ubo_2d(
@@ -548,8 +547,7 @@ fn init_viewport_buffers(
     fb_height: GLsizei
 ) {
     let have_draw_buffers_blend = aglet_have_gl_version_4_0()
-        || aglet_have_gl_arb_draw_buffers_blend()
-        || aglet_have_gl_amd_draw_buffers_blend();
+        || aglet_have_gl_arb_draw_buffers_blend();
 
     // shadowmap setup
     if viewport_state.buffers.shadowmap_texture.is_none() {

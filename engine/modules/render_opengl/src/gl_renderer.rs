@@ -144,8 +144,6 @@ impl GlRenderer {
             glBlendEquationi(1, GL_MAX);
         } else if aglet_have_gl_arb_draw_buffers_blend() {
             glBlendEquationiARB(1, GL_MAX);
-        } else if aglet_have_gl_amd_draw_buffers_blend() {
-            glBlendEquationIndexedAMD(1, GL_MAX);
         }
 
         glDisable(GL_CULL_FACE);
