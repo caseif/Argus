@@ -96,4 +96,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: argus_bootstrap-${{ env.RUNNER_NAME }}-${{ env.CONFIG_NAME }}
-        path: target/${{ env.CONFIG_NAME }}/argus_bootstrap${{ env.EXE_EXT }}
+        path: |
+          target/${{ env.CONFIG_NAME }}/argus_bootstrap${{ env.EXE_EXT }}
+          target/${{ env.CONFIG_NAME }}/argus_bootstrap.pdb
