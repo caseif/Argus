@@ -46,9 +46,9 @@ pub struct GlslCompileError {
 }
 
 impl GlslCompileError {
-    fn new(message: &str) -> Self {
+    fn new(message: impl Into<String>) -> Self {
         GlslCompileError {
-            message: message.to_string(),
+            message: message.into(),
         }
     }
 }
@@ -151,7 +151,12 @@ pub fn compile_glsl_to_spirv(
             None,
         ).unwrap();
 
-        let shader = Shader::new(compiler, input).unwrap();
+        let shader = match Shader::new(compiler, input) {
+            Ok(shader) => shader,
+            Err(err) => {
+                return Err(GlslCompileError::new(err.to_string()));
+            },
+        };
 
         let mut program = Program::new(compiler);
         program.add_shader(&shader);
