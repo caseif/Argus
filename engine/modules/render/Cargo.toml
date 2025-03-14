@@ -26,4 +26,4 @@ serde_json = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
-arp = { workspace = true }
+argus_build_util = { path = "../../libs/build_util", features = ["arp"] }

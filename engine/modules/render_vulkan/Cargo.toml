@@ -25,4 +25,4 @@ konst = "0.3.16"
 
 
 [build-dependencies]
-arp = { workspace = true }
+argus_build_util = { path = "../../libs/build_util", features = ["arp"] }

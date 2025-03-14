@@ -22,4 +22,4 @@ num_enum = { workspace = true }
 spirv-cross2 = { workspace = true, features = ["glsl"] }
 
 [build-dependencies]
-arp = { workspace = true }
+argus_build_util = { path = "../../libs/build_util", features = ["arp"] }

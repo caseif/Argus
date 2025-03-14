@@ -1,0 +1,15 @@
+[package]
+name = "argus_build_util"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+arp = ["dep:arp"]
+
+[lib]
+name = "argus_build_util"
+crate-type = ["rlib"]
+
+[dependencies]
+arp = { workspace = true, optional = true }
