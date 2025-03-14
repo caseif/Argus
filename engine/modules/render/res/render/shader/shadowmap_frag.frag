@@ -60,8 +60,16 @@ void main() {
 
         Light2D light = scene.Lights[i];
         vec2 light_pos = light.position.xy;
-
         vec2 offset = WorldPos.xy - light_pos;
+
+        if (abs(offset.x) < 0.01 && abs(offset.y) < 0.01) {
+            // light is fully occluded
+            for (int j = 0; j < ray_count; j++) {
+                imageAtomicExchange(u_RayBuffer, int(i * ray_count + j), 0);
+            }
+            continue;
+        }
+
         float theta = atan(offset.y, offset.x) + PI;
         uint ray_index = uint(floor(float(ray_count) * theta / TWO_PI));
         uint dist = uint(distance(light_pos, WorldPos.xy) * DIST_MULTIPLIER);
