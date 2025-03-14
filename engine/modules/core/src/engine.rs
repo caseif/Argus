@@ -6,9 +6,8 @@ use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 use itertools::Itertools;
 use serde::Deserialize;
-use argus_logging::{debug, LogManager, LogSettings};
+use argus_logging::{debug, severe, warn, LogManager, LogSettings};
 use argus_scripting_bind::script_bind;
-use argus_util::math::Vector2u;
 use crate::*;
 use crate::manager::{EngineManager};
 use crate::module::get_registered_modules_sorted;
@@ -32,7 +31,7 @@ static IS_RENDER_INITTED: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::
 static IS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
 static STOP_ACK_UPDATE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static STOP_ACK_RENDER: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
-
+static DID_RENDER_PANIC: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct ClientConfig {
@@ -55,8 +54,23 @@ pub struct CoreConfig {
 }
 
 pub struct RenderLoopParams {
-    pub core_render_callback: fn(Duration),
-    pub shutdown_notifier: Receiver<fn()>,
+    pub(crate) core_render_callback: fn(&RenderLoopParams, Duration),
+    pub(crate) shutdown_notifier: Receiver<fn()>,
+}
+
+impl RenderLoopParams {
+    pub fn should_shutdown(&self) -> bool {
+        if let Ok(shutdown_callback) = self.shutdown_notifier.try_recv() {
+            shutdown_callback();
+            return true;
+        }
+
+        false
+    }
+
+    pub fn run_core_callbacks(&self, delta: Duration) {
+        (self.core_render_callback)(self, delta);
+    }
 }
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -67,6 +81,25 @@ pub enum Ordering {
     Standard,
     Late,
     Latest,
+}
+
+struct PoisonPill {
+    callback: fn(),
+}
+
+impl PoisonPill {
+    fn new(callback: fn()) -> Self {
+        Self { callback }
+    }
+}
+
+impl Drop for PoisonPill {
+    fn drop(&mut self) {
+        if thread::panicking() {
+            eprintln!("Thread panic detected!");
+            (self.callback)();
+        }
+    }
 }
 
 pub fn init_logger(settings: LogSettings) {
@@ -110,9 +143,16 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
         mgr.render_shutdown_tx.set(render_shutdown_tx)
             .expect("Failed to store shutdown notifier for render thread");
 
+        let (render_pol_tx, render_pol_rx) = mpsc::channel();
+        mgr.render_proof_of_life_tx.set(render_pol_tx)
+            .expect("Failed to store proof-of-life channel for render thread");
+
         let render_loop = mgr.get_render_loop().expect("Render loop is not set");
 
         thread::spawn(|| {
+            let _poison_pill =
+                PoisonPill::new(|| DID_RENDER_PANIC.store(true, atomic::Ordering::Relaxed));
+
             debug!(LOGGER, "Running render initialization callbacks");
 
             mgr.render_init_callbacks.flush_queues();
@@ -127,7 +167,7 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
             *IS_RENDER_INITTED.0.lock().unwrap() = true;
             IS_RENDER_INITTED.1.notify_all();
             debug!(LOGGER, "Render thread notified update thread that it can proceed");
-            
+
             render_loop(RenderLoopParams {
                 core_render_callback: do_render_callbacks,
                 shutdown_notifier: render_shutdown_rx,
@@ -193,8 +233,16 @@ pub fn stop_engine() {
     debug!(LOGGER, "Engine stop requested");
     IS_STOP_REQUESTED.store(true, atomic::Ordering::Relaxed);
     if let Some(tx) = EngineManager::instance().render_shutdown_tx.get() {
-        tx.send(render_shutdown_callback)
-            .expect("Failed to notify render thread of engine shutdown");
+        if tx.send(render_shutdown_callback).is_err() {
+            warn!(
+                LOGGER,
+                "Failed to notify render thread of engine shutdown - it most likely panicked",
+            );
+            // pretend the render thread acknowledged the shutdown since it
+            // probably isn't running anymore
+            *STOP_ACK_RENDER.0.lock().unwrap() = true;
+            STOP_ACK_RENDER.1.notify_all();
+        };
     }
 }
 
@@ -266,13 +314,19 @@ fn do_update_loop() {
             "Render thread was already initialized - update loop can start immediately",
         );
     }
-    
+
     let mut last_update = Instant::now();
 
     while !IS_STOP_REQUESTED.load(atomic::Ordering::Relaxed) {
         let cur_instant = Instant::now();
         let delta = cur_instant.duration_since(last_update);
         last_update = cur_instant;
+
+        if DID_RENDER_PANIC.load(atomic::Ordering::Relaxed) {
+            severe!(LOGGER, "Render thread indicated panic");
+            stop_engine();
+            continue;
+        }
 
         EngineManager::instance().update_one_off_callbacks.flush_queues();
 
@@ -307,7 +361,7 @@ fn do_update_loop() {
     }
 }
 
-fn do_render_callbacks(delta: Duration) {
+fn do_render_callbacks(_params: &RenderLoopParams, delta: Duration) {
     EngineManager::instance().render_one_off_callbacks.flush_queues();
 
     let mut once_callbacks = EngineManager::instance().render_one_off_callbacks.drain();

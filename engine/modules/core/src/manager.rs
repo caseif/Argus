@@ -54,6 +54,7 @@ pub struct EngineManager {
 
     pub(crate) render_loop: OnceLock<fn(RenderLoopParams)>,
     pub(crate) render_shutdown_tx: OnceLock<Sender<fn()>>,
+    pub(crate) render_proof_of_life_tx: OnceLock<Sender<()>>,
     pub(crate) update_thread_id: OnceLock<ThreadId>,
 
     next_callback_index: AtomicU64,
@@ -108,6 +109,7 @@ impl EngineManager {
 
             render_loop: OnceLock::new(),
             render_shutdown_tx: OnceLock::new(),
+            render_proof_of_life_tx: OnceLock::new(),
             update_thread_id: OnceLock::new(),
 
             next_callback_index: AtomicU64::new(1),

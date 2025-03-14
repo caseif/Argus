@@ -160,8 +160,7 @@ fn render_loop(params: RenderLoopParams) {
     let mut last_time = Instant::now();
     
     loop {
-        if let Ok(shutdown_callback) = params.shutdown_notifier.try_recv() {
-            shutdown_callback();
+        if params.should_shutdown() {
             return;
         }
         
@@ -169,7 +168,8 @@ fn render_loop(params: RenderLoopParams) {
         let delta = cur_time - last_time;
         last_time = cur_time;
 
-        (params.core_render_callback)(delta);
+        params.run_core_callbacks(delta);
+
         do_window_loop(delta);
     }
 }
