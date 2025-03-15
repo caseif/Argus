@@ -204,6 +204,14 @@ impl World2d {
         self.add_background_layer(parallax_coeff, None).unwrap()
     }
 
+    fn simulate(&mut self, delta: Duration) {
+        for i in 0..self.bg_layers_count {
+            let layer = self.bg_layers[i as usize].as_mut().expect("Background layer is missing");
+            layer.simulate(delta);
+        }
+        self.fg_layer.simulate(delta);
+    }
+
     fn render(&mut self) {
         let scale_factor = self.get_scale_factor();
         let camera_transform = self.abstract_camera.read();
@@ -218,9 +226,15 @@ impl World2d {
         self.fg_layer.render(scale_factor, &camera_transform, &al_level, &al_color);
     }
 
+    pub(crate) fn simulate_worlds(delta: Duration) {
+        for (_, world) in g_worlds.read().unwrap().iter() {
+            world.write().unwrap().simulate(delta);
+        }
+    }
+
     pub(crate) fn render_worlds(_delta: Duration) {
-        for (_, world) in g_worlds.read().expect("World list lock was poisoned").iter() {
-            world.write().expect("World lock was poisoned").render();
+        for (_, world) in g_worlds.read().unwrap().iter() {
+            world.write().unwrap().render();
         }
     }
 
@@ -293,14 +307,12 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
-        transform: Transform2d,
     ) -> Result<Uuid, String> {
         self.get_foreground_layer_mut().create_actor(
             sprite,
             size,
             z_index,
             can_occlude_light,
-            transform,
         )
     }
 
@@ -311,14 +323,12 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
-        transform: Transform2d,
     ) -> String {
         self.create_actor(
             sprite,
             size,
             z_index,
             can_occlude_light,
-            transform,
         ).unwrap()
             .to_string()
     }

@@ -19,6 +19,7 @@
 use crate::actor::Actor2d;
 use std::collections::HashMap;
 use std::ops::DerefMut;
+use std::time::Duration;
 use uuid::Uuid;
 use argus_render::common::{Material, RenderCanvas, TextureData, Transform2d, Vertex2d};
 use argus_render::constants::RESOURCE_TYPE_MATERIAL;
@@ -198,14 +199,13 @@ impl World2dLayer {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
-        transform: Transform2d,
     ) -> Result<Uuid, String> {
         let sprite_defn_res = match ResourceManager::instance().get_resource(&sprite_uid) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
 
-        let actor = Actor2d::new(sprite_defn_res, size, z_index, can_occlude_light, transform);
+        let actor = Actor2d::new(sprite_defn_res, size, z_index, can_occlude_light);
         let id = Uuid::new_v4();
         self.actors.insert(id, actor);
         Ok(id)
@@ -222,6 +222,16 @@ impl World2dLayer {
                 Ok(())
             }
             None => Err("No such actor exists for world layer (in get_actor)"),
+        }
+    }
+
+    pub(crate) fn simulate(&mut self, delta: Duration) {
+        for (_, actor) in &mut self.actors {
+            if actor.velocity.x != 0.0 || actor.velocity.y != 0.0 {
+                let mut new_transform = actor.transform.peek().value;
+                new_transform.translation += actor.velocity * delta.as_secs_f32();
+                actor.transform.set(new_transform);
+            }
         }
     }
 

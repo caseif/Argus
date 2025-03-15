@@ -27,6 +27,7 @@ use crate::sprite::Sprite;
 pub struct Actor2d {
     size: Vector2f,
     z_index: u32,
+    pub(crate) velocity: Vector2f,
     pub(crate) can_occlude_light: Dirtiable<bool>,
     pub(crate) transform: Dirtiable<Transform2d>,
 
@@ -42,15 +43,15 @@ impl Actor2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
-        transform: Transform2d,
     ) -> Actor2d {
         let sprite = Sprite::new(sprite_defn_res);
 
         Self {
             size,
             z_index,
+            velocity: Vector2f::default(),
             can_occlude_light: Dirtiable::new(can_occlude_light),
-            transform: Dirtiable::new(transform),
+            transform: Default::default(),
             sprite,
             render_obj: None,
         }
@@ -87,6 +88,51 @@ impl Actor2d {
             return;
         }
         self.transform.set(transform);
+    }
+
+    #[script_bind]
+    pub fn get_position(&self) -> Vector2f {
+        self.transform.peek().value.translation
+    }
+
+    #[script_bind]
+    pub fn set_position(&mut self, position: Vector2f) {
+        self.transform.update_in_place(|transform| { transform.translation = position });
+    }
+
+    #[script_bind]
+    pub fn get_scale(&self) -> Vector2f {
+        self.transform.peek().value.translation
+    }
+
+    #[script_bind]
+    pub fn set_scale(&mut self, scale: Vector2f) {
+        self.transform.update_in_place(|transform| { transform.scale = scale });
+    }
+
+    #[script_bind]
+    pub fn get_rotation(&self) -> f32 {
+        self.transform.peek().value.rotation
+    }
+
+    #[script_bind]
+    pub fn set_rotation(&mut self, rotation_rads: f32) {
+        self.transform.update_in_place(|transform| { transform.rotation = rotation_rads });
+    }
+
+    #[script_bind]
+    pub fn get_velocity(&self) -> Vector2f {
+        self.velocity
+    }
+
+    #[script_bind]
+    pub fn set_velocity(&mut self, velocity: Vector2f) {
+        self.velocity = velocity;
+    }
+
+    #[script_bind]
+    pub fn add_velocity(&mut self, delta: Vector2f) {
+        self.velocity += delta;
     }
 
     #[script_bind]

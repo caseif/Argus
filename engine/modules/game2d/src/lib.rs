@@ -42,7 +42,8 @@ pub fn update_lifecycle_game2d(stage: LifecycleStage) {
         LifecycleStage::PreInit => {}
         LifecycleStage::Init => {
             ResourceManager::instance().register_loader(vec![RESOURCE_TYPE_SPRITE], SpriteLoader {});
-            register_update_callback(Box::new(World2d::render_worlds), Ordering::Standard);
+            register_update_callback(Box::new(World2d::simulate_worlds), Ordering::Standard);
+            register_update_callback(Box::new(World2d::render_worlds), Ordering::Late);
         }
         LifecycleStage::PostInit => {}
         LifecycleStage::Running => {}

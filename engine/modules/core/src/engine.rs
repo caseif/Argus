@@ -143,10 +143,6 @@ pub fn start_engine() -> Result<Infallible, EngineError> {
         mgr.render_shutdown_tx.set(render_shutdown_tx)
             .expect("Failed to store shutdown notifier for render thread");
 
-        let (render_pol_tx, render_pol_rx) = mpsc::channel();
-        mgr.render_proof_of_life_tx.set(render_pol_tx)
-            .expect("Failed to store proof-of-life channel for render thread");
-
         let render_loop = mgr.get_render_loop().expect("Render loop is not set");
 
         thread::spawn(|| {

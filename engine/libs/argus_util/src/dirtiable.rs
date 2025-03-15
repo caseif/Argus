@@ -64,6 +64,11 @@ impl<T> Dirtiable<T> {
         self.value = func(&self.value);
         self.dirty = true;
     }
+
+    pub fn update_in_place<F: Fn(&mut T)>(&mut self, func: F) {
+        func(&mut self.value);
+        self.dirty = true;
+    }
 }
 
 /*impl<T> From<T> for Dirtiable<T> {
