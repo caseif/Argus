@@ -1,13 +1,22 @@
+use argus_scripting_bind::script_bind;
 use argus_util::math::Vector3f;
 use crate::common::Transform2d;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[script_bind]
 pub enum Light2dType {
     Point = 0,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Light2dParameters {
+#[script_bind]
+pub struct Light2dProperties {
+    /// The type of light.
+    pub ty: Light2dType,
+    /// The RGB color of the light as normalized float values.
+    pub color: Vector3f,
+    /// Whether the light can be occluded by objects.
+    pub is_occludable: bool,
     /// The absolute intensity of the light between 0 and 1.
     pub intensity: f32,
     /// Higher values will result in a steeper falloff gradient.
@@ -24,58 +33,35 @@ pub struct Light2dParameters {
     pub shadow_falloff_multiplier: f32,
 }
 
-pub struct Light2d {
-    ty: Light2dType,
-    is_occludable: bool,
-    color: Vector3f,
-    params: Light2dParameters,
+pub struct RenderLight2d {
+    properties: Light2dProperties,
     transform: Transform2d,
 }
 
-impl Light2d {
+impl RenderLight2d {
     #[must_use]
-    pub(crate) fn new (
-        ty: Light2dType,
-        is_occludable: bool,
-        color: Vector3f,
-        params: Light2dParameters,
+    pub(crate) fn new(
+        properties: Light2dProperties,
         transform: Transform2d
-    ) -> Light2d {
+    ) -> RenderLight2d {
         Self {
-            ty,
-            is_occludable,
-            color,
-            params,
+            properties: properties,
             transform,
         }
     }
 
     #[must_use]
-    pub fn get_type(&self) -> Light2dType {
-        self.ty
+    pub fn get_properties(&self) -> &Light2dProperties {
+        &self.properties
     }
 
     #[must_use]
-    pub fn is_occludable(&self) -> bool {
-        self.is_occludable
+    pub fn get_properties_mut(&mut self) -> &mut Light2dProperties {
+        &mut self.properties
     }
 
-    #[must_use]
-    pub fn get_color(&self) -> &Vector3f {
-        &self.color
-    }
-
-    pub fn set_color(&mut self, color: Vector3f) {
-        self.color = color;
-    }
-
-    #[must_use]
-    pub fn get_parameters(&self) -> &Light2dParameters {
-        &self.params
-    }
-
-    pub fn set_parameters(&mut self, params: Light2dParameters) {
-        self.params = params;
+    pub fn set_properties(&mut self, params: Light2dProperties) {
+        self.properties = params;
     }
 
     #[must_use]

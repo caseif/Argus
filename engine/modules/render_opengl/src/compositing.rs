@@ -165,19 +165,20 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
     for (i, light_handle) in light_handles.into_iter().enumerate() {
         let light = scene.get_light_mut(light_handle).unwrap();
 
-        let color = light.get_color();
         let pos = &light.get_transform().translation;
+        let props = light.get_properties();
+        let color = props.color;
         shader_lights_arr[i] = Std140Light2D {
-            color: [color.x, color.y, color.z, 1f32],
-            position: [pos.x, pos.y, 0.0, 1f32],
-            intensity: light.get_parameters().intensity,
-            falloff_gradient: light.get_parameters().falloff_gradient,
-            falloff_distance: light.get_parameters().falloff_multiplier,
-            falloff_buffer: light.get_parameters().falloff_buffer,
-            shadow_falloff_gradient: light.get_parameters().shadow_falloff_gradient,
-            shadow_falloff_distance: light.get_parameters().shadow_falloff_multiplier,
-            ty: light.get_type() as i32,
-            is_occludable: light.is_occludable(),
+            color: [color.x, color.y, color.z, 1.0],
+            position: [pos.x, pos.y, 0.0, 1.0],
+            intensity: props.intensity,
+            falloff_gradient: props.falloff_gradient,
+            falloff_distance: props.falloff_multiplier,
+            falloff_buffer: props.falloff_buffer,
+            shadow_falloff_gradient: props.shadow_falloff_gradient,
+            shadow_falloff_distance: props.shadow_falloff_multiplier,
+            ty: props.ty as i32,
+            is_occludable: props.is_occludable,
         };
     }
 

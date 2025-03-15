@@ -93,15 +93,12 @@ impl Scene2d {
 
     pub fn add_light(
         &mut self,
-        ty: Light2dType,
-        is_occludable: bool,
-        color: Vector3f,
-        params: Light2dParameters,
+        properties: Light2dProperties,
         initial_transform: Transform2d
     ) -> Handle {
         // Let there be light.
         // That's, uh... God. I was quoting God.
-        let light = Light2d::new(ty, is_occludable, color, params, initial_transform);
+        let light = RenderLight2d::new(properties, initial_transform);
         let context = get_render_context_2d();
         let handle = context.add_light(light);
         self.lights.push(handle);
@@ -111,7 +108,7 @@ impl Scene2d {
     pub fn get_light<'a>(
         &mut self,
         handle: Handle
-    ) -> Option<ContextObjectReadGuard<Light2d>> {
+    ) -> Option<ContextObjectReadGuard<RenderLight2d>> {
         if !self.lights.contains(&handle) {
             return None;
         }
@@ -122,7 +119,7 @@ impl Scene2d {
     pub fn get_light_mut<'a>(
         &mut self,
         handle: Handle
-    ) -> Option<ContextObjectWriteGuard<Light2d>> {
+    ) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
         if !self.lights.contains(&handle) {
             return None;
         }
@@ -287,7 +284,7 @@ impl Scene2d {
         self.cameras.remove(id.as_ref());
     }
 
-    pub(crate) fn get_lights_for_render(&self) -> Vec<Light2d> {
+    pub(crate) fn get_lights_for_render(&self) -> Vec<RenderLight2d> {
         todo!()
     }
 }

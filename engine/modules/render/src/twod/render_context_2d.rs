@@ -6,7 +6,7 @@ use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockR
 use uuid::Uuid;
 use argus_util::pool::{Handle, ValuePool};
 use crate::common::{RenderCanvas, Transform2d};
-use crate::twod::{Light2d, RenderGroup2d, RenderObject2d, Scene2d};
+use crate::twod::{RenderLight2d, RenderGroup2d, RenderObject2d, Scene2d};
 
 lazy_static! {
     static ref RENDER_CONTEXT: RenderContext2d = RenderContext2d::new();
@@ -18,7 +18,7 @@ pub struct RenderContext2d {
     scenes: DashMap<String, Scene2d>,
     group_pool: RwLock<ValuePool<RenderGroup2d>>,
     object_pool: RwLock<ValuePool<RenderObject2d>>,
-    light_pool: RwLock<ValuePool<Light2d>>,
+    light_pool: RwLock<ValuePool<RenderLight2d>>,
 }
 
 pub struct ContextObjectReadGuard<'a, T> {
@@ -250,7 +250,7 @@ impl RenderContext2d {
         get_pool_value_mut(&self.object_pool, handle)
     }
 
-    pub(crate) fn add_light(&self, light: Light2d) -> Handle {
+    pub(crate) fn add_light(&self, light: RenderLight2d) -> Handle {
         self.light_pool.write().insert(light)
     }
 
@@ -265,11 +265,11 @@ impl RenderContext2d {
         true
     }
 
-    pub(crate) fn get_light(&self, handle: Handle) -> Option<ContextObjectReadGuard<Light2d>> {
+    pub(crate) fn get_light(&self, handle: Handle) -> Option<ContextObjectReadGuard<RenderLight2d>> {
         get_pool_value(&self.light_pool, handle)
     }
 
-    pub(crate) fn get_light_mut(&self, handle: Handle) -> Option<ContextObjectWriteGuard<Light2d>> {
+    pub(crate) fn get_light_mut(&self, handle: Handle) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
         get_pool_value_mut(&self.light_pool, handle)
     }
 }

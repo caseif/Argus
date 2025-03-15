@@ -23,7 +23,7 @@ use std::time::Duration;
 use uuid::Uuid;
 use argus_render::common::{Material, RenderCanvas, TextureData, Transform2d, Vertex2d};
 use argus_render::constants::RESOURCE_TYPE_MATERIAL;
-use argus_render::twod::{get_render_context_2d, Light2dParameters, Light2dType, RenderPrimitive2d, Scene2d};
+use argus_render::twod::{get_render_context_2d, Light2dProperties, Light2dType, RenderPrimitive2d, Scene2d};
 use argus_resman::ResourceManager;
 use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
@@ -68,10 +68,10 @@ impl World2dLayer {
             .create_scene(layer_id_str.as_str(), Transform2d::default());
         scene.set_lighting_enabled(lighting_enabled);
         scene.add_light(
-            Light2dType::Point,
-            true,
-            Vector3f::new(1.0, 0.0, 1.0),
-            Light2dParameters {
+            Light2dProperties {
+                ty: Light2dType::Point,
+                is_occludable: true,
+                color: Vector3f::new(1.0, 0.0, 1.0),
                 intensity: 1.0,
                 falloff_gradient: 1,
                 falloff_multiplier: 5.0,
@@ -82,10 +82,10 @@ impl World2dLayer {
             Transform2d::new(Vector2f::new(0.25, 0.5), Vector2f::new(1.0, 1.0), 0.0),
         );
         scene.add_light(
-            Light2dType::Point,
-            true,
-            Vector3f::new(0.0, 1.0, 1.0),
-            Light2dParameters {
+            Light2dProperties {
+                ty: Light2dType::Point,
+                color: Vector3f::new(0.0, 1.0, 1.0),
+                is_occludable: true,
                 intensity: 1.0,
                 falloff_gradient: 1,
                 falloff_multiplier: 5.0,
