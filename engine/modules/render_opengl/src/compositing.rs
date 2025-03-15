@@ -50,13 +50,13 @@ struct Std140Light2D {
     // offset 32
     intensity: f32,
     // offset 36
-    falloff_gradient: u32,
+    falloff_gradient: f32,
     // offset 40
     falloff_distance: f32,
     // offset 44
     falloff_buffer: f32,
     // offset 48
-    shadow_falloff_gradient: u32,
+    shadow_falloff_gradient: f32,
     // offset 52
     shadow_falloff_distance: f32,
     // offset 56

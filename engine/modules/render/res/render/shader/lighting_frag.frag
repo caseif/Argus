@@ -14,10 +14,10 @@ struct Light2D {
     vec4 color;
     vec4 position;
     float intensity;
-    uint falloff_gradient;
+    float falloff_gradient;
     float falloff_distance;
     float falloff_buffer;
-    uint shadow_falloff_gradient;
+    float shadow_falloff_gradient;
     float shadow_falloff_distance;
     int type;
     bool is_occludable;
@@ -37,6 +37,45 @@ layout(std140, binding = 0) uniform Scene {
     uint LightCount;
     Light2D Lights[32];
 } scene;
+
+// Applies a power-like function with a non-integer exponent without doing an
+// expensive pow() operation.
+//
+// This works quite well for base >= 1 but begins to diverge as base approaches
+// 0, with the curve being less pronounced than for the actual function for a
+// given exponent. However, precision isn't especially important here - all that
+// matters are the general characteristics of the function.
+float powerlike_fn(float base, float exponent) {
+    float exp_fract;
+    float exp_int = modf(exponent, exp_fract);
+    return pow(base, exp_int + 1) / ((1 - exp_fract) * base + exp_fract);
+}
+
+float get_base_attenuation(Light2D light, float dist) {
+    if (dist <= light.falloff_buffer) {
+        return 1.0;
+    } else if (dist >= light.falloff_buffer + light.falloff_distance) {
+        return 0.0;
+    } else {
+        // distance from the edge of the falloff buffer
+        float offset_dist = max(dist - light.falloff_buffer, 0.0);
+        // This is roughly the slope { y = -(x / D)^G + 1 }
+        // where D = falloff distance, G = falloff gradient, and x = offset_dist.
+        //
+        // If G == 1 this is a straight line through (0, 1) and (D, 0).
+        // If G is a different value this is a non-linear slope through the same points.
+        return -powerlike_fn(offset_dist / light.falloff_distance, light.falloff_gradient) + 1.0;
+    }
+}
+
+float get_shadow_attenuation(Light2D light, float dist_from_occluder) {
+    if (dist_from_occluder >= light.shadow_falloff_distance) {
+        return 0.0;
+    } else {
+        // same equation but using the distance from the occluder and shadow-specific parameters
+        return -powerlike_fn(dist_from_occluder / light.shadow_falloff_distance, light.shadow_falloff_gradient) + 1.0;
+    }
+}
 
 void main() {
     uint ray_count = 720;
@@ -58,31 +97,22 @@ void main() {
         float dist = distance(light.position.xy, WorldPos.xy);
 
         bool is_occluded = false;
-        float occl_dist = dist;
+        float occl_dist;
         if (light.is_occludable) {
             int ray_lookup_index = int(i * ray_count + ray_index);
             occl_dist = texelFetch(u_RayBuffer, ray_lookup_index).r / float(DIST_MULTIPLIER);
             is_occluded = dist >= occl_dist;
         }
 
-        float attenuation_denom;
+        float base_attenuation = get_base_attenuation(light, dist);
+
+        float attenuation;
         if (is_occluded) {
-            float scaled_dist = occl_dist * light.falloff_distance;
-            float falloff_offset = -light.falloff_buffer + 1.0;
-            float atten_denom_at_occluder = pow(scaled_dist + falloff_offset, light.falloff_gradient);
-
             float dist_from_occluder = dist - occl_dist;
-            float scaled_shadow_dist = dist_from_occluder * (light.shadow_falloff_distance + light.falloff_distance);
-            float shadow_falloff_offset = 1.0;
-            float shadow_mult = pow(scaled_shadow_dist + shadow_falloff_offset, light.shadow_falloff_gradient);
-
-            attenuation_denom = max(atten_denom_at_occluder, 1.0) * max(shadow_mult, 1.0);
+            attenuation = base_attenuation * get_shadow_attenuation(light, dist_from_occluder);
         } else {
-            float scaled_dist = dist * light.falloff_distance;
-            float falloff_offset = -light.falloff_buffer + 1.0;
-            attenuation_denom = pow(scaled_dist + falloff_offset, light.falloff_gradient);
+            attenuation = base_attenuation;
         }
-        float attenuation = clamp(1.0 / attenuation_denom, 0.0, 1.0);
 
         vec3 light_contrib = light.color.rgb * light.intensity * attenuation;
         light_sum = vec3(1) - (vec3(1) - light_sum) * (vec3(1) - light_contrib);

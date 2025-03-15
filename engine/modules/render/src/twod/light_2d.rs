@@ -20,14 +20,14 @@ pub struct Light2dProperties {
     /// The absolute intensity of the light between 0 and 1.
     pub intensity: f32,
     /// Higher values will result in a steeper falloff gradient.
-    pub falloff_gradient: u32,
+    pub falloff_gradient: f32,
     /// Higher values will increase the distance over which the light falls off.
     pub falloff_multiplier: f32,
     /// Higher values will increase the distance before the light starts to fall
     /// off.
     pub falloff_buffer: f32,
     /// Higher values will result in a steeper falloff gradient in shadows.
-    pub shadow_falloff_gradient: u32,
+    pub shadow_falloff_gradient: f32,
     /// Higher values will increase the distance over which light falls off in a
     /// shadow.
     pub shadow_falloff_multiplier: f32,
