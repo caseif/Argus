@@ -28,6 +28,7 @@ use argus_render::common::{RenderCanvas, Transform2d};
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_wm::WindowManager;
+use crate::light_point::PointLight;
 use crate::static_object::StaticObject2d;
 
 const MAX_BACKGROUND_LAYERS: u32 = 16;
@@ -335,5 +336,18 @@ impl World2d {
 
     pub fn delete_actor(&mut self, id: &Uuid) -> Result<(), &'static str> {
         self.get_foreground_layer_mut().delete_actor(id)
+    }
+    
+    pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {
+        self.fg_layer.add_point_light(light)
+    }
+
+    #[script_bind(rename = "add_point_light")]
+    pub fn add_point_light_unsafe(&mut self, light: PointLight) -> String {
+        self.fg_layer.add_point_light(light).unwrap().to_string()
+    }
+
+    pub fn delete_point_light(&mut self, id: &Uuid) -> Result<(), &'static str> {
+        self.fg_layer.delete_point_light(&id)
     }
 }

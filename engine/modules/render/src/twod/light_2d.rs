@@ -19,18 +19,38 @@ pub struct Light2dProperties {
     pub is_occludable: bool,
     /// The absolute intensity of the light between 0 and 1.
     pub intensity: f32,
-    /// Higher values will result in a steeper falloff gradient.
+    /// How sharply the light drops off. Values above 1 will result in a slower
+    /// falloff close to the light and a steeper one further away from it, while
+    /// values between 0 and 1 will 
     pub falloff_gradient: f32,
-    /// Higher values will increase the distance over which the light falls off.
-    pub falloff_multiplier: f32,
-    /// Higher values will increase the distance before the light starts to fall
-    /// off.
+    /// The distance (outside the falloff buffer) over which the light intensity
+    /// falls to zero.
+    pub falloff_distance: f32,
+    /// The distance at which the light will begin to fall off. At shorter
+    /// distances the light will be at full intensity.
     pub falloff_buffer: f32,
-    /// Higher values will result in a steeper falloff gradient in shadows.
+    /// How sharply the light drops off when occluded by an object. See
+    /// `falloff_gradient` for more information.
     pub shadow_falloff_gradient: f32,
-    /// Higher values will increase the distance over which light falls off in a
-    /// shadow.
-    pub shadow_falloff_multiplier: f32,
+    /// The distance over which the light intensity falls to zero after being
+    /// occluded by an object.
+    pub shadow_falloff_distance: f32,
+}
+
+impl Default for Light2dProperties {
+    fn default() -> Self {
+        Self {
+            ty: Light2dType::Point,
+            color: Default::default(),
+            is_occludable: false,
+            intensity: 1.0,
+            falloff_gradient: 1.0,
+            falloff_distance: 1.0,
+            falloff_buffer: 0.0,
+            shadow_falloff_gradient: 1.0,
+            shadow_falloff_distance: 1.0,
+        }
+    }
 }
 
 pub struct RenderLight2d {
@@ -45,7 +65,7 @@ impl RenderLight2d {
         transform: Transform2d
     ) -> RenderLight2d {
         Self {
-            properties: properties,
+            properties,
             transform,
         }
     }

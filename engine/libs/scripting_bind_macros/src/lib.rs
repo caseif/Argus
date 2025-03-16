@@ -1196,6 +1196,14 @@ fn parse_type_internal(
     outer_type: OuterTypeType
 )
     -> Result<(ObjectType, Vec<Type>), CompileError> {
+    let base_ty = ty;
+
+    let ty = if let Type::Group(group) = ty {
+        group.elem.as_ref()
+    } else {
+        &base_ty
+    };
+
     if let Some(trait_obj) = try_as_boxed_trait_object(ty) {
         if outer_type != OuterTypeType::None {
             return Err(CompileError::new(

@@ -32,6 +32,7 @@ pub mod world_layer;
 
 mod constants;
 mod sprite_loader;
+mod light_point;
 
 argus_logging::crate_logger!(LOGGER, "argus/game2d");
 

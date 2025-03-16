@@ -173,10 +173,10 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
             position: [pos.x, pos.y, 0.0, 1.0],
             intensity: props.intensity,
             falloff_gradient: props.falloff_gradient,
-            falloff_distance: props.falloff_multiplier,
+            falloff_distance: props.falloff_distance,
             falloff_buffer: props.falloff_buffer,
             shadow_falloff_gradient: props.shadow_falloff_gradient,
-            shadow_falloff_distance: props.shadow_falloff_multiplier,
+            shadow_falloff_distance: props.shadow_falloff_distance,
             ty: props.ty as i32,
             is_occludable: props.is_occludable,
         };

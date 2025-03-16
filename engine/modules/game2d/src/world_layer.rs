@@ -29,6 +29,7 @@ use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
+use crate::light_point::PointLight;
 use crate::sprite::Sprite;
 use crate::static_object::StaticObject2d;
 
@@ -48,6 +49,7 @@ pub struct World2dLayer {
 
     static_objects: HashMap<Uuid, StaticObject2d>,
     actors: HashMap<Uuid, Actor2d>,
+    point_lights: HashMap<Uuid, PointLight>,
 }
 
 #[script_bind]
@@ -67,34 +69,6 @@ impl World2dLayer {
         let mut scene = get_render_context_2d()
             .create_scene(layer_id_str.as_str(), Transform2d::default());
         scene.set_lighting_enabled(lighting_enabled);
-        scene.add_light(
-            Light2dProperties {
-                ty: Light2dType::Point,
-                is_occludable: true,
-                color: Vector3f::new(1.0, 0.0, 1.0),
-                intensity: 1.0,
-                falloff_gradient: 1.0,
-                falloff_multiplier: 5.0,
-                falloff_buffer: 0.5,
-                shadow_falloff_gradient: 2.0,
-                shadow_falloff_multiplier: 3.0,
-            },
-            Transform2d::new(Vector2f::new(0.25, 0.5), Vector2f::new(1.0, 1.0), 0.0),
-        );
-        scene.add_light(
-            Light2dProperties {
-                ty: Light2dType::Point,
-                color: Vector3f::new(0.0, 1.0, 1.0),
-                is_occludable: true,
-                intensity: 1.0,
-                falloff_gradient: 1.0,
-                falloff_multiplier: 5.0,
-                falloff_buffer: 0.5,
-                shadow_falloff_gradient: 2.0,
-                shadow_falloff_multiplier: 3.0,
-            },
-            Transform2d::new(Vector2f::new(0.75, 0.5), Vector2f::new(1.0, 1.0), 0.0),
-        );
 
         let scene_id = scene.get_id().to_string();
         let render_camera = scene.create_camera(layer_id_str.as_str());
@@ -115,6 +89,7 @@ impl World2dLayer {
             render_camera_id: layer_id_str,
             static_objects: Default::default(),
             actors: Default::default(),
+            point_lights: Default::default(),
         };
 
         layer
@@ -221,7 +196,42 @@ impl World2dLayer {
 
                 Ok(())
             }
-            None => Err("No such actor exists for world layer (in get_actor)"),
+            None => Err("No such actor exists for world layer (in delete_actor)"),
+        }
+    }
+
+    pub fn get_point_light(&self, id: &Uuid) -> Result<&PointLight, &'static str> {
+        match self.point_lights.get(id) {
+            Some(light) => Ok(light),
+            None => Err("No such point light exists for world layer (in get_point_light)"),
+        }
+    }
+
+    pub fn get_point_light_mut(&mut self, id: &Uuid) -> Result<&mut PointLight, &'static str> {
+        match self.point_lights.get_mut(id) {
+            Some(light) => Ok(light),
+            None => Err("No such point light exists for world layer (in get_point_light_mut)")
+        }
+    }
+
+    pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {
+        let uuid = Uuid::new_v4();
+        self.point_lights.insert(uuid, light);
+
+        Ok(uuid)
+    }
+
+    pub fn delete_point_light(&mut self, id: &Uuid) -> Result<(), &'static str> {
+        match self.point_lights.remove(id) {
+            Some(light) => {
+                if let Some(render_light) = light.render_light {
+                    let context = get_render_context_2d();
+                    context.get_scene_mut(self.get_scene_id()).unwrap().remove_light(render_light);
+                }
+
+                Ok(())
+            }
+            None => Err("No such point light exists for world layer (in delete_point_light)"),
         }
     }
 
@@ -451,6 +461,58 @@ impl World2dLayer {
         actor.get_sprite_mut().update_current_frame(&mut render_obj);
     }
 
+    pub(crate) fn render_point_light(&mut self, scene: &mut Scene2d, id: &Uuid, scale_factor: f32) {
+        let light = self.point_lights.get(id).expect("Point light was missing");
+
+        let mut render_light = match light.render_light {
+            Some(light_handle) => scene.get_light_mut(light_handle).unwrap(),
+            None => {
+                let render_transform = self.get_render_transform(
+                    &light.transform.peek().value,
+                    scale_factor,
+                    false,
+                );
+                // upgrade reference
+                let light = self.point_lights.get_mut(id).expect("Point light was missing");
+
+                let new_handle = scene.add_light(
+                    light.properties.peek().value,
+                    render_transform.clone(),
+                );
+                light.render_light = Some(new_handle);
+
+                let mut new_render_light = scene.get_light_mut(new_handle)
+                    .expect("Render light was missing for point light");
+                new_render_light.set_transform(render_transform.into());
+
+                new_render_light
+            }
+        };
+
+
+        let read_props;
+        let read_transform;
+        {
+            // upgrade reference so we can reset the dirty flags
+            let light = self.point_lights.get_mut(id).expect("Actor was missing");
+            read_props = light.properties.read();
+            read_transform = light.transform.read();
+        }
+
+        if read_props.dirty {
+            render_light.set_properties(read_props.value);
+        }
+
+        if read_transform.dirty {
+            render_light.set_transform(self
+                .get_render_transform(
+                    &read_transform.value,
+                    scale_factor,
+                    false
+                ).into());
+        }
+    }
+
     pub(crate) fn render(
         &mut self,
         scale_factor: f32,
@@ -503,6 +565,11 @@ impl World2dLayer {
         let actors_to_render = self.actors.keys().cloned().collect::<Vec<_>>();
         for actor_id in actors_to_render {
             self.render_actor(scene.deref_mut(), &actor_id, scale_factor);
+        }
+        
+        let point_lights_to_render = self.point_lights.keys().cloned().collect::<Vec<_>>();
+        for light_id in point_lights_to_render {
+            self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
         }
     }
 }
