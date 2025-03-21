@@ -354,6 +354,20 @@ fn do_update_loop() {
             .sorted_by_key(|callback| callback.ordering) {
             (callback.f)(delta);
         }
+
+        let config = EngineManager::instance().get_config();
+        if let Some(tickrate) = config.get_section::<CoreConfig>().unwrap().target_tickrate {
+            if tickrate == 0 {
+                continue;
+            }
+            let target_tick_dur = Duration::from_micros((1000000.0 / tickrate as f32) as u64);
+            let cur_tick_dur = Instant::now() - last_update + Duration::from_micros(60);
+            if cur_tick_dur >= target_tick_dur {
+                continue;
+            }
+            let sleep_dur = target_tick_dur - cur_tick_dur;
+            thread::sleep(sleep_dur);
+        }
     }
 }
 
