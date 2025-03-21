@@ -20,20 +20,17 @@ use argus_resman::Resource;
 use argus_render::common::Transform2d;
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::Vector2f;
-use argus_util::pool::Handle;
+use crate::collision::BoundingRect;
+use crate::object::CommonObjectProperties;
 use crate::sprite::Sprite;
 
 #[script_bind(ref_only)]
 pub struct Actor2d {
-    size: Vector2f,
-    z_index: u32,
-    pub(crate) velocity: Vector2f,
+    pub(crate) common: CommonObjectProperties,
     pub(crate) can_occlude_light: Dirtiable<bool>,
+    pub(crate) bounding_box: Dirtiable<BoundingRect>,
+    pub(crate) velocity: Vector2f,
     pub(crate) transform: Dirtiable<Transform2d>,
-
-    sprite: Sprite,
-
-    pub(crate) render_obj: Option<Handle>,
 }
 
 #[script_bind]
@@ -43,28 +40,39 @@ impl Actor2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        collision_layer: u64,
+        collision_mask: u64,
     ) -> Actor2d {
         let sprite = Sprite::new(sprite_defn_res);
 
         Self {
-            size,
-            z_index,
+            common: CommonObjectProperties {
+                size,
+                z_index,
+                sprite,
+                render_obj: None,
+                collision_layer,
+                collision_mask,
+            },
             velocity: Vector2f::default(),
             can_occlude_light: Dirtiable::new(can_occlude_light),
+            bounding_box: Dirtiable::new(BoundingRect {
+                size,
+                center: Vector2f::default(),
+                rotation_rads: 0.0,
+            }),
             transform: Default::default(),
-            sprite,
-            render_obj: None,
         }
     }
 
     #[script_bind]
     pub fn get_size(&self) -> Vector2f {
-        self.size
+        self.common.size
     }
 
     #[script_bind]
     pub fn get_z_index(&self) -> u32 {
-        self.z_index
+        self.common.z_index
     }
 
     #[script_bind]
@@ -87,7 +95,18 @@ impl Actor2d {
         if transform == self.transform.peek().value {
             return;
         }
+
         self.transform.set(transform);
+    }
+
+    #[script_bind]
+    pub fn get_bounding_box(&self) -> BoundingRect {
+        self.bounding_box.peek().value
+    }
+
+    #[script_bind]
+    pub fn set_bounding_box(&mut self, bounding_box: BoundingRect) {
+        self.bounding_box.set(bounding_box);
     }
 
     #[script_bind]
@@ -137,11 +156,11 @@ impl Actor2d {
 
     #[script_bind]
     pub fn get_sprite(&self) -> &Sprite {
-        &self.sprite
+        &self.common.sprite
     }
 
     #[script_bind]
     pub fn get_sprite_mut(&mut self) -> &mut Sprite {
-        &mut self.sprite
+        &mut self.common.sprite
     }
 }

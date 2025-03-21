@@ -57,6 +57,12 @@ macro_rules! create_vector2_ops {
             fn mul(self, rhs: $el_type) -> Self::Output { Self { x: self.x * rhs, y: self.y * rhs } }
         }
 
+        impl std::ops::Mul<$vec_type> for $vec_type {
+            type Output = Self;
+
+            fn mul(self, rhs: $vec_type) -> Self::Output { Self { x: self.x * rhs.x, y: self.y * rhs.y } }
+        }
+
         impl std::ops::Div<$el_type> for $vec_type {
             type Output = Self;
 
@@ -102,6 +108,60 @@ macro_rules! create_vector2_ops {
             fn div_assign(&mut self, rhs: $el_type) {
                 self.x /= rhs;
                 self.y /= rhs;
+            }
+        }
+
+        impl $vec_type {
+            #[inline(always)]
+            pub fn is_zero(&self) -> bool {
+                self.x == (0 as $el_type) && self.y == (0 as $el_type)
+            }
+
+            #[inline(always)]
+            pub fn abs(&self) -> Self {
+                Self {
+                    x: if self.x < 0 as $el_type { self.x * -1i32 as $el_type } else { self.x },
+                    y: if self.y < 0 as $el_type { self.y * -1i32 as $el_type } else { self.y },
+                }
+            }
+
+            #[inline(always)]
+            pub fn dist(&self, other: &$vec_type) -> f32 {
+                self.dist_squared(other).sqrt()
+            }
+
+            #[inline(always)]
+            pub fn dist_squared(&self, other: &$vec_type) -> f32 {
+                let dx = if self.x > other.x { self.x - other.x } else { other.x - self.x };
+                let dy = if self.y > other.y { self.y - other.y } else { other.y - self.y };
+                (dx * dx + dy * dy) as f32
+            }
+
+            #[inline(always)]
+            pub fn dist_manhattan(&self, other: &$vec_type) -> $el_type {
+                let dx = if self.x > other.x { self.x - other.x } else { other.x - self.x };
+                let dy = if self.y > other.y { self.y - other.y } else { other.y - self.y };
+                dx + dy
+            }
+
+            #[inline(always)]
+            pub fn mag(&self) -> f32 {
+                self.mag_squared().sqrt()
+            }
+
+            #[inline(always)]
+            pub fn mag_squared(&self) -> f32 {
+                (self.x * self.x + self.y * self.y) as f32
+            }
+
+            #[inline(always)]
+            pub fn cross_mag(&self, other: &$vec_type) -> $el_type {
+                self.x * other.y - self.y * other.x
+            }
+
+            #[inline(always)]
+            pub fn dot(&self, other: &$vec_type) -> $el_type {
+                self.x * other.x + self.y * other.y
             }
         }
     }
@@ -164,6 +224,12 @@ macro_rules! create_vector3_ops {
             fn mul(self, rhs: $el_type) -> Self::Output { Self { x: self.x * rhs, y: self.y * rhs, z: self.z * rhs } }
         }
 
+        impl std::ops::Mul<$vec_type> for $vec_type {
+            type Output = Self;
+
+            fn mul(self, rhs: $vec_type) -> Self::Output { Self { x: self.x * rhs.x, y: self.y * rhs.y, z: self.z * rhs.z } }
+        }
+
         impl std::ops::Div<$el_type> for $vec_type {
             type Output = Self;
 
@@ -215,6 +281,12 @@ macro_rules! create_vector3_ops {
                 self.x /= rhs;
                 self.y /= rhs;
                 self.z /= rhs;
+            }
+        }
+
+        impl $vec_type {
+            pub fn mag(&self) -> f32 {
+                return ((self.x * self.x + self.y * self.y + self.z * self.z) as f32).sqrt();
             }
         }
     }
@@ -304,6 +376,19 @@ macro_rules! create_vector4_ops {
             }
         }
 
+        impl std::ops::Mul<$vec_type> for $vec_type {
+            type Output = Self;
+
+            fn mul(self, rhs: $vec_type) -> Self::Output {
+                Self {
+                    x: self.x * rhs.x,
+                    y: self.y * rhs.y,
+                    z: self.z * rhs.z,
+                    w: self.w * rhs.w,
+                }
+            }
+        }
+
         impl std::ops::Div<$el_type> for $vec_type {
             type Output = Self;
 
@@ -368,6 +453,15 @@ macro_rules! create_vector4_ops {
                 self.y /= rhs;
                 self.z /= rhs;
                 self.w /= rhs;
+            }
+        }
+
+        impl $vec_type {
+            pub fn mag(&self) -> f32 {
+                return (
+                    (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w) as f32
+                )
+                    .sqrt();
             }
         }
     }

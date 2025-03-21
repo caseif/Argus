@@ -198,7 +198,7 @@ impl World2d {
     }
 
     #[script_bind(rename = "add_background_layer")]
-    pub fn add_background_layer_unsafe(
+    pub fn add_background_layer_or_die(
         &mut self,
         parallax_coeff: f32,
     ) -> &mut World2dLayer {
@@ -247,6 +247,15 @@ impl World2d {
         &mut self.fg_layer
     }
 
+    pub fn add_collision_layer(&mut self, layer: String) -> Result<(), String> {
+        self.fg_layer.add_collision_layer(layer)
+    }
+
+    #[script_bind(rename = "add_collision_layer")]
+    pub fn add_collision_layer_or_die(&mut self, layer: String) {
+        self.fg_layer.add_collision_layer(layer).unwrap()
+    }
+
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
         self.get_foreground_layer().get_static_object(id)
     }
@@ -262,6 +271,8 @@ impl World2d {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        collision_layer: impl AsRef<str>,
+        collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
         self.get_foreground_layer_mut().create_static_object(
             sprite.as_str(),
@@ -269,19 +280,31 @@ impl World2d {
             z_index,
             can_occlude_light,
             transform,
+            collision_layer,
+            collision_mask,
         )
     }
 
     #[script_bind(rename = "create_static_object")]
-    pub fn create_static_object_unsafe(
+    pub fn create_static_object_or_die(
         &mut self,
         sprite: String,
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        collision_layer: String,
     ) -> String {
-        self.create_static_object(sprite, size, z_index, can_occlude_light, transform).unwrap()
+        let coll_mask: &[&str] = &[];
+        self.create_static_object(
+            sprite,
+            size,
+            z_index,
+            can_occlude_light,
+            transform,
+            &collision_layer,
+            coll_mask,
+        ).unwrap()
             .to_string()
     }
 
@@ -298,7 +321,7 @@ impl World2d {
     }
 
     #[script_bind(rename = "get_actor_mut")]
-    pub fn get_actor_mut_unsafe(&mut self, id: &str) -> &mut Actor2d {
+    pub fn get_actor_mut_or_die(&mut self, id: &str) -> &mut Actor2d {
         self.get_actor_mut(&Uuid::parse_str(id).unwrap()).unwrap()
     }
 
@@ -308,28 +331,36 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        collision_layer: impl AsRef<str>,
+        collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
         self.get_foreground_layer_mut().create_actor(
             sprite,
             size,
             z_index,
             can_occlude_light,
+            collision_layer,
+            collision_mask,
         )
     }
 
     #[script_bind(rename = "create_actor")]
-    pub fn create_actor_unsafe(
+    pub fn create_actor_or_die(
         &mut self,
         sprite: String,
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        collision_layer: String,
+        collision_mask: String,
     ) -> String {
         self.create_actor(
             sprite,
             size,
             z_index,
             can_occlude_light,
+            &collision_layer,
+            &[&collision_mask],
         ).unwrap()
             .to_string()
     }
@@ -343,7 +374,7 @@ impl World2d {
     }
 
     #[script_bind(rename = "add_point_light")]
-    pub fn add_point_light_unsafe(&mut self, light: PointLight) -> String {
+    pub fn add_point_light_or_die(&mut self, light: PointLight) -> String {
         self.fg_layer.add_point_light(light).unwrap().to_string()
     }
 

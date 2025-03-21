@@ -17,13 +17,13 @@
  */
 
 use crate::actor::Actor2d;
-use std::collections::HashMap;
+use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
 use std::time::Duration;
 use uuid::Uuid;
 use argus_render::common::{Material, RenderCanvas, TextureData, Transform2d, Vertex2d};
 use argus_render::constants::RESOURCE_TYPE_MATERIAL;
-use argus_render::twod::{get_render_context_2d, Light2dProperties, Light2dType, RenderPrimitive2d, Scene2d};
+use argus_render::twod::{get_render_context_2d, RenderObject2d, RenderPrimitive2d, Scene2d};
 use argus_resman::ResourceManager;
 use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
@@ -50,6 +50,9 @@ pub struct World2dLayer {
     static_objects: HashMap<Uuid, StaticObject2d>,
     actors: HashMap<Uuid, Actor2d>,
     point_lights: HashMap<Uuid, PointLight>,
+
+    collision_layers: HashMap<String, u64>,
+    next_collision_layer_bit: u64,
 }
 
 #[script_bind]
@@ -90,6 +93,8 @@ impl World2dLayer {
             static_objects: Default::default(),
             actors: Default::default(),
             point_lights: Default::default(),
+            collision_layers: Default::default(),
+            next_collision_layer_bit: 1,
         };
 
         layer
@@ -106,6 +111,26 @@ impl World2dLayer {
     #[script_bind]
     pub fn get_world_id(&self) -> &str {
         self.world_id.as_str()
+    }
+
+    pub fn add_collision_layer(&mut self, layer_id: String) -> Result<(), String> {
+        if self.next_collision_layer_bit == 0 {
+            return Err("World layer may not have more than 64 collision layers".to_owned());
+        }
+
+        let hash_map::Entry::Vacant(entry) = self.collision_layers.entry(layer_id) else {
+            return Err("Collision layer with same ID already exists in world layer".to_owned());
+        };
+
+        entry.insert(self.next_collision_layer_bit);
+
+        if self.next_collision_layer_bit == (1 << 63) {
+            self.next_collision_layer_bit = 0;
+        } else {
+            self.next_collision_layer_bit <<= 1;
+        }
+
+        Ok(())
     }
 
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
@@ -129,13 +154,31 @@ impl World2dLayer {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        collision_layer: impl AsRef<str>,
+        collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
         let sprite_defn_res = match ResourceManager::instance().get_resource(sprite) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
 
-        let obj = StaticObject2d::new(sprite_defn_res, size, z_index, can_occlude_light, transform);
+        let collision_bit = match self.collision_layers.get(collision_layer.as_ref()) {
+            Some(bit) => *bit,
+            None => {
+                return Err("Collision layer for static object does not exist".to_owned());
+            },
+        };
+        let collision_bitmask = self.get_collision_bitmask(collision_mask)?;
+
+        let obj = StaticObject2d::new(
+            sprite_defn_res,
+            size,
+            z_index,
+            can_occlude_light,
+            transform,
+            collision_bit,
+            collision_bitmask,
+        );
         let id = Uuid::new_v4();
         self.static_objects.insert(id, obj);
         Ok(id)
@@ -144,7 +187,7 @@ impl World2dLayer {
     pub fn delete_static_object(&mut self, id: &Uuid) -> Result<(), &'static str> {
         match self.static_objects.remove(&id) {
             Some(obj) => {
-                if let Some(render_obj) = obj.render_obj {
+                if let Some(render_obj) = obj.common.render_obj {
                     let context = get_render_context_2d();
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_object(render_obj);
                 }
@@ -174,13 +217,30 @@ impl World2dLayer {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        collision_layer: impl AsRef<str>,
+        collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
         let sprite_defn_res = match ResourceManager::instance().get_resource(&sprite_uid) {
             Ok(res) => res,
             Err(e) => { return Err(e.info); }
         };
 
-        let actor = Actor2d::new(sprite_defn_res, size, z_index, can_occlude_light);
+        let collision_bit = match self.collision_layers.get(collision_layer.as_ref()) {
+            Some(bit) => *bit,
+            None => {
+                return Err("Collision layer for static object does not exist".to_owned());
+            },
+        };
+        let collision_bitmask = self.get_collision_bitmask(collision_mask)?;
+
+        let actor = Actor2d::new(
+            sprite_defn_res,
+            size,
+            z_index,
+            can_occlude_light,
+            collision_bit,
+            collision_bitmask,
+        );
         let id = Uuid::new_v4();
         self.actors.insert(id, actor);
         Ok(id)
@@ -189,7 +249,7 @@ impl World2dLayer {
     pub fn delete_actor(&mut self, id: &Uuid) -> Result<(), &'static str> {
         match self.actors.remove(id) {
             Some(actor) => {
-                if let Some(render_obj) = actor.render_obj {
+                if let Some(render_obj) = actor.common.render_obj {
                     let context = get_render_context_2d();
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_object(render_obj);
                 }
@@ -237,17 +297,64 @@ impl World2dLayer {
 
     pub(crate) fn simulate(&mut self, delta: Duration) {
         for (_, actor) in &mut self.actors {
-            if actor.velocity.x != 0.0 || actor.velocity.y != 0.0 {
-                let mut new_transform = actor.transform.peek().value;
-                new_transform.translation += actor.velocity * delta.as_secs_f32();
-                actor.transform.set(new_transform);
+            let orig_transform = actor.transform.peek().value;
+            if actor.velocity.x == 0.0 && actor.velocity.y == 0.0 {
+                continue;
             }
+
+            let orig_movement = actor.velocity * delta.as_secs_f32();
+
+            let mut remaining_movement = orig_movement;
+
+            let mut cur_transform = orig_transform.clone();
+
+            while !remaining_movement.is_zero() {
+                let mut allowed_movement = remaining_movement;
+                let mut deflected_movement = None;
+
+                let cur_bb = actor.bounding_box.peek();
+                let mut transform_after_move = cur_transform.clone();
+                transform_after_move.translation += remaining_movement;
+                let eff_bb = cur_bb.value.transform(&transform_after_move);
+
+                //TODO: use a quadtree to improve efficiency
+                for (_, other) in &self.static_objects {
+                    if actor.common.collision_mask & other.common.collision_layer == 0 &&
+                        other.common.collision_mask & actor.common.collision_layer == 0 {
+                        // objects don't have collision with each other
+                        continue;
+                    }
+
+                    let other_eff_bb = other.bounding_box.transform(&other.transform);
+                    let Some((allowed, deflected)) =
+                        eff_bb.adjust_movement_for_collision(&other_eff_bb, &remaining_movement)
+                    else { continue; };
+
+                    if allowed.x.abs() < allowed_movement.x.abs() || allowed.y.abs() < allowed_movement.y.abs() {
+                        allowed_movement = allowed;
+                        deflected_movement = deflected;
+                    }
+                }
+
+                if !allowed_movement.is_zero() {
+                    cur_transform.translation += allowed_movement;
+                }
+
+                if let Some(deflected) = deflected_movement {
+                    remaining_movement = deflected;
+                } else {
+                    break;
+                }
+            }
+
+            actor.transform.set(cur_transform);
         }
     }
 
     fn get_render_transform(
         &self,
         world_transform: &Transform2d,
+        world_size: &Vector2f,
         world_scale_factor: f32,
         include_parallax: bool,
     ) -> Transform2d {
@@ -258,14 +365,13 @@ impl World2dLayer {
         };
 
         Transform2d::new(
-            world_transform.translation * parallax_coeff / world_scale_factor,
+            (world_transform.translation * parallax_coeff) / world_scale_factor,
             world_transform.scale,
             world_transform.rotation,
         )
     }
 
     fn create_render_object(
-        world_id: String,
         scene: &mut Scene2d,
         sprite: &mut Sprite,
         size: Vector2f,
@@ -278,27 +384,28 @@ impl World2dLayer {
         let mut prims: Vec<RenderPrimitive2d> = Vec::new();
 
         let scaled_size = size / scale_factor;
+        let half_size = scaled_size / 2.0;
 
         let v1 = Vertex2d {
-            position: Vector2f::new(0.0, 0.0),
+            position: Vector2f::new(-half_size.x, -half_size.y),
             tex_coord: Vector2f::new(0.0, 0.0),
             normal: Default::default(),
             color: Default::default(),
         };
         let v2 = Vertex2d {
-            position: Vector2f::new(0.0, scaled_size.y),
+            position: Vector2f::new(-half_size.x, half_size.y),
             tex_coord: Vector2f::new(0.0, 1.0),
             normal: Default::default(),
             color: Default::default(),
         };
         let v3 = Vertex2d {
-            position: Vector2f::new(scaled_size.x, scaled_size.y),
+            position: Vector2f::new(half_size.x, half_size.y),
             tex_coord: Vector2f::new(1.0, 1.0),
             normal: Default::default(),
             color: Default::default(),
         };
         let v4 = Vertex2d {
-            position: Vector2f::new(scaled_size.x, 0.0),
+            position: Vector2f::new(half_size.x, -half_size.y),
             tex_coord: Vector2f::new(1.0, 0.0),
             normal: Default::default(),
             color: Default::default(),
@@ -343,7 +450,7 @@ impl World2dLayer {
         scene.add_object(
             mat_resource,
             prims,
-            scaled_size / 2.0,
+            Vector2f::new(0.0, 0.0),
             Vector2f::new(atlas_stride_x, atlas_stride_y),
             z_index,
             if can_occlude_light { 1.0 } else { 0.0 },
@@ -353,27 +460,26 @@ impl World2dLayer {
 
     fn render_static_object(&mut self, scene: &mut Scene2d, id: &Uuid, scale_factor: f32) {
         let static_obj = self.static_objects.get(id).expect("Static object was missing");
-        let mut render_obj = match static_obj.render_obj {
+        let mut render_obj = match static_obj.common.render_obj {
             Some(obj_id) => {
                 scene.get_object_mut(obj_id).expect("Render object was missing for static object")
             }
             None => {
-                let world_id = self.get_world_id().to_string();
                 let size = static_obj.get_size();
                 let z_index = static_obj.get_z_index();
                 let can_occlude_light = static_obj.get_can_occlude_light();
                 let render_transform = self.get_render_transform(
                     &static_obj.get_transform(),
+                    &static_obj.common.size,
                     scale_factor,
                     false
                 );
                 // upgrade reference
                 let static_obj = self.static_objects.get_mut(id)
                     .expect("Static object was missing");
-                let sprite = static_obj.get_sprite_mut();
+                let sprite = &mut static_obj.common.sprite;
 
                 let new_obj_handle = Self::create_render_object(
-                    world_id,
                     scene,
                     sprite,
                     size,
@@ -381,7 +487,7 @@ impl World2dLayer {
                     can_occlude_light,
                     scale_factor,
                 );
-                static_obj.render_obj = Some(new_obj_handle);
+                static_obj.common.render_obj = Some(new_obj_handle);
 
                 let mut new_obj = scene.get_object_mut(new_obj_handle)
                     .expect("Render object was missing for static object");
@@ -399,24 +505,23 @@ impl World2dLayer {
     fn render_actor(&mut self, scene: &mut Scene2d, id: &Uuid, scale_factor: f32) {
         let actor = self.actors.get(id).expect("Actor was missing");
 
-        let mut render_obj = match actor.render_obj {
+        let mut render_obj = match actor.common.render_obj {
             Some(obj_handle) => scene.get_object_mut(obj_handle).unwrap(),
             None => {
-                let world_id = self.get_world_id().to_string();
                 let size = actor.get_size();
                 let z_index = actor.get_z_index();
                 let render_transform = self.get_render_transform(
                     &actor.get_transform(),
+                    &size,
                     scale_factor,
                     false
                 );
                 // upgrade reference
                 let actor = self.actors.get_mut(id).expect("Actor was missing");
                 let can_occlude_light = actor.can_occlude_light.read().value;
-                let sprite = actor.get_sprite_mut();
+                let sprite = &mut actor.common.sprite;
 
                 let new_obj_handle = Self::create_render_object(
-                    world_id,
                     scene,
                     sprite,
                     size,
@@ -424,7 +529,7 @@ impl World2dLayer {
                     can_occlude_light,
                     scale_factor,
                 );
-                actor.render_obj = Some(new_obj_handle);
+                actor.common.render_obj = Some(new_obj_handle);
 
                 let mut new_obj = scene.get_object_mut(new_obj_handle)
                     .expect("Render object was missing for static object");
@@ -433,6 +538,9 @@ impl World2dLayer {
                 new_obj
             }
         };
+
+        // downgrade ref
+        let actor = self.actors.get(id).expect("Actor was missing");
 
         let read_occl_light;
         let read_transform;
@@ -447,10 +555,12 @@ impl World2dLayer {
             render_obj.set_light_opacity(if read_occl_light.value { 1.0 } else { 0.0 });
         }
 
+        let size = Vector2f::default(); //actor.get_size();
         if read_transform.dirty {
             render_obj.set_transform(self
                 .get_render_transform(
                     &read_transform.value,
+                    &size,
                     scale_factor,
                     false
                 ).into());
@@ -469,6 +579,7 @@ impl World2dLayer {
             None => {
                 let render_transform = self.get_render_transform(
                     &light.transform.peek().value,
+                    &Vector2f::default(),
                     scale_factor,
                     false,
                 );
@@ -507,6 +618,7 @@ impl World2dLayer {
             render_light.set_transform(self
                 .get_render_transform(
                     &read_transform.value,
+                    &Vector2f::default(),
                     scale_factor,
                     false
                 ).into());
@@ -531,6 +643,7 @@ impl World2dLayer {
                 .set_transform(
                     self.get_render_transform(
                         &camera_transform.value,
+                        &Vector2f::default(),
                         scale_factor,
                         true,
                     )
@@ -571,5 +684,21 @@ impl World2dLayer {
         for light_id in point_lights_to_render {
             self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
         }
+    }
+
+    fn get_collision_bitmask(&self, layers: &[impl AsRef<str>]) -> Result<u64, String> {
+        let mut collision_bitmask = 0;
+        for layer in layers {
+            let layer = layer.as_ref();
+            match self.collision_layers.get(layer) {
+                Some(bit) => {
+                    collision_bitmask |= bit;
+                },
+                None => {
+                    return Err("Collision layer in static object mask does not exist".to_owned());
+                },
+            }
+        }
+        Ok(collision_bitmask)
     }
 }

@@ -19,16 +19,15 @@ use argus_render::common::Transform2d;
 use argus_resman::Resource;
 use argus_util::math::Vector2f;
 use argus_util::pool::Handle;
+use crate::collision::BoundingRect;
+use crate::object::CommonObjectProperties;
 use crate::sprite::Sprite;
 
 pub struct StaticObject2d {
-    sprite: Sprite,
-    size: Vector2f,
-    z_index: u32,
-    can_occlude_light: bool,
-    transform: Transform2d,
-
-    pub(crate) render_obj: Option<Handle>,
+    pub(crate) common: CommonObjectProperties,
+    pub(crate) can_occlude_light: bool,
+    pub(crate) bounding_box: BoundingRect,
+    pub(crate) transform: Transform2d,
 }
 
 impl StaticObject2d {
@@ -38,23 +37,34 @@ impl StaticObject2d {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        collision_layer: u64,
+        collision_mask: u64,
     ) -> Self {
         Self {
-            sprite: Sprite::new(sprite_def_res),
-            size,
-            z_index,
+            common: CommonObjectProperties {
+                sprite: Sprite::new(sprite_def_res),
+                size,
+                z_index,
+                render_obj: None,
+                collision_layer,
+                collision_mask,
+            },
             can_occlude_light,
+            bounding_box: BoundingRect {
+                size,
+                center: Vector2f::default(),
+                rotation_rads: 0.0,
+            },
             transform,
-            render_obj: None,
         }
     }
 
     pub fn get_size(&self) -> Vector2f {
-        self.size
+        self.common.size
     }
 
     pub fn get_z_index(&self) -> u32 {
-        self.z_index
+        self.common.z_index
     }
 
     pub fn get_can_occlude_light(&self) -> bool {
@@ -66,10 +76,14 @@ impl StaticObject2d {
     }
 
     pub fn get_sprite(&self) -> &Sprite {
-        &self.sprite
+        &self.common.sprite
     }
 
     pub fn get_sprite_mut(&mut self) -> &mut Sprite {
-        &mut self.sprite
+        &mut self.common.sprite
+    }
+    
+    pub fn get_bounding_box(&self) -> &BoundingRect {
+        &self.bounding_box
     }
 }

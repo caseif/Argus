@@ -58,24 +58,6 @@ impl Transform2d {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Matrix4x4 {
-    pub cells: [f32; 16],
-}
-
-impl Matrix4x4 {
-    pub fn identity() -> Self {
-        Self {
-            cells: [
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0,
-            ]
-        }
-    }
-}
-
 #[script_bind]
 impl Default for Transform2d {
     #[script_bind]
@@ -264,6 +246,24 @@ impl Transform2d {
             )
         } else {
             RwLockUpgradableReadGuard::downgrade(guard)
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Matrix4x4 {
+    pub cells: [f32; 16],
+}
+
+impl Matrix4x4 {
+    pub fn identity() -> Self {
+        Self {
+            cells: [
+                1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0,
+            ]
         }
     }
 }
