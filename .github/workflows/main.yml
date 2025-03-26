@@ -58,7 +58,8 @@ jobs:
           libsdl2-dev \
           glslang-dev \
           glslang-tools \
-          spirv-tools
+          spirv-tools \
+          libfreetype-dev
       if: matrix.os == 'ubuntu-24.04'
 
     - name: Install dependencies (macOS)
