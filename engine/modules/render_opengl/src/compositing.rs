@@ -377,32 +377,37 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     if scene.is_lighting_enabled() {
         // generate shadowmap
         let shadowmap_program = get_shadowmap_program(&mut renderer_state.shadowmap_program);
-        compute_scene_2d_shadowmap(scene_state, viewport_state, shadowmap_program, renderer_state.frame_vao.unwrap(), &resolution);
+        compute_scene_2d_shadowmap(
+            scene_state,
+            viewport_state,
+            shadowmap_program,
+            renderer_state.frame_vao.unwrap(),
+            &resolution,
+        );
 
         // generate lightmap
         let lighting_program = get_lighting_program(&mut renderer_state.lighting_program);
-        draw_scene_2d_lightmap(scene_state, viewport_state, lighting_program, renderer_state.frame_vao.unwrap(), &resolution);
+        draw_scene_2d_lightmap(
+            scene_state,
+            viewport_state,
+            lighting_program,
+            renderer_state.frame_vao.unwrap(),
+            &resolution,
+        );
 
-        // draw lightmap to framebuffer
-        //let lm_comp_program = get_lightmap_composite_program(&mut renderer_state.lightmap_composite_program);
-        //glUseProgram(lm_comp_program.handle);
-        glUseProgram(renderer_state.frame_program.as_ref().unwrap().handle);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_prim);
+        // lightmaps are composited in a later step after this function is called
 
-        glViewport(0, 0, fb_width, fb_height);
-
-        glBindVertexArray(renderer_state.frame_vao.unwrap());
-        //bind_texture(0, viewport_state.color_buf_primary);
-        bind_texture(0, viewport_state.buffers.lightmap_buf.unwrap());
-
-        // blend color multiplicatively, don't touch destination alpha
-        glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        restore_gl_blend_params();
-
-        //std::swap(viewport_state.fb_primary, viewport_state.fb_secondary);
-        //std::swap(viewport_state.color_buf_primary, viewport_state.color_buf_secondary);
+        draw_lightmap_to_framebuffer(
+            renderer_state,
+            att_viewport.get_id(),
+            att_viewport.get_id(),
+            viewport,
+            &resolution.value,
+        );
     }
+
+    let viewport_state = renderer_state.viewport_states_2d
+        .get_mut(&att_viewport.get_id()).unwrap();
 
     // set buffers for ping-ponging
     let mut fb_front = fb_prim;
@@ -453,6 +458,8 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     glBindVertexArray(0);
 
     viewport_state.buffers.color_buf_front = Some(color_buf_front);
+    viewport_state.buffers.fb_primary = Some(fb_front);
+    viewport_state.buffers.fb_secondary = Some(fb_back);
 
     // do selective second pass to populate auxiliary buffers
     if !non_std_buckets.is_empty() {
@@ -539,6 +546,41 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     glUseProgram(0);
     glBindVertexArray(0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
+pub(crate) fn draw_lightmap_to_framebuffer(
+    renderer_state: &RendererState,
+    source_viewport_id: u32,
+    target_viewport_id: u32,
+    fb_viewport: &Viewport,
+    resolution: &Vector2u,
+) {
+    let viewport_px = transform_viewport_to_pixels(&fb_viewport, &resolution);
+    let fb_width = (viewport_px.right - viewport_px.left).abs();
+    let fb_height = (viewport_px.bottom - viewport_px.top).abs();
+
+    let fb_prim = renderer_state.viewport_states_2d
+        .get(&target_viewport_id).unwrap().buffers.fb_primary.unwrap();
+    let lightmap_buf = renderer_state.viewport_states_2d
+        .get(&source_viewport_id).unwrap().buffers.lightmap_buf.unwrap();
+
+    glUseProgram(renderer_state.frame_program.as_ref().unwrap().handle);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_prim);
+
+    glViewport(0, 0, fb_width, fb_height);
+
+    glBindVertexArray(renderer_state.frame_vao.unwrap());
+    bind_texture(0, lightmap_buf);
+
+    // blend color multiplicatively, don't touch destination alpha
+    glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    restore_gl_blend_params();
+
+    bind_texture(0, 0);
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glUseProgram(0);
 }
 
 fn init_viewport_buffers(
@@ -966,6 +1008,7 @@ pub(crate) fn draw_framebuffer_to_screen(
     );
 
     glBindVertexArray(frame_vao);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glUseProgram(frame_program.handle);
     bind_texture(0, viewport_state.buffers.color_buf_front.unwrap());
 

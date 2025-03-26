@@ -154,12 +154,49 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        let viewports = &mut canvas.get_viewports_2d();
+        let mut viewports = canvas.get_viewports_2d();
         viewports.sort_by_key(|vp| vp.get_z_index());
+        let viewports = viewports;
 
-        for viewport in &*viewports {
+        // initial render pass
+        for viewport in &viewports {
             let scene_id = viewport.get_scene_id();
             draw_scene_2d_to_framebuffer(&mut self.state, &scene_id, viewport, &resolution);
+        }
+
+        // Lighting pass
+        //
+        // The actual lightmaps are generated while drawing the scene but the
+        // compositing onto the draw framebuffer is deferred until now to allow
+        // the lightmap to be applied to viewports "below" the current one.
+        //
+        // The basic algorithm (slightly rewritten for readability) is:
+        //   For each viewport A:
+        //     Apply lightmap A to viewport A
+        //     For each viewport B in front of A (back to front)
+        //       If viewport B has lighting enabled
+        //         Apply lightmap B to viewport A
+        //
+        // In effect, the lightmap of a given viewport A will be applied to all
+        // viewports behind A.
+        for target_idx in 0..viewports.len() {
+            let target_viewport = viewports[target_idx];
+
+            for src_idx in target_idx..viewports.len() {
+                let source_viewport = viewports[src_idx];
+                let source_scene_id = source_viewport.get_scene_id();
+                let source_scene = get_render_context_2d().get_scene(&source_scene_id).unwrap();
+                if !source_scene.is_lighting_enabled() {
+                    continue;
+                }
+                draw_lightmap_to_framebuffer(
+                    &mut self.state,
+                    source_viewport.get_id(),
+                    target_viewport.get_id(),
+                    target_viewport.get_viewport(),
+                    &resolution.value,
+                );
+            }
         }
 
         // set up state for drawing framebuffers to screen
@@ -172,7 +209,7 @@ impl GlRenderer {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        for viewport in &*viewports {
+        for viewport in &viewports {
             let viewport_state = self.state.get_viewport_2d_state(viewport.get_id());
 
             draw_framebuffer_to_screen(

@@ -113,12 +113,12 @@ impl World2dLayer {
         self.world_id.as_str()
     }
 
-    pub fn add_collision_layer(&mut self, layer_id: String) -> Result<(), String> {
+    pub fn add_collision_layer(&mut self, layer_id: impl Into<String>) -> Result<(), String> {
         if self.next_collision_layer_bit == 0 {
             return Err("World layer may not have more than 64 collision layers".to_owned());
         }
 
-        let hash_map::Entry::Vacant(entry) = self.collision_layers.entry(layer_id) else {
+        let hash_map::Entry::Vacant(entry) = self.collision_layers.entry(layer_id.into()) else {
             return Err("Collision layer with same ID already exists in world layer".to_owned());
         };
 
@@ -131,6 +131,11 @@ impl World2dLayer {
         }
 
         Ok(())
+    }
+
+    #[script_bind(rename = "add_collision_layer")]
+    pub fn add_collision_layer_or_die(&mut self, layer_id: String) {
+        self.add_collision_layer(layer_id);
     }
 
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
@@ -155,7 +160,7 @@ impl World2dLayer {
         can_occlude_light: bool,
         transform: Transform2d,
         collision_layer: impl AsRef<str>,
-        collision_mask: &[impl AsRef<str>],
+        collision_mask: &[&str],
     ) -> Result<Uuid, String> {
         let sprite_defn_res = match ResourceManager::instance().get_resource(sprite) {
             Ok(res) => res,
@@ -182,6 +187,29 @@ impl World2dLayer {
         let id = Uuid::new_v4();
         self.static_objects.insert(id, obj);
         Ok(id)
+    }
+
+    #[script_bind(rename = "create_static_object")]
+    pub fn create_static_object_or_die(
+        &mut self,
+        sprite: &str,
+        size: Vector2f,
+        z_index: u32,
+        can_occlude_light: bool,
+        transform: Transform2d,
+        collision_layer: &str,
+    ) -> String {
+        self.create_static_object(
+            sprite,
+            size,
+            z_index,
+            can_occlude_light,
+            transform,
+            collision_layer,
+            &[],
+        )
+            .unwrap()
+            .to_string()
     }
 
     pub fn delete_static_object(&mut self, id: &Uuid) -> Result<(), &'static str> {

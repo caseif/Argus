@@ -247,7 +247,7 @@ impl World2d {
         &mut self.fg_layer
     }
 
-    pub fn add_collision_layer(&mut self, layer: String) -> Result<(), String> {
+    pub fn add_collision_layer(&mut self, layer: impl Into<String>) -> Result<(), String> {
         self.fg_layer.add_collision_layer(layer)
     }
 
@@ -272,7 +272,7 @@ impl World2d {
         can_occlude_light: bool,
         transform: Transform2d,
         collision_layer: impl AsRef<str>,
-        collision_mask: &[impl AsRef<str>],
+        collision_mask: &[&str],
     ) -> Result<Uuid, String> {
         self.get_foreground_layer_mut().create_static_object(
             sprite.as_str(),
