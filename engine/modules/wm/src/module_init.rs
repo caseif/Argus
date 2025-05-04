@@ -1,5 +1,6 @@
 use std::cell::{RefCell};
 use std::sync::OnceLock;
+use std::thread;
 use std::time::{Duration, Instant};
 use argus_core::*;
 use argus_logging::{crate_logger, debug, info};
@@ -158,7 +159,7 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
 
 fn render_loop(params: RenderLoopParams) {
     let mut last_time = Instant::now();
-    
+
     loop {
         if params.should_shutdown() {
             return;
@@ -171,6 +172,23 @@ fn render_loop(params: RenderLoopParams) {
         params.run_core_callbacks(delta);
 
         do_window_loop(delta);
+
+        let config = EngineManager::instance().get_config();
+        if let Some(target_fps) = config.get_section::<CoreConfig>().unwrap().target_framerate {
+            if config.get_section::<WindowConfig>().unwrap().vsync.unwrap_or(false) {
+                continue;
+            }
+            if target_fps == 0 {
+                continue;
+            }
+            let target_frame_dur = Duration::from_micros((1000000.0 / target_fps as f32) as u64);
+            let cur_tick_dur = Instant::now() - last_time + Duration::from_micros(60);
+            if cur_tick_dur >= target_frame_dur {
+                continue;
+            }
+            let sleep_dur = target_frame_dur - cur_tick_dur;
+            thread::sleep(sleep_dur);
+        }
     }
 }
 
