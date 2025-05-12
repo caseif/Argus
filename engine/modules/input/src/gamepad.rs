@@ -173,7 +173,7 @@ pub fn get_gamepad_name(gamepad: u32) -> String {
         return GAMEPAD_NAME_INVALID.to_string();
     };
 
-    controller.name()
+    controller.name().unwrap_or("(unknown)".to_string())
 }
 
 #[script_bind]
@@ -217,18 +217,18 @@ pub fn get_gamepad_axis_delta(gamepad: u32, axis: GamepadAxis) -> f64 {
 }
 
 fn init_gamepads(devices_state: &mut GamepadDevicesState) {
-    for joystick in InputManager::instance().get_sdl_joystick_ss().unwrap().joysticks()
+    for joystick_id in InputManager::instance().get_sdl_joystick_ss().unwrap().joysticks()
         .expect("Failed to enumerate joysticks") {
         let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap()
-            .open(joystick.id) else {
-            debug!(LOGGER, "Joystick {} is not reported as a gamepad, ignoring", joystick.id);
+            .open(joystick_id) else {
+            debug!(LOGGER, "Joystick {} is not reported as a gamepad, ignoring", joystick_id);
             continue;
         };
         let name = gamepad.name();
-        info!(LOGGER, "Opening joystick '{}' as a gamepad", name);
-        InputManager::instance().get_sdl_gamepad_ss().unwrap().open(gamepad.instance_id())
+        info!(LOGGER, "Opening joystick '{}' as a gamepad", name.unwrap_or("(unknown)".to_string()));
+        InputManager::instance().get_sdl_gamepad_ss().unwrap().open(gamepad.id().unwrap())
             .expect("Failed to open joystick as game controller");
-        devices_state.available_gamepads.push(gamepad.instance_id());
+        devices_state.available_gamepads.push(gamepad.id().unwrap());
     }
 
     let gamepad_count = devices_state.available_gamepads.len();
@@ -473,7 +473,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
 
                 let gamepad = InputManager::instance().get_sdl_gamepad_ss().unwrap()
                     .open(device_index).unwrap();
-                let instance_id = gamepad.instance_id();
+                let instance_id = gamepad.id().unwrap();
 
                 if devices_state.mapped_gamepads.contains_key(&instance_id) ||
                     devices_state.available_gamepads.contains(&instance_id) {
@@ -487,7 +487,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
 
                 devices_state.available_gamepads.push(instance_id);
 
-                let name = gamepad.name();
+                let name = gamepad.name().unwrap_or("(unknown)".to_string());
                 warn!(
                     LOGGER,
                     "Gamepad '{}' with instance ID {} was connected",
