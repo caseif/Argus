@@ -1,6 +1,6 @@
 [submodule "external/tooling/aglet"]
 	path = external/tooling/aglet
-	url = git@github.com:caseif/Aglet.git
+	url = https://github.com/caseif/Aglet.git
 [submodule "external/libs/lua"]
 	path = external-bindings/lua/lua
-	url = git@github.com:lua/lua.git
+	url = https://github.com/lua/lua.git
