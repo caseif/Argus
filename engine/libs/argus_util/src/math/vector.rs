@@ -15,12 +15,36 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+use std::fmt::{Display, Formatter};
 use argus_scripting_bind::script_bind;
 use serde::{Deserialize, Serialize};
 
+macro_rules! float_type_for {
+    (f64) => {
+        f64
+    };
+    ($ty:tt) => {
+        f32
+    };
+}
+
+macro_rules! float_vec2_type_for {
+    (f64) => {
+        Vector2d
+    };
+    ($ty:tt) => {
+        Vector2f
+    };
+}
+
 macro_rules! create_vector2_ops {
-    ($vec_type: ty, $el_type: ty) => {
+    ($vec_type: ty, $el_type: tt) => {
+        impl Display for $vec_type{
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                write!(f, "({}, {})", self.x, self.y)
+            }
+        }
+
         impl Into<[$el_type; 2]> for $vec_type {
             fn into(self) -> [$el_type; 2] {
                 [self.x, self.y]
@@ -111,7 +135,7 @@ macro_rules! create_vector2_ops {
             }
         }
 
-        impl $vec_type {
+        impl $vec_type {            
             #[inline(always)]
             pub fn is_zero(&self) -> bool {
                 self.x == (0 as $el_type) && self.y == (0 as $el_type)
@@ -126,15 +150,19 @@ macro_rules! create_vector2_ops {
             }
 
             #[inline(always)]
-            pub fn dist(&self, other: &$vec_type) -> f32 {
-                self.dist_squared(other).sqrt()
+            pub fn norm(&self) -> float_vec2_type_for!($el_type) {
+                let mag = self.mag();
+                <float_vec2_type_for!($el_type)>::new(
+                    self.x as float_type_for!($el_type) / mag,
+                    self.y as float_type_for!($el_type) / mag,
+                )
             }
 
             #[inline(always)]
-            pub fn dist_squared(&self, other: &$vec_type) -> f32 {
+            pub fn dist_squared(&self, other: &$vec_type) -> $el_type {
                 let dx = if self.x > other.x { self.x - other.x } else { other.x - self.x };
                 let dy = if self.y > other.y { self.y - other.y } else { other.y - self.y };
-                (dx * dx + dy * dy) as f32
+                dx * dx + dy * dy
             }
 
             #[inline(always)]
@@ -145,13 +173,18 @@ macro_rules! create_vector2_ops {
             }
 
             #[inline(always)]
-            pub fn mag(&self) -> f32 {
-                self.mag_squared().sqrt()
+            pub fn dist(&self, other: &$vec_type) -> float_type_for!($el_type) {
+                (self.dist_squared(other) as float_type_for!($el_type)).sqrt()
             }
 
             #[inline(always)]
-            pub fn mag_squared(&self) -> f32 {
-                (self.x * self.x + self.y * self.y) as f32
+            pub fn mag_squared(&self) -> $el_type {
+                self.x * self.x + self.y * self.y
+            }
+
+            #[inline(always)]
+            pub fn mag(&self) -> float_type_for!($el_type) {
+                (self.mag_squared() as float_type_for!($el_type)).sqrt()
             }
 
             #[inline(always)]
@@ -173,6 +206,14 @@ macro_rules! create_vector2_signed_ops {
             type Output = Self;
             fn neg(self) -> Self::Output {
                 Self { x: -self.x, y: -self.y }
+            }
+        }
+    }
+}macro_rules! create_vector2_fp_ops {
+    ($vec_type: ty, $el_type: ty) => {
+        impl $vec_type {
+            pub fn eq_approx(&self, other: &$vec_type, epsilon: $el_type) -> bool {
+                (self.x - other.x).abs() <= epsilon && (self.y - other.y).abs() <= epsilon
             }
         }
     }
@@ -494,6 +535,7 @@ impl Vector2d {
 
 create_vector2_ops!(Vector2d, f64);
 create_vector2_signed_ops!(Vector2d, f64);
+create_vector2_fp_ops!(Vector2d, f64);
 
 #[repr(C)]
 #[script_bind]
@@ -548,6 +590,7 @@ impl Vector2f {
 
 create_vector2_ops!(Vector2f, f32);
 create_vector2_signed_ops!(Vector2f, f32);
+create_vector2_fp_ops!(Vector2f, f32);
 
 #[repr(C)]
 #[script_bind]

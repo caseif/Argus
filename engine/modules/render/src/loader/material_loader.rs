@@ -72,7 +72,7 @@ impl ResourceLoader for MaterialLoader {
 #[derive(Deserialize)]
 struct MaterialResourceModel {
     texture: String,
-    shaders: Vec<MaterialResourceShaderModel>,
+    shaders: Option<Vec<MaterialResourceShaderModel>>,
 }
 
 #[derive(Deserialize)]
@@ -83,5 +83,10 @@ struct MaterialResourceShaderModel {
 
 fn parse_material(json_str: String) -> Result<Material, serde_json::Error> {
     let raw_model = serde_json::from_str::<MaterialResourceModel>(json_str.as_str())?;
-    Ok(Material::new(raw_model.texture, raw_model.shaders.iter().map(|s| s.uid.clone()).collect()))
+    Ok(Material::new(
+        raw_model.texture,
+        raw_model.shaders
+            .map(|shaders| shaders.iter().map(|s| s.uid.clone()).collect())
+            .unwrap_or_default(),
+    ))
 }

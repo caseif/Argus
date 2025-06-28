@@ -1,0 +1,4 @@
+{
+  "$schema": "https://schema.argusengine.dev/material/1/schema",
+  "texture": "argus:game2d/texture/arrow"
+}

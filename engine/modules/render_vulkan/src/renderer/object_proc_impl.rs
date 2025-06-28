@@ -19,7 +19,8 @@ pub(crate) fn process_object(
 ) {
     let (instance, device, state) = state_tuple;
     
-    let mut object = get_render_context_2d().get_object_mut(object_handle).unwrap();
+    let mut object = get_render_context_2d().get_object_mut(object_handle)
+        .expect("Object not present in render context during processing");
 
     let existing_obj = {
         let scene_state = state.scene_states_2d.entry(scene_id.to_owned()).or_insert_with(|| {

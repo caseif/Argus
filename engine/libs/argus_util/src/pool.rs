@@ -173,7 +173,7 @@ impl<V> ValuePool<V> {
         //         version field.
         let new_chunk = vec![0u8; self.slot_interval * self.slots_per_chunk].into_boxed_slice();
         self.storage.chunks.push(new_chunk);
-        self.storage.empty_indices.extend(first_slot_index as u32..=last_slot_index as u32);
+        self.storage.empty_indices.extend((first_slot_index as u32 + 1)..=last_slot_index as u32);
 
         Ok(first_slot_index as u32)
     }

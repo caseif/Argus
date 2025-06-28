@@ -20,7 +20,7 @@ use argus_resman::Resource;
 use argus_render::common::Transform2d;
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::Vector2f;
-use crate::collision::BoundingRect;
+use crate::collision::{BoundingShape, BoundingShapeType};
 use crate::object::CommonObjectProperties;
 use crate::sprite::Sprite;
 
@@ -28,9 +28,10 @@ use crate::sprite::Sprite;
 pub struct Actor2d {
     pub(crate) common: CommonObjectProperties,
     pub(crate) can_occlude_light: Dirtiable<bool>,
-    pub(crate) bounding_box: Dirtiable<BoundingRect>,
+    pub(crate) bounding_box: Dirtiable<BoundingShape>,
     pub(crate) velocity: Vector2f,
     pub(crate) transform: Dirtiable<Transform2d>,
+    pub(crate) collision_debug: bool,
 }
 
 #[script_bind]
@@ -40,6 +41,7 @@ impl Actor2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        bounding_shape: BoundingShapeType,
         collision_layer: u64,
         collision_mask: u64,
     ) -> Actor2d {
@@ -56,12 +58,14 @@ impl Actor2d {
             },
             velocity: Vector2f::default(),
             can_occlude_light: Dirtiable::new(can_occlude_light),
-            bounding_box: Dirtiable::new(BoundingRect {
+            bounding_box: Dirtiable::new(BoundingShape {
+                ty: bounding_shape,
                 size,
                 center: Vector2f::default(),
                 rotation_rads: 0.0,
             }),
             transform: Default::default(),
+            collision_debug: Default::default(),
         }
     }
 
@@ -100,12 +104,12 @@ impl Actor2d {
     }
 
     #[script_bind]
-    pub fn get_bounding_box(&self) -> BoundingRect {
+    pub fn get_bounding_box(&self) -> BoundingShape {
         self.bounding_box.peek().value
     }
 
     #[script_bind]
-    pub fn set_bounding_box(&mut self, bounding_box: BoundingRect) {
+    pub fn set_bounding_box(&mut self, bounding_box: BoundingShape) {
         self.bounding_box.set(bounding_box);
     }
 
@@ -162,5 +166,10 @@ impl Actor2d {
     #[script_bind]
     pub fn get_sprite_mut(&mut self) -> &mut Sprite {
         &mut self.common.sprite
+    }
+    
+    #[script_bind]
+    pub fn set_collision_debug(&mut self, debug: bool) {
+        self.collision_debug = debug;
     }
 }

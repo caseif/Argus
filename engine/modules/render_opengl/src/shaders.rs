@@ -158,7 +158,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             let entry_point_c = CString::new("main").unwrap();
             glSpecializeShaderARB(
                 shader_handle,
-                entry_point_c.as_ptr(),
+                entry_point_c.as_ptr().cast(),
                 0,
                 ptr::null(),
                 ptr::null(),
@@ -179,7 +179,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             debug!(LOGGER, "GLSL source:\n{}", glsl_src);
 
             let glsl_src_len = glsl_src.len() as GLint;
-            glShaderSource(shader_handle, 1, &glsl_src_c.as_ptr(), &glsl_src_len);
+            glShaderSource(shader_handle, 1, &glsl_src_c.as_ptr().cast(), &glsl_src_len);
             glCompileShader(shader_handle);
         }
 
@@ -270,8 +270,8 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
 
     let out_color_name_c = CString::new(SHADER_OUT_COLOR).unwrap();
     let out_light_opac_name_c = CString::new(SHADER_OUT_LIGHT_OPACITY).unwrap();
-    glBindFragDataLocation(program_handle, 0, out_color_name_c.as_ptr());
-    glBindFragDataLocation(program_handle, 1, out_light_opac_name_c.as_ptr());
+    glBindFragDataLocation(program_handle, 0, out_color_name_c.as_ptr().cast());
+    glBindFragDataLocation(program_handle, 1, out_light_opac_name_c.as_ptr().cast());
 
     glLinkProgram(program_handle);
 

@@ -62,7 +62,7 @@ impl VulkanDevice {
         let dev_features = vk::PhysicalDeviceFeatures::default()
             .independent_blend(true);
 
-        let ext_names: Vec<*const i8> = ENGINE_DEVICE_EXTENSIONS.iter()
+        let ext_names: Vec<_> = ENGINE_DEVICE_EXTENSIONS.iter()
             .map(|ext| ext.as_ptr())
             .collect();
 

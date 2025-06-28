@@ -21,6 +21,7 @@
 use argus_core::{register_module, register_update_callback, LifecycleStage, Ordering};
 use argus_resman::ResourceManager;
 use crate::constants::RESOURCE_TYPE_SPRITE;
+use crate::resources::RESOURCES_PACK;
 use crate::sprite_loader::SpriteLoader;
 use crate::world::World2d;
 
@@ -33,8 +34,9 @@ pub mod world_layer;
 mod collision;
 mod constants;
 mod light_point;
-mod sprite_loader;
 mod object;
+mod resources;
+mod sprite_loader;
 
 argus_logging::crate_logger!(LOGGER, "argus/game2d");
 
@@ -48,7 +50,10 @@ pub fn update_lifecycle_game2d(stage: LifecycleStage) {
             register_update_callback(Box::new(World2d::simulate_worlds), Ordering::Standard);
             register_update_callback(Box::new(World2d::render_worlds), Ordering::Late);
         }
-        LifecycleStage::PostInit => {}
+        LifecycleStage::PostInit => {
+            ResourceManager::instance().add_memory_package(RESOURCES_PACK)
+                .expect("Failed to load in-memory resources for game2d");
+        }
         LifecycleStage::Running => {}
         LifecycleStage::PreDeinit => {}
         LifecycleStage::Deinit => {}

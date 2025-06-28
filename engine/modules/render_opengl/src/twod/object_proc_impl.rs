@@ -42,7 +42,8 @@ pub(crate) fn process_object(
     is_transform_dirty: bool,
     state: &mut RendererState,
 ) {
-    let mut object = get_render_context_2d().get_object_mut(object_handle).unwrap();
+    //TODO: stopgap until render graph buffering is properly implemented
+    let Some(mut object) = get_render_context_2d().get_object_mut(object_handle) else { return; };
 
     let existing_obj = {
         let scene_state = state.scene_states_2d.entry(scene_id.to_string()).or_insert_with(|| {

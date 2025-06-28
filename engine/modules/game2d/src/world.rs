@@ -28,6 +28,7 @@ use argus_render::common::{RenderCanvas, Transform2d};
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_wm::WindowManager;
+use crate::collision::BoundingShapeType;
 use crate::light_point::PointLight;
 use crate::static_object::StaticObject2d;
 
@@ -271,6 +272,7 @@ impl World2d {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        bounding_shape: BoundingShapeType,
         collision_layer: impl AsRef<str>,
         collision_mask: &[&str],
     ) -> Result<Uuid, String> {
@@ -280,6 +282,7 @@ impl World2d {
             z_index,
             can_occlude_light,
             transform,
+            bounding_shape,
             collision_layer,
             collision_mask,
         )
@@ -293,6 +296,7 @@ impl World2d {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        bounding_shape: BoundingShapeType,
         collision_layer: String,
     ) -> String {
         let coll_mask: &[&str] = &[];
@@ -302,6 +306,7 @@ impl World2d {
             z_index,
             can_occlude_light,
             transform,
+            bounding_shape,
             &collision_layer,
             coll_mask,
         ).unwrap()
@@ -331,6 +336,7 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        bounding_shape: BoundingShapeType,
         collision_layer: impl AsRef<str>,
         collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
@@ -339,6 +345,7 @@ impl World2d {
             size,
             z_index,
             can_occlude_light,
+            bounding_shape,
             collision_layer,
             collision_mask,
         )
@@ -351,6 +358,7 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        bounding_shape: BoundingShapeType,
         collision_layer: String,
         collision_mask: String,
     ) -> String {
@@ -359,6 +367,7 @@ impl World2d {
             size,
             z_index,
             can_occlude_light,
+            bounding_shape,
             &collision_layer,
             &[&collision_mask],
         ).unwrap()

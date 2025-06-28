@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::sync::Mutex;
+use std::sync::{LazyLock};
+use std::f32::consts::PI;
 use crate::actor::Actor2d;
 use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
@@ -23,17 +26,23 @@ use std::time::Duration;
 use uuid::Uuid;
 use argus_render::common::{Material, RenderCanvas, TextureData, Transform2d, Vertex2d};
 use argus_render::constants::RESOURCE_TYPE_MATERIAL;
-use argus_render::twod::{get_render_context_2d, RenderObject2d, RenderPrimitive2d, Scene2d};
+use argus_render::twod::{get_render_context_2d, RenderPrimitive2d, Scene2d};
 use argus_resman::ResourceManager;
 use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
+use crate::collision::{BoundingShapeType, CollisionResolution};
 use crate::light_point::PointLight;
 use crate::sprite::Sprite;
 use crate::static_object::StaticObject2d;
 
 const LAYER_PREFIX: &str = "_worldlayer_";
+
+const COLLISION_ARROW_TTL: u32 = 20;
+
+const LAST_COLLISIONS: LazyLock<Mutex<HashMap<(Uuid, Uuid), CollisionResolution>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 #[script_bind(ref_only)]
 pub struct World2dLayer {
@@ -53,6 +62,8 @@ pub struct World2dLayer {
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
+    collision_debug_arrows: HashMap<Uuid, (Transform2d, u32)>,
+    collision_debug_arrow_objs: Vec<Handle>,
 }
 
 #[script_bind]
@@ -95,6 +106,8 @@ impl World2dLayer {
             point_lights: Default::default(),
             collision_layers: Default::default(),
             next_collision_layer_bit: 1,
+            collision_debug_arrows: Default::default(),
+            collision_debug_arrow_objs: Default::default(),
         };
 
         layer
@@ -135,7 +148,7 @@ impl World2dLayer {
 
     #[script_bind(rename = "add_collision_layer")]
     pub fn add_collision_layer_or_die(&mut self, layer_id: String) {
-        self.add_collision_layer(layer_id);
+        self.add_collision_layer(layer_id).unwrap();
     }
 
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
@@ -159,6 +172,7 @@ impl World2dLayer {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        bounding_shape: BoundingShapeType,
         collision_layer: impl AsRef<str>,
         collision_mask: &[&str],
     ) -> Result<Uuid, String> {
@@ -181,6 +195,7 @@ impl World2dLayer {
             z_index,
             can_occlude_light,
             transform,
+            bounding_shape,
             collision_bit,
             collision_bitmask,
         );
@@ -197,6 +212,7 @@ impl World2dLayer {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
+        bounding_shape: BoundingShapeType,
         collision_layer: &str,
     ) -> String {
         self.create_static_object(
@@ -205,6 +221,7 @@ impl World2dLayer {
             z_index,
             can_occlude_light,
             transform,
+            bounding_shape,
             collision_layer,
             &[],
         )
@@ -245,6 +262,7 @@ impl World2dLayer {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
+        bounding_shape: BoundingShapeType,
         collision_layer: impl AsRef<str>,
         collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
@@ -266,6 +284,7 @@ impl World2dLayer {
             size,
             z_index,
             can_occlude_light,
+            bounding_shape,
             collision_bit,
             collision_bitmask,
         );
@@ -324,11 +343,15 @@ impl World2dLayer {
     }
 
     pub(crate) fn simulate(&mut self, delta: Duration) {
-        for (_, actor) in &mut self.actors {
+        self.collision_debug_arrows.iter_mut().for_each(|(_, (_, ttl))| *ttl -= 1);
+        self.collision_debug_arrows.retain(|_, (_, ttl)| *ttl > 0);
+
+        for (actor_id, actor) in &mut self.actors {
             let orig_transform = actor.transform.peek().value;
             if actor.velocity.x == 0.0 && actor.velocity.y == 0.0 {
                 continue;
             }
+            println!("original position: {:?}", orig_transform.translation);
 
             let orig_movement = actor.velocity * delta.as_secs_f32();
 
@@ -336,9 +359,13 @@ impl World2dLayer {
 
             let mut cur_transform = orig_transform.clone();
 
+            let last_collisions = LAST_COLLISIONS.lock().unwrap().clone();
+            LAST_COLLISIONS.lock().unwrap().clear();
+            let mut new_collisions = HashMap::new();
+
             while !remaining_movement.is_zero() {
                 let mut allowed_movement = remaining_movement;
-                let mut deflected_movement = None;
+                let mut deflected_movement = Vector2f::default();
 
                 let cur_bb = actor.bounding_box.peek();
                 let mut transform_after_move = cur_transform.clone();
@@ -346,52 +373,122 @@ impl World2dLayer {
                 let eff_bb = cur_bb.value.transform(&transform_after_move);
 
                 //TODO: use a quadtree to improve efficiency
-                for (_, other) in &self.static_objects {
+                //TODO: only take first collision chronologically into consideration
+                for (other_id, other) in &self.static_objects {
                     if actor.common.collision_mask & other.common.collision_layer == 0 &&
                         other.common.collision_mask & actor.common.collision_layer == 0 {
-                        // objects don't have collision with each other
+                        // objects don't have collision with each other enabled
                         continue;
                     }
 
                     let other_eff_bb = other.bounding_box.transform(&other.transform);
-                    let Some((allowed, deflected)) =
-                        eff_bb.adjust_movement_for_collision(&other_eff_bb, &remaining_movement)
+                    let last_coll = last_collisions.get(&(*actor_id, *other_id)).copied();
+                    let Some(resolution) =
+                        eff_bb.resolve_collision(&other_eff_bb, &remaining_movement, last_coll)
                     else { continue; };
+                    new_collisions.insert((*actor_id, *other_id), resolution);
 
-                    if allowed.x.abs() < allowed_movement.x.abs() || allowed.y.abs() < allowed_movement.y.abs() {
-                        allowed_movement = allowed;
-                        deflected_movement = deflected;
+                    if actor.collision_debug {
+                        let mut arrow_transform = actor.transform.peek().value;
+                        arrow_transform.rotation = f32::atan2(
+                            resolution.collision_vector.y, resolution.collision_vector.x
+                        ) - PI / 2.0;
+                        self.collision_debug_arrows.insert(
+                            *actor_id,
+                            (arrow_transform, COLLISION_ARROW_TTL),
+                        );
+                    }
+
+                    if resolution.allowed_movement.x.abs() < allowed_movement.x.abs() ||
+                        resolution.allowed_movement.y.abs() < allowed_movement.y.abs() {
+                        //if orig_movement.y > 0.0 {
+                        //    allowed_movement = remaining_movement;
+                        //} else {
+                        allowed_movement = resolution.allowed_movement;
+                        //}
+                        deflected_movement = resolution.deflected_movement;
                     }
                 }
 
+                println!("allowed movement: {:?}", allowed_movement);
                 if !allowed_movement.is_zero() {
                     cur_transform.translation += allowed_movement;
+                    println!("new position: {:?}", cur_transform.translation);
                 }
 
-                if let Some(deflected) = deflected_movement {
-                    remaining_movement = deflected;
-                } else {
+                println!("deflected: {:?}", deflected_movement);
+                remaining_movement = deflected_movement;
+                
+                if remaining_movement.is_zero() {
                     break;
                 }
             }
+            
+            *LAST_COLLISIONS.lock().unwrap() = new_collisions;
 
             actor.transform.set(cur_transform);
         }
     }
 
-    fn get_render_transform(
-        &self,
-        world_transform: &Transform2d,
-        world_size: &Vector2f,
-        world_scale_factor: f32,
-        include_parallax: bool,
-    ) -> Transform2d {
-        let parallax_coeff = if include_parallax {
-            self.parallax_coeff
-        } else {
-            1.0
+    fn create_collision_debug_arrow(
+        &mut self,
+        scene: &mut Scene2d,
+        transform: &Transform2d,
+        scale_factor: f32,
+    ) {
+        let arrow_res = ResourceManager::instance().get_resource("argus:game2d/material/arrow")
+            .unwrap();
+        let v1 = Vertex2d {
+            position: Vector2f::new(-1.0 / scale_factor, -1.0 / scale_factor),
+            tex_coord: Vector2f::new(0.0, 0.0),
+            normal: Default::default(),
+            color: Default::default(),
+        };
+        let v2 = Vertex2d {
+            position: Vector2f::new(-1.0 / scale_factor, 1.0 / scale_factor),
+            tex_coord: Vector2f::new(0.0, 1.0),
+            normal: Default::default(),
+            color: Default::default(),
+        };
+        let v3 = Vertex2d {
+            position: Vector2f::new(1.0 / scale_factor, 1.0 / scale_factor),
+            tex_coord: Vector2f::new(1.0, 1.0),
+            normal: Default::default(),
+            color: Default::default(),
+        };
+        let v4 = Vertex2d {
+            position: Vector2f::new(1.0 / scale_factor, -1.0 / scale_factor),
+            tex_coord: Vector2f::new(1.0, 0.0),
+            normal: Default::default(),
+            color: Default::default(),
         };
 
+        let prims = vec![
+            RenderPrimitive2d::new(vec![v1, v2, v3]),
+            RenderPrimitive2d::new(vec![v1, v3, v4]),
+        ];
+
+        let handle = scene.add_object(
+            arrow_res,
+            prims,
+            Vector2f::new(0.0, 0.0),
+            Vector2f::new(1.0, 1.0),
+            9999,
+            0.0,
+            Transform2d::default(),
+        );
+        scene.get_object_mut(handle).unwrap().set_transform(
+            Self::get_render_transform(&transform, &Default::default(), scale_factor, 1.0)
+        );
+        self.collision_debug_arrow_objs.push(handle);
+    }
+
+    fn get_render_transform(
+        world_transform: &Transform2d,
+        _world_size: &Vector2f,
+        world_scale_factor: f32,
+        parallax_coeff: f32,
+    ) -> Transform2d {
         Transform2d::new(
             (world_transform.translation * parallax_coeff) / world_scale_factor,
             world_transform.scale,
@@ -496,11 +593,11 @@ impl World2dLayer {
                 let size = static_obj.get_size();
                 let z_index = static_obj.get_z_index();
                 let can_occlude_light = static_obj.get_can_occlude_light();
-                let render_transform = self.get_render_transform(
+                let render_transform = Self::get_render_transform(
                     &static_obj.get_transform(),
                     &static_obj.common.size,
                     scale_factor,
-                    false
+                    1.0,
                 );
                 // upgrade reference
                 let static_obj = self.static_objects.get_mut(id)
@@ -538,11 +635,11 @@ impl World2dLayer {
             None => {
                 let size = actor.get_size();
                 let z_index = actor.get_z_index();
-                let render_transform = self.get_render_transform(
+                let render_transform = Self::get_render_transform(
                     &actor.get_transform(),
                     &size,
                     scale_factor,
-                    false
+                    1.0,
                 );
                 // upgrade reference
                 let actor = self.actors.get_mut(id).expect("Actor was missing");
@@ -585,13 +682,12 @@ impl World2dLayer {
 
         let size = Vector2f::default(); //actor.get_size();
         if read_transform.dirty {
-            render_obj.set_transform(self
-                .get_render_transform(
-                    &read_transform.value,
-                    &size,
-                    scale_factor,
-                    false
-                ).into());
+            render_obj.set_transform(Self::get_render_transform(
+                &read_transform.value,
+                &size,
+                scale_factor,
+                1.0,
+            ).into());
         }
 
         // upgrade reference
@@ -605,11 +701,11 @@ impl World2dLayer {
         let mut render_light = match light.render_light {
             Some(light_handle) => scene.get_light_mut(light_handle).unwrap(),
             None => {
-                let render_transform = self.get_render_transform(
+                let render_transform = Self::get_render_transform(
                     &light.transform.peek().value,
                     &Vector2f::default(),
                     scale_factor,
-                    false,
+                    1.0,
                 );
                 // upgrade reference
                 let light = self.point_lights.get_mut(id).expect("Point light was missing");
@@ -643,13 +739,14 @@ impl World2dLayer {
         }
 
         if read_transform.dirty {
-            render_light.set_transform(self
-                .get_render_transform(
+            render_light.set_transform(
+                Self::get_render_transform(
                     &read_transform.value,
                     &Vector2f::default(),
                     scale_factor,
-                    false
-                ).into());
+                    1.0,
+                ).into()
+            );
         }
     }
 
@@ -669,11 +766,11 @@ impl World2dLayer {
                 .get_camera_mut(self.get_render_camera_id())
                 .unwrap()
                 .set_transform(
-                    self.get_render_transform(
+                    Self::get_render_transform(
                         &camera_transform.value,
                         &Vector2f::default(),
                         scale_factor,
-                        true,
+                        self.parallax_coeff,
                     )
                 );
         }
@@ -711,6 +808,18 @@ impl World2dLayer {
         let point_lights_to_render = self.point_lights.keys().cloned().collect::<Vec<_>>();
         for light_id in point_lights_to_render {
             self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
+        }
+
+        for handle in self.collision_debug_arrow_objs.drain(..) {
+            scene.remove_object(handle);
+        }
+
+        for (_, (arrow_transform, _)) in self.collision_debug_arrows.clone() {
+            self.create_collision_debug_arrow(
+                scene.value_mut(),
+                &arrow_transform,
+                scale_factor,
+            );
         }
     }
 
