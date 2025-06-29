@@ -93,9 +93,10 @@ fn process_render_group_2d<S>(
 
     for child_obj_handle in child_objects {
         let (obj_transform, obj_anchor, child_version) = {
-            let mut child_object = get_render_context_2d()
+            //TODO: stopgap until render graph buffering is properly implemented
+            let Some(mut child_object) = get_render_context_2d()
                 .get_object_mut(child_obj_handle)
-                .unwrap();
+                else { continue; };
 
             (
                 child_object.get_transform().value,

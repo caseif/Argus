@@ -86,7 +86,7 @@ pub(crate) unsafe extern "C" fn gl_debug_callback(
         _ => LogLevel::Debug, // shouldn't happen
     };
 
-    GL_LOGGER.log(level, CStr::from_ptr(message).to_string_lossy());
+    GL_LOGGER.log(level, CStr::from_ptr(message.cast()).to_string_lossy());
 }
 
 pub(crate) fn set_attrib_pointer(
