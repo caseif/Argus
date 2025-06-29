@@ -34,7 +34,7 @@ impl VulkanInstance {
             .into_iter()
             .map(|ext| CString::new(ext).unwrap())
             .collect();
-        
+
         let required_exts_c: Vec<_> = required_extensions.iter()
             .map(|s| CString::from(*s))
             .collect();

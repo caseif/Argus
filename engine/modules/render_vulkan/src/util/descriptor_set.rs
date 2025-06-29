@@ -43,9 +43,11 @@ fn create_sampler_binding<'a>() -> vk::DescriptorSetLayoutBinding<'a> {
 
 pub(crate) fn create_descriptor_pool(device: &VulkanDevice) -> Result<vk::DescriptorPool, String> {
     let ubo_pool_size = vk::DescriptorPoolSize::default()
+        .ty(vk::DescriptorType::UNIFORM_BUFFER)
         .descriptor_count(INITIAL_UBO_COUNT);
 
     let sampler_pool_size = vk::DescriptorPoolSize::default()
+        .ty(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
         .descriptor_count(INITIAL_SAMPLER_COUNT);
 
     let pool_sizes = [ubo_pool_size, sampler_pool_size];
