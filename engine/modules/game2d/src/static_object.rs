@@ -18,15 +18,14 @@
 use argus_render::common::Transform2d;
 use argus_resman::Resource;
 use argus_util::math::Vector2f;
-use argus_util::pool::Handle;
-use crate::collision::BoundingRect;
+use crate::physics::{BoundingRectangle, BoundingShape};
 use crate::object::CommonObjectProperties;
 use crate::sprite::Sprite;
 
 pub struct StaticObject2d {
     pub(crate) common: CommonObjectProperties,
     pub(crate) can_occlude_light: bool,
-    pub(crate) bounding_box: BoundingRect,
+    pub(crate) bounding_shape: Option<BoundingShape>,
     pub(crate) transform: Transform2d,
 }
 
@@ -45,16 +44,16 @@ impl StaticObject2d {
                 sprite: Sprite::new(sprite_def_res),
                 size,
                 z_index,
-                render_obj: None,
                 collision_layer,
                 collision_mask,
+                b2_body: None,
+                render_obj: None,
             },
             can_occlude_light,
-            bounding_box: BoundingRect {
+            bounding_shape: Some(BoundingShape::Rectangle(BoundingRectangle {
                 size,
-                center: Vector2f::default(),
-                rotation_rads: 0.0,
-            },
+                rotation: 0.0,
+            })),
             transform,
         }
     }
@@ -83,7 +82,7 @@ impl StaticObject2d {
         &mut self.common.sprite
     }
     
-    pub fn get_bounding_box(&self) -> &BoundingRect {
-        &self.bounding_box
+    pub fn get_bounding_shape(&self) -> Option<&BoundingShape> {
+        self.bounding_shape.as_ref()
     }
 }

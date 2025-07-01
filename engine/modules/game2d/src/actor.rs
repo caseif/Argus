@@ -20,7 +20,7 @@ use argus_resman::Resource;
 use argus_render::common::Transform2d;
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::Vector2f;
-use crate::collision::BoundingRect;
+use crate::physics::{BoundingCapsule, BoundingCircle, BoundingRectangle, BoundingShape};
 use crate::object::CommonObjectProperties;
 use crate::sprite::Sprite;
 
@@ -28,9 +28,10 @@ use crate::sprite::Sprite;
 pub struct Actor2d {
     pub(crate) common: CommonObjectProperties,
     pub(crate) can_occlude_light: Dirtiable<bool>,
-    pub(crate) bounding_box: Dirtiable<BoundingRect>,
+    pub(crate) bounding_shape: Dirtiable<Option<BoundingShape>>,
     pub(crate) velocity: Vector2f,
     pub(crate) transform: Dirtiable<Transform2d>,
+    pub(crate) collision_debug: bool,
 }
 
 #[script_bind]
@@ -50,18 +51,19 @@ impl Actor2d {
                 size,
                 z_index,
                 sprite,
-                render_obj: None,
                 collision_layer,
                 collision_mask,
+                b2_body: None,
+                render_obj: None,
             },
             velocity: Vector2f::default(),
             can_occlude_light: Dirtiable::new(can_occlude_light),
-            bounding_box: Dirtiable::new(BoundingRect {
+            bounding_shape: Dirtiable::new(Some(BoundingShape::Rectangle(BoundingRectangle {
                 size,
-                center: Vector2f::default(),
-                rotation_rads: 0.0,
-            }),
+                rotation: 0.0,
+            }))),
             transform: Default::default(),
+            collision_debug: Default::default(),
         }
     }
 
@@ -99,14 +101,35 @@ impl Actor2d {
         self.transform.set(transform);
     }
 
-    #[script_bind]
-    pub fn get_bounding_box(&self) -> BoundingRect {
-        self.bounding_box.peek().value
+    pub fn get_bounding_shape(&self) -> Option<BoundingShape> {
+        self.bounding_shape.peek().value
     }
 
     #[script_bind]
-    pub fn set_bounding_box(&mut self, bounding_box: BoundingRect) {
-        self.bounding_box.set(bounding_box);
+    pub fn set_bounding_box(&mut self, width: f32, height: f32, rotation: f32) {
+        self.bounding_shape.set(Some(BoundingShape::Rectangle(
+            BoundingRectangle { size: Vector2f::new(width, height), rotation }
+        )));
+    }
+
+    #[script_bind]
+    pub fn set_bounding_capsule(
+        &mut self,
+        width: f32,
+        length: f32,
+        rotation: f32,
+        offset: Vector2f,
+    ) {
+        self.bounding_shape.set(Some(BoundingShape::Capsule(
+            BoundingCapsule { width, length, rotation, offset }
+        )));
+    }
+
+    #[script_bind]
+    pub fn set_bounding_circle(&mut self, radius: f32) {
+        self.bounding_shape.set(Some(BoundingShape::Circle(
+            BoundingCircle { radius }
+        )));
     }
 
     #[script_bind]
@@ -162,5 +185,10 @@ impl Actor2d {
     #[script_bind]
     pub fn get_sprite_mut(&mut self) -> &mut Sprite {
         &mut self.common.sprite
+    }
+    
+    #[script_bind]
+    pub fn set_collision_debug(&mut self, debug: bool) {
+        self.collision_debug = debug;
     }
 }

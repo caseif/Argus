@@ -30,11 +30,11 @@ pub mod static_object;
 pub mod world;
 pub mod world_layer;
 
-mod collision;
+mod physics;
 mod constants;
 mod light_point;
-mod sprite_loader;
 mod object;
+mod sprite_loader;
 
 argus_logging::crate_logger!(LOGGER, "argus/game2d");
 

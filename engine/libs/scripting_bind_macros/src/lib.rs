@@ -1013,8 +1013,13 @@ fn parse_fn_args(meta_list: Vec<&Meta>) -> Result<FnAttrArgs, CompileError> {
 }
 
 fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2, CompileError> {
-    let Type::Path(ty) = impl_block.self_ty.as_ref()
-    else {
+    let mut outer_ty = impl_block.self_ty.as_ref();
+    while let Type::Group(group) = outer_ty {
+        outer_ty = group.elem.as_ref()
+    };
+    let ty = if let Type::Path(ty) = outer_ty {
+        ty
+    } else {
         return Err(CompileError::new(
             impl_block.self_ty.span(),
             format!("Only primitive and struct types are supported by {ATTR_SCRIPT_BIND}"),
@@ -1413,7 +1418,7 @@ fn parse_type_internal(
             Err(CompileError::new(tuple.span(), "Tuple types are not supported"))
         }
     } else {
-        Err(CompileError::new(ty.span(), "Unsupported type for script binding"))
+        Err(CompileError::new(ty.span(), format!("Unsupported type for script binding: {:?}", ty)))
     }
 }
 

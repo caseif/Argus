@@ -9,27 +9,35 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULARpub(crate)  PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use box2d_sys::b2BodyId;
 use crate::actor::Actor2d;
 use crate::world_layer::World2dLayer;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::ptr;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::Duration;
+use box2d_sys::{b2Atan2, b2BodyDef, b2BodyType, b2BodyType_b2_dynamicBody, b2BodyType_b2_staticBody, b2Body_GetPosition, b2Body_GetRotation, b2Body_GetTransform, b2Body_SetLinearVelocity, b2Capsule, b2Circle, b2ComputeCosSin, b2CreateBody, b2CreateCapsuleShape, b2CreateCircleShape, b2CreatePolygonShape, b2CreateWorld, b2DefaultBodyDef, b2DefaultShapeDef, b2DefaultWorldDef, b2MakeBox, b2MakeOffsetBox, b2Rot, b2Vec2, b2Vec2_zero, b2WorldId, b2World_Step};
+use fragile::Fragile;
 use argus_scripting_bind::script_bind;
 use uuid::Uuid;
 use argus_render::common::{RenderCanvas, Transform2d};
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_wm::WindowManager;
+use crate::physics::{BoundingShape};
 use crate::light_point::PointLight;
+use crate::object::CommonObjectProperties;
 use crate::static_object::StaticObject2d;
+
+static g_b2_worlds: LazyLock<Mutex<HashMap<String, Fragile<box2d_sys::b2WorldId>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 const MAX_BACKGROUND_LAYERS: u32 = 16;
 const FG_LAYER_ID: &str = "_foreground";
@@ -77,6 +85,10 @@ impl World2d {
             bg_layers_count: 0,
             abstract_camera: Default::default(),
         };
+
+        let fg_b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
+        g_b2_worlds.lock().unwrap()
+            .insert(format!("{}|{}", id.clone(), FG_LAYER_ID.to_string()), Fragile::new(fg_b2_world));
 
         g_worlds.write().unwrap().insert(id.clone(), Arc::new(RwLock::new(world)));
         g_worlds.read().unwrap().get(&id).unwrap().clone()
@@ -206,11 +218,116 @@ impl World2d {
     }
 
     fn simulate(&mut self, delta: Duration) {
-        for i in 0..self.bg_layers_count {
-            let layer = self.bg_layers[i as usize].as_mut().expect("Background layer is missing");
-            layer.simulate(delta);
+        let mut b2_world_map = g_b2_worlds.lock().unwrap();
+        let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, FG_LAYER_ID.to_string()))
+            .unwrap().get();
+        Self::simulate_layer(&mut self.fg_layer, *b2_world, delta);
+    }
+
+    fn simulate_layer(
+        layer: &mut World2dLayer,
+        b2_world: b2WorldId,
+        delta: Duration
+    ) {
+        for obj in layer.static_objects.values_mut() {
+            if obj.common.b2_body.is_none() {
+                let transform = &obj.transform;
+                let cos_sin = unsafe { b2ComputeCosSin(transform.rotation) };
+
+                let mut body_def = unsafe { b2DefaultBodyDef() };
+                body_def.type_ = b2BodyType_b2_staticBody;
+                body_def.position = b2Vec2 { x: transform.translation.x, y: transform.translation.y };
+                body_def.rotation = b2Rot { c: cos_sin.cosine, s: cos_sin.sine };
+                let body_id = unsafe { b2CreateBody(b2_world, &body_def) };
+
+                if let Some(bounding_shape) = obj.bounding_shape {
+                    Self::create_shape(&obj.common, &bounding_shape, body_id);
+                }
+
+                obj.common.b2_body = Some(body_id);
+            }
+            let body_handle = obj.common.b2_body.unwrap();
         }
-        self.fg_layer.simulate(delta);
+
+        for actor in layer.actors.values_mut() {
+            if actor.common.b2_body.is_none() {
+                let transform = actor.transform.peek().value;
+                let cos_sin = unsafe { b2ComputeCosSin(transform.rotation) };
+                let mut body_def = unsafe { b2DefaultBodyDef() };
+                body_def.type_ = b2BodyType_b2_dynamicBody;
+                body_def.position = b2Vec2 {
+                    x: transform.translation.x,
+                    y: transform.translation.y,
+                };
+                body_def.rotation = b2Rot { c: cos_sin.cosine, s: cos_sin.sine };
+                body_def.linearVelocity = b2Vec2 {
+                    x: actor.velocity.x,
+                    y: actor.velocity.y,
+                };
+                body_def.angularVelocity = 0.0;
+                body_def.fixedRotation = true;
+                let body_id = unsafe { b2CreateBody(b2_world, &body_def) };
+                if let Some(bounding_shape) = actor.bounding_shape.peek().value {
+                    Self::create_shape(&actor.common, &bounding_shape, body_id);
+                }
+                actor.common.b2_body = Some(body_id);
+            }
+            let body_handle = actor.common.b2_body.unwrap();
+
+            unsafe {
+                b2Body_SetLinearVelocity(
+                    body_handle,
+                    b2Vec2 { x: actor.velocity.x, y: actor.velocity.y }
+                );
+            }
+        }
+        unsafe { b2World_Step(b2_world, delta.as_secs_f32(), 4) };
+
+        for actor in layer.actors.values_mut() {
+            let body_transform = unsafe { b2Body_GetTransform(actor.common.b2_body.unwrap()) };
+            actor.transform.set(Transform2d::new(
+                Vector2f { x: body_transform.p.x, y: body_transform.p.y },
+                actor.transform.peek().value.scale,
+                unsafe { b2Atan2(body_transform.q.s, body_transform.q.c) },
+            ));
+        }
+    }
+
+    fn create_shape(
+        obj_props: &CommonObjectProperties,
+        bounding_shape: &BoundingShape,
+        body_id: b2BodyId
+    ) {
+        let mut shape = unsafe { b2DefaultShapeDef() };
+        shape.density = 1.0;
+        shape.friction = 0.0;
+        shape.filter.categoryBits = obj_props.collision_layer;
+        shape.filter.maskBits = obj_props.collision_mask;
+
+        match bounding_shape {
+            BoundingShape::Rectangle(rect) => {
+                let polygon = unsafe { b2MakeBox(rect.size.x / 2.0, rect.size.y / 2.0) };
+                unsafe { b2CreatePolygonShape(body_id, &shape, &polygon) };
+            }
+            BoundingShape::Capsule(cap) => {
+                let radius = cap.width / 2.0;
+                let center1 = b2Vec2 {
+                    x: cap.offset.x,
+                    y: -cap.length / 2.0 + radius + cap.offset.y };
+                let center2 = b2Vec2 {
+                    x: cap.offset.x,
+                    y: cap.length / 2.0 - radius + cap.offset.y };
+                let capsule = unsafe { b2Capsule { center1, center2, radius } };
+                unsafe { b2CreateCapsuleShape(body_id, &shape, &capsule) };
+            }
+            BoundingShape::Circle(cir) => {
+                let circle = b2Circle {
+                    center: b2Vec2 { x: 0.0, y: 0.0 },
+                    radius: cir.radius
+                };
+                unsafe { b2CreateCircleShape(body_id, &shape, &circle) };
+            }
+        }
     }
 
     fn render(&mut self) {
@@ -293,17 +410,17 @@ impl World2d {
         z_index: u32,
         can_occlude_light: bool,
         transform: Transform2d,
-        collision_layer: String,
+        collision_layer: &str,
+        collision_mask: &str,
     ) -> String {
-        let coll_mask: &[&str] = &[];
         self.create_static_object(
             sprite,
             size,
             z_index,
             can_occlude_light,
             transform,
-            &collision_layer,
-            coll_mask,
+            collision_layer,
+            &[collision_mask],
         ).unwrap()
             .to_string()
     }
@@ -351,16 +468,16 @@ impl World2d {
         size: Vector2f,
         z_index: u32,
         can_occlude_light: bool,
-        collision_layer: String,
-        collision_mask: String,
+        collision_layer: &str,
+        collision_mask: &str,
     ) -> String {
         self.create_actor(
             sprite,
             size,
             z_index,
             can_occlude_light,
-            &collision_layer,
-            &[&collision_mask],
+            collision_layer,
+            &[collision_mask],
         ).unwrap()
             .to_string()
     }
