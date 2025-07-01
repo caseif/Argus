@@ -39,9 +39,9 @@ use crate::static_object::StaticObject2d;
 static g_b2_worlds: LazyLock<Mutex<HashMap<String, Fragile<box2d_sys::b2WorldId>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-const MAX_BACKGROUND_LAYERS: u32 = 16;
-const FG_LAYER_ID: &str = "_foreground";
-const BG_LAYER_ID_PREFIX: &str = "_background_";
+const MAX_SECONDARY_LAYERS: u32 = 16;
+const PRIM_LAYER_ID: &str = "_primary";
+const SEC_LAYER_ID_PREFIX: &str = "_secondary_";
 
 lazy_static! {
     static ref g_worlds: Arc<RwLock<HashMap<String, Arc<RwLock<World2d>>>>> =
@@ -56,9 +56,9 @@ pub struct World2d {
     al_level: Dirtiable<f32>,
     al_color: Dirtiable<Vector3f>,
 
-    fg_layer: World2dLayer,
-    bg_layers: [Option<World2dLayer>; MAX_BACKGROUND_LAYERS as usize],
-    bg_layers_count: u32,
+    prim_layer: World2dLayer,
+    sec_layers: [Option<World2dLayer>; MAX_SECONDARY_LAYERS as usize],
+    sec_layers_count: u32,
 
     abstract_camera: Dirtiable<Transform2d>,
 }
@@ -71,9 +71,9 @@ impl World2d {
             scale_factor,
             al_level: Default::default(),
             al_color: Default::default(),
-            fg_layer: World2dLayer::new(
+            prim_layer: World2dLayer::new(
                 id.clone(),
-                FG_LAYER_ID.to_string(),
+                PRIM_LAYER_ID.to_string(),
                 1000,
                 1.0,
                 None,
@@ -81,14 +81,14 @@ impl World2d {
                 canvas,
             ),
             window_id: canvas.get_window_id().to_string(),
-            bg_layers: Default::default(),
-            bg_layers_count: 0,
+            sec_layers: Default::default(),
+            sec_layers_count: 0,
             abstract_camera: Default::default(),
         };
 
-        let fg_b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
+        let b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
         g_b2_worlds.lock().unwrap()
-            .insert(format!("{}|{}", id.clone(), FG_LAYER_ID.to_string()), Fragile::new(fg_b2_world));
+            .insert(format!("{}|{}", id.clone(), PRIM_LAYER_ID.to_string()), Fragile::new(b2_world));
 
         g_worlds.write().unwrap().insert(id.clone(), Arc::new(RwLock::new(world)));
         g_worlds.read().unwrap().get(&id).unwrap().clone()
@@ -168,25 +168,25 @@ impl World2d {
         self.al_color.set(color);
     }
 
-    pub fn get_background_layer(&self, index: u32) -> Result<&World2dLayer, &'static str> {
-        if index >= self.bg_layers_count {
-            return Err("Invalid background index requested");
+    pub fn get_secondary_layer(&self, index: u32) -> Result<&World2dLayer, &'static str> {
+        if index >= self.sec_layers_count {
+            return Err("Invalid secondary layer index requested");
         }
-        Ok(self.bg_layers[index as usize].as_ref().expect("Background layer is missing"))
+        Ok(self.sec_layers[index as usize].as_ref().expect("Secondary layer is missing"))
     }
 
-    pub fn add_background_layer(
+    pub fn add_secondary_layer(
         &mut self,
         parallax_coeff: f32,
         repeat_interval: Option<Vector2f>,
     ) -> Result<&mut World2dLayer, &'static str> {
-        if self.bg_layers_count >= MAX_BACKGROUND_LAYERS {
-            return Err("Too many background layers added");
+        if self.sec_layers_count >= MAX_SECONDARY_LAYERS {
+            return Err("Too many secondary layers added");
         }
 
-        let bg_index = self.bg_layers_count;
+        let sec_index = self.sec_layers_count;
 
-        let layer_id = format!("{}{}", BG_LAYER_ID_PREFIX, bg_index);
+        let layer_id = format!("{}{}", SEC_LAYER_ID_PREFIX, sec_index);
 
         let mut window = WindowManager::instance().get_window_mut(&self.window_id).unwrap();
         let canvas = window.get_canvas_mut().expect("Window does not have associated canvas");
@@ -194,7 +194,7 @@ impl World2d {
         let layer = World2dLayer::new(
             self.id.clone(),
             layer_id,
-            100 + bg_index,
+            100 + sec_index,
             parallax_coeff,
             repeat_interval,
             false,
@@ -202,26 +202,26 @@ impl World2d {
                 .expect("Canvas object from window was unexpected type!"),
         );
 
-        assert!(self.bg_layers[bg_index as usize].is_none());
-        self.bg_layers[bg_index as usize] = Some(layer);
-        self.bg_layers_count += 1;
+        assert!(self.sec_layers[sec_index as usize].is_none());
+        self.sec_layers[sec_index as usize] = Some(layer);
+        self.sec_layers_count += 1;
 
-        Ok(self.bg_layers[bg_index as usize].as_mut().expect("Background layer is missing"))
+        Ok(self.sec_layers[sec_index as usize].as_mut().expect("Secondary layer is missing"))
     }
 
-    #[script_bind(rename = "add_background_layer")]
-    pub fn add_background_layer_or_die(
+    #[script_bind(rename = "add_secondary_layer")]
+    pub fn add_secondary_layer_or_die(
         &mut self,
         parallax_coeff: f32,
     ) -> &mut World2dLayer {
-        self.add_background_layer(parallax_coeff, None).unwrap()
+        self.add_secondary_layer(parallax_coeff, None).unwrap()
     }
 
     fn simulate(&mut self, delta: Duration) {
         let mut b2_world_map = g_b2_worlds.lock().unwrap();
-        let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, FG_LAYER_ID.to_string()))
+        let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, PRIM_LAYER_ID.to_string()))
             .unwrap().get();
-        Self::simulate_layer(&mut self.fg_layer, *b2_world, delta);
+        Self::simulate_layer(&mut self.prim_layer, *b2_world, delta);
     }
 
     fn simulate_layer(
@@ -311,12 +311,8 @@ impl World2d {
             }
             BoundingShape::Capsule(cap) => {
                 let radius = cap.width / 2.0;
-                let center1 = b2Vec2 {
-                    x: cap.offset.x,
-                    y: -cap.length / 2.0 + radius + cap.offset.y };
-                let center2 = b2Vec2 {
-                    x: cap.offset.x,
-                    y: cap.length / 2.0 - radius + cap.offset.y };
+                let center1 = b2Vec2 { x: cap.offset.x, y: -cap.length / 2.0 + radius + cap.offset.y };
+                let center2 = b2Vec2 { x: cap.offset.x, y: cap.length / 2.0 - radius + cap.offset.y };
                 let capsule = unsafe { b2Capsule { center1, center2, radius } };
                 unsafe { b2CreateCapsuleShape(body_id, &shape, &capsule) };
             }
@@ -336,12 +332,12 @@ impl World2d {
         let al_level = self.al_level.read();
         let al_color = self.al_color.read();
 
-        for i in 0..self.bg_layers_count {
-            self.bg_layers[i as usize].as_mut().expect("Background layer is missing")
+        for i in 0..self.sec_layers_count {
+            self.sec_layers[i as usize].as_mut().expect("Secondary layer is missing")
                 .render(scale_factor, &camera_transform, &al_level, &al_color);
         }
 
-        self.fg_layer.render(scale_factor, &camera_transform, &al_level, &al_color);
+        self.prim_layer.render(scale_factor, &camera_transform, &al_level, &al_color);
     }
 
     pub(crate) fn simulate_worlds(delta: Duration) {
@@ -356,29 +352,29 @@ impl World2d {
         }
     }
 
-    fn get_foreground_layer(&self) -> &World2dLayer {
-        &self.fg_layer
+    fn get_primary_layer(&self) -> &World2dLayer {
+        &self.prim_layer
     }
 
-    fn get_foreground_layer_mut(&mut self) -> &mut World2dLayer {
-        &mut self.fg_layer
+    fn get_primary_layer_mut(&mut self) -> &mut World2dLayer {
+        &mut self.prim_layer
     }
 
     pub fn add_collision_layer(&mut self, layer: impl Into<String>) -> Result<(), String> {
-        self.fg_layer.add_collision_layer(layer)
+        self.prim_layer.add_collision_layer(layer)
     }
 
     #[script_bind(rename = "add_collision_layer")]
     pub fn add_collision_layer_or_die(&mut self, layer: String) {
-        self.fg_layer.add_collision_layer(layer).unwrap()
+        self.prim_layer.add_collision_layer(layer).unwrap()
     }
 
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
-        self.get_foreground_layer().get_static_object(id)
+        self.get_primary_layer().get_static_object(id)
     }
 
     pub fn get_static_object_mut(&mut self, id: &Uuid) -> Result<&mut StaticObject2d, &'static str> {
-        self.get_foreground_layer_mut().get_static_object_mut(id)
+        self.get_primary_layer_mut().get_static_object_mut(id)
     }
 
     pub fn create_static_object(
@@ -391,7 +387,7 @@ impl World2d {
         collision_layer: impl AsRef<str>,
         collision_mask: &[&str],
     ) -> Result<Uuid, String> {
-        self.get_foreground_layer_mut().create_static_object(
+        self.get_primary_layer_mut().create_static_object(
             sprite.as_str(),
             size,
             z_index,
@@ -426,15 +422,15 @@ impl World2d {
     }
 
     pub fn delete_static_object(&mut self, id: &Uuid) -> Result<(), &'static str> {
-        self.get_foreground_layer_mut().delete_static_object(id)
+        self.get_primary_layer_mut().delete_static_object(id)
     }
 
     pub fn get_actor(&self, id: &Uuid) -> Result<&Actor2d, &'static str> {
-        self.get_foreground_layer().get_actor(id)
+        self.get_primary_layer().get_actor(id)
     }
 
     pub fn get_actor_mut(&mut self, id: &Uuid) -> Result<&mut Actor2d, &'static str> {
-        self.get_foreground_layer_mut().get_actor_mut(id)
+        self.get_primary_layer_mut().get_actor_mut(id)
     }
 
     #[script_bind(rename = "get_actor_mut")]
@@ -451,7 +447,7 @@ impl World2d {
         collision_layer: impl AsRef<str>,
         collision_mask: &[impl AsRef<str>],
     ) -> Result<Uuid, String> {
-        self.get_foreground_layer_mut().create_actor(
+        self.get_primary_layer_mut().create_actor(
             sprite,
             size,
             z_index,
@@ -483,19 +479,19 @@ impl World2d {
     }
 
     pub fn delete_actor(&mut self, id: &Uuid) -> Result<(), &'static str> {
-        self.get_foreground_layer_mut().delete_actor(id)
+        self.get_primary_layer_mut().delete_actor(id)
     }
     
     pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {
-        self.fg_layer.add_point_light(light)
+        self.prim_layer.add_point_light(light)
     }
 
     #[script_bind(rename = "add_point_light")]
     pub fn add_point_light_or_die(&mut self, light: PointLight) -> String {
-        self.fg_layer.add_point_light(light).unwrap().to_string()
+        self.prim_layer.add_point_light(light).unwrap().to_string()
     }
 
     pub fn delete_point_light(&mut self, id: &Uuid) -> Result<(), &'static str> {
-        self.fg_layer.delete_point_light(&id)
+        self.prim_layer.delete_point_light(&id)
     }
 }
