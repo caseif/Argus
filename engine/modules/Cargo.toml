@@ -1,0 +1,28 @@
+[package]
+name = "argus_modules"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+path = "argus_modules.rs"
+
+[features]
+default = []
+opengl = ["dep:argus_render_opengl"]
+vulkan = ["dep:argus_render_vulkan"]
+
+[dependencies]
+argus_core = { path = "core" }
+argus_game2d = { path = "game2d" }
+argus_input = { path = "input" }
+argus_render = { path = "render" }
+argus_resman = { path = "resman" }
+argus_scripting = { path = "scripting" }
+argus_scripting_lua = { path = "scripting_lua" }
+argus_sound = { path = "sound" }
+argus_ui = { path = "ui" }
+argus_wm = { path = "wm" }
+
+argus_render_opengl = { path = "render_opengl", optional = true }
+argus_render_vulkan = { path = "render_vulkan", optional = true }

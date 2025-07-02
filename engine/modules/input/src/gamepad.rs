@@ -196,13 +196,13 @@ pub fn is_gamepad_button_pressed(gamepad: u32, button: GamepadButton) -> bool {
 
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
-pub fn get_gamepad_axis(gamepad: u32, axis: &GamepadAxis) -> f64 {
+pub fn get_gamepad_axis(gamepad: u32, axis: GamepadAxis) -> f64 {
     let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return 0.0;
     };
 
-    gamepad_state.axis_state[axis]
+    gamepad_state.axis_state[&axis]
 }
 
 #[script_bind]

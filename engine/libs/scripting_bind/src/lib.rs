@@ -24,6 +24,8 @@ pub use linkme;
 use linkme::distributed_slice;
 pub use syn;
 
+pub const ENGINE_LUA_NAMESPACE: &str = "argus";
+
 #[distributed_slice]
 pub static BOUND_STRUCT_DEFS: [BoundStructInfo];
 #[distributed_slice]

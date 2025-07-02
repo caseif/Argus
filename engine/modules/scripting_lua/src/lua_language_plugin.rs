@@ -1,8 +1,9 @@
-use std::any::{Any};
+use std::any::Any;
 use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
 use std::ptr::{addr_of, copy_nonoverlapping};
 use std::rc::Rc;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use argus_logging::{debug, warn};
 use fragile::Fragile;
@@ -18,8 +19,6 @@ use crate::handles::ScriptBindableHandle;
 use crate::loaded_script::LoadedScript;
 use crate::LOGGER;
 use crate::lua_util::to_managed_state;
-
-const ENGINE_NAMESPACE: &CStr = c"argus";
 
 const LUA_BUILTIN_INDEX: &CStr = c"__index";
 const LUA_BUILTIN_NEWINDEX: &CStr = c"__newindex";
@@ -187,8 +186,9 @@ impl ScriptLanguagePlugin for LuaLanguagePlugin {
                 lua_setglobal(raw_state, LUA_BUILTIN_REQUIRE.as_ptr());
 
                 // create namespace table
-                luaL_newmetatable(raw_state, ENGINE_NAMESPACE.as_ptr());
-                lua_setglobal(raw_state, ENGINE_NAMESPACE.as_ptr());
+                let ns = CString::from_str(ENGINE_LUA_NAMESPACE).unwrap();
+                luaL_newmetatable(raw_state, ns.as_ptr());
+                lua_setglobal(raw_state, ns.as_ptr());
             }
         }
 
@@ -1222,7 +1222,8 @@ unsafe fn bind_global_fn(context: &ManagedLuaState, f: &BoundFunctionDef) {
     assert_eq!(f.ty, FunctionType::Global);
 
     // put the namespace table on the stack
-    luaL_getmetatable(context.state, ENGINE_NAMESPACE.as_ptr());
+    let ns = CString::from_str(ENGINE_LUA_NAMESPACE).unwrap();
+    luaL_getmetatable(context.state, ns.as_ptr());
     bind_fn(context, f, "");
     // pop the namespace table
     lua_pop(context.state, 1);

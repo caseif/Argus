@@ -387,7 +387,7 @@ impl Controller {
         is_gamepad_button_pressed(gamepad, button)
     }
 
-    pub fn get_gamepad_axis(&self, axis: &GamepadAxis) -> f64 {
+    pub fn get_gamepad_axis(&self, axis: GamepadAxis) -> f64 {
         let Some(gamepad) = self.attached_gamepad else {
             panic!("Cannot query gamepad axis state for controller: No gamepad is associated");
         };
@@ -446,7 +446,7 @@ impl Controller {
                 max_value = max_abs(
                     max_value,
                     gamepad_bindings.iter()
-                        .map(|binding| self.get_gamepad_axis(binding))
+                        .map(|binding| self.get_gamepad_axis(*binding))
                         .reduce(max_abs)
                         .unwrap_or(0.0),
                 );

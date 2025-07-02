@@ -16,19 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate argus_core;
-extern crate argus_game2d;
-extern crate argus_input;
-extern crate argus_render;
-extern crate argus_resman;
-extern crate argus_scripting;
-extern crate argus_scripting_lua;
-extern crate argus_sound;
-extern crate argus_ui;
-extern crate argus_wm;
-
-#[cfg(feature = "opengl")]
-extern crate argus_render_opengl;
-
-#[cfg(feature = "vulkan")]
-extern crate argus_render_vulkan;
+extern crate argus_modules;

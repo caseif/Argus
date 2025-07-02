@@ -15,31 +15,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#![feature(used_with_arg)]
 
-use argus_logging::crate_logger;
+extern crate argus_core;
+extern crate argus_game2d;
+extern crate argus_input;
+extern crate argus_render;
+extern crate argus_resman;
+extern crate argus_scripting;
+extern crate argus_scripting_lua;
+extern crate argus_sound;
+extern crate argus_ui;
+extern crate argus_wm;
 
-pub mod register;
+#[cfg(feature = "opengl")]
+extern crate argus_render_opengl;
 
-mod bind;
-mod config;
-mod context;
-mod error;
-mod manager;
-mod module_init;
-mod plugin;
-mod util;
-mod wrap;
-
-pub use bind::*;
-pub use config::*;
-pub use context::*;
-pub use error::*;
-pub use manager::*;
-pub use plugin::*;
-pub use util::*;
-pub use wrap::*;
-
-crate_logger!(LOGGER, "argus/scripting");
-
-
+#[cfg(feature = "vulkan")]
+extern crate argus_render_vulkan;

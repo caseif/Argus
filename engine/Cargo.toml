@@ -7,21 +7,9 @@ edition.workspace = true
 crate-type = ["rlib"]
 
 [features]
-default = []
-opengl = ["dep:argus_render_opengl"]
-vulkan = ["dep:argus_render_vulkan"]
+default = ["opengl"]
+opengl = ["argus_modules/opengl"]
+vulkan = ["argus_modules/vulkan"]
 
 [dependencies]
-argus_core = { path = "modules/core" }
-argus_game2d = { path = "modules/game2d" }
-argus_input = { path = "modules/input" }
-argus_render = { path = "modules/render" }
-argus_resman = { path = "modules/resman" }
-argus_scripting = { path = "modules/scripting" }
-argus_scripting_lua = { path = "modules/scripting_lua" }
-argus_sound = { path = "modules/sound" }
-argus_ui = { path = "modules/ui" }
-argus_wm = { path = "modules/wm" }
-
-argus_render_opengl = { path = "modules/render_opengl", optional = true }
-argus_render_vulkan = { path = "modules/render_vulkan", optional = true }
+argus_modules = { path = "modules" }

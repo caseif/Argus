@@ -603,6 +603,20 @@ fn gen_fn_binding_code(
         FunctionType::Global
     };
 
+    let param_names: Vec<_> = fn_params.iter()
+        .filter_map(|param| {
+            if let FnArg::Typed(pat_type) = param {
+                if let Pat::Ident(PatIdent { ident, .. }) = &*pat_type.pat {
+                    Some(ident.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+
     let param_types: Vec<_> = fn_params.iter()
         .map(|input| {
             match input {
@@ -944,6 +958,9 @@ fn gen_fn_binding_code(
                     name: #fn_name,
                     ty: #fn_type,
                     is_const: #is_const,
+                    param_names: &[
+                        #(#param_names),*
+                    ],
                     param_type_serials: &[
                         #(#param_type_serials),*
                     ],

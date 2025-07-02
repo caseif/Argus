@@ -782,6 +782,7 @@ pub struct ScriptInvocationError {
     pub message: String,
 }
 
+#[derive(Clone, Debug)]
 pub struct BoundStructInfo {
     pub name: &'static str,
     pub type_id: fn() -> TypeId,
@@ -790,6 +791,7 @@ pub struct BoundStructInfo {
     pub dtor: Option<FfiDtor>,
 }
 
+#[derive(Clone, Debug)]
 pub struct BoundFieldInfo {
     pub containing_type: fn() -> TypeId,
     pub name: &'static str,
@@ -799,16 +801,19 @@ pub struct BoundFieldInfo {
     pub mutator: fn(&mut WrappedObject, &WrappedObject) -> (),
 }
 
+#[derive(Clone, Debug)]
 pub struct BoundFunctionInfo {
     pub name: &'static str,
     pub ty: FunctionType,
     pub is_const: bool,
+    pub param_names: &'static [&'static str],
     pub param_type_serials: &'static [&'static str],
     pub return_type_serial: &'static str,
     pub assoc_type: Option<TypeIdGetter>,
     pub proxy: ProxiedNativeFunction,
 }
 
+#[derive(Clone, Debug)]
 pub struct BoundEnumInfo {
     pub name: &'static str,
     pub type_id: fn() -> TypeId,

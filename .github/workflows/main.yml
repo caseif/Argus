@@ -93,6 +93,11 @@ jobs:
     - name: Build
       run: cargo build --profile ${{ matrix.profile }} --features argus/opengl,argus/vulkan
 
+    - name: Generate Lua bindings
+      run: |
+        cd tools/gen_binding_spec_lua
+        cargo run "../../target/${{ env.CONFIG_NAME }}/argus.spec.lua"
+
     - name: Archive
       uses: actions/upload-artifact@v4
       with:
@@ -100,3 +105,4 @@ jobs:
         path: |
           target/${{ env.CONFIG_NAME }}/argus_bootstrap${{ env.EXE_EXT }}
           target/${{ env.CONFIG_NAME }}/argus_bootstrap.pdb
+          target/${{ env.CONFIG_NAME }}/argus.spec.lua

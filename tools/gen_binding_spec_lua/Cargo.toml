@@ -1,0 +1,14 @@
+[package]
+name = "gen_binding_spec_lua"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+argus_modules = { path = "../../engine/modules" }
+
+argus_logging = { path = "../../engine/libs/logging" }
+argus_scripting_bind = { path = "../../engine/libs/scripting_bind" }
+
+clap = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
+serde_json = { workspace = true }

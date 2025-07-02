@@ -6,6 +6,10 @@ members = [
     "engine/libs/*",
     "engine/modules/*",
     "external-bindings/*",
+    "tools/*",
+]
+default-members = [
+    "bootstrap"
 ]
 
 [workspace.package]

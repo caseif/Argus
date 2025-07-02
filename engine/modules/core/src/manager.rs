@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::sync::atomic::{AtomicU32, AtomicU64};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64};
 use std::sync::{atomic, Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::sync::mpsc::Sender;
 use std::thread::ThreadId;
@@ -44,6 +44,7 @@ impl<F: ?Sized> EngineCallback<F> {
 pub struct EngineManager {
     cur_stage: AtomicU32,
 
+    pub(crate) are_modules_loaded: AtomicBool,
     loaded_modules: Arc<Mutex<HashSet<String>>>,
     render_backends: Arc<Mutex<HashSet<String>>>,
     active_render_backend: OnceLock<String>,
@@ -98,6 +99,7 @@ impl EngineManager {
         Self {
             cur_stage: AtomicU32::new(LifecycleStage::Load.into()),
 
+            are_modules_loaded: AtomicBool::new(false),
             loaded_modules: Arc::default(),
             render_backends: Arc::default(),
             active_render_backend: OnceLock::default(),
