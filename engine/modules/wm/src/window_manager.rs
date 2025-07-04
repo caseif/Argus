@@ -9,10 +9,10 @@ use dashmap::DashMap;
 use dashmap::mapref::one::{Ref, RefMut};
 use fragile::Fragile;
 use sdl3::{EventPump, EventSubsystem, Sdl, VideoSubsystem};
-use argus_core::{dispatch_event, get_current_lifecycle_stage, LifecycleStage};
+use argus_core::dispatch_event;
 use argus_scripting_bind::script_bind;
 use argus_util::math::{Vector2f, Vector2i, Vector2u};
-use crate::{is_wm_module_initialized, Canvas, Display, Window, WindowEvent, WindowEventType, WindowStateFlags, LOGGER};
+use crate::{is_wm_module_initialized, Canvas, Window, WindowEvent, WindowEventType, WindowStateFlags, LOGGER};
 use crate::gl_manager::GlManager;
 use crate::window::dispatch_window_event;
 
@@ -190,13 +190,13 @@ impl WindowManager {
     ///
     /// @remark A Canvas will be implicitly created during construction
     ///         of a Window.
-    pub fn create_window(&self, id: impl Into<String>, parent: Option<String>) ->
+    pub fn create_window(&self, id: impl Into<String>) ->
         Result<RefMut<String, Window>, String> {
         if !is_wm_module_initialized() {
             return Err("Cannot create window before wm module is initialized.".to_owned());
         }
 
-        let create_flags = WindowCreationFlags::from_bits_truncate(
+        let _create_flags = WindowCreationFlags::from_bits_truncate(
             self.window_create_flags.load(Ordering::Relaxed)
         );
 
@@ -215,8 +215,6 @@ impl WindowManager {
             handle: None,
             id: id_str.clone(),
             canvas: None,
-            parent,
-            children: vec![],
             properties: Default::default(),
             content_scale: Vector2f::new(1.0, 1.0),
             close_callback,

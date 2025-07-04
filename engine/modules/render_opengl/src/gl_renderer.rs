@@ -23,10 +23,9 @@ use crate::state::*;
 use crate::textures::get_or_load_texture;
 use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
-use std::ffi::CStr;
-use std::ptr;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use argus_core::{EngineManager, ScreenSpaceScaleMode};
+use crate::util::gl_util::gl_debug_callback;
+use crate::LOGGER;
+use argus_core::ScreenSpaceScaleMode;
 use argus_logging::info;
 use argus_render::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2d, Viewport};
 use argus_render::constants::*;
@@ -34,18 +33,17 @@ use argus_render::twod::get_render_context_2d;
 use argus_resman::Resource;
 use argus_util::math::Vector2u;
 use argus_wm::*;
-use crate::LOGGER;
-use crate::util::gl_util::gl_debug_callback;
+use std::ffi::CStr;
+use std::ptr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub(crate) struct GlRenderer {
-    window_id: String,
     state: RendererState,
 }
 
 impl GlRenderer {
     pub(crate) fn new(window: &mut Window) -> Self {
         let mut renderer = Self {
-            window_id: window.get_id().to_string(),
             state: Default::default(),
         };
         renderer.init(window);

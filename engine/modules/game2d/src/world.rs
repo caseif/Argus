@@ -15,28 +15,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use box2d_sys::b2BodyId;
 use crate::actor::Actor2d;
+use crate::light_point::PointLight;
+use crate::object::CommonObjectProperties;
+use crate::physics::BoundingShape;
+use crate::static_object::StaticObject2d;
 use crate::world_layer::World2dLayer;
+use argus_render::common::{RenderCanvas, Transform2d};
+use argus_scripting_bind::script_bind;
+use argus_util::dirtiable::Dirtiable;
+use argus_util::math::{Vector2f, Vector3f};
+use argus_wm::WindowManager;
+use box2d_sys::b2BodyId;
+use box2d_sys::{b2Atan2, b2BodyType_b2_dynamicBody, b2BodyType_b2_staticBody, b2Body_GetTransform, b2Body_SetLinearVelocity, b2Capsule, b2Circle, b2ComputeCosSin, b2CreateBody, b2CreateCapsuleShape, b2CreateCircleShape, b2CreatePolygonShape, b2CreateWorld, b2DefaultBodyDef, b2DefaultShapeDef, b2DefaultWorldDef, b2MakeBox, b2Rot, b2Vec2, b2WorldId, b2World_Step};
+use fragile::Fragile;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::ptr;
 use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::Duration;
-use box2d_sys::{b2Atan2, b2BodyDef, b2BodyType, b2BodyType_b2_dynamicBody, b2BodyType_b2_staticBody, b2Body_GetPosition, b2Body_GetRotation, b2Body_GetTransform, b2Body_SetLinearVelocity, b2Capsule, b2Circle, b2ComputeCosSin, b2CreateBody, b2CreateCapsuleShape, b2CreateCircleShape, b2CreatePolygonShape, b2CreateWorld, b2DefaultBodyDef, b2DefaultShapeDef, b2DefaultWorldDef, b2MakeBox, b2MakeOffsetBox, b2Rot, b2Vec2, b2Vec2_zero, b2WorldId, b2World_Step};
-use fragile::Fragile;
-use argus_scripting_bind::script_bind;
 use uuid::Uuid;
-use argus_render::common::{RenderCanvas, Transform2d};
-use argus_util::dirtiable::Dirtiable;
-use argus_util::math::{Vector2f, Vector3f};
-use argus_wm::WindowManager;
-use crate::physics::{BoundingShape};
-use crate::light_point::PointLight;
-use crate::object::CommonObjectProperties;
-use crate::static_object::StaticObject2d;
 
-static g_b2_worlds: LazyLock<Mutex<HashMap<String, Fragile<box2d_sys::b2WorldId>>>> =
+static B2_WORLDS: LazyLock<Mutex<HashMap<String, Fragile<b2WorldId>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 const MAX_SECONDARY_LAYERS: u32 = 16;
@@ -73,7 +73,6 @@ impl World2d {
             al_color: Default::default(),
             prim_layer: World2dLayer::new(
                 id.clone(),
-                PRIM_LAYER_ID.to_string(),
                 1000,
                 1.0,
                 None,
@@ -87,7 +86,7 @@ impl World2d {
         };
 
         let b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
-        g_b2_worlds.lock().unwrap()
+        B2_WORLDS.lock().unwrap()
             .insert(format!("{}|{}", id.clone(), PRIM_LAYER_ID.to_string()), Fragile::new(b2_world));
 
         g_worlds.write().unwrap().insert(id.clone(), Arc::new(RwLock::new(world)));
@@ -193,7 +192,6 @@ impl World2d {
 
         let layer = World2dLayer::new(
             self.id.clone(),
-            layer_id,
             100 + sec_index,
             parallax_coeff,
             repeat_interval,
@@ -218,7 +216,7 @@ impl World2d {
     }
 
     fn simulate(&mut self, delta: Duration) {
-        let mut b2_world_map = g_b2_worlds.lock().unwrap();
+        let mut b2_world_map = B2_WORLDS.lock().unwrap();
         let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, PRIM_LAYER_ID.to_string()))
             .unwrap().get();
         Self::simulate_layer(&mut self.prim_layer, *b2_world, delta);
@@ -246,7 +244,7 @@ impl World2d {
 
                 obj.common.b2_body = Some(body_id);
             }
-            let body_handle = obj.common.b2_body.unwrap();
+            let _body_handle = obj.common.b2_body.unwrap();
         }
 
         for actor in layer.actors.values_mut() {
@@ -265,7 +263,7 @@ impl World2d {
                     y: actor.velocity.y,
                 };
                 body_def.angularVelocity = 0.0;
-                body_def.fixedRotation = true;
+                body_def.fixedRotation = false;
                 let body_id = unsafe { b2CreateBody(b2_world, &body_def) };
                 if let Some(bounding_shape) = actor.bounding_shape.peek().value {
                     Self::create_shape(&actor.common, &bounding_shape, body_id);
@@ -313,7 +311,7 @@ impl World2d {
                 let radius = cap.width / 2.0;
                 let center1 = b2Vec2 { x: cap.offset.x, y: -cap.length / 2.0 + radius + cap.offset.y };
                 let center2 = b2Vec2 { x: cap.offset.x, y: cap.length / 2.0 - radius + cap.offset.y };
-                let capsule = unsafe { b2Capsule { center1, center2, radius } };
+                let capsule = b2Capsule { center1, center2, radius };
                 unsafe { b2CreateCapsuleShape(body_id, &shape, &capsule) };
             }
             BoundingShape::Circle(cir) => {

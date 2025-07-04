@@ -65,7 +65,7 @@ pub fn script_bind(args: TokenStream, input: TokenStream) -> TokenStream {
     if meta_list.iter().any(|meta| match meta {
         Meta::Path(path) => {
             path.segments.len() == 1 &&
-                path.segments.first().unwrap().ident.to_string() == UNIV_ARG_IGNORE
+                path.segments.first().unwrap().ident == UNIV_ARG_IGNORE
         }
         _ => false,
     }) {
@@ -287,6 +287,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                         name: #field_name,
                         type_serial: #field_type_serial,
                         size: size_of::<#field_type>(),
+                        #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
                         accessor: #field_accessor_tokens,
                         #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
                         mutator: #field_mutator_tokens,
@@ -301,7 +302,6 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         Ok(quote! {
             #item
             const _: () = {
-                use ::argus_scripting_bind::Wrappable;
                 #ctor_dtor_proxies_tokens
                 #script_bound_impl_tokens
                 #wrappable_impl_tokens
@@ -313,7 +313,6 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         Ok(quote! {
             #item
             const _: () = {
-                use ::argus_scripting_bind::Wrappable;
                 #script_bound_impl_tokens
                 #register_struct_tokens
                 #(#field_regs)*
@@ -483,7 +482,6 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
     Ok(quote! {
         #item
         const _: () = {
-            use ::argus_scripting_bind::Wrappable;
             #script_bound_impl_tokens
             #wrappable_impl_tokens
             const _: () = {
@@ -632,9 +630,9 @@ fn gen_fn_binding_code(
                         Type::Path(assoc_type.expect("Associated type was missing").clone());
                     match &self_type.reference {
                         Some((and_token, lifetime)) => Ok(Type::Reference(TypeReference {
-                            and_token: and_token.clone(),
+                            and_token: *and_token,
                             lifetime: lifetime.clone(),
-                            mutability: self_type.mutability.clone(),
+                            mutability: self_type.mutability,
                             elem: Box::new(assoc_type_path),
                         })),
                         None => Ok(assoc_type_path),
@@ -649,7 +647,7 @@ fn gen_fn_binding_code(
         Vec<(ObjectType, Vec<Type>)> =
         param_types.iter()
             .map(|ty| {
-                parse_type(&ty, ValueFlowDirection::FromScript)
+                parse_type(ty, ValueFlowDirection::FromScript)
             })
             .collect::<Result<_, _>>()?;
 
@@ -684,7 +682,7 @@ fn gen_fn_binding_code(
     for i in 0..param_obj_types.len() {
         let syn_type = &param_types[i];
         let param_type_tokens: TokenStream2;
-        let boxed_trait_obj_opt = try_as_boxed_trait_object(&syn_type);
+        let boxed_trait_obj_opt = try_as_boxed_trait_object(syn_type);
         if let Some(trait_obj) = boxed_trait_obj_opt {
             //TODO: only allow 1 bound (?)
             let Some(paren_args) = trait_obj.bounds.iter().find_map(|bound| match bound {
@@ -1052,9 +1050,9 @@ fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2,
                 if let Some(pos) = f.attrs.iter().position(|attr| {
                     if attr.path().segments.len() != 1 { return false; }
                     let seg = attr.path().segments.first().expect("First path segment was missing");
-                    seg.ident.to_string() == ATTR_SCRIPT_BIND
+                    seg.ident == ATTR_SCRIPT_BIND
                 }) {
-                    fns_to_bind.push((&f, f.attrs[pos].meta.clone()));
+                    fns_to_bind.push((f, f.attrs[pos].meta.clone()));
                     let mut f_clone = f.clone();
                     // remove script_bind attribute since it's being handled as
                     // part of the impl block
@@ -1117,7 +1115,7 @@ fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2,
 }
 
 fn handle_impl_fn(ty: &TypePath, f: &ImplItemFn, args: Meta) -> Result<TokenStream2, CompileError> {
-    let fn_attr_span = args.span().clone();
+    let fn_attr_span = args.span();
     let meta_list = match args {
         Meta::List(meta_list) => {
             let args_tokens = TokenStream::from(meta_list.tokens);
@@ -1185,6 +1183,7 @@ enum ValueFlowDirection {
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[allow(unused)]
 enum OuterTypeType {
     None,
     Reference,
@@ -1223,7 +1222,7 @@ fn parse_type_internal(
     let ty = if let Type::Group(group) = ty {
         group.elem.as_ref()
     } else {
-        &base_ty
+        base_ty
     };
 
     if let Some(trait_obj) = try_as_boxed_trait_object(ty) {
@@ -1258,7 +1257,7 @@ fn parse_type_internal(
         };
         let (out_type, out_syn_types) = match &paren_args.output {
             ReturnType::Type(_, ty) => {
-                parse_type_internal(&ty, flow_direction, OuterTypeType::None)?
+                parse_type_internal(ty, flow_direction, OuterTypeType::None)?
             },
             ReturnType::Default => (ObjectType::empty(), vec![]),
         };
@@ -1294,32 +1293,32 @@ fn parse_type_internal(
             all_syn_types,
         ))
     } else if let Type::Path(path) = ty {
-        if path.path.segments.len() == 0 {
+        if path.path.segments.is_empty() {
             return Err(CompileError::new(path.span(), "Type path does not contain any segments"));
         }
 
         let parsed_opt = first_some!(
-            resolve_i8(&path),
-            resolve_i16(&path),
-            resolve_i32(&path),
-            resolve_i64(&path),
-            resolve_i128(&path),
-            resolve_u8(&path),
-            resolve_u16(&path),
-            resolve_u32(&path),
-            resolve_u64(&path),
-            resolve_u128(&path),
-            resolve_f32(&path),
-            resolve_f64(&path),
-            resolve_bool(&path),
-            resolve_string(&path),
+            resolve_i8(path),
+            resolve_i16(path),
+            resolve_i32(path),
+            resolve_i64(path),
+            resolve_i128(path),
+            resolve_u8(path),
+            resolve_u16(path),
+            resolve_u32(path),
+            resolve_u64(path),
+            resolve_u128(path),
+            resolve_f32(path),
+            resolve_f64(path),
+            resolve_bool(path),
+            resolve_string(path),
         );
 
         if let Some(res) = parsed_opt {
             return Ok((res, vec![]));
         }
 
-        if let Some(res) = resolve_vec(&path, flow_direction)? {
+        if let Some(res) = resolve_vec(path, flow_direction)? {
             if outer_type != OuterTypeType::None &&
                 outer_type != OuterTypeType::Reference {
                 return Err(CompileError::new(path.span(), "Vec may not be used as an inner type"));
@@ -1329,22 +1328,22 @@ fn parse_type_internal(
             return Ok((res.0, resolved_inner_type));
         }
 
-        if let Some(res) = resolve_result(&path, flow_direction)? {
+        if let Some(res) = resolve_result(path, flow_direction)? {
             if outer_type != OuterTypeType::None {
-                if outer_type == OuterTypeType::Reference {
-                    return Err(CompileError::new(
+                return if outer_type == OuterTypeType::Reference {
+                    Err(CompileError::new(
                         path.span(),
                         "Result may not be passed as references in bound symbol"
-                    ));
+                    ))
                 } else {
-                    return Err(CompileError::new(
+                    Err(CompileError::new(
                         path.span(), "Result may not be used as an inner type"
-                    ));
+                    ))
                 }
             }
 
             let resolved_inner_types = [res.1, res.2].into_iter()
-                .filter_map(|opt| opt)
+                .flatten()
                 .collect();
             return Ok((res.0, resolved_inner_types));
         }
@@ -1426,7 +1425,7 @@ fn parse_type_internal(
     } else if let Type::Ptr(_) = ty {
         Err(CompileError::new(ty.span(), "Pointer is not allowed in bound symbol"))
     } else if let Type::Tuple(tuple) = ty {
-        if tuple.elems.len() == 0 {
+        if tuple.elems.is_empty() {
             Ok((
                 ObjectType::empty(),
                 vec![],
@@ -1449,8 +1448,8 @@ fn match_path(subject: &Path, needle: Vec<&'static str>) -> bool {
         needle[needle.len() - subject.segments.len()..]
             .iter()
             .enumerate()
-            .map(|(i, seg)| subject.segments[i].ident.to_string() == *seg)
-            .fold(true, |a, b| a && b)
+            .map(|(i, seg)| subject.segments[i].ident == seg)
+            .all(|b| b)
     }
 }
 
@@ -1528,7 +1527,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
     else { return Err(CompileError::new(ty.span(), "Invalid Vec argument syntax")); };
 
     let (inner_obj_type, resolved_inner_types) =
-        parse_type_internal(&inner_type, flow_direction, OuterTypeType::Vec)?;
+        parse_type_internal(inner_type, flow_direction, OuterTypeType::Vec)?;
     assert!(resolved_inner_types.len() <= 1,
             "Parsing Vec type returned too many resolved types for inner type");
 

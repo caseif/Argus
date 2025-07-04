@@ -39,6 +39,7 @@ impl ResourceLoader for ShaderLoader {
         reader: &mut dyn Read,
         _size: u64
     ) -> Result<Box<dyn Any + Send + Sync>, ResourceError> {
+        #[allow(unused)]
         let (shader_type, shader_stage) = match prototype.media_type.as_str() {
             RESOURCE_TYPE_SHADER_GLSL_VERT => (SHADER_TYPE_GLSL, ShaderStage::Vertex),
             RESOURCE_TYPE_SHADER_GLSL_FRAG => (SHADER_TYPE_GLSL, ShaderStage::Fragment),

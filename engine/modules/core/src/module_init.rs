@@ -1,6 +1,5 @@
-use std::any::TypeId;
-use crate::{ClientConfig, CoreConfig, EngineManager, LifecycleStage};
 use crate::register_module;
+use crate::{ClientConfig, CoreConfig, EngineManager, LifecycleStage};
 
 const CONFIG_KEY_CLIENT: &str = "client";
 const CONFIG_KEY_CORE: &str = "core";

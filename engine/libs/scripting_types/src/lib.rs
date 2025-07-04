@@ -256,10 +256,8 @@ impl ObjectType {
     pub fn get_is_refable(&self) -> Option<bool> {
         if let Some(refable) = self.is_refable {
             Some(refable)
-        } else if let Some(getter) = self.is_refable_getter {
-            Some((getter.fn_ptr)())
         } else {
-            None
+            self.is_refable_getter.map(|getter| (getter.fn_ptr)())
         }
     }
 }
@@ -403,7 +401,7 @@ impl Wrappable for String {
     }
 }
 
-impl<'a> ScriptBound for &'a str {
+impl ScriptBound for &str {
     fn get_object_type() -> ObjectType {
         ObjectType {
             ty: IntegralType::String,
@@ -422,7 +420,7 @@ impl<'a> ScriptBound for &'a str {
     }
 }
 
-impl<'a> Wrappable for &'a str {
+impl Wrappable for &str {
     type InternalFormat = ffi::c_char;
 
     fn wrap_into(self, wrapper: &mut WrappedObject) {
@@ -560,6 +558,8 @@ impl<T: ScriptBound> Wrappable for &mut T {
 
 const WRAPPED_OBJ_BUF_CAP: usize = 64;
 
+pub type EnumValueGetter = fn() -> i64;
+
 pub struct WrappedObject {
     pub ty: ObjectType,
     pub data: [u8; WRAPPED_OBJ_BUF_CAP],
@@ -648,7 +648,7 @@ impl WrappedObject {
     }
 
     pub fn unwrap<T: Wrappable>(&self) -> T {
-        <T as Wrappable>::unwrap_as_value(&self)
+        <T as Wrappable>::unwrap_as_value(self)
     }
 
     fn initialize_buffer(&mut self, size: usize) {
@@ -818,7 +818,7 @@ pub struct BoundEnumInfo {
     pub name: &'static str,
     pub type_id: fn() -> TypeId,
     pub width: usize,
-    pub values: &'static [(&'static str, fn() -> i64)],
+    pub values: &'static [(&'static str, EnumValueGetter)],
 }
 
 pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {

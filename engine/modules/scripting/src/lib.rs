@@ -32,7 +32,6 @@ mod util;
 mod wrap;
 
 pub use bind::*;
-pub use config::*;
 pub use context::*;
 pub use error::*;
 pub use manager::*;
@@ -41,5 +40,3 @@ pub use util::*;
 pub use wrap::*;
 
 crate_logger!(LOGGER, "argus/scripting");
-
-

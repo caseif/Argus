@@ -18,7 +18,7 @@ use crate::loader::ShaderLoader;
 use crate::renderer::VulkanRenderer;
 use crate::resources::RESOURCES_PACK;
 use crate::setup::device::VulkanDevice;
-use crate::setup::instance::{VulkanInstance, ENGINE_INSTANCE_EXTENSIONS};
+use crate::setup::instance::VulkanInstance;
 use crate::setup::LOGGER;
 
 const BACKEND_ID: &str = "vulkan";
@@ -90,7 +90,7 @@ fn activate_vulkan_backend() -> bool {
     }
 
     // create hidden window so we can attach a surface and probe for capabilities
-    let Ok(mut window_ref) = WindowManager::instance().create_window("probe_vk", None) else {
+    let Ok(mut window_ref) = WindowManager::instance().create_window("probe_vk") else {
         debug!(LOGGER, "Failed to create window while probing for Vulkan capabilities");
         return false;
     };

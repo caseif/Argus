@@ -1,11 +1,8 @@
-use std::any::TypeId;
-use std::collections::HashMap;
-use std::mem;
+use crate::config::ScriptingConfig;
+use crate::register::register_script_bindings;
+use crate::*;
 use argus_core::{register_module, run_on_update_thread, EngineManager, LifecycleStage, Ordering};
 use argus_logging::debug;
-use argus_scripting_bind::*;
-use crate::*;
-use crate::register::register_script_bindings;
 
 const CONFIG_KEY_SCRIPTING: &str = "scripting";
 

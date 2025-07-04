@@ -27,9 +27,9 @@ macro_rules! create_vector2_ops {
             }
         }
 
-        impl Into<[$el_type; 2]> for $vec_type {
-            fn into(self) -> [$el_type; 2] {
-                [self.x, self.y]
+        impl From<$vec_type> for [$el_type; 2] {
+            fn from(v: $vec_type) -> Self {
+                [v.x, v.y]
             }
         }
 
@@ -222,9 +222,9 @@ macro_rules! create_vector2_signed_ops {
 
 macro_rules! create_vector3_ops {
     ($vec_type: ty, $el_type: ty) => {
-        impl Into<[$el_type; 3]> for $vec_type {
-            fn into(self) -> [$el_type; 3] {
-                [self.x, self.y, self.z]
+        impl From<$vec_type> for [$el_type; 3] {
+            fn from(v: $vec_type) -> Self {
+                [v.x, v.y, v.z]
             }
         }
 
@@ -347,9 +347,9 @@ macro_rules! create_vector3_signed_ops {
 
 macro_rules! create_vector4_ops {
     ($vec_type: ty, $el_type: ty) => {
-        impl Into<[$el_type; 4]> for $vec_type {
-            fn into(self) -> [$el_type; 4] {
-                [self.x, self.y, self.z, self.w]
+        impl From<$vec_type> for [$el_type; 4] {
+            fn from(v: $vec_type) -> Self {
+                [v.x, v.y, v.z, v.w]
             }
         }
 

@@ -549,7 +549,7 @@ unsafe fn wrap_param(
                     params: Vec<WrappedObject>,
                     data: Arc<Mutex<dyn ScriptCallbackRef>>,
                 | {
-                    (data.lock().unwrap()).call(params)
+                    data.lock().unwrap().call(params)
                 };
 
                 create_callback_object_wrapper(

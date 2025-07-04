@@ -25,8 +25,6 @@ const DEINIT_STAGES: &[LifecycleStage] = &[
     LifecycleStage::PostDeinit
 ];
 
-const DEF_RESOURCES_DIR_NAME: &str = "resources";
-
 static IS_RENDER_INITTED: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 static IS_STOP_REQUESTED: AtomicBool = AtomicBool::new(false);
 static STOP_ACK_UPDATE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());

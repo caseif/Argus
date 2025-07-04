@@ -17,17 +17,17 @@
  */
 
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Write;
 
 use glsl::{parser::*, syntax::*, visitor::*};
 use glslang::*;
 
-const LAYOUT_ID_LOCATION: &'static str = "location";
-const LAYOUT_ID_BINDING: &'static str = "binding";
-const LAYOUT_ID_STD140: &'static str = "std140";
-const LAYOUT_ID_STD430: &'static str = "std430";
+const LAYOUT_ID_LOCATION: &str = "location";
+const LAYOUT_ID_BINDING: &str = "binding";
+const LAYOUT_ID_STD140: &str = "std140";
+const LAYOUT_ID_STD430: &str = "std430";
 
 pub struct ProcessedGlslShader {
     stage: glslang::ShaderStage,
@@ -94,20 +94,20 @@ struct StringWriter {
 
 impl StringWriter {
     fn new() -> Self {
-        return StringWriter {
+        StringWriter {
             string: "".to_string(),
-        };
+        }
     }
 
     fn to_string(&self) -> String {
-        return self.string.clone();
+        self.string.clone()
     }
 }
 
 impl Write for StringWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.string.push_str(s);
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -141,7 +141,7 @@ pub fn compile_glsl_to_spirv(
     };
 
     for glsl in &processed_glsl {
-        let source = ShaderSource::try_from(glsl.source.as_str()).unwrap();
+        let source = ShaderSource::from(glsl.source.as_str());
 
         let input = ShaderInput::new(
             &source,
@@ -214,7 +214,7 @@ pub fn compile_glsl_to_spirv(
                 a
             });
 
-    return Ok(CompiledShaderSet {
+    Ok(CompiledShaderSet {
         bytecode: res,
         inputs: program_attrs,
         outputs: program_outputs,
@@ -222,7 +222,7 @@ pub fn compile_glsl_to_spirv(
         buffers: program_buffers,
         ubo_bindings: program_ubo_bindings,
         ubo_names: program_ubo_names,
-    });
+    })
 }
 
 fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>) -> (Vec<(u32, u32)>, u32) {
@@ -255,8 +255,7 @@ fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>) -> (Vec<(u32, u32)>
     let mut free_ranges = Vec::<(u32, u32)>::new(); // (pos, size)
 
     let mut range_start = 0;
-    for i in 0..occupied_locs.len() {
-        let occupied = occupied_locs[i];
+    for (i, &occupied) in occupied_locs.iter().enumerate() {
         if occupied {
             if range_start != i {
                 free_ranges.push((
@@ -268,7 +267,7 @@ fn get_free_loc_ranges(existing_decls: Vec<DeclarationInfo>) -> (Vec<(u32, u32)>
         }
     }
 
-    return (free_ranges, occupied_locs.len().try_into().unwrap());
+    (free_ranges, occupied_locs.len().try_into().unwrap())
 }
 
 fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32)) -> u32 {
@@ -293,7 +292,7 @@ fn get_next_free_location(size: u32, free_range_info: &mut (Vec<(u32, u32)>, u32
 
     let loc = *max_occupied_plus_one;
     *max_occupied_plus_one += size;
-    return loc;
+    loc
 }
 
 fn process_glsl(
@@ -352,7 +351,9 @@ fn process_glsl(
 
         // validate uniforms to ensure we don't have conflicting definitions
         for (uni_name, cur_decl) in scan_visitor.uniforms {
-            if uniforms.contains_key(&uni_name) {
+            if let std::collections::hash_map::Entry::Vacant(e) = uniforms.entry(uni_name.clone()) {
+                e.insert(cur_decl);
+            } else {
                 let prev_decl = uniforms.get_mut(&uni_name).unwrap();
 
                 if cur_decl.explicit_location {
@@ -373,14 +374,14 @@ fn process_glsl(
                             .to_string(),
                     });
                 }
-            } else {
-                uniforms.insert(uni_name, cur_decl);
             }
         }
 
         // validate blocks to ensure we don't have conflicting definitions
         for (block_name, cur_decl) in scan_visitor.ubos {
-            if ubos.contains_key(&block_name) {
+            if let std::collections::hash_map::Entry::Vacant(e) = ubos.entry(block_name.clone()) {
+                e.insert(cur_decl);
+            } else {
                 let prev_decl = ubos.get_mut(&block_name).unwrap();
 
                 if prev_decl.storage != cur_decl.storage {
@@ -394,8 +395,6 @@ fn process_glsl(
                         "All shader stages must use same instance name per UBO",
                     ));
                 }
-            } else {
-                ubos.insert(block_name, cur_decl);
             }
         }
 
@@ -606,7 +605,7 @@ fn process_glsl(
         });
     }
 
-    return Ok(processed_sources);
+    Ok(processed_sources)
 }
 
 fn get_array_size_multiplier(
@@ -716,7 +715,7 @@ impl StructDefVisitor {
 }
 
 impl Visitor for StructDefVisitor {
-    fn visit_struct_specifier(&mut self, struct_spec: &::glsl::syntax::StructSpecifier) -> Visit {
+    fn visit_struct_specifier(&mut self, struct_spec: &StructSpecifier) -> Visit {
         if self.fail_condition {
             return Visit::Parent;
         }
@@ -776,7 +775,7 @@ impl Visitor for StructDefVisitor {
             Some(total_size),
         );
 
-        return Visit::Parent;
+        Visit::Parent
     }
 }
 
@@ -933,13 +932,13 @@ fn get_decl_info(
         .unwrap_or(Ok(1))?;
     let decl_size = type_size.map(|ts| ts * *arr_el_count);
 
-    return Ok(Some(DeclarationInfo {
+    Ok(Some(DeclarationInfo {
         name: name.as_ref().unwrap().to_owned().0,
         storage: storage.unwrap(),
         size: decl_size,
         location,
         explicit_location: location.is_some(),
-    }));
+    }))
 }
 
 fn get_block_info(block: &Block) -> Result<Option<BlockInfo>, GlslCompileError> {
@@ -1060,14 +1059,14 @@ fn get_block_info(block: &Block) -> Result<Option<BlockInfo>, GlslCompileError> 
         ));
     }
 
-    return Ok(Some(BlockInfo {
+    Ok(Some(BlockInfo {
         block_name: block_name.to_owned().0,
         instance_name: instance_name.to_owned(),
         array_dims,
         storage: storage.unwrap(),
         //size: type_size,
         binding,
-    }));
+    }))
 }
 
 fn set_decl_location(decl_type: &mut FullySpecifiedType, location: i32) {
@@ -1080,11 +1079,9 @@ fn set_decl_location(decl_type: &mut FullySpecifiedType, location: i32) {
         Some(quals) => {
             let mut target_opt: Option<&mut LayoutQualifier> = None;
 
-            for qual in &mut quals.qualifiers {
-                if let TypeQualifierSpec::Layout(lq) = qual {
-                    target_opt = Some(lq);
-                }
-                break;
+            if let Some(TypeQualifierSpec::Layout(lq)) =
+                (&mut quals.qualifiers).into_iter().next() {
+                target_opt = Some(lq);
             }
 
             if let Some(target) = target_opt {
@@ -1126,16 +1123,16 @@ impl PreprocessorVersionVisitor {
 impl VisitorMut for PreprocessorVersionVisitor {
     fn visit_preprocessor_version(
         &mut self,
-        decl: &mut glsl::syntax::PreprocessorVersion,
+        decl: &mut PreprocessorVersion,
     ) -> Visit {
         if self.fail_condition {
             return Visit::Parent;
         }
 
         decl.version = 460;
-        decl.profile = Some(glsl::syntax::PreprocessorVersionProfile::Core);
+        decl.profile = Some(PreprocessorVersionProfile::Core);
 
-        return Visit::Parent;
+        Visit::Parent
     }
 }
 
@@ -1173,14 +1170,14 @@ impl<'a> ScanningDeclarationVisitor<'a> {
     }
 }
 
-impl<'a> Visitor for ScanningDeclarationVisitor<'a> {
-    fn visit_declaration(&mut self, decl: &glsl::syntax::Declaration) -> Visit {
+impl Visitor for ScanningDeclarationVisitor<'_> {
+    fn visit_declaration(&mut self, decl: &Declaration) -> Visit {
         if self.fail_condition {
             return Visit::Parent;
         }
 
         if let Declaration::InitDeclaratorList(idl) = decl {
-            let decl = match get_decl_info(&idl.head, &self.struct_sizes) {
+            let decl = match get_decl_info(&idl.head, self.struct_sizes) {
                 Ok(opt) => match opt {
                     Some(val) => val,
                     None => {
@@ -1216,16 +1213,12 @@ impl<'a> Visitor for ScanningDeclarationVisitor<'a> {
                 }
             };
 
-            match block_info.storage {
-                StorageQualifier::Uniform => {
-                    self.ubos
-                        .insert(block_info.block_name.clone(), block_info.clone());
-                }
-                _ => {}
+            if block_info.storage == StorageQualifier::Uniform {
+                self.ubos.insert(block_info.block_name.clone(), block_info.clone());
             }
         }
 
-        return Visit::Parent;
+        Visit::Parent
     }
 }
 
@@ -1269,14 +1262,14 @@ impl<'a> MutatingDeclarationVisitor<'a> {
     }
 }
 
-impl<'a> VisitorMut for MutatingDeclarationVisitor<'a> {
-    fn visit_declaration(&mut self, decl: &mut glsl::syntax::Declaration) -> Visit {
+impl VisitorMut for MutatingDeclarationVisitor<'_> {
+    fn visit_declaration(&mut self, decl: &mut Declaration) -> Visit {
         if self.fail_condition {
             return Visit::Parent;
         }
 
         if let Declaration::InitDeclaratorList(idl) = decl {
-            let decl_info = match get_decl_info(&idl.head, &self.struct_sizes) {
+            let decl_info = match get_decl_info(&idl.head, self.struct_sizes) {
                 Ok(opt) => match opt {
                     Some(val) => val,
                     None => {
@@ -1317,6 +1310,6 @@ impl<'a> VisitorMut for MutatingDeclarationVisitor<'a> {
             // no-op
         }
 
-        return Visit::Parent;
+        Visit::Parent
     }
 }

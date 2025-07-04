@@ -103,7 +103,7 @@ pub fn register_script_bindings() {
                 );
                 let type_def = type_defs.get_mut(&assoc_type_id).unwrap();
                 let fn_def = BoundFunctionDef::new(
-                    fn_info.name.clone(),
+                    fn_info.name,
                     FunctionType::MemberStatic,
                     false,
                     param_parsed_types,

@@ -12,15 +12,6 @@ struct SemaphoreInner {
 }
 
 impl Semaphore {
-    fn new() -> Self {
-        Self {
-            inner: Arc::new(SemaphoreInner {
-                mutex: Mutex::new(false),
-                cv: Condvar::new(),
-            }),
-        }
-    }
-    
     pub fn is_signaled(&self) -> bool {
         *self.inner.mutex.lock().unwrap()
     }

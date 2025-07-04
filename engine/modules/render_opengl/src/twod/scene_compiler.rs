@@ -58,7 +58,6 @@ fn handle_new_obj(
             let mut bucket = RenderBucket::create(
                 processed_obj.material_res.clone(),
                 processed_obj.atlas_stride,
-                processed_obj.z_index,
                 processed_obj.light_opacity
             );
             create_obj_ubo(&mut bucket);

@@ -1,7 +1,5 @@
 use ash::vk;
 
-pub(crate) const BACKEND_ID: &str = "vulkan";
-
 pub(crate) const BINDING_INDEX_VBO: u32 = 0;
 pub(crate) const BINDING_INDEX_ANIM_FRAME_BUF: u32 = 1;
 

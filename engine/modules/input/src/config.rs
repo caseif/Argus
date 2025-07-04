@@ -1,9 +1,10 @@
 use serde::Deserialize;
 
+#[allow(unused)]
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct BindingsConfig {
     #[serde(default)]
-    default_bindings_resource: Option<String>,
+    pub(crate) default_bindings_resource: Option<String>,
     #[serde(default)]
-    save_user_bindings: Option<bool>,
+    pub(crate) save_user_bindings: Option<bool>,
 }

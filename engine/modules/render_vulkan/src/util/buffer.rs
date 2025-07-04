@@ -36,6 +36,7 @@ impl<'a> Drop for MappedBuffer<'a> {
 }
 
 impl<'a> MappedBuffer<'a> {
+    #[allow(unused)]
     pub(crate) fn as_slice<T>(&self) -> &[T] {
         assert_eq!(
             self.map.len() % size_of::<T>(),

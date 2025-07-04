@@ -77,7 +77,6 @@ struct MaterialResourceModel {
 
 #[derive(Deserialize)]
 struct MaterialResourceShaderModel {
-    stage: String,
     uid: String,
 }
 

@@ -21,10 +21,6 @@ impl ArgusEvent for ResourceEvent {
 }
 
 impl ResourceEvent {
-    pub(crate) fn new(subtype: ResourceEventType, resource: Resource) -> Self {
-        Self { subtype, resource }
-    }
-
     pub fn get_subtype(&self) -> ResourceEventType {
         self.subtype
     }

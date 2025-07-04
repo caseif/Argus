@@ -1,33 +1,36 @@
+use crate::buffered_map::BufferedMap;
+use crate::{ArgusEvent, Ordering};
+use crate::{EngineError, LifecycleStage, RenderLoopParams, TargetThread, LOGGER};
+use argus_logging::{debug, info, warn};
+use arp::ResourceIdentifier;
+use fragile::Fragile;
+use parking_lot::Mutex;
+use serde::de::DeserializeOwned;
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
-use std::{env, fs};
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64};
-use std::sync::{atomic, Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::atomic::{AtomicU32, AtomicU64};
 use std::sync::mpsc::Sender;
+use std::sync::{atomic, Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread::ThreadId;
 use std::time::Duration;
-use arp::ResourceIdentifier;
-use fragile::Fragile;
-use parking_lot::{Mutex, MutexGuard};
-use serde::de::DeserializeOwned;
-use serde::Deserialize;
-use argus_logging::{debug, info, warn};
-use crate::{EngineError, LifecycleStage, RenderLoopParams, ScreenSpaceScaleMode, TargetThread, LOGGER};
-use crate::buffered_map::BufferedMap;
-use crate::{ArgusEvent, Ordering};
+use std::{env, fs};
 
 const ARP_FILE_EXTENSION: &str = "arp";
 const CONFIG_BASE_NAME: &str = "client";
 const CONFIG_FILE_NAME: &str = "client.json";
 const CONFIG_FILE_MEDIA_TYPE: &str = "application/json";
+const DEF_RESOURCES_DIR_NAME: &str = "resources";
 
 static INSTANCE: OnceLock<EngineManager> = OnceLock::new();
+
+pub type ConfigMaybeDeserializer =
+    Box<dyn Fn(&str) -> serde_json::error::Result<Box<dyn Any + Send + Sync>>>;
 
 pub(crate) struct EngineCallback<F: ?Sized> {
     pub(crate) f: Box<F>,
@@ -40,17 +43,16 @@ impl<F: ?Sized> EngineCallback<F> {
     }
 }
 
+pub(crate) type CallbackOnce = Box<dyn Send + FnOnce()>;
+pub(crate) type EventHandler = EngineCallback<dyn Send + Fn(&Arc<dyn ArgusEvent>)>;
+pub(crate) type EventQueue = Vec<(Arc<dyn ArgusEvent>, TypeId)>;
+
 #[derive(Default)]
 pub struct EngineManager {
     cur_stage: AtomicU32,
 
-    pub(crate) are_modules_loaded: AtomicBool,
-    loaded_modules: Arc<Mutex<HashSet<String>>>,
-    render_backends: Arc<Mutex<HashSet<String>>>,
-    active_render_backend: OnceLock<String>,
-
     config: Arc<RwLock<EngineConfig>>,
-    config_deserializers: Fragile<RefCell<HashMap<String, (TypeId, Box<dyn Fn(&str) -> serde_json::error::Result<Box<dyn Any + Send + Sync>>>)>>>,
+    config_deserializers: Fragile<RefCell<HashMap<String, (TypeId, ConfigMaybeDeserializer)>>>,
     primary_namespace: OnceLock<String>,
 
     pub(crate) render_loop: OnceLock<fn(RenderLoopParams)>,
@@ -60,14 +62,14 @@ pub struct EngineManager {
     next_callback_index: AtomicU64,
     pub(crate) update_callbacks: BufferedMap<u64, EngineCallback<dyn Send + Fn(Duration)>>,
     pub(crate) render_callbacks: BufferedMap<u64, EngineCallback<dyn Send + Fn(Duration)>>,
-    pub(crate) update_one_off_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
-    pub(crate) render_one_off_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
-    pub(crate) render_init_callbacks: BufferedMap<u64, (Box<dyn Send + FnOnce()>, Ordering)>,
+    pub(crate) update_one_off_callbacks: BufferedMap<u64, (CallbackOnce, Ordering)>,
+    pub(crate) render_one_off_callbacks: BufferedMap<u64, (CallbackOnce, Ordering)>,
+    pub(crate) render_init_callbacks: BufferedMap<u64, (CallbackOnce, Ordering)>,
 
-    pub(crate) update_event_handlers: BufferedMap<u64, (EngineCallback<dyn Send + Fn(&Arc<dyn ArgusEvent>)>, TypeId)>,
-    pub(crate) render_event_handlers: BufferedMap<u64, (EngineCallback<dyn Send + Fn(&Arc<dyn ArgusEvent>)>, TypeId)>,
-    pub(crate) update_event_queue: Arc<Mutex<Vec<(Arc<dyn ArgusEvent>, TypeId)>>>,
-    pub(crate) render_event_queue: Arc<Mutex<Vec<(Arc<dyn ArgusEvent>, TypeId)>>>,
+    pub(crate) update_event_handlers: BufferedMap<u64, (EventHandler, TypeId)>,
+    pub(crate) render_event_handlers: BufferedMap<u64, (EventHandler, TypeId)>,
+    pub(crate) update_event_queue: Arc<Mutex<EventQueue>>,
+    pub(crate) render_event_queue: Arc<Mutex<EventQueue>>,
 }
 
 pub trait EngineConfigSection: Any + Send + Sync {
@@ -99,11 +101,6 @@ impl EngineManager {
         Self {
             cur_stage: AtomicU32::new(LifecycleStage::Load.into()),
 
-            are_modules_loaded: AtomicBool::new(false),
-            loaded_modules: Arc::default(),
-            render_backends: Arc::default(),
-            active_render_backend: OnceLock::default(),
-
             config: Arc::default(),
             config_deserializers: Default::default(),
             primary_namespace: OnceLock::default(),
@@ -132,24 +129,6 @@ impl EngineManager {
 
     pub(crate) fn set_current_lifecycle_stage(&self, stage: LifecycleStage) {
         self.cur_stage.store(stage.into(), atomic::Ordering::Relaxed);
-    }
-
-    pub(crate) fn get_loaded_modules(&self) -> MutexGuard<HashSet<String>> {
-        self.loaded_modules.lock()
-    }
-
-    pub(crate) fn get_available_render_backends(&self) -> MutexGuard<HashSet<String>> {
-        self.render_backends.lock()
-    }
-
-    pub(crate) fn get_active_render_backend(&self) -> String {
-        self.active_render_backend.get().cloned()
-            .expect("Active render backend is not yet set")
-    }
-
-    pub(crate) fn set_active_render_backend(&self, backend: impl Into<String>) {
-        self.active_render_backend.set(backend.into())
-            .expect("Active render backend may only be set once");
     }
 
     /// Adds a deserializer to be applied when the engine config is loaded.
@@ -184,7 +163,7 @@ impl EngineManager {
             Some(path) => PathBuf::from_str(path).map_err(|err| err.to_string())?,
             None => {
                 let mut wd = env::current_dir().map_err(|err| err.to_string())?;
-                wd.push("resources");
+                wd.push(DEF_RESOURCES_DIR_NAME);
                 wd
             }
         };

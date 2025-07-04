@@ -19,7 +19,7 @@
 use crate::aglet::*;
 use crate::util::gl_util::*;
 
-use std::{mem, ptr, slice};
+use std::{ptr, slice};
 
 pub(crate) struct GlBuffer {
     size: usize,
@@ -92,6 +92,7 @@ impl GlBuffer {
         self.handle
     }
 
+    #[allow(unused)]
     pub(crate) fn map_write(&mut self) {
         assert!(self.allow_mapping);
 
@@ -131,7 +132,7 @@ impl GlBuffer {
     }
 
     pub(crate) fn write_vals<T>(&self, src: &[T], offset: usize) {
-        let len = mem::size_of_val(src);
+        let len = size_of_val(src);
 
         assert!(offset + len <= self.size);
 
@@ -163,7 +164,7 @@ impl GlBuffer {
 
     pub(crate) fn write_val<T>(&self, val: &T, offset: usize) {
         self.write_vals(
-            unsafe { slice::from_raw_parts((val as *const T) as *const u8, mem::size_of_val(val)) },
+            unsafe { slice::from_raw_parts((val as *const T) as *const u8, size_of_val(val)) },
             offset,
         );
     }

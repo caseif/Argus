@@ -67,7 +67,7 @@ fn set_backend_active(active: bool) {
 }
 
 fn test_opengl_support() -> Result<(), ()> {
-    let mut window = WindowManager::instance().create_window("gl_probe", None)
+    let mut window = WindowManager::instance().create_window("gl_probe")
         .expect("Failed to create window for OpenGL probe");
     window.update(Duration::from_secs(0));
     let gl_mgr = WindowManager::instance().get_gl_manager().expect("Failed to get OpenGL manager");

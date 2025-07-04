@@ -41,16 +41,14 @@ pub(crate) struct ViewportBuffers {
 }
 
 pub(crate) struct ViewportState {
-    pub(crate) viewport_id: u32,
     pub(crate) view_matrix: Matrix4x4,
     pub(crate) view_matrix_dirty: bool,
     pub(crate) buffers: ViewportBuffers,
 }
 
 impl ViewportState {
-    pub(crate) fn new(viewport_id: u32) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            viewport_id,
             view_matrix: Default::default(),
             view_matrix_dirty: true,
             buffers: Default::default(),

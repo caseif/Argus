@@ -23,7 +23,7 @@ pub struct LogManager {
 
 impl LogManager {
     pub fn instance() -> &'static Self {
-        &MANAGER.get().unwrap()
+        MANAGER.get().unwrap()
     }
 
     pub fn initialize(settings: LogSettings) -> Result<(), ()> {
@@ -191,7 +191,7 @@ fn emit_log_entry(mgr: &LogManager, message: StagedMessage) {
         .collect::<Vec<_>>()
         .join(" ");
 
-    let final_msg = if prelude.len() > 0 {
+    let final_msg = if !prelude.is_empty() {
         format!("{} {}\n", prelude, message.message)
     } else {
         format!("{}\n", message.message)

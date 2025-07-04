@@ -33,7 +33,7 @@ fn did_file_change(path: &Path, timestamp_file: &Path) -> bool {
     if !path.exists() {
         panic!(
             "No file exists at path {}",
-            path.to_string_lossy().to_string()
+            path.to_string_lossy()
         );
     }
 
@@ -54,7 +54,7 @@ fn did_file_change(path: &Path, timestamp_file: &Path) -> bool {
             ),
         };
 
-        let prev_modified_time = match fs::metadata(&timestamp_file).and_then(|meta| meta.modified()) {
+        let prev_modified_time = match fs::metadata(timestamp_file).and_then(|meta| meta.modified()) {
             Ok(modified_time) => modified_time,
             Err(e) => panic!(
                 "Failed to read metadata of timestamp file at path {} ({e})",

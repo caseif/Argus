@@ -1,7 +1,7 @@
-use std::{env, fs};
-use std::path::{Path, PathBuf};
-use arp::{create_arp_from_fs, CompressionType, PackingOptions};
 use crate::rerun::run_if_changed;
+use arp::{create_arp_from_fs, CompressionType, PackingOptions};
+use std::path::PathBuf;
+use std::{env, fs};
 
 const RES_MAPPINGS_PATH: &str = "../../../res/arp_custom_mappings.csv";
 

@@ -41,7 +41,6 @@ const LAYER_PREFIX: &str = "_worldlayer_";
 
 #[script_bind(ref_only)]
 pub struct World2dLayer {
-    id: String,
     world_id: String,
 
     z_index: u32,
@@ -57,15 +56,12 @@ pub struct World2dLayer {
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
-    collision_debug_arrows: HashMap<Uuid, (Transform2d, u32)>,
-    collision_debug_arrow_objs: Vec<Handle>,
 }
 
 #[script_bind]
 impl World2dLayer {
     pub(crate) fn new(
         world_id: String,
-        id: String,
         z_index: u32,
         parallax_coeff: f32,
         repeat_interval: Option<Vector2f>,
@@ -76,13 +72,12 @@ impl World2dLayer {
         let layer_id_str = format!("{}{}_{}", LAYER_PREFIX, world_id, layer_uuid);
 
         let mut scene = get_render_context_2d()
-            .create_scene(layer_id_str.as_str(), Transform2d::default());
+            .create_scene(layer_id_str.as_str());
         scene.set_lighting_enabled(lighting_enabled);
 
         let scene_id = scene.get_id().to_string();
         let render_camera = scene.create_camera(layer_id_str.as_str());
         canvas.add_default_viewport_2d(
-            layer_id_str.as_str(),
             scene_id,
             render_camera.get_id(),
             z_index
@@ -90,7 +85,6 @@ impl World2dLayer {
 
         let layer = World2dLayer {
             world_id,
-            id,
             z_index,
             parallax_coeff,
             repeat_interval,
@@ -101,8 +95,6 @@ impl World2dLayer {
             point_lights: Default::default(),
             collision_layers: Default::default(),
             next_collision_layer_bit: 1,
-            collision_debug_arrows: Default::default(),
-            collision_debug_arrow_objs: Default::default(),
         };
 
         layer
@@ -514,9 +506,6 @@ impl World2dLayer {
             }
         };
 
-        // downgrade ref
-        let actor = self.actors.get(id).expect("Actor was missing");
-
         let read_occl_light;
         let read_transform;
         {
@@ -658,10 +647,6 @@ impl World2dLayer {
         let point_lights_to_render = self.point_lights.keys().cloned().collect::<Vec<_>>();
         for light_id in point_lights_to_render {
             self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
-        }
-
-        for handle in self.collision_debug_arrow_objs.drain(..) {
-            scene.remove_object(handle);
         }
     }
 

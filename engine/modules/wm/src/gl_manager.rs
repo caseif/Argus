@@ -1,10 +1,10 @@
-use std::{ffi, mem};
-use std::ffi::{CStr, CString};
+use crate::{Window, WindowManager};
 use bitflags::bitflags;
 use fragile::Fragile;
 use sdl3::video::GLProfile;
 use sdl3::VideoSubsystem;
-use crate::{Window, WindowManager};
+use std::ffi::CStr;
+use std::{ffi, mem};
 
 use sdl3::video::GLContext as SdlGlContext;
 

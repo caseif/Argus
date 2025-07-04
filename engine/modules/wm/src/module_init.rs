@@ -48,7 +48,7 @@ fn create_initial_window() {
         return;
     }
 
-    let mut window = WindowManager::instance().create_window(id, None)
+    let mut window = WindowManager::instance().create_window(id)
         .expect("Failed to create initial window");
 
     if let Some(title) = &params.title {

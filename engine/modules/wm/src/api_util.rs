@@ -14,9 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-use std::ffi;
-use fragile::Fragile;
+ */use fragile::Fragile;
 use crate::Window;
 
 use sdl3::video::VkInstance as SdlVkInstance;

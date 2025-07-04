@@ -53,10 +53,8 @@ impl RenderBucketKey {
 }
 
 pub(crate) struct RenderBucket {
-    pub(crate) material_uid: String,
     pub(crate) material_res: Resource,
     pub(crate) atlas_stride: Vector2f,
-    pub(crate) z_index: u32,
     pub(crate) light_opacity: f32,
     pub(crate) objects: Vec<Handle>,
     pub(crate) vertex_buffer: Option<GlBufferHandle>,
@@ -72,16 +70,11 @@ impl RenderBucket {
     pub(crate) fn create(
         material_res: Resource,
         atlas_stride: Vector2f,
-        z_index: u32,
         light_opacity: f32,
     ) -> Self {
-        let material_uid = material_res.get_prototype().uid.to_string();
-
         Self {
-            material_uid,
             material_res,
             atlas_stride,
-            z_index,
             light_opacity,
             objects: Default::default(),
             vertex_buffer: Default::default(),

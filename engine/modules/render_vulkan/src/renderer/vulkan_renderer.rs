@@ -1,13 +1,14 @@
-use std::collections::HashSet;
-use std::ops::Deref;
-use std::sync::atomic::Ordering;
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
-use std::thread::JoinHandle;
-use std::time::Duration;
-use ash::{khr, vk};
-use ash::vk::Handle;
-use argus_core::{EngineManager, ScreenSpaceScaleMode};
+use crate::renderer::bucket_proc::fill_buckets;
+use crate::renderer::compositing::{draw_framebuffer_to_swapchain, draw_scene_to_framebuffer};
+use crate::renderer::scene_compiler::compile_scene_2d;
+use crate::setup::device::VulkanDevice;
+use crate::setup::instance::VulkanInstance;
+use crate::setup::swapchain::{create_swapchain, destroy_swapchain, recreate_swapchain, VulkanSwapchain};
+use crate::setup::LOGGER;
+use crate::state::{NotifyCreatedSwapchainParams, NotifyDestroyedSwapchainParams, NotifyHaltingParams, PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
+use crate::util::defines::*;
+use crate::util::*;
+use argus_core::ScreenSpaceScaleMode;
 use argus_logging::debug;
 use argus_render::common::{AttachedViewport, Material, Matrix4x4, RenderCanvas, SceneType, Transform2d, Viewport};
 use argus_render::constants::{SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
@@ -16,16 +17,15 @@ use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
 use argus_wm::{vk_create_surface, VkInstance, Window};
-use crate::renderer::bucket_proc::fill_buckets;
-use crate::renderer::compositing::{draw_framebuffer_to_swapchain, draw_scene_to_framebuffer};
-use crate::renderer::scene_compiler::compile_scene_2d;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
-use crate::setup::LOGGER;
-use crate::setup::swapchain::{create_swapchain, destroy_swapchain, recreate_swapchain, VulkanSwapchain};
-use crate::state::{NotifyCreatedSwapchainParams, NotifyDestroyedSwapchainParams, NotifyHaltingParams, PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
-use crate::util::defines::*;
-use crate::util::*;
+use ash::vk::Handle;
+use ash::{khr, vk};
+use std::collections::HashSet;
+use std::ops::Deref;
+use std::sync::atomic::Ordering;
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
+use std::thread::JoinHandle;
+use std::time::Duration;
 
 const FRAME_QUAD_VERTEX_DATA: &[f32] = &[
     -1.0, -1.0, 0.0, 0.0,
@@ -37,7 +37,6 @@ const FRAME_QUAD_VERTEX_DATA: &[f32] = &[
 ];
 
 pub(crate) struct VulkanRenderer {
-    window_id: String,
     vk_instance: VulkanInstance,
     vk_device: VulkanDevice,
     state: RendererState,
@@ -47,7 +46,6 @@ pub(crate) struct VulkanRenderer {
 impl VulkanRenderer {
     pub(crate) fn new(vk_instance: VulkanInstance, vk_device: VulkanDevice, window: &Window) -> Self {
         let mut renderer = Self {
-            window_id: window.get_id().to_owned(),
             vk_instance,
             vk_device,
             state: RendererState::default(),

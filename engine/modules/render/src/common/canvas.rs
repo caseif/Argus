@@ -72,7 +72,6 @@ impl RenderCanvas {
 
     pub fn add_default_viewport_2d(
         &mut self,
-        id: impl AsRef<str>,
         scene_id: impl AsRef<str>,
         camera_id: impl AsRef<str>,
         z_index: u32

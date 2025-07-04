@@ -13,8 +13,10 @@ use crate::util::*;
 
 struct TransformedViewport {
     top: i32,
+    #[allow(unused)]
     bottom: i32,
     left: i32,
+    #[allow(unused)]
     right: i32,
 }
 
@@ -711,41 +713,4 @@ pub(crate) fn draw_framebuffer_to_swapchain(
     unsafe {
         device.logical_device.cmd_draw(vk_cmd_buf, 6, 1, 0, 0);
     }
-}
-
-pub(crate) fn setup_framebuffer(_state: &mut RendererState) {
-    /*let frame_program = create_pipeline(state, { FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH });
-
-    state.frame_program = frame_program;
-
-    if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_POSITION).has_value()) {
-        crash("Frame program is missing required position attribute");
-    }
-    if (!frame_program.reflection.get_attr_loc(SHADER_ATTRIB_TEXCOORD).has_value()) {
-        crash("Frame program is missing required texcoords attribute");
-    }
-
-    float frame_quad_vertex_data[] = {
-            -1.0, -1.0, 0.0, 0.0,
-            -1.0, 1.0, 0.0, 1.0,
-            1.0, 1.0, 1.0, 1.0,
-            -1.0, -1.0, 0.0, 0.0,
-            1.0, 1.0, 1.0, 1.0,
-            1.0, -1.0, 1.0, 0.0,
-    };
-
-    glCreateVertexArrays(1, &state.frame_vao);
-
-    glCreateBuffers(1, &state.frame_vbo);
-
-    glNamedBufferData(state.frame_vbo, sizeof(frame_quad_vertex_data), frame_quad_vertex_data, GL_STATIC_DRAW);
-
-    glVertexArrayVertexBuffer(state.frame_vao, BINDING_INDEX_VBO, state.frame_vbo, 0,
-            4 * uint32_t(sizeof(GLfloat)));
-
-    unsigned int attr_offset = 0;
-    set_attrib_pointer(state.frame_vao, state.frame_vbo, BINDING_INDEX_VBO, 4, SHADER_ATTRIB_POSITION_LEN,
-            FB_SHADER_ATTRIB_POSITION_LOC, &attr_offset);
-    set_attrib_pointer(state.frame_vao, state.frame_vbo, BINDING_INDEX_VBO, 4, SHADER_ATTRIB_TEXCOORD_LEN,
-            FB_SHADER_ATTRIB_TEXCOORD_LOC, &attr_offset);*/
 }

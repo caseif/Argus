@@ -8,7 +8,6 @@ use crate::twod::*;
 
 pub struct Scene2d {
     id: String,
-    transform: Transform2d,
     lighting_enabled: bool,
     ambient_light_level: Dirtiable<f32>,
     ambient_light_color: Dirtiable<Vector3f>,
@@ -28,12 +27,11 @@ impl Scene for Scene2d {
 
 impl Scene2d {
     #[must_use]
-    pub(crate) fn new(id: impl Into<String>, transform: Transform2d) -> Scene2d {
+    pub(crate) fn new(id: impl Into<String>) -> Scene2d {
         let root_group_write = get_render_context_2d()
             .add_group(RenderGroup2d::new(Transform2d::default(), None));
         Self {
             id: id.into(),
-            transform,
             lighting_enabled: false,
             ambient_light_level: Dirtiable::new(1.0),
             ambient_light_color: Dirtiable::new(Vector3f::new(1.0, 1.0, 1.0)),
@@ -284,6 +282,7 @@ impl Scene2d {
         self.cameras.remove(id.as_ref());
     }
 
+    #[allow(unused)]
     pub(crate) fn get_lights_for_render(&self) -> Vec<RenderLight2d> {
         todo!()
     }

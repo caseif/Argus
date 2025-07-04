@@ -53,10 +53,6 @@ pub struct Window {
     /// This is only set if the Canvas constructor has been set by the module
     /// responsible for implementing canvases.
     pub(crate) canvas: Option<Box<dyn Canvas>>,
-    /// The Window parent to this one, if applicable.
-    pub(crate) parent: Option<String>,
-    /// This Window's child \link Window Windows \endlink, if any.
-    pub(crate) children: Vec<Arc<RwLock<Window>>>,
     pub(crate) properties: RwLock<WindowProperties>,
     pub(crate) content_scale: Vector2f,
     /// The callback to be executed upon the Window being closed.

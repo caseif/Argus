@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use argus_scripting_bind::script_bind;
-use crate::{EngineError, EngineManager};
+use crate::{EngineError};
 use crate::internal::register::{ModuleRegistration, REGISTERED_MODULES};
 
 #[derive(
@@ -100,7 +100,7 @@ fn topo_sort<'a>(
     let mut start_nodes: VecDeque<&str> = VecDeque::new();
     let mut remaining_edges: Vec<(&str, &str)> = edges;
 
-    for (&id, _) in nodes {
+    for id in nodes.keys() {
         start_nodes.push_back(id);
     }
 

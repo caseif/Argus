@@ -1,23 +1,20 @@
+use crate::input_event::{dispatch_axis_event, dispatch_button_event};
+use crate::input_manager::GamepadDevicesState;
+use crate::{InputDeviceEvent, InputDeviceEventType, InputManager, LOGGER};
+use argus_core::dispatch_event;
+use argus_logging::{debug, info, warn};
+use argus_scripting_bind::script_bind;
+use lazy_static::lazy_static;
+use num_enum::IntoPrimitive;
 use std::cmp::min;
 use std::collections::HashMap;
-use argus_logging::{debug, info, warn};
-use lazy_static::lazy_static;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use argus_core::dispatch_event;
-use argus_scripting_bind::script_bind;
-use crate::input_event::{dispatch_axis_event, dispatch_button_event};
-use crate::{InputDeviceEvent, InputDeviceEventType, InputManager, LOGGER};
-use crate::input_manager::GamepadDevicesState;
 
+use argus_wm::WindowManager;
 use sdl3::event::Event as SdlEvent;
 use sdl3::gamepad::Axis as SdlGamepadAxis;
 use sdl3::gamepad::Button as SdlGamepadButton;
-use sdl3::gamepad::Gamepad as SdlGamepad;
-use sdl3::joystick::Joystick as SdlJoystick;
-use argus_wm::WindowManager;
 
 const GAMEPAD_NAME_INVALID: &str = "invalid";
-const GAMEPAD_NAME_UNKNOWN: &str = "unknown";
 
 pub type HidDeviceInstanceId = u32;
 
@@ -610,7 +607,7 @@ pub(crate) fn unassoc_gamepad(id: HidDeviceInstanceId) {
     devices_state.available_gamepads.push(id);
 }
 
-fn close_gamepad(id: HidDeviceInstanceId) {
+fn close_gamepad(_id: HidDeviceInstanceId) {
     //TODO
     /*let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
         warn!(

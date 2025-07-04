@@ -7,7 +7,6 @@ use argus_util::math::Vector2u;
 use ash::vk;
 
 pub(crate) struct PreparedTexture {
-    uid: String,
     pub(crate) image: VulkanImage,
     pub(crate) sampler: vk::Sampler,
     staging_buf: VulkanBuffer,
@@ -126,7 +125,6 @@ pub(crate) fn prepare_texture(
     };
 
     Ok(PreparedTexture {
-        uid: texture_res.get_prototype().uid.to_string(),
         image,
         sampler,
         staging_buf,

@@ -1,12 +1,10 @@
-use std::ops::{Deref, DerefMut};
-use dashmap::DashMap;
+use crate::twod::{RenderGroup2d, RenderLight2d, RenderObject2d, Scene2d};
+use argus_util::pool::{Handle, ValuePool};
 use dashmap::mapref::one::{Ref, RefMut};
+use dashmap::DashMap;
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use uuid::Uuid;
-use argus_util::pool::{Handle, ValuePool};
-use crate::common::{RenderCanvas, Transform2d};
-use crate::twod::{RenderLight2d, RenderGroup2d, RenderObject2d, Scene2d};
+use std::ops::{Deref, DerefMut};
 
 lazy_static! {
     static ref RENDER_CONTEXT: RenderContext2d = RenderContext2d::new();
@@ -14,7 +12,6 @@ lazy_static! {
 
 #[derive(Default)]
 pub struct RenderContext2d {
-    canvases: DashMap<Uuid, RenderCanvas>,
     scenes: DashMap<String, Scene2d>,
     group_pool: RwLock<ValuePool<RenderGroup2d>>,
     object_pool: RwLock<ValuePool<RenderObject2d>>,
@@ -122,30 +119,12 @@ pub fn get_render_context_2d() -> &'static RenderContext2d {
 impl RenderContext2d {
     pub fn new() -> Self {
         Self {
-            canvases: DashMap::new(),
             scenes: DashMap::new(),
             group_pool: RwLock::new(ValuePool::new()),
             object_pool: RwLock::new(ValuePool::new()),
             light_pool: RwLock::new(ValuePool::new()),
         }
     }
-
-    /*pub fn get_canvas(&self, id: &Uuid) -> Option<Ref<Uuid, RenderCanvas>> {
-        self.canvases.get(id)
-    }
-
-    pub fn get_canvas_mut(&self, id: &Uuid) -> Option<RefMut<Uuid, RenderCanvas>> {
-        self.canvases.get_mut(id)
-    }
-
-    pub fn create_canvas(&self, window: &Window) -> RefMut<Uuid, RenderCanvas> {
-        let canvas = RenderCanvas::new(window);
-        self.canvases.entry(canvas.get_id()).or_insert(canvas)
-    }
-
-    pub fn remove_canvas(&self, id: &Uuid) -> bool {
-        self.canvases.remove(id).is_some()
-    }*/
 
     pub fn get_scene(&self, scene_id: impl AsRef<str>) -> Option<Ref<String, Scene2d>> {
         self.scenes.get(scene_id.as_ref())
@@ -156,12 +135,12 @@ impl RenderContext2d {
         self.scenes.get_mut(scene_id.as_ref())
     }
 
-    pub fn create_scene(&self, id: impl Into<String>, transform: Transform2d)
+    pub fn create_scene(&self, id: impl Into<String>)
         -> RefMut<String, Scene2d> {
         let id = id.into();
         self.scenes
             .entry(id.clone())
-            .or_insert_with(|| Scene2d::new(id, transform))
+            .or_insert_with(|| Scene2d::new(id))
     }
 
     pub fn remove_scene(&self, id: impl Into<String>) -> bool {
