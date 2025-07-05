@@ -46,7 +46,8 @@ pub(crate) struct MouseState {
 #[derive(Default)]
 pub(crate) struct GamepadDevicesState {
     pub(crate) available_gamepads: Vec<HidDeviceInstanceId>,
-    pub(crate) mapped_gamepads: HashMap<HidDeviceInstanceId, String>,
+    pub(crate) mapped_gamepads:
+        HashMap<HidDeviceInstanceId, (Fragile<sdl3::gamepad::Gamepad>, String)>,
     pub(crate) are_gamepads_initted: bool,
 }
 

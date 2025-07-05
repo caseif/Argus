@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use num_enum::IntoPrimitive;
 use std::cmp::min;
 use std::collections::HashMap;
-
+use fragile::Fragile;
 use argus_wm::WindowManager;
 use sdl3::event::Event as SdlEvent;
 use sdl3::gamepad::Axis as SdlGamepadAxis;
@@ -251,14 +251,14 @@ fn normalize_axis(val: i16) -> f64 {
     }
 }
 
-fn poll_gamepad(devices_state: &mut GamepadDevicesState, id: HidDeviceInstanceId) {
+fn poll_gamepad(devices_state: &GamepadDevicesState, id: HidDeviceInstanceId) {
     let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
         warn!(LOGGER, "Failed to get SDL controller from instance ID {}", id);
         return;
     };
 
     let controller_opt = devices_state.mapped_gamepads.get(&id)
-        .map(|name| InputManager::instance().get_controller(name));
+        .map(|(_, name)| InputManager::instance().get_controller(name));
 
     let mut new_button_state: GamepadButtonState = 0;
     let mut i = 0;
@@ -499,7 +499,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
 
                 let mut devices_state =
                     InputManager::instance().gamepad_devices_state.write();
-                if let Some(controller_name) =
+                if let Some((_, controller_name)) =
                     devices_state.mapped_gamepads.get(&instance_id) {
                     match InputManager::instance().controllers.get_mut(controller_name) {
                         Some(mut controller) => {
@@ -554,8 +554,8 @@ pub(crate) fn update_gamepads() {
         poll_gamepad(&mut devices_state, gamepad_id);
     }
 
-    for (gamepad_id, _) in devices_state.mapped_gamepads.clone() {
-        poll_gamepad(&mut devices_state, gamepad_id);
+    for (&gamepad_id, _) in &devices_state.mapped_gamepads {
+        poll_gamepad(&devices_state, gamepad_id);
     }
 }
 
@@ -578,7 +578,9 @@ pub(crate) fn assoc_gamepad(id: HidDeviceInstanceId, controller_name: impl Into<
     };
 
     gamepads.remove(pos);
-    devices_state.mapped_gamepads.insert(id, controller_name.into());
+    let gamepad = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id)
+        .map_err(|e| e.to_string())?;
+    devices_state.mapped_gamepads.insert(id, (Fragile::new(gamepad), controller_name.into()));
 
     Ok(())
 }
